@@ -72,7 +72,6 @@ class RemoveGrainMode(CustomIntEnum):
     OPP_CLIP_AVG_FAST = 22
     EDGE_DEHALO = 23
     EDGE_DEHALO2 = 24
-    MIN_SHARP2 = 25
     SMART_RGC = 26
     SMART_RGCL = 27
     SMART_RGCL2 = 28
