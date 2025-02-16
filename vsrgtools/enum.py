@@ -49,6 +49,7 @@ class LimitFilterMode(LimitFilterModeMeta, CustomIntEnum):
 
 
 class RemoveGrainMode(CustomIntEnum):
+    NONE = 0
     MINMAX_AROUND1 = 1
     MINMAX_AROUND2 = 2
     MINMAX_AROUND3 = 3
@@ -85,6 +86,7 @@ RemoveGrainModeT = int | RemoveGrainMode | Sequence[int | RemoveGrainMode]
 
 
 class RepairMode(CustomIntEnum):
+    NONE = 0
     MINMAX_SQUARE1 = 1
     MINMAX_SQUARE2 = 2
     MINMAX_SQUARE3 = 3
@@ -122,6 +124,7 @@ RepairModeT = int | RepairMode | Sequence[int | RepairMode]
 
 
 class VerticalCleanerMode(CustomIntEnum):
+    NONE = 0
     MEDIAN = 1
     PRESERVING = 2
 

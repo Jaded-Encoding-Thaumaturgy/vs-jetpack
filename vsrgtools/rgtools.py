@@ -21,6 +21,9 @@ def repair(clip: vs.VideoNode, repairclip: vs.VideoNode, mode: RepairModeT) -> v
 
     if mode not in RepairMode:
         raise NotFoundEnumValue('Invalid RepairMode specified!', repair, mode)
+    
+    if mode == RepairMode.NONE:
+        return clip
 
     if not complexpr_available:
         if mode in (RepairMode.CLIP_REF_RG20, RepairMode.CLIP_REF_RG23) and clip.format.sample_type == vs.FLOAT:
@@ -36,6 +39,9 @@ def removegrain(clip: vs.VideoNode, mode: RemoveGrainModeT) -> vs.VideoNode:
 
     if mode not in RemoveGrainMode:
         raise NotFoundEnumValue('Invalid RemoveGrainMode specified!', removegrain, mode)
+    
+    if mode == RemoveGrainMode.NONE:
+        return clip
 
     if clip.format.sample_type == vs.INTEGER and mode in range(1, 24 + 1):
         if hasattr(core, "zsmooth"):
@@ -86,4 +92,8 @@ def backward_clense(clip: vs.VideoNode, planes: PlanesT = None) -> vs.VideoNode:
 def vertical_cleaner(clip: vs.VideoNode, mode: VerticalCleanerModeT = VerticalCleanerMode.MEDIAN) -> vs.VideoNode:
     if mode not in VerticalCleanerMode:
         raise NotFoundEnumValue('Invalid VerticalCleanerMode specified!', vertical_cleaner, mode)
+    
+    if mode == VerticalCleanerMode.NONE:
+        return clip
+
     return pick_func_stype(clip, core.lazy.rgvs.VerticalCleaner, core.lazy.rgsf.VerticalCleaner)(clip, mode)

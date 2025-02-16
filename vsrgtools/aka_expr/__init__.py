@@ -15,9 +15,17 @@ from ._rp import (
 )
 
 
+def _noop_expr() -> str:
+    return ''
+
+
+def _unimpl_expr() -> None:
+    raise NotImplementedError('Unimplemented RG expr mode!', _unimpl_expr)
+
+
 removegrain_aka_exprs = list[Callable[[], str]](
     [
-        None,
+        _noop_expr,
         aka_removegrain_expr_1,
         partial(aka_removegrain_expr_2_4, 2),
         partial(aka_removegrain_expr_2_4, 3),
@@ -28,21 +36,21 @@ removegrain_aka_exprs = list[Callable[[], str]](
         aka_removegrain_expr_8,
         aka_removegrain_expr_9,
         aka_removegrain_expr_10,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
+        _unimpl_expr,
+        _unimpl_expr,
+        _unimpl_expr,
+        _unimpl_expr,
+        _unimpl_expr,
+        _unimpl_expr,
         aka_removegrain_expr_17,
         aka_removegrain_expr_18,
-        None,
-        None,
+        _unimpl_expr,
+        _unimpl_expr,
         aka_removegrain_expr_21_22,
         aka_removegrain_expr_21_22,
         aka_removegrain_expr_23,
         aka_removegrain_expr_24,
-        None,
+        _unimpl_expr,
         aka_removegrain_expr_26,
         aka_removegrain_expr_27,
         aka_removegrain_expr_28,
@@ -51,7 +59,7 @@ removegrain_aka_exprs = list[Callable[[], str]](
 
 repair_aka_exprs = list[Callable[[], str]](
     [
-        None,
+        _noop_expr,
         partial(aka_repair_expr_1_4, 1),
         partial(aka_repair_expr_1_4, 2),
         partial(aka_repair_expr_1_4, 3),
@@ -76,7 +84,7 @@ repair_aka_exprs = list[Callable[[], str]](
         aka_repair_expr_22,
         aka_repair_expr_23,
         aka_repair_expr_24,
-        None,
+        _unimpl_expr,
         aka_repair_expr_26,
         aka_repair_expr_27,
         aka_repair_expr_28,
