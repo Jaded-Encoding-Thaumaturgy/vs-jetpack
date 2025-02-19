@@ -7,19 +7,17 @@ from __future__ import annotations
 import warnings
 
 from enum import EnumMeta
-from math import ceil, sin
+from math import sin
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
-from vsaa import Nnedi3
 from vsexprtools import ExprOp, complexpr_available, norm_expr
-from vskernels import Bicubic, Bilinear, Scaler, ScalerT
+from vskernels import Bilinear, Scaler
 from vsmasktools import retinex
 from vsrgtools import bilateral, box_blur, flux_smooth, gauss_blur, min_blur
 from vstools import (
-    MISSING, ColorRange, ConvMode, CustomEnum, CustomIntEnum, CustomRuntimeError, MissingT, PlanesT,
-    SingleOrArr, check_variable, clamp, core, depth, disallow_variable_format,
-    disallow_variable_resolution, get_neutral_value, get_peak_value, get_y, join, normalize_planes,
-    normalize_seq, scale_delta, scale_value, split, vs
+    MISSING, ColorRange, ConvMode, CustomIntEnum, MissingT, PlanesT, SingleOrArr,
+    check_variable, clamp, core, depth, get_neutral_value, get_peak_value, get_y,
+    join, normalize_planes, normalize_seq, scale_delta, scale_value, split, vs
 )
 
 from .bm3d import BM3D as BM3DM
@@ -29,8 +27,7 @@ from .nlm import DeviceType, nl_means
 
 __all__ = [
     'Prefilter', 'prefilter_to_full_range',
-    'MultiPrefilter',
-    'PelType'
+    'MultiPrefilter'
 ]
 
 __abstract__ = [
@@ -773,12 +770,12 @@ class MultiPrefilter(PrefBase):  # type: ignore
         return clip
 
 
-def prefilter_to_full_range(pref: vs.VideoNode, range_conversion: float, planes: PlanesT = None) -> vs.VideoNode:
+def prefilter_to_full_range(clip: vs.VideoNode, range_conversion: float = 5.0, planes: PlanesT = None) -> vs.VideoNode:
     """
     Convert a limited range clip to full range.\n
     Useful for expanding prefiltered clip's ranges to give motion estimation additional information to work with.
 
-    :param pref:                Clip to be preprocessed.
+    :param clip:                Clip to be preprocessed.
     :param range_conversion:    Value which determines what range conversion method gets used.\n
                                  * >= 1.0 - Expansion with expr based on this coefficient.
                                  * >  0.0 - Expansion with retinex.
@@ -787,12 +784,11 @@ def prefilter_to_full_range(pref: vs.VideoNode, range_conversion: float, planes:
 
     :return:                    Full range clip.
     """
+    planes = normalize_planes(clip, planes)
 
-    planes = normalize_planes(pref, planes)
+    work_clip, *chroma = split(clip) if planes == [0] else (clip, )
 
-    work_clip, *chroma = split(pref) if planes == [0] else (pref, )
-
-    assert (fmt := work_clip.format) and pref.format
+    assert (fmt := work_clip.format) and clip.format
 
     is_integer = fmt.sample_type == vs.INTEGER
 
@@ -805,8 +801,8 @@ def prefilter_to_full_range(pref: vs.VideoNode, range_conversion: float, planes:
         k = (range_conversion - 1) * c
 
         if is_integer:
-            t = f'x {scale_value(16, 8, pref)} '
-            t += f'- {scale_value(219, 8, pref)} '
+            t = f'x {scale_value(16, 8, clip)} '
+            t += f'- {scale_value(219, 8, clip)} '
             t += f'/ {ExprOp.clamp(0, 1)}'
         else:
             t = ExprOp.clamp(0, 1, 'x').to_str()
@@ -826,146 +822,9 @@ def prefilter_to_full_range(pref: vs.VideoNode, range_conversion: float, planes:
     elif range_conversion > 0.0:
         pref_full = retinex(work_clip, upper_thr=range_conversion, fast=False)
     else:
-        pref_full = depth(work_clip, pref, range_out=ColorRange.FULL)
+        pref_full = depth(work_clip, clip, range_out=ColorRange.FULL)
 
     if chroma:
-        return join(pref_full, *chroma, family=pref.format.color_family)
+        return join(pref_full, *chroma, family=clip.format.color_family)
 
     return pref_full
-
-
-if TYPE_CHECKING:
-    PelTypeBase = CustomEnum
-else:
-    class PelTypeBase(CustomEnum):
-        ...
-
-    class CUSTOM(Scaler):
-        def __init__(self, scaler: str | type[Scaler] | Scaler, **kwargs: Any) -> None:
-            self.scaler = Scaler.ensure_obj(scaler)
-            self.kwargs = kwargs
-
-        @disallow_variable_format
-        @disallow_variable_resolution
-        def __call__(
-            self, clip: vs.VideoNode, pel: int, subpixel: int = 3,
-            default: ScalerT | None = None, **kwargs: Any
-        ) -> vs.VideoNode:
-            return PelType.__call__(self.scaler, clip, pel, default, **(self.kwargs | kwargs))
-
-        def scale(
-            self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-            shift: tuple[float, float] = (0, 0), **kwargs: Any
-        ) -> vs.VideoNode:
-            width, height = Scaler._wh_norm(clip, width, height)
-            return self.scaler.scale(clip, width, height, shift, **kwargs)
-
-        @property
-        def kernel_radius(self) -> int:
-            return self.scaler.kernel_radius
-
-    BILINEAR = CUSTOM(Bilinear)
-    BICUBIC = CUSTOM(Bicubic)
-    WIENER = CUSTOM(Bicubic(b=-0.6, c=0.4))
-
-    PelTypeBase.CUSTOM = CUSTOM
-    PelTypeBase.BILINEAR = BILINEAR
-    PelTypeBase.BICUBIC = BICUBIC
-    PelTypeBase.WIENER = WIENER
-
-
-class PelType(int, PelTypeBase):
-    AUTO = -1
-    """Automatically decide what :py:class:`PelType` to use."""
-
-    NONE = 0
-    """Don't perform any scaling."""
-
-    NNEDI3 = 4
-    """Performs scaling with NNedi3, ZNedi3."""
-
-    if TYPE_CHECKING:
-        from .prefilters import PelType
-
-        class CUSTOM(Scaler, PelType):  # type: ignore
-            """Class for constructing your own :py:class:`PelType`."""
-
-            def __init__(self, scaler: str | type[Scaler] | Scaler, **kwargs: Any) -> None:
-                """
-                Create custom :py:class`PelType` from a scaler.
-
-                :param scaler:  Scaler to be used for scaling and create a pel clip.
-                """
-
-            def scale(  # type: ignore
-                self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-                shift: tuple[float, float] = (0, 0), **kwargs: Any
-            ) -> vs.VideoNode:
-                ...
-
-        BILINEAR: CUSTOM
-        """Performs scaling with the bilinear filter (:py:class:`vskernels.Bilinear`)."""
-
-        BICUBIC: CUSTOM
-        """Performs scaling with default bicubic values (:py:class:`vskernels.Catrom`)."""
-
-        WIENER: CUSTOM
-        """Performs scaling with the wiener filter (:py:class:`Bicubic(b=-0.6, c=0.4)`)."""
-
-        def __new__(cls, value: int) -> PelType:
-            ...
-
-        def __init__(self, value: int) -> None:
-            ...
-
-    @disallow_variable_format
-    @disallow_variable_resolution
-    def __call__(
-        pel_type: Scaler | PelType, clip: vs.VideoNode, pel: int,
-        default: ScalerT | PelType | None = None, **kwargs: Any
-    ) -> vs.VideoNode:
-        """
-        Scale a clip. Useful for motion interpolation.
-
-        :param clip:        Clip to be scaled.
-        :param pel:         Rate of scaling.
-        :param subpixel:    Precision used in mvtools calls.\n
-                            Will be used with :py:attr:`PelType.AUTO`.
-        :param default:     Specify a default :py:class:`PelType`/:py:class:`Scaler` top be used.\n
-                            Will be used with :py:attr:`PelType.AUTO`.
-        :param kwargs:      Keyword arguments passed to the scaler.
-
-        :return:            Upscaled clip.
-        """
-
-        assert clip.format
-
-        if pel_type is PelType.NONE or pel <= 1:
-            return clip
-
-        if pel_type is PelType.AUTO:
-            if default:
-                pel_type = default if isinstance(default, PelType) else Scaler.ensure_obj(default)
-            else:
-                val = 1 << 3 - ceil(clip.height / 1000)
-
-                if val < 1:
-                    pel_type = PelType.BILINEAR
-                elif val < 2:
-                    pel_type = PelType.BICUBIC
-                elif val < 3:
-                    pel_type = PelType.WIENER
-                else:
-                    pel_type = PelType.NNEDI3
-
-        if pel_type == PelType.NNEDI3:
-            if not any((hasattr(core, ns) for ns in ('nnedi3cl', 'nnedi3'))):
-                raise CustomRuntimeError('Missing any nnedi3 implementation!', PelType.NNEDI3)
-
-            kwargs |= {'nsize': 0, 'nns': clamp(((pel - 1) // 2) + 1, 0, 4), 'qual': clamp(pel - 1, 1, 3)} | kwargs
-
-            pel_type = Nnedi3(**kwargs)
-
-        assert isinstance(pel_type, Scaler)
-
-        return pel_type.scale(clip, clip.width * pel, clip.height * pel, **kwargs)
