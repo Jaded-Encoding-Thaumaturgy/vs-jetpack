@@ -241,6 +241,7 @@ class MVTools:
 
         if clip is self.clip:
             self.clip = super_clip
+
         if clip is self.search_clip:
             self.search_clip = super_clip
 
@@ -338,6 +339,9 @@ class MVTools:
         ):
             self.disable_compensate = True
 
+        if self.vectors.has_vectors:
+            self.vectors.clear()
+
         if self.mvtools is MVToolsPlugin.FLOAT:
             self.vectors.vmulti = self.mvtools.Analyze(super_clip, radius=self.tr, **analyze_args)
         else:
@@ -347,8 +351,6 @@ class MVTools:
                         super_clip, isb=direction is MVDirection.BACK, delta=i, **analyze_args
                     )
                     self.vectors.set_mv(direction, i, vector)
-                    
-            self.vectors.analysis_data.clear()
 
     def recalculate(
         self, super: vs.VideoNode | None = None, vectors: MotionVectors | MVTools | None = None,

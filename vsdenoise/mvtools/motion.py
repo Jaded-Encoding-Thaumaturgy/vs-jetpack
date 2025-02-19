@@ -28,9 +28,8 @@ class MotionVectors:
 
     def __init__(self) -> None:
         self._init_vects()
-        self.analysis_data = dict()
+        self.analysis_data = dict[str, Any]()
         self.scaled = False
-        self.kwargs = dict[str, Any]()
 
     def _init_vects(self) -> None:
         self.temporal_vectors = {w: {} for w in MVDirection}
@@ -72,6 +71,5 @@ class MotionVectors:
         del self.vmulti
         self.analysis_data.clear()
         self.scaled = False
-        self.kwargs.clear()
         self.temporal_vectors.clear()
         self._init_vects()

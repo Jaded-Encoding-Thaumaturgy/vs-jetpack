@@ -146,13 +146,13 @@ class MVToolsPlugin(CustomIntEnum):
 class MVDirection(IntFlag):
     """Motion vector analyze direction."""
 
-    FWRD = 1
-    """Forwards motion detection."""
-
-    BACK = 2
+    BACK = 1
     """Backwards motion detection."""
 
-    BOTH = FWRD | BACK
+    FWRD = 2
+    """Forwards motion detection."""
+
+    BOTH = BACK | FWRD
     """Backwards and forwards motion detection."""
 
 
