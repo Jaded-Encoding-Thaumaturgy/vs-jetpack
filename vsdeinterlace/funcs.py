@@ -100,7 +100,9 @@ class telop_resample(CustomIntEnum):
                     bobbed_clip[0] * assumefps + jitter, **(ivtc_fps_div if cleanpos == 6 else ivtc_fps)
                 )
 
-            comp = MVTools(jitter, **mv_args).flow_interpolate()
+            mv = MVTools(jitter, **mv_args)
+            mv.analyze()
+            comp = mv.flow_interpolate(interleave=False)
 
             out = intl([comp, clean], decimate, [0])
             offs = 3 if decimate else 2
@@ -137,8 +139,13 @@ class telop_resample(CustomIntEnum):
         if offset == -1:
             c1, c2 = (core.std.AssumeFPS(bobbed_clip[0] + c, **ivtc_fps) for c in (c1, c2))
 
-        fix1 = MVTools(c1, **mv_args).flow_interpolate(time=50 + direction * 25)
-        fix2 = MVTools(c2, **mv_args).flow_interpolate()
+        mv1 = MVTools(c1, **mv_args)
+        mv1.analyze()
+        fix1 = mv1.flow_interpolate(time=50 + direction * 25, interleave=False)
+
+        mv2 = MVTools(c2, **mv_args)
+        mv2.analyze()
+        fix2 = mv2.flow_interpolate(interleave=False)
 
         return intl([fix1, fix2], pattern == 0, [0, 1])
 
