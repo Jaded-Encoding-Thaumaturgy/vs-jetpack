@@ -725,7 +725,7 @@ class MVTools:
 
         if self.mvtools is MVToolsPlugin.FLOAT:
             output = self.mvtools.Degrain()(
-                clip, super_clip, mv_multi=self.get_vectors(vectors, tr=tr, multi=True), **degrain_args
+                clip, super_clip, self.get_vectors(vectors, tr=tr, multi=True), **degrain_args
             )
         else:
             vect_b, vect_f = self.get_vectors(vectors, tr=tr)
