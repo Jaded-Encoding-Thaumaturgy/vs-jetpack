@@ -39,6 +39,22 @@ class _dpir(CustomStrEnum):
         fp16: bool | None = None, num_streams: int | None = 1, device_id: int = 0, kernel: KernelT = Catrom,
         **kwargs: Any
     ) -> vs.VideoNode:
+        """
+        Deep Plug-and-Play Image Restoration
+        :param clip:            Clip to process.
+        :param strength:        Threshold (8-bit scale) strength for deblocking/denoising.
+        :param matrix:          Matrix output.
+        :param cuda:            vs-mlrt backend. Will attempt to auto-select the most suitable one if None.
+        :param i444:            Output as 444 if True.
+        :param tiles:           Splits up the frame into multiple tiles.
+                                Helps if you're lacking in vram but models may behave differently.
+        :param overlap:         
+        :param zones:           Apply different strength in specified zones.
+        :param fp16:            Process in half-precision floating-point format.
+        :param num_streams:     Number of asynchrononous operations. If None, auto pick the best number based on your GPU.
+        :param device_id:       Device ordinal of the GPU.
+        :param kernel:          Kernel used for upsampling/downscampling.
+        """
         func = 'dpir'
 
         try:
