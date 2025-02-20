@@ -335,15 +335,12 @@ class MVTools:
             if not any((analyze_args.get('overlap'), analyze_args.get('overlapv'))):
                 self.disable_compensate = True
 
-            for i in range(1, self.tr + 1):
+            for delta in range(1, self.tr + 1):
                 for direction in MVDirection:
-                    self.vectors.set_mv(
-                        self.mvtools.Analyze(
-                            super_clip, isb=direction is MVDirection.BACKWARD, delta=i, **analyze_args
-                        ),
-                        direction,
-                        i,
+                    vector = self.mvtools.Analyze(
+                        super_clip, isb=direction is MVDirection.BACKWARD, delta=delta, **analyze_args
                     )
+                    self.vectors.set_mv(vector, direction, delta)
 
     def recalculate(
         self, super: vs.VideoNode | None = None, vectors: MotionVectors | MVTools | None = None,
@@ -421,13 +418,10 @@ class MVTools:
 
             vectors.analysis_data.clear()
 
-            for i in range(1, self.tr + 1):
+            for delta in range(1, self.tr + 1):
                 for direction in MVDirection:
-                    vectors.set_mv(
-                        self.mvtools.Recalculate(super_clip, vectors.get_mv(direction, i), **recalculate_args),
-                        direction,
-                        i,
-                    )
+                    vector = self.get_vector(vectors, direction=direction, delta=delta)
+                    vectors.set_mv(self.mvtools.Recalculate(super_clip, vector, **recalculate_args), direction, delta)
 
     @overload
     def compensate(
@@ -515,7 +509,7 @@ class MVTools:
 
         tr = fallback(tr, self.tr)
 
-        vect_b, vect_f = self.get_vectors(self.vectors, direction=direction, tr=tr)
+        vect_b, vect_f = self.get_vectors(vectors, direction=direction, tr=tr)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -626,7 +620,7 @@ class MVTools:
 
         tr = fallback(tr, self.tr)
 
-        vect_b, vect_f = self.get_vectors(self.vectors, direction=direction, tr=tr)
+        vect_b, vect_f = self.get_vectors(vectors, direction=direction, tr=tr)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -716,8 +710,6 @@ class MVTools:
 
             degrain_args.update(thsad=thsad, thsad2=thsad2, limit=limit)
         else:
-            vect_b, vect_f = self.get_vectors(vectors, tr=tr)
-
             thsad, thsadc = normalize_seq(thsad, 2)
             limit, limitc = normalize_seq(limit, 2)
 
@@ -732,14 +724,12 @@ class MVTools:
         degrain_args = self.degrain_args | KwargsNotNone(degrain_args)
 
         if self.mvtools is MVToolsPlugin.FLOAT:
-            mv_multi = cast(vs.VideoNode, vectors.mv_multi)
-
-            if tr != self.tr:
-                trim = self.tr - tr
-                mv_multi = mv_multi.std.SelectEvery(self.tr * 2, range(trim, self.tr * 2 - trim))
-
-            output = self.mvtools.Degrain()(clip, super_clip, mv_multi, **degrain_args)
+            output = self.mvtools.Degrain()(
+                clip, super_clip, mv_multi=self.get_vectors(vectors, tr=tr, multi=True), **degrain_args
+            )
         else:
+            vect_b, vect_f = self.get_vectors(vectors, tr=tr)
+
             output = self.mvtools.Degrain(tr)(
                 clip, super_clip, *chain.from_iterable(zip(vect_b, vect_f)), **degrain_args
             )
@@ -789,7 +779,7 @@ class MVTools:
         elif vectors is None:
             vectors = self.vectors
 
-        vect_b, vect_f = self.get_vectors(self.vectors, tr=1)
+        vect_b, vect_f = self.get_vectors(vectors, tr=1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -845,7 +835,7 @@ class MVTools:
         elif vectors is None:
             vectors = self.vectors
 
-        vect_b, vect_f = self.get_vectors(self.vectors, tr=1)
+        vect_b, vect_f = self.get_vectors(vectors, tr=1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -900,7 +890,7 @@ class MVTools:
         elif vectors is None:
             vectors = self.vectors
 
-        vect_b, vect_f = self.get_vectors(self.vectors, tr=1)
+        vect_b, vect_f = self.get_vectors(vectors, tr=1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -947,7 +937,7 @@ class MVTools:
         elif vectors is None:
             vectors = self.vectors
 
-        vect_b, vect_f = self.get_vectors(self.vectors, tr=1)
+        vect_b, vect_f = self.get_vectors(vectors, tr=1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -992,7 +982,7 @@ class MVTools:
         elif vectors is None:
             vectors = self.vectors
 
-        vect = vectors.get_mv(direction, delta)
+        vect = self.get_vector(vectors, direction=direction, delta=delta)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -1038,7 +1028,9 @@ class MVTools:
 
         detect = clip
         for direction in MVDirection:
-            detect = self.mvtools.SCDetection(detect, vectors.get_mv(direction, delta), **sc_detection_args)
+            detect = self.mvtools.SCDetection(
+                detect, self.get_vector(vectors, direction=direction, delta=delta), **sc_detection_args
+            )
 
         return detect
 
@@ -1087,9 +1079,10 @@ class MVTools:
             self.clip = self.clip.std.RemoveFrameProps('MSuper')
             self.search_clip = self.search_clip.std.RemoveFrameProps('MSuper')
 
-            for i in range(1, self.tr + 1):
+            for delta in range(1, self.tr + 1):
                 for direction in MVDirection:
-                    vectors.set_mv(vectors.get_mv(direction, i).manipmv.ScaleVect(scalex, scaley), direction, i)
+                    vector = self.get_vector(vectors, direction=direction, delta=delta)
+                    vectors.set_mv(vector.manipmv.ScaleVect(scalex, scaley), direction, delta)
 
     def show_vector(
         self, clip: vs.VideoNode | None = None, vectors: MotionVectors | MVTools | None = None,
@@ -1120,7 +1113,7 @@ class MVTools:
         elif vectors is None:
             vectors = self.vectors
 
-        vect = vectors.get_mv(direction, delta)
+        vect = self.get_vector(vectors, direction=direction, delta=delta)
 
         return clip.manipmv.ShowVect(vect, scenechange)
     
@@ -1151,7 +1144,11 @@ class MVTools:
         if not vectors.analysis_data:
             analysis_props = dict[str, Any]()
 
-            with vectors.get_mv(MVDirection.BACKWARD, 1).manipmv.ExpandAnalysisData().get_frame(0) as clip_props:
+            with (
+                self.get_vector(vectors, direction=MVDirection.BACKWARD, delta=1)
+                .manipmv.ExpandAnalysisData()
+                .get_frame(0) as clip_props
+            ):
                 for i in props_list:
                     analysis_props[i] = get_prop(clip_props, i, int | list)  # type: ignore
 
@@ -1178,12 +1175,61 @@ class MVTools:
             super_clip = clip.std.PropToClip(prop='MSuper')
 
         return super_clip
+    
+    def get_vector(self, vectors: MotionVectors, *, direction: MVDirection, delta: int) -> vs.VideoNode:
+        """
+        Get a single motion vector.
+
+        :param vectors:        The motion vectors to get the vector from.
+        :param direction:      Motion vector direction to get.
+        :param delta:          Motion vector delta to get.
+
+        :return:               A single motion vector VideoNode
+        """
+
+        if not vectors.has_vectors:
+            raise CustomRuntimeError('You need to run analyze before getting a motion vector!', self.get_vector)
+
+        if delta > self.tr:
+            raise CustomRuntimeError(
+                f'Tried to get a motion vector delta larger than what exists! {delta} > {self.tr}',
+                self.get_vector
+            )
+        
+        if self.mvtools is MVToolsPlugin.FLOAT:
+            return cast(vs.VideoNode, vectors.mv_multi).std.SelectEvery(delta * 2, (delta - 1) + (direction - 1))
+        else:
+            return vectors.get_mv(direction, delta)
+
+    @overload
+    def get_vectors(
+        self, vectors: MotionVectors, *,
+        direction: MVDirection = MVDirection.BOTH,
+        tr: int | None = None, multi: Literal[False] = ...
+    ) -> tuple[list[vs.VideoNode], list[vs.VideoNode]]:
+        ...
+
+    @overload
+    def get_vectors(
+        self, vectors: MotionVectors, *,
+        direction: MVDirection = MVDirection.BOTH,
+        tr: int | None = None, multi: Literal[True] = ...
+    ) -> vs.VideoNode:
+        ...
+
+    @overload
+    def get_vectors(
+        self, vectors: MotionVectors, *,
+        direction: MVDirection = MVDirection.BOTH,
+        tr: int | None = None, multi: bool = ...
+    ) -> vs.VideoNode | tuple[list[vs.VideoNode], list[vs.VideoNode]]:
+        ...
 
     def get_vectors(
         self, vectors: MotionVectors, *,
         direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None
-    ) -> tuple[list[vs.VideoNode], list[vs.VideoNode]]:
+        tr: int | None = None, multi: bool = False
+    ) -> vs.VideoNode | tuple[list[vs.VideoNode], list[vs.VideoNode]]:
         """
         Get the backwards and forward vectors.
 
@@ -1199,22 +1245,28 @@ class MVTools:
 
         tr = fallback(tr, self.tr)
 
+        if tr > self.tr:
+            raise CustomRuntimeError(
+                f'Tried to obtain more motion vectors than what exist! {tr} > {self.tr}',
+                self.get_vectors
+            )
+        
+        if multi and self.mvtools is MVToolsPlugin.FLOAT:
+            mv_multi = cast(vs.VideoNode, vectors.mv_multi)
+
+            if tr != self.tr:
+                trim = self.tr - tr
+                mv_multi = mv_multi.std.SelectEvery(self.tr * 2, range(trim, self.tr * 2 - trim))
+
+            return mv_multi
+
         vectors_backward = list[vs.VideoNode]()
         vectors_forward = list[vs.VideoNode]()
 
-        if self.mvtools is MVToolsPlugin.FLOAT:
-            mv_multi = cast(vs.VideoNode, vectors.mv_multi)
-
-            for i in range(0, tr * 2, 2):
-                if direction in [MVDirection.BACKWARD, MVDirection.BOTH]:
-                    vectors_backward.append(mv_multi.std.SelectEvery(tr * 2, i))
-                if direction in [MVDirection.FORWARD, MVDirection.BOTH]:
-                    vectors_forward.append(mv_multi.std.SelectEvery(tr * 2, i + 1))
-        else:
-            for i in range(1, tr + 1):
-                if direction in [MVDirection.BACKWARD, MVDirection.BOTH]:
-                    vectors_backward.append(vectors.get_mv(MVDirection.BACKWARD, i))
-                if direction in [MVDirection.FORWARD, MVDirection.BOTH]:
-                    vectors_forward.append(vectors.get_mv(MVDirection.FORWARD, i))
+        for delta in range(1, tr + 1):
+            if direction in [MVDirection.BACKWARD, MVDirection.BOTH]:
+                vectors_backward.append(self.get_vector(vectors, direction=MVDirection.BACKWARD, delta=delta))
+            if direction in [MVDirection.FORWARD, MVDirection.BOTH]:
+                vectors_backward.append(self.get_vector(vectors, direction=MVDirection.FORWARD, delta=delta))
 
         return (vectors_backward, vectors_forward)

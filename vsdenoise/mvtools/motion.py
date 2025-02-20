@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from vstools import vs
+from vstools import CustomRuntimeError, vs
 
 from .enums import MVDirection
 
@@ -52,6 +52,9 @@ class MotionVectors:
 
         :return:             The requested motion vector clip.
         """
+
+        if delta not in self.motion_vectors[direction]:
+            raise CustomRuntimeError(f'Motion vector does not exist! ({direction}, {delta})', self.get_mv)
 
         return self.motion_vectors[direction][delta]
 
