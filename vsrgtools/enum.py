@@ -68,8 +68,10 @@ class RemoveGrainMode(CustomIntEnum):
     BOB_BOTTOM_INTER = 16
     MINMAX_MEDIAN_OPP = 17
     LINE_CLIP_OPP = 18
-    BOX_BLUR_NO_CENTER = 19
-    BOX_BLUR = 20
+    MEAN_NO_CENTER = 19
+    MEAN = 20
+    BOX_BLUR_NO_CENTER = MEAN_NO_CENTER
+    BOX_BLUR = MEAN
     OPP_CLIP_AVG = 21
     OPP_CLIP_AVG_FAST = 22
     EDGE_DEHALO = 23
@@ -79,9 +81,9 @@ class RemoveGrainMode(CustomIntEnum):
     SMART_RGCL2 = 28
 
     def __call__(self, clip: vs.VideoNode, planes: PlanesT = None) -> vs.VideoNode:
-        from .rgtools import removegrain
+        from .rgtools import remove_grain
         from .util import norm_rmode_planes
-        return removegrain(clip, norm_rmode_planes(clip, self, planes))
+        return remove_grain(clip, norm_rmode_planes(clip, self, planes))
 
 
 RemoveGrainModeT = int | RemoveGrainMode | Sequence[int | RemoveGrainMode]
@@ -132,9 +134,9 @@ class VerticalCleanerMode(CustomIntEnum):
     PRESERVING = 2
 
     def __call__(self, clip: vs.VideoNode, planes: PlanesT = None) -> vs.VideoNode:
-        from .rgtools import verticalcleaner
+        from .rgtools import vertical_cleaner
         from .util import norm_rmode_planes
-        return verticalcleaner(clip, norm_rmode_planes(clip, self, planes))
+        return vertical_cleaner(clip, norm_rmode_planes(clip, self, planes))
 
 
 VerticalCleanerModeT = int | VerticalCleanerMode | Sequence[int | VerticalCleanerMode]
@@ -332,6 +334,9 @@ class BlurMatrixBase(list[Nb]):
 class BlurMatrix(CustomIntEnum):
     MEAN_NO_CENTER = 0
     MEAN = 1
+    BOX_BLUR_NO_CENTER = MEAN_NO_CENTER
+    CIRCLE = MEAN_NO_CENTER  # todo: remove
+    BOX_BLUR = MEAN
     BINOMIAL = 2
     LOG = 3
 

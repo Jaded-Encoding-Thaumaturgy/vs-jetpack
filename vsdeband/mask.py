@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from vsexprtools import ExprOp
 from vsmasktools import Morpho, Prewitt, retinex
-from vsrgtools import RemoveGrainMode, RemoveGrainModeT, gauss_blur, removegrain
+from vsrgtools import RemoveGrainMode, RemoveGrainModeT, gauss_blur, remove_grain
 from vstools import get_y, vs
 
 __all__ = [
@@ -34,4 +34,4 @@ def deband_detail_mask(
 
     merged = ExprOp.ADD(blur_ret_brz, prewitt_brz)
 
-    return removegrain(merged, rg_mode)
+    return remove_grain(merged, rg_mode)

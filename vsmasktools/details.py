@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from vsexprtools import ExprOp
-from vsrgtools import RemoveGrainMode, RemoveGrainModeT, bilateral, gauss_blur, removegrain
+from vsrgtools import RemoveGrainMode, RemoveGrainModeT, bilateral, gauss_blur, remove_grain
 from vstools import check_variable, get_y, limiter, plane, vs
 
 from .edge import Kirsch, MinMax, Prewitt, PrewittTCanny
@@ -32,8 +32,8 @@ def detail_mask(
 
     mask = ExprOp.MAX.combine(range_mask, edges)
 
-    mask = removegrain(mask, 22)
-    mask = removegrain(mask, 11)
+    mask = remove_grain(mask, 22)
+    mask = remove_grain(mask, 11)
 
     return mask
 
@@ -62,7 +62,7 @@ def detail_mask_neo(
 
     merged = ExprOp.ADD.combine(blur_pref, prew_mask)
 
-    return removegrain(merged, rg_mode)
+    return remove_grain(merged, rg_mode)
 
 
 @limiter
@@ -79,7 +79,7 @@ def simple_detail_mask(
 
     mask = ExprOp.MAX.combine(mask_a, mask_b)
 
-    return removegrain(removegrain(mask, 22), 11)
+    return remove_grain(remove_grain(mask, 22), 11)
 
 
 def multi_detail_mask(clip: vs.VideoNode, thr: float = 0.015) -> vs.VideoNode:

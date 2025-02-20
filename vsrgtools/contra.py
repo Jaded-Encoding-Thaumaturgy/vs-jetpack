@@ -12,7 +12,7 @@ from vstools import (
 
 from .blur import box_blur, median_blur, min_blur
 from .enum import BlurMatrix, RemoveGrainMode, RemoveGrainModeT, RepairMode, RepairModeT
-from .rgtools import removegrain, repair
+from .rgtools import remove_grain, repair
 from .util import norm_rmode_planes
 
 __all__ = [
@@ -124,7 +124,7 @@ def contrasharpening_median(
     planes = normalize_planes(flt, planes)
 
     if isinstance(mode, (int, list, RemoveGrainMode)):
-        repaired = removegrain(flt, norm_rmode_planes(flt, mode, planes))
+        repaired = remove_grain(flt, norm_rmode_planes(flt, mode, planes))
     elif callable(mode):
         repaired = mode(flt, planes=planes)
     else:

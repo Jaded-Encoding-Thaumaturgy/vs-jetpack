@@ -12,8 +12,8 @@ from .enum import (
 )
 
 __all__ = [
-    'repair', 'removegrain',
-    'clense', 'verticalcleaner'
+    'repair', 'remove_grain', 'removegrain',
+    'clense', 'vertical_cleaner'
 ]
 
 
@@ -32,8 +32,8 @@ def repair(clip: vs.VideoNode, repairclip: vs.VideoNode, mode: RepairModeT) -> v
     return norm_expr([clip, repairclip], tuple([repair_aka_exprs[m]() for m in mode]))
 
 
-def removegrain(clip: vs.VideoNode, mode: RemoveGrainModeT) -> vs.VideoNode:
-    assert check_variable(clip, removegrain)
+def remove_grain(clip: vs.VideoNode, mode: RemoveGrainModeT) -> vs.VideoNode:
+    assert check_variable(clip, remove_grain)
 
     mode = normalize_seq(mode, clip.format.num_planes)
 
@@ -76,8 +76,8 @@ def clense(
     )
 
 
-def verticalcleaner(clip: vs.VideoNode, mode: VerticalCleanerModeT) -> vs.VideoNode:
-    assert check_variable(clip, verticalcleaner)
+def vertical_cleaner(clip: vs.VideoNode, mode: VerticalCleanerModeT) -> vs.VideoNode:
+    assert check_variable(clip, vertical_cleaner)
 
     mode = normalize_seq(mode, clip.format.num_planes)
 
@@ -89,3 +89,6 @@ def verticalcleaner(clip: vs.VideoNode, mode: VerticalCleanerModeT) -> vs.VideoN
             warnings.warn(f'Deprecated verticalcleaner mode {m}! Use median_blur instead!', DeprecationWarning)
 
     return pick_func_stype(clip, core.lazy.rgvs.VerticalCleaner, core.lazy.rgsf.VerticalCleaner)(clip, mode)
+
+
+removegrain = remove_grain  # todo: remove

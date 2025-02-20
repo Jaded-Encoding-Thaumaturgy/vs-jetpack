@@ -9,7 +9,7 @@ from vskernels import Bilinear, BSpline, Lanczos, Mitchell, NoShift, Point, Scal
 from vsmasktools import EdgeDetect, Morpho, RadiusT, Robinson3, XxpandMode, grow_mask, retinex
 from vsrgtools import (
     BlurMatrixBase, RemoveGrainMode, RepairMode, box_blur, contrasharpening,
-    contrasharpening_dehalo, gauss_blur, limit_filter, repair
+    contrasharpening_dehalo, gauss_blur, limit_filter, repair, remove_grain
 )
 from vsrgtools.util import norm_rmode_planes
 from vstools import (
@@ -652,8 +652,8 @@ def dehalomicron(
     ymask_ref0 = gauss_blur(y_mask, sigma=sigma_ref)
 
     dehalo_mask = norm_expr([dehalo_ref0mask, y_mask], 'x y - abs 100 *')
-    dehalo_mask = RemoveGrainMode.BOX_BLUR_NO_CENTER(dehalo_mask)
-    dehalo_mask = RemoveGrainMode.MINMAX_MEDIAN_OPP(dehalo_mask)
+    dehalo_mask = remove_grain(dehalo_mask, RemoveGrainMode.BOX_BLUR_NO_CENTER)
+    dehalo_mask = remove_grain(dehalo_mask, RemoveGrainMode.MINMAX_MEDIAN_OPP)
 
     if brz:
         dmask_expr = (
@@ -667,7 +667,7 @@ def dehalomicron(
 
     fine_edge_mask = fine_dehalo.mask(norm_expr([y_mask, ymask_ref0], 'y x -'))
     dehalo_mask = norm_expr([dehalo_mask, y_mask, ymask_ref0, fine_edge_mask], 'y z + 2 / x < x and x abs a ?')
-    dehalo_mask = RemoveGrainMode.EDGE_CLIP_STRONG(dehalo_mask)
+    dehalo_mask = remove_grain(dehalo_mask, RemoveGrainMode.EDGE_CLIP_STRONG)
 
     actual_dehalo = dehalo_sigma(
         func.work_clip, pre_ss=1 + pre_ss, sigma=sigma, ss=ss - 0.5 * pre_ss, planes=func.norm_planes, **kwargs

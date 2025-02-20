@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 from vsexprtools import ExprOp, ExprToken, norm_expr
 from vskernels import Bilinear
 from vsmasktools import EdgeDetectT, FDoGTCanny, range_mask
-from vsrgtools import RemoveGrainMode, bilateral, box_blur, gauss_blur, removegrain
+from vsrgtools import RemoveGrainMode, bilateral, box_blur, gauss_blur, remove_grain
 from vsrgtools.util import norm_rmode_planes
 from vstools import (
     ColorRange, CustomIndexError, CustomIntEnum, FuncExceptT, InvalidColorFamilyError, KwargsT, PlanesT, check_ref_clip,
@@ -191,7 +191,7 @@ class PostProcessConfig:
         func = func or self.__class__
 
         if self.mode is PostProcess.REPAIR:
-            return removegrain(clip, norm_rmode_planes(clip, RemoveGrainMode.MINMAX_AROUND1, planes))
+            return remove_grain(clip, norm_rmode_planes(clip, RemoveGrainMode.MINMAX_AROUND1, planes))
 
         if self.mode in {PostProcess.FFT3D_MED, PostProcess.FFT3D_HIGH}:
             return fft3d(clip, func, bw=self.block_size, bh=self.block_size, bt=self.tr * 2 + 1, **self.kwargs)

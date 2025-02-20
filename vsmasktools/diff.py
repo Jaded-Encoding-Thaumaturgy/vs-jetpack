@@ -5,7 +5,7 @@ from typing import Any, TypeAlias, overload
 
 from vsexprtools import ExprOp, norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelT, NoScale
-from vsrgtools import RemoveGrainMode, bilateral, gauss_blur, removegrain
+from vsrgtools import RemoveGrainMode, bilateral, gauss_blur, remove_grain
 from vstools import (
     ColorRange, CustomValueError, FuncExceptT, KwargsT, VSFunction, check_variable, depth, get_w,
     get_y, insert_clip, iterate, vs
@@ -221,13 +221,13 @@ def based_diff_mask(
 
     if postfilter:
         if isinstance(postfilter, int):
-            mask = iterate(mask, removegrain, postfilter, RemoveGrainMode.MINMAX_AROUND2)
+            mask = iterate(mask, remove_grain, postfilter, RemoveGrainMode.MINMAX_AROUND2)
         elif isinstance(postfilter, tuple):
-            mask = iterate(mask, removegrain, postfilter[0], postfilter[1])
+            mask = iterate(mask, remove_grain, postfilter[0], postfilter[1])
         elif isinstance(postfilter, list):
             mask = mask
             for count, rgmode in postfilter:
-                mask = iterate(mask, removegrain, count, rgmode)
+                mask = iterate(mask, remove_grain, count, rgmode)
         else:
             mask = postfilter(mask)
 

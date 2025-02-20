@@ -8,7 +8,7 @@ from vsexprtools import ExprOp
 from vsmasktools import FDoG, Morpho, flat_mask, texture_mask
 from vsrgtools import (
     BlurMatrix, MeanMode, RemoveGrainMode, RemoveGrainModeT,
-    box_blur, gauss_blur, limit_filter, removegrain
+    box_blur, gauss_blur, limit_filter, remove_grain
 )
 from vstools import (
     ColorRange, PlanesT, VSFunction, FunctionUtil, check_ref_clip, check_variable, depth,
@@ -171,9 +171,9 @@ def guided_deband(
         if bin_thr and max(bin_thr) > 0:
             rmask = rmask.std.Binarize(threshold=bin_thr, planes=planes)
 
-        rmask = removegrain(rmask, RemoveGrainMode.OPP_CLIP_AVG_FAST)
+        rmask = remove_grain(rmask, RemoveGrainMode.OPP_CLIP_AVG_FAST)
         rmask = BlurMatrix.BINOMIAL()(rmask)
-        rmask = removegrain(rmask, RemoveGrainMode.MIN_SHARP)
+        rmask = remove_grain(rmask, RemoveGrainMode.MIN_SHARP)
 
         deband = deband.std.MaskedMerge(clip, rmask, planes=planes)
 

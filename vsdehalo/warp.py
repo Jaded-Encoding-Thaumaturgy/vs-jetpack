@@ -4,7 +4,7 @@ from math import sqrt
 from typing import Sequence
 
 from vsmasktools import EdgeDetect, EdgeDetectT, PrewittStd
-from vsrgtools import min_blur, removegrain, repair, BlurMatrix, box_blur
+from vsrgtools import min_blur, remove_grain, repair, BlurMatrix, box_blur
 from vstools import (
     DitherType, PlanesT, core, cround, disallow_variable_format, disallow_variable_resolution, depth_func,
     get_peak_value, get_y, join, normalize_planes, padder, scale_mask, split, vs
@@ -73,7 +73,7 @@ def edge_cleaner(
         final = repair(final, work_clip, 2)
 
     if smode:
-        clean = removegrain(y_mask, 17)
+        clean = remove_grain(y_mask, 17)
 
         diff = y_mask.std.MakeDiff(clean)
 
@@ -86,7 +86,7 @@ def edge_cleaner(
         )
         sc4 = scale_mask(4, 8, work_clip)
         sc16 = scale_mask(16, 8, work_clip)
-        mask = removegrain(mask, 7).std.Expr(f'x {sc4} < 0 x {sc16} > {peak} x ? ?')
+        mask = remove_grain(mask, 7).std.Expr(f'x {sc4} < 0 x {sc16} > {peak} x ? ?')
 
         final = final.std.MaskedMerge(work_clip, mask)
 
