@@ -481,7 +481,7 @@ def insert_clip(clip: vs.VideoNode, /, insert: vs.VideoNode, start_frame: int, s
         return pre + insert
 
     if insert_diff < 0:
-        return pre + insert + clip[insert_diff:]
+        return vs.core.std.Splice([pre, insert, clip[insert_diff:]])
 
     if strict:
         raise ClipLengthError(
