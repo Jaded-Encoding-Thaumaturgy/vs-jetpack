@@ -38,7 +38,7 @@ class _dpir(CustomStrEnum):
         matrix: MatrixT | None = None, cuda: bool | Literal['trt'] | None = None, i444: bool = False,
         tiles: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = 8,
         zones: Sequence[tuple[FrameRangeN | FrameRangesN | None, StrengthT]] | None = None,
-        fp16: bool | None = None, num_streams: int | None = 1, device_id: int = 0, kernel: KernelT = Catrom,
+        fp16: bool | None = None, num_streams: int | None = None, device_id: int = 0, kernel: KernelT = Catrom,
         **kwargs: Any
     ) -> vs.VideoNode:
         """
