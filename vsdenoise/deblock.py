@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Literal, Sequence, SupportsFloat, cast
 
+from jetpytools import clamp
+
 from vsaa import Nnedi3
 from vsexprtools import expr_func, norm_expr
 from vskernels import Catrom, Kernel, KernelT
@@ -254,7 +256,7 @@ class _dpir(CustomStrEnum):
             try:
                 data: KwargsT = core.trt.DeviceProperties(device_id)  # type: ignore
                 memory = data.get('total_global_memory', 0)
-                def_num_streams = num_streams or data.get('async_engine_count', 1)
+                def_num_streams = num_streams or clamp(data.get('async_engine_count', 1), 1, 2)
 
                 bkwargs = KwargsT(
                     workspace=memory / (1 << 22) if memory else None,
