@@ -283,9 +283,11 @@ def depth(
     :param range_out:       Output pixel range (defaults to input `clip`'s range).
     :param dither_type:     Dithering algorithm. Allows overriding default dithering behavior. See :py:class:`Dither`.
 
-                            Defaults to :attr:`Dither.ERROR_DIFFUSION`, or Floyd-Steinberg error diffusion,
-                            when downsampling, converting between ranges, or upsampling full range input.
-                            Defaults to :attr:`Dither.NONE`, or round to nearest, otherwise.
+                            When integer output is desired but the conversion may produce fractional values,
+                            defaults to :attr:`Dither.VOID` if it is available via the fmtc VapourSynth plugin,
+                            or to Floyd-Steinberg :attr:`Dither.ERROR_DIFFUSION` for 8-bit output
+                            or :attr:`DitherType.ORDERED` for higher bit depths.
+                            In other cases, defaults to :attr:`Dither.NONE`, or round to nearest.
                             See :py:func:`Dither.should_dither` for more information.
 
     :return:                Converted clip with desired bit depth and sample type.
