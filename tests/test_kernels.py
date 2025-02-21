@@ -25,3 +25,23 @@ def test_blur(kernel: type[ZimgComplexKernel]) -> None:
 
         mock_descale_function.assert_called_once()
         assert mock_descale_function.call_args.kwargs["blur"] == 1.15
+
+@pytest.mark.parametrize("kernel", kernels)
+def test_force(kernel: type[ZimgComplexKernel]) -> None:
+    with patch.object(kernel, 'scale_function') as mock_scale_function:
+        kernel.scale(clip, 1600, 900, force=True)
+
+        mock_scale_function.assert_called_once()
+        assert mock_scale_function.call_args.kwargs["force"]
+
+    with patch.object(kernel, 'scale_function') as mock_scale_function:
+        kernel.scale(clip, 1600, 900, force_h=True)
+
+        mock_scale_function.assert_called_once()
+        assert mock_scale_function.call_args.kwargs["force_h"]
+
+    with patch.object(kernel, 'scale_function') as mock_scale_function:
+        kernel.scale(clip, 1600, 900, force_w=True)
+
+        mock_scale_function.assert_called_once()
+        assert mock_scale_function.call_args.kwargs["force_w"]

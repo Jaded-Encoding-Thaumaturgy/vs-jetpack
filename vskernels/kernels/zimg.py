@@ -59,7 +59,7 @@ class ZimgComplexKernel(ComplexKernel, ZimgDescaler):  # type: ignore[misc]
         args = super().get_params_args(is_descale, clip, width, height, **kwargs)
 
         if not is_descale:
-            for key in ('border_handling', 'ignore_mask', 'force', 'force_h', 'force_v'):
+            for key in ('border_handling', 'ignore_mask'):
                 args.pop(key, None)
 
         return args
