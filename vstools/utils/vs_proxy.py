@@ -58,7 +58,7 @@ from .vs_enums import (
     YUV440P28, YUV440P29, YUV440P30, YUV440P31, YUV440P32, YUV440PH, YUV440PS, YUV444P8, YUV444P9, YUV444P10, YUV444P11,
     YUV444P12, YUV444P13, YUV444P14, YUV444P15, YUV444P16, YUV444P17, YUV444P18, YUV444P19, YUV444P20, YUV444P21,
     YUV444P22, YUV444P23, YUV444P24, YUV444P25, YUV444P26, YUV444P27, YUV444P28, YUV444P29, YUV444P30, YUV444P31,
-    YUV444P32, YUV444PH, YUV444PS, PresetFormat, PresetVideoFormat, VSPresetVideoFormat
+    YUV444P32, YUV444PH, YUV444PS, PresetVideoFormat, VSPresetVideoFormat
 )
 
 __all__ = [
@@ -77,7 +77,7 @@ __all__ = [
     'MESSAGE_TYPE_INFORMATION', 'MESSAGE_TYPE_WARNING', 'MatrixCoefficients', 'MediaType', 'MessageType', 'NONE',
     'PRIMARIES_BT2020', 'PRIMARIES_BT470_BG', 'PRIMARIES_BT470_M', 'PRIMARIES_BT709', 'PRIMARIES_EBU3213_E',
     'PRIMARIES_FILM', 'PRIMARIES_ST170_M', 'PRIMARIES_ST240_M', 'PRIMARIES_ST428', 'PRIMARIES_ST431_2',
-    'PRIMARIES_ST432_1', 'PRIMARIES_UNSPECIFIED', 'Plugin', 'PresetFormat', 'PresetVideoFormat',
+    'PRIMARIES_ST432_1', 'PRIMARIES_UNSPECIFIED', 'Plugin', 'PresetVideoFormat',
     'PythonVSScriptLoggingBridge', 'RANGE_FULL',
     'RANGE_LIMITED', 'RGB', 'RGB24', 'RGB27', 'RGB30', 'RGB33', 'RGB36', 'RGB39', 'RGB42', 'RGB45', 'RGB48', 'RGB51',
     'RGB54', 'RGB57', 'RGB60', 'RGB63', 'RGB66', 'RGB69', 'RGB72', 'RGB75', 'RGB78', 'RGB81', 'RGB84', 'RGB87', 'RGB90',
@@ -288,10 +288,7 @@ def vstools_isinstance(
     if __class_or_tuple in (_CoreProxy, Core) and builtins_isinstance(__obj, CoreProxy):
         return True
 
-    if __class_or_tuple is VSPresetVideoFormat and (
-        builtins_isinstance(__obj, PresetVideoFormat)
-        or builtins_isinstance(__obj, PresetFormat)  # LEGACY SUPPORT, PresetFormat is DEPRECATED
-    ):
+    if __class_or_tuple is VSPresetVideoFormat and builtins_isinstance(__obj, PresetVideoFormat):
         return True
 
     return builtins_isinstance(__obj, __class_or_tuple)

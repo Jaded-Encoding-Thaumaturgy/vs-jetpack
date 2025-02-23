@@ -51,12 +51,8 @@ if TYPE_CHECKING:
     VideoFormatT = Union[VSPresetVideoFormat, vs.VideoFormat]
     """Types representing a clear VideoFormat."""
 else:
-    if hasattr(vs, 'PresetFormat'):
-        VideoFormatT = Union[vs.PresetFormat, vs.VideoFormat]
-        """Types representing a clear VideoFormat."""
-    else:
-        VideoFormatT = Union[vs.PresetVideoFormat, vs.VideoFormat]
-        """Types representing a clear VideoFormat."""
+    VideoFormatT = Union[vs.PresetVideoFormat, vs.VideoFormat]
+    """Types representing a clear VideoFormat."""
 
 # TODO change to | when mypy fixes bug upstream
 HoldsVideoFormatT = Union[vs.VideoNode, vs.VideoFrame, vs.VideoFormat]

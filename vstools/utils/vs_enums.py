@@ -4,16 +4,12 @@ from enum import IntEnum
 from typing import TYPE_CHECKING
 
 from vapoursynth import FLOAT, GRAY, INTEGER, RGB, YUV
-
-try:
-    from vapoursynth import PresetVideoFormat as VSPresetVideoFormat
-except ImportError:
-    from vapoursynth import PresetFormat as VSPresetVideoFormat
+from vapoursynth import PresetVideoFormat as VSPresetVideoFormat
 
 from .other import IS_DOCS
 
 __all__ = [
-    'PresetVideoFormat', 'PresetVideoFormat', 'VSPresetVideoFormat',
+    'PresetVideoFormat', 'VSPresetVideoFormat',
     'GRAY8', 'GRAY9', 'GRAY10', 'GRAY11', 'GRAY12', 'GRAY13', 'GRAY14', 'GRAY15', 'GRAY16', 'GRAY17', 'GRAY18',
     'GRAY19', 'GRAY20', 'GRAY21', 'GRAY22', 'GRAY23', 'GRAY24', 'GRAY25', 'GRAY26', 'GRAY27', 'GRAY28', 'GRAY29',
     'GRAY30', 'GRAY31', 'GRAY32', 'GRAYH', 'GRAYS',
@@ -41,10 +37,14 @@ __all__ = [
 ]
 
 
-def MAKE_VIDEO_ID(colorFamily: int, sampleType: int, bitsPerSample: int, subSamplingW: int, subSamplingH: int) -> int:
-    if IS_DOCS:
-        return 0
-    return colorFamily << 28 | sampleType << 24 | bitsPerSample << 16 | subSamplingW << 8 | subSamplingH << 0
+def MAKE_VIDEO_ID(
+    colorFamily: int, sampleType: int, bitsPerSample: int, subSamplingW: int, subSamplingH: int
+) -> PresetVideoFormat:
+    return (
+        0 if IS_DOCS else (
+            colorFamily << 28 | sampleType << 24 | bitsPerSample << 16 | subSamplingW << 8 | subSamplingH << 0
+        )  # type: ignore[return-value]
+    )
 
 
 if TYPE_CHECKING:
@@ -55,16 +55,20 @@ else:
 
 ################################################
 
-class PresetVideoFormat(PresetVideoFormatBase):  # type: ignore
-    GRAY8 = MAKE_VIDEO_ID(GRAY, INTEGER, 8, 0, 0)
-    GRAY9 = MAKE_VIDEO_ID(GRAY, INTEGER, 9, 0, 0)
-    GRAY10 = MAKE_VIDEO_ID(GRAY, INTEGER, 10, 0, 0)
+class PresetVideoFormat(PresetVideoFormatBase):
+    if not TYPE_CHECKING:
+        GRAY8 = MAKE_VIDEO_ID(GRAY, INTEGER, 8, 0, 0)
+        GRAY9 = MAKE_VIDEO_ID(GRAY, INTEGER, 9, 0, 0)
+        GRAY10 = MAKE_VIDEO_ID(GRAY, INTEGER, 10, 0, 0)
     GRAY11 = MAKE_VIDEO_ID(GRAY, INTEGER, 11, 0, 0)
-    GRAY12 = MAKE_VIDEO_ID(GRAY, INTEGER, 12, 0, 0)
+    if not TYPE_CHECKING:
+        GRAY12 = MAKE_VIDEO_ID(GRAY, INTEGER, 12, 0, 0)
     GRAY13 = MAKE_VIDEO_ID(GRAY, INTEGER, 13, 0, 0)
-    GRAY14 = MAKE_VIDEO_ID(GRAY, INTEGER, 14, 0, 0)
+    if not TYPE_CHECKING:
+        GRAY14 = MAKE_VIDEO_ID(GRAY, INTEGER, 14, 0, 0)
     GRAY15 = MAKE_VIDEO_ID(GRAY, INTEGER, 15, 0, 0)
-    GRAY16 = MAKE_VIDEO_ID(GRAY, INTEGER, 16, 0, 0)
+    if not TYPE_CHECKING:
+        GRAY16 = MAKE_VIDEO_ID(GRAY, INTEGER, 16, 0, 0)
     GRAY17 = MAKE_VIDEO_ID(GRAY, INTEGER, 17, 0, 0)
     GRAY18 = MAKE_VIDEO_ID(GRAY, INTEGER, 18, 0, 0)
     GRAY19 = MAKE_VIDEO_ID(GRAY, INTEGER, 19, 0, 0)
@@ -80,22 +84,28 @@ class PresetVideoFormat(PresetVideoFormatBase):  # type: ignore
     GRAY29 = MAKE_VIDEO_ID(GRAY, INTEGER, 29, 0, 0)
     GRAY30 = MAKE_VIDEO_ID(GRAY, INTEGER, 30, 0, 0)
     GRAY31 = MAKE_VIDEO_ID(GRAY, INTEGER, 31, 0, 0)
-    GRAY32 = MAKE_VIDEO_ID(GRAY, INTEGER, 32, 0, 0)
+    if not TYPE_CHECKING:
+        GRAY32 = MAKE_VIDEO_ID(GRAY, INTEGER, 32, 0, 0)
 
-    GRAYH = MAKE_VIDEO_ID(GRAY, FLOAT, 16, 0, 0)
-    GRAYS = MAKE_VIDEO_ID(GRAY, FLOAT, 32, 0, 0)
+    if not TYPE_CHECKING:
+        GRAYH = MAKE_VIDEO_ID(GRAY, FLOAT, 16, 0, 0)
+        GRAYS = MAKE_VIDEO_ID(GRAY, FLOAT, 32, 0, 0)
 
     ################################################
 
-    YUV420P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 1, 1)
-    YUV420P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 1, 1)
-    YUV420P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 1, 1)
+    if not TYPE_CHECKING:
+        YUV420P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 1, 1)
+        YUV420P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 1, 1)
+        YUV420P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 1, 1)
     YUV420P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 1, 1)
-    YUV420P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 1, 1)
+    if not TYPE_CHECKING:
+        YUV420P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 1, 1)
     YUV420P13 = MAKE_VIDEO_ID(YUV, INTEGER, 13, 1, 1)
-    YUV420P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 1, 1)
+    if not TYPE_CHECKING:
+        YUV420P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 1, 1)
     YUV420P15 = MAKE_VIDEO_ID(YUV, INTEGER, 15, 1, 1)
-    YUV420P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 1, 1)
+    if not TYPE_CHECKING:
+        YUV420P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 1, 1)
     YUV420P17 = MAKE_VIDEO_ID(YUV, INTEGER, 17, 1, 1)
     YUV420P18 = MAKE_VIDEO_ID(YUV, INTEGER, 18, 1, 1)
     YUV420P19 = MAKE_VIDEO_ID(YUV, INTEGER, 19, 1, 1)
@@ -118,15 +128,19 @@ class PresetVideoFormat(PresetVideoFormatBase):  # type: ignore
 
     ################################################
 
-    YUV444P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 0, 0)
-    YUV444P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 0, 0)
-    YUV444P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 0, 0)
+    if not TYPE_CHECKING:
+        YUV444P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 0, 0)
+        YUV444P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 0, 0)
+        YUV444P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 0, 0)
     YUV444P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 0, 0)
-    YUV444P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 0, 0)
+    if not TYPE_CHECKING:
+        YUV444P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 0, 0)
     YUV444P13 = MAKE_VIDEO_ID(YUV, INTEGER, 13, 0, 0)
-    YUV444P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 0, 0)
+    if not TYPE_CHECKING:
+        YUV444P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 0, 0)
     YUV444P15 = MAKE_VIDEO_ID(YUV, INTEGER, 15, 0, 0)
-    YUV444P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 0, 0)
+    if not TYPE_CHECKING:
+        YUV444P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 0, 0)
     YUV444P17 = MAKE_VIDEO_ID(YUV, INTEGER, 17, 0, 0)
     YUV444P18 = MAKE_VIDEO_ID(YUV, INTEGER, 18, 0, 0)
     YUV444P19 = MAKE_VIDEO_ID(YUV, INTEGER, 19, 0, 0)
@@ -144,20 +158,25 @@ class PresetVideoFormat(PresetVideoFormatBase):  # type: ignore
     YUV444P31 = MAKE_VIDEO_ID(YUV, INTEGER, 31, 0, 0)
     YUV444P32 = MAKE_VIDEO_ID(YUV, INTEGER, 32, 0, 0)
 
-    YUV444PH = MAKE_VIDEO_ID(YUV, FLOAT, 16, 0, 0)
-    YUV444PS = MAKE_VIDEO_ID(YUV, FLOAT, 32, 0, 0)
+    if not TYPE_CHECKING:
+        YUV444PH = MAKE_VIDEO_ID(YUV, FLOAT, 16, 0, 0)
+        YUV444PS = MAKE_VIDEO_ID(YUV, FLOAT, 32, 0, 0)
 
     ################################################
 
-    YUV422P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 1, 0)
-    YUV422P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 1, 0)
-    YUV422P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 1, 0)
+    if not TYPE_CHECKING:
+        YUV422P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 1, 0)
+        YUV422P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 1, 0)
+        YUV422P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 1, 0)
     YUV422P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 1, 0)
-    YUV422P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 1, 0)
+    if not TYPE_CHECKING:
+        YUV422P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 1, 0)
     YUV422P13 = MAKE_VIDEO_ID(YUV, INTEGER, 13, 1, 0)
-    YUV422P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 1, 0)
+    if not TYPE_CHECKING:
+        YUV422P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 1, 0)
     YUV422P15 = MAKE_VIDEO_ID(YUV, INTEGER, 15, 1, 0)
-    YUV422P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 1, 0)
+    if not TYPE_CHECKING:
+        YUV422P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 1, 0)
     YUV422P17 = MAKE_VIDEO_ID(YUV, INTEGER, 17, 1, 0)
     YUV422P18 = MAKE_VIDEO_ID(YUV, INTEGER, 18, 1, 0)
     YUV422P19 = MAKE_VIDEO_ID(YUV, INTEGER, 19, 1, 0)
@@ -180,7 +199,8 @@ class PresetVideoFormat(PresetVideoFormatBase):  # type: ignore
 
     ################################################
 
-    YUV411P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 2, 0)
+    if not TYPE_CHECKING:
+        YUV411P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 2, 0)
     YUV411P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 2, 0)
     YUV411P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 2, 0)
     YUV411P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 2, 0)
@@ -211,7 +231,8 @@ class PresetVideoFormat(PresetVideoFormatBase):  # type: ignore
 
     ################################################
 
-    YUV440P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 0, 1)
+    if not TYPE_CHECKING:
+        YUV440P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 0, 1)
     YUV440P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 0, 1)
     YUV440P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 0, 1)
     YUV440P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 0, 1)
@@ -242,7 +263,8 @@ class PresetVideoFormat(PresetVideoFormatBase):  # type: ignore
 
     ################################################
 
-    YUV410P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 2, 2)
+    if not TYPE_CHECKING:
+        YUV410P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 2, 2)
     YUV410P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 2, 2)
     YUV410P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 2, 2)
     YUV410P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 2, 2)
@@ -273,15 +295,19 @@ class PresetVideoFormat(PresetVideoFormatBase):  # type: ignore
 
     ################################################
 
-    RGB24 = MAKE_VIDEO_ID(RGB, INTEGER, 8, 0, 0)
-    RGB27 = MAKE_VIDEO_ID(RGB, INTEGER, 9, 0, 0)
-    RGB30 = MAKE_VIDEO_ID(RGB, INTEGER, 10, 0, 0)
+    if not TYPE_CHECKING:
+        RGB24 = MAKE_VIDEO_ID(RGB, INTEGER, 8, 0, 0)
+        RGB27 = MAKE_VIDEO_ID(RGB, INTEGER, 9, 0, 0)
+        RGB30 = MAKE_VIDEO_ID(RGB, INTEGER, 10, 0, 0)
     RGB33 = MAKE_VIDEO_ID(RGB, INTEGER, 11, 0, 0)
-    RGB36 = MAKE_VIDEO_ID(RGB, INTEGER, 12, 0, 0)
+    if not TYPE_CHECKING:
+        RGB36 = MAKE_VIDEO_ID(RGB, INTEGER, 12, 0, 0)
     RGB39 = MAKE_VIDEO_ID(RGB, INTEGER, 13, 0, 0)
-    RGB42 = MAKE_VIDEO_ID(RGB, INTEGER, 14, 0, 0)
+    if not TYPE_CHECKING:
+        RGB42 = MAKE_VIDEO_ID(RGB, INTEGER, 14, 0, 0)
     RGB45 = MAKE_VIDEO_ID(RGB, INTEGER, 15, 0, 0)
-    RGB48 = MAKE_VIDEO_ID(RGB, INTEGER, 16, 0, 0)
+    if not TYPE_CHECKING:
+        RGB48 = MAKE_VIDEO_ID(RGB, INTEGER, 16, 0, 0)
     RGB51 = MAKE_VIDEO_ID(RGB, INTEGER, 17, 0, 0)
     RGB54 = MAKE_VIDEO_ID(RGB, INTEGER, 18, 0, 0)
     RGB57 = MAKE_VIDEO_ID(RGB, INTEGER, 19, 0, 0)
@@ -299,76 +325,9 @@ class PresetVideoFormat(PresetVideoFormatBase):  # type: ignore
     RGB93 = MAKE_VIDEO_ID(RGB, INTEGER, 31, 0, 0)
     RGB96 = MAKE_VIDEO_ID(RGB, INTEGER, 32, 0, 0)
 
-    RGBH = MAKE_VIDEO_ID(RGB, FLOAT, 16, 0, 0)
-    RGBS = MAKE_VIDEO_ID(RGB, FLOAT, 32, 0, 0)
-
-
-class PresetDeprecateProxy(type):
-    @classmethod
-    def _warn(cls) -> None:
-        import warnings
-        warnings.warn('vs.PresetFormat is DEPRECATED! Use PresetVideoFormat from now on!')
-
-    def __bool__(cls):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__bool__()
-
-    def __call__(  # type: ignore
-        cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None
-    ):
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__call__(
-            value, names, module=module, qualname=qualname, type=type, start=start, boundary=boundary
-        )
-
-    def __contains__(cls, member):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__contains__(member)
-
-    def __delattr__(cls, attr):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__delattr__(attr)  # type: ignore
-
-    def __dir__(cls):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__dir__()  # type: ignore
-
-    def __getattr__(cls, name):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__getattr__(name)
-
-    def __getitem__(cls, name):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__getitem__(name)
-
-    def __iter__(cls):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__iter__()
-
-    def __len__(cls):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__len__()
-
-    @property
-    def __members__(cls):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__members__()
-
-    def __repr__(cls):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__repr__()  # type: ignore
-
-    def __reversed__(cls):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__reversed__()
-
-    def __setattr__(cls, name, value):  # type: ignore
-        PresetDeprecateProxy._warn()
-        return PresetVideoFormat.__setattr__(name, value)  # type: ignore
-
-
-class PresetFormat(metaclass=PresetDeprecateProxy):
-    """Deprecated, use PresetVideoFormat."""
+    if not TYPE_CHECKING:
+        RGBH = MAKE_VIDEO_ID(RGB, FLOAT, 16, 0, 0)
+        RGBS = MAKE_VIDEO_ID(RGB, FLOAT, 32, 0, 0)
 
 
 GRAY8 = PresetVideoFormat.GRAY8
