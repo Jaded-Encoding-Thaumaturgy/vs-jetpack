@@ -59,12 +59,22 @@ def clip_async_render(
     backlog: int = -1, y4m: bool | None = None, async_requests: int | bool | AsyncRenderConf = False
 ) -> list[T] | None:
     """
-    Iterate over an entire clip and optionally write results in a file.
+    Iterate over an entire clip and optionally write results to a file.
 
-    This is mostly useful for metric gathering that must be performed before you do anything else.
+    This is mostly useful for metric gathering that must be performed before any other processing.
     This could be for example gathering scenechanges, per-frame heuristics, etc.
 
     It's highly recommended to perform as little filtering as possible on the input clip for speed purposes.
+
+    Example usage:
+
+    .. code-block:: python
+
+        # Gather scenechanges.
+        >>> scenechanges = clip_async_render(clip, None, 'Searching for scenechanges...', lambda n, f: get_prop(f, "_SceneChange", int))
+
+        # Gather average planes stats.
+        >>> avg_planes = clip_async_render(clip, None, 'Calculating average planes...', lambda n, f: get_prop(f, "PlaneStatsAverage", float))
 
     :param clip:            Clip to render.
     :param outfile:         Optional binary output to write.
