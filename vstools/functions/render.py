@@ -37,7 +37,7 @@ class AsyncRenderConf:
 
 @overload
 def clip_async_render(
-    clip: vs.VideoNode, outfile: BinaryIO | None = None, progress: str | Callable[[int, int], None] | None = None,
+    clip: vs.VideoNode, outfile: BinaryIO | SPathLike | None = None, progress: str | Callable[[int, int], None] | None = None,
     callback: None = None, prefetch: int = 0, backlog: int = -1, y4m: bool = False,
     async_requests: int | bool | AsyncRenderConf = False
 ) -> None:
@@ -46,7 +46,7 @@ def clip_async_render(
 
 @overload
 def clip_async_render(
-    clip: vs.VideoNode, outfile: BinaryIO | None = None, progress: str | Callable[[int, int], None] | None = None,
+    clip: vs.VideoNode, outfile: BinaryIO | SPathLike | None = None, progress: str | Callable[[int, int], None] | None = None,
     callback: Callable[[int, vs.VideoFrame], T] = ..., prefetch: int = 0,
     backlog: int = -1, y4m: bool = False, async_requests: int | bool | AsyncRenderConf = False
 ) -> list[T]:
@@ -54,7 +54,7 @@ def clip_async_render(
 
 
 def clip_async_render(
-    clip: vs.VideoNode, outfile: BinaryIO | None = None, progress: str | Callable[[int, int], None] | None = None,
+    clip: vs.VideoNode, outfile: BinaryIO | SPathLike | None = None, progress: str | Callable[[int, int], None] | None = None,
     callback: Callable[[int, vs.VideoFrame], T] | None = None, prefetch: int = 0,
     backlog: int = -1, y4m: bool | None = None, async_requests: int | bool | AsyncRenderConf = False
 ) -> list[T] | None:
@@ -77,7 +77,7 @@ def clip_async_render(
         >>> avg_planes = clip_async_render(clip, None, 'Calculating average planes...', lambda n, f: get_prop(f, "PlaneStatsAverage", float))
 
     :param clip:            Clip to render.
-    :param outfile:         Optional binary output to write.
+    :param outfile:         Optional binary output or path to write to.
     :param progress:        A message to display during rendering. This is shown alongside the progress.
     :param callback:        Callback function. Must accept `n` and `f` (like a frameeval would) and return some value.
                             This function is used to determine what information gets returned per frame.
@@ -95,9 +95,13 @@ def clip_async_render(
 
     from .funcs import fallback
 
-    result = dict[int, T]()
+    if isinstance(outfile, SPathLike):
+        with open(outfile, 'wb') as f:
+            return clip_async_render(clip, f, progress, callback, prefetch, backlog, y4m, async_requests)
 
+    result = dict[int, T]()
     async_conf: AsyncRenderConf | Literal[False]
+
     if async_requests is True:
         async_conf = AsyncRenderConf(1)
     elif isinstance(async_requests, int):
