@@ -81,7 +81,7 @@ class TestGetProp(TestCase):
 
         self.assertEqual(get_prop(clip, "__IntProp", int, cast=int), 123)
         self.assertEqual(get_prop(clip, "__FloatProp", float, cast=int), 123)
-        self.assertEqual(get_prop(clip, "__BoolProp", bool, cast=int), 1)
+        self.assertEqual(get_prop(clip, "__BoolProp", int, cast=int), 1)
 
         self.assertRaises(FramePropError, get_prop, clip, "__StrProp", str, cast=int)
         self.assertRaises(FramePropError, get_prop, clip, "__BytesProp", bytes, cast=int)
@@ -92,7 +92,7 @@ class TestGetProp(TestCase):
 
         self.assertEqual(get_prop(clip, "__IntProp", int, cast=float), 123.0)
         self.assertEqual(get_prop(clip, "__FloatProp", float, cast=float), 123.456)
-        self.assertEqual(get_prop(clip, "__BoolProp", bool, cast=float), 1.0)
+        self.assertEqual(get_prop(clip, "__BoolProp", int, cast=float), 1.0)
 
         self.assertRaises(FramePropError, get_prop, clip, "__StrProp", str, cast=float)
         self.assertRaises(FramePropError, get_prop, clip, "__BytesProp", bytes, cast=float)
@@ -104,7 +104,7 @@ class TestGetProp(TestCase):
         self.assertEqual(get_prop(clip, "__StrProp", str, cast=bool), True)
         self.assertEqual(get_prop(clip, "__IntProp", int, cast=bool), True)
         self.assertEqual(get_prop(clip, "__FloatProp", float, cast=bool), True)
-        self.assertEqual(get_prop(clip, "__BoolProp", bool, cast=bool), True)
+        self.assertEqual(get_prop(clip, "__BoolProp", int, cast=bool), True)
         self.assertEqual(get_prop(clip, "__BytesProp", bytes, cast=bool), True)
         self.assertEqual(get_prop(clip, "__VideoFrameProp", vs.VideoFrame, cast=bool), True)
 
@@ -114,7 +114,7 @@ class TestGetProp(TestCase):
         self.assertEqual(get_prop(clip, "__StrProp", str, cast=str), "test string")
         self.assertEqual(get_prop(clip, "__IntProp", int, cast=str), "123")
         self.assertEqual(get_prop(clip, "__FloatProp", float, cast=str), "123.456")
-        self.assertEqual(get_prop(clip, "__BoolProp", bool, cast=str), "True")
+        self.assertEqual(get_prop(clip, "__BoolProp", int, cast=str), "1")
         self.assertEqual(get_prop(clip, "__BytesProp", bytes, cast=str), "test bytes")
         self.assertEqual(get_prop(clip, "__VideoFrameProp", vs.VideoFrame, cast=str), str(clip.get_frame(0)))
 
@@ -126,7 +126,7 @@ class TestGetProp(TestCase):
         self.assertEqual(get_prop(clip, "__VideoFrameProp", vs.VideoFrame, cast=bytes), bytes(clip.get_frame(0)))
         self.assertRaises(FramePropError, get_prop, clip, "__IntProp", int, cast=bytes)
         self.assertRaises(FramePropError, get_prop, clip, "__FloatProp", float, cast=bytes)
-        self.assertRaises(FramePropError, get_prop, clip, "__BoolProp", bool, cast=bytes)
+        self.assertRaises(FramePropError, get_prop, clip, "__BoolProp", int, cast=bytes)
 
     def test_get_prop_error_messages(self) -> None:
         """Test get_prop error message formatting."""
@@ -146,7 +146,7 @@ class TestGetProp(TestCase):
         self.assertEqual(get_prop(clip, "__StrProp", str, cast=custom_cast), "Custom: test string")
         self.assertEqual(get_prop(clip, "__IntProp", int, cast=custom_cast), "Custom: 123")
         self.assertEqual(get_prop(clip, "__FloatProp", float, cast=custom_cast), "Custom: 123.456")
-        self.assertEqual(get_prop(clip, "__BoolProp", bool, cast=custom_cast), "Custom: True")
+        self.assertEqual(get_prop(clip, "__BoolProp", int, cast=custom_cast), "Custom: 1")
         self.assertEqual(get_prop(clip, "__BytesProp", bytes, cast=custom_cast), "Custom: test bytes")
         self.assertEqual(get_prop(clip, "__VideoFrameProp", vs.VideoFrame, cast=custom_cast), f"Custom: {clip.get_frame(0)}")
 
