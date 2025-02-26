@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Literal, MutableMapping, TypeVar, overload
 
 import vapoursynth as vs
-
-from jetpytools import MISSING, FileWasNotFoundError, FuncExceptT, MissingT, SPath, SPathLike, SupportsString
+from jetpytools import (MISSING, FileWasNotFoundError, FuncExceptT, MissingT,
+                        SPath, SPathLike, SupportsString, normalize_seq)
 
 from ..enums import PropEnum
 from ..exceptions import FramePropError
@@ -14,6 +14,7 @@ from .cache import NodesPropsCache
 
 __all__ = [
     'get_prop',
+    'get_props',
     'merge_clip_props',
     'get_clip_filepath'
 ]
@@ -97,11 +98,13 @@ class _get_prop:
         :param t:                   type of prop.
         :param cast:                Cast value to this type, if specified.
         :param default:             Fallback value.
+        :param func:                Function returned for custom error handling.
+                                    This should only be set by VS package developers.
 
         :return:                    frame.prop[key].
 
         :raises FramePropError:     ``key`` is not found in props.
-        :raises FramePropError:     Returns a prop of the wrong type.
+        :raises FramePropError:     ``key`` is of the wrong type.
         """
         props: MutableMapping[str, Any]
 
@@ -270,3 +273,155 @@ def get_clip_filepath(
         return fallback_path
 
     raise FileWasNotFoundError('File not found!', func, spath.absolute())
+
+
+@overload
+def get_props(
+    obj: HoldsPropValueT, keys: list[SupportsString | PropEnum],
+    t: type[BoundVSMapValue] | list[type[BoundVSMapValue]], *,
+    cast: None = None, default: MissingT = MISSING, func: FuncExceptT | None = None
+) -> dict[str, BoundVSMapValue]:
+    ...
+
+
+@overload
+def get_props(
+    obj: HoldsPropValueT, keys: list[SupportsString | PropEnum],
+    t: type[BoundVSMapValue] | list[type[BoundVSMapValue]], *,
+    cast: type[CT] | Callable[[BoundVSMapValue], CT], default: MissingT = MISSING,
+    func: FuncExceptT | None = None
+) -> dict[str, CT]:
+    ...
+
+
+@overload
+def get_props(
+    obj: HoldsPropValueT, keys: list[SupportsString | PropEnum],
+    t: type[BoundVSMapValue] | list[type[BoundVSMapValue]], *,
+    cast: type[CT] | Callable[[BoundVSMapValue], CT], default: DT | list[DT],
+    func: FuncExceptT | None = None
+) -> dict[str, CT | DT]:
+    ...
+
+
+def get_props(
+    obj: HoldsPropValueT, keys: list[SupportsString | PropEnum],
+    t: type[BoundVSMapValue] | list[type[BoundVSMapValue]], *,
+    cast: type[CT] | Callable[[BoundVSMapValue], CT] | None = None,
+    default: DT | list[DT] | MissingT = MISSING, func: FuncExceptT | None = None
+) -> dict[str, BoundVSMapValue | CT | DT]:
+    """
+    Get multiple frame properties from a clip.
+
+    :param obj:                 Clip or frame containing props.
+    :param keys:                List of props to get.
+    :param t:                   Type of prop or list of types of props.
+                                If fewer types are provided than props,
+                                the last type will be used for the remaining props.
+    :param cast:                Cast value to this type, if specified.
+    :param default:             Fallback value. Can be a single value or a list of values.
+                                If a list is provided, it must be the same length as keys.
+    :param func:                Function returned for custom error handling.
+                                This should only be set by VS package developers.
+
+    :return:                    Dictionary mapping property names to their values.
+                                Values will be of type specified by cast if provided,
+                                otherwise of the type(s) specified in ``t``
+                                or a default value if provided.
+    """
+
+    func = func or 'get_props'
+
+    if not keys:
+        return {}
+
+    t = normalize_seq(t, len(keys))
+    cast = normalize_seq(cast, len(keys))
+    default = normalize_seq(default, len(keys))
+
+    # May as well take the highway if there's only one prop
+    if len(keys) == 1:
+        return {str(keys[0]): get_prop(obj, keys[0], t[0], cast[0], default[0], func)}
+
+    result = dict[str, BoundVSMapValue | CT | DT]()
+
+    missing_props = list[str]()
+    wrong_type_props = list[str]()
+    failed_to_cast_props = list[str]()
+
+    for k, t_, cast_, default_ in zip(keys, t, cast, default):
+        try:
+            result |= {str(k): get_prop(obj, k, t_, cast_, default_, func)}
+        except BaseException as e:
+            if default_ is not MISSING:
+                result[str(k)] = default_
+                continue
+
+            err_msg = str(e)
+
+            if 'not present in props' in err_msg:
+                missing_props += str(k)
+            elif 'did not contain expected type' in err_msg:
+                wrong_type_props += str(k)
+            elif 'Failed to cast prop' in err_msg:
+                failed_to_cast_props += str(k)
+            else:
+                raise
+
+    if missing_props or wrong_type_props or failed_to_cast_props:
+        error_parts = list[str]()
+        failed_props = list[str]()
+
+        if missing_props:
+            missing_msg, missing = _format_prop_error_details(missing_props, keys, 'Missing props')
+            error_parts += missing_msg
+            failed_props += missing
+
+        if wrong_type_props:
+            wrong_type_msg, wrong = _format_prop_error_details(
+                wrong_type_props, keys, 'Unexpected type returned for props',
+                lambda p, i: f'{p} (Expected: {t[i].__name__})'
+            )
+
+            error_parts += wrong_type_msg
+            failed_props += wrong
+
+        if failed_to_cast_props:
+            def get_cast_name(cast_type: type[CT] | Callable[[BoundVSMapValue], CT], i: int) -> str:
+                if isinstance(cast_type, type):
+                    return cast_type.__name__
+                return cast_type.__class__.__name__
+
+            cast_msg, failed_cast = _format_prop_error_details(
+                failed_to_cast_props, keys, 'Failed to cast props',
+                lambda p, i: f'{p} (Cast to: {get_cast_name(cast[i], i)})'
+            )
+
+            error_parts += cast_msg
+            failed_props += failed_cast
+
+        err_msg = 'The following errors occurred while trying to get the frame props:\n• ' + '\n• '.join(error_parts)
+
+        raise FramePropError(func, ', '.join(failed_props), err_msg)
+
+    return result
+
+
+def _format_prop_error_details(
+    props: list[str], keys: list[str], prefix: str,
+    get_detail: Callable[[str, int], str] | None = None
+) -> tuple[str, list[str]]:
+    if not props:
+        return '', []
+
+    details = []
+
+    if get_detail:
+        for prop in props:
+            idx = keys.index(prop)
+            details.append(get_detail(prop, idx))
+        msg = f'{prefix}: {", ".join(details)}'
+    else:
+        msg = f'{prefix}: {", ".join(props)}'
+
+    return msg, props
