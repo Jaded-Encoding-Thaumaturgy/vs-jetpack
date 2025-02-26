@@ -13,6 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: qoomon/actions--context@v2
+        id: context
+      - uses: tj-actions/branch-names@v8
+        id: branch-names
+
       - name: Get version number
         run: |
           echo "CURR_VER=v$(python -c "import runpy;runpy.run_path('_metadata.py', None, '__github__')")" >> $GITHUB_ENV
@@ -39,3 +44,13 @@ jobs:
       - name: Fallback
         if: steps.tagcheck.outputs.exists == 'true'
         run: echo "Nothing to see here, move along citizen"
+
+      - name: Post webhook for failure
+        if: failure()
+        uses: tsickert/discord-webhook@v6.0.0
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          embed-url: ${{ steps.context.outputs.job_log_url }}
+          embed-title: "[${{ github.event.repository.name }}] ${{ steps.context.outputs.job }} failed on ${{ steps.branch-names.outputs.current_branch }}"
+          username: "GitHub - ${{ github.repository }}"
+          avatar-url: https://github.githubassets.com/favicons/favicon.png

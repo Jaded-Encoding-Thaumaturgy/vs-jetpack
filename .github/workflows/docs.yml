@@ -19,8 +19,12 @@ jobs:
     env:
       PROD: true
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - uses: qoomon/actions--context@v2
+        id: context
+      - uses: tj-actions/branch-names@v8
+        id: branch-names
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -62,6 +66,16 @@ jobs:
         with:
           key: mkdocs-material-${{ hashfiles('.cache/**') }}
           path: .cache
+
+      - name: Post webhook for failure
+        if: failure()
+        uses: tsickert/discord-webhook@v6.0.0
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          embed-url: ${{ steps.context.outputs.job_log_url }}
+          embed-title: "[${{ github.event.repository.name }}] ${{ steps.context.outputs.job }} failed on ${{ steps.branch-names.outputs.current_branch }}"
+          username: "GitHub - ${{ github.repository }}"
+          avatar-url: https://github.githubassets.com/favicons/favicon.png
 
   docs-deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
