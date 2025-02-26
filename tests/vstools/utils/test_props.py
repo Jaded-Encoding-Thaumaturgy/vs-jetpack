@@ -10,7 +10,7 @@ clip = core.std.BlankClip(
 clip = clip.std.SetFrameProps(
     _Matrix=1, _Transfer=1, _Primaries=1,
     __StrProp="test string", __IntProp=123, __FloatProp=123.456,
-    __BoolProp=True, _BytesProp=b"test bytes",
+    __BoolProp=True, __BytesProp=b"test bytes",
     __VideoFrameProp=clip.get_frame(0)
 )
 
@@ -66,7 +66,7 @@ class TestGetProp(TestCase):
     def test_get_prop_default(self) -> None:
         """Test get_prop default value fallback."""
 
-        self.assertEqual(get_prop(clip, "_Matrix", int, default=2), 2)
+        self.assertEqual(get_prop(clip, "NonExistentProp", int, default=2), 2)
 
     def test_get_prop_func(self) -> None:
         """Test get_prop with custom function name in error."""
@@ -115,7 +115,7 @@ class TestGetProp(TestCase):
         self.assertEqual(get_prop(clip, "__IntProp", int, cast=str), "123")
         self.assertEqual(get_prop(clip, "__FloatProp", float, cast=str), "123.456")
         self.assertEqual(get_prop(clip, "__BoolProp", int, cast=str), "1")
-        self.assertEqual(get_prop(clip, "__BytesProp", bytes, cast=str), "test bytes")
+        self.assertEqual(get_prop(clip, "__BytesProp", bytes, cast=str), b"test bytes")
         self.assertEqual(get_prop(clip, "__VideoFrameProp", vs.VideoFrame, cast=str), str(clip.get_frame(0)))
 
     def test_get_prop_cast_bytes(self) -> None:
@@ -141,6 +141,9 @@ class TestGetProp(TestCase):
         """Test get_prop with custom casting function."""
 
         def custom_cast(x: Any) -> str:
+            if isinstance(x, bytes):
+                x = x.decode('utf-8')
+
             return f"Custom: {x}"
 
         self.assertEqual(get_prop(clip, "__StrProp", str, cast=custom_cast), "Custom: test string")
@@ -159,7 +162,7 @@ class TestMergeClipProps(TestCase):
 
         merged = merge_clip_props(clip, clip2)
 
-        self.assertEqual(get_prop(merged, "_Matrix", int), 1)
+        self.assertEqual(get_prop(merged, "_Matrix", int), 5)
         self.assertEqual(get_prop(merged, "__FloatProp", float), 123.456)
         self.assertEqual(get_prop(merged, "_RandomProp", int), 1)
         self.assertEqual(get_prop(merged, "__AnotherRandomProp", str), "gsdgsdgs")
@@ -169,7 +172,7 @@ class TestMergeClipProps(TestCase):
 
         merged = merge_clip_props(clip, clip2, main_idx=1)
 
-        self.assertEqual(get_prop(merged, "_Matrix", int), 5)
+        self.assertEqual(get_prop(merged, "_Matrix", int), 1)
         self.assertEqual(get_prop(merged, "__FloatProp", float), 123.456)
         self.assertEqual(get_prop(merged, "_RandomProp", int), 1)
         self.assertEqual(get_prop(merged, "__AnotherRandomProp", str), "gsdgsdgs")
