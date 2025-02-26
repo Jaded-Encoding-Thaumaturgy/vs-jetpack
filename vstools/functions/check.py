@@ -10,18 +10,23 @@ import vapoursynth as vs
 from jetpytools import CustomError, F, FuncExceptT
 
 from ..exceptions import (
-    FormatsRefClipMismatchError, ResolutionsRefClipMismatchError, VariableFormatError, VariableResolutionError
+    FormatsRefClipMismatchError, ResolutionsRefClipMismatchError, UnsupportedFieldBasedError, VariableFormatError,
+    VariableResolutionError
 )
 from ..types import ConstantFormatVideoNode, VideoNodeT
 
 __all__ = [
-    'disallow_variable_format',
-    'disallow_variable_resolution',
     'check_ref_clip',
+
+    'check_variable',
     'check_variable_format',
     'check_variable_resolution',
-    'check_variable',
-    'check_correct_subsampling'
+    'check_correct_subsampling',
+    'check_progressive',
+
+    'disallow_variable_format',
+    'disallow_variable_resolution',
+    'disallow_interlaced',
 ]
 
 
@@ -107,6 +112,36 @@ def disallow_variable_resolution(function: F | None = None, /, *, only_first: Li
 
     return _check_variable(
         function, 'resolution', VariableResolutionError, only_first, lambda x: not all({x.width, x.height})
+    )
+
+
+@overload
+def disallow_interlaced(*, only_first: bool = False) -> Callable[[F], F]:
+    ...
+
+
+@overload
+def disallow_interlaced(function: F | None = None, /) -> F:
+    ...
+
+
+def disallow_interlaced(function: F | None = None, /, *, only_first: bool = False) -> Callable[[F], F] | F:
+    """
+    Decorator for disallowing interlaced clips.
+
+    :param function:                        Function to decorate.
+    :param only_first:                      Only verify the first argument.
+                                            Default: False.
+
+    :raises UnsupportedFieldBasedError:     A clip is interlaced.
+    """
+
+    if function is None:
+        return cast(Callable[[F], F], partial(disallow_interlaced, only_first=only_first))
+
+    return _check_variable(
+        function, 'interlaced', UnsupportedFieldBasedError, only_first,
+        lambda x: FieldBased.from_video(x, func=function).is_inter
     )
 
 
@@ -222,3 +257,19 @@ def check_correct_subsampling(
                 'The {subsampling} subsampling is not supported for this resolution!',
                 reason=dict(width=width, height=height)
             )
+
+def check_progressive(clip: vs.VideoNode, func: FuncExceptT) -> TypeGuard[vs.VideoNode]:
+    """
+    Check if the clip is progressive and return an error if it's not.
+
+    :param clip:                        Clip to check.
+    :param func:                        Function returned for custom error handling.
+                                        This should only be set by VS package developers.
+
+    :raises UnsupportedFieldBasedError: The clip is interlaced.
+    """
+
+    if FieldBased.from_video(clip, func=func).is_inter:
+        raise UnsupportedFieldBasedError(func)
+
+    return True
