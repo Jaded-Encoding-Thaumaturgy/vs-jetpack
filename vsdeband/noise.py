@@ -17,15 +17,12 @@ from vstools import (
     normalize_seq, plane, scale_value, split, to_arr, ConvMode, vs
 )
 
-from .f3kdb import F3kdb
 from .placebo import Placebo
 
 __all__ = [
     'Grainer', 'GrainPP',
 
-    'AddGrain', 'AddNoise',
-
-    'F3kdbGrain', 'PlaceboGrain',
+    'AddNoise', 'PlaceboGrain',
 
     'LinearLightGrainer',
 
@@ -326,15 +323,6 @@ class Grainer(ABC):
         return grained
 
 
-class AddGrain(Grainer):
-    """Built-in grain.Add plugin. https://github.com/HomeOfVapourSynthEvolution/VapourSynth-AddGrain"""
-
-    def _perform_graining(
-        self, clip: vs.VideoNode, strength: tuple[float, float], dynamic: bool = True, **kwargs: Any
-    ) -> vs.VideoNode:
-        return core.grain.Add(clip, *strength, constant=not dynamic, **kwargs)
-
-
 class AddNoiseBase(Grainer):
     def _get_kw(self, kwargs: KwargsT) -> KwargsT:
         kwargs = super()._get_kw(kwargs)
@@ -400,13 +388,36 @@ class AddNoise(AddNoiseBase):
         _noise_type = 4
 
 
-class F3kdbGrain(Grainer):
-    """Built-in f3kdb.Deband plugin. https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb"""
+class AddGrain(AddNoise.GAUSS):
+    """
+    Built-in grain.Add plugin. https://github.com/HomeOfVapourSynthEvolution/VapourSynth-AddGrain
+    DEPRECATED: Use AddNoise.GAUSS instead.
+    """
 
     def _perform_graining(
         self, clip: vs.VideoNode, strength: tuple[float, float], dynamic: bool = True, **kwargs: Any
     ) -> vs.VideoNode:
-        return F3kdb.deband(clip, 8, 1, list(strength), dynamic_grain=dynamic, **kwargs)
+        import warnings
+
+        warnings.warn('AddGrain is deprecated, use AddNoise.GAUSS instead.', DeprecationWarning)
+
+        return super()._perform_graining(clip, strength, dynamic, **kwargs)
+
+
+class F3kdbGrain(AddNoise.GAUSS):
+    """
+    Built-in f3kdb.Deband plugin. https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb
+    DEPRECATED: Use AddNoise.GAUSS instead.
+    """
+
+    def _perform_graining(
+        self, clip: vs.VideoNode, strength: tuple[float, float], dynamic: bool = True, **kwargs: Any
+    ) -> vs.VideoNode:
+        import warnings
+
+        warnings.warn('F3kdbGrain is deprecated, use AddNoise.GAUSS instead.', DeprecationWarning)
+
+        return super()._perform_graining(clip, strength, dynamic, **kwargs)
 
 
 class PlaceboGrain(Grainer):
@@ -602,10 +613,9 @@ def multi_graining(
                         The overflow is the range of the hard threshold.
                         If a grainer is None, the original clip will be applied in that range.
                         For example:
-                            MultiGrainer((None, 0.1), (AddGrain, 0.5), (AddNoise, 0.8))
+                            MultiGrainer((None, 0.1), (AddNoise, 0.5))
 
-                        Will apply no grain for values <= 0.1 and > 0.8, AddGrain for values <= 0.5,
-                        AddNoise for values <= 0.8.
+                        Will apply no grain for values <= 0.1 & > 0.5, AddNoise for values <= 0.5.
     :param prefilter:   Clip or prefilter for making theh clip used for the threshold masks.
     """
 

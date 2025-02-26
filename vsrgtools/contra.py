@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from functools import partial
-from inspect import Signature
 from typing import Callable
 
-from vsexprtools import complexpr_available, norm_expr
+from vsexprtools import norm_expr
 from vstools import (
-    CustomValueError, GenericVSFunction, PlanesT, check_ref_clip, check_variable, clamp_arr, get_neutral_value,
-    iterate, normalize_planes, to_arr, vs, core
+    CustomValueError, GenericVSFunction, PlanesT, check_ref_clip,
+    check_variable, iterate, normalize_planes, vs, core
 )
 
 from .blur import box_blur, median_blur, min_blur
@@ -16,10 +15,9 @@ from .rgtools import remove_grain, repair
 from .util import norm_rmode_planes
 
 __all__ = [
-    'contrasharpening', 'contra',
-    'contrasharpening_dehalo', 'contra_dehalo',
-    'contrasharpening_median', 'contra_median',
-    'fine_contra'
+    'contrasharpening',
+    'contrasharpening_dehalo',
+    'contrasharpening_median'
 ]
 
 
@@ -131,68 +129,3 @@ def contrasharpening_median(
         raise CustomValueError('Invalid mode or function passed!', contrasharpening_median)
 
     return norm_expr([flt, src, repaired], 'x dup + z - x y min x y max clip', planes)
-
-
-def fine_contra(
-    flt: vs.VideoNode, src: vs.VideoNode, sharp: float | list[float] | range = 0.75,
-    radius: int | list[int] = 1, merge_func: GenericVSFunction | None = None,
-    mode: RepairModeT = RepairMode.MINMAX_SQUARE_REF3, planes: PlanesT = 0
-) -> vs.VideoNode:
-    """
-    :param flt:         Filtered clip.
-    :param src:         Source clip.
-    :param sharp:       Contrast Adaptive Sharpening's sharpening strength.
-                        If it's a list, depending on ``merge_func`` being ``None``,
-                        it will iterate over with different strengths or merge all with ``merge_func``.
-    :param radius:      Spatial radius for contra-sharpening (1-3). Default is 2 for HD / 1 for SD.
-    :param merge_func:  Depending on ``sharp``, this will get all sharpened clips and merge them.
-    :param mode:        Mode of rgvs.Repair to limit the difference.
-    :param planes:      Planes to process, defaults to None.
-    :return:            Contrasharpened clip.
-    """
-
-    assert check_variable(src, contrasharpening)
-    assert check_variable(flt, contrasharpening)
-    check_ref_clip(src, flt, contrasharpening)
-
-    neutral = get_neutral_value(flt)
-
-    planes = normalize_planes(flt, planes)
-
-    mblur = min_blur(flt, radius, planes=planes)
-
-    sharp = [1.0 / x for x in sharp if x] if isinstance(sharp, range) else to_arr(sharp)
-    sharp = clamp_arr(sharp, 0.0, 1.0)
-
-    if merge_func is None:
-        for s in sharp:
-            mblur = mblur.cas.CAS(s, planes)
-    else:
-        mblurs = [mblur.cas.CAS(s, planes) for s in sharp]
-
-        got_p = 'planes' in Signature.from_callable(merge_func).parameters.keys()
-
-        try:
-            if got_p:
-                mblur = merge_func(*mblurs, planes=planes)
-            else:
-                mblur = merge_func(*mblurs)
-        except Exception:
-            if got_p:
-                mblur = merge_func(mblurs, planes=planes)
-            else:
-                mblur = merge_func(mblurs)
-
-    limit = repair(mblur, src.std.MakeDiff(flt, planes), norm_rmode_planes(flt, mode, planes))
-
-    if complexpr_available:
-        expr = 'x {mid} - LD! y {mid} - BD! LD@ abs BD@ abs < LD@ BD@ ? z +'
-    else:
-        expr = 'x {mid} - abs y {mid} - abs < x y ? {mid} - z +'
-
-    return norm_expr([limit, mblur, flt], expr, planes, mid=neutral)
-
-
-contra = contrasharpening
-contra_dehalo = contrasharpening_dehalo
-contra_median = contrasharpening_median
