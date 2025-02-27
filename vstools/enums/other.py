@@ -144,7 +144,7 @@ class Sar(Fraction):
 
         assert isinstance(active_area, int | Fraction)
 
-        return cls(dar / (active_area / height))
+        return cls(dar / (Fraction(active_area) / height))
 
     def apply(self, clip: vs.VideoNode) -> vs.VideoNode:
         """Apply the SAR values as _SARNum and _SARDen frame properties to a clip."""
