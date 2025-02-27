@@ -24,13 +24,13 @@ class TestDirection(TestCase):
 
 
 class TestDar(TestCase):
-    def test_from_size_width_height(self) -> None:
-        result = Dar.from_size(1920, 1080)
+    def test_from_res(self) -> None:
+        result = Dar.from_res(1920, 1080)
         self.assertEqual(result, Dar(16, 9))
 
-    def test_from_size_clip(self) -> None:
+    def test_from_clip(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=1920, height=1080)
-        result = Dar.from_size(clip)
+        result = Dar.from_clip(clip)
         self.assertEqual(result, Dar(16, 9))
 
     def test_to_sar(self) -> None:
@@ -39,10 +39,7 @@ class TestDar(TestCase):
 
 class TestSar(TestCase):
     def test_from_ar(self) -> None:
-        self.assertEqual(Sar.from_ar(16, 9, 1, 1080), Sar(1920, 1))
-
-    def test_from_dar(self) -> None:
-        self.assertEqual(Sar.from_dar(Dar(16, 9), 1, 1080), Sar(1920, 1))
+        self.assertEqual(Sar.from_ar(1, 1080, Dar(16, 9)), Sar(1920, 1))
 
     def test_apply(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=1920, height=1080)

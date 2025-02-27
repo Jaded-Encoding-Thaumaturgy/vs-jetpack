@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from fractions import Fraction
-from math import gcd
-from typing import Callable, Iterable, NamedTuple, overload
+from typing import Callable, Iterable, NamedTuple
 
 import vapoursynth as vs
 
-from jetpytools import Coordinate, CustomIntEnum, CustomStrEnum, FuncExceptT, Position, Sentinel, SentinelT, Size
+from jetpytools import Coordinate, CustomIntEnum, CustomStrEnum, Position, Sentinel, SentinelT, Size
 from typing_extensions import Self
 
 from ..types import HoldsPropValueT
@@ -61,78 +60,36 @@ class Dar(Fraction):
     For more information, see <https://en.wikipedia.org/wiki/Display_aspect_ratio>.
     """
 
-    @overload
     @classmethod
-    def from_size(
-        cls,
-        width: int,
-        height: int,
-        sar: Sar | bool = True, /,
-        func: FuncExceptT | None = ...
-    ) -> Self:
+    def from_res(cls, width: int, height: int, sar: Sar | None = None) -> Dar:
         """
-        Get the Display Aspect Ratio from the clip's dimensions or Sample Aspect Ratio (SAR).
+        Get the DAR from the specified dimensions and SAR.
 
-        :param width:               The width of the display.
-        :param height:              The height of the display.
-        :param sar:                 The AR of the pixels. Only used if `clip_width` is an integer.
-                                    Can be either a SAR object or a boolean. If False, assume 1/1 (square pixel).
+        :param width:      The width of the image.
+        :param height:     The height of the image.
+        :param sar:        The SAR object. Optional.
 
-        :return:                    DAR object representing the aspect ratio of the display based on heuristics.
+        :return:           A DAR object created using the specified dimensions and SAR.
         """
-        ...
 
-    @overload
-    @classmethod
-    def from_size(
-        cls,
-        clip: vs.VideoNode,
-        sar: Sar | bool = True, /, *,
-        func: FuncExceptT | None = ...
-    ) -> Self:
-        """
-        Get the Display Aspect Ratio from the clip's Sample Aspect Ratio (SAR).
+        dar = Fraction(width, height)
 
-        :param clip:                The clip to get the dimensions from.
-        :param sar:                 The AR of the pixels. Only used if `clip_width` is an integer.
-                                    Can be either a SAR object or a boolean. If False, assume 1/1 (square pixel).
-
-        :return:                    DAR object representing the aspect ratio of the display based on heuristics.
-        """
-        ...
+        return cls(dar if not sar else dar / sar if sar.denominator > sar.numerator else dar * sar)
 
     @classmethod
-    def from_size(
-        cls,
-        width_or_clip: int | vs.VideoNode,
-        height_or_sar: int | Sar | bool = True,
-        sar: Sar | bool = True,
-        /,
-        func: FuncExceptT | None = None
-    ) -> Self:
-        if isinstance(width_or_clip, vs.VideoNode) and isinstance(height_or_sar, (Sar, bool)):
-            from ..functions import check_variable_resolution
+    def from_clip(cls, clip: vs.VideoNode, sar: bool = True) -> Dar:
+        """
+        Get the DAR from the specified clip and SAR.
 
-            clip = width_or_clip
+        :param clip:     Clip or frame that holds the frame properties.
+        :param sar:      Whether to use SAR metadata.
 
-            check_variable_resolution(clip, func or cls.from_size)
+        :return:         A DAR object created using the specified clip and SAR.
+        """
 
-            width, height, sar = clip.width, clip.height, height_or_sar
+        return Dar.from_res(clip.width, clip.height, Sar.from_clip(clip) if sar else None)
 
-            if sar is True:
-                sar = Sar.from_clip(clip)
-
-        elif isinstance(width_or_clip, int) and isinstance(height_or_sar, int):
-            width, height = width_or_clip, height_or_sar
-
-        max_common_div = gcd(width, height)
-
-        if sar is False:
-            sar = Sar(1, 1)
-
-        return cls(width // max_common_div * sar.numerator, height // max_common_div * sar.denominator)
-
-    def to_sar(self, active_area: int | str | Fraction, height: int) -> Sar:
+    def to_sar(self, active_area: int | Fraction, height: int) -> Sar:
         """
         Convert the DAR to a SAR object.
 
@@ -141,7 +98,10 @@ class Dar(Fraction):
 
         :return:                A SAR object created using the DAR.
         """
-        return Sar.from_dar(self, active_area, height)
+
+        assert isinstance(active_area, int | Fraction)
+
+        return Sar.from_ar(active_area, height, self)
 
 
 class Sar(Fraction):
@@ -151,10 +111,6 @@ class Sar(Fraction):
     This represents the aspect ratio of the pixels or samples of an image.
     It may also be known as the Pixel Aspect Ratio in certain scenarios.
     For more information, see <https://en.wikipedia.org/wiki/Pixel_aspect_ratio>.
-
-    This is most useful for anamorphic content, and can allow you to ascertain the true aspect ratio.
-    For more information, see:
-    `<https://web.archive.org/web/20140218044518/http://lipas.uwasa.fi/~f76998/video/conversion/#conversion_table>`_
     """
 
     @classmethod
@@ -172,31 +128,23 @@ class Sar(Fraction):
         return cls(get_prop(clip, '_SARNum', int, None, 1), get_prop(clip, '_SARDen', int, None, 1))
 
     @classmethod
-    def from_ar(cls, num: int, den: int, active_area: int | str | Fraction, height: int) -> Self:
+    def from_ar(cls, active_area: int | Fraction, height: int, dar: Dar) -> Self:
         """
-        Calculate the SAR from the given display aspect ratio and active image area.
-        This method is used to obtain metadata to set in the video container for anamorphic video.
+        Calculate the SAR using a DAR object & active area. See ``Dar.to_sar`` for more information.
 
         For a list of known standards, refer to the following tables:
-        `<https://web.archive.org/web/20140218044518/http://lipas.uwasa.fi/~f76998/video/conversion/#conversion_table>`_
+        `<https://docs.google.com/spreadsheets/d/1pzVHFusLCI7kys2GzK9BTk3w7G8zcLxgHs3DMsurF7g>`_
 
-        :param num:             The numerator.
-        :param den:             The denominator.
         :param active_area:     The active image area.
         :param height:          The height of the image.
+        :param dar:             The DAR object.
 
         :return:                A SAR object created using DAR and active image area information.
         """
 
-        return cls(Dar(num, den).to_sar(active_area, height))
+        assert isinstance(active_area, int | Fraction)
 
-    @classmethod
-    def from_dar(cls, dar: Dar, active_area: int | str | Fraction, height: int) -> Self:
-        """Calculate the SAR using a DAR object. See ``Dar.to_sar`` for more information."""
-
-        assert isinstance(active_area, int | str | Fraction)
-
-        return cls(dar / (Fraction(active_area) / height))
+        return cls(dar / (active_area / height))
 
     def apply(self, clip: vs.VideoNode) -> vs.VideoNode:
         """Apply the SAR values as _SARNum and _SARDen frame properties to a clip."""
