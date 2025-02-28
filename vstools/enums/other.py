@@ -74,7 +74,13 @@ class Dar(Fraction):
 
         dar = Fraction(width, height)
 
-        return cls(dar if not sar else dar / sar if sar.denominator > sar.numerator else dar * sar)
+        if sar:
+            if sar.denominator > sar.numerator:
+                dar /= sar
+            else:
+                dar *= sar
+
+        return cls(dar)
 
     @classmethod
     def from_clip(cls, clip: vs.VideoNode, sar: bool = True) -> Dar:
