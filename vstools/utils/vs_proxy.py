@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 import gc
+import warnings
 import weakref
 from ctypes import Structure
 from inspect import Parameter, Signature
@@ -315,46 +316,14 @@ def _get_core(self: VSCoreProxy) -> Core | None:
 
 
 if TYPE_CHECKING:
-    core_on_destroy_callbacks = dict[int, dict[int, tuple[weakref.ReferenceType[Callable[..., None]], bool]]]()
-else:
-    core_on_destroy_callbacks = {}
-
-if TYPE_CHECKING:
     core_on_creation_callbacks = dict[int, weakref.ReferenceType[Callable[..., None]]]()
 else:
     core_on_creation_callbacks = {}
 
 core_on_creation_callbacks_cores = set[int]()
 
-added_callback_cores = set[int]()
-
-
 def _finalize_core(env_id: int, core_id: int, _forced: bool = True) -> None:
-    if env_id not in core_on_destroy_callbacks:
-        return
-
-    for cb_id in list(core_on_destroy_callbacks[env_id].keys()):
-        if _forced:
-            callback_ref = core_on_destroy_callbacks[env_id].get(cb_id)
-        else:
-            callback_ref = core_on_destroy_callbacks[env_id].pop(cb_id)
-
-        if callback_ref and (callback_ref[1] if _forced else True):
-            callback = callback_ref[0]()
-
-            if not callback:
-                core_on_destroy_callbacks[env_id].pop(cb_id, None)
-                continue
-
-            try:
-                callback(env_id, core_id)
-            except TypeError:
-                callback()
-
-    if not _forced:
-        core_on_destroy_callbacks.pop(env_id)
-
-    gc.collect()
+    warnings.warn('_finalize_core is deprecated and calls to it can be removed.', DeprecationWarning)
 
 
 def _get_core_with_cb(self: VSCoreProxy | None = None) -> Core:
@@ -377,10 +346,6 @@ def _get_core_with_cb(self: VSCoreProxy | None = None) -> Core:
                 core_on_creation_callbacks.pop(cb_id, None)
 
         core_on_creation_callbacks_cores.add(id(_vs_core))
-
-    if core_id not in added_callback_cores:
-        env_id = get_current_environment().env_id
-        weakref.finalize(_vs_core, lambda: _finalize_core(env_id, core_id, False))
 
     return _vs_core
 
@@ -526,25 +491,13 @@ class VSCoreProxy(CoreProxyBase):
         """Register a callback on this core destroy."""
 
         _check_environment()
-
-        env_id = get_current_environment().env_id
-
-        if env_id not in core_on_destroy_callbacks:
-            core_on_destroy_callbacks[env_id] = {id(callback): (weakref.ref(callback), on_forced)}
-        else:
-            core_on_destroy_callbacks[env_id] |= {id(callback): (weakref.ref(callback), on_forced)}
+        register_on_destroy(callback)
 
     def unregister_on_destroy(self, callback: Callable[..., None]) -> None:
         """Unregister a callback from this core destroy."""
 
         _check_environment()
-
-        env_id = get_current_environment().env_id
-
-        if env_id not in core_on_destroy_callbacks:
-            core_on_destroy_callbacks[env_id] = {}
-        else:
-            core_on_destroy_callbacks[env_id].pop(id(callback), None)
+        unregister_on_destroy(callback)
 
     def set_affinity(
         self, threads: int | float | range | tuple[int, int] | list[int] | None = None,
