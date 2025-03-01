@@ -29,12 +29,8 @@ class DGIndex(D2VWitch):
         else:
             paths = list(map(str, files))
 
-        for f in paths:
-            assert ' ' not in f, 'DGIndex only supports paths without spaces in them!'
-
         return list(map(str, [
             self._get_bin_path(),
-            '-IF=[' + ','.join([f'{p}' for p in paths]) + ']',
-            f'-IA={idct_algo}', f'-FO={field_op}', f'-YR={yuv_to_rgb}',
-            '-OM=0', f'-OF=[{output.with_suffix("")}]', '-HIDE', '-EXIT'
+            '-i', *paths, '-ia', idct_algo, '-fo', field_op, '-yr', yuv_to_rgb,
+            '-om', '0', '-o', output.with_suffix(""), '-hide', '-exit'
         ]))
