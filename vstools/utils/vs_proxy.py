@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import builtins
 import gc
-import warnings
 import weakref
 from ctypes import Structure
 from inspect import Parameter, Signature
@@ -321,9 +320,6 @@ else:
     core_on_creation_callbacks = {}
 
 core_on_creation_callbacks_cores = set[int]()
-
-def _finalize_core(env_id: int, core_id: int, _forced: bool = True) -> None:
-    warnings.warn('_finalize_core is deprecated and calls to it can be removed.', DeprecationWarning)
 
 
 def _get_core_with_cb(self: VSCoreProxy | None = None) -> Core:
