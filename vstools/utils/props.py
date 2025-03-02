@@ -285,18 +285,22 @@ def get_clip_filepath(
 
 @overload
 def get_props(
-    obj: HoldsPropValueT, keys: list[SupportsString | PropEnum],
-    t: type[BoundVSMapValue] | list[type[BoundVSMapValue]], *,
-    cast: None = None, default: MissingT = MISSING, func: FuncExceptT | None = None
+    obj: HoldsPropValueT,
+    keys: Sequence[SupportsString | PropEnum],
+    t: type[BoundVSMapValue],
+    *,
+    func: FuncExceptT | None = None
 ) -> dict[str, BoundVSMapValue]:
     ...
 
 
 @overload
 def get_props(
-    obj: HoldsPropValueT, keys: list[SupportsString | PropEnum],
-    t: type[BoundVSMapValue] | list[type[BoundVSMapValue]], *,
-    cast: type[CT] | Callable[[BoundVSMapValue], CT], default: MissingT = MISSING,
+    obj: HoldsPropValueT,
+    keys: Sequence[SupportsString | PropEnum],
+    t: type[BoundVSMapValue],
+    cast: type[CT] | Callable[[BoundVSMapValue], CT],
+    *,
     func: FuncExceptT | None = None
 ) -> dict[str, CT]:
     ...
@@ -304,20 +308,48 @@ def get_props(
 
 @overload
 def get_props(
-    obj: HoldsPropValueT, keys: list[SupportsString | PropEnum],
-    t: type[BoundVSMapValue] | list[type[BoundVSMapValue]], *,
-    cast: type[CT] | Callable[[BoundVSMapValue], CT], default: DT | list[DT],
+    obj: HoldsPropValueT,
+    keys: Sequence[SupportsString | PropEnum],
+    t: type[BoundVSMapValue],
+    *,
+    default: DT,
+    func: FuncExceptT | None = None
+) -> dict[str, BoundVSMapValue | DT]:
+    ...
+
+
+@overload
+def get_props(
+    obj: HoldsPropValueT,
+    keys: Sequence[SupportsString | PropEnum],
+    t: type[BoundVSMapValue],
+    cast: type[CT] | Callable[[BoundVSMapValue], CT],
+    default: DT,
     func: FuncExceptT | None = None
 ) -> dict[str, CT | DT]:
     ...
 
 
+@overload
 def get_props(
-    obj: HoldsPropValueT, keys: list[SupportsString | PropEnum],
-    t: type[BoundVSMapValue] | list[type[BoundVSMapValue]], *,
-    cast: type[CT] | Callable[[BoundVSMapValue], CT] | None = None,
-    default: DT | list[DT] | MissingT = MISSING, func: FuncExceptT | None = None
-) -> dict[str, BoundVSMapValue | CT | DT]:
+    obj: HoldsPropValueT,
+    keys: Sequence[SupportsString | PropEnum],
+    t: Sequence[type[BoundVSMapValue]],
+    cast: Sequence[type[CT] | Callable[[BoundVSMapValue], CT]] | None = None,
+    default: DT | Sequence[DT] | MissingT = ...,
+    func: FuncExceptT | None = None
+) -> dict[str, Any]:
+    ...
+
+
+def get_props(
+    obj: HoldsPropValueT,
+    keys: Sequence[SupportsString | PropEnum],
+    t: type[BoundVSMapValue] | Sequence[type[BoundVSMapValue]],
+    cast: type[CT] | Callable[[BoundVSMapValue], CT] | Sequence[type[CT] | Callable[[BoundVSMapValue], CT]] | None = None,
+    default: DT | Sequence[DT] | MissingT = MISSING,
+    func: FuncExceptT | None = None
+) -> dict[str, Any]:
     """
     Get multiple frame properties from a clip.
 
