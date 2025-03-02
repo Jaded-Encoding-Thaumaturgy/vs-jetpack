@@ -29,21 +29,21 @@ class _get_prop:
     @overload
     def __call__(
         self, obj: HoldsPropValueT, key: SupportsString | PropEnum, t: type[BoundVSMapValue],
-        cast: None = None, default: MissingT = ..., func: FuncExceptT | None = None
+        *, func: FuncExceptT | None = None
     ) -> BoundVSMapValue:
         ...
 
     @overload
     def __call__(
         self, obj: HoldsPropValueT, key: SupportsString | PropEnum, t: type[BoundVSMapValue],
-        cast: type[CT], default: MissingT = ..., func: FuncExceptT | None = None
+        cast: type[CT] | Callable[[BoundVSMapValue], CT], *, func: FuncExceptT | None = None
     ) -> CT:
         ...
 
     @overload
     def __call__(
         self, obj: HoldsPropValueT, key: SupportsString | PropEnum, t: type[BoundVSMapValue],
-        cast: None = None, default: DT | MissingT = ...,
+        *, default: DT,
         func: FuncExceptT | None = None
     ) -> BoundVSMapValue | DT:
         ...
@@ -51,9 +51,17 @@ class _get_prop:
     @overload
     def __call__(
         self, obj: HoldsPropValueT, key: SupportsString | PropEnum, t: type[BoundVSMapValue],
-        cast: type[CT] | Callable[[BoundVSMapValue], CT], default: DT | MissingT = ...,
+        cast: type[CT] | Callable[[BoundVSMapValue], CT], default: DT,
         func: FuncExceptT | None = None
     ) -> CT | DT:
+        ...
+
+    @overload
+    def __call__(
+        self, obj: HoldsPropValueT, key: SupportsString | PropEnum, t: type[BoundVSMapValue],
+        cast: type[CT] | Callable[[BoundVSMapValue], CT] | None, default: DT | MissingT,
+        func: FuncExceptT | None = None
+    ) -> BoundVSMapValue | CT | DT:
         ...
 
     def __call__(
