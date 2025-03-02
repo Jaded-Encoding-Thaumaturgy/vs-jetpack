@@ -1,10 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Literal, MutableMapping, TypeVar, overload
+import sys
+
+from typing import TYPE_CHECKING, Any, Callable, Literal, MutableMapping, Sequence, TypeVar
+from typing import cast as typing_cast
+from typing import overload
 
 import vapoursynth as vs
-from jetpytools import (MISSING, FileWasNotFoundError, FuncExceptT, MissingT,
-                        SPath, SPathLike, SupportsString, normalize_seq)
+
+from jetpytools import (
+    MISSING, FileWasNotFoundError, FuncExceptT, MissingT, SPath, SPathLike, SupportsString,
+    normalize_seq
+)
 
 from ..enums import PropEnum
 from ..exceptions import FramePropError
@@ -376,92 +383,25 @@ def get_props(
         return {}
 
     t = normalize_seq(t, len(keys))
-    cast = normalize_seq(cast, len(keys))
-    default = normalize_seq(default, len(keys))
+    ncast = typing_cast(list[type[CT | Callable[[BoundVSMapValue], CT]]], normalize_seq(cast, len(keys)))
+    ndefault = typing_cast(list[DT | MissingT], normalize_seq(default, len(keys)))
 
-    # May as well take the highway if there's only one prop
-    if len(keys) == 1:
-        return {str(keys[0]): get_prop(obj, keys[0], t[0], cast[0], default[0], func)}
+    props = dict[str, Any]()
+    exceptions = list[Exception]()
 
-    result = dict[str, BoundVSMapValue | CT | DT]()
-
-    missing_props = list[str]()
-    wrong_type_props = list[str]()
-    failed_to_cast_props = list[str]()
-
-    for k, t_, cast_, default_ in zip(keys, t, cast, default):
+    for k, t_, cast_, default_ in zip(keys, t, ncast, ndefault):
         try:
-            result |= {str(k): get_prop(obj, k, t_, cast_, default_, func)}
-        except BaseException as e:
-            if default_ is not MISSING:
-                result[str(k)] = default_
-                continue
+            prop = get_prop(obj, k, t_, cast_, default_, func)
+        except Exception as e:
+            exceptions.append(e)
+        else:
+            props[str(k)] = prop
 
-            err_msg = str(e)
+    if exceptions:
+        if sys.version_info >= (3, 11):
+            raise ExceptionGroup("Multiple exceptions occurred!", exceptions)  # noqa: F821
 
-            if 'not present in props' in err_msg:
-                missing_props += str(k)
-            elif 'did not contain expected type' in err_msg:
-                wrong_type_props += str(k)
-            elif 'Failed to cast prop' in err_msg:
-                failed_to_cast_props += str(k)
-            else:
-                raise
+        if sys.version_info < (3, 11):  # type: ignore[unreachable]
+            raise Exception(exceptions)
 
-    if missing_props or wrong_type_props or failed_to_cast_props:
-        error_parts = list[str]()
-        failed_props = list[str]()
-
-        if missing_props:
-            missing_msg, missing = _format_prop_error_details(missing_props, keys, 'Missing props')
-            error_parts += missing_msg
-            failed_props += missing
-
-        if wrong_type_props:
-            wrong_type_msg, wrong = _format_prop_error_details(
-                wrong_type_props, keys, 'Unexpected type returned for props',
-                lambda p, i: f'{p} (Expected: {t[i].__name__})'
-            )
-
-            error_parts += wrong_type_msg
-            failed_props += wrong
-
-        if failed_to_cast_props:
-            def get_cast_name(cast_type: type[CT] | Callable[[BoundVSMapValue], CT], i: int) -> str:
-                if isinstance(cast_type, type):
-                    return cast_type.__name__
-                return cast_type.__class__.__name__
-
-            cast_msg, failed_cast = _format_prop_error_details(
-                failed_to_cast_props, keys, 'Failed to cast props',
-                lambda p, i: f'{p} (Cast to: {get_cast_name(cast[i], i)})'
-            )
-
-            error_parts += cast_msg
-            failed_props += failed_cast
-
-        err_msg = 'The following errors occurred while trying to get the frame props:\n• ' + '\n• '.join(error_parts)
-
-        raise FramePropError(func, ', '.join(failed_props), err_msg)
-
-    return result
-
-
-def _format_prop_error_details(
-    props: list[str], keys: list[str], prefix: str,
-    get_detail: Callable[[str, int], str] | None = None
-) -> tuple[str, list[str]]:
-    if not props:
-        return '', []
-
-    details = []
-
-    if get_detail:
-        for prop in props:
-            idx = keys.index(prop)
-            details.append(get_detail(prop, idx))
-        msg = f'{prefix}: {", ".join(details)}'
-    else:
-        msg = f'{prefix}: {", ".join(props)}'
-
-    return msg, props
+    return props
