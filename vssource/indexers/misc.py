@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from vstools import core
+from typing import Any
+
+from jetpytools import CustomIntEnum
+
+from vstools import core, vs
 
 from .base import Indexer
 
@@ -51,6 +55,29 @@ class BestSource(Indexer):
     def __init__(self, *, force: bool = True, **kwargs: Any) -> None:
         kwargs.setdefault("cachemode", BestSource.CacheMode.ABSOLUTE)
         super().__init__(force=force, **kwargs)
+
+        from logging import WARNING, getLogger
+
+        try:
+            from vspreview import is_preview
+        except ImportError:
+            def is_preview() -> bool:
+                return False
+
+        def handler_func_best_source(m_type: vs.MessageType, msg: str) -> None:
+            if all([
+                m_type == vs.MESSAGE_TYPE_INFORMATION,
+                msg.startswith("VideoSource "),
+                getLogger().level <= WARNING,
+                is_preview()
+            ]):
+                print(msg, end="\r")
+
+        self._log_handle = core.add_log_handler(handler_func_best_source)
+
+    def __del__(self) -> None:
+        core.remove_log_handler(self._log_handle)
+
 
 class IMWRI(Indexer):
     """ImageMagick Writer-Reader indexer"""
