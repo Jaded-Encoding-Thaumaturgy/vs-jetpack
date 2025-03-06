@@ -190,10 +190,16 @@ class ArtCNN(BaseArtCNN):
     """
     Super-Resolution Convolutional Neural Networks optimised for anime.
 
-    Defaults to C16F64.
+    A quick reminder that vs-mlrt does not ship these in the base package.\n
+    You will have to grab the extended models pack or get it from the repo itself.\n
+    (And create an "ArtCNN" folder in your models folder yourself)
+
+    https://github.com/Artoriuz/ArtCNN/releases/latest
+
+    Defaults to R8F64.
     """
 
-    _model = 2
+    _model = 7
 
     class C4F32(BaseArtCNN):
         """
@@ -210,8 +216,10 @@ class ArtCNN(BaseArtCNN):
 
     class C16F64(BaseArtCNN):
         """
-        The current default model. Looks decent and very fast. Good for AA purposes.\n
+        Very fast and good enough for AA purposes but the onnx variant is officially deprecated.\n
         This has 16 internal convolution layers with 64 filters each.
+
+        ONNX files available at https://github.com/Artoriuz/ArtCNN/tree/388b91797ff2e675fd03065953cc1147d6f972c2/ONNX
         """
 
         _model = 2
@@ -259,7 +267,7 @@ class ArtCNN(BaseArtCNN):
 
     class R8F64_Chroma(BaseArtCNN):
         """
-        The new and fancy big chroma model.
+        The new and fancy big chroma model.\n
         These don't double the input clip and rather just try to enhance the chroma using luma information.
         """
 
