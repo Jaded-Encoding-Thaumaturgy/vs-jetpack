@@ -138,7 +138,7 @@ if TYPE_CHECKING:
         clip: vs.VideoNode, rfactor: float = 2.0,
         mask: vs.VideoNode | EdgeDetectT | Literal[False] = Prewitt, mask_thr: int = 60, pskip: bool = True,
         downscaler: ScalerT | None = None,
-        supersampler: ScalerT | ShaderFile | Path | Literal[False] = ArtCNN.C16F64,
+        supersampler: ScalerT | ShaderFile | Path | Literal[False] = ArtCNN,
         double_rate: bool = False,
         antialiaser: Antialiaser | None = None,
         prefilter: vs.VideoNode | VSFunction | Literal[False] = False,
@@ -177,7 +177,7 @@ if TYPE_CHECKING:
                                 back to its original resolution.
                                 The supersampler should ideally be fairly sharp without
                                 introducing too much ringing.
-                                Default: ArtCNN.C16F64.
+                                Default: ArtCNN (R8F64).
         :param double_rate:     Whether to use double-rate antialiasing.
                                 If True, both fields will be processed separately, which may improve
                                 anti-aliasing strength at the cost of increased processing time and detail loss.
