@@ -272,3 +272,17 @@ class ArtCNN(BaseArtCNN):
         """
 
         _model = 9
+
+    class C4F16(BaseArtCNN):
+        """
+        This has 4 internal convolution layers with 16 filters each.\n
+        The currently fastest variant. Not really recommended for any filtering.\n
+        Should strictly be used for real-time applications and even then the other non R ones should be fast enough...
+        """
+
+        _model = 10
+
+    class C4F16_DS(BaseArtCNN):
+        """The same as C4F16 but intended to also sharpen and denoise."""
+
+        _model = 11
