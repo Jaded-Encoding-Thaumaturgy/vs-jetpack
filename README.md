@@ -1,7 +1,7 @@
 # vs-jetpack
 
 [![Coverage Status](https://coveralls.io/repos/github/Jaded-Encoding-Thaumaturgy/vs-jetpack/badge.svg?branch=main)](https://coveralls.io/github/Jaded-Encoding-Thaumaturgy/vs-jetpack?branch=main)
-[![Documentation](https://img.shields.io/badge/API%20Docs-purple)](https://sgt0.github.io/vs-jetpack/)
+[![Documentation](https://img.shields.io/badge/API%20Docs-purple)](https://jaded-encoding-thaumaturgy.github.io/vs-jetpack/)
 
 
 
