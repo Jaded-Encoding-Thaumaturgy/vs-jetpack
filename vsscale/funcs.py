@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Concatenate, Literal, TypeGuard, cast
 
@@ -14,12 +14,11 @@ from vstools import (
 )
 
 from .helpers import GenericScaler
-from .shaders import FSRCNNXShader, FSRCNNXShaderT
 
 __all__ = [
     'MergeScalers',
-    'ClampScaler', 'MergedFSRCNNX',
-    'UnsharpLimitScaler', 'UnsharpedFSRCNNX'
+    'ClampScaler',
+    'UnsharpLimitScaler'
 ]
 
 
@@ -208,7 +207,7 @@ class UnsharpLimitScaler(GenericScaler):
             Concatenate[vs.VideoNode, P], vs.VideoNode
         ] = partial(unsharp_masked, radius=2, strength=65),
         merge_mode: LimitFilterMode | bool = True,
-        reference: ScalerT | vs.VideoNode = Nnedi3(0, opencl=None),
+        reference: ScalerT | vs.VideoNode = Nnedi3(0),
         *args: P.args, **kwargs: P.kwargs
     ) -> None:
         """
@@ -237,7 +236,7 @@ class UnsharpLimitScaler(GenericScaler):
     ) -> vs.VideoNode:
         width, height = self._wh_norm(clip, width, height)
 
-        fsrcnnx = self.ref_scaler.scale(clip, width, height, shift, **kwargs)
+        ref_scaled = self.ref_scaler.scale(clip, width, height, shift, **kwargs)
 
         if isinstance(self.reference, vs.VideoNode):
             smooth = self.reference
@@ -249,43 +248,20 @@ class UnsharpLimitScaler(GenericScaler):
 
         assert smooth
 
-        check_ref_clip(fsrcnnx, smooth)
+        check_ref_clip(ref_scaled, smooth)
 
         smooth_sharp = self.unsharp_func(smooth, *self.args, **self.kwargs)
 
         if isinstance(self.merge_mode, LimitFilterMode):
-            return limit_filter(smooth, fsrcnnx, smooth_sharp, self.merge_mode)
+            return limit_filter(smooth, ref_scaled, smooth_sharp, self.merge_mode)
 
         if self.merge_mode:
-            return MeanMode.MEDIAN(smooth, fsrcnnx, smooth_sharp)
+            return MeanMode.MEDIAN(smooth, ref_scaled, smooth_sharp)
 
-        return combine([smooth, fsrcnnx, smooth_sharp], ExprOp.MIN)
+        return combine([smooth, ref_scaled, smooth_sharp], ExprOp.MIN)
 
     @property
     def kernel_radius(self) -> int:  # type: ignore[override]
         if self._reference:
             return max(self._reference.kernel_radius, self.ref_scaler.kernel_radius)
         return self.ref_scaler.kernel_radius
-
-
-@dataclass
-class MergedFSRCNNX(ClampScaler):
-    """Clamped FSRCNNX Scaler."""
-
-    ref_scaler: FSRCNNXShaderT = field(default_factory=lambda: FSRCNNXShader.x56, kw_only=True)
-
-
-class UnsharpedFSRCNNX(UnsharpLimitScaler):
-    """Clamped FSRCNNX Scaler with an unsharp mask."""
-
-    def __init__(
-        self,
-        unsharp_func: Callable[
-            Concatenate[vs.VideoNode, P], vs.VideoNode
-        ] = partial(unsharp_masked, radius=2, strength=65),
-        merge_mode: LimitFilterMode | bool = True,
-        reference: ScalerT | vs.VideoNode = Nnedi3(0, opencl=None),
-        ref_scaler: ScalerT = FSRCNNXShader.x56,
-        *args: P.args, **kwargs: P.kwargs
-    ) -> None:
-        super().__init__(ref_scaler, unsharp_func, merge_mode, reference, *args, **kwargs)

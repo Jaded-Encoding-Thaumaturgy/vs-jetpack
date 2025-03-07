@@ -16,9 +16,7 @@ from .helpers import GenericScaler
 __all__ = [
     'PlaceboShader',
 
-    'ShaderFile',
-
-    'FSRCNNXShader', 'FSRCNNXShaderT'
+    'ShaderFile'
 ]
 
 
@@ -120,13 +118,6 @@ class ShaderFile(ShaderFileBase):
     if not TYPE_CHECKING:
         CUSTOM = 'custom'
 
-    FSRCNNX_x8 = 'FSRCNNX_x2_8-0-4-1.glsl'
-    FSRCNNX_x16 = 'FSRCNNX_x2_16-0-4-1.glsl'
-    FSRCNNX_x56 = 'FSRCNNX_x2_56-16-4-1.glsl'
-
-    SSIM_DOWNSCALER = 'SSimDownscaler.glsl'
-    SSIM_SUPERSAMPLER = 'SSimSuperRes.glsl'
-
     @overload
     def __call__(self) -> Path:
         ...
@@ -141,7 +132,7 @@ class ShaderFile(ShaderFileBase):
         if self is not ShaderFile.CUSTOM:
             file_name = self.value
 
-        if file_name is MISSING:  # type: ignore
+        if file_name is MISSING:
             raise TypeError("ShaderFile.__call__() missing 1 required positional argument: 'file_name'")
 
         file_name, cwd = Path(file_name), Path.cwd()
@@ -165,24 +156,3 @@ class ShaderFile(ShaderFileBase):
             return mpv_dir
 
         raise FileWasNotFoundError(f'"{file_name}" could not be found!', str(ShaderFile.CUSTOM))
-
-
-class FSRCNNXShader(PlaceboShaderBase):
-    """Defaults FSRCNNX shaders shipped with vsscale."""
-
-    shader_file = ShaderFile.FSRCNNX_x56
-
-    @dataclass
-    class x8(PlaceboShaderBase):
-        shader_file = ShaderFile.FSRCNNX_x8
-
-    @dataclass
-    class x16(PlaceboShaderBase):
-        shader_file = ShaderFile.FSRCNNX_x16
-
-    @dataclass
-    class x56(PlaceboShaderBase):
-        shader_file = ShaderFile.FSRCNNX_x56
-
-
-FSRCNNXShaderT = type[PlaceboShaderBase] | PlaceboShaderBase
