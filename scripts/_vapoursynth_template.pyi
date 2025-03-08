@@ -6,7 +6,7 @@ from inspect import Signature
 from types import MappingProxyType, TracebackType
 from typing import (
     TYPE_CHECKING, Any, BinaryIO, Callable, ContextManager, Dict, Generic, Iterator, Literal,
-    MutableMapping, NamedTuple, NoReturn, Optional, Protocol, Sequence, Tuple, Type, TypedDict,
+    MutableMapping, NamedTuple, NoReturn, Protocol, Sequence, Tuple, TypedDict,
     TypeVar, Union, cast, overload, runtime_checkable
 )
 from weakref import ReferenceType
@@ -140,7 +140,7 @@ __all__ = [
 _T = TypeVar('_T')
 _S = TypeVar('_S')
 
-_SingleAndSequence = Union[_T, Sequence[_T]]
+_SingleAndSequence = _T | Sequence[_T]
 
 
 @runtime_checkable
@@ -150,7 +150,7 @@ class _SupportsString(Protocol):
         ...
 
 
-_DataType = Union[str, bytes, bytearray, _SupportsString]
+_DataType = str | bytes | bytearray | _SupportsString
 
 _VapourSynthMapValue = Union[
     _SingleAndSequence[int],
@@ -175,7 +175,7 @@ class _Future(Generic[_T]):
 
     def result(self) -> _T: ...
 
-    def exception(self) -> Union[NoReturn, None]: ...
+    def exception(self) -> NoReturn | None: ...
 
 ###
 # Typed dicts
@@ -618,10 +618,10 @@ class EnvironmentPolicy:
     def on_policy_cleared(self) -> None: ...
 
     @abstractmethod
-    def get_current_environment(self) -> Union[EnvironmentData, None]: ...
+    def get_current_environment(self) -> EnvironmentData | None: ...
 
     @abstractmethod
-    def set_environment(self, environment: Union[EnvironmentData, None]) -> Union[EnvironmentData, None]: ...
+    def set_environment(self, environment: EnvironmentData | None) -> EnvironmentData | None: ...
 
     def is_alive(self, environment: EnvironmentData) -> bool: ...
 
@@ -710,7 +710,7 @@ class Local:
 
 class VideoOutputTuple(NamedTuple):
     clip: 'VideoNode'
-    alpha: Union['VideoNode', None]
+    alpha: 'VideoNode' | None
     alt_output: Literal[0, 1, 2]
 
 
@@ -726,11 +726,11 @@ def clear_outputs() -> None:
     ...
 
 
-def get_outputs() -> MappingProxyType[int, Union[VideoOutputTuple, 'AudioNode']]:
+def get_outputs() -> MappingProxyType[int, VideoOutputTuple | 'AudioNode']:
     ...
 
 
-def get_output(index: int = 0) -> Union[VideoOutputTuple, 'AudioNode']:
+def get_output(index: int = 0) -> VideoOutputTuple | 'AudioNode':
     ...
 
 
@@ -767,11 +767,11 @@ class VideoFormat:
 
     def replace(
         self, *,
-        color_family: Union[ColorFamily, None] = None,
-        sample_type: Union[SampleType, None] = None,
-        bits_per_sample: Union[int, None] = None,
-        subsampling_w: Union[int, None] = None,
-        subsampling_h: Union[int, None] = None
+        color_family: ColorFamily | None = None,
+        sample_type: SampleType | None = None,
+        bits_per_sample: int | None = None,
+        subsampling_w: int | None = None,
+        subsampling_h: int | None = None
     ) -> 'VideoFormat': ...
 
     @overload
@@ -895,10 +895,10 @@ class RawFrame:
     def __enter__(self: 'SelfFrame') -> 'SelfFrame': ...
 
     def __exit__(
-        self, exc_type: Union[Type[BaseException], None],
-        exc_value: Union[BaseException, None],
-        traceback: Union[TracebackType, None], /,
-    ) -> Union[bool, None]: ...
+        self, exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None, /,
+    ) -> bool | None: ...
 
     def __getitem__(self, index: int) -> memoryview: ...
 
@@ -942,17 +942,17 @@ class RawNode:
     def get_frame_async(self, n: int, cb: None = None) -> _Future[RawFrame]: ...
 
     @overload
-    def get_frame_async(self, n: int, cb: Callable[[Union[RawFrame, None], Union[Exception, None]], None]) -> None: ...
+    def get_frame_async(self, n: int, cb: Callable[[RawFrame | None, Exception | None], None]) -> None: ...
 
     def frames(
-        self, prefetch: Union[int, None] = None, backlog: Union[int, None] = None, close: bool = False
+        self, prefetch: int | None = None, backlog: int | None = None, close: bool = False
     ) -> Iterator[RawFrame]: ...
 
     def clear_cache(self) -> None: ...
 
     def set_output(self, index: int = 0) -> None: ...
 
-    def is_inspectable(self, version: Union[int, None] = None) -> bool: ...
+    def is_inspectable(self, version: int | None = None) -> bool: ...
 
     if not TYPE_CHECKING:
         @property
@@ -987,7 +987,7 @@ class RawNode:
 
     def __rmul__(self: 'SelfRawNode', other: int) -> 'SelfRawNode': ...
 
-    def __getitem__(self: 'SelfRawNode', index: Union[int, slice], /) -> 'SelfRawNode': ...
+    def __getitem__(self: 'SelfRawNode', index: int | slice, /) -> 'SelfRawNode': ...
 
     def __len__(self) -> int: ...
 
@@ -996,7 +996,7 @@ SelfRawNode = TypeVar('SelfRawNode', bound=RawNode)
 
 
 class VideoNode(RawNode):
-    format: Union[VideoFormat, None]
+    format: VideoFormat | None
 
     width: int
     height: int
@@ -1009,7 +1009,7 @@ class VideoNode(RawNode):
     num_frames: int
 
     def set_output(
-        self, index: int = 0, alpha: Union['VideoNode', None] = None, alt_output: Literal[0, 1, 2] = 0
+        self, index: int = 0, alpha: 'VideoNode' | None = None, alt_output: Literal[0, 1, 2] = 0
     ) -> None: ...
 
     def output(
@@ -1023,10 +1023,10 @@ class VideoNode(RawNode):
     def get_frame_async(self, n: int, cb: None = None) -> _Future[VideoFrame]: ...
 
     @overload
-    def get_frame_async(self, n: int, cb: Callable[[Union[VideoFrame, None], Union[Exception, None]], None]) -> None: ...
+    def get_frame_async(self, n: int, cb: Callable[[VideoFrame | None, Exception | None], None]) -> None: ...
 
     def frames(
-        self, prefetch: Union[int, None] = None, backlog: Union[int, None] = None, close: bool = False
+        self, prefetch: int | None = None, backlog: int | None = None, close: bool = False
     ) -> Iterator[VideoFrame]: ...
 
 #include <plugins/bound/VideoNode>
@@ -1054,10 +1054,10 @@ class AudioNode(RawNode):
     def get_frame_async(self, n: int, cb: None = None) -> _Future[AudioFrame]: ...
 
     @overload
-    def get_frame_async(self, n: int, cb: Callable[[Union[AudioFrame, None], Union[Exception, None]], None]) -> None: ...
+    def get_frame_async(self, n: int, cb: Callable[[AudioFrame | None, Exception | None], None]) -> None: ...
 
     def frames(
-        self, prefetch: Union[int, None] = None, backlog: Union[int, None] = None, close: bool = False
+        self, prefetch: int | None = None, backlog: int | None = None, close: bool = False
     ) -> Iterator[AudioFrame]: ...
 
 #include <plugins/bound/AudioNode>
@@ -1124,7 +1124,7 @@ class Core:
         subsampling_h: int = 0
     ) -> VideoFormat: ...
 
-    def get_video_format(self, id: Union[VideoFormat, int, PresetVideoFormat]) -> VideoFormat: ...
+    def get_video_format(self, id: VideoFormat | int | PresetVideoFormat) -> VideoFormat: ...
 
     def create_video_frame(self, format: VideoFormat, width: int, height: int) -> VideoFrame: ...
 
