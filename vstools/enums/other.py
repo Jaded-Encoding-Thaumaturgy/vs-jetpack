@@ -292,7 +292,7 @@ class SceneChangeMode(CustomIntEnum):
 
         from ..exceptions import CustomRuntimeError
 
-        stats_clip = []
+        stats_clip = list[vs.VideoNode]()
 
         if self.is_SCXVID:
             if not hasattr(vs.core, 'scxvid'):
