@@ -137,43 +137,43 @@ __all__ = [
 ###
 # Typing
 
-T = TypeVar('T')
-S = TypeVar('S')
+_T = TypeVar('_T')
+_S = TypeVar('_S')
 
-SingleAndSequence = Union[T, Sequence[T]]
+_SingleAndSequence = Union[_T, Sequence[_T]]
 
 
 @runtime_checkable
-class SupportsString(Protocol):
+class _SupportsString(Protocol):
     @abstractmethod
     def __str__(self) -> str:
         ...
 
 
-DataType = Union[str, bytes, bytearray, SupportsString]
+_DataType = Union[str, bytes, bytearray, _SupportsString]
 
 _VapourSynthMapValue = Union[
-    SingleAndSequence[int],
-    SingleAndSequence[float],
-    SingleAndSequence[DataType],
-    SingleAndSequence['VideoNode'],
-    SingleAndSequence['VideoFrame'],
-    SingleAndSequence['AudioNode'],
-    SingleAndSequence['AudioFrame'],
-    SingleAndSequence['VSMapValueCallback[Any]']
+    _SingleAndSequence[int],
+    _SingleAndSequence[float],
+    _SingleAndSequence[_DataType],
+    _SingleAndSequence['VideoNode'],
+    _SingleAndSequence['VideoFrame'],
+    _SingleAndSequence['AudioNode'],
+    _SingleAndSequence['AudioFrame'],
+    _SingleAndSequence['_VSMapValueCallback[Any]']
 ]
 
-BoundVSMapValue = TypeVar('BoundVSMapValue', bound=_VapourSynthMapValue)
+_BoundVSMapValue = TypeVar('_BoundVSMapValue', bound=_VapourSynthMapValue)
 
-VSMapValueCallback = Callable[..., BoundVSMapValue]
+_VSMapValueCallback = Callable[..., _BoundVSMapValue]
 
 
-class _Future(Generic[T]):
-    def set_result(self, value: T) -> None: ...
+class _Future(Generic[_T]):
+    def set_result(self, value: _T) -> None: ...
 
     def set_exception(self, exception: BaseException) -> None: ...
 
-    def result(self) -> T: ...
+    def result(self) -> _T: ...
 
     def exception(self) -> Union[NoReturn, None]: ...
 
