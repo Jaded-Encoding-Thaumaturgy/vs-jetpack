@@ -1029,6 +1029,14 @@ class VideoNode(RawNode):
         self, prefetch: int | None = None, backlog: int | None = None, close: bool = False
     ) -> Iterator[VideoFrame]: ...
 
+
+#include <plugins/bound/VideoNode>
+
+
+class _ConstantFormatVideoNode(VideoNode):
+    format: VideoFormat
+
+
 #include <plugins/bound/VideoNode>
 
 
