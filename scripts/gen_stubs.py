@@ -21,6 +21,7 @@ __all__ = [
 var_format_functions = [
     'std.AddBorders',
     'std.AssumeFPS',
+    'std.BlankClip',
     'std.CopyFrameProps',
     'std.CropAbs',
     'std.DeleteFrames',
