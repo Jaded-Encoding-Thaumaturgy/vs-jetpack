@@ -163,6 +163,7 @@ def clean_signature(signature: Any) -> str:
     signature = signature.replace('NoneType', 'None')
     signature = signature.replace('str, bytes, bytearray', '_DataType')
     signature = re.sub(r"Optional\[([^\]]+)\]", lambda m: f"{m.group(1)} | None", signature)
+    signature = signature.replace("'_ConstantFormatVideoNode'", "_ConstantFormatVideoNode")
 
     for t in types:
         for t_ in {t, f"'{t}'"}:
