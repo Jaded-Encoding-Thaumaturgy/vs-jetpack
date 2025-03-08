@@ -88,8 +88,6 @@ VSFunction = VSFunctionNoArgs | VSFunctionArgs | VSFunctionKwArgs | VSFunctionAl
 GenericVSFunction = Callable[..., vs.VideoNode]
 
 if TYPE_CHECKING:
-    from vapoursynth import _ConstantFormatVideoNode
-
-    ConstantFormatVideoNode = _ConstantFormatVideoNode
+    from vapoursynth import ConstantFormatVideoNode
 else:
     ConstantFormatVideoNode = vs.VideoNode
