@@ -396,13 +396,18 @@ class InvalidFramerateError(CustomValueError):
 
         :raises InvalidFramerateError:  Given framerate is not in list of correct framerates.
         """
-        from ..functions import to_arr
         from ..utils import get_framerate
 
         to_check = get_framerate(to_check)
-        correct_list = [
-            get_framerate(c) for c in ([correct] if isinstance(correct, tuple) else to_arr(correct))  # type: ignore
-        ]
+
+        def _resolve_correct(val: Any) -> Iterable[vs.VideoNode | Fraction | tuple[int, int] | float]:
+            if isinstance(val, Iterable):
+                if isinstance(val, tuple) and len(val) == 2 and all(isinstance(x, int) for x in val):
+                    return [val]
+                return val
+            return [val]
+
+        correct_list = [get_framerate(c) for c in _resolve_correct(correct)]
 
         if to_check not in correct_list:
             raise InvalidFramerateError(
