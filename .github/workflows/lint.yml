@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        vs-versions: [66]
+        vs-versions: [67]
         python-version: ['3.12']
 
     steps:
