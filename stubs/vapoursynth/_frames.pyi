@@ -2,7 +2,7 @@
 
 from ctypes import c_void_p
 from types import MappingProxyType, TracebackType
-from typing import Iterator, Literal, MutableMapping, NoReturn, Self, TypeVar
+from typing import Iterator, Literal, MutableMapping, Self, TypeVar
 
 from ._enums import SampleType
 from ._formats import ChannelLayout, VideoFormat
@@ -56,8 +56,6 @@ class audio_view(memoryview):  # type: ignore[misc]
 
 
 class RawFrame:
-    def __init__(self) -> None: ...
-
     @property
     def closed(self) -> bool: ...
 
@@ -120,8 +118,6 @@ class AudioFrame(RawFrame):
 
 
 class FrameProps(MutableMapping[str, _VapourSynthMapValue]):
-    def __init__(self) -> NoReturn: ...
-
     def setdefault(
         self, key: str, default: _VapourSynthMapValue = 0
     ) -> _VapourSynthMapValue: ...

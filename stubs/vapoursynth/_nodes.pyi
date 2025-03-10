@@ -2,7 +2,7 @@
 
 from fractions import Fraction
 from typing import (
-    TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Literal, NoReturn, Self, TypeVar, TypedDict,
+    TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Literal, Self, TypeVar, TypedDict,
     overload
 )
 
@@ -780,8 +780,6 @@ class _Plugin_zsmooth_VideoNode_Bound(Plugin):
 
 
 class RawNode:
-    def __init__(self) -> None: ...
-
     def get_frame(self, n: int) -> RawFrame: ...
 
     @overload
@@ -1003,19 +1001,17 @@ class AudioNode(RawNode):
 
 
 class Core:
-    def __init__(self) -> NoReturn: ...
-
     @property
     def num_threads(self) -> int: ...
 
     @num_threads.setter
-    def num_threads(self) -> None: ...
+    def num_threads(self, value: int) -> None: ...
 
     @property
     def max_cache_size(self) -> int: ...
 
     @max_cache_size.setter
-    def max_cache_size(self) -> None: ...
+    def max_cache_size(self, mb: int) -> None: ...
 
     @property
     def flags(self) -> int: ...
