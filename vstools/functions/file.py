@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import inspect
+
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from jetpytools import CustomRuntimeError, SPath, get_script_path
+from jetpytools import CustomRuntimeError, SPath, SPathLike, get_script_path
 
 __all__ = [
     'PackageStorage'
@@ -58,7 +59,7 @@ class PackageStorage:
     def ensure_folder(self) -> None:
         self.folder.mkdir(self.mode, True, True)
 
-    def get_file(self, filename: str | Path | SPath, *, ext: str | Path | SPath | None = None) -> SPath:
+    def get_file(self, filename: SPathLike, *, ext: SPathLike | None = None) -> SPath:
         filename = SPath(filename)
 
         if ext:

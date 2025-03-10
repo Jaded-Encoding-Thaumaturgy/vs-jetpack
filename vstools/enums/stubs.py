@@ -39,7 +39,7 @@ class PropEnum(CustomIntEnum):
 
     if TYPE_CHECKING:
         def __new__(
-            cls, value: int | Self | vs.VideoNode | vs.VideoFrame | vs.FrameProps
+            cls, value: int | Self | vs.VideoNode | vs.VideoFrame | vs.FrameProps | None
         ) -> Self:
             ...
 

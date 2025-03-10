@@ -12,7 +12,7 @@ from jetpytools import CustomIndexError, CustomStrEnum, CustomValueError, FuncEx
 
 from ..enums import ColorRange, ColorRangeT, Matrix
 from ..exceptions import ClipLengthError, InvalidColorFamilyError
-from ..types import F_VD, HoldsVideoFormatT, PlanesT, VideoFormatT
+from ..types import F_VD, ConstantFormatVideoNode, HoldsVideoFormatT, PlanesT, VideoFormatT
 from .check import check_variable, check_variable_format, disallow_variable_format
 
 __all__ = [
@@ -326,10 +326,10 @@ def depth(
     return dither_type.apply(clip, new_format, range_in, range_out)
 
 
-_f2c_cache = WeakValueDictionary[int, vs.VideoNode]()
+_f2c_cache = WeakValueDictionary[int, ConstantFormatVideoNode]()
 
 
-def frame2clip(frame: vs.VideoFrame) -> vs.VideoNode:
+def frame2clip(frame: vs.VideoFrame) -> ConstantFormatVideoNode:
     """
     Convert a VideoFrame to a VideoNode.
 

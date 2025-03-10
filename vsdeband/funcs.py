@@ -140,7 +140,7 @@ def pfdeband(
 
 def guided_deband(
     clip: vs.VideoNode, radius: int | list[int] | None = None, strength: float = 0.3,
-    thr: float | list[float] | None = None, mode: GuidedFilterMode = GuidedFilterMode.GRADIENT,
+    thr: int | tuple[int, int] | None = None, mode: GuidedFilterMode = GuidedFilterMode.GRADIENT,
     rad: int = 0, bin_thr: float | list[float] | None = 0, planes: PlanesT = None,
     range_in: ColorRange | None = None, **kwargs: Any
 ) -> vs.VideoNode:
@@ -163,7 +163,7 @@ def guided_deband(
     deband = guided_filter(clip, None, radius, strength, mode, planes=planes, **kwargs)
 
     if thr:
-        deband = limit_filter(deband, clip, thr=tuple(map(int, to_arr(thr))))  # type: ignore
+        deband = limit_filter(deband, clip, thr=thr)
 
     if rad:
         morpho = Morpho(planes)
