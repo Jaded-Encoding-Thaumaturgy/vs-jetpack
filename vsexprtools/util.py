@@ -6,7 +6,7 @@ from typing import Any, Callable, Iterable, Iterator, Sequence, SupportsIndex, T
 from vstools import (
     EXPR_VARS, MISSING, ColorRange, CustomIndexError, CustomNotImplementedError, CustomRuntimeError, FuncExceptT,
     HoldsVideoFormatT, MissingT, PlanesT, VideoFormatT, classproperty, core, fallback, get_video_format,
-    normalize_planes, normalize_seq, to_arr, vs
+    normalize_planes, normalize_seq, vs
 )
 
 __all__ = [
@@ -261,11 +261,11 @@ def norm_expr_planes(
 ) -> list[str]:
     assert clip.format
 
-    expr_array = normalize_seq(to_arr(expr), clip.format.num_planes)
+    expr_array = normalize_seq(expr, clip.format.num_planes)
 
     planes = normalize_planes(clip, planes)
 
-    string_args = [(key, normalize_seq(to_arr(value))) for key, value in kwargs.items()]
+    string_args = [(key, normalize_seq(value)) for key, value in kwargs.items()]
 
     return [
         exp.format(**({'plane_idx': i} | {key: value[i] for key, value in string_args}))
