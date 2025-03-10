@@ -212,7 +212,6 @@ class ExternalIndexer(Indexer):
         self, files: Sequence[SPath], force: bool = False, split_files: bool = False,
         output_folder: SPathLike | Literal[False] | None = None, *cmd_args: str
     ) -> list[SPath]:
-        files = to_arr(files)
 
         if len(unique_folders := list(set([f.get_folder().to_str() for f in files]))) > 1:
             return [

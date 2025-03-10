@@ -170,7 +170,7 @@ class FunctionUtil(cachedproperty.baseclass, list[int]):
 
             InvalidColorspacePathError.check(self.func, clip)
 
-        return cast(ConstantFormatVideoNode, clip)
+        return clip
 
     @cachedproperty
     def work_clip(self) -> ConstantFormatVideoNode:

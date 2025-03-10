@@ -46,19 +46,13 @@ BoundVSMapValue = TypeVar('BoundVSMapValue', bound=VSMapValue)
 VSMapValueCallback = Callable[..., VSMapValue]
 """Callback that can be held in a VSMap. It can only return values representable in a VSMap."""
 
-if TYPE_CHECKING:
-    from ..utils.vs_enums import VSPresetVideoFormat
-    VideoFormatT = Union[VSPresetVideoFormat, vs.VideoFormat]
-    """Types representing a clear VideoFormat."""
-else:
-    VideoFormatT = Union[vs.PresetVideoFormat, vs.VideoFormat]
-    """Types representing a clear VideoFormat."""
+VideoFormatT = vs.PresetVideoFormat | vs.VideoFormat
+"""Types representing a clear VideoFormat."""
 
-# TODO change to | when mypy fixes bug upstream
-HoldsVideoFormatT = Union[vs.VideoNode, vs.VideoFrame, vs.VideoFormat]
+HoldsVideoFormatT = vs.VideoNode | vs.VideoFrame | vs.VideoFormat
 """Types from which a clear VideoFormat can be retrieved."""
 
-HoldsPropValueT = Union[vs.FrameProps, vs.VideoFrame, vs.AudioFrame, vs.VideoNode, vs.AudioNode]
+HoldsPropValueT = vs.FrameProps | vs.VideoFrame | vs.AudioFrame | vs.VideoNode | vs.AudioNode
 """Types that can hold :py:attr:`vs.FrameProps`."""
 
 
