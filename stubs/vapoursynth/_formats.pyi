@@ -20,8 +20,6 @@ class VideoFormat:
     subsampling_h: int
     num_planes: int
 
-    def __init__(self) -> NoReturn: ...
-
     def _as_dict(self) -> _VideoFormatInfo: ...
 
     def replace(
@@ -42,8 +40,6 @@ class VideoFormat:
 
 
 class ChannelLayout(int):
-    def __init__(self) -> NoReturn: ...
-
     def __contains__(self, layout: AudioChannels) -> bool: ...
 
     def __iter__(self) -> Iterator[AudioChannels]: ...

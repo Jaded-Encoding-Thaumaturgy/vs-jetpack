@@ -2,7 +2,7 @@
 from abc import abstractmethod
 from ctypes import c_void_p
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Callable, ContextManager, Literal, NamedTuple, NoReturn
+from typing import TYPE_CHECKING, Any, Callable, ContextManager, Literal, NamedTuple
 from weakref import ReferenceType
 
 from ._nodes import AudioNode, VideoNode
@@ -31,8 +31,7 @@ __all__ = [
 # VapourSynth Environment SubSystem
 
 
-class EnvironmentData:
-    def __init__(self) -> NoReturn: ...
+class EnvironmentData: ...
 
 
 class EnvironmentPolicy:
@@ -50,8 +49,6 @@ class EnvironmentPolicy:
 
 
 class EnvironmentPolicyAPI:
-    def __init__(self) -> NoReturn: ...
-
     def wrap_environment(self, environment_data: EnvironmentData) -> Environment: ...
 
     def create_environment(self, flags: int = 0) -> EnvironmentData: ...
@@ -86,8 +83,6 @@ def unregister_on_destroy(callback: Callable[..., None]) -> None: ...
 
 class Environment:
     env: ReferenceType[EnvironmentData]
-
-    def __init__(self) -> NoReturn: ...
 
     @property
     def alive(self) -> bool: ...
