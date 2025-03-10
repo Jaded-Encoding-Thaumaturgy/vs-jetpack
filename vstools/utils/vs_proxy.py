@@ -3,6 +3,7 @@ from __future__ import annotations
 import builtins
 import gc
 import weakref
+
 from ctypes import Structure
 from inspect import Parameter, Signature
 from logging import NOTSET as LogLevelUnset
@@ -14,21 +15,23 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, NoReturn
 from weakref import ReferenceType
 
 import vapoursynth as vs
+
 from vapoursynth import (
     AUDIO, BACK_CENTER, BACK_LEFT, BACK_RIGHT, CHROMA_BOTTOM, CHROMA_BOTTOM_LEFT, CHROMA_CENTER, CHROMA_LEFT,
-    CHROMA_TOP, CHROMA_TOP_LEFT, FIELD_BOTTOM, FIELD_PROGRESSIVE, FIELD_TOP, FLOAT, FRONT_CENTER, FRONT_LEFT,
-    FRONT_LEFT_OF_CENTER, FRONT_RIGHT, FRONT_RIGHT_OF_CENTER, GRAY, INTEGER, LOW_FREQUENCY, LOW_FREQUENCY2,
-    MATRIX_BT470_BG, MATRIX_BT709, MATRIX_BT2020_CL, MATRIX_BT2020_NCL, MATRIX_CHROMATICITY_DERIVED_CL,
-    MATRIX_CHROMATICITY_DERIVED_NCL, MATRIX_FCC, MATRIX_ICTCP, MATRIX_RGB, MATRIX_ST170_M, MATRIX_UNSPECIFIED,
-    MATRIX_YCGCO, MESSAGE_TYPE_CRITICAL, MESSAGE_TYPE_DEBUG, MESSAGE_TYPE_FATAL, MESSAGE_TYPE_INFORMATION,
-    MESSAGE_TYPE_WARNING, NONE, PRIMARIES_BT470_BG, PRIMARIES_BT470_M, PRIMARIES_BT709, PRIMARIES_BT2020,
-    PRIMARIES_EBU3213_E, PRIMARIES_FILM, PRIMARIES_ST170_M, PRIMARIES_ST240_M, PRIMARIES_ST428, PRIMARIES_ST431_2,
-    PRIMARIES_ST432_1, PRIMARIES_UNSPECIFIED, RANGE_FULL, RANGE_LIMITED, RGB, SIDE_LEFT, SIDE_RIGHT, STEREO_LEFT,
-    STEREO_RIGHT, SURROUND_DIRECT_LEFT, SURROUND_DIRECT_RIGHT, TOP_BACK_CENTER, TOP_BACK_LEFT, TOP_BACK_RIGHT,
-    TOP_CENTER, TOP_FRONT_CENTER, TOP_FRONT_LEFT, TOP_FRONT_RIGHT, TRANSFER_ARIB_B67, TRANSFER_BT470_BG,
-    TRANSFER_BT470_M, TRANSFER_BT601, TRANSFER_BT709, TRANSFER_BT2020_10, TRANSFER_BT2020_12, TRANSFER_IEC_61966_2_1,
+    CHROMA_TOP, CHROMA_TOP_LEFT, DISABLE_AUTO_LOADING, DISABLE_LIBRARY_UNLOADING, ENABLE_GRAPH_INSPECTION, FIELD_BOTTOM,
+    FIELD_PROGRESSIVE, FIELD_TOP, FLOAT, FRAME_STATE, FRONT_CENTER, FRONT_LEFT, FRONT_LEFT_OF_CENTER, FRONT_RIGHT,
+    FRONT_RIGHT_OF_CENTER, GRAY, INTEGER, LOW_FREQUENCY, LOW_FREQUENCY2, MATRIX_BT470_BG, MATRIX_BT709,
+    MATRIX_BT2020_CL, MATRIX_BT2020_NCL, MATRIX_CHROMATICITY_DERIVED_CL, MATRIX_CHROMATICITY_DERIVED_NCL, MATRIX_FCC,
+    MATRIX_ICTCP, MATRIX_RGB, MATRIX_ST170_M, MATRIX_UNSPECIFIED, MATRIX_YCGCO, MESSAGE_TYPE_CRITICAL,
+    MESSAGE_TYPE_DEBUG, MESSAGE_TYPE_FATAL, MESSAGE_TYPE_INFORMATION, MESSAGE_TYPE_WARNING, NONE, PARALLEL,
+    PARALLEL_REQUESTS, PRIMARIES_BT470_BG, PRIMARIES_BT470_M, PRIMARIES_BT709, PRIMARIES_BT2020, PRIMARIES_EBU3213_E,
+    PRIMARIES_FILM, PRIMARIES_ST170_M, PRIMARIES_ST240_M, PRIMARIES_ST428, PRIMARIES_ST431_2, PRIMARIES_ST432_1,
+    PRIMARIES_UNSPECIFIED, RANGE_FULL, RANGE_LIMITED, RGB, SIDE_LEFT, SIDE_RIGHT, STEREO_LEFT, STEREO_RIGHT,
+    SURROUND_DIRECT_LEFT, SURROUND_DIRECT_RIGHT, TOP_BACK_CENTER, TOP_BACK_LEFT, TOP_BACK_RIGHT, TOP_CENTER,
+    TOP_FRONT_CENTER, TOP_FRONT_LEFT, TOP_FRONT_RIGHT, TRANSFER_ARIB_B67, TRANSFER_BT470_BG, TRANSFER_BT470_M,
+    TRANSFER_BT601, TRANSFER_BT709, TRANSFER_BT2020_10, TRANSFER_BT2020_12, TRANSFER_IEC_61966_2_1,
     TRANSFER_IEC_61966_2_4, TRANSFER_LINEAR, TRANSFER_LOG_100, TRANSFER_LOG_316, TRANSFER_ST240_M, TRANSFER_ST2084,
-    TRANSFER_UNSPECIFIED, UNDEFINED, VIDEO, WIDE_LEFT, WIDE_RIGHT, YUV, AudioChannels, AudioFrame, AudioNode,
+    TRANSFER_UNSPECIFIED, UNDEFINED, UNORDERED, VIDEO, WIDE_LEFT, WIDE_RIGHT, YUV, AudioChannels, AudioFrame, AudioNode,
     ChromaLocation, ColorFamily, ColorPrimaries, ColorRange, Core, CoreCreationFlags, Environment, EnvironmentData,
     EnvironmentPolicy, EnvironmentPolicyAPI, Error, FieldBased, FilterMode, FrameProps, FramePtr, Func, FuncData,
     Function, LogHandle, MatrixCoefficients, MediaType, MessageType, Plugin, RawFrame, RawNode, SampleType,
@@ -108,10 +111,9 @@ __all__ = [
     'YUV444P22', 'YUV444P23', 'YUV444P24', 'YUV444P25', 'YUV444P26', 'YUV444P27', 'YUV444P28', 'YUV444P29', 'YUV444P30',
     'YUV444P31', 'YUV444P32', 'YUV444P8', 'YUV444P9', 'YUV444PH', 'YUV444PS', '_CoreProxy', '__all__',
     '__api_version__', '__version__', 'CoreCreationFlags', 'ENABLE_GRAPH_INSPECTION', 'DISABLE_AUTO_LOADING',
-    'DISABLE_LIBRARY_UNLOADING', 'ccfDisableAutoLoading', 'ccfDisableLibraryUnloading', 'ccfEnableGraphInspection',
-    'clear_output', 'clear_outputs', 'construct_parameter', 'construct_signature', 'construct_type', 'core',
-    'FilterMode', 'PARALLEL', 'PARALLEL_REQUESTS', 'UNORDERED', 'FRAME_STATE', 'fmFrameState', 'fmParallel',
-    'fmParallelRequests', 'fmUnordered', 'get_current_environment', 'get_output', 'get_outputs', 'has_policy',
+    'DISABLE_LIBRARY_UNLOADING', 'clear_output', 'clear_outputs', 'construct_parameter', 'construct_signature',
+    'construct_type', 'core', 'FilterMode', 'PARALLEL', 'PARALLEL_REQUESTS', 'UNORDERED', 'FRAME_STATE',
+    'get_current_environment', 'get_output', 'get_outputs', 'has_policy',
     'pyx_capi', 'register_on_creation', 'register_on_destroy', 'register_policy', 'try_enable_introspection',
     'unregister_on_creation', 'unregister_on_destroy', 'vs_file', 'clear_cache'
 ]
@@ -122,6 +124,7 @@ if not TYPE_CHECKING:
     import re
     import sys
     import warnings
+
     from pathlib import Path
     from types import ModuleType
 
@@ -648,18 +651,3 @@ else:
     from vapoursynth import _FastManager
     from vapoursynth import _try_enable_introspection as try_enable_introspection
     from vapoursynth import construct_signature
-
-
-if not TYPE_CHECKING:
-    from vapoursynth import (
-        DISABLE_AUTO_LOADING, DISABLE_LIBRARY_UNLOADING, ENABLE_GRAPH_INSPECTION, FRAME_STATE, PARALLEL,
-        PARALLEL_REQUESTS, UNORDERED
-    )
-
-    fmParallel = PARALLEL
-    fmParallelRequests = PARALLEL_REQUESTS
-    fmUnordered = UNORDERED
-    fmFrameState = FRAME_STATE
-    ccfEnableGraphInspection = ENABLE_GRAPH_INSPECTION
-    ccfDisableAutoLoading = DISABLE_AUTO_LOADING
-    ccfDisableLibraryUnloading = DISABLE_LIBRARY_UNLOADING
