@@ -69,9 +69,9 @@ class Indexer(ABC):
     def normalize_filenames(cls, file: SPathLike | Sequence[SPathLike]) -> list[SPath]:
         files = list[SPath]()
 
-        for f in to_arr(file):  # type: ignore
+        for f in to_arr(file):
             if str(f).startswith('file:///'):
-                f = str(f)[8::]  # type: ignore
+                f = str(f)[8::]
 
             files.append(SPath(f))
 

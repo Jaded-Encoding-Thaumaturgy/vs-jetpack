@@ -141,9 +141,9 @@ def norm_expr(
 
             return cast(vs.VideoNode, nclips)
         else:
-            nexpr = tuple([to_arr(x) for x in expr])  # type: ignore[arg-type]
+            nexpr = tuple([to_arr(x) for x in expr])
     else:
-        nexpr = tuple([to_arr(expr)])  # type: ignore[arg-type]
+        nexpr = tuple([to_arr(expr)])
 
     normalized_exprs = [StrList(plane_expr).to_str() for plane_expr in nexpr]
 

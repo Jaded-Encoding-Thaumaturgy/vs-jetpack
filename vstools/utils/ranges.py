@@ -206,7 +206,7 @@ def replace_ranges(
 
 
 def remap_frames(clip: vs.VideoNode, ranges: Sequence[int | tuple[int, int]]) -> vs.VideoNode:
-    frame_map = list(flatten(  # type: ignore
+    frame_map = list(flatten(
         f if isinstance(f, int) else range(f[0], f[1] + 1) for f in ranges
     ))
 
