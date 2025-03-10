@@ -4,7 +4,7 @@ from typing import Callable, Iterable, Sequence, TypeAlias, TypeVar
 
 import vapoursynth as vs
 from jetpytools import (
-    F0, F1, F2, P0, P1, P2, R0, R1, R2, T0, T1, T2, ByteData, ComparatorFunc, F, KwargsT, Nb, P, R, R_contra, Self,
+    F0, F1, F2, P0, P1, P2, R0, R1, R2, T0, T1, T2, ByteData, ComparatorFunc, F, KwargsT, Nb, P, R, R_contra,
     SimpleByteData, SimpleByteDataArray, SingleOrArr, SingleOrArrOpt, SingleOrSeq, SingleOrSeqOpt, SoftRange,
     SoftRangeN, SoftRangesN, SupportsAllComparisons, SupportsDunderGE, SupportsDunderGT, SupportsDunderLE,
     SupportsDunderLT, SupportsFloatOrIndex, SupportsIndexing, SupportsKeysAndGetItem, SupportsRichComparison,
@@ -24,8 +24,6 @@ __all__ = [
     'PlanesT', 'VideoNodeIterable',
 
     'FrameRange', 'FrameRangeN', 'FrameRangesN',
-
-    'Self',
 
     'SingleOrArr', 'SingleOrArrOpt',
     'SingleOrSeq', 'SingleOrSeqOpt',
