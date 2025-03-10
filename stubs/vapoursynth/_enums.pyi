@@ -8,10 +8,10 @@ __all__ = [
         'MESSAGE_TYPE_CRITICAL', 'MESSAGE_TYPE_FATAL',
 
     'FilterMode',
-        'fmParallel', 'fmParallelRequests', 'fmUnordered', 'fmFrameState',
+        'PARALLEL', 'PARALLEL_REQUESTS', 'UNORDERED', 'FRAME_STATE',
 
     'CoreCreationFlags',
-        'ccfEnableGraphInspection', 'ccfDisableAutoLoading', 'ccfDisableLibraryUnloading',
+        'ENABLE_GRAPH_INSPECTION', 'DISABLE_AUTO_LOADING', 'DISABLE_LIBRARY_UNLOADING',
 
     'MediaType',
         'VIDEO', 'AUDIO',
