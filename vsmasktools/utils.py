@@ -7,7 +7,7 @@ from vskernels import Bilinear, Kernel, KernelT
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
     ColorRange, CustomValueError, FrameRangeN, FrameRangesN, FuncExceptT, P, check_ref_clip,
-    check_variable, check_variable_format, core, depth, flatten, get_lowest_values, get_peak_values,
+    check_variable, check_variable_format, core, depth, flatten_vnodes, get_lowest_values, get_peak_values,
     insert_clip, normalize_ranges, plane, replace_ranges, split, vs
 )
 
@@ -29,7 +29,7 @@ __all__ = [
 
 
 def max_planes(*_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelT = Bilinear) -> vs.VideoNode:
-    clips = list[vs.VideoNode](flatten(_clips))  # type: ignore
+    clips = flatten_vnodes(_clips)
 
     assert check_variable_format((model := clips[0]), max_planes)
 
