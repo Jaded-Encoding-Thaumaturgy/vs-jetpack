@@ -22,7 +22,7 @@ __all__ = [
 
     'PassthroughC',
 
-    'ConstantFormatVideoNode'
+    'ConstantFormatVideoNode', 'VideoNodeT'
 ]
 
 _VSMapValue = Union[
@@ -85,3 +85,6 @@ if TYPE_CHECKING:
     from vapoursynth import ConstantFormatVideoNode
 else:
     ConstantFormatVideoNode = vs.VideoNode
+
+
+VideoNodeT = TypeVar("VideoNodeT", bound=vs.VideoNode)
