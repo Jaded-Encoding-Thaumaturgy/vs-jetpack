@@ -1,4 +1,4 @@
-from typing import Any, Iterator, Literal, NoReturn, Self, overload
+from typing import Any, Iterator, Literal, Self, overload
 
 from ._enums import AudioChannels, ColorFamily, SampleType
 from ._typings import _VideoFormatInfo
