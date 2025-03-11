@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Protocol, TypeVar, Union
 
 import vapoursynth as vs
+
 from jetpytools import MISSING, DataType, FuncExceptT, MissingT, PassthroughC, SingleOrArr, StrArr, StrArrOpt
 
 __all__ = [
@@ -82,7 +83,9 @@ VSFunction = VSFunctionNoArgs | VSFunctionArgs | VSFunctionKwArgs | VSFunctionAl
 GenericVSFunction = Callable[..., vs.VideoNode]
 
 if TYPE_CHECKING:
-    from vapoursynth import ConstantFormatVideoNode
+    class ConstantFormatVideoNode(vs.VideoNode):
+        format: vs.VideoFormat
+
 else:
     ConstantFormatVideoNode = vs.VideoNode
 
