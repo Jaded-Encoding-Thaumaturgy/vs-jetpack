@@ -352,7 +352,7 @@ def frame2clip(frame: vs.VideoFrame) -> ConstantFormatVideoNode:
 
     frame_cp = frame.copy()
 
-    return blank_clip.std.ModifyFrame(blank_clip, lambda n, f: frame_cp)
+    return vs.core.std.ModifyFrame(blank_clip, blank_clip, lambda n, f: frame_cp)
 
 
 def get_y(clip: vs.VideoNode, /) -> vs.VideoNode:

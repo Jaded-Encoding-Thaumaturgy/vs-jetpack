@@ -212,7 +212,7 @@ def remap_frames(clip: vs.VideoNode, ranges: Sequence[int | tuple[int, int]]) ->
 
     base = vs.core.std.BlankClip(clip, length=len(frame_map))
 
-    return base.std.FrameEval(lambda n: clip[frame_map[n]], None, clip)
+    return vs.core.std.FrameEval(base, lambda n: clip[frame_map[n]], None, clip)
 
 
 def replace_every(
@@ -224,4 +224,4 @@ def replace_every(
 
     interleaved = vs.core.std.Interleave([clipa, clipb])
 
-    return interleaved.std.SelectEvery(cycle * 2, offsets, modify_duration)
+    return vs.core.std.SelectEvery(interleaved, cycle * 2, offsets, modify_duration)
