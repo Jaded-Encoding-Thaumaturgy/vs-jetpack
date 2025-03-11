@@ -6,7 +6,7 @@ import vapoursynth as vs
 from jetpytools import CustomValueError, flatten, interleave_arr, ranges_product
 
 from ..functions import check_ref_clip
-from ..types import FrameRangeN, FrameRangesN
+from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN
 
 __all__ = [
     'replace_ranges',
@@ -205,19 +205,19 @@ def replace_ranges(
     return vs.core.std.Splice(list(interleave_arr(main, other, 1)), mismatch)
 
 
-def remap_frames(clip: vs.VideoNode, ranges: Sequence[int | tuple[int, int]]) -> vs.VideoNode:
+def remap_frames(clip: vs.VideoNode, ranges: Sequence[int | tuple[int, int]]) -> ConstantFormatVideoNode:
     frame_map = list(flatten(
         f if isinstance(f, int) else range(f[0], f[1] + 1) for f in ranges
     ))
 
-    base = clip.std.BlankClip(length=len(frame_map))
+    base = vs.core.std.BlankClip(clip, length=len(frame_map))
 
     return base.std.FrameEval(lambda n: clip[frame_map[n]], None, clip)
 
 
 def replace_every(
     clipa: vs.VideoNode, clipb: vs.VideoNode, cycle: int, offsets: Sequence[int], modify_duration: bool = True
-) -> vs.VideoNode:
+) -> ConstantFormatVideoNode:
     offsets_a = [x * 2 for x in range(cycle) if x not in offsets]
     offsets_b = [x * 2 + 1 for x in offsets]
     offsets = sorted(offsets_a + offsets_b)

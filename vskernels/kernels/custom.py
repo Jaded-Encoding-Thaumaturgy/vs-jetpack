@@ -3,7 +3,7 @@ from jetpytools import CustomValueError, DependencyNotFoundError, KwargsT, injec
 from inspect import Signature
 from math import ceil
 
-from vstools import vs, core
+from vstools import ConstantFormatVideoNode, vs, core
 from typing import Any, Protocol
 from .abstract import Kernel
 
@@ -57,12 +57,16 @@ class CustomKernel(Kernel):
 
         return core.resize2.Custom(clip, kernel, ceil(support), width, height, *args, **clean_kwargs)
 
-    resample_function = scale_function
+    @inject_self
+    def resample_function(  # type: ignore[override]
+        self, clip: vs.VideoNode, width: int | None = None, height: int | None = None, *args: Any, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        return self.scale_function(clip, width, height, *args, **kwargs)  # type: ignore[return-value]
 
     @inject_self
     def descale_function(  # type: ignore[override]
         self, clip: vs.VideoNode, width: int, height: int, *args: Any, **kwargs: Any
-    ) -> vs.VideoNode:
+    ) -> ConstantFormatVideoNode:
         kernel, support = self._modify_kernel_func(kwargs)
 
         clean_kwargs = {

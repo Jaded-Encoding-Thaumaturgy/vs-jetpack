@@ -6,10 +6,12 @@ from math import ceil
 from typing import Any, Callable, ClassVar, Sequence, TypeVar, Union, cast, overload
 
 from jetpytools import inject_kwargs_params
+
 from vstools import (
-    CustomIndexError, CustomRuntimeError, CustomValueError, FieldBased, FuncExceptT, GenericVSFunction,
-    HoldsVideoFormatT, KwargsT, Matrix, MatrixT, T, VideoFormatT, check_correct_subsampling, check_variable_resolution,
-    core, depth, expect_bits, fallback, get_subclasses, get_video_format, inject_self, vs, vs_object
+    ConstantFormatVideoNode, CustomIndexError, CustomRuntimeError, CustomValueError, FieldBased, FuncExceptT,
+    GenericVSFunction, HoldsVideoFormatT, KwargsT, Matrix, MatrixT, T, VideoFormatT, check_correct_subsampling,
+    check_variable_resolution, core, depth, expect_bits, fallback, get_subclasses, get_video_format, inject_self, vs,
+    vs_object
 )
 from vstools.enums.color import _norm_props_enums
 
@@ -278,7 +280,7 @@ class Descaler(BaseScaler):
 
     _err_class = UnknownDescalerError
 
-    descale_function: GenericVSFunction
+    descale_function: Callable[..., ConstantFormatVideoNode]
     """Descale function called internally when descaling"""
 
     @inject_self.cached
@@ -370,7 +372,7 @@ class Resampler(BaseScaler):
 
     _err_class = UnknownResamplerError
 
-    resample_function: GenericVSFunction
+    resample_function: Callable[..., ConstantFormatVideoNode]
     """Resample function called internally when resampling"""
 
     @inject_self.cached

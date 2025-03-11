@@ -5,7 +5,7 @@ from copy import deepcopy
 from itertools import count
 from typing import Sequence
 
-from vstools import CustomRuntimeError, T, flatten, remap_frames, vs
+from vstools import ConstantFormatVideoNode, CustomRuntimeError, T, flatten, remap_frames, vs
 
 __all__ = [
     'apply_rff_array', 'apply_rff_video',
@@ -41,7 +41,7 @@ def apply_rff_array(old_array: Sequence[T], rff: Sequence[int], tff: Sequence[in
 
 def apply_rff_video(
     node: vs.VideoNode, rff: list[int], tff: list[int], prog: list[int], prog_seq: list[int]
-) -> vs.VideoNode:
+) -> ConstantFormatVideoNode:
     assert len(node) == len(rff) == len(tff) == len(prog) == len(prog_seq)
 
     fields = list[dict[str, int]]()
