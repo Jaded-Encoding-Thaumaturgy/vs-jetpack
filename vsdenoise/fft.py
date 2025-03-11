@@ -140,7 +140,7 @@ class SLocation:
         if isinstance(locations, Mapping):
             frequencies, sigmas = list(locations.keys()), list(locations.values())
         else:
-            locations = list[float](flatten(locations))  # type: ignore [arg-type]
+            locations = list[float](flatten(locations))
 
             if len(locations) % 2:
                 raise CustomValueError(

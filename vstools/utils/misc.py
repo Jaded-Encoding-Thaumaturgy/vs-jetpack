@@ -560,7 +560,7 @@ def set_output(
         index = index_or_name
 
     ouputs = vs.get_outputs()
-    nodes = list(flatten(node))
+    nodes = list[vs.RawNode](flatten(node)) if isinstance(node, Iterable) else [node]
 
     index = to_arr(index) if index is not None else [max(ouputs, default=-1) + 1]
 

@@ -221,7 +221,7 @@ class ExprOp(ExprOpBase, CustomEnum):
         """Format this ExprOp into an ExprOpBase str."""
 
     def __call__(self, *pos_args: Any, **kwargs: Any) -> vs.VideoNode | ExprOpBase:
-        args = list[Any](flatten(pos_args))
+        args = list(flatten(pos_args))
 
         if isinstance(args[0], vs.VideoNode):
             return self.combine(*args, **kwargs)
@@ -304,7 +304,7 @@ class ExprOp(ExprOpBase, CustomEnum):
         mode: ConvMode = ConvMode.HV, premultiply: float | int | None = None,
         multiply: float | int | None = None, clamp: bool = False
     ) -> TupleExprList:
-        convolution = list[float](flatten(matrix))  # type: ignore
+        convolution = list[float](flatten(matrix))
 
         if not (conv_len := len(convolution)) % 2:
             raise CustomValueError('Convolution length must be odd!', cls.convolution, matrix)

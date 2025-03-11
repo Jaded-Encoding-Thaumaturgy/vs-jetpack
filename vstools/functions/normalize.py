@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Sequence, overload
+from typing import Any, Iterable, Iterator, Sequence, overload
 
 import vapoursynth as vs
 from jetpytools import T, norm_display_name, norm_func_name, normalize_list_to_ranges, to_arr
@@ -67,21 +67,21 @@ def normalize_planes(clip: vs.VideoNode, planes: PlanesT = None) -> list[int]:
 
 
 @overload
-def flatten(items: T | Iterable[T | Iterable[T | Iterable[T]]]) -> Iterable[T]:
+def flatten(items: Iterable[Iterable[T]]) -> Iterator[T]:
     ...
 
 
 @overload
-def flatten(items: T | Iterable[T | Iterable[T]]) -> Iterable[T]:  # type: ignore
+def flatten(items: Iterable[Any]) -> Iterator[Any]:
     ...
 
 
 @overload
-def flatten(items: T | Iterable[T]) -> Iterable[T]:  # type: ignore
+def flatten(items: Any) -> Iterator[Any]:
     ...
 
 
-def flatten(items: Any) -> Any:
+def flatten(items: Any) -> Iterator[Any]:
     """Flatten an array of values, clips and frames included."""
 
     if isinstance(items, (vs.RawNode, vs.RawFrame)):
@@ -105,7 +105,7 @@ def flatten_vnodes(
 
     from .utils import split
 
-    nodes = list[vs.VideoNode](flatten(clips)) # type: ignore[arg-type]
+    nodes = list[vs.VideoNode](flatten(clips))
 
     if not split_planes:
         return nodes

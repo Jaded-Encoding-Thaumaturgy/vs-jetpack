@@ -139,4 +139,4 @@ def apply_rff_video(
 
 
 def cut_array_on_ranges(array: list[T], ranges: list[tuple[int, int]]) -> list[T]:
-    return [array[i] for i in flatten([range(rrange[0], rrange[1] + 1) for rrange in ranges])]  # type: ignore
+    return [array[i] for i in flatten([range(rrange[0], rrange[1] + 1) for rrange in ranges])]
