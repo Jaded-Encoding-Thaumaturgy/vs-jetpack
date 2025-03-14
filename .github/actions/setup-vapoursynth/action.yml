@@ -7,8 +7,10 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: ccache
+    - name: Set up ccache
       uses: hendrikmuhs/ccache-action@v1
+      with:
+        key: vapoursynth-${{ inputs.vapoursynth-version }}
 
     - name: Checkout zimg
       uses: actions/checkout@v4

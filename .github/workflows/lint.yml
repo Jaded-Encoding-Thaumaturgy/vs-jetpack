@@ -10,6 +10,9 @@ on:
     paths:
       - '**.py'
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest

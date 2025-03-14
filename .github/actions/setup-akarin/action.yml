@@ -1,0 +1,45 @@
+name: Set up akarin
+description: Build and install akarin
+inputs:
+  akarin-version:
+    description: akarin version
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Set up ccache
+      uses: hendrikmuhs/ccache-action@v1
+      with:
+        key: akarin-${{ inputs.akarin-version }}
+
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        uv tool install meson
+        uv tool install ninja
+
+    - name: Checkout akarin
+      uses: actions/checkout@v4
+      with:
+        repository: Jaded-Encoding-Thaumaturgy/akarin-vapoursynth-plugin
+        ref: ${{ inputs.akarin-version }}
+        path: .akarin-vapoursynth-plugin
+
+    - name: Install akarin
+      env:
+        CC: ccache gcc
+        CXX: ccache g++
+      shell: bash
+      run: |
+        pushd .akarin-vapoursynth-plugin
+        meson setup build
+        meson compile -C build
+        sudo $(which meson) install -C build
+        popd
+        rm -rf .akarin-vapoursynth-plugin
+
+    - name: Verify akarin install
+      shell: python
+      run: |
+        import vapoursynth
+        print(vapoursynth.core.akarin)
