@@ -47,7 +47,6 @@ MODULES = [
 EXCLUDE = [
     # These cause infinite recursion in griffe.
     "vsdenoise.nlm",
-    "vsdenoise.prefilters",
 
     # Cannot be found.
     "vspreview.plugins.builtins.frame_props.category",
