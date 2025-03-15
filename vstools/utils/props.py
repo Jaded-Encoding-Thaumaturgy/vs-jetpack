@@ -384,7 +384,7 @@ def get_props(
 
     t = normalize_seq(t, len(keys))
     ncast = typing_cast(list[type[CT | Callable[[BoundVSMapValue], CT]]], normalize_seq(cast, len(keys)))
-    ndefault = typing_cast(list[DT | MissingT], normalize_seq(default, len(keys)))
+    ndefault = normalize_seq(default, len(keys))
 
     props = dict[str, Any]()
     exceptions = list[Exception]()
@@ -401,7 +401,6 @@ def get_props(
         if sys.version_info >= (3, 11):
             raise ExceptionGroup("Multiple exceptions occurred!", exceptions)  # noqa: F821
 
-        if sys.version_info < (3, 11):  # type: ignore[unreachable]
-            raise Exception(exceptions)
+        raise Exception(exceptions)
 
     return props
