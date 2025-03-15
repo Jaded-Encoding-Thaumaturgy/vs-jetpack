@@ -27,8 +27,9 @@ jobs:
 
       - uses: qoomon/actions--context@v3
         id: context
-      - uses: tj-actions/branch-names@v8
+      - name: Determine branch name
         id: branch-names
+        run: echo "current_branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
