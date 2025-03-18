@@ -240,6 +240,6 @@ def check_progressive(clip: VideoNodeT, func: FuncExceptT) -> TypeGuard[VideoNod
     """
 
     if FieldBased.from_video(clip, func=func).is_inter:
-        raise UnsupportedFieldBasedError(func)
+        raise UnsupportedFieldBasedError("Only progressive video is supported!", func)
 
     return True
