@@ -312,7 +312,7 @@ class HardsubSign(HardsubMask):
 
 class HardsubLine(HardsubMask):
     """
-    Helper for de-hardsubbing general monochrome subtitles.
+    Helper for de-hardsubbing white text with black border subtitles.
     Originally written by Kageru from Kagefunc:
     `https://github.com/Irrational-Encoding-Wizardry/kagefunc`
     """
