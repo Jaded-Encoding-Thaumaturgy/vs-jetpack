@@ -8,16 +8,15 @@ from vsexprtools import ExprOp, combine, norm_expr
 from vskernels import Bilinear, BSpline, Lanczos, Mitchell, NoShift, Point, Scaler, ScalerT
 from vsmasktools import EdgeDetect, Morpho, RadiusT, Robinson3, XxpandMode, grow_mask, retinex
 from vsrgtools import (
-    BlurMatrixBase, RemoveGrainMode, RepairMode, box_blur, contrasharpening,
-    contrasharpening_dehalo, gauss_blur, limit_filter, repair, remove_grain
+    BlurMatrixBase, RemoveGrainMode, RepairMode, box_blur, contrasharpening, contrasharpening_dehalo, gauss_blur,
+    limit_filter, remove_grain, repair
 )
 from vsrgtools.util import norm_rmode_planes
 from vstools import (
-    ConvMode, CustomIndexError, CustomIntEnum, CustomValueError, FieldBased, FuncExceptT,
-    FunctionUtil, InvalidColorFamilyError, KwargsT, OneDimConvModeT, PlanesT,
-    UnsupportedFieldBasedError, check_ref_clip, check_variable, check_variable_format, clamp,
-    cround, fallback, get_peak_value, get_y, join, limiter, mod4, normalize_planes, normalize_seq,
-    scale_mask, split, to_arr, vs
+    ConvMode, CustomIndexError, CustomIntEnum, CustomValueError, FuncExceptT, FunctionUtil, InvalidColorFamilyError,
+    KwargsT, OneDimConvModeT, PlanesT, check_progressive, check_ref_clip, check_variable, check_variable_format, clamp,
+    cround, fallback, get_peak_value, get_y, join, limiter, mod4, normalize_planes, normalize_seq, scale_mask, split,
+    to_arr, vs
 )
 
 __all__ = [
@@ -198,9 +197,7 @@ class _fine_dehalo:
         func = func or 'fine_dehalo'
 
         assert check_variable(clip, func)
-
-        if FieldBased.from_video(clip).is_inter:
-            raise UnsupportedFieldBasedError('Only progressive video is supported!', func)
+        assert check_progressive(clip, func)
 
         InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
 
@@ -504,9 +501,7 @@ def dehalo_alpha(
     func = func or dehalo_alpha
 
     assert check_variable(clip, func)
-
-    if FieldBased.from_video(clip).is_inter:
-        raise UnsupportedFieldBasedError('Only progressive video is supported!', func)
+    assert check_progressive(clip, func)
 
     InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
 
@@ -582,9 +577,7 @@ def dehalo_sigma(
     func = func or dehalo_alpha
 
     assert check_variable(clip, func)
-
-    if FieldBased.from_video(clip).is_inter:
-        raise UnsupportedFieldBasedError('Only progressive video is supported!', func)
+    assert check_progressive(clip, func)
 
     InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
 
@@ -641,8 +634,7 @@ def dehalomicron(
 ) -> vs.VideoNode:
     func = FunctionUtil(clip, dehalomicron, planes, (vs.GRAY, vs.YUV))
 
-    if FieldBased.from_video(clip).is_inter:
-        raise UnsupportedFieldBasedError('Only progressive video is supported!', func.func)
+    assert check_progressive(clip, func.func)
 
     fdehalo_kwargs = KwargsT(edgeproc=0.5, ss=1.5 if pre_ss else 2.0) | (fdehalo_kwargs or {})
 
@@ -746,9 +738,7 @@ def dehalo_merge(
 
     assert check_ref_clip(clip, dehalo, func)
     assert check_variable_format(clip, func)
-
-    if FieldBased.from_video(clip).is_inter:
-        raise UnsupportedFieldBasedError('Only progressive video is supported!', func)
+    assert check_progressive(clip, func)
 
     InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
 

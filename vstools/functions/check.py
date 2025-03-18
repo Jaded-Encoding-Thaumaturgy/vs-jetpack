@@ -9,19 +9,24 @@ import vapoursynth as vs
 
 from jetpytools import CustomError, F, FuncExceptT
 
+from ..enums import FieldBased
 from ..exceptions import (
-    FormatsRefClipMismatchError, ResolutionsRefClipMismatchError, VariableFormatError, VariableResolutionError
+    FormatsRefClipMismatchError, ResolutionsRefClipMismatchError, UnsupportedFieldBasedError,
+    VariableFormatError, VariableResolutionError
 )
 from ..types import ConstantFormatVideoNode, VideoNodeT
 
 __all__ = [
-    'disallow_variable_format',
-    'disallow_variable_resolution',
     'check_ref_clip',
+
+    'check_variable',
     'check_variable_format',
     'check_variable_resolution',
-    'check_variable',
-    'check_correct_subsampling'
+    'check_correct_subsampling',
+    'check_progressive',
+
+    'disallow_variable_format',
+    'disallow_variable_resolution',
 ]
 
 
@@ -222,3 +227,19 @@ def check_correct_subsampling(
                 'The {subsampling} subsampling is not supported for this resolution!',
                 reason=dict(width=width, height=height)
             )
+
+def check_progressive(clip: VideoNodeT, func: FuncExceptT) -> TypeGuard[VideoNodeT]:
+    """
+    Check if the clip is progressive and return an error if it's not.
+
+    :param clip:                        Clip to check.
+    :param func:                        Function returned for custom error handling.
+                                        This should only be set by VS package developers.
+
+    :raises UnsupportedFieldBasedError: The clip is interlaced.
+    """
+
+    if FieldBased.from_video(clip, func=func).is_inter:
+        raise UnsupportedFieldBasedError("Only progressive video is supported!", func)
+
+    return True

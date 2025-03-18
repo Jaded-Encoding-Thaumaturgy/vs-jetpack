@@ -9,10 +9,12 @@ from vsdenoise import Prefilter, frequency_merge, nl_means
 from vsexprtools import ExprOp, ExprToken, norm_expr
 from vskernels import Catrom, NoShift, Point, Scaler, ScalerT
 from vsmasktools import Morpho, Prewitt
-from vsrgtools import LimitFilterMode, contrasharpening, contrasharpening_dehalo, gauss_blur, median_blur, limit_filter, repair
+from vsrgtools import (
+    LimitFilterMode, contrasharpening, contrasharpening_dehalo, gauss_blur, limit_filter, median_blur, repair
+)
 from vstools import (
-    ConstantFormatVideoNode, FieldBased, FunctionUtil, PlanesT, UnsupportedFieldBasedError,
-    check_ref_clip, core, fallback, mod4, plane, to_arr, vs
+    ConstantFormatVideoNode, FunctionUtil, PlanesT, check_progressive, check_ref_clip, core, fallback, mod4, plane,
+    to_arr, vs
 )
 
 __all__ = [
@@ -81,8 +83,7 @@ def smooth_dering(
     """
     func = FunctionUtil(clip, smooth_dering, planes, (vs.GRAY, vs.YUV))
 
-    if FieldBased.from_video(clip).is_inter:
-        raise UnsupportedFieldBasedError('Only progressive video is supported!', func.func)
+    assert check_progressive(clip, func.func)
 
     planes = func.norm_planes
     work_clip = func.work_clip
@@ -178,8 +179,7 @@ def vine_dehalo(
     """
     func = FunctionUtil(clip, vine_dehalo, planes)
 
-    if FieldBased.from_video(clip).is_inter:
-        raise UnsupportedFieldBasedError('Only progressive video is supported!', func.func)
+    assert check_progressive(clip, func.func)
 
     strength = to_arr(strength)
     supersampler = Scaler.ensure_obj(supersampler, func.func)
