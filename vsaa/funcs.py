@@ -131,9 +131,12 @@ def clamp_aa(
 
 
 def _based_aa(
-    clip: vs.VideoNode, rfactor: float = 2.0,
-    mask: vs.VideoNode | EdgeDetectT | Literal[False] = Prewitt, mask_thr: int = 60,
-    pscale: float = 0.0, downscaler: ScalerT | MissingT = MISSING,
+    clip: vs.VideoNode,
+    rfactor: float = 2.0,
+    mask: vs.VideoNode | EdgeDetectT | Literal[False] = Prewitt,
+    mask_thr: int = 60,
+    pscale: float = 0.0,
+    downscaler: ScalerT | MissingT = MISSING,
     supersampler: ScalerT | Literal[False] | None | MissingT = MISSING,
     double_rate: bool = False,
     antialiaser: Antialiaser | MissingT = MISSING,
@@ -144,6 +147,19 @@ def _based_aa(
 
     func = FunctionUtil(clip, based_aa, 0, (vs.YUV, vs.GRAY))
 
+    if rfactor <= 0.0:
+        raise CustomValueError('rfactor must be greater than 0!', based_aa, rfactor)
+
+    if mask and not isinstance(mask, vs.VideoNode):
+        mask = EdgeDetect.ensure_obj(mask, based_aa).edgemask(func.work_clip, 0)
+        mask = mask.std.Binarize(scale_mask(mask_thr, 8, func.work_clip))
+
+        mask = box_blur(mask.std.Maximum())
+        mask = limiter(mask, func=based_aa)
+        
+        if show_mask:
+            return mask
+
     if not supersampler:
         supersampler = downscaler = NoScale
     elif supersampler is MISSING:
@@ -152,9 +168,6 @@ def _based_aa(
         supersampler = ArtCNN()
 
     supersampler = Scaler.ensure_obj(supersampler, based_aa)
-
-    if rfactor <= 0.0:
-        raise CustomValueError('rfactor must be greater than 0!', based_aa, rfactor)
 
     aaw, aah = [(round(r * rfactor) + 1) & ~1 for r in (func.work_clip.width, func.work_clip.height)]
 
@@ -168,18 +181,6 @@ def _based_aa(
 
     if rfactor < 1.0:
         downscaler, supersampler = supersampler, downscaler
-
-    if mask and not isinstance(mask, vs.VideoNode):
-        mask = EdgeDetect.ensure_obj(mask, based_aa).edgemask(func.work_clip, 0)
-        mask = mask.std.Binarize(scale_mask(mask_thr, 8, func.work_clip))
-
-        mask = box_blur(mask.std.Maximum())
-        mask = limiter(mask, func=based_aa)
-
-    if show_mask:
-        if not mask:
-            raise CustomValueError("Can't show mask when no mask is used!", based_aa, mask)
-        return mask
 
     if callable(prefilter):
         ss_clip = prefilter(func.work_clip)
@@ -221,9 +222,12 @@ if TYPE_CHECKING:
     from vsscale import ArtCNN
 
     def based_aa(
-        clip: vs.VideoNode, rfactor: float = 2.0,
-        mask: vs.VideoNode | EdgeDetectT | Literal[False] = Prewitt, mask_thr: int = 60,
-        pscale: float = 0.0, downscaler: ScalerT = ...,
+        clip: vs.VideoNode,
+        rfactor: float = 2.0,
+        mask: vs.VideoNode | EdgeDetectT | Literal[False] = Prewitt,
+        mask_thr: int = 60,
+        pscale: float = 0.0,
+        downscaler: ScalerT = ...,
         supersampler: ScalerT | Literal[False] | None = ArtCNN,
         double_rate: bool = False,
         antialiaser: Antialiaser = ...,
