@@ -259,7 +259,7 @@ def check_correct_subsampling(
                 reason=dict(width=width, height=height)
             )
 
-def check_progressive(clip: vs.VideoNode, func: FuncExceptT) -> TypeGuard[vs.VideoNode]:
+def check_progressive(clip: VideoNodeT, func: FuncExceptT) -> TypeGuard[VideoNodeT]:
     """
     Check if the clip is progressive and return an error if it's not.
 
