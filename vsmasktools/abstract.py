@@ -18,6 +18,8 @@ __all__ = [
 
 
 class GeneralMask(ABC):
+    """Abstract GeneralMask interface"""
+
     @abstractmethod
     def get_mask(self, clip: vs.VideoNode, /, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
         ...
@@ -43,6 +45,8 @@ class BoundingBox(GeneralMask):
 
 
 class DeferredMask(GeneralMask):
+    """Abstract DeferredMask interface"""
+
     ranges: FrameRangesN
     bound: BoundingBox | None
     refframes: list[int | None]
@@ -56,6 +60,14 @@ class DeferredMask(GeneralMask):
         blur: bool = False,
         refframes: int | list[int | None] | None = None
     ) -> None:
+        """
+        :param ranges:          The frame ranges that the mask should be applied to.
+        :param bound:           An optional bounding box that defines the area of the frame where the mask will be applied.
+                                If None, the mask applies to the whole frame.
+        :param blur:            Whether to apply a box blur effect to the mask.
+        :param refframes:       A list of reference frames used in building the final mask for each specified range.
+                                Must have the same length as `ranges`.
+        """
         self.ranges = ranges if isinstance(ranges, Sequence) else [(0, None)] if ranges is None else [ranges]
         self.blur = blur
         self.bound = bound
@@ -72,6 +84,14 @@ class DeferredMask(GeneralMask):
 
     @limiter
     def get_mask(self, clip: vs.VideoNode, /, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        """
+        Get the constructed mask
+
+        :param clip:        Source clip.
+        :param ref:         Reference clip.
+        :param **kwargs:    Keyword arguments passed to the internal `_mask` method.
+        :return:            Constructed mask
+        """
         assert check_variable(clip, self.get_mask)
         assert check_variable(ref, self.get_mask)
 

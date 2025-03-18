@@ -49,12 +49,21 @@ class _base_cmaskcar(vs_object):
 
 @dataclass
 class CustomMaskFromClipsAndRanges(GeneralMask, _base_cmaskcar):
+    """Abstract CustomMaskFromClipsAndRanges interface"""
+
     processing: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = field(
         default=core.lazy.std.Binarize, kw_only=True
     )
     idx: Indexer | Type[Indexer] = field(default=IMWRI, kw_only=True)
 
     def get_mask(self, ref: vs.VideoNode, /, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+        """
+        Get the constructed mask
+
+        :param ref:         Reference clip.
+        :param **kwargs:    Keyword arguments passed to `replace_ranges` function.
+        :return:            Constructed mask
+        """
         assert check_variable(ref, self.get_mask)
 
         mask = vs.core.std.BlankClip(
@@ -84,6 +93,8 @@ class CustomMaskFromClipsAndRanges(GeneralMask, _base_cmaskcar):
 
 @dataclass
 class CustomMaskFromFolder(CustomMaskFromClipsAndRanges):
+    """A helper class for creating a mask clip from a folder of images."""
+
     folder_path: FilePathType
 
     def __post_init__(self) -> None:
@@ -103,6 +114,11 @@ class CustomMaskFromFolder(CustomMaskFromClipsAndRanges):
 
 @dataclass
 class CustomMaskFromRanges(CustomMaskFromClipsAndRanges):
+    """
+    A helper class for creating a mask clip from a mapping of file paths
+    and their corresponding frame ranges
+    """
+
     ranges: Mapping[FilePathType, FrameRangeN | FrameRangesN]
 
     def __post_init__(self) -> None:
@@ -113,6 +129,8 @@ class CustomMaskFromRanges(CustomMaskFromClipsAndRanges):
 
 
 class HardsubMask(DeferredMask):
+    """Abstract HardsubMask interface"""
+
     bin_thr: float = 0.75
 
     def get_progressive_dehardsub(
@@ -121,11 +139,11 @@ class HardsubMask(DeferredMask):
         """
         Dehardsub using multiple superior hardsubbed sources and one inferior non-subbed source.
 
-        :param hardsub:  Hardsub master source (eg Wakanim RU dub).
-        :param ref:      Non-subbed reference source (eg CR, Funi, Amazon).
-        :param partials: Sources to use for partial dehardsubbing (eg Waka DE, FR, SC).
+        :param hardsub:     Hardsub master source (eg Wakanim RU dub).
+        :param ref:         Non-subbed reference source (eg CR, Funi, Amazon).
+        :param partials:    Sources to use for partial dehardsubbing (eg Waka DE, FR, SC).
 
-        :return:         Dehardsub stages and masks used for progressive dehardsub.
+        :return:            Dehardsub stages and masks used for progressive dehardsub.
         """
         assert check_variable(hardsub, self.get_progressive_dehardsub)
 
@@ -154,6 +172,15 @@ class HardsubMask(DeferredMask):
     def apply_dehardsub(
         self, hardsub: vs.VideoNode, ref: vs.VideoNode, partials: list[vs.VideoNode] | None = None
     ) -> ConstantFormatVideoNode:
+        """
+        Dehardsub using multiple superior hardsubbed sources and one inferior non-subbed source.
+
+        :param hardsub:     Hardsub master source (eg Wakanim RU dub).
+        :param ref:         Non-subbed reference source (eg CR, Funi, Amazon).
+        :param partials:    Sources to use for partial dehardsubbing (eg Waka DE, FR, SC).
+
+        :return:            Dehardsubbed clip.
+        """
         if partials:
             partials_dehardsubbed, _ = self.get_progressive_dehardsub(hardsub, ref, partials)
             dehardsub = partials_dehardsubbed[-1]
@@ -164,6 +191,12 @@ class HardsubMask(DeferredMask):
 
 
 class HardsubSignFades(HardsubMask):
+    """
+    Helper for hardsub scene filtering, typically used for de-hardsubbing signs during fades or hard-to-catch signs.
+    Originally written by Kageru from Kagefunc:
+    `https://github.com/Irrational-Encoding-Wizardry/kagefunc`
+    """
+
     highpass: float
     expand: int
     edgemask: GenericMaskT
@@ -181,6 +214,19 @@ class HardsubSignFades(HardsubMask):
         blur: bool = False,
         refframes: int | list[int | None] | None = None
     ) -> None:
+        """
+        :param ranges:          The frame ranges that the mask should be applied to.
+        :param bound:           An optional bounding box that defines the area of the frame where the mask will be applied.
+                                If None, the mask applies to the whole frame.
+        :param highpass:        Highpass threshold. Lower this value if the sign isn't fully de-hardsubbed,
+                                but be cautious as it may also capture more artifacts.
+        :param expand:          Number of expand iterations.
+        :param edgemask:        Edge mask used for finding subtitles.
+        :param expand_mode:     Specifies the XxpandMode used for mask growth
+        :param blur:            Whether to apply a box blur effect to the mask.
+        :param refframes:       A list of reference frames used in building the final mask for each specified range.
+                                Must have the same length as `ranges`.
+        """
         self.highpass = highpass
         self.expand = expand
         self.edgemask = edgemask
@@ -206,12 +252,6 @@ class HardsubSignFades(HardsubMask):
 class HardsubSign(HardsubMask):
     """
     Hardsub scenefiltering helper using `Zastin <https://github.com/kgrabs>`_'s hardsub mask.
-
-    :param thr:             Binarization threshold, [0, 1] (Default: 0.06).
-    :param minimum:         std.Minimum iterations (Default: 1).
-    :param expand:          std.Maximum iterations (Default: 8).
-    :param inflate:         std.Inflate iterations (Default: 7).
-    :param expand_mode:     Specifies the XxpandMode used for mask growth (Default: XxpandMode.RECTANGLE).
     """
 
     thr: float
@@ -233,6 +273,19 @@ class HardsubSign(HardsubMask):
         blur: bool = False,
         refframes: int | list[int | None] | None = None
     ) -> None:
+        """
+        :param ranges:          The frame ranges that the mask should be applied to.
+        :param bound:           An optional bounding box that defines the area of the frame where the mask will be applied.
+                                If None, the mask applies to the whole frame.
+        :param thr:             Binarization threshold, [0, 1] (Default: 0.06).
+        :param minimum:         std.Minimum iterations (Default: 1).
+        :param expand:          std.Maximum iterations (Default: 8).
+        :param inflate:         std.Inflate iterations (Default: 7).
+        :param expand_mode:     Specifies the XxpandMode used for mask growth (Default: XxpandMode.RECTANGLE).
+        :param blur:            Whether to apply a box blur effect to the mask.
+        :param refframes:       A list of reference frames used in building the final mask for each specified range.
+                                Must have the same length as `ranges`.
+        """
         self.thr = thr
         self.minimum = minimum
         self.expand = expand
@@ -258,6 +311,12 @@ class HardsubSign(HardsubMask):
 
 
 class HardsubLine(HardsubMask):
+    """
+    Helper for de-hardsubbing white text with black border subtitles.
+    Originally written by Kageru from Kagefunc:
+    `https://github.com/Irrational-Encoding-Wizardry/kagefunc`
+    """
+
     expand: int | None
 
     def __init__(
@@ -269,6 +328,15 @@ class HardsubLine(HardsubMask):
         blur: bool = False,
         refframes: int | list[int | None] | None = None
     ) -> None:
+        """
+        :param ranges:          The frame ranges that the mask should be applied to.
+        :param bound:           An optional bounding box that defines the area of the frame where the mask will be applied.
+                                If None, the mask applies to the whole frame.
+        :param expand:          std.Maximum iterations. Default is automatically adjusted based on the width of the clip.
+        :param blur:            Whether to apply a box blur effect to the mask.
+        :param refframes:       A list of reference frames used in building the final mask for each specified range.
+                                Must have the same length as `ranges`.
+        """
         self.expand = expand
 
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
@@ -317,6 +385,10 @@ class HardsubLine(HardsubMask):
 
 
 class HardsubLineFade(HardsubLine):
+    """
+    A specialized version of HardsubLine with a weight for selecting a frame within the specified frame ranges.
+    """
+
     ref_float: float
 
     def __init__(
@@ -328,6 +400,16 @@ class HardsubLineFade(HardsubLine):
         *,
         blur: bool = False,
     ) -> None:
+        """
+        :param ranges:          The frame ranges that the mask should be applied to.
+        :param bound:           An optional bounding box that defines the area of the frame where the mask will be applied.
+                                If None, the mask applies to the whole frame.
+        :param expand:          std.Maximum iterations. Default is automatically adjusted based on the width of the clip.
+        :param refframe:        Reference frame weight. Must be between 0 and 1.
+        :param blur:            Whether to apply a box blur effect to the mask.
+        :param refframes:       A list of reference frames used in building the final mask for each specified range.
+                                Must have the same length as `ranges`.
+        """
         if refframe < 0 or refframe > 1:
             raise CustomOverflowError('"refframe" must be between 0 and 1!', self.__class__)
 
@@ -345,6 +427,8 @@ class HardsubLineFade(HardsubLine):
 
 
 class HardsubASS(HardsubMask):
+    """A helper for de-hardsubbing using an ASS subtitle file to generate a hardsub mask."""
+
     filename: str
     fontdir: str | None
 
@@ -358,6 +442,15 @@ class HardsubASS(HardsubMask):
         blur: bool = False,
         refframes: int | list[int | None] | None = None
     ) -> None:
+        """
+        :param filename:        Subtitle file.
+        :param ranges:          The frame ranges that the mask should be applied to.
+        :param bound:           An optional bounding box that defines the area of the frame where the mask will be applied.
+                                If None, the mask applies to the whole frame.
+        :param blur:            Whether to apply a box blur effect to the mask.
+        :param refframes:       A list of reference frames used in building the final mask for each specified range.
+                                Must have the same length as `ranges`.
+        """
         self.filename = str(filename)
         self.fontdir = fontdir
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
