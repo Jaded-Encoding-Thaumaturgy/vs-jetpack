@@ -27,7 +27,6 @@ __all__ = [
 
     'disallow_variable_format',
     'disallow_variable_resolution',
-    'disallow_interlaced',
 ]
 
 
@@ -113,36 +112,6 @@ def disallow_variable_resolution(function: F | None = None, /, *, only_first: Li
 
     return _check_variable(
         function, 'resolution', VariableResolutionError, only_first, lambda x: not all({x.width, x.height})
-    )
-
-
-@overload
-def disallow_interlaced(*, only_first: bool = False) -> Callable[[F], F]:
-    ...
-
-
-@overload
-def disallow_interlaced(function: F | None = None, /) -> F:
-    ...
-
-
-def disallow_interlaced(function: F | None = None, /, *, only_first: bool = False) -> Callable[[F], F] | F:
-    """
-    Decorator for disallowing interlaced clips.
-
-    :param function:                        Function to decorate.
-    :param only_first:                      Only verify the first argument.
-                                            Default: False.
-
-    :raises UnsupportedFieldBasedError:     A clip is interlaced.
-    """
-
-    if function is None:
-        return cast(Callable[[F], F], partial(disallow_interlaced, only_first=only_first))
-
-    return _check_variable(
-        function, 'interlaced', UnsupportedFieldBasedError, only_first,
-        lambda x: FieldBased.from_video(x, func=function).is_inter
     )
 
 
