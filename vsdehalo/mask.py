@@ -7,8 +7,7 @@ from vsexprtools import norm_expr
 from vskernels import Point
 from vsmasktools import Morpho, PrewittTCanny
 from vsrgtools import BlurMatrix
-from vstools import FieldBased, UnsupportedFieldBasedError, get_y, scale_delta, vs
-
+from vstools import check_progressive, get_y, scale_delta, vs
 
 __all__ = [
     'base_dehalo_mask'
@@ -33,8 +32,7 @@ def base_dehalo_mask(
     :return:            Dehalo mask.
     """
 
-    if FieldBased.from_video(src).is_inter:
-        raise UnsupportedFieldBasedError('Only progressive video is supported!', base_dehalo_mask)
+    assert check_progressive(src, base_dehalo_mask)
 
     luma = get_y(src)
 
