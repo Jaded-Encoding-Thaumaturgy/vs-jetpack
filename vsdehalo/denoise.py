@@ -13,8 +13,8 @@ from vsrgtools import (
     LimitFilterMode, contrasharpening, contrasharpening_dehalo, gauss_blur, limit_filter, median_blur, repair
 )
 from vstools import (
-    ConstantFormatVideoNode, FieldBased, FunctionUtil, PlanesT, UnsupportedFieldBasedError, check_progressive,
-    check_ref_clip, core, fallback, mod4, plane, to_arr, vs
+    ConstantFormatVideoNode, FunctionUtil, PlanesT, check_progressive, check_ref_clip, core, fallback, mod4, plane,
+    to_arr, vs
 )
 
 __all__ = [
