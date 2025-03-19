@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Concatenate, Literal, TypeGuard, cast
 
-from vsaa import Nnedi3
 from vsexprtools import ExprOp, combine, norm_expr
 from vskernels import Scaler, ScalerT
 from vsmasktools import ringing_mask
@@ -97,8 +96,11 @@ class MergeScalers(GenericScaler):
 class ClampScaler(GenericScaler):
     """Clamp a reference Scaler."""
 
-    ref_scaler: ScalerT
+    base_scaler: ScalerT
     """Scaler to clamp."""
+
+    reference: ScalerT | vs.VideoNode
+    """Reference Scaler used to clamp base_scaler"""
 
     strength: int = 80
     """Strength of clamping."""
@@ -118,9 +120,6 @@ class ClampScaler(GenericScaler):
     masked: bool = True
     """Whether to mask with a ringing mask or not."""
 
-    reference: ScalerT | vs.VideoNode = Nnedi3
-    """Reference Scaler used to clamp ref_scaler"""
-
     def __post_init__(self) -> None:
         super().__post_init__()
 
@@ -134,8 +133,8 @@ class ClampScaler(GenericScaler):
         if self.undershoot is None:
             self.undershoot = self.overshoot
 
+        self._base_scaler = self.ensure_scaler(self.base_scaler)
         self._reference = None if isinstance(self.reference, vs.VideoNode) else self.ensure_scaler(self.reference)
-        self._ref_scaler = self.ensure_scaler(self.ref_scaler)
 
     @inject_self
     def scale(  # type: ignore
@@ -146,7 +145,7 @@ class ClampScaler(GenericScaler):
 
         assert (self.undershoot or self.undershoot == 0) and (self.overshoot or self.overshoot == 0)
 
-        ref = self._ref_scaler.scale(clip, width, height, shift, **kwargs)
+        ref = self._base_scaler.scale(clip, width, height, shift, **kwargs)
 
         if isinstance(self.reference, vs.VideoNode):
             smooth = self.reference
@@ -194,24 +193,24 @@ class ClampScaler(GenericScaler):
     @property
     def kernel_radius(self) -> int:  # type: ignore[override]
         if self._reference:
-            return max(self._reference.kernel_radius, self._ref_scaler.kernel_radius)
-        return self._ref_scaler.kernel_radius
+            return max(self._reference.kernel_radius, self._base_scaler.kernel_radius)
+        return self._base_scaler.kernel_radius
 
 
 class UnsharpLimitScaler(GenericScaler):
     """Limit a scaler with a masked unsharping."""
 
     def __init__(
-        self, ref_scaler: ScalerT,
+        self, base_scaler: ScalerT,
+        reference: ScalerT | vs.VideoNode,
         unsharp_func: Callable[
             Concatenate[vs.VideoNode, P], vs.VideoNode
         ] = partial(unsharp_masked, radius=2, strength=65),
         merge_mode: LimitFilterMode | bool = True,
-        reference: ScalerT | vs.VideoNode = Nnedi3(0),
         *args: P.args, **kwargs: P.kwargs
     ) -> None:
         """
-        :param ref_scaler:      Scaler of which to limit haloing.
+        :param base_scaler:     Scaler of which to limit haloing.
         :param unsharp_func:    Unsharpening function used as reference for limiting.
         :param merge_mode:      Whether to limit with LimitFilterMode,
                                 use a median filter (True) or just take the darkest pixels (False).
@@ -222,9 +221,9 @@ class UnsharpLimitScaler(GenericScaler):
 
         self.merge_mode = merge_mode
 
+        self.base_scaler = self.ensure_scaler(base_scaler)
         self.reference = reference
         self._reference = None if isinstance(self.reference, vs.VideoNode) else self.ensure_scaler(self.reference)
-        self.ref_scaler = self.ensure_scaler(ref_scaler)
 
         self.args = args
         self.kwargs = kwargs
@@ -236,7 +235,7 @@ class UnsharpLimitScaler(GenericScaler):
     ) -> vs.VideoNode:
         width, height = self._wh_norm(clip, width, height)
 
-        ref_scaled = self.ref_scaler.scale(clip, width, height, shift, **kwargs)
+        ref_scaled = self.base_scaler.scale(clip, width, height, shift, **kwargs)
 
         if isinstance(self.reference, vs.VideoNode):
             smooth = self.reference
@@ -263,5 +262,5 @@ class UnsharpLimitScaler(GenericScaler):
     @property
     def kernel_radius(self) -> int:  # type: ignore[override]
         if self._reference:
-            return max(self._reference.kernel_radius, self.ref_scaler.kernel_radius)
-        return self.ref_scaler.kernel_radius
+            return max(self._reference.kernel_radius, self.base_scaler.kernel_radius)
+        return self.base_scaler.kernel_radius

@@ -6,7 +6,6 @@ from math import ceil, floor
 from types import NoneType
 from typing import Any, Callable, NamedTuple, Protocol, Self, TypeAlias, overload
 
-from vsaa import Nnedi3
 from vskernels import Catrom, Kernel, KernelT, Scaler, ScalerT
 from vstools import KwargsT, MatrixT, Resolution, fallback, get_w, mod2, plane, vs
 
@@ -155,10 +154,9 @@ class GenericScaler(Scaler):
 
 
 def scale_var_clip(
-    clip: vs.VideoNode,
+    clip: vs.VideoNode, scaler: Scaler | Callable[[Resolution], Scaler],
     width: int | Callable[[Resolution], int] | None, height: int | Callable[[Resolution], int],
-    shift: tuple[float, float] | Callable[[Resolution], tuple[float, float]] = (0, 0),
-    scaler: Scaler | Callable[[Resolution], Scaler] = Nnedi3(), debug: bool = False
+    shift: tuple[float, float] | Callable[[Resolution], tuple[float, float]] = (0, 0), debug: bool = False
 ) -> vs.VideoNode:
     """Scale a variable clip to constant or variable resolution."""
     if not debug:
