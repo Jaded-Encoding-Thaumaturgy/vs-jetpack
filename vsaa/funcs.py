@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Box, Catrom, NoScale, Scaler, ScalerT
-from vsscale import ArtCNN
 from vsmasktools import EdgeDetect, EdgeDetectT, Prewitt, ScharrTCanny
 from vsrgtools import MeanMode, bilateral, box_blur, unsharp_masked
+from vsscale import ArtCNN
 from vstools import (
-    CustomValueError, FunctionUtil, KwargsT, PlanesT, VSFunction,
-    fallback, get_peak_value, get_y, limiter, scale_mask, vs
+    ConstantFormatVideoNode, CustomValueError, FormatsMismatchError, FunctionUtil, KwargsT, PlanesT, VSFunction,
+    VSFunctionNoArgs, check_variable_format, fallback, get_peak_value, get_y, limiter, scale_mask, vs
 )
 
 from .abstract import Antialiaser
@@ -132,13 +132,17 @@ def clamp_aa(
 
 
 def based_aa(
-    clip: vs.VideoNode, rfactor: float = 2.0,
-    mask: vs.VideoNode | EdgeDetectT | Literal[False] = Prewitt, mask_thr: int = 60,
-    pscale: float = 0.0, downscaler: ScalerT | None = None,
+    clip: vs.VideoNode,
+    rfactor: float = 2.0,
+    mask: vs.VideoNode | EdgeDetectT | Literal[False] = Prewitt,
+    mask_thr: int = 60,
+    pscale: float = 0.0,
+    downscaler: ScalerT | None = None,
     supersampler: ScalerT | Literal[False] = ArtCNN,
-    double_rate: bool = False, antialiaser: Antialiaser | None = None,
-    prefilter: vs.VideoNode | VSFunction | None = None,
-    postfilter: VSFunction | Literal[False] | None = None,
+    double_rate: bool = False,
+    antialiaser: Antialiaser | None = None,
+    prefilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] = False,
+    postfilter: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] | None = None,
     show_mask: bool = False, **aa_kwargs: Any
 ) -> vs.VideoNode:
     """
@@ -156,7 +160,7 @@ def based_aa(
                                   Lower values may be useful for particularly extremely aliased content.
                                   Values closer to 1.0 will perform faster at the cost of precision.
                                   This value must be greater than 0.0. Default: 2.0.
-    :param mask:                  Edge detection mask or function to generate it.  Default: Prewitt.
+    :param mask:                  Edge detection mask or function to generate it. Default: Prewitt.
     :param mask_thr:              Threshold for edge detection mask.
                                   Only used if an EdgeDetect class is passed to `mask`. Default: 60.
     :param pscale:                Scale factor for the supersample-downscale process change.
@@ -197,37 +201,47 @@ def based_aa(
 
     func = FunctionUtil(clip, based_aa, 0, (vs.YUV, vs.GRAY))
 
-    if not supersampler:
-        supersampler = downscaler = NoScale
-
     if rfactor <= 0.0:
         raise CustomValueError('rfactor must be greater than 0!', based_aa, rfactor)
 
+    if mask is not False and not isinstance(mask, vs.VideoNode):
+        mask = EdgeDetect.ensure_obj(mask, based_aa).edgemask(func.work_clip, 0)
+        mask = mask.std.Binarize(scale_mask(mask_thr, 8, func.work_clip))
+
+        mask = box_blur(mask.std.Maximum())
+        mask = limiter(mask, func=based_aa)
+        
+        if show_mask:
+            return mask
+
+    if supersampler is False:
+        supersampler = downscaler = NoScale
+
     aaw, aah = [round(dimension * rfactor) for dimension in (func.work_clip.width, func.work_clip.height)]
 
-    if not downscaler:
+    if downscaler is None:
         downscaler = Box if (
             max(aaw, func.work_clip.width) % min(aaw, func.work_clip.width) == 0
             and max(aah, func.work_clip.height) % min(aah, func.work_clip.height) == 0
         ) else Catrom
 
+    supersampler = Scaler.ensure_obj(supersampler, based_aa)
+    downscaler = Scaler.ensure_obj(downscaler, based_aa)
+
     if rfactor < 1.0:
         downscaler, supersampler = supersampler, downscaler
 
-    if mask and not isinstance(mask, vs.VideoNode):
-        mask = EdgeDetect.ensure_obj(mask, based_aa).edgemask(func.work_clip, 0)
-        mask = mask.std.Binarize(scale_mask(mask_thr, 8, func.work_clip))
-        mask = limiter(box_blur(mask.std.Maximum()), func=based_aa)
+    if callable(prefilter):
+        ss_clip = prefilter(func.work_clip)
+    elif isinstance(prefilter, vs.VideoNode):
+        FormatsMismatchError.check(based_aa, func.work_clip, prefilter)
 
-    if show_mask:
-        if not mask:
-            raise CustomValueError("Can't show mask when no mask is used!", based_aa, mask)
-        return mask
+        if TYPE_CHECKING:
+            assert check_variable_format(prefilter, func.func)
 
-    ss_clip = prefilter(func.work_clip) if callable(prefilter) else fallback(prefilter, func.work_clip)
-
-    supersampler = Scaler.ensure_obj(supersampler, based_aa)
-    downscaler = Scaler.ensure_obj(downscaler, based_aa)
+        ss_clip = prefilter
+    else:
+        ss_clip = func.work_clip
 
     ss = supersampler.scale(ss_clip, aaw, aah)
 
