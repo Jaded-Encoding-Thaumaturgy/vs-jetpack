@@ -38,6 +38,9 @@ class EEDI3(_Antialiaser):
         default_factory=lambda: nnedi3.Nnedi3
     )
 
+    # Class Variable
+    _shift = 0.5
+
     def __post_init__(self) -> None:
         super().__post_init__()
 
@@ -109,19 +112,15 @@ class EEDI3(_Antialiaser):
 
         return aa_kwargs
 
-    _shift = 0.5
-
-    @inject_self.property
-    def kernel_radius(self) -> int:
-        return self.nrad
-
     def __del__(self) -> None:
         if not TYPE_CHECKING:
             self.mclip = None
 
 
 class Eedi3SS(EEDI3, SuperSampler):
-    ...
+    @inject_self.cached.property
+    def kernel_radius(self) -> int:
+        return self.nrad
 
 
 class Eedi3SR(EEDI3, SingleRater, vs_object):
@@ -152,5 +151,5 @@ class Eedi3DR(EEDI3, DoubleRater):
     ...
 
 
-class Eedi3(Eedi3SR, Antialiaser):
+class Eedi3(Eedi3SR, Eedi3SS, Antialiaser):
     ...

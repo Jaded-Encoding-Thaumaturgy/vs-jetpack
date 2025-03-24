@@ -25,6 +25,9 @@ class EEDI2(_FullInterpolate, _Antialiaser):
 
     cuda: bool = dc_field(default=False, kw_only=True)
 
+    # Class Variable
+    _shift = -0.5
+
     def is_full_interpolate_enabled(self, x: bool, y: bool) -> bool:
         return self.cuda and x and y
 
@@ -62,7 +65,7 @@ class EEDI2(_FullInterpolate, _Antialiaser):
 
 
 class Eedi2SS(EEDI2, SuperSampler):
-    ...
+    _static_kernel_radius = 2
 
 
 class Eedi2SR(EEDI2, SingleRater):
@@ -73,5 +76,5 @@ class Eedi2DR(EEDI2, DoubleRater):
     ...
 
 
-class Eedi2(EEDI2, Antialiaser):
+class Eedi2(Eedi2SS, Antialiaser):
     ...

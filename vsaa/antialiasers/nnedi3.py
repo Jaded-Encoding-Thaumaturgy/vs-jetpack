@@ -22,6 +22,9 @@ class NNEDI3(_FullInterpolate, _Antialiaser):
 
     opencl: bool = False
 
+    # Class Variable
+    _shift = 0.5
+
     def is_full_interpolate_enabled(self, x: bool, y: bool) -> bool:
         return self.opencl and x and y
 
@@ -37,9 +40,9 @@ class NNEDI3(_FullInterpolate, _Antialiaser):
     def full_interpolate(self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any) -> ConstantFormatVideoNode:
         return clip.sneedif.NNEDI3(self.field, double_y, double_x, transpose_first=self.transpose_first, **kwargs)
 
-    _shift = 0.5
 
-    @inject_self.property
+class Nnedi3SS(NNEDI3, SuperSampler):
+    @inject_self.cached.property
     def kernel_radius(self) -> int:
         match self.nsize:
             case 1 | 5:
@@ -52,10 +55,6 @@ class NNEDI3(_FullInterpolate, _Antialiaser):
                 return 8
 
 
-class Nnedi3SS(NNEDI3, SuperSampler):
-    ...
-
-
 class Nnedi3SR(NNEDI3, SingleRater):
     ...
 
@@ -64,5 +63,5 @@ class Nnedi3DR(NNEDI3, DoubleRater):
     ...
 
 
-class Nnedi3(NNEDI3, Antialiaser):
+class Nnedi3(Nnedi3SS, Antialiaser):
     ...

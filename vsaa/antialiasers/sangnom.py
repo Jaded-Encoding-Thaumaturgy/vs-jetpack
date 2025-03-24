@@ -17,6 +17,9 @@ class SANGNOM(_Antialiaser):
     aa_strength: int | tuple[int, ...] = 48
     double_fps: bool = False
 
+    # Class Variable
+    _shift = -0.5
+
     def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         if self.double_fps:
             return clip.std.SeparateFields(self.field).std.DoubleWeave(self.field)
@@ -32,13 +35,9 @@ class SANGNOM(_Antialiaser):
 
         return self.shift_interpolate(clip, interpolated, double_y, **kwargs)
 
-    _shift = -0.5
-
-    _static_kernel_radius = 2
-
 
 class SangNomSS(SANGNOM, SuperSampler):
-    ...
+    _static_kernel_radius = 2
 
 
 class SangNomSR(SANGNOM, SingleRater):
@@ -49,5 +48,5 @@ class SangNomDR(SANGNOM, DoubleRater):
     ...
 
 
-class SangNom(SANGNOM, Antialiaser):
+class SangNom(SangNomSS, Antialiaser):
     ...
