@@ -25,7 +25,7 @@ __all__ = [
 
 
 class _SingleInterpolate(ABC):
-    _shift: float
+    _shift: ClassVar[float]
 
     def _post_interpolate(
         self,
