@@ -77,6 +77,7 @@ class _Plugin_akarin_VideoNode_Bound(Plugin):
 # end implementation
 
 
+
 # implementation: bs
 
 _ReturnDict_bs_TrackInfo = TypedDict("_ReturnDict_bs_TrackInfo", {"mediatype": int, "mediatypestr": _DataType, "codec": int, "codecstr": _DataType, "disposition": int, "dispositionstr": _DataType})
@@ -94,6 +95,7 @@ class _Plugin_bs_Core_Bound(Plugin):
 # end implementation
 
 
+
 # implementation: cs
 
 class _Plugin_cs_Core_Bound(Plugin):
@@ -108,6 +110,7 @@ class _Plugin_cs_VideoNode_Bound(Plugin):
 # end implementation
 
 
+
 # implementation: d2v
 
 class _Plugin_d2v_Core_Bound(Plugin):
@@ -115,6 +118,7 @@ class _Plugin_d2v_Core_Bound(Plugin):
     def Source(self, input: _DataType, threads: int | None = None, nocrop: int | None = None, rff: int | None = None) -> ConstantFormatVideoNode: ...
 
 # end implementation
+
 
 
 # implementation: descale
@@ -160,6 +164,7 @@ class _Plugin_descale_VideoNode_Bound(Plugin):
 # end implementation
 
 
+
 # implementation: dgdecodenv
 
 class _Plugin_dgdecodenv_Core_Bound(Plugin):
@@ -184,6 +189,7 @@ class _Plugin_dpid_VideoNode_Bound(Plugin):
 # end implementation
 
 
+
 # implementation: dvdsrc2
 
 class _Plugin_dvdsrc2_Core_Bound(Plugin):
@@ -197,6 +203,54 @@ class _Plugin_dvdsrc2_Core_Bound(Plugin):
 # end implementation
 
 
+
+# implementation: eedi2
+
+class _Plugin_eedi2_Core_Bound(Plugin):
+    """This class implements the module definitions for the "eedi2" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def EEDI2(self, clip: VideoNode, field: int, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_eedi2_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "eedi2" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def EEDI2(self, field: int, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
+
+# implementation: eedi2cuda
+
+class _Plugin_eedi2cuda_Core_Bound(Plugin):
+    """This class implements the module definitions for the "eedi2cuda" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def AA2(self, clip: VideoNode, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: _SingleAndSequence[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> ConstantFormatVideoNode: ...
+    def BuildConfig(self) -> _DataType: ...
+    def EEDI2(self, clip: VideoNode, field: int, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: _SingleAndSequence[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> ConstantFormatVideoNode: ...
+    def Enlarge2(self, clip: VideoNode, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: _SingleAndSequence[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_eedi2cuda_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "eedi2cuda" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def AA2(self, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: _SingleAndSequence[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> ConstantFormatVideoNode: ...
+    def EEDI2(self, field: int, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: _SingleAndSequence[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> ConstantFormatVideoNode: ...
+    def Enlarge2(self, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: _SingleAndSequence[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
+
+# implementation: eedi3m
+
+class _Plugin_eedi3m_Core_Bound(Plugin):
+    """This class implements the module definitions for the "eedi3m" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def EEDI3(self, clip: VideoNode, field: int, dh: int | None = None, planes: _SingleAndSequence[int] | None = None, alpha: float | None = None, beta: float | None = None, gamma: float | None = None, nrad: int | None = None, mdis: int | None = None, hp: int | None = None, ucubic: int | None = None, cost3: int | None = None, vcheck: int | None = None, vthresh0: float | None = None, vthresh1: float | None = None, vthresh2: float | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None, opt: int | None = None) -> ConstantFormatVideoNode: ...
+    def EEDI3CL(self, clip: VideoNode, field: int, dh: int | None = None, planes: _SingleAndSequence[int] | None = None, alpha: float | None = None, beta: float | None = None, gamma: float | None = None, nrad: int | None = None, mdis: int | None = None, hp: int | None = None, ucubic: int | None = None, cost3: int | None = None, vcheck: int | None = None, vthresh0: float | None = None, vthresh1: float | None = None, vthresh2: float | None = None, sclip: VideoNode | None = None, opt: int | None = None, device: int | None = None, list_device: int | None = None, info: int | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_eedi3m_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "eedi3m" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def EEDI3(self, field: int, dh: int | None = None, planes: _SingleAndSequence[int] | None = None, alpha: float | None = None, beta: float | None = None, gamma: float | None = None, nrad: int | None = None, mdis: int | None = None, hp: int | None = None, ucubic: int | None = None, cost3: int | None = None, vcheck: int | None = None, vthresh0: float | None = None, vthresh1: float | None = None, vthresh2: float | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None, opt: int | None = None) -> ConstantFormatVideoNode: ...
+    def EEDI3CL(self, field: int, dh: int | None = None, planes: _SingleAndSequence[int] | None = None, alpha: float | None = None, beta: float | None = None, gamma: float | None = None, nrad: int | None = None, mdis: int | None = None, hp: int | None = None, ucubic: int | None = None, cost3: int | None = None, vcheck: int | None = None, vthresh0: float | None = None, vthresh1: float | None = None, vthresh2: float | None = None, sclip: VideoNode | None = None, opt: int | None = None, device: int | None = None, list_device: int | None = None, info: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
+
+
 # implementation: ffms2
 
 class _Plugin_ffms2_Core_Bound(Plugin):
@@ -208,6 +262,7 @@ class _Plugin_ffms2_Core_Bound(Plugin):
     def Version(self) -> _DataType: ...
 
 # end implementation
+
 
 
 # implementation: fmtc
@@ -252,6 +307,7 @@ class _Plugin_hysteresis_VideoNode_Bound(Plugin):
 # end implementation
 
 
+
 # implementation: imwri
 
 class _Plugin_imwri_Core_Bound(Plugin):
@@ -266,6 +322,7 @@ class _Plugin_imwri_VideoNode_Bound(Plugin):
 # end implementation
 
 
+
 # implementation: lsmas
 
 class _Plugin_lsmas_Core_Bound(Plugin):
@@ -274,6 +331,7 @@ class _Plugin_lsmas_Core_Bound(Plugin):
     def LWLibavSource(self, source: _DataType, stream_index: int | None = None, cache: int | None = None, cachefile: _DataType | None = None, threads: int | None = None, seek_mode: int | None = None, seek_threshold: int | None = None, dr: int | None = None, fpsnum: int | None = None, fpsden: int | None = None, variable: int | None = None, format: _DataType | None = None, decoder: _DataType | None = None, prefer_hw: int | None = None, repeat: int | None = None, dominance: int | None = None, ff_loglevel: int | None = None, cachedir: _DataType | None = None, ff_options: _DataType | None = None) -> VideoNode: ...
 
 # end implementation
+
 
 
 # implementation: placebo
@@ -293,6 +351,7 @@ class _Plugin_placebo_VideoNode_Bound(Plugin):
     def Tonemap(self, src_csp: int | None = None, dst_csp: int | None = None, dst_prim: int | None = None, src_max: float | None = None, src_min: float | None = None, dst_max: float | None = None, dst_min: float | None = None, dynamic_peak_detection: int | None = None, smoothing_period: float | None = None, scene_threshold_low: float | None = None, scene_threshold_high: float | None = None, percentile: float | None = None, gamut_mapping: int | None = None, tone_mapping_function: int | None = None, tone_mapping_function_s: _DataType | None = None, tone_mapping_param: float | None = None, metadata: int | None = None, use_dovi: int | None = None, visualize_lut: int | None = None, show_clipping: int | None = None, contrast_recovery: float | None = None, log_level: int | None = None) -> ConstantFormatVideoNode: ...
 
 # end implementation
+
 
 
 # implementation: resize
@@ -389,8 +448,8 @@ class _Plugin_resize_VideoNode_Bound(Plugin):
     @overload
     def Spline64(self, width: int | None = None, height: int | None = None, format: int | None = None, matrix: int | None = None, matrix_s: _DataType | None = None, transfer: int | None = None, transfer_s: _DataType | None = None, primaries: int | None = None, primaries_s: _DataType | None = None, range: int | None = None, range_s: _DataType | None = None, chromaloc: int | None = None, chromaloc_s: _DataType | None = None, matrix_in: int | None = None, matrix_in_s: _DataType | None = None, transfer_in: int | None = None, transfer_in_s: _DataType | None = None, primaries_in: int | None = None, primaries_in_s: _DataType | None = None, range_in: int | None = None, range_in_s: _DataType | None = None, chromaloc_in: int | None = None, chromaloc_in_s: _DataType | None = None, filter_param_a: float | None = None, filter_param_b: float | None = None, resample_filter_uv: _DataType | None = None, filter_param_a_uv: float | None = None, filter_param_b_uv: float | None = None, dither_type: _DataType | None = None, cpu_type: _DataType | None = None, prefer_props: int | None = None, src_left: float | None = None, src_top: float | None = None, src_width: float | None = None, src_height: float | None = None, nominal_luminance: float | None = None, approximate_gamma: int | None = None) -> VideoNode: ...
 
-
 # end implementation
+
 
 
 # implementation: resize2
@@ -512,6 +571,7 @@ class _Plugin_resize2_VideoNode_Bound(Plugin):
 # end implementation
 
 
+
 # implementation: scxvid
 
 class _Plugin_scxvid_Core_Bound(Plugin):
@@ -523,6 +583,28 @@ class _Plugin_scxvid_VideoNode_Bound(Plugin):
     def Scxvid(self, log: _DataType | None = None, use_slices: int | None = None) -> ConstantFormatVideoNode: ...
 
 # end implementation
+
+
+# implementation: sneedif
+
+_ReturnDict_sneedif_DeviceInfo = TypedDict("_ReturnDict_sneedif_DeviceInfo", {"name": _DataType, "vendor": _DataType, "profile": _DataType, "version": _DataType, "max_compute_units": int, "max_work_group_size": int, "max_work_item_sizes": _SingleAndSequence[int], "image2D_max_width": int, "image2D_max_height": int, "image_support": int, "global_memory_cache_type": _DataType, "global_memory_cache": int, "global_memory_size": int, "max_constant_buffer_size": int, "max_constant_arguments": int, "local_memory_type": _DataType, "local_memory_size": int, "available": int, "compiler_available": int, "linker_available": int, "opencl_c_version": _DataType, "image_max_buffer_size": int})
+_ReturnDict_sneedif_ListDevices = TypedDict("_ReturnDict_sneedif_ListDevices", {"numDevices": int, "deviceNames": _SingleAndSequence[_DataType], "platformNames": _SingleAndSequence[_DataType]})
+_ReturnDict_sneedif_PlatformInfo = TypedDict("_ReturnDict_sneedif_PlatformInfo", {"profile": _DataType, "version": _DataType, "name": _DataType, "vendor": _DataType})
+
+
+class _Plugin_sneedif_Core_Bound(Plugin):
+    """This class implements the module definitions for the "sneedif" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def DeviceInfo(self, device: int | None = None) -> '_ReturnDict_sneedif_DeviceInfo': ...
+    def ListDevices(self) -> '_ReturnDict_sneedif_ListDevices': ...
+    def NNEDI3(self, clip: VideoNode, field: int, dh: int | None = None, dw: int | None = None, planes: _SingleAndSequence[int] | None = None, nsize: int | None = None, nns: int | None = None, qual: int | None = None, etype: int | None = None, pscrn: int | None = None, transpose_first: int | None = None, device: int | None = None) -> ConstantFormatVideoNode: ...
+    def PlatformInfo(self, device: int | None = None) -> '_ReturnDict_sneedif_PlatformInfo': ...
+
+class _Plugin_sneedif_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "sneedif" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def NNEDI3(self, field: int, dh: int | None = None, dw: int | None = None, planes: _SingleAndSequence[int] | None = None, nsize: int | None = None, nns: int | None = None, qual: int | None = None, etype: int | None = None, pscrn: int | None = None, transpose_first: int | None = None, device: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
 
 
 # implementation: std
@@ -794,6 +876,7 @@ class _Plugin_text_VideoNode_Bound(Plugin):
 # end implementation
 
 
+
 # implementation: vszip
 
 class _Plugin_vszip_Core_Bound(Plugin):
@@ -864,6 +947,7 @@ class _Plugin_warpsf_VideoNode_Bound(Plugin):
 
 
 
+
 # implementation: wwxd
 
 class _Plugin_wwxd_Core_Bound(Plugin):
@@ -876,6 +960,18 @@ class _Plugin_wwxd_VideoNode_Bound(Plugin):
 
 # end implementation
 
+
+# implementation: znedi3
+
+class _Plugin_znedi3_Core_Bound(Plugin):
+    """This class implements the module definitions for the "znedi3" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def nnedi3(self, clip: VideoNode, field: int, dh: int | None = None, planes: _SingleAndSequence[int] | None = None, nsize: int | None = None, nns: int | None = None, qual: int | None = None, etype: int | None = None, pscrn: int | None = None, opt: int | None = None, int16_prescreener: int | None = None, int16_predictor: int | None = None, exp: int | None = None, show_mask: int | None = None, x_nnedi3_weights_bin: _DataType | None = None, x_cpu: _DataType | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_znedi3_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "znedi3" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def nnedi3(self, field: int, dh: int | None = None, planes: _SingleAndSequence[int] | None = None, nsize: int | None = None, nns: int | None = None, qual: int | None = None, etype: int | None = None, pscrn: int | None = None, opt: int | None = None, int16_prescreener: int | None = None, int16_predictor: int | None = None, exp: int | None = None, show_mask: int | None = None, x_nnedi3_weights_bin: _DataType | None = None, x_cpu: _DataType | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
 
 # implementation: zsmooth
 
@@ -1026,6 +1122,21 @@ class VideoNode(RawNode):
     def dpid(self) -> _Plugin_dpid_VideoNode_Bound:
         """Rapid, Detail-Preserving Image Downscaling"""
     # end instance
+    # instance_bound_VideoNode: eedi2
+    @property
+    def eedi2(self) -> _Plugin_eedi2_VideoNode_Bound:
+        """EEDI2"""
+    # end instance
+    # instance_bound_VideoNode: eedi2cuda
+    @property
+    def eedi2cuda(self) -> _Plugin_eedi2cuda_VideoNode_Bound:
+        """EEDI2 filter using CUDA"""
+    # end instance
+    # instance_bound_VideoNode: eedi3m
+    @property
+    def eedi3m(self) -> _Plugin_eedi3m_VideoNode_Bound:
+        """Enhanced Edge Directed Interpolation 3"""
+    # end instance
     # instance_bound_VideoNode: fmtc
     @property
     def fmtc(self) -> _Plugin_fmtc_VideoNode_Bound:
@@ -1060,6 +1171,10 @@ class VideoNode(RawNode):
     @property
     def scxvid(self) -> _Plugin_scxvid_VideoNode_Bound:
         """VapourSynth Scxvid Plugin"""
+    # end instance
+    @property
+    def sneedif(self) -> _Plugin_sneedif_VideoNode_Bound:
+        """Setsugen No Ensemble of Edge Directed Interpolation Functions"""
     # end instance
     # instance_bound_VideoNode: std
     @property
@@ -1105,6 +1220,11 @@ class VideoNode(RawNode):
     @property
     def wwxd(self) -> _Plugin_wwxd_VideoNode_Bound:
         """Scene change detection approximately like Xvid's"""
+    # end instance
+    # instance_bound_VideoNode: znedi3
+    @property
+    def znedi3(self) -> _Plugin_znedi3_VideoNode_Bound:
+        """Neural network edge directed interpolation (3rd gen.)"""
     # end instance
     # instance_bound_VideoNode: zsmooth
     @property
@@ -1235,6 +1355,21 @@ class Core:
     def dvdsrc2(self) -> _Plugin_dvdsrc2_Core_Bound:
         """Dvdsrc 2nd tour"""
     # end instance
+    # instance_bound_Core: eedi2
+    @property
+    def eedi2(self) -> _Plugin_eedi2_Core_Bound:
+        """EEDI2"""
+    # end instance
+    # instance_bound_Core: eedi2cuda
+    @property
+    def eedi2cuda(self) -> _Plugin_eedi2cuda_Core_Bound:
+        """EEDI2 filter using CUDA"""
+    # end instance
+    # instance_bound_Core: eedi3m
+    @property
+    def eedi3m(self) -> _Plugin_eedi3m_Core_Bound:
+        """Enhanced Edge Directed Interpolation 3"""
+    # end instance
     # instance_bound_Core: ffms2
     @property
     def ffms2(self) -> _Plugin_ffms2_Core_Bound:
@@ -1280,6 +1415,11 @@ class Core:
     def scxvid(self) -> _Plugin_scxvid_Core_Bound:
         """VapourSynth Scxvid Plugin"""
     # end instance
+    # instance_bound_Core: sneedif
+    @property
+    def sneedif(self) -> _Plugin_sneedif_Core_Bound:
+        """Setsugen No Ensemble of Edge Directed Interpolation Functions"""
+    # end instance
     # instance_bound_Core: std
     @property
     def std(self) -> _Plugin_std_Core_Bound:
@@ -1323,6 +1463,11 @@ class Core:
     @property
     def wwxd(self) -> _Plugin_wwxd_Core_Bound:
         """Scene change detection approximately like Xvid's"""
+    # end instance
+    # instance_bound_Core: znedi3
+    @property
+    def znedi3(self) -> _Plugin_znedi3_Core_Bound:
+        """Neural network edge directed interpolation (3rd gen.)"""
     # end instance
     # instance_bound_Core: zsmooth
     @property
