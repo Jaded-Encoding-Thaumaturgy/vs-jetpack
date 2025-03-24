@@ -176,7 +176,7 @@ class SuperSampler(_Antialiaser, Scaler, ABC):
 
             if isinstance(self._shifter, NoShift):
                 if upscaled.format.subsampling_h or upscaled.format.subsampling_w:
-                    upscaled = Catrom.shift(upscaled, 0, [0, cleftshift + cresshift])  # type: ignore
+                    upscaled = Catrom.shift(upscaled, 0, [0, cleftshift + cresshift])
             else:
                 upscaled = self._shifter.shift(
                     upscaled, [topshift, ctopshift], [leftshift, cleftshift]
@@ -219,10 +219,10 @@ class SingleRater(_Antialiaser, ABC):
                 upscaled = upscaled.std.Transpose()
 
                 if 'mclip' in kwargs:
-                    kwargs.update(mclip=kwargs.get('mclip').std.Transpose())
+                    kwargs.update(mclip=cast(vs.VideoNode, kwargs.get('mclip')).std.Transpose())
 
                 if 'sclip' in kwargs:
-                    kwargs.update(sclip=kwargs.get('sclip').std.Transpose())
+                    kwargs.update(sclip=cast(vs.VideoNode, kwargs.get('sclip')).std.Transpose())
 
         for isx, val in enumerate([y, x]):
             if val:
