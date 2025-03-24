@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Box, Catrom, NoScale, Scaler, ScalerT
-from vsmasktools import EdgeDetect, EdgeDetectT, Prewitt, ScharrTCanny
+from vsmasktools import EdgeDetect, EdgeDetectT, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, unsharp_masked
 from vsscale import ArtCNN
 from vstools import (
-    ConstantFormatVideoNode, CustomValueError, FormatsMismatchError, FunctionUtil, KwargsT, PlanesT, VSFunction,
-    VSFunctionNoArgs, check_variable_format, fallback, get_peak_value, get_y, limiter, scale_mask, vs
+    ConstantFormatVideoNode, CustomValueError, FormatsMismatchError, FunctionUtil, KwargsT, PlanesT, VSFunctionNoArgs,
+    check_variable_format, fallback, get_peak_value, get_y, limiter, scale_mask, vs
 )
 
 from .abstract import Antialiaser
@@ -66,13 +66,15 @@ pre_aa = _pre_aa()
 
 
 def clamp_aa(
-    clip: vs.VideoNode, strength: float = 1.0,
-    mthr: float = 0.25, mask: vs.VideoNode | EdgeDetectT | None = None,
-    weak_aa: vs.VideoNode | Antialiaser = Nnedi3(),
-    strong_aa: vs.VideoNode | Antialiaser = Eedi3(),
-    opencl: bool | None = False, ref: vs.VideoNode | None = None,
+    clip: vs.VideoNode,
+    strength: float = 1.0,
+    mthr: float = 0.25,
+    mask: vs.VideoNode | EdgeDetectT | Literal[False] = False,
+    weak_aa: vs.VideoNode | type[Antialiaser] | Antialiaser | None = None,
+    strong_aa: vs.VideoNode | type[Antialiaser] | Antialiaser | None = None,
+    ref: vs.VideoNode | None = None,
     planes: PlanesT = 0
-) -> vs.VideoNode:
+) -> ConstantFormatVideoNode:
     """
     Clamp a strong aa to a weaker one for the purpose of reducing the stronger's artifacts.
 
@@ -80,9 +82,8 @@ def clamp_aa(
     :param strength:            Set threshold strength for over/underflow value for clamping.
     :param mthr:                Binarize threshold for the mask, float.
     :param mask:                Clip to use for custom mask or an EdgeDetect to use custom masker.
-    :param weak_aa:             Antialiaser for the weaker aa.
-    :param strong_aa:           Antialiaser for the stronger aa.
-    :param opencl:              Whether to force OpenCL acceleration, None to leave as is.
+    :param weak_aa:             Antialiaser for the weaker aa. Default is Nnedi3
+    :param strong_aa:           Antialiaser for the stronger aa. Default is Eedi3
     :param ref:                 Reference clip for clamping.
 
     :return:                    Antialiased clip.
@@ -91,14 +92,14 @@ def clamp_aa(
     func = FunctionUtil(clip, clamp_aa, planes, (vs.YUV, vs.GRAY))
 
     if not isinstance(weak_aa, vs.VideoNode):
-        if opencl is not None and hasattr(weak_aa, 'opencl'):
-            weak_aa.opencl = opencl
+        if weak_aa is None:
+            weak_aa = Nnedi3()
 
         weak_aa = weak_aa.aa(func.work_clip)
 
     if not isinstance(strong_aa, vs.VideoNode):
-        if opencl is not None and hasattr(strong_aa, 'opencl'):
-            strong_aa.opencl = opencl
+        if strong_aa is None:
+            strong_aa = Eedi3()
 
         strong_aa = strong_aa.aa(func.work_clip)
 
@@ -120,11 +121,11 @@ def clamp_aa(
         thr=thr, planes=func.norm_planes, func=func.func
     )
 
-    if mask:
+    if mask is not False:
         if not isinstance(mask, vs.VideoNode):
             bin_thr = scale_mask(mthr, 32, clip)
 
-            mask = ScharrTCanny.ensure_obj(mask).edgemask(func.work_clip)  # type: ignore
+            mask = EdgeDetect.ensure_obj(mask).edgemask(func.work_clip)
             mask = box_blur(mask.std.Binarize(bin_thr).std.Maximum())
             mask = mask.std.Minimum().std.Deflate()
 
