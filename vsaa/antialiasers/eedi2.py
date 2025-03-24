@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from dataclasses import field as dc_field
 from typing import Any
 
-from vstools import core, vs
+from vstools import ConstantFormatVideoNode, check_variable_format, core, vs
 
 from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser, _FullInterpolate
 
@@ -34,13 +34,13 @@ class EEDI2(_FullInterpolate, _Antialiaser):
             estr=self.estr, dstr=self.dstr, maxd=self.maxd, pp=self.pp
         )
 
-    def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> vs.VideoNode:
-        inter: vs.VideoNode
+    def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> ConstantFormatVideoNode:
+        assert check_variable_format(clip, self.__class__)
 
         if self.cuda:
-            inter = core.eedi2cuda.EEDI2(clip, self.field, **kwargs)  # type: ignore
+            inter = core.eedi2cuda.EEDI2(clip, self.field, **kwargs)
         else:
-            inter = core.eedi2.EEDI2(clip, self.field, **kwargs)  # type: ignore
+            inter = core.eedi2.EEDI2(clip, self.field, **kwargs)
 
         if not double_y:
             if self.drop_fields:
@@ -51,18 +51,14 @@ class EEDI2(_FullInterpolate, _Antialiaser):
                 shift = (self._shift * int(not self.field), 0)
 
                 if self._scaler:
-                    inter = self._scaler.scale(inter, clip.width, clip.height, shift)
+                    inter = self._scaler.scale(inter, clip.width, clip.height, shift)  # type: ignore[assignment]
                 else:
-                    inter = self._shifter.scale(inter, clip.width, clip.height, shift)
+                    inter = self._shifter.scale(inter, clip.width, clip.height, shift)  # type: ignore[assignment]
 
         return self._post_interpolate(clip, inter, double_y, **kwargs)
 
-    def full_interpolate(self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any) -> vs.VideoNode:
-        return core.eedi2cuda.Enlarge2(clip, **kwargs)  # type: ignore
-
-    _shift = -0.5
-
-    _static_kernel_radius = 2
+    def full_interpolate(self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any) -> ConstantFormatVideoNode:
+        return core.eedi2cuda.Enlarge2(clip, **kwargs)
 
 
 class Eedi2SS(EEDI2, SuperSampler):

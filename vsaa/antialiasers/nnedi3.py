@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from vstools import inject_self, vs
+from vstools import ConstantFormatVideoNode, inject_self, vs
 
 from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser, _FullInterpolate
 
@@ -30,11 +30,11 @@ class NNEDI3(_FullInterpolate, _Antialiaser):
         pscrn = min(self.pscrn, 1) if clip.format.sample_type == vs.FLOAT else self.pscrn
         return dict(nsize=self.nsize, nns=self.nns, qual=self.qual, etype=self.etype, pscrn=pscrn)
 
-    def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> vs.VideoNode:
+    def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> ConstantFormatVideoNode:
         interpolated = clip.znedi3.nnedi3(self.field, double_y or not self.drop_fields, **kwargs)
         return self.shift_interpolate(clip, interpolated, double_y, **kwargs)
 
-    def full_interpolate(self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any) -> vs.VideoNode:
+    def full_interpolate(self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any) -> ConstantFormatVideoNode:
         return clip.sneedif.NNEDI3(self.field, double_y, double_x, transpose_first=self.transpose_first, **kwargs)
 
     _shift = 0.5
