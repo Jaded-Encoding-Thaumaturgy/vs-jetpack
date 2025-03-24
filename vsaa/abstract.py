@@ -28,11 +28,15 @@ class _SingleInterpolate(ABC):
     _shift: float
 
     def _post_interpolate(
-        self, clip: vs.VideoNode, aa_clip: vs.VideoNode, double_y: bool,
-        mclip: vs.VideoNode | None = None, **kwargs: Any
-    ) -> vs.VideoNode:
-        if not double_y and isinstance(mclip, vs.VideoNode):
-            return norm_expr([clip, aa_clip, mclip], 'z y x ?', func=self.__class__._post_interpolate)
+        self,
+        clip: ConstantFormatVideoNode,
+        aa_clip: ConstantFormatVideoNode,
+        double_y: bool,
+        mclip: ConstantFormatVideoNode | None = None,
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        if not double_y and mclip:
+            return norm_expr([clip, aa_clip, mclip], 'z y x ?', func=self.__class__._post_interpolate, **kwargs)
 
         return aa_clip
 
@@ -50,26 +54,33 @@ class _Antialiaser(_SingleInterpolate, ABC):
     scaler: ScalerT | None = dc_field(default=None, kw_only=True)
 
     def __post_init__(self) -> None:
-        super().__post_init__()
-
         self._shifter = Kernel.ensure_obj(self.shifter or Catrom, self.__class__)
         self._scaler = None if self.scaler is None else Scaler.ensure_obj(self.scaler, self.__class__)
 
-    def preprocess_clip(self, clip: vs.VideoNode) -> vs.VideoNode:
+    def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+        assert check_variable(clip, self.__class__)
+
         return clip
 
     def get_aa_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
         return {}
 
     def shift_interpolate(
-        self, clip: vs.VideoNode, inter: vs.VideoNode, double_y: bool, **kwargs: Any
-    ) -> vs.VideoNode:
+        self,
+        clip: vs.VideoNode,
+        inter: vs.VideoNode,
+        double_y: bool,
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        assert check_variable(clip, self.__class__)
+        assert check_variable(inter, self.__class__)
+
         if not double_y and not self.drop_fields:
             shift = (self._shift * int(not self.field), 0)
 
             inter = (self._scaler if self._scaler else self._shifter).scale(inter, clip.width, clip.height, shift)
 
-            return self._post_interpolate(clip, inter, double_y, **kwargs)
+            return self._post_interpolate(clip, inter, double_y, **kwargs)  # type: ignore[arg-type]
 
         return inter
 
@@ -91,18 +102,17 @@ class SuperSampler(_Antialiaser, Scaler, ABC):
     def get_ss_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
         return {}
 
-    @inject_self
-    def scale(  # type: ignore[override]
+    @inject_self.cached
+    def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-        shift: tuple[float, float] = (0, 0), **kwargs: Any
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        **kwargs: Any
     ) -> vs.VideoNode:
 
         assert check_progressive(clip, self.scale)
 
         clip = self.preprocess_clip(clip)
         width, height = Scaler._wh_norm(clip, width, height)
-
-        assert clip.format and clip.width and clip.height
 
         if (clip.width, clip.height) == (width, height):
             return clip
@@ -182,20 +192,10 @@ class SingleRater(_Antialiaser, ABC):
     def get_sr_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
         return {}
 
-    @overload
     @inject_self.init_kwargs.clean
-    def aa(self, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any) -> vs.VideoNode:
-        ...
-
-    @overload
-    @inject_self.init_kwargs.clean
-    def aa(self, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any) -> vs.VideoNode:
-        ...
-
-    @inject_self.init_kwargs.clean
-    def aa(
+    def _aa(
         self, clip: vs.VideoNode, y_or_dir: bool | AADirection = True, x: bool = True, /, **kwargs: Any
-    ) -> vs.VideoNode:
+    ) -> ConstantFormatVideoNode:
         if isinstance(y_or_dir, AADirection):
             y, x = y_or_dir.to_yx()
         else:
@@ -203,9 +203,9 @@ class SingleRater(_Antialiaser, ABC):
 
         clip = self.preprocess_clip(clip)
 
-        return self._aa(clip, y, x, **kwargs)
+        return self._do_aa(clip, y, x, **kwargs)
 
-    def _aa(self, clip: vs.VideoNode, y: bool = True, x: bool = False, **kwargs: Any) -> vs.VideoNode:
+    def _do_aa(self, clip: ConstantFormatVideoNode, y: bool = True, x: bool = False, **kwargs: Any) -> ConstantFormatVideoNode:
         kwargs = self.get_aa_args(clip, **kwargs) | self.get_sr_args(clip, **kwargs) | kwargs
 
         upscaled = clip
@@ -238,84 +238,112 @@ class SingleRater(_Antialiaser, ABC):
         return upscaled
 
 
-@dataclass(kw_only=True)
-class DoubleRater(SingleRater):
-    merge_func: Callable[[vs.VideoNode, vs.VideoNode], vs.VideoNode] = core.proxied.std.Merge
+    if TYPE_CHECKING:
+        @overload  # type: ignore[misc]
+        @staticmethod
+        def aa(
+            clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            ...
 
-    def _aa(self, clip: vs.VideoNode, y: bool = True, x: bool = False, **kwargs: Any) -> vs.VideoNode:
+        @overload
+        def aa(
+            self, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            ...
+
+        @overload
+        @staticmethod
+        def aa(
+            clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            ...
+
+        @overload
+        def aa(
+            self, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            ...
+
+        @overload
+        def aa(self, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+            ...
+
+        def aa(*args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+            ...
+    else:
+        aa = _aa
+
+
+@dataclass(kw_only=True)
+class DoubleRater(SingleRater, ABC):
+    merge_func: Callable[[vs.VideoNode, vs.VideoNode], ConstantFormatVideoNode] = core.proxied.std.Merge
+
+    @inject_self.init_kwargs.clean
+    def _draa(
+        self, clip: vs.VideoNode, y_or_dir: bool | AADirection = True, x: bool = True, /, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        if isinstance(y_or_dir, AADirection):
+            y, x = y_or_dir.to_yx()
+        else:
+            y = y_or_dir
+
+        clip = self.preprocess_clip(clip)
+
+        kwargs.pop('field', None)
+
+        return self._do_draa(clip, y, x, **kwargs)
+
+    def _do_draa(self, clip: ConstantFormatVideoNode, y: bool = True, x: bool = False, **kwargs: Any) -> ConstantFormatVideoNode:
         original_field = int(self.field)
 
         self.field = 0
-        aa0 = super()._aa(clip, y, x, **kwargs)
+        aa0 = super()._do_aa(clip, y, x, **kwargs)
+
         self.field = 1
-        aa1 = super()._aa(clip, y, x, **kwargs)
+        aa1 = super()._do_aa(clip, y, x, **kwargs)
 
         self.field = original_field
 
         return self.merge_func(aa0, aa1)
 
+    if TYPE_CHECKING:
+        @overload  # type: ignore[misc]
+        @staticmethod
+        def draa(
+            clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            ...
+
+        @overload
+        def draa(
+            self, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            ...
+
+        @overload
+        @staticmethod
+        def draa(
+            clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            ...
+
+        @overload
+        def draa(
+            self, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            ...
+
+        @overload
+        def draa(self, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+            ...
+
+        def draa(*args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+            ...
+    else:
+        draa = _draa
+
 
 @dataclass
-class Antialiaser(DoubleRater, SuperSampler):
-    @inject_self
-    def scale(  # type: ignore[override]
-        self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-        shift: tuple[float, float] = (0, 0), **kwargs: Any
-    ) -> vs.VideoNode:
-        """Scale with this antialiaser"""
-        width, height = Scaler._wh_norm(clip, width, height)
-        return SuperSampler.scale(self, clip, width, height, shift, **kwargs)
-
-    if TYPE_CHECKING:
-        @overload  # type: ignore[no-overload-impl]
-        @classmethod
-        def aa(cls, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any) -> vs.VideoNode:
-            ...
-
-        @overload
-        @classmethod
-        def aa(cls, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any) -> vs.VideoNode:
-            ...
-    else:
-        @inject_self.init_kwargs.clean
-        def aa(
-            self, clip: vs.VideoNode, y_or_dir: bool | AADirection = True, x: bool = True, /, **kwargs: Any
-        ) -> vs.VideoNode:
-            """Single rate aa with this antialiaser"""
-
-            if isinstance(y_or_dir, AADirection):
-                y, x = y_or_dir.to_yx()
-            else:
-                y = y_or_dir
-
-            clip = self.preprocess_clip(clip)
-
-            return SingleRater._aa(self, clip, y, x, **kwargs)
-
-    if TYPE_CHECKING:
-        @overload  # type: ignore[no-overload-impl]
-        @classmethod
-        def draa(cls, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any) -> vs.VideoNode:
-            ...
-
-        @overload
-        @classmethod
-        def draa(cls, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any) -> vs.VideoNode:
-            ...
-    else:
-        @inject_self.init_kwargs.clean
-        def draa(
-            self, clip: vs.VideoNode, y_or_dir: bool | AADirection = True, x: bool = True, /, **kwargs: Any
-        ) -> vs.VideoNode:
-            """Double rate aa with this antialiaser"""
-
-            if isinstance(y_or_dir, AADirection):
-                y, x = y_or_dir.to_yx()
-            else:
-                y = y_or_dir
-
-            clip = self.preprocess_clip(clip)
-
-            kwargs.pop('field', None)
-
-            return DoubleRater._aa(self, clip, y, x, **kwargs)
+class Antialiaser(DoubleRater, SuperSampler, ABC):
+    ...
