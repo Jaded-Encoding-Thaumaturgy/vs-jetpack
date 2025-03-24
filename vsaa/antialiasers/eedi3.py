@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from dataclasses import field as dc_field
 from typing import TYPE_CHECKING, Any, Literal
 
-from vstools import CustomValueError, core, inject_self, vs
+from vstools import ConstantFormatVideoNode, CustomValueError, core, inject_self, vs, vs_object
 
 from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser
 from . import nnedi3
@@ -43,10 +43,14 @@ class EEDI3(_Antialiaser):
 
         self._sclip_aa: Antialiaser | Literal[True] | vs.VideoNode | None
 
-        if self.sclip_aa and self.sclip_aa is not True and not isinstance(self.sclip_aa, (Antialiaser, vs.VideoNode)):
-            self._sclip_aa = self.sclip_aa()  # type: ignore[operator]
+        if (
+            self.sclip_aa is not None
+            and self.sclip_aa is not True
+            and not isinstance(self.sclip_aa, (Antialiaser, vs.VideoNode))
+        ):
+            self._sclip_aa = self.sclip_aa()
         else:
-            self._sclip_aa = self.sclip_aa  # type: ignore[assignment]
+            self._sclip_aa = self.sclip_aa
 
     def get_aa_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
         args = dict(
@@ -65,15 +69,14 @@ class EEDI3(_Antialiaser):
 
         return args
 
-    def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> vs.VideoNode:
+    def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> ConstantFormatVideoNode:
         aa_kwargs = self.get_aa_args(clip, **kwargs)
         aa_kwargs = self._handle_sclip(clip, double_y, aa_kwargs, **kwargs)
 
-        function = core.eedi3m.EEDI3CL if self.opencl else core.eedi3m.EEDI3
-
-        interpolated = function(  # type: ignore[operator]
-            clip, self.field, double_y or not self.drop_fields, **aa_kwargs
-        )
+        if self.opencl:
+            interpolated = core.eedi3m.EEDI3CL(clip, self.field, double_y or not self.drop_fields, **aa_kwargs)
+        else:
+            interpolated = core.eedi3m.EEDI3(clip, self.field, double_y or not self.drop_fields, **aa_kwargs)
 
         return self.shift_interpolate(clip, interpolated, double_y, **kwargs)
 
@@ -95,14 +98,14 @@ class EEDI3(_Antialiaser):
                         self.__class__
                     )
 
-            aa_kwargs.update(dict(sclip=clip))
+            aa_kwargs.update(sclip=clip)
 
             return aa_kwargs
 
         sclip_args = self._sclip_aa.get_aa_args(clip, mclip=kwargs.get('mclip'))
         sclip_args.update(self._sclip_aa.get_ss_args(clip) if double_y else self._sclip_aa.get_sr_args(clip))
 
-        aa_kwargs.update(dict(sclip=self._sclip_aa.interpolate(clip, double_y or not self.drop_fields, **sclip_args)))
+        aa_kwargs.update(sclip=self._sclip_aa.interpolate(clip, double_y or not self.drop_fields, **sclip_args))
 
         return aa_kwargs
 
@@ -121,7 +124,7 @@ class Eedi3SS(EEDI3, SuperSampler):
     ...
 
 
-class Eedi3SR(EEDI3, SingleRater):
+class Eedi3SR(EEDI3, SingleRater, vs_object):
     _mclips: tuple[vs.VideoNode, vs.VideoNode] | None = None
 
     def get_sr_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
