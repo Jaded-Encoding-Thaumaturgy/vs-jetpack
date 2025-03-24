@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from dataclasses import field as dc_field
 from dataclasses import replace
 from itertools import zip_longest
 from math import ceil, log2
-from typing import TYPE_CHECKING, Any, Callable, overload
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, cast, overload
 
 from typing_extensions import Self
 
 from vsexprtools import norm_expr
 from vskernels import Catrom, Kernel, KernelT, NoShift, Scaler, ScalerT
-from vstools import check_progressive, core, inject_self, vs, vs_object
+from vskernels.types import LeftShift, TopShift
+from vstools import ConstantFormatVideoNode, check_progressive, check_variable, core, inject_self, vs, vs_object
 
 from .enums import AADirection
 
@@ -22,7 +24,7 @@ __all__ = [
 ]
 
 
-class _SingleInterpolate(vs_object):
+class _SingleInterpolate(ABC):
     _shift: float
 
     def _post_interpolate(
@@ -34,12 +36,13 @@ class _SingleInterpolate(vs_object):
 
         return aa_clip
 
-    def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> vs.VideoNode:
-        raise NotImplementedError
+    @abstractmethod
+    def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> ConstantFormatVideoNode:
+        ...
 
 
 @dataclass
-class _Antialiaser(_SingleInterpolate):
+class _Antialiaser(_SingleInterpolate, ABC):
     field: int = dc_field(default=0, kw_only=True)
     drop_fields: bool = dc_field(default=True, kw_only=True)
     transpose_first: bool = dc_field(default=False, kw_only=True)
@@ -74,15 +77,17 @@ class _Antialiaser(_SingleInterpolate):
         return replace(self, **kwargs)
 
 
-class _FullInterpolate(_SingleInterpolate):
+class _FullInterpolate(_SingleInterpolate, ABC):
+    @abstractmethod
     def is_full_interpolate_enabled(self, x: bool, y: bool) -> bool:
-        return False
+        ...
 
-    def full_interpolate(self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any) -> vs.VideoNode:
-        raise NotImplementedError
+    @abstractmethod
+    def full_interpolate(self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any) -> ConstantFormatVideoNode:
+        ...
 
 
-class SuperSampler(_Antialiaser, Scaler):
+class SuperSampler(_Antialiaser, Scaler, ABC):
     def get_ss_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
         return {}
 
@@ -173,7 +178,7 @@ class SuperSampler(_Antialiaser, Scaler):
         return self._shifter.scale(upscaled, width, height, shift)
 
 
-class SingleRater(_Antialiaser):
+class SingleRater(_Antialiaser, ABC):
     def get_sr_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
         return {}
 
