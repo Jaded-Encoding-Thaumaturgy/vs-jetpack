@@ -25,7 +25,7 @@ __all__ = [
 
 class _pre_aa:
     def custom(
-        self, clip: vs.VideoNode, sharpen: VSFunction,
+        self, clip: vs.VideoNode, sharpen: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
         aa: type[Antialiaser] | Antialiaser = Nnedi3,
         planes: PlanesT = None, **kwargs: Any
     ) -> vs.VideoNode:
@@ -35,15 +35,17 @@ class _pre_aa:
         if field < 2:
             field += 2
 
+        antialiaser: Antialiaser
+
         if isinstance(aa, Antialiaser):
-            aa = aa.copy(field=field, **kwargs)  # type: ignore
+            antialiaser = aa.copy(field=field, **kwargs)
         else:
-            aa = aa(field=field, **kwargs)
+            antialiaser = aa(field=field, **kwargs)
 
         wclip = func.work_clip
 
         for _ in range(2):
-            bob = aa.interpolate(wclip, False, **aa.get_aa_args(wclip))
+            bob = antialiaser.interpolate(wclip, False, **antialiaser.get_aa_args(wclip))
             sharp = sharpen(wclip)
             limit = MeanMode.MEDIAN(sharp, wclip, bob[::2], bob[1::2])
             wclip = limit.std.Transpose()
