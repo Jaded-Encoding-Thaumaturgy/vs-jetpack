@@ -617,6 +617,19 @@ class _Plugin_rgvs_VideoNode_Bound(Plugin):
 # end implementation
 
 
+# implementation: sangnom
+
+class _Plugin_sangnom_Core_Bound(Plugin):
+    """This class implements the module definitions for the "sangnom" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def SangNom(self, clip: VideoNode, order: int | None = None, dh: int | None = None, aa: _SingleAndSequence[int] | None = None, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_sangnom_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "sangnom" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def SangNom(self, order: int | None = None, dh: int | None = None, aa: _SingleAndSequence[int] | None = None, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
+
+
+# end implementation
+
 
 # implementation: scxvid
 
@@ -1213,6 +1226,11 @@ class VideoNode(RawNode):
     def rgvs(self) -> _Plugin_rgvs_VideoNode_Bound:
         """RemoveGrain VapourSynth Port"""
     # end instance
+    # instance_bound_VideoNode: sangnom
+    @property
+    def sangnom(self) -> _Plugin_sangnom_VideoNode_Bound:
+        """VapourSynth Single Field Deinterlacer"""
+    # end instance
     # instance_bound_VideoNode: scxvid
     @property
     def scxvid(self) -> _Plugin_scxvid_VideoNode_Bound:
@@ -1465,6 +1483,11 @@ class Core:
     @property
     def rgvs(self) -> _Plugin_rgvs_Core_Bound:
         """RemoveGrain VapourSynth Port"""
+    # end instance
+    # instance_bound_Core: sangnom
+    @property
+    def sangnom(self) -> _Plugin_sangnom_Core_Bound:
+        """VapourSynth Single Field Deinterlacer"""
     # end instance
     # instance_bound_Core: scxvid
     @property
