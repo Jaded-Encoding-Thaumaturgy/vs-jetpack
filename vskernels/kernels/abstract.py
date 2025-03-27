@@ -148,6 +148,11 @@ class BaseScalerMeta(ABCMeta):
         partial_abstract: bool = False,
         **kwargs: Any
     ) -> BaseScalerMeta:
+        """
+        Adding `abstract=True` to the class declaration will force the class to be abstract and not be instantiated.
+        Adding `partial_abstract=True` to the class declaration will allow the class to be instantiated
+        but will likely raise an error if the kernel radius is not implemented.
+        """
 
         obj = super().__new__(mcls, name, bases, namespace, **kwargs)
 
