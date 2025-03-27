@@ -86,7 +86,7 @@ def adg_mask(
 def retinex(
     clip: vs.VideoNode, sigma: Sequence[float] = [25, 80, 250],
     lower_thr: float = 0.001, upper_thr: float = 0.001,
-    fast: bool | None = None, func: FuncExceptT | None = None
+    fast: bool = True, func: FuncExceptT | None = None
 ) -> ConstantFormatVideoNode:
     func = func or retinex
 
@@ -95,17 +95,6 @@ def retinex(
     sigma = sorted(sigma)
 
     y = get_y(clip)
-
-    if not complexpr_available or not hasattr(vs.core, 'vszip'):
-        if fast:
-            raise CustomRuntimeError(
-                "You don't have {missing} plugin, you can't use this function!", func, 'fast=True',
-                missing=iter(x for x in ('akarin', 'vszip') if not hasattr(vs.core, x))
-            )
-
-        return y.retinex.MSRCP(sigma, lower_thr, upper_thr)  # type: ignore
-    elif fast is None:
-        fast = True
 
     y = y.std.PlaneStats()
     is_float = get_sample_type(y) is vs.FLOAT
