@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Sequence
+from typing import Any, Sequence, overload
 
 from vsexprtools import ExprOp
 from vsrgtools import box_blur
 from vstools import (
-    ColorRange, ConstantFormatVideoNode, FrameRangeN, FrameRangesN, FramesLengthError, Position, Size, check_variable,
-    depth, inject_self, limiter, normalize_seq, replace_ranges, vs
+    ColorRange, ConstantFormatVideoNode, CustomTypeError, FrameRangeN, FrameRangesN, FramesLengthError, Position, Size,
+    check_variable, depth, inject_self, limiter, normalize_seq, replace_ranges, vs
 )
 
 __all__ = [
@@ -36,8 +36,23 @@ class BoundingBox(GeneralMask):
     size: Size
     invert: bool
 
-    def __init__(self, pos: tuple[int, int] | Position, size: tuple[int, int] | Size, invert: bool = False) -> None:
-        self.pos, self.size, self.invert = Position(pos), Size(size), invert
+    @overload
+    def __init__(self, width: int, height: int, offset_x: int, offset_y: int, /, *, invert: bool = False) -> None:
+        ...
+
+    @overload
+    def __init__(self, size: tuple[int, int] | Size, pos: tuple[int, int] | Position, /, *, invert: bool = False) -> None:
+        ...
+
+    def __init__(self, *args: Any, invert: bool = False) -> None:
+        if len(args) == 4:
+            size, pos = (args[0], args[1]), (args[2], args[3])
+        elif len(args) == 2:
+            size, pos = args[0], args[1]
+        else:
+            raise CustomTypeError(None, self.__class__, args)
+
+        self.size, self.pos, self.invert = Size(pos), Position(size), invert
 
     def get_mask(self, ref: vs.VideoNode, /, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
         from .utils import squaremask
