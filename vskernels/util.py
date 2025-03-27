@@ -10,7 +10,7 @@ from typing_extensions import Self
 from vsexprtools import norm_expr
 from vstools import (
     ConstantFormatVideoNode, CustomRuntimeError, CustomValueError, HoldsVideoFormatT, InvalidTransferError, Matrix,
-    MatrixT, Transfer, cachedproperty, depth, get_video_format, inject_self, to_singleton, vs
+    MatrixT, Transfer, cachedproperty, depth, get_video_format, inject_self, vs
 )
 
 if TYPE_CHECKING:
@@ -18,14 +18,10 @@ if TYPE_CHECKING:
 else:
     BaseScaler = Any
 
-from .kernels import (
-    Bicubic, BicubicAuto, Catrom, ComplexKernel, CustomComplexKernel, Kernel, KernelT, LinearDescaler,
-    Placebo, Point, Resampler, ResamplerT, Scaler
-)
+from .kernels import Bicubic, Catrom, Kernel, KernelT, Point, Resampler, ResamplerT, Scaler
 from .types import Center, LeftShift, Slope, TopShift
 
 __all__ = [
-    'abstract_kernels', 'excluded_kernels',
     'NoShift', 'NoScale',
 
     'LinearLight',
@@ -126,35 +122,6 @@ class NoScale(NoScaleBase, Bicubic):
             ...
 
         return inner_no_scale
-
-
-abstract_kernels = list[type[BaseScaler]]([
-    Kernel, Placebo, ComplexKernel, CustomComplexKernel, LinearDescaler
-])
-
-
-@to_singleton
-class excluded_kernels(list[type]):
-    def __init__(self) -> None:
-        super().__init__(abstract_kernels)
-
-        self.exclude_sub = [NoShiftBase, NoScaleBase, BicubicAuto]
-
-    def __contains__(self, key: object) -> bool:
-        if not isinstance(key, type):
-            key = key.__class__
-
-        if super().__contains__(key):
-            return True
-
-        if key in self.exclude_sub:
-            return True
-
-        for t in self.exclude_sub:
-            if issubclass(key, t):
-                return True
-
-        return False
 
 
 @dataclass
@@ -290,8 +257,3 @@ def resample_to(
         return Point.resample(clip, out_fmt, matrix)
 
     return resampler.resample(clip, out_fmt, matrix)
-
-
-if True:
-    from .kernels import abstract
-    abstract._finished_loading_abstract = True

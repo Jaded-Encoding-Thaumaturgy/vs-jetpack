@@ -13,7 +13,7 @@ from vstools import T, check_progressive, core, inject_self, vs, vs_object
 
 from .enums import AADirection
 
-__all__ = __abstract__ = [
+__all__ = [
     'SuperSampler',
     'SingleRater', 'DoubleRater',
     'Antialiaser'
