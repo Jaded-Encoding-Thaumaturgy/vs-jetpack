@@ -21,7 +21,7 @@ __all__ = [
 ]
 
 
-class Placebo(ComplexScaler):
+class Placebo(ComplexScaler, abstract=True):
     """
     Abstract Placebo scaler.
 

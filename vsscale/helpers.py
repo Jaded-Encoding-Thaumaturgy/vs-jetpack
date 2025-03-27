@@ -21,10 +21,6 @@ __all__ = [
     'ScalingArgs'
 ]
 
-__abstract__ = [
-    'GenericScaler'
-]
-
 
 class _GeneriScaleNoShift(Protocol):
     def __call__(self, clip: vs.VideoNode, width: int, height: int, *args: Any, **kwds: Any) -> vs.VideoNode:
@@ -40,7 +36,7 @@ class _GeneriScaleWithShift(Protocol):
 
 
 @dataclass
-class GenericScaler(Scaler):
+class GenericScaler(Scaler, partial_abstract=True):
     """
     Generic Scaler base class.
     Inherit from this to create more complex scalers with built-in utils.
