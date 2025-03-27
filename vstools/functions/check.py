@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import inspect
-
-from functools import partial, wraps
-from typing import Any, Callable, Literal, Sequence, TypeGuard, cast, overload
+from typing import Sequence, TypeGuard, overload
 
 import vapoursynth as vs
 
-from jetpytools import CustomError, F, FuncExceptT
+from jetpytools import FuncExceptT
 
 from ..enums import FieldBased
 from ..exceptions import (
@@ -24,95 +21,7 @@ __all__ = [
     'check_variable_resolution',
     'check_correct_subsampling',
     'check_progressive',
-
-    'disallow_variable_format',
-    'disallow_variable_resolution',
 ]
-
-
-def _check_variable(
-    function: F, vname: str, error: type[CustomError],
-    only_first: bool, check_func: Callable[[vs.VideoNode], bool]
-) -> F:
-    def _check(x: Any) -> bool:
-        return isinstance(x, vs.VideoNode) and check_func(x)
-
-    @wraps(function)
-    def _wrapper(*args: Any, **kwargs: Any) -> Any:
-        if only_first:
-            import warnings
-            warnings.warn("Please use the check functions if only_first is True", SyntaxWarning)
-
-        for obj in args[:1] if only_first else [*args, *kwargs.values()]:
-            if _check(obj):
-                raise error(func=function)
-
-        if not only_first:
-            for name, param in inspect.signature(function).parameters.items():
-                if param.default is not inspect.Parameter.empty and _check(param.default):
-                    raise error(
-                        message=f'Variable-{vname} clip not allowed in default argument `{name}`.', func=function
-                    )
-
-        return function(*args, **kwargs)
-
-    return cast(F, _wrapper)
-
-
-@overload
-def disallow_variable_format(*, only_first: Literal[False] = ...) -> Callable[[F], F]:
-    ...
-
-
-@overload
-def disallow_variable_format(function: F | None = None, /) -> F:
-    ...
-
-
-def disallow_variable_format(function: F | None = None, /, *, only_first: Literal[False] = False) -> Callable[[F], F] | F:
-    """
-    Decorator for disallowing clips with variable formats.
-
-    :param only_first:              Only verify the format of the first argument.
-                                    Default: False.
-
-    :raises VariableFormatError:    A clip with a variable format is found.
-    """
-
-    if function is None:
-        return cast(Callable[[F], F], partial(disallow_variable_format, only_first=only_first))
-
-    return _check_variable(
-        function, 'format', VariableFormatError, only_first, lambda x: x.format is None
-    )
-
-
-@overload
-def disallow_variable_resolution(*, only_first: Literal[False] = ...) -> Callable[[F], F]:
-    ...
-
-
-@overload
-def disallow_variable_resolution(func: F | None = None, /) -> F:
-    ...
-
-
-def disallow_variable_resolution(function: F | None = None, /, *, only_first: Literal[False] = False) -> Callable[[F], F] | F:
-    """
-    Decorator for disallowing clips with variable resolutions.
-
-    :param only_first:                  Only verify the resolution of the first argument.
-                                        Default: False.
-
-    :raises VariableResolutionError:    A clip with a variable resolution is found.
-    """
-
-    if function is None:
-        return cast(Callable[[F], F], partial(disallow_variable_resolution, only_first=only_first))
-
-    return _check_variable(
-        function, 'resolution', VariableResolutionError, only_first, lambda x: not all({x.width, x.height})
-    )
 
 
 def check_ref_clip(src: vs.VideoNode, ref: vs.VideoNode | None, func: FuncExceptT | None = None) -> vs.VideoNode:
