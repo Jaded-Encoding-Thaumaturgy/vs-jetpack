@@ -6,9 +6,12 @@ from math import ceil, floor
 from types import NoneType
 from typing import Any, Callable, NamedTuple, Protocol, Self, TypeAlias, overload
 
-from vskernels import Catrom, Kernel, KernelT, Scaler, ScalerT
-from vstools import KwargsT, MatrixT, Resolution, get_w, mod2, plane, vs
+from jetpytools import inject_self
 
+from vskernels import Catrom, Kernel, KernelT, Scaler, ScalerT
+from vstools import (
+    ConstantFormatVideoNode, KwargsT, MatrixT, Resolution, check_variable, get_w, mod2, plane, vs
+)
 
 __all__ = [
     'GenericScaler',
@@ -21,16 +24,23 @@ __all__ = [
 
 
 class _GeneriScaleNoShift(Protocol):
-    def __call__(self, clip: vs.VideoNode, width: int, height: int, *args: Any, **kwds: Any) -> vs.VideoNode:
+    def __call__(
+        self, clip: ConstantFormatVideoNode, width: int, height: int,
+        *args: Any, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
         ...
 
 
 class _GeneriScaleWithShift(Protocol):
     def __call__(
-        self, clip: vs.VideoNode, width: int, height: int, shift: tuple[float, float],
-        *args: Any, **kwds: Any
-    ) -> vs.VideoNode:
+        self, clip: ConstantFormatVideoNode, width: int, height: int, shift: tuple[float, float],
+        *args: Any, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
         ...
+
+
+def _func_no_op(clip: ConstantFormatVideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+    return clip
 
 
 @dataclass
@@ -42,81 +52,73 @@ class GenericScaler(Scaler, partial_abstract=True):
     to use that as a Scaler in functions taking that.
     """
 
-    kernel: KernelT | None = field(default=None, kw_only=True)
+    kernel: KernelT = field(default=Catrom, kw_only=True)
     """
     Base kernel to be used for certain scaling/shifting/resampling operations.
-    Must be specified and defaults to catrom
+    Defaults to catrom
     """
 
     scaler: ScalerT | None = field(default=None, kw_only=True)
     """Scaler used for scaling operations. Defaults to kernel."""
 
     shifter: KernelT | None = field(default=None, kw_only=True)
-    """Kernel used for shifting operations. Defaults to kernel."""
+    """Kernel used for shifting operations. Defaults to scaler."""
 
     def __post_init__(self) -> None:
-        self._kernel = Kernel.ensure_obj(self.kernel or Catrom, self.__class__)
+        self._kernel = Kernel.ensure_obj(self.kernel, self.__class__)
         self._scaler = Scaler.ensure_obj(self.scaler or self._kernel, self.__class__)
         self._shifter = Kernel.ensure_obj(
             self.shifter or (self._scaler if isinstance(self._scaler, Kernel) else Catrom), self.__class__
         )
 
     def __init__(
-        self, func: _GeneriScaleNoShift | _GeneriScaleWithShift | Callable[..., vs.VideoNode], **kwargs: Any
+        self, func: _GeneriScaleNoShift | _GeneriScaleWithShift | None = None, **kwargs: Any
     ) -> None:
-        self.func = func
+        self.func = _func_no_op if func is None else func
         self.kwargs = kwargs
 
-    def scale(  # type: ignore
+    @inject_self.cached
+    def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: tuple[float, float] = (0, 0), **kwargs: Any
-    ) -> vs.VideoNode:
+    ) -> ConstantFormatVideoNode:
+        assert check_variable(clip, self.__class__)
+
         width, height = self._wh_norm(clip, width, height)
 
         kwargs = self.kwargs | kwargs
 
-        output = None
-
         if shift != (0, 0):
-            try:
-                output = self.func(clip, width, height, shift, **kwargs)
-            except BaseException:
-                try:
-                    output = self.func(clip, width=width, height=height, shift=shift, **kwargs)
-                except BaseException:
-                    pass
-
-        if output is None:
-            try:
-                output = self.func(clip, width, height, **kwargs)
-            except BaseException:
-                output = self.func(clip, width=width, height=height, **kwargs)
+            output = self.func(clip, width, height, shift, **kwargs)
+        else:
+            output = self.func(clip, width, height, **kwargs)
 
         return self._finish_scale(output, clip, width, height, shift)
 
     def _finish_scale(
-        self, clip: vs.VideoNode, input_clip: vs.VideoNode, width: int, height: int,
-        shift: tuple[float, float] = (0, 0), matrix: MatrixT | None = None,
+        self,
+        clip: ConstantFormatVideoNode,
+        input_clip: ConstantFormatVideoNode,
+        width: int, height: int,
+        shift: tuple[float, float] = (0, 0),
+        matrix: MatrixT | None = None,
         copy_props: bool = False
-    ) -> vs.VideoNode:
-        assert input_clip.format
+    ) -> ConstantFormatVideoNode:
 
         if input_clip.format.num_planes == 1:
             clip = plane(clip, 0)
 
         if (clip.width, clip.height) != (width, height):
-            clip = self._scaler.scale(clip, width, height)
+            clip = self._scaler.scale(clip, width, height)  # type: ignore[assignment]
 
         if shift != (0, 0):
-            clip = self._shifter.shift(clip, shift)  # type: ignore
-
-        assert clip.format
+            clip = self._shifter.shift(clip, shift)
 
         if clip.format.id != input_clip.format.id:
             clip = self._kernel.resample(clip, input_clip, matrix)
 
         if copy_props:
-            return clip.std.CopyFrameProps(input_clip)
+            return vs.core.std.CopyFrameProps(clip, input_clip)
 
         return clip
 
@@ -126,7 +128,7 @@ class GenericScaler(Scaler, partial_abstract=True):
         scaler_obj = Scaler.ensure_obj(scaler, self.__class__)
 
         if is_dataclass(scaler_obj):
-            from inspect import Signature  #type: ignore[unreachable]
+            from inspect import Signature  # type: ignore[unreachable]
 
             kwargs = dict[str, ScalerT]()
 
