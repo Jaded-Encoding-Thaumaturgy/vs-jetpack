@@ -10,7 +10,7 @@ from vsrgtools import RepairMode, repair
 from vstools import CustomOverflowError, check_ref_clip, inject_self, scale_delta, vs
 
 
-from .helpers import GenericScaler
+from .generic import GenericScaler
 
 __all__ = [
     'ClampScaler',

@@ -13,7 +13,7 @@ from vstools import (
     clamp, core, depth, fallback, get_nvidia_version, get_prop, inject_self, limiter, padder, vs
 )
 
-from .helpers import BaseGenericScaler
+from .generic import BaseGenericScaler
 
 __all__ = [
     'DPID',
