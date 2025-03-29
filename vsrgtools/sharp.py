@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
-
 from scipy import interpolate
+from functools import partial
 
 from vsexprtools import norm_expr
 from vstools import (
-    ConstantFormatVideoNode, ConvMode, CustomTypeError, FunctionUtil, GenericVSFunction, PlanesT, VSFunctionNoArgs,
-    check_ref_clip, check_variable, normalize_planes, vs
+    ConstantFormatVideoNode, ConvMode, CustomTypeError, FunctionUtil, GenericVSFunction, 
+    check_ref_clip, PlanesT, VSFunctionNoArgs, check_variable, normalize_planes, vs
 )
 
 from .blur import box_blur, gauss_blur, median_blur, min_blur
@@ -26,34 +25,20 @@ __all__ = [
 
 
 def unsharpen(
-    clip: vs.VideoNode, strength: float = 1.0, sigma: float | list[float] = 1.5,
-    prefilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | None = None,
-    **kwargs: Any
+    clip: vs.VideoNode, strength: float = 1.0,
+    blur: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = partial(gauss_blur, sigma=1.5),
+    planes: PlanesT = None,
 ) -> ConstantFormatVideoNode:
 
     assert check_variable(clip, unsharpen)
 
-    if prefilter is None:
-        den, ref = clip, None
-    else:
-        if callable(prefilter):
-            den = prefilter(clip)
-        else:
-            assert check_variable(prefilter, unsharpen)
-            den = prefilter
+    if callable(blur):
+        blur = blur(clip)
 
-        ref = den
+    assert check_variable(blur, unsharpen)
+    check_ref_clip(clip, blur, unsharpen)
 
-    check_ref_clip(clip, ref)
-
-    blur = gauss_blur(den, sigma, **kwargs)
-
-    unsharp = norm_expr([den, blur], f'x y - {strength} * x +', 0, func=unsharpen)
-
-    if ref is not None:
-        return unsharp
-
-    return unsharp.std.MergeDiff(clip.std.MakeDiff(den))
+    return norm_expr([clip, blur], f'x y - {strength} * x +', planes, func=unsharpen)
 
 
 def unsharp_masked(
