@@ -7,7 +7,7 @@ from vstools import (
     depth, get_nvidia_version, get_y, inject_self, limiter, vs
 )
 
-from .helpers import BaseGenericScaler
+from .generic import BaseGenericScaler
 
 __all__ = ["GenericOnnxScaler", "autoselect_backend", "ArtCNN"]
 
