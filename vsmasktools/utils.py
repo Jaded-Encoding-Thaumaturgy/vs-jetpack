@@ -295,63 +295,102 @@ def normalize_mask(
     return depth(cmask, clip, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
 
 
-def rekt_partial(
-    clip: vs.VideoNode, left: int = 0, top: int = 0, right: int = 0, bottom: int = 0,
-    func: Callable[Concatenate[vs.VideoNode, P], ConstantFormatVideoNode] | None = None,
-    *args: P.args, **kwargs: P.kwargs
-) -> ConstantFormatVideoNode:
+class _rekt_partial:
+    def __call__(
+        self,
+        clip: vs.VideoNode,
+        func: Callable[Concatenate[vs.VideoNode, P], ConstantFormatVideoNode],
+        left: int = 0, right: int = 0, top: int = 0, bottom: int = 0,
+        *args: P.args, **kwargs: P.kwargs
+    ) -> ConstantFormatVideoNode:
+        """
+        Creates a rectangular mask to apply fixes only within the masked area,
+        significantly speeding up filters like anti-aliasing and scaling.
 
-    assert check_variable(clip, rekt_partial)
+        :param clip:            The source video clip to which the mask will be applied.
+        :param func:            The function to be applied within the masked area.
+        :param left:            The left boundary of the mask, defaults to 0.
+        :param right:           The right boundary of the mask, defaults to 0.
+        :param top:             The top boundary of the mask, defaults to 0.
+        :param bottom:          The bottom boundary of the mask, defaults to 0.
+        :return:                A new clip with the applied mask.
+        """
 
-    if left == top == right == bottom == 0:
-        if func:
+        assert check_variable(clip, rekt_partial)
+
+        if left == top == right == bottom == 0:
             return func(clip, *args, **kwargs)
-        return clip
 
-    cropped = clip.std.Crop(left, right, top, bottom)
+        cropped = clip.std.Crop(left, right, top, bottom)
 
-    if func:
         filtered = func(cropped, *args, **kwargs)
-    else:
-        filtered = cropped
 
-    check_ref_clip(cropped, filtered, rekt_partial)
+        check_ref_clip(cropped, filtered, rekt_partial)
 
-    if complexpr_available:
-        filtered = core.std.AddBorders(filtered, left, right, top, bottom)
+        if complexpr_available:
+            filtered = core.std.AddBorders(filtered, left, right, top, bottom)
 
-        ratio_w, ratio_h = 1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h
+            ratio_w, ratio_h = 1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h
 
-        vals = list(filter(None, [
-            ('X {left} >= ' if left else None),
-            ('X {right} < ' if right else None),
-            ('Y {top} >= ' if top else None),
-            ('Y {bottom} < ' if bottom else None)
-        ]))
+            vals = list(filter(None, [
+                ('X {left} >= ' if left else None),
+                ('X {right} < ' if right else None),
+                ('Y {top} >= ' if top else None),
+                ('Y {bottom} < ' if bottom else None)
+            ]))
 
-        return norm_expr(
-            [clip, filtered], [*vals, ['and'] * (len(vals) - 1), 'y x ?'],
-            left=[left, left / ratio_w], right=[clip.width - right, (clip.width - right) / ratio_w],
-            top=[top, top / ratio_h], bottom=[clip.height - bottom, (clip.height - bottom) / ratio_h],
-            func=rekt_partial
+            return norm_expr(
+                [clip, filtered], [*vals, ['and'] * (len(vals) - 1), 'y x ?'],
+                left=[left, left / ratio_w], right=[clip.width - right, (clip.width - right) / ratio_w],
+                top=[top, top / ratio_h], bottom=[clip.height - bottom, (clip.height - bottom) / ratio_h],
+                func=rekt_partial
+            )
+
+        if not (top or bottom) and (right or left):
+            return core.std.StackHorizontal(list(filter(None, [
+                clip.std.CropAbs(left, clip.height) if left else None,
+                filtered,
+                clip.std.CropAbs(right, clip.height, x=clip.width - right) if right else None,
+            ])))
+
+        if (top or bottom) and (right or left):
+            filtered = core.std.StackHorizontal(list(filter(None, [
+                clip.std.CropAbs(left, filtered.height, y=top) if left else None,
+                filtered,
+                clip.std.CropAbs(right, filtered.height, x=clip.width - right, y=top) if right else None,
+            ])))
+
+        return core.std.StackVertical(list(filter(None, [
+            clip.std.CropAbs(clip.width, top) if top else None,
+            filtered,
+            clip.std.CropAbs(clip.width, bottom, y=clip.height - bottom) if bottom else None,
+        ])))
+
+    rel = __call__
+
+    def abs(
+        self,
+        clip: vs.VideoNode,
+        func: Callable[Concatenate[vs.VideoNode, P], ConstantFormatVideoNode],
+        width: int, height: int, offset_x: int = 0, offset_y: int = 0,
+        *args: P.args, **kwargs: P.kwargs
+    ) -> ConstantFormatVideoNode:
+        """
+        Creates a rectangular mask to apply fixes only within the masked area,
+        significantly speeding up filters like anti-aliasing and scaling.
+
+        :param clip:            The source video clip to which the mask will be applied.
+        :param func:            The function to be applied within the masked area.
+        :param width:           The width of the rectangular mask.
+        :param height:          The height of the rectangular mask.
+        :param offset_x:        The horizontal offset of the mask from the top-left corner, defaults to 0.
+        :param offset_y:        The vertical offset of the mask from the top-left corner, defaults to 0.
+        :return:                A new clip with the applied mask.
+        """
+        return self.__call__(
+            clip, func, offset_x, clip.width - width - offset_x, offset_y, clip.height - height - offset_y,
+            *args, **kwargs
         )
 
-    if not (top or bottom) and (right or left):
-        return core.std.StackHorizontal(list(filter(None, [
-            clip.std.CropAbs(left, clip.height) if left else None,
-            filtered,
-            clip.std.CropAbs(right, clip.height, x=clip.width - right) if right else None,
-        ])))
 
-    if (top or bottom) and (right or left):
-        filtered = core.std.StackHorizontal(list(filter(None, [
-            clip.std.CropAbs(left, filtered.height, y=top) if left else None,
-            filtered,
-            clip.std.CropAbs(right, filtered.height, x=clip.width - right, y=top) if right else None,
-        ])))
-
-    return core.std.StackVertical(list(filter(None, [
-        clip.std.CropAbs(clip.width, top) if top else None,
-        filtered,
-        clip.std.CropAbs(clip.width, bottom, y=clip.height - bottom) if bottom else None,
-    ])))
+rekt_partial = _rekt_partial()
