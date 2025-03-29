@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from abc import ABC, ABCMeta
 from functools import lru_cache
 from inspect import Signature
 from math import ceil
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Literal, Sequence, TypeVar, Union, cast, overload
+
+from typing_extensions import Self
 
 from jetpytools import inject_kwargs_params
 
@@ -27,8 +30,6 @@ __all__ = [
     'Resampler', 'ResamplerT',
     'Kernel', 'KernelT'
 ]
-
-_finished_loading_abstract = False
 
 
 @lru_cache
@@ -63,7 +64,7 @@ def _base_from_param(
     basecls: type[BaseScalerT],
     value: str | type[BaseScalerT] | BaseScalerT | None,
     exception_cls: type[CustomValueError],
-    excluded: Sequence[type[BaseScalerT]] = [],
+    excluded: Sequence[type] = [],
     func_except: FuncExceptT | None = None
 ) -> type[BaseScalerT]:
     if isinstance(value, str):
@@ -110,7 +111,60 @@ def _base_ensure_obj(
     return new_scaler
 
 
-class BaseScaler(vs_object):
+def _check_kernel_radius(cls: BaseScalerMeta, obj: BaseScaler) -> BaseScaler:
+    if cls in partial_abstract_kernels:
+        return obj
+
+    if cls in abstract_kernels:
+        raise CustomRuntimeError(f"Can't instantiate abstract class {cls.__name__}!", cls)
+
+    mro = set(cls.mro())
+    mro.discard(BaseScaler)
+
+    for sub_cls in mro:
+        if any(v in sub_cls.__dict__.keys() for v in ('_static_kernel_radius', 'kernel_radius')):
+            return obj
+
+    raise CustomRuntimeError(
+        'When inheriting from BaseScaler, you must implement the kernel radius by either adding '
+        'the `kernel_radius` property or setting the class variable `_static_kernel_radius`.',
+        reason=cls
+    )
+
+
+abstract_kernels: list[BaseScalerMeta] = []
+partial_abstract_kernels: list[BaseScalerMeta] = []
+
+
+class BaseScalerMeta(ABCMeta):
+    def __new__(
+        mcls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        /,
+        *,
+        abstract: bool = False,
+        partial_abstract: bool = False,
+        **kwargs: Any
+    ) -> BaseScalerMeta:
+        """
+        Adding `abstract=True` to the class declaration will force the class to be abstract and not be instantiated.
+        Adding `partial_abstract=True` to the class declaration will allow the class to be instantiated
+        but will likely raise an error if the kernel radius is not implemented.
+        """
+
+        obj = super().__new__(mcls, name, bases, namespace, **kwargs)
+
+        if abstract:
+            abstract_kernels.append(obj)
+        elif partial_abstract:
+            partial_abstract_kernels.append(obj)
+
+        return obj
+
+
+class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
     """
     Base abstract scaling interface.
     """
@@ -121,52 +175,15 @@ class BaseScaler(vs_object):
     _static_kernel_radius: ClassVar[int]
     _err_class: ClassVar[type[CustomValueError]]
 
+    if not TYPE_CHECKING:
+        def __new__(cls, *args: Any, **kwargs: Any) -> Self:
+            return _check_kernel_radius(cls, super().__new__(cls))
+
     def __init__(self, **kwargs: Any) -> None:
         self.kwargs = kwargs
 
     def __str__(self) -> str:
         return self.pretty_string
-
-    def __init_subclass__(cls) -> None:
-        if not _finished_loading_abstract:
-            return
-
-        from ..util import abstract_kernels
-        from .complex import CustomComplexKernel
-
-        if cls in abstract_kernels:
-            return
-
-        import sys
-
-        module = sys.modules[cls.__module__]
-
-        if hasattr(module, '__abstract__'):
-            if cls.__name__ in module.__abstract__:
-                abstract_kernels.append(cls)
-                return
-
-        if 'kernel_radius' in cls.__dict__.keys():
-            return
-
-        mro = [cls, *({*cls.mro()} - {*CustomComplexKernel.mro()})]
-
-        for sub_cls in mro:
-            if hasattr(sub_cls, '_static_kernel_radius'):
-                break
-
-            try:
-                if hasattr(sub_cls, 'kernel_radius'):
-                    break
-            except Exception:
-                ...
-        else:
-            if mro:
-                raise CustomRuntimeError(
-                    'When inheriting from BaseScaler, you must implement the kernel radius by either adding '
-                    'the `kernel_radius` property or setting the class variable `_static_kernel_radius`.',
-                    reason=cls
-                )
 
     @staticmethod
     def _wh_norm(clip: vs.VideoNode, width: int | None = None, height: int | None = None) -> tuple[int, int]:
@@ -584,7 +601,6 @@ class Kernel(Scaler, Descaler, Resampler):
     def from_param(
         cls, kernel: str | type[BaseScaler] | BaseScaler | None = None, /, func_except: FuncExceptT | None = None
     ) -> type[BaseScaler]:
-        from ..util import abstract_kernels
         return _base_from_param(
             cls, Kernel, kernel, UnknownKernelError, abstract_kernels, func_except
         )
@@ -622,7 +638,6 @@ class Kernel(Scaler, Descaler, Resampler):
         cls: type[Kernel], kernel: str | type[BaseScaler] | BaseScaler | None = None, /,
         func_except: FuncExceptT | None = None
     ) -> BaseScaler:
-        from ..util import abstract_kernels
         return _base_ensure_obj(
             cls, Kernel, kernel, UnknownKernelError, abstract_kernels, func_except
         )
