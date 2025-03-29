@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from functools import partial
 from math import ceil, log2
-from typing import Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from vsexprtools import complexpr_available, expr_func, norm_expr
-from vskernels import Catrom, Hermite, LinearScaler, Scaler, ScalerT
+from vskernels import Catrom, Hermite, KernelT, LinearScaler, Scaler, ScalerT
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
     ConstantFormatVideoNode, KwargsT, Matrix, MatrixT, PlanesT, ProcessVariableClip,
@@ -14,7 +13,7 @@ from vstools import (
     clamp, core, depth, fallback, get_nvidia_version, get_prop, inject_self, limiter, padder, vs
 )
 
-from .helpers import GenericScaler
+from .helpers import BaseGenericScaler
 
 __all__ = [
     'DPID',
@@ -23,55 +22,69 @@ __all__ = [
 ]
 
 
-@dataclass
-class DPID(GenericScaler):
+class DPID(BaseGenericScaler):
     """Rapid, Detail-Preserving Image Downscaler for VapourSynth"""
 
-    sigma: float = 0.1
-    """
-    The power factor of range kernel. It can be used to tune the amplification of the weights of pixels
-    that represent detail—from a box filter over an emphasis of distinct pixels towards a selection
-    of only the most distinct pixels.
-    """
+    def __init__(
+        self,
+        sigma: float = 0.1,
+        ref: vs.VideoNode | ScalerT = Catrom,
+        planes: PlanesT = None,
+        **kwargs: Any
+    ) -> None:
+        """
+        :param sigma:       The power factor of range kernel. It can be used to tune the amplification
+                            of the weights of pixels that represent detail—from a box filter over an emphasis
+                            of distinct pixels towards a selection of only the most distinct pixels.
+        :param ref:         VideoNode or Scaler to obtain the downscaled reference for DPID.
+        :param planes:      Sets which planes will be processed. Any unprocessed planes will be simply copied from ref.
+        """
+        super().__init__(**kwargs)
 
-    ref: vs.VideoNode | ScalerT = Catrom
-    """VideoNode or Scaler to obtain the downscaled reference for DPID."""
+        self.sigma = sigma
+        self.ref = ref
+        self.planes = planes
 
-    planes: PlanesT = None
-    """Sets which planes will be processed. Any unprocessed planes will be simply copied from ref."""
-
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        if isinstance(self.ref, vs.VideoNode):
-            self._ref_scaler = self.ensure_scaler(self._scaler)
+        if isinstance(ref, vs.VideoNode):
+            self._ref_scaler = self.scaler
         else:
-            self._ref_scaler = self.ensure_scaler(self.ref)
+            self._ref_scaler = Scaler.ensure_obj(ref, self.__class__)
 
-    @inject_self
-    def scale(  # type: ignore[override]
-        self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-        shift: tuple[float, float] = (0, 0), **kwargs: Any
-    ) -> vs.VideoNode:
+    @inject_self.cached
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[float, float] = (0, 0),
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        assert check_variable(clip, self.__class__)
+
         width, height = self._wh_norm(clip, width, height)
 
         ref = clip
 
         if isinstance(self.ref, vs.VideoNode):
             check_ref_clip(clip, self.ref)
+
+            if TYPE_CHECKING:
+                assert check_variable_format(self.ref, self.__class__)
+
             ref = self.ref
 
         if (ref.width, ref.height) != (width, height):
-            ref = self._ref_scaler.scale(ref, width, height)
+            ref = self._ref_scaler.scale(ref, width, height)  # type: ignore[assignment]
 
-        kwargs |= {
-            'lambda_': self.sigma, 'planes': self.planes,
+        kwargs = {
+            'lambda': self.sigma, 'planes': self.planes,
             'src_left': shift[1], 'src_top': shift[0]
-        } | kwargs | {'read_chromaloc': True}
+        } | self.kwargs | kwargs | {'read_chromaloc': True}
 
         return core.dpid.DpidRaw(clip, ref, **kwargs)
 
-    @inject_self.property
-    def kernel_radius(self) -> int:  # type: ignore
+    @inject_self.cached.property
+    def kernel_radius(self) -> int:
         return self._ref_scaler.kernel_radius
 
 

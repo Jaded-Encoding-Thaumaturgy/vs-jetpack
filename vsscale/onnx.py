@@ -1,80 +1,15 @@
-from dataclasses import dataclass
-from typing import Any, ClassVar
+from abc import ABC
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from vskernels import Kernel, KernelT
+from vskernels import Bilinear, Catrom, Kernel, KernelT, ScalerT
 from vstools import (
-    CustomValueError, KwargsT, NotFoundEnumValue, SPath, SPathLike, core,
-    depth, expect_bits, get_nvidia_version, get_video_format, get_y, inject_self, limiter, vs
+    ConstantFormatVideoNode, CustomValueError, KwargsT, NotFoundEnumValue, SPath, SPathLike, check_variable, core,
+    depth, get_nvidia_version, get_y, inject_self, limiter, vs
 )
 
-from .helpers import GenericScaler
+from .helpers import BaseGenericScaler
 
 __all__ = ["GenericOnnxScaler", "autoselect_backend", "ArtCNN"]
-
-
-@dataclass
-class GenericOnnxScaler(GenericScaler):
-    """Generic scaler class for an onnx model."""
-
-    model: SPathLike
-    """Path to the model."""
-    backend: Any | None = None
-    """
-    vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.\n
-    In order of trt > cuda > directml > nncn > cpu.
-    """
-    tiles: int | tuple[int, int] | None = None
-    """Splits up the frame into multiple tiles. Helps if you're lacking in vram but models may behave differently."""
-
-    tilesize: int | tuple[int, int] | None = None
-    overlap: int | tuple[int, int] | None = None
-
-    _static_kernel_radius = 2
-
-    @inject_self
-    def scale(  # type: ignore
-        self,
-        clip: vs.VideoNode,
-        width: int,
-        height: int,
-        shift: tuple[float, float] = (0, 0),
-        **kwargs: Any,
-    ) -> vs.VideoNode:
-        if self.backend is None:
-            self.backend = autoselect_backend()
-
-        wclip, _ = expect_bits(clip, 32)
-
-        from vsmlrt import calc_tilesize, inference, init_backend  #type: ignore[import-untyped]
-
-        if self.overlap is None:
-            overlap_w = overlap_h = 8
-        else:
-            overlap_w, overlap_h = (self.overlap, self.overlap) if isinstance(self.overlap, int) else self.overlap
-
-        (tile_w, tile_h), (overlap_w, overlap_h) = calc_tilesize(
-            tiles=self.tiles,
-            tilesize=self.tilesize,
-            width=wclip.width,
-            height=wclip.height,
-            multiple=1,
-            overlap_w=overlap_w,
-            overlap_h=overlap_h,
-        )
-
-        if tile_w % 1 != 0 or tile_h % 1 != 0:
-            raise CustomValueError(f"Tile size must be divisible by 1 ({tile_w}, {tile_h})", self.__class__)
-
-        backend = init_backend(backend=self.backend, trt_opt_shapes=(tile_w, tile_h))
-
-        scaled = inference(
-            limiter(wclip, func=self.__class__),
-            network_path=str(SPath(self.model).resolve()),
-            backend=backend,
-            overlap=(overlap_w, overlap_h),
-            tilesize=(tile_w, tile_h),
-        )
-        return self._finish_scale(scaled, clip, width, height, shift)
 
 
 def autoselect_backend(trt_args: KwargsT = {}, **kwargs: Any) -> Any:
@@ -102,44 +37,165 @@ def autoselect_backend(trt_args: KwargsT = {}, **kwargs: Any) -> Any:
         return Backend.ORT_CPU(fp16=fp16, **kwargs) if hasattr(core, "ort") else Backend.OV_CPU(fp16=fp16, **kwargs)
 
 
-class _BaseArtCNN:
-    _model: ClassVar[int]
-    _func = "ArtCNN"
+class BaseGenericOnnxScaler(BaseGenericScaler, ABC):
+    """Abstract generic scaler class for an onnx model."""
+
+    def __init__(
+        self,
+        model: SPathLike | None = None,
+        backend: Any | None = None,
+        tiles: int | tuple[int, int] | None = None,
+        tilesize: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] | None = None,
+        *,
+        kernel: KernelT = Catrom,
+        scaler: ScalerT | None = None,
+        shifter: KernelT | None = None,
+        **kwargs: Any
+    ) -> None:
+        """
+        :param model:       Path to the model.
+        :param backend:     vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.
+                            In order of trt > cuda > directml > nncn > cpu.
+        :param tiles:       Splits up the frame into multiple tiles.
+                            Helps if you're lacking in vram but models may behave differently.
+        :param tilesize:    
+        :param overlap:     
+        :param kernel:      Base kernel to be used for certain scaling/shifting/resampling operations.
+                            Defaults to Catrom.
+        :param scaler:      Scaler used for scaling operations. Defaults to kernel.
+        :param shifter:     Kernel used for shifting operations. Defaults to scaler.
+        """
+        if model is not None:
+            self.model = str(SPath(model).resolve())
+
+        self.backend = autoselect_backend() if backend is None else backend
+
+        self.tiles = tiles
+        self.tilesize = tilesize
+
+        if overlap is None:
+            self.overlap_w = self.overlap_h = 8
+        elif isinstance(overlap, int):
+            self.overlap_w = self.overlap_h = overlap
+        else:
+            self.overlap_w, self.overlap_h = overlap
+
+        super().__init__(kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
+
+    def calc_tilesize(self, clip: vs.VideoNode) -> tuple[tuple[int, int], tuple[int, int]]:
+        from vsmlrt import calc_tilesize
+
+        return calc_tilesize(
+            tiles=self.tiles,
+            tilesize=self.tilesize,
+            width=clip.width,
+            height=clip.height,
+            multiple=1,
+            overlap_w=self.overlap_w,
+            overlap_h=self.overlap_h,
+        )
+
+    def init_backend(self, trt_opt_shapes: tuple[int, int]) -> Any:
+        from vsmlrt import init_backend
+
+        return init_backend(backend=self.backend, trt_opt_shapes=trt_opt_shapes)
+
+    def inference(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
+        from vsmlrt import inference
+
+        (tile_w, tile_h), (overlap_w, overlap_h) = self.calc_tilesize(clip)
+
+        if tile_w % 1 != 0 or tile_h % 1 != 0:
+            raise CustomValueError("Tile size must be divisible by 1", self.__class__, (tile_w, tile_h))
+
+        scaled = inference(
+            limiter(depth(clip, 32), func=self.__class__),
+            network_path=self.model,
+            backend=self.init_backend(trt_opt_shapes=(tile_w, tile_h)),
+            overlap=(overlap_w, overlap_h),
+            tilesize=(tile_w, tile_h),
+        )
+
+        if TYPE_CHECKING:
+            assert check_variable(scaled, self.__class__)
+
+        return scaled
 
 
-@dataclass
-class BaseArtCNN(_BaseArtCNN, GenericScaler):
-    backend: Any | None = None
-    """
-    vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.\n
-    In order of trt > cuda > directml > nncn > cpu.
-    """
-    chroma_scaler: KernelT | None = None
-    """
-    Scaler to upscale the chroma with.\n
-    Necessary if you're trying to use one of the chroma models but aren't passing a 444 clip.\n
-    Bilinear is probably the safe option to use.
-    """
-
-    tiles: int | tuple[int, int] | None = None
-    """Splits up the frame into multiple tiles. Helps if you're lacking in vram but models may behave differently."""
-    tilesize: int | tuple[int, int] | None = None
-    overlap: int | tuple[int, int] | None = None
+class GenericOnnxScaler(BaseGenericOnnxScaler):
+    """Generic scaler class for an onnx model."""
 
     _static_kernel_radius = 2
 
-    @inject_self
-    def scale(  # type: ignore
+    @inject_self.cached
+    def scale(
         self,
         clip: vs.VideoNode,
         width: int | None = None,
         height: int | None = None,
         shift: tuple[float, float] = (0, 0),
-        **kwargs: Any,
-    ) -> vs.VideoNode:
-        from vsmlrt import ArtCNNModel, ArtCNN as mlrt_ArtCNN
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        assert check_variable(clip, self.__class__)
 
-        clip_format = get_video_format(clip)
+        scaled = self.inference(clip)
+
+        width, height = self._wh_norm(clip, width, height)
+
+        return self._finish_scale(scaled, clip, width, height, shift, **kwargs)
+
+
+class BaseArtCNN(BaseGenericOnnxScaler):
+    _model: ClassVar[int]
+
+    _static_kernel_radius = 2
+
+    def __init__(
+        self,
+        chroma_scaler: KernelT = Bilinear,
+        backend: Any | None = None,
+        tiles: int | tuple[int, int] | None = None,
+        tilesize: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] | None = None,
+        *,
+        kernel: KernelT = Catrom,
+        scaler: ScalerT | None = None,
+        shifter: KernelT | None = None,
+        **kwargs: Any
+    ) -> None:
+        """
+        :param chroma_scaler:   Scaler to upscale the chroma with. Defaults to Bilinear.
+        :param backend:         vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.
+                                In order of trt > cuda > directml > nncn > cpu.
+        :param tiles:           Splits up the frame into multiple tiles.
+                                Helps if you're lacking in vram but models may behave differently.
+        :param tilesize:        
+        :param overlap:         
+        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
+                                Defaults to Catrom.
+        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
+        :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        """
+
+        self.chroma_scaler = Kernel.ensure_obj(chroma_scaler)
+
+        super().__init__(None, backend, tiles, tilesize, overlap, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
+
+    @inject_self.cached
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[float, float] = (0, 0),
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        from vsmlrt import ArtCNN as mlrt_ArtCNN
+        from vsmlrt import ArtCNNModel
+
+        assert check_variable(clip, self.__class__)
+
         chroma_model = self._model in [4, 5, 9]
 
         # The chroma models aren't supposed to change the video dimensions and API wise this is more comfortable.
@@ -148,42 +204,39 @@ class BaseArtCNN(_BaseArtCNN, GenericScaler):
                 width = clip.width
                 height = clip.height
             else:
-                raise CustomValueError("You have to pass height and width if not using a chroma model.", self._func)
-
-        if chroma_model and clip_format.color_family != vs.YUV:
-            raise CustomValueError("ArtCNN Chroma models need YUV input.", self._func)
-
-        if not chroma_model and clip_format.color_family not in (vs.YUV, vs.GRAY):
-            raise CustomValueError("Regular ArtCNN models need YUV or GRAY input.", self._func)
-
-        if chroma_model and (clip_format.subsampling_h != 0 or clip_format.subsampling_w != 0):
-            if self.chroma_scaler is None:
                 raise CustomValueError(
-                    "ArtCNN needs a non subsampled clip. Either pass one or set `chroma_scaler`.", self._func
+                    "You have to pass height and width if not using a chroma model.", "ArtCNN", (width, height)
                 )
 
-            clip = Kernel.ensure_obj(self.chroma_scaler).resample(
-                clip, clip_format.replace(subsampling_h=0, subsampling_w=0)
+        if chroma_model and clip.format.color_family != vs.YUV:
+            raise CustomValueError("ArtCNN Chroma models need YUV input.", "ArtCNN")
+
+        if not chroma_model and clip.format.color_family not in (vs.YUV, vs.GRAY):
+            raise CustomValueError("Regular ArtCNN models need YUV or GRAY input.", "ArtCNN")
+
+        if chroma_model and (clip.format.subsampling_h != 0 or clip.format.subsampling_w != 0):
+            clip = self.chroma_scaler.resample(
+                clip, clip.format.replace(subsampling_h=0, subsampling_w=0)
             )
 
         if self._model not in ArtCNNModel.__members__.values():
-            raise NotFoundEnumValue(f'Invalid model: \'{self._model}\'. Please update \'vsmlrt\'!', self._func)
+            raise NotFoundEnumValue(f"Invalid model: '{self._model}'. Please update 'vsmlrt'!", "ArtCNN")
 
         wclip = get_y(clip) if not chroma_model else clip
 
-        if self.backend is None:
-            self.backend = autoselect_backend()
-
         scaled = mlrt_ArtCNN(
-            limiter(depth(wclip, 32), func=self._func),
+            limiter(depth(wclip, 32), func="ArtCNN"),
             self.tiles,
             self.tilesize,
-            self.overlap,
+            (self.overlap_w, self.overlap_h),
             ArtCNNModel(self._model),
             backend=self.backend,
         )
 
-        return self._finish_scale(scaled, wclip, width, height, shift)
+        if TYPE_CHECKING:
+            assert check_variable(scaled, self.__class__)
+
+        return self._finish_scale(scaled, wclip, width, height, shift, **kwargs)
 
 
 class ArtCNN(BaseArtCNN):
