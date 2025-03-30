@@ -101,6 +101,10 @@ class BaseGenericOnnxScaler(BaseGenericScaler, ABC):
 
         return init_backend(backend=self.backend, trt_opt_shapes=trt_opt_shapes)
 
+    def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+        clip = depth(clip, 16 if self.backend.fp16 else 32, vs.FLOAT)
+        return limiter(clip, func=self.__class__)
+
     def inference(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
         from vsmlrt import inference
 
@@ -110,7 +114,7 @@ class BaseGenericOnnxScaler(BaseGenericScaler, ABC):
             raise CustomValueError("Tile size must be divisible by 1", self.__class__, (tile_w, tile_h))
 
         scaled = inference(
-            limiter(depth(clip, 32), func=self.__class__),
+            self.preprocess_clip(clip),
             network_path=self.model,
             backend=self.init_backend(trt_opt_shapes=(tile_w, tile_h)),
             overlap=(overlap_w, overlap_h),
@@ -148,12 +152,10 @@ class GenericOnnxScaler(BaseGenericOnnxScaler):
 
 class BaseArtCNN(BaseGenericOnnxScaler):
     _model: ClassVar[int]
-
     _static_kernel_radius = 2
 
     def __init__(
         self,
-        chroma_scaler: KernelT = Bilinear,
         backend: Any | None = None,
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
@@ -165,7 +167,6 @@ class BaseArtCNN(BaseGenericOnnxScaler):
         **kwargs: Any
     ) -> None:
         """
-        :param chroma_scaler:   Scaler to upscale the chroma with. Defaults to Bilinear.
         :param backend:         vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.
                                 In order of trt > cuda > directml > nncn > cpu.
         :param tiles:           Splits up the frame into multiple tiles.
@@ -177,10 +178,10 @@ class BaseArtCNN(BaseGenericOnnxScaler):
         :param scaler:          Scaler used for scaling operations. Defaults to kernel.
         :param shifter:         Kernel used for shifting operations. Defaults to scaler.
         """
-
-        self.chroma_scaler = Kernel.ensure_obj(chroma_scaler)
-
         super().__init__(None, backend, tiles, tilesize, overlap, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
+
+    def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+        return super().preprocess_clip(get_y(clip))
 
     @inject_self.cached
     def scale(
@@ -196,36 +197,10 @@ class BaseArtCNN(BaseGenericOnnxScaler):
 
         assert check_variable(clip, self.__class__)
 
-        chroma_model = self._model in [4, 5, 9]
-
-        # The chroma models aren't supposed to change the video dimensions and API wise this is more comfortable.
-        if width is None or height is None:
-            if chroma_model:
-                width = clip.width
-                height = clip.height
-            else:
-                raise CustomValueError(
-                    "You have to pass height and width if not using a chroma model.", "ArtCNN", (width, height)
-                )
-
-        if chroma_model and clip.format.color_family != vs.YUV:
-            raise CustomValueError("ArtCNN Chroma models need YUV input.", "ArtCNN")
-
-        if not chroma_model and clip.format.color_family not in (vs.YUV, vs.GRAY):
-            raise CustomValueError("Regular ArtCNN models need YUV or GRAY input.", "ArtCNN")
-
-        if chroma_model and (clip.format.subsampling_h != 0 or clip.format.subsampling_w != 0):
-            clip = self.chroma_scaler.resample(
-                clip, clip.format.replace(subsampling_h=0, subsampling_w=0)
-            )
-
-        if self._model not in ArtCNNModel.__members__.values():
-            raise NotFoundEnumValue(f"Invalid model: '{self._model}'. Please update 'vsmlrt'!", "ArtCNN")
-
-        wclip = get_y(clip) if not chroma_model else clip
+        width, height = self._wh_norm(clip, width, height)
 
         scaled = mlrt_ArtCNN(
-            limiter(depth(wclip, 32), func="ArtCNN"),
+            self.preprocess_clip(clip),
             self.tiles,
             self.tilesize,
             (self.overlap_w, self.overlap_h),
@@ -233,10 +208,53 @@ class BaseArtCNN(BaseGenericOnnxScaler):
             backend=self.backend,
         )
 
-        if TYPE_CHECKING:
-            assert check_variable(scaled, self.__class__)
+        return self._finish_scale(scaled, clip, width, height, shift, **kwargs)
 
-        return self._finish_scale(scaled, wclip, width, height, shift, **kwargs)
+
+class BaseArtCNNChroma(BaseArtCNN):
+    def __init__(
+        self,
+        backend: Any | None = None,
+        tiles: int | tuple[int, int] | None = None,
+        tilesize: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] | None = None,
+        *,
+        chroma_scaler: KernelT = Bilinear,
+        kernel: KernelT = Catrom,
+        scaler: ScalerT | None = None,
+        shifter: KernelT | None = None,
+        **kwargs: Any
+    ) -> None:
+        """
+        :param backend:         vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.
+                                In order of trt > cuda > directml > nncn > cpu.
+        :param tiles:           Splits up the frame into multiple tiles.
+                                Helps if you're lacking in vram but models may behave differently.
+        :param tilesize:        
+        :param overlap:         
+        :param chroma_scaler:   Scaler to upscale the chroma with. Defaults to Bilinear.
+        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
+                                Defaults to Catrom.
+        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
+        :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        """
+        self.chroma_scaler = Kernel.ensure_obj(chroma_scaler)
+
+        super().__init__(backend, tiles, tilesize, overlap, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
+
+    def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+        assert check_variable(clip, self.__class__)
+
+        if clip.format.subsampling_h != 0 or clip.format.subsampling_w != 0:
+            clip = self.chroma_scaler.resample(
+                clip, clip.format.replace(
+                    subsampling_h=0, subsampling_w=0,
+                    sample_type=vs.FLOAT, bits_per_sample=16 if self.backend.fp16 else 32
+                )
+            )
+            return limiter(clip, func=self.__class__)
+    
+        return super().preprocess_clip(clip)
 
 
 class ArtCNN(BaseArtCNN):
@@ -282,7 +300,7 @@ class ArtCNN(BaseArtCNN):
 
         _model = 3
 
-    class C4F32_Chroma(BaseArtCNN):
+    class C4F32_Chroma(BaseArtCNNChroma):
         """
         The smaller of the two chroma models.\n
         These don't double the input clip and rather just try to enhance the chroma using luma information.
@@ -290,7 +308,7 @@ class ArtCNN(BaseArtCNN):
 
         _model = 4
 
-    class C16F64_Chroma(BaseArtCNN):
+    class C16F64_Chroma(BaseArtCNNChroma):
         """
         The bigger of the two chroma models.\n
         These don't double the input clip and rather just try to enhance the chroma using luma information.
@@ -318,7 +336,7 @@ class ArtCNN(BaseArtCNN):
 
         _model = 8
 
-    class R8F64_Chroma(BaseArtCNN):
+    class R8F64_Chroma(BaseArtCNNChroma):
         """
         The new and fancy big chroma model.\n
         These don't double the input clip and rather just try to enhance the chroma using luma information.
