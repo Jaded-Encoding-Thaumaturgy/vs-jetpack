@@ -3,38 +3,50 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from vskernels import Bilinear, Catrom, Kernel, KernelT, ScalerT
 from vstools import (
-    ConstantFormatVideoNode, CustomValueError, KwargsT, NotFoundEnumValue, SPath, SPathLike, check_variable, core,
-    depth, get_nvidia_version, get_y, inject_self, limiter, vs
+    ConstantFormatVideoNode, CustomValueError, SPath, SPathLike, check_variable, core, depth, get_nvidia_version, get_y,
+    inject_self, limiter, vs
 )
 
 from .generic import BaseGenericScaler
 
-__all__ = ["GenericOnnxScaler", "autoselect_backend", "ArtCNN"]
+__all__ = [
+    "autoselect_backend",
+
+    "BaseGenericOnnxScaler", "GenericOnnxScaler",
+
+    "BaseArtCNN", "BaseArtCNNChroma", "ArtCNN"
+]
 
 
-def autoselect_backend(trt_args: KwargsT = {}, **kwargs: Any) -> Any:
+def _clean_keywords(kwargs: dict[str, Any], backend: Any) -> dict[str, Any]:
+    return {k: v for k, v in kwargs.items() if k in backend.__dataclass_fields__}
+
+
+def autoselect_backend(**kwargs: Any) -> Any:
     import os
 
     from vsmlrt import Backend
 
-    fp16 = kwargs.pop("fp16", True)
+    backend: Any
 
-    cuda = get_nvidia_version() is not None
-    if cuda:
+    if get_nvidia_version():
         if hasattr(core, "trt"):
-            kwargs.update(trt_args)
-            return Backend.TRT(fp16=fp16, **trt_args)
+            backend = Backend.TRT
         elif hasattr(core, "ort"):
-            return Backend.ORT_CUDA(fp16=fp16, **kwargs)
+            backend = Backend.ORT_CUDA
         else:
-            return Backend.OV_GPU(fp16=fp16, **kwargs)
+            backend = Backend.OV_GPU
     else:
         if hasattr(core, "ort") and os.name == "nt":
-            return Backend.ORT_DML(fp16=fp16, **kwargs)
+            backend = Backend.ORT_DML
         elif hasattr(core, "ncnn"):
-            return Backend.NCNN_VK(fp16=fp16, **kwargs)
+            backend = Backend.NCNN_VK
+        elif hasattr(core, "ort"):
+            backend = Backend.ORT_CPU
+        else:
+            backend = Backend.OV_CPU
 
-        return Backend.ORT_CPU(fp16=fp16, **kwargs) if hasattr(core, "ort") else Backend.OV_CPU(fp16=fp16, **kwargs)
+    return backend(**_clean_keywords(kwargs, backend))
 
 
 class BaseGenericOnnxScaler(BaseGenericScaler, ABC):
@@ -69,7 +81,12 @@ class BaseGenericOnnxScaler(BaseGenericScaler, ABC):
         if model is not None:
             self.model = str(SPath(model).resolve())
 
-        self.backend = autoselect_backend() if backend is None else backend
+        if backend is None:
+            # Default with float16 precision and output as fp16 as well
+            # if the backend supports it
+            self.backend = autoselect_backend(fp16=16, output_format=1)
+        else:
+            self.backend = backend
 
         self.tiles = tiles
         self.tilesize = tilesize
