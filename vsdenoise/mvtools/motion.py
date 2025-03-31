@@ -20,6 +20,9 @@ class MotionVectors(vs_object):
     mv_multi: vs.VideoNode | None
     """Multi-vector clip."""
 
+    tr: int
+    """Temporal radius of the motion vectors."""
+
     analysis_data: dict[str, Any]
     """Dictionary containing motion vector analysis data."""
 
@@ -29,6 +32,7 @@ class MotionVectors(vs_object):
     def __init__(self) -> None:
         self._init_vects()
         self.mv_multi = None
+        self.tr = 0
         self.analysis_data = dict[str, Any]()
         self.scaled = False
 
@@ -43,6 +47,7 @@ class MotionVectors(vs_object):
 
         self.motion_vectors.clear()
         self.mv_multi = None
+        self.tr = 0
         self.analysis_data.clear()
         self.scaled = False
         self._init_vects()

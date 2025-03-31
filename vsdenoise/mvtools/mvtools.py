@@ -70,7 +70,7 @@ class MVTools(vs_object):
     def __init__(
         self, clip: vs.VideoNode, search_clip: vs.VideoNode | GenericVSFunction | None = None,
         vectors: MotionVectors | None = None,
-        tr: int = 1, pad: int | tuple[int | None, int | None] | None = None,
+        pad: int | tuple[int | None, int | None] | None = None,
         pel: int | None = None, planes: PlanesT = None,
         *,
         super_args: KwargsT | None = None,
@@ -140,7 +140,6 @@ class MVTools(vs_object):
         self.chroma = self.mv_plane != 0
         self.disable_compensate = False
 
-        self.tr = tr
         self.pel = pel
         self.pad = normalize_seq(pad, 2)
 
@@ -228,8 +227,9 @@ class MVTools(vs_object):
         return super_clip
 
     def analyze(
-        self, super: vs.VideoNode | None = None, blksize: int | tuple[int | None, int | None] | None = None,
-        levels: int | None = None, search: SearchMode | None = None, searchparam: int | None = None,
+        self, tr: int = 1, super: vs.VideoNode | None = None,
+        blksize: int | tuple[int | None, int | None] | None = None, levels: int | None = None,
+        search: SearchMode | None = None, searchparam: int | None = None,
         pelsearch: int | None = None, lambda_: int | None = None, truemotion: MotionMode | None = None,
         lsad: int | None = None, plevel: PenaltyMode | None = None, global_: bool | None = None,
         pnew: int | None = None, pzero: int | None = None, pglobal: int | None = None,
@@ -317,13 +317,15 @@ class MVTools(vs_object):
         if self.vectors.has_vectors:
             self.vectors.clear()
 
+        self.vectors.tr = tr
+
         if self.mvtools is MVToolsPlugin.FLOAT:
-            self.vectors.mv_multi = self.mvtools.Analyze(super_clip, radius=self.tr, **analyze_args)
+            self.vectors.mv_multi = self.mvtools.Analyze(super_clip, radius=self.vectors.tr, **analyze_args)
         else:
             if not any((analyze_args.get('overlap'), analyze_args.get('overlapv'))):
                 self.disable_compensate = True
 
-            for delta in range(1, self.tr + 1):
+            for delta in range(1, self.vectors.tr + 1):
                 for direction in MVDirection:
                     self.vectors.set_vector(
                         self.mvtools.Analyze(
@@ -385,10 +387,7 @@ class MVTools(vs_object):
 
         vectors = fallback(vectors, self.vectors)
 
-        if not vectors.has_vectors:
-            raise CustomRuntimeError(
-                f'You must run {self.analyze} before recalculating motion vectors!', self.recalculate
-            )
+        assert vectors.has_vectors
 
         blksize, blksizev = normalize_seq(blksize, 2)
         overlap, overlapv = normalize_seq(overlap, 2)
@@ -407,7 +406,7 @@ class MVTools(vs_object):
             if not any((recalculate_args.get('overlap'), recalculate_args.get('overlapv'))):
                 self.disable_compensate = True
 
-            for delta in range(1, self.tr + 1):
+            for delta in range(1, vectors.tr + 1):
                 for direction in MVDirection:
                     vectors.set_vector(
                         self.mvtools.Recalculate(
@@ -665,7 +664,9 @@ class MVTools(vs_object):
         clip = fallback(clip, self.clip)
         super_clip = self.get_super(fallback(super, clip))
 
-        tr = fallback(tr, self.tr)
+        vectors = fallback(vectors, self.vectors)
+
+        tr = fallback(tr, vectors.tr)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -1068,7 +1069,7 @@ class MVTools(vs_object):
             self.clip = self.clip.std.RemoveFrameProps('MSuper')
             self.search_clip = self.search_clip.std.RemoveFrameProps('MSuper')
 
-            for delta in range(1, self.tr + 1):
+            for delta in range(1, vectors.tr + 1):
                 for direction in MVDirection:
                     vectors.set_vector(
                         self.get_vector(vectors, direction=direction, delta=delta).manipmv.ScaleVect(scalex, scaley),
@@ -1169,16 +1170,15 @@ class MVTools(vs_object):
 
         vectors = fallback(vectors, self.vectors)
 
-        if not vectors.has_vectors:
-            raise CustomRuntimeError(f'You need to run {self.analyze} before getting a motion vector!', self.get_vector)
+        assert vectors.has_vectors
 
-        if delta > self.tr:
+        if delta > vectors.tr:
             raise CustomRuntimeError(
-                'Tried to get a motion vector delta larger than what exists!', self.get_vector, f'{delta} > {self.tr}'
+                'Tried to get a motion vector delta larger than what exists!', self.get_vector, f'{delta} > {vectors.tr}'
             )
 
         if self.mvtools is MVToolsPlugin.FLOAT:
-            return cast(vs.VideoNode, vectors.mv_multi)[(delta - 1) * 2 + direction - 1 :: self.tr * 2]
+            return cast(vs.VideoNode, vectors.mv_multi)[(delta - 1) * 2 + direction - 1 :: vectors.tr * 2]
         else:
             return vectors.motion_vectors[direction][delta]
 
@@ -1227,22 +1227,21 @@ class MVTools(vs_object):
         """
 
         vectors = fallback(vectors, self.vectors)
-        tr = fallback(tr, self.tr)
+        tr = fallback(tr, vectors.tr)
 
-        if not vectors.has_vectors:
-            raise CustomRuntimeError(f'You must run {self.analyze} before getting motion vectors!', self.get_vectors)
+        assert vectors.has_vectors
 
-        if tr > self.tr:
+        if tr > vectors.tr:
             raise CustomRuntimeError(
-                'Tried to obtain more motion vectors than what exist!', self.get_vectors, f'{tr} > {self.tr}'
+                'Tried to obtain more motion vectors than what exist!', self.get_vectors, f'{tr} > {vectors.tr}'
             )
 
         if multi and self.mvtools is MVToolsPlugin.FLOAT:
             mv_multi = cast(vs.VideoNode, vectors.mv_multi)
 
-            if tr != self.tr:
-                trim = self.tr - tr
-                mv_multi = mv_multi.std.SelectEvery(self.tr * 2, range(trim, self.tr * 2 - trim))
+            if tr != vectors.tr:
+                trim = vectors.tr - tr
+                mv_multi = mv_multi.std.SelectEvery(vectors.tr * 2, range(trim, vectors.tr * 2 - trim))
 
             return mv_multi
 
