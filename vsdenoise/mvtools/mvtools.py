@@ -227,7 +227,7 @@ class MVTools(vs_object):
         return super_clip
 
     def analyze(
-        self, tr: int = 1, super: vs.VideoNode | None = None,
+        self, super: vs.VideoNode | None = None, tr: int = 1,
         blksize: int | tuple[int | None, int | None] | None = None, levels: int | None = None,
         search: SearchMode | None = None, searchparam: int | None = None,
         pelsearch: int | None = None, lambda_: int | None = None, truemotion: MotionMode | None = None,
