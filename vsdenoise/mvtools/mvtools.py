@@ -665,7 +665,6 @@ class MVTools(vs_object):
         super_clip = self.get_super(fallback(super, clip))
 
         vectors = fallback(vectors, self.vectors)
-
         tr = fallback(tr, vectors.tr)
 
         thscd1, thscd2 = normalize_thscd(thscd)
