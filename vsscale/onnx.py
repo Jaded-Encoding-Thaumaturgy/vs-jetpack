@@ -1,9 +1,10 @@
 from abc import ABC
-from typing import TYPE_CHECKING, Any, ClassVar
+from logging import warning
+from typing import Any, ClassVar, Literal
 
 from vskernels import Bilinear, Catrom, Kernel, KernelT, ScalerT
 from vstools import (
-    ConstantFormatVideoNode, CustomValueError, SPath, SPathLike, check_variable, core, depth, get_nvidia_version, get_y,
+    ConstantFormatVideoNode, CustomValueError, DitherType, ProcessVariableResClip, SPath, SPathLike, check_variable_format, core, depth, get_nvidia_version, get_y,
     inject_self, limiter, vs
 )
 
@@ -12,7 +13,9 @@ from .generic import BaseGenericScaler
 __all__ = [
     "autoselect_backend",
 
-    "BaseGenericOnnxScaler", "GenericOnnxScaler",
+    "BaseOnnxScaler",
+
+    "GenericOnnxScaler",
 
     "BaseArtCNN", "BaseArtCNNChroma", "ArtCNN"
 ]
@@ -49,7 +52,7 @@ def autoselect_backend(**kwargs: Any) -> Any:
     return backend(**_clean_keywords(kwargs, backend))
 
 
-class BaseGenericOnnxScaler(BaseGenericScaler, ABC):
+class BaseOnnxScaler(BaseGenericScaler, ABC):
     """Abstract generic scaler class for an onnx model."""
 
     def __init__(
@@ -59,6 +62,7 @@ class BaseGenericOnnxScaler(BaseGenericScaler, ABC):
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
+        max_instances: int = 2,
         *,
         kernel: KernelT = Catrom,
         scaler: ScalerT | None = None,
@@ -66,17 +70,18 @@ class BaseGenericOnnxScaler(BaseGenericScaler, ABC):
         **kwargs: Any
     ) -> None:
         """
-        :param model:       Path to the model.
-        :param backend:     vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.
-                            In order of trt > cuda > directml > nncn > cpu.
-        :param tiles:       Splits up the frame into multiple tiles.
-                            Helps if you're lacking in vram but models may behave differently.
+        :param model:           Path to the model.
+        :param backend:         vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.
+                                In order of trt > cuda > directml > nncn > cpu.
+        :param tiles:           Splits up the frame into multiple tiles.
+                                Helps if you're lacking in vram but models may behave differently.
         :param tilesize:    
         :param overlap:     
-        :param kernel:      Base kernel to be used for certain scaling/shifting/resampling operations.
-                            Defaults to Catrom.
-        :param scaler:      Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:     Kernel used for shifting operations. Defaults to scaler.
+        :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
+        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
+                                Defaults to Catrom.
+        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
+        :param shifter:         Kernel used for shifting operations. Defaults to scaler.
         """
         if model is not None:
             self.model = str(SPath(model).resolve())
@@ -90,15 +95,63 @@ class BaseGenericOnnxScaler(BaseGenericScaler, ABC):
 
         self.tiles = tiles
         self.tilesize = tilesize
+        self.overlap = overlap
 
-        if overlap is None:
+        if self.overlap is None:
             self.overlap_w = self.overlap_h = 8
-        elif isinstance(overlap, int):
-            self.overlap_w = self.overlap_h = overlap
+        elif isinstance(self.overlap, int):
+            self.overlap_w = self.overlap_h = self.overlap
         else:
-            self.overlap_w, self.overlap_h = overlap
+            self.overlap_w, self.overlap_h = self.overlap
+
+        self.max_instances = max_instances
 
         super().__init__(kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
+
+    @inject_self.cached
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[float, float] = (0, 0),
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        from vsmlrt import Backend
+
+        assert check_variable_format(clip, self.__class__)
+
+        width, height = self._wh_norm(clip, width, height)
+
+        wclip = self.preprocess_clip(clip)
+
+        if 0 not in {clip.width, clip.height}:
+            scaled = self.inference(wclip)
+        else:
+            if not isinstance(self.backend, Backend.TRT):
+                raise CustomValueError(
+                    "Variable resolution clips can only be processed with TRT Backend!", self.__class__, self.backend
+                )
+            
+            warning(f"{self.__class__.__name__}: Variable resolution clip detected!")
+
+            if self.backend.static_shape:
+                warning("static_shape is True, setting it to False...")
+                self.backend.static_shape = False
+
+            if not self.backend.max_shapes:
+                warning("max_shapes is None, setting it to (1936, 1088). You may want to adjust it...")
+                self.backend.max_shapes = (1936, 1088)
+            
+            if not self.backend.opt_shapes:
+                warning("opt_shapes is None, setting it to (64, 64). You may want to adjust it...")
+                self.backend.opt_shapes = (64, 64)
+
+            scaled = ProcessVariableResClip.from_func(wclip, self.inference, False, wclip.format, self.max_instances)
+
+        scaled = self.postprocess_clip(scaled, clip)
+
+        return self._finish_scale(scaled, clip, width, height, shift, **kwargs)
 
     def calc_tilesize(self, clip: vs.VideoNode) -> tuple[tuple[int, int], tuple[int, int]]:
         from vsmlrt import calc_tilesize
@@ -113,61 +166,36 @@ class BaseGenericOnnxScaler(BaseGenericScaler, ABC):
             overlap_h=self.overlap_h,
         )
 
-    def init_backend(self, trt_opt_shapes: tuple[int, int]) -> Any:
-        from vsmlrt import init_backend
-
-        return init_backend(backend=self.backend, trt_opt_shapes=trt_opt_shapes)
-
     def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         clip = depth(clip, 16 if self.backend.fp16 else 32, vs.FLOAT)
         return limiter(clip, func=self.__class__)
 
+    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode) -> ConstantFormatVideoNode:
+        return depth(
+            clip, input_clip, dither_type=DitherType.ORDERED if 0 in {clip.width, clip.height} else DitherType.AUTO
+        )
+
     def inference(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
         from vsmlrt import inference
 
-        (tile_w, tile_h), (overlap_w, overlap_h) = self.calc_tilesize(clip)
+        tiles, overlaps = self.calc_tilesize(clip)
 
-        if tile_w % 1 != 0 or tile_h % 1 != 0:
-            raise CustomValueError("Tile size must be divisible by 1", self.__class__, (tile_w, tile_h))
-
-        scaled = inference(
-            self.preprocess_clip(clip),
+        return inference(
+            clip,
             network_path=self.model,
-            backend=self.init_backend(trt_opt_shapes=(tile_w, tile_h)),
-            overlap=(overlap_w, overlap_h),
-            tilesize=(tile_w, tile_h),
+            overlap=overlaps,
+            tilesize=tiles,
+            backend=self.backend,
         )
 
-        if TYPE_CHECKING:
-            assert check_variable(scaled, self.__class__)
 
-        return scaled
-
-
-class GenericOnnxScaler(BaseGenericOnnxScaler):
+class GenericOnnxScaler(BaseOnnxScaler):
     """Generic scaler class for an onnx model."""
 
     _static_kernel_radius = 2
 
-    @inject_self.cached
-    def scale(
-        self,
-        clip: vs.VideoNode,
-        width: int | None = None,
-        height: int | None = None,
-        shift: tuple[float, float] = (0, 0),
-        **kwargs: Any
-    ) -> ConstantFormatVideoNode:
-        assert check_variable(clip, self.__class__)
 
-        scaled = self.inference(clip)
-
-        width, height = self._wh_norm(clip, width, height)
-
-        return self._finish_scale(scaled, clip, width, height, shift, **kwargs)
-
-
-class BaseArtCNN(BaseGenericOnnxScaler):
+class BaseArtCNN(BaseOnnxScaler):
     _model: ClassVar[int]
     _static_kernel_radius = 2
 
@@ -177,6 +205,7 @@ class BaseArtCNN(BaseGenericOnnxScaler):
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
+        max_instances: int = 2,
         *,
         kernel: KernelT = Catrom,
         scaler: ScalerT | None = None,
@@ -190,42 +219,32 @@ class BaseArtCNN(BaseGenericOnnxScaler):
                                 Helps if you're lacking in vram but models may behave differently.
         :param tilesize:        
         :param overlap:         
+        :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
         :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
                                 Defaults to Catrom.
         :param scaler:          Scaler used for scaling operations. Defaults to kernel.
         :param shifter:         Kernel used for shifting operations. Defaults to scaler.
         """
-        super().__init__(None, backend, tiles, tilesize, overlap, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
+        super().__init__(
+            None, backend, tiles, tilesize, overlap, max_instances, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs
+        )
 
     def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         return super().preprocess_clip(get_y(clip))
 
-    @inject_self.cached
-    def scale(
-        self,
-        clip: vs.VideoNode,
-        width: int | None = None,
-        height: int | None = None,
-        shift: tuple[float, float] = (0, 0),
-        **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    def inference(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
         from vsmlrt import ArtCNN as mlrt_ArtCNN
         from vsmlrt import ArtCNNModel
 
-        assert check_variable(clip, self.__class__)
-
-        width, height = self._wh_norm(clip, width, height)
-
-        scaled = mlrt_ArtCNN(
-            self.preprocess_clip(clip),
+        return mlrt_ArtCNN(
+            clip,
             self.tiles,
             self.tilesize,
-            (self.overlap_w, self.overlap_h),
+            self.overlap,
             ArtCNNModel(self._model),
-            backend=self.backend,
+            self.backend,
         )
 
-        return self._finish_scale(scaled, clip, width, height, shift, **kwargs)
 
 
 class BaseArtCNNChroma(BaseArtCNN):
@@ -260,7 +279,7 @@ class BaseArtCNNChroma(BaseArtCNN):
         super().__init__(backend, tiles, tilesize, overlap, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
 
     def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
-        assert check_variable(clip, self.__class__)
+        assert check_variable_format(clip, self.__class__)
 
         if clip.format.subsampling_h != 0 or clip.format.subsampling_w != 0:
             clip = self.chroma_scaler.resample(
