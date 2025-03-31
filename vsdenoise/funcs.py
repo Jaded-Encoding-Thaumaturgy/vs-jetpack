@@ -114,7 +114,7 @@ def mc_degrain(
     def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
         return (x[0] // 2, x[1] // 2)
 
-    mv_args = preset | kwargs | KwargsNotNone(search_clip=prefilter, tr=tr)
+    mv_args = preset | kwargs | KwargsNotNone(search_clip=prefilter)
 
     rfilter_search, rfilter_render = normalize_seq(rfilter, 2)
 
@@ -131,7 +131,7 @@ def mc_degrain(
     mv.super(mv.search_clip, rfilter=rfilter_search)
 
     if not vectors:
-        mv.analyze(blksize=blksize, overlap=_floor_div_tuple(blksize))
+        mv.analyze(tr=tr, blksize=blksize, overlap=_floor_div_tuple(blksize))
 
         if refine:
             if thsad_recalc is None:
@@ -143,7 +143,7 @@ def mc_degrain(
 
                 mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
-    den = mv.degrain(mfilter, mv.clip, None, tr, thsad, thsad2, limit, thscd)
+    den = mv.degrain(mfilter, mv.clip, None, None, thsad, thsad2, limit, thscd)
 
     return (den, mv) if export_globals else den
 
