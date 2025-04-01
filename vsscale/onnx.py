@@ -2,10 +2,11 @@ from abc import ABC
 from logging import warning
 from typing import Any, ClassVar, Literal
 
+from vsexprtools import norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelT, ScalerT
 from vstools import (
-    ConstantFormatVideoNode, CustomValueError, DitherType, ProcessVariableResClip, SPath, SPathLike, check_variable_format, core, depth, get_nvidia_version, get_y,
-    inject_self, limiter, vs
+    ConstantFormatVideoNode, CustomValueError, DitherType, Matrix, ProcessVariableResClip, SPath, SPathLike,
+    check_variable_format, core, depth, get_nvidia_version, get_video_format, get_y, inject_self, limiter, padder, vs
 )
 
 from .generic import BaseGenericScaler
@@ -393,3 +394,148 @@ class ArtCNN(BaseArtCNN):
         """The same as C4F16 but intended to also sharpen and denoise."""
 
         _model = 11
+
+
+class BaseWaifu2x(BaseOnnxScaler):
+    scale_w2x: Literal[1, 2, 4]
+    noise: Literal[-1, 0, 1, 2, 3]
+
+    _model: ClassVar[int]
+    _static_kernel_radius = 2
+
+    def __init__(
+        self,
+        scale: Literal[1, 2, 4] = 2,
+        noise: Literal[-1, 0, 1, 2, 3] = -1,
+        backend: Any | None = None,
+        tiles: int | tuple[int, int] | None = None,
+        tilesize: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] | None = None,
+        max_instances: int = 2,
+        *,
+        kernel: KernelT = Catrom,
+        scaler: ScalerT | None = None,
+        shifter: KernelT | None = None,
+        **kwargs: Any
+    ) -> None:
+        """
+        :param noise:
+        :param scale:
+        :param backend:         vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.
+                                In order of trt > cuda > directml > nncn > cpu.
+        :param tiles:           Splits up the frame into multiple tiles.
+                                Helps if you're lacking in vram but models may behave differently.
+        :param tilesize:
+        :param overlap:
+        :param max_instances:
+        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
+                                Defaults to Catrom.
+        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
+        :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        """
+        self.scale_w2x = scale
+        self.noise = noise
+        super().__init__(
+            None, backend, tiles, tilesize, overlap, max_instances, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs
+        )
+
+    def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        from vsmlrt import Waifu2x as mlrt_Waifu2x
+        from vsmlrt import Waifu2xModel
+
+        return mlrt_Waifu2x(
+            clip,
+            self.noise,
+            self.scale_w2x,
+            self.tiles,
+            self.tilesize,
+            self.overlap,
+            Waifu2xModel(self._model),
+            self.backend,
+            **kwargs
+        )
+
+
+class BaseWaifu2xRGB(BaseWaifu2x):
+    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        clip = self.kernel.resample(clip, vs.RGBH if self.backend.fp16 else vs.RGBS, Matrix.RGB)
+        return limiter(clip, func=self.__class__)
+
+
+class BaseWaifu2xMlrtPreprocess(BaseWaifu2x):
+    def __init__(
+        self,
+        scale: Literal[1, 2, 4] = 2,
+        noise: Literal[-1, 0, 1, 2, 3] = -1,
+        preprocess: bool = True,
+        backend: Any | None = None,
+        tiles: int | tuple[int, int] | None = None,
+        tilesize: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] | None = None,
+        max_instances: int = 2,
+        *,
+        kernel: KernelT = Catrom,
+        scaler: ScalerT | None = None,
+        shifter: KernelT | None = None,
+        **kwargs: Any
+    ) -> None:
+        self.preprocess = preprocess
+        super().__init__(
+            scale, noise, backend, tiles, tilesize, overlap, max_instances, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs
+        )
+
+    def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        return super().inference(clip, preprocess=self.preprocess, **kwargs)
+
+
+class Waifu2x(BaseWaifu2x):
+    _model = 6
+
+    class AnimeStyleArt(BaseWaifu2xMlrtPreprocess, BaseWaifu2x):
+        _model = 0
+
+    class AnimeStyleArtRGB(BaseWaifu2xMlrtPreprocess, BaseWaifu2xRGB):
+        _model = 1
+
+    class Photo(BaseWaifu2xMlrtPreprocess, BaseWaifu2xRGB):
+        _model = 2
+
+    class UpConv7AnimeStyleArt(BaseWaifu2xRGB):
+        _model = 3
+
+    class UpConv7Photo(BaseWaifu2xRGB):
+        _model = 4
+
+    class UpResNet10(BaseWaifu2xRGB):
+        _model = 5
+
+    class Cunet(BaseWaifu2xRGB):
+        _model = 6
+
+        def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+            with padder.ctx(16, 4) as pad:
+                padded = pad.MIRROR(clip)
+                scaled = super().inference(padded, **kwargs)
+                cropped = pad.CROP(scaled, crop_scale=2.0)
+
+            return cropped
+
+        def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+            tint_fix = norm_expr(
+                clip, 'x 0.5 255 / + 0 1 clamp',
+                planes=0 if get_video_format(input_clip).color_family is vs.GRAY else None,
+                func="Waifu2x" + self.__class__.__name__
+            )
+            return super().postprocess_clip(tint_fix, input_clip, **kwargs)
+
+    class SwinUnetArt(BaseWaifu2xRGB):
+        _model = 7
+
+    class SwinUnetPhoto(BaseWaifu2xRGB):
+        _model = 8
+
+    class SwinUnetPhotoV2(BaseWaifu2xRGB):
+        _model = 9
+
+    class SwinUnetArtScan(BaseWaifu2xRGB):
+        _model = 10
