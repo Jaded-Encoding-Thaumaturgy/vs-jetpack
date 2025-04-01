@@ -76,8 +76,8 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
                                 In order of trt > cuda > directml > nncn > cpu.
         :param tiles:           Splits up the frame into multiple tiles.
                                 Helps if you're lacking in vram but models may behave differently.
-        :param tilesize:    
-        :param overlap:     
+        :param tilesize:
+        :param overlap:
         :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
         :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
                                 Defaults to Catrom.
@@ -133,7 +133,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
                 raise CustomValueError(
                     "Variable resolution clips can only be processed with TRT Backend!", self.__class__, self.backend
                 )
-            
+
             warning(f"{self.__class__.__name__}: Variable resolution clip detected!")
 
             if self.backend.static_shape:
@@ -143,7 +143,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             if not self.backend.max_shapes:
                 warning("max_shapes is None, setting it to (1936, 1088). You may want to adjust it...")
                 self.backend.max_shapes = (1936, 1088)
-            
+
             if not self.backend.opt_shapes:
                 warning("opt_shapes is None, setting it to (64, 64). You may want to adjust it...")
                 self.backend.opt_shapes = (64, 64)
@@ -167,27 +167,21 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             overlap_h=self.overlap_h,
         )
 
-    def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         clip = depth(clip, 16 if self.backend.fp16 else 32, vs.FLOAT)
         return limiter(clip, func=self.__class__)
 
-    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         return depth(
             clip, input_clip, dither_type=DitherType.ORDERED if 0 in {clip.width, clip.height} else DitherType.AUTO
         )
 
-    def inference(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
+    def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         from vsmlrt import inference
 
         tiles, overlaps = self.calc_tilesize(clip)
 
-        return inference(
-            clip,
-            network_path=self.model,
-            overlap=overlaps,
-            tilesize=tiles,
-            backend=self.backend,
-        )
+        return inference(clip, self.model, overlaps, tiles, self.backend, **kwargs)
 
 
 class GenericOnnxScaler(BaseOnnxScaler):
@@ -200,52 +194,14 @@ class BaseArtCNN(BaseOnnxScaler):
     _model: ClassVar[int]
     _static_kernel_radius = 2
 
-    def __init__(
-        self,
-        backend: Any | None = None,
-        tiles: int | tuple[int, int] | None = None,
-        tilesize: int | tuple[int, int] | None = None,
-        overlap: int | tuple[int, int] | None = None,
-        max_instances: int = 2,
-        *,
-        kernel: KernelT = Catrom,
-        scaler: ScalerT | None = None,
-        shifter: KernelT | None = None,
-        **kwargs: Any
-    ) -> None:
-        """
-        :param backend:         vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.
-                                In order of trt > cuda > directml > nncn > cpu.
-        :param tiles:           Splits up the frame into multiple tiles.
-                                Helps if you're lacking in vram but models may behave differently.
-        :param tilesize:        
-        :param overlap:         
-        :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
-        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
-                                Defaults to Catrom.
-        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:         Kernel used for shifting operations. Defaults to scaler.
-        """
-        super().__init__(
-            None, backend, tiles, tilesize, overlap, max_instances, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs
-        )
+    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        return super().preprocess_clip(get_y(clip), **kwargs)
 
-    def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
-        return super().preprocess_clip(get_y(clip))
-
-    def inference(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
+    def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         from vsmlrt import ArtCNN as mlrt_ArtCNN
         from vsmlrt import ArtCNNModel
 
-        return mlrt_ArtCNN(
-            clip,
-            self.tiles,
-            self.tilesize,
-            self.overlap,
-            ArtCNNModel(self._model),
-            self.backend,
-        )
-
+        return mlrt_ArtCNN(clip, self.tiles, self.tilesize, self.overlap, ArtCNNModel(self._model), self.backend)
 
 
 class BaseArtCNNChroma(BaseArtCNN):
@@ -255,6 +211,7 @@ class BaseArtCNNChroma(BaseArtCNN):
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
+        max_instances: int = 2,
         *,
         chroma_scaler: KernelT = Bilinear,
         kernel: KernelT = Catrom,
@@ -267,8 +224,9 @@ class BaseArtCNNChroma(BaseArtCNN):
                                 In order of trt > cuda > directml > nncn > cpu.
         :param tiles:           Splits up the frame into multiple tiles.
                                 Helps if you're lacking in vram but models may behave differently.
-        :param tilesize:        
-        :param overlap:         
+        :param tilesize:
+        :param overlap:
+        :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
         :param chroma_scaler:   Scaler to upscale the chroma with. Defaults to Bilinear.
         :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
                                 Defaults to Catrom.
@@ -277,9 +235,11 @@ class BaseArtCNNChroma(BaseArtCNN):
         """
         self.chroma_scaler = Kernel.ensure_obj(chroma_scaler)
 
-        super().__init__(backend, tiles, tilesize, overlap, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
+        super().__init__(
+            None, backend, tiles, tilesize, overlap, max_instances, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs
+        )
 
-    def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         assert check_variable_format(clip, self.__class__)
 
         if clip.format.subsampling_h != 0 or clip.format.subsampling_w != 0:
@@ -290,8 +250,8 @@ class BaseArtCNNChroma(BaseArtCNN):
                 )
             )
             return limiter(clip, func=self.__class__)
-    
-        return super().preprocess_clip(clip)
+
+        return super().preprocess_clip(clip, **kwargs)
 
 
 class ArtCNN(BaseArtCNN):
