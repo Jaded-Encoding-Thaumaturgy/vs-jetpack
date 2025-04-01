@@ -476,7 +476,7 @@ class Waifu2x(BaseWaifu2x):
             with padder.ctx(16, 4) as pad:
                 padded = pad.MIRROR(clip)
                 scaled = super().inference(padded, **kwargs)
-                cropped = pad.CROP(scaled, crop_scale=2.0)
+                cropped = pad.CROP(scaled)
 
             return cropped
 
