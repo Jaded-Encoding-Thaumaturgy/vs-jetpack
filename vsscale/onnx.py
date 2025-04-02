@@ -43,6 +43,8 @@ def autoselect_backend(**kwargs: Any) -> Any:
     else:
         if hasattr(core, "ort") and os.name == "nt":
             backend = Backend.ORT_DML
+        elif hasattr(core, "migx"):
+            backend = Backend.MIGX
         elif hasattr(core, "ncnn"):
             backend = Backend.NCNN_VK
         elif hasattr(core, "ort"):
