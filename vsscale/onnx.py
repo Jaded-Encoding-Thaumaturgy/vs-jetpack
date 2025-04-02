@@ -148,7 +148,9 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
                 warning("opt_shapes is None, setting it to (64, 64). You may want to adjust it...")
                 self.backend.opt_shapes = (64, 64)
 
-            scaled = ProcessVariableResClip.from_func(wclip, self.inference, False, wclip.format, self.max_instances)
+            scaled = ProcessVariableResClip[ConstantFormatVideoNode].from_func(
+                wclip, self.inference, False, wclip.format, self.max_instances
+            )
 
         scaled = self.postprocess_clip(scaled, clip)
 
