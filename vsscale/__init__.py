@@ -1,6 +1,5 @@
 # ruff: noqa: F401, F403
 
-from .exceptions import *
 from .generic import *
 from .various import *
 from .helpers import *
