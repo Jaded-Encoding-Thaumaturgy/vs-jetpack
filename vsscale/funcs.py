@@ -2,94 +2,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Concatenate, Literal, TypeGuard, cast
+from typing import Any, Callable, Concatenate, Literal
 
 from vsexprtools import ExprOp, combine, norm_expr
-from vskernels import Scaler, ScalerT
+from vskernels import ScalerT
 from vsmasktools import ringing_mask
 from vsrgtools import LimitFilterMode, RepairMode, MeanMode, limit_filter, repair, unsharp_masked
-from vstools import (
-    EXPR_VARS, CustomIndexError, CustomOverflowError, P, check_ref_clip, inject_self, scale_delta, vs
-)
+from vstools import CustomOverflowError, P, check_ref_clip, inject_self, scale_delta, vs
+
 
 from .helpers import GenericScaler
 
 __all__ = [
-    'MergeScalers',
     'ClampScaler',
     'UnsharpLimitScaler'
 ]
-
-
-class MergeScalers(GenericScaler):
-    def __init__(self, *scalers: ScalerT | tuple[ScalerT, float | None]) -> None:
-        """Create a unified Scaler from multiple Scalers with optional weights."""
-        if (slen := len(scalers)) < 2:
-            raise CustomIndexError('Not enough scalers passed!', self.__class__, slen)
-        elif slen > len(EXPR_VARS):
-            raise CustomIndexError('Too many scalers passed!', self.__class__, slen)
-
-        def _not_all_tuple_scalers(
-            scalers: tuple[ScalerT | tuple[ScalerT, float | None], ...]
-        ) -> TypeGuard[tuple[ScalerT, ...]]:
-            return all(not isinstance(s, tuple) for s in scalers)
-
-        if not _not_all_tuple_scalers(scalers):
-            norm_scalers = [
-                scaler if isinstance(scaler, tuple) else (scaler, None) for scaler in scalers
-            ]
-
-            curr_sum = 0.0
-            n_auto_weight = 0
-
-            for i, (_, weight) in enumerate(norm_scalers):
-                if weight is None:
-                    n_auto_weight += 1
-                elif weight <= 0.0:
-                    raise CustomOverflowError(
-                        f'Weights have to be positive, >= 0.0! (Scaler index: ({i})', self.__class__
-                    )
-                else:
-                    curr_sum += weight
-
-            if curr_sum > 1.0:
-                raise CustomOverflowError(
-                    'Sum of the weights should be less or equal than 1.0!', self.__class__
-                )
-
-            if n_auto_weight:
-                a_wgh = (1.0 - curr_sum) / n_auto_weight
-
-                norm_scalers = [
-                    (scaler, a_wgh if weight is None else weight)
-                    for scaler, weight in norm_scalers
-                ]
-        else:
-            weight = 1.0 / len(scalers)
-
-            norm_scalers = [(scaler, weight) for scaler in scalers]
-
-        self.scalers = [
-            (self.ensure_scaler(scaler), float(weight if weight else 0))
-            for scaler, weight in norm_scalers
-        ]
-
-    def scale(  # type: ignore
-        self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-        shift: tuple[float, float] = (0, 0), **kwargs: Any
-    ) -> vs.VideoNode:
-        width, height = self._wh_norm(clip, width, height)
-
-        scalers, weights = cast(tuple[list[Scaler], list[float]], zip(*self.scalers))
-
-        return combine(
-            [scaler.scale(clip, width, height, shift, **kwargs) for scaler in scalers],
-            ExprOp.ADD, zip(weights, ExprOp.MUL), expr_suffix=[sum(weights), ExprOp.DIV]
-        )
-
-    @property
-    def kernel_radius(self) -> int:  # type: ignore[override]
-        return max(scaler.kernel_radius for scaler, _ in self.scalers)
 
 
 @dataclass
