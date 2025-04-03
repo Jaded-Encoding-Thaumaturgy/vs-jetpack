@@ -1,21 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import partial
-from typing import Any, Callable, Concatenate, Literal
+from typing import Any, Literal
 
 from vsexprtools import ExprOp, combine, norm_expr
 from vskernels import ScalerT
 from vsmasktools import ringing_mask
-from vsrgtools import LimitFilterMode, RepairMode, MeanMode, limit_filter, repair, unsharp_masked
-from vstools import CustomOverflowError, P, check_ref_clip, inject_self, scale_delta, vs
+from vsrgtools import RepairMode, repair
+from vstools import CustomOverflowError, check_ref_clip, inject_self, scale_delta, vs
 
 
 from .helpers import GenericScaler
 
 __all__ = [
     'ClampScaler',
-    'UnsharpLimitScaler'
 ]
 
 
@@ -122,72 +120,3 @@ class ClampScaler(GenericScaler):
         if self._reference:
             return max(self._reference.kernel_radius, self._base_scaler.kernel_radius)
         return self._base_scaler.kernel_radius
-
-
-class UnsharpLimitScaler(GenericScaler):
-    """Limit a scaler with a masked unsharping."""
-
-    def __init__(
-        self, base_scaler: ScalerT,
-        reference: ScalerT | vs.VideoNode,
-        unsharp_func: Callable[
-            Concatenate[vs.VideoNode, P], vs.VideoNode
-        ] = partial(unsharp_masked, radius=2, strength=65),
-        merge_mode: LimitFilterMode | bool = True,
-        *args: P.args, **kwargs: P.kwargs
-    ) -> None:
-        """
-        :param base_scaler:     Scaler of which to limit haloing.
-        :param unsharp_func:    Unsharpening function used as reference for limiting.
-        :param merge_mode:      Whether to limit with LimitFilterMode,
-                                use a median filter (True) or just take the darkest pixels (False).
-        :param reference:       Reference scaler used to fill in the haloed parts.
-        """
-
-        self.unsharp_func = unsharp_func
-
-        self.merge_mode = merge_mode
-
-        self.base_scaler = self.ensure_scaler(base_scaler)
-        self.reference = reference
-        self._reference = None if isinstance(self.reference, vs.VideoNode) else self.ensure_scaler(self.reference)
-
-        self.args = args
-        self.kwargs = kwargs
-
-    @inject_self
-    def scale(  # type: ignore
-        self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-        shift: tuple[float, float] = (0, 0), *, smooth: vs.VideoNode | None = None, **kwargs: Any
-    ) -> vs.VideoNode:
-        width, height = self._wh_norm(clip, width, height)
-
-        ref_scaled = self.base_scaler.scale(clip, width, height, shift, **kwargs)
-
-        if isinstance(self.reference, vs.VideoNode):
-            smooth = self.reference
-
-            if shift != (0, 0):
-                smooth = self._kernel.shift(smooth, shift)
-        else:
-            smooth = self._reference.scale(clip, width, height, shift)  # type: ignore
-
-        assert smooth
-
-        check_ref_clip(ref_scaled, smooth)
-
-        smooth_sharp = self.unsharp_func(smooth, *self.args, **self.kwargs)
-
-        if isinstance(self.merge_mode, LimitFilterMode):
-            return limit_filter(smooth, ref_scaled, smooth_sharp, self.merge_mode)
-
-        if self.merge_mode:
-            return MeanMode.MEDIAN(smooth, ref_scaled, smooth_sharp)
-
-        return combine([smooth, ref_scaled, smooth_sharp], ExprOp.MIN)
-
-    @property
-    def kernel_radius(self) -> int:  # type: ignore[override]
-        if self._reference:
-            return max(self._reference.kernel_radius, self.base_scaler.kernel_radius)
-        return self.base_scaler.kernel_radius
