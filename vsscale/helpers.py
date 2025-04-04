@@ -19,11 +19,26 @@ __all__ = [
 
 
 def scale_var_clip(
-    clip: vs.VideoNode, scaler: Scaler | Callable[[Resolution], Scaler],
-    width: int | Callable[[Resolution], int] | None, height: int | Callable[[Resolution], int],
-    shift: tuple[float, float] | Callable[[Resolution], tuple[float, float]] = (0, 0), debug: bool = False
+    clip: vs.VideoNode,
+    scaler: Scaler | Callable[[Resolution], Scaler] | Callable[[tuple[int, int]], Scaler],
+    width: int | Callable[[Resolution], int] | Callable[[tuple[int, int]], int] | None,
+    height: int | Callable[[Resolution], int] | Callable[[tuple[int, int]], int],
+    shift: tuple[float, float] | Callable[[tuple[int, int]], tuple[float, float]] = (0, 0),
+    debug: bool = False
 ) -> vs.VideoNode:
-    """Scale a variable clip to constant or variable resolution."""
+    """
+    Scale a variable clip to constant or variable resolution.
+
+    :param clip:            Source clip.
+    :param scaler:          A scaler instance or a callable that returns a scaler instance.
+    :param width:           A width integer or a callable that returns the width. 
+                            If None, it will be calculated from the height and the aspect ratio of the clip.
+    :param height:          A height integer or a callable that returns the height.
+    :param shift:           Optional top shift, left shift tuple or a callable that returns the shifts.
+                            Defaults to no shift.
+    :param debug:           If True, the `var_width` and `var_height` props will be added to the clip.
+    :return:                Scaled clip.
+    """
     _cached_clips = dict[str, vs.VideoNode]()
 
     no_accepts_var = list[Scaler]()

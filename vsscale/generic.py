@@ -107,10 +107,7 @@ class BaseGenericScaler(Scaler, ABC):
 
 
 class GenericScaler(BaseGenericScaler, partial_abstract=True):
-    """
-    Instantiate with a callable taking at least a VideoNode, width, and height
-    to use that as a Scaler in functions taking that.
-    """
+    """Generic Scaler class"""
 
     def __init__(
         self,
@@ -121,6 +118,16 @@ class GenericScaler(BaseGenericScaler, partial_abstract=True):
         shifter: KernelT | None = None,
         **kwargs: Any
     ) -> None:
+        """
+        Apply an arbitrary scaling function.
+
+        :param func:        The scaling function to apply.
+                            Can either be a function without shifting or one that includes shifting logic.
+        :param kernel:      Base kernel to be used for certain scaling/shifting/resampling operations.
+                            Defaults to Catrom.
+        :param scaler:      Scaler used for scaling operations. Defaults to kernel.
+        :param shifter:     Kernel used for shifting operations. Defaults to scaler.
+        """
         self.func = _func_no_op if func is None else func
         super().__init__(kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
 
