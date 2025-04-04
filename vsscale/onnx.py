@@ -483,6 +483,7 @@ class Waifu2x(BaseWaifu2x):
         _model = 6
 
         def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+            # Cunet model ruins image borders, so we need to pad it before upscale and crop it after.
             with padder.ctx(16, 4) as pad:
                 padded = pad.MIRROR(clip)
                 scaled = super().inference(padded, **kwargs)
@@ -491,6 +492,7 @@ class Waifu2x(BaseWaifu2x):
             return cropped
 
         def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+            # Cunet model also has a tint issue
             tint_fix = norm_expr(
                 clip, 'x 0.5 255 / + 0 1 clamp',
                 planes=0 if get_video_format(input_clip).color_family is vs.GRAY else None,
