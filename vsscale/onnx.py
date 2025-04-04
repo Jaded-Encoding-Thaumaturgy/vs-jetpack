@@ -202,14 +202,16 @@ class BaseArtCNN(BaseOnnxScaler):
     _model: ClassVar[int]
     _static_kernel_radius = 2
 
-    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        return super().preprocess_clip(get_y(clip), **kwargs)
-
     def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         from vsmlrt import ArtCNN as mlrt_ArtCNN
         from vsmlrt import ArtCNNModel
 
         return mlrt_ArtCNN(clip, self.tiles, self.tilesize, self.overlap, ArtCNNModel(self._model), self.backend)
+
+
+class BaseArtCNNLuma(BaseArtCNN):
+    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        return super().preprocess_clip(get_y(clip), **kwargs)
 
 
 class BaseArtCNNChroma(BaseArtCNN):
@@ -262,7 +264,7 @@ class BaseArtCNNChroma(BaseArtCNN):
         return super().preprocess_clip(clip, **kwargs)
 
 
-class ArtCNN(BaseArtCNN):
+class ArtCNN(BaseArtCNNLuma):
     """
     Super-Resolution Convolutional Neural Networks optimised for anime.
 
@@ -277,7 +279,7 @@ class ArtCNN(BaseArtCNN):
 
     _model = 7
 
-    class C4F32(BaseArtCNN):
+    class C4F32(BaseArtCNNLuma):
         """
         This has 4 internal convolution layers with 32 filters each.\n
         If you need an even faster model.
@@ -285,12 +287,12 @@ class ArtCNN(BaseArtCNN):
 
         _model = 0
 
-    class C4F32_DS(BaseArtCNN):
+    class C4F32_DS(BaseArtCNNLuma):
         """The same as C4F32 but intended to also sharpen and denoise."""
 
         _model = 1
 
-    class C16F64(BaseArtCNN):
+    class C16F64(BaseArtCNNLuma):
         """
         Very fast and good enough for AA purposes but the onnx variant is officially deprecated.\n
         This has 16 internal convolution layers with 64 filters each.
@@ -300,7 +302,7 @@ class ArtCNN(BaseArtCNN):
 
         _model = 2
 
-    class C16F64_DS(BaseArtCNN):
+    class C16F64_DS(BaseArtCNNLuma):
         """The same as C16F64 but intended to also sharpen and denoise."""
 
         _model = 3
@@ -321,7 +323,7 @@ class ArtCNN(BaseArtCNN):
 
         _model = 5
 
-    class R16F96(BaseArtCNN):
+    class R16F96(BaseArtCNNLuma):
         """
         The biggest model. Can compete with or outperform Waifu2x Cunet.\n
         Also quite a bit slower but is less heavy on vram.
@@ -329,14 +331,14 @@ class ArtCNN(BaseArtCNN):
 
         _model = 6
 
-    class R8F64(BaseArtCNN):
+    class R8F64(BaseArtCNNLuma):
         """
         A smaller and faster version of R16F96 but very competitive.
         """
 
         _model = 7
 
-    class R8F64_DS(BaseArtCNN):
+    class R8F64_DS(BaseArtCNNLuma):
         """The same as R8F64 but intended to also sharpen and denoise."""
 
         _model = 8
@@ -349,7 +351,7 @@ class ArtCNN(BaseArtCNN):
 
         _model = 9
 
-    class C4F16(BaseArtCNN):
+    class C4F16(BaseArtCNNLuma):
         """
         This has 4 internal convolution layers with 16 filters each.\n
         The currently fastest variant. Not really recommended for any filtering.\n
@@ -358,7 +360,7 @@ class ArtCNN(BaseArtCNN):
 
         _model = 10
 
-    class C4F16_DS(BaseArtCNN):
+    class C4F16_DS(BaseArtCNNLuma):
         """The same as C4F16 but intended to also sharpen and denoise."""
 
         _model = 11
