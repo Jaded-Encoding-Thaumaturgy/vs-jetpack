@@ -18,7 +18,9 @@ __all__ = [
 
     "GenericOnnxScaler",
 
-    "BaseArtCNN", "BaseArtCNNChroma", "ArtCNN"
+    "ArtCNN",
+
+    "Waifu2x"
 ]
 
 
