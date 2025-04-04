@@ -16,7 +16,7 @@ __all__ = [
 
 
 class PlaceboShader(BaseGenericScaler):
-    """Base placebo shader class."""
+    """Placebo shader class."""
 
     _static_kernel_radius = 2
 

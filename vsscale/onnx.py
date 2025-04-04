@@ -29,6 +29,14 @@ def _clean_keywords(kwargs: dict[str, Any], backend: Any) -> dict[str, Any]:
 
 
 def autoselect_backend(**kwargs: Any) -> Any:
+    """
+    Try to select the best backend for the current system.
+    If the system has an NVIDIA GPU: TRT > CUDA (ORT) > Vulkan > OpenVINO GPU
+    Else: DirectML (D3D12) > MIGraphX > Vulkan > CPU (ORT) > CPU OpenVINO
+
+    :param kwargs:        Additional arguments to pass to the backend.
+    :return:              The selected backend.
+    """
     import os
 
     from vsmlrt import Backend
@@ -77,13 +85,12 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         **kwargs: Any
     ) -> None:
         """
-        :param model:           Path to the model.
-        :param backend:         vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.
-                                In order of trt > cuda > directml > nncn > cpu.
-        :param tiles:           Splits up the frame into multiple tiles.
-                                Helps if you're lacking in vram but models may behave differently.
-        :param tilesize:
-        :param overlap:
+        :param backend:         The backend to be used with the vs-mlrt framework.
+                                If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
+        :param tiles:           Whether to split the image into multiple tiles.
+                                This can help reduce VRAM usage, but note that the model's behavior may vary when they are used.
+        :param tilesize:        The size of each tile when splitting the image (if tiles are enabled).
+        :param overlap:         The size of overlap between tiles.
         :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
         :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
                                 Defaults to Catrom.
@@ -230,12 +237,12 @@ class BaseArtCNNChroma(BaseArtCNN):
         **kwargs: Any
     ) -> None:
         """
-        :param backend:         vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.
-                                In order of trt > cuda > directml > nncn > cpu.
-        :param tiles:           Splits up the frame into multiple tiles.
-                                Helps if you're lacking in vram but models may behave differently.
-        :param tilesize:
-        :param overlap:
+        :param backend:         The backend to be used with the vs-mlrt framework.
+                                If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
+        :param tiles:           Whether to split the image into multiple tiles.
+                                This can help reduce VRAM usage, but note that the model's behavior may vary when they are used.
+        :param tilesize:        The size of each tile when splitting the image (if tiles are enabled).
+        :param overlap:         The size of overlap between tiles.
         :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
         :param chroma_scaler:   Scaler to upscale the chroma with. Defaults to Bilinear.
         :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
@@ -389,15 +396,15 @@ class BaseWaifu2x(BaseOnnxScaler):
         **kwargs: Any
     ) -> None:
         """
-        :param noise:
-        :param scale:
-        :param backend:         vs-mlrt backend. Will attempt to autoselect the most suitable one with fp16=True if None.
-                                In order of trt > cuda > directml > nncn > cpu.
-        :param tiles:           Splits up the frame into multiple tiles.
-                                Helps if you're lacking in vram but models may behave differently.
-        :param tilesize:
-        :param overlap:
-        :param max_instances:
+        :param scale:           Upscaling factor. 1 = no uspcaling, 2 = 2x, 4 = 4x.
+        :param noise:           Noise reduction level. -1 = none, 0 = low, 1 = medium, 2 = high, 3 = highest.
+        :param backend:         The backend to be used with the vs-mlrt framework.
+                                If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
+        :param tiles:           Whether to split the image into multiple tiles.
+                                This can help reduce VRAM usage, but note that the model's behavior may vary when they are used.
+        :param tilesize:        The size of each tile when splitting the image (if tiles are enabled).
+        :param overlap:         The size of overlap between tiles.
+        :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
         :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
                                 Defaults to Catrom.
         :param scaler:          Scaler used for scaling operations. Defaults to kernel.
