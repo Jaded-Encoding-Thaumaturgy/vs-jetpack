@@ -144,8 +144,6 @@ class GenericScaler(BaseGenericScaler, partial_abstract=True):
 
         width, height = self._wh_norm(clip, width, height)
 
-        kwargs = self.kwargs | kwargs
-
         if shift != (0, 0):
             output = self.func(clip, width, height, shift, **kwargs)
         else:
