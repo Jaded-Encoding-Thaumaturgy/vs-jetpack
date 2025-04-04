@@ -40,6 +40,8 @@ def autoselect_backend(**kwargs: Any) -> Any:
             backend = Backend.TRT
         elif hasattr(core, "ort"):
             backend = Backend.ORT_CUDA
+        elif hasattr(core, "ncnn"):
+            backend = Backend.NCNN_VK
         else:
             backend = Backend.OV_GPU
     else:
