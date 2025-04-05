@@ -62,6 +62,7 @@ plugins:
               - "^__call__$"
               - "^_dpir$"         # vs-denoise: mostly public via alias.
               - "^_dre_edgemask$" # vs-masktools: mostly public via alias.
+              - "^_rekt_partial$" # vs-masktools: mostly public via alias.
               - "^_fine_dehalo$"  # vs-dehalo: mostly public via alias.
               - "^_get_prop$"     # vs-tools: mostly public via alias.
               - "^_padder$"       # vs-tools: mostly public via alias.
