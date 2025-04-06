@@ -4,7 +4,7 @@ import warnings
 
 from vsexprtools import norm_expr
 from vstools import (
-    ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_variable, core, normalize_seq, pick_func_stype, vs
+    ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_variable, core, normalize_seq, padder, pick_func_stype, vs
 )
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
@@ -28,7 +28,13 @@ def repair(clip: vs.VideoNode, repairclip: vs.VideoNode, mode: RepairModeT) -> C
         return clip
 
     if clip.format.sample_type == vs.INTEGER and all(m in range(24 + 1) for m in mode):
-        return core.rgvs.Repair(clip, repairclip, mode)
+        sub = max(1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h)
+
+        with padder.ctx(sub, sub) as pad:
+            padded = pad.MIRROR(clip)
+            padded_repair = pad.MIRROR(repairclip)
+            repaired = core.rgvs.Repair(padded, padded_repair, mode)
+            return pad.CROP(repaired)
 
     return norm_expr([clip, repairclip], tuple([repair_aka_exprs[m]() for m in mode]), func=repair)
 
