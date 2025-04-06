@@ -73,6 +73,7 @@ class QTempGaussMC(vs_object):
         self.clip = clip
         self.input_type = input_type
         self.tff = clip_fieldbased.is_tff
+        self.field = clip_fieldbased.field + 2
 
         if self.input_type == InputType.PROGRESSIVE and clip_fieldbased.is_inter:
             raise CustomRuntimeError(f"{self.input_type} incompatible with interlaced video!", self.__class__)
@@ -118,13 +119,12 @@ class QTempGaussMC(vs_object):
         self.denoise_stabilize_comp_args = fallback(stabilize_comp_args, KwargsT())
 
         return self
-    
+
     def basic(
         self,
         *,
         tr: int = 2,
         bobber: _Antialiaser | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] = Nnedi3(qual=2, nsize=0, nns=4, pscrn=1),
-        field_order: int = 3,
         noise_restore: float = 0,
         degrain_args: KwargsT | None = KwargsT(thsad=640),
         mask_shimmer_args: KwargsT | None = KwargsT(erosion_distance=0),
@@ -133,7 +133,7 @@ class QTempGaussMC(vs_object):
 
         if isinstance(bobber, _Antialiaser):
             bobber = bobber.copy()
-            bobber.field = field_order
+            bobber.field = self.field
 
             def _bobber_func(clip: vs.VideoNode) -> vs.VideoNode:
                 return bobber.interpolate(clip, **bobber.get_aa_args(clip))
@@ -153,7 +153,6 @@ class QTempGaussMC(vs_object):
         *,
         tr: int = 1,
         bobber: _Antialiaser | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
-        field_order: int = 3,
         mode: SourceMatchMode = SourceMatchMode.NONE,
         similarity: float = 0.5,
         enhance: float = 0.5,
@@ -163,7 +162,7 @@ class QTempGaussMC(vs_object):
 
         if isinstance(bobber, _Antialiaser):
             bobber = bobber.copy()
-            bobber.field = field_order
+            bobber.field = self.field
 
             def _bobber_func(clip: vs.VideoNode) -> vs.VideoNode:
                 return bobber.interpolate(clip, **bobber.get_aa_args(clip))
@@ -208,7 +207,7 @@ class QTempGaussMC(vs_object):
         self.sharp_thin = thin
 
         return self
-    
+
     def back_blend(
         self,
         *,
@@ -352,7 +351,7 @@ class QTempGaussMC(vs_object):
 
     def apply_prefilter(self) -> None:
         if self.input_type == InputType.REPAIR:
-            search = BlurMatrix.BINOMIAL()(self.clip, mode=ConvMode.VERTICAL)
+            search = BlurMatrix.BINOMIAL()(self.draft, mode=ConvMode.VERTICAL)
         else:
             search = self.draft
 
@@ -562,7 +561,7 @@ class QTempGaussMC(vs_object):
             )
 
         return resharp
-    
+
     def apply_back_blend(self, flt: vs.VideoNode, src: vs.VideoNode) -> ConstantFormatVideoNode:
         assert check_variable(flt, self.apply_back_blend)
 
