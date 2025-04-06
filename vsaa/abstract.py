@@ -7,9 +7,11 @@ from itertools import zip_longest
 from math import ceil, log2
 from typing import TYPE_CHECKING, Any, Callable, overload
 
+from typing_extensions import Self
+
 from vsexprtools import norm_expr
 from vskernels import Catrom, Kernel, KernelT, NoShift, Scaler, ScalerT
-from vstools import T, check_progressive, core, inject_self, vs, vs_object
+from vstools import check_progressive, core, inject_self, vs, vs_object
 
 from .enums import AADirection
 
@@ -68,8 +70,7 @@ class _Antialiaser(_SingleInterpolate):
 
         return inter
 
-    @inject_self
-    def copy(self: T, **kwargs: Any) -> T:
+    def copy(self, **kwargs: Any) -> Self:
         return replace(self, **kwargs)
 
 
