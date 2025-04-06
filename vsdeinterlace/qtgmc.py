@@ -136,7 +136,7 @@ class QTempGaussMC(vs_object):
             bobber.field = self.field
 
             def _bobber_func(clip: vs.VideoNode) -> vs.VideoNode:
-                return bobber.interpolate(clip, **bobber.get_aa_args(clip))
+                return bobber.interpolate(clip, double_y=False, **bobber.get_aa_args(clip))
 
             self.basic_bobber = _bobber_func
         else:
@@ -165,7 +165,7 @@ class QTempGaussMC(vs_object):
             bobber.field = self.field
 
             def _bobber_func(clip: vs.VideoNode) -> vs.VideoNode:
-                return bobber.interpolate(clip, **bobber.get_aa_args(clip))
+                return bobber.interpolate(clip, double_y=False, **bobber.get_aa_args(clip))
 
             self.match_bobber = _bobber_func
         elif bobber:
