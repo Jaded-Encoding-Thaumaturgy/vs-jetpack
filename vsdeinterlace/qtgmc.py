@@ -123,13 +123,25 @@ class QTempGaussMC(vs_object):
         self,
         *,
         tr: int = 2,
-        bobber: VSFunction = partial(core.znedi3.nnedi3, field=3, qual=2, nsize=0, nns=4, pscrn=1),  # fixme
+        bobber: _Antialiaser | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] = Nnedi3(qual=2, nsize=0, nns=4, pscrn=1),
+        field_order: int = 3,
         noise_restore: float = 0,
         degrain_args: KwargsT | None = KwargsT(thsad=640),
         mask_shimmer_args: KwargsT | None = KwargsT(erosion_distance=0),
     ) -> Self:
         self.basic_tr = tr
-        self.basic_bobber = bobber
+
+        if isinstance(bobber, _Antialiaser):
+            bobber = bobber.copy()
+            bobber.field = field_order
+
+            def _bobber_func(clip: vs.VideoNode) -> vs.VideoNode:
+                return bobber.interpolate(clip, **bobber.get_aa_args(clip))
+
+            self.basic_bobber = _bobber_func
+        else:
+            self.basic_bobber = bobber
+
         self.basic_noise_restore = noise_restore
         self.basic_degrain_args = fallback(degrain_args, KwargsT())
         self.basic_mask_shimmer_args = fallback(mask_shimmer_args, KwargsT())
@@ -140,14 +152,28 @@ class QTempGaussMC(vs_object):
         self,
         *,
         tr: int = 1,
-        bobber: VSFunction | None = None,
+        bobber: _Antialiaser | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+        field_order: int = 3,
         mode: SourceMatchMode = SourceMatchMode.NONE,
         similarity: float = 0.5,
         enhance: float = 0.5,
         degrain_args: KwargsT | None = None,
     ) -> Self:
         self.match_tr = tr
-        self.match_bobber = fallback(bobber, self.basic_bobber)
+
+        if isinstance(bobber, _Antialiaser):
+            bobber = bobber.copy()
+            bobber.field = field_order
+
+            def _bobber_func(clip: vs.VideoNode) -> vs.VideoNode:
+                return bobber.interpolate(clip, **bobber.get_aa_args(clip))
+
+            self.match_bobber = _bobber_func
+        elif bobber:
+            self.match_bobber = bobber
+        else:
+            self.match_bobber = self.basic_bobber
+
         self.match_mode = mode
         self.match_similarity = similarity
         self.match_enhance = enhance
