@@ -32,7 +32,7 @@ __all__ = [
 ]
 
 
-class QTempGaussMC:
+class QTempGaussMC(vs_object):
     """
     Quasi Temporal Gaussian Motion Compensated (QTGMC)
     """
@@ -639,3 +639,10 @@ class QTempGaussMC:
         self.apply_motion_blur()
 
         return self.motion_blur_output
+
+    def __vs_del__(self, core_id: int) -> None:
+        for k, v in self.__dict__.items():
+            if isinstance(v, MutableMapping):
+                v.clear()
+            if isinstance(v, vs.VideoNode):
+                setattr(self, k, None)
