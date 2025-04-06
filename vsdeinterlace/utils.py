@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from vstools import FieldBased, FieldBasedT, core, vs
+from vstools import FieldBased, FieldBasedT, core, vs, FunctionUtil
 
 __all__ = [
     'telecine_patterns',
     'get_field_difference',
-    'reinterlace'
+    'reinterlace',
+    'scdetect'
 ]
 
 
@@ -34,3 +35,11 @@ def reinterlace(clip: vs.VideoNode, tff: FieldBasedT | bool | None = None) -> vs
     tff = FieldBased.from_param_or_video(tff, clip, True, reinterlace).is_tff
 
     return clip.std.SeparateFields(tff).std.SelectEvery(4, (0, 3)).std.DoubleWeave(tff)[::2]
+
+
+def scdetect(clip: vs.VideoNode, thr: float | None = None) -> vs.VideoNode:
+    func = FunctionUtil(clip, scdetect, 0, (vs.GRAY, vs.YUV))
+
+    props_clip = func.work_clip.misc.SCDetect(thr)
+
+    return clip.std.CopyFrameProps(props_clip, ('_SceneChangePrev', '_SceneChangeNext'))
