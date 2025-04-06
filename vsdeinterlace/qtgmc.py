@@ -681,6 +681,9 @@ class QTempGaussMC(vs_object):
     def __vs_del__(self, core_id: int) -> None:
         for k, v in self.__dict__.items():
             if isinstance(v, MutableMapping):
-                v.clear()
+                for k2, v2 in v.items():
+                    if isinstance(v2, vs.VideoNode):
+                        v[k2] = None
+
             if isinstance(v, vs.VideoNode):
                 setattr(self, k, None)
