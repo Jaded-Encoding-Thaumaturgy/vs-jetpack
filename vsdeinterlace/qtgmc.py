@@ -193,12 +193,16 @@ class QTempGaussMC(vs_object):
     def sharpen(
         self,
         *,
-        mode: SharpMode = SharpMode.UNSHARP_MINMAX,
+        mode: SharpMode | None = None,
         strength: float = 1.0,
         clamp: int | float = 1,
         thin: float = 0.0,
     ) -> Self:
-        self.sharp_mode = mode
+        if mode is None:
+            self.sharp_mode = SharpMode.NONE if self.match_mode else SharpMode.UNSHARP_MINMAX
+        else:
+            self.sharp_mode = mode
+
         self.sharp_strength = strength
         self.sharp_clamp = clamp
         self.sharp_thin = thin
@@ -219,12 +223,16 @@ class QTempGaussMC(vs_object):
     def sharpen_limit(
         self,
         *,
-        mode: SharpLimitMode = SharpLimitMode.TEMPORAL_PRESMOOTH,
+        mode: SharpLimitMode | None = None,
         radius: int = 3,
         overshoot: int | float = 0,
         comp_args: KwargsT | None = None,
     ) -> Self:
-        self.limit_mode = mode
+        if mode is None:
+            self.limit_mode = SharpLimitMode.NONE if self.match_mode else SharpLimitMode.TEMPORAL_PRESMOOTH
+        else:
+            self.limit_mode = mode
+
         self.limit_radius = radius
         self.limit_overshoot = overshoot
         self.limit_comp_args = fallback(comp_args, KwargsT())
@@ -566,7 +574,7 @@ class QTempGaussMC(vs_object):
     def apply_sharpen_limit(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.apply_sharpen_limit)
 
-        if self.sharp_mode and not self.match_mode:
+        if self.sharp_mode:
             if self.limit_mode in (SharpLimitMode.SPATIAL_PRESMOOTH, SharpLimitMode.SPATIAL_POSTSMOOTH):
                 if self.limit_radius == 1:
                     clip = repair(clip, self.bobbed, RepairMode.MINMAX_SQUARE1)
