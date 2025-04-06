@@ -1,35 +1,40 @@
-from typing import Literal, Any
-from typing_extensions import Self
-from numpy import linalg, zeros
-from math import factorial
 from functools import partial
+from math import factorial
+from typing import Any, Literal, MutableMapping, Protocol
 
-from vstools import (
-    ConstantFormatVideoNode, FieldBased, FieldBasedT, CustomRuntimeError, KwargsT,
-    check_variable, fallback, VSFunction, vs, core, scale_delta, ConvMode, VSFunctionKwArgs
+from numpy import linalg, zeros
+from typing_extensions import Self
+
+from vsaa import Nnedi3
+from vsaa.abstract import _Antialiaser
+from vsdeband import AddNoise
+from vsdenoise import (
+    DFTTest, MaskMode, MotionVectors, MVDirection, MVTools, MVToolsPreset, MVToolsPresets, prefilter_to_full_range
 )
 from vsexprtools import norm_expr
+from vsmasktools import Coordinates, Morpho
 from vsrgtools import (
-    median_blur, gauss_blur, unsharpen, BlurMatrix, MeanMode,
-    remove_grain, repair, RemoveGrainMode, RepairMode,
+    BlurMatrix, MeanMode, RemoveGrainMode, RepairMode, gauss_blur, median_blur, remove_grain, repair, unsharpen
 )
-from vsdenoise import (
-    DFTTest, MVTools, MVDirection, MotionVectors,
-    MVToolsPreset, MVToolsPresets, prefilter_to_full_range,
-    MaskMode
+from vstools import (
+    ConstantFormatVideoNode, ConvMode, CustomRuntimeError, FieldBased, FieldBasedT, KwargsT, VSFunctionKwArgs,
+    VSFunctionNoArgs, check_variable, core, fallback, scale_delta, vs, vs_object
 )
-from vsdeband import AddNoise
-from vsmasktools import Morpho, Coordinates
 
 from .enums import (
-    InputType, SearchPostProcess, LosslessMode, NoiseProcessMode, NoiseDeintMode,
-    SharpMode, SharpLimitMode, BackBlendMode, SourceMatchMode,
+    BackBlendMode, InputType, LosslessMode, NoiseDeintMode, NoiseProcessMode, SearchPostProcess, SharpLimitMode,
+    SharpMode, SourceMatchMode
 )
-from .utils import scdetect, reinterlace
+from .utils import reinterlace, scdetect
 
 __all__ = [
     'QTempGaussMC'
 ]
+
+
+class _DenoiseFuncTr(Protocol):
+    def __call__(self, clip: vs.VideoNode, /, *, tr: int = ...) -> vs.VideoNode:
+        ...
 
 
 class QTempGaussMC(vs_object):
@@ -97,7 +102,7 @@ class QTempGaussMC(vs_object):
         self,
         *,
         tr: int = 2,
-        func: VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = partial(DFTTest.denoise, sigma=2),
+        func: _DenoiseFuncTr | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = partial(DFTTest.denoise, sigma=2),
         mode: NoiseProcessMode = NoiseProcessMode.IDENTIFY,
         deint: NoiseDeintMode = NoiseDeintMode.GENERATE,
         stabilize: tuple[float, float] | Literal[False] = (0.6, 0.2),
@@ -108,7 +113,7 @@ class QTempGaussMC(vs_object):
         self.denoise_func = func
         self.denoise_mode = mode
         self.denoise_deint = deint
-        self.denoise_stabilize = stabilize
+        self.denoise_stabilize: tuple[float, float] | Literal[False] = stabilize
         self.denoise_func_comp_args = fallback(func_comp_args, KwargsT())
         self.denoise_stabilize_comp_args = fallback(stabilize_comp_args, KwargsT())
 
@@ -226,7 +231,7 @@ class QTempGaussMC(vs_object):
         self.motion_blur_shutter_angle = shutter_angle
         self.motion_blur_fps_divisor = fps_divisor
         self.motion_blur_args = fallback(blur_args, KwargsT())
-        self.motion_blur_mask_args = fallback(mask_args, KwargsT())
+        self.motion_blur_mask_args: KwargsT | Literal[False] = fallback(mask_args, KwargsT())
 
         return self
 
@@ -609,7 +614,7 @@ class QTempGaussMC(vs_object):
         preset: MVToolsPreset = MVToolsPresets.HQ_SAD,
         mask_args: KwargsT | None | Literal[False] = None,
     ) -> ConstantFormatVideoNode:
-        mask_args = fallback(mask_args, KwargsT())
+        mask_args_norm: KwargsT | Literal[False] = fallback(mask_args, KwargsT())
 
         self.draft = self.clip.resize.Bob(tff=self.tff) if self.input_type == InputType.INTERLACE else self.clip
 
@@ -628,10 +633,10 @@ class QTempGaussMC(vs_object):
         if self.input_type == InputType.REPAIR:
             self.denoise_output = reinterlace(self.denoise_output, self.tff)  # type: ignore
 
-        self.bobbed = self.basic_bobber(self.denoise_output)
+        self.bobbed = self.basic_bobber(self.denoise_output)  # type: ignore
 
-        if mask_args is not False and self.input_type == InputType.REPAIR:
-            mask = self.mv.mask(self.prefilter_output, direction=MVDirection.BACKWARD, kind=MaskMode.SAD, **mask_args)
+        if mask_args_norm is not False and self.input_type == InputType.REPAIR:
+            mask = self.mv.mask(self.prefilter_output, direction=MVDirection.BACKWARD, kind=MaskMode.SAD, **mask_args_norm)
             self.bobbed = self.denoise_output.std.MaskedMerge(self.bobbed, mask)
 
         self.apply_basic()
