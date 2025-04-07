@@ -472,7 +472,7 @@ class BaseWaifu2xMlrtPreprocess(BaseWaifu2x):
         return super().inference(clip, preprocess=self.preprocess, **kwargs)
 
 
-class Waifu2x(BaseWaifu2x):
+class Waifu2x(BaseWaifu2xRGB):
     _model = 6
 
     class AnimeStyleArt(BaseWaifu2xMlrtPreprocess, BaseWaifu2x):
