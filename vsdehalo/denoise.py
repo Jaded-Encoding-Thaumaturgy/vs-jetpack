@@ -201,7 +201,7 @@ def vine_dehalo(
     weight = constants0 * log(1 + 1 / constants0)
     h_refine = [constants1 * (s / constants1) ** constants2 for s in strength]
 
-    supersampled = supersampler.multi(func.work_clip)
+    supersampled = supersampler.supersample(func.work_clip)
     supersampled = nl_means(supersampled, strength, tr=0, simr=0, **kwargs)
     supersampled = downscaler.scale(supersampled, func.work_clip.width, func.work_clip.height)
 

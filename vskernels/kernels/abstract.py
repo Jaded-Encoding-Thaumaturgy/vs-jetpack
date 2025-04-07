@@ -298,7 +298,7 @@ class Scaler(BaseScaler):
         )
 
     def get_implemented_funcs(self) -> tuple[Callable[..., Any], ...]:
-        return (self.scale, self.multi)
+        return (self.scale, self.supersample)
 
 
 class Descaler(BaseScaler):
