@@ -265,7 +265,7 @@ def norm_expr_planes(
 
     planes = normalize_planes(clip, planes)
 
-    string_args = [(key, normalize_seq(value)) for key, value in kwargs.items()]
+    string_args = [(key, normalize_seq(str(value))) for key, value in kwargs.items()]
 
     return [
         exp.format(**({'plane_idx': i} | {key: value[i] for key, value in string_args}))
