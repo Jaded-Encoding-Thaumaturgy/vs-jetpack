@@ -385,7 +385,7 @@ class QTempGaussMC(vs_object):
                 blurred = norm_expr(
                     [blurred, smoothed, search],
                     'z y {lim1} - y {lim1} + clip TWEAK! '
-                    'x {lim2} + TWEAK@ < x {lim3} + x {lim2} - TWEAK@ > x {lim3} - x 51 * y 49 * + 100 / ? ?',
+                    'x {lim2} + TWEAK@ < x {lim3} + x {lim2} - TWEAK@ > x {lim3} - x 51 * TWEAK@ 49 * + 100 / ? ?',
                     lim1=lim1, lim2=lim2, lim3=lim3,
                 )
         else:

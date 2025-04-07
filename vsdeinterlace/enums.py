@@ -77,12 +77,6 @@ class SearchPostProcess(CustomIntEnum):
     GAUSSBLUR_EDGESOFTEN = 2
 
 
-class LosslessMode(CustomIntEnum):
-    NONE = 0
-    PRESHARPEN = 1
-    POSTSMOOTH = 2
-
-
 class NoiseProcessMode(CustomIntEnum):
     NONE = 0
     DENOISE = 1
@@ -121,3 +115,9 @@ class SourceMatchMode(CustomIntEnum):
     BASIC = 1
     REFINED = 2
     TWICE_REFINED = 3
+
+
+class LosslessMode(CustomIntEnum):
+    NONE = 0
+    PRESHARPEN = 1
+    POSTSMOOTH = 2
