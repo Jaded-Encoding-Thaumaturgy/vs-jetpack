@@ -240,6 +240,38 @@ class BaseArtCNN(BaseOnnxScaler):
     _model: ClassVar[int]
     _static_kernel_radius = 2
 
+    def __init__(
+        self,
+        backend: Any | None = None,
+        tiles: int | tuple[int, int] | None = None,
+        tilesize: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] | None = None,
+        max_instances: int = 2,
+        *,
+        kernel: KernelT = Catrom,
+        scaler: ScalerT | None = None,
+        shifter: KernelT | None = None,
+        **kwargs: Any
+    ) -> None:
+        """
+        :param backend:         The backend to be used with the vs-mlrt framework.
+                                If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
+        :param tiles:           Whether to split the image into multiple tiles.
+                                This can help reduce VRAM usage, but note that the model's behavior may vary when they are used.
+        :param tilesize:        The size of each tile when splitting the image (if tiles are enabled).
+        :param overlap:         The size of overlap between tiles.
+        :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
+        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
+                                Defaults to Catrom.
+        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
+        :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        :param **kwargs:        Additional arguments to pass to the backend.
+                                See the vsmlrt backend's docstring for more details.
+        """
+        super().__init__(
+            None, backend, tiles, tilesize, overlap, max_instances, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs
+        )
+
     def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         from vsmlrt import ArtCNN as mlrt_ArtCNN
         from vsmlrt import ArtCNNModel
@@ -286,7 +318,7 @@ class BaseArtCNNChroma(BaseArtCNN):
         self.chroma_scaler = Kernel.ensure_obj(chroma_scaler)
 
         super().__init__(
-            None, backend, tiles, tilesize, overlap, max_instances, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs
+            backend, tiles, tilesize, overlap, max_instances, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs
         )
 
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
