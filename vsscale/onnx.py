@@ -510,7 +510,7 @@ class Waifu2x(BaseWaifu2x):
             tint_fix = norm_expr(
                 clip, 'x 0.5 255 / + 0 1 clamp',
                 planes=0 if get_video_format(input_clip).color_family is vs.GRAY else None,
-                func="Waifu2x" + self.__class__.__name__
+                func="Waifu2x." + self.__class__.__name__
             )
             return super().postprocess_clip(tint_fix, input_clip, **kwargs)
 
