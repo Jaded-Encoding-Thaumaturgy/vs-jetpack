@@ -122,6 +122,9 @@ def norm_expr(
                             - 0 means clamped
                             - 1 means mirrored
     :param split_planes:    Splits the VideoNodes into their individual planes.
+    :param **kwargs:        Additional keywords arguments to be passed to the expression function.
+                            These arguments are key-value pairs, where the keys are placeholders
+                            that will be replaced in the expression string.
     :return:                Evaluated clip.
     """
     clips = flatten_vnodes(clips, split_planes=split_planes)
