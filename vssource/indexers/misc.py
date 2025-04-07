@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from jetpytools import CustomIntEnum
 
-from vstools import core, vs
+from vstools import core, vs, vs_object
 
 from .base import Indexer
 
@@ -21,7 +21,7 @@ __all__ = [
 ]
 
 
-class BestSource(Indexer):
+class BestSource(Indexer, vs_object):
     """BestSource indexer"""
 
     _source_func = core.lazy.bs.VideoSource
@@ -75,8 +75,13 @@ class BestSource(Indexer):
 
         self._log_handle = core.add_log_handler(handler_func_best_source)
 
+    def __vs_del__(self, core_id: int) -> None:
+        self.__del__()
+
     def __del__(self) -> None:
         core.remove_log_handler(self._log_handle)
+        if not TYPE_CHECKING:
+            self._log_handle = None
 
 
 class IMWRI(Indexer):
