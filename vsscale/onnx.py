@@ -2,6 +2,8 @@ from abc import ABC
 from logging import warning
 from typing import Any, ClassVar, Literal
 
+from jetpytools import KwargsT
+
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelT, ScalerT
 from vstools import (
@@ -96,14 +98,17 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
                                 Defaults to Catrom.
         :param scaler:          Scaler used for scaling operations. Defaults to kernel.
         :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        :param **kwargs:        Additional arguments to pass to the backend.
+                                See the vsmlrt backend's docstring for more details.
         """
+        super().__init__(kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
+
         if model is not None:
             self.model = str(SPath(model).resolve())
 
         if backend is None:
-            # Default with float16 precision and output as fp16 as well
-            # if the backend supports it
-            self.backend = autoselect_backend(fp16=16, output_format=1)
+            _default_args = KwargsT(fp16=True, output_format=1, use_cuda_graph=True, use_cublas=True, heuristic=True)
+            self.backend = autoselect_backend(**_default_args | self.kwargs)
         else:
             self.backend = backend
 
@@ -119,8 +124,6 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             self.overlap_w, self.overlap_h = self.overlap
 
         self.max_instances = max_instances
-
-        super().__init__(kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
 
     @inject_self.cached
     def scale(
@@ -249,6 +252,8 @@ class BaseArtCNNChroma(BaseArtCNN):
                                 Defaults to Catrom.
         :param scaler:          Scaler used for scaling operations. Defaults to kernel.
         :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        :param **kwargs:        Additional arguments to pass to the backend.
+                                See the vsmlrt backend's docstring for more details.
         """
         self.chroma_scaler = Kernel.ensure_obj(chroma_scaler)
 
@@ -409,6 +414,8 @@ class BaseWaifu2x(BaseOnnxScaler):
                                 Defaults to Catrom.
         :param scaler:          Scaler used for scaling operations. Defaults to kernel.
         :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        :param **kwargs:        Additional arguments to pass to the backend.
+                                See the vsmlrt backend's docstring for more details.
         """
         self.scale_w2x = scale
         self.noise = noise
