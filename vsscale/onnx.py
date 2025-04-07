@@ -87,6 +87,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         **kwargs: Any
     ) -> None:
         """
+        :param model:           Path to the ONNX model file.
         :param backend:         The backend to be used with the vs-mlrt framework.
                                 If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
         :param tiles:           Whether to split the image into multiple tiles.
