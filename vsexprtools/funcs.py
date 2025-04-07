@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import partial
 from math import ceil
-from typing import Any, Sequence, cast
+from typing import Any, Iterable, Sequence, cast
 
 from vstools import (
     ConstantFormatVideoNode, CustomRuntimeError, CustomValueError, FuncExceptT, HoldsVideoFormatT, PlanesT, ProcessVariableResClip, StrArr,
@@ -104,7 +104,7 @@ def norm_expr(
     opt: bool | None = None, boundary: bool = True,
     func: FuncExceptT | None = None,
     split_planes: bool = False,
-    **kwargs: SupportsString
+    **kwargs: Iterable[SupportsString] | SupportsString
 ) -> VideoNodeT:
     """
     Evaluates an expression per pixel.
@@ -125,6 +125,7 @@ def norm_expr(
     :param **kwargs:        Additional keywords arguments to be passed to the expression function.
                             These arguments are key-value pairs, where the keys are placeholders
                             that will be replaced in the expression string.
+                            Iterable values (except str and bytes types) will be associated with the corresponding plane.
     :return:                Evaluated clip.
     """
     clips = flatten_vnodes(clips, split_planes=split_planes)

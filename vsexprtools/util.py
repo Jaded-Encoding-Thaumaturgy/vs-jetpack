@@ -259,7 +259,7 @@ def bitdepth_aware_tokenize_expr(
 
 
 def norm_expr_planes(
-    clip: vs.VideoNode, expr: str | list[str], planes: PlanesT = None, **kwargs: SupportsString
+    clip: vs.VideoNode, expr: str | list[str], planes: PlanesT = None, **kwargs: Iterable[SupportsString] | SupportsString
 ) -> list[str]:
     assert clip.format
 
