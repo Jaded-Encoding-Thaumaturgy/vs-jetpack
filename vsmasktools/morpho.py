@@ -383,10 +383,10 @@ class Morpho:
                 clip, '{dilated} {eroded} - {multiply}', planes,
                 dilated=self._morpho_xx_imum(
                     clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MAX, func=func
-                )[0],
+                )[0].to_str(),
                 eroded=self._morpho_xx_imum(
                     clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MIN, func=func
-                )[0],
+                )[0].to_str(),
                 multiply='' if multiply is None else f'{multiply} *'
             )
 
@@ -516,7 +516,7 @@ class Morpho:
                 clip, '{dilated} {multiply} x -', planes,
                 dilated=self._morpho_xx_imum(
                     clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MAX, func=func
-                )[0],
+                )[0].to_str(),
                 multiply='' if multiply is None else f'{multiply} *'
             )
 
@@ -571,7 +571,7 @@ class Morpho:
                 clip, 'x {eroded} {multiply} -', planes,
                 eroded=self._morpho_xx_imum(
                     clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MIN, func=func
-                )[0],
+                )[0].to_str(),
                 multiply='' if multiply is None else f'{multiply} *'
             )
 
