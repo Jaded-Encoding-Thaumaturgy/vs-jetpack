@@ -472,6 +472,15 @@ class BaseWaifu2xRGB(BaseWaifu2x):
         clip = self.kernel.resample(clip, vs.RGBH if self.backend.fp16 else vs.RGBS, Matrix.RGB)
         return limiter(clip, func=self.__class__)
 
+    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        assert check_variable_format(clip, self.__class__)
+
+        if clip.format != get_video_format(input_clip):
+            kwargs = dict(dither_type=DitherType.ORDERED) | kwargs
+            clip = self.kernel.resample(clip, input_clip, Matrix.from_video(input_clip, func=self.__class__), **kwargs)
+
+        return clip
+
 
 class BaseWaifu2xMlrtPreprocess(BaseWaifu2x):
     def __init__(
