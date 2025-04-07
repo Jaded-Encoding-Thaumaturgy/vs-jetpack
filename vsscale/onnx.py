@@ -134,16 +134,43 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         shift: tuple[float, float] = (0, 0),
         **kwargs: Any
     ) -> ConstantFormatVideoNode:
+        """
+        Scale the given clip using the ONNX model.
+
+        :param clip:        The input clip to be scaled.
+        :param width:       The target width for scaling. If None, the width of the input clip will be used.
+        :param height:      The target height for scaling. If None, the height of the input clip will be used.
+        :param shift:       A tuple representing the shift values for the x and y axes.
+        :param **kwargs:    Additional arguments to be passed to the `preprocess_clip`, `postprocess_clip`,
+                            `inference`, and `_final_scale` methods.
+                            Use the prefix `preprocess_` or `postprocess_` to pass an argument to the respective method.
+                            Use the prefix `inference_` to pass an argument to the inference method.
+
+        :return:            The scaled clip.
+        """
         from vsmlrt import Backend
 
         assert check_variable_format(clip, self.__class__)
 
         width, height = self._wh_norm(clip, width, height)
 
-        wclip = self.preprocess_clip(clip)
+        preprocess_kwargs = dict[str, Any]()
+        postprocess_kwargs = dict[str, Any]()
+        inference_kwargs = dict[str, Any]()
+
+        for k in kwargs.copy():
+            for prefix, ckwargs in zip(
+                ("preprocess_", "postprocess_", "inference_"),
+                (preprocess_kwargs, postprocess_kwargs, inference_kwargs)
+            ):
+                if k.startswith(prefix):
+                    ckwargs[k.removeprefix(prefix)] = kwargs.pop(k)
+                    break
+
+        wclip = self.preprocess_clip(clip, **preprocess_kwargs)
 
         if 0 not in {clip.width, clip.height}:
-            scaled = self.inference(wclip)
+            scaled = self.inference(wclip, **inference_kwargs)
         else:
             if not isinstance(self.backend, Backend.TRT):
                 raise CustomValueError(
@@ -165,10 +192,10 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
                 self.backend.opt_shapes = (64, 64)
 
             scaled = ProcessVariableResClip[ConstantFormatVideoNode].from_func(
-                wclip, self.inference, False, wclip.format, self.max_instances
+                wclip, lambda c: self.inference(c, **inference_kwargs), False, wclip.format, self.max_instances
             )
 
-        scaled = self.postprocess_clip(scaled, clip)
+        scaled = self.postprocess_clip(scaled, clip, **postprocess_kwargs)
 
         return self._finish_scale(scaled, clip, width, height, shift, **kwargs)
 
