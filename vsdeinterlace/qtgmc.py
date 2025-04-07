@@ -43,22 +43,31 @@ class QTempGaussMC(vs_object):
     """
 
     clip: ConstantFormatVideoNode
+    """Clip to process."""
 
     draft: ConstantFormatVideoNode
+    """Draft processed clip, used as a base for prefiltering & denoising."""
 
     bobbed: ConstantFormatVideoNode
+    """High quality bobbed clip, initial spatial interpolation."""
 
     noise: ConstantFormatVideoNode | None
+    """Extracted noise when noise processing is enabled."""
 
     prefilter_output: ConstantFormatVideoNode
+    """Output of the prefilter stage."""
 
     denoise_output: ConstantFormatVideoNode
+    """Output of the denoise stage."""
 
     basic_output: ConstantFormatVideoNode
+    """Output of the basic stage."""
 
     final_output: ConstantFormatVideoNode
+    """Output of the final stage."""
 
     motion_blur_output: ConstantFormatVideoNode
+    """Output of the motion blur stage."""
 
     def __init__(
         self,
@@ -66,6 +75,11 @@ class QTempGaussMC(vs_object):
         input_type: InputType = InputType.INTERLACE,
         tff: FieldBasedT | bool | None = None,
     ) -> None:
+        """
+        :param clip:          Clip to process.
+        :param input_type:    Nature of the clip - Indicates processing routine.
+        :param tff:           Field order of the clip.
+        """
         assert check_variable(clip, self.__class__)
 
         clip_fieldbased = FieldBased.from_param_or_video(tff, clip, True, self.__class__)
@@ -89,6 +103,15 @@ class QTempGaussMC(vs_object):
         range_conversion_args: KwargsT | None | Literal[False] = KwargsT(range_conversion=2.0),
         mask_shimmer_args: KwargsT | None = None,
     ) -> Self:
+        """
+        :param tr:                       Radius of the initial temporal binomial smooth.
+        :param sc_threshold:             Threshold for scene changes, disables sc detection if False.
+        :param postprocess:              Post-processing routine to use.
+        :param strength:                 Tuple containing gaussian blur sigma & blend weigh of the blur.
+        :param limit:                    3-step limiting thresholds for the gaussian blur post-processing.
+        :param range_conversion_args:    Arguments passed to :py:attr:`prefilter_to_full_range`.
+        :param mask_shimmer_args:        Arguments passed to :py:attr:`QTempGaussMC.mask_shimmer`.
+        """
         self.prefilter_tr = tr
         self.prefilter_sc_threshold = sc_threshold
         self.prefilter_postprocess = postprocess
@@ -110,6 +133,15 @@ class QTempGaussMC(vs_object):
         func_comp_args: KwargsT | None = None,
         stabilize_comp_args: KwargsT | None = None,
     ) -> Self:
+        """
+        :param tr:                     Temporal radius of the denoising function & it's motion compensation.
+        :param func:                   Denoising function to use.
+        :param mode:                   Noise handling method to use.
+        :param deint:                  Noise deinterlacing method to use.
+        :param stabilize:              Weights to use when blending source noise with compensated noise.
+        :param func_comp_args:         Arguments passed to :py:attr:`MVTools.compensate` for denoising.
+        :param stabilize_comp_args:    Arguments passed to :py:attr:`MVTools.compensate` for stabilization.
+        """
         self.denoise_tr = tr
         self.denoise_func = func
         self.denoise_mode = mode
@@ -131,6 +163,15 @@ class QTempGaussMC(vs_object):
         mask_args: KwargsT | None | Literal[False] = None,
         mask_shimmer_args: KwargsT | None = KwargsT(erosion_distance=0),
     ) -> Self:
+        """
+        :param tr:                   Temporal radius of the motion compensated binomial smooth.
+        :param thsad:                Thsad of the motion compensated binomial smooth.
+        :param bobber:               Bobber to use for initial spatial interpolation.
+        :param noise_restore:        How much noise to restore after this stage.
+        :param degrain_args:         Arguments passed to :py:attr:`QTempGaussMC.binomial_degrain`.
+        :param mask_args:            Arguments passed to :py:attr:`MVTools.mask` for :py:attr:`InputType.REPAIR`.
+        :param mask_shimmer_args:    Arguments passed to :py:attr:`QTempGaussMC.mask_shimmer`.
+        """
         self.basic_tr = tr
         self.basic_thsad = thsad if isinstance(thsad, tuple) else (thsad, thsad)
 
@@ -162,6 +203,14 @@ class QTempGaussMC(vs_object):
         enhance: float = 0.5,
         degrain_args: KwargsT | None = None,
     ) -> Self:
+        """
+        :param tr:              Temporal radius of the refinement motion compensated binomial smooth.
+        :param bobber:          Bobber to use for refined spatial interpolation.
+        :param mode:            Specifies number of refinement steps to perform.
+        :param similarity:      Temporal similarity of the error created by smoothing.
+        :param enhance:         Sharpening strength prior to source match refinement.
+        :param degrain_args:    Arguments passed to :py:attr:`QTempGaussMC.binomial_degrain`
+        """
         self.match_tr = tr
 
         if isinstance(bobber, _Antialiaser):
@@ -189,6 +238,9 @@ class QTempGaussMC(vs_object):
         *,
         mode: LosslessMode = LosslessMode.NONE,
     ) -> Self:
+        """
+        :param mode:    Specifies at which stage to re-weave the original fields.
+        """
         self.lossless_mode = mode
 
         return self
@@ -201,6 +253,12 @@ class QTempGaussMC(vs_object):
         clamp: int | float = 1,
         thin: float = 0.0,
     ) -> Self:
+        """
+        :param mode:        Specifies the type of sharpening to use.
+        :param strength:    Sharpening strength.
+        :param clamp:       Clamp the sharpening strength of :py:attr:`SharpMode.UNSHARP_MINMAX` to the min/max average plus this.
+        :param thin:        How much to vertically thin edges.
+        """
         if mode is None:
             self.sharp_mode = SharpMode.NONE if self.match_mode else SharpMode.UNSHARP_MINMAX
         else:
@@ -218,6 +276,10 @@ class QTempGaussMC(vs_object):
         mode: BackBlendMode = BackBlendMode.BOTH,
         sigma: float = 1.4,
     ) -> Self:
+        """
+        :param mode:     Specifies at which stage to perform back-blending.
+        :param sigma:    Back-blend gaussian sigma.
+        """
         self.backblend_mode = mode
         self.backblend_sigma = sigma
 
@@ -231,6 +293,12 @@ class QTempGaussMC(vs_object):
         overshoot: int | float = 0,
         comp_args: KwargsT | None = None,
     ) -> Self:
+        """
+        :param mode:         Specifies type of limiting & at which stage to perform it.
+        :param radius:       Radius of sharpness limiting
+        :param overshoot:    How much overshoot to allow
+        :param comp_args:    Arguments passed to :py:attr:`MVTools.compensate` for temporal limiting.
+        """
         if mode is None:
             self.limit_mode = SharpLimitMode.NONE if self.match_mode else SharpLimitMode.TEMPORAL_PRESMOOTH
         else:
@@ -251,6 +319,13 @@ class QTempGaussMC(vs_object):
         degrain_args: KwargsT | None = None,
         mask_shimmer_args: KwargsT | None = None,
     ) -> Self:
+        """
+        :param tr:                   Temporal radius of the motion compensated smooth.
+        :param thsad:                Thsad of the motion compensated smooth.
+        :param noise_restore:        How much noise to restore after this stage.
+        :param degrain_args:         Arguments passed to :py:attr:`MVTools.degrain`.
+        :param mask_shimmer_args:    Arguments passed to :py:attr:`QTempGaussMC.mask_shimmer`.
+        """
         self.final_tr = tr
         self.final_thsad = thsad if isinstance(thsad, tuple) else (thsad, thsad)
         self.final_noise_restore = noise_restore
@@ -267,6 +342,12 @@ class QTempGaussMC(vs_object):
         blur_args: KwargsT | None = None,
         mask_args: KwargsT | None | Literal[False] = KwargsT(ml=4),
     ) -> Self:
+        """
+        :param shutter_angle:    Tuple containing the source and output shutter angle. Will apply motion blur if they do not match.
+        :param fps_divisor:      Factor by which to reduce framerate
+        :param blur_args:        Arguments passed to :py:attr:`MVTools.flow_blur`.
+        :param mask_args:        Arguments passed to :py:attr:`MVTools.mask`.
+        """
         self.motion_blur_shutter_angle = shutter_angle
         self.motion_blur_fps_divisor = fps_divisor
         self.motion_blur_args = fallback(blur_args, KwargsT())
@@ -282,6 +363,13 @@ class QTempGaussMC(vs_object):
         erosion_distance: int = 4,
         over_dilation: int = 0,
     ) -> ConstantFormatVideoNode:
+        """
+        :param flt:                 Processed clip to perform masking on.
+        :param src:                 Unprocessed clip to restore from.
+        :param threshold:           Threshold of change to perform masking.
+        :param erosion_distance:    How much to deflate then reflate to remove thin areas.
+        :param over_dilation:       Extra inflation to ensure areas to restore back are fully caught.
+        """
         assert check_variable(flt, self.mask_shimmer)
 
         if not erosion_distance:
@@ -675,6 +763,17 @@ class QTempGaussMC(vs_object):
         thsad_recalc: int | None = None,
         thscd: int | tuple[int | None, int | float | None] | None = (180, 38.5),
     ) -> ConstantFormatVideoNode:
+        """
+        :param force_tr:        Always analyze motion to at least this, even if otherwise unnecessary.
+        :param preset:          MVTools preset defining base values for the MVTools object.
+        :param blksize:         Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+        :param refine:          Number of times to recalculate motion vectors with halved block size.
+        :param thsad_recalc:    Only bad quality new vectors with a SAD above thid will be re-estimated by search.
+                                thsad value is scaled to 8x8 block size.
+        :param thscd:           Scene change detection thresholds:
+                                 - First value: SAD threshold for considering a block changed between frames.
+                                 - Second value: Percentage of changed blocks needed to trigger a scene change.
+        """
         def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
             return (x[0] // 2, x[1] // 2)
 
