@@ -468,7 +468,8 @@ def mpeg2stinx(
         return norm_expr([flt, src, diff], 'z {limit} * LIM! x y LIM@ - y LIM@ + clip', limit=limit, func=mpeg2stinx)
 
     def _default_bob(clip: vs.VideoNode) -> vs.VideoNode:
-        bobbed = Nnedi3(field=3).interpolate(clip, double_y=False)
+        bobber = Nnedi3(field=3)
+        bobbed = bobber.interpolate(clip, double_y=False, **bobber.get_aa_args(clip))
         return clip.bwdif.Bwdif(field=3, edeint=bobbed)
     
     assert check_progressive(clip, mpeg2stinx)

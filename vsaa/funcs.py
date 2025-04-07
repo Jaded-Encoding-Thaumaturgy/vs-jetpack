@@ -43,7 +43,7 @@ class _pre_aa:
         wclip = func.work_clip
 
         for _ in range(2):
-            bob = aa.interpolate(wclip, False)
+            bob = aa.interpolate(wclip, False, **aa.get_aa_args(wclip))
             sharp = sharpen(wclip)
             limit = MeanMode.MEDIAN(sharp, wclip, bob[::2], bob[1::2])
             wclip = limit.std.Transpose()
