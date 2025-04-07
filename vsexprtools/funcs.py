@@ -104,7 +104,7 @@ def norm_expr(
     opt: bool | None = None, boundary: bool = True,
     func: FuncExceptT | None = None,
     split_planes: bool = False,
-    **kwargs: Any
+    **kwargs: SupportsString
 ) -> VideoNodeT:
     """
     Evaluates an expression per pixel.

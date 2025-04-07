@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from itertools import count
-from typing import Any, Callable, Iterable, Iterator, Sequence, SupportsIndex, TypeAlias, overload
+from typing import Callable, Iterable, Iterator, Sequence, SupportsIndex, TypeAlias, overload
+
+from jetpytools import SupportsString
 
 from vstools import (
     EXPR_VARS, MISSING, ColorRange, CustomIndexError, CustomNotImplementedError, CustomRuntimeError, FuncExceptT,
@@ -257,7 +259,7 @@ def bitdepth_aware_tokenize_expr(
 
 
 def norm_expr_planes(
-    clip: vs.VideoNode, expr: str | list[str], planes: PlanesT = None, **kwargs: Any
+    clip: vs.VideoNode, expr: str | list[str], planes: PlanesT = None, **kwargs: SupportsString
 ) -> list[str]:
     assert clip.format
 
