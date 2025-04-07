@@ -70,7 +70,7 @@ def autoselect_backend(**kwargs: Any) -> Any:
 
 
 class BaseOnnxScaler(BaseGenericScaler, ABC):
-    """Abstract generic scaler class for an onnx model."""
+    """Abstract generic scaler class for an ONNX model."""
 
     def __init__(
         self,
@@ -231,7 +231,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
 
 class GenericOnnxScaler(BaseOnnxScaler):
-    """Generic scaler class for an onnx model."""
+    """Generic scaler class for an ONNX model."""
 
     _static_kernel_radius = 2
 
