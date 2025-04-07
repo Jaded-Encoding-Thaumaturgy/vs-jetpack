@@ -128,6 +128,7 @@ class QTempGaussMC(vs_object):
         bobber: _Antialiaser | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] = Nnedi3(qual=2, nsize=0, nns=4, pscrn=1),
         noise_restore: float = 0,
         degrain_args: KwargsT | None = None,
+        mask_args: KwargsT | None | Literal[False] = None,
         mask_shimmer_args: KwargsT | None = KwargsT(erosion_distance=0),
     ) -> Self:
         self.basic_tr = tr
@@ -147,6 +148,7 @@ class QTempGaussMC(vs_object):
         self.basic_noise_restore = noise_restore
         self.basic_degrain_args = fallback(degrain_args, KwargsT())
         self.basic_mask_shimmer_args = fallback(mask_shimmer_args, KwargsT())
+        self.basic_mask_args: KwargsT | Literal[False] = fallback(mask_args, KwargsT())
 
         return self
 
@@ -378,7 +380,7 @@ class QTempGaussMC(vs_object):
             blurred = core.std.Merge(gauss_blur(smoothed, gauss_sigma), smoothed, blend_weight)
 
             if self.prefilter_postprocess == SearchPostProcess.GAUSSBLUR_EDGESOFTEN:
-                lim1, lim2, lim3 = [scale_delta(_, 8, self.clip) for _ in self.prefilter_soften_limit]
+                lim1, lim2, lim3 = [scale_delta(thr, 8, self.clip) for thr in self.prefilter_soften_limit]
 
                 blurred = norm_expr(
                     [blurred, smoothed, search],
@@ -450,8 +452,20 @@ class QTempGaussMC(vs_object):
         else:
             self.noise = None
             self.denoise_output = self.clip
+        
+        if self.input_type == InputType.REPAIR:
+            self.denoise_output = reinterlace(self.denoise_output, self.tff)  # type: ignore
 
     def apply_basic(self) -> None:
+        self.bobbed = self.basic_bobber(self.denoise_output)  # type: ignore
+
+        if self.basic_mask_args is not False and self.input_type == InputType.REPAIR:
+            mask = self.mv.mask(
+                self.prefilter_output, direction=MVDirection.BACKWARD,
+                kind=MaskMode.SAD, thscd=self.thscd, **self.basic_mask_args,
+            )
+            self.bobbed = self.denoise_output.std.MaskedMerge(self.bobbed, mask)
+
         smoothed = self.binomial_degrain(self.bobbed, tr=self.basic_tr)
         smoothed = self.mask_shimmer(smoothed, self.bobbed, **self.basic_mask_shimmer_args)
 
@@ -660,21 +674,16 @@ class QTempGaussMC(vs_object):
         refine: int = 1,
         thsad_recalc: int | None = None,
         thscd: int | tuple[int | None, int | float | None] | None = (180, 38.5),
-        mask_args: KwargsT | None | Literal[False] = None,
     ) -> ConstantFormatVideoNode:
         def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
             return (x[0] // 2, x[1] // 2)
-
-        mask_args_norm: KwargsT | Literal[False] = fallback(mask_args, KwargsT())
 
         self.draft = self.clip.resize.Bob(tff=self.tff) if self.input_type == InputType.INTERLACE else self.clip
         self.thscd = thscd
 
         tr = max(force_tr, self.denoise_tr, self.basic_tr, self.match_tr, self.final_tr)
         blksize = blksize if isinstance(blksize, tuple) else (blksize, blksize)
-
-        if preset:
-            preset.pop('search_clip', None)
+        preset.pop('search_clip', None)
 
         self.apply_prefilter()
 
@@ -692,19 +701,6 @@ class QTempGaussMC(vs_object):
                 self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
         self.apply_denoise()
-
-        if self.input_type == InputType.REPAIR:
-            self.denoise_output = reinterlace(self.denoise_output, self.tff)  # type: ignore
-
-        self.bobbed = self.basic_bobber(self.denoise_output)  # type: ignore
-
-        if mask_args_norm is not False and self.input_type == InputType.REPAIR:
-            mask = self.mv.mask(
-                self.prefilter_output, direction=MVDirection.BACKWARD,
-                kind=MaskMode.SAD, thscd=self.thscd, **mask_args_norm,
-            )
-            self.bobbed = self.denoise_output.std.MaskedMerge(self.bobbed, mask)
-
         self.apply_basic()
         self.apply_final()
         self.apply_motion_blur()
