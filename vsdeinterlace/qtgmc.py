@@ -18,7 +18,7 @@ from vsrgtools import (
 )
 from vstools import (
     ConstantFormatVideoNode, ConvMode, CustomRuntimeError, FieldBased, FieldBasedT, KwargsT, VSFunctionKwArgs,
-    VSFunctionNoArgs, check_variable, core, fallback, scale_delta, vs, vs_object
+    check_variable, core, fallback, scale_delta, vs, vs_object
 )
 
 from .enums import (
@@ -157,7 +157,7 @@ class QTempGaussMC(vs_object):
         *,
         tr: int = 2,
         thsad: int | tuple[int, int] = 640,
-        bobber: _Antialiaser | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] = Nnedi3(qual=2, nsize=0, nns=4, pscrn=1),
+        bobber: _Antialiaser = Nnedi3(qual=2, nsize=0, nns=4, pscrn=1),
         noise_restore: float = 0,
         degrain_args: KwargsT | None = None,
         mask_args: KwargsT | None | Literal[False] = None,
@@ -174,18 +174,7 @@ class QTempGaussMC(vs_object):
         """
         self.basic_tr = tr
         self.basic_thsad = thsad if isinstance(thsad, tuple) else (thsad, thsad)
-
-        if isinstance(bobber, _Antialiaser):
-            bobber = bobber.copy()
-            bobber.field = self.field
-
-            def _bobber_func(clip: vs.VideoNode) -> vs.VideoNode:
-                return bobber.interpolate(clip, double_y=False, **bobber.get_aa_args(clip))
-
-            self.basic_bobber = _bobber_func
-        else:
-            self.basic_bobber = bobber
-
+        self.basic_bobber = bobber.copy(field=self.field)
         self.basic_noise_restore = noise_restore
         self.basic_degrain_args = fallback(degrain_args, KwargsT())
         self.basic_mask_shimmer_args = fallback(mask_shimmer_args, KwargsT())
@@ -197,7 +186,7 @@ class QTempGaussMC(vs_object):
         self,
         *,
         tr: int = 1,
-        bobber: _Antialiaser | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+        bobber: _Antialiaser | None = None,
         mode: SourceMatchMode = SourceMatchMode.NONE,
         similarity: float = 0.5,
         enhance: float = 0.5,
@@ -212,20 +201,7 @@ class QTempGaussMC(vs_object):
         :param degrain_args:    Arguments passed to :py:attr:`QTempGaussMC.binomial_degrain`
         """
         self.match_tr = tr
-
-        if isinstance(bobber, _Antialiaser):
-            bobber = bobber.copy()
-            bobber.field = self.field
-
-            def _bobber_func(clip: vs.VideoNode) -> vs.VideoNode:
-                return bobber.interpolate(clip, double_y=False, **bobber.get_aa_args(clip))
-
-            self.match_bobber = _bobber_func
-        elif bobber:
-            self.match_bobber = bobber
-        else:
-            self.match_bobber = self.basic_bobber
-
+        self.match_bobber = fallback(bobber, self.basic_bobber).copy(field=self.field)
         self.match_mode = mode
         self.match_similarity = similarity
         self.match_enhance = enhance
@@ -545,7 +521,9 @@ class QTempGaussMC(vs_object):
             self.denoise_output = reinterlace(self.denoise_output, self.tff)  # type: ignore
 
     def apply_basic(self) -> None:
-        self.bobbed = self.basic_bobber(self.denoise_output)  # type: ignore
+        self.bobbed = self.basic_bobber.interpolate(  # type: ignore
+            self.denoise_output, False, **self.basic_bobber.get_aa_args(self.denoise_output)
+        )
 
         if self.basic_mask_args is not False and self.input_type == InputType.REPAIR:
             mask = self.mv.mask(
@@ -588,7 +566,7 @@ class QTempGaussMC(vs_object):
             clip = reinterlace(clip, self.tff)
 
         adjusted1 = _error_adjustment(clip, self.denoise_output, self.basic_tr)
-        bobbed1 = self.basic_bobber(adjusted1)
+        bobbed1 = self.basic_bobber.interpolate(adjusted1, False, **self.basic_bobber.get_aa_args(adjusted1))
         match1 = self.binomial_degrain(bobbed1, self.basic_tr)
 
         if self.match_mode > SourceMatchMode.BASIC:
@@ -599,7 +577,7 @@ class QTempGaussMC(vs_object):
                 clip = reinterlace(match1, self.tff)
 
             diff = self.denoise_output.std.MakeDiff(clip)
-            bobbed2 = self.match_bobber(diff)
+            bobbed2 = self.match_bobber.interpolate(diff, False, **self.match_bobber.get_aa_args(diff))
             match2 = self.binomial_degrain(bobbed2, self.match_tr)
 
             if self.match_mode == SourceMatchMode.TWICE_REFINED:
