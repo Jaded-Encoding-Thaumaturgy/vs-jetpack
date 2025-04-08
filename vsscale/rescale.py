@@ -123,7 +123,7 @@ class RescaleBase:
 
     @_add_props
     def _generate_doubled(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
-        return self.upscaler.multi(clip, 2)  # type: ignore[return-value]
+        return self.upscaler.supersample(clip, 2)  # type: ignore[return-value]
 
     @_add_props
     def _generate_upscale(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:

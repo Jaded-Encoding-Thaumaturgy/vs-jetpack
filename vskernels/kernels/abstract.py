@@ -255,19 +255,31 @@ class Scaler(BaseScaler):
         )
 
     @inject_self.cached
-    def multi(
-        self, clip: vs.VideoNode, multi: float = 2, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
+    def supersample(
+        self, clip: vs.VideoNode, rfactor: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
     ) -> vs.VideoNode:
         assert check_variable_resolution(clip, self.multi)
 
-        dst_width, dst_height = ceil(clip.width * multi), ceil(clip.height * multi)
+        dst_width, dst_height = ceil(clip.width * rfactor), ceil(clip.height * rfactor)
 
         if max(dst_width, dst_height) <= 0.0:
             raise CustomValueError(
-                'Multiplying the resolution by "multi" must result in a positive resolution!', self.multi, multi
+                'Multiplying the resolution by "rfactor" must result in a positive resolution!', self.supersample, rfactor
             )
 
         return self.scale(clip, dst_width, dst_height, shift, **kwargs)
+
+    @inject_self.cached
+    def multi(
+        self, clip: vs.VideoNode, rfactor: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
+    ) -> vs.VideoNode:
+
+        import warnings
+
+        warnings.warn('The "multi" method is deprecated. Use "supersample" instead.', DeprecationWarning)
+
+        return self.supersample(clip, rfactor, shift, **kwargs)
+
 
     @inject_kwargs_params
     def get_scale_args(
@@ -286,7 +298,7 @@ class Scaler(BaseScaler):
         )
 
     def get_implemented_funcs(self) -> tuple[Callable[..., Any], ...]:
-        return (self.scale, self.multi)
+        return (self.scale, self.supersample)
 
 
 class Descaler(BaseScaler):
