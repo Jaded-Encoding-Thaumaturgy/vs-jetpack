@@ -7,8 +7,9 @@ from jetpytools import KwargsT
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelT, ScalerT
 from vstools import (
-    ConstantFormatVideoNode, CustomValueError, DitherType, Matrix, ProcessVariableResClip, SPath, SPathLike,
-    check_variable_format, core, depth, get_nvidia_version, get_video_format, get_y, inject_self, limiter, padder, vs
+    ConstantFormatVideoNode, CustomValueError, DitherType, Matrix, MatrixT, ProcessVariableResClip, SPath, SPathLike,
+    check_variable_format, core, depth, get_nvidia_version, get_video_format, get_y, inject_self, join, limiter, padder,
+    vs
 )
 
 from .generic import BaseGenericScaler
@@ -282,6 +283,34 @@ class BaseArtCNN(BaseOnnxScaler):
 class BaseArtCNNLuma(BaseArtCNN):
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         return super().preprocess_clip(get_y(clip), **kwargs)
+
+    def _finish_scale(
+        self,
+        clip: ConstantFormatVideoNode,
+        input_clip: ConstantFormatVideoNode,
+        width: int, height: int,
+        shift: tuple[float, float] = (0, 0),
+        matrix: MatrixT | None = None,
+        copy_props: bool = False
+    ) -> ConstantFormatVideoNode:
+
+        if (clip.width, clip.height) != (width, height):
+            clip = self.scaler.scale(clip, width, height)  # type: ignore[assignment]
+
+        if input_clip.format.color_family == vs.YUV:
+            scaled_chroma = self.scaler.scale(input_clip, clip.width, clip.height)
+            clip = join(clip, scaled_chroma, vs.YUV)
+
+        if shift != (0, 0):
+            clip = self.shifter.shift(clip, shift)
+
+        if clip.format.id != input_clip.format.id:
+            clip = self.kernel.resample(clip, input_clip, matrix)
+
+        if copy_props:
+            return vs.core.std.CopyFrameProps(clip, input_clip)
+
+        return clip
 
 
 class BaseArtCNNChroma(BaseArtCNN):
