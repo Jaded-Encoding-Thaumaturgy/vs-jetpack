@@ -253,7 +253,7 @@ def based_aa(
 
     aa = downscaler.scale(aa, func.work_clip.width, func.work_clip.height)
 
-    if pscale != 1.0 and supersampler is not False:
+    if pscale != 1.0 and not isinstance(supersampler, NoScale):
         no_aa = downscaler.scale(ss, func.work_clip.width, func.work_clip.height)
         aa = norm_expr([func.work_clip, aa, no_aa], 'x z x - {pscale} * + y z - +', pscale=pscale, func=func.func)
 
