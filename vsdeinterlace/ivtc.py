@@ -17,7 +17,7 @@ __all__ = [
 
 
 def sivtc(
-    clip: vs.VideoNode, pattern: int = 0, tff: bool | FieldBasedT = True, ivtc_cycle: IVTCycles = IVTCycles.cycle_10
+    clip: vs.VideoNode, pattern: int = 0, tff: FieldBasedT | bool | None = None, ivtc_cycle: IVTCycles = IVTCycles.cycle_10
 ) -> vs.VideoNode:
     """
     Simplest form of a fieldmatching function.
@@ -32,7 +32,7 @@ def sivtc(
     :return:            IVTC'd clip.
     """
 
-    tff = FieldBased.from_param(tff).field
+    tff = FieldBased.from_param_or_video(tff, clip, True, sivtc).is_tff
 
     ivtc = clip.std.SeparateFields(tff=tff).std.DoubleWeave()
     ivtc = ivtc_cycle.decimate(ivtc, pattern)
@@ -41,7 +41,7 @@ def sivtc(
 
 
 def jivtc(
-    src: vs.VideoNode, pattern: int, tff: bool = True, chroma_only: bool = True,
+    clip: vs.VideoNode, pattern: int, tff: FieldBasedT | bool | None = None, chroma_only: bool = True,
     postprocess: VSFunctionKwArgs = deblend, postdecimate: IVTCycles | None = IVTCycles.cycle_05,
     ivtc_cycle: IVTCycles = IVTCycles.cycle_10, final_ivtc_cycle: IVTCycles = IVTCycles.cycle_08,
     **kwargs: Any
@@ -50,7 +50,7 @@ def jivtc(
     This function should only be used when a normal ivtc or ivtc + bobber leaves chroma blend to a every fourth frame.
     You can disable chroma_only to use in luma as well, but it is not recommended.
 
-    :param src:             Source clip. Has to be 60i.
+    :param clip:            Clip to process. Has to be 60i.
     :param pattern:         First frame of any clean-combed-combed-clean-clean sequence.
     :param tff:             Set top field first (True) or bottom field first (False).
     :param chroma_only:     Decide whether luma too will be processed.
@@ -60,12 +60,14 @@ def jivtc(
     :return:                Inverse Telecined clip.
     """
 
-    InvalidFramerateError.check(jivtc, src, (30000, 1001))
+    tff = FieldBased.from_param_or_video(tff, clip, True, jivtc).is_tff
 
-    ivtced = core.std.SeparateFields(src, tff=tff).std.DoubleWeave()
+    InvalidFramerateError.check(jivtc, clip, (30000, 1001))
+
+    ivtced = clip.std.SeparateFields(tff).std.DoubleWeave(tff)
     ivtced = ivtc_cycle.decimate(ivtced, pattern)
 
-    pprocess = postprocess(src if postdecimate else ivtced, **kwargs)
+    pprocess = postprocess(clip if postdecimate else ivtced, **kwargs)
 
     if postdecimate:
         pprocess = postdecimate.decimate(pprocess, pattern)

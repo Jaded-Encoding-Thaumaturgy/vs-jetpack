@@ -21,7 +21,7 @@ def telecine_patterns(clipa: vs.VideoNode, clipb: vs.VideoNode, length: int = 5)
 
 
 def get_field_difference(clip: vs.VideoNode, tff: FieldBasedT | bool | None = None) -> vs.VideoNode:
-    tff = FieldBased.from_param_or_video(tff, clip, True, get_field_difference).field
+    tff = FieldBased.from_param_or_video(tff, clip, True, get_field_difference).is_tff
 
     stats = clip.std.SeparateFields(tff).std.PlaneStats()
 
@@ -31,6 +31,6 @@ def get_field_difference(clip: vs.VideoNode, tff: FieldBasedT | bool | None = No
 
 
 def reinterlace(clip: vs.VideoNode, tff: FieldBasedT | bool | None = None) -> vs.VideoNode:
-    tff = FieldBased.from_param_or_video(tff, clip, True, reinterlace).field
+    tff = FieldBased.from_param_or_video(tff, clip, True, reinterlace).is_tff
 
     return clip.std.SeparateFields(tff).std.SelectEvery(4, (0, 3)).std.DoubleWeave(tff)[::2]
