@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import field as dc_field
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from vstools import ConstantFormatVideoNode, CustomValueError, core, inject_self, vs, vs_object
 
@@ -113,8 +113,7 @@ class EEDI3(_Antialiaser):
         return aa_kwargs
 
     def __del__(self) -> None:
-        if not TYPE_CHECKING:
-            self.mclip = None
+        self.mclip = None
 
 
 class Eedi3SS(EEDI3, SuperSampler):
@@ -139,12 +138,12 @@ class Eedi3SR(EEDI3, SingleRater, vs_object):
             return dict(mclip=self._mclips[1])
 
     def __del__(self) -> None:
-        if not TYPE_CHECKING:
-            self._mclips = None
-            self.mclip = 0
+        self._mclips = None
+        self.mclip = None
 
     def __vs_del__(self, core_id: int) -> None:
         self._mclips = None
+        self.mclip = None
 
 
 class Eedi3DR(EEDI3, DoubleRater):
