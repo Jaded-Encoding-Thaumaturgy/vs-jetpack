@@ -532,7 +532,7 @@ class QTempGaussMC(vs_object):
             )
             self.bobbed = self.denoise_output.std.MaskedMerge(self.bobbed, mask)
 
-        smoothed = self.binomial_degrain(self.bobbed, tr=self.basic_tr)
+        smoothed = self.binomial_degrain(self.bobbed, self.basic_tr)
         smoothed = self.mask_shimmer(smoothed, self.bobbed, **self.basic_mask_shimmer_args)
 
         if self.match_mode:
@@ -758,7 +758,7 @@ class QTempGaussMC(vs_object):
         self.draft = self.clip.resize.Bob(tff=self.tff) if self.input_type == InputType.INTERLACE else self.clip
         self.thscd = thscd
 
-        tr = max(force_tr, self.denoise_tr, self.basic_tr, self.match_tr, self.final_tr)
+        tr = max(1, force_tr, self.denoise_tr, self.basic_tr, self.match_tr, self.final_tr)
         blksize = blksize if isinstance(blksize, tuple) else (blksize, blksize)
         preset.pop('search_clip', None)
 
