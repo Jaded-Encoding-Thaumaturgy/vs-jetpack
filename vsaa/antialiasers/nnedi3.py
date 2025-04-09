@@ -51,7 +51,9 @@ class NNEDI3(_FullInterpolate, _Antialiaser):
         )
         return self.shift_interpolate(clip, interpolated, double_y)
 
-    def full_interpolate(self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any) -> ConstantFormatVideoNode:
+    def full_interpolate(
+        self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
         return clip.sneedif.NNEDI3(self.field, double_y, double_x, transpose_first=self.transpose_first, **kwargs)
 
 

@@ -92,7 +92,9 @@ class _FullInterpolate(_SingleInterpolate, ABC):
         ...
 
     @abstractmethod
-    def full_interpolate(self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any) -> ConstantFormatVideoNode:
+    def full_interpolate(
+        self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
         ...
 
 
@@ -102,7 +104,10 @@ class SuperSampler(_Antialiaser, Scaler, ABC):
 
     @inject_self.cached
     def scale(
-        self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any
     ) -> vs.VideoNode:
