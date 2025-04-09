@@ -1,3 +1,7 @@
+"""
+This module implements wrappers for the Enhanced Edge Directed Interpolation (3rd gen.)
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -22,27 +26,127 @@ __all__ = [
 
 @dataclass
 class EEDI3(_Antialiaser):
+    """Base class for EEDI3 interpolating methods."""
+
     alpha: float = 0.25
+    """
+    Controls the weight given to connecting similar neighborhoods.
+    It must be in the range [0, 1]. 
+    A larger value for alpha will connect more lines and edges.
+    Increasing alpha prioritizes connecting similar regions,
+    which can reduce artifacts but may lead to excessive connections.
+    """
+
     beta: float = 0.5
+    """
+    Controls the weight given to the vertical difference created by the interpolation.
+    It must also be in the range [0, 1], and the sum of alpha and beta must not exceed 1.
+    A larger value for beta will reduce the number of connected lines and edges,
+    making the result less directed by edges.
+    At a value of 1.0, there will be no edge-directed interpolation at all. 
+    """
+
     gamma: float = 40
+    """
+    Penalizes changes in interpolation direction.
+    The larger the value of gamma, the smoother the interpolation field will be between two lines.
+    The range for gamma is [0, ∞].
+    Increasing gamma results in a smoother interpolation between lines but may reduce the sharpness of edges.
+
+    If lines are not connecting properly, try increasing alpha and possibly decreasing beta/gamma.
+    If unwanted artifacts occur, reduce alpha and consider increasing beta or gamma.
+    """
+
     nrad: int = 2
+    """
+    Sets the radius used for computing neighborhood similarity. The valid range is [0, 3]. 
+    A larger value for `nrad` will consider a wider neighborhood for similarity,
+    which can improve edge connections but may also increase processing time.
+    """
+
     mdis: int = 20
+    """
+    Sets the maximum connection radius. The valid range is [1, 40].
+    For example, with `mdis=20`, when interpolating the pixel at (50, 10) (x, y),
+    the farthest connections allowed would be between (30, 9)/(70, 11) and (70, 9)/(30, 11). 
+    Larger values for `mdis` will allow connecting lines with smaller slopes,
+    but this can also increase the chance of artifacts and slow down processing.
+    """
 
     ucubic: bool = True
+    """
+    Determines the type of interpolation used.
+    - When `ucubic=True`, cubic 4-point interpolation is applied.
+    - When `ucubic=False`, 2-point linear interpolation is used.
+    """
+
     cost3: bool = True
+    """
+    Defines the neighborhood cost function used to measure similarity.
+    - When `cost3=True`, a 3-neighborhood cost function is used.
+    - When `cost3=False`, a 1-neighborhood cost function is applied.
+    """
+
     vcheck: int = 2
+    """
+    Defines the reliability check level for the resulting interpolation. The possible values are:
+    - 0: No reliability check
+    - 1: Weak reliability check
+    - 2: Medium reliability check
+    - 3: Strong reliability check
+    """
+
     vthresh0: float = 32.0
+    """Threshold used to calculate the reliability for the first difference."""
+
     vthresh1: float = 64.0
+    """Threshold used for the second difference."""
+
     vthresh2: float = 4.0
+    """Threshold used to control the weighting of the interpolation direction."""
 
     opt: int | None = None
+    """
+    Specifies the CPU optimizations to use during processing.
+    The possible values are:
+
+    - None = Auto-adjust based on whether `mclip` is used.
+    - 0 = Auto-detect the optimal optimization based on the CPU.
+    - 1 = Use standard C implementation.
+    - 2 = Use SSE2.
+    - 3 = Use SSE4.1.
+    - 4 = Use AVX.
+    - 5 = Use AVX512.
+    """
+
     device: int = -1
-    opencl: bool = dc_field(default=False, kw_only=True)
+    """
+    Specifies the target OpenCL device.
+    The default value (-1) triggers auto-detection of the available device.
+    """
+
+    opencl: bool = False
+    """
+    Enables the use of the OpenCL variant for processing.
+    Note that in most cases, OpenCL may be slower than the CPU version.
+    """
 
     mclip: vs.VideoNode | None = None
+    """
+    A mask used to apply edge-directed interpolation only to specified pixels. 
+    Pixels where the mask value is 0 will be interpolated using cubic linear
+    or bicubic methods instead. 
+    The primary purpose of the mask is to reduce computational overhead
+    by limiting edge-directed interpolation to certain pixels.
+    """
+
     sclip_aa: type[Antialiaser] | Antialiaser | Literal[True] | vs.VideoNode | None = dc_field(
         default_factory=lambda: nnedi3.Nnedi3
     )
+    """
+    Provides additional control over the interpolation by using a reference clip.
+    If set to None, vertical cubic interpolation is used as a fallback method instead.
+    """
 
     # Class Variable
     _shift = 0.5
@@ -123,12 +227,16 @@ class EEDI3(_Antialiaser):
 
 
 class Eedi3SS(EEDI3, SuperSampler):
+    """Concrete implementation of EEDI3 used as a supersampler."""
+
     @inject_self.cached.property
     def kernel_radius(self) -> int:
         return self.nrad
 
 
 class Eedi3SR(EEDI3, SingleRater, vs_object):
+    """Concrete implementation of EEDI3 used as a single-rater."""
+
     _mclips: tuple[vs.VideoNode, vs.VideoNode] | None = None
 
     def get_sr_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
@@ -153,8 +261,8 @@ class Eedi3SR(EEDI3, SingleRater, vs_object):
 
 
 class Eedi3DR(Eedi3SR, DoubleRater):
-    ...
+    """Concrete implementation of EEDI3 used as a double-rater."""
 
 
 class Eedi3(Eedi3DR, Eedi3SS, Antialiaser):
-    ...
+    """Full implementation of the EEDI3 anti-aliaser"""

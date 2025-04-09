@@ -1,3 +1,7 @@
+"""
+This module implements wrappers for the Enhanced Edge Directed Interpolation (2nd gen.)
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -18,15 +22,62 @@ __all__ = [
 
 @dataclass
 class EEDI2(_FullInterpolate, _Antialiaser):
+    """Base class for EEDI2 interpolating methods."""
+
     mthresh: int = 10
+    """
+    Controls the edge magnitude threshold used in edge detection for building the initial edge map.
+    Its range is from 0 to 255, with lower values detecting weaker edges.
+    """
+
     lthresh: int = 20
+    """
+    Controls the Laplacian threshold used in edge detection. 
+    Its range is from 0 to 510, with lower values detecting weaker lines.
+    """
+
     vthresh: int = 20
+    """
+    Controls the variance threshold used in edge detection. 
+    Its range is from 0 to a large number, with lower values detecting weaker edges.
+    """
+
     estr: int = 2
+    """
+    Defines the required number of edge pixels (<=) in a 3x3 area, in which the center pixel
+    has been detected as an edge pixel, for the center pixel to be removed from the edge map.
+    """
+
     dstr: int = 4
+    """
+    Defines the required number of edge pixels (>=) in a 3x3 area, in which the center pixel
+    has not been detected as an edge pixel, for the center pixel to be added to the edge map.
+    """
+
     maxd: int = 24
+    """
+    Sets the maximum pixel search distance for determining the interpolation direction.
+    Larger values allow the algorithm to connect edges and lines with smaller slopes but may introduce artifacts.
+    In some cases, using a smaller `maxd` value can yield better results than a larger one.
+    The maximum possible value for `maxd` is 29.
+    """
+
     pp: int = 1
+    """
+    Enables two optional post-processing modes designed to reduce artifacts by identifying problem areas
+    and applying simple vertical linear interpolation in those areas.
+    While these modes can improve results, they may slow down processing and slightly reduce edge sharpness.
+    - 0 = No post-processing
+    - 1 = Check for spatial consistency of final interpolation directions
+    - 2 = Check for junctions and corners
+    - 3 = Apply both checks from 1 and 2
+    """
 
     cuda: bool = False
+    """
+    Enables the use of the CUDA variant for processing.
+    Note that full interpolating is only supported by CUDA.
+    """
 
     # Class Variable
     _shift = -0.5
@@ -74,16 +125,18 @@ class EEDI2(_FullInterpolate, _Antialiaser):
 
 
 class Eedi2SS(EEDI2, SuperSampler):
+    """Concrete implementation of EEDI2 used as a supersampler."""
+
     _static_kernel_radius = 2
 
 
 class Eedi2SR(EEDI2, SingleRater):
-    ...
+    """Concrete implementation of EEDI2 used as a single-rater."""
 
 
 class Eedi2DR(Eedi2SR, DoubleRater):
-    ...
+    """Concrete implementation of EEDI2 used as a double-rater."""
 
 
 class Eedi2(Eedi2DR, Eedi2SS, Antialiaser):
-    ...
+    """Full implementation of the EEDI2 anti-aliaser"""
