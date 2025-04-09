@@ -8,7 +8,11 @@ from vstools import ConstantFormatVideoNode, core, vs
 from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser
 
 __all__ = [
-    'SangNom', 'SangNomDR'
+    "SANGNOM",
+
+    "SangNomSS", "SangNomDR", "SangNomDR",
+
+    'SangNom',
 ]
 
 
