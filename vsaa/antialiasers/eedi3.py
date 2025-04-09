@@ -65,7 +65,7 @@ class EEDI3(_Antialiaser):
         ) | kwargs
 
         if self.opencl:
-            args |= dict(device=self.device)
+            args.update(device=self.device)
         elif self.mclip is not None or kwargs.get('mclip'):
             # opt=3 appears to always give reliable speed boosts if mclip is used.
             args |= dict(opt=kwargs.get('opt', self.opt) or 3)
@@ -133,9 +133,9 @@ class Eedi3SR(EEDI3, SingleRater, vs_object):
             self._mclips = (self.mclip, self.mclip.std.Transpose())
 
         if self.mclip.width == clip.width and self.mclip.height == clip.height:
-            return dict(mclip=self._mclips[0])
-        else:
-            return dict(mclip=self._mclips[1])
+            return dict(mclip=self._mclips[0]) | kwargs
+
+        return dict(mclip=self._mclips[1]) | kwargs
 
     def __del__(self) -> None:
         self._mclips = None

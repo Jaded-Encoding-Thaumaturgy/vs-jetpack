@@ -26,14 +26,14 @@ class SANGNOM(_Antialiaser):
         return super().preprocess_clip(clip)
 
     def get_aa_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
-        return dict(aa=self.aa_strength, order=0 if self.double_fps else self.field + 1)
+        return dict(aa=self.aa_strength, order=0 if self.double_fps else self.field + 1) | kwargs
 
     def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> ConstantFormatVideoNode:
         interpolated = core.sangnom.SangNom(
-            clip, dh=double_y or not self.drop_fields, **kwargs
+            clip, dh=double_y or not self.drop_fields, **self.get_aa_args(clip, **kwargs) | kwargs
         )
 
-        return self.shift_interpolate(clip, interpolated, double_y, **kwargs)
+        return self.shift_interpolate(clip, interpolated, double_y)
 
 
 class SangNomSS(SANGNOM, SuperSampler):

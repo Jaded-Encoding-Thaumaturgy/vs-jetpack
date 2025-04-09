@@ -33,10 +33,9 @@ class _SingleInterpolate(ABC):
         aa_clip: ConstantFormatVideoNode,
         double_y: bool,
         mclip: ConstantFormatVideoNode | None = None,
-        **kwargs: Any
     ) -> ConstantFormatVideoNode:
         if not double_y and mclip:
-            return norm_expr([clip, aa_clip, mclip], 'z y x ?', func=self.__class__._post_interpolate, **kwargs)
+            return norm_expr([clip, aa_clip, mclip], 'z y x ?', func=self.__class__._post_interpolate)
 
         return aa_clip
 
@@ -63,7 +62,7 @@ class _Antialiaser(_SingleInterpolate, ABC):
         return clip
 
     def get_aa_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
-        return {}
+        return kwargs
 
     def shift_interpolate(
         self,
@@ -80,7 +79,7 @@ class _Antialiaser(_SingleInterpolate, ABC):
 
             inter = (self._scaler if self._scaler else self._shifter).scale(inter, clip.width, clip.height, shift)
 
-            return self._post_interpolate(clip, inter, double_y, **kwargs)  # type: ignore[arg-type]
+            return self._post_interpolate(clip, inter, double_y)  # type: ignore[arg-type]
 
         return inter
 
@@ -100,7 +99,7 @@ class _FullInterpolate(_SingleInterpolate, ABC):
 
 class SuperSampler(_Antialiaser, Scaler, ABC):
     def get_ss_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
-        return {}
+        return kwargs
 
     @inject_self.cached
     def scale(
@@ -219,10 +218,10 @@ class SingleRater(_Antialiaser, ABC):
                 upscaled = upscaled.std.Transpose()
 
                 if 'mclip' in kwargs:
-                    kwargs.update(mclip=cast(vs.VideoNode, kwargs.get('mclip')).std.Transpose())
+                    kwargs["mclip"] = kwargs.pop('mclip').std.Transpose()
 
                 if 'sclip' in kwargs:
-                    kwargs.update(sclip=cast(vs.VideoNode, kwargs.get('sclip')).std.Transpose())
+                    kwargs["sclip"] = kwargs.pop('sclip').std.Transpose()
 
         for isx, val in enumerate([y, x]):
             if val:
