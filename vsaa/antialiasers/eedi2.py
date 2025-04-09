@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from dataclasses import field as dc_field
 from typing import Any
 
 from vstools import ConstantFormatVideoNode, check_variable_format, core, vs
@@ -23,7 +22,7 @@ class EEDI2(_FullInterpolate, _Antialiaser):
     maxd: int = 24
     pp: int = 1
 
-    cuda: bool = dc_field(default=False, kw_only=True)
+    cuda: bool = False
 
     # Class Variable
     _shift = -0.5
@@ -45,6 +44,8 @@ class EEDI2(_FullInterpolate, _Antialiaser):
     def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> ConstantFormatVideoNode:
         assert check_variable_format(clip, self.__class__)
 
+        kwargs = self.get_aa_args(clip) | kwargs
+
         if self.cuda:
             inter = core.eedi2cuda.EEDI2(clip, self.field, **kwargs)
         else:
@@ -56,12 +57,9 @@ class EEDI2(_FullInterpolate, _Antialiaser):
 
                 inter = self._shifter.shift(inter, (0.5 - 0.75 * self.field, 0))
             else:
-                shift = (self._shift * int(not self.field), 0)
-
-                if self._scaler:
-                    inter = self._scaler.scale(inter, clip.width, clip.height, shift)  # type: ignore[assignment]
-                else:
-                    inter = self._shifter.scale(inter, clip.width, clip.height, shift)  # type: ignore[assignment]
+                inter = self._scaler.scale(  # type: ignore[assignment]
+                    inter, clip.width, clip.height, (self._shift * int(not self.field), 0)
+                )
 
         return self._post_interpolate(clip, inter, double_y)  # pyright: ignore[reportArgumentType]
 
