@@ -24,10 +24,10 @@ class SANGNOM(_Antialiaser):
     # Class Variable
     _shift = -0.5
 
-    def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def _preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         if self.double_fps:
             return clip.std.SeparateFields(self.field).std.DoubleWeave(self.field)
-        return super().preprocess_clip(clip)
+        return super()._preprocess_clip(clip)
 
     def get_aa_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
         return dict(aa=self.aa_strength, order=0 if self.double_fps else self.field + 1) | kwargs

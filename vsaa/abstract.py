@@ -56,7 +56,7 @@ class _Antialiaser(_SingleInterpolate, ABC):
         self._shifter = Kernel.ensure_obj(self.shifter)
         self._scaler = self._shifter.ensure_obj(self.scaler, self.__class__)
 
-    def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def _preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.__class__)
 
         return clip
@@ -114,7 +114,7 @@ class SuperSampler(_Antialiaser, Scaler, ABC):
 
         assert check_progressive(clip, self.scale)
 
-        clip = self.preprocess_clip(clip)
+        clip = self._preprocess_clip(clip)
         width, height = self._wh_norm(clip, width, height)
 
         if (clip.width, clip.height) == (width, height):
@@ -212,7 +212,7 @@ class SingleRater(_Antialiaser, ABC):
         else:
             y = y_or_dir
 
-        clip = self.preprocess_clip(clip)
+        clip = self._preprocess_clip(clip)
 
         return self._do_aa(clip, y, x, **kwargs)
 
@@ -275,7 +275,7 @@ class DoubleRater(SingleRater, ABC):
         else:
             y = y_or_dir
 
-        clip = self.preprocess_clip(clip)
+        clip = self._preprocess_clip(clip)
 
         original_field = int(self.field)
 
