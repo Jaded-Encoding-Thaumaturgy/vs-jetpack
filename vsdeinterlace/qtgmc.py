@@ -77,9 +77,10 @@ class QTempGaussMC(vs_object):
     ) -> None:
         """
         :param clip:          Clip to process.
-        :param input_type:    Nature of the clip - Indicates processing routine.
+        :param input_type:    Nature of the clip - indicates processing routine.
         :param tff:           Field order of the clip.
         """
+
         assert check_variable(clip, self.__class__)
 
         clip_fieldbased = FieldBased.from_param_or_video(tff, clip, True, self.__class__)
@@ -107,11 +108,12 @@ class QTempGaussMC(vs_object):
         :param tr:                       Radius of the initial temporal binomial smooth.
         :param sc_threshold:             Threshold for scene changes, disables sc detection if False.
         :param postprocess:              Post-processing routine to use.
-        :param strength:                 Tuple containing gaussian blur sigma & blend weigh of the blur.
+        :param strength:                 Tuple containing gaussian blur sigma & blend weight of the blur.
         :param limit:                    3-step limiting thresholds for the gaussian blur post-processing.
         :param range_conversion_args:    Arguments passed to :py:attr:`prefilter_to_full_range`.
         :param mask_shimmer_args:        Arguments passed to :py:attr:`QTempGaussMC.mask_shimmer`.
         """
+
         self.prefilter_tr = tr
         self.prefilter_sc_threshold = sc_threshold
         self.prefilter_postprocess = postprocess
@@ -142,6 +144,7 @@ class QTempGaussMC(vs_object):
         :param func_comp_args:         Arguments passed to :py:attr:`MVTools.compensate` for denoising.
         :param stabilize_comp_args:    Arguments passed to :py:attr:`MVTools.compensate` for stabilization.
         """
+
         self.denoise_tr = tr
         self.denoise_func = func
         self.denoise_mode = mode
@@ -172,6 +175,7 @@ class QTempGaussMC(vs_object):
         :param mask_args:            Arguments passed to :py:attr:`MVTools.mask` for :py:attr:`InputType.REPAIR`.
         :param mask_shimmer_args:    Arguments passed to :py:attr:`QTempGaussMC.mask_shimmer`.
         """
+
         self.basic_tr = tr
         self.basic_thsad = thsad if isinstance(thsad, tuple) else (thsad, thsad)
         self.basic_bobber = bobber.copy(field=self.field)
@@ -200,6 +204,7 @@ class QTempGaussMC(vs_object):
         :param enhance:         Sharpening strength prior to source match refinement.
         :param degrain_args:    Arguments passed to :py:attr:`QTempGaussMC.binomial_degrain`
         """
+
         self.match_tr = tr
         self.match_bobber = fallback(bobber, self.basic_bobber).copy(field=self.field)
         self.match_mode = mode
@@ -217,6 +222,7 @@ class QTempGaussMC(vs_object):
         """
         :param mode:    Specifies at which stage to re-weave the original fields.
         """
+
         self.lossless_mode = mode
 
         return self
@@ -235,6 +241,7 @@ class QTempGaussMC(vs_object):
         :param clamp:       Clamp the sharpening strength of :py:attr:`SharpMode.UNSHARP_MINMAX` to the min/max average plus this.
         :param thin:        How much to vertically thin edges.
         """
+
         if mode is None:
             self.sharp_mode = SharpMode.NONE if self.match_mode else SharpMode.UNSHARP_MINMAX
         else:
@@ -254,8 +261,9 @@ class QTempGaussMC(vs_object):
     ) -> Self:
         """
         :param mode:     Specifies at which stage to perform back-blending.
-        :param sigma:    Back-blend gaussian sigma.
+        :param sigma:    Gaussian blur sigma.
         """
+
         self.backblend_mode = mode
         self.backblend_sigma = sigma
 
@@ -275,6 +283,7 @@ class QTempGaussMC(vs_object):
         :param overshoot:    How much overshoot to allow
         :param comp_args:    Arguments passed to :py:attr:`MVTools.compensate` for temporal limiting.
         """
+
         if mode is None:
             self.limit_mode = SharpLimitMode.NONE if self.match_mode else SharpLimitMode.TEMPORAL_PRESMOOTH
         else:
@@ -302,6 +311,7 @@ class QTempGaussMC(vs_object):
         :param degrain_args:         Arguments passed to :py:attr:`MVTools.degrain`.
         :param mask_shimmer_args:    Arguments passed to :py:attr:`QTempGaussMC.mask_shimmer`.
         """
+
         self.final_tr = tr
         self.final_thsad = thsad if isinstance(thsad, tuple) else (thsad, thsad)
         self.final_noise_restore = noise_restore
@@ -324,6 +334,7 @@ class QTempGaussMC(vs_object):
         :param blur_args:        Arguments passed to :py:attr:`MVTools.flow_blur`.
         :param mask_args:        Arguments passed to :py:attr:`MVTools.mask`.
         """
+
         self.motion_blur_shutter_angle = shutter_angle
         self.motion_blur_fps_divisor = fps_divisor
         self.motion_blur_args = fallback(blur_args, KwargsT())
@@ -346,6 +357,7 @@ class QTempGaussMC(vs_object):
         :param erosion_distance:    How much to deflate then reflate to remove thin areas.
         :param over_dilation:       Extra inflation to ensure areas to restore back are fully caught.
         """
+
         assert check_variable(flt, self.mask_shimmer)
 
         if not erosion_distance:
@@ -360,24 +372,24 @@ class QTempGaussMC(vs_object):
         diff = src.std.MakeDiff(flt)
 
         opening = Morpho.minimum(diff, iterations=iter1, coords=Coordinates.VERTICAL)
+        closing = Morpho.maximum(diff, iterations=iter1, coords=Coordinates.VERTICAL)
+
         if erosion_distance % 3:
             opening = Morpho.deflate(opening)
+            closing = Morpho.inflate(closing)
+
             if erosion_distance % 3 == 2:
                 opening = median_blur(opening)
-        opening = Morpho.maximum(opening, iterations=iter2, coords=Coordinates.VERTICAL)
-
-        closing = Morpho.maximum(diff, iterations=iter1, coords=Coordinates.VERTICAL)
-        if erosion_distance % 3:
-            closing = Morpho.inflate(closing)
-            if erosion_distance % 3 == 2:
                 closing = median_blur(closing)
+
+        opening = Morpho.maximum(opening, iterations=iter2, coords=Coordinates.VERTICAL)
         closing = Morpho.minimum(closing, iterations=iter2, coords=Coordinates.VERTICAL)
 
         if over_dilation:
             opening = Morpho.maximum(opening, iterations=over1)
-            opening = Morpho.inflate(opening, iterations=over2)
-
             closing = Morpho.minimum(closing, iterations=over1)
+
+            opening = Morpho.inflate(opening, iterations=over2)
             closing = Morpho.deflate(closing, iterations=over2)
 
         return norm_expr(
@@ -751,7 +763,10 @@ class QTempGaussMC(vs_object):
         :param thscd:           Scene change detection thresholds:
                                  - First value: SAD threshold for considering a block changed between frames.
                                  - Second value: Percentage of changed blocks needed to trigger a scene change.
+
+        :return:                Deinterlaced clip.
         """
+
         def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
             return (x[0] // 2, x[1] // 2)
 
