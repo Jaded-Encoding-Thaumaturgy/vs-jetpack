@@ -8,7 +8,11 @@ from vstools import ConstantFormatVideoNode, inject_self, vs
 from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser, _FullInterpolate
 
 __all__ = [
-    'Nnedi3', 'Nnedi3DR'
+    "NNEDI3",
+
+    "Nnedi3SS", "Nnedi3DR", "Nnedi3DR",
+
+    'Nnedi3',
 ]
 
 

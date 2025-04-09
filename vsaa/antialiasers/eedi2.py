@@ -8,7 +8,11 @@ from vstools import ConstantFormatVideoNode, check_variable_format, core, vs
 from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser, _FullInterpolate
 
 __all__ = [
-    'Eedi2', 'Eedi2DR'
+    "EEDI2",
+
+    "Eedi2SS", "Eedi2DR", "Eedi2DR",
+
+    'Eedi2',
 ]
 
 

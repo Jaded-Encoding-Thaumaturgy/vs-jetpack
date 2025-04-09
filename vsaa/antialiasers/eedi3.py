@@ -12,7 +12,11 @@ from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Ant
 from . import nnedi3
 
 __all__ = [
-    'Eedi3', 'Eedi3DR'
+    "EEDI3",
+
+    "Eedi3SS", "Eedi3DR", "Eedi3DR",
+
+    'Eedi3',
 ]
 
 
