@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Sequence
 
 from vstools import ConstantFormatVideoNode, core, vs
 
@@ -14,7 +14,7 @@ __all__ = [
 
 @dataclass
 class SANGNOM(_Antialiaser):
-    aa_strength: int | tuple[int, ...] = 48
+    aa_strength: int | Sequence[int] = 48
     double_fps: bool = False
 
     # Class Variable
