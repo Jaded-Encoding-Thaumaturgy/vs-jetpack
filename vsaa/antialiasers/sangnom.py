@@ -44,9 +44,9 @@ class SangNomSR(SANGNOM, SingleRater):
     ...
 
 
-class SangNomDR(SANGNOM, DoubleRater):
+class SangNomDR(SangNomSR, DoubleRater):
     ...
 
 
-class SangNom(SangNomSS, Antialiaser):
+class SangNom(SangNomDR, SangNomSS, Antialiaser):
     ...
