@@ -7,6 +7,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from jetpytools import CustomRuntimeError
+
 from vstools import ConstantFormatVideoNode, check_variable_format, core, vs
 
 from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser, _FullInterpolate
@@ -121,7 +123,14 @@ class EEDI2(_FullInterpolate, _Antialiaser):
     def full_interpolate(
         self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any
     ) -> ConstantFormatVideoNode:
-        return core.eedi2cuda.Enlarge2(clip, **kwargs)
+        if not all([double_y, double_x]):
+            raise CustomRuntimeError(
+                "`double_y` and `double_x` should be set to True to use full_interpolate!",
+                self.full_interpolate,
+                (double_y, double_x)
+            )
+
+        return core.eedi2cuda.Enlarge2(clip, **self.get_aa_args(clip) | kwargs)
 
 
 class Eedi2SS(EEDI2, SuperSampler):
