@@ -30,6 +30,19 @@ class NNEDI3(_FullInterpolate, _Antialiaser):
 
     def get_aa_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
         assert clip.format
+
+        pscrn = self.pscrn
+
+        if clip.format.sample_type == vs.FLOAT:
+            if self.pscrn > 1:
+                from warnings import warn
+                warn(
+                    f"{self.__class__.__name__}: The new prescreener (2, 3, or 4) is not available with float input. "
+                    "Falling back to old prescreener...",
+                    Warning
+                )
+                pscrn = min(self.pscrn, 1)
+
         return dict(nsize=self.nsize, nns=self.nns, qual=self.qual, etype=self.etype, pscrn=pscrn) | kwargs
 
     def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> ConstantFormatVideoNode:
