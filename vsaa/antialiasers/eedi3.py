@@ -148,9 +148,9 @@ class Eedi3SR(EEDI3, SingleRater, vs_object):
         self.mclip = None
 
 
-class Eedi3DR(EEDI3, DoubleRater):
+class Eedi3DR(Eedi3SR, DoubleRater):
     ...
 
 
-class Eedi3(Eedi3SR, Eedi3SS, Antialiaser):
+class Eedi3(Eedi3DR, Eedi3SS, Antialiaser):
     ...

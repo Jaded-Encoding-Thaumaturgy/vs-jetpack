@@ -75,9 +75,9 @@ class Nnedi3SR(NNEDI3, SingleRater):
     ...
 
 
-class Nnedi3DR(NNEDI3, DoubleRater):
+class Nnedi3DR(Nnedi3SR, DoubleRater):
     ...
 
 
-class Nnedi3(Nnedi3SS, Antialiaser):
+class Nnedi3(Nnedi3DR, Nnedi3SS, Antialiaser):
     ...

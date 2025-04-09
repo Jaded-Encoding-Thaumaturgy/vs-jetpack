@@ -77,9 +77,9 @@ class Eedi2SR(EEDI2, SingleRater):
     ...
 
 
-class Eedi2DR(EEDI2, DoubleRater):
+class Eedi2DR(Eedi2SR, DoubleRater):
     ...
 
 
-class Eedi2(Eedi2SS, Antialiaser):
+class Eedi2(Eedi2DR, Eedi2SS, Antialiaser):
     ...
