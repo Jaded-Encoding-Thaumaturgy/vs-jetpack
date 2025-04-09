@@ -115,7 +115,9 @@ class NNEDI3(_FullInterpolate, _Antialiaser):
     def full_interpolate(
         self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any
     ) -> ConstantFormatVideoNode:
-        return clip.sneedif.NNEDI3(self.field, double_y, double_x, transpose_first=self.transpose_first, **kwargs)
+        return clip.sneedif.NNEDI3(
+            self.field, double_y, double_x, transpose_first=self.transpose_first, **self.get_aa_args(clip) | kwargs
+        )
 
 
 class Nnedi3SS(NNEDI3, SuperSampler):
