@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from dataclasses import field as dc_field
 from typing import Any, Literal
 
+from jetpytools import fallback
+
 from vstools import ConstantFormatVideoNode, CustomValueError, core, inject_self, vs, vs_object
 
 from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser
@@ -29,7 +31,7 @@ class EEDI3(_Antialiaser):
     vthresh1: float = 64.0
     vthresh2: float = 4.0
 
-    opt: int = 0
+    opt: int | None = None
     device: int = -1
     opencl: bool = dc_field(default=False, kw_only=True)
 
@@ -68,7 +70,7 @@ class EEDI3(_Antialiaser):
             args.update(device=self.device)
         elif self.mclip is not None or kwargs.get('mclip'):
             # opt=3 appears to always give reliable speed boosts if mclip is used.
-            args |= dict(opt=kwargs.get('opt', self.opt) or 3)
+            args.update(opt=fallback(kwargs.get('opt', None), self.opt, 3))
 
         return args
 

@@ -25,8 +25,10 @@ __all__ = [
 
 class _pre_aa:
     def custom(
-        self, clip: vs.VideoNode, sharpen: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
-        aa: type[Antialiaser] | Antialiaser = Nnedi3,
+        self,
+        clip: vs.VideoNode,
+        sharpen: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+        aa: Antialiaser,
         planes: PlanesT = None, **kwargs: Any
     ) -> vs.VideoNode:
         func = FunctionUtil(clip, pre_aa, planes)
@@ -35,17 +37,12 @@ class _pre_aa:
         if field < 2:
             field += 2
 
-        antialiaser: Antialiaser
-
-        if isinstance(aa, Antialiaser):
-            antialiaser = aa.copy(field=field, **kwargs)
-        else:
-            antialiaser = aa(field=field, **kwargs)
+        antialiaser = aa.copy(field=field, **kwargs)
 
         wclip = func.work_clip
 
         for _ in range(2):
-            bob = antialiaser.interpolate(wclip, False, **antialiaser.get_aa_args(wclip))
+            bob = antialiaser.interpolate(wclip, False)
             sharp = sharpen(wclip)
             limit = MeanMode.MEDIAN(sharp, wclip, bob[::2], bob[1::2])
             wclip = limit.std.Transpose()
@@ -53,9 +50,13 @@ class _pre_aa:
         return func.return_clip(wclip)
 
     def __call__(
-        self, clip: vs.VideoNode, radius: int = 1, strength: int = 100,
-        aa: type[Antialiaser] | Antialiaser = Nnedi3,
-        planes: PlanesT = None, **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        radius: int = 1,
+        strength: int = 100,
+        aa: Antialiaser = Nnedi3(),
+        planes: PlanesT = None,
+        **kwargs: Any
     ) -> vs.VideoNode:
         return self.custom(
             clip, partial(unsharp_masked, radius=radius, strength=strength), aa, planes, **kwargs
@@ -70,8 +71,8 @@ def clamp_aa(
     strength: float = 1.0,
     mthr: float = 0.25,
     mask: vs.VideoNode | EdgeDetectT | Literal[False] = False,
-    weak_aa: vs.VideoNode | type[Antialiaser] | Antialiaser | None = None,
-    strong_aa: vs.VideoNode | type[Antialiaser] | Antialiaser | None = None,
+    weak_aa: vs.VideoNode | Antialiaser | None = None,
+    strong_aa: vs.VideoNode | Antialiaser | None = None,
     ref: vs.VideoNode | None = None,
     planes: PlanesT = 0
 ) -> ConstantFormatVideoNode:

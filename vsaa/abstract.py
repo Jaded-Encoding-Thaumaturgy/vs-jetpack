@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from dataclasses import field as dc_field
+from dataclasses import KW_ONLY, dataclass
 from dataclasses import replace
 from itertools import zip_longest
 from math import ceil, log2
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, cast, overload
+from typing import Any, Callable, ClassVar, overload
 
 from typing_extensions import Self
 
@@ -46,15 +45,16 @@ class _SingleInterpolate(ABC):
 
 @dataclass
 class _Antialiaser(_SingleInterpolate, ABC):
-    field: int = dc_field(default=0, kw_only=True)
-    drop_fields: bool = dc_field(default=True, kw_only=True)
-    transpose_first: bool = dc_field(default=False, kw_only=True)
-    shifter: KernelT | None = dc_field(default=None, kw_only=True)
-    scaler: ScalerT | None = dc_field(default=None, kw_only=True)
+    _: KW_ONLY
+    field: int = 0
+    drop_fields: bool = True
+    transpose_first: bool = False
+    shifter: KernelT = Catrom
+    scaler: ScalerT | None = None
 
     def __post_init__(self) -> None:
-        self._shifter = Kernel.ensure_obj(self.shifter or Catrom, self.__class__)
-        self._scaler = None if self.scaler is None else Scaler.ensure_obj(self.scaler, self.__class__)
+        self._shifter = Kernel.ensure_obj(self.shifter)
+        self._scaler = self._shifter.ensure_obj(self.scaler, self.__class__)
 
     def preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.__class__)
@@ -69,7 +69,6 @@ class _Antialiaser(_SingleInterpolate, ABC):
         clip: vs.VideoNode,
         inter: vs.VideoNode,
         double_y: bool,
-        **kwargs: Any
     ) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.__class__)
         assert check_variable(inter, self.__class__)
@@ -77,7 +76,7 @@ class _Antialiaser(_SingleInterpolate, ABC):
         if not double_y and not self.drop_fields:
             shift = (self._shift * int(not self.field), 0)
 
-            inter = (self._scaler if self._scaler else self._shifter).scale(inter, clip.width, clip.height, shift)
+            inter = self._scaler.scale(inter, clip.width, clip.height, shift)
 
             return self._post_interpolate(clip, inter, double_y)  # type: ignore[arg-type]
 
@@ -111,7 +110,7 @@ class SuperSampler(_Antialiaser, Scaler, ABC):
         assert check_progressive(clip, self.scale)
 
         clip = self.preprocess_clip(clip)
-        width, height = Scaler._wh_norm(clip, width, height)
+        width, height = self._wh_norm(clip, width, height)
 
         if (clip.width, clip.height) == (width, height):
             return clip
@@ -181,10 +180,7 @@ class SuperSampler(_Antialiaser, Scaler, ABC):
                     upscaled, [topshift, ctopshift], [leftshift, cleftshift]
                 )
 
-        if self._scaler:
-            return self._scaler.scale(upscaled, width, height, shift)
-
-        return self._shifter.scale(upscaled, width, height, shift)
+        return self._scaler.scale(upscaled, width, height, shift)
 
 
 class SingleRater(_Antialiaser, ABC):
