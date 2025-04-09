@@ -67,10 +67,10 @@ class _Antialiaser(_SingleInterpolate, ABC):
     field: int = 0
     """
     Controls the mode of operation and which field is kept in the resized image.
-        - 0: Same rate, keeps the bottom field.
-        - 1: Same rate, keeps the top field.
-        - 2: Double rate (alternates each frame), starts with the bottom field.
-        - 3: Double rate (alternates each frame), starts with the top field.
+    - 0: Same rate, keeps the bottom field.
+    - 1: Same rate, keeps the top field.
+    - 2: Double rate (alternates each frame), starts with the bottom field.
+    - 3: Double rate (alternates each frame), starts with the top field.
     """
     drop_fields: bool = True
     """"""
@@ -90,7 +90,7 @@ class _Antialiaser(_SingleInterpolate, ABC):
 
     def _preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         """
-        An optional preprocessing function to apply before scaling, Anti-Aliasing, or DougleRate Anti-Aliasing.
+        An optional preprocessing function to apply before scaling, Anti-Aliasing, or DoubleRate Anti-Aliasing.
         """
         assert check_variable(clip, self.__class__)
 
@@ -192,7 +192,7 @@ class SuperSampler(_Antialiaser, Scaler, ABC):
         **kwargs: Any
     ) -> vs.VideoNode:
         """
-        Scale the given clip super sampling method.
+        Scale the given clip using super sampling method.
 
         :param clip:        The input clip to be scaled.
         :param width:       The target width for scaling. If None, the width of the input clip will be used.
@@ -296,7 +296,7 @@ class SingleRater(_Antialiaser, ABC):
         self, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
-        Performs anti-aliasing via a single-rate operation
+        Performs anti-aliasing via a single-rate operation.
 
         :param clip:        Source clip.
         :param y:           Whether to perform anti-aliasing on the height. Defaults to True.
@@ -310,7 +310,7 @@ class SingleRater(_Antialiaser, ABC):
         self, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
-        Performs anti-aliasing via a single-rate operation
+        Performs anti-aliasing via a single-rate operation.
 
         :param clip:        Source clip.
         :param dir:         Anti-aliasing direction. Defaults to both vertical and horizontal directions.
@@ -377,7 +377,7 @@ class DoubleRater(SingleRater, ABC):
         self, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
-        Performs anti-aliasing via a double-rate operation
+        Performs anti-aliasing via a double-rate operation.
 
         :param clip:        Source clip.
         :param y:           Whether to perform anti-aliasing on the height. Defaults to True.
@@ -391,7 +391,7 @@ class DoubleRater(SingleRater, ABC):
         self, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
-        Performs anti-aliasing via a double-rate operation
+        Performs anti-aliasing via a double-rate operation.
 
         :param clip:        Source clip.
         :param dir:         Anti-aliasing direction. Defaults to both vertical and horizontal directions.
@@ -425,4 +425,3 @@ class DoubleRater(SingleRater, ABC):
 @dataclass
 class Antialiaser(DoubleRater, SuperSampler, ABC):
     """Abstract interface base class for general anti-aliasing operations."""
-    ...
