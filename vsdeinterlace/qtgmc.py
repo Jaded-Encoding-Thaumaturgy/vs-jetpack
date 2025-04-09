@@ -88,7 +88,7 @@ class QTempGaussMC(vs_object):
         self.clip = clip
         self.input_type = input_type
         self.tff = clip_fieldbased.is_tff
-        self.field = clip_fieldbased.field + 2
+        self.field = -1 if not clip_fieldbased.is_inter else clip_fieldbased.field + 2
 
         if self.input_type == InputType.PROGRESSIVE and clip_fieldbased.is_inter:
             raise CustomRuntimeError(f'{self.input_type} incompatible with interlaced video!', self.__class__)
@@ -202,7 +202,7 @@ class QTempGaussMC(vs_object):
         :param mode:            Specifies number of refinement steps to perform.
         :param similarity:      Temporal similarity of the error created by smoothing.
         :param enhance:         Sharpening strength prior to source match refinement.
-        :param degrain_args:    Arguments passed to :py:attr:`QTempGaussMC.binomial_degrain`
+        :param degrain_args:    Arguments passed to :py:attr:`QTempGaussMC.binomial_degrain`.
         """
 
         self.match_tr = tr
@@ -279,8 +279,8 @@ class QTempGaussMC(vs_object):
     ) -> Self:
         """
         :param mode:         Specifies type of limiting & at which stage to perform it.
-        :param radius:       Radius of sharpness limiting
-        :param overshoot:    How much overshoot to allow
+        :param radius:       Radius of sharpness limiting.
+        :param overshoot:    How much overshoot to allow.
         :param comp_args:    Arguments passed to :py:attr:`MVTools.compensate` for temporal limiting.
         """
 
@@ -330,7 +330,7 @@ class QTempGaussMC(vs_object):
     ) -> Self:
         """
         :param shutter_angle:    Tuple containing the source and output shutter angle. Will apply motion blur if they do not match.
-        :param fps_divisor:      Factor by which to reduce framerate
+        :param fps_divisor:      Factor by which to reduce framerate.
         :param blur_args:        Arguments passed to :py:attr:`MVTools.flow_blur`.
         :param mask_args:        Arguments passed to :py:attr:`MVTools.mask`.
         """
@@ -533,9 +533,12 @@ class QTempGaussMC(vs_object):
             self.denoise_output = reinterlace(self.denoise_output, self.tff)  # type: ignore
 
     def apply_basic(self) -> None:
-        self.bobbed = self.basic_bobber.interpolate(  # type: ignore
-            self.denoise_output, False, **self.basic_bobber.get_aa_args(self.denoise_output)
-        )
+        if self.input_type == InputType.PROGRESSIVE:
+            self.bobbed = self.denoise_output
+        else:
+            self.bobbed = self.basic_bobber.interpolate(  # type: ignore
+                self.denoise_output, False, **self.basic_bobber.get_aa_args(self.denoise_output)
+            )
 
         if self.basic_mask_args is not False and self.input_type == InputType.REPAIR:
             mask = self.mv.mask(
@@ -578,7 +581,10 @@ class QTempGaussMC(vs_object):
             clip = reinterlace(clip, self.tff)
 
         adjusted1 = _error_adjustment(clip, self.denoise_output, self.basic_tr)
-        bobbed1 = self.basic_bobber.interpolate(adjusted1, False, **self.basic_bobber.get_aa_args(adjusted1))
+        if self.input_type == InputType.PROGRESSIVE:
+            bobbed1 = adjusted1
+        else:
+            bobbed1 = self.basic_bobber.interpolate(adjusted1, False, **self.basic_bobber.get_aa_args(adjusted1))  # type: ignore
         match1 = self.binomial_degrain(bobbed1, self.basic_tr)
 
         if self.match_mode > SourceMatchMode.BASIC:
@@ -589,7 +595,10 @@ class QTempGaussMC(vs_object):
                 clip = reinterlace(match1, self.tff)
 
             diff = self.denoise_output.std.MakeDiff(clip)
-            bobbed2 = self.match_bobber.interpolate(diff, False, **self.match_bobber.get_aa_args(diff))
+            if self.input_type == InputType.PROGRESSIVE:
+                bobbed2 = diff
+            else:
+                bobbed2 = self.match_bobber.interpolate(diff, False, **self.match_bobber.get_aa_args(diff))  # type: ignore
             match2 = self.binomial_degrain(bobbed2, self.match_tr)
 
             if self.match_mode == SourceMatchMode.TWICE_REFINED:
