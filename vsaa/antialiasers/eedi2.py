@@ -33,9 +33,14 @@ class EEDI2(_FullInterpolate, _Antialiaser):
 
     def get_aa_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
         return dict(
-            mthresh=self.mthresh, lthresh=self.lthresh, vthresh=self.vthresh,
-            estr=self.estr, dstr=self.dstr, maxd=self.maxd, pp=self.pp
-        )
+            mthresh=self.mthresh,
+            lthresh=self.lthresh,
+            vthresh=self.vthresh,
+            estr=self.estr,
+            dstr=self.dstr,
+            maxd=self.maxd,
+            pp=self.pp
+        ) | kwargs
 
     def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> ConstantFormatVideoNode:
         assert check_variable_format(clip, self.__class__)
@@ -58,7 +63,7 @@ class EEDI2(_FullInterpolate, _Antialiaser):
                 else:
                     inter = self._shifter.scale(inter, clip.width, clip.height, shift)  # type: ignore[assignment]
 
-        return self._post_interpolate(clip, inter, double_y, **kwargs)
+        return self._post_interpolate(clip, inter, double_y)  # pyright: ignore[reportArgumentType]
 
     def full_interpolate(self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any) -> ConstantFormatVideoNode:
         return core.eedi2cuda.Enlarge2(clip, **kwargs)
