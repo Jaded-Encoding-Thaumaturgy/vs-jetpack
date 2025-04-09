@@ -63,7 +63,9 @@ class EEDI2(_FullInterpolate, _Antialiaser):
 
         return self._post_interpolate(clip, inter, double_y)  # pyright: ignore[reportArgumentType]
 
-    def full_interpolate(self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any) -> ConstantFormatVideoNode:
+    def full_interpolate(
+        self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
         return core.eedi2cuda.Enlarge2(clip, **kwargs)
 
 
