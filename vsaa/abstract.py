@@ -191,8 +191,19 @@ class SingleRater(_Antialiaser, ABC):
     def get_sr_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
         return {}
 
-    @inject_self.init_kwargs.clean
-    def _aa(
+    @overload
+    def aa(
+        self, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        ...
+
+    @overload
+    def aa(
+        self, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        ...
+
+    def aa(
         self, clip: vs.VideoNode, y_or_dir: bool | AADirection = True, x: bool = True, /, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         if isinstance(y_or_dir, AADirection):
@@ -204,7 +215,9 @@ class SingleRater(_Antialiaser, ABC):
 
         return self._do_aa(clip, y, x, **kwargs)
 
-    def _do_aa(self, clip: ConstantFormatVideoNode, y: bool = True, x: bool = False, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _do_aa(
+        self, clip: ConstantFormatVideoNode, y: bool = True, x: bool = False, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
         kwargs = self.get_aa_args(clip, **kwargs) | self.get_sr_args(clip, **kwargs) | kwargs
 
         upscaled = clip
@@ -237,49 +250,23 @@ class SingleRater(_Antialiaser, ABC):
         return upscaled
 
 
-    if TYPE_CHECKING:
-        @overload  # type: ignore[misc]
-        @staticmethod
-        def aa(
-            clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
-
-        @overload
-        def aa(
-            self, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
-
-        @overload
-        @staticmethod
-        def aa(
-            clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
-
-        @overload
-        def aa(
-            self, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
-
-        @overload
-        def aa(self, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
-            ...
-
-        def aa(*args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
-            ...
-    else:
-        aa = _aa
-
-
 @dataclass(kw_only=True)
 class DoubleRater(SingleRater, ABC):
     merge_func: Callable[[vs.VideoNode, vs.VideoNode], ConstantFormatVideoNode] = core.proxied.std.Merge
 
-    @inject_self.init_kwargs.clean
-    def _draa(
+    @overload
+    def draa(
+        self, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        ...
+
+    @overload
+    def draa(
+        self, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        ...
+
+    def draa(
         self, clip: vs.VideoNode, y_or_dir: bool | AADirection = True, x: bool = True, /, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         if isinstance(y_or_dir, AADirection):
@@ -289,11 +276,6 @@ class DoubleRater(SingleRater, ABC):
 
         clip = self.preprocess_clip(clip)
 
-        kwargs.pop('field', None)
-
-        return self._do_draa(clip, y, x, **kwargs)
-
-    def _do_draa(self, clip: ConstantFormatVideoNode, y: bool = True, x: bool = False, **kwargs: Any) -> ConstantFormatVideoNode:
         original_field = int(self.field)
 
         self.field = 0
@@ -305,42 +287,6 @@ class DoubleRater(SingleRater, ABC):
         self.field = original_field
 
         return self.merge_func(aa0, aa1)
-
-    if TYPE_CHECKING:
-        @overload  # type: ignore[misc]
-        @staticmethod
-        def draa(
-            clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
-
-        @overload
-        def draa(
-            self, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
-
-        @overload
-        @staticmethod
-        def draa(
-            clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
-
-        @overload
-        def draa(
-            self, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
-
-        @overload
-        def draa(self, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
-            ...
-
-        def draa(*args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
-            ...
-    else:
-        draa = _draa
 
 
 @dataclass
