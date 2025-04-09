@@ -1,3 +1,7 @@
+"""
+This module defines the base interface classes for performing anti-aliasing operations.
+"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -24,6 +28,8 @@ __all__ = [
 
 
 class _SingleInterpolate(ABC):
+    """Abstract base class for single field interpolation"""
+
     _shift: ClassVar[float]
 
     def _post_interpolate(
@@ -40,28 +46,64 @@ class _SingleInterpolate(ABC):
 
     @abstractmethod
     def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> ConstantFormatVideoNode:
-        ...
+        """
+        Performs field interpolation.
+
+        :param clip:        Clip to interpolate.
+        :param double_y:    If True, doubles the height of the input by copying each line to every other line of the output,
+                            with the missing lines interpolated.
+                            If field is 0, the input is copied to the odd lines (bottom field).
+                            if field is 1, the input is copied to the even lines (top field).
+        :return:            Interpolated clip.
+        """
 
 
 @dataclass
 class _Antialiaser(_SingleInterpolate, ABC):
+    """Abstract base class for antialiaser operations."""
+
     _: KW_ONLY
+
     field: int = 0
+    """
+    Controls the mode of operation and which field is kept in the resized image.
+        - 0: Same rate, keeps the bottom field.
+        - 1: Same rate, keeps the top field.
+        - 2: Double rate (alternates each frame), starts with the bottom field.
+        - 3: Double rate (alternates each frame), starts with the top field.
+    """
     drop_fields: bool = True
+    """"""
+
     transpose_first: bool = False
+    """Transpose the clip before any operation."""
+
     shifter: KernelT = Catrom
+    """Kernel used for shifting operations. Default to Catrom."""
+
     scaler: ScalerT | None = None
+    """Scaler used for additional scaling operations. If None, default to `shifter`"""
 
     def __post_init__(self) -> None:
         self._shifter = Kernel.ensure_obj(self.shifter)
         self._scaler = self._shifter.ensure_obj(self.scaler, self.__class__)
 
     def _preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+        """
+        An optional preprocessing function to apply before scaling, Anti-Aliasing, or DougleRate Anti-Aliasing.
+        """
         assert check_variable(clip, self.__class__)
 
         return clip
 
     def get_aa_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
+        """
+        Retrieves arguments for anti-aliasing processing.
+
+        :param clip:        Source clip.
+        :param **kwargs:    Additional arguments.
+        :return:            Passed keyword arguments.
+        """
         return kwargs
 
     def shift_interpolate(
@@ -70,6 +112,14 @@ class _Antialiaser(_SingleInterpolate, ABC):
         inter: vs.VideoNode,
         double_y: bool,
     ) -> ConstantFormatVideoNode:
+        """
+        Applies a post-shifting interpolation operation to the interpolated clip.
+
+        :param clip:        Source clip.
+        :param inter:       Interpolated clip.
+        :param double_y:    Whether the height has been doubled
+        :return:            Shifted clip.
+        """
         assert check_variable(clip, self.__class__)
         assert check_variable(inter, self.__class__)
 
@@ -83,23 +133,53 @@ class _Antialiaser(_SingleInterpolate, ABC):
         return inter
 
     def copy(self, **kwargs: Any) -> Self:
+        """Returns a new Antialiaser class replacing specified fields with new values"""
         return replace(self, **kwargs)
 
 
 class _FullInterpolate(_SingleInterpolate, ABC):
+    """Abstract base class for full interpolation operation."""
+
     @abstractmethod
     def is_full_interpolate_enabled(self, x: bool, y: bool) -> bool:
-        ...
+        """
+        Determines whether full interpolation can be performed.
+
+        :param x:       Indicates whether the x-axis should be doubled.
+        :param y:       Indicates whether the y-axis should be doubled.
+        :return:        `True` if full interpolation is possible, otherwise `False`.
+        """
 
     @abstractmethod
     def full_interpolate(
         self, clip: vs.VideoNode, double_y: bool, double_x: bool, **kwargs: Any
     ) -> ConstantFormatVideoNode:
-        ...
+        """
+        Performs full interpolation on the given clip.
+
+        This method doubles the height and/or width of the input by copying each line (or column)
+        to every other line (or column) in the output, with missing lines (or columns) interpolated.
+        If the `field` is 0, the input is copied to the odd lines (bottom field).
+        if the `field` is 1, the input is copied to the even lines (top field).
+
+        :param clip:        Clip to be interpolated.
+        :param double_y:    Whether to double the height of the input.
+        :param double_x:    Whether to double the width of the input.
+        :return:            Interpolated clip.
+        """
 
 
 class SuperSampler(_Antialiaser, Scaler, ABC):
+    """Abstract base class for supersampling operations."""
+
     def get_ss_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
+        """
+        Retrieves arguments for super sampling processing.
+
+        :param clip:        Source clip.
+        :param **kwargs:    Additional arguments.
+        :return:            Passed keyword arguments.
+        """
         return kwargs
 
     @inject_self.cached
@@ -111,7 +191,17 @@ class SuperSampler(_Antialiaser, Scaler, ABC):
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any
     ) -> vs.VideoNode:
+        """
+        Scale the given clip super sampling method.
 
+        :param clip:        The input clip to be scaled.
+        :param width:       The target width for scaling. If None, the width of the input clip will be used.
+        :param height:      The target height for scaling. If None, the height of the input clip will be used.
+        :param shift:       A tuple representing the shift values for the y and x axes.
+        :param **kwargs:    Additional arguments to be passed to the `interpolate` or `full_interpolate` methods.
+
+        :return:            The scaled clip.
+        """
         assert check_progressive(clip, self.scale)
 
         clip = self._preprocess_clip(clip)
@@ -189,20 +279,44 @@ class SuperSampler(_Antialiaser, Scaler, ABC):
 
 
 class SingleRater(_Antialiaser, ABC):
+    """Abstract base class for single rating operations."""
+
     def get_sr_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
-        return {}
+        """
+        Retrieves arguments for single rating processing.
+
+        :param clip:        Source clip.
+        :param **kwargs:    Additional arguments.
+        :return:            Passed keyword arguments.
+        """
+        return kwargs
 
     @overload
     def aa(
         self, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
     ) -> ConstantFormatVideoNode:
-        ...
+        """
+        Performs anti-aliasing via a single-rate operation
+
+        :param clip:        Source clip.
+        :param y:           Whether to perform anti-aliasing on the height. Defaults to True.
+        :param x:           Whether to perform anti-aliasing on the width. Defaults to True.
+        :param **kwargs:    Additional arguments to be passed to the `interpolate` or `full_interpolate` methods.
+        :return:            Anti-aliased clip.
+        """
 
     @overload
     def aa(
         self, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
     ) -> ConstantFormatVideoNode:
-        ...
+        """
+        Performs anti-aliasing via a single-rate operation
+
+        :param clip:        Source clip.
+        :param dir:         Anti-aliasing direction. Defaults to both vertical and horizontal directions.
+        :param **kwargs:    Additional arguments to be passed to the `interpolate` or `full_interpolate` methods.
+        :return:            Anti-aliased clip.
+        """
 
     def aa(
         self, clip: vs.VideoNode, y_or_dir: bool | AADirection = True, x: bool = True, /, **kwargs: Any
@@ -253,19 +367,37 @@ class SingleRater(_Antialiaser, ABC):
 
 @dataclass(kw_only=True)
 class DoubleRater(SingleRater, ABC):
+    """Abstract base class for double rating operations."""
+
     merge_func: Callable[[vs.VideoNode, vs.VideoNode], ConstantFormatVideoNode] = core.proxied.std.Merge
+    """Function used to merge the clips after the double-rate operation."""
 
     @overload
     def draa(
         self, clip: vs.VideoNode, y: bool = True, x: bool = True, /, **kwargs: Any
     ) -> ConstantFormatVideoNode:
-        ...
+        """
+        Performs anti-aliasing via a double-rate operation
+
+        :param clip:        Source clip.
+        :param y:           Whether to perform anti-aliasing on the height. Defaults to True.
+        :param x:           Whether to perform anti-aliasing on the width. Defaults to True.
+        :param **kwargs:    Additional arguments to be passed to the `interpolate` or `full_interpolate` methods.
+        :return:            Anti-aliased clip.
+        """
 
     @overload
     def draa(
         self, clip: vs.VideoNode, dir: AADirection = AADirection.BOTH, /, **kwargs: Any
     ) -> ConstantFormatVideoNode:
-        ...
+        """
+        Performs anti-aliasing via a double-rate operation
+
+        :param clip:        Source clip.
+        :param dir:         Anti-aliasing direction. Defaults to both vertical and horizontal directions.
+        :param **kwargs:    Additional arguments to be passed to the `interpolate` or `full_interpolate` methods.
+        :return:            Anti-aliased clip.
+        """
 
     def draa(
         self, clip: vs.VideoNode, y_or_dir: bool | AADirection = True, x: bool = True, /, **kwargs: Any
@@ -292,4 +424,5 @@ class DoubleRater(SingleRater, ABC):
 
 @dataclass
 class Antialiaser(DoubleRater, SuperSampler, ABC):
+    """Abstract interface base class for general anti-aliasing operations."""
     ...
