@@ -473,7 +473,10 @@ class QTempGaussMC(vs_object):
         self.prefilter_output = blurred
 
     def apply_denoise(self) -> None:
-        if self.denoise_mode:
+        if not self.denoise_mode:
+            self.noise = None
+            self.denoise_output = self.clip
+        else:
             if self.denoise_tr:
                 denoised = self.mv.compensate(
                     self.draft, tr=self.denoise_tr, thscd=self.thscd,
@@ -525,9 +528,6 @@ class QTempGaussMC(vs_object):
 
             self.noise = noise
             self.denoise_output = denoised if self.denoise_mode == NoiseProcessMode.DENOISE else self.clip  # type: ignore
-        else:
-            self.noise = None
-            self.denoise_output = self.clip
         
         if self.input_type == InputType.REPAIR:
             self.denoise_output = reinterlace(self.denoise_output, self.tff)  # type: ignore
