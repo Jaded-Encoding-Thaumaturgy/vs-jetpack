@@ -73,12 +73,25 @@ class EEDI2(_FullInterpolate, Interpolater):
     - 1 = Check for spatial consistency of final interpolation directions
     - 2 = Check for junctions and corners
     - 3 = Apply both checks from 1 and 2
+
+    Only `pp=0` and `pp=1` is implemented for the CUDA variant.
     """
 
     cuda: bool = False
     """
     Enables the use of the CUDA variant for processing.
     Note that full interpolating is only supported by CUDA.
+    """
+
+    num_streams: int = 1
+    """
+    Specifies the number of CUDA streams.
+    """
+
+    device_id: int = -1
+    """
+    Specifies the target CUDA device.
+    The default value (-1) triggers auto-detection of the available device.
     """
 
     # Class Variable
@@ -88,15 +101,29 @@ class EEDI2(_FullInterpolate, Interpolater):
         return self.cuda and x and y
 
     def get_aa_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
-        return dict(
+        if (pp := self.pp) > 1 and self.cuda:
+            from warnings import warn
+            warn(
+                f"{self.__class__.__name__}: Only `pp=0` and `pp=1` is implemented for the CUDA variant. "
+                "Falling back to `pp=1`...",
+                Warning
+            )
+            pp = min(self.pp, 1)
+
+        args = dict(
             mthresh=self.mthresh,
             lthresh=self.lthresh,
             vthresh=self.vthresh,
             estr=self.estr,
             dstr=self.dstr,
             maxd=self.maxd,
-            pp=self.pp
-        ) | kwargs
+            pp=pp
+        )
+
+        if self.cuda:
+            args.update(num_streams=self.num_streams, device_id=self.device_id)
+
+        return args | kwargs
 
     def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> ConstantFormatVideoNode:
         assert check_variable_format(clip, self.__class__)
