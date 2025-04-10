@@ -52,13 +52,11 @@ class BaseGenericScaler(Scaler, ABC):
         :param kernel:      Base kernel to be used for certain scaling/shifting/resampling operations.
                             Defaults to Catrom.
         :param scaler:      Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:     Kernel used for shifting operations. Defaults to scaler.
+        :param shifter:     Kernel used for shifting operations. Defaults to kernel.
         """
         self.kernel = Kernel.ensure_obj(kernel, self.__class__)
         self.scaler = Scaler.ensure_obj(scaler or self.kernel, self.__class__)
-        self.shifter = Kernel.ensure_obj(
-            shifter or (self.scaler if isinstance(self.scaler, Kernel) else Catrom), self.__class__
-        )
+        self.shifter = Kernel.ensure_obj(shifter or self.kernel, self.__class__)
 
         super().__init__(**kwargs)
 
@@ -126,7 +124,7 @@ class GenericScaler(BaseGenericScaler, partial_abstract=True):
         :param kernel:      Base kernel to be used for certain scaling/shifting/resampling operations.
                             Defaults to Catrom.
         :param scaler:      Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:     Kernel used for shifting operations. Defaults to scaler.
+        :param shifter:     Kernel used for shifting operations. Defaults to kernel.
         """
         self.func = _func_no_op if func is None else func
         super().__init__(kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)

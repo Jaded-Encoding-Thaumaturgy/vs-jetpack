@@ -52,7 +52,7 @@ class ClampScaler(GenericScaler):
         :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
                                 Defaults to Catrom.
         :param scaler:          Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        :param shifter:         Kernel used for shifting operations. Defaults to kernel.
         """
         self.base_scaler = Scaler.ensure_obj(base_scaler, self.__class__)
 
