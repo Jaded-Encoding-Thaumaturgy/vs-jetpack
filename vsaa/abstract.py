@@ -74,7 +74,7 @@ class Interpolater(_SingleInterpolate, ABC):
     - 3: Double rate (alternates each frame), starts with the top field.
     """
     drop_fields: bool = True
-    """"""
+    """Whether to discard the unused field based on the `field` setting."""
 
     transpose_first: bool = False
     """Transpose the clip before any operation."""
