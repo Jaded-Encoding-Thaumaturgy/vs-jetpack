@@ -12,7 +12,7 @@ from jetpytools import fallback
 
 from vstools import ConstantFormatVideoNode, CustomValueError, core, inject_self, vs, vs_object
 
-from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser
+from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, Interpolater
 from . import nnedi3
 
 __all__ = [
@@ -25,7 +25,7 @@ __all__ = [
 
 
 @dataclass
-class EEDI3(_Antialiaser):
+class EEDI3(Interpolater):
     """Base class for EEDI3 interpolating methods."""
 
     alpha: float = 0.25

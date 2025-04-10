@@ -9,7 +9,7 @@ from typing import Any, Sequence
 
 from vstools import ConstantFormatVideoNode, core, vs
 
-from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser
+from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, Interpolater
 
 __all__ = [
     "SANGNOM",
@@ -21,7 +21,7 @@ __all__ = [
 
 
 @dataclass
-class SANGNOM(_Antialiaser):
+class SANGNOM(Interpolater):
     """Base class for SANGNOM interpolating methods."""
 
     aa_strength: int | Sequence[int] = 48

@@ -11,7 +11,7 @@ from jetpytools import CustomRuntimeError
 
 from vstools import ConstantFormatVideoNode, check_variable_format, core, vs
 
-from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser, _FullInterpolate
+from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, Interpolater, _FullInterpolate
 
 __all__ = [
     "EEDI2",
@@ -23,7 +23,7 @@ __all__ = [
 
 
 @dataclass
-class EEDI2(_FullInterpolate, _Antialiaser):
+class EEDI2(_FullInterpolate, Interpolater):
     """Base class for EEDI2 interpolating methods."""
 
     mthresh: int = 10
