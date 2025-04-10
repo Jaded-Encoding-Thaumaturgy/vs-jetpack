@@ -55,6 +55,7 @@ class _SingleInterpolate(ABC):
                             with the missing lines interpolated.
                             If field is 0, the input is copied to the odd lines (bottom field).
                             if field is 1, the input is copied to the even lines (top field).
+        :param **kwargs:    Additional keyword arguments to pass to the interpolation plugin.
         :return:            Interpolated clip.
         """
 
