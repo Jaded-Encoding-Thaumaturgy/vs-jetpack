@@ -95,7 +95,7 @@ class NNEDI3(_FullInterpolate, Interpolater):
         if (pscrn := self.pscrn) > 1 and clip.format.sample_type == vs.FLOAT:
             from warnings import warn
             warn(
-                f"{self.__class__.__name__}: The new prescreener (2, 3, or 4) is not available with float input. "
+                f"{self.__class__.__name__}: The new prescreener {self.pscrn} is not available with float input. "
                 "Falling back to old prescreener...",
                 Warning
             )
