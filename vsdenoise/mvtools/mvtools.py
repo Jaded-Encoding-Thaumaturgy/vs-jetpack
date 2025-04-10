@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fractions import Fraction
 from itertools import chain
-from typing import Any, Literal, MutableMapping, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, MutableMapping, cast, overload
 
 from vstools import (
     ColorRange, ConstantFormatVideoNode, CustomRuntimeError, FieldBased, GenericVSFunction, InvalidColorFamilyError,
@@ -1256,8 +1256,13 @@ class MVTools(vs_object):
         return (vectors_backward, vectors_forward)
 
     def __vs_del__(self, core_id: int) -> None:
-        for k, v in self.__dict__.items():
-            if isinstance(v, MutableMapping):
-                v.clear()
+        if not TYPE_CHECKING:
+            self.clip = None
 
-            setattr(self, k, None)
+        for v in self.__dict__.values():
+            if not isinstance(v, MutableMapping):
+                continue
+
+            for k2, v2 in v.items():
+                if isinstance(v2, vs.VideoNode):
+                    v[k2] = None

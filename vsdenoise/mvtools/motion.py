@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from vstools import vs, vs_object
 
@@ -73,6 +73,8 @@ class MotionVectors(vs_object):
 
     def __vs_del__(self, core_id: int) -> None:
         for v in self.motion_vectors.values():
-            v.clear()
+            for k in v.keys():
+                if not TYPE_CHECKING:
+                    v[k] = None
 
         self.mv_multi = None

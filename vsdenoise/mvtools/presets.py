@@ -273,11 +273,8 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
         return self
 
     def __vs_del__(self, core_id: int) -> None:
-        for v in self._dict.values():
-            if isinstance(v, MutableMapping):
-                v.clear()
-
-        self._dict.clear()
+        self._dict["super_args"]["pelclip"] = None
+        self._dict["search_clip"] = None
 
 
 class MVToolsPresets:
