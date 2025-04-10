@@ -25,7 +25,7 @@ from .enums import (
     BackBlendMode, InputType, LosslessMode, NoiseDeintMode, NoiseProcessMode, SearchPostProcess, SharpLimitMode,
     SharpMode, SourceMatchMode
 )
-from .utils import reinterlace, scdetect
+from .utils import reinterlace
 
 __all__ = [
     'QTempGaussMC'
@@ -444,7 +444,7 @@ class QTempGaussMC(vs_object):
         if self.prefilter_tr:
             scenechange = self.prefilter_sc_threshold is not False
 
-            scenes = scdetect(search, self.prefilter_sc_threshold) if scenechange else search
+            scenes = search.misc.SCDetect(self.prefilter_sc_threshold) if scenechange else search
             smoothed = BlurMatrix.BINOMIAL(self.prefilter_tr, mode=ConvMode.TEMPORAL, scenechange=scenechange)(scenes)
             smoothed = self.mask_shimmer(smoothed, search, **self.prefilter_mask_shimmer_args)
         else:
