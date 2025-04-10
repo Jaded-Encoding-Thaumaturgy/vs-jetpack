@@ -172,15 +172,15 @@ class EEDI3(Interpolater):
             ucubic=self.ucubic, cost3=self.cost3,
             vcheck=self.vcheck,
             vthresh0=self.vthresh0, vthresh1=self.vthresh1, vthresh2=self.vthresh2
-        ) | kwargs
+        )
 
         if self.opencl:
             args.update(device=self.device)
         elif self.mclip is not None or kwargs.get('mclip'):
             # opt=3 appears to always give reliable speed boosts if mclip is used.
-            args.update(opt=fallback(kwargs.get('opt', None), self.opt, 3))
+            args.update(opt=fallback(kwargs.pop('opt', None), self.opt, 3))
 
-        return args
+        return args | kwargs
 
     def interpolate(self, clip: vs.VideoNode, double_y: bool, **kwargs: Any) -> ConstantFormatVideoNode:
         aa_kwargs = self.get_aa_args(clip, **kwargs)
