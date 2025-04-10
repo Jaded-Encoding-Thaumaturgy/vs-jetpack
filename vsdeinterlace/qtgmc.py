@@ -128,7 +128,7 @@ class QTempGaussMC(vs_object):
         self,
         *,
         tr: int = 2,
-        func: _DenoiseFuncTr | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = partial(DFTTest.denoise, sigma=2),
+        func: _DenoiseFuncTr | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = partial(DFTTest.denoise, sigma=8),
         mode: NoiseProcessMode = NoiseProcessMode.IDENTIFY,
         deint: NoiseDeintMode = NoiseDeintMode.GENERATE,
         stabilize: tuple[float, float] | Literal[False] = (0.6, 0.2),
