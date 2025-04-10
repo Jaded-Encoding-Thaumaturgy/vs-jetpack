@@ -108,7 +108,7 @@ class EEDI2(_FullInterpolate, Interpolater):
                 "Falling back to `pp=1`...",
                 Warning
             )
-            pp = min(self.pp, 1)
+            pp = 1
 
         args = dict(
             mthresh=self.mthresh,

@@ -99,7 +99,7 @@ class NNEDI3(_FullInterpolate, Interpolater):
                 "Falling back to old prescreener...",
                 Warning
             )
-            pscrn = min(self.pscrn, 1)
+            pscrn = 1
 
         return dict(nsize=self.nsize, nns=self.nns, qual=self.qual, etype=self.etype, pscrn=pscrn) | kwargs
 
