@@ -77,7 +77,7 @@ class QTempGaussMC(vs_object):
     ) -> None:
         """
         :param clip:          Clip to process.
-        :param input_type:    Nature of the clip - indicates processing routine.
+        :param input_type:    Indicates processing routine.
         :param tff:           Field order of the clip.
         """
 
@@ -509,7 +509,7 @@ class QTempGaussMC(vs_object):
                             )
                             noise_limit = norm_expr([noise_max, noise_min, noise_new], 'x y - z * range_size / y +')
 
-                            noise = core.std.Interleave([noise_source, noise_limit]).std.DoubleWeave(self.tff)
+                            noise = core.std.Interleave([noise_source, noise_limit]).std.DoubleWeave(self.tff)[::2]
 
                 if self.denoise_stabilize:
                     weight1, weight2 = self.denoise_stabilize
