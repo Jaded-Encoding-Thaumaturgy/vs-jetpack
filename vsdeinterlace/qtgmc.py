@@ -806,7 +806,7 @@ class QTempGaussMC(vs_object):
         self.apply_final()
         self.apply_motion_blur()
 
-        return self.motion_blur_output
+        return self.motion_blur_output.std.SetFieldBased(0)
 
     def __vs_del__(self, core_id: int) -> None:
         for k, v in self.__dict__.items():
