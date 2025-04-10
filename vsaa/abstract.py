@@ -21,6 +21,7 @@ from vstools import ConstantFormatVideoNode, check_progressive, check_variable, 
 from .enums import AADirection
 
 __all__ = [
+    'Interpolater',
     'SuperSampler',
     'SingleRater', 'DoubleRater',
     'Antialiaser'
@@ -59,8 +60,8 @@ class _SingleInterpolate(ABC):
 
 
 @dataclass
-class _Antialiaser(_SingleInterpolate, ABC):
-    """Abstract base class for antialiaser operations."""
+class Interpolater(_SingleInterpolate, ABC):
+    """Abstract base class for interpolate operation."""
 
     _: KW_ONLY
 
@@ -169,7 +170,7 @@ class _FullInterpolate(_SingleInterpolate, ABC):
         """
 
 
-class SuperSampler(_Antialiaser, Scaler, ABC):
+class SuperSampler(Interpolater, Scaler, ABC):
     """Abstract base class for supersampling operations."""
 
     def get_ss_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
@@ -278,7 +279,7 @@ class SuperSampler(_Antialiaser, Scaler, ABC):
         return self._scaler.scale(upscaled, width, height, shift)
 
 
-class SingleRater(_Antialiaser, ABC):
+class SingleRater(Interpolater, ABC):
     """Abstract base class for single rating operations."""
 
     def get_sr_args(self, clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:

@@ -9,7 +9,7 @@ from typing import Any
 
 from vstools import ConstantFormatVideoNode, inject_self, vs
 
-from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, _Antialiaser, _FullInterpolate
+from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, Interpolater, _FullInterpolate
 
 __all__ = [
     "NNEDI3",
@@ -21,7 +21,7 @@ __all__ = [
 
 
 @dataclass
-class NNEDI3(_FullInterpolate, _Antialiaser):
+class NNEDI3(_FullInterpolate, Interpolater):
     """Base class for NNEDI3 interpolating methods."""
 
     nsize: int = 0
