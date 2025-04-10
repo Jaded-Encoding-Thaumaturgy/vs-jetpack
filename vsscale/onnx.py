@@ -99,7 +99,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
                                 Defaults to Catrom.
         :param scaler:          Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        :param shifter:         Kernel used for shifting operations. Defaults to kernel.
         :param **kwargs:        Additional arguments to pass to the backend.
                                 See the vsmlrt backend's docstring for more details.
         """
@@ -265,7 +265,7 @@ class BaseArtCNN(BaseOnnxScaler):
         :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
                                 Defaults to Catrom.
         :param scaler:          Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        :param shifter:         Kernel used for shifting operations. Defaults to kernel.
         :param **kwargs:        Additional arguments to pass to the backend.
                                 See the vsmlrt backend's docstring for more details.
         """
@@ -340,7 +340,7 @@ class BaseArtCNNChroma(BaseArtCNN):
         :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
                                 Defaults to Catrom.
         :param scaler:          Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        :param shifter:         Kernel used for shifting operations. Defaults to kernel.
         :param **kwargs:        Additional arguments to pass to the backend.
                                 See the vsmlrt backend's docstring for more details.
         """
@@ -502,7 +502,7 @@ class BaseWaifu2x(BaseOnnxScaler):
         :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
                                 Defaults to Catrom.
         :param scaler:          Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:         Kernel used for shifting operations. Defaults to scaler.
+        :param shifter:         Kernel used for shifting operations. Defaults to kernel.
         :param **kwargs:        Additional arguments to pass to the backend.
                                 See the vsmlrt backend's docstring for more details.
         """
