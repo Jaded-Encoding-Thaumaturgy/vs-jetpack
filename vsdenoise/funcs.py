@@ -103,8 +103,8 @@ def mc_degrain(
                               thsad value is scaled to 8x8 block size.
     :param limit:             Maximum allowed change in pixel values.
     :param thscd:             Scene change detection thresholds:
-                              - First value: SAD threshold for considering a block changed between frames.
-                              - Second value: Number of changed blocks needed to trigger a scene change.
+                               - First value: SAD threshold for considering a block changed between frames.
+                               - Second value: Percentage of changed blocks needed to trigger a scene change.
     :param export_globals:    Whether to return the MVTools object.
     :param planes:            Which planes to process. Default: None (all planes).
 

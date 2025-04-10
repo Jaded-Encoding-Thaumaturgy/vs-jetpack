@@ -42,7 +42,7 @@ def planes_to_mvtools(input_planes: Sequence[int]) -> int:
 
 
 def normalize_thscd(
-    thscd: int | tuple[int | None, int | None] | None, scale: bool = True
+    thscd: int | tuple[int | None, int | float | None] | None, scale: bool = True
 ) -> tuple[int | None, int | None]:
     """
     Normalize and scale the thscd parameter.
@@ -57,5 +57,8 @@ def normalize_thscd(
 
     if scale and thscd2 is not None:
         thscd2 = round(thscd2 / 100 * 255)
+
+    if isinstance(thscd2, float):
+        thscd2 = int(thscd2)
 
     return (thscd1, thscd2)
