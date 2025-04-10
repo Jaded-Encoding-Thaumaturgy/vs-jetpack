@@ -167,6 +167,7 @@ class _FullInterpolate(_SingleInterpolate, ABC):
         :param clip:        Clip to be interpolated.
         :param double_y:    Whether to double the height of the input.
         :param double_x:    Whether to double the width of the input.
+        :param **kwargs:    Additional keyword arguments to pass to the interpolation plugin.
         :return:            Interpolated clip.
         """
 
