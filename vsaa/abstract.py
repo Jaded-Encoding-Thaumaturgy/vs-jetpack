@@ -16,7 +16,7 @@ from typing_extensions import Self
 from vsexprtools import norm_expr
 from vskernels import Catrom, Kernel, KernelT, NoShift, Scaler, ScalerT
 from vskernels.types import LeftShift, TopShift
-from vstools import ConstantFormatVideoNode, check_progressive, check_variable, core, inject_self, vs, vs_object
+from vstools import ConstantFormatVideoNode, check_progressive, check_variable, core, inject_self, vs
 
 from .enums import AADirection
 
