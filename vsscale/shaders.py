@@ -8,15 +8,15 @@ from jetpytools import SPath, SPathLike
 from vskernels import Catrom, KernelT, ScalerT
 from vstools import ConstantFormatVideoNode, check_variable, core, depth, inject_self, join, vs
 
-from .helpers import GenericScaler
+from .generic import BaseGenericScaler
 
 __all__ = [
     'PlaceboShader',
 ]
 
 
-class PlaceboShader(GenericScaler):
-    """Base placebo shader class."""
+class PlaceboShader(BaseGenericScaler):
+    """Placebo shader class."""
 
     _static_kernel_radius = 2
 

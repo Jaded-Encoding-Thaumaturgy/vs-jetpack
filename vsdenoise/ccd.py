@@ -118,7 +118,7 @@ def ccd(
                         See :py:attr:`vsdenoise.ccd.CCDPoints`.
     :param i444:        Output the clip as 4:4:4.
     :param planes:      Planes to process.
-    :param ssim_kwargs: Keyword arguments to pass to :py:class:`vsscale.scale.SSIM`.
+    :param ssim_kwargs: Keyword arguments to pass to :py:class:`vsscale.SSIM`.
 
     :return:            Denoised clip.
     """

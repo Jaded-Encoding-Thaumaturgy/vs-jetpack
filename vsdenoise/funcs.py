@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Any, Literal, overload
 
 from vsscale import Waifu2x
-from vsscale.scale import BaseWaifu2x
+from vsscale.onnx import BaseWaifu2x
 from vstools import CustomIndexError, KwargsNotNone, PlanesT, VSFunction, fallback, normalize_seq, vs
 
 from .mvtools import MotionVectors, MVTools, MVToolsPreset, MVToolsPresets, RFilterMode
@@ -149,12 +149,13 @@ def mc_degrain(
 
 
 def waifu2x_denoise(
-    clip: vs.VideoNode, noise: int = 1, model: type[BaseWaifu2x] = Waifu2x.Cunet, **kwargs: Any
+    clip: vs.VideoNode, noise: Literal[0, 1, 2, 3] = 1, model: type[BaseWaifu2x] = Waifu2x.Cunet, **kwargs: Any
 ) -> vs.VideoNode:
-    if noise < 0 or noise > 3:
-        raise CustomIndexError('"noise" must be in range 0-3 (inclusive).')
+    from warnings import warn
 
-    if not isinstance(model, type):
-        model = model.__class__  # type: ignore
+    warn("waifu2x_denoise is deprecated. Use vsscale.Waifu2x instead.", DeprecationWarning, 2)
 
-    return model(**kwargs).scale(clip, clip.width, clip.height, _static_args=dict(scale=1, noise=noise, force=True))
+    if not 0 <= noise <= 3:
+        raise CustomIndexError('"noise" must be in range 0-3 (inclusive).', waifu2x_denoise)
+
+    return model(1, noise, **kwargs).scale(clip, clip.width, clip.height)

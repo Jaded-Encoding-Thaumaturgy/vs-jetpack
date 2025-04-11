@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import partial
 from math import ceil, floor
 from types import NoneType
-from typing import Any, Callable, NamedTuple, Protocol, Self, TypeAlias, overload
+from typing import Any, Callable, NamedTuple, Self, TypeAlias, overload
 
-from vskernels import Catrom, Kernel, KernelT, Scaler, ScalerT
-from vstools import KwargsT, MatrixT, Resolution, get_w, mod2, plane, vs
-
+from vskernels import Scaler
+from vstools import KwargsT, Resolution, get_w, mod2, vs
 
 __all__ = [
-    'GenericScaler',
     'scale_var_clip',
 
     'CropRel',
@@ -20,139 +18,27 @@ __all__ = [
 ]
 
 
-class _GeneriScaleNoShift(Protocol):
-    def __call__(self, clip: vs.VideoNode, width: int, height: int, *args: Any, **kwds: Any) -> vs.VideoNode:
-        ...
-
-
-class _GeneriScaleWithShift(Protocol):
-    def __call__(
-        self, clip: vs.VideoNode, width: int, height: int, shift: tuple[float, float],
-        *args: Any, **kwds: Any
-    ) -> vs.VideoNode:
-        ...
-
-
-@dataclass
-class GenericScaler(Scaler, partial_abstract=True):
-    """
-    Generic Scaler base class.
-    Inherit from this to create more complex scalers with built-in utils.
-    Instantiate with a callable taking at least a VideoNode, width, and height
-    to use that as a Scaler in functions taking that.
-    """
-
-    kernel: KernelT | None = field(default=None, kw_only=True)
-    """
-    Base kernel to be used for certain scaling/shifting/resampling operations.
-    Must be specified and defaults to catrom
-    """
-
-    scaler: ScalerT | None = field(default=None, kw_only=True)
-    """Scaler used for scaling operations. Defaults to kernel."""
-
-    shifter: KernelT | None = field(default=None, kw_only=True)
-    """Kernel used for shifting operations. Defaults to kernel."""
-
-    def __post_init__(self) -> None:
-        self._kernel = Kernel.ensure_obj(self.kernel or Catrom, self.__class__)
-        self._scaler = Scaler.ensure_obj(self.scaler or self._kernel, self.__class__)
-        self._shifter = Kernel.ensure_obj(
-            self.shifter or (self._scaler if isinstance(self._scaler, Kernel) else Catrom), self.__class__
-        )
-
-    def __init__(
-        self, func: _GeneriScaleNoShift | _GeneriScaleWithShift | Callable[..., vs.VideoNode], **kwargs: Any
-    ) -> None:
-        self.func = func
-        self.kwargs = kwargs
-
-    def scale(  # type: ignore
-        self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-        shift: tuple[float, float] = (0, 0), **kwargs: Any
-    ) -> vs.VideoNode:
-        width, height = self._wh_norm(clip, width, height)
-
-        kwargs = self.kwargs | kwargs
-
-        output = None
-
-        if shift != (0, 0):
-            try:
-                output = self.func(clip, width, height, shift, **kwargs)
-            except BaseException:
-                try:
-                    output = self.func(clip, width=width, height=height, shift=shift, **kwargs)
-                except BaseException:
-                    pass
-
-        if output is None:
-            try:
-                output = self.func(clip, width, height, **kwargs)
-            except BaseException:
-                output = self.func(clip, width=width, height=height, **kwargs)
-
-        return self._finish_scale(output, clip, width, height, shift)
-
-    def _finish_scale(
-        self, clip: vs.VideoNode, input_clip: vs.VideoNode, width: int, height: int,
-        shift: tuple[float, float] = (0, 0), matrix: MatrixT | None = None,
-        copy_props: bool = False
-    ) -> vs.VideoNode:
-        assert input_clip.format
-
-        if input_clip.format.num_planes == 1:
-            clip = plane(clip, 0)
-
-        if (clip.width, clip.height) != (width, height):
-            clip = self._scaler.scale(clip, width, height)
-
-        if shift != (0, 0):
-            clip = self._shifter.shift(clip, shift)  # type: ignore
-
-        assert clip.format
-
-        if clip.format.id != input_clip.format.id:
-            clip = self._kernel.resample(clip, input_clip, matrix)
-
-        if copy_props:
-            return clip.std.CopyFrameProps(input_clip)
-
-        return clip
-
-    def ensure_scaler(self, scaler: ScalerT) -> Scaler:
-        from dataclasses import is_dataclass, replace
-
-        scaler_obj = Scaler.ensure_obj(scaler, self.__class__)
-
-        if is_dataclass(scaler_obj):
-            from inspect import Signature  #type: ignore[unreachable]
-
-            kwargs = dict[str, ScalerT]()
-
-            init_keys = Signature.from_callable(scaler_obj.__init__).parameters.keys()
-
-            if 'kernel' in init_keys:
-                kwargs.update(kernel=self.kernel or scaler_obj.kernel)
-
-            if 'scaler' in init_keys:
-                kwargs.update(scaler=self.scaler or scaler_obj.scaler)
-
-            if 'shifter' in init_keys:
-                kwargs.update(shifter=self.shifter or scaler_obj.shifter)
-
-            if kwargs:
-                scaler_obj = replace(scaler_obj, **kwargs)
-
-        return scaler_obj
-
-
 def scale_var_clip(
-    clip: vs.VideoNode, scaler: Scaler | Callable[[Resolution], Scaler],
-    width: int | Callable[[Resolution], int] | None, height: int | Callable[[Resolution], int],
-    shift: tuple[float, float] | Callable[[Resolution], tuple[float, float]] = (0, 0), debug: bool = False
+    clip: vs.VideoNode,
+    scaler: Scaler | Callable[[Resolution], Scaler] | Callable[[tuple[int, int]], Scaler],
+    width: int | Callable[[Resolution], int] | Callable[[tuple[int, int]], int] | None,
+    height: int | Callable[[Resolution], int] | Callable[[tuple[int, int]], int],
+    shift: tuple[float, float] | Callable[[tuple[int, int]], tuple[float, float]] = (0, 0),
+    debug: bool = False
 ) -> vs.VideoNode:
-    """Scale a variable clip to constant or variable resolution."""
+    """
+    Scale a variable clip to constant or variable resolution.
+
+    :param clip:            Source clip.
+    :param scaler:          A scaler instance or a callable that returns a scaler instance.
+    :param width:           A width integer or a callable that returns the width. 
+                            If None, it will be calculated from the height and the aspect ratio of the clip.
+    :param height:          A height integer or a callable that returns the height.
+    :param shift:           Optional top shift, left shift tuple or a callable that returns the shifts.
+                            Defaults to no shift.
+    :param debug:           If True, the `var_width` and `var_height` props will be added to the clip.
+    :return:                Scaled clip.
+    """
     _cached_clips = dict[str, vs.VideoNode]()
 
     no_accepts_var = list[Scaler]()
