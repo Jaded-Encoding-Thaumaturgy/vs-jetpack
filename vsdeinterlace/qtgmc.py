@@ -444,7 +444,7 @@ class QTempGaussMC(vs_object):
         if self.prefilter_tr:
             scenechange = self.prefilter_sc_threshold is not False
 
-            scenes = search.misc.SCDetect(self.prefilter_sc_threshold) if scenechange else search
+            scenes = search.misc.SCDetect(self.prefilter_sc_threshold) if scenechange else search  # type: ignore
             smoothed = BlurMatrix.BINOMIAL(self.prefilter_tr, mode=ConvMode.TEMPORAL, scenechange=scenechange)(scenes)
             smoothed = self.mask_shimmer(smoothed, search, **self.prefilter_mask_shimmer_args)
         else:
@@ -635,7 +635,7 @@ class QTempGaussMC(vs_object):
             processed_diff, remove_grain(processed_diff, RemoveGrainMode.MINMAX_AROUND2), RepairMode.MINMAX_SQUARE1
         )
 
-        return _reweave(fields_src, core.std.MakeDiff(fields_flt, processed_diff))
+        return _reweave(fields_src, fields_flt.std.MakeDiff(processed_diff))
 
     def apply_sharpen(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.apply_sharpen)
@@ -666,7 +666,7 @@ class QTempGaussMC(vs_object):
 
             resharp = norm_expr(
                 [resharp, blurred_diff, blur_kernel(blurred_diff)],
-                'y neutral - Y! z neutral - Z! Y@ abs Z@ abs < Y@ 0 ? x +',
+                'y neutral - Y! Y@ abs z neutral - abs < Y@ 0 ? x +',
             )
 
         return resharp
@@ -806,7 +806,7 @@ class QTempGaussMC(vs_object):
         self.apply_final()
         self.apply_motion_blur()
 
-        return self.motion_blur_output.std.SetFieldBased(0)
+        return self.motion_blur_output.std.SetFieldBased(0)  # type: ignore
 
     def __vs_del__(self, core_id: int) -> None:
         for k, v in self.__dict__.items():
