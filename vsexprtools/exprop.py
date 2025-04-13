@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import cycle
-from math import isqrt
+from math import isqrt, pi
 from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, SupportsIndex, overload
 
 from jetpytools import CustomRuntimeError
@@ -264,6 +264,12 @@ class ExprOp(ExprOpBase, CustomEnum):
     REL_PIX = "{char:s}[{x:d},{y:d}]", 3
     ABS_PIX = "{x:d} {y:d} {char:s}[]", 3
 
+    # Not Implemented in akarin or std
+    PI = str(pi), 0
+    SGN = "dup 0 > swap 0 < -", 1
+    NEG = "-1 *", 1
+    TAN = "dup sin swap cos /", 1
+
     @overload
     def __call__(
         self,
@@ -311,6 +317,66 @@ class ExprOp(ExprOpBase, CustomEnum):
 
     def __mul__(self, n: int) -> list[ExprOp]:  # type: ignore[override]
         return [self] * n
+
+    @classmethod
+    def atan(cls, c: str = "x", n: int = 5) -> ExprList:
+        # Using domain reduction when |x| > 1
+        expr = ExprList([
+            ExprList([c, ExprOp.DUP, "atanvar!", ExprOp.ABS, 1, ExprOp.GT]),
+            ExprList([
+                "atanvar@", ExprOp.SGN, ExprOp.PI, ExprOp.MUL, 2, ExprOp.DIV,
+                1, "atanvar@", ExprOp.DIV, cls.atanf("", n), ExprOp.SUB]
+                ),
+            ExprList([cls.atanf("atanvar@", n)]),
+            ExprOp.TERN
+        ])
+
+        return expr
+
+    @classmethod
+    def atanf(cls, c: str = "x", n: int = 5) -> ExprList:
+        # Approximation using Taylor series
+        n = max(2, n)
+
+        expr = ExprList([c, ExprOp.DUP, "atanfvar!"])
+
+        for i in range(1, n):
+            expr.append("atanfvar@", 2 * i + 1, ExprOp.POW, 2 * i + 1, ExprOp.DIV, ExprOp.SUB if i % 2 else ExprOp.ADD)
+
+        return expr
+
+    @classmethod
+    def atan2(cls, y: str = "y", x: str = "x", n: int = 5) -> ExprList:
+        expr = ExprList([
+            ExprList([x, 0, ExprOp.EQ]),  # if x = 0
+            ExprList([ExprOp.PI, 2, ExprOp.DIV, y, ExprOp.SGN, ExprOp.MUL]),
+            ExprList([
+                # if x != 0
+                cls.atan(ExprList([y, x, ExprOp.DIV]).to_str(), n),  # atan(y/x)
+                    ExprList([x, 0, ExprOp.GT]),                     # if x > 0
+                    0,
+                    ExprList([
+                        ExprList([y, 0, ExprOp.GTE]),                # if y >= 0
+                        ExprOp.PI,
+                        "-" + ExprOp.PI,                             # if y < 0
+                        ExprOp.TERN
+                    ]),
+                    ExprOp.TERN,
+                ExprOp.ADD                                           # Add atan(y/x) + (-)pi
+            ]),
+            ExprOp.TERN
+        ])
+        return expr
+
+    @classmethod
+    def asin(cls, c: str = "x", n: int = 5) -> ExprList:
+        return cls.atan(
+            ExprList([c, ExprOp.DUP, ExprOp.DUP, ExprOp.MUL, 1, ExprOp.SWAP, ExprOp.SUB, ExprOp.SQRT, ExprOp.DIV]).to_str(), n
+        )
+
+    @classmethod
+    def acos(cls, c: str = "x", n: int = 5) -> ExprList:
+        return ExprList([cls.PI, 2, ExprOp.DIV, cls.asin(c, n), ExprOp.SUB])
 
     @classmethod
     def clamp(
