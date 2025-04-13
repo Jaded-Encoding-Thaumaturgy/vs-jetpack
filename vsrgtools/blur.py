@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from functools import partial
 from itertools import count
-from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, overload
 
 from vsexprtools import ExprOp, ExprVars, complexpr_available, norm_expr
 from vskernels import Bilinear, Gaussian
 from vstools import (
-    ConstantFormatVideoNode, ConvMode, CustomValueError, KwargsT, OneDimConvModeT, PlanesT,
-    SpatialConvModeT, TempConvModeT, check_variable, check_variable_format, core, join, normalize_planes, normalize_seq,
+    ConstantFormatVideoNode, ConvMode, CustomValueError, KwargsT, OneDimConvModeT, PlanesT, SpatialConvModeT,
+    TempConvModeT, VSFunctionNoArgs, check_variable, check_variable_format, core, join, normalize_planes, normalize_seq,
     split, to_arr, vs
 )
 
@@ -206,21 +206,63 @@ def min_blur(
     return MeanMode.MEDIAN([clip, blurred, median], planes=planes)
 
 
+
+_SbrBlurT = Union[
+    BlurMatrix,
+    BlurMatrixBase[int],
+    BlurMatrixBase[float],
+    list[int],
+    list[float],
+    VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+    vs.VideoNode
+]
+
 def sbr(
-    clip: vs.VideoNode, radius: int | list[int] = 1,
-    mode: ConvMode = ConvMode.HV, planes: PlanesT = None,
+    clip: vs.VideoNode,
+    radius: int | Sequence[int] = 1,
+    mode: ConvMode = ConvMode.HV,
+    blur: _SbrBlurT = BlurMatrix.BINOMIAL,
+    blur_diff: _SbrBlurT = BlurMatrix.BINOMIAL,
+    planes: PlanesT = None,
     **kwargs: Any
 ) -> ConstantFormatVideoNode:
+    """
+    A helper function for high-pass filtering a blur difference, inspired by an AviSynth script by Didée.
+    `https://forum.doom9.org/showthread.php?p=1584186#post1584186`
+
+    :param clip:        Source clip.
+    :param radius:      Specifies the size of the blur kernels if `blur` or `blur_diff` is a BlurMatrix enum.
+                        Default to 1.
+    :param mode:        Specifies the convolution mode. Defaults to horizontal + vertical.
+    :param blur:        Blur kernel to apply to the original clip. Defaults to binomial.
+    :param blur_diff:   Blur kernel to apply to the difference clip. Defaults to binomial.
+    :param planes:      Which planes to process. Defaults to all.
+    :return:            Sbr'd clip.
+    """
+    if isinstance(radius, Sequence):
+        return normalize_radius(clip, min_blur, list(radius), planes)
+
+    def _apply_blur(clip: ConstantFormatVideoNode, blur: _SbrBlurT) -> ConstantFormatVideoNode:
+        if isinstance(blur, list):
+            return BlurMatrixBase(blur, mode=mode)(clip, planes, **kwargs)
+
+        if isinstance(blur, BlurMatrix):
+            return blur(taps=radius, mode=mode)(clip, planes, **kwargs)
+
+        blurred = blur(clip) if callable(blur) else blur
+
+        assert check_variable_format(blurred, sbr)
+
+        return blurred
+
     assert check_variable(clip, sbr)
 
     planes = normalize_planes(clip, planes)
 
-    blur_kernel = BlurMatrix.BINOMIAL(radius=radius, mode=mode)
-
-    blurred = blur_kernel(clip, planes=planes, **kwargs)
+    blurred = _apply_blur(clip, blur)
 
     diff = clip.std.MakeDiff(blurred, planes=planes)
-    blurred_diff = blur_kernel(diff, planes=planes, **kwargs)
+    blurred_diff = _apply_blur(diff, blur_diff)
 
     return norm_expr(
         [clip, diff, blurred_diff],
