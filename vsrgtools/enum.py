@@ -419,6 +419,10 @@ class BlurMatrix(CustomIntEnum):
     ) -> BlurMatrixBase[float]:
         ...
 
+    @overload
+    def __call__(self, taps: int = 1, **kwargs: Any) -> BlurMatrixBase[int | float]:
+        ...
+
     def __call__(self, taps: int = 1, **kwargs: Any) -> Any:
         kernel: BlurMatrixBase[Any]
 
