@@ -9,23 +9,24 @@ from vsaa import Nnedi3
 from vsaa.abstract import _Antialiaser
 from vsdeband import AddNoise
 from vsdenoise import (
-    DFTTest, MaskMode, MotionVectors, MVDirection, MVTools, MVToolsPreset, MVToolsPresets, prefilter_to_full_range
+    MotionVectors, MVDirection, MVTools, MVToolsPreset, MVToolsPresets,
+    MaskMode, DFTTest, mc_sharplimit, prefilter_to_full_range
 )
 from vsexprtools import norm_expr
 from vsmasktools import Coordinates, Morpho
 from vsrgtools import (
-    BlurMatrix, MeanMode, RemoveGrainMode, RepairMode, gauss_blur, median_blur, remove_grain, repair, unsharpen
+    BlurMatrix, RemoveGrainMode, RepairMode, gauss_blur, median_blur, remove_grain, repair, unsharpen
 )
 from vstools import (
     ConstantFormatVideoNode, ConvMode, CustomRuntimeError, FieldBased, FieldBasedT, KwargsT, VSFunctionKwArgs,
-    check_variable, core, fallback, scale_delta, vs, vs_object
+    check_variable, core, fallback, scale_delta, normalize_seq, vs, vs_object
 )
 
 from .enums import (
     BackBlendMode, InputType, LosslessMode, NoiseDeintMode, NoiseProcessMode, SearchPostProcess, SharpLimitMode,
     SharpMode, SourceMatchMode
 )
-from .utils import reinterlace, scdetect
+from .utils import reinterlace
 
 __all__ = [
     'QTempGaussMC'
@@ -77,7 +78,7 @@ class QTempGaussMC(vs_object):
     ) -> None:
         """
         :param clip:          Clip to process.
-        :param input_type:    Nature of the clip - indicates processing routine.
+        :param input_type:    Indicates processing routine.
         :param tff:           Field order of the clip.
         """
 
@@ -128,7 +129,7 @@ class QTempGaussMC(vs_object):
         self,
         *,
         tr: int = 2,
-        func: _DenoiseFuncTr | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = partial(DFTTest.denoise, sigma=2),
+        func: _DenoiseFuncTr | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = partial(DFTTest.denoise, sigma=8),
         mode: NoiseProcessMode = NoiseProcessMode.IDENTIFY,
         deint: NoiseDeintMode = NoiseDeintMode.GENERATE,
         stabilize: tuple[float, float] | Literal[False] = (0.6, 0.2),
@@ -160,7 +161,7 @@ class QTempGaussMC(vs_object):
         *,
         tr: int = 2,
         thsad: int | tuple[int, int] = 640,
-        bobber: _Antialiaser = Nnedi3(qual=2, nsize=0, nns=4, pscrn=1),
+        bobber: _Antialiaser = Nnedi3(nsize=1, nns=4, qual=2, pscrn=1),
         noise_restore: float = 0,
         degrain_args: KwargsT | None = None,
         mask_args: KwargsT | None | Literal[False] = None,
@@ -232,13 +233,13 @@ class QTempGaussMC(vs_object):
         *,
         mode: SharpMode | None = None,
         strength: float = 1.0,
-        clamp: int | float = 1,
+        clamp: int | float | tuple[int | float, int | float] = 1,
         thin: float = 0.0,
     ) -> Self:
         """
         :param mode:        Specifies the type of sharpening to use.
         :param strength:    Sharpening strength.
-        :param clamp:       Clamp the sharpening strength of :py:attr:`SharpMode.UNSHARP_MINMAX` to the min/max average plus this.
+        :param clamp:       Clamp the sharpening strength of :py:attr:`SharpMode.UNSHARP_MINMAX` to the min/max average plus/minus this.
         :param thin:        How much to vertically thin edges.
         """
 
@@ -248,7 +249,7 @@ class QTempGaussMC(vs_object):
             self.sharp_mode = mode
 
         self.sharp_strength = strength
-        self.sharp_clamp = clamp
+        self.sharp_clamp = normalize_seq(clamp, 2)
         self.sharp_thin = thin
 
         return self
@@ -274,13 +275,13 @@ class QTempGaussMC(vs_object):
         *,
         mode: SharpLimitMode | None = None,
         radius: int = 3,
-        overshoot: int | float = 0,
+        clamp: int | float | tuple[int | float, int | float] = 0,
         comp_args: KwargsT | None = None,
     ) -> Self:
         """
         :param mode:         Specifies type of limiting & at which stage to perform it.
         :param radius:       Radius of sharpness limiting.
-        :param overshoot:    How much overshoot to allow.
+        :param clamp:        How much undershoot/overshoot to allow.
         :param comp_args:    Arguments passed to :py:attr:`MVTools.compensate` for temporal limiting.
         """
 
@@ -290,7 +291,7 @@ class QTempGaussMC(vs_object):
             self.limit_mode = mode
 
         self.limit_radius = radius
-        self.limit_overshoot = overshoot
+        self.limit_clamp = clamp
         self.limit_comp_args = fallback(comp_args, KwargsT())
 
         return self
@@ -444,7 +445,7 @@ class QTempGaussMC(vs_object):
         if self.prefilter_tr:
             scenechange = self.prefilter_sc_threshold is not False
 
-            scenes = scdetect(search, self.prefilter_sc_threshold) if scenechange else search
+            scenes = search.misc.SCDetect(self.prefilter_sc_threshold) if scenechange else search  # type: ignore
             smoothed = BlurMatrix.BINOMIAL(self.prefilter_tr, mode=ConvMode.TEMPORAL, scenechange=scenechange)(scenes)
             smoothed = self.mask_shimmer(smoothed, search, **self.prefilter_mask_shimmer_args)
         else:
@@ -473,7 +474,10 @@ class QTempGaussMC(vs_object):
         self.prefilter_output = blurred
 
     def apply_denoise(self) -> None:
-        if self.denoise_mode:
+        if not self.denoise_mode:
+            self.noise = None
+            self.denoise_output = self.clip
+        else:
             if self.denoise_tr:
                 denoised = self.mv.compensate(
                     self.draft, tr=self.denoise_tr, thscd=self.thscd,
@@ -506,7 +510,7 @@ class QTempGaussMC(vs_object):
                             )
                             noise_limit = norm_expr([noise_max, noise_min, noise_new], 'x y - z * range_size / y +')
 
-                            noise = core.std.Interleave([noise_source, noise_limit]).std.DoubleWeave(self.tff)
+                            noise = core.std.Interleave([noise_source, noise_limit]).std.DoubleWeave(self.tff)[::2]
 
                 if self.denoise_stabilize:
                     weight1, weight2 = self.denoise_stabilize
@@ -525,9 +529,6 @@ class QTempGaussMC(vs_object):
 
             self.noise = noise
             self.denoise_output = denoised if self.denoise_mode == NoiseProcessMode.DENOISE else self.clip  # type: ignore
-        else:
-            self.noise = None
-            self.denoise_output = self.clip
         
         if self.input_type == InputType.REPAIR:
             self.denoise_output = reinterlace(self.denoise_output, self.tff)  # type: ignore
@@ -635,7 +636,7 @@ class QTempGaussMC(vs_object):
             processed_diff, remove_grain(processed_diff, RemoveGrainMode.MINMAX_AROUND2), RepairMode.MINMAX_SQUARE1
         )
 
-        return _reweave(fields_src, core.std.MakeDiff(fields_flt, processed_diff))
+        return _reweave(fields_src, fields_flt.std.MakeDiff(processed_diff))
 
     def apply_sharpen(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.apply_sharpen)
@@ -648,13 +649,16 @@ class QTempGaussMC(vs_object):
             case SharpMode.UNSHARP:
                 resharp = unsharpen(clip, self.sharp_strength, blur_kernel)
             case SharpMode.UNSHARP_MINMAX:
+                undershoot, overshoot = self.sharp_clamp
+
                 source_min = Morpho.minimum(clip, coords=Coordinates.VERTICAL)
                 source_max = Morpho.maximum(clip, coords=Coordinates.VERTICAL)
 
                 clamp = norm_expr(
                     [clip, source_min, source_max],
-                    'y z + 2 / AVG! x AVG@ {thr} - AVG@ {thr} + clip',
-                    thr=scale_delta(self.sharp_clamp, 8, clip),
+                    'y z + 2 / AVG! x AVG@ {undershoot} - AVG@ {overshoot} + clip',
+                    undershoot=scale_delta(undershoot, 8, clip),
+                    overshoot=scale_delta(overshoot, 8, clip),
                 )
                 resharp = unsharpen(clip, self.sharp_strength, blur_kernel(clamp))
 
@@ -666,7 +670,7 @@ class QTempGaussMC(vs_object):
 
             resharp = norm_expr(
                 [resharp, blurred_diff, blur_kernel(blurred_diff)],
-                'y neutral - Y! z neutral - Z! Y@ abs Z@ abs < Y@ 0 ? x +',
+                'y neutral - Y! Y@ abs z neutral - abs < Y@ 0 ? x +',
             )
 
         return resharp
@@ -692,17 +696,9 @@ class QTempGaussMC(vs_object):
                     )
 
             if self.limit_mode in (SharpLimitMode.TEMPORAL_PRESMOOTH, SharpLimitMode.TEMPORAL_POSTSMOOTH):
-                backward_comp, forward_comp = self.mv.compensate(
-                    self.bobbed, tr=self.limit_radius, thscd=self.thscd, interleave=False, **self.limit_comp_args
-                )
-
-                comp_min = MeanMode.MINIMUM([self.bobbed, *backward_comp, *forward_comp])
-                comp_max = MeanMode.MAXIMUM([self.bobbed, *backward_comp, *forward_comp])
-
-                clip = norm_expr(
-                    [clip, comp_min, comp_max],
-                    'x y {thr} - z {thr} + clip',
-                    thr=scale_delta(self.limit_overshoot, 8, clip),
+                clip = mc_sharplimit(
+                    clip, self.bobbed, self.mv, limit=self.limit_clamp,
+                    tr=self.limit_radius, thscd=self.thscd, **self.limit_comp_args,
                 )
 
         return clip
@@ -806,7 +802,7 @@ class QTempGaussMC(vs_object):
         self.apply_final()
         self.apply_motion_blur()
 
-        return self.motion_blur_output
+        return self.motion_blur_output.std.SetFieldBased(0)  # type: ignore
 
     def __vs_del__(self, core_id: int) -> None:
         for k, v in self.__dict__.items():

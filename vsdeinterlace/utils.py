@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from vstools import FieldBased, FieldBasedT, core, vs, FunctionUtil
+from vstools import FieldBased, FieldBasedT, core, vs
 
 __all__ = [
     'telecine_patterns',

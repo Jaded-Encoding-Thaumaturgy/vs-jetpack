@@ -3,8 +3,8 @@ from vstools import CustomEnum, CustomIntEnum, vs
 __all__ = [
     'VFMMode',
     'IVTCycles',
-    'InputType',
 
+    'InputType',
     'SearchPostProcess',
     'LosslessMode',
     'NoiseProcessMode',
