@@ -219,7 +219,7 @@ def sbr(
     clip: vs.VideoNode,
     radius: int | Sequence[int] = 1,
     mode: ConvMode = ConvMode.HV,
-    blur: _SbrBlurT = BlurMatrix.BINOMIAL,
+    blur: _SbrBlurT | vs.VideoNode = BlurMatrix.BINOMIAL,
     blur_diff: _SbrBlurT = BlurMatrix.BINOMIAL,
     planes: PlanesT = None,
     *,
