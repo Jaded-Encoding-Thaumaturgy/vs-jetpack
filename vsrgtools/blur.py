@@ -241,6 +241,7 @@ def sbr(
     :param blur:        Blur kernel to apply to the original clip. Defaults to binomial.
     :param blur_diff:   Blur kernel to apply to the difference clip. Defaults to binomial.
     :param planes:      Which planes to process. Defaults to all.
+    :param **kwargs:    Additional arguments passed to blur kernel call.
     :return:            Sbr'd clip.
     """
     func = func or sbr
