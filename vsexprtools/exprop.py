@@ -206,7 +206,14 @@ class ExprOpBase(str):
 
 
 class ExprOp(ExprOpBase, CustomEnum):
-    # 1 Argument
+    # 0 Argument (akarin)
+    N = "N", 0
+    X = "X", 0
+    Y = "Y", 0
+    WIDTH = "width", 0
+    HEIGHT = "height", 0
+
+    # 1 Argument (std)
     EXP = "exp", 1
     LOG = "log", 1
     SQRT = "sqrt", 1
@@ -215,12 +222,19 @@ class ExprOp(ExprOpBase, CustomEnum):
     ABS = "abs", 1
     NOT = "not", 1
     DUP = "dup", 1
-    DUPN = "dupN", 1
+    DUPN = "dup{N:d}", 1
+    # 1 Argument (akarin)
     TRUNC = "trunc", 1
     ROUND = "round", 1
     FLOOR = "floor", 1
+    DROP = "drop", 1
+    DROPN = "drop{N:d}", 1
+    SORT = "sort", 1
+    SORTN = "sort{N:d}", 1
+    VAR_STORE = "{name:s}!", 1
+    VAR_PUSH = "{name:s}@", 1
 
-    # 2 Arguments
+    # 2 Arguments (std)
     MAX = "max", 2
     MIN = "min", 2
     ADD = "+", 2
@@ -237,11 +251,13 @@ class ExprOp(ExprOpBase, CustomEnum):
     OR = "or", 2
     XOR = "xor", 2
     SWAP = "swap", 2
-    SWAPN = "swapN", 2
+    SWAPN = "swap{N:d}", 2
+    # 2 Argument (akarin)
     MOD = "%", 2
 
-    # 3 Arguments
+    # 3 Arguments (std)
     TERN = "?", 3
+    # 3 Argument (akarin)
     CLAMP = "clamp", 3
 
     # Special Operators
