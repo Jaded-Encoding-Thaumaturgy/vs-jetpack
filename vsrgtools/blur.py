@@ -4,6 +4,8 @@ from functools import partial
 from itertools import count
 from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, overload
 
+from jetpytools import FuncExceptT
+
 from vsexprtools import ExprOp, ExprVars, complexpr_available, norm_expr
 from vskernels import Bilinear, Gaussian
 from vstools import (
@@ -224,6 +226,8 @@ def sbr(
     blur: _SbrBlurT = BlurMatrix.BINOMIAL,
     blur_diff: _SbrBlurT = BlurMatrix.BINOMIAL,
     planes: PlanesT = None,
+    *,
+    func: FuncExceptT | None = None,
     **kwargs: Any
 ) -> ConstantFormatVideoNode:
     """
@@ -239,6 +243,8 @@ def sbr(
     :param planes:      Which planes to process. Defaults to all.
     :return:            Sbr'd clip.
     """
+    func = func or sbr
+
     if isinstance(radius, Sequence):
         return normalize_radius(clip, min_blur, list(radius), planes)
 
@@ -251,11 +257,11 @@ def sbr(
 
         blurred = blur(clip) if callable(blur) else blur
 
-        assert check_variable_format(blurred, sbr)
+        assert check_variable_format(blurred, func)
 
         return blurred
 
-    assert check_variable(clip, sbr)
+    assert check_variable(clip, func)
 
     planes = normalize_planes(clip, planes)
 
@@ -267,7 +273,7 @@ def sbr(
     return norm_expr(
         [clip, diff, blurred_diff],
         'y z - D1! y neutral - D2! x D1@ D2@ xor 0 D1@ abs D2@ abs < D1@ D2@ ? ? -',
-        planes=planes, func=sbr
+        planes=planes, func=func
     )
 
 
