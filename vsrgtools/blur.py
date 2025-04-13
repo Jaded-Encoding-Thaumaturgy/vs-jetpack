@@ -211,12 +211,8 @@ def min_blur(
 
 _SbrBlurT = Union[
     BlurMatrix,
-    BlurMatrixBase[int],
-    BlurMatrixBase[float],
-    list[int],
-    list[float],
+    Sequence[float],
     VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
-    vs.VideoNode
 ]
 
 def sbr(
@@ -249,8 +245,8 @@ def sbr(
     if isinstance(radius, Sequence):
         return normalize_radius(clip, min_blur, list(radius), planes)
 
-    def _apply_blur(clip: ConstantFormatVideoNode, blur: _SbrBlurT) -> ConstantFormatVideoNode:
-        if isinstance(blur, list):
+    def _apply_blur(clip: ConstantFormatVideoNode, blur: _SbrBlurT | vs.VideoNode) -> ConstantFormatVideoNode:
+        if isinstance(blur, Sequence):
             return BlurMatrixBase(blur, mode=mode)(clip, planes, **kwargs)
 
         if isinstance(blur, BlurMatrix):
