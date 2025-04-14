@@ -26,7 +26,7 @@ from .enums import (
     BackBlendMode, InputType, LosslessMode, NoiseDeintMode, NoiseProcessMode, SearchPostProcess, SharpLimitMode,
     SharpMode, SourceMatchMode
 )
-from .utils import reinterlace
+from .utils import reinterlace, reweave
 
 __all__ = [
     'QTempGaussMC'
@@ -613,9 +613,6 @@ class QTempGaussMC(vs_object):
         return out
 
     def apply_lossless(self, flt: vs.VideoNode) -> ConstantFormatVideoNode:
-        def _reweave(clipa: vs.VideoNode, clipb: vs.VideoNode) -> ConstantFormatVideoNode:
-            return core.std.Interleave([clipa, clipb]).std.SelectEvery(4, (0, 1, 3, 2)).std.DoubleWeave(self.tff)[::2]
-
         fields_src = self.denoise_output.std.SeparateFields(self.tff)
 
         if self.input_type == InputType.REPAIR:
@@ -623,7 +620,7 @@ class QTempGaussMC(vs_object):
 
         fields_flt = flt.std.SeparateFields(self.tff).std.SelectEvery(4, (1, 2))
 
-        woven = _reweave(fields_src, fields_flt)
+        woven = reweave(fields_src, fields_flt, self.tff)
 
         median_diff = woven.std.MakeDiff(median_blur(woven, mode=ConvMode.VERTICAL))
         fields_diff = median_diff.std.SeparateFields(self.tff).std.SelectEvery(4, (1, 2))
@@ -636,7 +633,7 @@ class QTempGaussMC(vs_object):
             processed_diff, remove_grain(processed_diff, RemoveGrainMode.MINMAX_AROUND2), RepairMode.MINMAX_SQUARE1
         )
 
-        return _reweave(fields_src, fields_flt.std.MakeDiff(processed_diff))
+        return reweave(fields_src, fields_flt.std.MakeDiff(processed_diff), self.tff)  # type: ignore
 
     def apply_sharpen(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.apply_sharpen)
