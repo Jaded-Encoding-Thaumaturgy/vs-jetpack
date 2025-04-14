@@ -348,21 +348,22 @@ class ExprOp(ExprOpBase, CustomEnum):
     @classmethod
     def atan2(cls, y: str = "y", x: str = "x", n: int = 5) -> ExprList:
         expr = ExprList([
-            ExprList([x, 0, ExprOp.EQ]),  # if x = 0
-            ExprList([ExprOp.PI, 2, ExprOp.DIV, y, ExprOp.SGN, ExprOp.MUL]),
+            y, x, "atan2xvar!", "atan2yvar!",
+            ExprList(["atan2xvar@", 0, ExprOp.EQ]),                                        # if x = 0
+            ExprList([ExprOp.PI, 2, ExprOp.DIV, "atan2yvar@", ExprOp.SGN, ExprOp.MUL]),
             ExprList([
                 # if x != 0
-                cls.atan(ExprList([y, x, ExprOp.DIV]).to_str(), n),  # atan(y/x)
-                    ExprList([x, 0, ExprOp.GT]),                     # if x > 0
+                cls.atan(ExprList(["atan2yvar@", "atan2xvar@", ExprOp.DIV]).to_str(), n),  # atan(y/x)
+                    ExprList(["atan2xvar@", 0, ExprOp.GT]),                                # if x > 0
                     0,
                     ExprList([
-                        ExprList([y, 0, ExprOp.GTE]),                # if y >= 0
+                        ExprList(["atan2yvar@", 0, ExprOp.GTE]),                           # if y >= 0
                         ExprOp.PI,
-                        "-" + ExprOp.PI,                             # if y < 0
+                        "-" + ExprOp.PI,                                                   # if y < 0
                         ExprOp.TERN
                     ]),
                     ExprOp.TERN,
-                ExprOp.ADD                                           # Add atan(y/x) + (-)pi
+                ExprOp.ADD                                                                 # Add atan(y/x) + (-)pi
             ]),
             ExprOp.TERN
         ])
