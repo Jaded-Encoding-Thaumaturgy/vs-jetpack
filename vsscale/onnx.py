@@ -2,7 +2,7 @@
 
 from abc import ABC
 from logging import warning
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat, TypeAlias
 
 from jetpytools import KwargsT
 
@@ -10,8 +10,8 @@ from vsexprtools import norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelT, ScalerT
 from vstools import (
     ConstantFormatVideoNode, CustomValueError, DitherType, Matrix, MatrixT, ProcessVariableResClip, SPath, SPathLike,
-    check_variable_format, core, depth, get_nvidia_version, get_video_format, get_y, inject_self, join, limiter, padder,
-    vs
+    check_variable_format, check_variable_resolution, core, depth, get_color_family, get_nvidia_version,
+    get_video_format, get_y, inject_self, join, limiter, padder, vs
 )
 
 from .generic import BaseGenericScaler
@@ -25,7 +25,9 @@ __all__ = [
 
     "ArtCNN",
 
-    "Waifu2x"
+    "Waifu2x",
+
+    "Dpir"
 ]
 
 
@@ -853,3 +855,141 @@ class Waifu2x(BaseWaifu2xRGB):
         ```
         """
         _model = 10
+
+
+_DpirGrayModel: TypeAlias = int
+_DpirColorModel: TypeAlias = int
+
+class BaseDpir(BaseOnnxScaler):
+    _model: ClassVar[tuple[_DpirGrayModel, _DpirColorModel]]
+    _static_kernel_radius = 2
+
+    def __init__(
+        self,
+        strength: SupportsFloat | vs.VideoNode = 10,
+        backend: Any | None = None,
+        tiles: int | tuple[int, int] | None = None,
+        tilesize: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] | None = None,
+        *,
+        kernel: KernelT = Catrom,
+        scaler: ScalerT | None = None,
+        shifter: KernelT | None = None,
+        **kwargs: Any
+    ) -> None:
+        """
+        :param strength:        
+        :param backend:         The backend to be used with the vs-mlrt framework.
+                                If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
+        :param tiles:           Whether to split the image into multiple tiles.
+                                This can help reduce VRAM usage, but note that the model's behavior may vary when they are used.
+        :param tilesize:        The size of each tile when splitting the image (if tiles are enabled).
+        :param overlap:         The size of overlap between tiles.
+        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
+                                Defaults to Catrom.
+        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
+        :param shifter:         Kernel used for shifting operations. Defaults to kernel.
+        :param **kwargs:        Additional arguments to pass to the backend.
+                                See the vsmlrt backend's docstring for more details.
+        """
+        self.strength = strength
+        self.multiple = 8
+    
+        super().__init__(
+            None,
+            backend,
+            tiles,
+            tilesize,
+            16 if overlap is None else overlap,
+            -1,
+            kernel=kernel,
+            scaler=scaler,
+            shifter=shifter,
+            **kwargs
+        )
+
+    @inject_self.cached
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[float, float] = (0, 0),
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        """
+        Scale the given clip using the ONNX model.
+
+        :param clip:        The input clip to be scaled.
+        :param width:       The target width for scaling. If None, the width of the input clip will be used.
+        :param height:      The target height for scaling. If None, the height of the input clip will be used.
+        :param shift:       A tuple representing the shift values for the x and y axes.
+        :param **kwargs:    Additional arguments to be passed to the `preprocess_clip`, `postprocess_clip`,
+                            `inference`, and `_final_scale` methods.
+                            Use the prefix `preprocess_` or `postprocess_` to pass an argument to the respective method.
+                            Use the prefix `inference_` to pass an argument to the inference method.
+
+        :return:            The scaled clip.
+        """
+        assert check_variable_resolution(clip, self.__class__)
+
+        return super().scale(clip, width, height, shift, **kwargs)
+
+    def calc_tilesize(self, clip: vs.VideoNode, **kwargs: Any) -> tuple[tuple[int, int], tuple[int, int]]:
+        return super().calc_tilesize(clip, **dict(multiple=self.multiple) | kwargs)
+
+    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        if get_color_family(clip) == vs.GRAY:
+            return super().preprocess_clip(clip, **kwargs)
+
+        clip = self.kernel.resample(clip, vs.RGBH if self.backend.fp16 else vs.RGBS, Matrix.RGB)
+
+        return limiter(clip, func=self.__class__)
+
+    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        assert check_variable_format(clip, self.__class__)
+
+        if get_video_format(clip) != get_video_format(input_clip):
+            kwargs = dict(dither_type=DitherType.ORDERED) | kwargs
+            clip = self.kernel.resample(clip, input_clip, Matrix.from_video(input_clip, func=self.__class__), **kwargs)
+
+        return clip
+
+    def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        from vsmlrt import DPIR as mlrt_dpir
+        from vsmlrt import DPIRModel
+
+        args = (
+            self.tiles,
+            self.tilesize,
+            self.overlap,
+            DPIRModel(self._model[0] if clip.format.color_family == vs.GRAY else self._model[1]),
+            self.backend
+        )
+        padding = padder.mod_padding(clip, self.multiple, 0)
+
+        if not any(padding) or kwargs.pop("no_pad", False):
+            return mlrt_dpir(clip, self.strength, *args)
+
+        clip = padder.MIRROR(clip, *padding)
+        strength = padder.MIRROR(self.strength, *padding) if isinstance(self.strength, vs.VideoNode) else self.strength
+
+        inferenced = mlrt_dpir(clip, strength, *args)
+
+        return inferenced.std.Crop(*padding)
+
+    def __vs_del__(self, core_id: int) -> None:
+        if not TYPE_CHECKING:
+            self.strength = None
+
+
+class Dpir(BaseDpir):
+    """"Deep Plug-and-Play Image Restoration"""
+
+    _model = (2, 3)
+
+    class DrunetDenoise(BaseDpir):
+        _model = (0, 1)
+
+    class DrunetDeblock(BaseDpir):
+        _model = (2, 3)
