@@ -141,7 +141,7 @@ class DPIRModel(enum.IntEnum):
     drunet_deblocking_grayscale = 2
     drunet_deblocking_color = 3
 
-def DPIR(clip: vs.VideoNode, strength: typing.SupportsFloat | vs.VideoNode | None, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, model: DPIRModel = ..., backend: backendT = ...) -> vs.VideoNode: ...
+def DPIR(clip: vs.VideoNode, strength: typing.SupportsFloat | vs.VideoNode | None, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, model: DPIRModel = ..., backend: backendT = ...) -> ConstantFormatVideoNode: ...
 
 class RealESRGANModel(enum.IntEnum):
     animevideo_xsx2 = 0

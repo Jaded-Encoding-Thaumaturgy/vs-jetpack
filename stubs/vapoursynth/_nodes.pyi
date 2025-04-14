@@ -468,8 +468,8 @@ class _Plugin_lsmas_Core_Bound(Plugin):
     def LibavSMASHSource(self, source: _DataType, track: int | None = None, threads: int | None = None, seek_mode: int | None = None, seek_threshold: int | None = None, dr: int | None = None, fpsnum: int | None = None, fpsden: int | None = None, variable: int | None = None, format: _DataType | None = None, decoder: _DataType | None = None, prefer_hw: int | None = None, ff_loglevel: int | None = None, ff_options: _DataType | None = None) -> VideoNode: ...
     def LWLibavSource(self, source: _DataType, stream_index: int | None = None, cache: int | None = None, cachefile: _DataType | None = None, threads: int | None = None, seek_mode: int | None = None, seek_threshold: int | None = None, dr: int | None = None, fpsnum: int | None = None, fpsden: int | None = None, variable: int | None = None, format: _DataType | None = None, decoder: _DataType | None = None, prefer_hw: int | None = None, repeat: int | None = None, dominance: int | None = None, ff_loglevel: int | None = None, cachedir: _DataType | None = None, ff_options: _DataType | None = None) -> VideoNode: ...
 
-# end implementation
 
+# end implementation
 
 
 # implementation: manipmv
