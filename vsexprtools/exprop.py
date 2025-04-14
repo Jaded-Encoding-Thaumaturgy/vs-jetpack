@@ -404,7 +404,7 @@ class ExprOp(ExprOpBase, CustomEnum):
 
     @classmethod
     def acos(cls, c: SupportsString = "", n: int = 5) -> ExprList:
-        return ExprList([cls.PI, 2, ExprOp.DIV, cls.asin(c, n), ExprOp.SUB])
+        return ExprList([c, "acosvar!", cls.PI, 2, ExprOp.DIV, cls.asin("acosvar@", n), ExprOp.SUB])
 
     @classmethod
     def clamp(
