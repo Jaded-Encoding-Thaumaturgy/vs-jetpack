@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Iterable, Iterator, MutableMapping, Self, TypedDict, overload
 
-from vstools import T1, T2, KwargsT, PlanesT, SupportsKeysAndGetItem, VSFunction, classproperty, vs, vs_object
+from vstools import T1, T2, KwargsT, PlanesT, SupportsKeysAndGetItem, VSFunctionNoArgs, classproperty, vs, vs_object
 
 from ..prefilters import prefilter_to_full_range
 from .enums import FlowMode, MaskMode, MotionMode, PenaltyMode, RFilterMode, SADMode, SearchMode, SharpMode, SmoothMode
@@ -29,7 +29,7 @@ class SuperArgs(TypedDict, total=False):
     levels: int | None
     sharp: SharpMode | None
     rfilter: RFilterMode | None
-    pelclip: vs.VideoNode | VSFunction | None
+    pelclip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None
 
 
 class AnalyzeArgs(TypedDict, total=False):
@@ -151,7 +151,7 @@ class ScDetectionArgs(TypedDict, total=False):
 
 
 class MVToolsPreset(MutableMapping[str, Any], vs_object):
-    search_clip: vs.VideoNode | VSFunction
+    search_clip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode]
     tr: int
     pel: int
     pad: int | tuple[int | None, int | None]
@@ -172,7 +172,7 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
     def __init__(
         self,
         *,
-        search_clip: vs.VideoNode | VSFunction | None = None,
+        search_clip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None,
         tr: int | None = None,
         pel: int | None = None,
         pad: int | tuple[int | None, int | None] | None = None,

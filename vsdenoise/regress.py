@@ -525,7 +525,7 @@ class ChromaReconstruct(ABC):
         """
         y, y_base, y_m, y_dm, chroma_base, chroma_dm = self._get_bases(clip, False, self.debug)
 
-        return y, y_base, y_dm, *flatten(zip(chroma_base, chroma_dm))  # type: ignore
+        return y, y_base, y_dm, *flatten(zip(chroma_base, chroma_dm))
 
     @inject_self.init_kwargs
     def reconstruct(

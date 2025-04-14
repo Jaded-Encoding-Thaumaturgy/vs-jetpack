@@ -464,7 +464,7 @@ class BackendInfo(KwargsT):
             if dft_args.pop('tosize'):
                 raise CustomValueError('{backend} doesn\'t support tosize', func, backend=backend)
 
-            return DFTTest2(clip, **dft_args | dkwargs, backend=dft2_backend)  # type: ignore[no-any-return]
+            return DFTTest2(clip, **dft_args | dkwargs, backend=dft2_backend)
 
         dft_args |= self
 

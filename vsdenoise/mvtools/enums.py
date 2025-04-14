@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from enum import IntFlag
-from typing import Any, cast
+from typing import Any
 
 from vstools import (
-    CustomIntEnum, CustomValueError, VSFunctionAllArgs, VSFunctionKwArgs, core,
-    fallback, vs
+    ConstantFormatVideoNode, CustomIntEnum, CustomValueError, VSFunctionAllArgs, check_variable_format, core, fallback,
+    vs
 )
 
 __all__ = [
@@ -31,84 +31,82 @@ class MVToolsPlugin(CustomIntEnum):
     def namespace(self) -> Any:
         """Get the appropriate MVTools namespace based on plugin type."""
 
-        return core.mv if self is MVToolsPlugin.INTEGER else core.mvsf
+        return core.proxied.mv if self is MVToolsPlugin.INTEGER else core.proxied.mvsf
 
     @property
-    def Super(self) -> VSFunctionKwArgs:
+    def Super(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the Super function for creating motion vector clips."""
 
-        return cast(VSFunctionKwArgs, self.namespace.Super)
+        return self.namespace.Super
 
     @property
-    def Analyze(self) -> VSFunctionKwArgs:
+    def Analyze(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the Analyze function for analyzing motion vectors."""
 
-        return cast(
-            VSFunctionKwArgs, self.namespace.Analyze if self is MVToolsPlugin.FLOAT else self.namespace.Analyse
-        )
+        return self.namespace.Analyze if self is MVToolsPlugin.FLOAT else self.namespace.Analyse
 
     @property
-    def Recalculate(self) -> VSFunctionAllArgs:
+    def Recalculate(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the Recalculate function for refining motion vectors."""
 
-        return cast(VSFunctionAllArgs, self.namespace.Recalculate)
+        return self.namespace.Recalculate
 
     @property
-    def Compensate(self) -> VSFunctionAllArgs:
+    def Compensate(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the Compensate function for motion compensation."""
 
-        return cast(VSFunctionKwArgs, self.namespace.Compensate)
+        return self.namespace.Compensate
 
     @property
-    def Flow(self) -> VSFunctionAllArgs:
+    def Flow(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the Flow function for motion vector visualization."""
 
-        return cast(VSFunctionAllArgs, self.namespace.Flow)
+        return self.namespace.Flow
 
     @property
-    def FlowInter(self) -> VSFunctionAllArgs:
+    def FlowInter(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the FlowInter function for motion-compensated frame interpolation."""
 
-        return cast(VSFunctionAllArgs, self.namespace.FlowInter)
+        return self.namespace.FlowInter
 
     @property
-    def FlowBlur(self) -> VSFunctionAllArgs:
+    def FlowBlur(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the FlowBlur function for motion-compensated frame blending."""
 
-        return cast(VSFunctionAllArgs, self.namespace.FlowBlur)
+        return self.namespace.FlowBlur
 
     @property
-    def FlowFPS(self) -> VSFunctionAllArgs:
+    def FlowFPS(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the FlowFPS function for motion-compensated frame rate conversion."""
 
-        return cast(VSFunctionAllArgs, self.namespace.FlowFPS)
+        return self.namespace.FlowFPS
 
     @property
-    def BlockFPS(self) -> VSFunctionAllArgs:
+    def BlockFPS(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the BlockFPS function for block-based frame rate conversion."""
 
-        return cast(VSFunctionAllArgs, self.namespace.BlockFPS)
+        return self.namespace.BlockFPS
 
     @property
-    def Mask(self) -> VSFunctionAllArgs:
+    def Mask(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the Mask function for generating motion masks."""
 
-        return cast(VSFunctionAllArgs, self.namespace.Mask)
+        return self.namespace.Mask
 
     @property
-    def SCDetection(self) -> VSFunctionAllArgs:
+    def SCDetection(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the SCDetection function for scene change detection."""
 
-        return cast(VSFunctionAllArgs, self.namespace.SCDetection)
+        return self.namespace.SCDetection
 
-    def Degrain(self, tr: int | None = None) -> VSFunctionAllArgs:
+    def Degrain(self, tr: int | None = None) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         """Get the Degrain function for motion compensated denoising."""
 
         if tr is None and self is not MVToolsPlugin.FLOAT:
             raise CustomValueError('This implementation needs a temporal radius!', f'{self.name}.Degrain')
 
         try:
-            return cast(VSFunctionAllArgs, getattr(self.namespace, f"Degrain{fallback(tr, '')}"))
+            return getattr(self.namespace, f"Degrain{fallback(tr, '')}")
         except AttributeError:
             raise CustomValueError('This temporal radius isn\'t supported!', f'{self.name}.Degrain', tr)
 
@@ -121,8 +119,7 @@ class MVToolsPlugin(CustomIntEnum):
 
         :return:        The accompanying MVTools plugin for the clip.
         """
-
-        assert clip.format
+        assert check_variable_format(clip, cls.from_video)
 
         if clip.format.sample_type is vs.FLOAT:
             return MVToolsPlugin.FLOAT

@@ -93,8 +93,8 @@ class DeviceTypeWithInfo(str):
     if TYPE_CHECKING:
         from .nlm import DeviceType
 
-        @overload  # type: ignore
-        def __call__(
+        @overload
+        def __call__(  # type: ignore
             self: Literal[DeviceType.CUDA], *, device_id: int | None = None, num_streams: int | None = None
         ) -> DeviceType:
             ...
@@ -115,6 +115,7 @@ class DeviceTypeWithInfo(str):
 
         def __call__(self, **kwargs: Any) -> DeviceTypeWithInfo:
             "Add kwargs depending on the device you're going to use."
+            ...
     else:
         def __call__(self, **kwargs: Any) -> DeviceTypeWithInfo:
             return DeviceTypeWithInfo(str(self), **kwargs)

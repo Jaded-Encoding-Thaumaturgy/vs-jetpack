@@ -87,15 +87,15 @@ def decrease_size(
 
     if isinstance(mask, vs.VideoNode):
         InvalidColorFamilyError.check(mask, vs.GRAY, decrease_size)
-        check_ref_clip(pre, mask)  # type: ignore
+        check_ref_clip(pre, mask)
     else:
-        pm_min, pm_max, *emask = mask  # type: ignore
+        pm_min, pm_max, *emask = mask
 
         if pm_min > pm_max:
             raise CustomIndexError('The mask min must be lower than max!', decrease_size, dict(min=pm_min, max=pm_max))
 
-        pm_min = scale_mask(pm_min, 32, clip, range_out=ColorRange.FULL)
-        pm_max = scale_mask(pm_max, 32, clip, range_out=ColorRange.FULL)
+        pm_min = scale_mask(pm_min, 32, clip)
+        pm_max = scale_mask(pm_max, 32, clip)
 
         yuv444 = Bilinear.resample(
             range_mask(clip, rad=3, radc=2), clip.format.replace(subsampling_h=0, subsampling_w=0)
@@ -126,7 +126,7 @@ def decrease_size(
     maxf = scale_value(max_in, 8, pre)
 
     mask = norm_expr(
-        [pre, mask],  # type: ignore
+        [pre, mask],
         f'x {ExprOp.clamp(minf, maxf)} {minf} - {maxf} {minf} - / {1 / gamma} '
         f'pow {ExprOp.clamp(0, 1)} {ExprToken.RangeMax} * y -', planes,
         func=decrease_size
