@@ -7,6 +7,8 @@ from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, SupportsInd
 from jetpytools import CustomRuntimeError
 from typing_extensions import Self
 
+from jetpytools import SupportsString
+
 from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
@@ -319,22 +321,35 @@ class ExprOp(ExprOpBase, CustomEnum):
         return [self] * n
 
     @classmethod
-    def atan(cls, c: str = "x", n: int = 5) -> ExprList:
+    def atan(cls, c: SupportsString = "", n: int = 5) -> ExprList:
         # Using domain reduction when |x| > 1
-        expr = ExprList([
-            ExprList([c, ExprOp.DUP, "atanvar!", ExprOp.ABS, 1, ExprOp.GT]),
-            ExprList([
-                "atanvar@", ExprOp.SGN, ExprOp.PI, ExprOp.MUL, 2, ExprOp.DIV,
-                1, "atanvar@", ExprOp.DIV, cls.atanf("", n), ExprOp.SUB]
+        expr = ExprList(
+            [
+                ExprList([c, ExprOp.DUP, "atanvar!", ExprOp.ABS, 1, ExprOp.GT]),
+                ExprList(
+                    [
+                        "atanvar@",
+                        ExprOp.SGN,
+                        ExprOp.PI,
+                        ExprOp.MUL,
+                        2,
+                        ExprOp.DIV,
+                        1,
+                        "atanvar@",
+                        ExprOp.DIV,
+                        cls.atanf("", n),
+                        ExprOp.SUB,
+                    ]
                 ),
-            ExprList([cls.atanf("atanvar@", n)]),
-            ExprOp.TERN
-        ])
+                ExprList([cls.atanf("atanvar@", n)]),
+                ExprOp.TERN,
+            ]
+        )
 
         return expr
 
     @classmethod
-    def atanf(cls, c: str = "x", n: int = 5) -> ExprList:
+    def atanf(cls, c: SupportsString = "", n: int = 5) -> ExprList:
         # Approximation using Taylor series
         n = max(2, n)
 
@@ -346,37 +361,49 @@ class ExprOp(ExprOpBase, CustomEnum):
         return expr
 
     @classmethod
-    def atan2(cls, y: str = "y", x: str = "x", n: int = 5) -> ExprList:
-        expr = ExprList([
-            y, x, "atan2xvar!", "atan2yvar!",
-            ExprList(["atan2xvar@", 0, ExprOp.EQ]),                                        # if x = 0
-            ExprList([ExprOp.PI, 2, ExprOp.DIV, "atan2yvar@", ExprOp.SGN, ExprOp.MUL]),
-            ExprList([
-                # if x != 0
-                cls.atan(ExprList(["atan2yvar@", "atan2xvar@", ExprOp.DIV]).to_str(), n),  # atan(y/x)
-                    ExprList(["atan2xvar@", 0, ExprOp.GT]),                                # if x > 0
-                    0,
-                    ExprList([
-                        ExprList(["atan2yvar@", 0, ExprOp.GTE]),                           # if y >= 0
-                        ExprOp.PI,
-                        "-" + ExprOp.PI,                                                   # if y < 0
-                        ExprOp.TERN
-                    ]),
-                    ExprOp.TERN,
-                ExprOp.ADD                                                                 # Add atan(y/x) + (-)pi
-            ]),
-            ExprOp.TERN
-        ])
+    def atan2(cls, y: SupportsString = "", x: SupportsString = "", n: int = 5) -> ExprList:
+        expr = ExprList(
+            [
+                y,
+                x,
+                "atan2xvar!",
+                "atan2yvar!",
+                ExprList(["atan2xvar@", 0, ExprOp.EQ]),  # if x = 0
+                ExprList([ExprOp.PI, 2, ExprOp.DIV, "atan2yvar@", ExprOp.SGN, ExprOp.MUL]),
+                ExprList(
+                    [
+                        # if x != 0
+                        cls.atan(ExprList(["atan2yvar@", "atan2xvar@", ExprOp.DIV]).to_str(), n),  # atan(y/x)
+                        ExprList(["atan2xvar@", 0, ExprOp.GT]),  # if x > 0
+                        0,
+                        ExprList(
+                            [
+                                ExprList(["atan2yvar@", 0, ExprOp.GTE]),  # if y >= 0
+                                ExprOp.PI,
+                                "-" + ExprOp.PI,  # if y < 0
+                                ExprOp.TERN,
+                            ]
+                        ),
+                        ExprOp.TERN,
+                        ExprOp.ADD,  # Add atan(y/x) + (-)pi
+                    ]
+                ),
+                ExprOp.TERN,
+            ]
+        )
         return expr
 
     @classmethod
-    def asin(cls, c: str = "x", n: int = 5) -> ExprList:
+    def asin(cls, c: SupportsString = "", n: int = 5) -> ExprList:
         return cls.atan(
-            ExprList([c, ExprOp.DUP, ExprOp.DUP, ExprOp.MUL, 1, ExprOp.SWAP, ExprOp.SUB, ExprOp.SQRT, ExprOp.DIV]).to_str(), n
+            ExprList(
+                [c, ExprOp.DUP, ExprOp.DUP, ExprOp.MUL, 1, ExprOp.SWAP, ExprOp.SUB, ExprOp.SQRT, ExprOp.DIV]
+            ).to_str(),
+            n,
         )
 
     @classmethod
-    def acos(cls, c: str = "x", n: int = 5) -> ExprList:
+    def acos(cls, c: SupportsString = "", n: int = 5) -> ExprList:
         return ExprList([cls.PI, 2, ExprOp.DIV, cls.asin(c, n), ExprOp.SUB])
 
     @classmethod
