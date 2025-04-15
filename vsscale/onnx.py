@@ -1,3 +1,5 @@
+"""This module implements scalers for ONNX models."""
+
 from abc import ABC
 from logging import warning
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
@@ -201,10 +203,12 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         return self._finish_scale(scaled, clip, width, height, shift, **kwargs)
 
-    def calc_tilesize(self, clip: vs.VideoNode) -> tuple[tuple[int, int], tuple[int, int]]:
+    def calc_tilesize(self, clip: vs.VideoNode, **kwargs: Any) -> tuple[tuple[int, int], tuple[int, int]]:
+        """Reimplementation of vsmlrt.calc_tilesize helper function"""
+
         from vsmlrt import calc_tilesize
 
-        return calc_tilesize(
+        kwargs = dict(
             tiles=self.tiles,
             tilesize=self.tilesize,
             width=clip.width,
@@ -212,18 +216,26 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             multiple=1,
             overlap_w=self.overlap_w,
             overlap_h=self.overlap_h,
-        )
+        ) | kwargs
+
+        return calc_tilesize(**kwargs)
 
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        """Performs preprocessing on the clip prior to inference."""
+
         clip = depth(clip, 16 if self.backend.fp16 else 32, vs.FLOAT)
         return limiter(clip, func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        """Handles postprocessing of the model's output after inference."""
+
         return depth(
             clip, input_clip, dither_type=DitherType.ORDERED if 0 in {clip.width, clip.height} else DitherType.AUTO
         )
 
     def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        """Runs inference on the given video clip using the configured model and backend."""
+
         from vsmlrt import inference
 
         tiles, overlaps = self.calc_tilesize(clip)
@@ -342,6 +354,13 @@ class ArtCNN(BaseArtCNNLuma):
     https://github.com/Artoriuz/ArtCNN/releases/latest
 
     Defaults to R8F64.
+
+    Example usage:
+    ```
+    from vsscale import ArtCNN
+
+    doubled = ArtCNN.scale(clip, clip.width * 2, clip.height * 2)
+    ```
     """
 
     _model = 7
@@ -350,12 +369,28 @@ class ArtCNN(BaseArtCNNLuma):
         """
         This has 4 internal convolution layers with 32 filters each.\n
         If you need an even faster model.
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        doubled = ArtCNN.C4F32.scale(clip, clip.width * 2, clip.height * 2)
+        ```
         """
 
         _model = 0
 
     class C4F32_DS(BaseArtCNNLuma):
-        """The same as C4F32 but intended to also sharpen and denoise."""
+        """
+        The same as C4F32 but intended to also sharpen and denoise.
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        doubled = ArtCNN.C4F32_DS.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
 
         _model = 1
 
@@ -365,12 +400,28 @@ class ArtCNN(BaseArtCNNLuma):
         This has 16 internal convolution layers with 64 filters each.
 
         ONNX files available at https://github.com/Artoriuz/ArtCNN/tree/388b91797ff2e675fd03065953cc1147d6f972c2/ONNX
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        doubled = ArtCNN.C16F64.scale(clip, clip.width * 2, clip.height * 2)
+        ```
         """
 
         _model = 2
 
     class C16F64_DS(BaseArtCNNLuma):
-        """The same as C16F64 but intended to also sharpen and denoise."""
+        """
+        The same as C16F64 but intended to also sharpen and denoise.
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        doubled = ArtCNN.C16F64_DS.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
 
         _model = 3
 
@@ -378,6 +429,13 @@ class ArtCNN(BaseArtCNNLuma):
         """
         The smaller of the two chroma models.\n
         These don't double the input clip and rather just try to enhance the chroma using luma information.
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        chroma_upscaled = ArtCNN.C4F32_Chroma.scale(clip)
+        ```
         """
 
         _model = 4
@@ -386,6 +444,13 @@ class ArtCNN(BaseArtCNNLuma):
         """
         The bigger of the two chroma models.\n
         These don't double the input clip and rather just try to enhance the chroma using luma information.
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        chroma_upscaled = ArtCNN.C16F64_Chroma.scale(clip)
+        ```
         """
 
         _model = 5
@@ -394,6 +459,13 @@ class ArtCNN(BaseArtCNNLuma):
         """
         The biggest model. Can compete with or outperform Waifu2x Cunet.\n
         Also quite a bit slower but is less heavy on vram.
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        doubled = ArtCNN.R16F96.scale(clip, clip.width * 2, clip.height * 2)
+        ```
         """
 
         _model = 6
@@ -401,12 +473,28 @@ class ArtCNN(BaseArtCNNLuma):
     class R8F64(BaseArtCNNLuma):
         """
         A smaller and faster version of R16F96 but very competitive.
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        doubled = ArtCNN.R8F64.scale(clip, clip.width * 2, clip.height * 2)
+        ```
         """
 
         _model = 7
 
     class R8F64_DS(BaseArtCNNLuma):
-        """The same as R8F64 but intended to also sharpen and denoise."""
+        """
+        The same as R8F64 but intended to also sharpen and denoise.
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        doubled = ArtCNN.R8F64_DS.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
 
         _model = 8
 
@@ -414,6 +502,13 @@ class ArtCNN(BaseArtCNNLuma):
         """
         The new and fancy big chroma model.\n
         These don't double the input clip and rather just try to enhance the chroma using luma information.
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        chroma_upscaled = ArtCNN.R8F64_Chroma.scale(clip)
+        ```
         """
 
         _model = 9
@@ -423,12 +518,28 @@ class ArtCNN(BaseArtCNNLuma):
         This has 4 internal convolution layers with 16 filters each.\n
         The currently fastest variant. Not really recommended for any filtering.\n
         Should strictly be used for real-time applications and even then the other non R ones should be fast enough...
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        doubled = ArtCNN.C4F16.scale(clip, clip.width * 2, clip.height * 2)
+        ```
         """
 
         _model = 10
 
     class C4F16_DS(BaseArtCNNLuma):
-        """The same as C4F16 but intended to also sharpen and denoise."""
+        """
+        The same as C4F16 but intended to also sharpen and denoise.
+
+        Example usage:
+        ```
+        from vsscale import ArtCNN
+
+        doubled = ArtCNN.C4F16_DS.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
 
         _model = 11
 
@@ -511,28 +622,112 @@ class BaseWaifu2xRGB(BaseWaifu2x):
 
 
 class Waifu2x(BaseWaifu2xRGB):
+    """
+    Well known Image Super-Resolution for Anime-Style Art.
+
+    Defaults to Cunet.
+
+    Example usage:
+    ```
+    from vsscale import Waifu2x
+
+    doubled = Waifu2x.scale(clip, clip.width * 2, clip.height * 2)
+    ```
+    """
     _model = 6
+    _static_kernel_radius = 16
 
     class AnimeStyleArt(BaseWaifu2x):
+        """
+        Waifu2x model for anime-style art.
+
+        Example usage:
+        ```
+        from vsscale import Waifu2x
+
+        doubled = Waifu2x.AnimeStyleArt.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
         _model = 0
 
     class AnimeStyleArtRGB(BaseWaifu2xRGB):
+        """
+        RGB version of the anime-style model.
+
+        Example usage:
+        ```
+        from vsscale import Waifu2x
+
+        doubled = Waifu2x.AnimeStyleArtRGB.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
         _model = 1
 
     class Photo(BaseWaifu2xRGB):
+        """
+        Waifu2x model trained on real-world photographic images.
+
+        Example usage:
+        ```
+        from vsscale import Waifu2x
+
+        doubled = Waifu2x.Photo.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
         _model = 2
 
     class UpConv7AnimeStyleArt(BaseWaifu2xRGB):
+        """
+        UpConv7 model variant optimized for anime-style images.
+
+        Example usage:
+        ```
+        from vsscale import Waifu2x
+
+        doubled = Waifu2x.UpConv7AnimeStyleArt.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
         _model = 3
 
     class UpConv7Photo(BaseWaifu2xRGB):
+        """
+        UpConv7 model variant optimized for photographic images.
+
+        Example usage:
+        ```
+        from vsscale import Waifu2x
+
+        doubled = Waifu2x.UpConv7Photo.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
         _model = 4
 
     class UpResNet10(BaseWaifu2xRGB):
+        """
+        UpResNet10 model offering a balance of speed and quality.
+
+        Example usage:
+        ```
+        from vsscale import Waifu2x
+
+        doubled = Waifu2x.UpResNet10.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
         _model = 5
 
     class Cunet(BaseWaifu2xRGB):
+        """
+        CUNet (Compact U-Net) model for anime art.
+
+        Example usage:
+        ```
+        from vsscale import Waifu2x
+
+        doubled = Waifu2x.Cunet.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
         _model = 6
+        _static_kernel_radius = 16
 
         if TYPE_CHECKING:
             @inject_self.cached
@@ -595,13 +790,53 @@ class Waifu2x(BaseWaifu2xRGB):
             return super().postprocess_clip(tint_fix, input_clip, **kwargs)
 
     class SwinUnetArt(BaseWaifu2xRGB):
+        """
+        Swin-Unet-based model trained on anime-style images.
+
+        Example usage:
+        ```
+        from vsscale import Waifu2x
+
+        doubled = Waifu2x.SwinUnetArt.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
         _model = 7
 
     class SwinUnetPhoto(BaseWaifu2xRGB):
+        """
+        Swin-Unet model trained on photographic content.
+
+        Example usage:
+        ```
+        from vsscale import Waifu2x
+
+        doubled = Waifu2x.SwinUnetPhoto.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
         _model = 8
 
     class SwinUnetPhotoV2(BaseWaifu2xRGB):
+        """
+        Improved Swin-Unet model for photos (v2).
+
+        Example usage:
+        ```
+        from vsscale import Waifu2x
+
+        doubled = Waifu2x.SwinUnetPhotoV2.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
         _model = 9
 
     class SwinUnetArtScan(BaseWaifu2xRGB):
+        """
+        Swin-Unet model trained on anime scans.
+
+        Example usage:
+        ```
+        from vsscale import Waifu2x
+
+        doubled = Waifu2x.SwinUnetArtScan.scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
         _model = 10
