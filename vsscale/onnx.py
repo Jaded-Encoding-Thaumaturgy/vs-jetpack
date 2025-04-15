@@ -249,7 +249,7 @@ class GenericOnnxScaler(BaseOnnxScaler):
     Generic scaler class for an ONNX model.
 
     Example usage:
-    ```
+    ```py
     from vsscale import GenericOnnxScaler
 
     scaled = GenericOnnxScaler("path/to/model.onnx").scale(clip, ...)
@@ -369,7 +369,7 @@ class ArtCNN(BaseArtCNNLuma):
     Defaults to R8F64.
 
     Example usage:
-    ```
+    ```py
     from vsscale import ArtCNN
 
     doubled = ArtCNN.scale(clip, clip.width * 2, clip.height * 2)
@@ -384,7 +384,7 @@ class ArtCNN(BaseArtCNNLuma):
         If you need an even faster model.
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         doubled = ArtCNN.C4F32.scale(clip, clip.width * 2, clip.height * 2)
@@ -398,7 +398,7 @@ class ArtCNN(BaseArtCNNLuma):
         The same as C4F32 but intended to also sharpen and denoise.
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         doubled = ArtCNN.C4F32_DS.scale(clip, clip.width * 2, clip.height * 2)
@@ -415,7 +415,7 @@ class ArtCNN(BaseArtCNNLuma):
         ONNX files available at https://github.com/Artoriuz/ArtCNN/tree/388b91797ff2e675fd03065953cc1147d6f972c2/ONNX
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         doubled = ArtCNN.C16F64.scale(clip, clip.width * 2, clip.height * 2)
@@ -429,7 +429,7 @@ class ArtCNN(BaseArtCNNLuma):
         The same as C16F64 but intended to also sharpen and denoise.
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         doubled = ArtCNN.C16F64_DS.scale(clip, clip.width * 2, clip.height * 2)
@@ -444,7 +444,7 @@ class ArtCNN(BaseArtCNNLuma):
         These don't double the input clip and rather just try to enhance the chroma using luma information.
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         chroma_upscaled = ArtCNN.C4F32_Chroma.scale(clip)
@@ -459,7 +459,7 @@ class ArtCNN(BaseArtCNNLuma):
         These don't double the input clip and rather just try to enhance the chroma using luma information.
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         chroma_upscaled = ArtCNN.C16F64_Chroma.scale(clip)
@@ -474,7 +474,7 @@ class ArtCNN(BaseArtCNNLuma):
         Also quite a bit slower but is less heavy on vram.
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         doubled = ArtCNN.R16F96.scale(clip, clip.width * 2, clip.height * 2)
@@ -488,7 +488,7 @@ class ArtCNN(BaseArtCNNLuma):
         A smaller and faster version of R16F96 but very competitive.
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         doubled = ArtCNN.R8F64.scale(clip, clip.width * 2, clip.height * 2)
@@ -502,7 +502,7 @@ class ArtCNN(BaseArtCNNLuma):
         The same as R8F64 but intended to also sharpen and denoise.
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         doubled = ArtCNN.R8F64_DS.scale(clip, clip.width * 2, clip.height * 2)
@@ -517,7 +517,7 @@ class ArtCNN(BaseArtCNNLuma):
         These don't double the input clip and rather just try to enhance the chroma using luma information.
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         chroma_upscaled = ArtCNN.R8F64_Chroma.scale(clip)
@@ -533,7 +533,7 @@ class ArtCNN(BaseArtCNNLuma):
         Should strictly be used for real-time applications and even then the other non R ones should be fast enough...
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         doubled = ArtCNN.C4F16.scale(clip, clip.width * 2, clip.height * 2)
@@ -547,7 +547,7 @@ class ArtCNN(BaseArtCNNLuma):
         The same as C4F16 but intended to also sharpen and denoise.
 
         Example usage:
-        ```
+        ```py
         from vsscale import ArtCNN
 
         doubled = ArtCNN.C4F16_DS.scale(clip, clip.width * 2, clip.height * 2)
@@ -641,7 +641,7 @@ class Waifu2x(BaseWaifu2xRGB):
     Defaults to Cunet.
 
     Example usage:
-    ```
+    ```py
     from vsscale import Waifu2x
 
     doubled = Waifu2x.scale(clip, clip.width * 2, clip.height * 2)
@@ -655,7 +655,7 @@ class Waifu2x(BaseWaifu2xRGB):
         Waifu2x model for anime-style art.
 
         Example usage:
-        ```
+        ```py
         from vsscale import Waifu2x
 
         doubled = Waifu2x.AnimeStyleArt.scale(clip, clip.width * 2, clip.height * 2)
@@ -668,7 +668,7 @@ class Waifu2x(BaseWaifu2xRGB):
         RGB version of the anime-style model.
 
         Example usage:
-        ```
+        ```py
         from vsscale import Waifu2x
 
         doubled = Waifu2x.AnimeStyleArtRGB.scale(clip, clip.width * 2, clip.height * 2)
@@ -681,7 +681,7 @@ class Waifu2x(BaseWaifu2xRGB):
         Waifu2x model trained on real-world photographic images.
 
         Example usage:
-        ```
+        ```py
         from vsscale import Waifu2x
 
         doubled = Waifu2x.Photo.scale(clip, clip.width * 2, clip.height * 2)
@@ -694,7 +694,7 @@ class Waifu2x(BaseWaifu2xRGB):
         UpConv7 model variant optimized for anime-style images.
 
         Example usage:
-        ```
+        ```py
         from vsscale import Waifu2x
 
         doubled = Waifu2x.UpConv7AnimeStyleArt.scale(clip, clip.width * 2, clip.height * 2)
@@ -707,7 +707,7 @@ class Waifu2x(BaseWaifu2xRGB):
         UpConv7 model variant optimized for photographic images.
 
         Example usage:
-        ```
+        ```py
         from vsscale import Waifu2x
 
         doubled = Waifu2x.UpConv7Photo.scale(clip, clip.width * 2, clip.height * 2)
@@ -720,7 +720,7 @@ class Waifu2x(BaseWaifu2xRGB):
         UpResNet10 model offering a balance of speed and quality.
 
         Example usage:
-        ```
+        ```py
         from vsscale import Waifu2x
 
         doubled = Waifu2x.UpResNet10.scale(clip, clip.width * 2, clip.height * 2)
@@ -733,7 +733,7 @@ class Waifu2x(BaseWaifu2xRGB):
         CUNet (Compact U-Net) model for anime art.
 
         Example usage:
-        ```
+        ```py
         from vsscale import Waifu2x
 
         doubled = Waifu2x.Cunet.scale(clip, clip.width * 2, clip.height * 2)
@@ -807,7 +807,7 @@ class Waifu2x(BaseWaifu2xRGB):
         Swin-Unet-based model trained on anime-style images.
 
         Example usage:
-        ```
+        ```py
         from vsscale import Waifu2x
 
         doubled = Waifu2x.SwinUnetArt.scale(clip, clip.width * 2, clip.height * 2)
@@ -820,7 +820,7 @@ class Waifu2x(BaseWaifu2xRGB):
         Swin-Unet model trained on photographic content.
 
         Example usage:
-        ```
+        ```py
         from vsscale import Waifu2x
 
         doubled = Waifu2x.SwinUnetPhoto.scale(clip, clip.width * 2, clip.height * 2)
@@ -833,7 +833,7 @@ class Waifu2x(BaseWaifu2xRGB):
         Improved Swin-Unet model for photos (v2).
 
         Example usage:
-        ```
+        ```py
         from vsscale import Waifu2x
 
         doubled = Waifu2x.SwinUnetPhotoV2.scale(clip, clip.width * 2, clip.height * 2)
@@ -846,7 +846,7 @@ class Waifu2x(BaseWaifu2xRGB):
         Swin-Unet model trained on anime scans.
 
         Example usage:
-        ```
+        ```py
         from vsscale import Waifu2x
 
         doubled = Waifu2x.SwinUnetArtScan.scale(clip, clip.width * 2, clip.height * 2)
