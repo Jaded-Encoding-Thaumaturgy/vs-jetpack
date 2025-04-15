@@ -27,7 +27,7 @@ __all__ = [
 
     "Waifu2x",
 
-    "Dpir"
+    "DPIR"
 ]
 
 
@@ -857,11 +857,11 @@ class Waifu2x(BaseWaifu2xRGB):
         _model = 10
 
 
-_DpirGrayModel: TypeAlias = int
-_DpirColorModel: TypeAlias = int
+_DPIRGrayModel: TypeAlias = int
+_DPIRColorModel: TypeAlias = int
 
-class BaseDpir(BaseOnnxScaler):
-    _model: ClassVar[tuple[_DpirGrayModel, _DpirColorModel]]
+class BaseDPIR(BaseOnnxScaler):
+    _model: ClassVar[tuple[_DPIRGrayModel, _DPIRColorModel]]
     _static_kernel_radius = 2
 
     def __init__(
@@ -983,13 +983,13 @@ class BaseDpir(BaseOnnxScaler):
             self.strength = None
 
 
-class Dpir(BaseDpir):
-    """"Deep Plug-and-Play Image Restoration"""
+class DPIR(BaseDPIR):
+    """Deep Plug-and-Play Image Restoration"""
 
     _model = (2, 3)
 
-    class DrunetDenoise(BaseDpir):
+    class DrunetDenoise(BaseDPIR):
         _model = (0, 1)
 
-    class DrunetDeblock(BaseDpir):
+    class DrunetDeblock(BaseDPIR):
         _model = (2, 3)
