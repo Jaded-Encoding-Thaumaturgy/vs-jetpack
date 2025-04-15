@@ -253,6 +253,9 @@ class GenericOnnxScaler(BaseOnnxScaler):
     from vsscale import GenericOnnxScaler
 
     scaled = GenericOnnxScaler("path/to/model.onnx").scale(clip, ...)
+
+    # For Windows paths:
+    scaled = GenericOnnxScaler(r"path\\to\\model.onnx").scale(clip, ...)
     ```
     """
 
