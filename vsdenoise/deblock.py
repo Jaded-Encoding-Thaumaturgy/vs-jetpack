@@ -174,9 +174,10 @@ def deblock_qed(
         clip = p8.MIRROR(func.work_clip)
 
         block = padder.COLOR(
-            clip.std.BlankClip(
+            core.std.BlankClip(
+                clip,
                 width=6, height=6, length=1, color=0,
-                format=func.work_clip.format.replace(color_family=vs.GRAY, subsampling_w=0, subsampling_h=0)
+                format=func.work_clip.format.replace(color_family=vs.GRAY, subsampling_w=0, subsampling_h=0).id
             ), 1, 1, 1, 1, True
         )
         block = core.std.StackHorizontal([block] * (clip.width // block.width))
