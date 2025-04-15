@@ -510,42 +510,16 @@ class BaseWaifu2xRGB(BaseWaifu2x):
         return clip
 
 
-class BaseWaifu2xMlrtPreprocess(BaseWaifu2x):
-    def __init__(
-        self,
-        scale: Literal[1, 2, 4] = 2,
-        noise: Literal[-1, 0, 1, 2, 3] = -1,
-        preprocess: bool = True,
-        backend: Any | None = None,
-        tiles: int | tuple[int, int] | None = None,
-        tilesize: int | tuple[int, int] | None = None,
-        overlap: int | tuple[int, int] | None = None,
-        max_instances: int = 2,
-        *,
-        kernel: KernelT = Catrom,
-        scaler: ScalerT | None = None,
-        shifter: KernelT | None = None,
-        **kwargs: Any
-    ) -> None:
-        self.preprocess = preprocess
-        super().__init__(
-            scale, noise, backend, tiles, tilesize, overlap, max_instances, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs
-        )
-
-    def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        return super().inference(clip, preprocess=self.preprocess, **kwargs)
-
-
 class Waifu2x(BaseWaifu2xRGB):
     _model = 6
 
-    class AnimeStyleArt(BaseWaifu2xMlrtPreprocess, BaseWaifu2x):
+    class AnimeStyleArt(BaseWaifu2x):
         _model = 0
 
-    class AnimeStyleArtRGB(BaseWaifu2xMlrtPreprocess, BaseWaifu2xRGB):
+    class AnimeStyleArtRGB(BaseWaifu2xRGB):
         _model = 1
 
-    class Photo(BaseWaifu2xMlrtPreprocess, BaseWaifu2xRGB):
+    class Photo(BaseWaifu2xRGB):
         _model = 2
 
     class UpConv7AnimeStyleArt(BaseWaifu2xRGB):
