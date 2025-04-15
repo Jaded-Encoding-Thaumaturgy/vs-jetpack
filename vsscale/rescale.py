@@ -161,8 +161,8 @@ class Rescale(RescaleBase):
     re-upscaling and masking-out details.
 
     Examples usage:
-    Basic 720p rescale:
-    ```py
+    - Basic 720p rescale:
+    ```
     from vsscale import Rescale
     from vskernels import Bilinear
 
@@ -170,8 +170,8 @@ class Rescale(RescaleBase):
     final = rs.upscale
     ```
 
-    Adding aa and dehalo on doubled clip:
-    ```py
+    - Adding aa and dehalo on doubled clip:
+    ```
     from vsaa import based_aa
     from vsdehalo import fine_dehalo
 
@@ -181,8 +181,8 @@ class Rescale(RescaleBase):
     rs.doubled = dehalo
     ```
 
-    Loading line_mask and credit_mask:
-    ```py
+    - Loading line_mask and credit_mask:
+    ```
     from vsmasktools import diff_creditless_oped
     from vsexprtools import ExprOp
 
@@ -193,8 +193,8 @@ class Rescale(RescaleBase):
     rs.credit_mask = ExprOp.ADD.combine(oped_credit_mask, credit_mask)
     ```
 
-    Fractional rescale:
-    ```py
+    - Fractional rescale:
+    ```
     from vsscale import Rescale
     from vskernels import Bilinear
 
@@ -212,8 +212,8 @@ class Rescale(RescaleBase):
     ScalingArgs(width=1422, height=800, src_width=1422, src_height=800, src_top=0, src_left=0, mode='hw')
     ```
 
-    Cropping is also supported:
-    ```py
+    - Cropping is also supported:
+    ```
     from vsscale import Rescale
     from vskernels import Bilinear
 
