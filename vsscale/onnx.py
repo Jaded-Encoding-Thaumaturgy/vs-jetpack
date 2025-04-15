@@ -245,7 +245,16 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
 
 class GenericOnnxScaler(BaseOnnxScaler):
-    """Generic scaler class for an ONNX model."""
+    """
+    Generic scaler class for an ONNX model.
+
+    Example usage:
+    ```
+    from vsscale import GenericOnnxScaler
+
+    scaled = GenericOnnxScaler("path/to/model.onnx").scale(clip, ...)
+    ```
+    """
 
     _static_kernel_radius = 2
 
