@@ -878,7 +878,9 @@ class BaseDPIR(BaseOnnxScaler):
         **kwargs: Any
     ) -> None:
         """
-        :param strength:        
+        :param strength:        Threshold (8-bit scale) strength for deblocking/denoising.
+                                If a VideoNode is used, it must be in GRAY8, GRAYH, or GRAYS format, with pixel values
+                                representing the 8-bit thresholds.
         :param backend:         The backend to be used with the vs-mlrt framework.
                                 If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
         :param tiles:           Whether to split the image into multiple tiles.
@@ -917,20 +919,6 @@ class BaseDPIR(BaseOnnxScaler):
         shift: tuple[float, float] = (0, 0),
         **kwargs: Any
     ) -> ConstantFormatVideoNode:
-        """
-        Scale the given clip using the ONNX model.
-
-        :param clip:        The input clip to be scaled.
-        :param width:       The target width for scaling. If None, the width of the input clip will be used.
-        :param height:      The target height for scaling. If None, the height of the input clip will be used.
-        :param shift:       A tuple representing the shift values for the x and y axes.
-        :param **kwargs:    Additional arguments to be passed to the `preprocess_clip`, `postprocess_clip`,
-                            `inference`, and `_final_scale` methods.
-                            Use the prefix `preprocess_` or `postprocess_` to pass an argument to the respective method.
-                            Use the prefix `inference_` to pass an argument to the inference method.
-
-        :return:            The scaled clip.
-        """
         assert check_variable_resolution(clip, self.__class__)
 
         return super().scale(clip, width, height, shift, **kwargs)
