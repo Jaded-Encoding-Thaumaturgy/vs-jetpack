@@ -10,7 +10,7 @@ from vsaa.abstract import _Antialiaser
 from vsdeband import AddNoise
 from vsdenoise import (
     MotionVectors, MVDirection, MVTools, MVToolsPreset, MVToolsPresets,
-    MaskMode, DFTTest, mc_sharplimit, prefilter_to_full_range
+    MaskMode, DFTTest, mc_clamp, prefilter_to_full_range
 )
 from vsexprtools import norm_expr
 from vsmasktools import Coordinates, Morpho
@@ -162,7 +162,7 @@ class QTempGaussMC(vs_object):
         tr: int = 2,
         thsad: int | tuple[int, int] = 640,
         bobber: _Antialiaser = Nnedi3(nsize=1, nns=4, qual=2, pscrn=1),
-        noise_restore: float = 0,
+        noise_restore: float = 0.0,
         degrain_args: KwargsT | None = None,
         mask_args: KwargsT | None | Literal[False] = None,
         mask_shimmer_args: KwargsT | None = KwargsT(erosion_distance=0),
@@ -178,7 +178,7 @@ class QTempGaussMC(vs_object):
         """
 
         self.basic_tr = tr
-        self.basic_thsad = thsad if isinstance(thsad, tuple) else (thsad, thsad)
+        self.basic_thsad = thsad
         self.basic_bobber = bobber.copy(field=self.field)
         self.basic_noise_restore = noise_restore
         self.basic_degrain_args = fallback(degrain_args, KwargsT())
@@ -314,7 +314,7 @@ class QTempGaussMC(vs_object):
         """
 
         self.final_tr = tr
-        self.final_thsad = thsad if isinstance(thsad, tuple) else (thsad, thsad)
+        self.final_thsad = thsad
         self.final_noise_restore = noise_restore
         self.final_degrain_args = fallback(degrain_args, KwargsT())
         self.final_mask_shimmer_args = fallback(mask_shimmer_args, KwargsT())
@@ -347,7 +347,7 @@ class QTempGaussMC(vs_object):
         self,
         flt: vs.VideoNode,
         src: vs.VideoNode,
-        threshold: float | int = 1,
+        threshold: int | float = 1,
         erosion_distance: int = 4,
         over_dilation: int = 0,
     ) -> ConstantFormatVideoNode:
@@ -508,9 +508,9 @@ class QTempGaussMC(vs_object):
                             noise_new = AddNoise.GAUSS.grain(
                                 noise_source, 2048, protect_chroma=False, fade_limits=False, neutral_out=True
                             )
-                            noise_limit = norm_expr([noise_max, noise_min, noise_new], 'x y - z * range_size / y +')
+                            noise_new = norm_expr([noise_max, noise_min, noise_new], 'x y - z * range_size / y +')
 
-                            noise = core.std.Interleave([noise_source, noise_limit]).std.DoubleWeave(self.tff)[::2]
+                            noise = core.std.Interleave([noise_source, noise_new]).std.DoubleWeave(self.tff)[::2]
 
                 if self.denoise_stabilize:
                     weight1, weight2 = self.denoise_stabilize
@@ -638,13 +638,11 @@ class QTempGaussMC(vs_object):
     def apply_sharpen(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.apply_sharpen)
 
-        blur_kernel = BlurMatrix.BINOMIAL()
-
         match self.sharp_mode:
             case SharpMode.NONE:
                 resharp = clip
             case SharpMode.UNSHARP:
-                resharp = unsharpen(clip, self.sharp_strength, blur_kernel)
+                resharp = unsharpen(clip, self.sharp_strength, BlurMatrix.BINOMIAL())
             case SharpMode.UNSHARP_MINMAX:
                 undershoot, overshoot = self.sharp_clamp
 
@@ -657,7 +655,7 @@ class QTempGaussMC(vs_object):
                     undershoot=scale_delta(undershoot, 8, clip),
                     overshoot=scale_delta(overshoot, 8, clip),
                 )
-                resharp = unsharpen(clip, self.sharp_strength, blur_kernel(clamp))
+                resharp = unsharpen(clip, self.sharp_strength, BlurMatrix.BINOMIAL()(clamp))
 
         if self.sharp_thin:
             median_diff = norm_expr(
@@ -666,8 +664,8 @@ class QTempGaussMC(vs_object):
             blurred_diff = BlurMatrix.BINOMIAL(mode=ConvMode.HORIZONTAL)(median_diff)
 
             resharp = norm_expr(
-                [resharp, blurred_diff, blur_kernel(blurred_diff)],
-                'y neutral - Y! Y@ abs z neutral - abs < Y@ 0 ? x +',
+                [resharp, blurred_diff, BlurMatrix.BINOMIAL()(blurred_diff)],
+                'y neutral - Y! Y@ abs z neutral - abs < x Y@ + x ?',
             )
 
         return resharp
@@ -693,8 +691,8 @@ class QTempGaussMC(vs_object):
                     )
 
             if self.limit_mode in (SharpLimitMode.TEMPORAL_PRESMOOTH, SharpLimitMode.TEMPORAL_POSTSMOOTH):
-                clip = mc_sharplimit(
-                    clip, self.bobbed, self.mv, limit=self.limit_clamp,
+                clip = mc_clamp(
+                    clip, self.bobbed, self.mv, clamp=self.limit_clamp,
                     tr=self.limit_radius, thscd=self.thscd, **self.limit_comp_args,
                 )
 
@@ -786,7 +784,9 @@ class QTempGaussMC(vs_object):
 
         if refine:
             if thsad_recalc is None:
-                thsad_recalc = self.basic_thsad[0] // 2
+                thsad_recalc = round(
+                    (self.basic_thsad[0] if isinstance(self.basic_thsad, tuple) else self.basic_thsad) / 2
+                )
 
             for _ in range(refine):
                 blksize = _floor_div_tuple(blksize)
