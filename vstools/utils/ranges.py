@@ -369,24 +369,17 @@ def replace_ranges(
             base_clip, partial(_func, callback=callback), prop_src if 'f' in params else None, [clip_a, clip_b]
         )
 
-    shift = 1 - exclusive
-    b_ranges = normalize_ranges(clip_b, ranges)
+    b_ranges = normalize_ranges(clip_b, ranges, exclusive)
 
     if hasattr(vs.core, 'vszip'):
         return vs.core.vszip.RFS(
-            clip_a, clip_b,
-            [y for (s, e) in b_ranges
-             for y in range(
-                 s, e + (not exclusive if s != e else 1) + (1 if e == clip_b.num_frames - 1 and exclusive else 0)
-             )
-            ],
-            mismatch=mismatch
+            clip_a, clip_b, [y for (s, e) in b_ranges for y in range(s, e + (not exclusive))], mismatch=mismatch
         )
 
-    a_ranges = invert_ranges(clip_a, clip_b, b_ranges)
+    a_ranges = invert_ranges(clip_a, clip_b, b_ranges, exclusive)
 
-    a_trims = [clip_a[max(0, start - exclusive):end + shift + exclusive] for start, end in a_ranges]
-    b_trims = [clip_b[start:end + shift] for start, end in b_ranges]
+    a_trims = [clip_a[max(0, start - exclusive):end + (not exclusive)] for start, end in a_ranges]
+    b_trims = [clip_b[start:end + (not exclusive)] for start, end in b_ranges]
 
     if a_ranges:
         main, other = (a_trims, b_trims) if (a_ranges[0][0] == 0) else (b_trims, a_trims)

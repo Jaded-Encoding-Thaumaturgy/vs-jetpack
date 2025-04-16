@@ -131,7 +131,9 @@ def flatten_vnodes(
     return sum(map(split, nodes), list[ConstantFormatVideoNode]())
 
 
-def normalize_ranges(clip: vs.VideoNode, ranges: FrameRangeN | FrameRangesN) -> list[tuple[int, int]]:
+def normalize_ranges(
+    clip: vs.VideoNode, ranges: FrameRangeN | FrameRangesN, exclusive: bool = False
+) -> list[tuple[int, int]]:
     """
     Normalize ranges to a list of positive ranges.
 
@@ -156,15 +158,17 @@ def normalize_ranges(clip: vs.VideoNode, ranges: FrameRangeN | FrameRangesN) -> 
 
     :param clip:        Input clip.
     :param ranges:      Frame range or list of frame ranges.
+    :param exclusive:   Whether to use exclusive (Python-style) ranges.
+                        Defaults to False.
 
     :return:            List of positive frame ranges.
     """
 
-    return jetp_normalize_ranges(ranges, clip.num_frames)
+    return jetp_normalize_ranges(ranges, clip.num_frames, exclusive)
 
 
 def invert_ranges(
-    clipa: vs.VideoNode, clipb: vs.VideoNode | None, ranges: FrameRangeN | FrameRangesN
+    clipa: vs.VideoNode, clipb: vs.VideoNode | None, ranges: FrameRangeN | FrameRangesN, exclusive: bool = False
 ) -> list[tuple[int, int]]:
     """
     Invert FrameRanges.
@@ -181,8 +185,12 @@ def invert_ranges(
     :param clipb:          Replacement clip.
     :param ranges:         Ranges to replace clipa (original clip) with clipb (replacement clip).
                            These ranges will be inverted. For more info, see `replace_ranges`.
+    :param exclusive:      Whether to use exclusive (Python-style) ranges.
+                           Defaults to False.
 
     :return:                A list of inverted frame ranges.
     """
 
-    return jetp_invert_ranges(ranges, clipa.num_frames, None if clipb is None else clipb.num_frames)
+    return jetp_invert_ranges(
+        ranges, clipa.num_frames, None if clipb is None else clipb.num_frames, exclusive
+    )
