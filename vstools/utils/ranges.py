@@ -73,7 +73,10 @@ class _replace_ranges:
     ) -> ConstantFormatVideoNode:
         """
         Replaces frames in a clip with pre-calculated indices.
-        Frame ranges are inclusive. This behaviour can be changed by setting `exclusive=True`.
+
+        Frame ranges are inclusive by default.
+        This behaviour can be changed by setting `exclusive=True` for one-time use,
+        or set `replace_ranges.exclusive = True` to apply the change globally.
 
         Examples with clips ``black`` and ``white`` of equal length:
             * ``replace_ranges(black, white, [(0, 1)])``: replace frames 0 and 1 with ``white``
@@ -114,7 +117,10 @@ class _replace_ranges:
     ) -> VideoNodeT:
         """
         Replaces frames in a clip with pre-calculated indices.
-        Frame ranges are inclusive. This behaviour can be changed by setting `exclusive=True`.
+
+        Frame ranges are inclusive by default.
+        This behaviour can be changed by setting `exclusive=True` for one-time use,
+        or set `replace_ranges.exclusive = True` to apply the change globally.
 
         Examples with clips ``black`` and ``white`` of equal length:
             * ``replace_ranges(black, white, [(0, 1)])``: replace frames 0 and 1 with ``white``
@@ -265,7 +271,10 @@ class _replace_ranges:
     ) -> vs.VideoNode:
         """
         Replaces frames in a clip, either with pre-calculated indices or on-the-fly with a callback.
-        Frame ranges are inclusive. This behaviour can be changed by setting `exclusive=True`.
+
+        Frame ranges are inclusive by default.
+        This behaviour can be changed by setting `exclusive=True` for one-time use,
+        or set `replace_ranges.exclusive = True` to apply the change globally.
 
         Examples with clips ``black`` and ``white`` of equal length:
             * ``replace_ranges(black, white, [(0, 1)])``: replace frames 0 and 1 with ``white``
