@@ -5,7 +5,7 @@ from typing import Any, Callable, Literal, Protocol, Sequence, TypeVar, Union, o
 
 import vapoursynth as vs
 
-from jetpytools import CustomValueError, flatten, interleave_arr, ranges_product
+from jetpytools import CustomValueError, fallback, flatten, interleave_arr, ranges_product
 
 from ..functions import check_ref_clip
 from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, VideoNodeT
@@ -68,7 +68,7 @@ class _replace_ranges:
         clip_a: vs.VideoNode,
         clip_b: vs.VideoNode,
         ranges: FrameRangeN | FrameRangesN,
-        exclusive: bool = False,
+        exclusive: bool | None = None,
         mismatch: Literal[False] = ...
     ) -> ConstantFormatVideoNode:
         """
@@ -109,7 +109,7 @@ class _replace_ranges:
         clip_a: VideoNodeT,
         clip_b: VideoNodeT,
         ranges: FrameRangeN | FrameRangesN,
-        exclusive: bool = False,
+        exclusive: bool | None = None,
         mismatch: Literal[True] | bool = ...
     ) -> VideoNodeT:
         """
@@ -258,7 +258,7 @@ class _replace_ranges:
         clip_a: vs.VideoNode,
         clip_b: vs.VideoNode,
         ranges: FrameRangeN | FrameRangesN | _RangesCallBackT | None,
-        exclusive: bool = False,
+        exclusive: bool | None = None,
         mismatch: bool = False,
         *,
         prop_src: vs.VideoNode | Sequence[vs.VideoNode] | None = None
@@ -310,7 +310,7 @@ class _replace_ranges:
         clip_a: vs.VideoNode,
         clip_b: vs.VideoNode,
         ranges: FrameRangeN | FrameRangesN | _RangesCallBackT | None,
-        exclusive: bool = False,
+        exclusive: bool | None = None,
         mismatch: bool = False,
         *,
         prop_src: vs.VideoNode | Sequence[vs.VideoNode] | None = None
@@ -376,6 +376,7 @@ class _replace_ranges:
                 base_clip, partial(_func, callback=callback), prop_src if 'f' in params else None, [clip_a, clip_b]
             )
 
+        exclusive = fallback(exclusive, self.exclusive, False)
 
         b_ranges = normalize_ranges(clip_b, ranges, exclusive)
 
