@@ -342,7 +342,7 @@ class BlurMatrix(CustomIntEnum):
     MEAN_NO_CENTER = 0
     MEAN = 1
     BOX_BLUR_NO_CENTER = MEAN_NO_CENTER
-    CIRCLE = MEAN_NO_CENTER  # todo: remove
+    CIRCLE = MEAN_NO_CENTER  # TODO: remove
     BOX_BLUR = MEAN
     BINOMIAL = 2
     LOG = 3

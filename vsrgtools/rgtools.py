@@ -4,12 +4,12 @@ import warnings
 
 from vsexprtools import norm_expr
 from vstools import (
-    ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_variable, core, normalize_seq, padder, pick_func_stype, vs
+    ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_variable, normalize_seq, vs
 )
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
 from .enum import (
-    ClenseMode, ClenseModeT, RemoveGrainMode, RemoveGrainModeT, RepairModeT, VerticalCleanerMode, VerticalCleanerModeT
+    ClenseMode, ClenseModeT, RemoveGrainMode, RemoveGrainModeT, RepairModeT, VerticalCleanerModeT
 )
 
 __all__ = [
@@ -27,14 +27,8 @@ def repair(clip: vs.VideoNode, repairclip: vs.VideoNode, mode: RepairModeT) -> C
     if not sum(mode):
         return clip
 
-    if clip.format.sample_type == vs.INTEGER and all(m in range(24 + 1) for m in mode):
-        sub = max(1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h)
-
-        with padder.ctx(sub, sub) as pad:
-            padded = pad.MIRROR(clip)
-            padded_repair = pad.MIRROR(repairclip)
-            repaired = core.rgvs.Repair(padded, padded_repair, mode)
-            return pad.CROP(repaired)
+    if all(m in range(24 + 1) for m in mode):
+        return clip.zsmooth.Repair(repairclip, mode)
 
     return norm_expr([clip, repairclip], tuple([repair_aka_exprs[m]() for m in mode]), func=repair)
 
@@ -70,16 +64,12 @@ def clense(
 ) -> ConstantFormatVideoNode:
     assert check_variable(clip, clense)
 
-    warnings.warn('clense is deprecated! Use MeanMode instead!', DeprecationWarning)
-
     kwargs = KwargsNotNone(previous=previous_clip, next=next_clip)
 
     if mode == ClenseMode.NONE:
         return clip
-
-    return pick_func_stype(clip, getattr(core.lazy.rgvs, mode), getattr(core.lazy.rgsf, mode))(
-        clip, planes=planes, **kwargs
-    )
+    
+    return getattr(clip.zsmooth, mode)(clip, planes=planes, **kwargs)
 
 
 def vertical_cleaner(clip: vs.VideoNode, mode: VerticalCleanerModeT) -> ConstantFormatVideoNode:
@@ -90,11 +80,7 @@ def vertical_cleaner(clip: vs.VideoNode, mode: VerticalCleanerModeT) -> Constant
     if not sum(mode):
         return clip
 
-    for m in mode:
-        if m == VerticalCleanerMode.MEDIAN:
-            warnings.warn(f'Deprecated verticalcleaner mode {m}! Use median_blur instead!', DeprecationWarning)
-
-    return pick_func_stype(clip, core.lazy.rgvs.VerticalCleaner, core.lazy.rgsf.VerticalCleaner)(clip, mode)
+    return clip.zsmooth.VerticalCleaner(mode)
 
 
-removegrain = remove_grain  # todo: remove
+removegrain = remove_grain  # TODO: remove
