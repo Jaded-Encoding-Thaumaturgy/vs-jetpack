@@ -75,7 +75,7 @@ jobs:
       - name: Running mypy on vsscale
         run: uv run mypy vsscale
 
-      - name: Running mypy on vsmasktools
+      - name: Running mypy on vsaa
         run: uv run mypy vsaa
 
       - name: Post webhook for failure
