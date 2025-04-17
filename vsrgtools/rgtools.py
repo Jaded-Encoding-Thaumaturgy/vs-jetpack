@@ -69,7 +69,7 @@ def clense(
     if mode == ClenseMode.NONE:
         return clip
     
-    return getattr(clip.zsmooth, mode)(clip, planes=planes, **kwargs)
+    return getattr(clip.zsmooth, mode)(planes=planes, **kwargs)
 
 
 def vertical_cleaner(clip: vs.VideoNode, mode: VerticalCleanerModeT) -> ConstantFormatVideoNode:
