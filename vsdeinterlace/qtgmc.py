@@ -41,6 +41,10 @@ class _DenoiseFuncTr(Protocol):
 class QTempGaussMC(vs_object):
     """
     Quasi Temporal Gaussian Motion Compensated (QTGMC)
+
+    A very high quality deinterlacer with a range of features for both quality and convenience.
+    These include extensive noise processing capabilities, support for repair of progressive material, precision source matching, shutter speed simulation, etc.
+    Originally based on TempGaussMC by Didée.
     """
 
     clip: ConstantFormatVideoNode
@@ -352,6 +356,9 @@ class QTempGaussMC(vs_object):
         over_dilation: int = 0,
     ) -> ConstantFormatVideoNode:
         """
+        Compare processed clip with reference clip,
+        only allow thin, horizontal areas of difference, i.e. bob shimmer fixes.
+
         :param flt:                 Processed clip to perform masking on.
         :param src:                 Unprocessed clip to restore from.
         :param threshold:           Threshold of change to perform masking.
@@ -401,7 +408,7 @@ class QTempGaussMC(vs_object):
 
     def binomial_degrain(self, clip: vs.VideoNode, tr: int) -> ConstantFormatVideoNode:
         def _get_weights(n: int) -> list[int]:
-            k, rhs = 1, []
+            k, rhs = 1, list[int]()
             mat = zeros((n + 1, n + 1))
 
             for i in range(1, n + 2):
@@ -549,7 +556,8 @@ class QTempGaussMC(vs_object):
             self.bobbed = self.denoise_output.std.MaskedMerge(self.bobbed, mask)
 
         smoothed = self.binomial_degrain(self.bobbed, self.basic_tr)
-        smoothed = self.mask_shimmer(smoothed, self.bobbed, **self.basic_mask_shimmer_args)
+        if self.basic_tr:
+            smoothed = self.mask_shimmer(smoothed, self.bobbed, **self.basic_mask_shimmer_args)
 
         if self.match_mode:
             smoothed = self.apply_source_match(smoothed)
@@ -710,7 +718,8 @@ class QTempGaussMC(vs_object):
         smoothed = self.mv.degrain(
             self.basic_output, tr=self.final_tr, thsad=self.final_thsad, thscd=self.thscd, **self.final_degrain_args
         )
-        smoothed = self.mask_shimmer(smoothed, self.bobbed, **self.final_mask_shimmer_args)
+        if self.basic_tr or self.final_tr:
+            smoothed = self.mask_shimmer(smoothed, self.bobbed, **self.final_mask_shimmer_args)
 
         if self.limit_mode in (SharpLimitMode.SPATIAL_POSTSMOOTH, SharpLimitMode.TEMPORAL_POSTSMOOTH):
             smoothed = self.apply_sharpen_limit(smoothed)
