@@ -34,7 +34,7 @@ def contrasharpening(
     :param src:         Source clip
     :param radius:      Spatial radius for sharpening.
     :param sharp:       Optional pre-sharpened clip or function to use.
-    :param mode:        Mode of rgvs.Repair to limit the difference
+    :param mode:        Mode of Repair to limit the difference
     :param planes:      Planes to process, defaults to None
 
     :return:            Contrasharpened clip

@@ -512,52 +512,6 @@ class _Plugin_resize2_VideoNode_Bound(Plugin):
 # end implementation
 
 
-# implementation: rgsf
-
-class _Plugin_rgsf_Core_Bound(Plugin):
-    """This class implements the module definitions for the "rgsf" VapourSynth plugin.\n\n*This class cannot be imported.*"""
-    def BackwardClense(self, clip: VideoNode, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def Clense(self, clip: VideoNode, previous: VideoNode | None = None, next: VideoNode | None = None, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def ForwardClense(self, clip: VideoNode, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def RemoveGrain(self, clip: VideoNode, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-    def Repair(self, clip: VideoNode, repairclip: VideoNode, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-    def VerticalCleaner(self, clip: VideoNode, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-
-class _Plugin_rgsf_VideoNode_Bound(Plugin):
-    """This class implements the module definitions for the "rgsf" VapourSynth plugin.\n\n*This class cannot be imported.*"""
-    def BackwardClense(self, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def Clense(self, previous: VideoNode | None = None, next: ConstantFormatVideoNode | None = None, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def ForwardClense(self, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def RemoveGrain(self, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-    def Repair(self, repairclip: VideoNode, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-    def VerticalCleaner(self, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-
-# end implementation
-
-
-# implementation: rgvs
-
-class _Plugin_rgvs_Core_Bound(Plugin):
-    """This class implements the module definitions for the "rgvs" VapourSynth plugin.\n\n*This class cannot be imported.*"""
-    def BackwardClense(self, clip: VideoNode, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def Clense(self, clip: VideoNode, previous: VideoNode | None = None, next: VideoNode | None = None, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def ForwardClense(self, clip: VideoNode, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def RemoveGrain(self, clip: VideoNode, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-    def Repair(self, clip: VideoNode, repairclip: VideoNode, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-    def VerticalCleaner(self, clip: VideoNode, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-
-class _Plugin_rgvs_VideoNode_Bound(Plugin):
-    """This class implements the module definitions for the "rgvs" VapourSynth plugin.\n\n*This class cannot be imported.*"""
-    def BackwardClense(self, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def Clense(self, previous: VideoNode | None = None, next: VideoNode | None = None, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def ForwardClense(self, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
-    def RemoveGrain(self, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-    def Repair(self, repairclip: VideoNode, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-    def VerticalCleaner(self, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
-
-# end implementation
-
-
 # implementation: scxvid
 
 class _Plugin_scxvid_Core_Bound(Plugin):
@@ -1092,16 +1046,6 @@ class VideoNode(RawNode):
     def resize2(self) -> _Plugin_resize2_VideoNode_Bound:
         """Built-in VapourSynth resizer based on zimg with some modifications."""
     # end instance
-    # instance_bound_VideoNode: rgvs
-    @property
-    def rgsf(self) -> _Plugin_rgsf_VideoNode_Bound:
-        """RemoveGrain VapourSynth Port"""
-    # end instance
-    # instance_bound_VideoNode: rgvs
-    @property
-    def rgvs(self) -> _Plugin_rgvs_VideoNode_Bound:
-        """RemoveGrain VapourSynth Port"""
-    # end instance
     # instance_bound_VideoNode: scxvid
     @property
     def scxvid(self) -> _Plugin_scxvid_VideoNode_Bound:
@@ -1320,16 +1264,6 @@ class Core:
     @property
     def resize2(self) -> _Plugin_resize2_Core_Bound:
         """Built-in VapourSynth resizer based on zimg with some modifications."""
-    # end instance
-    # instance_bound_Core: rgvs
-    @property
-    def rgsf(self) -> _Plugin_rgsf_Core_Bound:
-        """RemoveGrain VapourSynth Port"""
-    # end instance
-    # instance_bound_Core: rgvs
-    @property
-    def rgvs(self) -> _Plugin_rgvs_Core_Bound:
-        """RemoveGrain VapourSynth Port"""
     # end instance
     # instance_bound_Core: scxvid
     @property

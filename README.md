@@ -63,7 +63,6 @@ for example using [vsrepo](https://github.com/vapoursynth/vsrepo).
 |                                        |                                        | [tedgemask](https://github.com/dubhater/vapoursynth-tedgemask) |
 |                                        |                                        | [hysteresis](https://github.com/sgt0/vapoursynth-hysteresis) |
 |                                        |                                        | [adaptivegrain](https://github.com/Irrational-Encoding-Wizardry/adaptivegrain) |
-|                                        |                                        | [rgvs](https://github.com/vapoursynth/vs-removegrain) / [rgsf](https://github.com/IFeelBloated/RGSF) |
 |                                        |                                        | [zsmooth](https://github.com/adworacz/zsmooth) |
 |                                        |                                        | [bilateralgpu](https://github.com/WolframRhodium/VapourSynth-BilateralGPU) |
 |                                        |                                        | [dpid](https://github.com/WolframRhodium/VapourSynth-dpid) |
