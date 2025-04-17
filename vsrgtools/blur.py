@@ -14,10 +14,11 @@ from vstools import (
     split, to_arr, vs
 )
 
-from .enum import BilateralBackend, BlurMatrix, BlurMatrixBase, LimitFilterMode
+from .enum import BilateralBackend, BlurMatrix, BlurMatrixBase, LimitFilterMode, VerticalCleanerMode
 from .freqs import MeanMode
 from .limit import limit_filter
-from .util import normalize_radius
+from .rgtools import vertical_cleaner
+from .util import normalize_radius, norm_rmode_planes
 
 __all__ = [
     'box_blur', 'side_box_blur',
@@ -308,8 +309,11 @@ def median_blur(
 
     radius = to_arr(radius)
 
-    if (len((rs := set(radius))) == 1 and rs.pop() == 1) and mode == ConvMode.SQUARE:
-        return clip.std.Median(planes=planes)
+    if (len((rs := set(radius))) == 1 and rs.pop() == 1):
+        if mode == ConvMode.SQUARE:
+            return clip.std.Median(planes=planes)
+        if mode == ConvMode.VERTICAL:
+            return vertical_cleaner(clip, norm_rmode_planes(clip, VerticalCleanerMode.MEDIAN, planes))
 
     expr_plane = list[list[str]]()
 
