@@ -718,8 +718,7 @@ class QTempGaussMC(vs_object):
         smoothed = self.mv.degrain(
             self.basic_output, tr=self.final_tr, thsad=self.final_thsad, thscd=self.thscd, **self.final_degrain_args
         )
-        if self.basic_tr or self.final_tr:
-            smoothed = self.mask_shimmer(smoothed, self.bobbed, **self.final_mask_shimmer_args)
+        smoothed = self.mask_shimmer(smoothed, self.bobbed, **self.final_mask_shimmer_args)
 
         if self.limit_mode in (SharpLimitMode.SPATIAL_POSTSMOOTH, SharpLimitMode.TEMPORAL_POSTSMOOTH):
             smoothed = self.apply_sharpen_limit(smoothed)
