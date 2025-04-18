@@ -766,7 +766,7 @@ class QTempGaussMC(vs_object):
         :param preset:          MVTools preset defining base values for the MVTools object.
         :param blksize:         Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
         :param refine:          Number of times to recalculate motion vectors with halved block size.
-        :param thsad_recalc:    Only bad quality new vectors with a SAD above thid will be re-estimated by search.
+        :param thsad_recalc:    Only bad quality new vectors with a SAD above this will be re-estimated by search.
                                 thsad value is scaled to 8x8 block size.
         :param thscd:           Scene change detection thresholds:
                                  - First value: SAD threshold for considering a block changed between frames.
