@@ -199,7 +199,7 @@ class FixInterlacedFades(CustomEnum):
         )
 
         expr_header = 'Y 2 % x.fbAvg{i} x.ftAvg{i} ? AVG! AVG@ 0 = x x {color} - '
-        expr_footer = ' AVG@ / * ? {color} +'
+        expr_footer = ' AVG@ / * {color} + ?'
 
         expr_luma = expr_header + 'x.ftAvg{i} x.fbAvg{i} {expr_mode}' + expr_footer
         expr_chroma = expr_luma if self == self.Average else (
