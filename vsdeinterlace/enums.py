@@ -2,7 +2,17 @@ from vstools import CustomEnum, CustomIntEnum, vs
 
 __all__ = [
     'VFMMode',
-    'IVTCycles'
+    'IVTCycles',
+
+    'InputType',
+    'SearchPostProcess',
+    'LosslessMode',
+    'NoiseProcessMode',
+    'NoiseDeintMode',
+    'SharpMode',
+    'SharpLimitMode',
+    'BackBlendMode',
+    'SourceMatchMode'
 ]
 
 
@@ -53,3 +63,132 @@ class IVTCycles(list[int], CustomEnum):  # type: ignore[misc]
     def decimate(self, clip: vs.VideoNode, pattern: int = 0) -> vs.VideoNode:
         assert 0 <= pattern < self.length
         return clip.std.SelectEvery(self.pattern_length, self.value[pattern])
+
+
+class InputType(CustomIntEnum):
+    """Processing routine to use for the input."""
+
+    INTERLACE = 0
+    """Deinterlace interlaced input."""
+
+    PROGRESSIVE = 1
+    """Deshimmer general progressive material that contains less severe problems."""
+
+    REPAIR = 2
+    """Repair badly deinterlaced material with considerable horizontal artefacts."""
+
+
+class SearchPostProcess(CustomIntEnum):
+    """Prefiltering to apply in order to assist with motion search."""
+
+    NONE = 0
+    """No post-processing."""
+
+    GAUSSBLUR = 1
+    """Gaussian blur."""
+
+    GAUSSBLUR_EDGESOFTEN = 2
+    """Gaussian blur & edge softening."""
+
+
+class NoiseProcessMode(CustomIntEnum):
+    """How to handle processing noise in the source."""
+
+    NONE = 0
+    """No noise processing."""
+
+    DENOISE = 1
+    """Denoise source & optionally restore some noise back at the end of basic or final stages."""
+
+    IDENTIFY = 2
+    """Identify noise only & optionally restore some noise back at the end of basic or final stages."""
+
+
+class NoiseDeintMode(CustomIntEnum):
+    """When noise is taken from interlaced source, how to 'deinterlace' it before restoring."""
+
+    WEAVE = 0
+    """Double weave source noise, lags behind by one frame."""
+
+    BOB = 1
+    """Bob source noise, results in coarse noise."""
+
+    GENERATE = 2
+    """Gnerates fresh noise lines."""
+
+
+class SharpMode(CustomIntEnum):
+    """How to re-sharpen the clip after temporally blurring."""
+
+    NONE = 0
+    """No re-sharpening."""
+
+    UNSHARP = 1
+    """Re-sharpening using unsharpening."""
+
+    UNSHARP_MINMAX = 2
+    """Re-sharpening using unsharpening clamped to the local 3x3 min/max average."""
+
+
+class SharpLimitMode(CustomIntEnum):
+    """How to limit and when to apply re-sharpening of the clip."""
+
+    NONE = 0
+    """No sharpness limiting."""
+
+    SPATIAL_PRESMOOTH = 1
+    """Spatial sharpness limiting prior to final stage."""
+
+    TEMPORAL_PRESMOOTH = 2
+    """Temporal sharpness limiting prior to final stage."""
+
+    SPATIAL_POSTSMOOTH = 3
+    """Spatial sharpness limiting after the final stage."""
+
+    TEMPORAL_POSTSMOOTH = 4
+    """Temporal sharpness limiting after the final stage."""
+
+
+class BackBlendMode(CustomIntEnum):
+    """When to back blend (blurred) difference between pre & post sharpened clip."""
+
+    NONE = 0
+    """No back-blending."""
+
+    PRELIMIT = 1
+    """Perform back-blending prior to sharpness limiting."""
+
+    POSTLIMIT = 2
+    """Perform back-blending after sharpness limiting."""
+
+    BOTH = 3
+    """Perform back-blending both before and after sharpness limiting."""
+
+
+class SourceMatchMode(CustomIntEnum):
+    """Creates higher fidelity output with extra processing. will capture more source detail and reduce oversharpening / haloing."""
+
+    NONE = 0
+    """No source match processing."""
+
+    BASIC = 1
+    """Conservative halfway stage that rarely introduces artefacts."""
+
+    REFINED = 2
+    """Restores almost exact source detail but is sensitive to noise & can introduce occasional aliasing."""
+
+    TWICE_REFINED = 3
+    """Restores almost exact source detail."""
+
+
+class LosslessMode(CustomIntEnum):
+    """When to put exact source fields into result & clean any artefacts."""
+
+    NONE = 0
+    """Do not restore source fields."""
+
+    PRESHARPEN = 1
+    """Restore source fields prior to re-sharpening. Not exactly lossless."""
+
+    POSTSMOOTH = 2
+    """Restore source fields after final temporal smooth. True lossless but less stable."""
