@@ -81,7 +81,8 @@ def frequency_merge(
                         or specifying the clip with the low frequency components.
                         If a clip is passed, it must be one of the clips provided in `_clips`.
                         Defaults to `MeanMode.ARITHMETIC`.
-    :param lowpass:     
+    :param lowpass:     A global lowpass function applied to all provided clips.
+                        If set, ``_clips`` must consist solely of VideoNodes.
     :param planes:      Planes to process. If specified, this will be passed to the lowpass functions.
                         If None, it won't be included. Defaults to None.
     :param **kwargs:    Additional keyword arguments passed to the lowpass functions.
