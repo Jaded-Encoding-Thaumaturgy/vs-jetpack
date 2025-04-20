@@ -1,65 +1,153 @@
 from __future__ import annotations
 
-from typing import Any, Iterable
+from typing import Any, overload
+
+from jetpytools import CustomRuntimeError
 
 from vsrgtools import MeanMode
-from vstools import (
-    CustomValueError, GenericVSFunction, PlanesT, flatten_vnodes,
-    normalize_planes, normalize_seq, vs, FormatsMismatchError
-)
-
-from .fft import DFTTest
+from vstools import CustomValueError, FormatsMismatchError, PlanesT, VSFunctionKwArgs, VSFunctionNoArgs, vs
 
 __all__ = [
     'frequency_merge',
 ]
 
 
+@overload
 def frequency_merge(
-    *_clips: vs.VideoNode | Iterable[vs.VideoNode],
-    mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER, mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
-    lowpass: GenericVSFunction | list[GenericVSFunction] = DFTTest.denoise, planes: PlanesT = None, **kwargs: Any
+    *_clips: vs.VideoNode | tuple[
+        vs.VideoNode,
+        VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None
+    ],
+    mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER,
+    mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
+    lowpass: None = None,
+    planes: PlanesT = None,
+    **kwargs: Any
+) -> vs.VideoNode:
+    ...
+
+
+@overload
+def frequency_merge(
+    *_clips: vs.VideoNode,
+    mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER,
+    mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
+    lowpass: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode],
+    planes: PlanesT = None,
+    **kwargs: Any
+) -> vs.VideoNode:
+    ...
+
+
+def frequency_merge(
+    *_clips: vs.VideoNode | tuple[
+        vs.VideoNode,
+        VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None
+    ],
+    mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER,
+    mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
+    lowpass: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    planes: PlanesT = None,
+    **kwargs: Any
 ) -> vs.VideoNode:
     """
     Merges the frequency components of the input clips.
-    :param _clips:      The clips to merge.
-    :param mode_high:   The mean mode to use for the high frequency components or
-                        specifying the clip with the high frequency components.
-    :param mode_low:    The mean mode to use for the low frequency components or
-                        specifying the clip with the low frequency components.
-    :param lowpass:     The lowpass filter to used to extract high frequency components.
-                            Example: `lowpass = lambda i: vsrgtools.box_blur(i, passes=3)`
-    :param planes:      The planes to process. If None, all planes will be processed.
+
+    Example:
+
+        - Replacing the high-frequency details of a Blu-ray source with the sharper components from a web stream:
+
+        ``` py
+            delowpass = frequency_merge(
+                bluray_src, (web_src, lambda clip: Lanczos(taps=4).scale(clip, blur=4/3, force=True)),
+                mode_high=web_src,
+                mode_low=bluray_src
+            )
+        ```
+
+        - Lehmer merging 34 sources (stop doing that please)
+
+        ``` py
+            merged = frequency_merge(*clips, lowpass=lambda clip: DFTTest.denoise(clip, ...))
+        ```
+
+    :param _clips:      A variable number of tuples, each containing a clip and an optional lowpass filter function.
+                        The lowpass function can either be a standard function or one that supports per-plane filtering.
+    :param mode_high:   The mean mode to use for the high frequency components
+                        or specifying the clip with the high frequency components.
+                        If a clip is passed, it must be one of the clips provided in `_clips`.
+                        Defaults to `MeanMode.LEHMER`.
+    :param mode_low:    The mean mode to use for the low frequency components
+                        or specifying the clip with the low frequency components.
+                        If a clip is passed, it must be one of the clips provided in `_clips`.
+                        Defaults to `MeanMode.ARITHMETIC`.
+    :param lowpass:     
+    :param planes:      Planes to process. If specified, this will be passed to the lowpass functions.
+                        If None, it won't be included. Defaults to None.
+    :param **kwargs:    Additional keyword arguments passed to the lowpass functions.
+
+    :return:            A clip representing the merged output of the frequency-separated clips.
     """
 
-    clips = flatten_vnodes(_clips)
-    n_clips = len(clips)
+    clips = list[vs.VideoNode]()
+    lowpass_funcs = list[
+        VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None
+    ]()
 
-    planes = normalize_planes(clips[0], planes)
+    for c in _clips:
+        if isinstance(c, tuple):
+            clip, func = c
+        else:
+            clip, func = c, lowpass
 
-    if not lowpass:
+        clips.append(clip)
+        lowpass_funcs.append(func)
+
+    if not lowpass_funcs:
         raise CustomValueError('You must pass at least one lowpass filter!', frequency_merge)
 
     FormatsMismatchError.check(frequency_merge, *clips)
 
-    blurred_clips = []
-    for clip, filt in zip(clips, normalize_seq(lowpass, n_clips)):
-        try:
-            blurred_clips.append(clip if not filt else filt(clip, planes=planes, **kwargs))
-        except Exception:
-            blurred_clips.append(clip if not filt else filt(clip, **kwargs))
+    blurred_clips = list[vs.VideoNode]()
+
+    for clip, filt in zip(clips, lowpass_funcs):
+        if not filt:
+            blurred_clip = clip
+        else:
+            if planes is not None:
+                kwargs.update(planes=planes)
+
+            blurred_clip = filt(clip, **kwargs)
+
+        blurred_clips.append(blurred_clip)
 
     if isinstance(mode_low, vs.VideoNode):
-        low_freqs = blurred_clips[clips.index(mode_low)]
+        try:
+            low_freqs = blurred_clips[clips.index(mode_low)]
+        except ValueError as e:
+            raise CustomValueError(
+                "Could not retrieve low-frequency clip: `mode_low` must be one of the clips provided in `_clips`.",
+                frequency_merge
+            ) from e
     else:
         low_freqs = mode_low(blurred_clips, planes=planes, func=frequency_merge)
 
-    diffed_clips = []
-    for clip, blur in zip(clips, normalize_seq(blurred_clips, n_clips)):
-        diffed_clips.append(None if clip == blur else clip.std.MakeDiff(blur, planes))
+    diffed_clips = list[vs.VideoNode | None]()
+
+    for clip, blurred in zip(clips, blurred_clips):
+        diffed_clips.append(None if clip == blurred else clip.std.MakeDiff(blurred, planes))
 
     if isinstance(mode_high, vs.VideoNode):
-        high_freqs = diffed_clips[clips.index(mode_high)]
+        try:
+            high_freqs = diffed_clips[clips.index(mode_high)]
+        except ValueError as e:
+            raise CustomValueError(
+                "Could not retrieve high-frequency clip: `mode_high` must be one of the clips provided in `_clips`.",
+                frequency_merge
+            ) from e
+
+        if not high_freqs:
+            raise CustomRuntimeError("Could not retrieve high-frequency clip!", frequency_merge)
     else:
         high_freqs = mode_high([clip for clip in diffed_clips if clip], planes=planes, func=frequency_merge)
 
