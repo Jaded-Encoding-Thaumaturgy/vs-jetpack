@@ -61,7 +61,6 @@ plugins:
             filters:
               - "!^_"
               - "^__call__$"
-              - "^_dpir$"         # vs-denoise: mostly public via alias.
             heading_level: 1
             inherited_members: true
             line_length: 80

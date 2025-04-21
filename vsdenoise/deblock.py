@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Sequence, SupportsFloat
+from typing import Any, Sequence, SupportsFloat, cast
 
-from jetpytools import CustomNotImplementedError, CustomRuntimeError
+from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomStrEnum
 
 from vsaa import Nnedi3
 from vsexprtools import norm_expr
@@ -10,7 +10,7 @@ from vsmasktools import FDoG, GenericMaskT, Morpho, adg_mask, normalize_mask, st
 from vsrgtools import MeanMode, gauss_blur, repair
 from vsscale import DPIR
 from vstools import (
-    Align, ConstantFormatVideoNode, CustomStrEnum, FrameRangeN, FrameRangesN, FunctionUtil, PlanesT, VSFunctionNoArgs,
+    Align, ConstantFormatVideoNode, FrameRangeN, FrameRangesN, FunctionUtil, PlanesT, VSFunctionNoArgs,
     check_progressive, check_variable_format, core, depth, fallback, get_plane_sizes, get_y, join, normalize_ranges,
     normalize_seq, padder, plane, replace_ranges, shift_clip_multi, vs
 )
@@ -26,9 +26,9 @@ __all__ = [
 _StrengthT = SupportsFloat | vs.VideoNode | None
 
 
-class _dpir(CustomStrEnum):
-    DEBLOCK: _dpir = "deblock"  # type: ignore
-    DENOISE: _dpir = "denoise"  # type: ignore
+class dpir(CustomStrEnum):
+    DEBLOCK = cast("dpir", "deblock")
+    DENOISE = cast("dpir", "denoise")
 
     def __call__(
         self,
@@ -104,9 +104,6 @@ class _dpir(CustomStrEnum):
             dpired = replace_ranges(dpired, clip, no_dpir_zones, exclusive=exclusive_ranges)
 
         return dpired
-
-
-dpir = _dpir.DEBLOCK
 
 
 def dpir_mask(
