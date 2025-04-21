@@ -5,8 +5,7 @@ from typing import Literal, MutableMapping, Protocol
 from numpy import linalg, zeros
 from typing_extensions import Self
 
-from vsaa import Nnedi3
-from vsaa.abstract import _Antialiaser
+from vsaa import Nnedi3, Interpolater
 from vsdeband import AddNoise
 from vsdenoise import (
     MotionVectors, MVDirection, MVTools, MVToolsPreset, MVToolsPresets,
@@ -56,7 +55,7 @@ class QTempGaussMC(vs_object):
     bobbed: ConstantFormatVideoNode
     """High quality bobbed clip, initial spatial interpolation."""
 
-    noise: ConstantFormatVideoNode | None
+    noise: ConstantFormatVideoNode
     """Extracted noise when noise processing is enabled."""
 
     prefilter_output: ConstantFormatVideoNode
@@ -165,7 +164,7 @@ class QTempGaussMC(vs_object):
         *,
         tr: int = 2,
         thsad: int | tuple[int, int] = 640,
-        bobber: _Antialiaser = Nnedi3(nsize=1, nns=4, qual=2, pscrn=1),
+        bobber: Interpolater = Nnedi3(nsize=1, nns=4, qual=2, pscrn=1),
         noise_restore: float = 0.0,
         degrain_args: KwargsT | None = None,
         mask_args: KwargsT | None | Literal[False] = None,
@@ -195,7 +194,7 @@ class QTempGaussMC(vs_object):
         self,
         *,
         tr: int = 1,
-        bobber: _Antialiaser | None = None,
+        bobber: Interpolater | None = None,
         mode: SourceMatchMode = SourceMatchMode.NONE,
         similarity: float = 0.5,
         enhance: float = 0.5,
@@ -435,7 +434,7 @@ class QTempGaussMC(vs_object):
             vectors.tr = 1
 
             degrained.append(
-                self.mv.degrain(  # type: ignore
+                self.mv.degrain(
                     clip, vectors=vectors, thsad=self.basic_thsad, thscd=self.thscd, **self.basic_degrain_args
                 )
             )
@@ -452,7 +451,7 @@ class QTempGaussMC(vs_object):
         if self.prefilter_tr:
             scenechange = self.prefilter_sc_threshold is not False
 
-            scenes = search.misc.SCDetect(self.prefilter_sc_threshold) if scenechange else search  # type: ignore
+            scenes = search.misc.SCDetect(self.prefilter_sc_threshold) if scenechange else search
             smoothed = BlurMatrix.BINOMIAL(self.prefilter_tr, mode=ConvMode.TEMPORAL, scenechange=scenechange)(scenes)
             smoothed = self.mask_shimmer(smoothed, search, **self.prefilter_mask_shimmer_args)
         else:
@@ -482,7 +481,6 @@ class QTempGaussMC(vs_object):
 
     def apply_denoise(self) -> None:
         if not self.denoise_mode:
-            self.noise = None
             self.denoise_output = self.clip
         else:
             if self.denoise_tr:
@@ -492,10 +490,10 @@ class QTempGaussMC(vs_object):
                     **self.denoise_func_comp_args,
                 )
             else:
-                denoised = self.denoise_func(self.draft)
+                denoised = self.denoise_func(self.draft)  # type: ignore
 
             if self.input_type == InputType.INTERLACE:
-                denoised = reinterlace(denoised, self.tff)
+                denoised = reinterlace(denoised, self.tff)  # type: ignore
 
             noise = self.clip.std.MakeDiff(denoised)
 
@@ -532,10 +530,10 @@ class QTempGaussMC(vs_object):
                         [noise, *noise_comp],
                         'x neutral - abs y neutral - abs > x y ? {weight1} * x y + {weight2} * +',
                         weight1=weight1, weight2=weight2,
-                    )  # type: ignore
+                    )
 
             self.noise = noise
-            self.denoise_output = denoised if self.denoise_mode == NoiseProcessMode.DENOISE else self.clip  # type: ignore
+            self.denoise_output = denoised if self.denoise_mode == NoiseProcessMode.DENOISE else self.clip
         
         if self.input_type == InputType.REPAIR:
             self.denoise_output = reinterlace(self.denoise_output, self.tff)  # type: ignore
@@ -544,7 +542,7 @@ class QTempGaussMC(vs_object):
         if self.input_type == InputType.PROGRESSIVE:
             self.bobbed = self.denoise_output
         else:
-            self.bobbed = self.basic_bobber.interpolate(  # type: ignore
+            self.bobbed = self.basic_bobber.interpolate(
                 self.denoise_output, False, **self.basic_bobber.get_aa_args(self.denoise_output)
             )
 
@@ -593,7 +591,7 @@ class QTempGaussMC(vs_object):
         if self.input_type == InputType.PROGRESSIVE:
             bobbed1 = adjusted1
         else:
-            bobbed1 = self.basic_bobber.interpolate(adjusted1, False, **self.basic_bobber.get_aa_args(adjusted1))  # type: ignore
+            bobbed1 = self.basic_bobber.interpolate(adjusted1, False, **self.basic_bobber.get_aa_args(adjusted1))
         match1 = self.binomial_degrain(bobbed1, self.basic_tr)
 
         if self.match_mode > SourceMatchMode.BASIC:
@@ -607,7 +605,7 @@ class QTempGaussMC(vs_object):
             if self.input_type == InputType.PROGRESSIVE:
                 bobbed2 = diff
             else:
-                bobbed2 = self.match_bobber.interpolate(diff, False, **self.match_bobber.get_aa_args(diff))  # type: ignore
+                bobbed2 = self.match_bobber.interpolate(diff, False, **self.match_bobber.get_aa_args(diff))
             match2 = self.binomial_degrain(bobbed2, self.match_tr)
 
             if self.match_mode == SourceMatchMode.TWICE_REFINED:
@@ -709,7 +707,7 @@ class QTempGaussMC(vs_object):
     def apply_noise_restore(self, clip: vs.VideoNode, restore: float = 0.0) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.apply_noise_restore)
 
-        if restore and self.noise:
+        if restore and hasattr(self, "noise"):
             clip = norm_expr([clip, self.noise], 'y neutral - {restore} * x +', restore=restore)
 
         return clip
@@ -749,7 +747,7 @@ class QTempGaussMC(vs_object):
         if self.motion_blur_fps_divisor > 1:
             processed = processed[:: self.motion_blur_fps_divisor]
 
-        self.motion_blur_output = processed  # type: ignore
+        self.motion_blur_output = processed
 
     def process(
         self,
