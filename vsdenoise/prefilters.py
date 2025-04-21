@@ -12,7 +12,7 @@ from jetpytools import CustomNotImplementedError
 from vsexprtools import norm_expr
 from vsrgtools import bilateral, flux_smooth, gauss_blur, min_blur
 from vstools import (
-    MISSING, ColorRange, CustomIntEnum, MissingT, PlanesT, SingleOrArr, check_variable, core,
+    MISSING, ColorRange, CustomIntEnum, MissingT, PlanesT, SingleOrArr, check_variable, core, get_video_format,
     get_peak_value, get_y, normalize_planes, normalize_seq, scale_value, vs, InvalidColorFamilyError
 )
 
@@ -539,11 +539,19 @@ def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: floa
 
     InvalidColorFamilyError.check(clip, (vs.YUV, vs.GRAY), prefilter_to_full_range)
 
+    clip_range = ColorRange.from_video(clip)
+    clip_fmt = get_video_format(clip)
+
     curve = (slope - 1) * smooth
     luma_expr = (
         'x yrange_in_min - 1 yrange_in_max yrange_in_min - / * LUMA! '
         '{k} 1 {c} + {c} sin LUMA@ {c} + / - * LUMA@ 1 {k} - * + range_max *'
     )
-    chroma_expr = 'x neutral - range_max crange_in_max crange_in_min - / * neutral +'
+    chroma_expr = 'x neutral - range_max crange_in_max crange_in_min - / * range_half + round'
 
-    return ColorRange.FULL.apply(norm_expr(clip, (luma_expr, chroma_expr), k=curve, c=smooth))
+    if clip_fmt.sample_type is vs.INTEGER:
+        luma_expr += 'round'
+
+    planes = 0 if clip_range.is_full or clip_fmt.sample_type is vs.FLOAT else None
+
+    return ColorRange.FULL.apply(norm_expr(clip, (luma_expr, chroma_expr), k=curve, c=smooth, planes=planes))
