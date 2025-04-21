@@ -545,7 +545,7 @@ def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: floa
     curve = (slope - 1) * smooth
     luma_expr = (
         'x yrange_in_min - 1 yrange_in_max yrange_in_min - / * LUMA! '
-        '{k} 1 {c} + {c} sin LUMA@ {c} + / - * LUMA@ 1 {k} - * + range_max *'
+        '{k} 1 {c} + {c} sin LUMA@ {c} + / - * LUMA@ 1 {k} - * + range_max * '
     )
     chroma_expr = 'x neutral - range_max crange_in_max crange_in_min - / * range_half + round'
 
