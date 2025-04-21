@@ -13,7 +13,7 @@ from vsexprtools import norm_expr
 from vsrgtools import bilateral, flux_smooth, gauss_blur, min_blur
 from vstools import (
     MISSING, ColorRange, CustomIntEnum, MissingT, PlanesT, SingleOrArr, check_variable, core,
-    get_peak_value, get_y, normalize_planes, normalize_seq, scale_value, vs
+    get_peak_value, get_y, normalize_planes, normalize_seq, scale_value, vs, InvalidColorFamilyError
 )
 
 from .bm3d import BM3D as BM3DM
@@ -536,6 +536,8 @@ def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: floa
 
     :return:            Range expanded clip.
     """
+
+    InvalidColorFamilyError.check(clip, (vs.YUV, vs.GRAY), prefilter_to_full_range)
 
     curve = (slope - 1) * smooth
     luma_expr = (
