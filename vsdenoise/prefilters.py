@@ -5,17 +5,15 @@ This module implements prefilters for denoisers
 from __future__ import annotations
 
 from enum import EnumMeta
-from math import sin
 from typing import TYPE_CHECKING, Any, Literal, Sequence, cast, overload
 
 from jetpytools import CustomNotImplementedError
 
-from vsexprtools import ExprOp, complexpr_available, norm_expr
-from vsmasktools import retinex
+from vsexprtools import norm_expr
 from vsrgtools import bilateral, flux_smooth, gauss_blur, min_blur
 from vstools import (
-    MISSING, ColorRange, CustomIntEnum, MissingT, PlanesT, SingleOrArr, check_variable, core, depth, get_neutral_value,
-    get_peak_value, get_y, join, normalize_planes, normalize_seq, scale_value, split, vs
+    MISSING, ColorRange, CustomIntEnum, MissingT, PlanesT, SingleOrArr, check_variable, core,
+    get_peak_value, get_y, normalize_planes, normalize_seq, scale_value, vs
 )
 
 from .bm3d import BM3D as BM3DM
@@ -169,7 +167,7 @@ class PrefilterBase(CustomIntEnum, metaclass=PrefilterMeta):
 
         if full_range is not False:
             if full_range is True:
-                full_range = 5.0
+                full_range = 2.0
 
             return prefilter_to_full_range(out, full_range)
 
@@ -527,64 +525,23 @@ class MultiPrefilter(PrefBase):  # type: ignore
         return clip
 
 
-def prefilter_to_full_range(clip: vs.VideoNode, range_conversion: float = 5.0, amp: float = 0.0625, planes: PlanesT = None) -> vs.VideoNode:
+def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: float = 0.0625) -> vs.VideoNode:
     """
-    Convert a limited range clip to full range.\n
-    Useful for expanding prefiltered clip's ranges to give motion estimation additional information to work with.
+    Converts a clip to full range if necessary and amplifies dark areas.
+    Essentially acts like a luma-based multiplier on the SAD when used as an mvtools prefilter.
 
-    :param clip:                Clip to be preprocessed.
-    :param range_conversion:    Value which determines what range conversion method gets used.\n
-                                 * >= 1.0 - Expansion with expr based on this coefficient.
-                                 * >  0.0 - Expansion with retinex.
-                                 * <= 0.0 - Simple conversion with resize plugin.
-    :param amp:                 Amplitude of the conversion.
-    :param planes:              Planes to be processed.
+    :param clip:        Clip to process.
+    :param slope:       Slope to amplify the scale of the dark areas relative to bright areas.
+    :param smooth:      Indicates the length of the transition between the amplified dark areas and normal range conversion.
 
-    :return:                    Full range clip.
+    :return:            Range expanded clip.
     """
-    planes = normalize_planes(clip, planes)
 
-    work_clip, *chroma = split(clip) if planes == [0] else (clip, )
+    curve = (slope - 1) * smooth
+    luma_expr = (
+        'x yrange_in_min - 1 yrange_in_max yrange_in_min - / * LUMA! '
+        '{k} 1 {c} + {c} sin LUMA@ {c} + / - * LUMA@ 1 {k} - * + range_max *'
+    )
+    chroma_expr = 'x neutral - range_max crange_in_max crange_in_min - / * neutral +'
 
-    assert (fmt := work_clip.format) and clip.format
-
-    is_integer = fmt.sample_type == vs.INTEGER
-
-    # Luma expansion TV->PC (up to 16% more values for motion estimation)
-    if range_conversion >= 1.0:
-        neutral = get_neutral_value(work_clip)
-        max_val = get_peak_value(work_clip)
-
-        c = sin(amp)
-        k = (range_conversion - 1) * c
-
-        if is_integer:
-            t = f'x {scale_value(16, 8, clip)} '
-            t += f'- {scale_value(219, 8, clip)} '
-            t += f'/ {ExprOp.clamp(0, 1)}'
-        else:
-            t = ExprOp.clamp(0, 1, 'x').to_str()
-
-        head = f'{k} {1 + c} {(1 + c) * c}'
-
-        if complexpr_available:
-            head = f'{t} T! {head}'
-            t = 'T@'
-
-        luma_expr = f'{head} {t} {c} + / - * {t} 1 {k} - * +'
-
-        if is_integer:
-            luma_expr += f' {max_val} *'
-
-        pref_full = norm_expr(
-            work_clip, (luma_expr, f'x {neutral} - 128 * 112 / {neutral} +'), planes, func=prefilter_to_full_range
-        )
-    elif range_conversion > 0.0:
-        pref_full = retinex(work_clip, upper_thr=range_conversion, fast=False)
-    else:
-        pref_full = depth(work_clip, clip, range_out=ColorRange.FULL)
-
-    if chroma:
-        return join(pref_full, *chroma, family=clip.format.color_family)
-
-    return pref_full
+    return ColorRange.FULL.apply(norm_expr(clip, (luma_expr, chroma_expr), k=curve, c=smooth))
