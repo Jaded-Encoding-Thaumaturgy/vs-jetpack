@@ -47,7 +47,7 @@ class VFMMode(CustomIntEnum):
     """
 
 
-class IVTCycles(list[list[int]], CustomEnum):  # type: ignore[misc]
+class IVTCycles(CustomEnum):
     """
     Enum representing different decimation patterns for IVTC (Inverse Telecine) processes.
 
@@ -60,7 +60,8 @@ class IVTCycles(list[list[int]], CustomEnum):  # type: ignore[misc]
         [0, 2, 5, 8],
         [0, 2, 4, 7],
         [2, 4, 6, 9],
-        [1, 4, 6, 8]
+        [1, 4, 6, 8],
+        10
     ]
     """Pattern for standard 2:3 pulldown."""
 
@@ -69,7 +70,8 @@ class IVTCycles(list[list[int]], CustomEnum):  # type: ignore[misc]
         [0, 2, 5, 6],
         [0, 2, 4, 7],
         [0, 2, 4, 7],
-        [1, 2, 4, 6]
+        [1, 2, 4, 6],
+        8
     ]
     """Pattern for 2:3:3:2 pulldown."""
 
@@ -78,19 +80,16 @@ class IVTCycles(list[list[int]], CustomEnum):  # type: ignore[misc]
         [0, 1, 2, 4],
         [0, 1, 2, 3],
         [1, 2, 3, 4],
-        [0, 2, 3, 4]
+        [0, 2, 3, 4],
+        5
     ]
     """Pattern for second-stage decimation or animation-on-twos cleanup."""
+
+    pattern_length: int
 
     def __init__(self, value: list[list[int]], pattern_length: int) -> None:
         self._value_ = value
         self.pattern_length = pattern_length
-
-    @property
-    def pattern_length(self) -> int:
-        """Get the length of the pattern cycle in frames."""
-
-        return int(self._name_[6:])
 
     @property
     def pattern_count(self) -> int:
