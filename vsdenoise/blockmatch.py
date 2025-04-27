@@ -230,23 +230,19 @@ def bmdegrain(
 if TYPE_CHECKING:
     from vapoursynth import Function, Plugin
 
-    class _VSFunction(Function, Generic[P, R]):
-        def __init__(self, function: Callable[P, R]) -> None: ...
-
-        def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...  # type: ignore[override]
-
-    def _func_type(*args: Any, **kwargs: Any) -> ConstantFormatVideoNode: ...
+    class _VSFunction(Function):
+        def __call__(self, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode: ...
 
     class _VSPlugin(Plugin):
-        BM3D = _VSFunction(_func_type)
-        BM3Dv2 = _VSFunction(_func_type)
-        VAggregate = _VSFunction(_func_type)
+        BM3D: _VSFunction
+        BM3Dv2: _VSFunction
+        VAggregate: _VSFunction
 else:
     _Plugin = Any
 
 
 def _clean_keywords(
-    kwargs: dict[str, Any], function: _VSFunction[..., Any]
+    kwargs: dict[str, Any], function: _VSFunction
 ) -> dict[str, Any]:
     return {k: v for k, v in kwargs.items() if k in signature(function).parameters}
 
