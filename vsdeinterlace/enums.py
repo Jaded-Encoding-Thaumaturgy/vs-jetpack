@@ -82,6 +82,10 @@ class IVTCycles(list[list[int]], CustomEnum):  # type: ignore[misc]
     ]
     """Pattern for second-stage decimation or animation-on-twos cleanup."""
 
+    def __init__(self, value: list[list[int]], pattern_length: int) -> None:
+        self._value_ = value
+        self.pattern_length = pattern_length
+
     @property
     def pattern_length(self) -> int:
         """Get the length of the pattern cycle in frames."""
