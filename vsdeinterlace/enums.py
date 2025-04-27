@@ -89,7 +89,7 @@ class IVTCycles(list[list[int]], CustomEnum):  # type: ignore[misc]
         return int(self._name_[6:])
 
     @property
-    def length(self) -> int:
+    def pattern_count(self) -> int:
         """Get the total number of available pattern variations for this cycle."""
 
         return len(self.value)
@@ -97,7 +97,7 @@ class IVTCycles(list[list[int]], CustomEnum):  # type: ignore[misc]
     def decimate(self, clip: vs.VideoNode, pattern: int = 0) -> vs.VideoNode:
         """Apply the decimation pattern to a video clip with the given pattern index."""
 
-        assert 0 <= pattern < self.length
+        assert 0 <= pattern < self.pattern_count
         return clip.std.SelectEvery(self.pattern_length, self.value[pattern])
 
 
