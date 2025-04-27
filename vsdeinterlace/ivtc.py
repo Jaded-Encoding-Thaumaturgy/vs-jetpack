@@ -49,8 +49,8 @@ def jivtc(
     **kwargs: Any
 ) -> vs.VideoNode:
     """
-    This function should only be used when a normal ivtc or ivtc + bobber leaves chroma blend to a every fourth frame.
-    You can disable chroma_only to use in luma as well, but it is not recommended.
+    This function should only be used when a normal ivtc or ivtc + bobber leaves chroma blend to every fourth frame.
+    You can disable chroma_only to use it for luma as well, but it is not recommended.
 
     :param clip:            Clip to process. Has to be 60i.
     :param pattern:         First frame of any clean-combed-combed-clean-clean sequence.
