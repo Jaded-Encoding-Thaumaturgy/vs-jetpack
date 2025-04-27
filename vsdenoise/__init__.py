@@ -1,7 +1,6 @@
 # ruff: noqa: F401, F403
 
 from .blockmatch import *
-from .bm3d import *
 from .ccd import *
 from .deblock import *
 from .fft import *
