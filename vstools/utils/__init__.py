@@ -3,7 +3,6 @@
 from . import vs_proxy as vapoursynth
 from .cache import *
 from .clips import *
-from .colors import *
 from .ffprobe import *
 from .file import *
 from .funcs import *
