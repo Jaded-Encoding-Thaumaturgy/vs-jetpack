@@ -77,6 +77,31 @@ class _Plugin_akarin_VideoNode_Bound(Plugin):
 # end implementation
 
 
+# implementation: bm3d
+
+class _Plugin_bm3d_Core_Bound(Plugin):
+    """This class implements the module definitions for the "bm3d" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Basic(self, input: VideoNode, ref: VideoNode | None = None, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, th_mse: float | None = None, hard_thr: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def Final(self, input: VideoNode, ref: VideoNode, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, th_mse: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def OPP2RGB(self, input: VideoNode, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def RGB2OPP(self, input: VideoNode, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def VAggregate(self, input: VideoNode, radius: int | None = None, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def VBasic(self, input: VideoNode, ref: VideoNode | None = None, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, radius: int | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, ps_num: int | None = None, ps_range: int | None = None, ps_step: int | None = None, th_mse: float | None = None, hard_thr: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def VFinal(self, input: VideoNode, ref: VideoNode, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, radius: int | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, ps_num: int | None = None, ps_range: int | None = None, ps_step: int | None = None, th_mse: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_bm3d_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "bm3d" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Basic(self, ref: VideoNode | None = None, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, th_mse: float | None = None, hard_thr: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def Final(self, ref: VideoNode, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, th_mse: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def OPP2RGB(self, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def RGB2OPP(self, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def VAggregate(self, radius: int | None = None, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def VBasic(self, ref: VideoNode | None = None, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, radius: int | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, ps_num: int | None = None, ps_range: int | None = None, ps_step: int | None = None, th_mse: float | None = None, hard_thr: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def VFinal(self, ref: VideoNode, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, radius: int | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, ps_num: int | None = None, ps_range: int | None = None, ps_step: int | None = None, th_mse: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
+
 # implementation: bilateralgpu
 
 class _Plugin_bilateralgpu_Core_Bound(Plugin):
@@ -1540,6 +1565,11 @@ class VideoNode(RawNode):
     def bilateralgpu_rtc(self) -> _Plugin_bilateralgpu_rtc_VideoNode_Bound:
         """Bilateral filter using CUDA (NVRTC)"""
     # end instance
+    # instance_bound_VideoNode: bm3d
+    @property
+    def bm3d(self) -> _Plugin_bm3d_VideoNode_Bound:
+        """Implementation of BM3D denoising filter for VapourSynth."""
+    # end instance
     # instance_bound_VideoNode: bm3dcpu
     @property
     def bm3dcpu(self) -> _Plugin_bm3dcpu_VideoNode_Bound:
@@ -1847,6 +1877,11 @@ class Core:
     @property
     def bilateralgpu_rtc(self) -> _Plugin_bilateralgpu_rtc_Core_Bound:
         """Bilateral filter using CUDA (NVRTC)"""
+    # end instance
+    # instance_bound_Core: bm3d
+    @property
+    def bm3d(self) -> _Plugin_bm3d_Core_Bound:
+        """Implementation of BM3D denoising filter for VapourSynth."""
     # end instance
     # instance_bound_Core: bm3dcpu
     @property
