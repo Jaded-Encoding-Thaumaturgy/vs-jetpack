@@ -48,21 +48,36 @@ class VFMMode(CustomIntEnum):
 
 
 class IVTCycles(CustomEnum):
-    cycle_10 = [[0, 3, 6, 8], [0, 2, 5, 8], [0, 2, 4, 7], [2, 4, 6, 9], [1, 4, 6, 8]], 10
-    cycle_08 = [[0, 3, 4, 6], [0, 2, 5, 6], [0, 2, 4, 7], [0, 2, 4, 7], [1, 2, 4, 6]], 8
-    cycle_05 = [[0, 1, 3, 4], [0, 1, 2, 4], [0, 1, 2, 3], [1, 2, 3, 4], [0, 2, 3, 4]], 5
+    """
+    Enum representing different decimation patterns for IVTC (Inverse Telecine) processes.
 
-    pattern_length: int
+    These patterns are used to remove duplicate frames after double weaving fields into frames.
+    Each pattern defines a sequence of frame indices to keep during decimation.
+    """
 
-    def __init__(self, value: list[list[int]], pattern_length: int) -> None:
-        self._value_ = value
-        self.pattern_length = pattern_length
+    cycle_10 = [[0, 3, 6, 8], [0, 2, 5, 8], [0, 2, 4, 7], [2, 4, 6, 9], [1, 4, 6, 8]]
+    """Pattern for standard 2:3 pulldown."""
+
+    cycle_08 = [[0, 3, 4, 6], [0, 2, 5, 6], [0, 2, 4, 7], [0, 2, 4, 7], [1, 2, 4, 6]]
+    """Pattern for 2:3:3:2 pulldown."""
+
+    cycle_05 = [[0, 1, 3, 4], [0, 1, 2, 4], [0, 1, 2, 3], [1, 2, 3, 4], [0, 2, 3, 4]]
+    """Pattern for second-stage decimation or animation-on-twos cleanup."""
+
+    @property
+    def pattern_length(self) -> int:
+        """Get the length of the pattern cycle in frames."""
+        return int(self._name_[6:])
 
     @property
     def length(self) -> int:
+        """Get the total number of available pattern variations for this cycle."""
+
         return len(self.value)
 
     def decimate(self, clip: vs.VideoNode, pattern: int = 0) -> vs.VideoNode:
+        """Apply the decimation pattern to a video clip with the given pattern index."""
+
         assert 0 <= pattern < self.length
         return clip.std.SelectEvery(self.pattern_length, self.value[pattern])
 
