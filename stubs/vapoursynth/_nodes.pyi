@@ -77,6 +77,37 @@ class _Plugin_akarin_VideoNode_Bound(Plugin):
 # end implementation
 
 
+# implementation: bilateralgpu
+
+class _Plugin_bilateralgpu_Core_Bound(Plugin):
+    """This class implements the module definitions for the "akarin" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Bilateral(self, clip: VideoNode, sigma_spatial: _SingleAndSequence[float] | None = None, sigma_color: _SingleAndSequence[float] | None = None, radius: _SingleAndSequence[int] | None = None, device_id: int | None = None, num_streams: int | None = None, use_shared_memory: int | None = None, ref: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+    def Version(self) -> bytes: ...
+
+
+class _Plugin_bilateralgpu_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "akarin" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Bilateral(self, sigma_spatial: _SingleAndSequence[float] | None = None, sigma_color: _SingleAndSequence[float] | None = None, radius: _SingleAndSequence[int] | None = None, device_id: int | None = None, num_streams: int | None = None, use_shared_memory: int | None = None, ref: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+
+
+# end implementation
+
+
+# implementation: bilateralgpu_rtc
+
+class _Plugin_bilateralgpu_rtc_Core_Bound(Plugin):
+    """This class implements the module definitions for the "akarin" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Bilateral(self, clip: VideoNode, sigma_spatial: _SingleAndSequence[float] | None = None, sigma_color: _SingleAndSequence[float] | None = None, radius: _SingleAndSequence[int] | None = None, device_id: int | None = None, num_streams: int | None = None, use_shared_memory: int | None = None, block_x: int | None = None, block_y: int | None = None, ref: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+    def Version(self) -> bytes: ...
+
+
+class _Plugin_bilateralgpu_rtc_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "akarin" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Bilateral(self, sigma_spatial: _SingleAndSequence[float] | None = None, sigma_color: _SingleAndSequence[float] | None = None, radius: _SingleAndSequence[int] | None = None, device_id: int | None = None, num_streams: int | None = None, use_shared_memory: int | None = None, block_x: int | None = None, block_y: int | None = None, ref: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+
+
+# end implementation
+
 
 # implementation: bm3dcpu
 
@@ -1447,6 +1478,16 @@ class VideoNode(RawNode):
     def akarin(self) -> _Plugin_akarin_VideoNode_Bound:
         """Akarin's Experimental Filters"""
     # end instance
+    # instance_bound_VideoNode: bilateralgpu
+    @property
+    def bilateralgpu(self) -> _Plugin_bilateralgpu_VideoNode_Bound:
+        """Bilateral filter using CUDA"""
+    # end instance
+    # instance_bound_VideoNode: bilateralgpu_rtc
+    @property
+    def bilateralgpu_rtc(self) -> _Plugin_bilateralgpu_rtc_VideoNode_Bound:
+        """Bilateral filter using CUDA (NVRTC)"""
+    # end instance
     # instance_bound_VideoNode: bm3dcpu
     @property
     def bm3dcpu(self) -> _Plugin_bm3dcpu_VideoNode_Bound:
@@ -1729,6 +1770,16 @@ class Core:
     @property
     def akarin(self) -> _Plugin_akarin_Core_Bound:
         """Akarin's Experimental Filters"""
+    # end instance
+    # instance_bound_Core: bilateralgpu
+    @property
+    def bilateralgpu(self) -> _Plugin_bilateralgpu_Core_Bound:
+        """Bilateral filter using CUDA"""
+    # end instance
+    # instance_bound_Core: bilateralgpu_rtc
+    @property
+    def bilateralgpu_rtc(self) -> _Plugin_bilateralgpu_rtc_Core_Bound:
+        """Bilateral filter using CUDA (NVRTC)"""
     # end instance
     # instance_bound_Core: bm3dcpu
     @property
