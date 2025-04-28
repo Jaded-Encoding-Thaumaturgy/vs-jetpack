@@ -439,6 +439,11 @@ def bilateral(
     and pixel intensity similarity.
     It can be used for joint (cross) bilateral filtering when a reference clip is given.
 
+    Example:
+        ```py
+        blurred = bilateral(clip, ref, 3.0, 0.02, backend=bilateral.Backend.CPU)
+        ```
+
     For more details, see:
         - https://github.com/dnjulek/vapoursynth-zip/wiki/Bilateral
         - https://github.com/HomeOfVapourSynthEvolution/VapourSynth-Bilateral
