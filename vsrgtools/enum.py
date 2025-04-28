@@ -5,7 +5,7 @@ from math import ceil, exp, log2, pi, sqrt
 from typing import Any, Iterable, Literal, Sequence, TypeVar, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError
-from typing_extensions import Self
+from typing_extensions import Self, deprecated
 
 from vsexprtools import ExprList, ExprOp, ExprToken, ExprVars
 from vstools import (
@@ -456,6 +456,11 @@ class BlurMatrix(CustomEnum):
         return taps
 
 
+@deprecated(
+    "This enum is deprecated and will be removed in a future version. "
+    "Uses `vsrgtools.bilateral.Backend` instead.",
+    category=DeprecationWarning
+)
 class BilateralBackend(CustomStrEnum):
     CPU = 'vszip'
     GPU = 'bilateralgpu'
