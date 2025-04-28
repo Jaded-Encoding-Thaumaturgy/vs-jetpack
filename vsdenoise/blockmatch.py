@@ -265,12 +265,12 @@ class BM3D(Generic[P, R]):
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
 
-    class DeviceType(CustomEnum):
-        """Enum representing the available devices for running the BM3D plugin."""
+    class Backend(CustomEnum):
+        """Enum representing the available backends for running the BM3D plugin."""
 
         AUTO = "auto"
         """
-        Automatically selects the best available device.
+        Automatically selects the best available backend.
         Selection priority: "cuda_rtc" → "cuda" → "hip" → "sycl" → "cpu" → "old".
         When the filter chain is executed within vspreview, the priority of "cuda_rtc" and "cuda" is reversed.
         """
@@ -294,17 +294,17 @@ class BM3D(Generic[P, R]):
         """GPU implementation using Intel SYCL."""
 
         @cache
-        def resolve(self) -> BM3D.DeviceType:
+        def resolve(self) -> BM3D.Backend:
             """
-            Resolves the appropriate BM3D device type to use based on availability and context.
+            Resolves the appropriate BM3D backend to use based on availability and context.
 
-            If the current instance is not BM3D.DeviceType.AUTO, it returns itself.
-            Otherwise, it attempts to select the best available device type available.
+            If the current instance is not BM3D.Backend.AUTO, it returns itself.
+            Otherwise, it attempts to select the best available backend.
 
             :raises CustomRuntimeError:     If no supported BM3D implementation is available on the system.
-            :return:                        The resolved BM3D.DeviceType to use for processing.
+            :return:                        The resolved BM3D.Backend to use for processing.
             """
-            if self is not BM3D.DeviceType.AUTO:
+            if self is not BM3D.Backend.AUTO:
                 return self
 
             try:
@@ -315,57 +315,57 @@ class BM3D(Generic[P, R]):
                     return False
 
             if is_preview() and hasattr(core, "bm3dcuda"):
-                return BM3D.DeviceType.CUDA
+                return BM3D.Backend.CUDA
 
             if hasattr(core, "bm3dcuda_rtc"):
-                return BM3D.DeviceType.CUDA_RTC
+                return BM3D.Backend.CUDA_RTC
 
             if hasattr(core, "bm3dcuda"):
-                return BM3D.DeviceType.CUDA
+                return BM3D.Backend.CUDA
 
             if hasattr(core, "bm3dhip"):
-                return BM3D.DeviceType.HIP
+                return BM3D.Backend.HIP
 
             if hasattr(core, "bm3dsycl"):
-                return BM3D.DeviceType.SYCL
+                return BM3D.Backend.SYCL
 
             if hasattr(core, "bm3dcpu"):
-                return BM3D.DeviceType.CPU
+                return BM3D.Backend.CPU
 
             if hasattr(core, "bm3d"):
-                return BM3D.DeviceType.OLD
-            
+                return BM3D.Backend.OLD
+
             raise CustomRuntimeError(
                 "No compatible plugin found. Please install one from: "
                 "https://github.com/WolframRhodium/VapourSynth-BM3DCUDA "
-                "or https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D/ "
+                "or https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D/"
             )
 
         @property
         def plugin(self) -> _VSPlugin:
             """
-            Returns the appropriate BM3D plugin based on the current device type.
+            Returns the appropriate BM3D plugin based on the current backend.
 
-            :return:        The corresponding BM3D plugin for the resolved device type.
+            :return:        The corresponding BM3D plugin for the resolved backend.
             """
-            device_type = self.resolve()
+            backend = self.resolve()
 
-            if device_type is BM3D.DeviceType.OLD:
+            if backend is BM3D.Backend.OLD:
                 return cast(_VSPlugin, core.lazy.bm3d)
 
-            if device_type is BM3D.DeviceType.CPU:
+            if backend is BM3D.Backend.CPU:
                 return cast(_VSPlugin, core.lazy.bm3dcpu)
 
-            if device_type is BM3D.DeviceType.CUDA:
+            if backend is BM3D.Backend.CUDA:
                 return cast(_VSPlugin, core.lazy.bm3dcuda)
 
-            if device_type is BM3D.DeviceType.CUDA_RTC:
+            if backend is BM3D.Backend.CUDA_RTC:
                 return cast(_VSPlugin, core.lazy.bm3dcuda_rtc)
 
-            if device_type is BM3D.DeviceType.HIP:
+            if backend is BM3D.Backend.HIP:
                 return cast(_VSPlugin, core.lazy.bm3dhip)
 
-            if device_type is BM3D.DeviceType.SYCL:
+            if backend is BM3D.Backend.SYCL:
                 return cast(_VSPlugin, core.lazy.bm3dsycl)
 
             raise CustomRuntimeError
@@ -624,7 +624,7 @@ def bm3d(
     profile: BM3D.Profile = BM3D.Profile.FAST,
     pre: vs.VideoNode | None = None,
     ref: vs.VideoNode | None = None,
-    device_type: BM3D.DeviceType = BM3D.DeviceType.AUTO,
+    backend: BM3D.Backend = BM3D.Backend.AUTO,
     basic_args: dict[str, Any] | None = None,
     final_args: dict[str, Any] | None = None,
     **kwargs: Any,
@@ -638,7 +638,7 @@ def bm3d(
 
 
     :param clip:                            The clip to process.
-                                            If using BM3D.DeviceType.OLD, the clip format must be YUV444 or RGB,
+                                            If using BM3D.Backend.OLD, the clip format must be YUV444 or RGB,
                                             as filtering is always performed in the OPPonent color space.
                                             If using another device type and the clip format is:
                                                 - RGB       -> Processed in OPP format (BM3D algorithm, aka `chroma=False`).
@@ -675,7 +675,7 @@ def bm3d(
                                             Either `ref` or `pre` can be specified, not both.
                                             Defaults to None.
 
-    :param device_type:                     The device to use for processing. Defaults to BM3D.DeviceType.AUTO.
+    :param backend:                         The backend to use for processing. Defaults to BM3D.backend.AUTO.
 
     :param basic_args:                      Additional arguments to pass to the basic estimate step.
                                             Defaults to None.
@@ -687,7 +687,7 @@ def bm3d(
 
     :raises CustomValueError:               If both `pre` and `ref` are specified at the same time.
     :raises UnsupportedProfileError:        If the VERY_NOISY profile is not supported by the selected device type.
-    :raises UnsupportedVideoFormatError:    If the video format is not supported when using BM3D.DeviceType.OLD.
+    :raises UnsupportedVideoFormatError:    If the video format is not supported when using BM3D.Backend.OLD.
 
     :return:                                Denoised clip.
     """
@@ -706,16 +706,16 @@ def bm3d(
     radius_basic, radius_final = normalize_seq(radius, 2)
     nsigma = normalize_seq(sigma, 3)
 
-    device_type = device_type.resolve()
+    backend = backend.resolve()
     nbasic_args = basic_args or KwargsT()
     nfinal_args = final_args or KwargsT()
 
     matrix_rgb2opp = kwargs.pop("matrix_rgb2opp", BM3D.matrix_rgb2opp)
     matrix_opp2rgb = kwargs.pop("matrix_rgb2opp", BM3D.matrix_opp2rgb)
 
-    if device_type != BM3D.DeviceType.OLD and profile == BM3D.Profile.VERY_NOISY:
+    if backend != BM3D.Backend.OLD and profile == BM3D.Profile.VERY_NOISY:
         raise UnsupportedProfileError(
-            "The VERY_NOISY profile is only supported with BM3D.DeviceType.OLD.", func
+            "The VERY_NOISY profile is only supported with BM3D.Backend.OLD.", func
         )
 
     def _bm3d_wolfram(
@@ -728,11 +728,11 @@ def bm3d(
 
         if not ref:
             b_args = (
-                _clean_keywords(profile.basic_args(radius_basic), device_type.plugin.BM3Dv2)
+                _clean_keywords(profile.basic_args(radius_basic), backend.plugin.BM3Dv2)
                 | nbasic_args
                 | kwargs
             )
-            basic = device_type.plugin.BM3Dv2(
+            basic = backend.plugin.BM3Dv2(
                 preclip, pre, nsigma, chroma=chroma, **b_args
             )
         else:
@@ -742,7 +742,7 @@ def bm3d(
             final = basic
         else:
             f_args = (
-                _clean_keywords(profile.final_args(radius_final), device_type.plugin.BM3Dv2)
+                _clean_keywords(profile.final_args(radius_final), backend.plugin.BM3Dv2)
                 | nfinal_args
                 | kwargs
             )
@@ -750,7 +750,7 @@ def bm3d(
             final = basic
 
             for _ in range(refine):
-                final = device_type.plugin.BM3Dv2(
+                final = backend.plugin.BM3Dv2(
                     preclip, final, nsigma, chroma=chroma, **f_args
                 )
 
@@ -812,7 +812,7 @@ def bm3d(
     assert check_variable(clip, func)
 
     if clip.format.color_family == vs.RGB:
-        if device_type == BM3D.DeviceType.OLD:
+        if backend == BM3D.Backend.OLD:
             return _bm3d_mawen(clip, pre, ref)
 
         coefs = list(interleave_arr(matrix_rgb2opp, [0, 0, 0], 3))
@@ -834,7 +834,7 @@ def bm3d(
     preclip = depth(clip, 32)
 
     if clip.format.color_family == vs.YUV and {clip.format.subsampling_w, clip.format.subsampling_h} == {0}:
-        if device_type == BM3D.DeviceType.OLD:
+        if backend == BM3D.Backend.OLD:
             preclip = Point.resample(clip, clip.format.replace(color_family=vs.RGB))
 
             denoised = bm3d(
@@ -845,7 +845,7 @@ def bm3d(
                 profile,
                 pre,
                 ref,
-                device_type,
+                backend,
                 basic_args,
                 final_args,
                 **kwargs,
@@ -857,9 +857,9 @@ def bm3d(
 
         return depth(denoised, clip)
 
-    if device_type == BM3D.DeviceType.OLD:
+    if backend == BM3D.Backend.OLD:
         raise UnsupportedVideoFormatError(
-            "When using `BM3D.DeviceType.OLD`, the input clip must be in YUV444 or RGB format.",
+            "When using `BM3D.Backend.OLD`, the input clip must be in YUV444 or RGB format.",
             func, clip.format.color_family
         )
 
