@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from functools import partial
 from itertools import count
-from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, Sequence, Union, overload
 
-from jetpytools import FuncExceptT
+from jetpytools import CustomStrEnum, FuncExceptT, P, R
 
 from vsexprtools import ExprOp, ExprVars, complexpr_available, norm_expr
 from vskernels import Bilinear, Gaussian
@@ -14,11 +14,11 @@ from vstools import (
     split, to_arr, vs
 )
 
-from .enum import BilateralBackend, BlurMatrix, BlurMatrixBase, LimitFilterMode, VerticalCleanerMode, RemoveGrainMode
+from .enum import BlurMatrix, BlurMatrixBase, LimitFilterMode, RemoveGrainMode, VerticalCleanerMode
 from .freqs import MeanMode
 from .limit import limit_filter
 from .rgtools import remove_grain, vertical_cleaner
-from .util import normalize_radius, norm_rmode_planes
+from .util import norm_rmode_planes, normalize_radius
 
 __all__ = [
     'box_blur', 'side_box_blur',
@@ -432,6 +432,28 @@ def bilateral(
     backend: Bilateral.Backend = Bilateral.Backend.CPU,
     **kwargs: Any
 ) -> ConstantFormatVideoNode:
+    """
+    Applies a bilateral filter for edge-preserving and noise-reducing smoothing.
+
+    This filter replaces each pixel with a weighted average of nearby pixels based on both spatial distance
+    and pixel intensity similarity.
+    It can be used for joint (cross) bilateral filtering when a reference clip is given.
+
+    For more details, see:
+        - https://github.com/dnjulek/vapoursynth-zip/wiki/Bilateral
+        - https://github.com/HomeOfVapourSynthEvolution/VapourSynth-Bilateral
+        - https://github.com/WolframRhodium/VapourSynth-BilateralGPU
+
+    :param clip:        Source clip.
+    :param ref:         Optional reference clip for joint bilateral filtering.
+    :param sigmaS:      Spatial sigma (controls the extent of spatial smoothing).
+                        Can be a float or per-plane list.
+    :param sigmaR:      Range sigma (controls sensitivity to intensity differences).
+                        Can be a float or per-plane list.
+    :param backend:     Backend implementation to use.
+    :param kwargs:      Additional arguments forwarded to the backend-specific implementation.
+    :return:            Bilaterally filtered clip.
+    """
     assert check_variable_format(clip, bilateral)
 
     # TODO: remove this when BilateralBackend will be removed
