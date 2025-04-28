@@ -636,6 +636,10 @@ def bm3d(
         - https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D/
         - https://github.com/WolframRhodium/VapourSynth-BM3DCUDA
 
+    Example:
+        ```py
+        denoised = bm3d(clip, 1.25, 1, backend=bm3d.Backend.CUDA_RTC, ...)
+        ```
 
     :param clip:                            The clip to process.
                                             If using BM3D.Backend.OLD, the clip format must be YUV444 or RGB,
