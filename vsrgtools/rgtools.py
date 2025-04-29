@@ -156,6 +156,16 @@ def repair(
     - Modes 1–24 directly map to [zsmooth.Repair](https://github.com/adworacz/zsmooth?tab=readme-ov-file#repair) plugin modes.
     - Modes 26+ fall back to expression-based approximations.
 
+    Example:
+        ```py
+        repaired = repair(filtered, clip, repair.Mode.MINMAX_SQUARE_REF3)
+        ```
+
+        Alternatively, directly using the enum:
+        ```py
+        repaired = repair.Mode.MINMAX_SQUARE_REF3(clip)
+        ```
+
     :param clip:          Input clip to process (typically filtered).
     :param repairclip:    Reference clip for bounds (often the original or a less-processed version).
     :param mode:          Repair mode(s) used to constrain pixels. Can be a single mode or a list per plane.
@@ -332,6 +342,16 @@ def vertical_cleaner(
     """
     Applies a fast vertical median or relaxed median filter to the clip
     using the [zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#verticalcleaner) plugin.
+
+    Example:
+        ```py
+        cleaned = vertical_cleaner(clip, vertical_cleaner.Mode.PRESERVING)
+        ```
+
+        Alternatively, directly using the enum:
+        ```py
+        cleaned = vertical_cleaner.Mode.PRESERVING(clip)
+        ```
 
     :param clip:    Source clip to process.
     :param mode:    Mode of vertical cleaning to apply. Can be:
