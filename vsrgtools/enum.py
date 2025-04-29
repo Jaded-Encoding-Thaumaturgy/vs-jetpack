@@ -49,6 +49,11 @@ class LimitFilterMode(LimitFilterModeMeta, CustomIntEnum):
         return self
 
 
+@deprecated(
+    "This enum is deprecated and will be removed in a future version. "
+    "Uses `vsrgtools.remove_grain.Mode` instead.",
+    category=DeprecationWarning
+)
 class RemoveGrainMode(CustomIntEnum):
     NONE = 0
     MINMAX_AROUND1 = 1
