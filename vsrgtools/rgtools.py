@@ -8,7 +8,7 @@ from vsexprtools import norm_expr
 from vstools import ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_variable, normalize_seq, vs
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
-from .enum import RemoveGrainModeT, RepairModeT
+from .enum import RemoveGrainModeT
 
 __all__ = [
     'repair', 'remove_grain', 'removegrain',
@@ -16,7 +16,152 @@ __all__ = [
 ]
 
 
-def repair(clip: vs.VideoNode, repairclip: vs.VideoNode, mode: RepairModeT) -> ConstantFormatVideoNode:
+class Repair(Generic[P, R]):
+    """
+    Class decorator that wraps the [repair][vsrgtools.rgtools.repair] function
+    and extends its functionality.
+
+    It is not meant to be used directly.
+    """
+
+    def __init__(self, repair_func: Callable[P, R]) -> None:
+        self._func = repair_func
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        return self._func(*args, **kwargs)
+
+    class Mode(CustomIntEnum):
+        """
+        Enum that specifies the mode for repairing or limiting a source clip using a reference clip.
+
+        These modes define different spatial strategies for constraining each pixel in the source clip
+        based on the reference clip's local neighborhood, typically using 3×3 squares or line-sensitive patterns.
+
+        Commonly used in denoising, artifact removal, or detail-preserving restoration.
+        """
+
+        NONE = 0
+        """No repair. The input plane is passed through unchanged."""
+
+        MINMAX_SQUARE1 = 1
+        """Clamp using the 1st min/max from a 3×3 square in the reference clip."""
+
+        MINMAX_SQUARE2 = 2
+        """Clamp using the 2nd min/max from a 3×3 square in the reference clip."""
+
+        MINMAX_SQUARE3 = 3
+        """Clamp using the 3rd min/max from a 3×3 square in the reference clip."""
+
+        MINMAX_SQUARE4 = 4
+        """Clamp using the 4th min/max from a 3×3 square in the reference clip."""
+
+        LINE_CLIP_MIN = 5
+        """Line-sensitive clamping with minimal alteration."""
+
+        LINE_CLIP_LIGHT = 6
+        """Line-sensitive clamping with a light effect."""
+
+        LINE_CLIP_MEDIUM = 7
+        """Line-sensitive clamping with a moderate effect."""
+
+        LINE_CLIP_STRONG = 8
+        """Line-sensitive clamping with a strong effect."""
+
+        LINE_CLIP_CLOSE = 9
+        """Line-sensitive clamp using the closest neighbors."""
+
+        MINMAX_SQUARE_REF_CLOSE = 10
+        """Replace pixel with the closest value in the 3×3 reference square."""
+
+        MINMAX_SQUARE_REF1 = 11
+        """Same as mode 1, but clips with min/max of 1st rank and the center pixel of the reference clip."""
+
+        MINMAX_SQUARE_REF2 = 12
+        """Same as mode 2, but clips with min/max of 2nd rank and the center pixel of the reference clip."""
+
+        MINMAX_SQUARE_REF3 = 13
+        """Same as mode 3, but clips with min/max of 3rd rank and the center pixel of the reference clip."""
+
+        MINMAX_SQUARE_REF4 = 14
+        """Same as mode 4, but clips with min/max of 4th rank and the center pixel of the reference clip."""
+
+        CLIP_REF_RG5 = 15
+        """Use RemoveGrain mode 5's result to constrain the pixel."""
+
+        CLIP_REF_RG6 = 16
+        """Use RemoveGrain mode 6's result to constrain the pixel."""
+
+        CLIP_REF_RG17 = 17
+        """Use RemoveGrain mode 17's result to constrain the pixel."""
+
+        CLIP_REF_RG18 = 18
+        """Use RemoveGrain mode 18's result to constrain the pixel."""
+
+        CLIP_REF_RG19 = 19
+        """Use RemoveGrain mode 19's result to constrain the pixel."""
+
+        CLIP_REF_RG20 = 20
+        """Use RemoveGrain mode 20's result to constrain the pixel."""
+
+        CLIP_REF_RG21 = 21
+        """Use RemoveGrain mode 21's result to constrain the pixel."""
+
+        CLIP_REF_RG22 = 22
+        """Use RemoveGrain mode 22's result to constrain the pixel."""
+
+        CLIP_REF_RG23 = 23
+        """Use RemoveGrain mode 23's result to constrain the pixel."""
+
+        CLIP_REF_RG24 = 24
+        """Use RemoveGrain mode 24's result to constrain the pixel."""
+        
+        # Mode 25 is not available
+
+        CLIP_REF_RG26 = 26
+        """Use RemoveGrain mode 26's result to constrain the pixel."""
+
+        CLIP_REF_RG27 = 27
+        """Use RemoveGrain mode 27's result to constrain the pixel."""
+
+        CLIP_REF_RG28 = 28
+        """Use RemoveGrain mode 28's result to constrain the pixel."""
+
+        def __call__(
+            self, clip: vs.VideoNode, repairclip: vs.VideoNode, planes: PlanesT = None
+        ) -> ConstantFormatVideoNode:
+            """
+            Apply the selected repair mode to a `clip` using a `repairclip`.
+
+            :param clip:            Input clip to process (typically filtered).
+            :param repairclip:      Reference clip for bounds (often the original or a less-processed version).
+            :param planes:          Planes to process. Defaults to all.
+            :return:                Clip with repaired pixels, bounded by the reference.
+            """
+            from .util import norm_rmode_planes
+
+            return repair(clip, repairclip, norm_rmode_planes(clip, self, planes))
+
+
+@Repair
+def repair(
+    clip: vs.VideoNode, repairclip: vs.VideoNode, mode: int | Repair.Mode | Sequence[int | Repair.Mode]
+) -> ConstantFormatVideoNode:
+    """
+    Constrains the input `clip` using a `repairclip` by clamping pixel values based on a chosen `RepairMode`.
+
+    This is typically used to limit over-aggressive filtering (e.g., from `RemoveGrain`) while keeping
+    the corrections within reasonable bounds derived from the reference (`repairclip`). Often used in detail
+    restoration workflows.
+
+    - Modes 1–24 directly map to [zsmooth.Repair](https://github.com/adworacz/zsmooth?tab=readme-ov-file#repair) plugin modes.
+    - Modes 26+ fall back to expression-based approximations.
+
+    :param clip:          Input clip to process (typically filtered).
+    :param repairclip:    Reference clip for bounds (often the original or a less-processed version).
+    :param mode:          Repair mode(s) used to constrain pixels. Can be a single mode or a list per plane.
+                          See `RepairMode` for details.
+    :return:              Clip with repaired pixels, bounded by the reference.
+    """
     assert check_variable(clip, repair)
     assert check_variable(repairclip, repair)
 
