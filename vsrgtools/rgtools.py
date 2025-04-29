@@ -114,7 +114,7 @@ class Repair(Generic[P, R]):
 
         CLIP_REF_RG24 = 24
         """Use RemoveGrain mode 24's result to constrain the pixel."""
-        
+
         # Mode 25 is not available
 
         CLIP_REF_RG26 = 26
@@ -147,14 +147,15 @@ def repair(
     clip: vs.VideoNode, repairclip: vs.VideoNode, mode: int | Repair.Mode | Sequence[int | Repair.Mode]
 ) -> ConstantFormatVideoNode:
     """
-    Constrains the input `clip` using a `repairclip` by clamping pixel values based on a chosen `RepairMode`.
+    Constrains the input `clip` using a `repairclip` by clamping pixel values
+    based on a chosen [mode][vsrgtools.rgtools.Repair.Mode].
 
     This is typically used to limit over-aggressive filtering (e.g., from `RemoveGrain`) while keeping
     the corrections within reasonable bounds derived from the reference (`repairclip`). Often used in detail
     restoration workflows.
 
     - Modes 1–24 directly map to [zsmooth.Repair](https://github.com/adworacz/zsmooth?tab=readme-ov-file#repair) plugin modes.
-    - Modes 26+ fall back to expression-based approximations.
+    - Modes 26+ fall back to expression-based implementations.
 
     Example:
         ```py
@@ -169,7 +170,7 @@ def repair(
     :param clip:          Input clip to process (typically filtered).
     :param repairclip:    Reference clip for bounds (often the original or a less-processed version).
     :param mode:          Repair mode(s) used to constrain pixels. Can be a single mode or a list per plane.
-                          See `RepairMode` for details.
+                          See [Repair.Mode][vsrgtools.rgtools.Repair.Mode] for details.
     :return:              Clip with repaired pixels, bounded by the reference.
     """
     assert check_variable(clip, repair)
