@@ -8,7 +8,7 @@ from vsexprtools import norm_expr
 from vstools import ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_variable, normalize_seq, vs
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
-from .enum import RemoveGrainModeT, RepairModeT, VerticalCleanerModeT
+from .enum import RemoveGrainModeT, RepairModeT
 
 __all__ = [
     'repair', 'remove_grain', 'removegrain',
@@ -139,7 +139,61 @@ def clense(
     return getattr(clip.zsmooth, mode)(planes=planes, **kwargs)
 
 
-def vertical_cleaner(clip: vs.VideoNode, mode: VerticalCleanerModeT) -> ConstantFormatVideoNode:
+class VerticalCleaner(Generic[P, R]):
+    """
+    Class decorator that wraps the [vertical_cleaner][vsrgtools.rgtools.vertical_cleaner] function
+    and extends its functionality.
+
+    It is not meant to be used directly.
+    """
+
+    def __init__(self, vertical_cleaner_func: Callable[P, R]) -> None:
+        self._func = vertical_cleaner_func
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        return self._func(*args, **kwargs)
+
+    class Mode(CustomIntEnum):
+        """
+        Enum that specifies the vertical cleaner mode to use
+        in the [zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#verticalcleaner) plugin.
+        """
+
+        NONE = 0
+        """The input plane is simply passed through."""
+
+        MEDIAN = 1
+        """Applies a strict vertical median filter."""
+
+        PRESERVING = 2
+        """Applies a detail-preserving vertical median filter (less aggressive)."""
+
+        def __call__(self, clip: vs.VideoNode, planes: PlanesT = None) -> ConstantFormatVideoNode:
+            """
+            Applies the vertical cleaning mode to the given clip.
+
+            :param clip:        Source clip to process.
+            :param planes:      Planes to process. Defaults to all.
+            :return:            Filtered clip.
+            """
+            from .util import norm_rmode_planes
+            return vertical_cleaner(clip, norm_rmode_planes(clip, self, planes))
+
+
+@VerticalCleaner
+def vertical_cleaner(
+    clip: vs.VideoNode, mode: int | VerticalCleaner.Mode | Sequence[int | VerticalCleaner.Mode]
+) -> ConstantFormatVideoNode:
+    """
+    Applies a fast vertical median or relaxed median filter to the clip
+    using the [zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#verticalcleaner) plugin.
+
+    :param clip:    Source clip to process.
+    :param mode:    Mode of vertical cleaning to apply. Can be:
+                      - A single enum/int (applied to all planes),
+                      - A sequence of enums/ints (one per plane).
+    :return:        Filtered clip.
+    """
     assert check_variable(clip, vertical_cleaner)
 
     mode = normalize_seq(mode, clip.format.num_planes)
