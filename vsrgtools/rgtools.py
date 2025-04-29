@@ -8,7 +8,6 @@ from vsexprtools import norm_expr
 from vstools import ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_variable, normalize_seq, vs
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
-from .enum import RemoveGrainModeT
 
 __all__ = [
     'repair', 'remove_grain', 'removegrain',
@@ -187,7 +186,156 @@ def repair(
     return norm_expr([clip, repairclip], tuple([repair_aka_exprs[m]() for m in mode]), func=repair)
 
 
-def remove_grain(clip: vs.VideoNode, mode: RemoveGrainModeT) -> ConstantFormatVideoNode:
+class RemoveGrain(Generic[P, R]):
+    """
+    Class decorator that wraps the [remove_grain][vsrgtools.rgtools.remove_grain] function
+    and extends its functionality.
+
+    It is not meant to be used directly.
+    """
+
+    def __init__(self, repair_func: Callable[P, R]) -> None:
+        self._func = repair_func
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        return self._func(*args, **kwargs)
+
+    class Mode(CustomIntEnum):
+        """
+        Enum representing available spatial filtering strategies in RemoveGrain.
+
+        These modes serve a wide range of use cases, such as clamping outliers,
+        removing noise, or simple dehaloing.
+        """
+
+        NONE = 0
+        """The input plane is simply passed through."""
+
+        MINMAX_AROUND1 = 1
+        """Clamp pixel to the min/max of its 3×3 neighborhood (excluding center)."""
+
+        MINMAX_AROUND2 = 2
+        """Clamp to the second lowest/highest in the neighborhood."""
+
+        MINMAX_AROUND3 = 3
+        """Clamp to the third lowest/highest in the neighborhood."""
+
+        MINMAX_MEDIAN = 4
+        """Deprecated. Similar to mode 1, but clamps to fourth-lowest/highest."""
+
+        EDGE_CLIP_STRONG = 5
+        """Line-sensitive clipping that minimizes change to the center pixel."""
+
+        EDGE_CLIP_MODERATE = 6
+        """Line-sensitive clipping with moderate sensitivity (change prioritized 2:1)."""
+
+        EDGE_CLIP_MEDIUM = 7
+        """Balanced version of mode 6 (change vs. range ratio 1:1)."""
+
+        EDGE_CLIP_LIGHT = 8
+        """Light edge clipping (prioritizes the range between opposites)."""
+
+        LINE_CLIP_CLOSE = 9
+        """Clip using the line with closest neighbors. Useful for fixing 1-pixel gaps."""
+
+        MIN_SHARP = 10
+        """Replaces pixel with its closest neighbor. A poor but sharp denoiser."""
+
+        BINOMIAL_BLUR = 11
+        """Deprecated. Use `BlurMatrix.BINOMIAL`. Applies weighted 3×3 blur."""
+
+        BOB_TOP_CLOSE = 13
+        """Interpolate top field using the closest neighboring pixels."""
+
+        BOB_BOTTOM_CLOSE = 14
+        """Interpolate bottom field using the closest neighboring pixels."""
+
+        BOB_TOP_INTER = 15
+        """Top field interpolation using a more complex formula than mode 13."""
+
+        BOB_BOTTOM_INTER = 16
+        """Bottom field interpolation using a more complex formula than mode 14."""
+
+        MINMAX_MEDIAN_OPP = 17
+        """Clip using min/max of opposing neighbor pairs."""
+
+        LINE_CLIP_OPP = 18
+        """Line-sensitive clipping using opposite neighbors with minimal deviation."""
+
+        MEAN_NO_CENTER = 19
+        """Deprecated. Use `BlurMatrix.MEAN_NO_CENTER`. Mean of neighborhood (excluding center)."""
+
+        MEAN = 20
+        """Deprecated. Use `BlurMatrix.MEAN`. Arithmetic mean of 3×3 neighborhood."""
+
+        BOX_BLUR_NO_CENTER = MEAN_NO_CENTER
+        """Alias for MEAN_NO_CENTER."""
+
+        BOX_BLUR = MEAN
+        """Alias for MEAN."""
+
+        OPP_CLIP_AVG = 21
+        """Clip to min/max of averages of 4 opposing pixel pairs."""
+
+        OPP_CLIP_AVG_FAST = 22
+        """Faster variant of mode 21 with simpler rounding."""
+
+        EDGE_DEHALO = 23
+        """Very light dehaloing. Rarely useful."""
+
+        EDGE_DEHALO2 = 24
+        """More conservative version of mode 23."""
+
+        SMART_RGC = 26
+        """Like mode 17, but preserves corners. Does not preserve thin lines."""
+
+        SMART_RGCL = 27
+        """Uses 12 pixel pairs instead of 8. Similar to 26, but slightly stronger."""
+
+        SMART_RGCL2 = 28
+        """Variant of 27 with different pairs. Usually visually similar."""
+
+        def __call__(self, clip: vs.VideoNode, planes: PlanesT = None) -> ConstantFormatVideoNode:
+            """
+            Apply the selected remove grain mode to a `clip`.
+
+            :param clip:            Clip to process.
+            :param planes:          Planes to process. Defaults to all.
+            :return:                Processed (denoised) clip.
+            """
+            from .util import norm_rmode_planes
+
+            return remove_grain(clip, norm_rmode_planes(clip, self, planes))
+
+
+@RemoveGrain
+def remove_grain(
+    clip: vs.VideoNode, mode: int | RemoveGrain.Mode | Sequence[int | RemoveGrain.Mode]
+) -> ConstantFormatVideoNode:
+    """
+    Apply spatial denoising using the RemoveGrain algorithm.
+
+    Supports a variety of pixel clamping, edge-aware filtering, and blur strategies.
+    See [RemoveGrain.Mode][vsrgtools.rgtools.RemoveGrain.Mode] for all available modes.
+
+    - Modes 1–24 are natively implemented in [zsmooth.RemoveGrain](https://github.com/adworacz/zsmooth?tab=readme-ov-file#removegrain).
+    - Modes 26+ fall back to expression-based implementations.
+
+    Example:
+        ```py
+        denoised = remove_grain(clip, remove_grain.Mode.EDGE_CLIP_STRONG)
+        ```
+
+        Alternatively, directly using the enum:
+        ```py
+        denoised = remove_grain.Mode.EDGE_CLIP_STRONG(clip)
+        ```
+
+    :param clip:    Clip to process.
+    :param mode:    Mode(s) to use. Can be a single mode or per-plane list.
+                    See [RemoveGrain.Mode][vsrgtools.rgtools.RemoveGrain.Mode] for details.
+    :return:        Processed (denoised) clip.
+    """
     assert check_variable(clip, remove_grain)
 
     mode = normalize_seq(mode, clip.format.num_planes)
