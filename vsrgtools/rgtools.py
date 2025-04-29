@@ -439,7 +439,7 @@ def clense(
 
     if mode == Clense.Mode.NONE:
         return clip
-    
+
     return getattr(clip.zsmooth, mode)(planes=planes, **kwargs)
 
 
