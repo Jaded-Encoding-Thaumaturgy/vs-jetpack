@@ -128,6 +128,11 @@ class RepairMode(CustomIntEnum):
 RepairModeT = int | RepairMode | Sequence[int | RepairMode]
 
 
+@deprecated(
+    "This enum is deprecated and will be removed in a future version. "
+    "Uses `vsrgtools.vertical_cleaner.Mode` instead.",
+    category=DeprecationWarning
+)
 class VerticalCleanerMode(CustomIntEnum):
     NONE = 0
     MEDIAN = 1
