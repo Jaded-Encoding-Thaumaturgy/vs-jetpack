@@ -89,6 +89,11 @@ class RemoveGrainMode(CustomIntEnum):
 RemoveGrainModeT = int | RemoveGrainMode | Sequence[int | RemoveGrainMode]
 
 
+@deprecated(
+    "This enum is deprecated and will be removed in a future version. "
+    "Uses `vsrgtools.repair.Mode` instead.",
+    category=DeprecationWarning
+)
 class RepairMode(CustomIntEnum):
     NONE = 0
     MINMAX_SQUARE1 = 1
