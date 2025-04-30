@@ -90,10 +90,7 @@ class Timecodes(list[FrameDur]):
     def to_fractions(self) -> list[Fraction]:
         """Convert to a list of frame lengths, representing the individual framerates."""
 
-        return list(
-            Fraction(x.numerator, x.denominator)
-            for x in self
-        )
+        return [t.to_fraction() for t in self]
 
     def to_normalized_ranges(self) -> dict[tuple[int, int], Fraction]:
         """Convert to a list of normalized frame ranges and their assigned framerate."""
