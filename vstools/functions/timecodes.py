@@ -88,10 +88,10 @@ class Timecodes(list[FrameDur]):
     """
 
     def to_fractions(self) -> list[Fraction]:
-        """Convert to a list of individual framerates."""
+        """Convert to a list of frame lengths, representing the individual framerates."""
 
         return list(
-            Fraction(x.denominator, x.numerator)
+            Fraction(x.numerator, x.denominator)
             for x in self
         )
 
