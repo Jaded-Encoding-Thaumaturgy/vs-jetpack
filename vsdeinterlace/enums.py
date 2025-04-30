@@ -56,13 +56,13 @@ class IVTCycles(CustomEnum):
     """
 
     cycle_10 = [[0, 3, 6, 8], [0, 2, 5, 8], [0, 2, 4, 7], [2, 4, 6, 9], [1, 4, 6, 8]]
-    """Pattern for standard 2:3 pulldown."""
+    """Pattern for standard field-based 2:3 pulldown."""
 
     cycle_08 = [[0, 3, 4, 6], [0, 2, 5, 6], [0, 2, 4, 7], [0, 2, 4, 7], [1, 2, 4, 6]]
     """Pattern for 2:3:3:2 pulldown."""
 
     cycle_05 = [[0, 1, 3, 4], [0, 1, 2, 4], [0, 1, 2, 3], [1, 2, 3, 4], [0, 2, 3, 4]]
-    """Pattern for second-stage decimation or animation-on-twos cleanup."""
+    """Pattern for standard frame-based 2:3 pulldown."""
 
     @property
     def pattern_length(self) -> int:
