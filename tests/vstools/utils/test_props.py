@@ -7,7 +7,8 @@ clip = core.std.BlankClip(
     format=vs.YUV420P8, width=1920, height=1080,
 )
 
-clip = clip.std.SetFrameProps(
+clip = core.std.SetFrameProps(
+    clip,
     _Matrix=1, _Transfer=1, _Primaries=1,
     __StrProp="test string", __IntProp=123, __FloatProp=123.456,
     __BoolProp=True, __BytesProp=b"test bytes",
@@ -18,7 +19,8 @@ clip2 = core.std.BlankClip(
     format=vs.YUV420P8, width=1920, height=1080,
 )
 
-clip2 = clip2.std.SetFrameProps(
+clip2 = core.std.SetFrameProps(
+    clip2,
     _Matrix=5, _RandomProp=1, __AnotherRandomProp="gsdgsdgs"
 )
 
@@ -115,18 +117,19 @@ class TestGetProp(TestCase):
         self.assertEqual(get_prop(clip, "__IntProp", int, cast=str), "123")
         self.assertEqual(get_prop(clip, "__FloatProp", float, cast=str), "123.456")
         self.assertEqual(get_prop(clip, "__BoolProp", int, cast=str), "1")
-        self.assertEqual(get_prop(clip, "__BytesProp", bytes, cast=str), b"test bytes")
+        self.assertEqual(get_prop(clip, "__BytesProp", bytes, cast=str), "b'test bytes'")
         self.assertEqual(get_prop(clip, "__VideoFrameProp", vs.VideoFrame, cast=str), str(clip.get_frame(0)))
 
     def test_get_prop_cast_bytes(self) -> None:
         """Test get_prop casting to bytes."""
 
-        self.assertEqual(get_prop(clip, "__StrProp", str, cast=bytes), b"test string")
+        self.assertEqual(get_prop(clip, "__StrProp", str, cast=lambda x: bytes(x, "utf-8")), b"test string")
         self.assertEqual(get_prop(clip, "__BytesProp", bytes, cast=bytes), b"test bytes")
-        self.assertEqual(get_prop(clip, "__VideoFrameProp", vs.VideoFrame, cast=bytes), bytes(clip.get_frame(0)))
-        self.assertRaises(FramePropError, get_prop, clip, "__IntProp", int, cast=bytes)
+        self.assertEqual(get_prop(clip, "__IntProp", int, cast=bytes), bytes(123))
+        self.assertEqual(get_prop(clip, "__BoolProp", int, cast=bytes), bytes(1))
+
+        self.assertRaises(FramePropError, get_prop, clip, "__VideoFrameProp", vs.VideoFrame, cast=bytes)
         self.assertRaises(FramePropError, get_prop, clip, "__FloatProp", float, cast=bytes)
-        self.assertRaises(FramePropError, get_prop, clip, "__BoolProp", int, cast=bytes)
 
     def test_get_prop_error_messages(self) -> None:
         """Test get_prop error message formatting."""
