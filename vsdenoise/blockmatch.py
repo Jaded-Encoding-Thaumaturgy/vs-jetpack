@@ -585,7 +585,7 @@ class BM3D(Generic[P, R]):
 def bm3d(
     clip: vs.VideoNode,
     sigma: float | Sequence[float] = 0.5,
-    radius: int | Sequence[int | None] | None = None,
+    tr: int | Sequence[int | None] | None = None,
     refine: int = 1,
     profile: BM3D.Profile = BM3D.Profile.FAST,
     pre: vs.VideoNode | None = None,
@@ -622,7 +622,7 @@ def bm3d(
                                             If fewer than 3 elements are given, the last value is repeated.
                                             Defaults to 0.5.
 
-    :param radius:                          The temporal radius for denoising. Valid range is [1, 16].
+    :param tr:                              The temporal radius for denoising. Valid range is [1, 16].
                                             Defaults to the radius defined by the profile.
 
     :param refine:                          Number of refinement steps.
@@ -673,7 +673,7 @@ def bm3d(
     if ref is not None:
         ref = check_ref_clip(clip, ref, func)
 
-    radius_basic, radius_final = normalize_seq(radius, 2)
+    radius_basic, radius_final = normalize_seq(tr, 2)
     nsigma = normalize_seq(sigma, 3)
 
     backend = backend.resolve()
