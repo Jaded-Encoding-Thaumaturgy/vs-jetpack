@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from functools import cache, cached_property
 from inspect import signature
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Callable, Generic, Sequence, cast
 
 from jetpytools import (
-    CustomEnum, CustomRuntimeError, CustomStrEnum, CustomValueError, KwargsT, P, R, fallback, interleave_arr, normalize_seq
+    CustomEnum, CustomRuntimeError, CustomStrEnum, CustomValueError, KwargsT, P, R, fallback, interleave_arr,
+    normalize_seq
 )
 
 from vsexprtools import norm_expr
 from vskernels import Point
 from vstools import (
-    ConstantFormatVideoNode, FunctionUtil, PlanesT, UnsupportedVideoFormatError,
-    check_progressive, check_ref_clip, check_variable, core, depth, get_y, join, vs
+    ConstantFormatVideoNode, FunctionUtil, PlanesT, UnsupportedVideoFormatError, check_progressive, check_ref_clip,
+    check_variable, core, depth, get_y, join, vs
 )
 
 from .prefilters import Prefilter
@@ -360,11 +362,19 @@ class BM3D(Generic[P, R]):
         """A profile tailored for handling very noisy content."""
 
         @cached_property
-        def config(self) -> dict[BM3D.Profile, dict[str, dict[str, dict[str, Any]]]]:
+        def config(self) -> MappingProxyType[str, MappingProxyType[str, MappingProxyType[str, Any]]]:
             """
             Retrieves the configuration for each BM3D profile.
             """
-            return {
+
+            def freeze_dict(d: dict[str, Any]) -> Any:
+                """Recursively convert all dictionaries into MappingProxyType."""
+                return MappingProxyType({
+                    k: freeze_dict(v) if isinstance(v, dict) else v
+                    for k, v in d.items()
+                })
+
+            config = {
                 BM3D.Profile.FAST: {
                     "basic": {
                         "spatial": {
@@ -530,11 +540,12 @@ class BM3D(Generic[P, R]):
                     },
                 },
             }
+            return freeze_dict(config[self])
 
         def _get_args(self, radius: int | None, estimate_step: str) -> dict[str, Any]:
-            config = self.config[self][estimate_step]
+            config = self.config[estimate_step]
 
-            args = config["spatial"]
+            args = config["spatial"].copy()
 
             if radius is None or radius > 0:
                 args.update(config["temporal"])
