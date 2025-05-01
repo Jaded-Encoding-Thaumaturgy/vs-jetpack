@@ -702,9 +702,9 @@ def bm3d(
                 | nbasic_args
                 | kwargs
             )
-            basic = backend.plugin.BM3Dv2(
-                preclip, pre, nsigma, chroma=chroma, **b_args
-            )
+            b_args.update(chroma=chroma)
+
+            basic = backend.plugin.BM3Dv2(preclip, pre, nsigma, **b_args)
         else:
             basic = ref
 
@@ -716,13 +716,12 @@ def bm3d(
                 | nfinal_args
                 | kwargs
             )
+            f_args.update(chroma=chroma)
 
             final = basic
 
             for _ in range(refine):
-                final = backend.plugin.BM3Dv2(
-                    preclip, final, nsigma, chroma=chroma, **f_args
-                )
+                final = backend.plugin.BM3Dv2(preclip, final, nsigma, **f_args)
 
         return final
 
