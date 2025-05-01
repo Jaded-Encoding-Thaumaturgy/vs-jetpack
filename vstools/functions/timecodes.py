@@ -115,7 +115,7 @@ class Timecodes(list[FrameDur]):
     def normalize_range_timecodes(
         cls, timecodes: dict[tuple[int | None, int | None], Fraction], length: int, assume: Fraction | None = None
     ) -> list[Fraction]:
-        """Convert from normalized ranges to a list of Fractions."""
+        """Convert from normalized ranges to a list of frame duration."""
 
         from .funcs import fallback
 
@@ -126,9 +126,9 @@ class Timecodes(list[FrameDur]):
             end = fallback(endn, length - 1)
 
             if end + 1 > len(norm_timecodes):
-                norm_timecodes += [fps] * (end + 1 - len(norm_timecodes))
+                norm_timecodes += [1 / fps] * (end + 1 - len(norm_timecodes))
 
-            norm_timecodes[start:end + 1] = [fps] * (end + 1 - start)
+            norm_timecodes[start:end + 1] = [1 / fps] * (end + 1 - start)
 
         return norm_timecodes
 
