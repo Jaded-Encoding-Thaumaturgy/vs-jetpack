@@ -271,27 +271,27 @@ class BM3D(Generic[P, R]):
         AUTO = "auto"
         """
         Automatically selects the best available backend.
-        Selection priority: "cuda_rtc" → "cuda" → "hip" → "sycl" → "cpu" → "old".
+        Selection priority: "CUDA_RTC" → "CUDA" → "HIP" → "SYCL" → "CPU" → "OLD".
         When the filter chain is executed within vspreview, the priority of "cuda_rtc" and "cuda" is reversed.
         """
 
-        OLD = "old"
-        """Reference VapourSynth-BM3D implementation."""
-
-        CPU = "cpu"
-        """Optimized CPU implementation using AVX and AVX2 intrinsics."""
-
-        CUDA = "cuda"
-        """GPU implementation using NVIDIA CUDA."""
-
-        CUDA_RTC = "cuda_rtc"
+        CUDA_RTC = "bm3dcuda_rtc"
         """GPU implementation using NVIDIA CUDA with NVRTC (runtime compilation)."""
 
-        HIP = "hip"
+        CUDA = "bm3dcuda"
+        """GPU implementation using NVIDIA CUDA."""
+
+        HIP = "bm3dhip"
         """GPU implementation using AMD HIP."""
 
-        SYCL = "sycl"
+        SYCL = "bm3dsycl"
         """GPU implementation using Intel SYCL."""
+
+        CPU = "bm3dcpu"
+        """Optimized CPU implementation using AVX and AVX2 intrinsics."""
+
+        OLD = "bm3d"
+        """Reference VapourSynth-BM3D implementation."""
 
         @cache
         def resolve(self) -> BM3D.Backend:
@@ -317,23 +317,9 @@ class BM3D(Generic[P, R]):
             if is_preview() and hasattr(core, "bm3dcuda"):
                 return BM3D.Backend.CUDA
 
-            if hasattr(core, "bm3dcuda_rtc"):
-                return BM3D.Backend.CUDA_RTC
-
-            if hasattr(core, "bm3dcuda"):
-                return BM3D.Backend.CUDA
-
-            if hasattr(core, "bm3dhip"):
-                return BM3D.Backend.HIP
-
-            if hasattr(core, "bm3dsycl"):
-                return BM3D.Backend.SYCL
-
-            if hasattr(core, "bm3dcpu"):
-                return BM3D.Backend.CPU
-
-            if hasattr(core, "bm3d"):
-                return BM3D.Backend.OLD
+            for member in list(BM3D.Backend.__members__.values())[1:]:
+                if hasattr(core, member.value):
+                    return BM3D.Backend(member.value)
 
             raise CustomRuntimeError(
                 "No compatible plugin found. Please install one from: "
@@ -348,27 +334,7 @@ class BM3D(Generic[P, R]):
 
             :return:        The corresponding BM3D plugin for the resolved backend.
             """
-            backend = self.resolve()
-
-            if backend is BM3D.Backend.OLD:
-                return cast(_VSPlugin, core.lazy.bm3d)
-
-            if backend is BM3D.Backend.CPU:
-                return cast(_VSPlugin, core.lazy.bm3dcpu)
-
-            if backend is BM3D.Backend.CUDA:
-                return cast(_VSPlugin, core.lazy.bm3dcuda)
-
-            if backend is BM3D.Backend.CUDA_RTC:
-                return cast(_VSPlugin, core.lazy.bm3dcuda_rtc)
-
-            if backend is BM3D.Backend.HIP:
-                return cast(_VSPlugin, core.lazy.bm3dhip)
-
-            if backend is BM3D.Backend.SYCL:
-                return cast(_VSPlugin, core.lazy.bm3dsycl)
-
-            raise CustomRuntimeError
+            return getattr(core.lazy, self.resolve().value)
 
     class Profile(CustomStrEnum):
         """
