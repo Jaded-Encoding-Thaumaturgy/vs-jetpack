@@ -558,7 +558,7 @@ class BM3D(Generic[P, R]):
             Retrieves the arguments for the final estimate step based on the specified radius.
 
             :param radius:  The temporal radius for denoising. If None, a default value is used.
-            :return:        A dictionary of arguments for the basic denoising step.
+            :return:        A dictionary of arguments for the final denoising step.
             """
             return self._get_args(radius, "final")
 
@@ -645,7 +645,7 @@ def bm3d(
                                             Either `ref` or `pre` can be specified, not both.
                                             Defaults to None.
 
-    :param backend:                         The backend to use for processing. Defaults to BM3D.backend.AUTO.
+    :param backend:                         The backend to use for processing. Defaults to BM3D.Backend.AUTO.
 
     :param basic_args:                      Additional arguments to pass to the basic estimate step.
                                             Defaults to None.
