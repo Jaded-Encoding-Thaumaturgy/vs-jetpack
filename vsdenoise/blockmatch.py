@@ -5,7 +5,7 @@ from inspect import signature
 from typing import TYPE_CHECKING, Any, Callable, Generic, Sequence, cast
 
 from jetpytools import (
-    CustomEnum, CustomRuntimeError, CustomStrEnum, CustomValueError, KwargsT, P, R, interleave_arr, normalize_seq
+    CustomEnum, CustomRuntimeError, CustomStrEnum, CustomValueError, KwargsT, P, R, fallback, interleave_arr, normalize_seq
 )
 
 from vsexprtools import norm_expr
@@ -677,8 +677,8 @@ def bm3d(
     nsigma = normalize_seq(sigma, 3)
 
     backend = backend.resolve()
-    nbasic_args = basic_args or KwargsT()
-    nfinal_args = final_args or KwargsT()
+    nbasic_args = fallback(basic_args, KwargsT())
+    nfinal_args = fallback(final_args, KwargsT())
 
     matrix_rgb2opp = kwargs.pop("matrix_rgb2opp", BM3D.matrix_rgb2opp)
     matrix_opp2rgb = kwargs.pop("matrix_rgb2opp", BM3D.matrix_opp2rgb)
