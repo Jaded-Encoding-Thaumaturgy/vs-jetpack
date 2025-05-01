@@ -388,12 +388,15 @@ class BM3D(Generic[P, R]):
                             "bm_range": 7,
                             "radius": 1,
                             "ps_range": 4,
+                            # Only available in OLD
+                            "group_size": 8,
                         },
                     },
                     "final": {
                         "spatial": {
                             "block_step": 7,
                             "bm_range": 9,
+                            # Only available in OLD
                             "block_size": 8,
                             "group_size": 8,
                         },
@@ -401,6 +404,8 @@ class BM3D(Generic[P, R]):
                             "bm_range": 7,
                             "radius": 1,
                             "ps_range": 5,
+                            # Only available in OLD
+                            "group_size": 8,
                         },
                     },
                 },
