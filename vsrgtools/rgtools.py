@@ -206,6 +206,8 @@ class RemoveGrain(Generic[P, R]):
 
         These modes serve a wide range of use cases, such as clamping outliers,
         removing noise, or simple dehaloing.
+
+        More information [here](https://blog.kageru.moe/legacy/removegrain.html).
         """
 
         NONE = 0
