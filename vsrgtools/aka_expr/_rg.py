@@ -259,6 +259,37 @@ def aka_remove_grain_expr_24() -> str:
     )
 
 
+def aka_remove_grain_expr_25() -> str:
+    return (
+        f"x {A4} < range_max x {A4} - ? "
+        f"x {A5} < range_max x {A5} - ? "
+        f"x {A1} < range_max x {A1} - ? "
+        f"x {A2} < range_max x {A2} - ? "
+        f"x {A3} < range_max x {A3} - ? "
+        f"x {A6} < range_max x {A6} - ? "
+        f"x {A7} < range_max x {A7} - ? "
+        f"x {A8} < range_max x {A8} - ? "
+        "min min min min min min min min_minus! "
+        f"x {A4} > range_max {A4} x - ? "
+        f"x {A5} > range_max {A5} x - ? "
+        f"x {A1} > range_max {A1} x - ? "
+        f"x {A2} > range_max {A2} x - ? "
+        f"x {A3} > range_max {A3} x - ? "
+        f"x {A6} > range_max {A6} x - ? "
+        f"x {A7} > range_max {A7} x - ? "
+        f"x {A8} > range_max {A8} x - ? "
+        "min min min min min min min min_plus! "
+        "0 min_minus@ min_plus@ - max mp_diff! "
+        "0 min_plus@ min_minus@ - max pm_diff! "
+        "min_minus@ 0.5 * m_per2! "
+        "min_plus@ 0.5 * p_per2! "
+        "p_per2@ mp_diff@ min min_1! "
+        "m_per2@ pm_diff@ min min_2! "
+        "range_max x min_1@ + min "
+        "min_2@ - range_min max"
+    )
+
+
 def aka_remove_grain_expr_26() -> str:
     return (
         f'{A1} {A2} min mil1! '
