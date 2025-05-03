@@ -81,3 +81,52 @@ def test_side_box_blur_no_exception() -> None:
     # TODO
     ...
 
+
+@pytest.mark.parametrize("clip", [clip_int8, clip_int16, clip_fp16, clip_fp32])
+@pytest.mark.parametrize("sigma", [0.5, [0.5, 1.0]])
+@pytest.mark.parametrize("taps", [None, 3])
+@pytest.mark.parametrize(
+    "mode",
+    [
+        ConvMode.SQUARE,
+        ConvMode.HORIZONTAL,
+        ConvMode.VERTICAL,
+        ConvMode.HV,
+        ConvMode.TEMPORAL
+    ]
+)
+@pytest.mark.parametrize("planes", [None, 0, [1, 2]])
+@pytest.mark.parametrize("_fast", [True, False])
+def test_gauss_blur_no_exception(
+    clip: vs.VideoNode,
+    sigma: float | Sequence[float],
+    taps: int | None,
+    mode: ConvMode,
+    planes: PlanesT,
+    _fast: bool
+) -> None:
+    try:
+        result = gauss_blur(
+            clip=clip,
+            sigma=sigma,
+            taps=taps,
+            mode=mode,  # type: ignore[arg-type]
+            planes=planes,
+            _fast=_fast
+        )
+    except CustomValueError as e:
+        if all([
+            mode == ConvMode.SQUARE,
+            e.func == box_blur,
+            e.message == "Invalid mode specified",
+            e.reason == mode
+        ]):
+            pass
+    except Exception as e:
+        pytest.fail(
+            f"gauss_blur raised an exception with clip = {repr(clip)},\n"
+            f"sigma={sigma}, taps={taps}, mode={mode}, planes={planes}:\n{e}"
+        )
+    else:
+        assert isinstance(result, vs.VideoNode)
+        assert _has_not_been_processed(result, clip, planes)
