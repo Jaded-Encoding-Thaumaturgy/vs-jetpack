@@ -142,7 +142,259 @@ def test_gauss_blur_no_exception(
     else:
         assert isinstance(result, vs.VideoNode)
         assert _has_not_been_processed(result, clip, planes)
+
+
+@pytest.mark.parametrize("clip", [clip_int8, clip_fp16, clip_fp32])
+@pytest.mark.parametrize("radius", [1, [1, 2]])
+@pytest.mark.parametrize(
+    "mode",
+    [
+        (ConvMode.HV, ConvMode.SQUARE),
+        (ConvMode.HORIZONTAL, ConvMode.VERTICAL),
+        (ConvMode.TEMPORAL, ConvMode.TEMPORAL)
+    ]
+)
+@pytest.mark.parametrize("planes", [None, 0, [1, 2]])
+def test_min_blur_no_exception(
+    clip: vs.VideoNode,
+    radius: int | Sequence[int],
+    mode: tuple[ConvMode, ConvMode],
+    planes: PlanesT
+) -> None:
+    try:
+        result = min_blur(
+            clip=clip,
+            radius=radius,
+            mode=mode,
+            planes=planes
+        )
+    except Exception as e:
+        pytest.fail(
+            _display_error_msg(
+                clip, min_blur, e,
+                radius=radius,
+                mode=mode,
+                planes=planes,
+            )
         )
     else:
         assert isinstance(result, vs.VideoNode)
         assert _has_not_been_processed(result, clip, planes)
+
+
+@pytest.mark.parametrize("clip", [clip_int8, clip_fp32])
+@pytest.mark.parametrize("radius", [1, [1, 2]])
+@pytest.mark.parametrize(
+    "mode",
+    [
+        ConvMode.SQUARE,
+        ConvMode.HORIZONTAL,
+        ConvMode.VERTICAL,
+        ConvMode.HV,
+        ConvMode.TEMPORAL
+    ]
+)
+@pytest.mark.parametrize("blur", [BlurMatrix.BINOMIAL])
+@pytest.mark.parametrize("blur_diff", [BlurMatrix.BINOMIAL])
+@pytest.mark.parametrize("planes", [None, 0, [1, 2]])
+def test_sbr_blurmatrix_no_exception(
+    clip: vs.VideoNode,
+    radius: int | Sequence[int],
+    mode: ConvMode,
+    blur: BlurMatrix,
+    blur_diff: BlurMatrix,
+    planes: PlanesT
+) -> None:
+    try:
+        result = sbr(
+            clip=clip,
+            radius=radius,
+            mode=mode,
+            blur=blur,
+            blur_diff=blur_diff,
+            planes=planes
+        )
+    except Exception as e:
+        pytest.fail(
+            _display_error_msg(
+                clip, sbr, e,
+                radius=radius,
+                mode=mode,
+                blur=blur,
+                blur_diff=blur_diff,
+                planes=planes
+            )
+        )
+    else:
+        assert isinstance(result, vs.VideoNode)
+        assert _has_not_been_processed(result, clip, planes)
+
+
+@pytest.mark.parametrize("clip", [clip_int8, clip_fp32])
+@pytest.mark.parametrize("mode", [ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.HV])
+@pytest.mark.parametrize("blur", [[1] * 9, lambda clip: clip])
+@pytest.mark.parametrize("blur_diff", [[0, 1, 0, 1, 1, 1, 0, 1, 0]])
+@pytest.mark.parametrize("planes", [None, 0, [1, 2]])
+def test_sbr_no_exception(
+    clip: vs.VideoNode,
+    mode: ConvMode,
+    blur: Any,
+    blur_diff: Any,
+    planes: Any
+) -> None:
+    try:
+        result = sbr(
+            clip=clip,
+            mode=mode,
+            blur=blur,
+            blur_diff=blur_diff,
+            planes=planes
+        )
+    except Exception as e:
+        pytest.fail(
+            _display_error_msg(
+                clip, sbr, e,
+                mode=mode,
+                blur=blur,
+                blur_diff=blur_diff,
+                planes=planes
+            )
+        )
+    else:
+        assert isinstance(result, vs.VideoNode)
+        assert _has_not_been_processed(result, clip, planes)
+
+
+
+@pytest.mark.parametrize("clip", [clip_int8, clip_fp16, clip_fp32])
+@pytest.mark.parametrize("radius", [1, [1, 2]])
+@pytest.mark.parametrize(
+    "mode",
+    [
+        ConvMode.SQUARE,
+        ConvMode.HORIZONTAL,
+        ConvMode.VERTICAL,
+        ConvMode.HV,
+    ]
+)
+@pytest.mark.parametrize("planes", [None, 0, [1, 2]])
+def test_median_blur_spatial_no_exception(
+    clip: vs.VideoNode,
+    radius: int | Sequence[int],
+    mode: Any,
+    planes: Any
+) -> None:
+    try:
+        result = median_blur(
+            clip=clip,
+            radius=radius,
+            mode=mode,
+            planes=planes
+        )
+    except Exception as e:
+        pytest.fail(
+            _display_error_msg(
+                clip, median_blur, e,
+                radius=radius,
+                mode=mode,
+                planes=planes
+            )
+        )
+    else:
+        assert isinstance(result, vs.VideoNode)
+        assert _has_not_been_processed(result, clip, planes)
+
+
+@pytest.mark.parametrize("clip", [clip_int8, clip_fp16, clip_fp32])
+@pytest.mark.parametrize("radius", [1, 2])
+@pytest.mark.parametrize("mode", [ConvMode.TEMPORAL])
+@pytest.mark.parametrize("planes", [None, 0, [1, 2]])
+def test_median_blur_temporal_no_exception(
+    clip: vs.VideoNode,
+    radius: int,
+    mode: Literal[ConvMode.TEMPORAL],
+    planes: Any
+) -> None:
+    try:
+        result = median_blur(
+            clip=clip,
+            radius=radius,
+            mode=mode,
+            planes=planes
+        )
+    except Exception as e:
+        pytest.fail(
+            _display_error_msg(
+                clip, median_blur, e,
+                radius=radius,
+                mode=mode,
+                planes=planes
+            )
+        )
+    else:
+        assert isinstance(result, vs.VideoNode)
+        assert _has_not_been_processed(result, clip, planes)
+
+
+@pytest.mark.parametrize("clip", [clip_int8, clip_fp16, clip_fp32])
+@pytest.mark.parametrize("ref", [None])
+@pytest.mark.parametrize("sigmaS", [None, 1.5, [1.0, 2.0]])
+@pytest.mark.parametrize("sigmaR", [None, 0.1, [0.1, 0.2]])
+@pytest.mark.parametrize("backend", [bilateral.Backend.CPU])
+def test_bilateral_no_exception(
+    clip: vs.VideoNode,
+    ref: vs.VideoNode | None,
+    sigmaS: float | Sequence[float] | None,
+    sigmaR: float | Sequence[float] | None,
+    backend: Any
+) -> None:
+    try:
+        result = bilateral(
+            clip=clip,
+            ref=ref,
+            sigmaS=sigmaS,
+            sigmaR=sigmaR,
+            backend=backend
+        )
+    except Exception as e:
+        pytest.fail(
+            _display_error_msg(
+                clip, bilateral, e,
+                ref=ref,
+                sigmaS=sigmaS,
+                sigmaR=sigmaR,
+                backend=backend
+            )
+        )
+    else:
+        assert isinstance(result, vs.VideoNode)
+
+
+@pytest.mark.parametrize("clip", [clip_int8, clip_fp16, clip_fp32])
+@pytest.mark.parametrize("temporal_threshold", [7.0, [5.0, 10.0]])
+@pytest.mark.parametrize("spatial_threshold", [None, 2.0, [1.0, 3.0]])
+@pytest.mark.parametrize("scalep", [True, False])
+def test_flux_smooth_no_exception(
+    clip: vs.VideoNode,
+    temporal_threshold: float | Sequence[float],
+    spatial_threshold: float | Sequence[float] | None,
+    scalep: bool
+) -> None:
+    try:
+        result = flux_smooth(
+            clip=clip,
+            temporal_threshold=temporal_threshold,
+            spatial_threshold=spatial_threshold,
+            scalep=scalep
+        )
+    except Exception as e:
+        pytest.fail(
+            _display_error_msg(
+                clip, flux_smooth, e,
+                temporal_threshold=temporal_threshold,
+                spatial_threshold=spatial_threshold,
+                scalep=scalep
+            )
+        )
+    else:
+        assert isinstance(result, vs.VideoNode)
