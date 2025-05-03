@@ -75,3 +75,9 @@ def test_box_blur_no_exception(
         assert isinstance(result, vs.VideoNode)
 
         assert _has_not_been_processed(result, clip, planes)
+
+
+def test_side_box_blur_no_exception() -> None:
+    # TODO
+    ...
+
