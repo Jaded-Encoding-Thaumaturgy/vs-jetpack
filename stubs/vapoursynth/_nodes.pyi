@@ -878,6 +878,26 @@ class _Plugin_cs_VideoNode_Bound(Plugin):
 
 # end implementation
 
+# implementation: colorbars
+
+class _Plugin_colorbars_Core_Bound(Plugin):
+    """This class implements the module definitions for the "colorbars" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def ColorBars(
+        self,
+        resolution: int | None = None,
+        format: int | None = None,
+        hdr: int | None = None,
+        wcg: int | None = None,
+        compatability: int | None = None,
+        subblack: int | None = None,
+        superwhite: int | None = None,
+        iq: int | None = None,
+        halfline: int | None = None,
+        filter: int | None = None,
+    ) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
 # implementation: d2v
 
 class _Plugin_d2v_Core_Bound(Plugin):
@@ -11686,6 +11706,11 @@ class Core:
     @property
     def bwdif(self) -> _Plugin_bwdif_Core_Bound:
         """BobWeaver Deinterlacing Filter"""
+    # end instance
+    # instance_bound_Core: colorbars
+    @property
+    def colorbars(self) -> _Plugin_colorbars_Core_Bound:
+        """SMPTE RP 219-2:2016 and ITU-BT.2111 color bar generator for VapourSynth"""
     # end instance
     # instance_bound_Core: cs
     @property
