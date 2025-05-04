@@ -35,56 +35,31 @@ class TestChromaLocation(TestCase):
         result = ChromaLocation.from_video(clip)
         self.assertEqual(result, ChromaLocation.LEFT)
 
-    def test_get_offsets_from_chroma_location(self) -> None:
-        off_left, off_top = ChromaLocation.get_offsets(ChromaLocation.LEFT)
-        self.assertEqual(off_left, -0.5)
-        self.assertEqual(off_top, 0.0)
-
-        off_left, off_top = ChromaLocation.get_offsets(ChromaLocation.CENTER)
-        self.assertEqual(off_left, 0.0)
-        self.assertEqual(off_top, 0.0)
-
-        off_left, off_top = ChromaLocation.get_offsets(ChromaLocation.TOP_LEFT)
-        self.assertEqual(off_left, -0.5)
-        self.assertEqual(off_top, -0.5)
-
-        off_left, off_top = ChromaLocation.get_offsets(ChromaLocation.TOP)
-        self.assertEqual(off_left, 0.0)
-        self.assertEqual(off_top, -0.5)
-
-        off_left, off_top = ChromaLocation.get_offsets(ChromaLocation.BOTTOM_LEFT)
-        self.assertEqual(off_left, -0.5)
-        self.assertEqual(off_top, 0.5)
-
-        off_left, off_top = ChromaLocation.get_offsets(ChromaLocation.BOTTOM)
-        self.assertEqual(off_left, 0.0)
-        self.assertEqual(off_top, 0.5)
-
-    def test_get_offsets_from_video(self) -> None:
+    def test_get_offsets(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8)
-        off_left, off_top = ChromaLocation.get_offsets(clip)
-        self.assertEqual(off_left, 0.5)
+        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.LEFT)
+        self.assertEqual(off_left, -0.5)
         self.assertEqual(off_top, 0.0)
 
-        clip = vs.core.std.BlankClip(format=vs.YUV422P8)
-        off_left, off_top = ChromaLocation.get_offsets(clip)
-        self.assertEqual(off_left, 0.5)
-        self.assertEqual(off_top, 0.0)
-
-        clip = vs.core.std.BlankClip(format=vs.YUV444P8)
-        off_left, off_top = ChromaLocation.get_offsets(clip)
+        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.CENTER)
         self.assertEqual(off_left, 0.0)
         self.assertEqual(off_top, 0.0)
 
-        clip = vs.core.std.BlankClip(format=vs.YUV411P8)
-        off_left, off_top = ChromaLocation.get_offsets(clip)
-        self.assertEqual(off_left, 2.5)
-        self.assertEqual(off_top, 0.0)
+        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.TOP_LEFT)
+        self.assertEqual(off_left, -0.5)
+        self.assertEqual(off_top, -0.5)
 
-        clip = vs.core.std.BlankClip(format=vs.YUV410P8)
-        off_left, off_top = ChromaLocation.get_offsets(clip)
-        self.assertEqual(off_left, 2.5)
-        self.assertEqual(off_top, 1.0)
+        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.TOP)
+        self.assertEqual(off_left, 0.0)
+        self.assertEqual(off_top, -0.5)
+
+        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.BOTTOM_LEFT)
+        self.assertEqual(off_left, -0.5)
+        self.assertEqual(off_top, 0.5)
+
+        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.BOTTOM)
+        self.assertEqual(off_left, 0.0)
+        self.assertEqual(off_top, 0.5)
 
 
 class TestFieldBased(TestCase):
