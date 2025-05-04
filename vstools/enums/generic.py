@@ -7,7 +7,7 @@ from jetpytools import FuncExceptT
 
 from ..exceptions import (
     UndefinedChromaLocationError, UndefinedFieldBasedError, UnsupportedChromaLocationError,
-    UnsupportedFieldBasedError, UnsupportedSubsamplingError
+    UnsupportedFieldBasedError
 )
 from .stubs import _base_from_video, _ChromaLocationMeta, _FieldBasedMeta
 
@@ -72,43 +72,24 @@ class ChromaLocation(_ChromaLocationMeta):  # type: ignore[misc]
         return _base_from_video(cls, src, UndefinedChromaLocationError, strict, func)
 
     @classmethod
-    def get_offsets(
-        cls, chroma_loc: ChromaLocation | vs.VideoNode
-    ) -> tuple[float, float]:
+    def get_offsets(cls, src: vs.VideoNode, chroma_loc: ChromaLocation) -> tuple[float, float]:
         """
         Get (left,top) shift for chroma relative to luma.
 
         This is only useful if you MUST use a pre-specified chroma location and shift the chroma yourself.
         """
 
-        if isinstance(chroma_loc, vs.VideoNode):
-            assert chroma_loc.format
-            subsampling = (chroma_loc.format.subsampling_w, chroma_loc.format.subsampling_h)
-
-            if subsampling in [(1, 0), (1, 1)]:
-                offsets = (0.5, 0)
-            elif subsampling == (0, 1):
-                offsets = (0, 0)
-            elif subsampling == (2, 0):
-                offsets = (2.5, 0)
-            elif subsampling == (2, 2):
-                offsets = (2.5, 1)
-            elif subsampling == (0, 0):
-                offsets = (0, 0)
-            else:
-                raise UnsupportedSubsamplingError('Unknown subsampling.', cls)
-
-            return offsets
+        assert src.format
 
         off_left = off_top = 0.0
 
         if chroma_loc in {ChromaLocation.LEFT, ChromaLocation.TOP_LEFT, ChromaLocation.BOTTOM_LEFT}:
-            off_left += -0.5
+            off_left = 0.5 - 2 ** (src.format.subsampling_w - 1)
 
         if chroma_loc in {ChromaLocation.TOP, ChromaLocation.TOP_LEFT}:
-            off_top += -0.5
+            off_top = 0.5 - 2 ** (src.format.subsampling_h - 1)
         elif chroma_loc in {ChromaLocation.BOTTOM, ChromaLocation.BOTTOM_LEFT}:
-            off_top += +0.5
+            off_top = 2 ** (src.format.subsampling_h - 1) - 0.5
 
         return off_left, off_top
 
