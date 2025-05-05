@@ -243,14 +243,16 @@ class DFTTest:
             self = self.resolve()
 
             if self == DFTTest.Backend.OLD:
-                return core.dfttest.DFTTest(clip, *args, **kwargs)
+                return core.dfttest.DFTTest(clip, *args, **self.kwargs | kwargs)
 
-            from dfttest2 import Backend as vsdfttest2_Backend
-            from dfttest2 import DFTTest as vsdfttest2_DFTTest2
+            try: 
+                import dfttest2
+            except ModuleNotFoundError as e:
+                raise CustomRuntimeError("`dfttest2` python package is missing.", self.DFTTest) from e
 
-            kwargs.update(backend=getattr(vsdfttest2_Backend, self.name)(**self.kwargs))
+            kwargs.update(backend=getattr(dfttest2.Backend, self.name)(**self.kwargs))
 
-            return vsdfttest2_DFTTest2(clip, *args, **kwargs)
+            return dfttest2.DFTTest(clip, *args, **kwargs)
 
         @cache
         def resolve(self) -> Self:
