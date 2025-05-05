@@ -727,7 +727,7 @@ class DFTTest:
             :param kwargs:          Additional configuration parameters for the backend.
             :return:                The configured backend with applied parameters.
             """
-            new_enum = DFTTest._BackendBase(self.__class__.__name__, DFTTest.Backend.__members__)  # type: ignore
+            new_enum = _BackendBase(self.__class__.__name__, DFTTest.Backend.__members__)  # type: ignore
             member = getattr(new_enum, self.name)
             member.kwargs = kwargs
             return member
