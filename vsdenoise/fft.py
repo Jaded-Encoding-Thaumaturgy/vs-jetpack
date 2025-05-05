@@ -1,5 +1,5 @@
 """
-This module implements wrapper for FFT (Fast Fourier Transform) based plugins.
+This module implements wrappers for FFT (Fast Fourier Transform) based plugins.
 """
 from __future__ import annotations
 
