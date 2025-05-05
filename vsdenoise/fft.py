@@ -25,6 +25,44 @@ __all__ = [
 ]
 
 
+class _BackendBase(CustomEnum):
+    kwargs: dict[str, Any]
+
+    def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+        self = self.resolve()
+
+        if self == DFTTest.Backend.OLD:
+            return core.dfttest.DFTTest(clip, *args, **self.kwargs | kwargs)
+
+        try: 
+            import dfttest2
+        except ModuleNotFoundError as e:
+            raise CustomRuntimeError("`dfttest2` python package is missing.", self.DFTTest) from e
+
+        kwargs.update(backend=getattr(dfttest2.Backend, self.name)(**self.kwargs))
+
+        return dfttest2.DFTTest(clip, *args, **kwargs)
+
+    @cache
+    def resolve(self) -> Self:
+        if self.value != "auto":
+            return self
+
+        for member in list(self.__class__.__members__.values())[1:]:
+            if hasattr(core, member.value):
+                return self.__class__(member.value)
+
+        raise CustomRuntimeError(
+            "No compatible plugin found. Please install one from: "
+            "https://github.com/AmusementClub/vs-dfttest2 "
+            "or https://github.com/HomeOfVapourSynthEvolution/VapourSynth-DFTTest "
+        )
+
+    @property
+    def plugin(self) -> Plugin:
+        return getattr(core.lazy, self.resolve().value)
+
+
 class DFTTest:
     """
     2D/3D frequency domain denoiser using Discrete Fourier transform.
@@ -555,43 +593,6 @@ class DFTTest:
 
         See: https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Nuttall_window
         """
-
-    class _BackendBase(CustomEnum):
-        kwargs: dict[str, Any]
-
-        def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
-            self = self.resolve()
-
-            if self == DFTTest.Backend.OLD:
-                return core.dfttest.DFTTest(clip, *args, **self.kwargs | kwargs)
-
-            try: 
-                import dfttest2
-            except ModuleNotFoundError as e:
-                raise CustomRuntimeError("`dfttest2` python package is missing.", self.DFTTest) from e
-
-            kwargs.update(backend=getattr(dfttest2.Backend, self.name)(**self.kwargs))
-
-            return dfttest2.DFTTest(clip, *args, **kwargs)
-
-        @cache
-        def resolve(self) -> Self:
-            if self.value != "auto":
-                return self
-
-            for member in list(self.__class__.__members__.values())[1:]:
-                if hasattr(core, member.value):
-                    return self.__class__(member.value)
-
-            raise CustomRuntimeError(
-                "No compatible plugin found. Please install one from: "
-                "https://github.com/AmusementClub/vs-dfttest2 "
-                "or https://github.com/HomeOfVapourSynthEvolution/VapourSynth-DFTTest "
-            )
-
-        @property
-        def plugin(self) -> Plugin:
-            return getattr(core.lazy, self.resolve().value)
 
     class Backend(_BackendBase):
         """
