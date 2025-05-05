@@ -392,13 +392,14 @@ class DFTTest:
             )
 
         @classproperty
-        def NoProcess(self) -> Self:
+        @classmethod
+        def NoProcess(cls) -> Self:
             """
             Returns a pre-defined `SLocation` instance that performs no processing (i.e., sigma is zero for all locations).
 
             :return: A `SLocation` instance with no processing.
             """
-            return self.__class__({0: 0, 1: 0})
+            return cls({0: 0, 1: 0})
 
         class MultiDim:
             """
