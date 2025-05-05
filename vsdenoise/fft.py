@@ -4,9 +4,9 @@ This module implements wrappers for FFT (Fast Fourier Transform) based plugins.
 from __future__ import annotations
 
 from functools import cache
-from typing import TYPE_CHECKING, Any, Iterable, Iterator, Literal, Mapping, Sequence, TypeAlias, Union, overload
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Sequence, TypeAlias, Union, overload
 
-from jetpytools import KwargsNotNone, classproperty, fallback
+from jetpytools import KwargsNotNone, MismatchError, classproperty, fallback
 from typing_extensions import Self, deprecated
 from vapoursynth import Plugin
 
@@ -83,7 +83,7 @@ class DFTTest:
     2D/3D frequency domain denoiser using Discrete Fourier transform.
     """
 
-    class SLocation(Iterable[float]):
+    class SLocation(Mapping[Frequency, Sigma]):
         """
         A helper class for handling sigma values as functions of frequency in different dimensions.
 
@@ -246,12 +246,12 @@ class DFTTest:
 
                 return DFTTest.SLocation.MultiDim(*(self(x, res=res, digits=digits) for x in locations))
 
-        frequencies: tuple[float, ...]
+        frequencies: tuple[Frequency, ...]
         """
         The list of frequency locations.
         """
 
-        sigmas: tuple[float, ...]
+        sigmas: tuple[Sigma, ...]
         """
         The corresponding sigma values for each frequency.
         """
@@ -294,13 +294,43 @@ class DFTTest:
 
                 self.frequencies, self.sigmas = interpolated.frequencies, interpolated.sigmas
 
+        def __getitem__(self, key: Frequency) -> Sigma:
+            """
+            Get the sigma value associated with a given frequency.
+
+            :param key:         The frequency value to look up.
+            :return:            The sigma value corresponding to the given frequency.
+            :raises KeyError:   If the frequency is not found.
+            """
+            for f, s in zip(self.frequencies, self.sigmas):
+                if f == key:
+                    return s
+            
+            raise KeyError(key)
+
         def __iter__(self) -> Iterator[float]:
             """
-            Iterates through the frequency-sigma pairs as a flat list.
+            Return an iterator over the frequencies.
 
-            :return: An iterator over the frequency-sigma pairs.
+            :return: An iterator yielding each frequency in order.
             """
-            return iter([v for pair in zip(self.frequencies, self.sigmas) for v in pair])
+            return iter(self.frequencies)
+
+        def __len__(self) -> int:
+            """
+            Return the number of frequency-sigma pairs.
+
+            :return:                The number of pairs.
+            :raises MismatchError:  If the number of frequencies and sigmas does not match.
+            """
+            if len(self.frequencies) == (length := len(self.sigmas)):
+                return length
+
+            raise MismatchError(
+                self.__class__,
+                [self.frequencies, self.sigmas],
+                "Frequencies and sigmas must have the same number of items."
+            )
 
         def __reversed__(self) -> Self:
             """
@@ -376,10 +406,7 @@ class DFTTest:
                 return None
 
             if location is False:
-                location = DFTTest.SLocation.NoProcess
-
-            if isinstance(location, DFTTest.SLocation):
-                return cls(list(location))
+                return cls.NoProcess
 
             return cls(location)
 
@@ -401,10 +428,7 @@ class DFTTest:
                 list(self.frequencies), list(self.sigmas), method.value, fill_value='extrapolate'
             )(frequencies)
 
-            return DFTTest.SLocation(
-                dict(zip(frequencies, [float(s) for s in sigmas])) | dict(zip(self.frequencies, self.sigmas)),
-                strict=False
-            )
+            return self.__class__(dict(zip(frequencies, (float(s) for s in sigmas))) | dict(self), strict=False)
 
         @classproperty
         @classmethod
