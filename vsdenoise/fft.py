@@ -889,7 +889,7 @@ class DFTTest:
 
         for k, v in ckwargs.items():
             if isinstance(v, DFTTest.SLocation):
-                ckwargs[k] = list(flatten(v))
+                ckwargs[k] = list(v)
 
         return self.backend.DFTTest(nclip, **KwargsNotNone(ckwargs) | self.default_args | kwargs)
 
