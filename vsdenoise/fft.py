@@ -13,7 +13,7 @@ from vapoursynth import Plugin
 from vstools import (
     ConstantFormatVideoNode, CustomEnum, CustomIntEnum, CustomOverflowError, CustomRuntimeError, CustomValueError,
     FieldBased, FuncExceptT, PlanesT, SupportsFloatOrIndex, check_progressive, core, flatten, get_depth,
-    get_sample_type, inject_self, vs
+    get_sample_type, vs
 )
 
 __all__ = [
@@ -893,7 +893,6 @@ class DFTTest:
 
         return self.backend.DFTTest(nclip, **KwargsNotNone(ckwargs) | self.default_args | kwargs)
 
-    @inject_self
     def extract_freq(
         self, clip: vs.VideoNode, sloc: SLocationT | SLocation.MultiDim, **kwargs: Any
     ) -> vs.VideoNode:
@@ -908,7 +907,6 @@ class DFTTest:
         kwargs = dict(func=self.extract_freq) | kwargs
         return clip.std.MakeDiff(self.denoise(clip, sloc, **kwargs))
 
-    @inject_self
     def insert_freq(
         self, low: vs.VideoNode, high: vs.VideoNode, sloc: SLocationT | SLocation.MultiDim, **kwargs: Any
     ) -> vs.VideoNode:
@@ -923,7 +921,6 @@ class DFTTest:
         """
         return low.std.MergeDiff(self.extract_freq(high, sloc, **dict(func=self.insert_freq) | kwargs))
 
-    @inject_self
     def merge_freq(
         self, low: vs.VideoNode, high: vs.VideoNode, sloc: SLocationT | SLocation.MultiDim, **kwargs: Any
     ) -> vs.VideoNode:
