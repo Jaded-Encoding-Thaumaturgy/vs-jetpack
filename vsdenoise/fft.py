@@ -63,6 +63,21 @@ class _BackendBase(CustomEnum):
         return getattr(core.lazy, self.resolve().value)
 
 
+Frequency: TypeAlias = float
+"""
+Represents the frequency value in the frequency domain.
+
+The value is a `float` that represents the magnitude or position in the frequency spectrum.
+"""
+Sigma: TypeAlias = float
+"""
+Represents the sigma value, which is typically associated with noise standard deviation.
+
+Used to indicate the level of noise or variance in the signal, and it is represented as a `float` value.
+A higher sigma means more noise in the signal.
+"""
+
+
 class DFTTest:
     """
     2D/3D frequency domain denoiser using Discrete Fourier transform.
@@ -938,20 +953,6 @@ class DFTTest:
             self.denoise(low, sloc, **kwargs), high, sloc, **dict(func=self.merge_freq) | kwargs
         )
 
-
-Frequency: TypeAlias = float
-"""
-Represents the frequency value in the frequency domain.
-
-The value is a `float` that represents the magnitude or position in the frequency spectrum.
-"""
-Sigma: TypeAlias = float
-"""
-Represents the sigma value, which is typically associated with noise standard deviation.
-
-Used to indicate the level of noise or variance in the signal, and it is represented as a `float` value.
-A higher sigma means more noise in the signal.
-"""
 
 SLocationT = Union[
     float,
