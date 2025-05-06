@@ -99,7 +99,7 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
                     if not y:
                         nshift[x][y] = (nshift[x][y] + -0.25 if field else 0.25) * 2
                     else:
-                        nshift[x][y] = (nshift[x][y] + (-0.25 if field else 0.25) * subsampling[x]) * 2
+                        nshift[x][y] = (nshift[x][y] + (-0.25 if field else 0.25) * subsampling[x]) * 2 - cloc[x]
 
                 if is_width:
                     clip = clip.std.Transpose()
