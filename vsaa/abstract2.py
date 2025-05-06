@@ -75,6 +75,8 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
         sy, sx = shift
 
         cloc = list(ChromaLocation.get_offsets(clip, ChromaLocation.from_video(clip)))
+        subsampling = [2 ** clip.format.subsampling_w, 2 ** clip.format.subsampling_h]
+
         nshift: list[list[float]] = [
             normalize_seq(sx, clip.format.num_planes),
             normalize_seq(sy, clip.format.num_planes)
@@ -83,6 +85,7 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
         if not self.transpose_first:
             dest_dimensions.reverse()
             cloc.reverse()
+            subsampling.reverse()
             nshift.reverse()
 
         for x, dim in enumerate(dest_dimensions):
@@ -93,7 +96,10 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
                 field = int(self.tff) if nshift[x][0] == 0 else 1 if nshift[x][0] > 0 else 0
 
                 for y in range(clip.format.num_planes):
-                    nshift[x][y] = (nshift[x][y] + -0.25 if field else 0.25) * 2
+                    if not y:
+                        nshift[x][y] = (nshift[x][y] + -0.25 if field else 0.25) * 2
+                    else:
+                        nshift[x][y] = (nshift[x][y] + (-0.25 if field else 0.25) * subsampling[x]) * 2
 
                 if is_width:
                     clip = clip.std.Transpose()
