@@ -41,7 +41,7 @@ class Deinterlacer(ABC):
                 if y == self.AADirection.HORIZONTAL:
                     clip = clip.std.Transpose()
 
-                clip = self.deinterlace(clip, **kwargs)
+                clip = self._deinterlacer_function(clip, **self.get_deint_args(**kwargs))
 
                 if self.double_rate:
                     clip = core.std.Merge(clip[::2], clip[1::2])
@@ -93,18 +93,18 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
 
             while (clip.width if is_width else clip.height) < dim:
 
-                field = int(self.tff) if nshift[x][0] == 0 else 1 if nshift[x][0] > 0 else 0
+                tff = int(self.tff) if nshift[x][0] == 0 else True if nshift[x][0] > 0 else False
 
                 for y in range(clip.format.num_planes):
                     if not y:
-                        nshift[x][y] = (nshift[x][y] + (-0.25 if field else 0.25)) * 2
+                        nshift[x][y] = (nshift[x][y] + (-0.25 if tff else 0.25)) * 2
                     else:
-                        nshift[x][y] = (nshift[x][y] + (-0.25 if field else 0.25) * subsampling[x]) * 2 - cloc[x]
+                        nshift[x][y] = (nshift[x][y] + (-0.25 if tff else 0.25) * subsampling[x]) * 2 - cloc[x]
 
                 if is_width:
                     clip = clip.std.Transpose()
 
-                clip = self.deinterlace(clip, **self.get_deint_args(field=field) | self.get_ss_args(**kwargs))
+                clip = self._deinterlacer_function(clip, tff, **self.get_deint_args() | self.get_ss_args(**kwargs))
 
                 if is_width:
                     clip = clip.std.Transpose()
@@ -124,8 +124,10 @@ class NNEDI3(SuperSampler, Deinterlacer):
     pscrn: int | None = None
     opencl: bool = False
 
-    def _deinterlacer_function(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        field = fallback(kwargs.pop('field', None), int(self.tff) + (int(self.double_rate) * 2))
+    def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool | None = None, **kwargs: Any) -> ConstantFormatVideoNode:
+        kwargs.pop('field', None)
+
+        field = int(fallback(tff, self.tff)) + (int(self.double_rate) * 2)
 
         func = core.lazy.sneedif.NNEDI3 if self.opencl else core.lazy.znedi3.nnedi3
         
