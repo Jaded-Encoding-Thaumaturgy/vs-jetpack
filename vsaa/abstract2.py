@@ -7,7 +7,10 @@ from jetpytools import inject_self
 from typing_extensions import Self
 
 from vskernels import LeftShift, Scaler, TopShift
-from vstools import ChromaLocation, ConstantFormatVideoNode, VSFunctionAllArgs, check_variable, core, normalize_seq, vs
+from vstools import (
+    ChromaLocation, ConstantFormatVideoNode, VSFunctionAllArgs,
+    check_variable, core, normalize_seq, vs, fallback,
+)
 
 
 @dataclass
@@ -24,14 +27,11 @@ class Deinterlacer(ABC):
         HORIZONTAL = auto()
         BOTH = VERTICAL | HORIZONTAL
 
-    def __post_init__(self) -> None:
-        self._field_order = int(self.tff) + (int(self.double_rate) * 2)
-
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         return kwargs
 
     def deinterlace(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        return self._deinterlacer_function(clip, self._field_order, **self.get_deint_args(**kwargs))
+        return self._deinterlacer_function(clip, **self.get_deint_args(**kwargs))
 
     def aa(self, clip: vs.VideoNode, direction: AADirection = AADirection.BOTH, **kwargs: Any) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.aa)
@@ -44,7 +44,7 @@ class Deinterlacer(ABC):
                 clip = self.deinterlace(clip, **kwargs)
 
                 if self.double_rate:
-                    clip = core.std.Merge(clip[::2], clip[1::2])  # ?????
+                    clip = core.std.Merge(clip[::2], clip[1::2])
 
                 if y == self.AADirection.HORIZONTAL:
                     clip = clip.std.Transpose()
@@ -104,7 +104,7 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
                 if is_width:
                     clip = clip.std.Transpose()
 
-                clip = self.deinterlace(clip, **self.get_deint_args() | self.get_ss_args(**kwargs))
+                clip = self.deinterlace(clip, **self.get_deint_args(field=field) | self.get_ss_args(**kwargs))
 
                 if is_width:
                     clip = clip.std.Transpose()
@@ -122,8 +122,14 @@ class NNEDI3(SuperSampler, Deinterlacer):
     qual: int | None = None
     etype: int | None = None
     pscrn: int | None = None
+    opencl: bool = False
 
-    _deinterlacer_function = core.lazy.znedi3.nnedi3
+    def _deinterlacer_function(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        field = fallback(kwargs.pop('field', None), int(self.tff) + (int(self.double_rate) * 2))
+
+        func = core.lazy.sneedif.NNEDI3 if self.opencl else core.lazy.znedi3.nnedi3
+        
+        return func(clip, field, **kwargs)
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         return dict(
