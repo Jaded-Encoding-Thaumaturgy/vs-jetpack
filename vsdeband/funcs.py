@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import Any
+from typing import Any, Sequence
 
 from vsdenoise import PrefilterT, frequency_merge
 from vsexprtools import ExprOp, norm_expr
 from vsmasktools import FDoG, Morpho, flat_mask, texture_mask
-from vsrgtools import (
-    BlurMatrix, MeanMode, RemoveGrainMode, RemoveGrainModeT, box_blur, gauss_blur, limit_filter, remove_grain
-)
+from vsrgtools import BlurMatrix, MeanMode, box_blur, gauss_blur, limit_filter, remove_grain
 from vstools import (
     ColorRange, FunctionUtil, PlanesT, VSFunctionKwArgs, check_ref_clip, check_variable, depth, expect_bits, fallback,
     normalize_planes, normalize_seq, scale_value, to_arr, vs
@@ -81,7 +79,7 @@ def masked_deband(
     thr: float | list[float] = 96, grain: float | list[float] = [0.23, 0],
     sigma: float = 1.25, rxsigma: list[int] = [50, 220, 300],
     pf_sigma: float | None = 1.25, brz: tuple[float, float] = (0.038, 0.068),
-    rg_mode: RemoveGrainModeT = RemoveGrainMode.MINMAX_MEDIAN_OPP,
+    rg_mode: int | Sequence[int] = remove_grain.Mode.MINMAX_MEDIAN_OPP,
     debander: type[Debander] | Debander = F3kdb, **kwargs: Any
 ) -> vs.VideoNode:
     clip, bits = expect_bits(clip, 16)
@@ -170,9 +168,9 @@ def guided_deband(
         if bin_thr and max(bin_thr) > 0:
             rmask = rmask.std.Binarize(threshold=bin_thr, planes=planes)
 
-        rmask = remove_grain(rmask, RemoveGrainMode.OPP_CLIP_AVG_FAST)
+        rmask = remove_grain.Mode.OPP_CLIP_AVG_FAST(rmask)
         rmask = BlurMatrix.BINOMIAL()(rmask)
-        rmask = remove_grain(rmask, RemoveGrainMode.MIN_SHARP)
+        rmask = remove_grain.Mode.MIN_SHARP(rmask)
 
         deband = deband.std.MaskedMerge(clip, rmask, planes=planes)
 
@@ -253,7 +251,7 @@ def multi_deband(
 
     deband = frequency_merge(
         base_deband,
-        (
+        *(
             debanded
             if (debanded := debander.deband(clip if base_db else base_deband))
             and not mask else debanded.std.MaskedMerge(base_deband, textures)

@@ -1,8 +1,9 @@
 from __future__ import annotations
+from typing import Sequence
 
 from vsexprtools import ExprOp
 from vsmasktools import Morpho, Prewitt, retinex
-from vsrgtools import RemoveGrainMode, RemoveGrainModeT, gauss_blur, remove_grain
+from vsrgtools import gauss_blur, remove_grain
 from vstools import get_y, vs
 
 __all__ = [
@@ -13,7 +14,7 @@ __all__ = [
 def deband_detail_mask(
     clip: vs.VideoNode, sigma: float = 1.0, rxsigma: list[int] = [50, 200, 350],
     pf_sigma: float | None = 1.0, brz: tuple[float, float] = (0.038, 0.068),
-    rg_mode: RemoveGrainModeT = RemoveGrainMode.MINMAX_MEDIAN_OPP
+    rg_mode: int | Sequence[int] = remove_grain.Mode.MINMAX_MEDIAN_OPP
 ) -> vs.VideoNode:
     clip_y = get_y(clip)
 

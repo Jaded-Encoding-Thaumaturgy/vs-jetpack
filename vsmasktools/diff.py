@@ -6,7 +6,8 @@ from typing import Any, TypeAlias, Union, overload
 
 from vsexprtools import ExprOp, norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelT, NoScale
-from vsrgtools import RemoveGrainMode, bilateral, gauss_blur, remove_grain
+from vsrgtools import bilateral, gauss_blur, remove_grain
+from vsrgtools.rgtools import RemoveGrain
 from vstools import (
     ColorRange, ConstantFormatVideoNode, CustomValueError, FuncExceptT, KwargsT, VSFunctionNoArgs, check_variable,
     depth, get_w, get_y, insert_clip, iterate, vs
@@ -128,8 +129,8 @@ def based_diff_mask(
     thr: float = 0.216,
     prefilter: int | KwargsT | bool | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = False,
     postfilter: Union[
-        int, tuple[Count, RemoveGrainMode],
-        list[tuple[Count, RemoveGrainMode]],
+        int, tuple[Count, RemoveGrain.Mode],
+        list[tuple[Count, RemoveGrain.Mode]],
         VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode]
     ] = 2,
     ampl: str | type[EdgeDetect] | EdgeDetect = ...,
@@ -160,8 +161,8 @@ def based_diff_mask(
     thr: float = 0.216,
     prefilter: int | KwargsT | bool | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = False,
     postfilter: Union[
-        int, tuple[Count, RemoveGrainMode],
-        list[tuple[Count, RemoveGrainMode]],
+        int, tuple[Count, RemoveGrain.Mode],
+        list[tuple[Count, RemoveGrain.Mode]],
         VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode]
     ] = 2,
     ampl: str | type[EdgeDetect] | EdgeDetect = ...,
@@ -192,8 +193,8 @@ def based_diff_mask(
     thr: float = 0.216,
     prefilter: int | KwargsT | bool | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = False,
     postfilter: Union[
-        int, tuple[Count, RemoveGrainMode],
-        list[tuple[Count, RemoveGrainMode]],
+        int, tuple[Count, RemoveGrain.Mode],
+        list[tuple[Count, RemoveGrain.Mode]],
         VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode]
     ] = 2,
     ampl: str | type[EdgeDetect] | EdgeDetect = 'x yrange_max / 2 4 pow * {thr} < 0 1 ? yrange_max *',
@@ -241,7 +242,7 @@ def based_diff_mask(
 
     if postfilter:
         if isinstance(postfilter, int):
-            mask = iterate(mask, remove_grain, postfilter, RemoveGrainMode.MINMAX_AROUND2)
+            mask = iterate(mask, remove_grain, postfilter, remove_grain.Mode.MINMAX_AROUND2)
         elif isinstance(postfilter, tuple):
             mask = iterate(mask, remove_grain, postfilter[0], postfilter[1])
         elif isinstance(postfilter, list):

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Iterable, Iterator, MutableMapping, Self, TypedDict, overload
 
+from typing_extensions import deprecated
+
 from vstools import T1, T2, KwargsT, PlanesT, SupportsKeysAndGetItem, VSFunctionNoArgs, classproperty, vs, vs_object
 
 from ..prefilters import prefilter_to_full_range
@@ -314,7 +316,11 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
             )
         )
 
-# TODO: add deprecation
+@deprecated(
+    "MVToolsPresets class is deprecated and will be removed in a future version. "
+    "Use MVToolsPreset instead."
+    , category=DeprecationWarning
+)
 class MVToolsPresets:
     """Presets for arguments passed to MVTools functions."""
 

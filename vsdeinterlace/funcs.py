@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import warnings
+
 from functools import partial
 from typing import Any
 
@@ -152,6 +154,9 @@ class telop_resample(CustomIntEnum):
 
 class FixInterlacedFades(CustomEnum):
     Average: FixInterlacedFades = object()  # type: ignore
+    Match: FixInterlacedFades = object()  # type: ignore
+
+    # Deprecated aliases for `Match`
     Darken: FixInterlacedFades = object()  # type: ignore
     Brighten: FixInterlacedFades = object()  # type: ignore
 
@@ -179,37 +184,38 @@ class FixInterlacedFades(CustomEnum):
         """
         func = func or self.__class__
 
+        if self in (self.Darken, self.Brighten):
+            warnings.warn(
+                'FixInterlacedFades: Darken and Brighten are deprecated and will be removed in a future version. '
+                'They are now aliases for Match, so use Match directly instead.',
+                DeprecationWarning
+            )
+
         f = FunctionUtil(clip, func, planes, vs.YUV, 32)
 
         fields = limiter(f.work_clip).std.SeparateFields(tff=True)
 
+        fields = norm_expr(fields, 'x {color} - abs', planes, color=colors, func=func)
         for i in f.norm_planes:
             fields = fields.std.PlaneStats(None, i, f'P{i}')
 
         props_clip = core.akarin.PropExpr(
             [f.work_clip, fields[::2], fields[1::2]], lambda: {  # type: ignore[misc]
-                f'f{t}Avg{i}': f'{c}.P{i}Average {color} -'  # type: ignore[has-type]
+                f'f{t}Avg{i}': f'{c}.P{i}Average'  # type: ignore[has-type]
                 for t, c in ['ty', 'bz']
-                for i, color in zip(f.norm_planes, f.norm_seq(colors, 0))
+                for i in f.norm_planes
             }
         )
 
-        expr_mode, expr_mode_chroma = (
-            ('min', '<') if self == self.Darken else ('max', '>') if self == self.Brighten else ('+ 2 /', '+ 2 /')
-        )
-
-        expr_header = 'Y 2 % x.fbAvg{i} x.ftAvg{i} ? AVG! AVG@ 0 = x x {color} - '
-        expr_footer = ' AVG@ / * {color} + ?'
-
-        expr_luma = expr_header + 'x.ftAvg{i} x.fbAvg{i} {expr_mode}' + expr_footer
-        expr_chroma = expr_luma if self == self.Average else (
-            expr_header + 'x.ftAvg{i} abs x.fbAvg{i} abs {expr_mode} x.ftAvg{i} x.fbAvg{i} ?' + expr_footer
+        expr = (
+            'Y 2 % x.fbAvg{i} x.ftAvg{i} ? AVG! '
+            'AVG@ 0 = x x {color} - x.ftAvg{i} x.fbAvg{i} {expr_mode} AVG@ / * {color} + ?'
         )
 
         fix = norm_expr(
-            props_clip, (expr_luma, expr_chroma),
-            planes, i=f.norm_planes, color=colors,
-            expr_mode=(expr_mode, expr_mode_chroma),
+            props_clip, expr, planes,
+            i=f.norm_planes, color=colors,
+            expr_mode='+ 2 /' if self == self.Average else 'min',
             func=func
         )
 

@@ -208,7 +208,7 @@ def vine_dehalo(
     smoothed = core.std.Merge(supersampled, smoothed, weight)
 
     highpassed = frequency_merge(
-        [func.work_clip, smoothed],
+        func.work_clip, smoothed,
         mode_low=func.work_clip,
         mode_high=smoothed,
         lowpass=partial(gauss_blur, sigma=sigma)

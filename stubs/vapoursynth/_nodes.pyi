@@ -77,6 +77,31 @@ class _Plugin_akarin_VideoNode_Bound(Plugin):
 # end implementation
 
 
+# implementation: bm3d
+
+class _Plugin_bm3d_Core_Bound(Plugin):
+    """This class implements the module definitions for the "bm3d" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Basic(self, input: VideoNode, ref: VideoNode | None = None, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, th_mse: float | None = None, hard_thr: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def Final(self, input: VideoNode, ref: VideoNode, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, th_mse: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def OPP2RGB(self, input: VideoNode, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def RGB2OPP(self, input: VideoNode, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def VAggregate(self, input: VideoNode, radius: int | None = None, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def VBasic(self, input: VideoNode, ref: VideoNode | None = None, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, radius: int | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, ps_num: int | None = None, ps_range: int | None = None, ps_step: int | None = None, th_mse: float | None = None, hard_thr: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def VFinal(self, input: VideoNode, ref: VideoNode, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, radius: int | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, ps_num: int | None = None, ps_range: int | None = None, ps_step: int | None = None, th_mse: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_bm3d_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "bm3d" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Basic(self, ref: VideoNode | None = None, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, th_mse: float | None = None, hard_thr: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def Final(self, ref: VideoNode, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, th_mse: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def OPP2RGB(self, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def RGB2OPP(self, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def VAggregate(self, radius: int | None = None, sample: int | None = None) -> ConstantFormatVideoNode: ...
+    def VBasic(self, ref: VideoNode | None = None, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, radius: int | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, ps_num: int | None = None, ps_range: int | None = None, ps_step: int | None = None, th_mse: float | None = None, hard_thr: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+    def VFinal(self, ref: VideoNode, profile: _DataType | None = None, sigma: _SingleAndSequence[float] | None = None, radius: int | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, bm_step: int | None = None, ps_num: int | None = None, ps_range: int | None = None, ps_step: int | None = None, th_mse: float | None = None, matrix: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
+
 # implementation: bilateralgpu
 
 class _Plugin_bilateralgpu_Core_Bound(Plugin):
@@ -567,6 +592,20 @@ class _Plugin_imwri_VideoNode_Bound(Plugin):
 
 
 
+# implementation: knlm
+
+class _Plugin_knlm_Core_Bound(Plugin):
+    """This class implements the module definitions for the "knlm" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def KNLMeansCL(self, clip: VideoNode, d: int | None = None, a: int | None = None, s: int | None = None, h: float | None = None, channels: _DataType | None = None, wmode: int | None = None, wref: float | None = None, rclip: VideoNode | None = None, device_type: _DataType | None = None, device_id: int | None = None, ocl_x: int | None = None, ocl_y: int | None = None, ocl_r: int | None = None, info: int | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_knlm_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "knlm" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def KNLMeansCL(self, d: int | None = None, a: int | None = None, s: int | None = None, h: float | None = None, channels: _DataType | None = None, wmode: int | None = None, wref: float | None = None, rclip: VideoNode | None = None, device_type: _DataType | None = None, device_id: int | None = None, ocl_x: int | None = None, ocl_y: int | None = None, ocl_r: int | None = None, info: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
+
+
 # implementation: lsmas
 
 class _Plugin_lsmas_Core_Bound(Plugin):
@@ -762,6 +801,44 @@ class _Plugin_mvsf_VideoNode_Bound(Plugin):
     def Recalculate(self, *args: _VapourSynthMapValue, **kwargs: _VapourSynthMapValue) -> ConstantFormatVideoNode: ...
     def SCDetection(self, vectors: VideoNode, thscd1: float | None = None, thscd2: float | None = None) -> ConstantFormatVideoNode: ...
     def Super(self, hpad: int | None = None, vpad: int | None = None, pel: int | None = None, levels: int | None = None, chroma: int | None = None, sharp: int | None = None, rfilter: int | None = None, pelclip: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
+
+
+
+_ReturnDict_nlm_cuda_Version = TypedDict(
+    "_ReturnDict_nlm_cuda_Version",
+    {
+        "cuda_version": int,
+        "version": bytes,
+    }
+)
+
+# implementation: nlm_cuda
+
+class _Plugin_nlm_cuda_Core_Bound(Plugin):
+    """This class implements the module definitions for the "nlm_cuda" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def NLMeans(self, clip: VideoNode, d: int | None = None, a: int | None = None, s: int | None = None, h: float | None = None, channels: _DataType | None = None, wmode: int | None = None, wref: float | None = None, rclip: VideoNode | None = None, device_id: int | None = None, num_streams: int | None = None) -> ConstantFormatVideoNode: ...
+    def Version(self) -> _ReturnDict_nlm_cuda_Version: ...
+
+class _Plugin_nlm_cuda_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "nlm_cuda" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def NLMeans(self, d: int | None = None, a: int | None = None, s: int | None = None, h: float | None = None, channels: _DataType | None = None, wmode: int | None = None, wref: float | None = None, rclip: VideoNode | None = None, device_id: int | None = None, num_streams: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
+
+# implementation: nlm_ispc
+
+class _Plugin_nlm_ispc_Core_Bound(Plugin):
+    """This class implements the module definitions for the "nlm_ispc" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def NLMeans(self, clip: VideoNode, d: int | None = None, a: int | None = None, s: int | None = None, h: float | None = None, channels: _DataType | None = None, wmode: int | None = None, wref: float | None = None, rclip: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+    def Version(self) -> bytes: ...
+
+class _Plugin_nlm_ispc_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "nlm_ispc" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def NLMeans(self, d: int | None = None, a: int | None = None, s: int | None = None, h: float | None = None, channels: _DataType | None = None, wmode: int | None = None, wref: float | None = None, rclip: VideoNode | None = None) -> ConstantFormatVideoNode: ...
 
 # end implementation
 
@@ -1392,6 +1469,22 @@ class _Plugin_warpsf_VideoNode_Bound(Plugin):
 # end implementation
 
 
+# implementation: wnnm
+
+class _Plugin_wnnm_Core_Bound(Plugin):
+    """This class implements the module definitions for the "wnnm" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def VAggregate(self, clip: VideoNode, src: VideoNode, planes: _SingleAndSequence[int], internal: int | None = None) -> ConstantFormatVideoNode: ...
+    def Version(self) -> dict[str, bytes]: ...
+    def WNNM(self, clip: VideoNode, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, radius: int | None = None, ps_num: int | None = None, ps_range: int | None = None, residual: int | None = None, adaptive_aggregation: int | None = None, rclip: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+    def WNNMRaw(self, clip: VideoNode, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, radius: int | None = None, ps_num: int | None = None, ps_range: int | None = None, residual: int | None = None, adaptive_aggregation: int | None = None, rclip: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_wnnm_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "wnnm" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def VAggregate(self, src: VideoNode, planes: _SingleAndSequence[int], internal: int | None = None) -> ConstantFormatVideoNode: ...
+    def WNNM(self, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, radius: int | None = None, ps_num: int | None = None, ps_range: int | None = None, residual: int | None = None, adaptive_aggregation: int | None = None, rclip: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+    def WNNMRaw(self, sigma: _SingleAndSequence[float] | None = None, block_size: int | None = None, block_step: int | None = None, group_size: int | None = None, bm_range: int | None = None, radius: int | None = None, ps_num: int | None = None, ps_range: int | None = None, residual: int | None = None, adaptive_aggregation: int | None = None, rclip: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
 
 
 # implementation: wwxd
@@ -1563,6 +1656,11 @@ class VideoNode(RawNode):
     def bilateralgpu_rtc(self) -> _Plugin_bilateralgpu_rtc_VideoNode_Bound:
         """Bilateral filter using CUDA (NVRTC)"""
     # end instance
+    # instance_bound_VideoNode: bm3d
+    @property
+    def bm3d(self) -> _Plugin_bm3d_VideoNode_Bound:
+        """Implementation of BM3D denoising filter for VapourSynth."""
+    # end instance
     # instance_bound_VideoNode: bm3dcpu
     @property
     def bm3dcpu(self) -> _Plugin_bm3dcpu_VideoNode_Bound:
@@ -1673,6 +1771,11 @@ class VideoNode(RawNode):
     def imwri(self) -> _Plugin_imwri_VideoNode_Bound:
         """VapourSynth ImageMagick 7 HDRI Writer/Reader"""
     # end instance
+    # instance_bound_VideoNode: knlm
+    @property
+    def knlm(self) -> _Plugin_knlm_VideoNode_Bound:
+        """KNLMeansCL for VapourSynth"""
+    # end instance
     # instance_bound_VideoNode: manipmv
     @property
     def manipmv(self) -> _Plugin_manipmv_VideoNode_Bound:
@@ -1692,6 +1795,16 @@ class VideoNode(RawNode):
     @property
     def mvsf(self) -> _Plugin_mvsf_VideoNode_Bound:
         """MVTools Single Precision"""
+    # end instance
+    # instance_bound_VideoNode: nlm_cuda
+    @property
+    def nlm_cuda(self) -> _Plugin_nlm_cuda_VideoNode_Bound:
+        """Non-local means denoise filter implemented in CUDA"""
+    # end instance
+    # instance_bound_VideoNode: nlm_ispc
+    @property
+    def nlm_ispc(self) -> _Plugin_nlm_ispc_VideoNode_Bound:
+        """Non-local means denoise filter implemented in ISPC"""
     # end instance
     # instance_bound_VideoNode: placebo
     @property
@@ -1761,6 +1874,11 @@ class VideoNode(RawNode):
     @property
     def warpsf(self) -> _Plugin_warpsf_VideoNode_Bound:
         """Warpsharp floating point version"""
+    # end instance
+    # instance_bound_VideoNode: wnnm
+    @property
+    def wnnm(self) -> _Plugin_wnnm_VideoNode_Bound:
+        """Weighted Nuclear Norm Minimization Denoiser"""
     # end instance
     # instance_bound_VideoNode: wwxd
     @property
@@ -1875,6 +1993,11 @@ class Core:
     @property
     def bilateralgpu_rtc(self) -> _Plugin_bilateralgpu_rtc_Core_Bound:
         """Bilateral filter using CUDA (NVRTC)"""
+    # end instance
+    # instance_bound_Core: bm3d
+    @property
+    def bm3d(self) -> _Plugin_bm3d_Core_Bound:
+        """Implementation of BM3D denoising filter for VapourSynth."""
     # end instance
     # instance_bound_Core: bm3dcpu
     @property
@@ -2011,6 +2134,11 @@ class Core:
     def imwri(self) -> _Plugin_imwri_Core_Bound:
         """VapourSynth ImageMagick 7 HDRI Writer/Reader"""
     # end instance
+    # instance_bound_Core: knlm
+    @property
+    def knlm(self) -> _Plugin_knlm_Core_Bound:
+        """KNLMeansCL for VapourSynth"""
+    # end instance
     # instance_bound_Core: lsmas
     @property
     def lsmas(self) -> _Plugin_lsmas_Core_Bound:
@@ -2035,6 +2163,16 @@ class Core:
     @property
     def mvsf(self) -> _Plugin_mvsf_Core_Bound:
         """MVTools Single Precision"""
+    # end instance
+    # instance_bound_Core: nlm_cuda
+    @property
+    def nlm_cuda(self) -> _Plugin_nlm_cuda_Core_Bound:
+        """Non-local means denoise filter implemented in CUDA"""
+    # end instance
+    # instance_bound_Core: nlm_ispc
+    @property
+    def nlm_ispc(self) -> _Plugin_nlm_ispc_Core_Bound:
+        """Non-local means denoise filter implemented in ISPC"""
     # end instance
     # instance_bound_Core: placebo
     @property
@@ -2106,6 +2244,12 @@ class Core:
     def warpsf(self) -> _Plugin_warpsf_Core_Bound:
         """Warpsharp floating point version"""
     # end instance
+    # instance_bound_Core: wnnm
+    @property
+    def wnnm(self) -> _Plugin_wnnm_Core_Bound:
+        """Weighted Nuclear Norm Minimization Denoiser"""
+    # end instance
+    # instance_bound_Core: wwxd
     @property
     def wwxd(self) -> _Plugin_wwxd_Core_Bound:
         """Scene change detection approximately like Xvid's"""

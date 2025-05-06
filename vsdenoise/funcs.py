@@ -8,11 +8,9 @@ from typing import Any, Literal, overload
 
 from vsexprtools import norm_expr
 from vsrgtools import MeanMode
-from vsscale import Waifu2x
-from vsscale.onnx import BaseWaifu2x
 from vstools import (
-    ConstantFormatVideoNode, CustomIndexError, KwargsNotNone, PlanesT, VSFunctionNoArgs, check_ref_clip, check_variable,
-    fallback, normalize_seq, scale_delta, vs
+    ConstantFormatVideoNode, KwargsNotNone, PlanesT, VSFunctionNoArgs, check_ref_clip, check_variable, fallback,
+    normalize_seq, scale_delta, vs
 )
 
 from .mvtools import MotionVectors, MVTools, MVToolsPreset, MVToolsPresets
@@ -21,8 +19,6 @@ from .prefilters import PrefilterPartial
 __all__ = [
     'mc_degrain',
     'mc_clamp',
-
-    'waifu2x_denoise'
 ]
 
 
@@ -167,16 +163,3 @@ def mc_clamp(
         undershoot=scale_delta(undershoot, 8, flt),
         overshoot=scale_delta(overshoot, 8, flt),
     )
-
-
-def waifu2x_denoise(
-    clip: vs.VideoNode, noise: Literal[0, 1, 2, 3] = 1, model: type[BaseWaifu2x] = Waifu2x.Cunet, **kwargs: Any
-) -> vs.VideoNode:
-    from warnings import warn
-
-    warn("waifu2x_denoise is deprecated. Use vsscale.Waifu2x instead.", DeprecationWarning, 2)
-
-    if not 0 <= noise <= 3:
-        raise CustomIndexError('"noise" must be in range 0-3 (inclusive).', waifu2x_denoise)
-
-    return model(1, noise, **kwargs).scale(clip, clip.width, clip.height)

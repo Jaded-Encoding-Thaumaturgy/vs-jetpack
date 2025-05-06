@@ -2,24 +2,20 @@ from __future__ import annotations
 
 from enum import auto
 from math import ceil, exp, log2, pi, sqrt
-from typing import Any, Iterable, Literal, Sequence, TypeVar, overload
+from typing import Any, Iterable, Literal, TypeVar, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError
-from typing_extensions import Self, deprecated
+from typing_extensions import Self
 
 from vsexprtools import ExprList, ExprOp, ExprToken, ExprVars
 from vstools import (
-    ConstantFormatVideoNode, ConvMode, CustomIntEnum, CustomStrEnum, CustomValueError, KwargsT, PlanesT, check_variable,
+    ConstantFormatVideoNode, ConvMode, CustomIntEnum, CustomValueError, KwargsT, PlanesT, check_variable,
     core, fallback, iterate, shift_clip_multi, vs
 )
 
 __all__ = [
     'LimitFilterMode',
-    'RemoveGrainMode', 'RemoveGrainModeT',
-    'RepairMode', 'RepairModeT',
-    'VerticalCleanerMode', 'VerticalCleanerModeT',
-    'ClenseMode', 'ClenseModeT',
-    'BlurMatrixBase', 'BlurMatrix', 'BilateralBackend'
+    'BlurMatrixBase', 'BlurMatrix'
 ]
 
 
@@ -48,138 +44,6 @@ class LimitFilterMode(LimitFilterModeMeta, CustomIntEnum):
 
         return self
 
-
-@deprecated(
-    "This enum is deprecated and will be removed in a future version. "
-    "Uses `vsrgtools.remove_grain.Mode` instead.",
-    category=DeprecationWarning
-)
-class RemoveGrainMode(CustomIntEnum):
-    NONE = 0
-    MINMAX_AROUND1 = 1
-    MINMAX_AROUND2 = 2
-    MINMAX_AROUND3 = 3
-    MINMAX_MEDIAN = 4
-    EDGE_CLIP_STRONG = 5
-    EDGE_CLIP_MODERATE = 6
-    EDGE_CLIP_MEDIUM = 7
-    EDGE_CLIP_LIGHT = 8
-    LINE_CLIP_CLOSE = 9
-    MIN_SHARP = 10
-    BINOMIAL_BLUR = 11
-    BOB_TOP_CLOSE = 13
-    BOB_BOTTOM_CLOSE = 14
-    BOB_TOP_INTER = 15
-    BOB_BOTTOM_INTER = 16
-    MINMAX_MEDIAN_OPP = 17
-    LINE_CLIP_OPP = 18
-    MEAN_NO_CENTER = 19
-    MEAN = 20
-    BOX_BLUR_NO_CENTER = MEAN_NO_CENTER
-    BOX_BLUR = MEAN
-    OPP_CLIP_AVG = 21
-    OPP_CLIP_AVG_FAST = 22
-    EDGE_DEHALO = 23
-    EDGE_DEHALO2 = 24
-    SMART_RGC = 26
-    SMART_RGCL = 27
-    SMART_RGCL2 = 28
-
-    def __call__(self, clip: vs.VideoNode, planes: PlanesT = None) -> ConstantFormatVideoNode:
-        from .rgtools import remove_grain
-        from .util import norm_rmode_planes
-        return remove_grain(clip, norm_rmode_planes(clip, self, planes))
-
-
-RemoveGrainModeT = int | RemoveGrainMode | Sequence[int | RemoveGrainMode]
-
-
-@deprecated(
-    "This enum is deprecated and will be removed in a future version. "
-    "Uses `vsrgtools.repair.Mode` instead.",
-    category=DeprecationWarning
-)
-class RepairMode(CustomIntEnum):
-    NONE = 0
-    MINMAX_SQUARE1 = 1
-    MINMAX_SQUARE2 = 2
-    MINMAX_SQUARE3 = 3
-    MINMAX_SQUARE4 = 4
-    LINE_CLIP_MIN = 5
-    LINE_CLIP_LIGHT = 6
-    LINE_CLIP_MEDIUM = 7
-    LINE_CLIP_STRONG = 8
-    LINE_CLIP_CLOSE = 9
-    MINMAX_SQUARE_REF_CLOSE = 10
-    MINMAX_SQUARE_REF1 = 11
-    MINMAX_SQUARE_REF2 = 12
-    MINMAX_SQUARE_REF3 = 13
-    MINMAX_SQUARE_REF4 = 14
-    CLIP_REF_RG5 = 15
-    CLIP_REF_RG6 = 16
-    CLIP_REF_RG17 = 17
-    CLIP_REF_RG18 = 18
-    CLIP_REF_RG19 = 19
-    CLIP_REF_RG20 = 20
-    CLIP_REF_RG21 = 21
-    CLIP_REF_RG22 = 22
-    CLIP_REF_RG23 = 23
-    CLIP_REF_RG24 = 24
-    CLIP_REF_RG26 = 26
-    CLIP_REF_RG27 = 27
-    CLIP_REF_RG28 = 28
-
-    def __call__(self, clip: vs.VideoNode, repairclip: vs.VideoNode, planes: PlanesT = None) -> ConstantFormatVideoNode:
-        from .rgtools import repair
-        from .util import norm_rmode_planes
-        return repair(clip, repairclip, norm_rmode_planes(clip, self, planes))
-
-
-RepairModeT = int | RepairMode | Sequence[int | RepairMode]
-
-
-@deprecated(
-    "This enum is deprecated and will be removed in a future version. "
-    "Uses `vsrgtools.vertical_cleaner.Mode` instead.",
-    category=DeprecationWarning
-)
-class VerticalCleanerMode(CustomIntEnum):
-    NONE = 0
-    MEDIAN = 1
-    PRESERVING = 2
-
-    def __call__(self, clip: vs.VideoNode, planes: PlanesT = None) -> ConstantFormatVideoNode:
-        from .rgtools import vertical_cleaner
-        from .util import norm_rmode_planes
-        return vertical_cleaner(clip, norm_rmode_planes(clip, self, planes))
-
-
-VerticalCleanerModeT = int | VerticalCleanerMode | Sequence[int | VerticalCleanerMode]
-
-
-@deprecated(
-    "This enum is deprecated and will be removed in a future version. "
-    "Uses `vsrgtools.clense.Mode` instead.",
-    category=DeprecationWarning
-)
-class ClenseMode(CustomStrEnum):
-    NONE = ''
-    BACKWARD = 'BackwardClense'
-    FORWARD = 'ForwardClense'
-    BOTH = 'Clense'
-
-    def __call__(
-        self,
-        clip: vs.VideoNode,
-        previous_clip: vs.VideoNode | None = None,
-        next_clip: vs.VideoNode | None = None,
-        planes: PlanesT = None
-    ) -> ConstantFormatVideoNode:
-        from .rgtools import clense
-        return clense(clip, previous_clip, next_clip, self, planes)
-
-
-ClenseModeT = str | ClenseMode
 
 _Nb = TypeVar('_Nb', bound=float | int)
 
@@ -370,8 +234,6 @@ class BlurMatrix(CustomEnum):
 
     BOX_BLUR_NO_CENTER = MEAN_NO_CENTER
 
-    CIRCLE = MEAN_NO_CENTER  # TODO: remove
-
     MEAN = auto()
     """Standard mean/box blur kernel including the center pixel. Aliased as BOX_BLUR."""
 
@@ -542,14 +404,3 @@ class BlurMatrix(CustomEnum):
             taps = ceil(abs(sigma) * 8 + 1) // 2
 
         return taps
-
-
-@deprecated(
-    "This enum is deprecated and will be removed in a future version. "
-    "Uses `vsrgtools.bilateral.Backend` instead.",
-    category=DeprecationWarning
-)
-class BilateralBackend(CustomStrEnum):
-    CPU = 'vszip'
-    GPU = 'bilateralgpu'
-    GPU_RTC = 'bilateralgpu_rtc'

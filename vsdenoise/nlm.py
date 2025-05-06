@@ -5,250 +5,183 @@ This module implements a wrapper for non local means denoisers
 from __future__ import annotations
 
 import warnings
-from enum import auto
-from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Sequence, overload
+
+from typing import Any, Callable, Generic, Sequence
+
+from jetpytools import CustomRuntimeError, CustomStrEnum, P, R
 
 from vstools import (
-    CustomEnum, CustomIntEnum, CustomValueError, KwargsT, PlanesT, check_progressive,
-    check_variable, core, join, normalize_planes, normalize_seq, to_arr, vs
+    ConstantFormatVideoNode, CustomIntEnum, PlanesT, check_variable, core, join, normalize_planes, normalize_seq,
+    to_arr, vs
 )
 
 __all__ = [
-    'ChannelMode', 'DeviceType', 'NLMWeightMode',
-
     'nl_means'
 ]
 
+class NLMeans(Generic[P, R]):
+    """
+    Class decorator that wraps the [nl_means][vsdenoise.nlm.nl_means] function
+    and adds enumerations relevant to its implementation.
 
-class ChannelMode(CustomEnum):
-    """Enum representing the NLMeans channel operation mode."""
+    It is not meant to be used directly.
+    """
 
-    NO_PLANES = auto()
-    """Don't process any planes."""
+    def __init__(self, nl_means_func: Callable[P, R]) -> None:
+        self._func = nl_means_func
 
-    ALL_PLANES = auto()
-    """Process all planes."""
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        return self._func(*args, **kwargs)
 
-    LUMA = auto()
-    """Only process luma in YUV/GRAY."""
-
-    CHROMA = auto()
-    """Only process chroma in YUV."""
-
-    CHROMA_U = auto()
-    """Only process chroma U plane in YUV."""
-
-    CHROMA_V = auto()
-    """Only process chroma V plane in YUV."""
-
-    @classmethod
-    def from_planes(cls, planes: PlanesT) -> ChannelMode:
+    class Backend(CustomStrEnum):
         """
-        Get :py:attr:`ChannelMode` from a traditional ``planes`` param.
-
-        :param planes:  Sequence of planes to be processed.
-
-        :return:        :py:attr:`ChannelMode` value.
+        Enum representing available backends on which to run the plugin.
         """
 
-        if planes is None:
-            return cls.ALL_PLANES
-
-        planes = to_arr(planes)
-
-        if planes == []:
-            return cls.NO_PLANES
-
-        if planes == [0]:
-            return cls.LUMA
-
-        if 0 not in planes:
-            if planes == [1]:
-                return cls.CHROMA_U
-            elif planes == [2]:
-                return cls.CHROMA_V
-
-            return cls.CHROMA
-
-        return cls.ALL_PLANES
-
-    def to_planes(self) -> PlanesT:
-        if self is ChannelMode.ALL_PLANES:
-            return None
-
-        if self is ChannelMode.LUMA:
-            return [0]
-
-        return [1, 2]
-
-
-class DeviceTypeWithInfo(str):
-    kwargs: KwargsT
-
-    def __new__(cls, val: str, **kwargs: Any) -> DeviceTypeWithInfo:
-        self = super().__new__(cls, val)
-        self.kwargs = kwargs
-        return self
-
-    if TYPE_CHECKING:
-        from .nlm import DeviceType
-
-        @overload
-        def __call__(  # type: ignore
-            self: Literal[DeviceType.CUDA], *, device_id: int | None = None, num_streams: int | None = None
-        ) -> DeviceType:
-            ...
-
-        @overload
-        def __call__(  # type: ignore
-            self: Literal[DeviceType.AUTO], *, device_id: int | None = None, **kwargs: Any
-        ) -> DeviceType:
-            ...
-
-        @overload
-        def __call__(  # type: ignore
-            self: Literal[DeviceType.CPU] | Literal[DeviceType.GPU] | Literal[DeviceType.ACCELERATOR], *,
-            device_id: int | None = None, ocl_x: int | None = None, ocl_y: int | None = None, ocl_r: int | None = None,
-            info: int | None = None
-        ) -> DeviceType:
-            ...
-
-        def __call__(self, **kwargs: Any) -> DeviceTypeWithInfo:
-            "Add kwargs depending on the device you're going to use."
-            ...
-    else:
-        def __call__(self, **kwargs: Any) -> DeviceTypeWithInfo:
-            return DeviceTypeWithInfo(str(self), **kwargs)
-
-    def NLMeans(
-        self: DeviceTypeWithInfo | DeviceType, clip: vs.VideoNode,
-        h: float | None = None, d: int | None = None, a: int | None = None, s: int | None = None,
-        channels: str | None = None, wmode: int | None = None, wref: float | None = None,
-        ref: vs.VideoNode | None = None, **kwargs: Any
-    ) -> vs.VideoNode:
-        assert check_progressive(clip, nl_means)
-
-        if self == DeviceType.AUTO and hasattr(core, 'nlm_cuda'):
-            self = DeviceType.CUDA
-
-        if self == DeviceType.CUDA and not hasattr(core, 'nlm_cuda'):
-            raise CustomValueError("You can't use cuda device type, you are missing the nlm_cuda plugin!")
-
-        funcs = list[Callable[..., vs.VideoNode]]()
-
-        if self == DeviceType.CUDA:
-            funcs.append(core.proxied.nlm_cuda.NLMeans)
-        else:
-            funcs.extend([core.proxied.knlm.KNLMeansCL, core.proxied.nlm_ispc.NLMeans])
-
-        exceptions = list[Exception]()
-
-        for func in funcs:
-            try:
-                return func(clip, d, a, s, h, channels, wmode, wref, ref, **(self.kwargs | kwargs))
-            except Exception as _e:
-                exceptions.append(_e)
-
-        for x in (True, False):
-            for e in exceptions:
-                if not isinstance(e, AttributeError):
-                    if 'no compatible opencl' not in str(e):
-                        if x:
-                            continue
-                    raise e from None
-
-        raise next(iter(exceptions))
-
-
-class DeviceType(DeviceTypeWithInfo, CustomEnum):
-    """Enum representing available OpenCL device on which to run the plugin."""
-
-    ACCELERATOR = 'accelerator'
-    """Dedicated OpenCL accelerators."""
-
-    CPU = 'cpu'
-    """An OpenCL device that is the host processor."""
-
-    GPU = 'gpu'
-    """An OpenCL device that is a GPU."""
-
-    CUDA = 'cuda'
-    """Use a Cuda GPU."""
-
-    AUTO = 'auto'
-    """Automatically detect device. Priority is "cuda" -> "accelerator" -> "gpu" -> "cpu"."""
-
-    if not TYPE_CHECKING:
-        def __call__(self, **kwargs: Any) -> DeviceTypeWithInfo:
-            return DeviceTypeWithInfo(str(self), **kwargs)
-
-
-class NLMWeightMode(CustomIntEnum):
-    WELSCH = 0
-    """
-    Welsch weighting function has a faster decay, but still assigns positive weights to dissimilar blocks.
-    Original Non-local means denoising weighting function.
-    """
-
-    BISQUARE_LR = 1
-    """
-    Modified Bisquare weighting function to be less robust.
-    """
-
-    BISQUARE_THR = 2
-    """
-    Bisquare weighting function use a soft threshold to compare neighbourhoods.
-    The weight is 0 as soon as a given threshold is exceeded.
-    """
-
-    BISQUARE_HR = 3
-    """
-    Modified Bisquare weighting function to be even more robust.
-    """
-
-    def __call__(self, weight_ref: float = 1.0) -> NLMWeightModeAndRef:
+        AUTO = 'auto'
         """
-        :param weight_ref:  Amount of original pixel to contribute to the filter output,
+        Automatically selects the best available backend.
+        Priority: "cuda" -> "accelerator" -> "gpu" -> "cpu" -> "ispc".
+        """
+
+        ACCELERATOR = 'accelerator'
+        """Dedicated OpenCL accelerators."""
+
+        GPU = 'gpu'
+        """An OpenCL device that is a GPU."""
+
+        CPU = 'cpu'
+        """An OpenCL device that is the host processor."""
+
+        ISPC = 'ispc'
+        """ISPC (CPU-based) implementation."""
+
+        CUDA = 'cuda'
+        """CUDA (GPU-based) implementation."""
+
+        def NLMeans(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+            """
+            Applies the Non-Local Means denoising filter using the plugin associated with the selected backend.
+
+            :param clip:                    Source clip.
+            :param *args:                   Positional arguments passed to the selected plugin.
+            :param **kwargs:                Keyword arguments passed to the selected plugin.
+            :raises CustomRuntimeError:     If the selected backend is not available or unsupported.
+            :return:                        Denoised clip.
+            """
+
+            if self == NLMeans.Backend.CUDA:
+                return clip.nlm_cuda.NLMeans(*args, **kwargs)
+
+            if self in [NLMeans.Backend.ACCELERATOR, NLMeans.Backend.GPU, NLMeans.Backend.CPU]:
+                return clip.knlm.KNLMeansCL(*args, **kwargs | dict(device_type=self.value))
+
+            if self == NLMeans.Backend.ISPC:
+                return clip.nlm_ispc.NLMeans(*args, **kwargs)
+
+            # Fallback selection based on available plugins
+            if hasattr(core, "nlm_cuda"):
+                return NLMeans.Backend.CUDA.NLMeans(clip, *args, **kwargs)
+
+            if hasattr(core, "knlm"):
+                return clip.knlm.KNLMeansCL(*args, **kwargs | dict(device_type="auto"))
+
+            if hasattr(core, "nlm_ispc"):
+                return NLMeans.Backend.ISPC.NLMeans(clip, *args, **kwargs)
+
+            raise CustomRuntimeError(
+                "No compatible plugin found. Please install one from: "
+                "https://github.com/AmusementClub/vs-nlm-cuda, https://github.com/AmusementClub/vs-nlm-ispc "
+                "or https://github.com/Khanattila/KNLMeansCL"
+            )
+
+    class WeightMode(CustomIntEnum):
+        """Enum of weighting modes for Non-Local Means (NLM) denoiser."""
+
+        wref: float | None
+
+        def __init__(self, value: int, wref: float | None = None) -> None:
+            self._value_ = value
+            self.wref = wref
+
+        WELSCH = 0
+        """
+        Welsch weighting function has a faster decay, but still assigns positive weights to dissimilar blocks.
+        Original Non-local means denoising weighting function.
+        """
+
+        BISQUARE_LR = 1
+        """
+        Modified Bisquare weighting function to be less robust.
+        """
+
+        BISQUARE_THR = 2
+        """
+        Bisquare weighting function use a soft threshold to compare neighbourhoods.
+        The weight is 0 as soon as a given threshold is exceeded.
+        """
+
+        BISQUARE_HR = 3
+        """
+        Modified Bisquare weighting function to be even more robust.
+        """
+
+        def __call__(self, wref: float | None = None) -> NLMeans.WeightMode:
+            """
+            :param wref:    Amount of original pixel to contribute to the filter output,
                             relative to the weight of the most similar pixel found.
 
-        :return:            Config with weight mode and ref.
-        """
-        return NLMWeightModeAndRef(self, weight_ref)
+            :return:        Config with weight mode and ref.
+            """
+            new_enum = CustomIntEnum(self.__class__.__name__, NLMeans.WeightMode.__members__)  # type: ignore
+            member = getattr(new_enum, self.name)
+            member.wref = wref
+            return member
 
 
-class NLMWeightModeAndRef(NamedTuple):
-    weight_mode: NLMWeightMode
-    weight_ref: float
-
-
+@NLMeans
 def nl_means(
-    clip: vs.VideoNode, strength: float | Sequence[float] = 1.2,
-    tr: int | Sequence[int] = 1, sr: int | Sequence[int] = 2, simr: int | Sequence[int] = 4,
-    device_type: DeviceType = DeviceType.AUTO, ref: vs.VideoNode | None = None,
-    wmode: NLMWeightMode | NLMWeightModeAndRef = NLMWeightMode.WELSCH, planes: PlanesT = None,
+    clip: vs.VideoNode,
+    h: float | Sequence[float] = 1.2,
+    tr: int | Sequence[int] = 1,
+    a: int | Sequence[int] = 2,
+    s: int | Sequence[int] = 4,
+    backend: NLMeans.Backend = NLMeans.Backend.AUTO,
+    ref: vs.VideoNode | None = None,
+    wmode: NLMeans.WeightMode = NLMeans.WeightMode.WELSCH,
+    planes: PlanesT = None,
     **kwargs: Any
 ) -> vs.VideoNode:
     """
     Convenience wrapper for NLMeans implementations.
 
+    Filter description [here](https://github.com/Khanattila/KNLMeansCL/wiki/Filter-description).
+
+    Example:
+        ```py
+        denoised = nl_means(clip, 0.4, backend=nl_means.Backend.CUDA, ...)
+        ```
+
     :param clip:            Source clip.
-    :param strength:        Controls the strength of the filtering.\n
+    :param h:               Controls the strength of the filtering.
                             Larger values will remove more noise.
-    :param tr:              Temporal Radius. Temporal size = `(2 * tr + 1)`.\n
-                            Sets the number of past and future frames to uses for denoising the current frame.\n
-                            tr=0 uses 1 frame, while tr=1 uses 3 frames and so on.\n
+    :param tr:              Temporal Radius. Temporal size = `(2 * d + 1)`.
+                            Sets the number of past and future frames to uses for denoising the current frame.
+                            d=0 uses 1 frame, while d=1 uses 3 frames and so on.
                             Usually, larger values result in better denoising.
-    :param sr:              Search Radius. Spatial size = `(2 * sr + 1)^2`.\n
-                            Sets the radius of the search window.\n
-                            sr=1 uses 9 pixel, while sr=2 uses 25 pixels and so on.\n
+                            Also known as the `d` parameter.
+    :param a:               Search Radius. Spatial size = `(2 * a + 1)^2`.
+                            Sets the radius of the search window.
+                            a=1 uses 9 pixel, while a=2 uses 25 pixels and so on.
                             Usually, larger values result in better denoising.
-    :param simr:            Similarity Radius. Similarity neighbourhood size = `(2 * simr + 1) ** 2`.\n
-                            Sets the radius of the similarity neighbourhood window.\n
+    :param s:               Similarity Radius. Similarity neighbourhood size = `(2 * s + 1) ** 2`.
+                            Sets the radius of the similarity neighbourhood window.
                             The impact on performance is low, therefore it depends on the nature of the noise.
+    :param backend:         Set the backend to use for processing.
     :param ref:             Reference clip to do weighting calculation.
+                            Also known as the `rclip` parameter.
     :param wmode:           Weighting function to use.
-    :param planes:          Set the clip planes to be processed.
-    :param device_type:     Set the device to use for processing. The fastest device will be used by default.
+    :param planes:          Which planes to process.
     :param kwargs:          Additional arguments passed to the plugin.
 
     :return:                Denoised clip.
@@ -258,19 +191,29 @@ def nl_means(
 
     planes = normalize_planes(clip, planes)
 
-    if planes == []:
+    if not planes:
         return clip
 
-    nstrength, ntr, nsr, nsimr = to_arr(strength), to_arr(tr), to_arr(sr), to_arr(simr)
+    params = dict[str, list[float] | list[int]](h=to_arr(h), d=to_arr(tr), a=to_arr(a), s=to_arr(s))
 
-    wmoder, wref = wmode if isinstance(wmode, NLMWeightModeAndRef) else wmode()
-
-    kwargs.update(ref=ref, wmode=wmoder.value, wref=wref)
-
-    params = dict[str, list[float] | list[int]](strength=nstrength, tr=ntr, sr=nsr, simr=nsimr)
+    # TODO: Remove legacy support for old arguments.
+    for sargs, kargs in zip(
+        ["strength", "sr", "simr"],
+        ["h", "a", "s"]
+    ):
+        if sargs in kwargs:
+            warnings.warn(
+                f"nl_means: '{sargs}' argument is deprecated, use '{kargs}' instead",
+                DeprecationWarning
+            )
+            params[kargs] = to_arr(kwargs.pop(sargs))
 
     def _nl_means(i: int, channels: str) -> vs.VideoNode:
-        return device_type.NLMeans(clip, nstrength[i], ntr[i], nsr[i], nsimr[i], channels, **kwargs)
+        return backend.NLMeans(
+            clip,
+            **{k: p[i] for k, p in params.items()},
+            **dict(channels=channels, rclip=ref, wmode=wmode, wref=wmode.wref) | kwargs
+        )
 
     if clip.format.color_family in {vs.GRAY, vs.RGB}:
         for doc, p in params.items():
@@ -289,7 +232,8 @@ def nl_means(
     ):
         return _nl_means(0, 'YUV')
 
-    nstrength, (ntr, nsr, nsimr) = normalize_seq(nstrength, 2), (normalize_seq(x, 2) for x in (ntr, nsr, nsimr))
+    for k, p in params.items():
+        params[k] = normalize_seq(p, 2)
 
     luma = _nl_means(0, 'Y') if 0 in planes else None
     chroma = _nl_means(1, 'UV') if 1 in planes or 2 in planes else None

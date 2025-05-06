@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Callable
+from typing import Callable, Sequence
 
 from vsexprtools import norm_expr
 from vstools import (
@@ -10,8 +10,8 @@ from vstools import (
 )
 
 from .blur import box_blur, median_blur, min_blur
-from .enum import BlurMatrix, RemoveGrainMode, RemoveGrainModeT, RepairMode, RepairModeT
-from .rgtools import remove_grain, repair
+from .enum import BlurMatrix
+from .rgtools import remove_grain, repair, Repair, RemoveGrain
 from .util import norm_rmode_planes
 
 __all__ = [
@@ -24,7 +24,7 @@ __all__ = [
 def contrasharpening(
     flt: vs.VideoNode, src: vs.VideoNode, radius: int | list[int] = 1,
     sharp: vs.VideoNode | GenericVSFunction[vs.VideoNode] | None = None,
-    mode: RepairModeT = RepairMode.MINMAX_SQUARE3, planes: PlanesT = 0
+    mode: Repair.Mode = repair.Mode.MINMAX_SQUARE3, planes: PlanesT = 0
 ) -> ConstantFormatVideoNode:
     """
     contra-sharpening: sharpen the denoised clip, but don't add more to any pixel than what was previously removed.
@@ -91,7 +91,7 @@ def contrasharpening_dehalo(
 
     planes = normalize_planes(flt, planes)
 
-    rep_modes = norm_rmode_planes(flt, RepairMode.MINMAX_SQUARE1, planes)
+    rep_modes = norm_rmode_planes(flt, repair.Mode.MINMAX_SQUARE1, planes)
 
     blur = BlurMatrix.BINOMIAL()(flt, planes)
     blur2 = median_blur(blur, 2, planes=planes)
@@ -106,7 +106,7 @@ def contrasharpening_dehalo(
 
 def contrasharpening_median(
     flt: vs.VideoNode, src: vs.VideoNode,
-    mode: RemoveGrainModeT | Callable[..., ConstantFormatVideoNode] = box_blur,
+    mode: int | Sequence[int] | RemoveGrain.Mode | Callable[..., ConstantFormatVideoNode] = box_blur,
     planes: PlanesT = 0
 ) -> ConstantFormatVideoNode:
     """
@@ -122,7 +122,7 @@ def contrasharpening_median(
 
     planes = normalize_planes(flt, planes)
 
-    if isinstance(mode, (int, list, RemoveGrainMode)):
+    if isinstance(mode, (int, Sequence)):
         repaired = remove_grain(flt, norm_rmode_planes(flt, mode, planes))
     elif callable(mode):
         repaired = mode(flt, planes=planes)

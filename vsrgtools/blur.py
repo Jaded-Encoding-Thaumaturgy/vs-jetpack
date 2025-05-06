@@ -14,11 +14,11 @@ from vstools import (
     split, to_arr, vs
 )
 
-from .enum import BlurMatrix, BlurMatrixBase, LimitFilterMode, RemoveGrainMode, VerticalCleanerMode
+from .enum import BlurMatrix, BlurMatrixBase, LimitFilterMode
 from .freqs import MeanMode
 from .limit import limit_filter
 from .rgtools import remove_grain, vertical_cleaner
-from .util import norm_rmode_planes, normalize_radius
+from .util import normalize_radius
 
 __all__ = [
     'box_blur', 'side_box_blur',
@@ -163,7 +163,7 @@ def gauss_blur(
     :param kwargs:              Additional arguments passed to the resizer or blur kernel.
                                 Specifying `_fast=True` enables fast approximation.
     :raises CustomValueError:   If square convolution mode is specified, which is unsupported.
-    :return:        Blurred clip.
+    :return:                    Blurred clip.
     """
     assert check_variable(clip, gauss_blur)
 
@@ -374,9 +374,9 @@ def median_blur(
 
     if (len((rs := set(radius))) == 1 and rs.pop() == 1):
         if mode == ConvMode.SQUARE:
-            return remove_grain(clip, norm_rmode_planes(clip, RemoveGrainMode.MINMAX_MEDIAN, planes))
+            return remove_grain.Mode.MINMAX_MEDIAN(clip, planes)
         if mode == ConvMode.VERTICAL:
-            return vertical_cleaner(clip, norm_rmode_planes(clip, VerticalCleanerMode.MEDIAN, planes))
+            return vertical_cleaner.Mode.MEDIAN(clip, planes)
 
     expr_plane = list[list[str]]()
 
@@ -482,9 +482,6 @@ def bilateral(
     :return:            Bilaterally filtered clip.
     """
     assert check_variable_format(clip, bilateral)
-
-    # TODO: remove this when BilateralBackend will be removed
-    backend = Bilateral.Backend(backend)
 
     if backend == Bilateral.Backend.CPU:
         bilateral_args = KwargsT(ref=ref, sigmaS=sigmaS, sigmaR=sigmaR, planes=normalize_planes(clip))

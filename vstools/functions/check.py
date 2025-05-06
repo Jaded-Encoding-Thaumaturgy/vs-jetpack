@@ -24,7 +24,7 @@ __all__ = [
 ]
 
 
-def check_ref_clip(src: vs.VideoNode, ref: vs.VideoNode | None, func: FuncExceptT | None = None) -> vs.VideoNode:
+def check_ref_clip(src: vs.VideoNode, ref: vs.VideoNode | None, func: FuncExceptT | None = None) -> ConstantFormatVideoNode:
     """
     Function for ensuring the ref clip's format matches that of the input clip.
 
@@ -41,13 +41,13 @@ def check_ref_clip(src: vs.VideoNode, ref: vs.VideoNode | None, func: FuncExcept
 
     :return:        Ref clip.
     """
+    func = func or check_ref_clip
+
+    assert check_variable(src, func)
 
     if ref is None:
         return src
 
-    func = func or check_ref_clip
-
-    assert check_variable(src, func)
     assert check_variable(ref, func)
 
     FormatsRefClipMismatchError.check(func, src, ref)

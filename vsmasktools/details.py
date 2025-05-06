@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from vsexprtools import ExprOp
-from vsrgtools import RemoveGrainMode, RemoveGrainModeT, bilateral, gauss_blur, remove_grain
+from vsrgtools import bilateral, gauss_blur, remove_grain
+from vsrgtools.rgtools import RemoveGrain
 from vstools import ConstantFormatVideoNode, check_variable, get_y, limiter, plane, vs
 
 from .edge import Kirsch, MinMax, Prewitt, PrewittTCanny
@@ -41,7 +42,7 @@ def detail_mask(
 @limiter
 def detail_mask_neo(
     clip: vs.VideoNode, sigma: float = 1.0, detail_brz: float = 0.05, lines_brz: float = 0.08,
-    edgemask: GenericMaskT = Prewitt, rg_mode: RemoveGrainModeT = RemoveGrainMode.MINMAX_MEDIAN_OPP
+    edgemask: GenericMaskT = Prewitt, rg_mode: RemoveGrain.Mode = remove_grain.Mode.MINMAX_MEDIAN_OPP
 ) -> ConstantFormatVideoNode:
     assert check_variable(clip, detail_mask_neo)
 

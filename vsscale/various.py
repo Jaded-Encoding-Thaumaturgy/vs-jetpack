@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Any, Literal
 from vsexprtools import ExprOp, combine, complexpr_available, expr_func, norm_expr
 from vskernels import Catrom, Hermite, KernelT, LinearScaler, Scaler, ScalerT
 from vsmasktools import ringing_mask
-from vsrgtools import RepairMode, box_blur, gauss_blur
+from vsrgtools import box_blur, gauss_blur
+from vsrgtools.rgtools import Repair
 from vstools import (
     ConstantFormatVideoNode, CustomOverflowError, PlanesT, VSFunctionNoArgs, check_ref_clip, check_variable,
     check_variable_format, core, inject_self, scale_delta, vs
@@ -31,7 +32,7 @@ class ClampScaler(GenericScaler):
         strength: int = 80,
         overshoot: float | None = None,
         undershoot: float | None = None,
-        limit: RepairMode | bool = True,
+        limit: Repair.Mode | bool = True,
         operator: Literal[ExprOp.MAX, ExprOp.MIN] | None = ExprOp.MIN,
         masked: bool = True,
         *,
@@ -130,7 +131,7 @@ class ClampScaler(GenericScaler):
         else:
             merged = smooth.std.Merge(base, merge_weight)
 
-            if isinstance(self.limit, RepairMode):
+            if isinstance(self.limit, Repair.Mode):
                 merged = self.limit(merged, smooth)
 
         if self.operator is not None:

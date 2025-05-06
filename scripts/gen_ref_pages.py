@@ -45,9 +45,6 @@ MODULES = [
 
 # Excluded submodules.
 EXCLUDE = [
-    # These cause infinite recursion in griffe.
-    "vsdenoise.nlm",
-
     # Cannot be found.
     "vspreview.plugins.builtins.frame_props.category",
     "vspreview.plugins.builtins.frame_props.exclude",

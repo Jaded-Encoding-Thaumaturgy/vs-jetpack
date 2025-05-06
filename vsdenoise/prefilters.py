@@ -12,15 +12,12 @@ from jetpytools import CustomEnum, CustomNotImplementedError, KwargsT
 from vsexprtools import norm_expr
 from vsrgtools import bilateral, flux_smooth, gauss_blur, min_blur
 from vstools import (
-    MISSING, ColorRange, MissingT, PlanesT, SingleOrArr, check_variable, core, get_video_format,
-    get_peak_value, get_y, normalize_planes, normalize_seq, scale_value, vs, InvalidColorFamilyError
+    MISSING, ColorRange, ConstantFormatVideoNode, InvalidColorFamilyError, MissingT, PlanesT, check_variable,
+    check_variable_format, get_peak_value, get_y, normalize_planes, normalize_seq, scale_value, vs
 )
 
 
-from .bm3d import BM3D as BM3DM
-from .bm3d import BM3DCPU, AbstractBM3D, BM3DCuda, BM3DCudaRTC, Profile
 from .fft import DFTTest, SLocationT
-from .nlm import DeviceType, nl_means
 
 __all__ = [
     'Prefilter', 'PrefilterPartial', 'MultiPrefilter',
@@ -83,39 +80,20 @@ def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: PlanesT, **
         return dftt.std.MaskedMerge(clip, pref_mask, planes)
 
     if pref_type == Prefilter.NLMEANS:
-        return nl_means(clip, **KwargsT(strength=7.0, simr=2, planes=planes) | kwargs)
+        from .nlm import nl_means
+
+        return nl_means(clip, **KwargsT(h=7.0, s=2, planes=planes) | kwargs)
 
     if pref_type == Prefilter.BM3D:
+        from .blockmatch import bm3d
+
         planes = normalize_planes(clip, planes)
 
-        bm3d_arch: type[AbstractBM3D] = kwargs.pop('arch', None)
-        gpu: bool | None = kwargs.pop('gpu', None)
-
-        if gpu is None:
-            gpu = hasattr(core, 'bm3dcuda')
-
-        if bm3d_arch is None:
-            if gpu:  # type: ignore
-                bm3d_arch = BM3DCudaRTC if hasattr(core, 'bm3dcuda_rtc') else BM3DCuda
-            else:
-                bm3d_arch = BM3DCPU if hasattr(core, 'bm3dcpu') else BM3DM
-
-        if bm3d_arch is BM3DM:
-            sigma, profile = 10, Profile.FAST
-        elif bm3d_arch is BM3DCPU:
-            sigma, profile = 10, Profile.LOW_COMPLEXITY
-        elif bm3d_arch in (BM3DCuda, BM3DCudaRTC):
-            sigma, profile = 8, Profile.NORMAL
-        else:
-            raise ValueError
-
         sigmas = kwargs.pop(
-            'sigma', [sigma if 0 in planes else 0, sigma if (1 in planes or 2 in planes) else 0]
+            'sigma', [10 if 0 in planes else 0, 10 if (1 in planes or 2 in planes) else 0]
         )
 
-        bm3d_args = dict[str, Any](sigma=sigmas, tr=1, profile=profile) | kwargs
-
-        return bm3d_arch.denoise(clip, **bm3d_args)
+        return bm3d(clip, **KwargsT(sigma=sigmas, radius=1) | kwargs)
 
     if pref_type is Prefilter.BILATERAL:
         planes = normalize_planes(clip, planes)
@@ -246,9 +224,8 @@ class Prefilter(AbstractPrefilter, CustomEnum):
         planes: PlanesT = None,
         full_range: bool | float = False,
         *,
-        strength: SingleOrArr[float] = 7.0,
-        simr: SingleOrArr[int] = 2,
-        device_type: DeviceType = DeviceType.AUTO,
+        h: float | Sequence[float] = 7.0,
+        s: int | Sequence[int] = 2,
         **kwargs: Any
     ) -> vs.VideoNode:
         """
@@ -257,12 +234,11 @@ class Prefilter(AbstractPrefilter, CustomEnum):
         :param clip:            Clip to be preprocessed.
         :param planes:          Planes to be preprocessed.
         :param full_range:      Whether to return a prefiltered clip in full range.
-        :param strength:        Controls the strength of the filtering.\n
+        :param h:               Controls the strength of the filtering.
                                 Larger values will remove more noise.
-        :param simr:            Similarity Radius. Similarity neighbourhood size = `(2 * simr + 1) ** 2`.\n
-                                Sets the radius of the similarity neighbourhood window.\n
+        :param s:               Similarity Radius. Similarity neighbourhood size = `(2 * s + 1) ** 2`.
+                                Sets the radius of the similarity neighbourhood window.
                                 The impact on performance is low, therefore it depends on the nature of the noise.
-        :param device_type:     Set the device to use for processing. The fastest device will be used by default.
         :param kwargs:          Additional arguments to pass to the prefilter.
 
         :return:                Denoised clip.
@@ -273,14 +249,11 @@ class Prefilter(AbstractPrefilter, CustomEnum):
         self: Literal[Prefilter.BM3D],
         clip: vs.VideoNode, /,
         planes: PlanesT = None,
-        full_range: bool | float = False, *,
-        arch: type[AbstractBM3D] = ...,
-        gpu: bool | None = None,
-        sigma: SingleOrArr[float] = ...,
-        tr: SingleOrArr[int] = 1,
-        profile: Profile = ...,
-        ref: vs.VideoNode | None = None,
-        refine: int = 1
+        full_range: bool | float = False,
+        *,
+        sigma: float | Sequence[float] = 10,
+        radius: int | Sequence[int | None] | None = 1,
+        **kwargs: Any
     ) -> vs.VideoNode:
         """
         Normal spatio-temporal denoising using BM3D.
@@ -288,15 +261,9 @@ class Prefilter(AbstractPrefilter, CustomEnum):
         :param clip:        Clip to be preprocessed.
         :param planes:      Planes to be preprocessed.
         :param full_range:  Whether to return a prefiltered clip in full range.
-        :param sigma:       Strength of denoising, valid range is [0, +inf].
-        :param tr:          Temporal radius, valid range is [1, 16].
-        :param profile:     See :py:attr:`vsdenoise.bm3d.Profile`.
-        :param ref:         Reference clip used in block-matching, replacing the basic estimation.
-                            If not specified, the input clip is used instead.
-        :param refine:      Times to refine the estimation.
-                            * 0 means basic estimate only.
-                            * 1 means basic estimate with one final estimate.
-                            * n means basic estimate refined with final estimate for n times.
+        :param sigma:       Strength of denoising. Valid range is [0, +inf).
+        :param radius:      The temporal radius for denoising. Valid range is [1, 16].
+        :param kwargs:      Additional arguments passed to the plugin.
 
         :return:            Preprocessed clip.
         """
@@ -386,9 +353,8 @@ class Prefilter(AbstractPrefilter, CustomEnum):
         *,
         planes: PlanesT = None,
         full_range: bool | float = False,
-        strength: SingleOrArr[float] = 7.0,
-        simr: SingleOrArr[int] = 2,
-        device_type: DeviceType = DeviceType.AUTO,
+        h: float | Sequence[float] = 7.0,
+        s: int | Sequence[int]= 2,
         **kwargs: Any
     ) -> PrefilterPartial:
         """
@@ -396,12 +362,11 @@ class Prefilter(AbstractPrefilter, CustomEnum):
 
         :param planes:          Planes to be preprocessed.
         :param full_range:      Whether to return a prefiltered clip in full range.
-        :param strength:        Controls the strength of the filtering.\n
+        :param h:               Controls the strength of the filtering.
                                 Larger values will remove more noise.
-        :param simr:            Similarity Radius. Similarity neighbourhood size = `(2 * simr + 1) ** 2`.\n
-                                Sets the radius of the similarity neighbourhood window.\n
+        :param s:               Similarity Radius. Similarity neighbourhood size = `(2 * s + 1) ** 2`.
+                                Sets the radius of the similarity neighbourhood window.
                                 The impact on performance is low, therefore it depends on the nature of the noise.
-        :param device_type:     Set the device to use for processing. The fastest device will be used by default.
         :param kwargs:          Additional arguments to pass to the prefilter.
 
         :return:                Partial Prefilter.
@@ -409,33 +374,20 @@ class Prefilter(AbstractPrefilter, CustomEnum):
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Literal[Prefilter.BM3D],
-        /,
-        *,
-        planes: PlanesT = None,
-        full_range: bool | float = False,
-        arch: type[AbstractBM3D] = ...,
-        gpu: bool = False,
-        sigma: SingleOrArr[float] = ...,
-        radius: SingleOrArr[int] = 1,
-        profile: Profile = ...,
-        ref: vs.VideoNode | None = None,
-        refine: int = 1
+        self: Literal[Prefilter.BM3D], /, *,
+        planes: PlanesT = None, full_range: bool | float = False,
+        sigma: float | Sequence[float] = 10,
+        radius: int | Sequence[int | None] | None = 1,
+        **kwargs: Any
     ) -> PrefilterPartial:
         """
         Normal spatio-temporal denoising using BM3D.
 
         :param planes:      Planes to be preprocessed.
         :param full_range:  Whether to return a prefiltered clip in full range.
-        :param sigma:       Strength of denoising, valid range is [0, +inf].
-        :param radius:      Temporal radius, valid range is [1, 16].
-        :param profile:     See :py:attr:`vsdenoise.bm3d.Profile`.
-        :param ref:         Reference clip used in block-matching, replacing the basic estimation.
-                            If not specified, the input clip is used instead.
-        :param refine:      Times to refine the estimation.
-                            * 0 means basic estimate only.
-                            * 1 means basic estimate with one final estimate.
-                            * n means basic estimate refined with final estimate for n times.
+        :param sigma:       Strength of denoising. Valid range is [0, +inf).
+        :param radius:      The temporal radius for denoising. Valid range is [1, 16].
+        :param kwargs:      Additional arguments passed to the plugin.
 
         :return:            Partial Prefilter.
         """
@@ -586,7 +538,7 @@ class MultiPrefilter(AbstractPrefilter):
 PrefilterT = Prefilter | PrefilterPartial | MultiPrefilter
 
 
-def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: float = 0.0625) -> vs.VideoNode:
+def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: float = 0.0625) -> ConstantFormatVideoNode:
     """
     Converts a clip to full range if necessary and amplifies dark areas.
     Essentially acts like a luma-based multiplier on the SAD when used as an mvtools prefilter.
@@ -597,11 +549,11 @@ def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: floa
 
     :return:            Range expanded clip.
     """
+    assert check_variable_format(clip, prefilter_to_full_range)
 
     InvalidColorFamilyError.check(clip, (vs.YUV, vs.GRAY), prefilter_to_full_range)
 
     clip_range = ColorRange.from_video(clip)
-    clip_fmt = get_video_format(clip)
 
     curve = (slope - 1) * smooth
     luma_expr = (
@@ -610,9 +562,9 @@ def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: floa
     )
     chroma_expr = 'x neutral - range_max crange_in_max crange_in_min - / * range_half + round'
 
-    if clip_fmt.sample_type is vs.INTEGER:
+    if clip.format.sample_type is vs.INTEGER:
         luma_expr += 'round'
 
-    planes = 0 if clip_range.is_full or clip_fmt.sample_type is vs.FLOAT else None
+    planes = 0 if clip_range.is_full or clip.format.sample_type is vs.FLOAT else None
 
     return ColorRange.FULL.apply(norm_expr(clip, (luma_expr, chroma_expr), k=curve, c=smooth, planes=planes))

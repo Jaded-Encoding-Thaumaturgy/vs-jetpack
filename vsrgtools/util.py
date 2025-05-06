@@ -1,24 +1,20 @@
 from __future__ import annotations
 
-from typing import Any, Sequence, TypeVar
+from typing import Any, Sequence
 
 from vstools import (
     ConstantFormatVideoNode, GenericVSFunction, PlanesT, check_variable, check_variable_format,
     join, normalize_planes, normalize_seq, split, vs
 )
 
-from .enum import RemoveGrainMode, RepairMode
-
 __all__ = [
     'norm_rmode_planes',
     'normalize_radius'
 ]
 
-RModeT = TypeVar('RModeT', RemoveGrainMode, RepairMode)
-
 
 def norm_rmode_planes(
-    clip: vs.VideoNode, mode: int | RModeT | Sequence[int | RModeT], planes: PlanesT = None
+    clip: vs.VideoNode, mode: int | Sequence[int], planes: PlanesT = None
 ) -> list[int]:
     assert check_variable(clip, norm_rmode_planes)
 
