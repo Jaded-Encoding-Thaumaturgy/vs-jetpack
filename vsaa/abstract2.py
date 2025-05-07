@@ -93,7 +93,8 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
 
             while (clip.width if is_width else clip.height) < dim:
 
-                tff = self.tff if nshift[x][0] == 0 else True if nshift[x][0] > 0 else False
+                delta = max(nshift[x], key=lambda y: abs(y))
+                tff = self.tff if delta == 0 else True if delta > 0 else False
 
                 for y in range(clip.format.num_planes):
                     if not y:
