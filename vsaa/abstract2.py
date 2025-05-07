@@ -126,7 +126,6 @@ class NNEDI3(SuperSampler, Deinterlacer):
 
     def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool | None = None, **kwargs: Any) -> ConstantFormatVideoNode:
         kwargs.pop('field', None)
-
         field = int(fallback(tff, self.tff)) + (int(self.double_rate) * 2)
 
         func = core.lazy.sneedif.NNEDI3 if self.opencl else core.lazy.znedi3.nnedi3
@@ -144,16 +143,50 @@ class NNEDI3(SuperSampler, Deinterlacer):
 
 
 @dataclass
+class EEDI2(SuperSampler, Deinterlacer):
+    mthresh: int | None = None
+    lthresh: int | None = None
+    vthresh: int | None = None
+    estr: int | None = None
+    dstr: int | None = None
+    maxd: int | None = None
+    map: int | None = None
+    nt: int | None = None
+    pp: int | None = None
+    cuda: bool = False
+
+    def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool | None = None, **kwargs: Any) -> ConstantFormatVideoNode:
+        kwargs.pop('field', None)
+        field = int(fallback(tff, self.tff)) + (int(self.double_rate) * 2)
+
+        func = core.lazy.eedi2cuda.EEDI2 if self.cuda else core.lazy.eedi2.EEDI2
+        
+        return func(clip, field, **kwargs)
+
+    def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
+        return dict(
+            mthresh=self.mthresh,
+            lthresh=self.lthresh,
+            vthresh=self.vthresh,
+            estr=self.estr,
+            dstr=self.dstr,
+            maxd=self.maxd,
+            map=self.map,
+            nt=self.nt,
+            pp=self.pp
+        ) | kwargs
+
+
+@dataclass
 class SANGNOM(SuperSampler, Deinterlacer):
     aa: list[int] | None = None
 
     def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool | None = None, **kwargs: Any) -> ConstantFormatVideoNode:
         kwargs.pop('order', None)
-
-        if self.double_rate and not kwargs.get('dh', None):
-            clip = clip.std.SeparateFields(self.tff).std.DoubleWeave(self.tff)
-
         order = 0 if self.double_rate else abs(int(fallback(tff, self.tff)) - 2)
+
+        if self.double_rate and not kwargs.get('dh'):
+            clip = clip.std.SeparateFields(self.tff).std.DoubleWeave(self.tff)
         
         return core.sangnom.SangNom(clip, order, **kwargs)
 
