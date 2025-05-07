@@ -16,7 +16,6 @@ from vstools import (
     check_variable_format, get_peak_value, get_y, normalize_planes, normalize_seq, scale_value, vs
 )
 
-
 from .fft import DFTTest, SLocationT
 
 __all__ = [

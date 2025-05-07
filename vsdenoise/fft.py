@@ -6,7 +6,7 @@ from __future__ import annotations
 from functools import cache
 from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Sequence, TypeAlias, Union, overload
 
-from jetpytools import KwargsNotNone, MismatchError, classproperty, fallback
+from jetpytools import KwargsNotNone, MismatchError, classproperty
 from typing_extensions import Self, deprecated
 from vapoursynth import Plugin
 
@@ -903,7 +903,7 @@ class DFTTest:
 
         if isinstance(clip_or_sloc, vs.VideoNode):
             nclip = clip_or_sloc
-            nsloc = fallback(sloc, self.default_slocation)
+            nsloc = self.default_slocation if sloc is None else sloc
         else:
             nclip = self.clip
             nsloc = clip_or_sloc
@@ -924,7 +924,7 @@ class DFTTest:
         if isinstance(nsloc, DFTTest.SLocation.MultiDim):
             ckwargs.update(ssx=nsloc.horizontal, ssy=nsloc.vertical, sst=nsloc.temporal)
         else:
-            ckwargs.update(slocation=DFTTest.SLocation.from_param(nsloc))  # type: ignore[call-overload]
+            ckwargs.update(slocation=DFTTest.SLocation.from_param(nsloc))
 
         for k, v in ckwargs.items():
             if isinstance(v, DFTTest.SLocation):
@@ -978,6 +978,7 @@ class DFTTest:
 
 
 SLocationT = Union[
+    int,
     float,
     DFTTest.SLocation,
     Sequence[Frequency | Sigma],
