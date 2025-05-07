@@ -157,7 +157,7 @@ class EEDI2(SuperSampler, Deinterlacer):
         func = core.lazy.eedi2cuda.EEDI2 if self.cuda else core.lazy.eedi2.EEDI2
 
         if not dh:
-            clip = clip.std.SeparateFields(self.tff)
+            clip = clip.std.SeparateFields(tff)
 
         clip = func(clip, field, **kwargs)
 
@@ -225,7 +225,7 @@ class SANGNOM(SuperSampler, Deinterlacer):
         order = 0 if self.double_rate else abs(int(tff) - 2)
 
         if self.double_rate and not dh:
-            clip = clip.std.SeparateFields(self.tff).std.DoubleWeave(self.tff)
+            clip = clip.std.SeparateFields(tff).std.DoubleWeave(tff)
         
         return core.sangnom.SangNom(clip, order, dh, **kwargs)
 
