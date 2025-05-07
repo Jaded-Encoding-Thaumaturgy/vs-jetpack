@@ -124,13 +124,15 @@ class NNEDI3(SuperSampler, Deinterlacer):
     pscrn: int | None = None
     opencl: bool = False
 
-    def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool | None = None, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _deinterlacer_function(
+            self, clip: vs.VideoNode, tff: bool | None = None, dh: bool | None = None, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
         kwargs.pop('field', None)
         field = int(fallback(tff, self.tff)) + (int(self.double_rate) * 2)
 
         func = core.lazy.sneedif.NNEDI3 if self.opencl else core.lazy.znedi3.nnedi3
         
-        return func(clip, field, **kwargs)
+        return func(clip, field, dh, **kwargs)
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         return dict(
@@ -155,13 +157,20 @@ class EEDI2(SuperSampler, Deinterlacer):
     pp: int | None = None
     cuda: bool = False
 
-    def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool | None = None, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _deinterlacer_function(
+            self, clip: vs.VideoNode, tff: bool | None = None, dh: bool | None = None, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
         kwargs.pop('field', None)
         field = int(fallback(tff, self.tff)) + (int(self.double_rate) * 2)
 
         func = core.lazy.eedi2cuda.EEDI2 if self.cuda else core.lazy.eedi2.EEDI2
-        
-        return func(clip, field, **kwargs)
+
+        if not dh:
+            clip = clip.std.SeparateFields(self.tff)
+
+        clip = func(clip, field, **kwargs)
+
+        return clip if self.double_rate else clip[::2]
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         return dict(
@@ -192,11 +201,13 @@ class EEDI3(SuperSampler, Deinterlacer):
     sclip: ConstantFormatVideoNode | None = None
     mclip: ConstantFormatVideoNode | None = None
 
-    def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool | None = None, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _deinterlacer_function(
+            self, clip: vs.VideoNode, tff: bool | None = None, dh: bool | None = None, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
         kwargs.pop('field', None)
         field = int(fallback(tff, self.tff)) + (int(self.double_rate) * 2)
 
-        return core.eedi3m.EEDI3(clip, field, **kwargs)
+        return core.eedi3m.EEDI3(clip, field, dh, **kwargs)
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         self.vthresh = normalize_seq(self.vthresh, 3)
@@ -220,16 +231,18 @@ class EEDI3(SuperSampler, Deinterlacer):
 
 @dataclass
 class SANGNOM(SuperSampler, Deinterlacer):
-    aa: list[int] | None = None
+    aa: list[int | None] | None = None
 
-    def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool | None = None, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _deinterlacer_function(
+            self, clip: vs.VideoNode, tff: bool | None = None, dh: bool | None = None, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
         kwargs.pop('order', None)
         order = 0 if self.double_rate else abs(int(fallback(tff, self.tff)) - 2)
 
-        if self.double_rate and not kwargs.get('dh'):
+        if self.double_rate and not dh:
             clip = clip.std.SeparateFields(self.tff).std.DoubleWeave(self.tff)
         
-        return core.sangnom.SangNom(clip, order, **kwargs)
+        return core.sangnom.SangNom(clip, order, dh, **kwargs)
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         return dict(aa=self.aa) | kwargs
