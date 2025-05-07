@@ -31,7 +31,7 @@ class Deinterlacer(ABC):
         return kwargs
 
     def deinterlace(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        return self._deinterlacer_function(clip, **self.get_deint_args(**kwargs))
+        return self._deinterlacer_function(clip, self.tff, False, **self.get_deint_args(**kwargs))
 
     def antialias(self, clip: vs.VideoNode, direction: AADirection = AADirection.BOTH, **kwargs: Any) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.antialias)
@@ -41,7 +41,7 @@ class Deinterlacer(ABC):
                 if y == self.AADirection.HORIZONTAL:
                     clip = clip.std.Transpose()
 
-                clip = self._deinterlacer_function(clip, **self.get_deint_args(**kwargs))
+                clip = self._deinterlacer_function(clip, self.tff, False, **self.get_deint_args(**kwargs))
 
                 if self.double_rate:
                     clip = core.std.Merge(clip[::2], clip[1::2])
@@ -57,9 +57,6 @@ class Deinterlacer(ABC):
 
 
 class SuperSampler(Deinterlacer, Scaler, ABC):
-    def get_ss_args(self, **kwargs: Any) -> dict[str, Any]:
-        return dict(dh=True) | kwargs
-
     @inject_self.cached
     def scale(
         self,
@@ -104,7 +101,7 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
                 if is_width:
                     clip = clip.std.Transpose()
 
-                clip = self._deinterlacer_function(clip, tff, **self.get_deint_args() | self.get_ss_args(**kwargs))
+                clip = self._deinterlacer_function(clip, tff, True, **self.get_deint_args(**kwargs))
 
                 if is_width:
                     clip = clip.std.Transpose()
@@ -127,7 +124,6 @@ class NNEDI3(SuperSampler, Deinterlacer):
     def _deinterlacer_function(
             self, clip: vs.VideoNode, tff: bool | None = None, dh: bool | None = None, **kwargs: Any
         ) -> ConstantFormatVideoNode:
-        kwargs.pop('field', None)
         field = int(fallback(tff, self.tff)) + (int(self.double_rate) * 2)
 
         func = core.lazy.sneedif.NNEDI3 if self.opencl else core.lazy.znedi3.nnedi3
@@ -160,7 +156,6 @@ class EEDI2(SuperSampler, Deinterlacer):
     def _deinterlacer_function(
             self, clip: vs.VideoNode, tff: bool | None = None, dh: bool | None = None, **kwargs: Any
         ) -> ConstantFormatVideoNode:
-        kwargs.pop('field', None)
         field = int(fallback(tff, self.tff)) + (int(self.double_rate) * 2)
 
         func = core.lazy.eedi2cuda.EEDI2 if self.cuda else core.lazy.eedi2.EEDI2
@@ -204,7 +199,6 @@ class EEDI3(SuperSampler, Deinterlacer):
     def _deinterlacer_function(
             self, clip: vs.VideoNode, tff: bool | None = None, dh: bool | None = None, **kwargs: Any
         ) -> ConstantFormatVideoNode:
-        kwargs.pop('field', None)
         field = int(fallback(tff, self.tff)) + (int(self.double_rate) * 2)
 
         return core.eedi3m.EEDI3(clip, field, dh, **kwargs)
@@ -236,7 +230,6 @@ class SANGNOM(SuperSampler, Deinterlacer):
     def _deinterlacer_function(
             self, clip: vs.VideoNode, tff: bool | None = None, dh: bool | None = None, **kwargs: Any
         ) -> ConstantFormatVideoNode:
-        kwargs.pop('order', None)
         order = 0 if self.double_rate else abs(int(fallback(tff, self.tff)) - 2)
 
         if self.double_rate and not dh:
