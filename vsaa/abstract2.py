@@ -178,6 +178,47 @@ class EEDI2(SuperSampler, Deinterlacer):
 
 
 @dataclass
+class EEDI3(SuperSampler, Deinterlacer):
+    alpha: float | None = None
+    beta: float | None = None
+    gamma: float | None = None
+    nrad: int | None = None
+    mdis: int | None = None
+    hp: bool | None = None
+    ucubic: bool | None = None
+    cost3: bool | None = None
+    vcheck: int | None = None
+    vthresh: list[float | None] | None = None
+    sclip: ConstantFormatVideoNode | None = None
+    mclip: ConstantFormatVideoNode | None = None
+
+    def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool | None = None, **kwargs: Any) -> ConstantFormatVideoNode:
+        kwargs.pop('field', None)
+        field = int(fallback(tff, self.tff)) + (int(self.double_rate) * 2)
+
+        return core.eedi3m.EEDI3(clip, field, **kwargs)
+
+    def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
+        self.vthresh = normalize_seq(self.vthresh, 3)
+        return dict(
+            alpha=self.alpha,
+            beta=self.beta,
+            gamma=self.gamma,
+            nrad=self.nrad,
+            mdis=self.mdis,
+            hp=self.hp,
+            ucubic=self.ucubic,
+            cost3=self.cost3,
+            vcheck=self.vcheck,
+            vthresh0=self.vthresh[0],
+            vthresh1=self.vthresh[1],
+            vthresh2=self.vthresh[2],
+            sclip=self.sclip,
+            mclip=self.mclip
+        ) | kwargs
+
+
+@dataclass
 class SANGNOM(SuperSampler, Deinterlacer):
     aa: list[int] | None = None
 
