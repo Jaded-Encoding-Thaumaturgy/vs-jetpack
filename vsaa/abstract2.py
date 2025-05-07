@@ -152,11 +152,12 @@ class EEDI2(SuperSampler, Deinterlacer):
     cuda: bool = False
 
     def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool, dh: bool, **kwargs: Any) -> ConstantFormatVideoNode:
-        field = int(tff) + (int(self.double_rate) * 2)
+        field = int(tff)
 
         func = core.lazy.eedi2cuda.EEDI2 if self.cuda else core.lazy.eedi2.EEDI2
 
         if not dh:
+            field += int(self.double_rate) * 2
             clip = clip.std.SeparateFields(tff)
 
         clip = func(clip, field, **kwargs)
@@ -222,10 +223,11 @@ class SANGNOM(SuperSampler, Deinterlacer):
     aa: list[int | None] | None = None
 
     def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool, dh: bool, **kwargs: Any) -> ConstantFormatVideoNode:
-        order = 0 if self.double_rate else abs(int(tff) - 2)
-
         if self.double_rate and not dh:
+            order = 0
             clip = clip.std.SeparateFields(tff).std.DoubleWeave(tff)
+        else:
+            order = abs((int(tff) - 2))
         
         return core.sangnom.SangNom(clip, order, dh, **kwargs)
 
