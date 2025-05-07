@@ -160,9 +160,10 @@ class EEDI2(SuperSampler, Deinterlacer):
             field += int(self.double_rate) * 2
             clip = clip.std.SeparateFields(tff)
 
-        clip = func(clip, field, **kwargs)
+            if not self.double_rate:
+                clip = clip[::2]
 
-        return clip if self.double_rate else clip[::2]
+        return func(clip, field, **kwargs)
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         return dict(
