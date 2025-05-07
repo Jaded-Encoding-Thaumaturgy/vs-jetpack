@@ -33,8 +33,8 @@ class Deinterlacer(ABC):
     def deinterlace(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         return self._deinterlacer_function(clip, **self.get_deint_args(**kwargs))
 
-    def aa(self, clip: vs.VideoNode, direction: AADirection = AADirection.BOTH, **kwargs: Any) -> ConstantFormatVideoNode:
-        assert check_variable(clip, self.aa)
+    def antialias(self, clip: vs.VideoNode, direction: AADirection = AADirection.BOTH, **kwargs: Any) -> ConstantFormatVideoNode:
+        assert check_variable(clip, self.antialias)
 
         for y in sorted((aa_dir for aa_dir in self.AADirection), key=lambda x: x.value, reverse=self.transpose_first):
             if direction in (y, self.AADirection.BOTH):
@@ -75,7 +75,7 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
         sy, sx = shift
 
         cloc = list(ChromaLocation.get_offsets(clip, ChromaLocation.from_video(clip)))
-        subsampling = [2 ** clip.format.subsampling_w, 2 ** clip.format.subsampling_h]
+        subsampling = [2**clip.format.subsampling_w, 2**clip.format.subsampling_h]
 
         nshift: list[list[float]] = [
             normalize_seq(sx, clip.format.num_planes),
@@ -92,9 +92,8 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
             is_width = not x and self.transpose_first or not self.transpose_first and x
 
             while (clip.width if is_width else clip.height) < dim:
-
                 delta = max(nshift[x], key=lambda y: abs(y))
-                tff = self.tff if delta == 0 else True if delta > 0 else False
+                tff = False if delta < 0 else True if delta > 0 else self.tff
 
                 for y in range(clip.format.num_planes):
                     if not y:
@@ -142,3 +141,21 @@ class NNEDI3(SuperSampler, Deinterlacer):
             etype=self.etype,
             pscrn=self.pscrn
         ) | kwargs
+
+
+@dataclass
+class SANGNOM(SuperSampler, Deinterlacer):
+    aa: list[int] | None = None
+
+    def _deinterlacer_function(self, clip: vs.VideoNode, tff: bool | None = None, **kwargs: Any) -> ConstantFormatVideoNode:
+        kwargs.pop('order', None)
+
+        if self.double_rate and not kwargs.get('dh', None):
+            clip = clip.std.SeparateFields(self.tff).std.DoubleWeave(self.tff)
+
+        order = 0 if self.double_rate else abs(int(fallback(tff, self.tff)) - 2)
+        
+        return core.sangnom.SangNom(clip, order, **kwargs)
+
+    def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
+        return dict(aa=self.aa) | kwargs
