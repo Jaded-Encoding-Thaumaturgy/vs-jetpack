@@ -302,11 +302,10 @@ class DFTTest:
             :return:            The sigma value corresponding to the given frequency.
             :raises KeyError:   If the frequency is not found.
             """
-            for f, s in zip(self.frequencies, self.sigmas):
-                if f == key:
-                    return s
-            
-            raise KeyError(key)
+            try:
+                return self.sigmas[self.frequencies.index(key)]
+            except ValueError as e:
+                raise KeyError(key) from e
 
         def __iter__(self) -> Iterator[float]:
             """
@@ -314,7 +313,7 @@ class DFTTest:
 
             :return: An iterator yielding each frequency in order.
             """
-            return iter(self.frequencies)
+            yield from self.frequencies
 
         def __len__(self) -> int:
             """
