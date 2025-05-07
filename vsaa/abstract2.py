@@ -41,6 +41,12 @@ class Deinterlacer(ABC):
                 if y == self.AADirection.HORIZONTAL:
                     clip = clip.std.Transpose()
 
+                    if hasattr(self, 'sclip'):
+                        self.sclip = self.sclip.std.Transpose()
+
+                    if hasattr(self, 'mclip'):
+                        self.mclip = self.mclip.std.Transpose()
+
                 clip = self._deinterlacer_function(clip, self.tff, False, **self.get_deint_args(**kwargs))
 
                 if self.double_rate:
@@ -48,6 +54,12 @@ class Deinterlacer(ABC):
 
                 if y == self.AADirection.HORIZONTAL:
                     clip = clip.std.Transpose()
+
+                    if hasattr(self, 'sclip'):
+                        self.sclip = self.sclip.std.Transpose()
+
+                    if hasattr(self, 'mclip'):
+                        self.mclip = self.mclip.std.Transpose()
 
         return clip
 
@@ -101,10 +113,22 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
                 if is_width:
                     clip = clip.std.Transpose()
 
+                    if hasattr(self, 'sclip'):
+                        self.sclip = self.sclip.std.Transpose()
+
+                    if hasattr(self, 'mclip'):
+                        self.mclip = self.mclip.std.Transpose()
+
                 clip = self._deinterlacer_function(clip, tff, True, **self.get_deint_args(**kwargs))
 
                 if is_width:
                     clip = clip.std.Transpose()
+
+                    if hasattr(self, 'sclip'):
+                        self.sclip = self.sclip.std.Transpose()
+
+                    if hasattr(self, 'mclip'):
+                        self.mclip = self.mclip.std.Transpose()
 
         if not self.transpose_first:
             nshift.reverse()
@@ -228,7 +252,7 @@ class SANGNOM(SuperSampler, Deinterlacer):
             order = 0
             clip = clip.std.SeparateFields(tff).std.DoubleWeave(tff)
         else:
-            order = abs((int(tff) - 2))
+            order = 1 if tff else 2
         
         return core.sangnom.SangNom(clip, order, dh, **kwargs)
 
