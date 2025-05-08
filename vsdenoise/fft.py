@@ -265,6 +265,19 @@ class DFTTest:
             """
             Initializes the SLocation object by processing frequency-sigma pairs and sorting them.
 
+            Example:
+                ```py
+                sloc = DFTTest.SLocation(
+                    [(0.0, 4), (0.25, 8), (0.5, 10), (0.75, 32), (1.0, 64)], DFTTest.SLocation.InterMode.SPLINE
+                )
+                >>> sloc  # rounded to 3 digits
+                >>> {
+                    0.0: 4, 0.053: 4.848, 0.105: 5.68, 0.158: 6.528, 0.211: 7.376, 0.25: 8, 0.263: 8.104, 0.316: 8.528,
+                    0.368: 8.944, 0.421: 9.368, 0.474: 9.792, 0.5: 10, 0.526: 12.288, 0.579: 16.952, 0.632: 21.616, 0.684: 26.192,
+                    0.737: 30.856, 0.75: 32, 0.789: 36.992, 0.842: 43.776, 0.895: 50.56, 0.947: 57.216, 1.0: 64
+                }
+                ```
+
             :param locations:           A sequence of tuples or a dictionary that specifies frequency and sigma pairs.
             :param interpolate:         The interpolation method to be used for sigma values. If `None`, no interpolation is done.
             :param strict:              If `True`, raises an error if values are out of bounds.
@@ -457,6 +470,14 @@ class DFTTest:
                 """
                 Initializes a `MultiDim` object with specified frequency-sigma mappings for horizontal,
                 vertical, and temporal dimensions.
+
+                Example:
+                    Denoise only on the vertical dimension:
+                    ```py
+                    sloc = DFTTest.SLocation.MultiDim(vertical=[(0.0, 8.0), (0.25, 16.0), (0.5, 0.0), (0.75, 16.0), (1.0, 0.0)])
+
+                    denoised = DFTTest(clip).denoise(sloc)
+                    ```
 
                 :param horizontal:          The sigma values for horizontal frequency locations.
                 :param vertical:            The sigma values for vertical frequency locations.
@@ -824,6 +845,13 @@ class DFTTest:
         """
         Initializes the `DFTTest` class with the provided clip, backend, and frequency location.
 
+        Example:
+            ```py
+            dfttest = DFTTest(clip, DFTTest.Backend.OLD)
+            denoised_low_frequencies = dfttest.denoise({0: 16, 0.25: 8, 0.5:0, 1.0: 0})
+            denoised_high_frequencies = dfttest.denoise([(0, 0), (0.5, 0), (0.75, 16), (1.0, 32)])
+            ```
+
         :param clip:        Source clip.
         :param backend:     The backend to use processing.
         :param sloc:        The frequency location for denoising.
@@ -888,6 +916,17 @@ class DFTTest:
             - VapourSynth DFTTest plugin: https://github.com/HomeOfVapourSynthEvolution/VapourSynth-DFTTest/blob/master/README.md
             - AviSynth DFTTest docs: http://avisynth.nl/index.php/Dfttest
             - vs-dfttest2 docstring: https://github.com/AmusementClub/vs-dfttest2/blob/573bb36c53df93c46a38926c7c654569e3679732/dfttest2.py#L614-L764
+
+        Examples:
+            Apply a constant sigma:
+            ```py
+            denoised = DFTTest().denoise(clip, sigma=16)
+            ```
+
+            Use frequency-dependent sigma values:
+            ```py
+            denoised = DFTTest().denoise(clip, {0: 0, 0.25: 4, 0.5: 8, 0.75: 16, 1.0: 32})
+            ```
 
         :param clip_or_sloc:    Either a video clip or frequency location.
         :param sloc:            Frequency location (used if `clip_or_sloc` is a video clip).
