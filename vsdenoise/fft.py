@@ -4,6 +4,7 @@ This module implements wrappers for FFT (Fast Fourier Transform) based plugins.
 from __future__ import annotations
 
 from functools import cache
+import math
 from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Sequence, TypeAlias, Union, overload
 
 from jetpytools import KwargsNotNone, MismatchError, classproperty
@@ -374,8 +375,10 @@ class DFTTest:
 
             values = values.copy()
 
-            bounds_str = iter('inf' if x is None else x for x in bounds)
-            of_error = CustomOverflowError("Invalid value at index {i}, not in ({bounds})", cls, bounds=bounds_str)
+            of_error = CustomOverflowError(
+                "Invalid value at index {i}, not in ({bounds})", cls,
+                bounds=list(math.inf if x is None else x for x in bounds)
+            )
 
             low_bound, up_bound = bounds
 
