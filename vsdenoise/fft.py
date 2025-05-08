@@ -882,16 +882,16 @@ class DFTTest:
         Denoises a clip using Discrete Fourier Transform (DFT).
 
         More informations:
-            - https://github.com/HomeOfVapourSynthEvolution/VapourSynth-DFTTest/blob/master/README.md
-            - http://avisynth.nl/index.php/Dfttest
-            - https://github.com/AmusementClub/vs-dfttest2/blob/573bb36c53df93c46a38926c7c654569e3679732/dfttest2.py#L614-L764
+            - VapourSynth DFTTest plugin: https://github.com/HomeOfVapourSynthEvolution/VapourSynth-DFTTest/blob/master/README.md
+            - AviSynth DFTTest docs: http://avisynth.nl/index.php/Dfttest
+            - vs-dfttest2 docstring: https://github.com/AmusementClub/vs-dfttest2/blob/573bb36c53df93c46a38926c7c654569e3679732/dfttest2.py#L614-L764
 
         :param clip_or_sloc:    Either a video clip or frequency location.
         :param sloc:            Frequency location (used if `clip_or_sloc` is a video clip).
-        :param tr:              Temporal radius for denoising (default is 0).
-        :param ftype:           Filter type for denoising.
-        :param swin:            Synthesis window size.
-        :param twin:            Temporal window size.
+        :param tr:              Temporal radius for denoising (equivalent to `tbsize`).
+        :param ftype:           Filter type for denoising (see [FilterType][vsdenoise.fft.DFTTest.FilterType] enum, e.g.).
+        :param swin:            Synthesis window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
+        :param twin:            Temporal window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
         :param planes:          Planes to apply the denoising filter.
         :param func:            Function returned for custom error handling.
         :param kwargs:          Additional parameters for the denoising process.
@@ -990,7 +990,7 @@ A type that represents various ways to specify a location in the frequency domai
 
 The `SLocationT` type can be one of the following:
 
-- `float`: 
+- `int` or `float`: 
   A single frequency value (for 1D frequency location).
 - `DFTTest.SLocation`: 
   A structured class for defining frequency locations in a more complex manner.
