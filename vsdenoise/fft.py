@@ -35,7 +35,7 @@ class _BackendBase(CustomEnum):
         if self == DFTTest.Backend.OLD:
             return core.dfttest.DFTTest(clip, *args, **self.kwargs | kwargs)
 
-        try: 
+        try:
             import dfttest2
         except ModuleNotFoundError as e:
             raise CustomRuntimeError("`dfttest2` python package is missing.", self.DFTTest) from e
@@ -1035,11 +1035,11 @@ A type that represents various ways to specify a location in the frequency domai
 
 The `SLocationT` type can be one of the following:
 
-- `int` or `float`: 
+- `int` or `float`:
   A single frequency value (for 1D frequency location).
-- `DFTTest.SLocation`: 
+- `DFTTest.SLocation`:
   A structured class for defining frequency locations in a more complex manner.
-- `Sequence[Frequency, Sigma]`: 
+- `Sequence[Frequency, Sigma]`:
   A sequence (e.g., list or tuple) that alternates between `Frequency` and `Sigma` values.
   The sequence must have an even number of items, where each frequency is followed by its corresponding sigma.
   For example: `[0.0, 8.0, 0.5, 16.0]` where `0.0` is the frequency and `8.0` is its corresponding sigma, and so on.
