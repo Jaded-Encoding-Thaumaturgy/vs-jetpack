@@ -298,8 +298,8 @@ class DFTTest:
 
                 frequencies, sigmas = list(locations[0::2]), list(locations[1::2])
 
-            frequencies = self.boundsCheck(frequencies, (0, 1), strict)
-            sigmas = self.boundsCheck(sigmas, (0, None), strict)
+            frequencies = self.bounds_check(frequencies, (0, 1), strict)
+            sigmas = self.bounds_check(sigmas, (0, math.inf), strict)
 
             self.frequencies, self.sigmas = (t for t in zip(*sorted(zip(frequencies, sigmas))))
 
@@ -359,8 +359,8 @@ class DFTTest:
             )
 
         @classmethod
-        def boundsCheck(
-            cls, values: list[float], bounds: tuple[float | None, float | None], strict: bool = False
+        def bounds_check(
+            cls, values: Sequence[float], bounds: tuple[float | None, float | None], strict: bool = False
         ) -> list[float]:
             """
             Checks and bounds the sigma values to the specified limits.
@@ -373,7 +373,7 @@ class DFTTest:
             if not values:
                 raise CustomValueError('"values" can\'t be empty!', cls)
 
-            values = values.copy()
+            values = list(values)
 
             of_error = CustomOverflowError(
                 "Invalid value at index {i}, not in ({bounds})", cls,
