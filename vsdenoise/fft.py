@@ -294,6 +294,9 @@ class DFTTest:
 
                 self.frequencies, self.sigmas = interpolated.frequencies, interpolated.sigmas
 
+        def __str__(self) -> str:
+            return str(dict(self))
+
         def __getitem__(self, key: Frequency) -> Sigma:
             """
             Get the sigma value associated with a given frequency.
