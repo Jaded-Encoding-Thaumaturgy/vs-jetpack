@@ -39,13 +39,7 @@ class Deinterlacer(ABC):
         for y in sorted((aa_dir for aa_dir in self.AADirection), key=lambda x: x.value, reverse=self.transpose_first):
             if direction in (y, self.AADirection.BOTH):
                 if y == self.AADirection.HORIZONTAL:
-                    clip = clip.std.Transpose()
-
-                    if hasattr(self, 'sclip'):
-                        self.sclip = self.sclip.std.Transpose()
-
-                    if hasattr(self, 'mclip'):
-                        self.mclip = self.mclip.std.Transpose()
+                    clip = self.transpose(clip)
 
                 clip = self._deinterlacer_function(clip, self.tff, False, **self.get_deint_args(**kwargs))
 
@@ -53,15 +47,18 @@ class Deinterlacer(ABC):
                     clip = core.std.Merge(clip[::2], clip[1::2])
 
                 if y == self.AADirection.HORIZONTAL:
-                    clip = clip.std.Transpose()
-
-                    if hasattr(self, 'sclip'):
-                        self.sclip = self.sclip.std.Transpose()
-
-                    if hasattr(self, 'mclip'):
-                        self.mclip = self.mclip.std.Transpose()
+                    clip = self.transpose(clip)
 
         return clip
+    
+    def transpose(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+        if hasattr(self, 'sclip'):
+            self.sclip = self.sclip.std.Transpose()
+
+        if hasattr(self, 'mclip'):
+            self.mclip = self.mclip.std.Transpose()
+
+        return clip.std.Transpose()
 
     def copy(self, **kwargs: Any) -> Self:
         """Returns a new Antialiaser class replacing specified fields with new values"""
@@ -111,24 +108,12 @@ class SuperSampler(Deinterlacer, Scaler, ABC):
                         nshift[x][y] = (nshift[x][y] + (-0.25 if tff else 0.25) * subsampling[x]) * 2 - cloc[x]
 
                 if is_width:
-                    clip = clip.std.Transpose()
-
-                    if hasattr(self, 'sclip'):
-                        self.sclip = self.sclip.std.Transpose()
-
-                    if hasattr(self, 'mclip'):
-                        self.mclip = self.mclip.std.Transpose()
+                    clip = self.transpose(clip)
 
                 clip = self._deinterlacer_function(clip, tff, True, **self.get_deint_args(**kwargs))
 
                 if is_width:
-                    clip = clip.std.Transpose()
-
-                    if hasattr(self, 'sclip'):
-                        self.sclip = self.sclip.std.Transpose()
-
-                    if hasattr(self, 'mclip'):
-                        self.mclip = self.mclip.std.Transpose()
+                    clip = self.transpose(clip)
 
         if not self.transpose_first:
             nshift.reverse()
