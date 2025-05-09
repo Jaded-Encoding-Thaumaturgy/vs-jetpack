@@ -13,19 +13,20 @@ from vstools import (
 )
 
 
+class AADirection(IntFlag):
+    VERTICAL = auto()
+    HORIZONTAL = auto()
+    BOTH = VERTICAL | HORIZONTAL
+
+
 @dataclass
 class Deinterlacer(ABC):
     _deinterlacer_function: ClassVar[VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]]
 
     _: KW_ONLY
     tff: bool = False
-    double_rate: bool = False
+    double_rate: bool = True
     transpose_first: bool = False
-
-    class AADirection(IntFlag):
-        VERTICAL = auto()
-        HORIZONTAL = auto()
-        BOTH = VERTICAL | HORIZONTAL
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         return kwargs
@@ -36,9 +37,16 @@ class Deinterlacer(ABC):
     def antialias(self, clip: vs.VideoNode, direction: AADirection = AADirection.BOTH, **kwargs: Any) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.antialias)
 
-        for y in sorted((aa_dir for aa_dir in self.AADirection), key=lambda x: x.value, reverse=self.transpose_first):
-            if direction in (y, self.AADirection.BOTH):
-                if y == self.AADirection.HORIZONTAL:
+        if self.double_rate:
+            if hasattr(self, 'sclip') and isinstance(self.sclip, vs.VideoNode):
+                self.sclip = core.std.Interleave([self.sclip] * 2)
+
+            if hasattr(self, 'mclip') and isinstance(self.mclip, vs.VideoNode):
+                self.mclip = core.std.Interleave([self.mclip] * 2)
+
+        for y in sorted((aa_dir for aa_dir in AADirection), key=lambda x: x.value, reverse=self.transpose_first):
+            if direction in (y, AADirection.BOTH):
+                if y == AADirection.HORIZONTAL:
                     clip = self.transpose(clip)
 
                 clip = self._deinterlacer_function(clip, self.tff, False, **self.get_deint_args(**kwargs))
@@ -46,16 +54,16 @@ class Deinterlacer(ABC):
                 if self.double_rate:
                     clip = core.std.Merge(clip[::2], clip[1::2])
 
-                if y == self.AADirection.HORIZONTAL:
+                if y == AADirection.HORIZONTAL:
                     clip = self.transpose(clip)
 
         return clip
     
     def transpose(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
-        if hasattr(self, 'sclip'):
+        if hasattr(self, 'sclip') and isinstance(self.sclip, vs.VideoNode):
             self.sclip = self.sclip.std.Transpose()
 
-        if hasattr(self, 'mclip'):
+        if hasattr(self, 'mclip') and isinstance(self.mclip, vs.VideoNode):
             self.mclip = self.mclip.std.Transpose()
 
         return clip.std.Transpose()
