@@ -44,7 +44,7 @@ class ZimgComplexKernel(ComplexKernel, ZimgDescaler):
             sar: Sar | float | bool | None = None, dar: Dar | float | bool | None = None,
             dar_in: Dar | bool | float | None = None, keep_ar: bool | None = None,
             # `linear` and `sigmoid` from LinearScaler
-            linear: bool = False, sigmoid: bool | tuple[Slope, Center] = False,
+            linear: bool | None = None, sigmoid: bool | tuple[Slope, Center] = False,
             # ZimgComplexKernel adds blur parameter
             blur: float = 1.0,
             **kwargs: Any
@@ -60,7 +60,7 @@ class ZimgComplexKernel(ComplexKernel, ZimgDescaler):
             sample_grid_model: SampleGridModel = SampleGridModel.MATCH_EDGES,
             field_based: FieldBased | None = None,
             # `linear` and `sigmoid` from LinearDescaler
-            linear: bool = False, sigmoid: bool | tuple[Slope, Center] = False,
+            linear: bool | None = None, sigmoid: bool | tuple[Slope, Center] = False,
             # `blur` and `ignore_mask` parameters from ZimgDescaler
             blur: float = 1.0, ignore_mask: vs.VideoNode | None = None,
             **kwargs: Any

@@ -9,7 +9,7 @@ from typing_extensions import Self
 from vsexprtools import norm_expr
 from vstools import (
     ConstantFormatVideoNode, CustomRuntimeError, CustomValueError, HoldsVideoFormatT, InvalidTransferError, Matrix,
-    MatrixT, Transfer, cachedproperty, depth, get_video_format, inject_self, vs
+    MatrixT, Transfer, VideoFormatT, cachedproperty, depth, get_video_format, vs
 )
 
 if TYPE_CHECKING:
@@ -123,12 +123,12 @@ class NoScale(NoScaleBase, Bicubic):
 class LinearLight:
     clip: vs.VideoNode
 
-    linear: bool = True
+    linear: bool | None = True
     sigmoid: bool | tuple[Slope, Center] = False
 
     resampler: ResamplerT | None = Catrom
 
-    out_fmt: vs.VideoFormat | None = None
+    out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
 
     _linear: ClassVar[vs.VideoNode]
 
@@ -235,7 +235,10 @@ class LinearLight:
 
 
 def resample_to(
-    clip: vs.VideoNode, out_fmt: HoldsVideoFormatT, matrix: MatrixT | None = None, resampler: ResamplerT = Catrom
+    clip: vs.VideoNode,
+    out_fmt: int | VideoFormatT | HoldsVideoFormatT,
+    matrix: MatrixT | None = None,
+    resampler: ResamplerT = Catrom
 ) -> vs.VideoNode:
     out_fmt = get_video_format(out_fmt)
     assert clip.format

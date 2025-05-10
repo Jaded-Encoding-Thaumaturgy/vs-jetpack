@@ -46,53 +46,72 @@ def _from_param(cls: type[XarT], value: XarT | bool | float | None, fallback: Xa
     return None
 
 
-class _BaseLinearOperation:
-    @staticmethod
-    def _linear_op(op_name: str) -> Any:
-        @inject_kwargs_params
-        def func(
-            self: _BaseLinearOperation, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-            shift: tuple[TopShift, LeftShift] = (0, 0), *,
-            linear: bool = False, sigmoid: bool | tuple[Slope, Center] = False, **kwargs: Any
-        ) -> vs.VideoNode:
+def _linearize_on_function(
+    function: Callable[Concatenate[T, vs.VideoNode, P], vs.VideoNode]
+) -> Callable[Concatenate[T, vs.VideoNode, P], vs.VideoNode]:
+
+    @wraps(function)
+    def _scale_wrapper(
+        self: T,
+        clip: vs.VideoNode,
+        *args: P.args,
+        **kwargs: P.kwargs
+    ) -> vs.VideoNode:
+        linear = cast(bool | None, kwargs.pop("linear", None))
+        sigmoid = cast(bool, kwargs.pop("sigmoid", False))
+        resampler = self if isinstance(self, Resampler) else None
+        format_ = cast(int | VideoFormatT | HoldsVideoFormatT | None, kwargs.pop('format', None))
+
+        if linear or sigmoid:
             from ..util import LinearLight
 
-            has_custom_op = hasattr(self, f'_linear_{op_name}')
-            operation = cast(
-                VSFunctionAllArgs[vs.VideoNode, vs.VideoNode],
-                getattr(self, f'_linear_{op_name}') if has_custom_op else getattr(super(), op_name)
-            )
-
-            if sigmoid:
-                linear = True
-
-            if not linear and not has_custom_op:
-                return operation(clip, width, height, shift, **kwargs)
-
-            resampler: Resampler | None = self if isinstance(self, Resampler) else None
-
-            with LinearLight(clip, linear, sigmoid, resampler, kwargs.pop('format', None)) as ll:
-                ll.linear = operation(ll.linear, width, height, shift, **kwargs)
+            with LinearLight(clip, linear, sigmoid, resampler, format_) as ll:
+                ll.linear = function(self, ll.linear, *args, **kwargs)
 
             return ll.out
 
-        return func
+        return function(self, clip, *args, **kwargs)
+
+    return _scale_wrapper
 
 
-class LinearScaler(_BaseLinearOperation, Scaler):
+_LinearScalerMetaT = TypeVar("_LinearScalerMetaT", bound="LinearScalerMeta")
+
+
+class LinearScalerMeta(BaseScalerMeta):
+    def __new__(
+        mcls: type[_LinearScalerMetaT],
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        /,
+        **kwargs: Any
+    ) -> _LinearScalerMetaT:
+
+        for op in ["scale", "descale"]:
+            try:
+                func = namespace[op]
+            except KeyError:
+                pass
+            else:
+                namespace[op] = _linearize_on_function(func)
+
+        return super().__new__(mcls, name, bases, namespace, **kwargs)
+
+
+class LinearScaler(Scaler, metaclass=LinearScalerMeta):
     if TYPE_CHECKING:
-        @inject_self.cached
         def scale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: tuple[TopShift, LeftShift] = (0, 0),
             *,
             # LinearScaler adds `linear` and `sigmoid` parameters
-            linear: bool = False, sigmoid: bool | tuple[Slope, Center] = False, **kwargs: Any
+            linear: bool | None = None, sigmoid: bool | tuple[Slope, Center] = False, **kwargs: Any
         ) -> vs.VideoNode | ConstantFormatVideoNode:
             ...
 
 
-class LinearDescaler(_BaseLinearOperation, Descaler):
+class LinearDescaler(Descaler, metaclass=LinearScalerMeta):
     if TYPE_CHECKING:
         def descale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
@@ -103,11 +122,9 @@ class LinearDescaler(_BaseLinearOperation, Descaler):
             sample_grid_model: SampleGridModel = SampleGridModel.MATCH_EDGES,
             field_based: FieldBased | None = None,
             # LinearDescaler adds `linear` and `sigmoid` parameters
-            linear: bool = False, sigmoid: bool | tuple[Slope, Center] = False, **kwargs: Any
+            linear: bool | None = None, sigmoid: bool | tuple[Slope, Center] = False, **kwargs: Any
         ) -> ConstantFormatVideoNode:
             ...
-    else:
-        descale = inject_self.cached(_BaseLinearOperation._linear_op('descale'))
 
 
 class KeepArScaler(Scaler):
@@ -190,7 +207,7 @@ class KeepArScaler(Scaler):
         dar_in: Dar | bool | float | None = None, keep_ar: bool | None = None,
         **kwargs: Any
     ) -> vs.VideoNode | ConstantFormatVideoNode:
-        width, height = Scaler._wh_norm(clip, width, height)
+        width, height = self._wh_norm(clip, width, height)
 
         kwargs = self.kwargs | kwargs
 
@@ -216,7 +233,7 @@ class KeepArScaler(Scaler):
                 s + ((p - c) // 2) for s, c, p in zip(shift, *((x.height, x.width) for x in (clip, padded)))
             ), padded
 
-        clip = Scaler.scale(self, clip, width, height, shift, **kwargs)
+        clip = super().scale(clip, width, height, shift, **kwargs)
 
         if const_size and out_sar:
             clip = out_sar.apply(clip)
@@ -235,10 +252,10 @@ class ComplexScaler(KeepArScaler, LinearScaler):
         sar: Sar | float | bool | None = None, dar: Dar | float | bool | None = None,
         dar_in: Dar | bool | float | None = None, keep_ar: bool | None = None,
         # `linear` and `sigmoid` from LinearScaler
-        linear: bool = False, sigmoid: bool | tuple[Slope, Center] = False,
+        linear: bool | None = False, sigmoid: bool | tuple[Slope, Center] = False,
         **kwargs: Any
     ) -> vs.VideoNode | ConstantFormatVideoNode:
-        width, height = Scaler._wh_norm(clip, width, height)
+        width, height = self._wh_norm(clip, width, height)
         return super().scale(
             clip, width, height, shift,
             border_handling=border_handling, sample_grid_model=sample_grid_model,
@@ -263,7 +280,7 @@ class CustomComplexKernel(CustomKernel, ComplexKernel):
             sample_grid_model: SampleGridModel = SampleGridModel.MATCH_EDGES,
             field_based: FieldBased | None = None,
             # `linear` and `sigmoid` parameters from LinearDescaler
-            linear: bool = False, sigmoid: bool | tuple[Slope, Center] = False,
+            linear: bool | None = None, sigmoid: bool | tuple[Slope, Center] = False,
             # `blur` and `ignore_mask` from CustomKernel
             blur: float = 1.0, ignore_mask: vs.VideoNode | None = None,
             **kwargs: Any
