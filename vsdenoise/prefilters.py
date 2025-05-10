@@ -16,7 +16,7 @@ from vstools import (
     check_variable_format, get_peak_value, get_y, normalize_planes, normalize_seq, scale_value, vs
 )
 
-from .fft import DFTTest, SLocT
+from .fft import DFTTest, SLocationT
 
 __all__ = [
     'Prefilter', 'PrefilterPartial', 'MultiPrefilter',
@@ -194,7 +194,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
         planes: PlanesT = None,
         full_range: bool | float = False,
         *,
-        sloc: SLocT | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},
+        sloc: SLocationT | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},
         pref_mask: vs.VideoNode | Literal[False] | tuple[int, int] = (16, 75),
         **kwargs: Any
     ) -> vs.VideoNode:
@@ -204,6 +204,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
         :param clip:        Clip to be preprocessed.
         :param planes:      Planes to be preprocessed.
         :param full_range:  Whether to return a prefiltered clip in full range.
+        :param sloc:        Frequency location.
         :param pref_mask:   Gradient mask node for details retaining if VideoNode.
                             Disable masking if False.
                             Lower/upper bound pixel values if tuple.
@@ -323,7 +324,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
         *,
         planes: PlanesT = None,
         full_range: bool | float = False,
-        sloc: SLocT | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},
+        sloc: SLocationT | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},
         pref_mask: vs.VideoNode | Literal[False] | tuple[int, int] = (16, 75),
         **kwargs: Any
     ) -> PrefilterPartial:
@@ -332,6 +333,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
 
         :param planes:      Planes to be preprocessed.
         :param full_range:  Whether to return a prefiltered clip in full range.
+        :param sloc:        Frequency location.
         :param pref_mask:   Gradient mask node for details retaining if VideoNode.
                             Disable masking if False.
                             Lower/upper bound pixel values if tuple.

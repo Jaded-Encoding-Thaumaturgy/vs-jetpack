@@ -345,6 +345,81 @@ class _Plugin_descale_VideoNode_Bound(Plugin):
 # end implementation
 
 
+# implementation: dfttest
+
+class _Plugin_dfttest_Core_Bound(Plugin):
+    """This class implements the module definitions for the "dfttest" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def DFTTest(self, clip: VideoNode, ftype: int | None = None, sigma: float | None = None, sigma2: float | None = None, pmin: float | None = None, pmax: float | None = None, sbsize: int | None = None, smode: int | None = None, sosize: int | None = None, tbsize: int | None = None, tmode: int | None = None, tosize: int | None = None, swin: int | None = None, twin: int | None = None, sbeta: float | None = None, tbeta: float | None = None, zmean: int | None = None, f0beta: float | None = None, nlocation: _SingleAndSequence[int] | None = None, alpha: float | None = None, slocation: _SingleAndSequence[float] | None = None, ssx: _SingleAndSequence[float] | None = None, ssy: _SingleAndSequence[float] | None = None, sst: _SingleAndSequence[float] | None = None, ssystem: int | None = None, planes: _SingleAndSequence[int] | None = None, opt: int | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_dfttest_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "dfttest" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def DFTTest(self, ftype: int | None = None, sigma: float | None = None, sigma2: float | None = None, pmin: float | None = None, pmax: float | None = None, sbsize: int | None = None, smode: int | None = None, sosize: int | None = None, tbsize: int | None = None, tmode: int | None = None, tosize: int | None = None, swin: int | None = None, twin: int | None = None, sbeta: float | None = None, tbeta: float | None = None, zmean: int | None = None, f0beta: float | None = None, nlocation: _SingleAndSequence[int] | None = None, alpha: float | None = None, slocation: _SingleAndSequence[float] | None = None, ssx: _SingleAndSequence[float] | None = None, ssy: _SingleAndSequence[float] | None = None, sst: _SingleAndSequence[float] | None = None, ssystem: int | None = None, planes: _SingleAndSequence[int] | None = None, opt: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
+
+# implementation: dfttest2_cpu
+
+_ReturnDict_dfttest2_cpu_Version = TypedDict(
+    "_ReturnDict_dfttest2_cpu_Version",
+    {
+        "version": bytes,
+        "dispatch_targets": list[bytes],
+    }
+)
+
+class _Plugin_dfttest2_cpu_Core_Bound(Plugin):
+    """This class implements the module definitions for the "dfttest2_cpu" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def DFTTest(self, clip: VideoNode, window: _SingleAndSequence[float], sigma: _SingleAndSequence[float], sigma2: float, pmin: float, pmax: float, filter_type: int, radius: int | None = None, block_size: int | None = None, block_step: int | None = None, zero_mean: int | None = None, window_freq: _SingleAndSequence[float] | None = None, planes: _SingleAndSequence[int] | None = None, opt: int | None = None) -> ConstantFormatVideoNode: ...
+    def RDFT(self, data: _SingleAndSequence[float], shape: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
+    def Version(self) -> _ReturnDict_dfttest2_cpu_Version: ...
+
+class _Plugin_dfttest2_cpu_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "dfttest2_cpu" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def DFTTest(self, window: _SingleAndSequence[float], sigma: _SingleAndSequence[float], sigma2: float, pmin: float, pmax: float, filter_type: int, radius: int | None = None, block_size: int | None = None, block_step: int | None = None, zero_mean: int | None = None, window_freq: _SingleAndSequence[float] | None = None, planes: _SingleAndSequence[int] | None = None, opt: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
+
+# implementation: dfttest2_cuda
+
+_ReturnDict_dfttest2_cuda_Version = TypedDict(
+    "_ReturnDict_dfttest2_cuda_Version",
+    {
+        "version": bytes,
+        "cufft_version": int,
+        "cufft_version_build": int,
+    }
+)
+
+class _Plugin_dfttest2_cuda_Core_Bound(Plugin):
+    """This class implements the module definitions for the "dfttest2_cuda" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def DFTTest(self, clip: VideoNode, kernel: _SingleAndSequence[_DataType], radius: int | None = None, block_size: int | None = None, block_step: int | None = None, planes: _SingleAndSequence[int] | None = None, in_place: int | None = None, device_id: int | None = None) -> ConstantFormatVideoNode: ...
+    def RDFT(self, data: _SingleAndSequence[float], shape: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
+    def ToSingle(self, data: _SingleAndSequence[float]) -> ConstantFormatVideoNode: ...
+    def Version(self) -> _ReturnDict_dfttest2_cuda_Version: ...
+
+class _Plugin_dfttest2_cuda_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "dfttest2_cuda" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def DFTTest(self, kernel: _SingleAndSequence[_DataType], radius: int | None = None, block_size: int | None = None, block_step: int | None = None, planes: _SingleAndSequence[int] | None = None, in_place: int | None = None, device_id: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
+# implementation: dfttest2_nvrtc
+
+class _Plugin_dfttest2_nvrtc_Core_Bound(Plugin):
+    """This class implements the module definitions for the "dfttest2_nvrtc" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def DFTTest(self, clip: VideoNode, kernel: _SingleAndSequence[_DataType], radius: int | None = None, block_size: int | None = None, block_step: int | None = None, planes: _SingleAndSequence[int] | None = None, in_place: int | None = None, device_id: int | None = None, num_streams: int | None = None) -> ConstantFormatVideoNode: ...
+    def RDFT(self, data: _SingleAndSequence[float], shape: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
+    def ToSingle(self, data: _SingleAndSequence[float]) -> ConstantFormatVideoNode: ...
+    def Version(self) -> bytes: ...
+
+class _Plugin_dfttest2_nvrtc_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "dfttest2_nvrtc" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def DFTTest(self, kernel: _SingleAndSequence[_DataType], radius: int | None = None, block_size: int | None = None, block_step: int | None = None, planes: _SingleAndSequence[int] | None = None, in_place: int | None = None, device_id: int | None = None, num_streams: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
 
 # implementation: dgdecodenv
 
@@ -1636,6 +1711,26 @@ class VideoNode(RawNode):
     def descale(self) -> _Plugin_descale_VideoNode_Bound:
         """Undo linear interpolation"""
     # end instance
+    # instance_bound_VideoNode: dfttest
+    @property
+    def dfttest(self) -> _Plugin_dfttest_VideoNode_Bound:
+        """2D/3D frequency domain denoiser"""
+    # end instance
+    # instance_bound_VideoNode: dfttest2_cpu
+    @property
+    def dfttest2_cpu(self) -> _Plugin_dfttest2_cpu_VideoNode_Bound:
+        """DFTTest2 (CPU)"""
+    # end instance
+    # instance_bound_VideoNode: dfttest2_cuda
+    @property
+    def dfttest2_cuda(self) -> _Plugin_dfttest2_cuda_VideoNode_Bound:
+        """DFTTest2 (CUDA)"""
+    # end instance
+    # instance_bound_VideoNode: dfttest2_nvrtc
+    @property
+    def dfttest2_nvrtc(self) -> _Plugin_dfttest2_nvrtc_VideoNode_Bound:
+        """DFTTest2 (NVRTC)"""
+    # end instance
     # instance_bound_VideoNode: dpid
     @property
     def dpid(self) -> _Plugin_dpid_VideoNode_Bound:
@@ -1963,6 +2058,26 @@ class Core:
     @property
     def descale(self) -> _Plugin_descale_Core_Bound:
         """Undo linear interpolation"""
+    # end instance
+    # instance_bound_Core: dfttest
+    @property
+    def dfttest(self) -> _Plugin_dfttest_Core_Bound:
+        """2D/3D frequency domain denoiser"""
+    # end instance
+    # instance_bound_Core: dfttest2_cpu
+    @property
+    def dfttest2_cpu(self) -> _Plugin_dfttest2_cpu_Core_Bound:
+        """DFTTest2 (CPU)"""
+    # end instance
+    # instance_bound_Core: dfttest2_cuda
+    @property
+    def dfttest2_cuda(self) -> _Plugin_dfttest2_cuda_Core_Bound:
+        """DFTTest2 (CUDA)"""
+    # end instance
+    # instance_bound_Core: dfttest2_nvrtc
+    @property
+    def dfttest2_nvrtc(self) -> _Plugin_dfttest2_nvrtc_Core_Bound:
+        """DFTTest2 (NVRTC)"""
     # end instance
     # instance_bound_Core: dgdecodenv
     @property
