@@ -3,7 +3,6 @@ from __future__ import annotations
 from math import ceil
 from typing import Any, Callable, ClassVar
 
-from jetpytools import inject_kwargs_params
 from vstools import core, fallback, inject_self, vs
 
 from ..types import LeftShift, TopShift
@@ -64,26 +63,20 @@ class Placebo(ComplexScaler, abstract=True):
         self.antiring = antiring
         super().__init__(**kwargs)
 
-    @inject_kwargs_params
     def get_scale_args(
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
         *funcs: Callable[..., Any], **kwargs: Any
     ) -> dict[str, Any]:
-        return (
-            dict(sx=shift[1], sy=shift[0])
-            | self.get_params_args(False, clip, width, height, **kwargs)
-        )
-
-    def get_params_args(
-        self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any
-    ) -> dict[str, Any]:
         return dict(
-            width=width, height=height, filter=self._kernel,
-            radius=self.taps, param1=self.b, param2=self.c,
+            sx=shift[1], sy=shift[0],
+            width=width, height=height,
+            filter=self._kernel,
+            radius=self.taps,
+            param1=self.b, param2=self.c,
             clamp=self.clamp, taper=self.taper, blur=self.blur,
             antiring=self.antiring,
-        ) | kwargs
+        ) | self.kwargs | kwargs
 
     @inject_self.cached.property
     def kernel_radius(self) -> int:

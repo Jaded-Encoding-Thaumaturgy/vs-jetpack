@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from jetpytools import inject_kwargs_params
-
 from vstools import ConstantFormatVideoNode, Dar, FieldBased, Sar, inject_self, vs
 
 from ..types import BorderHandling, Center, LeftShift, SampleGridModel, ShiftT, Slope, TopShift
@@ -19,7 +17,6 @@ __all__ = [
 class ZimgDescaler(Descaler):
     if TYPE_CHECKING:
         @inject_self.cached
-        @inject_kwargs_params
         def descale(
             self, clip: vs.VideoNode, width: int | None, height: int | None,
             shift: ShiftT = (0, 0),
@@ -39,7 +36,6 @@ class ZimgComplexKernel(ComplexKernel, ZimgDescaler):
     if TYPE_CHECKING:
         # Override signature to add `blur`
         @inject_self.cached
-        @inject_kwargs_params
         def scale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: tuple[TopShift, LeftShift] = (0, 0),
@@ -58,7 +54,6 @@ class ZimgComplexKernel(ComplexKernel, ZimgDescaler):
             ...
 
         @inject_self.cached
-        @inject_kwargs_params
         def descale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: ShiftT = (0, 0),
