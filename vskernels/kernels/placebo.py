@@ -72,7 +72,6 @@ class Placebo(ComplexScaler, abstract=True):
     ) -> dict[str, Any]:
         return (
             dict(sx=shift[1], sy=shift[0])
-            | self.get_clean_kwargs(*funcs)
             | self.get_params_args(False, clip, width, height, **kwargs)
         )
 

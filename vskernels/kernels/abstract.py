@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, ABCMeta
-from functools import lru_cache
-from inspect import Signature
 from math import ceil
 from types import NoneType
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Literal, Protocol, Sequence, TypeVar, Union, cast, overload
@@ -30,33 +28,6 @@ __all__ = [
     'Resampler', 'ResamplerT',
     'Kernel', 'KernelT'
 ]
-
-
-@lru_cache
-def _get_keywords(_methods: tuple[Callable[..., Any] | None, ...], self: Any) -> set[str]:
-    methods_list = list(_methods)
-
-    for cls in self.__class__.mro():
-        if hasattr(cls, 'get_implemented_funcs'):
-            methods_list.extend(cls.get_implemented_funcs(self))
-
-    methods = {m for m in methods_list if m}
-
-    keywords = set[str]()
-
-    for method in methods:
-        try:
-            signature = method.__signature__  # type: ignore[attr-defined]
-        except Exception:
-            signature = Signature.from_callable(method)
-
-        keywords.update(signature.parameters.keys())
-
-    return keywords
-
-
-def _clean_self_kwargs(methods: tuple[Callable[..., Any] | None, ...], self: Any) -> KwargsT:
-    return {k: v for k, v in self.kwargs.items() if k not in _get_keywords(methods, self)}
 
 
 def _base_from_param(
@@ -285,15 +256,6 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             return ceil(self._static_kernel_radius)
         raise CustomNotImplementedError('kernel_radius is not implemented!', self.__class__)
 
-    def get_clean_kwargs(self, *funcs: Callable[..., Any] | None) -> KwargsT:
-        """
-        Filter and return clean kwargs applicable to the given functions.
-
-        :param funcs:   Functions to match kwargs against.
-        :return:        Filtered kwargs dictionary.
-        """
-        return _clean_self_kwargs(funcs, self)
-
     def _pretty_string(self, **attrs: Any) -> str:
         """
         Build a formatted string representation including class name and arguments.
@@ -403,7 +365,7 @@ class Scaler(BaseScaler):
     def get_scale_args(
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
-        *funcs: Callable[..., Any], **kwargs: Any
+        **kwargs: Any
     ) -> KwargsT:
         """
         Generate the keyword arguments used for scaling.
@@ -412,7 +374,6 @@ class Scaler(BaseScaler):
         :param shift:   Subpixel shift (top, left).
         :param width:   Target width.
         :param height:  Target height.
-        :param funcs:   Optional callables to match applicable kwargs.
         :param kwargs:  Extra parameters to merge.
         :return:        Final dictionary of keyword arguments for the scale function.
         """
@@ -421,18 +382,9 @@ class Scaler(BaseScaler):
                 src_top=shift[0],
                 src_left=shift[1]
             )
-            | self.get_clean_kwargs(*funcs)
             | dict(width=width, height=height)
             | kwargs
         )
-
-    def get_implemented_funcs(self) -> tuple[Callable[..., Any], ...]:
-        """
-        Return a tuple of implemented scaler functions.
-
-        :return: Tuple containing implemented scaling methods (e.g., scale, supersample).
-        """
-        return (self.scale, self.supersample)
 
 
 class Descaler(BaseScaler):
@@ -573,7 +525,7 @@ class Descaler(BaseScaler):
     def get_descale_args(
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
-        *funcs: Callable[..., Any], **kwargs: Any
+        **kwargs: Any
     ) -> KwargsT:
         """
         Construct the argument dictionary used for descaling.
@@ -582,7 +534,6 @@ class Descaler(BaseScaler):
         :param shift:   Subpixel shift (top, left).
         :param width:   Target width for descaling.
         :param height:  Target height for descaling.
-        :param funcs:   Optional callables used to filter kwargs.
         :param kwargs:  Extra keyword arguments to merge.
         :return:        Combined keyword argument dictionary.
         """
@@ -591,18 +542,9 @@ class Descaler(BaseScaler):
                 src_top=shift[0],
                 src_left=shift[1]
             )
-            | self.get_clean_kwargs(*funcs)
             | dict(width=width, height=height)
             | kwargs
         )
-
-    def get_implemented_funcs(self) -> tuple[Callable[..., Any], ...]:
-        """
-        Return a tuple of implemented descaler methods.
-
-        :return: Tuple containing the `descale` method.
-        """
-        return (self.descale, )
 
 
 class Resampler(BaseScaler):
@@ -643,7 +585,7 @@ class Resampler(BaseScaler):
     def get_resample_args(
         self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
         matrix: MatrixT | None, matrix_in: MatrixT | None,
-        *funcs: Callable[..., Any], **kwargs: Any
+        **kwargs: Any
     ) -> KwargsT:
         """
         Construct the argument dictionary used for resampling.
@@ -655,7 +597,6 @@ class Resampler(BaseScaler):
                                 - or a source from which a valid `VideoFormat` can be extracted.
         :param matrix:      The matrix for color transformation.
         :param matrix_in:   The input matrix for color transformation.
-        :param funcs:       Optional functions used to filter or modify the keyword arguments.
         :param kwargs:      Additional keyword arguments for resampling.
         :return:            A dictionary containing the resampling arguments.
         """
@@ -665,17 +606,8 @@ class Resampler(BaseScaler):
                 matrix=Matrix.from_param(matrix),
                 matrix_in=Matrix.from_param(matrix_in)
             )
-            | self.get_clean_kwargs(*funcs)
             | kwargs
         )
-
-    def get_implemented_funcs(self) -> tuple[Callable[..., Any], ...]:
-        """
-        Return the implemented resampling methods.
-
-        :return: A tuple containing the `resample` method.
-        """
-        return (self.resample, )
 
 
 if TYPE_CHECKING:
@@ -989,7 +921,7 @@ class Kernel(Scaler, Descaler, Resampler):
     def get_scale_args(
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
-        *funcs: Callable[..., Any], **kwargs: Any
+        **kwargs: Any
     ) -> KwargsT:
         """
         Generate and normalize argument dictionary for a scale operation.
@@ -998,14 +930,12 @@ class Kernel(Scaler, Descaler, Resampler):
         :param shift:   Vertical and horizontal shift to apply.
         :param width:   Target width.
         :param height:  Target height.
-        :param funcs:   Callable functions whose keyword arguments will be cleaned and included.
         :param kwargs:  Additional arguments to pass to the scale function.
 
         :return:        Dictionary of keyword arguments for the scale function.
         """
         return (
             dict(src_top=shift[0], src_left=shift[1])
-            | self.get_clean_kwargs(*funcs)
             | self.get_params_args(False, clip, width, height, **kwargs)
         )
 
@@ -1013,7 +943,7 @@ class Kernel(Scaler, Descaler, Resampler):
     def get_descale_args(
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
-        *funcs: Callable[..., Any], **kwargs: Any
+        **kwargs: Any
     ) -> KwargsT:
         """
         Generate and normalize argument dictionary for a descale operation.
@@ -1022,14 +952,12 @@ class Kernel(Scaler, Descaler, Resampler):
         :param shift:   Vertical and horizontal shift to apply.
         :param width:   Target width.
         :param height:  Target height.
-        :param funcs:   Callable functions whose keyword arguments will be cleaned and included.
         :param kwargs:  Additional arguments to pass to the descale function.
 
         :return:        Dictionary of keyword arguments for the descale function.
         """
         return (
             dict(src_top=shift[0], src_left=shift[1])
-            | self.get_clean_kwargs(*funcs)
             | self.get_params_args(True, clip, width, height, **kwargs)
         )
 
@@ -1037,7 +965,7 @@ class Kernel(Scaler, Descaler, Resampler):
     def get_resample_args(
         self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
         matrix: MatrixT | None, matrix_in: MatrixT | None,
-        *funcs: Callable[..., Any], **kwargs: Any
+        **kwargs: Any
     ) -> KwargsT:
         """
         Generate and normalize argument dictionary for a resample operation.
@@ -1049,7 +977,6 @@ class Kernel(Scaler, Descaler, Resampler):
                                 - or a source from which a valid `VideoFormat` can be extracted.
         :param matrix:      Target color matrix.
         :param matrix_in:   Source color matrix.
-        :param funcs:       Callable functions whose keyword arguments will be cleaned and included.
         :param kwargs:      Additional arguments to pass to the resample function.
 
         :return:            Dictionary of keyword arguments for the resample function.
@@ -1060,17 +987,9 @@ class Kernel(Scaler, Descaler, Resampler):
                 matrix=Matrix.from_param(matrix),
                 matrix_in=Matrix.from_param(matrix_in)
             )
-            | self.get_clean_kwargs(*funcs)
             | self.get_params_args(False, clip, **kwargs)
         )
 
-    def get_implemented_funcs(self) -> tuple[Callable[..., Any], ...]:
-        """
-        Return the implemented Kernel methods.
-
-        :return: A tuple containing the `shift` method.
-        """
-        return (self.shift, )
 
 
 ScalerT = Union[str, type[Scaler], Scaler]
