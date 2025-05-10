@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from math import exp
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-from jetpytools import inject_kwargs_params
 from typing_extensions import Self
 
 from vsexprtools import norm_expr
@@ -87,7 +86,6 @@ class NoShift(Bicubic, NoShiftBase):
 
 class NoScaleBase(Scaler):
     @inject_self.cached
-    @inject_kwargs_params
     def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
@@ -103,7 +101,6 @@ class NoScaleBase(Scaler):
 class NoScale(NoScaleBase, Bicubic):
     if TYPE_CHECKING:
         @inject_self.cached
-        @inject_kwargs_params
         def scale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: tuple[TopShift, LeftShift] = (0, 0),

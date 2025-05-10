@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import ceil
 from typing import TYPE_CHECKING, Any, SupportsFloat, TypeVar, Union, cast
 
-from jetpytools import inject_kwargs_params
+from jetpytools import P, T
 
 from vstools import (
     ConstantFormatVideoNode, Dar, FieldBased, KwargsT, Resolution, Sar, VSFunctionAllArgs, check_correct_subsampling,
@@ -81,7 +81,6 @@ class _BaseLinearOperation:
 class LinearScaler(_BaseLinearOperation, Scaler):
     if TYPE_CHECKING:
         @inject_self.cached
-        @inject_kwargs_params
         def scale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: tuple[TopShift, LeftShift] = (0, 0),
@@ -97,7 +96,6 @@ class LinearScaler(_BaseLinearOperation, Scaler):
 class LinearDescaler(_BaseLinearOperation, Descaler):
     if TYPE_CHECKING:
         @inject_self.cached
-        @inject_kwargs_params
         def descale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: ShiftT = (0, 0),
@@ -184,7 +182,6 @@ class KeepArScaler(Scaler):
         return kwargs, out_shift, out_sar
 
     @inject_self.cached
-    @inject_kwargs_params
     def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
@@ -197,6 +194,8 @@ class KeepArScaler(Scaler):
         **kwargs: Any
     ) -> vs.VideoNode:
         width, height = Scaler._wh_norm(clip, width, height)
+
+        kwargs = self.kwargs | kwargs
 
         check_correct_subsampling(clip, width, height)
 
@@ -230,7 +229,6 @@ class KeepArScaler(Scaler):
 
 class ComplexScaler(LinearScaler, KeepArScaler):
     @inject_self.cached
-    @inject_kwargs_params
     def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
@@ -261,7 +259,6 @@ class ComplexKernel(Kernel, LinearDescaler, ComplexScaler):
 class CustomComplexKernel(CustomKernel, ComplexKernel):
     if TYPE_CHECKING:
         @inject_self.cached
-        @inject_kwargs_params
         def descale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: ShiftT = (0, 0),

@@ -5,7 +5,7 @@ from math import ceil
 from types import NoneType
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Literal, Protocol, Sequence, TypeVar, Union, cast, overload
 
-from jetpytools import T_co, inject_kwargs_params
+from jetpytools import T_co
 from typing_extensions import Self
 
 from vstools import (
@@ -294,7 +294,6 @@ class Scaler(BaseScaler):
     """Scale function called internally when performing scaling operations."""
 
     @inject_self.cached
-    @inject_kwargs_params
     def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
@@ -361,7 +360,6 @@ class Scaler(BaseScaler):
 
         return self.supersample(clip, multi, shift, **kwargs)
 
-    @inject_kwargs_params
     def get_scale_args(
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
@@ -378,12 +376,8 @@ class Scaler(BaseScaler):
         :return:        Final dictionary of keyword arguments for the scale function.
         """
         return (
-            dict(
-                src_top=shift[0],
-                src_left=shift[1]
-            )
-            | dict(width=width, height=height)
-            | kwargs
+            dict(width=width, height=height, src_top=shift[0], src_left=shift[1])
+            | self.kwargs | kwargs
         )
 
 
@@ -400,7 +394,6 @@ class Descaler(BaseScaler):
     """Descale function called internally when performing descaling operations."""
 
     @inject_self.cached
-    @inject_kwargs_params
     def descale(
         self, clip: vs.VideoNode, width: int | None, height: int | None,
         shift: ShiftT = (0, 0),
@@ -521,7 +514,6 @@ class Descaler(BaseScaler):
 
         return shift
 
-    @inject_kwargs_params
     def get_descale_args(
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
@@ -538,12 +530,8 @@ class Descaler(BaseScaler):
         :return:        Combined keyword argument dictionary.
         """
         return (
-            dict(
-                src_top=shift[0],
-                src_left=shift[1]
-            )
-            | dict(width=width, height=height)
-            | kwargs
+            dict(width=width, height=height, src_top=shift[0], src_left=shift[1])
+            | self.kwargs | kwargs
         )
 
 
@@ -560,7 +548,6 @@ class Resampler(BaseScaler):
     """Resample function called internally when performing resampling operations."""
 
     @inject_self.cached
-    @inject_kwargs_params
     def resample(
         self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
         matrix: MatrixT | None = None, matrix_in: MatrixT | None = None, **kwargs: Any
@@ -606,7 +593,7 @@ class Resampler(BaseScaler):
                 matrix=Matrix.from_param(matrix),
                 matrix_in=Matrix.from_param(matrix_in)
             )
-            | kwargs
+            | self.kwargs | kwargs
         )
 
 
@@ -750,7 +737,6 @@ class Kernel(Scaler, Descaler, Resampler):
     _err_class = UnknownKernelError  # type: ignore[assignment]
 
     @_inject_self_cached_shift
-    @inject_kwargs_params
     def shift(
         self,
         clip: vs.VideoNode,
@@ -915,9 +901,8 @@ class Kernel(Scaler, Descaler, Resampler):
 
         :return:            Dictionary of combined parameters.
         """
-        return dict(width=width, height=height) | kwargs
+        return dict(width=width, height=height) | self.kwargs | kwargs
 
-    @inject_kwargs_params
     def get_scale_args(
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
@@ -939,7 +924,6 @@ class Kernel(Scaler, Descaler, Resampler):
             | self.get_params_args(False, clip, width, height, **kwargs)
         )
 
-    @inject_kwargs_params
     def get_descale_args(
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
@@ -961,7 +945,6 @@ class Kernel(Scaler, Descaler, Resampler):
             | self.get_params_args(True, clip, width, height, **kwargs)
         )
 
-    @inject_kwargs_params
     def get_resample_args(
         self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
         matrix: MatrixT | None, matrix_in: MatrixT | None,
