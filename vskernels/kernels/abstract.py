@@ -4,17 +4,17 @@ from abc import ABC, ABCMeta
 from functools import lru_cache
 from inspect import Signature
 from math import ceil
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Literal, Sequence, TypeVar, Union, cast, overload
+from types import NoneType
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Literal, Protocol, Sequence, TypeVar, Union, cast, overload
 
+from jetpytools import T_co, inject_kwargs_params
 from typing_extensions import Self
-
-from jetpytools import inject_kwargs_params
 
 from vstools import (
     ConstantFormatVideoNode, CustomIndexError, CustomNotImplementedError, CustomRuntimeError, CustomValueError,
-    FieldBased, FuncExceptT, HoldsVideoFormatT, KwargsT, Matrix, MatrixT, VideoFormatT, VideoNodeT,
-    check_correct_subsampling, check_variable_format, check_variable_resolution, core, depth, expect_bits, fallback,
-    get_subclasses, get_video_format, inject_self, split, vs, vs_object
+    FieldBased, FuncExceptT, HoldsVideoFormatT, KwargsT, Matrix, MatrixT, VideoFormatT, check_correct_subsampling,
+    check_variable_format, check_variable_resolution, core, depth, expect_bits, fallback, get_subclasses,
+    get_video_format, inject_self, normalize_seq, split, vs, vs_object
 )
 from vstools.enums.color import _norm_props_enums
 
@@ -678,121 +678,205 @@ class Resampler(BaseScaler):
         return (self.resample, )
 
 
+if TYPE_CHECKING:
+    class _kernel_shift_injected_self_func(Protocol[T_co]):  # pyright: ignore[reportInvalidTypeVarUse]
+        @overload
+        @staticmethod
+        def __call__(
+            clip: vs.VideoNode, shift: tuple[TopShift, LeftShift], /, **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            """
+            Apply a subpixel shift to the clip using the kernel's scaling logic.
+
+            :param clip:                    The source clip.
+            :param shift:                   A (top, left) tuple values for shift.
+            :param kwargs:                  Additional arguments passed to the internal `scale` call.
+
+            :return:                        A new clip with the applied shift.
+            :raises VariableFormatError:    If the input clip has variable format.
+            """
+
+        @overload
+        @staticmethod
+        def __call__(
+            clip: vs.VideoNode,
+            shift_top: float | list[float],
+            shift_left: float | list[float],
+            /,
+            **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            """
+            Apply a subpixel shift to the clip using the kernel's scaling logic.
+
+            :param clip:                    The source clip.
+            :param shift_top:               Vertical shift or list of Vertical shifts.
+            :param shift_left:              Horizontal shift or list of horizontal shifts.
+            :param kwargs:                  Additional arguments passed to the internal `scale` call.
+
+            :return:                        A new clip with the applied shift.
+            :raises VariableFormatError:    If the input clip has variable format.
+            """
+
+        @overload
+        @staticmethod
+        def __call__(
+            self: T_co, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift], /, **kwargs: Any  # type: ignore[misc]
+        ) -> ConstantFormatVideoNode:
+            """
+            Apply a subpixel shift to the clip using the kernel's scaling logic.
+
+            :param clip:                    The source clip.
+            :param shift:                   A (top, left) tuple values for shift.
+            :param kwargs:                  Additional arguments passed to the internal `scale` call.
+
+            :return:                        A new clip with the applied shift.
+            :raises VariableFormatError:    If the input clip has variable format.
+            """
+
+        @overload
+        @staticmethod
+        def __call__(
+            self: T_co,  # type: ignore[misc]
+            clip: vs.VideoNode,
+            shift_top: float | list[float],
+            shift_left: float | list[float],
+            /,
+            **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            """
+            Apply a subpixel shift to the clip using the kernel's scaling logic.
+
+            :param clip:                    The source clip.
+            :param shift_top:               Vertical shift or list of Vertical shifts.
+            :param shift_left:              Horizontal shift or list of horizontal shifts.
+            :param kwargs:                  Additional arguments passed to the internal `scale` call.
+
+            :return:                        A new clip with the applied shift.
+            :raises VariableFormatError:    If the input clip has variable format.
+            """
+
+        @overload
+        @staticmethod
+        def __call__(
+            cls: type[T_co],  # pyright: ignore
+            clip: vs.VideoNode,
+            shift: tuple[TopShift, LeftShift],
+            /,
+            **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            """
+            Apply a subpixel shift to the clip using the kernel's scaling logic.
+
+            :param clip:                    The source clip.
+            :param shift:                   A (top, left) tuple values for shift.
+            :param kwargs:                  Additional arguments passed to the internal `scale` call.
+
+            :return:                        A new clip with the applied shift.
+            :raises VariableFormatError:    If the input clip has variable format.
+            """
+
+        @overload
+        @staticmethod
+        def __call__(
+            cls: type[T_co],  # pyright: ignore
+            clip: vs.VideoNode,
+            shift_top: float | list[float],
+            shift_left: float | list[float],
+            /,
+            **kwargs: Any
+        ) -> ConstantFormatVideoNode:
+            """
+            Apply a subpixel shift to the clip using the kernel's scaling logic.
+
+            :param clip:                    The source clip.
+            :param shift_top:               Vertical shift or list of Vertical shifts.
+            :param shift_left:              Horizontal shift or list of horizontal shifts.
+            :param kwargs:                  Additional arguments passed to the internal `scale` call.
+
+            :return:                        A new clip with the applied shift.
+            :raises VariableFormatError:    If the input clip has variable format.
+            """
+
+
+    class _inject_self_cached_shift(inject_self.cached[T_co, ..., ConstantFormatVideoNode]):
+        def __get__(self, class_obj: Any, class_type: Any) -> _kernel_shift_injected_self_func[T_co]:
+            ...
+else:
+    _inject_self_cached_shift = inject_self.cached
+
+
 class Kernel(Scaler, Descaler, Resampler):
     """
-    Abstract kernel interface.
+    Abstract kernel interface combining scaling, descaling, resampling, and shifting functionality.
+
+    Subclasses are expected to implement the actual transformation logic by overriding the methods or
+    providing the respective `*_function` callables (`scale_function`, `descale_function`, `resample_function`).
+
+    This class is abstract and should not be used directly.
     """
 
     _err_class = UnknownKernelError  # type: ignore[assignment]
 
-    if TYPE_CHECKING:
-        @overload  # type: ignore[misc]
-        @inject_kwargs_params
-        @staticmethod
-        def shift(
-            clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0), /, **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
+    @_inject_self_cached_shift
+    @inject_kwargs_params
+    def shift(
+        self,
+        clip: vs.VideoNode,
+        shifts_or_top: float | tuple[float, float] | list[float],
+        shift_left: float | list[float] | None = None,
+        /,
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        """
+        Apply a subpixel shift to the clip using the kernel's scaling logic.
 
-        @overload
-        @inject_kwargs_params
-        def shift(
-            self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0), /, **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
+        If a single float or tuple is provided, it is used uniformly.
+        If a list is given, the shift is applied per plane.
 
-        @overload
-        @inject_kwargs_params
-        @staticmethod
-        def shift(
-            clip: vs.VideoNode,
-            shift_top: float | list[float] = 0.0,
-            shift_left: float | list[float] = 0.0,
-            /,
-            **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
+        :param clip:                    The source clip.
+        :param shifts_or_top:           Either a single vertical shift, a (top, left) tuple, or a list of vertical shifts.
+        :param shift_left:              Horizontal shift or list of horizontal shifts. Ignored if `shifts_or_top` is a tuple.
+        :param kwargs:                  Additional arguments passed to the internal `scale` call.
 
-        @overload
-        @inject_kwargs_params
-        def shift(
-            self,
-            clip: vs.VideoNode,
-            shift_top: float | list[float] = 0.0,
-            shift_left: float | list[float] = 0.0,
-            /,
-            **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            ...
+        :return:                        A new clip with the applied shift.
+        :raises VariableFormatError:    If the input clip has variable format.
+        :raises CustomValueError:       If the input clip is GRAY but lists of shift has been passed.
+        """
+        assert check_variable_format(clip, self.shift)
 
-        @overload
-        @inject_kwargs_params
-        def shift(self, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
-            ...
+        n_planes = clip.format.num_planes
 
-        @inject_kwargs_params
-        def shift(*args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
-            ...
-    else:
-        @inject_self.cached
-        @inject_kwargs_params
-        def shift(
-            self,
-            clip: vs.VideoNode,
-            shifts_or_top: float | tuple[float, float] | list[float] | None = None,
-            shift_left: float | list[float] | None = None,
-            /,
-            **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            assert check_variable_format(clip, self.shift)
+        def _shift(src: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0)) -> ConstantFormatVideoNode:
+            return self.scale(src, shift=shift, **kwargs)  # type: ignore[return-value]
 
-            n_planes = clip.format.num_planes
+        if isinstance(shifts_or_top, tuple):
+            return _shift(clip, shifts_or_top)
 
-            def _shift(src: VideoNodeT, shift: tuple[TopShift, LeftShift] = (0, 0)) -> VideoNodeT:
-                return self.scale(src, src.width, src.height, shift, **kwargs)
+        if isinstance(shifts_or_top, float) and isinstance(shift_left, (float, NoneType)):
+            return _shift(clip, (shifts_or_top, shift_left or 0))
 
-            if not shifts_or_top and not shift_left:
-                return _shift(clip)
+        if shift_left is None:
+            shift_left = 0.0
 
-            if isinstance(shifts_or_top, tuple):
-                return _shift(clip, shifts_or_top)
+        shifts_top = normalize_seq(shifts_or_top, n_planes)
+        shifts_left = normalize_seq(shift_left, n_planes)
 
-            if isinstance(shifts_or_top, float) and isinstance(shift_left, float):
-                return _shift(clip, (shifts_or_top, shift_left))
+        if n_planes == 1:
+            if len(set(shifts_top)) > 1 or len(set(shifts_left)) > 1:
+                raise CustomValueError(
+                    "Inconsistent shift values detected for a single plane. "
+                    "All shift values must be identical when passing a GRAY clip.",
+                    self.shift, (shifts_top, shifts_left)
+                )
 
-            if shifts_or_top is None:
-                shifts_or_top = 0.0
-            if shift_left is None:
-                shift_left = 0.0
+            return _shift(clip, (shifts_top[0], shifts_left[0]))
 
-            shifts_top = shifts_or_top if isinstance(shifts_or_top, list) else [shifts_or_top]
-            shifts_left = shift_left if isinstance(shift_left, list) else [shift_left]
+        shifted_planes = [
+            plane if top == left == 0 else _shift(plane, (top, left))
+            for plane, top, left in zip(split(clip), shifts_top, shifts_left)
+        ]
 
-            if not shifts_top:
-                shifts_top = [0.0] * n_planes
-            elif (ltop := len(shifts_top)) > n_planes:
-                shifts_top = shifts_top[:n_planes]
-            else:
-                shifts_top += shifts_top[-1:] * (n_planes - ltop)
-
-            if not shifts_left:
-                shifts_left = [0.0] * n_planes
-            elif (lleft := len(shifts_left)) > n_planes:
-                shifts_left = shifts_left[:n_planes]
-            else:
-                shifts_left += shifts_left[-1:] * (n_planes - lleft)
-
-            if len(set(shifts_top)) == len(set(shifts_left)) == 1 or n_planes == 1:
-                return _shift(clip, (shifts_top[0], shifts_left[0]))
-
-            planes = split(clip)
-
-            shifted_planes = [
-                plane if top == left == 0 else _shift(plane, (top, left))
-                for plane, top, left in zip(planes, shifts_top, shifts_left)
-            ]
-
-            return core.std.ShufflePlanes(shifted_planes, [0, 0, 0], clip.format.color_family)
+        return core.std.ShufflePlanes(shifted_planes, [0, 0, 0], clip.format.color_family)
 
     @overload
     @classmethod
