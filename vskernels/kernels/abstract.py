@@ -147,6 +147,9 @@ These may implement some but not all kernel functionality.
 """
 
 
+_BaseScalerMetaT = TypeVar("_BaseScalerMetaT", bound="BaseScalerMeta")
+
+
 class BaseScalerMeta(ABCMeta):
     """
     Metaclass for scaler classes.
@@ -162,7 +165,7 @@ class BaseScalerMeta(ABCMeta):
     """
 
     def __new__(
-        mcls,
+        mcls: type[_BaseScalerMetaT],
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
@@ -171,7 +174,7 @@ class BaseScalerMeta(ABCMeta):
         abstract: bool = False,
         partial_abstract: bool = False,
         **kwargs: Any
-    ) -> BaseScalerMeta:
+    ) -> _BaseScalerMetaT:
         """
         :param abstract:            If True, the class is treated as fully abstract
                                     and added to the ``abstract_kernels`` list.
