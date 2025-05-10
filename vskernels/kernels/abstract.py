@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 from abc import ABC, ABCMeta
+import functools
 from math import ceil
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Literal, Protocol, Sequence, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Literal, NoReturn, Sequence, TypeVar, Union, cast, overload
 
 from jetpytools import T_co
 from typing_extensions import Self
 
 from vstools import (
     ConstantFormatVideoNode, CustomIndexError, CustomNotImplementedError, CustomRuntimeError, CustomValueError,
-    FieldBased, FuncExceptT, HoldsVideoFormatT, KwargsT, Matrix, MatrixT, VideoFormatT, check_correct_subsampling,
+    FieldBased, FuncExceptT, HoldsVideoFormatT, KwargsT, Matrix, MatrixT, VideoFormatT, VideoNodeT, check_correct_subsampling,
     check_variable_format, check_variable_resolution, core, depth, expect_bits, fallback, get_subclasses,
-    get_video_format, inject_self, normalize_seq, split, vs, vs_object
+    get_video_format, normalize_seq, split, vs, vs_object
 )
 from vstools.enums.color import _norm_props_enums
 
@@ -177,6 +178,13 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
     _err_class: ClassVar[type[CustomValueError]]
     """Custom error class used for validation failures."""
 
+    class cached_property(functools.cached_property[T_co]):
+        """Read only version of functools.cached_property."""
+
+        def __set__(self, instance: None, value: Any) -> NoReturn:  # type: ignore[override]
+            """Raise an error when attempting to set a cached property."""
+            raise AttributeError("Can't set attribute")
+
     if not TYPE_CHECKING:
         def __new__(cls, *args: Any, **kwargs: Any) -> Self:
             """
@@ -244,7 +252,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             cls, (mro := cls.mro())[mro.index(BaseScaler) - 1], scaler, cls._err_class, [], func_except
         )
 
-    @inject_self.cached.property
+    @cached_property
     def kernel_radius(self) -> int:
         """
         Return the effective kernel radius for the scaler.
@@ -268,7 +276,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             + '(' + ', '.join(f'{k}={v}' for k, v in (attrs | self.kwargs).items()) + ')'
         )
 
-    @inject_self.cached.property
+    @cached_property
     def pretty_string(self) -> str:
         """
         Cached property returning a user-friendly string representation.
@@ -293,12 +301,11 @@ class Scaler(BaseScaler):
     scale_function: Callable[..., vs.VideoNode]
     """Scale function called internally when performing scaling operations."""
 
-    @inject_self.cached
     def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any
-    ) -> vs.VideoNode:
+    ) -> vs.VideoNode | ConstantFormatVideoNode:
         """
         Scale a clip to a specified resolution.
 
@@ -316,10 +323,9 @@ class Scaler(BaseScaler):
             clip, **_norm_props_enums(self.get_scale_args(clip, shift, width, height, **kwargs))
         )
 
-    @inject_self.cached
     def supersample(
-        self, clip: vs.VideoNode, rfactor: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
-    ) -> vs.VideoNode:
+        self, clip: VideoNodeT, rfactor: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
+    ) -> VideoNodeT:
         """
         Supersample a clip by a given scaling factor.
 
@@ -339,12 +345,11 @@ class Scaler(BaseScaler):
                 'Multiplying the resolution by "rfactor" must result in a positive resolution!', self.supersample, rfactor
             )
 
-        return self.scale(clip, dst_width, dst_height, shift, **kwargs)
+        return self.scale(clip, dst_width, dst_height, shift, **kwargs)  # type: ignore[return-value]
 
-    @inject_self.cached
     def multi(
-        self, clip: vs.VideoNode, multi: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
-    ) -> vs.VideoNode:
+        self, clip: VideoNodeT, multi: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
+    ) -> VideoNodeT:
         """
         Deprecated alias for `supersample`.
 
@@ -393,7 +398,6 @@ class Descaler(BaseScaler):
     descale_function: Callable[..., ConstantFormatVideoNode]
     """Descale function called internally when performing descaling operations."""
 
-    @inject_self.cached
     def descale(
         self, clip: vs.VideoNode, width: int | None, height: int | None,
         shift: ShiftT = (0, 0),
@@ -547,7 +551,6 @@ class Resampler(BaseScaler):
     resample_function: Callable[..., ConstantFormatVideoNode]
     """Resample function called internally when performing resampling operations."""
 
-    @inject_self.cached
     def resample(
         self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
         matrix: MatrixT | None = None, matrix_in: MatrixT | None = None, **kwargs: Any
@@ -597,133 +600,6 @@ class Resampler(BaseScaler):
         )
 
 
-if TYPE_CHECKING:
-    class _kernel_shift_injected_self_func(Protocol[T_co]):  # pyright: ignore[reportInvalidTypeVarUse]
-        @overload
-        @staticmethod
-        def __call__(
-            clip: vs.VideoNode, shift: tuple[TopShift, LeftShift], /, **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            """
-            Apply a subpixel shift to the clip using the kernel's scaling logic.
-
-            :param clip:                    The source clip.
-            :param shift:                   A (top, left) tuple values for shift.
-            :param kwargs:                  Additional arguments passed to the internal `scale` call.
-
-            :return:                        A new clip with the applied shift.
-            :raises VariableFormatError:    If the input clip has variable format.
-            """
-
-        @overload
-        @staticmethod
-        def __call__(
-            clip: vs.VideoNode,
-            shift_top: float | list[float],
-            shift_left: float | list[float],
-            /,
-            **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            """
-            Apply a subpixel shift to the clip using the kernel's scaling logic.
-
-            :param clip:                    The source clip.
-            :param shift_top:               Vertical shift or list of Vertical shifts.
-            :param shift_left:              Horizontal shift or list of horizontal shifts.
-            :param kwargs:                  Additional arguments passed to the internal `scale` call.
-
-            :return:                        A new clip with the applied shift.
-            :raises VariableFormatError:    If the input clip has variable format.
-            """
-
-        @overload
-        @staticmethod
-        def __call__(
-            self: T_co, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift], /, **kwargs: Any  # type: ignore[misc]
-        ) -> ConstantFormatVideoNode:
-            """
-            Apply a subpixel shift to the clip using the kernel's scaling logic.
-
-            :param clip:                    The source clip.
-            :param shift:                   A (top, left) tuple values for shift.
-            :param kwargs:                  Additional arguments passed to the internal `scale` call.
-
-            :return:                        A new clip with the applied shift.
-            :raises VariableFormatError:    If the input clip has variable format.
-            """
-
-        @overload
-        @staticmethod
-        def __call__(
-            self: T_co,  # type: ignore[misc]
-            clip: vs.VideoNode,
-            shift_top: float | list[float],
-            shift_left: float | list[float],
-            /,
-            **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            """
-            Apply a subpixel shift to the clip using the kernel's scaling logic.
-
-            :param clip:                    The source clip.
-            :param shift_top:               Vertical shift or list of Vertical shifts.
-            :param shift_left:              Horizontal shift or list of horizontal shifts.
-            :param kwargs:                  Additional arguments passed to the internal `scale` call.
-
-            :return:                        A new clip with the applied shift.
-            :raises VariableFormatError:    If the input clip has variable format.
-            """
-
-        @overload
-        @staticmethod
-        def __call__(
-            cls: type[T_co],  # pyright: ignore
-            clip: vs.VideoNode,
-            shift: tuple[TopShift, LeftShift],
-            /,
-            **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            """
-            Apply a subpixel shift to the clip using the kernel's scaling logic.
-
-            :param clip:                    The source clip.
-            :param shift:                   A (top, left) tuple values for shift.
-            :param kwargs:                  Additional arguments passed to the internal `scale` call.
-
-            :return:                        A new clip with the applied shift.
-            :raises VariableFormatError:    If the input clip has variable format.
-            """
-
-        @overload
-        @staticmethod
-        def __call__(
-            cls: type[T_co],  # pyright: ignore
-            clip: vs.VideoNode,
-            shift_top: float | list[float],
-            shift_left: float | list[float],
-            /,
-            **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            """
-            Apply a subpixel shift to the clip using the kernel's scaling logic.
-
-            :param clip:                    The source clip.
-            :param shift_top:               Vertical shift or list of Vertical shifts.
-            :param shift_left:              Horizontal shift or list of horizontal shifts.
-            :param kwargs:                  Additional arguments passed to the internal `scale` call.
-
-            :return:                        A new clip with the applied shift.
-            :raises VariableFormatError:    If the input clip has variable format.
-            """
-
-
-    class _inject_self_cached_shift(inject_self.cached[T_co, ..., ConstantFormatVideoNode]):
-        def __get__(self, class_obj: Any, class_type: Any) -> _kernel_shift_injected_self_func[T_co]:
-            ...
-else:
-    _inject_self_cached_shift = inject_self.cached
-
-
 class Kernel(Scaler, Descaler, Resampler):
     """
     Abstract kernel interface combining scaling, descaling, resampling, and shifting functionality.
@@ -736,7 +612,42 @@ class Kernel(Scaler, Descaler, Resampler):
 
     _err_class = UnknownKernelError  # type: ignore[assignment]
 
-    @_inject_self_cached_shift
+    @overload
+    def shift(
+        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift], /, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        """
+        Apply a subpixel shift to the clip using the kernel's scaling logic.
+
+        :param clip:                    The source clip.
+        :param shift:                   A (top, left) tuple values for shift.
+        :param kwargs:                  Additional arguments passed to the internal `scale` call.
+
+        :return:                        A new clip with the applied shift.
+        :raises VariableFormatError:    If the input clip has variable format.
+        """
+
+    @overload
+    def shift(
+        self,
+        clip: vs.VideoNode,
+        shift_top: float | list[float],
+        shift_left: float | list[float],
+        /,
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        """
+        Apply a subpixel shift to the clip using the kernel's scaling logic.
+
+        :param clip:                    The source clip.
+        :param shift_top:               Vertical shift or list of Vertical shifts.
+        :param shift_left:              Horizontal shift or list of horizontal shifts.
+        :param kwargs:                  Additional arguments passed to the internal `scale` call.
+
+        :return:                        A new clip with the applied shift.
+        :raises VariableFormatError:    If the input clip has variable format.
+        """
+
     def shift(
         self,
         clip: vs.VideoNode,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import ceil
 from typing import Any, Callable, ClassVar
 
-from vstools import core, fallback, inject_self, vs
+from vstools import core, fallback, vs
 
 from ..types import LeftShift, TopShift
 from .complex import ComplexScaler
@@ -78,7 +78,7 @@ class Placebo(ComplexScaler, abstract=True):
             antiring=self.antiring,
         ) | self.kwargs | kwargs
 
-    @inject_self.cached.property
+    @ComplexScaler.cached_property
     def kernel_radius(self) -> int:
         from .bicubic import Bicubic
 

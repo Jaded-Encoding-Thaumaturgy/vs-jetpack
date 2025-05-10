@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+from functools import wraps
 from math import ceil
-from typing import TYPE_CHECKING, Any, SupportsFloat, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Concatenate, SupportsFloat, TypeVar, Union, cast
 
 from jetpytools import P, T
 
 from vstools import (
-    ConstantFormatVideoNode, Dar, FieldBased, KwargsT, Resolution, Sar, VSFunctionAllArgs, check_correct_subsampling,
-    fallback, inject_self, vs
+    ConstantFormatVideoNode, Dar, FieldBased, HoldsVideoFormatT, KwargsT, Resolution, Sar, VideoFormatT,
+    check_correct_subsampling, fallback, vs
 )
 
 from ..types import BorderHandling, Center, LeftShift, SampleGridModel, ShiftT, Slope, TopShift
-from .abstract import Descaler, Kernel, Resampler, Scaler
+from .abstract import BaseScalerMeta, Descaler, Kernel, Resampler, Scaler
 from .custom import CustomKernel
 
 __all__ = [
@@ -87,15 +88,12 @@ class LinearScaler(_BaseLinearOperation, Scaler):
             *,
             # LinearScaler adds `linear` and `sigmoid` parameters
             linear: bool = False, sigmoid: bool | tuple[Slope, Center] = False, **kwargs: Any
-        ) -> vs.VideoNode:
+        ) -> vs.VideoNode | ConstantFormatVideoNode:
             ...
-    else:
-        scale = inject_self.cached(_BaseLinearOperation._linear_op('scale'))
 
 
 class LinearDescaler(_BaseLinearOperation, Descaler):
     if TYPE_CHECKING:
-        @inject_self.cached
         def descale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: ShiftT = (0, 0),
@@ -181,7 +179,6 @@ class KeepArScaler(Scaler):
 
         return kwargs, out_shift, out_sar
 
-    @inject_self.cached
     def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
@@ -192,7 +189,7 @@ class KeepArScaler(Scaler):
         sar: Sar | float | bool | None = None, dar: Dar | float | bool | None = None,
         dar_in: Dar | bool | float | None = None, keep_ar: bool | None = None,
         **kwargs: Any
-    ) -> vs.VideoNode:
+    ) -> vs.VideoNode | ConstantFormatVideoNode:
         width, height = Scaler._wh_norm(clip, width, height)
 
         kwargs = self.kwargs | kwargs
@@ -227,8 +224,7 @@ class KeepArScaler(Scaler):
         return clip
 
 
-class ComplexScaler(LinearScaler, KeepArScaler):
-    @inject_self.cached
+class ComplexScaler(KeepArScaler, LinearScaler):
     def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
@@ -241,7 +237,7 @@ class ComplexScaler(LinearScaler, KeepArScaler):
         # `linear` and `sigmoid` from LinearScaler
         linear: bool = False, sigmoid: bool | tuple[Slope, Center] = False,
         **kwargs: Any
-    ) -> vs.VideoNode:
+    ) -> vs.VideoNode | ConstantFormatVideoNode:
         width, height = Scaler._wh_norm(clip, width, height)
         return super().scale(
             clip, width, height, shift,
@@ -258,7 +254,6 @@ class ComplexKernel(Kernel, LinearDescaler, ComplexScaler):
 
 class CustomComplexKernel(CustomKernel, ComplexKernel):
     if TYPE_CHECKING:
-        @inject_self.cached
         def descale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: ShiftT = (0, 0),
@@ -281,7 +276,7 @@ class CustomComplexTapsKernel(CustomComplexKernel):
         self.taps = taps
         super().__init__(**kwargs)
 
-    @inject_self.cached.property
+    @Scaler.cached_property
     def kernel_radius(self) -> int:
         return ceil(self.taps)
 

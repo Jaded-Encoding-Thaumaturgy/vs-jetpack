@@ -85,12 +85,11 @@ class NoShift(Bicubic, NoShiftBase):
 
 
 class NoScaleBase(Scaler):
-    @inject_self.cached
     def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any
-    ) -> vs.VideoNode:
+    ) -> vs.VideoNode | ConstantFormatVideoNode:
         try:
             width, height = Scaler._wh_norm(clip, width, height)
             return super().scale(clip, clip.width, clip.height, shift, **kwargs)
@@ -100,12 +99,11 @@ class NoScaleBase(Scaler):
 
 class NoScale(NoScaleBase, Bicubic):
     if TYPE_CHECKING:
-        @inject_self.cached
         def scale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: tuple[TopShift, LeftShift] = (0, 0),
             **kwargs: Any
-        ) -> vs.VideoNode:
+        ) -> vs.VideoNode | ConstantFormatVideoNode:
             ...
 
     def __class_getitem__(cls, kernel: KernelT) -> type[Kernel]:
@@ -251,6 +249,6 @@ def resample_to(
         return depth(clip, out_fmt)
 
     if out_fmt.subsampling_w == out_fmt.subsampling_h == 0:
-        return Point.resample(clip, out_fmt, matrix)
+        return Point().resample(clip, out_fmt, matrix)
 
-    return resampler.resample(clip, out_fmt, matrix)
+    return resampler().resample(clip, out_fmt, matrix)
