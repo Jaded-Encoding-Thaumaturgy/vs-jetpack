@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import sqrt
 from typing import Any, overload
 
-from vstools import CustomValueError, inject_self, core, vs
+from vstools import CustomValueError, core, vs
 
 from .zimg import ZimgComplexKernel
 
@@ -51,7 +51,7 @@ class Bicubic(ZimgComplexKernel):
             return args | dict(b=self.b, c=self.c)
         return args | dict(filter_param_a=self.b, filter_param_b=self.c)
 
-    @inject_self.cached.property
+    @ZimgComplexKernel.cached_property
     def kernel_radius(self) -> int:
         if (self.b, self.c) == (0, 0):
             return 1

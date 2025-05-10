@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import ceil
 from typing import Any
 
-from vstools import core, inject_self, vs
+from vstools import core, vs
 
 from .zimg import ZimgComplexKernel
 
@@ -56,6 +56,6 @@ class Lanczos(ZimgComplexKernel):
             return args | dict(taps=self.taps)
         return args | dict(filter_param_a=self.taps)
 
-    @inject_self.cached.property
+    @ZimgComplexKernel.cached_property
     def kernel_radius(self) -> int:
         return ceil(self.taps)

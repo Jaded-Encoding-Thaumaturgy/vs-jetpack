@@ -4,7 +4,7 @@ from typing import Any
 
 from vstools import (
     ConstantFormatVideoNode, HoldsVideoFormatT, Matrix, MatrixT, VideoFormatT, core, depth, get_video_format,
-    inject_self, vs
+    vs
 )
 
 from ..types import ShiftT
@@ -23,7 +23,6 @@ class Example(Kernel):
         self.c = c
         super().__init__(**kwargs)
 
-    @inject_self.cached
     def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: tuple[float, float] = (0, 0), **kwargs: Any
@@ -45,7 +44,6 @@ class Example(Kernel):
             filter_param_a=self.b, filter_param_b=self.c, **self.kwargs, **kwargs
         )
 
-    @inject_self.cached
     def descale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: ShiftT = (0, 0), **kwargs: Any
@@ -67,7 +65,6 @@ class Example(Kernel):
             depth(clip, 32), width, height, b=self.b, c=self.c, src_top=shift[0], src_left=shift[1], **kwargs
         ), clip)
 
-    @inject_self.cached
     def resample(
         self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
         matrix: MatrixT | None = None, matrix_in: MatrixT | None = None, **kwargs: Any
@@ -89,11 +86,11 @@ class Example(Kernel):
             matrix_in=Matrix.from_param(matrix_in), **self.kwargs | kwargs
         )
 
-    def shift(  # type: ignore[override]
+    def shift(
         self,
         clip: vs.VideoNode,
-        shifts_or_shift_top: tuple[float, float] | float | list[float] = 0.0,
-        shift_left: float | list[float] = 0.0, /,
+        shifts_or_shift_top: tuple[float, float] | float | list[float],
+        shift_left: float | list[float], /,
         **kwargs: Any
     ) -> vs.VideoNode:
         """

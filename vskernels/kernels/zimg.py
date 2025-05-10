@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from vstools import ConstantFormatVideoNode, Dar, FieldBased, Sar, inject_self, vs
+from vstools import ConstantFormatVideoNode, Dar, FieldBased, Sar, vs
 
 from ..types import BorderHandling, Center, LeftShift, SampleGridModel, ShiftT, Slope, TopShift
 from .abstract import Descaler
@@ -16,7 +16,6 @@ __all__ = [
 
 class ZimgDescaler(Descaler):
     if TYPE_CHECKING:
-        @inject_self.cached
         def descale(
             self, clip: vs.VideoNode, width: int | None, height: int | None,
             shift: ShiftT = (0, 0),
@@ -35,7 +34,6 @@ class ZimgDescaler(Descaler):
 class ZimgComplexKernel(ComplexKernel, ZimgDescaler):
     if TYPE_CHECKING:
         # Override signature to add `blur`
-        @inject_self.cached
         def scale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: tuple[TopShift, LeftShift] = (0, 0),
@@ -50,10 +48,9 @@ class ZimgComplexKernel(ComplexKernel, ZimgDescaler):
             # ZimgComplexKernel adds blur parameter
             blur: float = 1.0,
             **kwargs: Any
-        ) -> vs.VideoNode:
+        ) -> vs.VideoNode | ConstantFormatVideoNode:
             ...
 
-        @inject_self.cached
         def descale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: ShiftT = (0, 0),

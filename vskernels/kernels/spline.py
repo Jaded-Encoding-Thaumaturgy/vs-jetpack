@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import comb
 from typing import Any
 
-from vstools import core, inject_self
+from vstools import core
 
 from .complex import CustomComplexTapsKernel
 from .helpers import poly3
@@ -81,7 +81,6 @@ class Spline(CustomComplexTapsKernel):
 
         return coeffs
 
-    @inject_self.cached
     def kernel(self, *, x: float) -> float:
         x, taps = abs(x), self.kernel_radius
 
