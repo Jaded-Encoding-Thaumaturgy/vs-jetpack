@@ -82,11 +82,47 @@ class SampleGridModel(CustomIntEnum):
 
 
 TopShift: TypeAlias = float
+"""
+Type alias for vertical shift in pixels (top).
+
+Represents the amount of vertical offset when scaling a video.
+"""
+
 LeftShift: TypeAlias = float
+"""
+Type alias for horizontal shift in pixels (left).
+
+Represents the amount of horizontal offset when scaling a video.
+"""
+
 TopFieldTopShift: TypeAlias = float
+"""
+Type alias for the top field's vertical shift in pixels.
+
+Used when processing interlaced video to describe the vertical shift of the top field.
+"""
+
 TopFieldLeftShift: TypeAlias = float
+"""
+Type alias for the top field's horizontal shift in pixels.
+
+Used when processing interlaced video to describe the horizontal shift of the top field.
+"""
+
 BotFieldTopShift: TypeAlias = float
+"""
+Type alias for the bottom field's vertical shift in pixels.
+
+Used when processing interlaced video to describe the vertical shift of the bottom field.
+"""
+
 BotFieldLeftShift: TypeAlias = float
+"""
+Type alias for the bottom field's horizontal shift in pixels.
+
+Used when processing interlaced video to describe the horizontal shift of the bottom field.
+"""
+
 ShiftT = Union[
     tuple[TopShift, LeftShift],
     tuple[
@@ -94,6 +130,12 @@ ShiftT = Union[
         LeftShift | tuple[TopFieldLeftShift, BotFieldLeftShift]
     ]
 ]
+"""
+Type alias for shift in both horizontal and vertical directions.
+
+Can either represent a single shift (for progressive video) or separate shifts for top and bottom fields (for interlaced video).
+The first value in the tuple represents vertical shift, and the second represents horizontal shift.
+"""
 
 Slope: TypeAlias = float
 Center: TypeAlias = float
