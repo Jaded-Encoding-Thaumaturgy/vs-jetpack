@@ -88,10 +88,25 @@ class _BaseLinear(BaseScaler):
 
 
 class LinearScaler(_BaseLinear, Scaler):
+    """
+    Abctract scaler class that applies linearization before scaling.
+
+    Only affects scaling results when `linear` or `sigmoid` parameters are specified.
+
+    Optionally, subclasses can implement `_linear_scale` to override the default behavior
+    with a custom linear scaling algorithm.
+    """
+
     if TYPE_CHECKING:
         def _linear_scale(
             self, clip: vs.VideoNode, width: int | None, height: int | None, shift: tuple[TopShift, LeftShift], **kwargs: Any
         ) -> vs.VideoNode:
+            """
+            An optional function to be implemented by subclasses.
+
+            If implemented, this will override the default scale behavior,
+            allowing custom linear scaling logic to be applied instead of the base scaler's method.
+            """
             ...
 
     def scale(
@@ -101,6 +116,25 @@ class LinearScaler(_BaseLinear, Scaler):
         # LinearScaler adds `linear` and `sigmoid` parameters
         linear: bool | None = None, sigmoid: bool | tuple[Slope, Center] = False, **kwargs: Any
     ) -> vs.VideoNode | ConstantFormatVideoNode:
+        """
+        Scale a clip to the given resolution with optional linearization.
+
+        This method behaves like the base `Scaler.descale()` but adds support for
+        linear or sigmoid-based preprocessing and postprocessing. When enabled, the clip
+        is linearized before the scaling operation and de-linearized afterward.
+
+        :param clip:        The source clip.
+        :param width:       Target width (defaults to clip width if None).
+        :param height:      Target height (defaults to clip height if None).
+        :param shift:       Subpixel shift (top, left) applied during scaling.
+        :param linear:      Whether to linearize the input before scaling. If None, inferred from sigmoid.
+        :param sigmoid:     Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+                            `True` applies the defaults values (6.5, 0.75).
+                            Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
+                            and sigmoid center has to be in range 0.0-1.0 (inclusive).
+        :param kwargs:      Additional arguments forwarded to the scale function.
+        :return:            Scaled video clip.
+        """
         return self._linearize(
             clip, linear, sigmoid, partial(super().scale, width=width, height=height, shift=shift),
             self.scale, **kwargs
@@ -108,10 +142,24 @@ class LinearScaler(_BaseLinear, Scaler):
 
 
 class LinearDescaler(_BaseLinear, Descaler):
+    """
+    Abctract descaler class that applies linearization before descaling.
+
+    Only affects descaling results when `linear` or `sigmoid` parameters are specified.
+
+    Optionally, subclasses can implement `_linear_descale` to override the default behavior
+    with a custom linear descaling algorithm.
+    """
     if TYPE_CHECKING:
         def _linear_descale(
             self, clip: vs.VideoNode, width: int | None, height: int | None, shift: ShiftT, **kwargs: Any
         ) -> ConstantFormatVideoNode:
+            """
+            An optional function to be implemented by subclasses.
+
+            If implemented, this will override the default descale behavior,
+            allowing custom linear descaling logic to be applied instead of the base descaler's method.
+            """
             ...
 
     def descale(
@@ -125,6 +173,27 @@ class LinearDescaler(_BaseLinear, Descaler):
         # LinearDescaler adds `linear` and `sigmoid` parameters
         linear: bool | None = None, sigmoid: bool | tuple[Slope, Center] = False, **kwargs: Any
     ) -> ConstantFormatVideoNode:
+        """
+        Descale a clip to the specified resolution, optionally using linear light processing.
+
+        This method behaves like the base `Descaler.descale()` but adds support for
+        linear or sigmoid-based preprocessing and postprocessing. When enabled, the clip
+        is linearized before the descaling operation and de-linearized afterward.
+
+        :param clip:                The source clip.
+        :param width:               Target descaled width (defaults to clip width if None).
+        :param height:              Target descaled height (defaults to clip height if None).
+        :param shift:               Subpixel shift (top, left) or per-field shifts.
+        :param border_handling:     Method for handling image borders during sampling.
+        :param sample_grid_model:   Model used to align sampling grid.
+        :param field_based:         Field-based processing mode (interlaced or progressive).
+        :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
+        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+                                    `True` applies the defaults values (6.5, 0.75).
+                                    Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
+                                    and sigmoid center has to be in range 0.0-1.0 (inclusive).
+        :return:                    The descaled video node, optionally processed in linear light.
+        """
         return self._linearize(
             clip, linear, sigmoid, partial(super().descale, width=width, height=height, shift=shift),
             self.descale, **kwargs
@@ -244,6 +313,13 @@ class KeepArScaler(Scaler):
 
 
 class ComplexScaler(KeepArScaler, LinearScaler):
+    """
+    An abstract composite scaler class that supports both aspect ratio preservation and linear light processing.
+
+    This class combines the capabilities of `KeepArScaler` (for handling display/sample aspect ratio)
+    and `LinearScaler` (for linear and sigmoid processing).
+    """
+
     if TYPE_CHECKING:
         def scale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
@@ -258,14 +334,47 @@ class ComplexScaler(KeepArScaler, LinearScaler):
             linear: bool | None = False, sigmoid: bool | tuple[Slope, Center] = False,
             **kwargs: Any
         ) -> vs.VideoNode | ConstantFormatVideoNode:
+            """
+            Scale a clip to the given resolution, with aspect ratio and linear light support.
+
+            :param clip:                The source clip.
+            :param width:               Target width (defaults to clip width if None).
+            :param height:              Target height (defaults to clip height if None).
+            :param shift:               Subpixel shift (top, left) applied during scaling.
+            :param border_handling:     Method for handling image borders during sampling.
+            :param sample_grid_model:   Model used to align sampling grid.
+            :param sar:                 Sample aspect ratio to assume or convert to.
+            :param dar:                 Desired display aspect ratio.
+            :param dar_in:              Input display aspect ratio, if different from clip’s.
+            :param keep_ar:             Whether to adjust dimensions to preserve aspect ratio.
+            :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
+            :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+                                        `True` applies the defaults values (6.5, 0.75).
+                                        Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
+                                        and sigmoid center has to be in range 0.0-1.0 (inclusive).
+            :return:                    Scaled clip, optionally aspect-corrected and linearized.
+            """
             ...
 
 
 class ComplexKernel(Kernel, LinearDescaler, ComplexScaler):
-    ...
+    """
+    A comprehensive abctract kernel class combining scaling, descaling,
+    and resampling with linear light and aspect ratio support.
+
+    This class merges the full capabilities of `Kernel`, `LinearDescaler`, and `ComplexScaler`.
+    """
 
 
 class CustomComplexKernel(CustomKernel, ComplexKernel):
+    """
+    An abstract kernel class that combines custom kernel behavior with advanced scaling and descaling capabilities.
+
+    This class extends both `CustomKernel` and `ComplexKernel`, enabling the definition
+    of custom mathematical kernels with the advanced rescaling logic provided by
+    linear and aspect-ratio-aware components.
+    """
+
     if TYPE_CHECKING:
         def descale(
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
@@ -281,16 +390,51 @@ class CustomComplexKernel(CustomKernel, ComplexKernel):
             blur: float = 1.0, ignore_mask: vs.VideoNode | None = None,
             **kwargs: Any
         ) -> ConstantFormatVideoNode:
+            """
+            Descale a clip using a customizable and complex kernel pipeline.
+
+            :param clip:                The source clip.
+            :param width:               Target descaled width (defaults to clip width if None).
+            :param height:              Target descaled height (defaults to clip height if None).
+            :param shift:               Subpixel shift (top, left) or per-field shifts.
+            :param border_handling:     Method for handling image borders during sampling.
+            :param sample_grid_model:   Model used to align sampling grid.
+            :param field_based:         Field-based processing mode (interlaced or progressive).
+            :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
+            :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+                                        `True` applies the defaults values (6.5, 0.75).
+                                        Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
+                                        and sigmoid center has to be in range 0.0-1.0 (inclusive).
+            :param blur:                Amount of blur to apply during descaling.
+            :param ignore_mask:         Optional mask specifying areas to ignore during descaling.
+            :param kwargs:              Additional parameters passed to the underlying descaler.
+            :return:                    The descaled clip.
+            """
             ...
 
 
 class CustomComplexTapsKernel(CustomComplexKernel):
+    """
+    Extension of `CustomComplexKernel` that introduces configurable kernel taps.
+    """
+
     def __init__(self, taps: float, **kwargs: Any) -> None:
+        """
+        Initialize the kernel with a specific number of taps.
+
+        :param taps:    Determines the radius of the kernel.
+        :param kwargs:  Additional keyword arguments passed to the superclass.
+        """
         self.taps = taps
         super().__init__(**kwargs)
 
     @Scaler.cached_property
     def kernel_radius(self) -> int:
+        """
+        Compute the effective kernel radius based on the number of taps.
+
+        :return: Radius as the ceiling of `taps`.
+        """
         return ceil(self.taps)
 
     def _pretty_string(self, **attrs: Any) -> str:
@@ -298,4 +442,21 @@ class CustomComplexTapsKernel(CustomComplexKernel):
 
 
 ComplexScalerT = Union[str, type[ComplexScaler], ComplexScaler]
+"""
+Type alias for anything that can resolve to a ComplexScaler.
+
+This includes:
+- A string identifier.
+- A class type subclassing `ComplexScaler`.
+- An instance of a `ComplexScaler`.
+"""
+
 ComplexKernelT = Union[str, type[ComplexKernel], ComplexKernel]
+"""
+Type alias for anything that can resolve to a ComplexKernel.
+
+This includes:
+- A string identifier.
+- A class type subclassing `ComplexKernel`.
+- An instance of a `ComplexKernel`.
+"""

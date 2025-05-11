@@ -15,7 +15,7 @@ __all__ = [
 
 
 class Point(ZimgComplexKernel):
-    """Built-in point resizer."""
+    """Point resizer."""
 
     scale_function = resample_function = core.lazy.resize2.Point
     descale_function = core.lazy.descale.Depoint
@@ -23,7 +23,7 @@ class Point(ZimgComplexKernel):
 
 
 class Bilinear(ZimgComplexKernel):
-    """Built-in bilinear resizer."""
+    """Bilinear resizer."""
 
     scale_function = resample_function = core.lazy.resize2.Bilinear
     descale_function = core.lazy.descale.Debilinear
@@ -31,20 +31,18 @@ class Bilinear(ZimgComplexKernel):
 
 
 class Lanczos(ZimgComplexKernel):
-    """
-    Built-in lanczos resizer.
-
-    Dependencies:
-
-    * VapourSynth-descale
-
-    :param taps: taps param for lanczos kernel
-    """
+    """Lanczos resizer."""
 
     scale_function = resample_function = core.lazy.resize2.Lanczos
     descale_function = core.lazy.descale.Delanczos
 
     def __init__(self, taps: int = 3, **kwargs: Any) -> None:
+        """
+        Initialize the kernel with a specific number of taps.
+
+        :param taps:    Determines the radius of the kernel.
+        :param kwargs:  Additional keyword arguments passed to the superclass.
+        """
         self.taps = taps
         super().__init__(**kwargs)
 

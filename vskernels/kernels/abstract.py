@@ -371,7 +371,7 @@ class Scaler(BaseScaler):
         :param shift:               Subpixel shift (top, left) applied during scaling.
         :param kwargs:              Additional arguments forwarded to the scale function.
         :raises CustomValueError:   If resulting resolution is non-positive.
-        :return:                    Supersampled video clip.
+        :return:                    Supersampled clip.
         """
         assert check_variable_resolution(clip, self.multi)
 
@@ -394,7 +394,7 @@ class Scaler(BaseScaler):
         :param multi:   Supersampling factor.
         :param shift:   Subpixel shift (top, left) applied during scaling.
         :param kwargs:  Additional arguments forwarded to the scale function.
-        :return:        Supersampled video clip.
+        :return:        Supersampled clip.
         """
         import warnings
 
@@ -453,8 +453,8 @@ class Descaler(BaseScaler):
         perform per-field descaling, and weave them back.
 
         :param clip:                The source clip.
-        :param width:               Target descaled width.
-        :param height:              Target descaled height.
+        :param width:               Target descaled width (defaults to clip width if None).
+        :param height:              Target descaled height (defaults to clip height if None).
         :param shift:               Subpixel shift (top, left) or per-field shifts.
         :param border_handling:     Method for handling image borders during sampling.
         :param sample_grid_model:   Model used to align sampling grid.
@@ -462,7 +462,7 @@ class Descaler(BaseScaler):
         :param kwargs:              Additional arguments passed to `descale_function`.
         :raises CustomIndexError:   If trying to descale to an odd height in interlaced mode.
         :raises CustomValueError:   If invalid shift is passed for progressive mode.
-        :return:                    Descaled video node.
+        :return:                    Descaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
 
@@ -930,16 +930,18 @@ class Kernel(Scaler, Descaler, Resampler):
 
 
 ScalerT = Union[str, type[Scaler], Scaler]
-"""Type alias for anything that can resolve to a Scaler.
+"""
+Type alias for anything that can resolve to a Scaler.
 
 This includes:
-- A string identifier (typically used for dynamic resolution).
+- A string identifier.
 - A class type subclassing `Scaler`.
 - An instance of a `Scaler`.
 """
 
 DescalerT = Union[str, type[Descaler], Descaler]
-"""Type alias for anything that can resolve to a Descaler.
+"""
+Type alias for anything that can resolve to a Descaler.
 
 This includes:
 - A string identifier.
@@ -948,7 +950,8 @@ This includes:
 """
 
 ResamplerT = Union[str, type[Resampler], Resampler]
-"""Type alias for anything that can resolve to a Resampler.
+"""
+Type alias for anything that can resolve to a Resampler.
 
 This includes:
 - A string identifier.
@@ -957,7 +960,8 @@ This includes:
 """
 
 KernelT = Union[str, type[Kernel], Kernel]
-"""Type alias for anything that can resolve to a Kernel.
+"""
+Type alias for anything that can resolve to a Kernel.
 
 This includes:
 - A string identifier.
