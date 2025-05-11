@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from abc import ABC, ABCMeta
 import functools
+from inspect import Signature
 from math import ceil
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Literal, NoReturn, Sequence, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Literal, NoReturn, Sequence, TypeVar, Union, cast, overload
 
-from jetpytools import T_co
+from jetpytools import P, R, T_co
 from typing_extensions import Self
 
 from vstools import (
@@ -29,6 +30,24 @@ __all__ = [
     'Resampler', 'ResamplerT',
     'Kernel', 'KernelT'
 ]
+
+
+def _add_init_kwargs(method: Callable[Concatenate[BaseScalerT, P], R]) -> Callable[Concatenate[BaseScalerT, P], R]:
+    signature = Signature.from_callable(method)
+
+    @functools.wraps(method)
+    def _wrapped(self: BaseScalerT, *args: P.args, **kwargs: P.kwargs) -> R:
+        init_kwargs = dict[str, Any]()
+
+        for k in self.kwargs.copy():
+            if k in signature.parameters:
+                init_kwargs[k] = self.kwargs.pop(k)
+
+        return method(self, *args, **init_kwargs | kwargs)
+
+    setattr(_wrapped, "__has_init_kwargs__", True)
+
+    return _wrapped
 
 
 def _base_from_param(
@@ -156,6 +175,12 @@ class BaseScalerMeta(ABCMeta):
 
         obj = super().__new__(mcls, name, bases, namespace, **kwargs)
 
+        for impl_func_name in getattr(obj, "_implemented_funcs"):
+            func = getattr(obj, impl_func_name)
+
+            if not getattr(func, "__has_init_kwargs__", False):
+                setattr(obj, impl_func_name, _add_init_kwargs(func))
+
         if abstract:
             abstract_kernels.append(obj)
         elif partial_abstract:
@@ -170,13 +195,20 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
     """
 
     kwargs: KwargsT
-    """Arguments passed to the internal scale function."""
+    """Arguments passed to the implemented funcs or internal scale function."""
 
     _static_kernel_radius: ClassVar[int]
     """Optional fixed kernel radius for the scaler."""
 
     _err_class: ClassVar[type[CustomValueError]]
     """Custom error class used for validation failures."""
+
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ()
+    """
+    Tuple of function names that are implemented.
+
+    These functions determine which keyword arguments will be extracted from the __init__ method.
+    """
 
     class cached_property(functools.cached_property[T_co]):
         """Read only version of functools.cached_property."""
@@ -196,7 +228,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         """
         Initialize the scaler with optional keyword arguments.
 
-        :param kwargs:      Parameters to pass to the internal scale function.
+        :param kwargs:      Parameters to pass to the implemented funcs or the internal scale function.
         """
         self.kwargs = kwargs
 
@@ -301,6 +333,8 @@ class Scaler(BaseScaler):
     scale_function: Callable[..., vs.VideoNode]
     """Scale function called internally when performing scaling operations."""
 
+    _implemented_funcs = tuple(["scale"])
+
     def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
@@ -397,6 +431,8 @@ class Descaler(BaseScaler):
 
     descale_function: Callable[..., ConstantFormatVideoNode]
     """Descale function called internally when performing descaling operations."""
+
+    _implemented_funcs = tuple(["descale"])
 
     def descale(
         self, clip: vs.VideoNode, width: int | None, height: int | None,
@@ -551,6 +587,8 @@ class Resampler(BaseScaler):
     resample_function: Callable[..., ConstantFormatVideoNode]
     """Resample function called internally when performing resampling operations."""
 
+    _implemented_funcs = tuple(["resample"])
+
     def resample(
         self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
         matrix: MatrixT | None = None, matrix_in: MatrixT | None = None, **kwargs: Any
@@ -611,6 +649,8 @@ class Kernel(Scaler, Descaler, Resampler):
     """
 
     _err_class = UnknownKernelError  # type: ignore[assignment]
+
+    _implemented_funcs = ("scale", "descale", "resample", "shift")
 
     @overload
     def shift(
