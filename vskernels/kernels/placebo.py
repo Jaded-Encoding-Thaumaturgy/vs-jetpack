@@ -81,13 +81,15 @@ class Placebo(ComplexScaler, abstract=True):
 
     @ComplexScaler.cached_property
     def kernel_radius(self) -> int:
-        from .bicubic import Bicubic
-
         if self.taps:
             return ceil(self.taps)
 
         if self.b or self.c:
-            return Bicubic(fallback(self.b, 0), fallback(self.c, 0.5)).kernel_radius
+            b, c = fallback(self.b, 0), fallback(self.c, 0.5)
+
+            if (b, c) == (0, 0):
+                return 1
+            return 2
 
         return 2
 
