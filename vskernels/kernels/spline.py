@@ -5,9 +5,8 @@ from typing import Any
 
 from vstools import core
 
-from .complex import CustomComplexTapsKernel
+from .complex import CustomComplexTapsKernel, ComplexKernel
 from .helpers import poly3
-from .zimg import ZimgComplexKernel
 
 __all__ = [
     'Spline',
@@ -94,25 +93,28 @@ class Spline(CustomComplexTapsKernel):
         return poly3(x, d, c, b, a)
 
 
-class Spline16(ZimgComplexKernel):
+class Spline16(ComplexKernel):
     """Spline16 resizer."""
 
     scale_function = resample_function = core.lazy.resize2.Spline16
     descale_function = core.lazy.descale.Despline16
+    rescale_function = core.lazy.descale.Spline16
     _static_kernel_radius = 2
 
 
-class Spline36(ZimgComplexKernel):
+class Spline36(ComplexKernel):
     """Spline36 resizer."""
 
     scale_function = resample_function = core.lazy.resize2.Spline36
     descale_function = core.lazy.descale.Despline36
+    rescale_function = core.lazy.descale.Spline36
     _static_kernel_radius = 3
 
 
-class Spline64(ZimgComplexKernel):
+class Spline64(ComplexKernel):
     """Spline64 resizer."""
 
     scale_function = resample_function = core.lazy.resize2.Spline64
     descale_function = core.lazy.descale.Despline64
+    rescale_function = core.lazy.descale.Spline64
     _static_kernel_radius = 4

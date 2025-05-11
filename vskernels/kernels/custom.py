@@ -64,3 +64,10 @@ class CustomKernel(Kernel):
                 )
 
             raise CustomValueError(e, self.__class__)
+
+    def rescale_function(
+        self, clip: vs.VideoNode, width: int, height: int, *args: Any, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        return core.descale.ScaleCustom(
+            clip, width, height, self.kernel, ceil(kwargs.pop('taps', self.kernel_radius)), *args, **kwargs
+        )

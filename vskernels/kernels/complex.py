@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from functools import partial
 from math import ceil
-from typing import TYPE_CHECKING, Any, SupportsFloat, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, TypeVar, Union, overload
 
-from jetpytools import CustomValueError, FuncExceptT
+from jetpytools import CustomIndexError, CustomValueError, FuncExceptT
 
 from vstools import (
-    ConstantFormatVideoNode, Dar, FieldBased, KwargsT, Resolution, Sar, VideoNodeT, check_correct_subsampling, fallback, vs
+    ConstantFormatVideoNode, Dar, FieldBased, FieldBasedT, KwargsT, Resolution, Sar, VideoNodeT, check_correct_subsampling, depth, expect_bits, fallback, vs
 )
 
-from ..types import BorderHandling, Center, LeftShift, SampleGridModel, ShiftT, Slope, TopShift
+from ..types import BorderHandling, BotFieldLeftShift, BotFieldTopShift, Center, LeftShift, SampleGridModel, ShiftT, Slope, TopFieldLeftShift, TopFieldTopShift, TopShift
 from .abstract import BaseScaler, Descaler, Kernel, Resampler, Scaler
 from .custom import CustomKernel
 
@@ -152,7 +152,7 @@ class LinearDescaler(_BaseLinear, Descaler):
     """
     if TYPE_CHECKING:
         def _linear_descale(
-            self, clip: vs.VideoNode, width: int | None, height: int | None, shift: ShiftT, **kwargs: Any
+            self, clip: vs.VideoNode, width: int | None, height: int | None, shift: tuple[TopShift, LeftShift], **kwargs: Any
         ) -> ConstantFormatVideoNode:
             """
             An optional function to be implemented by subclasses.
@@ -164,12 +164,8 @@ class LinearDescaler(_BaseLinear, Descaler):
 
     def descale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-        shift: ShiftT = (0, 0),
+        shift: tuple[TopShift, LeftShift] = (0, 0),
         *,
-        # `border_handling`, `sample_grid_model` and `field_based` from Descaler
-        border_handling: BorderHandling = BorderHandling.MIRROR,
-        sample_grid_model: SampleGridModel = SampleGridModel.MATCH_EDGES,
-        field_based: FieldBased | None = None,
         # LinearDescaler adds `linear` and `sigmoid` parameters
         linear: bool | None = None, sigmoid: bool | tuple[Slope, Center] = False, **kwargs: Any
     ) -> ConstantFormatVideoNode:
@@ -183,10 +179,7 @@ class LinearDescaler(_BaseLinear, Descaler):
         :param clip:                The source clip.
         :param width:               Target descaled width (defaults to clip width if None).
         :param height:              Target descaled height (defaults to clip height if None).
-        :param shift:               Subpixel shift (top, left) or per-field shifts.
-        :param border_handling:     Method for handling image borders during sampling.
-        :param sample_grid_model:   Model used to align sampling grid.
-        :param field_based:         Field-based processing mode (interlaced or progressive).
+        :param shift:               Subpixel shift (top, left) applied during descaling.
         :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
         :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
                                     `True` applies the defaults values (6.5, 0.75).
@@ -314,7 +307,7 @@ class KeepArScaler(Scaler):
 
 class ComplexScaler(KeepArScaler, LinearScaler):
     """
-    An abstract composite scaler class that supports both aspect ratio preservation and linear light processing.
+    Abstract composite scaler class that supports both aspect ratio preservation and linear light processing.
 
     This class combines the capabilities of `KeepArScaler` (for handling display/sample aspect ratio)
     and `LinearScaler` (for linear and sigmoid processing).
@@ -325,13 +318,15 @@ class ComplexScaler(KeepArScaler, LinearScaler):
             self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
             shift: tuple[TopShift, LeftShift] = (0, 0),
             *,
+            # `linear` and `sigmoid` from LinearScaler
+            linear: bool | None = False, sigmoid: bool | tuple[Slope, Center] = False,
             # `border_handling`, `sample_grid_model`, `sar`, `dar`, `dar_in` and `keep_ar` from KeepArScaler
             border_handling: BorderHandling = BorderHandling.MIRROR,
             sample_grid_model: SampleGridModel = SampleGridModel.MATCH_EDGES,
             sar: Sar | float | bool | None = None, dar: Dar | float | bool | None = None,
             dar_in: Dar | bool | float | None = None, keep_ar: bool | None = None,
-            # `linear` and `sigmoid` from LinearScaler
-            linear: bool | None = False, sigmoid: bool | tuple[Slope, Center] = False,
+            # ComplexScaler adds blur
+            blur: float | None = None,
             **kwargs: Any
         ) -> vs.VideoNode | ConstantFormatVideoNode:
             """
@@ -341,76 +336,251 @@ class ComplexScaler(KeepArScaler, LinearScaler):
             :param width:               Target width (defaults to clip width if None).
             :param height:              Target height (defaults to clip height if None).
             :param shift:               Subpixel shift (top, left) applied during scaling.
+            :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
+            :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+                                        `True` applies the defaults values (6.5, 0.75).
+                                        Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
+                                        and sigmoid center has to be in range 0.0-1.0 (inclusive).
             :param border_handling:     Method for handling image borders during sampling.
             :param sample_grid_model:   Model used to align sampling grid.
             :param sar:                 Sample aspect ratio to assume or convert to.
             :param dar:                 Desired display aspect ratio.
             :param dar_in:              Input display aspect ratio, if different from clip’s.
             :param keep_ar:             Whether to adjust dimensions to preserve aspect ratio.
-            :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-            :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
-                                        `True` applies the defaults values (6.5, 0.75).
-                                        Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
-                                        and sigmoid center has to be in range 0.0-1.0 (inclusive).
+            :param blur:                Amount of blur to apply during scaling.
             :return:                    Scaled clip, optionally aspect-corrected and linearized.
             """
             ...
 
 
-class ComplexKernel(Kernel, LinearDescaler, ComplexScaler):
+class ComplexDescaler(LinearDescaler):
     """
-    A comprehensive abctract kernel class combining scaling, descaling,
+    Abstract descaler class with support for border handling and sampling grid alignment.
+
+    Extends `LinearDescaler` by introducing mechanisms to control how image borders
+    are handled and how the sampling grid is aligned during descaling.
+    """
+
+    def descale(
+        self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
+        shift: ShiftT = (0, 0),
+        *,
+        # `linear` and `sigmoid` parameters from LinearDescaler
+        linear: bool | None = None, sigmoid: bool | tuple[Slope, Center] = False,
+        # ComplexDescaler adds border_handling, sample_grid_model, field_based,  ignore_mask and blur
+        border_handling: int | BorderHandling = BorderHandling.MIRROR,
+        sample_grid_model: int | SampleGridModel = SampleGridModel.MATCH_EDGES,
+        field_based: FieldBasedT | None = None,
+        ignore_mask: vs.VideoNode | None = None,
+        blur: float | None = None,
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        """
+        Descale a clip to the given resolution, with image borders handling and sampling grid alignment,
+        optionally using linear light processing.
+
+        Supports both progressive and interlaced sources. When interlaced, it will separate fields,
+        perform per-field descaling, and weave them back.
+
+        :param clip:                The source clip.
+        :param width:               Target descaled width (defaults to clip width if None).
+        :param height:              Target descaled height (defaults to clip height if None).
+        :param shift:               Subpixel shift (top, left) or per-field shifts.
+        :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
+        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+                                    `True` applies the defaults values (6.5, 0.75).
+                                    Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
+                                    and sigmoid center has to be in range 0.0-1.0 (inclusive).
+        :param border_handling:     Method for handling image borders during sampling.
+        :param sample_grid_model:   Model used to align sampling grid.
+        :param field_based:         Field-based processing mode (interlaced or progressive).
+        :param ignore_mask:         Optional mask specifying areas to ignore during descaling.
+        :param blur:                Amount of blur to apply during scaling.
+        :param kwargs:              Additional arguments passed to `descale_function`.
+        :return:                    The descaled video node, optionally processed in linear light.
+        """
+        width, height = self._wh_norm(clip, width, height)
+        check_correct_subsampling(clip, width, height)
+
+        field_based = FieldBased.from_param_or_video(field_based, clip)
+
+        clip, bits = expect_bits(clip, 32)
+
+        de_base_args = (width, height // (1 + field_based.is_inter))
+        kwargs.update(
+            border_handling=BorderHandling.from_param(border_handling, self.descale),
+            ignore_mask=ignore_mask,
+            blur=blur
+        )
+
+        sample_grid_model = SampleGridModel(sample_grid_model)
+
+        if field_based.is_inter:
+            shift_y, shift_x = self._shift_norm(shift, False, self.descale)
+
+            kwargs_tf, shift = sample_grid_model.for_src(clip, width, height, (shift_y[0], shift_x[0]), **kwargs)
+            kwargs_bf, shift = sample_grid_model.for_src(clip, width, height, (shift_y[1], shift_x[1]), **kwargs)
+
+            de_kwargs_tf = self.get_descale_args(clip, (shift_y[0], shift_x[0]), *de_base_args, **kwargs_tf)
+            de_kwargs_bf = self.get_descale_args(clip, (shift_y[1], shift_x[1]), *de_base_args, **kwargs_bf)
+
+            if height % 2:
+                raise CustomIndexError('You can\'t descale to odd resolution when crossconverted!', self.descale)
+
+            field_shift = 0.125 * height / clip.height
+
+            fields = clip.std.SeparateFields(field_based.is_tff)
+
+            interleaved = vs.core.std.Interleave([
+                super().descale(
+                    fields[offset::2],
+                    **de_kwargs | dict(src_top=de_kwargs.get('src_top', 0.0) + (field_shift * mult)),
+                    linear=linear,
+                    sigmoid=sigmoid
+                )
+                for offset, mult, de_kwargs in [(0, 1, de_kwargs_tf), (1, -1, de_kwargs_bf)]
+            ])
+
+            descaled = interleaved.std.DoubleWeave(field_based.is_tff)[::2]
+        else:
+            shift = self._shift_norm(shift, True, self.descale)
+
+            kwargs, shift = sample_grid_model.for_src(clip, width, height, shift, **kwargs)
+
+            descaled = super().descale(
+                clip, **self.get_descale_args(clip, shift, *de_base_args, **kwargs), linear=linear, sigmoid=sigmoid
+            )
+
+        return depth(descaled, bits)
+
+    def rescale(
+        self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
+        shift: ShiftT = (0, 0),
+        *,
+        # `linear` and `sigmoid` parameters from LinearDescaler
+        linear: bool | None = None, sigmoid: bool | tuple[Slope, Center] = False,
+        # ComplexDescaler adds border_handling, sample_grid_model, field_based,  ignore_mask and blur
+        border_handling: int | BorderHandling = BorderHandling.MIRROR,
+        sample_grid_model: int | SampleGridModel = SampleGridModel.MATCH_EDGES,
+        field_based: FieldBasedT | None = None,
+        ignore_mask: vs.VideoNode | None = None,
+        blur: float | None = None,
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        """
+        Rescale a clip to the given resolution from a previously descaled clip.
+
+        :param clip:                The source clip.
+        :param width:               Target scaled width (defaults to clip width if None).
+        :param height:              Target scaled height (defaults to clip height if None).
+        :param shift:               Subpixel shift (top, left) or per-field shifts.
+        :param linear:              Whether to linearize the input before rescaling. If None, inferred from sigmoid.
+        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+                                    `True` applies the defaults values (6.5, 0.75).
+                                    Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
+                                    and sigmoid center has to be in range 0.0-1.0 (inclusive).
+        :param border_handling:     Method for handling image borders during sampling.
+        :param sample_grid_model:   Model used to align sampling grid.
+        :param field_based:         Field-based processing mode (interlaced or progressive).
+        :param ignore_mask:         Optional mask specifying areas to ignore during rescaling.
+        :param blur:                Amount of blur to apply during rescaling.
+        :param kwargs:              Additional arguments passed to `rescale_function`.
+        :return: Scaled clip.
+        """
+        width, height = self._wh_norm(clip, width, height)
+        check_correct_subsampling(clip, width, height)
+
+        field_based = FieldBased.from_param_or_video(field_based, clip)
+
+        clip, bits = expect_bits(clip, 32)
+
+        de_base_args = (width, height // (1 + field_based.is_inter))
+        kwargs.update(
+            border_handling=BorderHandling.from_param(border_handling, self.descale),
+            ignore_mask=ignore_mask,
+            blur=blur
+        )
+
+        sample_grid_model = SampleGridModel(sample_grid_model)
+
+        if field_based.is_inter:
+            raise NotImplementedError
+        else:
+            shift = self._shift_norm(shift, True, self.descale)
+
+            kwargs, shift = sample_grid_model.for_src(clip, width, height, shift, **kwargs)
+
+            descaled = super().descale(
+                clip, **self.get_descale_args(clip, shift, *de_base_args, **kwargs), linear=linear, sigmoid=sigmoid
+            )
+
+        return depth(descaled, bits)
+
+    @overload
+    def _shift_norm(
+        self,
+        shift: ShiftT,
+        assume_progressive: Literal[True] = ...,
+        func: FuncExceptT | None = None
+        ) -> tuple[TopShift, LeftShift]:
+        ...
+
+    @overload
+    def _shift_norm(
+        self,
+        shift: ShiftT,
+        assume_progressive: Literal[False] = ...,
+        func: FuncExceptT | None = None
+        ) -> tuple[
+            tuple[TopFieldTopShift, BotFieldTopShift],
+            tuple[TopFieldLeftShift, BotFieldLeftShift]
+        ]:
+        ...
+
+    def _shift_norm(
+        self,
+        shift: ShiftT,
+        assume_progressive: bool = True,
+        func: FuncExceptT | None = None
+        ) -> Any:
+        """
+        Normalize shift values depending on field-based status.
+
+        :param shift:               Shift values (single or per-field).
+        :param assume_progressive:  Whether to assume the input is progressive.
+        :param func:                Function returned for custom error handling.
+        :raises CustomValueError:   If per-field shift is used in progressive mode.
+        :return:                    Normalized shift values.
+        """
+        if assume_progressive:
+            if any(isinstance(sh, tuple) for sh in shift):
+                raise CustomValueError("You can't descale per-field when the input is progressive!", func, shift)
+        else:
+            shift_y, shift_x = tuple[tuple[float, float], ...](
+                sh if isinstance(sh, tuple) else (sh, sh) for sh in shift
+            )
+            shift = shift_y, shift_x
+
+        return shift
+
+
+class ComplexKernel(Kernel, ComplexDescaler, ComplexScaler):
+    """
+    Comprehensive abstract kernel class combining scaling, descaling,
     and resampling with linear light and aspect ratio support.
 
-    This class merges the full capabilities of `Kernel`, `LinearDescaler`, and `ComplexScaler`.
+    This class merges the full capabilities of `Kernel`, `ComplexDescaler`, and `ComplexScaler`.
     """
 
 
 class CustomComplexKernel(CustomKernel, ComplexKernel):
     """
-    An abstract kernel class that combines custom kernel behavior with advanced scaling and descaling capabilities.
+    Abstract kernel class that combines custom kernel behavior with advanced scaling and descaling capabilities.
 
     This class extends both `CustomKernel` and `ComplexKernel`, enabling the definition
     of custom mathematical kernels with the advanced rescaling logic provided by
     linear and aspect-ratio-aware components.
     """
-
-    if TYPE_CHECKING:
-        def descale(
-            self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-            shift: ShiftT = (0, 0),
-            *,
-            # `border_handling`, `sample_grid_model` and `field_based` from Descaler
-            border_handling: BorderHandling = BorderHandling.MIRROR,
-            sample_grid_model: SampleGridModel = SampleGridModel.MATCH_EDGES,
-            field_based: FieldBased | None = None,
-            # `linear` and `sigmoid` parameters from LinearDescaler
-            linear: bool | None = None, sigmoid: bool | tuple[Slope, Center] = False,
-            # `blur` and `ignore_mask` from CustomKernel
-            blur: float = 1.0, ignore_mask: vs.VideoNode | None = None,
-            **kwargs: Any
-        ) -> ConstantFormatVideoNode:
-            """
-            Descale a clip using a customizable and complex kernel pipeline.
-
-            :param clip:                The source clip.
-            :param width:               Target descaled width (defaults to clip width if None).
-            :param height:              Target descaled height (defaults to clip height if None).
-            :param shift:               Subpixel shift (top, left) or per-field shifts.
-            :param border_handling:     Method for handling image borders during sampling.
-            :param sample_grid_model:   Model used to align sampling grid.
-            :param field_based:         Field-based processing mode (interlaced or progressive).
-            :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-            :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
-                                        `True` applies the defaults values (6.5, 0.75).
-                                        Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
-                                        and sigmoid center has to be in range 0.0-1.0 (inclusive).
-            :param blur:                Amount of blur to apply during descaling.
-            :param ignore_mask:         Optional mask specifying areas to ignore during descaling.
-            :param kwargs:              Additional parameters passed to the underlying descaler.
-            :return:                    The descaled clip.
-            """
-            ...
 
 
 class CustomComplexTapsKernel(CustomComplexKernel):
@@ -449,6 +619,16 @@ This includes:
 - A string identifier.
 - A class type subclassing `ComplexScaler`.
 - An instance of a `ComplexScaler`.
+"""
+
+ComplexDescalerT = Union[str, type[ComplexDescaler], ComplexDescaler]
+"""
+Type alias for anything that can resolve to a ComplexDescaler.
+
+This includes:
+- A string identifier.
+- A class type subclassing `ComplexDescaler`.
+- An instance of a `ComplexDescaler`.
 """
 
 ComplexKernelT = Union[str, type[ComplexKernel], ComplexKernel]
