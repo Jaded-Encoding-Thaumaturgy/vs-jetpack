@@ -238,9 +238,7 @@ class BicubicAuto(Bicubic):
         if None not in {b, c}:
             raise CustomValueError("You can't specify both b and c!", self.__class__)
 
-        self.b, self.c = self._get_bc_args(b, c)
-
-        super().__init__(**kwargs)
+        super().__init__(*self._get_bc_args(b, c), **kwargs)
 
     def _get_bc_args(self, b: float | None, c: float | None) -> tuple[float, float]:
         autob = 0.0 if b is None else b
