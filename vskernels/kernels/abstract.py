@@ -18,7 +18,9 @@ from vstools import (
 )
 from vstools.enums.color import _norm_props_enums
 
-from ..exceptions import UnknownDescalerError, UnknownKernelError, UnknownResamplerError, UnknownScalerError
+from ..exceptions import (
+    UnknownDescalerError, UnknownKernelError, UnknownResamplerError, UnknownScalerError, _UnknownBaseScalerError
+)
 from ..types import (
     BorderHandling, BotFieldLeftShift, BotFieldTopShift, LeftShift, SampleGridModel, ShiftT, TopFieldLeftShift,
     TopFieldTopShift, TopShift
@@ -94,7 +96,7 @@ def _base_ensure_obj(
 
     if new_scaler.__class__ in excluded:
         raise exception_cls(
-            func_except or cls.ensure_obj, new_scaler.__class__,
+            func_except or cls.ensure_obj, new_scaler.__class__.__name__,
             'This {cls_name} can\'t be instantiated to be used!',
             cls_name=new_scaler.__class__
         )
@@ -200,7 +202,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
     _static_kernel_radius: ClassVar[int]
     """Optional fixed kernel radius for the scaler."""
 
-    _err_class: ClassVar[type[CustomValueError]]
+    _err_class: ClassVar[type[_UnknownBaseScalerError]]
     """Custom error class used for validation failures."""
 
     _implemented_funcs: ClassVar[tuple[str, ...]] = ()
@@ -331,7 +333,7 @@ class Scaler(BaseScaler):
     Subclasses should define a `scale_function` to perform the actual scaling logic.
     """
 
-    _err_class = UnknownScalerError
+    _err_class: ClassVar[type[_UnknownBaseScalerError]] = UnknownScalerError
 
     scale_function: Callable[..., vs.VideoNode]
     """Scale function called internally when performing scaling operations."""
@@ -430,7 +432,7 @@ class Descaler(BaseScaler):
     Subclasses must define the `descale_function` used to perform the descaling.
     """
 
-    _err_class = UnknownDescalerError
+    _err_class: ClassVar[type[_UnknownBaseScalerError]] = UnknownDescalerError
 
     descale_function: Callable[..., ConstantFormatVideoNode]
     """Descale function called internally when performing descaling operations."""
@@ -585,7 +587,7 @@ class Resampler(BaseScaler):
     Subclasses must define the `resample_function` used to perform the resampling.
     """
 
-    _err_class = UnknownResamplerError
+    _err_class: ClassVar[type[_UnknownBaseScalerError]] = UnknownResamplerError
 
     resample_function: Callable[..., ConstantFormatVideoNode]
     """Resample function called internally when performing resampling operations."""
@@ -651,7 +653,7 @@ class Kernel(Scaler, Descaler, Resampler):
     This class is abstract and should not be used directly.
     """
 
-    _err_class = UnknownKernelError  # type: ignore[assignment]
+    _err_class: ClassVar[type[_UnknownBaseScalerError]] = UnknownKernelError
 
     _implemented_funcs = ("scale", "descale", "resample", "shift")
 
@@ -792,7 +794,7 @@ class Kernel(Scaler, Descaler, Resampler):
         :raises UnknownKernelError: If the kernel could not be identified.
         """
         return _base_from_param(
-            cls, Kernel, kernel, UnknownKernelError, abstract_kernels, func_except
+            cls, Kernel, kernel, cls._err_class, abstract_kernels, func_except
         )
 
     @overload
@@ -838,7 +840,7 @@ class Kernel(Scaler, Descaler, Resampler):
         :raises UnknownKernelError: If the kernel is unknown or cannot be instantiated.
         """
         return _base_ensure_obj(
-            cls, Kernel, kernel, UnknownKernelError, abstract_kernels, func_except
+            cls, Kernel, kernel, cls._err_class, abstract_kernels, func_except
         )
 
     def get_params_args(
