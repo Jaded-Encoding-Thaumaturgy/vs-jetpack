@@ -138,4 +138,11 @@ The first value in the tuple represents vertical shift, and the second represent
 """
 
 Slope: TypeAlias = float
+"""
+Type alias for the slope of the sigmoid curve, controlling the steepness of the transition.
+"""
+
 Center: TypeAlias = float
+"""
+Type alias for the center point of the sigmoid curve, determining the midpoint of the transition.
+"""
