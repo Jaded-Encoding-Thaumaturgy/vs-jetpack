@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from math import ceil
 from typing import Any
 
-from jetpytools import CustomNotImplementedError, CustomValueError
+from jetpytools import CustomValueError
 
 from vstools import ConstantFormatVideoNode, core, vs
 
@@ -16,7 +17,7 @@ __all__ = [
 
 class CustomKernel(Kernel):
     """
-    An abstract base class for defining custom kernel-based scaling and descaling operations.
+    Abstract base class for defining custom kernel-based scaling and descaling operations.
 
     This class allows users to implement their own kernel function by overriding the
     `kernel()` method. It provides flexible support for parameters like `blur` and `taps`,
@@ -25,6 +26,7 @@ class CustomKernel(Kernel):
     Subclasses must implement the `kernel()` method to specify the mathematical shape of the kernel.
     """
 
+    @abstractmethod
     def kernel(self, *, x: float) -> float:
         """
         Define the kernel function at a given position.
@@ -33,9 +35,7 @@ class CustomKernel(Kernel):
 
         :param x:                           The input position.
         :return:                            The evaluated kernel value at position `x`.
-        :raises CustomNotImplementedError:  If not overridden by subclass.
         """
-        raise CustomNotImplementedError
 
     def scale_function(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None, *args: Any, **kwargs: Any
