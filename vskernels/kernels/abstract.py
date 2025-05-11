@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-from abc import ABC, ABCMeta
 import functools
+
+from abc import ABC, ABCMeta
 from inspect import Signature
 from math import ceil
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Literal, NoReturn, Sequence, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Literal, NoReturn, Sequence, TypeVar, Union, cast, overload
+)
 
 from jetpytools import P, R, T_co
 from typing_extensions import Self
 
 from vstools import (
     ConstantFormatVideoNode, CustomIndexError, CustomNotImplementedError, CustomRuntimeError, CustomValueError,
-    FieldBased, FuncExceptT, HoldsVideoFormatT, KwargsT, Matrix, MatrixT, VideoFormatT, VideoNodeT, check_correct_subsampling,
+    FieldBased, FuncExceptT, HoldsVideoFormatT, Matrix, MatrixT, VideoFormatT, VideoNodeT, check_correct_subsampling,
     check_variable_format, check_variable_resolution, core, depth, expect_bits, fallback, get_subclasses,
     get_video_format, normalize_seq, split, vs, vs_object
 )
@@ -34,11 +37,11 @@ __all__ = [
 ]
 
 
-def _add_init_kwargs(method: Callable[Concatenate[BaseScalerT, P], R]) -> Callable[Concatenate[BaseScalerT, P], R]:
+def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Callable[Concatenate[_BaseScalerT, P], R]:
     signature = Signature.from_callable(method)
 
     @functools.wraps(method)
-    def _wrapped(self: BaseScalerT, *args: P.args, **kwargs: P.kwargs) -> R:
+    def _wrapped(self: _BaseScalerT, *args: P.args, **kwargs: P.kwargs) -> R:
         init_kwargs = dict[str, Any]()
 
         for k in self.kwargs.copy():
@@ -53,20 +56,20 @@ def _add_init_kwargs(method: Callable[Concatenate[BaseScalerT, P], R]) -> Callab
 
 
 def _base_from_param(
-    cls: type[BaseScalerT],
-    basecls: type[BaseScalerT],
-    value: str | type[BaseScalerT] | BaseScalerT | None,
-    exception_cls: type[CustomValueError],
+    cls: type[_BaseScalerT],
+    basecls: type[_BaseScalerT],
+    value: str | type[_BaseScalerT] | _BaseScalerT | None,
+    exception_cls: type[_UnknownBaseScalerError],
     excluded: Sequence[type] = [],
     func_except: FuncExceptT | None = None
-) -> type[BaseScalerT]:
+) -> type[_BaseScalerT]:
     if isinstance(value, str):
         all_scalers = get_subclasses(BaseScaler, excluded)
         search_str = value.lower().strip()
 
         for scaler_cls in all_scalers:
             if scaler_cls.__name__.lower() == search_str:
-                return cast(type[BaseScalerT], scaler_cls)
+                return cast(type[_BaseScalerT], scaler_cls)
 
         raise exception_cls(func_except or cls.from_param, value)
 
@@ -80,13 +83,13 @@ def _base_from_param(
 
 
 def _base_ensure_obj(
-    cls: type[BaseScalerT],
-    basecls: type[BaseScalerT],
-    value: str | type[BaseScalerT] | BaseScalerT | None,
-    exception_cls: type[CustomValueError],
+    cls: type[_BaseScalerT],
+    basecls: type[_BaseScalerT],
+    value: str | type[_BaseScalerT] | _BaseScalerT | None,
+    exception_cls: type[_UnknownBaseScalerError],
     excluded: Sequence[type] = [],
     func_except: FuncExceptT | None = None
-) -> BaseScalerT:
+) -> _BaseScalerT:
     if value is None:
         new_scaler = cls()
     elif isinstance(value, cls) or isinstance(value, basecls):
@@ -140,9 +143,6 @@ These may implement some but not all kernel functionality.
 """
 
 
-_BaseScalerMetaT = TypeVar("_BaseScalerMetaT", bound="BaseScalerMeta")
-
-
 class BaseScalerMeta(ABCMeta):
     """
     Metaclass for scaler classes.
@@ -169,6 +169,8 @@ class BaseScalerMeta(ABCMeta):
         **kwargs: Any
     ) -> _BaseScalerMetaT:
         """
+        Makes a new BaseScalerMeta type class.
+
         :param abstract:            If True, the class is treated as fully abstract
                                     and added to the ``abstract_kernels`` list.
         :param partial_abstract:    If True, the class is considered partially abstract
@@ -177,6 +179,7 @@ class BaseScalerMeta(ABCMeta):
 
         obj = super().__new__(mcls, name, bases, namespace, **kwargs)
 
+        # Decorate the `_implemented_funcs` with `_add_init_kwargs` to add the init kwargs to the funcs.
         for impl_func_name in getattr(obj, "_implemented_funcs"):
             func = getattr(obj, impl_func_name)
 
@@ -191,12 +194,15 @@ class BaseScalerMeta(ABCMeta):
         return obj
 
 
+_BaseScalerMetaT = TypeVar("_BaseScalerMetaT", bound=BaseScalerMeta)
+
+
 class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
     """
     Base abstract scaling interface for VapourSynth scalers.
     """
 
-    kwargs: KwargsT
+    kwargs: dict[str, Any]
     """Arguments passed to the implemented funcs or internal scale function."""
 
     _static_kernel_radius: ClassVar[int]
@@ -256,9 +262,9 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
 
     @classmethod
     def from_param(
-        cls: type[BaseScalerT], scaler: str | type[BaseScalerT] | BaseScalerT | None = None, /,
+        cls: type[_BaseScalerT], scaler: str | type[_BaseScalerT] | _BaseScalerT | None = None, /,
         func_except: FuncExceptT | None = None
-    ) -> type[BaseScalerT]:
+    ) -> type[_BaseScalerT]:
         """
         Resolve and return a scaler type from a given input (string, type, or instance).
 
@@ -272,9 +278,9 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
 
     @classmethod
     def ensure_obj(
-        cls: type[BaseScalerT], scaler: str | type[BaseScalerT] | BaseScalerT | None = None, /,
+        cls: type[_BaseScalerT], scaler: str | type[_BaseScalerT] | _BaseScalerT | None = None, /,
         func_except: FuncExceptT | None = None
-    ) -> BaseScalerT:
+    ) -> _BaseScalerT:
         """
         Ensure that the input is a scaler instance, resolving it if necessary.
 
@@ -323,7 +329,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         self.kwargs.clear()
 
 
-BaseScalerT = TypeVar('BaseScalerT', bound=BaseScaler)
+_BaseScalerT = TypeVar('_BaseScalerT', bound=BaseScaler)
 
 
 class Scaler(BaseScaler):
@@ -338,7 +344,7 @@ class Scaler(BaseScaler):
     scale_function: Callable[..., vs.VideoNode]
     """Scale function called internally when performing scaling operations."""
 
-    _implemented_funcs = tuple(["scale"])
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ("scale", )
 
     def scale(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
@@ -408,7 +414,7 @@ class Scaler(BaseScaler):
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
         **kwargs: Any
-    ) -> KwargsT:
+    ) -> dict[str, Any]:
         """
         Generate the keyword arguments used for scaling.
 
@@ -437,7 +443,7 @@ class Descaler(BaseScaler):
     descale_function: Callable[..., ConstantFormatVideoNode]
     """Descale function called internally when performing descaling operations."""
 
-    _implemented_funcs = tuple(["descale"])
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ("descale", )
 
     def descale(
         self, clip: vs.VideoNode, width: int | None, height: int | None,
@@ -563,7 +569,7 @@ class Descaler(BaseScaler):
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
         **kwargs: Any
-    ) -> KwargsT:
+    ) -> dict[str, Any]:
         """
         Construct the argument dictionary used for descaling.
 
@@ -592,7 +598,7 @@ class Resampler(BaseScaler):
     resample_function: Callable[..., ConstantFormatVideoNode]
     """Resample function called internally when performing resampling operations."""
 
-    _implemented_funcs = tuple(["resample"])
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ("resample", )
 
     def resample(
         self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
@@ -619,7 +625,7 @@ class Resampler(BaseScaler):
         self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
         matrix: MatrixT | None, matrix_in: MatrixT | None,
         **kwargs: Any
-    ) -> KwargsT:
+    ) -> dict[str, Any]:
         """
         Construct the argument dictionary used for resampling.
 
@@ -845,7 +851,7 @@ class Kernel(Scaler, Descaler, Resampler):
 
     def get_params_args(
         self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any
-    ) -> KwargsT:
+    ) -> dict[str, Any]:
         """
         Generate a base set of parameters to pass for scaling, descaling, or resampling.
 
@@ -863,7 +869,7 @@ class Kernel(Scaler, Descaler, Resampler):
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
         **kwargs: Any
-    ) -> KwargsT:
+    ) -> dict[str, Any]:
         """
         Generate and normalize argument dictionary for a scale operation.
 
@@ -884,7 +890,7 @@ class Kernel(Scaler, Descaler, Resampler):
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
         **kwargs: Any
-    ) -> KwargsT:
+    ) -> dict[str, Any]:
         """
         Generate and normalize argument dictionary for a descale operation.
 
@@ -905,7 +911,7 @@ class Kernel(Scaler, Descaler, Resampler):
         self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
         matrix: MatrixT | None, matrix_in: MatrixT | None,
         **kwargs: Any
-    ) -> KwargsT:
+    ) -> dict[str, Any]:
         """
         Generate and normalize argument dictionary for a resample operation.
 
