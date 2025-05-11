@@ -1,21 +1,17 @@
 from __future__ import annotations
-from jetpytools import CustomNotImplementedError, CustomValueError, KwargsT
-from inspect import Signature
+
 from math import ceil
+from typing import Any
 
-from vstools import ConstantFormatVideoNode, vs, core
-from typing import Any, Protocol
+from jetpytools import CustomNotImplementedError, CustomValueError
+
+from vstools import ConstantFormatVideoNode, core, vs
+
 from .abstract import Kernel
-
 
 __all__ = [
     'CustomKernel'
 ]
-
-
-class _kernel_func(Protocol):
-    def __call__(self, *, x: float) -> float:
-        ...
 
 
 class CustomKernel(Kernel):
@@ -41,46 +37,12 @@ class CustomKernel(Kernel):
         """
         raise CustomNotImplementedError
 
-    def _modify_kernel_func(self, kwargs: KwargsT) -> tuple[_kernel_func, float]:
-        """
-        Modify the kernel function using blur and tap parameters.
-
-        Dynamically scales the kernel based on the blur factor.
-        Calculates support based on the scaled number of taps.
-
-        :param kwargs:  Dictionary of keyword arguments that may include 'blur' and 'taps'.
-        :return:        A tuple of the kernel function and its support radius.
-        """
-        blur = float(kwargs.pop('blur', 1.0))
-        taps = int(kwargs.pop('taps', self.kernel_radius))
-        support = taps * blur
-
-        if blur != 1.0:
-            def kernel(*, x: float) -> float:
-                return self.kernel(x=x / blur)
-
-            return kernel, support
-
-        return self.kernel, support
-
     def scale_function(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None, *args: Any, **kwargs: Any
     ) -> vs.VideoNode:
-
-        if not hasattr(core, 'resize2'):
-            raise DependencyNotFoundError(
-                self.__class__, 'resize2', 'Missing dependency \'resize2\'! '
-                'You can find it here: https://github.com/Jaded-Encoding-Thaumaturgy/vapoursynth-resize2'
-            )
-
-        kernel, support = self._modify_kernel_func(kwargs)
-
-        clean_kwargs = {
-            k: v for k, v in kwargs.items()
-            if k not in Signature.from_callable(self._modify_kernel_func).parameters.keys()
-        }
-
-        return core.resize2.Custom(clip, kernel, ceil(support), width, height, *args, **clean_kwargs)
+        return core.resize2.Custom(
+            clip, self.kernel, ceil(kwargs.pop('taps', self.kernel_radius)), width, height, *args, **kwargs
+        )
 
     def resample_function(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None, *args: Any, **kwargs: Any
@@ -90,15 +52,10 @@ class CustomKernel(Kernel):
     def descale_function(
         self, clip: vs.VideoNode, width: int, height: int, *args: Any, **kwargs: Any
     ) -> ConstantFormatVideoNode:
-        kernel, support = self._modify_kernel_func(kwargs)
-
-        clean_kwargs = {
-            k: v for k, v in kwargs.items()
-            if k not in Signature.from_callable(self._modify_kernel_func).parameters.keys()
-        }
-
         try:
-            return core.descale.Decustom(clip, width, height, kernel, ceil(support), *args, **clean_kwargs)
+            return core.descale.Decustom(
+                clip, width, height, self.kernel, ceil(kwargs.pop('taps', self.kernel_radius)), *args, **kwargs
+            )
         except vs.Error as e:
             if 'Output dimension must be' in str(e):
                 raise CustomValueError(
@@ -107,17 +64,3 @@ class CustomKernel(Kernel):
                 )
 
             raise CustomValueError(e, self.__class__)
-
-    def get_params_args(
-        self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any
-    ) -> dict[str, Any]:
-        args = super().get_params_args(is_descale, clip, width, height, **kwargs)
-
-        if not is_descale:
-            for key in ('border_handling', 'ignore_mask'):
-                args.pop(key, None)
-
-        return args
-
-
-CustomKernelT = TypeVar('CustomKernelT', bound=CustomKernel)
