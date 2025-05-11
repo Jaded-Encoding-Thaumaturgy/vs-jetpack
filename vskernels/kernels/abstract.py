@@ -7,27 +7,23 @@ from inspect import Signature
 from math import ceil
 from types import NoneType
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Literal, NoReturn, Sequence, TypeVar, Union, cast, overload
+    TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, NoReturn, Sequence, TypeVar, Union, cast, overload
 )
 
 from jetpytools import P, R, T_co
 from typing_extensions import Self
 
 from vstools import (
-    ConstantFormatVideoNode, CustomIndexError, CustomNotImplementedError, CustomRuntimeError, CustomValueError,
-    FieldBased, FuncExceptT, HoldsVideoFormatT, Matrix, MatrixT, VideoFormatT, VideoNodeT, check_correct_subsampling,
-    check_variable_format, check_variable_resolution, core, depth, expect_bits, fallback, get_subclasses,
-    get_video_format, normalize_seq, split, vs, vs_object
+    ConstantFormatVideoNode, CustomNotImplementedError, CustomRuntimeError, CustomValueError, FuncExceptT,
+    HoldsVideoFormatT, Matrix, MatrixT, VideoFormatT, VideoNodeT, check_correct_subsampling, check_variable_format,
+    check_variable_resolution, core, fallback, get_subclasses, get_video_format, normalize_seq, split, vs, vs_object
 )
 from vstools.enums.color import _norm_props_enums
 
 from ..exceptions import (
     UnknownDescalerError, UnknownKernelError, UnknownResamplerError, UnknownScalerError, _UnknownBaseScalerError
 )
-from ..types import (
-    BorderHandling, BotFieldLeftShift, BotFieldTopShift, LeftShift, SampleGridModel, ShiftT, TopFieldLeftShift,
-    TopFieldTopShift, TopShift
-)
+from ..types import LeftShift, TopShift
 
 __all__ = [
     'Scaler', 'ScalerT',
@@ -443,127 +439,52 @@ class Descaler(BaseScaler):
     descale_function: Callable[..., ConstantFormatVideoNode]
     """Descale function called internally when performing descaling operations."""
 
-    _implemented_funcs: ClassVar[tuple[str, ...]] = ("descale", )
+    rescale_function: Callable[..., ConstantFormatVideoNode]
+    """Rescale function called internally when performing upscaling operations."""
+
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ("descale", "rescale")
 
     def descale(
         self, clip: vs.VideoNode, width: int | None, height: int | None,
-        shift: ShiftT = (0, 0),
-        *,
-        border_handling: BorderHandling = BorderHandling.MIRROR,
-        sample_grid_model: SampleGridModel = SampleGridModel.MATCH_EDGES,
-        field_based: FieldBased | None = None,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
         Descale a clip to the given resolution.
 
-        Supports both progressive and interlaced sources. When interlaced, it will separate fields,
-        perform per-field descaling, and weave them back.
-
-        :param clip:                The source clip.
-        :param width:               Target descaled width (defaults to clip width if None).
-        :param height:              Target descaled height (defaults to clip height if None).
-        :param shift:               Subpixel shift (top, left) or per-field shifts.
-        :param border_handling:     Method for handling image borders during sampling.
-        :param sample_grid_model:   Model used to align sampling grid.
-        :param field_based:         Field-based processing mode (interlaced or progressive).
-        :param kwargs:              Additional arguments passed to `descale_function`.
-        :raises CustomIndexError:   If trying to descale to an odd height in interlaced mode.
-        :raises CustomValueError:   If invalid shift is passed for progressive mode.
-        :return:                    Descaled clip.
+        :param clip:    The source clip.
+        :param width:   Target descaled width (defaults to clip width if None).
+        :param height:  Target descaled height (defaults to clip height if None).
+        :param shift:   Subpixel shift (top, left) applied during scaling.
+        :return:        Descaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
-
         check_correct_subsampling(clip, width, height)
 
-        field_based = FieldBased.from_param_or_video(field_based, clip)
+        return self.descale_function(
+            clip, **_norm_props_enums(self.get_descale_args(clip, shift, width, height, **kwargs))
+        )
 
-        clip, bits = expect_bits(clip, 32)
-
-        de_base_args = (width, height // (1 + field_based.is_inter))
-        kwargs |= dict(border_handling=BorderHandling.from_param(border_handling, self.descale))
-
-        if field_based.is_inter:
-            shift_y, shift_x = self._shift_norm(shift, False, self.descale)
-
-            kwargs_tf, shift = sample_grid_model.for_src(clip, width, height, (shift_y[0], shift_x[0]), **kwargs)
-            kwargs_bf, shift = sample_grid_model.for_src(clip, width, height, (shift_y[1], shift_x[1]), **kwargs)
-
-            de_kwargs_tf = self.get_descale_args(clip, (shift_y[0], shift_x[0]), *de_base_args, **kwargs_tf)
-            de_kwargs_bf = self.get_descale_args(clip, (shift_y[1], shift_x[1]), *de_base_args, **kwargs_bf)
-
-            if height % 2:
-                raise CustomIndexError('You can\'t descale to odd resolution when crossconverted!', self.descale)
-
-            field_shift = 0.125 * height / clip.height
-
-            fields = clip.std.SeparateFields(field_based.is_tff)
-
-            interleaved = core.std.Interleave([
-                self.descale_function(fields[offset::2], **_norm_props_enums(
-                    de_kwargs | dict(src_top=de_kwargs.get('src_top', 0.0) + (field_shift * mult))
-                ))
-                for offset, mult, de_kwargs in [(0, 1, de_kwargs_tf), (1, -1, de_kwargs_bf)]
-            ])
-
-            descaled = interleaved.std.DoubleWeave(field_based.is_tff)[::2]
-        else:
-            shift = self._shift_norm(shift, True, self.descale)
-
-            kwargs, shift = sample_grid_model.for_src(clip, width, height, shift, **kwargs)
-
-            de_kwargs = self.get_descale_args(clip, shift, *de_base_args, **kwargs)
-
-            descaled = self.descale_function(clip, **_norm_props_enums(de_kwargs))
-
-        return depth(descaled, bits)
-
-    @overload
-    def _shift_norm(
-        self,
-        shift: ShiftT,
-        assume_progressive: Literal[True] = ...,
-        func: FuncExceptT | None = None
-        ) -> tuple[TopShift, LeftShift]:
-        ...
-
-    @overload
-    def _shift_norm(
-        self,
-        shift: ShiftT,
-        assume_progressive: Literal[False] = ...,
-        func: FuncExceptT | None = None
-        ) -> tuple[
-            tuple[TopFieldTopShift, BotFieldTopShift],
-            tuple[TopFieldLeftShift, BotFieldLeftShift]
-        ]:
-        ...
-
-    def _shift_norm(
-        self,
-        shift: ShiftT,
-        assume_progressive: bool = True,
-        func: FuncExceptT | None = None
-        ) -> Any:
+    def rescale(
+        self, clip: vs.VideoNode, width: int | None, height: int | None,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
         """
-        Normalize shift values depending on field-based status.
+        Rescale a clip to the given resolution from a previously descaled clip.
 
-        :param shift:               Shift values (single or per-field).
-        :param assume_progressive:  Whether to assume the input is progressive.
-        :param func:                Function returned for custom error handling.
-        :raises CustomValueError:   If per-field shift is used in progressive mode.
-        :return:                    Normalized shift values.
+        :param clip:    The source clip.
+        :param width:   Target scaled width (defaults to clip width if None).
+        :param height:  Target scaled height (defaults to clip height if None).
+        :param shift:   Subpixel shift (top, left) applied during scaling.
+        :return:        Scaled clip.
         """
-        if assume_progressive:
-            if any(isinstance(sh, tuple) for sh in shift):
-                raise CustomValueError("You can't descale per-field when the input is progressive!", func, shift)
-        else:
-            shift_y, shift_x = tuple[tuple[float, float], ...](
-                sh if isinstance(sh, tuple) else (sh, sh) for sh in shift
-            )
-            shift = shift_y, shift_x
+        width, height = self._wh_norm(clip, width, height)
+        check_correct_subsampling(clip, width, height)
 
-        return shift
+        return self.rescale_function(
+            clip, **_norm_props_enums(self.get_rescale_args(clip, shift, width, height, **kwargs))
+        )
 
     def get_descale_args(
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
@@ -577,6 +498,26 @@ class Descaler(BaseScaler):
         :param shift:   Subpixel shift (top, left).
         :param width:   Target width for descaling.
         :param height:  Target height for descaling.
+        :param kwargs:  Extra keyword arguments to merge.
+        :return:        Combined keyword argument dictionary.
+        """
+        return (
+            dict(width=width, height=height, src_top=shift[0], src_left=shift[1])
+            | self.kwargs | kwargs
+        )
+
+    def get_rescale_args(
+        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
+        width: int | None = None, height: int | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Construct the argument dictionary used for upscaling.
+
+        :param clip:    The source clip.
+        :param shift:   Subpixel shift (top, left).
+        :param width:   Target width for upscaling.
+        :param height:  Target height for upscaling.
         :param kwargs:  Extra keyword arguments to merge.
         :return:        Combined keyword argument dictionary.
         """
@@ -661,7 +602,7 @@ class Kernel(Scaler, Descaler, Resampler):
 
     _err_class: ClassVar[type[_UnknownBaseScalerError]] = UnknownKernelError
 
-    _implemented_funcs = ("scale", "descale", "resample", "shift")
+    _implemented_funcs = ("scale", "descale", "rescale", "resample", "shift")
 
     @overload
     def shift(
@@ -907,6 +848,27 @@ class Kernel(Scaler, Descaler, Resampler):
             | self.get_params_args(True, clip, width, height, **kwargs)
         )
 
+    def get_rescale_args(
+        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
+        width: int | None = None, height: int | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Generate and normalize argument dictionary for a rescale operation.
+
+        :param clip:    The source clip.
+        :param shift:   Vertical and horizontal shift to apply.
+        :param width:   Target width.
+        :param height:  Target height.
+        :param kwargs:  Additional arguments to pass to the rescale function.
+
+        :return:        Dictionary of keyword arguments for the rescale function.
+        """
+        return (
+            dict(src_top=shift[0], src_left=shift[1])
+            | self.get_params_args(True, clip, width, height, **kwargs)
+        )
+
     def get_resample_args(
         self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
         matrix: MatrixT | None, matrix_in: MatrixT | None,
@@ -934,7 +896,6 @@ class Kernel(Scaler, Descaler, Resampler):
             )
             | self.get_params_args(False, clip, **kwargs)
         )
-
 
 
 ScalerT = Union[str, type[Scaler], Scaler]

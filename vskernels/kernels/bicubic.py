@@ -5,7 +5,7 @@ from typing import Any, overload
 
 from vstools import CustomValueError, core, vs
 
-from .zimg import ZimgComplexKernel
+from .complex import ComplexKernel
 
 __all__ = [
     'Bicubic',
@@ -25,11 +25,12 @@ __all__ = [
 ]
 
 
-class Bicubic(ZimgComplexKernel):
+class Bicubic(ComplexKernel):
     """Bicubic resizer."""
 
     scale_function = resample_function = core.lazy.resize2.Bicubic
     descale_function = core.lazy.descale.Debicubic
+    rescale_function = core.lazy.descale.Bicubic
 
     def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Any) -> None:
         """
@@ -51,7 +52,7 @@ class Bicubic(ZimgComplexKernel):
             return args | dict(b=self.b, c=self.c)
         return args | dict(filter_param_a=self.b, filter_param_b=self.c)
 
-    @ZimgComplexKernel.cached_property
+    @ComplexKernel.cached_property
     def kernel_radius(self) -> int:
         if (self.b, self.c) == (0, 0):
             return 1
