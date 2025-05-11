@@ -15,6 +15,10 @@ __all__ = [
 
 
 class ZimgDescaler(Descaler):
+    """
+    An abstract descaler that uses the Zimg library for descaling operation.
+    """
+
     if TYPE_CHECKING:
         def descale(
             self, clip: vs.VideoNode, width: int | None, height: int | None,
@@ -28,10 +32,32 @@ class ZimgDescaler(Descaler):
             blur: float = 1.0, ignore_mask: vs.VideoNode | None = None,
             **kwargs: Any
         ) -> ConstantFormatVideoNode:
+            """
+            Descale a clip to the given resolution.
+
+            Supports both progressive and interlaced sources. When interlaced, it will separate fields,
+            perform per-field descaling, and weave them back.
+
+            :param clip:                The source clip.
+            :param width:               Target descaled width (defaults to clip width if None).
+            :param height:              Target descaled height (defaults to clip height if None).
+            :param shift:               Subpixel shift (top, left) or per-field shifts.
+            :param border_handling:     Method for handling image borders during sampling.
+            :param sample_grid_model:   Model used to align sampling grid.
+            :param field_based:         Field-based processing mode (interlaced or progressive).
+            :param blur:                Amount of blur to apply during descaling.
+            :param ignore_mask:         Optional mask specifying areas to ignore during descaling.
+            :param kwargs:              Additional parameters passed to the underlying descaler.
+            :return:                    The descaled clip.
+            """
             ...
 
 
 class ZimgComplexKernel(ComplexKernel, ZimgDescaler):
+    """
+    A abstract complex kernel class that combines scaling and descaling operations using Zimg.
+    """
+
     if TYPE_CHECKING:
         # Override signature to add `blur`
         def scale(
@@ -49,6 +75,27 @@ class ZimgComplexKernel(ComplexKernel, ZimgDescaler):
             blur: float = 1.0,
             **kwargs: Any
         ) -> vs.VideoNode | ConstantFormatVideoNode:
+            """
+            Scale a clip to the given resolution, with aspect ratio and linear light support.
+
+            :param clip:                The source clip.
+            :param width:               Target width (defaults to clip width if None).
+            :param height:              Target height (defaults to clip height if None).
+            :param shift:               Subpixel shift (top, left) applied during scaling.
+            :param border_handling:     Method for handling image borders during sampling.
+            :param sample_grid_model:   Model used to align sampling grid.
+            :param sar:                 Sample aspect ratio to assume or convert to.
+            :param dar:                 Desired display aspect ratio.
+            :param dar_in:              Input display aspect ratio, if different from clip’s.
+            :param keep_ar:             Whether to adjust dimensions to preserve aspect ratio.
+            :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
+            :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+                                        `True` applies the defaults values (6.5, 0.75).
+                                        Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
+                                        and sigmoid center has to be in range 0.0-1.0 (inclusive).
+            :param blur:                Amount of blur to apply during scaling.
+            :return:                    The scaled clip.
+            """
             ...
 
         def descale(
@@ -65,15 +112,28 @@ class ZimgComplexKernel(ComplexKernel, ZimgDescaler):
             blur: float = 1.0, ignore_mask: vs.VideoNode | None = None,
             **kwargs: Any
         ) -> ConstantFormatVideoNode:
+            """
+            Descale a clip to the given resolution.
+
+            Supports both progressive and interlaced sources. When interlaced, it will separate fields,
+            perform per-field descaling, and weave them back.
+
+            :param clip:                The source clip.
+            :param width:               Target descaled width (defaults to clip width if None).
+            :param height:              Target descaled height (defaults to clip height if None).
+            :param shift:               Subpixel shift (top, left) or per-field shifts.
+            :param border_handling:     Method for handling image borders during sampling.
+            :param sample_grid_model:   Model used to align sampling grid.
+            :param field_based:         Field-based processing mode (interlaced or progressive).
+            :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
+            :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+                                        `True` applies the defaults values (6.5, 0.75).
+                                        Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
+                                        and sigmoid center has to be in range 0.0-1.0 (inclusive).
+            :param blur:                Amount of blur to apply during descaling.
+            :param ignore_mask:         Optional mask specifying areas to ignore during descaling.
+            :param kwargs:              Additional parameters passed to the underlying descaler.
+            :return:                    The descaled clip.
+            """
             ...
 
-    def get_params_args(
-        self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any
-    ) -> dict[str, Any]:
-        args = super().get_params_args(is_descale, clip, width, height, **kwargs)
-
-        if not is_descale:
-            for key in ('border_handling', 'ignore_mask'):
-                args.pop(key, None)
-
-        return args
