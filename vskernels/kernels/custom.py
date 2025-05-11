@@ -1,13 +1,11 @@
 from __future__ import annotations
-from jetpytools import CustomValueError, DependencyNotFoundError, KwargsT
+from jetpytools import CustomNotImplementedError, CustomValueError, KwargsT
 from inspect import Signature
 from math import ceil
 
 from vstools import ConstantFormatVideoNode, vs, core
 from typing import Any, Protocol
 from .abstract import Kernel
-
-from typing import TypeVar
 
 
 __all__ = [
@@ -21,10 +19,38 @@ class _kernel_func(Protocol):
 
 
 class CustomKernel(Kernel):
+    """
+    An abstract base class for defining custom kernel-based scaling and descaling operations.
+
+    This class allows users to implement their own kernel function by overriding the
+    `kernel()` method. It provides flexible support for parameters like `blur` and `taps`,
+    enabling dynamic modification of the kernel's behavior at runtime.
+
+    Subclasses must implement the `kernel()` method to specify the mathematical shape of the kernel.
+    """
+
     def kernel(self, *, x: float) -> float:
-        raise NotImplementedError
+        """
+        Define the kernel function at a given position.
+
+        This method must be implemented by subclasses to provide the actual kernel logic.
+
+        :param x:                           The input position.
+        :return:                            The evaluated kernel value at position `x`.
+        :raises CustomNotImplementedError:  If not overridden by subclass.
+        """
+        raise CustomNotImplementedError
 
     def _modify_kernel_func(self, kwargs: KwargsT) -> tuple[_kernel_func, float]:
+        """
+        Modify the kernel function using blur and tap parameters.
+
+        Dynamically scales the kernel based on the blur factor.
+        Calculates support based on the scaled number of taps.
+
+        :param kwargs:  Dictionary of keyword arguments that may include 'blur' and 'taps'.
+        :return:        A tuple of the kernel function and its support radius.
+        """
         blur = float(kwargs.pop('blur', 1.0))
         taps = int(kwargs.pop('taps', self.kernel_radius))
         support = taps * blur

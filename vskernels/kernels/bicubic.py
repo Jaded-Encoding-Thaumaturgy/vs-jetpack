@@ -26,19 +26,19 @@ __all__ = [
 
 
 class Bicubic(ZimgComplexKernel):
-    """
-    Built-in bicubic resizer.
-
-    Default: b=0, c=0.5
-
-    :param b: B-param for bicubic kernel
-    :param c: C-param for bicubic kernel
-    """
+    """Bicubic resizer."""
 
     scale_function = resample_function = core.lazy.resize2.Bicubic
     descale_function = core.lazy.descale.Debicubic
 
-    def __init__(self, b: float = 0, c: float = 1 / 2, **kwargs: Any) -> None:
+    def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param b:       The 'b' parameter for bicubic interpolation.
+        :param c:       The 'c' parameter for bicubic interpolation.
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
         self.b = b
         self.c = c
         super().__init__(**kwargs)
@@ -62,99 +62,160 @@ class Bicubic(ZimgComplexKernel):
 
 
 class BSpline(Bicubic):
-    """Bicubic b=1, c=0"""
+    """BSpline resizer (b=1, c=0)."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
         super().__init__(b=1, c=0, **kwargs)
 
 
 class Hermite(Bicubic):
-    """Bicubic b=0, c=0"""
+    """Hermite resizer (b=0, c=0)."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
         super().__init__(b=0, c=0, **kwargs)
 
 
 class Mitchell(Bicubic):
-    """Bicubic b=1/3, c=1/3"""
+    """Mitchell resizer (b=1/3, c=1/3)."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
         super().__init__(b=1 / 3, c=1 / 3, **kwargs)
 
 
 class Catrom(Bicubic):
-    """Bicubic b=0, c=0.5"""
+    """Catrom resizer (b=0, c=0.5)."""
 
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(b=0, c=1 / 2, **kwargs)
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
+        super().__init__(b=0, c=0.5, **kwargs)
 
 
 class FFmpegBicubic(Bicubic):
-    """Bicubic b=0, c=0.6; FFmpeg's swscale default"""
+    """FFmpeg's swscale default resizer (b=0, c=0.6)."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
         super().__init__(b=0, c=0.6, **kwargs)
 
 
 class AdobeBicubic(Bicubic):
-    """Bicubic b=0, c=0.75; Adobe's "Bicubic" interpolation preset"""
+    """Adobe's "Bicubic" interpolation preset resizer (b=0, c=0.75)."""
 
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(b=0, c=3 / 4, **kwargs)
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
+        super().__init__(b=0, c=0.75, **kwargs)
 
 
 class AdobeBicubicSharper(Bicubic):
-    """Bicubic b=0, c=1, blur=1.05; Adobe's "Bicubic Sharper" interpolation preset."""
+    """Adobe's "Bicubic Sharper" interpolation preset resizer (b=0, c=1, blur=1.05)."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
         super().__init__(b=0, c=1, blur=1.05, **kwargs)
 
 
 class AdobeBicubicSmoother(Bicubic):
-    """Bicubic b=0, c=0.625, blur=1.15; Adobe's "Bicubic Smoother" interpolation preset."""
+    """Adobe's "Bicubic Smoother" interpolation preset resizer (b=0, c=0.625, blur=1.15)."""
 
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(b=0, c=5 / 8, blur=1.15, **kwargs)
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
+        super().__init__(b=0, c=5/8, blur=1.15, **kwargs)
 
 
 class BicubicSharp(Bicubic):
-    """Bicubic b=0, c=1"""
+    """BicubicSharp resizer (b=0, c=1)."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
         super().__init__(b=0, c=1, **kwargs)
 
 
 class RobidouxSoft(Bicubic):
-    """Bicubic b=0.67962, c=0.16019"""
+    """RobidouxSoft resizer (b=0.67962, c=0.16019)."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
         b = (9 - 3 * sqrt(2)) / 7
         c = (1 - b) / 2
         super().__init__(b=b, c=c, **kwargs)
 
 
 class Robidoux(Bicubic):
-    """Bicubic b=0.37822, c=0.31089"""
+    """Robidoux resizer (b=0.37822, c=0.31089)."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
         b = 12 / (19 + 9 * sqrt(2))
         c = 113 / (58 + 216 * sqrt(2))
+
         super().__init__(b=b, c=c, **kwargs)
 
 
 class RobidouxSharp(Bicubic):
-    """Bicubic b=0.26201, c=0.36899"""
+    """RobidouxSharp resizer (b=0.26201, c=0.36899)."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        """
         b = 6 / (13 + 7 * sqrt(2))
         c = 7 / (2 + 12 * sqrt(2))
+
         super().__init__(b=b, c=c, **kwargs)
 
 
 class BicubicAuto(Bicubic):
     """
-    Kernel that follows the rule of:
-    b + 2c = target
+    Bicubic resizer that follows the rule of `b + 2c = ...`
     """
 
     @overload
@@ -166,6 +227,14 @@ class BicubicAuto(Bicubic):
         ...
 
     def __init__(self, b: float | None = None, c: float | None = None, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param b:                   The 'b' parameter for bicubic interpolation.
+        :param c:                   The 'c' parameter for bicubic interpolation.
+        :param kwargs:              Parameters to pass to the implemented funcs or the internal scale function.
+        :raise CustomValueError:    If both 'b' and 'c' are specified
+        """
         if None not in {b, c}:
             raise CustomValueError("You can't specify both b and c!", self.__class__)
 

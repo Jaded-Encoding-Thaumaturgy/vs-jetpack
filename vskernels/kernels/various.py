@@ -21,22 +21,28 @@ __all__ = [
 
 
 class gauss_sigma(float):
+    """A class for Gaussian sigma scaling transformations."""
+
     def from_fmtc(self, curve: float) -> float:
+        """Converts a curve value from fmtc to the Gaussian sigma."""
         if not curve:
             return 0.0
         return sqrt(1.0 / (2.0 * (curve / 10.0) * log(2)))
 
     def to_fmtc(self, sigma: float) -> float:
+        """Converts a Gaussian sigma to fmtc's curve value."""
         if not sigma:
             return 0.0
         return 10 / (2 * log(2) * (sigma ** 2))
 
     def from_libplacebo(self, sigma: float) -> float:
+        """Converts a sigma value from libplacebo to the Gaussian sigma."""
         if not sigma:
             return 0.0
         return sqrt(sigma / 4)
 
     def to_libplacebo(self, sigma: float) -> float:
+        """Converts a Gaussian sigma to libplacebo's sigma value."""
         if not sigma:
             return 0.0
         return 4 * (sigma ** 2)
@@ -46,7 +52,13 @@ class Gaussian(CustomComplexTapsKernel):
     """Gaussian resizer."""
 
     def __init__(self, sigma: float = 0.5, taps: float = 2, **kwargs: Any) -> None:
-        """Sigma is the same as imagemagick's sigma scaling."""
+        """
+        Initialize the kernel with a specific sigma and number of taps.
+
+        :param sigma:   The standard deviation (sigma) of the Gaussian function.
+                        It is the same as imagemagick's sigma scaling.
+        :param taps:    Determines the radius of the kernel.
+        """
 
         self._sigma = sigma
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import Any, Callable, ClassVar
+from typing import Any, ClassVar
 
 from vstools import core, fallback, vs
 
@@ -22,28 +22,13 @@ __all__ = [
 
 class Placebo(ComplexScaler, abstract=True):
     """
-    Abstract Placebo scaler.
+    Abstract Placebo scaler class.
 
-    Dependencies:
-
-    * vs-placebo <https://github.com/sgt0/vs-placebo>`_
+    This class and its subclasses depend on [vs-placebo](https://github.com/sgt0/vs-placebo)
     """
 
     _kernel: ClassVar[str]
-    """Name of the placebo kernel"""
-
-    # Kernel settings
-    taps: float | None
-    b: float | None
-    c: float | None
-
-    # Filter settings
-    clamp: float
-    blur: float
-    taper: float
-
-    # Quality settings
-    antiring: float
+    """Name of the Placebo kernel"""
 
     scale_function = core.lazy.placebo.Resample
 
@@ -54,6 +39,22 @@ class Placebo(ComplexScaler, abstract=True):
         antiring: float = 0.0,
         **kwargs: Any
     ) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param taps:        Overrides the filter kernel radius.
+                            Has no effect if the filter kernel is not resizeable.
+        :param b:           The 'b' parameter for bicubic interpolation.
+        :param c:           The 'c' parameter for bicubic interpolation.
+        :param clamp:       Represents an extra weighting/clamping coefficient for negative weights.
+                            A value of 0.0 represents no clamping.
+                            A value of 1.0 represents full clamping, i.e. all negative lobes will be removed.
+        :param blur:        Additional blur coefficient.
+                            This effectively stretches the kernel, without changing the effective radius of the filter radius.
+        :param taper:       Additional taper coefficient. This essentially flattens the function's center.
+        :param antiring:    Antiringing strength.
+        :param kwargs:      Parameters to pass to the implemented funcs or the internal scale function.
+        """
         self.taps = taps
         self.b = b
         self.c = c
@@ -66,7 +67,7 @@ class Placebo(ComplexScaler, abstract=True):
     def get_scale_args(
         self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
         width: int | None = None, height: int | None = None,
-        *funcs: Callable[..., Any], **kwargs: Any
+        **kwargs: Any
     ) -> dict[str, Any]:
         return dict(
             sx=shift[1], sy=shift[0],
@@ -92,9 +93,18 @@ class Placebo(ComplexScaler, abstract=True):
 
 
 class EwaBicubic(Placebo):
+    """Ewa Bicubic resizer."""
+
     _kernel = 'ewa_robidoux'
 
     def __init__(self, b: float = 0.0, c: float = 0.5, radius: int | None = None, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param b:           The 'b' parameter for bicubic interpolation.
+        :param c:           The 'c' parameter for bicubic interpolation.
+        :param radius:      Overrides the filter kernel radius.
+        """
         radius = kwargs.pop('taps', radius)
 
         if radius is None:
@@ -106,42 +116,76 @@ class EwaBicubic(Placebo):
 
 
 class EwaLanczos(Placebo):
+    """Ewa Lanczos resizer."""
+
     _kernel = 'ewa_lanczos'
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param taps:    The number of taps used for Lanczos interpolation.
+        """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaJinc(Placebo):
+    """Ewa Jinc resizer."""
+
     _kernel = 'ewa_jinc'
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param taps:    The number of taps used for Lanczos interpolation.
+        """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaGinseng(Placebo):
+    """Ewa Ginseng resizer."""
+
     _kernel = 'ewa_ginseng'
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param taps:    The number of taps used for Lanczos interpolation.
+        """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaHann(Placebo):
+    """Ewa Hann resizer."""
+
     _kernel = 'ewa_hann'
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param taps:    The number of taps used for Lanczos interpolation.
+        """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaRobidoux(Placebo):
+    """Ewa Robidoux resizer."""
+
     _kernel = 'ewa_robidoux'
 
     def __init__(self, **kwargs: Any) -> None:
+        """Initialize the scaler with optional arguments."""
         super().__init__(None, None, None, **kwargs)
 
 
 class EwaRobidouxSharp(Placebo):
+    """Ewa Robidoux Sharp resizer."""
+
     _kernel = 'ewa_robidouxsharp'
 
     def __init__(self, **kwargs: Any) -> None:
+        """Initialize the scaler with optional arguments."""
         super().__init__(None, None, None, **kwargs)
