@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from math import cos, exp, log, pi, sqrt
+from math import cos, exp, log, pi, sin, sqrt
 from typing import Any
 
 from .complex import CustomComplexKernel, CustomComplexTapsKernel
-from .helpers import sinc
 
 __all__ = [
     "Gaussian",
@@ -18,6 +17,10 @@ __all__ = [
     "Bohman",
     "Cosine",
 ]
+
+
+def sinc(x: float) -> float:
+    return 1.0 if x == 0.0 else sin(x * pi) / (x * pi)
 
 
 class gauss_sigma(float):
