@@ -8,20 +8,20 @@ from vstools import CustomValueError, core, vs
 from .complex import ComplexKernel
 
 __all__ = [
-    'Bicubic',
-    'BSpline',
-    'Hermite',
-    'Mitchell',
-    'Catrom',
-    'FFmpegBicubic',
-    'AdobeBicubic',
-    'AdobeBicubicSharper',
-    'AdobeBicubicSmoother',
-    'BicubicSharp',
-    'RobidouxSoft',
-    'Robidoux',
-    'RobidouxSharp',
-    'BicubicAuto',
+    "Bicubic",
+    "BSpline",
+    "Hermite",
+    "Mitchell",
+    "Catrom",
+    "FFmpegBicubic",
+    "AdobeBicubic",
+    "AdobeBicubicSharper",
+    "AdobeBicubicSmoother",
+    "BicubicSharp",
+    "RobidouxSoft",
+    "Robidoux",
+    "RobidouxSharp",
+    "BicubicAuto",
 ]
 
 
@@ -155,7 +155,7 @@ class AdobeBicubicSmoother(Bicubic):
 
         :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
         """
-        super().__init__(b=0, c=5/8, blur=1.15, **kwargs)
+        super().__init__(b=0, c=5 / 8, blur=1.15, **kwargs)
 
 
 class BicubicSharp(Bicubic):
@@ -220,12 +220,10 @@ class BicubicAuto(Bicubic):
     """
 
     @overload
-    def __init__(self, b: float = ..., c: None = ..., **kwargs: Any) -> None:
-        ...
+    def __init__(self, b: float = ..., c: None = None, **kwargs: Any) -> None: ...
 
     @overload
-    def __init__(self, b: None = ..., c: float = ..., **kwargs: Any) -> None:
-        ...
+    def __init__(self, b: None = None, c: float = ..., **kwargs: Any) -> None: ...
 
     def __init__(self, b: float | None = None, c: float | None = None, **kwargs: Any) -> None:
         """

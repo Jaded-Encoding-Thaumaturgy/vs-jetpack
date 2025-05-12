@@ -9,14 +9,14 @@ from ..types import LeftShift, TopShift
 from .complex import ComplexScaler
 
 __all__ = [
-    'Placebo',
-    'EwaBicubic',
-    'EwaJinc',
-    'EwaLanczos',
-    'EwaGinseng',
-    'EwaHann',
-    'EwaRobidoux',
-    'EwaRobidouxSharp',
+    "Placebo",
+    "EwaBicubic",
+    "EwaJinc",
+    "EwaLanczos",
+    "EwaGinseng",
+    "EwaHann",
+    "EwaRobidoux",
+    "EwaRobidouxSharp",
 ]
 
 
@@ -34,10 +34,14 @@ class Placebo(ComplexScaler, abstract=True):
 
     def __init__(
         self,
-        taps: float | None = None, b: float | None = None, c: float | None = None,
-        clamp: float = 0.0, blur: float = 0.0, taper: float = 0.0,
+        taps: float | None = None,
+        b: float | None = None,
+        c: float | None = None,
+        clamp: float = 0.0,
+        blur: float = 0.0,
+        taper: float = 0.0,
         antiring: float = 0.0,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """
         Initialize the scaler with optional arguments.
@@ -65,19 +69,31 @@ class Placebo(ComplexScaler, abstract=True):
         super().__init__(**kwargs)
 
     def get_scale_args(
-        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
-        width: int | None = None, height: int | None = None,
-        **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        width: int | None = None,
+        height: int | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
-        return dict(
-            sx=shift[1], sy=shift[0],
-            width=width, height=height,
-            filter=self._kernel,
-            radius=self.taps,
-            param1=self.b, param2=self.c,
-            clamp=self.clamp, taper=self.taper, blur=self.blur,
-            antiring=self.antiring,
-        ) | self.kwargs | kwargs
+        return (
+            dict(
+                sx=shift[1],
+                sy=shift[0],
+                width=width,
+                height=height,
+                filter=self._kernel,
+                radius=self.taps,
+                param1=self.b,
+                param2=self.c,
+                clamp=self.clamp,
+                taper=self.taper,
+                blur=self.blur,
+                antiring=self.antiring,
+            )
+            | self.kwargs
+            | kwargs
+        )
 
     @ComplexScaler.cached_property
     def kernel_radius(self) -> int:
@@ -89,7 +105,6 @@ class Placebo(ComplexScaler, abstract=True):
 
             if (b, c) == (0, 0):
                 return 1
-            return 2
 
         return 2
 
@@ -97,7 +112,7 @@ class Placebo(ComplexScaler, abstract=True):
 class EwaBicubic(Placebo):
     """Ewa Bicubic resizer."""
 
-    _kernel = 'ewa_robidoux'
+    _kernel = "ewa_robidoux"
 
     def __init__(self, b: float = 0.0, c: float = 0.5, radius: int | None = None, **kwargs: Any) -> None:
         """
@@ -107,7 +122,7 @@ class EwaBicubic(Placebo):
         :param c:           The 'c' parameter for bicubic interpolation.
         :param radius:      Overrides the filter kernel radius.
         """
-        radius = kwargs.pop('taps', radius)
+        radius = kwargs.pop("taps", radius)
 
         if radius is None:
             from .bicubic import Bicubic
@@ -120,7 +135,7 @@ class EwaBicubic(Placebo):
 class EwaLanczos(Placebo):
     """Ewa Lanczos resizer."""
 
-    _kernel = 'ewa_lanczos'
+    _kernel = "ewa_lanczos"
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
         """
@@ -134,7 +149,7 @@ class EwaLanczos(Placebo):
 class EwaJinc(Placebo):
     """Ewa Jinc resizer."""
 
-    _kernel = 'ewa_jinc'
+    _kernel = "ewa_jinc"
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
         """
@@ -148,7 +163,7 @@ class EwaJinc(Placebo):
 class EwaGinseng(Placebo):
     """Ewa Ginseng resizer."""
 
-    _kernel = 'ewa_ginseng'
+    _kernel = "ewa_ginseng"
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
         """
@@ -162,7 +177,7 @@ class EwaGinseng(Placebo):
 class EwaHann(Placebo):
     """Ewa Hann resizer."""
 
-    _kernel = 'ewa_hann'
+    _kernel = "ewa_hann"
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
         """
@@ -176,7 +191,7 @@ class EwaHann(Placebo):
 class EwaRobidoux(Placebo):
     """Ewa Robidoux resizer."""
 
-    _kernel = 'ewa_robidoux'
+    _kernel = "ewa_robidoux"
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the scaler with optional arguments."""
@@ -186,7 +201,7 @@ class EwaRobidoux(Placebo):
 class EwaRobidouxSharp(Placebo):
     """Ewa Robidoux Sharp resizer."""
 
-    _kernel = 'ewa_robidouxsharp'
+    _kernel = "ewa_robidouxsharp"
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the scaler with optional arguments."""

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from math import pi, sin
 
-__all__ = [
-    'sinc', 'poly3'
-]
+__all__ = ["sinc", "poly3"]
 
 
 def sinc(x: float) -> float:

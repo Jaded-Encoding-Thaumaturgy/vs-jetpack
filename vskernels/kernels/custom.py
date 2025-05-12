@@ -10,9 +10,7 @@ from vstools import ConstantFormatVideoNode, core, vs
 
 from .abstract import Kernel
 
-__all__ = [
-    'CustomKernel'
-]
+__all__ = ["CustomKernel"]
 
 
 class CustomKernel(Kernel):
@@ -41,7 +39,7 @@ class CustomKernel(Kernel):
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None, *args: Any, **kwargs: Any
     ) -> vs.VideoNode:
         return core.resize2.Custom(
-            clip, self.kernel, ceil(kwargs.pop('taps', self.kernel_radius)), width, height, *args, **kwargs
+            clip, self.kernel, ceil(kwargs.pop("taps", self.kernel_radius)), width, height, *args, **kwargs
         )
 
     def resample_function(
@@ -54,13 +52,14 @@ class CustomKernel(Kernel):
     ) -> ConstantFormatVideoNode:
         try:
             return core.descale.Decustom(
-                clip, width, height, self.kernel, ceil(kwargs.pop('taps', self.kernel_radius)), *args, **kwargs
+                clip, width, height, self.kernel, ceil(kwargs.pop("taps", self.kernel_radius)), *args, **kwargs
             )
         except vs.Error as e:
-            if 'Output dimension must be' in str(e):
+            if "Output dimension must be" in str(e):
                 raise CustomValueError(
-                    f'Output dimension ({width}x{height}) must be less than or equal to '
-                    f'input dimension ({clip.width}x{clip.height}).', self.__class__
+                    f"Output dimension ({width}x{height}) must be less than or equal to "
+                    f"input dimension ({clip.width}x{clip.height}).",
+                    self.__class__,
                 )
 
             raise CustomValueError(e, self.__class__)
@@ -69,5 +68,5 @@ class CustomKernel(Kernel):
         self, clip: vs.VideoNode, width: int, height: int, *args: Any, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         return core.descale.ScaleCustom(
-            clip, width, height, self.kernel, ceil(kwargs.pop('taps', self.kernel_radius)), *args, **kwargs
+            clip, width, height, self.kernel, ceil(kwargs.pop("taps", self.kernel_radius)), *args, **kwargs
         )
