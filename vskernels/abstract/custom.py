@@ -9,7 +9,7 @@ from abc import abstractmethod
 from math import ceil
 from typing import Any, Union
 
-from jetpytools import CustomValueError
+from jetpytools import CustomError, CustomValueError
 
 from vstools import ConstantFormatVideoNode, core, vs
 
@@ -48,9 +48,12 @@ class CustomKernel(Kernel):
     def scale_function(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None, *args: Any, **kwargs: Any
     ) -> vs.VideoNode:
-        return core.resize2.Custom(
-            clip, self.kernel, ceil(kwargs.pop("taps", self.kernel_radius)), width, height, *args, **kwargs
-        )
+        try:
+            return core.resize2.Custom(
+                clip, self.kernel, ceil(kwargs.pop("taps", self.kernel_radius)), width, height, *args, **kwargs
+            )
+        except vs.Error as e:
+            raise CustomError(e, self.__class__) from e
 
     def resample_function(
         self, clip: vs.VideoNode, width: int | None = None, height: int | None = None, *args: Any, **kwargs: Any
@@ -72,14 +75,17 @@ class CustomKernel(Kernel):
                     self.__class__,
                 )
 
-            raise CustomValueError(e, self.__class__)
+            raise CustomError(e, self.__class__) from e
 
     def rescale_function(
         self, clip: vs.VideoNode, width: int, height: int, *args: Any, **kwargs: Any
     ) -> ConstantFormatVideoNode:
-        return core.descale.ScaleCustom(
-            clip, width, height, self.kernel, ceil(kwargs.pop("taps", self.kernel_radius)), *args, **kwargs
-        )
+        try:
+            return core.descale.ScaleCustom(
+                clip, width, height, self.kernel, ceil(kwargs.pop("taps", self.kernel_radius)), *args, **kwargs
+            )
+        except vs.Error as e:
+            raise CustomError(e, self.__class__) from e
 
 
 class CustomComplexKernel(CustomKernel, ComplexKernel):
