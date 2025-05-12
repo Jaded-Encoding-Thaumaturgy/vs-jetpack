@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import cos, exp, log, pi, sin, sqrt
 from typing import Any
 
-from ..abstract import CustomComplexKernel, CustomComplexTapsKernel
+from ...abstract import CustomComplexKernel, CustomComplexTapsKernel
 
 __all__ = [
     "Gaussian",
@@ -23,36 +23,36 @@ def sinc(x: float) -> float:
     return 1.0 if x == 0.0 else sin(x * pi) / (x * pi)
 
 
-class gauss_sigma(float):
-    """A class for Gaussian sigma scaling transformations."""
-
-    def from_fmtc(self, curve: float) -> float:
-        """Converts a curve value from fmtc to the Gaussian sigma."""
-        if not curve:
-            return 0.0
-        return sqrt(1.0 / (2.0 * (curve / 10.0) * log(2)))
-
-    def to_fmtc(self, sigma: float) -> float:
-        """Converts a Gaussian sigma to fmtc's curve value."""
-        if not sigma:
-            return 0.0
-        return 10 / (2 * log(2) * (sigma**2))
-
-    def from_libplacebo(self, sigma: float) -> float:
-        """Converts a sigma value from libplacebo to the Gaussian sigma."""
-        if not sigma:
-            return 0.0
-        return sqrt(sigma / 4)
-
-    def to_libplacebo(self, sigma: float) -> float:
-        """Converts a Gaussian sigma to libplacebo's sigma value."""
-        if not sigma:
-            return 0.0
-        return 4 * (sigma**2)
-
-
 class Gaussian(CustomComplexTapsKernel):
     """Gaussian resizer."""
+
+    class Sigma(float):
+        """A class for Gaussian sigma scaling transformations."""
+
+        def from_fmtc(self, curve: float) -> float:
+            """Converts a curve value from fmtc to the Gaussian sigma."""
+            if not curve:
+                return 0.0
+            return sqrt(1.0 / (2.0 * (curve / 10.0) * log(2)))
+
+        def to_fmtc(self, sigma: float) -> float:
+            """Converts a Gaussian sigma to fmtc's curve value."""
+            if not sigma:
+                return 0.0
+            return 10 / (2 * log(2) * (sigma**2))
+
+        def from_libplacebo(self, sigma: float) -> float:
+            """Converts a sigma value from libplacebo to the Gaussian sigma."""
+            if not sigma:
+                return 0.0
+            return sqrt(sigma / 4)
+
+        def to_libplacebo(self, sigma: float) -> float:
+            """Converts a Gaussian sigma to libplacebo's sigma value."""
+            if not sigma:
+                return 0.0
+            return 4 * (sigma**2)
+
 
     def __init__(self, sigma: float = 0.5, taps: float = 2, **kwargs: Any) -> None:
         """
@@ -68,8 +68,8 @@ class Gaussian(CustomComplexTapsKernel):
         super().__init__(taps, **kwargs)
 
     @property
-    def sigma(self) -> gauss_sigma:
-        return gauss_sigma(self._sigma)
+    def sigma(self) -> Sigma:
+        return self.Sigma(self._sigma)
 
     def kernel(self, *, x: float) -> float:
         return 1 / (self._sigma * sqrt(2 * pi)) * exp(-(x**2) / (2 * self._sigma**2))

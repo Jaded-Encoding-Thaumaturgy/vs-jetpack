@@ -5,7 +5,7 @@ from typing import Any, overload
 
 from vstools import CustomValueError, core, vs
 
-from ..abstract import ComplexKernel
+from ...abstract import ComplexKernel
 
 __all__ = [
     "Bicubic",

@@ -5,7 +5,7 @@ from typing import Any
 
 from vstools import core, vs
 
-from ..abstract import ComplexKernel
+from ...abstract import ComplexKernel
 
 __all__ = [
     "Point",

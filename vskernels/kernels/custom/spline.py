@@ -3,16 +3,9 @@ from __future__ import annotations
 from math import comb
 from typing import Any
 
-from vstools import core
+from ...abstract import CustomComplexTapsKernel
 
-from ..abstract import CustomComplexTapsKernel, ComplexKernel
-
-__all__ = [
-    "Spline",
-    "Spline16",
-    "Spline36",
-    "Spline64",
-]
+__all__ = ["Spline"]
 
 
 def poly3(x: float, c0: float, c1: float, c2: float, c3: float) -> float:
@@ -92,30 +85,3 @@ class Spline(CustomComplexTapsKernel):
         a, b, c, d = self._coefs[4 * tap : 4 * tap + 4]
 
         return poly3(x, d, c, b, a)
-
-
-class Spline16(ComplexKernel):
-    """Spline16 resizer."""
-
-    scale_function = resample_function = core.lazy.resize2.Spline16
-    descale_function = core.lazy.descale.Despline16
-    rescale_function = core.lazy.descale.Spline16
-    _static_kernel_radius = 2
-
-
-class Spline36(ComplexKernel):
-    """Spline36 resizer."""
-
-    scale_function = resample_function = core.lazy.resize2.Spline36
-    descale_function = core.lazy.descale.Despline36
-    rescale_function = core.lazy.descale.Spline36
-    _static_kernel_radius = 3
-
-
-class Spline64(ComplexKernel):
-    """Spline64 resizer."""
-
-    scale_function = resample_function = core.lazy.resize2.Spline64
-    descale_function = core.lazy.descale.Despline64
-    rescale_function = core.lazy.descale.Spline64
-    _static_kernel_radius = 4
