@@ -125,9 +125,10 @@ class EwaBicubic(Placebo):
         radius = kwargs.pop("taps", radius)
 
         if radius is None:
-            from .bicubic import Bicubic
-
-            radius = Bicubic(b, c).kernel_radius
+            if (b, c) == (0, 0):
+                radius = 1
+            else:
+                radius = 2
 
         super().__init__(radius, b, c, **kwargs)
 
