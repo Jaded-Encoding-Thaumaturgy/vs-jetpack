@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from functools import partial
-from math import ceil
 from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, TypeVar, Union, overload
 
 from jetpytools import CustomIndexError, CustomValueError, FuncExceptT
@@ -25,8 +24,7 @@ __all__ = [
     "ComplexScalerT",
     "ComplexKernel",
     "ComplexKernelT",
-    "CustomComplexKernel",
-    "CustomComplexTapsKernel",
+
 ]
 
 XarT = TypeVar("XarT", Sar, Dar)
@@ -605,44 +603,6 @@ class ComplexKernel(Kernel, ComplexDescaler, ComplexScaler):
 
     This class merges the full capabilities of `Kernel`, `ComplexDescaler`, and `ComplexScaler`.
     """
-
-
-class CustomComplexKernel(CustomKernel, ComplexKernel):
-    """
-    Abstract kernel class that combines custom kernel behavior with advanced scaling and descaling capabilities.
-
-    This class extends both `CustomKernel` and `ComplexKernel`, enabling the definition
-    of custom mathematical kernels with the advanced rescaling logic provided by
-    linear and aspect-ratio-aware components.
-    """
-
-
-class CustomComplexTapsKernel(CustomComplexKernel):
-    """
-    Extension of `CustomComplexKernel` that introduces configurable kernel taps.
-    """
-
-    def __init__(self, taps: float, **kwargs: Any) -> None:
-        """
-        Initialize the kernel with a specific number of taps.
-
-        :param taps:    Determines the radius of the kernel.
-        :param kwargs:  Additional keyword arguments passed to the superclass.
-        """
-        self.taps = taps
-        super().__init__(**kwargs)
-
-    @Scaler.cached_property
-    def kernel_radius(self) -> int:
-        """
-        Compute the effective kernel radius based on the number of taps.
-
-        :return: Radius as the ceiling of `taps`.
-        """
-        return ceil(self.taps)
-
-    def _pretty_string(self, **attrs: Any) -> str:
-        return super()._pretty_string(**dict(taps=self.taps) | attrs)
 
 
 ComplexScalerT = Union[str, type[ComplexScaler], ComplexScaler]
