@@ -474,7 +474,11 @@ class ComplexDescaler(LinearDescaler):
 
         de_base_args = (width, height // (1 + field_based.is_inter))
         kwargs.update(
-            border_handling=BorderHandling.from_param(border_handling, self.descale), ignore_mask=ignore_mask, blur=blur
+            linear=linear,
+            sigmoid=sigmoid,
+            border_handling=BorderHandling.from_param(border_handling, self.descale),
+            ignore_mask=ignore_mask,
+            blur=blur
         )
 
         sample_grid_model = SampleGridModel(sample_grid_model)
@@ -495,17 +499,15 @@ class ComplexDescaler(LinearDescaler):
 
             fields = clip.std.SeparateFields(field_based.is_tff)
 
-            interleaved = vs.core.std.Interleave(
-                [
-                    super().descale(
-                        fields[offset::2],
-                        **de_kwargs | dict(src_top=de_kwargs.get("src_top", 0.0) + (field_shift * mult)),
-                        linear=linear,
-                        sigmoid=sigmoid,
-                    )
-                    for offset, mult, de_kwargs in [(0, 1, de_kwargs_tf), (1, -1, de_kwargs_bf)]
-                ]
+            descaled_tf = super().descale(
+                fields[0::2],
+                **de_kwargs_tf | dict(src_top=de_kwargs_tf.get("src_top", 0.0) + field_shift),
             )
+            descaled_bf = super().descale(
+                fields[1::2],
+                **de_kwargs_bf | dict(src_top=de_kwargs_bf.get("src_top", 0.0) - field_shift),
+            )
+            interleaved = vs.core.std.Interleave([descaled_tf, descaled_bf])
 
             descaled = interleaved.std.DoubleWeave(field_based.is_tff)[::2]
         else:
@@ -513,9 +515,7 @@ class ComplexDescaler(LinearDescaler):
 
             kwargs, shift = sample_grid_model.for_src(clip, width, height, shift, **kwargs)
 
-            descaled = super().descale(
-                clip, **self.get_descale_args(clip, shift, *de_base_args, **kwargs), linear=linear, sigmoid=sigmoid
-            )
+            descaled = super().descale(clip, **self.get_descale_args(clip, shift, *de_base_args, **kwargs))
 
         return depth(descaled, bits)
 
