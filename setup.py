@@ -36,7 +36,10 @@ setuptools.setup(
         'vstools.utils',
 
         'vskernels',
+        'vskernels.abstract',
         'vskernels.kernels',
+        'vskernels.kernels.custom',
+        'vskernels.kernels.zimg',
 
         'vsexprtools',
 
