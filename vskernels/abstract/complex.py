@@ -131,6 +131,10 @@ class LinearScaler(_BaseLinear, Scaler):
         linear or sigmoid-based preprocessing and postprocessing. When enabled, the clip
         is linearized before the scaling operation and de-linearized afterward.
 
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
         :param clip:        The source clip.
         :param width:       Target width (defaults to clip width if None).
         :param height:      Target height (defaults to clip height if None).
@@ -193,6 +197,10 @@ class LinearDescaler(_BaseLinear, Descaler):
         This method behaves like the base `Descaler.descale()` but adds support for
         linear or sigmoid-based preprocessing and postprocessing. When enabled, the clip
         is linearized before the descaling operation and de-linearized afterward.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
 
         :param clip:                The source clip.
         :param width:               Target descaled width (defaults to clip width if None).
@@ -378,6 +386,10 @@ class ComplexScaler(KeepArScaler, LinearScaler):
             """
             Scale a clip to the given resolution, with aspect ratio and linear light support.
 
+            Keyword arguments passed during initialization are automatically injected here,
+            unless explicitly overridden by the arguments provided at call time.
+            Only arguments that match named parameters in this method are injected.
+
             :param clip:                The source clip.
             :param width:               Target width (defaults to clip width if None).
             :param height:              Target height (defaults to clip height if None).
@@ -431,6 +443,10 @@ class ComplexDescaler(LinearDescaler):
 
         Supports both progressive and interlaced sources. When interlaced, it will separate fields,
         perform per-field descaling, and weave them back.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
 
         :param clip:                The source clip.
         :param width:               Target descaled width (defaults to clip width if None).
@@ -524,6 +540,10 @@ class ComplexDescaler(LinearDescaler):
         """
         Rescale a clip to the given resolution from a previously descaled clip.
 
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
         :param clip:                The source clip.
         :param width:               Target scaled width (defaults to clip width if None).
         :param height:              Target scaled height (defaults to clip height if None).
@@ -539,7 +559,7 @@ class ComplexDescaler(LinearDescaler):
         :param ignore_mask:         Optional mask specifying areas to ignore during rescaling.
         :param blur:                Amount of blur to apply during rescaling.
         :param kwargs:              Additional arguments passed to `rescale_function`.
-        :return:                    Scaled clip.
+        :return:                    The scaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         check_correct_subsampling(clip, width, height)

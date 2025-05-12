@@ -35,11 +35,11 @@ class Bicubic(ComplexKernel):
 
     def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Any) -> None:
         """
-        Initialize the scaler with optional arguments.
+        Initialize the scaler with specific 'b' and 'c' parameters and optional arguments.
 
         :param b:       The 'b' parameter for bicubic interpolation.
         :param c:       The 'c' parameter for bicubic interpolation.
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         self.b = b
         self.c = c
@@ -70,7 +70,7 @@ class BSpline(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(b=1, c=0, **kwargs)
 
@@ -82,7 +82,7 @@ class Hermite(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(b=0, c=0, **kwargs)
 
@@ -94,7 +94,7 @@ class Mitchell(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(b=1 / 3, c=1 / 3, **kwargs)
 
@@ -106,7 +106,7 @@ class Catrom(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(b=0, c=0.5, **kwargs)
 
@@ -118,7 +118,7 @@ class FFmpegBicubic(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(b=0, c=0.6, **kwargs)
 
@@ -130,7 +130,7 @@ class AdobeBicubic(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(b=0, c=0.75, **kwargs)
 
@@ -142,7 +142,7 @@ class AdobeBicubicSharper(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(b=0, c=1, blur=1.05, **kwargs)
 
@@ -154,7 +154,7 @@ class AdobeBicubicSmoother(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(b=0, c=5 / 8, blur=1.15, **kwargs)
 
@@ -166,7 +166,7 @@ class BicubicSharp(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(b=0, c=1, **kwargs)
 
@@ -178,7 +178,7 @@ class RobidouxSoft(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         b = (9 - 3 * sqrt(2)) / 7
         c = (1 - b) / 2
@@ -192,7 +192,7 @@ class Robidoux(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         b = 12 / (19 + 9 * sqrt(2))
         c = 113 / (58 + 216 * sqrt(2))
@@ -207,7 +207,7 @@ class RobidouxSharp(Bicubic):
         """
         Initialize the scaler with optional arguments.
 
-        :param kwargs:  Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         b = 6 / (13 + 7 * sqrt(2))
         c = 7 / (2 + 12 * sqrt(2))
@@ -232,7 +232,7 @@ class BicubicAuto(Bicubic):
 
         :param b:                   The 'b' parameter for bicubic interpolation.
         :param c:                   The 'c' parameter for bicubic interpolation.
-        :param kwargs:              Parameters to pass to the implemented funcs or the internal scale function.
+        :param kwargs:              Keyword arguments that configure the internal scaling behavior.
         :raise CustomValueError:    If both 'b' and 'c' are specified
         """
         if None not in {b, c}:

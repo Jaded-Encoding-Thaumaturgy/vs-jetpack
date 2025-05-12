@@ -110,10 +110,15 @@ class CustomComplexTapsKernel(CustomComplexKernel):
 
     def __init__(self, taps: float, **kwargs: Any) -> None:
         """
-        Initialize the kernel with a specific number of taps.
+        Initialize the kernel with a specific number of taps and optional keyword arguments.
+
+        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        but only if the method explicitly accepts them as named parameters.
+        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        the one passed to `func` takes precedence.
 
         :param taps:    Determines the radius of the kernel.
-        :param kwargs:  Additional keyword arguments passed to the superclass.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         self.taps = taps
         super().__init__(**kwargs)

@@ -37,7 +37,7 @@ class ExampleBicubicKernel(Kernel):
         :param shift:       Shift clip during the operation.
                             Expects a tuple of (src_top, src_left).
 
-        :return:            Scaled clip.
+        :return:            The scaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         return core.resize2.Bicubic(
@@ -68,7 +68,7 @@ class ExampleBicubicKernel(Kernel):
         :param shift:       Shift clip during the operation.
                             Expects a tuple of (src_top, src_left).
 
-        :return:            Descaled clip.
+        :return:            The descaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         return depth(
