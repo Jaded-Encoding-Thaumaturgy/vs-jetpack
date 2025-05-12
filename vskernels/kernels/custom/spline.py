@@ -3,6 +3,8 @@ from __future__ import annotations
 from math import comb
 from typing import Any
 
+import numpy as np
+
 from ...abstract import CustomComplexTapsKernel
 from .helpers import poly3
 
@@ -16,14 +18,12 @@ class Spline(CustomComplexTapsKernel):
         super().__init__(taps, **kwargs)
         self._coefs = self._splineKernelCoeff()
 
-    def _naturalCubicSpline(self, values: list[int]) -> list[float]:
-        import numpy as np
-
+    def _naturalCubicSpline(self, values: list[int]) -> list[np.float64]:
         n = len(values) - 1
 
         rhs = values[:-1] + values[1:] + [0] * (2 * n)
 
-        eqns = []
+        eqns = list[list[int]]()
         # left value = sample
         eqns += [[0] * (4 * i) + [i**3, i**2, i, 1] + [0] * (4 * (n - i - 1)) for i in range(n)]
         # right value = sample
@@ -50,12 +50,12 @@ class Spline(CustomComplexTapsKernel):
 
         return list(np.linalg.solve(np.array(eqns), np.array(rhs)))
 
-    def _splineKernelCoeff(self) -> list[float]:
+    def _splineKernelCoeff(self) -> list[np.float64]:
         taps = self.kernel_radius
 
-        coeffs = list[float]()
+        coeffs = list[np.float64]()
 
-        def _shiftPolynomial(coeffs: list[float], shift: float) -> list[float]:
+        def _shiftPolynomial(coeffs: list[np.float64], shift: float) -> list[Any]:
             return [
                 sum(c * comb(k, m) * (-shift) ** max(0, k - m) for k, c in enumerate(coeffs[::-1]))
                 for m in range(len(coeffs))
