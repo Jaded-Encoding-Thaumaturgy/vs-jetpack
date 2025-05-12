@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from math import sqrt
-from typing import Any, overload
+from typing import Any, Callable, overload
 
-from vstools import CustomValueError, core, vs
+from vstools import ConstantFormatVideoNode, CustomValueError, core, vs
 
 from ...abstract import ComplexKernel
 
@@ -28,9 +28,10 @@ __all__ = [
 class Bicubic(ComplexKernel):
     """Bicubic resizer."""
 
-    scale_function = resample_function = core.lazy.resize2.Bicubic
-    descale_function = core.lazy.descale.Debicubic
-    rescale_function = core.lazy.descale.Bicubic
+    scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Bicubic
+    resample_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Bicubic
+    descale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Debicubic
+    rescale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Bicubic
 
     def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Any) -> None:
         """
