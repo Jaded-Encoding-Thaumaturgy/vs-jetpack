@@ -29,8 +29,7 @@ class CustomKernel(Kernel):
     Abstract base class for defining custom kernel-based scaling and descaling operations.
 
     This class allows users to implement their own kernel function by overriding the
-    `kernel()` method. It provides flexible support for parameters like `blur` and `taps`,
-    enabling dynamic modification of the kernel's behavior at runtime.
+    `kernel()` method.
 
     Subclasses must implement the `kernel()` method to specify the mathematical shape of the kernel.
     """
