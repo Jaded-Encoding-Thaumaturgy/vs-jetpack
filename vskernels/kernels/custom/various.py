@@ -3,9 +3,15 @@ from __future__ import annotations
 from math import cos, exp, log, pi, sin, sqrt
 from typing import Any
 
+from vstools import vs
+
 from ...abstract import CustomComplexKernel, CustomComplexTapsKernel
+from ..zimg import Point, Bilinear, Lanczos
 
 __all__ = [
+    "CustomPoint",
+    "CustomBilinear",
+    "CustomLanczos",
     "Gaussian",
     "Box",
     "BlackMan",
@@ -21,6 +27,41 @@ __all__ = [
 
 def sinc(x: float) -> float:
     return 1.0 if x == 0.0 else sin(x * pi) / (x * pi)
+
+
+class CustomPoint(CustomComplexKernel, Point):
+    """Point resizer using the `CustomKernel` class."""
+
+    _static_kernel_radius = 0
+
+    def kernel(self, *, x: float) -> float:
+        return 1.0
+
+
+class CustomBilinear(CustomComplexKernel, Bilinear):
+    """Bilinear resizer using the `CustomKernel` class."""
+
+    _static_kernel_radius = 1
+
+    def kernel(self, *, x: float) -> float:
+        return max(1.0 - abs(x), 0.0)
+
+
+class CustomLanczos(CustomComplexTapsKernel, Lanczos):
+    """Lanczos resizer using the `CustomKernel` class."""
+
+    def __init__(self, taps: float = 3, **kwargs: Any) -> None:
+        super().__init__(taps, **kwargs)
+
+    def kernel(self, *, x: float) -> float:
+        x, taps = abs(x), self.kernel_radius
+
+        return sinc(x) * sinc(x / taps) if x < taps else 0.0
+
+    def get_params_args(
+        self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
+        return CustomComplexTapsKernel.get_params_args(self, is_descale, clip, width, height, **kwargs)
 
 
 class Gaussian(CustomComplexTapsKernel):

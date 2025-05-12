@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import Any
+from typing import Any, Callable
 
-from vstools import core, vs
+from vstools import ConstantFormatVideoNode, core, vs
 
 from ...abstract import ComplexKernel
 
@@ -17,29 +17,32 @@ __all__ = [
 class Point(ComplexKernel):
     """Point resizer."""
 
-    scale_function = resample_function = core.lazy.resize2.Point
-    descale_function = core.lazy.descale.Depoint
-    rescale_function = core.lazy.descale.Point
+    scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Point
+    resample_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Point
+    descale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Depoint
+    rescale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Point
     _static_kernel_radius = 1
 
 
 class Bilinear(ComplexKernel):
     """Bilinear resizer."""
 
-    scale_function = resample_function = core.lazy.resize2.Bilinear
-    descale_function = core.lazy.descale.Debilinear
-    rescale_function = core.lazy.descale.Bilinear
+    scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Bilinear
+    resample_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Bilinear
+    descale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Debilinear
+    rescale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Bilinear
     _static_kernel_radius = 1
 
 
 class Lanczos(ComplexKernel):
     """Lanczos resizer."""
 
-    scale_function = resample_function = core.lazy.resize2.Lanczos
-    descale_function = core.lazy.descale.Delanczos
-    rescale_function = core.lazy.descale.Lanczos
+    scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Lanczos
+    resample_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Lanczos
+    descale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Delanczos
+    rescale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Lanczos
 
-    def __init__(self, taps: int = 3, **kwargs: Any) -> None:
+    def __init__(self, taps: float = 3, **kwargs: Any) -> None:
         """
         Initialize the kernel with a specific number of taps.
 
@@ -54,8 +57,8 @@ class Lanczos(ComplexKernel):
     ) -> dict[str, Any]:
         args = super().get_params_args(is_descale, clip, width, height, **kwargs)
         if is_descale:
-            return args | dict(taps=self.taps)
-        return args | dict(filter_param_a=self.taps)
+            return args | dict(taps=self.kernel_radius)
+        return args | dict(filter_param_a=self.kernel_radius)
 
     @ComplexKernel.cached_property
     def kernel_radius(self) -> int:
