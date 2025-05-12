@@ -11,7 +11,7 @@ from typing import (
 )
 
 from jetpytools import P, R, T_co
-from typing_extensions import Self
+from typing_extensions import Self, deprecated
 
 from vstools import (
     ConstantFormatVideoNode, CustomNotImplementedError, CustomRuntimeError, CustomValueError, FuncExceptT,
@@ -26,10 +26,15 @@ from ..exceptions import (
 from ..types import LeftShift, TopShift
 
 __all__ = [
-    'Scaler', 'ScalerT',
-    'Descaler', 'DescalerT',
-    'Resampler', 'ResamplerT',
-    'Kernel', 'KernelT'
+    "Scaler",
+    "Descaler",
+    "Resampler",
+    "Kernel",
+
+    "ScalerT",
+    "DescalerT",
+    "ResamplerT",
+    "KernelT"
 ]
 
 
@@ -57,7 +62,7 @@ def _base_from_param(
     value: str | type[_BaseScalerT] | _BaseScalerT | None,
     exception_cls: type[_UnknownBaseScalerError],
     excluded: Sequence[type] = [],
-    func_except: FuncExceptT | None = None
+    func_except: FuncExceptT | None = None,
 ) -> type[_BaseScalerT]:
     if isinstance(value, str):
         all_scalers = get_subclasses(BaseScaler, excluded)
@@ -84,7 +89,7 @@ def _base_ensure_obj(
     value: str | type[_BaseScalerT] | _BaseScalerT | None,
     exception_cls: type[_UnknownBaseScalerError],
     excluded: Sequence[type] = [],
-    func_except: FuncExceptT | None = None
+    func_except: FuncExceptT | None = None,
 ) -> _BaseScalerT:
     if value is None:
         new_scaler = cls()
@@ -95,9 +100,10 @@ def _base_ensure_obj(
 
     if new_scaler.__class__ in excluded:
         raise exception_cls(
-            func_except or cls.ensure_obj, new_scaler.__class__.__name__,
-            'This {cls_name} can\'t be instantiated to be used!',
-            cls_name=new_scaler.__class__
+            func_except or cls.ensure_obj,
+            new_scaler.__class__.__name__,
+            "This {cls_name} can't be instantiated to be used!",
+            cls_name=new_scaler.__class__,
         )
 
     return new_scaler
@@ -114,13 +120,13 @@ def _check_kernel_radius(cls: BaseScalerMeta, obj: BaseScaler) -> BaseScaler:
     mro.discard(BaseScaler)
 
     for sub_cls in mro:
-        if any(v in sub_cls.__dict__.keys() for v in ('_static_kernel_radius', 'kernel_radius')):
+        if any(v in sub_cls.__dict__.keys() for v in ("_static_kernel_radius", "kernel_radius")):
             return obj
 
     raise CustomRuntimeError(
-        'When inheriting from BaseScaler, you must implement the kernel radius by either adding '
-        'the `kernel_radius` property or setting the class variable `_static_kernel_radius`.',
-        reason=cls
+        "When inheriting from BaseScaler, you must implement the kernel radius by either adding "
+        "the `kernel_radius` property or setting the class variable `_static_kernel_radius`.",
+        reason=cls,
     )
 
 
@@ -162,7 +168,7 @@ class BaseScalerMeta(ABCMeta):
         *,
         abstract: bool = False,
         partial_abstract: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> _BaseScalerMetaT:
         """
         Makes a new BaseScalerMeta type class.
@@ -258,8 +264,10 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
 
     @classmethod
     def from_param(
-        cls: type[_BaseScalerT], scaler: str | type[_BaseScalerT] | _BaseScalerT | None = None, /,
-        func_except: FuncExceptT | None = None
+        cls: type[_BaseScalerT],
+        scaler: str | type[_BaseScalerT] | _BaseScalerT | None = None,
+        /,
+        func_except: FuncExceptT | None = None,
     ) -> type[_BaseScalerT]:
         """
         Resolve and return a scaler type from a given input (string, type, or instance).
@@ -274,8 +282,10 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
 
     @classmethod
     def ensure_obj(
-        cls: type[_BaseScalerT], scaler: str | type[_BaseScalerT] | _BaseScalerT | None = None, /,
-        func_except: FuncExceptT | None = None
+        cls: type[_BaseScalerT],
+        scaler: str | type[_BaseScalerT] | _BaseScalerT | None = None,
+        /,
+        func_except: FuncExceptT | None = None,
     ) -> _BaseScalerT:
         """
         Ensure that the input is a scaler instance, resolving it if necessary.
@@ -296,9 +306,9 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         :raises CustomNotImplementedError:  If no kernel radius is defined.
         :return:                            Kernel radius.
         """
-        if hasattr(self, '_static_kernel_radius'):
+        if hasattr(self, "_static_kernel_radius"):
             return ceil(self._static_kernel_radius)
-        raise CustomNotImplementedError('kernel_radius is not implemented!', self.__class__)
+        raise CustomNotImplementedError("kernel_radius is not implemented!", self.__class__)
 
     def _pretty_string(self, **attrs: Any) -> str:
         """
@@ -308,8 +318,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         :return:        String representation of the object.
         """
         return (
-            f"{self.__class__.__name__}"
-            + '(' + ', '.join(f'{k}={v}' for k, v in (attrs | self.kwargs).items()) + ')'
+            f"{self.__class__.__name__}" + "(" + ", ".join(f"{k}={v}" for k, v in (attrs | self.kwargs).items()) + ")"
         )
 
     @cached_property
@@ -325,7 +334,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         self.kwargs.clear()
 
 
-_BaseScalerT = TypeVar('_BaseScalerT', bound=BaseScaler)
+_BaseScalerT = TypeVar("_BaseScalerT", bound=BaseScaler)
 
 
 class Scaler(BaseScaler):
@@ -340,12 +349,15 @@ class Scaler(BaseScaler):
     scale_function: Callable[..., vs.VideoNode]
     """Scale function called internally when performing scaling operations."""
 
-    _implemented_funcs: ClassVar[tuple[str, ...]] = ("scale", )
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ("scale",)
 
     def scale(
-        self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> vs.VideoNode | ConstantFormatVideoNode:
         """
         Scale a clip to a specified resolution.
@@ -360,9 +372,7 @@ class Scaler(BaseScaler):
         width, height = self._wh_norm(clip, width, height)
         check_correct_subsampling(clip, width, height)
 
-        return self.scale_function(
-            clip, **_norm_props_enums(self.get_scale_args(clip, shift, width, height, **kwargs))
-        )
+        return self.scale_function(clip, **_norm_props_enums(self.get_scale_args(clip, shift, width, height, **kwargs)))
 
     def supersample(
         self, clip: VideoNodeT, rfactor: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
@@ -383,11 +393,14 @@ class Scaler(BaseScaler):
 
         if max(dst_width, dst_height) <= 0.0:
             raise CustomValueError(
-                'Multiplying the resolution by "rfactor" must result in a positive resolution!', self.supersample, rfactor
+                'Multiplying the resolution by "rfactor" must result in a positive resolution!',
+                self.supersample,
+                rfactor,
             )
 
         return self.scale(clip, dst_width, dst_height, shift, **kwargs)  # type: ignore[return-value]
 
+    @deprecated('The "multi" method is deprecated. Use "supersample" instead.', category=DeprecationWarning)
     def multi(
         self, clip: VideoNodeT, multi: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
     ) -> VideoNodeT:
@@ -400,16 +413,15 @@ class Scaler(BaseScaler):
         :param kwargs:  Additional arguments forwarded to the scale function.
         :return:        Supersampled clip.
         """
-        import warnings
-
-        warnings.warn('The "multi" method is deprecated. Use "supersample" instead.', DeprecationWarning)
-
         return self.supersample(clip, multi, shift, **kwargs)
 
     def get_scale_args(
-        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
-        width: int | None = None, height: int | None = None,
-        **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        width: int | None = None,
+        height: int | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """
         Generate the keyword arguments used for scaling.
@@ -421,10 +433,7 @@ class Scaler(BaseScaler):
         :param kwargs:  Extra parameters to merge.
         :return:        Final dictionary of keyword arguments for the scale function.
         """
-        return (
-            dict(width=width, height=height, src_top=shift[0], src_left=shift[1])
-            | self.kwargs | kwargs
-        )
+        return dict(width=width, height=height, src_top=shift[0], src_left=shift[1]) | self.kwargs | kwargs
 
 
 class Descaler(BaseScaler):
@@ -445,9 +454,12 @@ class Descaler(BaseScaler):
     _implemented_funcs: ClassVar[tuple[str, ...]] = ("descale", "rescale")
 
     def descale(
-        self, clip: vs.VideoNode, width: int | None, height: int | None,
+        self,
+        clip: vs.VideoNode,
+        width: int | None,
+        height: int | None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
         Descale a clip to the given resolution.
@@ -466,9 +478,12 @@ class Descaler(BaseScaler):
         )
 
     def rescale(
-        self, clip: vs.VideoNode, width: int | None, height: int | None,
+        self,
+        clip: vs.VideoNode,
+        width: int | None,
+        height: int | None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
         Rescale a clip to the given resolution from a previously descaled clip.
@@ -487,9 +502,12 @@ class Descaler(BaseScaler):
         )
 
     def get_descale_args(
-        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
-        width: int | None = None, height: int | None = None,
-        **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        width: int | None = None,
+        height: int | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """
         Construct the argument dictionary used for descaling.
@@ -501,15 +519,15 @@ class Descaler(BaseScaler):
         :param kwargs:  Extra keyword arguments to merge.
         :return:        Combined keyword argument dictionary.
         """
-        return (
-            dict(width=width, height=height, src_top=shift[0], src_left=shift[1])
-            | self.kwargs | kwargs
-        )
+        return dict(width=width, height=height, src_top=shift[0], src_left=shift[1]) | self.kwargs | kwargs
 
     def get_rescale_args(
-        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
-        width: int | None = None, height: int | None = None,
-        **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        width: int | None = None,
+        height: int | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """
         Construct the argument dictionary used for upscaling.
@@ -521,10 +539,7 @@ class Descaler(BaseScaler):
         :param kwargs:  Extra keyword arguments to merge.
         :return:        Combined keyword argument dictionary.
         """
-        return (
-            dict(width=width, height=height, src_top=shift[0], src_left=shift[1])
-            | self.kwargs | kwargs
-        )
+        return dict(width=width, height=height, src_top=shift[0], src_left=shift[1]) | self.kwargs | kwargs
 
 
 class Resampler(BaseScaler):
@@ -539,11 +554,15 @@ class Resampler(BaseScaler):
     resample_function: Callable[..., ConstantFormatVideoNode]
     """Resample function called internally when performing resampling operations."""
 
-    _implemented_funcs: ClassVar[tuple[str, ...]] = ("resample", )
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ("resample",)
 
     def resample(
-        self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
-        matrix: MatrixT | None = None, matrix_in: MatrixT | None = None, **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        format: int | VideoFormatT | HoldsVideoFormatT,
+        matrix: MatrixT | None = None,
+        matrix_in: MatrixT | None = None,
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
         Resample a video clip to the given format.
@@ -563,9 +582,12 @@ class Resampler(BaseScaler):
         )
 
     def get_resample_args(
-        self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
-        matrix: MatrixT | None, matrix_in: MatrixT | None,
-        **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        format: int | VideoFormatT | HoldsVideoFormatT,
+        matrix: MatrixT | None,
+        matrix_in: MatrixT | None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """
         Construct the argument dictionary used for resampling.
@@ -584,9 +606,10 @@ class Resampler(BaseScaler):
             dict(
                 format=get_video_format(format).id,
                 matrix=Matrix.from_param(matrix),
-                matrix_in=Matrix.from_param(matrix_in)
+                matrix_in=Matrix.from_param(matrix_in),
             )
-            | self.kwargs | kwargs
+            | self.kwargs
+            | kwargs
         )
 
 
@@ -605,9 +628,7 @@ class Kernel(Scaler, Descaler, Resampler):
     _implemented_funcs = ("scale", "descale", "rescale", "resample", "shift")
 
     @overload
-    def shift(
-        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift], /, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    def shift(self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift], /, **kwargs: Any) -> ConstantFormatVideoNode:
         """
         Apply a subpixel shift to the clip using the kernel's scaling logic.
 
@@ -621,12 +642,7 @@ class Kernel(Scaler, Descaler, Resampler):
 
     @overload
     def shift(
-        self,
-        clip: vs.VideoNode,
-        shift_top: float | list[float],
-        shift_left: float | list[float],
-        /,
-        **kwargs: Any
+        self, clip: vs.VideoNode, shift_top: float | list[float], shift_left: float | list[float], /, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
         Apply a subpixel shift to the clip using the kernel's scaling logic.
@@ -646,7 +662,7 @@ class Kernel(Scaler, Descaler, Resampler):
         shifts_or_top: float | tuple[float, float] | list[float],
         shift_left: float | list[float] | None = None,
         /,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
         Apply a subpixel shift to the clip using the kernel's scaling logic.
@@ -687,7 +703,8 @@ class Kernel(Scaler, Descaler, Resampler):
                 raise CustomValueError(
                     "Inconsistent shift values detected for a single plane. "
                     "All shift values must be identical when passing a GRAY clip.",
-                    self.shift, (shifts_top, shifts_left)
+                    self.shift,
+                    (shifts_top, shifts_left),
                 )
 
             return _shift(clip, (shifts_top[0], shifts_left[0]))
@@ -703,29 +720,25 @@ class Kernel(Scaler, Descaler, Resampler):
     @classmethod
     def from_param(
         cls: type[Kernel], kernel: KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> type[Kernel]:
-        ...
+    ) -> type[Kernel]: ...
 
     @overload
     @classmethod
     def from_param(
         cls: type[Kernel], kernel: ScalerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> type[Scaler]:
-        ...
+    ) -> type[Scaler]: ...
 
     @overload
     @classmethod
     def from_param(
         cls: type[Kernel], kernel: DescalerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> type[Descaler]:
-        ...
+    ) -> type[Descaler]: ...
 
     @overload
     @classmethod
     def from_param(
         cls: type[Kernel], kernel: ResamplerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> type[Resampler]:
-        ...
+    ) -> type[Resampler]: ...
 
     @classmethod
     def from_param(
@@ -740,42 +753,38 @@ class Kernel(Scaler, Descaler, Resampler):
         :return:                    The resolved kernel class.
         :raises UnknownKernelError: If the kernel could not be identified.
         """
-        return _base_from_param(
-            cls, Kernel, kernel, cls._err_class, abstract_kernels, func_except
-        )
+        return _base_from_param(cls, Kernel, kernel, cls._err_class, abstract_kernels, func_except)
 
     @overload
     @classmethod
     def ensure_obj(
         cls: type[Kernel], kernel: KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> Kernel:
-        ...
+    ) -> Kernel: ...
 
     @overload
     @classmethod
     def ensure_obj(
         cls: type[Kernel], kernel: ScalerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> Scaler:
-        ...
+    ) -> Scaler: ...
 
     @overload
     @classmethod
     def ensure_obj(
         cls: type[Kernel], kernel: DescalerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> Descaler:
-        ...
+    ) -> Descaler: ...
 
     @overload
     @classmethod
     def ensure_obj(
         cls: type[Kernel], kernel: ResamplerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> Resampler:
-        ...
+    ) -> Resampler: ...
 
     @classmethod
     def ensure_obj(
-        cls: type[Kernel], kernel: str | type[BaseScaler] | BaseScaler | None = None, /,
-        func_except: FuncExceptT | None = None
+        cls: type[Kernel],
+        kernel: str | type[BaseScaler] | BaseScaler | None = None,
+        /,
+        func_except: FuncExceptT | None = None,
     ) -> BaseScaler:
         """
         Ensure that the given kernel input is returned as a kernel instance.
@@ -786,9 +795,7 @@ class Kernel(Scaler, Descaler, Resampler):
         :return:                    The resolved and instantiated kernel.
         :raises UnknownKernelError: If the kernel is unknown or cannot be instantiated.
         """
-        return _base_ensure_obj(
-            cls, Kernel, kernel, cls._err_class, abstract_kernels, func_except
-        )
+        return _base_ensure_obj(cls, Kernel, kernel, cls._err_class, abstract_kernels, func_except)
 
     def get_params_args(
         self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any
@@ -807,9 +814,12 @@ class Kernel(Scaler, Descaler, Resampler):
         return dict(width=width, height=height) | self.kwargs | kwargs
 
     def get_scale_args(
-        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
-        width: int | None = None, height: int | None = None,
-        **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        width: int | None = None,
+        height: int | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """
         Generate and normalize argument dictionary for a scale operation.
@@ -822,15 +832,15 @@ class Kernel(Scaler, Descaler, Resampler):
 
         :return:        Dictionary of keyword arguments for the scale function.
         """
-        return (
-            dict(src_top=shift[0], src_left=shift[1])
-            | self.get_params_args(False, clip, width, height, **kwargs)
-        )
+        return dict(src_top=shift[0], src_left=shift[1]) | self.get_params_args(False, clip, width, height, **kwargs)
 
     def get_descale_args(
-        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
-        width: int | None = None, height: int | None = None,
-        **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        width: int | None = None,
+        height: int | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """
         Generate and normalize argument dictionary for a descale operation.
@@ -843,15 +853,15 @@ class Kernel(Scaler, Descaler, Resampler):
 
         :return:        Dictionary of keyword arguments for the descale function.
         """
-        return (
-            dict(src_top=shift[0], src_left=shift[1])
-            | self.get_params_args(True, clip, width, height, **kwargs)
-        )
+        return dict(src_top=shift[0], src_left=shift[1]) | self.get_params_args(True, clip, width, height, **kwargs)
 
     def get_rescale_args(
-        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
-        width: int | None = None, height: int | None = None,
-        **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        width: int | None = None,
+        height: int | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """
         Generate and normalize argument dictionary for a rescale operation.
@@ -864,15 +874,15 @@ class Kernel(Scaler, Descaler, Resampler):
 
         :return:        Dictionary of keyword arguments for the rescale function.
         """
-        return (
-            dict(src_top=shift[0], src_left=shift[1])
-            | self.get_params_args(True, clip, width, height, **kwargs)
-        )
+        return dict(src_top=shift[0], src_left=shift[1]) | self.get_params_args(True, clip, width, height, **kwargs)
 
     def get_resample_args(
-        self, clip: vs.VideoNode, format: int | VideoFormatT | HoldsVideoFormatT,
-        matrix: MatrixT | None, matrix_in: MatrixT | None,
-        **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        format: int | VideoFormatT | HoldsVideoFormatT,
+        matrix: MatrixT | None,
+        matrix_in: MatrixT | None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """
         Generate and normalize argument dictionary for a resample operation.
@@ -888,14 +898,9 @@ class Kernel(Scaler, Descaler, Resampler):
 
         :return:            Dictionary of keyword arguments for the resample function.
         """
-        return (
-            dict(
-                format=get_video_format(format).id,
-                matrix=Matrix.from_param(matrix),
-                matrix_in=Matrix.from_param(matrix_in)
-            )
-            | self.get_params_args(False, clip, **kwargs)
-        )
+        return dict(
+            format=get_video_format(format).id, matrix=Matrix.from_param(matrix), matrix_in=Matrix.from_param(matrix_in)
+        ) | self.get_params_args(False, clip, **kwargs)
 
 
 ScalerT = Union[str, type[Scaler], Scaler]

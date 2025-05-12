@@ -7,16 +7,16 @@ from .complex import CustomComplexKernel, CustomComplexTapsKernel
 from .helpers import sinc
 
 __all__ = [
-    'Gaussian',
-    'Box',
-    'BlackMan',
-    'BlackManMinLobe',
-    'Sinc',
-    'Hann',
-    'Hamming',
-    'Welch',
-    'Bohman',
-    'Cosine',
+    "Gaussian",
+    "Box",
+    "BlackMan",
+    "BlackManMinLobe",
+    "Sinc",
+    "Hann",
+    "Hamming",
+    "Welch",
+    "Bohman",
+    "Cosine",
 ]
 
 
@@ -33,7 +33,7 @@ class gauss_sigma(float):
         """Converts a Gaussian sigma to fmtc's curve value."""
         if not sigma:
             return 0.0
-        return 10 / (2 * log(2) * (sigma ** 2))
+        return 10 / (2 * log(2) * (sigma**2))
 
     def from_libplacebo(self, sigma: float) -> float:
         """Converts a sigma value from libplacebo to the Gaussian sigma."""
@@ -45,7 +45,7 @@ class gauss_sigma(float):
         """Converts a Gaussian sigma to libplacebo's sigma value."""
         if not sigma:
             return 0.0
-        return 4 * (sigma ** 2)
+        return 4 * (sigma**2)
 
 
 class Gaussian(CustomComplexTapsKernel):
@@ -69,7 +69,7 @@ class Gaussian(CustomComplexTapsKernel):
         return gauss_sigma(self._sigma)
 
     def kernel(self, *, x: float) -> float:
-        return 1 / (self._sigma * sqrt(2 * pi)) * exp(-x ** 2 / (2 * self._sigma ** 2))
+        return 1 / (self._sigma * sqrt(2 * pi)) * exp(-(x**2) / (2 * self._sigma**2))
 
 
 class Box(CustomComplexKernel):

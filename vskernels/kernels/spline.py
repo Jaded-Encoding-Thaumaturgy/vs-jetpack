@@ -9,10 +9,10 @@ from .complex import CustomComplexTapsKernel, ComplexKernel
 from .helpers import poly3
 
 __all__ = [
-    'Spline',
-    'Spline16',
-    'Spline36',
-    'Spline64',
+    "Spline",
+    "Spline16",
+    "Spline36",
+    "Spline64",
 ]
 
 
@@ -32,16 +32,16 @@ class Spline(CustomComplexTapsKernel):
 
         eqns = []
         # left value = sample
-        eqns += [[0] * (4 * i) + [i ** 3, i ** 2, i, 1] + [0] * (4 * (n - i - 1)) for i in range(n)]
+        eqns += [[0] * (4 * i) + [i**3, i**2, i, 1] + [0] * (4 * (n - i - 1)) for i in range(n)]
         # right value = sample
         eqns += [[0] * (4 * i) + [(i + 1) ** 3, (i + 1) ** 2, i + 1, 1] + [0] * (4 * (n - i - 1)) for i in range(n)]
         # derivatives match
         eqns += [
             (
-                [0] * (4 * i) +  # noqa: W504
-                [3 * (i + 1) ** 2, 2 * (i + 1), 1, 0] +  # noqa: W504
-                [-3 * (i + 1) ** 2, -2 * (i + 1), -1, 0] +  # noqa: W504
-                [0] * (4 * (n - i - 2))
+                [0] * (4 * i)  # noqa: W504
+                + [3 * (i + 1) ** 2, 2 * (i + 1), 1, 0]  # noqa: W504
+                + [-3 * (i + 1) ** 2, -2 * (i + 1), -1, 0]  # noqa: W504
+                + [0] * (4 * (n - i - 2))
             )
             for i in range(n - 1)
         ]
@@ -51,9 +51,9 @@ class Spline(CustomComplexTapsKernel):
             for i in range(n - 1)
         ]
         eqns += [[0, 2, 0, 0] + [0] * (4 * (n - 1))]
-        eqns += [[0] * (4 * (n - 1)) + [6 * n ** 2, 2 * n, 0, 0]]
+        eqns += [[0] * (4 * (n - 1)) + [6 * n**2, 2 * n, 0, 0]]
 
-        assert (len(rhs) == len(eqns))
+        assert len(rhs) == len(eqns)
 
         return list(np.linalg.solve(np.array(eqns), np.array(rhs)))
 
@@ -74,9 +74,7 @@ class Spline(CustomComplexTapsKernel):
 
             assert len(samples) == 2 * taps
 
-            coeffs += _shiftPolynomial(
-                self._naturalCubicSpline(samples)[4 * taps - 4:4 * taps], -(taps - 1) + i
-            )
+            coeffs += _shiftPolynomial(self._naturalCubicSpline(samples)[4 * taps - 4 : 4 * taps], -(taps - 1) + i)
 
         return coeffs
 
@@ -88,7 +86,7 @@ class Spline(CustomComplexTapsKernel):
 
         tap = int(x)
 
-        a, b, c, d = self._coefs[4 * tap:4 * tap + 4]
+        a, b, c, d = self._coefs[4 * tap : 4 * tap + 4]
 
         return poly3(x, d, c, b, a)
 

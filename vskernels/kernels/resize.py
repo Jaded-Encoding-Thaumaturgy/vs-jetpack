@@ -8,9 +8,9 @@ from vstools import core, vs
 from .complex import ComplexKernel
 
 __all__ = [
-    'Point',
-    'Bilinear',
-    'Lanczos',
+    "Point",
+    "Bilinear",
+    "Lanczos",
 ]
 
 
