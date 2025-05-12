@@ -242,7 +242,12 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         """
         Initialize the scaler with optional keyword arguments.
 
-        :param kwargs:      Parameters to pass to the implemented funcs or the internal scale function.
+        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        but only if the method explicitly accepts them as named parameters.
+        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        the one passed to `func` takes precedence.
+
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
         """
         self.kwargs = kwargs
 
@@ -366,12 +371,16 @@ class Scaler(BaseScaler):
         """
         Scale a clip to a specified resolution.
 
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
         :param clip:        The source clip.
         :param width:       Target width (defaults to clip width if None).
         :param height:      Target height (defaults to clip height if None).
         :param shift:       Subpixel shift (top, left) applied during scaling.
         :param kwargs:      Additional arguments forwarded to the scale function.
-        :return:            Scaled clip.
+        :return:            The scaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         check_correct_subsampling(clip, width, height)
@@ -389,7 +398,7 @@ class Scaler(BaseScaler):
         :param shift:               Subpixel shift (top, left) applied during scaling.
         :param kwargs:              Additional arguments forwarded to the scale function.
         :raises CustomValueError:   If resulting resolution is non-positive.
-        :return:                    Supersampled clip.
+        :return:                    The supersampled clip.
         """
         assert check_variable_resolution(clip, self.multi)
 
@@ -415,7 +424,7 @@ class Scaler(BaseScaler):
         :param multi:   Supersampling factor.
         :param shift:   Subpixel shift (top, left) applied during scaling.
         :param kwargs:  Additional arguments forwarded to the scale function.
-        :return:        Supersampled clip.
+        :return:        The supersampled clip.
         """
         return self.supersample(clip, multi, shift, **kwargs)
 
@@ -468,11 +477,15 @@ class Descaler(BaseScaler):
         """
         Descale a clip to the given resolution.
 
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
         :param clip:    The source clip.
         :param width:   Target descaled width (defaults to clip width if None).
         :param height:  Target descaled height (defaults to clip height if None).
         :param shift:   Subpixel shift (top, left) applied during scaling.
-        :return:        Descaled clip.
+        :return:        The descaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         check_correct_subsampling(clip, width, height)
@@ -492,11 +505,15 @@ class Descaler(BaseScaler):
         """
         Rescale a clip to the given resolution from a previously descaled clip.
 
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
         :param clip:    The source clip.
         :param width:   Target scaled width (defaults to clip width if None).
         :param height:  Target scaled height (defaults to clip height if None).
         :param shift:   Subpixel shift (top, left) applied during scaling.
-        :return:        Scaled clip.
+        :return:        The scaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         check_correct_subsampling(clip, width, height)
@@ -571,6 +588,10 @@ class Resampler(BaseScaler):
         """
         Resample a video clip to the given format.
 
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
         :param clip:        The source clip.
         :param format:      The target video format, which can either be:
                                 - an integer format ID,
@@ -636,6 +657,10 @@ class Kernel(Scaler, Descaler, Resampler):
         """
         Apply a subpixel shift to the clip using the kernel's scaling logic.
 
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
         :param clip:                    The source clip.
         :param shift:                   A (top, left) tuple values for shift.
         :param kwargs:                  Additional arguments passed to the internal `scale` call.
@@ -650,6 +675,10 @@ class Kernel(Scaler, Descaler, Resampler):
     ) -> ConstantFormatVideoNode:
         """
         Apply a subpixel shift to the clip using the kernel's scaling logic.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
 
         :param clip:                    The source clip.
         :param shift_top:               Vertical shift or list of Vertical shifts.
@@ -673,6 +702,10 @@ class Kernel(Scaler, Descaler, Resampler):
 
         If a single float or tuple is provided, it is used uniformly.
         If a list is given, the shift is applied per plane.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
 
         :param clip:                    The source clip.
         :param shifts_or_top:           Either a single vertical shift, a (top, left) tuple, or a list of vertical shifts.
