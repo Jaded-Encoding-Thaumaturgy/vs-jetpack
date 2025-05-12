@@ -6,7 +6,7 @@ from typing import Any, ClassVar
 from vstools import core, fallback, vs
 
 from ..types import LeftShift, TopShift
-from .complex import ComplexScaler
+from ..abstract import ComplexScaler
 
 __all__ = [
     "Placebo",
