@@ -1,3 +1,7 @@
+"""
+This module defines the base abstract interfaces for general scaling operations.
+"""
+
 from __future__ import annotations
 
 import functools
