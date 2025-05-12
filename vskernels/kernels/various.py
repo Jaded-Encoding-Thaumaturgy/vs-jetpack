@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import cos, exp, log, pi, sin, sqrt
 from typing import Any
 
-from .complex import CustomComplexKernel, CustomComplexTapsKernel
+from ..abstract import CustomComplexKernel, CustomComplexTapsKernel
 
 __all__ = [
     "Gaussian",

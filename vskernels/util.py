@@ -12,12 +12,8 @@ from vstools import (
     MatrixT, Transfer, VideoFormatT, cachedproperty, depth, get_video_format, vs
 )
 
-if TYPE_CHECKING:
-    from .kernels.abstract import BaseScaler
-else:
-    BaseScaler = Any
-
-from .kernels import Bicubic, Catrom, Kernel, KernelT, Point, Resampler, ResamplerT, Scaler
+from .abstract import Kernel, KernelT, Resampler, ResamplerT, Scaler
+from .kernels import Bicubic, Catrom, Point
 from .types import Center, LeftShift, Slope, TopShift
 
 __all__ = [

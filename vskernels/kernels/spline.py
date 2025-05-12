@@ -5,7 +5,7 @@ from typing import Any
 
 from vstools import core
 
-from .complex import CustomComplexTapsKernel, ComplexKernel
+from ..abstract import CustomComplexTapsKernel, ComplexKernel
 
 __all__ = [
     "Spline",
