@@ -15,8 +15,7 @@ from ..types import (
     BorderHandling, BotFieldLeftShift, BotFieldTopShift, Center, LeftShift, SampleGridModel, ShiftT, Slope,
     TopFieldLeftShift, TopFieldTopShift, TopShift
 )
-from .abstract import BaseScaler, Descaler, Kernel, Resampler, Scaler
-from .custom import CustomKernel
+from .base import BaseScaler, Descaler, Kernel, Resampler, Scaler
 
 __all__ = [
     "LinearScaler",

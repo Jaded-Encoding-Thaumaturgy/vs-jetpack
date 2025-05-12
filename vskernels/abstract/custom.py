@@ -8,7 +8,7 @@ from jetpytools import CustomValueError
 
 from vstools import ConstantFormatVideoNode, core, vs
 
-from .abstract import Kernel
+from .base import Kernel
 
 __all__ = ["CustomKernel"]
 
