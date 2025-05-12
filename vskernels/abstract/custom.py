@@ -1,3 +1,8 @@
+"""
+This module defines the abstract classes for scaling, descaling and resampling operations
+based on a custom kernel.
+"""
+
 from __future__ import annotations
 
 from abc import abstractmethod

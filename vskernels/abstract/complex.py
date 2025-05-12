@@ -1,3 +1,7 @@
+"""
+This module defines the abstract classes for scaling, descaling and resampling operations.
+"""
+
 from __future__ import annotations
 
 from functools import partial
