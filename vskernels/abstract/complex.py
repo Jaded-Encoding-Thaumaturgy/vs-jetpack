@@ -484,7 +484,7 @@ class ComplexDescaler(LinearDescaler):
         sample_grid_model = SampleGridModel(sample_grid_model)
 
         if field_based.is_inter:
-            shift_y, shift_x = self._shift_norm(shift, False, self.descale)
+            shift_y, shift_x = self._descale_shift_norm(shift, False, self.descale)
 
             kwargs_tf, shift = sample_grid_model.for_src(clip, width, height, (shift_y[0], shift_x[0]), **kwargs)
             kwargs_bf, shift = sample_grid_model.for_src(clip, width, height, (shift_y[1], shift_x[1]), **kwargs)
@@ -511,7 +511,7 @@ class ComplexDescaler(LinearDescaler):
 
             descaled = interleaved.std.DoubleWeave(field_based.is_tff)[::2]
         else:
-            shift = self._shift_norm(shift, True, self.descale)
+            shift = self._descale_shift_norm(shift, True, self.descale)
 
             kwargs, shift = sample_grid_model.for_src(clip, width, height, shift, **kwargs)
 
@@ -578,7 +578,7 @@ class ComplexDescaler(LinearDescaler):
         if field_based.is_inter:
             raise NotImplementedError
         else:
-            shift = self._shift_norm(shift, True, self.descale)
+            shift = self._descale_shift_norm(shift, True, self.descale)
 
             kwargs, shift = sample_grid_model.for_src(clip, width, height, shift, **kwargs)
 
@@ -589,16 +589,16 @@ class ComplexDescaler(LinearDescaler):
         return depth(descaled, bits)
 
     @overload
-    def _shift_norm(
+    def _descale_shift_norm(
         self, shift: ShiftT, assume_progressive: Literal[True] = ..., func: FuncExceptT | None = None
     ) -> tuple[TopShift, LeftShift]: ...
 
     @overload
-    def _shift_norm(
+    def _descale_shift_norm(
         self, shift: ShiftT, assume_progressive: Literal[False] = ..., func: FuncExceptT | None = None
     ) -> tuple[tuple[TopFieldTopShift, BotFieldTopShift], tuple[TopFieldLeftShift, BotFieldLeftShift]]: ...
 
-    def _shift_norm(self, shift: ShiftT, assume_progressive: bool = True, func: FuncExceptT | None = None) -> Any:
+    def _descale_shift_norm(self, shift: ShiftT, assume_progressive: bool = True, func: FuncExceptT | None = None) -> Any:
         """
         Normalize shift values depending on field-based status.
 
