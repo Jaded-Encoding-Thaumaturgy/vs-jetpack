@@ -708,8 +708,8 @@ class Kernel(Scaler, Descaler, Resampler):
         format_out = get_video_format(kwargs.pop("format", clip.format))
 
         chromaloc = ChromaLocation.from_video(clip, func=self.scale)
-        chromaloc_in: ChromaLocation = kwargs.pop("chromaloc_in", chromaloc)
-        chromaloc_out: ChromaLocation = kwargs.pop("chromaloc", chromaloc)
+        chromaloc_in = ChromaLocation(kwargs.pop("chromaloc_in", chromaloc))
+        chromaloc_out = ChromaLocation(kwargs.pop("chromaloc", chromaloc))
 
         off_left, off_top = chromaloc_in.get_offsets(format_in)
         off_left_out, off_top_out = chromaloc_out.get_offsets(format_out)
