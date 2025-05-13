@@ -82,8 +82,8 @@ class Placebo(ComplexScaler, abstract=True):
     ) -> dict[str, Any]:
         return (
             dict(
-                sx=shift[1],
-                sy=shift[0],
+                sx=kwargs.pop("src_left", shift[1]),
+                sy=kwargs.pop("src_top", shift[0]),
                 width=width,
                 height=height,
                 filter=self._kernel,
