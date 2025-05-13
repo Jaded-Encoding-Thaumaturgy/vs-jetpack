@@ -400,7 +400,7 @@ class Scaler(BaseScaler):
         :raises CustomValueError:   If resulting resolution is non-positive.
         :return:                    The supersampled clip.
         """
-        assert check_variable_resolution(clip, self.multi)
+        assert check_variable_resolution(clip, self.supersample)
 
         dst_width, dst_height = ceil(clip.width * rfactor), ceil(clip.height * rfactor)
 
