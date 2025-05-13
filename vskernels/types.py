@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import cache
 from typing import Any, TypeAlias, Union
+
+from jetpytools import CustomNotImplementedError
 
 from vstools import CustomIntEnum, KwargsT, padder, vs
 
@@ -19,25 +21,29 @@ class BorderHandling(CustomIntEnum):
     ZERO = 1
     REPEAT = 2
 
-    def prepare_clip(self, clip: vs.VideoNode, min_pad: int = 2) -> vs.VideoNode:
+    def prepare_clip(
+        self, clip: vs.VideoNode, min_pad: int = 2, shift: tuple[TopShift, LeftShift] = (0, 0)
+    ) -> tuple[vs.VideoNode, tuple[TopShift, LeftShift]]:
         pad_w, pad_h = (
             self.pad_amount(size, min_pad) for size in (clip.width, clip.height)
         )
 
         if pad_w == pad_h == 0:
-            return clip
-
-        args = (clip, pad_w, pad_w, pad_h, pad_h)
+            return clip, shift
 
         match self:
-            case BorderHandling.MIRROR:
-                return padder.MIRROR(*args)
             case BorderHandling.ZERO:
-                return padder.COLOR(*args)
+                padded = padder.COLOR(clip, pad_w, pad_w, pad_h, pad_h)
             case BorderHandling.REPEAT:
-                return padder.REPEAT(*args)
+                padded = padder.REPEAT(clip, pad_w, pad_w, pad_h, pad_h)
+            case _:
+                raise CustomNotImplementedError
 
-    @lru_cache
+        shift = tuple(s + ((p - c) // 2) for s, c, p in zip(shift, *((x.height, x.width) for x in (clip, padded))))
+
+        return padded, shift
+
+    @cache
     def pad_amount(self, size: int, min_amount: int = 2) -> int:
         if self is BorderHandling.MIRROR:
             return 0
