@@ -355,6 +355,25 @@ class KeepArScaler(Scaler):
         keep_ar: bool | None = None,
         **kwargs: Any,
     ) -> vs.VideoNode | ConstantFormatVideoNode:
+        """
+        Scale a clip to the given resolution with aspect ratio support.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
+        :param clip:                The source clip.
+        :param width:               Target width (defaults to clip width if None).
+        :param height:              Target height (defaults to clip height if None).
+        :param shift:               Subpixel shift (top, left) applied during scaling.
+        :param border_handling:     Method for handling image borders during sampling.
+        :param sample_grid_model:   Model used to align sampling grid.
+        :param sar:                 Sample aspect ratio to assume or convert to.
+        :param dar:                 Desired display aspect ratio.
+        :param dar_in:              Input display aspect ratio, if different from clip's.
+        :param keep_ar:             Whether to adjust dimensions to preserve aspect ratio.
+        :return:                    Scaled clip, optionally aspect-corrected.
+        """
         width, height = self._wh_norm(clip, width, height)
 
         check_correct_subsampling(clip, width, height)
