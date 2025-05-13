@@ -720,9 +720,9 @@ class Kernel(Scaler, Descaler, Resampler):
 
         # Offsets for scale out
         if format_out.subsampling_w:
-            offc_left = ((abs(off_left) + off_left * (clip.width / width)) * 1 / 2 ** clip.format.subsampling_w) + offc_left
+            offc_left = ((abs(off_left) + off_left * (clip.width / width)) * 1 / 2 ** format_in.subsampling_w) + offc_left
         if format_out.subsampling_h:
-            offc_top = ((abs(off_top) + off_top * (clip.height / height)) * 1 / 2 ** clip.format.subsampling_h) + offc_top
+            offc_top = ((abs(off_top) + off_top * (clip.height / height)) * 1 / 2 ** format_in.subsampling_h) + offc_top
 
         for i in range(1, n_planes):
             shift_left[i] += offc_left
