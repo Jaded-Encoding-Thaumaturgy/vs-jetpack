@@ -705,11 +705,15 @@ class Kernel(Scaler, Descaler, Resampler):
         width, height = self._wh_norm(clip, width, height)
 
         format_in = clip.format
-        format_out = get_video_format(kwargs.pop("format", clip.format))
+        format_out = get_video_format(fallback(kwargs.pop("format", None), self.kwargs.get("format"), clip.format))
 
         chromaloc = ChromaLocation.from_video(clip, func=self.scale)
-        chromaloc_in = ChromaLocation(kwargs.pop("chromaloc_in", chromaloc))
-        chromaloc_out = ChromaLocation(kwargs.pop("chromaloc", chromaloc))
+        chromaloc_in = ChromaLocation(
+            fallback(kwargs.pop("chromaloc_in", None), self.kwargs.get("chromaloc_in"), chromaloc)
+        )
+        chromaloc_out = ChromaLocation(
+            fallback(kwargs.pop("chromaloc", None), self.kwargs.get("chromaloc"), chromaloc)
+        )
 
         off_left, off_top = chromaloc_in.get_offsets(format_in)
         off_left_out, off_top_out = chromaloc_out.get_offsets(format_out)
@@ -754,7 +758,7 @@ class Kernel(Scaler, Descaler, Resampler):
         merged = core.std.ShufflePlanes(scaled_planes, [0, 0, 0], format_out.color_family, clip)
 
         if chromaloc_in != chromaloc_out:
-            merged = chromaloc_out.apply(merged)
+            return chromaloc_out.apply(merged)
 
         return merged
 
