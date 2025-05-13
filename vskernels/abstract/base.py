@@ -51,7 +51,7 @@ def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Calla
 
         for k in self.kwargs.copy():
             if k in signature.parameters:
-                init_kwargs[k] = self.kwargs.pop(k)
+                init_kwargs[k] = self.kwargs.get(k)
 
         return method(self, *args, **init_kwargs | kwargs)
 
