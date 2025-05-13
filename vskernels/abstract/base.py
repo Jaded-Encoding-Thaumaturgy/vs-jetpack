@@ -18,7 +18,7 @@ from jetpytools import P, R, T_co
 from typing_extensions import Self, deprecated
 
 from vstools import (
-    ConstantFormatVideoNode, CustomNotImplementedError, CustomRuntimeError, CustomValueError, FuncExceptT,
+    ChromaLocation, ConstantFormatVideoNode, CustomNotImplementedError, CustomRuntimeError, CustomValueError, FuncExceptT,
     HoldsVideoFormatT, Matrix, MatrixT, VideoFormatT, VideoNodeT, check_correct_subsampling, check_variable_format,
     check_variable_resolution, core, fallback, get_subclasses, get_video_format, normalize_seq, split, vs, vs_object
 )
@@ -651,6 +651,95 @@ class Kernel(Scaler, Descaler, Resampler):
     _err_class: ClassVar[type[_UnknownBaseScalerError]] = UnknownKernelError
 
     _implemented_funcs = ("scale", "descale", "rescale", "resample", "shift")
+
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[TopShift | list[TopShift], LeftShift | list[LeftShift]] = (0, 0),
+        **kwargs: Any,
+    ) -> vs.VideoNode | ConstantFormatVideoNode:
+        """
+        Scale a clip to a specified resolution.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
+        :param clip:        The source clip.
+        :param width:       Target width (defaults to clip width if None).
+        :param height:      Target height (defaults to clip height if None).
+        :param shift:       Subpixel shift (top, left) applied during scaling.
+                            If a tuple is provided, it is used uniformly.
+                            If a list is given, the shift is applied per plane.
+        :param kwargs:      Additional arguments forwarded to the scale function.
+        :return:            The scaled clip.
+        """
+        shift_top, shift_left = shift
+
+        if isinstance(shift_top, float) and isinstance(shift_left, float):
+            return super().scale(clip, width, height, (shift_top, shift_left), **kwargs)
+
+        assert check_variable_format(clip, self.scale)
+
+        n_planes = clip.format.num_planes
+
+        shift_top = normalize_seq(shift_top, n_planes)
+        shift_left = normalize_seq(shift_left, n_planes)
+
+        if n_planes == 1:
+            if len(set(shift_top)) > 1 or len(set(shift_left)) > 1:
+                raise CustomValueError(
+                    "Inconsistent shift values detected for a single plane. "
+                    "All shift values must be identical when passing a GRAY clip.",
+                    self.scale,
+                    (shift_top, shift_left),
+                )
+
+            return super().scale(clip, width, height, (shift_top[0], shift_left[0]), **kwargs)
+
+        width, height = self._wh_norm(clip, width, height)
+
+        format_in = clip.format
+        format_out: vs.VideoFormat = kwargs.pop("format", clip.format)
+
+        chromaloc = ChromaLocation.from_video(clip, func=self.scale)
+        chromaloc_in: ChromaLocation = kwargs.pop("chromaloc_in", chromaloc)
+        chromaloc_out: ChromaLocation = kwargs.pop("chromaloc", chromaloc)
+
+        off_left, off_top = chromaloc_in.get_offsets(format_in)
+        off_left_out, off_top_out = chromaloc_out.get_offsets(format_out)
+
+        # Offsets for format out
+        offc_left = abs(off_left) * 1 / 2 ** format_in.subsampling_w + off_left_out * 1 / 2 ** format_in.subsampling_w
+        offc_top = abs(off_top) * 1 / 2 ** format_in.subsampling_h + off_top_out * 1 / 2 ** format_in.subsampling_h
+
+        # Offsets for scale out
+        offc_left = ((abs(off_left) + off_left * (clip.width / width)) * 1 / 2 ** clip.format.subsampling_w) + offc_left
+        offc_top = ((abs(off_top) + off_top * (clip.height / height)) * 1 / 2 ** clip.format.subsampling_h) + offc_top
+
+        for i in range(1, n_planes):
+            shift_left[i] += offc_left
+            shift_top[i] += offc_top
+
+        scaled_planes = list[vs.VideoNode]()
+
+        for i, (plane, top, left) in enumerate(zip(split(clip), shift_top, shift_left)):
+            if i:
+                w = round(width * 1 / 2 ** clip.format.subsampling_h)
+                h = round(height * 1 / 2 ** clip.format.subsampling_h)
+            else:
+                w, h = width, height
+
+            scaled_planes.append(super().scale(plane, w, h, (top, left), **kwargs))
+
+        merged = core.std.ShufflePlanes(scaled_planes, [0, 0, 0], format_out.color_family, clip)
+
+        if chromaloc_in != chromaloc_out:
+            merged = chromaloc_out.apply(merged)
+
+        return merged
 
     @overload
     def shift(self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift], /, **kwargs: Any) -> ConstantFormatVideoNode:
