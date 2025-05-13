@@ -227,6 +227,9 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
     class cached_property(functools.cached_property[T_co]):
         """Read only version of functools.cached_property."""
 
+        if TYPE_CHECKING:
+            def __init__(self, func: Callable[Concatenate[_BaseScalerT, P], T_co]) -> None: ...
+
         def __set__(self, instance: None, value: Any) -> NoReturn:  # type: ignore[override]
             """Raise an error when attempting to set a cached property."""
             raise AttributeError("Can't set attribute")
