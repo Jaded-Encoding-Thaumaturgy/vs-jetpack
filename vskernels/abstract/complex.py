@@ -4,10 +4,12 @@ This module defines the abstract classes for scaling, descaling and resampling o
 
 from __future__ import annotations
 
+import sys
+
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, TypeVar, Union, overload
 
-from jetpytools import CustomIndexError, CustomValueError, FuncExceptT
+from jetpytools import CustomIndexError, CustomNotImplementedError, CustomValueError, FuncExceptT
 
 from vstools import (
     ConstantFormatVideoNode, Dar, FieldBased, FieldBasedT, KwargsT, Resolution, Sar, VideoNodeT,
@@ -48,6 +50,51 @@ def _from_param(cls: type[XarT], value: XarT | bool | float | None, fallback: Xa
         return cls.from_float(float(value))
 
     return None
+
+
+def _check_dynamic_keeparscaler_params(
+    border_handling: BorderHandling,
+    sample_grid_model: SampleGridModel,
+    sar: Any,
+    dar: Any,
+    dar_in: Any,
+    keep_ar: Any,
+    func: FuncExceptT
+) -> bool:
+    exceptions = list[CustomNotImplementedError]()
+
+    if border_handling != BorderHandling.MIRROR:
+        exceptions.append(
+            CustomNotImplementedError(
+                'When passing a dynamic size clip, "border_handling" must be MIRROR',
+                func,
+                border_handling
+            )
+        )
+    if sample_grid_model != SampleGridModel.MATCH_EDGES:
+        exceptions.append(
+            CustomNotImplementedError(
+                'When passing a dynamic size clip, "sample_grid_model" must be MATCH_EDGES',
+                func,
+                sample_grid_model
+            )
+        )
+    if any([p is not None for p in [sar, dar, dar_in, keep_ar]]):
+        exceptions.append(
+            CustomNotImplementedError(
+                'When passing a dynamic size clip, "sar", "dar", "dar_in" and "keep_ar" must all be None',
+                func,
+                (sar, dar, dar_in, keep_ar)
+            )
+        )
+
+    if exceptions:
+        if sys.version_info >= (3, 11):
+            raise ExceptionGroup("Multiple exceptions occurred!", exceptions)  # noqa: F821
+
+        raise Exception(exceptions)
+    
+    return True
 
 
 class _BaseLinear(BaseScaler):
@@ -324,31 +371,29 @@ class KeepArScaler(Scaler):
 
         check_correct_subsampling(clip, width, height)
 
-        const_size = 0 not in (clip.width, clip.height)
-
-        if const_size:
-            kwargs = self._get_kwargs_keep_ar(sar, dar, dar_in, keep_ar, **kwargs)
-
-            kwargs, shift, out_sar = self._handle_crop_resize_kwargs(clip, width, height, shift, **kwargs)
-
-            kwargs, shift = sample_grid_model.for_dst(clip, width, height, shift, **kwargs)
-
-            if (bh := BorderHandling.from_param(border_handling, self.scale)) is not None:
-                border_handling = bh
-            else:
-                raise TypeError
-
-            padded = border_handling.prepare_clip(clip, self.kernel_radius)
-
-            shift, clip = (
-                tuple(s + ((p - c) // 2) for s, c, p in zip(shift, *((x.height, x.width) for x in (clip, padded)))),
-                padded,
+        if 0 in (clip.width, clip.height):
+            _check_dynamic_keeparscaler_params(
+                border_handling, sample_grid_model, sar, dar, dar_in, keep_ar, self.scale
             )
+            return super().scale(clip, width, height, shift, **kwargs)
+
+        kwargs = self._get_kwargs_keep_ar(sar, dar, dar_in, keep_ar, **kwargs)
+
+        kwargs, shift, out_sar = self._handle_crop_resize_kwargs(clip, width, height, shift, **kwargs)
+
+        kwargs, shift = sample_grid_model.for_dst(clip, width, height, shift, **kwargs)
+
+        padded = border_handling.prepare_clip(clip, self.kernel_radius)
+
+        shift, clip = (
+            tuple(s + ((p - c) // 2) for s, c, p in zip(shift, *((x.height, x.width) for x in (clip, padded)))),
+            padded,
+        )
 
         clip = super().scale(clip, width, height, shift, **kwargs)
 
-        if const_size and out_sar:
-            clip = out_sar.apply(clip)
+        if out_sar:
+            return out_sar.apply(clip)
 
         return clip
 
