@@ -9,11 +9,11 @@ import sys
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, Union, overload
 
-from jetpytools import CustomIndexError, CustomNotImplementedError, CustomValueError, FuncExceptT
+from jetpytools import CustomIndexError, CustomNotImplementedError, CustomValueError, FuncExceptT, fallback
 
 from vstools import (
-    ConstantFormatVideoNode, Dar, FieldBased, FieldBasedT, KwargsT, Resolution, Sar, VideoNodeT,
-    check_correct_subsampling, depth, expect_bits, vs
+    ChromaLocation, ConstantFormatVideoNode, Dar, FieldBased, FieldBasedT, KwargsT, Resolution, Sar, VideoNodeT,
+    check_correct_subsampling, check_variable_format, depth, expect_bits, get_video_format, normalize_seq, split, vs
 )
 
 from ..types import (
@@ -382,60 +382,157 @@ class KeepArScaler(Scaler):
 
 class ComplexScaler(KeepArScaler, LinearScaler):
     """
-    Abstract composite scaler class that supports both aspect ratio preservation and linear light processing.
+    Abstract composite scaler class with support for aspect ratio preservation, linear light processing,
+    and per-plane subpixel shifting.
 
-    This class combines the capabilities of `KeepArScaler` (for handling display/sample aspect ratio)
-    and `LinearScaler` (for linear and sigmoid processing).
+    Combines `KeepArScaler` for handling sample/display aspect ratios
+    and `LinearScaler` for linear and sigmoid processing.
+    Additionally, it introduces support for specifying per-plane subpixel shifts.
     """
 
-    if TYPE_CHECKING:
-        def scale(
-            self,
-            clip: vs.VideoNode,
-            width: int | None = None,
-            height: int | None = None,
-            shift: tuple[TopShift, LeftShift] = (0, 0),
-            *,
-            # `linear` and `sigmoid` from LinearScaler
-            linear: bool | None = False,
-            sigmoid: bool | tuple[Slope, Center] = False,
-            # `border_handling`, `sample_grid_model`, `sar`, `dar`, `dar_in` and `keep_ar` from KeepArScaler
-            border_handling: BorderHandling = BorderHandling.MIRROR,
-            sample_grid_model: SampleGridModel = SampleGridModel.MATCH_EDGES,
-            sar: Sar | float | bool | None = None,
-            dar: Dar | float | bool | None = None,
-            dar_in: Dar | bool | float | None = None,
-            keep_ar: bool | None = None,
-            # ComplexScaler adds blur
-            blur: float | None = None,
-            **kwargs: Any,
-        ) -> vs.VideoNode | ConstantFormatVideoNode:
-            """
-            Scale a clip to the given resolution, with aspect ratio and linear light support.
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        # ComplexScaler adds shift per planes
+        shift: tuple[TopShift | list[TopShift], LeftShift | list[LeftShift]] = (0, 0),
+        *,
+        # `linear` and `sigmoid` from LinearScaler
+        linear: bool | None = False,
+        sigmoid: bool | tuple[Slope, Center] = False,
+        # `border_handling`, `sample_grid_model`, `sar`, `dar`, `dar_in` and `keep_ar` from KeepArScaler
+        border_handling: BorderHandling = BorderHandling.MIRROR,
+        sample_grid_model: SampleGridModel = SampleGridModel.MATCH_EDGES,
+        sar: Sar | float | bool | None = None,
+        dar: Dar | float | bool | None = None,
+        dar_in: Dar | bool | float | None = None,
+        keep_ar: bool | None = None,
+        # ComplexScaler adds blur
+        blur: float | None = None,
+        **kwargs: Any,
+    ) -> vs.VideoNode | ConstantFormatVideoNode:
+        """
+        Scale a clip to the given resolution, with aspect ratio and linear light support.
 
-            Keyword arguments passed during initialization are automatically injected here,
-            unless explicitly overridden by the arguments provided at call time.
-            Only arguments that match named parameters in this method are injected.
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
 
-            :param clip:                The source clip.
-            :param width:               Target width (defaults to clip width if None).
-            :param height:              Target height (defaults to clip height if None).
-            :param shift:               Subpixel shift (top, left) applied during scaling.
-            :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-            :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
-                                        `True` applies the defaults values (6.5, 0.75).
-                                        Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
-                                        and sigmoid center has to be in range 0.0-1.0 (inclusive).
-            :param border_handling:     Method for handling image borders during sampling.
-            :param sample_grid_model:   Model used to align sampling grid.
-            :param sar:                 Sample aspect ratio to assume or convert to.
-            :param dar:                 Desired display aspect ratio.
-            :param dar_in:              Input display aspect ratio, if different from clip's.
-            :param keep_ar:             Whether to adjust dimensions to preserve aspect ratio.
-            :param blur:                Amount of blur to apply during scaling.
-            :return:                    Scaled clip, optionally aspect-corrected and linearized.
-            """
-            ...
+        :param clip:                The source clip.
+        :param width:               Target width (defaults to clip width if None).
+        :param height:              Target height (defaults to clip height if None).
+        :param shift:               Subpixel shift (top, left) applied during scaling.
+                                    If a tuple is provided, it is used uniformly.
+                                    If a list is given, the shift is applied per plane.
+        :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
+        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+                                    `True` applies the defaults values (6.5, 0.75).
+                                    Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
+                                    and sigmoid center has to be in range 0.0-1.0 (inclusive).
+        :param border_handling:     Method for handling image borders during sampling.
+        :param sample_grid_model:   Model used to align sampling grid.
+        :param sar:                 Sample aspect ratio to assume or convert to.
+        :param dar:                 Desired display aspect ratio.
+        :param dar_in:              Input display aspect ratio, if different from clip's.
+        :param keep_ar:             Whether to adjust dimensions to preserve aspect ratio.
+        :param blur:                Amount of blur to apply during scaling.
+        :return:                    Scaled clip, optionally aspect-corrected and linearized.
+        """
+        kwargs.update(
+            linear=linear,
+            sigmoid=sigmoid,
+            border_handling=border_handling,
+            sample_grid_model=sample_grid_model,
+            sar=sar,
+            dar=dar,
+            dar_in=dar_in,
+            keep_ar=keep_ar,
+            blur=blur
+        )
+
+        shift_top, shift_left = shift
+
+        if isinstance(shift_top, float) and isinstance(shift_left, float):
+            return super().scale(clip, width, height, (shift_top, shift_left), **kwargs)
+
+        assert check_variable_format(clip, self.scale)
+
+        n_planes = clip.format.num_planes
+
+        shift_top = normalize_seq(shift_top, n_planes)
+        shift_left = normalize_seq(shift_left, n_planes)
+
+        if n_planes == 1:
+            if len(set(shift_top)) > 1 or len(set(shift_left)) > 1:
+                raise CustomValueError(
+                    "Inconsistent shift values detected for a single plane. "
+                    "All shift values must be identical when passing a GRAY clip.",
+                    self.scale,
+                    (shift_top, shift_left),
+                )
+
+            return super().scale(clip, width, height, (shift_top[0], shift_left[0]), **kwargs)
+
+        width, height = self._wh_norm(clip, width, height)
+
+        format_in = clip.format
+        format_out = get_video_format(fallback(kwargs.pop("format", None), self.kwargs.get("format"), clip.format))
+
+        chromaloc = ChromaLocation.from_video(clip, func=self.scale)
+        chromaloc_in = ChromaLocation(
+            fallback(kwargs.pop("chromaloc_in", None), self.kwargs.get("chromaloc_in"), chromaloc)
+        )
+        chromaloc_out = ChromaLocation(
+            fallback(kwargs.pop("chromaloc", None), self.kwargs.get("chromaloc"), chromaloc)
+        )
+
+        off_left, off_top = chromaloc_in.get_offsets(format_in)
+        off_left_out, off_top_out = chromaloc_out.get_offsets(format_out)
+
+        factor_w = 1 / 2 ** format_in.subsampling_w
+        factor_h = 1 / 2 ** format_in.subsampling_h
+
+        # Offsets for format out
+        offc_left = (abs(off_left) + off_left_out) * factor_w
+        offc_top = (abs(off_top) + off_top_out) * factor_h
+
+        # Offsets for scale out
+        if format_out.subsampling_w:
+            offc_left = ((abs(off_left) + off_left * (clip.width / width)) * factor_w) + offc_left
+        if format_out.subsampling_h:
+            offc_top = ((abs(off_top) + off_top * (clip.height / height)) * factor_h) + offc_top
+
+        for i in range(1, n_planes):
+            shift_left[i] += offc_left
+            shift_top[i] += offc_top
+
+        scaled_planes = list[vs.VideoNode]()
+
+        for i, (plane, top, left) in enumerate(zip(split(clip), shift_top, shift_left)):
+            if i:
+                w = round(width * 1 / 2 ** format_out.subsampling_h)
+                h = round(height * 1 / 2 ** format_out.subsampling_h)
+            else:
+                w, h = width, height
+
+            scaled_planes.append(
+                super().scale(
+                    plane,
+                    w,
+                    h,
+                    (top, left),
+                    format=format_out.replace(color_family=vs.GRAY, subsampling_w=0, subsampling_h=0),
+                    **kwargs
+                )
+            )
+
+        merged = vs.core.std.ShufflePlanes(scaled_planes, [0, 0, 0], format_out.color_family, clip)
+
+        if chromaloc_in != chromaloc_out:
+            return chromaloc_out.apply(merged)
+
+        return merged
 
 
 class ComplexDescaler(LinearDescaler):
