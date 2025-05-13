@@ -7,13 +7,13 @@ from __future__ import annotations
 import sys
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Union, overload
 
 from jetpytools import CustomIndexError, CustomNotImplementedError, CustomValueError, FuncExceptT
 
 from vstools import (
     ConstantFormatVideoNode, Dar, FieldBased, FieldBasedT, KwargsT, Resolution, Sar, VideoNodeT,
-    check_correct_subsampling, depth, expect_bits, fallback, vs
+    check_correct_subsampling, depth, expect_bits, vs
 )
 
 from ..types import (
@@ -32,24 +32,6 @@ __all__ = [
     "ComplexKernelT",
 
 ]
-
-XarT = TypeVar("XarT", Sar, Dar)
-
-
-def _from_param(cls: type[XarT], value: XarT | bool | float | None, fallback: XarT) -> XarT | None:
-    if value is False:
-        return fallback
-
-    if value is True:
-        return None
-
-    if isinstance(value, cls):
-        return value
-
-    if isinstance(value, SupportsFloat):
-        return cls.from_float(float(value))
-
-    return None
 
 
 def _check_dynamic_keeparscaler_params(
@@ -271,34 +253,42 @@ class LinearDescaler(_BaseLinear, Descaler):
 
 
 class KeepArScaler(Scaler):
-    def _get_kwargs_keep_ar(
+    def _ar_params_norm(
         self,
-        sar: Sar | float | bool | None = None,
-        dar: Dar | float | bool | None = None,
-        dar_in: Dar | float | bool | None = None,
-        keep_ar: bool | None = None,
-        **kwargs: Any,
-    ) -> KwargsT:
-        kwargs = KwargsT(keep_ar=keep_ar, sar=sar, dar=dar, dar_in=dar_in) | kwargs
-
+        clip: vs.VideoNode,
+        width: int,
+        height: int,
+        sar: Sar | float | bool | None,
+        dar: Dar | float | bool | None,
+        dar_in: Dar | float | bool | None,
+        keep_ar: bool | None,
+    ) -> tuple[float, float, float]:
         if keep_ar is not None:
-            if None not in set(kwargs.get(x) for x in ("keep_ar", "sar", "dar", "dar_in")):
-                print(
-                    UserWarning(
-                        f'{self.__class__.__name__}.scale: "keep_ar" set '
-                        'with non-None values set in "sar", "dar" and "dar_in" won\'t do anything!'
-                    )
+            if None not in (sar, dar, dar_in):
+                raise CustomValueError(
+                    'If "keep_ar" is not None, then at least one of "sar", "dar", or "dar_in" must be None.'
                 )
-        else:
-            kwargs["keep_ar"] = False
 
-        default_val = kwargs.pop("keep_ar")
+        # Basically what it does:
+        # - If `xar` is Xar or float -> Converted to Xar
+        # - If `xar` is None         -> It fallbacks to bool(keep_ar). Becomes True or False
+        # - If `xar` is True         -> Value after the `or`
+        # - If `xar` is False        -> Fallback value: Sar(1, 1), Dar(0) or out_dar
+        src_sar = Sar.from_param(
+            sar if sar is not None else bool(keep_ar),
+            Sar(1, 1)
+        ) or Sar.from_clip(clip)
 
-        for key in ("sar", "dar", "dar_in"):
-            if kwargs[key] is None:
-                kwargs[key] = default_val
+        out_dar = Dar.from_param(
+            dar if dar is not None else bool(keep_ar),
+            Dar(0)
+        ) or Dar.from_res(width, height)
+        src_dar = Dar.from_param(
+            dar_in if dar_in is not None else bool(keep_ar),
+            out_dar
+        ) or Dar.from_clip(clip, False)
 
-        return kwargs
+        return float(src_sar), float(src_dar), float(out_dar)
 
     def _handle_crop_resize_kwargs(
         self,
@@ -309,8 +299,9 @@ class KeepArScaler(Scaler):
         sar: Sar | bool | float | None,
         dar: Dar | bool | float | None,
         dar_in: Dar | bool | float | None,
+        keep_ar: bool | None,
         **kwargs: Any,
-    ) -> tuple[KwargsT, tuple[TopShift, LeftShift], Sar | None]:
+    ) -> tuple[KwargsT, tuple[TopShift, LeftShift], Sar | Literal[False]]:
         kwargs.setdefault("src_top", kwargs.pop("sy", shift[0]))
         kwargs.setdefault("src_left", kwargs.pop("sx", shift[1]))
         kwargs.setdefault("src_width", kwargs.pop("sw", clip.width))
@@ -318,11 +309,8 @@ class KeepArScaler(Scaler):
 
         src_res = Resolution(kwargs["src_width"], kwargs["src_height"])
 
-        src_sar = float(_from_param(Sar, sar, Sar(1, 1)) or Sar.from_clip(clip))
-        out_sar = None
-
-        out_dar = float(_from_param(Dar, dar, Dar(0)) or Dar.from_res(width, height))
-        src_dar = float(fallback(_from_param(Dar, dar_in, Dar(out_dar)), Dar.from_clip(clip, False)))
+        src_sar, src_dar, out_dar = self._ar_params_norm(clip, width, height, sar, dar, dar_in, keep_ar)
+        out_sar: Sar | Literal[False] = False
 
         if src_sar not in {0.0, 1.0}:
             if src_sar > 1.0:
@@ -377,25 +365,19 @@ class KeepArScaler(Scaler):
             )
             return super().scale(clip, width, height, shift, **kwargs)
 
-        kwargs = self._get_kwargs_keep_ar(sar, dar, dar_in, keep_ar, **kwargs)
-
-        kwargs, shift, out_sar = self._handle_crop_resize_kwargs(clip, width, height, shift, **kwargs)
-
-        kwargs, shift = sample_grid_model.for_dst(clip, width, height, shift, **kwargs)
-
-        padded = border_handling.prepare_clip(clip, self.kernel_radius)
-
-        shift, clip = (
-            tuple(s + ((p - c) // 2) for s, c, p in zip(shift, *((x.height, x.width) for x in (clip, padded)))),
-            padded,
+        kwargs, shift, out_sar = self._handle_crop_resize_kwargs(
+            clip, width, height, shift, sar, dar, dar_in, keep_ar, **kwargs
         )
 
-        clip = super().scale(clip, width, height, shift, **kwargs)
+        kwargs, shift = sample_grid_model.for_dst(clip, width, height, shift, **kwargs)
+        padded, shift = border_handling.prepare_clip(clip, self.kernel_radius)
+
+        scaled = super().scale(padded, width, height, shift, **kwargs)
 
         if out_sar:
-            return out_sar.apply(clip)
+            return out_sar.apply(scaled)
 
-        return clip
+        return scaled
 
 
 class ComplexScaler(KeepArScaler, LinearScaler):
