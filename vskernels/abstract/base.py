@@ -714,15 +714,18 @@ class Kernel(Scaler, Descaler, Resampler):
         off_left, off_top = chromaloc_in.get_offsets(format_in)
         off_left_out, off_top_out = chromaloc_out.get_offsets(format_out)
 
+        factor_w = 1 / 2 ** format_in.subsampling_w
+        factor_h = 1 / 2 ** format_in.subsampling_h
+
         # Offsets for format out
-        offc_left = abs(off_left) * 1 / 2 ** format_in.subsampling_w + off_left_out * 1 / 2 ** format_in.subsampling_w
-        offc_top = abs(off_top) * 1 / 2 ** format_in.subsampling_h + off_top_out * 1 / 2 ** format_in.subsampling_h
+        offc_left = (abs(off_left) + off_left_out) * factor_w
+        offc_top = (abs(off_top) + off_top_out) * factor_h
 
         # Offsets for scale out
         if format_out.subsampling_w:
-            offc_left = ((abs(off_left) + off_left * (clip.width / width)) * 1 / 2 ** format_in.subsampling_w) + offc_left
+            offc_left = ((abs(off_left) + off_left * (clip.width / width)) * factor_w) + offc_left
         if format_out.subsampling_h:
-            offc_top = ((abs(off_top) + off_top * (clip.height / height)) * 1 / 2 ** format_in.subsampling_h) + offc_top
+            offc_top = ((abs(off_top) + off_top * (clip.height / height)) * factor_h) + offc_top
 
         for i in range(1, n_planes):
             shift_left[i] += offc_left
