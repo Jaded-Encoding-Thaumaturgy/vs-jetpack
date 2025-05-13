@@ -384,6 +384,9 @@ class KeepArScaler(Scaler):
             )
             return super().scale(clip, width, height, shift, **kwargs)
 
+        if int(border_handling) == int(sample_grid_model) == 0 and sar is dar is dar_in is keep_ar is None:
+            return super().scale(clip, width, height, shift, **kwargs)
+
         kwargs, shift, out_sar = self._handle_crop_resize_kwargs(
             clip, width, height, shift, sar, dar, dar_in, keep_ar, **kwargs
         )
