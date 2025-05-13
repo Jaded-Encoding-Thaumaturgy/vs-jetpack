@@ -705,7 +705,7 @@ class Kernel(Scaler, Descaler, Resampler):
         width, height = self._wh_norm(clip, width, height)
 
         format_in = clip.format
-        format_out: vs.VideoFormat = kwargs.pop("format", clip.format)
+        format_out = get_video_format(kwargs.pop("format", clip.format))
 
         chromaloc = ChromaLocation.from_video(clip, func=self.scale)
         chromaloc_in: ChromaLocation = kwargs.pop("chromaloc_in", chromaloc)
@@ -719,8 +719,10 @@ class Kernel(Scaler, Descaler, Resampler):
         offc_top = abs(off_top) * 1 / 2 ** format_in.subsampling_h + off_top_out * 1 / 2 ** format_in.subsampling_h
 
         # Offsets for scale out
-        offc_left = ((abs(off_left) + off_left * (clip.width / width)) * 1 / 2 ** clip.format.subsampling_w) + offc_left
-        offc_top = ((abs(off_top) + off_top * (clip.height / height)) * 1 / 2 ** clip.format.subsampling_h) + offc_top
+        if format_out.subsampling_w:
+            offc_left = ((abs(off_left) + off_left * (clip.width / width)) * 1 / 2 ** clip.format.subsampling_w) + offc_left
+        if format_out.subsampling_h:
+            offc_top = ((abs(off_top) + off_top * (clip.height / height)) * 1 / 2 ** clip.format.subsampling_h) + offc_top
 
         for i in range(1, n_planes):
             shift_left[i] += offc_left
@@ -730,12 +732,21 @@ class Kernel(Scaler, Descaler, Resampler):
 
         for i, (plane, top, left) in enumerate(zip(split(clip), shift_top, shift_left)):
             if i:
-                w = round(width * 1 / 2 ** clip.format.subsampling_h)
-                h = round(height * 1 / 2 ** clip.format.subsampling_h)
+                w = round(width * 1 / 2 ** format_out.subsampling_h)
+                h = round(height * 1 / 2 ** format_out.subsampling_h)
             else:
                 w, h = width, height
 
-            scaled_planes.append(super().scale(plane, w, h, (top, left), **kwargs))
+            scaled_planes.append(
+                super().scale(
+                    plane,
+                    w,
+                    h,
+                    (top, left),
+                    format=format_out.replace(color_family=vs.GRAY, subsampling_w=0, subsampling_h=0),
+                    **kwargs
+                )
+            )
 
         merged = core.std.ShufflePlanes(scaled_planes, [0, 0, 0], format_out.color_family, clip)
 
