@@ -75,7 +75,7 @@ def _check_dynamic_keeparscaler_params(
             raise ExceptionGroup("Multiple exceptions occurred!", exceptions)  # noqa: F821
 
         raise Exception(exceptions)
-    
+
     return True
 
 
@@ -106,7 +106,7 @@ class _BaseLinear(BaseScaler):
 
             fmt = self.kwargs.pop("format", kwargs.pop("format", None))
 
-            with LinearLight(clip, linear, sigmoid, self if isinstance(self, Resampler) else None, fmt) as ll:
+            with LinearLight(clip, sigmoid, self if isinstance(self, Resampler) else None, fmt) as ll:
                 ll.linear = op_partial(ll.linear, **kwargs)
 
             return ll.out  # type: ignore[return-value]
