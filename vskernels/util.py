@@ -17,116 +17,11 @@ from .kernels import Bicubic, Catrom, Point
 from .types import Center, LeftShift, Slope, TopShift
 
 __all__ = [
-    'NoShift', 'NoScale',
-
     'LinearLight',
 
     'resample_to'
 ]
 
-
-class NoShiftBase(Kernel):
-    def get_scale_args(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> dict[str, Any]:
-        return super().get_scale_args(clip, (0, 0), *(args and args[1:]), **kwargs)
-
-    def get_descale_args(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> dict[str, Any]:
-        return super().get_descale_args(clip, (0, 0), *(args and args[1:]), **kwargs)
-
-
-class NoShift(Bicubic, NoShiftBase):
-    """
-    Class util used to always pass shift=(0, 0)\n
-    By default it inherits from :py:class:`vskernels.Bicubic`,
-    this behaviour can be changed with :py:attr:`Noshift.from_kernel`\n
-
-    Use case, for example vsaa's ZNedi3:
-    ```
-    test = ...  # some clip, 480x480
-    doubled_no_shift = Znedi3(field=0, nsize=4, nns=3, shifter=NoShift).scale(test, 960, 960)
-    down = Point.scale(double, 480, 480)
-    ```
-    """
-
-    def __class_getitem__(cls, kernel: KernelT) -> type[Kernel]:
-        return cls.from_kernel(kernel)
-
-    @staticmethod
-    def from_kernel(kernel: KernelT) -> type[Kernel]:
-        """
-        Function or decorator for making a kernel not shift.
-
-        As example, in vsaa:
-        ```
-        doubled_no_shift = Znedi3(..., shifter=NoShift.from_kernel('lanczos')).scale(...)
-
-        # which in *this case* can also be written as this
-        doubled_no_shift = Znedi3(..., shifter=NoShift, scaler=Lanczos).scale(...)
-        ```
-
-        Or for some other code:
-        ```
-        @NoShift.from_kernel
-        class CustomCatromWithoutShift(Catrom):
-            # some cool code
-            ...
-        ```
-        """
-
-        kernel_t = Kernel.from_param(kernel)
-
-        class inner_no_shift(NoShiftBase, kernel_t):  # type: ignore
-            ...
-
-        return inner_no_shift
-
-
-class NoScaleBase(Scaler):
-    def scale(
-        self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-        shift: tuple[TopShift, LeftShift] = (0, 0),
-        **kwargs: Any
-    ) -> vs.VideoNode | ConstantFormatVideoNode:
-        try:
-            width, height = Scaler._wh_norm(clip, width, height)
-            return super().scale(clip, clip.width, clip.height, shift, **kwargs)
-        except Exception:
-            return clip
-
-
-class NoScale(NoScaleBase, Bicubic):
-    if TYPE_CHECKING:
-        def scale(
-            self, clip: vs.VideoNode, width: int | None = None, height: int | None = None,
-            shift: tuple[TopShift, LeftShift] = (0, 0),
-            **kwargs: Any
-        ) -> vs.VideoNode | ConstantFormatVideoNode:
-            ...
-
-    def __class_getitem__(cls, kernel: KernelT) -> type[Kernel]:
-        return cls.from_kernel(kernel)
-
-    @staticmethod
-    def from_kernel(kernel: KernelT) -> type[Kernel]:
-        kernel_t = Kernel.from_param(kernel)
-
-        class inner_no_scale(kernel_t, NoScaleBase):  # type: ignore
-            ...
-
-        return inner_no_scale
-
-
-@dataclass
-class LinearLight:
-    clip: vs.VideoNode
-
-    linear: bool | None = True
-    sigmoid: bool | tuple[Slope, Center] = False
-
-    resampler: ResamplerT | None = Catrom
-
-    out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
-
-    _linear: ClassVar[vs.VideoNode]
 
     @dataclass
     class LinearLightProcessing(cachedproperty.baseclass):
