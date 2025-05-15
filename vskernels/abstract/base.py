@@ -729,7 +729,7 @@ class Kernel(Scaler, Descaler, Resampler):
         if isinstance(shifts_or_top, tuple):
             return _shift(clip, shifts_or_top)
 
-        if isinstance(shifts_or_top, float) and isinstance(shift_left, (float, NoneType)):
+        if isinstance(shifts_or_top, (int, float)) and isinstance(shift_left, (int, float, NoneType)):
             return _shift(clip, (shifts_or_top, shift_left or 0))
 
         if shift_left is None:
