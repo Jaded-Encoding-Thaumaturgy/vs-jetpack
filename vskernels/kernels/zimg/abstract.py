@@ -1,4 +1,4 @@
-from typing import Any, Callable, ClassVar
+from typing import Any, Callable, ClassVar, Union
 
 from vstools import FieldBased, FieldBasedT, core, vs
 
@@ -71,3 +71,14 @@ class ZimgComplexKernel(ComplexKernel, ZimgBobber):
     """
 
     _implemented_funcs: ClassVar[tuple[str, ...]] = ("scale", "descale", "rescale", "resample", "shift", "bob")
+
+
+ZimgComplexKernelT = Union[str, type[ZimgComplexKernel], ZimgComplexKernel]
+"""
+Type alias for anything that can resolve to a ZimgComplexKernel.
+
+This includes:
+- A string identifier.
+- A class type subclassing `ZimgComplexKernel`.
+- An instance of a `ZimgComplexKernel`.
+"""
