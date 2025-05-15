@@ -656,7 +656,7 @@ class Kernel(Scaler, Descaler, Resampler):
 
     _err_class: ClassVar[type[_UnknownBaseScalerError]] = UnknownKernelError
 
-    _implemented_funcs = ("scale", "descale", "rescale", "resample", "shift")
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ("scale", "descale", "rescale", "resample", "shift")
 
     @overload
     def shift(self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift], /, **kwargs: Any) -> ConstantFormatVideoNode:
