@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
-from functools import wraps
+from functools import partial, wraps
 from math import exp
-from typing import TYPE_CHECKING, Any, Callable, Concatenate
+from typing import TYPE_CHECKING, Any, Callable, Concatenate, Union, overload
 
 from jetpytools import P
 from typing_extensions import Self
@@ -72,7 +72,6 @@ class LinearLightProcessing(cachedproperty.baseclass):
         if not hasattr(self, '_linear'):
             raise CustomValueError('You need to set .linear before getting .out!', self.__class__)
 
-
         if self.ll.sigmoid:
             processed = norm_expr(
                 self._linear,
@@ -110,16 +109,72 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
     out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
     """Optional output format."""
 
+    @overload
+    @classmethod
     def from_func(
-        self, func: Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
+        cls,
+        func: Callable[Concatenate[vs.VideoNode, P], vs.VideoNode],
+        /,
+        sigmoid: bool | tuple[Slope, Center] = False,
+        resampler: ResamplerT | None = Catrom,
+        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
     ) -> Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]:
         """
-        Decorator version of LinearLight
+        Example:
+            ``` py
+            @LinearLight.from_func
+            def decorated_function(clip: vs.VideoNode, ...) -> vs.VideoNode:
+                ...
+            ```
         """
+
+    @overload
+    @classmethod
+    def from_func(
+        cls,
+        /,
+        *,
+        sigmoid: bool | tuple[Slope, Center] = False,
+        resampler: ResamplerT | None = Catrom,
+        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
+    ) -> Callable[
+        [Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]],
+        Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
+    ]:
+        """
+        Example:
+            ``` py
+            @LinearLight.from_func(sigmoid=(6.5, 0.75))
+            def decorated_function(clip: vs.VideoNode, ...) -> vs.VideoNode:
+                ...
+            ```
+        """
+
+    @classmethod
+    def from_func(
+        cls,
+        func: Callable[Concatenate[vs.VideoNode, P], vs.VideoNode] | None = None,
+        /,
+        sigmoid: bool | tuple[Slope, Center] = False,
+        resampler: ResamplerT | None = Catrom,
+        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
+    ) -> Union[
+        Callable[Concatenate[vs.VideoNode, P], vs.VideoNode],
+        Callable[
+            [Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]],
+            Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
+        ]
+    ]:
+        """
+        Decorator version of LinearLight.
+        """
+
+        if func is None:
+            return partial(cls.from_func, sigmoid=sigmoid, resampler=resampler, out_fmt=out_fmt)
 
         @wraps(func)
         def _wrapped(clip: vs.VideoNode, *args: P.args, **kwargs: P.kwargs) -> vs.VideoNode:
-            with self as ll:
+            with cls(clip, sigmoid, resampler, out_fmt) as ll:
                 ll.linear = func(clip, *args, **kwargs)
             return ll.out
 
