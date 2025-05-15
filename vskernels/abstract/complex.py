@@ -30,7 +30,6 @@ __all__ = [
     "ComplexScalerT",
     "ComplexKernel",
     "ComplexKernelT",
-
 ]
 
 
@@ -116,7 +115,7 @@ class _BaseLinear(BaseScaler):
 
 class LinearScaler(_BaseLinear, Scaler):
     """
-    Abctract scaler class that applies linearization before scaling.
+    Abstract scaler class that applies linearization before scaling.
 
     Only affects scaling results when `linear` or `sigmoid` parameters are specified.
 
@@ -421,7 +420,7 @@ class ComplexScaler(KeepArScaler, LinearScaler):
         shift: tuple[TopShift | list[TopShift], LeftShift | list[LeftShift]] = (0, 0),
         *,
         # `linear` and `sigmoid` from LinearScaler
-        linear: bool | None = False,
+        linear: bool | None = None,
         sigmoid: bool | tuple[Slope, Center] = False,
         # `border_handling`, `sample_grid_model`, `sar`, `dar`, `dar_in` and `keep_ar` from KeepArScaler
         border_handling: BorderHandling = BorderHandling.MIRROR,
@@ -475,7 +474,7 @@ class ComplexScaler(KeepArScaler, LinearScaler):
 
         shift_top, shift_left = shift
 
-        if isinstance(shift_top, float) and isinstance(shift_left, float):
+        if isinstance(shift_top, (int, float)) and isinstance(shift_left, (int, float)):
             return super().scale(clip, width, height, (shift_top, shift_left), **kwargs)
 
         assert check_variable_format(clip, self.scale)
