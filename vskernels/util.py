@@ -90,7 +90,16 @@ class LinearLightProcessing(cachedproperty.baseclass):
 
 @dataclass
 class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
-    """Utility class for processing a clip in linear format."""
+    """
+    Utility class for processing a clip in linear format.
+
+    Usage:
+        ```py
+        with LinearLight(clip, ...) as ll:
+            ll.linear = function(ll.linear, ...)
+        out = ll.out
+        ```
+    """
 
     clip: vs.VideoNode
     """Input clip."""
@@ -165,9 +174,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
             Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
         ]
     ]:
-        """
-        Decorator version of LinearLight.
-        """
+        """Decorator version of LinearLight."""
 
         if func is None:
             return partial(cls.from_func, sigmoid=sigmoid, resampler=resampler, out_fmt=out_fmt)
