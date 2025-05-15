@@ -343,7 +343,10 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         return self._pretty_string()
 
     def __vs_del__(self, core_id: int) -> None:
-        self.kwargs.clear()
+        try:
+            self.kwargs.clear()
+        except AttributeError:
+            pass
 
 
 _BaseScalerT = TypeVar("_BaseScalerT", bound=BaseScaler)
