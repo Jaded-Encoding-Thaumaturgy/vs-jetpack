@@ -20,7 +20,7 @@ from ..types import (
     BorderHandling, BotFieldLeftShift, BotFieldTopShift, Center, LeftShift, SampleGridModel, ShiftT, Slope,
     TopFieldLeftShift, TopFieldTopShift, TopShift
 )
-from .base import BaseScaler, Descaler, Kernel, Resampler, Scaler
+from .base import Descaler, Kernel, Resampler, Scaler
 
 __all__ = [
     "LinearScaler",
@@ -78,42 +78,63 @@ def _check_dynamic_keeparscaler_params(
     return True
 
 
-class _BaseLinear(BaseScaler):
-    def _linearize(
-        self,
-        clip: vs.VideoNode,
-        linear: bool | None,
-        sigmoid: bool | tuple[Slope, Center],
-        op_partial: partial[VideoNodeT],
-        func: FuncExceptT,
-        **kwargs: Any,
-    ) -> VideoNodeT:
+@overload
+def _descale_shift_norm(
+    shift: ShiftT, assume_progressive: Literal[True] = ..., func: FuncExceptT | None = None
+) -> tuple[TopShift, LeftShift]: ...
 
-        if linear is False and sigmoid is not False:
-            raise CustomValueError("If sigmoid is not False, linear can't be False as well!", func, (linear, sigmoid))
+@overload
+def _descale_shift_norm(
+    shift: ShiftT, assume_progressive: Literal[False] = ..., func: FuncExceptT | None = None
+) -> tuple[tuple[TopFieldTopShift, BotFieldTopShift], tuple[TopFieldLeftShift, BotFieldLeftShift]]: ...
 
-        # if a _linear_scale or _linear_descale method is specified in the class,
-        # use this method instead of the super().scale or super().descale method.
-        # args and keywords are also forwarded.
-        if hasattr(self, f"_linear_{op_partial.func.__name__}"):
-            op_partial = partial(
-                getattr(self, f"_linear_{op_partial.func.__name__}"), *op_partial.args, **op_partial.keywords
-            )
+def _descale_shift_norm(shift: ShiftT, assume_progressive: bool = True, func: FuncExceptT | None = None) -> Any:
+    if assume_progressive:
+        if any(isinstance(sh, tuple) for sh in shift):
+            raise CustomValueError("You can't descale per-field when the input is progressive!", func, shift)
+    else:
+        shift_y, shift_x = tuple[tuple[float, float], ...](
+            sh if isinstance(sh, tuple) else (sh, sh) for sh in shift
+        )
+        shift = shift_y, shift_x
 
-        if sigmoid or linear:
-            from ..util import LinearLight
-
-            fmt = self.kwargs.pop("format", kwargs.pop("format", None))
-
-            with LinearLight(clip, sigmoid, self if isinstance(self, Resampler) else None, fmt) as ll:
-                ll.linear = op_partial(ll.linear, **kwargs)
-
-            return ll.out  # type: ignore[return-value]
-
-        return op_partial(clip, **kwargs)
+    return shift
 
 
-class LinearScaler(_BaseLinear, Scaler):
+def _linearize(
+    obj: Scaler | Descaler,
+    clip: vs.VideoNode,
+    linear: bool | None,
+    sigmoid: bool | tuple[Slope, Center],
+    op_partial: partial[VideoNodeT],
+    func: FuncExceptT,
+    **kwargs: Any,
+) -> VideoNodeT:
+    if linear is False and sigmoid is not False:
+        raise CustomValueError("If sigmoid is not False, linear can't be False as well!", func, (linear, sigmoid))
+
+    # if a _linear_scale or _linear_descale method is specified in the class,
+    # use this method instead of the super().scale or super().descale method.
+    # args and keywords are also forwarded.
+    if hasattr(obj, f"_linear_{op_partial.func.__name__}"):
+        op_partial = partial(
+            getattr(obj, f"_linear_{op_partial.func.__name__}"), *op_partial.args, **op_partial.keywords
+        )
+
+    if sigmoid or linear:
+        from ..util import LinearLight
+
+        fmt = obj.kwargs.pop("format", kwargs.pop("format", None))
+
+        with LinearLight(clip, sigmoid, obj if isinstance(obj, Resampler) else None, fmt) as ll:
+            ll.linear = op_partial(ll.linear, **kwargs)
+
+        return ll.out  # type: ignore[return-value]
+
+    return op_partial(clip, **kwargs)
+
+
+class LinearScaler(Scaler):
     """
     Abstract scaler class that applies linearization before scaling.
 
@@ -175,12 +196,18 @@ class LinearScaler(_BaseLinear, Scaler):
         :param kwargs:      Additional arguments forwarded to the scale function.
         :return:            Scaled video clip.
         """
-        return self._linearize(
-            clip, linear, sigmoid, partial(super().scale, width=width, height=height, shift=shift), self.scale, **kwargs
+        return _linearize(
+            self,
+            clip,
+            linear,
+            sigmoid,
+            partial(super().scale, width=width, height=height, shift=shift),
+            self.scale,
+            **kwargs
         )
 
 
-class LinearDescaler(_BaseLinear, Descaler):
+class LinearDescaler(Descaler):
     """
     Abctract descaler class that applies linearization before descaling.
 
@@ -241,7 +268,8 @@ class LinearDescaler(_BaseLinear, Descaler):
                                     and sigmoid center has to be in range 0.0-1.0 (inclusive).
         :return:                    The descaled video node, optionally processed in linear light.
         """
-        return self._linearize(
+        return _linearize(
+            self,
             clip,
             linear,
             sigmoid,
@@ -629,7 +657,7 @@ class ComplexDescaler(LinearDescaler):
         sample_grid_model = SampleGridModel(sample_grid_model)
 
         if field_based.is_inter:
-            shift_y, shift_x = self._descale_shift_norm(shift, False, self.descale)
+            shift_y, shift_x = _descale_shift_norm(shift, False, self.descale)
 
             kwargs_tf, shift = sample_grid_model.for_src(clip, width, height, (shift_y[0], shift_x[0]), **kwargs)
             kwargs_bf, shift = sample_grid_model.for_src(clip, width, height, (shift_y[1], shift_x[1]), **kwargs)
@@ -656,7 +684,7 @@ class ComplexDescaler(LinearDescaler):
 
             descaled = interleaved.std.DoubleWeave(field_based.is_tff)[::2]
         else:
-            shift = self._descale_shift_norm(shift, True, self.descale)
+            shift = _descale_shift_norm(shift, True, self.descale)
 
             kwargs, shift = sample_grid_model.for_src(clip, width, height, shift, **kwargs)
 
@@ -723,7 +751,7 @@ class ComplexDescaler(LinearDescaler):
         if field_based.is_inter:
             raise NotImplementedError
         else:
-            shift = self._descale_shift_norm(shift, True, self.descale)
+            shift = _descale_shift_norm(shift, True, self.descale)
 
             kwargs, shift = sample_grid_model.for_src(clip, width, height, shift, **kwargs)
 
@@ -732,37 +760,6 @@ class ComplexDescaler(LinearDescaler):
             )
 
         return depth(descaled, bits)
-
-    @overload
-    def _descale_shift_norm(
-        self, shift: ShiftT, assume_progressive: Literal[True] = ..., func: FuncExceptT | None = None
-    ) -> tuple[TopShift, LeftShift]: ...
-
-    @overload
-    def _descale_shift_norm(
-        self, shift: ShiftT, assume_progressive: Literal[False] = ..., func: FuncExceptT | None = None
-    ) -> tuple[tuple[TopFieldTopShift, BotFieldTopShift], tuple[TopFieldLeftShift, BotFieldLeftShift]]: ...
-
-    def _descale_shift_norm(self, shift: ShiftT, assume_progressive: bool = True, func: FuncExceptT | None = None) -> Any:
-        """
-        Normalize shift values depending on field-based status.
-
-        :param shift:               Shift values (single or per-field).
-        :param assume_progressive:  Whether to assume the input is progressive.
-        :param func:                Function returned for custom error handling.
-        :raises CustomValueError:   If per-field shift is used in progressive mode.
-        :return:                    Normalized shift values.
-        """
-        if assume_progressive:
-            if any(isinstance(sh, tuple) for sh in shift):
-                raise CustomValueError("You can't descale per-field when the input is progressive!", func, shift)
-        else:
-            shift_y, shift_x = tuple[tuple[float, float], ...](
-                sh if isinstance(sh, tuple) else (sh, sh) for sh in shift
-            )
-            shift = shift_y, shift_x
-
-        return shift
 
 
 class ComplexKernel(Kernel, ComplexDescaler, ComplexScaler):
