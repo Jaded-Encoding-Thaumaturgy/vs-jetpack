@@ -31,12 +31,12 @@ class ZimgBobber(BaseScaler):
 
         :param clip:        The source clip
         :param tff:         Field order of the clip.
-        :param double_rate: Wether to double the frame rate (True) of retain the original rate (False)
+        :param double_rate: Wether to double the frame rate (True) of retain the original rate (False).
         :return:            The bobbed clip.
         """
         clip_fieldbased = FieldBased.from_param_or_video(tff, clip, True, self.__class__)
 
-        bobbed = self.bob_function(clip, self.get_bob_args(clip, tff=clip_fieldbased.is_tff, **kwargs))
+        bobbed = self.bob_function(clip, **self.get_bob_args(clip, tff=clip_fieldbased.is_tff, **kwargs))
 
         if not double_rate:
             return bobbed[::2]
