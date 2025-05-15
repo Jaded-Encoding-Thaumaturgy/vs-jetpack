@@ -113,25 +113,23 @@ def _base_ensure_obj(
     return new_scaler
 
 
-def _check_kernel_radius(cls: BaseScalerMeta, obj: BaseScaler) -> BaseScaler:
-    if cls in partial_abstract_kernels:
-        return obj
-
+def _check_kernel_radius(cls: type[_BaseScalerT]) -> _BaseScalerT:
     if cls in abstract_kernels:
         raise CustomRuntimeError(f"Can't instantiate abstract class {cls.__name__}!", cls)
 
-    mro = set(cls.mro())
-    mro.discard(BaseScaler)
-
-    for sub_cls in mro:
-        if any(v in sub_cls.__dict__.keys() for v in ("_static_kernel_radius", "kernel_radius")):
-            return obj
+    if (
+        cls in partial_abstract_kernels
+        or "kernel_radius" in set(
+            (attr for sub_cls in cls.__mro__ for attr in sub_cls.__dict__.keys())
+        )
+    ):
+        return super(BaseScaler, cls).__new__(cls)
 
     raise CustomRuntimeError(
         "When inheriting from BaseScaler, you must implement the kernel radius by either adding "
         "the `kernel_radius` property or setting the class variable `_static_kernel_radius`.",
-        reason=cls,
-    )
+        cls,
+)
 
 
 abstract_kernels: list[BaseScalerMeta] = []
@@ -194,8 +192,31 @@ class BaseScalerMeta(ABCMeta):
 
         if abstract:
             abstract_kernels.append(obj)
-        elif partial_abstract:
+            return obj
+
+        if partial_abstract:
             partial_abstract_kernels.append(obj)
+
+            # If partial_abstract is True, add kernel_radius property
+            # if it not implemented by _static_kernel_radius or kernel_radius
+            if not hasattr(obj, "_static_kernel_radius") and not hasattr(obj, "kernel_radius"):
+                @BaseScaler.cached_property
+                def _partial_abstract_kernel_radius(self: BaseScaler) -> int:
+                    raise CustomNotImplementedError("kernel_radius is not implemented!", self.__class__)
+
+                _partial_abstract_kernel_radius.attrname = "kernel_radius"
+
+                setattr(obj, "kernel_radius", _partial_abstract_kernel_radius)
+
+        # If a _static_kernel_radius attr is implemented, check if kernel_radius property is there
+        if hasattr(obj, "_static_kernel_radius") and not hasattr(obj, "kernel_radius"):
+            @BaseScaler.cached_property
+            def _static_kernel_radius_property(self: BaseScaler) -> int:
+                return ceil(self._static_kernel_radius)
+
+            _static_kernel_radius_property.attrname = "kernel_radius"
+
+            setattr(obj, "kernel_radius", _static_kernel_radius_property)
 
         return obj
 
@@ -239,7 +260,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             """
             Create a new instance of the scaler, validating kernel radius if applicable.
             """
-            return _check_kernel_radius(cls, super().__new__(cls))
+            return _check_kernel_radius(cls)
 
     def __init__(self, **kwargs: Any) -> None:
         """
@@ -310,17 +331,16 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             cls, (mro := cls.mro())[mro.index(BaseScaler) - 1], scaler, cls._err_class, [], func_except
         )
 
-    @cached_property
-    def kernel_radius(self) -> int:
-        """
-        Return the effective kernel radius for the scaler.
+    if TYPE_CHECKING:
+        @cached_property
+        def kernel_radius(self) -> int:
+            """
+            Return the effective kernel radius for the scaler.
 
-        :raises CustomNotImplementedError:  If no kernel radius is defined.
-        :return:                            Kernel radius.
-        """
-        if hasattr(self, "_static_kernel_radius"):
-            return ceil(self._static_kernel_radius)
-        raise CustomNotImplementedError("kernel_radius is not implemented!", self.__class__)
+            :raises CustomNotImplementedError:  If no kernel radius is defined.
+            :return:                            Kernel radius.
+            """
+            ...
 
     def _pretty_string(self, **attrs: Any) -> str:
         """
@@ -343,10 +363,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         return self._pretty_string()
 
     def __vs_del__(self, core_id: int) -> None:
-        try:
-            self.kwargs.clear()
-        except AttributeError:
-            pass
+        self.kwargs.clear()
 
 
 _BaseScalerT = TypeVar("_BaseScalerT", bound=BaseScaler)
