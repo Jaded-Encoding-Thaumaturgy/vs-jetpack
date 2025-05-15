@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from vstools import core
 
-from ...abstract import ComplexKernel
+from .abstract import ZimgComplexKernel
 
 __all__ = [
     "Spline16",
@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 
-class Spline16(ComplexKernel):
+class Spline16(ZimgComplexKernel):
     """Spline16 resizer."""
 
     scale_function = resample_function = core.lazy.resize2.Spline16
@@ -20,7 +20,7 @@ class Spline16(ComplexKernel):
     _static_kernel_radius = 2
 
 
-class Spline36(ComplexKernel):
+class Spline36(ZimgComplexKernel):
     """Spline36 resizer."""
 
     scale_function = resample_function = core.lazy.resize2.Spline36
@@ -29,7 +29,7 @@ class Spline36(ComplexKernel):
     _static_kernel_radius = 3
 
 
-class Spline64(ComplexKernel):
+class Spline64(ZimgComplexKernel):
     """Spline64 resizer."""
 
     scale_function = resample_function = core.lazy.resize2.Spline64

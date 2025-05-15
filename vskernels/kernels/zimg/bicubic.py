@@ -5,7 +5,8 @@ from typing import Any, Callable, overload
 
 from vstools import ConstantFormatVideoNode, CustomValueError, core, vs
 
-from ...abstract import ComplexKernel
+from ...types import LeftShift, TopShift
+from .abstract import ZimgComplexKernel
 
 __all__ = [
     "Bicubic",
@@ -25,7 +26,7 @@ __all__ = [
 ]
 
 
-class Bicubic(ComplexKernel):
+class Bicubic(ZimgComplexKernel):
     """Bicubic resizer."""
 
     scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Bicubic
@@ -53,7 +54,17 @@ class Bicubic(ComplexKernel):
             return args | dict(b=self.b, c=self.c)
         return args | dict(filter_param_a=self.b, filter_param_b=self.c)
 
-    @ComplexKernel.cached_property
+    def get_bob_args(
+        self,
+        clip: vs.VideoNode,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        return super().get_bob_args(
+            clip, shift, filter="bicubic", filter_param_a=self.b, filter_param_b=self.c, **kwargs
+        )
+
+    @ZimgComplexKernel.cached_property
     def kernel_radius(self) -> int:
         if (self.b, self.c) == (0, 0):
             return 1

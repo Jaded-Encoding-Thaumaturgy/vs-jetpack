@@ -5,7 +5,8 @@ from typing import Any, Callable
 
 from vstools import ConstantFormatVideoNode, core, vs
 
-from ...abstract import ComplexKernel
+from ...types import LeftShift, TopShift
+from .abstract import ZimgComplexKernel
 
 __all__ = [
     "Point",
@@ -14,7 +15,7 @@ __all__ = [
 ]
 
 
-class Point(ComplexKernel):
+class Point(ZimgComplexKernel):
     """Point resizer."""
 
     scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Point
@@ -24,7 +25,7 @@ class Point(ComplexKernel):
     _static_kernel_radius = 1
 
 
-class Bilinear(ComplexKernel):
+class Bilinear(ZimgComplexKernel):
     """Bilinear resizer."""
 
     scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Bilinear
@@ -34,7 +35,7 @@ class Bilinear(ComplexKernel):
     _static_kernel_radius = 1
 
 
-class Lanczos(ComplexKernel):
+class Lanczos(ZimgComplexKernel):
     """Lanczos resizer."""
 
     scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Lanczos
@@ -60,6 +61,14 @@ class Lanczos(ComplexKernel):
             return args | dict(taps=self.kernel_radius)
         return args | dict(filter_param_a=self.kernel_radius)
 
-    @ComplexKernel.cached_property
+    def get_bob_args(
+        self,
+        clip: vs.VideoNode,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        return super().get_bob_args(clip, shift, filter_param_a=self.kernel_radius, **kwargs)
+
+    @ZimgComplexKernel.cached_property
     def kernel_radius(self) -> int:
         return ceil(self.taps)
