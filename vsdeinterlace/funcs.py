@@ -3,10 +3,10 @@ from __future__ import annotations
 import warnings
 
 from functools import partial
-from typing import Any
+from fractions import Fraction
 
 from jetpytools import CustomIntEnum
-from vsdenoise import MVTools
+from vsdenoise import MVTools, MVToolsPreset
 from vsexprtools import norm_expr
 from vsrgtools import BlurMatrix, sbr
 from vstools import (
@@ -15,141 +15,97 @@ from vstools import (
 )
 
 __all__ = [
-    'telop_resample',
+    'TelopResample',
     'FixInterlacedFades',
     'vinverse'
 ]
 
 
-class telop_resample(CustomIntEnum):
-    TXT60i_on_24telecined = 0
-    TXT60i_on_24duped = 1
-    TXT30p_on_24telecined = 2
+class TelopResample(CustomIntEnum):
+    IVTC_TXT60 = 0
+    DEC_TXT60 = 1
+    IVTC_TXT30 = 2
 
-    def __call__(self, bobbed_clip: vs.VideoNode, pattern: int, **mv_args: Any) -> vs.VideoNode:
-        """
-        Virtually oversamples the video to 120 fps with motion interpolation on credits only, and decimates to 24 fps.
-        Requires manually specifying the 3:2 pulldown pattern (the clip must be split into parts if it changes).
+    def __call__(
+        self,
+        clip: vs.VideoNode,
+        pattern: int,
+        preset: MVToolsPreset = MVToolsPreset.HQ_COHERENCE,
+        blksize: int | tuple[int, int] = 16,
+        refine: int = 1,
+        thsad_recalc: int | None = None,
+    ) -> vs.VideoNode:
+        def select_every(clip: vs.VideoNode, cycle: int, offsets: int | list[int]) -> vs.VideoNode:
+            def shift_clip(clip: vs.VideoNode, n: int) -> vs.VideoNode:
+                if n > 0:
+                    return clip[n:] + clip[-1] * n
+                elif n < 0:
+                    return clip[0] * -n + clip[:n]
+                else:
+                    return clip
 
-        :param bobbed_clip:             Bobbed clip. Framerate must be 60000/1001.
-        :param pattern:                 First frame in the pattern.
-        :param mv_args:                 Arguments to pass on to MVTools, used for motion compensation.
+            def select_clip(clip: vs.VideoNode, cycle: int, offsets: list[int]) -> list[vs.VideoNode]:
+                clips = list[vs.VideoNode]()
+                for x in offsets:
+                    shifted = shift_clip(clip, x)
+                    if cycle != 1:
+                        shifted = shifted.std.SelectEvery(cycle, 0)
+                    clips.append(shifted)
+                return clips
+            
+            if isinstance(offsets, int):
+                offsets = [offsets]
 
-        :return:                        Decimated clip with text resampled down to 24p.
+            return core.std.Interleave(select_clip(clip, cycle, offsets))
 
-        :raises InvalidFramerateError:  Bobbed clip does not have a framerate of 60000/1001 (59.94)
-        """
+        def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
+            return (x[0] // 2, x[1] // 2)
 
-        assert check_variable(bobbed_clip, telop_resample)
+        assert check_variable(clip, TelopResample)
 
-        InvalidFramerateError.check(telop_resample, bobbed_clip, (60000, 1001))
+        InvalidFramerateError.check(TelopResample, clip, (60000, 1001))
 
-        invpos = (5 - pattern * 2 % 5) % 5
+        mod = 10 if self == TelopResample.IVTC_TXT30 else 5
+        field_ref = pattern * 2 % mod
+        invpos = mod - field_ref % mod
 
-        offset = [0, 0, -1, 1, 1][pattern]
-        pattern = [0, 1, 0, 0, 1][pattern]
-        direction = [-1, -1, 1, 1, 1][pattern]
+        blksize = blksize if isinstance(blksize, tuple) else (blksize, blksize)
 
-        ivtc_fps, ivtc_fps_div = (dict[str, Any](fpsnum=x, fpsden=1001) for x in (24000, 12000))
+        match self:
+            case TelopResample.IVTC_TXT60:
+                clean = select_every(clip, 5, 1 - invpos)
+                judder = select_every(clip, 5, [3 - invpos, 4 - invpos])
+            case TelopResample.DEC_TXT60:
+                clean = select_every(clip, 5, 4 - invpos)
+                judder = select_every(clip, 5, [1 - invpos, 2 - invpos])
+            case TelopResample.IVTC_TXT30:
+                clean = select_every(clip, 5, -1 - invpos // 2)
+                judder = select_every(clip, 1, -1 - invpos).std.SelectEvery(10, (0, 1, 2, 3, 4, 5, 6, 7, 9))
 
-        pos = []
-        assumefps = 0
+        mv = MVTools(judder, **preset)
+        mv.analyze(tr=1, blksize=blksize, overlap=_floor_div_tuple(blksize))
 
-        interlaced = self in (telop_resample.TXT60i_on_24telecined, telop_resample.TXT60i_on_24duped)
-        decimate = self is telop_resample.TXT60i_on_24duped
+        if refine:
+            for _ in range(refine):
+                blksize = _floor_div_tuple(blksize)
+                overlap = _floor_div_tuple(blksize)
 
-        cycle = 10 // (1 + interlaced)
+                mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
-        def bb(idx: int, cut: bool = False) -> vs.VideoNode:
-            if cut:
-                return bobbed_clip[cycle:].std.SelectEvery(cycle, [idx])
-            return bobbed_clip.std.SelectEvery(cycle, [idx])
-
-        def intl(clips: list[vs.VideoNode], toreverse: bool, halv: list[int]) -> vs.VideoNode:
-            clips = [c[::2] if i in halv else c for i, c in enumerate(clips)]
-            if not toreverse:
-                clips = list(reversed(clips))
-            return core.std.Interleave(clips)
-
-        if interlaced:
-            if decimate:
-                cleanpos = 4
-                pos = [1, 2]
-
-                if invpos > 2:
-                    pos = [6, 7]
-                    assumefps = 2
-                elif invpos > 1:
-                    pos = [2, 6]
-                    assumefps = 1
-            else:
-                cleanpos = 1
-                pos = [3, 4]
-
-                if invpos > 1:
-                    cleanpos = 6
-                    assumefps = 1
-
-                if invpos > 3:
-                    pos = [4, 8]
-                    assumefps = 1
-
-            clean = bobbed_clip.std.SelectEvery(cycle, [cleanpos - invpos])
-            jitter = bobbed_clip.std.SelectEvery(cycle, [p - invpos for p in pos])
-
-            if assumefps:
-                jitter = core.std.AssumeFPS(
-                    bobbed_clip[0] * assumefps + jitter, **(ivtc_fps_div if cleanpos == 6 else ivtc_fps)
-                )
-
-            mv = MVTools(jitter, **mv_args)
-            mv.analyze()
-            comp = mv.flow_interpolate(interleave=False)
-
-            out = intl([*comp, clean], decimate, [0])
-            offs = 3 if decimate else 2
-
-            return out[invpos // offs:]
-
-        if pattern == 0:
-            c1pos = [0, 2, 7, 5]
-            c2pos = [3, 4, 9, 8]
-
-            if offset == -1:
-                c1pos = [2, 7, 5, 10]
-
-            if offset == 1:
-                c2pos = []
-                c2 = core.std.Interleave([bb(4), bb(5), bb(0, True), bb(9)])
+        if self == TelopResample.IVTC_TXT30:
+            comp = mv.flow_fps(fps=Fraction(4, 1)).std.SelectEvery(4, (1, 2, 3))
+            fixed = core.std.Interleave([clean, comp]).std.SelectEvery(8, (3, 5, 7, 0, 1, 2, 4, 6))
         else:
-            c1pos = [2, 4, 9, 7]
-            c2pos = [0, 1, 6, 5]
+            comp = mv.flow_interpolate(interleave=False)[0]
+            fixed = core.std.Interleave([clean, comp[::2]])
 
-            if offset == 1:
-                c1pos = []
-                c1 = core.std.Interleave([bb(3), bb(5), bb(0, True), bb(8)])
-
-            if offset == -1:
-                c2pos = [1, 6, 5, 10]
-
-        if c1pos:
-            c1 = bobbed_clip.std.SelectEvery(cycle, [c + offset for c in c1pos])
-
-        if c2pos:
-            c2 = bobbed_clip.std.SelectEvery(cycle, [c + offset for c in c2pos])
-
-        if offset == -1:
-            c1, c2 = (core.std.AssumeFPS(bobbed_clip[0] + c, **ivtc_fps) for c in (c1, c2))
-
-        mv1 = MVTools(c1, **mv_args)
-        mv1.analyze()
-        fix1 = mv1.flow_interpolate(time=50 + direction * 25, interleave=False)
-
-        mv2 = MVTools(c2, **mv_args)
-        mv2.analyze()
-        fix2 = mv2.flow_interpolate(interleave=False)
-
-        return intl([*fix1, *fix2], pattern == 0, [0, 1])
+        match self:
+            case TelopResample.IVTC_TXT60:
+                return fixed[invpos // 2 :]
+            case TelopResample.DEC_TXT60:
+                return fixed[invpos // 3 :]
+            case TelopResample.IVTC_TXT30:
+                return fixed[(1, 2, 3, 3, 4)[invpos // 2] :]
 
 
 class FixInterlacedFades(CustomEnum):
