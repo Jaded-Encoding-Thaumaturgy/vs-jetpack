@@ -11,7 +11,7 @@ from inspect import Signature
 from math import ceil
 from types import NoneType
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, NoReturn, Sequence, TypeVar, Union, cast, overload
+    TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, NoReturn, TypeVar, Union, cast, overload
 )
 
 from jetpytools import P, R, T_co
@@ -62,24 +62,20 @@ def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Calla
 
 def _base_from_param(
     cls: type[_BaseScalerT],
-    basecls: type[_BaseScalerT],
-    value: str | type[_BaseScalerT] | _BaseScalerT | None,
+    value: str | type[BaseScaler] | BaseScaler | None,
     exception_cls: type[_UnknownBaseScalerError],
-    excluded: Sequence[type] = [],
-    func_except: FuncExceptT | None = None,
+    func_except: FuncExceptT | None,
 ) -> type[_BaseScalerT]:
     if isinstance(value, str):
-        all_scalers = get_subclasses(BaseScaler, excluded)
-        search_str = value.lower().strip()
+        all_scalers = {s.__name__.lower(): s for s in get_subclasses(BaseScaler)}
 
-        for scaler_cls in all_scalers:
-            if scaler_cls.__name__.lower() == search_str:
-                return cast(type[_BaseScalerT], scaler_cls)
+        try:
+            return cast(type[_BaseScalerT], all_scalers[value.lower().strip()])
+        except KeyError:
+            raise exception_cls(func_except or cls.from_param, value)
 
-        raise exception_cls(func_except or cls.from_param, value)
-
-    if isinstance(value, type) and issubclass(value, basecls):
-        return value
+    if isinstance(value, type):
+        return cast(type[_BaseScalerT], value)
 
     if isinstance(value, cls):
         return value.__class__
@@ -89,28 +85,16 @@ def _base_from_param(
 
 def _base_ensure_obj(
     cls: type[_BaseScalerT],
-    basecls: type[_BaseScalerT],
-    value: str | type[_BaseScalerT] | _BaseScalerT | None,
-    exception_cls: type[_UnknownBaseScalerError],
-    excluded: Sequence[type] = [],
-    func_except: FuncExceptT | None = None,
+    value: str | type[BaseScaler] | BaseScaler | None,
+    func_except: FuncExceptT | None,
 ) -> _BaseScalerT:
     if value is None:
-        new_scaler = cls()
-    elif isinstance(value, cls) or isinstance(value, basecls):
-        new_scaler = value
-    else:
-        new_scaler = cls.from_param(value, func_except)()
+        return cls()
 
-    if new_scaler.__class__ in excluded:
-        raise exception_cls(
-            func_except or cls.ensure_obj,
-            new_scaler.__class__.__name__,
-            "This {cls_name} can't be instantiated to be used!",
-            cls_name=new_scaler.__class__,
-        )
+    if isinstance(value, cls):
+        return value
 
-    return new_scaler
+    return cls.from_param(value, func_except)()  # type: ignore[arg-type]
 
 
 def _check_kernel_radius(cls: type[_BaseScalerT]) -> _BaseScalerT:
@@ -297,11 +281,11 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
 
     @classmethod
     def from_param(
-        cls: type[_BaseScalerT],
-        scaler: str | type[_BaseScalerT] | _BaseScalerT | None = None,
+        cls,
+        scaler: str | type[Self] | Self | None = None,
         /,
         func_except: FuncExceptT | None = None,
-    ) -> type[_BaseScalerT]:
+    ) -> type[Self]:
         """
         Resolve and return a scaler type from a given input (string, type, or instance).
 
@@ -309,17 +293,15 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         :param func_except:     Function returned for custom error handling.
         :return:                Resolved scaler type.
         """
-        return _base_from_param(
-            cls, (mro := cls.mro())[mro.index(BaseScaler) - 1], scaler, cls._err_class, [], func_except
-        )
+        return _base_from_param(cls, scaler, cls._err_class, func_except)
 
     @classmethod
     def ensure_obj(
-        cls: type[_BaseScalerT],
-        scaler: str | type[_BaseScalerT] | _BaseScalerT | None = None,
+        cls,
+        scaler: str | type[Self] | Self | None = None,
         /,
         func_except: FuncExceptT | None = None,
-    ) -> _BaseScalerT:
+    ) -> Self:
         """
         Ensure that the input is a scaler instance, resolving it if necessary.
 
@@ -327,9 +309,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         :param func_except:     Function returned for custom error handling.
         :return:                Scaler instance.
         """
-        return _base_ensure_obj(
-            cls, (mro := cls.mro())[mro.index(BaseScaler) - 1], scaler, cls._err_class, [], func_except
-        )
+        return _base_ensure_obj(cls, scaler, func_except)
 
     if TYPE_CHECKING:
         @cached_property
@@ -776,34 +756,8 @@ class Kernel(Scaler, Descaler, Resampler):
 
         return core.std.ShufflePlanes(shifted_planes, [0, 0, 0], clip.format.color_family)
 
-    @overload
     @classmethod
-    def from_param(
-        cls: type[Kernel], kernel: KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> type[Kernel]: ...
-
-    @overload
-    @classmethod
-    def from_param(
-        cls: type[Kernel], kernel: ScalerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> type[Scaler]: ...
-
-    @overload
-    @classmethod
-    def from_param(
-        cls: type[Kernel], kernel: DescalerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> type[Descaler]: ...
-
-    @overload
-    @classmethod
-    def from_param(
-        cls: type[Kernel], kernel: ResamplerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> type[Resampler]: ...
-
-    @classmethod
-    def from_param(
-        cls, kernel: str | type[BaseScaler] | BaseScaler | None = None, /, func_except: FuncExceptT | None = None
-    ) -> type[BaseScaler]:
+    def from_param(cls, kernel: KernelT | None = None, /, func_except: FuncExceptT | None = None) -> type[Self]:
         """
         Resolve and return a kernel class from a string name, class type, or instance.
 
@@ -813,39 +767,10 @@ class Kernel(Scaler, Descaler, Resampler):
         :return:                    The resolved kernel class.
         :raises UnknownKernelError: If the kernel could not be identified.
         """
-        return _base_from_param(cls, Kernel, kernel, cls._err_class, abstract_kernels, func_except)
-
-    @overload
-    @classmethod
-    def ensure_obj(
-        cls: type[Kernel], kernel: KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> Kernel: ...
-
-    @overload
-    @classmethod
-    def ensure_obj(
-        cls: type[Kernel], kernel: ScalerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> Scaler: ...
-
-    @overload
-    @classmethod
-    def ensure_obj(
-        cls: type[Kernel], kernel: DescalerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> Descaler: ...
-
-    @overload
-    @classmethod
-    def ensure_obj(
-        cls: type[Kernel], kernel: ResamplerT | KernelT | None = ..., /, func_except: FuncExceptT | None = None
-    ) -> Resampler: ...
+        return _base_from_param(cls, kernel, cls._err_class, func_except)
 
     @classmethod
-    def ensure_obj(
-        cls: type[Kernel],
-        kernel: str | type[BaseScaler] | BaseScaler | None = None,
-        /,
-        func_except: FuncExceptT | None = None,
-    ) -> BaseScaler:
+    def ensure_obj(cls, kernel: KernelT | None = None, /, func_except: FuncExceptT | None = None) -> Self:
         """
         Ensure that the given kernel input is returned as a kernel instance.
 
@@ -853,9 +778,8 @@ class Kernel(Scaler, Descaler, Resampler):
         :param func_except:         Function returned for custom error handling.
 
         :return:                    The resolved and instantiated kernel.
-        :raises UnknownKernelError: If the kernel is unknown or cannot be instantiated.
         """
-        return _base_ensure_obj(cls, Kernel, kernel, cls._err_class, abstract_kernels, func_except)
+        return _base_ensure_obj(cls, kernel, func_except)
 
     def get_params_args(
         self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any

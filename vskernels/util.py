@@ -210,7 +210,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         self._wclip = self.clip
         self._curve = Transfer.from_video(self.clip)
         self._matrix = Matrix.from_video(self.clip)
-        self._resampler = Catrom.ensure_obj(self.resampler)
+        self._resampler = Resampler.ensure_obj(self.resampler or Catrom)
 
         self._exited = False
 
