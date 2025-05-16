@@ -101,12 +101,7 @@ def _check_kernel_radius(cls: type[_BaseScalerT]) -> _BaseScalerT:
     if cls in abstract_kernels:
         raise CustomRuntimeError(f"Can't instantiate abstract class {cls.__name__}!", cls)
 
-    if (
-        cls in partial_abstract_kernels
-        or "kernel_radius" in set(
-            (attr for sub_cls in cls.__mro__ for attr in sub_cls.__dict__.keys())
-        )
-    ):
+    if "kernel_radius" in set((attr for sub_cls in cls.__mro__ for attr in sub_cls.__dict__.keys())):
         return super(BaseScaler, cls).__new__(cls)
 
     raise CustomRuntimeError(
