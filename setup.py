@@ -47,7 +47,6 @@ setuptools.setup(
         'vsmasktools.edge',
 
         'vsaa',
-        'vsaa.antialiasers',
 
         'vsscale',
 
