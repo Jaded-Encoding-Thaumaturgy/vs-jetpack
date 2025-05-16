@@ -10,6 +10,7 @@ from ...types import LeftShift, TopShift
 __all__ = [
     "ZimgBobber",
     "ZimgComplexKernel",
+    "ZimgComplexKernelT",
 ]
 
 
