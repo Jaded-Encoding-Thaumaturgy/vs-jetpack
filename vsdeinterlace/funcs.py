@@ -11,17 +11,17 @@ from vsexprtools import norm_expr
 from vsrgtools import BlurMatrix, sbr
 from vstools import (
     ConvMode, CustomEnum, FormatsMismatchError, FuncExceptT, FunctionUtil, GenericVSFunction,
-    InvalidFramerateError, PlanesT, check_variable, core, limiter, scale_delta, vs
+    InvalidFramerateError, PlanesT, check_variable, core, limiter, scale_delta, shift_clip, vs
 )
 
 __all__ = [
-    'TelopResample',
+    'InterpolateOverlay',
     'FixInterlacedFades',
     'vinverse'
 ]
 
 
-class TelopResample(CustomIntEnum):
+class InterpolateOverlay(CustomIntEnum):
     IVTC_TXT60 = 0
     DEC_TXT60 = 1
     IVTC_TXT30 = 2
@@ -36,23 +36,19 @@ class TelopResample(CustomIntEnum):
         thsad_recalc: int | None = None,
     ) -> vs.VideoNode:
         def select_every(clip: vs.VideoNode, cycle: int, offsets: int | list[int]) -> vs.VideoNode:
-            def shift_clip(clip: vs.VideoNode, n: int) -> vs.VideoNode:
-                if n > 0:
-                    return clip[n:] + clip[-1] * n
-                elif n < 0:
-                    return clip[0] * -n + clip[:n]
-                else:
-                    return clip
-
             def select_clip(clip: vs.VideoNode, cycle: int, offsets: list[int]) -> list[vs.VideoNode]:
                 clips = list[vs.VideoNode]()
+
                 for x in offsets:
                     shifted = shift_clip(clip, x)
+
                     if cycle != 1:
                         shifted = shifted.std.SelectEvery(cycle, 0)
+
                     clips.append(shifted)
+
                 return clips
-            
+
             if isinstance(offsets, int):
                 offsets = [offsets]
 
@@ -61,24 +57,24 @@ class TelopResample(CustomIntEnum):
         def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
             return (x[0] // 2, x[1] // 2)
 
-        assert check_variable(clip, TelopResample)
+        assert check_variable(clip, InterpolateOverlay)
 
-        InvalidFramerateError.check(TelopResample, clip, (60000, 1001))
+        InvalidFramerateError.check(InterpolateOverlay, clip, (60000, 1001))
 
-        mod = 10 if self == TelopResample.IVTC_TXT30 else 5
+        mod = 10 if self == InterpolateOverlay.IVTC_TXT30 else 5
         field_ref = pattern * 2 % mod
-        invpos = mod - field_ref % mod
+        invpos = (mod - field_ref) % mod
 
         blksize = blksize if isinstance(blksize, tuple) else (blksize, blksize)
 
         match self:
-            case TelopResample.IVTC_TXT60:
+            case InterpolateOverlay.IVTC_TXT60:
                 clean = select_every(clip, 5, 1 - invpos)
                 judder = select_every(clip, 5, [3 - invpos, 4 - invpos])
-            case TelopResample.DEC_TXT60:
+            case InterpolateOverlay.DEC_TXT60:
                 clean = select_every(clip, 5, 4 - invpos)
                 judder = select_every(clip, 5, [1 - invpos, 2 - invpos])
-            case TelopResample.IVTC_TXT30:
+            case InterpolateOverlay.IVTC_TXT30:
                 clean = select_every(clip, 5, -1 - invpos // 2)
                 judder = select_every(clip, 1, -1 - invpos).std.SelectEvery(10, (0, 1, 2, 3, 4, 5, 6, 7, 9))
 
@@ -92,7 +88,7 @@ class TelopResample(CustomIntEnum):
 
                 mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
-        if self == TelopResample.IVTC_TXT30:
+        if self == InterpolateOverlay.IVTC_TXT30:
             comp = mv.flow_fps(fps=Fraction(4, 1)).std.SelectEvery(4, (1, 2, 3))
             fixed = core.std.Interleave([clean, comp]).std.SelectEvery(8, (3, 5, 7, 0, 1, 2, 4, 6))
         else:
@@ -100,11 +96,11 @@ class TelopResample(CustomIntEnum):
             fixed = core.std.Interleave([clean, comp[::2]])
 
         match self:
-            case TelopResample.IVTC_TXT60:
+            case InterpolateOverlay.IVTC_TXT60:
                 return fixed[invpos // 2 :]
-            case TelopResample.DEC_TXT60:
+            case InterpolateOverlay.DEC_TXT60:
                 return fixed[invpos // 3 :]
-            case TelopResample.IVTC_TXT30:
+            case InterpolateOverlay.IVTC_TXT30:
                 return fixed[(1, 2, 3, 3, 4)[invpos // 2] :]
 
 
