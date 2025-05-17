@@ -311,7 +311,7 @@ class Grainer(ABC):
             merge_clip, grained = clip, clip.std.MergeDiff(grained, planes)
 
         if do_protect_chroma:
-            neutral_mask = Lanczos.resample(clip, clip.format.replace(subsampling_h=0, subsampling_w=0))
+            neutral_mask = Lanczos().resample(clip, clip.format.replace(subsampling_h=0, subsampling_w=0))
 
             neutral_mask = norm_expr(
                 split(neutral_mask), f'y {neutral} = z {neutral} = and {get_peak_value(clip, range_in=ColorRange.FULL)} 0 ?',
@@ -636,7 +636,7 @@ def multi_graining(
     masks = [norm_expr(diffs, 'y x -', func=multi_graining) for diffs in zip(masks[:-1], masks[1:])]
 
     if clip.format.num_planes == 3:
-        masks = [Bilinear.resample(join(mask, mask, mask), clip) for mask in masks]
+        masks = [Bilinear().resample(join(mask, mask, mask), clip) for mask in masks]
 
     graineds = [grainer.grain(clip) if grainer else clip for grainer, *_ in norm_grainers]
 
@@ -644,7 +644,7 @@ def multi_graining(
         clip.std.MaskedMerge(grained, mask) for grained, mask in zip(graineds, masks)
     ]
 
-    return reduce(lambda x, y: y.std.MergeDiff(clip.std.MakeDiff(x)), clips_merge, clip)  # type: ignore
+    return reduce(lambda x, y: y.std.MergeDiff(clip.std.MakeDiff(x)), clips_merge, clip)
 
 
 MultiGrainerT = Grainer | type[Grainer] | tuple[Grainer | type[Grainer] | None, float] | tuple[

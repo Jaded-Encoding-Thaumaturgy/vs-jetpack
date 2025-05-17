@@ -4,7 +4,6 @@ from math import sqrt
 
 from vsaa import Nnedi3
 from vsexprtools import norm_expr
-from vskernels import Point
 from vsmasktools import Morpho, PrewittTCanny
 from vsrgtools import BlurMatrix
 from vstools import check_progressive, get_y, scale_delta, vs
@@ -61,6 +60,6 @@ def base_dehalo_mask(
     )
 
     if pre_ss:
-        return Point.scale(mask, src.width, src.height)
+        return vs.core.resize.Point(mask, src.width, src.height)
 
     return mask

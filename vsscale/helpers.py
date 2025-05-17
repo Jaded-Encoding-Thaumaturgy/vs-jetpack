@@ -58,7 +58,7 @@ def scale_var_clip(
             else:
                 norm_width = width(res) if callable(width) else width
 
-            part_scaler = partial(  #type: ignore[misc]
+            part_scaler = partial(
                 norm_scaler.scale, width=norm_width, height=norm_height, shift=norm_shift
             )
 

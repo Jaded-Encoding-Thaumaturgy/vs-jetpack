@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 
 from vsexprtools import ExprOp, ExprToken, norm_expr
-from vskernels import Bilinear
 from vsmasktools import EdgeDetect, EdgeDetectT, FDoGTCanny, range_mask
 from vsrgtools import bilateral, box_blur, gauss_blur
 from vstools import (
@@ -90,8 +89,8 @@ def decrease_size(
         pm_min = scale_mask(pm_min, 32, clip)
         pm_max = scale_mask(pm_max, 32, clip)
 
-        yuv444 = Bilinear.resample(
-            range_mask(clip, rad=3, radc=2), clip.format.replace(subsampling_h=0, subsampling_w=0)
+        yuv444 = vs.core.resize.Bilinear(
+            range_mask(clip, rad=3, radc=2), format=clip.format.replace(subsampling_h=0, subsampling_w=0).id
         )
 
         if emask:

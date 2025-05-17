@@ -146,7 +146,7 @@ class ClampScaler(GenericScaler):
 
         return merged
 
-    @inject_self.cached.property
+    @Scaler.cached_property
     def kernel_radius(self) -> int:
         if not isinstance(self.reference, vs.VideoNode):
             return max(self.reference.kernel_radius, self.base_scaler.kernel_radius)
@@ -214,7 +214,7 @@ class DPID(BaseGenericScaler):
 
         return core.dpid.DpidRaw(clip, ref, **kwargs)
 
-    @inject_self.cached.property
+    @Scaler.cached_property
     def kernel_radius(self) -> int:
         return self._ref_scaler.kernel_radius
 
@@ -251,7 +251,7 @@ class SSIM(LinearScaler):
         """
         super().__init__(**kwargs)
 
-        self.scaler = Hermite.from_param(scaler)
+        self.scaler = Scaler.from_param(scaler)()
 
         if smooth is None:
             smooth = (self.scaler.kernel_radius + 1.0) / 3
@@ -264,7 +264,12 @@ class SSIM(LinearScaler):
             self.filter_func = partial(gauss_blur, sigma=smooth)
 
     def _linear_scale(
-        self, clip: vs.VideoNode, width: int, height: int, shift: tuple[float, float] = (0, 0), **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        width: int | None,
+        height: int | None,
+        shift: tuple[float, float],
+        **kwargs: Any,
     ) -> vs.VideoNode:
         assert check_variable(clip, self.scale)
 
@@ -287,6 +292,6 @@ class SSIM(LinearScaler):
 
         return expr_func([self.filter_func(m), self.filter_func(r), l1, self.filter_func(t)], 'x y z * + a -')
 
-    @inject_self.cached.property
+    @Scaler.cached_property
     def kernel_radius(self) -> int:
         return self.scaler.kernel_radius

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Mapping, Type
 
 from vsexprtools import ExprOp, ExprToken, expr_func, norm_expr
-from vskernels import Bilinear, Catrom, Point
+from vskernels import Point
 from vsrgtools import box_blur, median_blur
 from vssource import IMWRI, Indexer
 from vstools import (
@@ -75,7 +75,7 @@ class CustomMaskFromClipsAndRanges(GeneralMask, _base_cmaskcar):
         matrix = Matrix.from_video(ref)
 
         for maskclip, mask_ranges in zip(self.clips, self.frame_ranges(ref)):
-            maskclip = Point.resample(
+            maskclip = Point().resample(
                 maskclip.std.AssumeFPS(ref), mask, matrix,
                 range_in=ColorRange.FULL, range=ColorRange.FULL
             )
@@ -298,7 +298,7 @@ class HardsubSign(HardsubMask):
         assert check_variable(clip, self._mask)
 
         hsmf = norm_expr([clip, ref], 'x y - abs', func=self.__class__)
-        hsmf = Bilinear.resample(hsmf, clip.format.replace(subsampling_w=0, subsampling_h=0))
+        hsmf = core.resize.Bilinear(hsmf, format=clip.format.replace(subsampling_w=0, subsampling_h=0).id)
 
         hsmf = ExprOp.MAX(hsmf, split_planes=True)
 
@@ -361,7 +361,7 @@ class HardsubLine(HardsubMask):
             func=self.__class__
         )
 
-        subedge = ExprOp.MIN(Catrom.resample(subedge, vs.YUV444P8), split_planes=True)
+        subedge = ExprOp.MIN(subedge.resize.Bicubic(format=vs.YUV444P8), split_planes=True)
 
         clip_y, ref_y = get_y(clip), depth(get_y(ref), clip)
 

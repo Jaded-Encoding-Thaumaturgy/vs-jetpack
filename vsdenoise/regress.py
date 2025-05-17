@@ -436,7 +436,7 @@ class ChromaReconstruct(ABC):
 
     def __post_init__(self) -> None:
         self._kernel = Kernel.ensure_obj(self.kernel)
-        self._scaler = self._kernel.ensure_obj(self.scaler)
+        self._scaler = Scaler.ensure_obj(self.scaler or self._kernel)
 
     @abstractmethod
     def get_base_clip(self, clip: vs.VideoNode) -> vs.VideoNode:
@@ -644,7 +644,7 @@ class GenericChromaRecon(ChromaReconstruct):
     def get_mangled_luma(self, clip: vs.VideoNode, y_base: vs.VideoNode) -> vs.VideoNode:
         c_width, c_height = get_plane_sizes(clip, 1)
 
-        return Catrom.scale(
+        return Catrom().scale(
             y_base, c_width, c_height, (0, -0.5 + self.get_chroma_shift(clip.width, c_width))
         )
 
@@ -724,14 +724,16 @@ class PAWorksChromaRecon(MissingFieldsChromaRecon):
         cm_width, _ = get_plane_sizes(y_base, 1)
         c_width, c_height = get_plane_sizes(clip, 1)
 
-        y_m = Point.scale(y_base, cm_width // 2, y_base.height, (0, -1))
-        y_m = Point.scale(y_m, c_width, y_base.height, (0, -0.25))
-        y_m = Catrom.scale(y_m, c_width, c_height)
+        point = Point()
+
+        y_m = point.scale(y_base, cm_width // 2, y_base.height, (0, -1))
+        y_m = point.scale(y_m, c_width, y_base.height, (0, -0.25))
+        y_m = Catrom().scale(y_m, c_width, c_height)
 
         return y_m
 
     def demangle_chroma(self, mangled: vs.VideoNode, y_base: vs.VideoNode) -> vs.VideoNode:
-        demangled = Point.scale(mangled, y_base.width // 2, mangled.height)
+        demangled = vs.core.resize.Point(mangled, y_base.width // 2, mangled.height)
 
         demangled = self._dm_wscaler.scale(demangled, mangled.width, y_base.height, (self.src_top, 0))
         demangled = self._dm_hscaler.scale(demangled, y_base.width, y_base.height, (0, self.src_left))

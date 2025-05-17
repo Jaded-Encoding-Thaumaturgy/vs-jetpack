@@ -10,7 +10,7 @@ from typing import Any, Literal
 
 from jetpytools import fallback
 
-from vstools import ConstantFormatVideoNode, CustomValueError, core, inject_self, vs, vs_object
+from vstools import ConstantFormatVideoNode, CustomValueError, core, vs, vs_object
 
 from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, Interpolater
 from . import nnedi3
@@ -229,7 +229,7 @@ class EEDI3(Interpolater):
 class Eedi3SS(EEDI3, SuperSampler):
     """Concrete implementation of EEDI3 used as a supersampler."""
 
-    @inject_self.cached.property
+    @SuperSampler.cached_property
     def kernel_radius(self) -> int:
         return self.nrad
 

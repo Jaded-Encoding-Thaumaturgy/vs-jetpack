@@ -698,7 +698,8 @@ def bm3d(
 
     if clip.format.color_family == vs.YUV and {clip.format.subsampling_w, clip.format.subsampling_h} == {0}:
         if backend == BM3D.Backend.OLD:
-            preclip = Point.resample(clip, clip.format.replace(color_family=vs.RGB))
+            point = Point()
+            preclip = point.resample(clip, clip.format.replace(color_family=vs.RGB))
 
             denoised = bm3d(
                 preclip,
@@ -714,7 +715,7 @@ def bm3d(
                 **kwargs,
             )
 
-            return Point.resample(denoised, clip, clip)
+            return point.resample(denoised, clip, clip)
 
         denoised = _bm3d_wolfram(preclip, pre, ref, chroma=True)
 

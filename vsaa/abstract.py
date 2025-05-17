@@ -14,7 +14,7 @@ from typing import Any, Callable, ClassVar, overload
 from typing_extensions import Self
 
 from vsexprtools import norm_expr
-from vskernels import Catrom, Kernel, KernelT, NoShift, Scaler, ScalerT
+from vskernels import Catrom, Kernel, KernelT, Scaler, ScalerT
 from vskernels.types import LeftShift, TopShift
 from vstools import ConstantFormatVideoNode, check_progressive, check_variable, core, inject_self, vs
 
@@ -88,7 +88,7 @@ class Interpolater(_SingleInterpolate, ABC):
 
     def __post_init__(self) -> None:
         self._shifter = Kernel.ensure_obj(self.shifter)
-        self._scaler = self._shifter.ensure_obj(self.scaler, self.__class__)
+        self._scaler = Scaler.ensure_obj(self.scaler or self._shifter, self.__class__)
 
     def _preprocess_clip(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         """
@@ -270,13 +270,9 @@ class SuperSampler(Interpolater, Scaler, ABC):
 
                     cleftshift -= cresshift
 
-            if isinstance(self._shifter, NoShift):
-                if upscaled.format.subsampling_h or upscaled.format.subsampling_w:
-                    upscaled = Catrom.shift(upscaled, 0, [0, cleftshift + cresshift])
-            else:
-                upscaled = self._shifter.shift(
-                    upscaled, [topshift, ctopshift], [leftshift, cleftshift]
-                )
+            upscaled = self._shifter.shift(
+                upscaled, [topshift, ctopshift], [leftshift, cleftshift]
+            )
 
         return self._scaler.scale(upscaled, width, height, shift)
 

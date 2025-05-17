@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, Sequence, Uni
 from jetpytools import CustomStrEnum, FuncExceptT, P, R
 
 from vsexprtools import ExprOp, ExprVars, complexpr_available, norm_expr
-from vskernels import Bilinear, Gaussian
+from vskernels import Gaussian
 from vstools import (
     ConstantFormatVideoNode, ConvMode, CustomValueError, KwargsT, OneDimConvModeT, PlanesT, SpatialConvModeT,
     TempConvModeT, VSFunctionNoArgs, check_variable, check_variable_format, core, join, normalize_planes, normalize_seq,
@@ -198,7 +198,7 @@ def gauss_blur(
 
                 resize_kwargs.update(width=plane.width, height=plane.height)
 
-                plane = Bilinear.scale(plane, wdown, hdown)  # type: ignore[assignment]
+                plane = core.resize.Bilinear(plane, wdown, hdown)
                 sigma = sigma_constant
             else:
                 resize_kwargs.update({f'force_{k}': k in mode for k in 'hv'})

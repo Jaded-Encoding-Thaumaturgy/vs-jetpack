@@ -286,12 +286,12 @@ def ccd(
             ]) if planes else None for planes in ref_clips
         ]
     else:
-        yuv = Bicubic.scale(src, yuvw, yuvh, format=src444_format)  # type: ignore[assignment]
-        yuvref = ref and Bicubic.scale(ref, yuvw, yuvh, format=src444_format)  # type: ignore[assignment]
+        yuv = vs.core.resize.Bicubic(src, yuvw, yuvh, format=src444_format.id)
+        yuvref = ref and vs.core.resize.Bicubic(ref, yuvw, yuvh, format=src444_format.id)
 
     assert yuv and yuv.format
 
-    rgb = Point.resample(yuv, yuv.format.replace(color_family=vs.RGB), None, matrix)
+    rgb = Point().resample(yuv, yuv.format.replace(color_family=vs.RGB), None, matrix)
 
     denoised = _ccd_expr(yuvref or yuv, rgb)
 
@@ -303,17 +303,18 @@ def ccd(
         elif mode == CCDMode.NNEDI_SSIM:
             down_format = down_format.replace(sample_type=vs.FLOAT, bits_per_sample=32)
 
-    denoised = Bicubic.resample(denoised, down_format, src_left=src_left)
+    denoised = vs.core.resize.Bicubic(denoised, format=down_format.id, src_left=src_left)
 
     if not is_subsampled and 0 in planes:
         return denoised
 
     if mode == CCDMode.NNEDI_SSIM and not i444:
-        u = SSIM.scale(plane(denoised, 1), yuvw, yuvh, **ssim_kwargs)
-        v = SSIM.scale(plane(denoised, 2), yuvw, yuvh, **ssim_kwargs)
+        ssim = SSIM()
+        u = ssim.scale(plane(denoised, 1), yuvw, yuvh, **ssim_kwargs)
+        v = ssim.scale(plane(denoised, 2), yuvw, yuvh, **ssim_kwargs)
 
         denoised = join(denoised if 0 in planes else src, u, v, vs.YUV)
     else:
         denoised = join(src, denoised, vs.YUV)
 
-    return denoised if i444 else Bicubic.resample(denoised, src.format)
+    return denoised if i444 else Bicubic().resample(denoised, src.format)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from vsexprtools import ExprOp, norm_expr
-from vskernels import Catrom
 from vsmasktools import Morpho, XxpandMode
 from vsrgtools import BlurMatrix, box_blur, gauss_blur
 from vstools import ConstantFormatVideoNode, core, ConvMode, get_y, iterate, shift_clip_multi, split, vs, limiter
@@ -76,7 +75,7 @@ def descale_error_mask(
 
     if bwbias > 1 and chroma:
         chroma_abs = norm_expr(chroma, 'x neutral - abs y neutral - abs max')
-        chroma_abs = Catrom.scale(chroma_abs, y.width, y.height)  # type: ignore[assignment]
+        chroma_abs = core.resize.Bicubic(chroma_abs, y.width, y.height)
 
         bias = norm_expr([y, chroma_abs], f'x ymax >= x ymin <= or y 0 = and {bwbias} 1 ?', func=descale_error_mask)
         bias = Morpho.expand(bias, 2, func=descale_error_mask)

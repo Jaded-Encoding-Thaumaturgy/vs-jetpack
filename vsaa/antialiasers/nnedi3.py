@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from vstools import ConstantFormatVideoNode, inject_self, vs
+from vstools import ConstantFormatVideoNode, vs
 
 from ..abstract import Antialiaser, DoubleRater, SingleRater, SuperSampler, Interpolater, _FullInterpolate
 
@@ -120,7 +120,7 @@ class NNEDI3(_FullInterpolate, Interpolater):
 class Nnedi3SS(NNEDI3, SuperSampler):
     """Concrete implementation of NNEDI3 used as a supersampler."""
     
-    @inject_self.cached.property
+    @SuperSampler.cached_property
     def kernel_radius(self) -> int:
         match self.nsize:
             case 1 | 5:

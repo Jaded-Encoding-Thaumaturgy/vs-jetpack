@@ -4,7 +4,7 @@ from functools import cached_property, wraps
 from typing import Any, Callable, TypeVar
 
 from vsexprtools import norm_expr
-from vskernels import Bilinear, BorderHandling, Hermite, Kernel, KernelT, Point, Scaler, ScalerT
+from vskernels import Bilinear, BorderHandling, Hermite, Kernel, KernelT, Scaler, ScalerT
 from vskernels.types import LeftShift, TopShift
 from vsmasktools import KirschTCanny, based_diff_mask
 from vsmasktools.utils import _get_region_expr
@@ -123,7 +123,7 @@ class RescaleBase:
 
     @_add_props
     def _generate_doubled(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
-        return self.upscaler.supersample(clip, 2)  # type: ignore[return-value]
+        return self.upscaler.supersample(clip, 2)
 
     @_add_props
     def _generate_upscale(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
@@ -327,7 +327,7 @@ class Rescale(RescaleBase):
                 self.descale_args.width, None,
                 **self.descale_args.kwargs(),
                 border_handling=self.border_handling,
-                ignore_mask=Point.scale(self._ignore_mask, height=descale_h.height)
+                ignore_mask=core.resize.Point(self._ignore_mask, height=descale_h.height)
             )
 
             self.descale_args.mode = 'hw'
