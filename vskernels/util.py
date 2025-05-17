@@ -4,26 +4,101 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from functools import partial, wraps
 from math import exp
-from typing import TYPE_CHECKING, Any, Callable, Concatenate, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Concatenate, Generic, TypeVar, Union, overload
 
 from jetpytools import P
 from typing_extensions import Self
 
 from vsexprtools import norm_expr
 from vstools import (
-    CustomRuntimeError, CustomValueError, HoldsVideoFormatT, Matrix, MatrixT, Transfer, VideoFormatT, cachedproperty,
-    check_variable_format, depth, get_video_format, vs, vs_object
+    ConstantFormatVideoNode, CustomRuntimeError, CustomValueError, HoldsVideoFormatT, Matrix, MatrixT, Transfer,
+    VideoFormatT, cachedproperty, check_variable_format, depth, get_video_format, vs, vs_object
 )
 
-from .abstract import Resampler, ResamplerT
+from .abstract import Resampler, ResamplerT, Scaler, ScalerT
+from .abstract.base import BaseScalerMeta
 from .kernels import Catrom, Point
-from .types import Center, Slope
+from .types import Center, LeftShift, Slope, TopShift
 
 __all__ = [
     'LinearLight',
+    'NoScale',
 
     'resample_to'
 ]
+
+_ScalerT = TypeVar("_ScalerT", bound=Scaler)
+
+class NoScale(Scaler, Generic[_ScalerT], partial_abstract=True):
+    """
+    A utility scaler class that performs no scaling on the input clip.
+
+    If used without a specified scaler, it defaults to inheriting from `Catrom`.
+    """
+
+    if not TYPE_CHECKING:
+        def __new__(cls, *args: Any, **kwargs: Any) -> Self:
+            if cls.__bases__ == (Scaler, Generic):
+                return cls.__class_getitem__(Catrom)()
+
+            return super().__new__(cls, *args, **kwargs)
+
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        **kwargs: Any,
+    ) -> vs.VideoNode | ConstantFormatVideoNode:
+        """
+        Return the input clip unscaled, validating that the dimensions are consistent.
+
+        :param clip:                The source clip.
+        :param width:               Optional width to validate against the clip's width.
+        :param height:              Optional height to validate against the clip's height.
+        :param shift:               Subpixel shift (top, left).
+        :param kwargs:              Additional arguments forwarded to the scale function.
+        :raises CustomValueError:   If `width` or `height` differ from the clip's dimensions.
+        """
+        width, height = self._wh_norm(clip, width, height)
+
+        if width != clip.width or height != clip.height:
+            raise CustomValueError(
+                "When using NoScale, `width` and `height` must match the clip's dimensions.",
+                self.__class__, (width, height)
+            )
+
+        if shift == (0, 0) and not kwargs and not self.kwargs:
+            return clip
+
+        return super().scale(clip, width, height, shift, **kwargs)
+
+    def __class_getitem__(cls, scaler: type[_ScalerT]) -> type[NoScale[_ScalerT]]:
+        """
+        Specialize NoScale with a given scaler kernel.
+
+        Example:
+        ```py
+        NoScale[Bicubic]
+        ```
+
+        :param scaler:  A Scaler type used to specialize NoScale.
+        :return:        A new subclass of NoScale using the provided kernel.
+        """
+        return BaseScalerMeta(  # type: ignore[return-value]
+            cls.__name__, (scaler, cls), cls.__dict__.copy(), partial_abstract=True
+        )
+
+    @classmethod
+    def from_scaler(cls, scaler: ScalerT) -> type[NoScale[Scaler]]:
+        """
+        Create a specialized NoScale class using a specific scaler.
+
+        :param scaler:  A Scaler instance, type or string used as a base for specialization.
+        :return:        A dynamically created NoScale subclass based on the given scaler.
+        """
+        return NoScale.__class_getitem__(Scaler.from_param(scaler))
 
 
 @dataclass

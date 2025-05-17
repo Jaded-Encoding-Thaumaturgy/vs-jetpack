@@ -5,7 +5,7 @@ import warnings
 from typing import Any, TypeAlias, Union, overload
 
 from vsexprtools import ExprOp, norm_expr
-from vskernels import Bilinear, Catrom, Kernel, KernelT, NoScale
+from vskernels import Bilinear, Catrom, Kernel, KernelT
 from vsrgtools import bilateral, gauss_blur, remove_grain
 from vsrgtools.rgtools import RemoveGrain
 from vstools import (
@@ -156,7 +156,7 @@ def based_diff_mask(
 
 @overload
 def based_diff_mask(
-    clip: vs.VideoNode, height: int, kernel: KernelT = ...,
+    clip: vs.VideoNode, height: int, kernel: KernelT,
     /,
     thr: float = 0.216,
     prefilter: int | KwargsT | bool | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = False,
@@ -188,7 +188,7 @@ def based_diff_mask(
 
 
 def based_diff_mask(
-    clip: vs.VideoNode, ref_or_height: vs.VideoNode | int, kernel: KernelT = NoScale,
+    clip: vs.VideoNode, ref_or_height: vs.VideoNode | int, kernel: KernelT | None = None,
     /,
     thr: float = 0.216,
     prefilter: int | KwargsT | bool | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = False,
@@ -209,6 +209,8 @@ def based_diff_mask(
         ref = ref_or_height
     else:
         clip = get_y(clip)
+
+        assert kernel is not None
 
         kernel = Kernel.ensure_obj(kernel, func)
 
@@ -237,7 +239,7 @@ def based_diff_mask(
     dst_fmt = clip.format.replace(subsampling_w=0, subsampling_h=0)
     diff_fmt = dst_fmt.replace(color_family=vs.GRAY)
 
-    mask = ExprOp.mae(dst_fmt)((Bilinear.resample(c, dst_fmt) for c in [clip, ref]), format=diff_fmt, split_planes=True)
+    mask = ExprOp.mae(dst_fmt)((Bilinear().resample(c, dst_fmt) for c in [clip, ref]), format=diff_fmt, split_planes=True)
     mask = ColorRange.FULL.apply(mask)
 
     if postfilter:
