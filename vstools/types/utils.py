@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from abc import ABC, ABCMeta
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable
 
 from jetpytools import (
     KwargsNotNone, LinearRangeLut, Singleton, cachedproperty, classproperty, complex_hash, copy_signature,
     get_subclasses, inject_self, to_singleton
 )
+from typing_extensions import Self
 
 __all__ = [
     'copy_signature',
@@ -43,7 +44,7 @@ class vs_object(ABC, metaclass=ABCMeta):
     __vsdel_partial_register: Callable[..., None]
     __vsdel_register: Callable[[int], None] | None = None
 
-    def __new__(cls: type[VSObjSelf], *args: Any, **kwargs: Any) -> VSObjSelf:
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         from ..utils.vs_proxy import core, register_on_creation
 
         try:
@@ -68,9 +69,6 @@ class vs_object(ABC, metaclass=ABCMeta):
     if TYPE_CHECKING:
         def __vs_del__(self, core_id: int) -> None:
             """Special dunder that will be called when a core is getting freed."""
-
-
-VSObjSelf = TypeVar('VSObjSelf', bound=vs_object)
 
 
 class VSDebug(Singleton, init=True):

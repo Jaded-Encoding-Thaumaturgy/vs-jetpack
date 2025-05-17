@@ -35,7 +35,7 @@ class PreAA(Generic[P, R]):
 
     def __init__(self, pre_aa: Callable[P, R]) -> None:
         self._func = pre_aa
-        
+
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
 
@@ -228,12 +228,12 @@ def based_aa(
 
         mask = box_blur(mask.std.Maximum())
         mask = limiter(mask, func=based_aa)
-        
+
         if show_mask:
             return mask
 
     if supersampler is False:
-        supersampler = downscaler = NoScale
+        supersampler = downscaler = NoScale[Catrom]
 
     aaw, aah = [round(dimension * rfactor) for dimension in (func.work_clip.width, func.work_clip.height)]
 
@@ -264,7 +264,7 @@ def based_aa(
     ss = supersampler.scale(ss_clip, aaw, aah)
 
     if not antialiaser:
-        antialiaser = Eedi3(mclip=Bilinear.scale(mask, ss.width, ss.height) if mask else None, sclip_aa=True)
+        antialiaser = Eedi3(mclip=Bilinear().scale(mask, ss.width, ss.height) if mask else None, sclip_aa=True)
         aa_kwargs = KwargsT(alpha=0.125, beta=0.25, vthresh0=12, vthresh1=24, field=1) | aa_kwargs
 
     aa = getattr(antialiaser, 'draa' if double_rate else 'aa')(ss, **aa_kwargs)

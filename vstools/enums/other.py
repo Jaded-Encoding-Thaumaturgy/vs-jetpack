@@ -52,7 +52,32 @@ class Direction(CustomIntEnum):
         return self._name_.lower()
 
 
-class Dar(Fraction):
+class _Xar(Fraction):
+    @classmethod
+    def from_param(cls, value: Self | bool | float | None, fallback: Self | float) -> Self | None:
+        """
+        Get the Xar from a Xar, a boolean, a float or a None object.
+
+        :param value:       Value identifier.
+        :param fallback:    Fallback value.
+        :return:            Xar object or None.
+        """
+        if value is False:
+            return cls(fallback)
+
+        if value is True:
+            return None
+
+        if isinstance(value, cls):
+            return value
+
+        if value is not None:
+            return cls.from_float(float(value))
+
+        return None
+
+
+class Dar(_Xar):
     """
     A Fraction representing the Display Aspect Ratio.
 
@@ -110,7 +135,7 @@ class Dar(Fraction):
         return Sar.from_ar(active_area, height, self)
 
 
-class Sar(Fraction):
+class Sar(_Xar):
     """
     A Fraction representing the Sample Aspect Ratio.
 

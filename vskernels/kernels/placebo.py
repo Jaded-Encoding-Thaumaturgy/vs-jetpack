@@ -1,60 +1,68 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import Any, Callable, ClassVar
+from typing import Any, ClassVar
 
-from jetpytools import inject_kwargs_params
-from vstools import core, fallback, inject_self, vs
+from vstools import core, fallback, vs
 
 from ..types import LeftShift, TopShift
-from .complex import ComplexScaler
+from ..abstract import ComplexScaler
 
 __all__ = [
-    'Placebo',
-    'EwaBicubic',
-    'EwaJinc',
-    'EwaLanczos',
-    'EwaGinseng',
-    'EwaHann',
-    'EwaRobidoux',
-    'EwaRobidouxSharp',
+    "Placebo",
+    "EwaBicubic",
+    "EwaJinc",
+    "EwaLanczos",
+    "EwaGinseng",
+    "EwaHann",
+    "EwaRobidoux",
+    "EwaRobidouxSharp",
 ]
 
 
 class Placebo(ComplexScaler, abstract=True):
     """
-    Abstract Placebo scaler.
+    Abstract Placebo scaler class.
 
-    Dependencies:
-
-    * vs-placebo <https://github.com/sgt0/vs-placebo>`_
+    This class and its subclasses depend on [vs-placebo](https://github.com/sgt0/vs-placebo)
     """
 
     _kernel: ClassVar[str]
-    """Name of the placebo kernel"""
-
-    # Kernel settings
-    taps: float | None
-    b: float | None
-    c: float | None
-
-    # Filter settings
-    clamp: float
-    blur: float
-    taper: float
-
-    # Quality settings
-    antiring: float
+    """Name of the Placebo kernel"""
 
     scale_function = core.lazy.placebo.Resample
 
     def __init__(
         self,
-        taps: float | None = None, b: float | None = None, c: float | None = None,
-        clamp: float = 0.0, blur: float = 0.0, taper: float = 0.0,
+        taps: float | None = None,
+        b: float | None = None,
+        c: float | None = None,
+        clamp: float = 0.0,
+        blur: float = 0.0,
+        taper: float = 0.0,
         antiring: float = 0.0,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
+        :param taps:        Overrides the filter kernel radius.
+                            Has no effect if the filter kernel is not resizeable.
+        :param b:           The 'b' parameter for bicubic interpolation.
+        :param c:           The 'c' parameter for bicubic interpolation.
+        :param clamp:       Represents an extra weighting/clamping coefficient for negative weights.
+                            A value of 0.0 represents no clamping.
+                            A value of 1.0 represents full clamping, i.e. all negative lobes will be removed.
+        :param blur:        Additional blur coefficient.
+                            This effectively stretches the kernel, without changing the effective radius of the filter radius.
+        :param taper:       Additional taper coefficient. This essentially flattens the function's center.
+        :param antiring:    Antiringing strength.
+        :param kwargs:      Keyword arguments that configure the internal scaling behavior.
+        """
         self.taps = taps
         self.b = b
         self.c = c
@@ -64,92 +72,190 @@ class Placebo(ComplexScaler, abstract=True):
         self.antiring = antiring
         super().__init__(**kwargs)
 
-    @inject_kwargs_params
     def get_scale_args(
-        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0),
-        width: int | None = None, height: int | None = None,
-        *funcs: Callable[..., Any], **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        width: int | None = None,
+        height: int | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         return (
-            dict(sx=shift[1], sy=shift[0])
-            | self.get_clean_kwargs(*funcs)
-            | self.get_params_args(False, clip, width, height, **kwargs)
+            dict(
+                sx=kwargs.pop("src_left", shift[1]),
+                sy=kwargs.pop("src_top", shift[0]),
+                width=width,
+                height=height,
+                filter=self._kernel,
+                radius=self.taps,
+                param1=self.b,
+                param2=self.c,
+                clamp=self.clamp,
+                taper=self.taper,
+                blur=self.blur,
+                antiring=self.antiring,
+            )
+            | self.kwargs
+            | kwargs
         )
 
-    def get_params_args(
-        self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any
-    ) -> dict[str, Any]:
-        return dict(
-            width=width, height=height, filter=self._kernel,
-            radius=self.taps, param1=self.b, param2=self.c,
-            clamp=self.clamp, taper=self.taper, blur=self.blur,
-            antiring=self.antiring,
-        ) | kwargs
-
-    @inject_self.cached.property
+    @ComplexScaler.cached_property
     def kernel_radius(self) -> int:
-        from .bicubic import Bicubic
-
         if self.taps:
             return ceil(self.taps)
 
         if self.b or self.c:
-            return Bicubic(fallback(self.b, 0), fallback(self.c, 0.5)).kernel_radius
+            b, c = fallback(self.b, 0), fallback(self.c, 0.5)
+
+            if (b, c) == (0, 0):
+                return 1
 
         return 2
 
 
 class EwaBicubic(Placebo):
-    _kernel = 'ewa_robidoux'
+    """Ewa Bicubic resizer."""
+
+    _kernel = "ewa_robidoux"
 
     def __init__(self, b: float = 0.0, c: float = 0.5, radius: int | None = None, **kwargs: Any) -> None:
-        radius = kwargs.pop('taps', radius)
+        """
+        Initialize the scaler with specific 'b' and 'c' parameters and optional arguments.
+
+        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        but only if the method explicitly accepts them as named parameters.
+        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        the one passed to `func` takes precedence.
+
+        :param b:       The 'b' parameter for bicubic interpolation.
+        :param c:       The 'c' parameter for bicubic interpolation.
+        :param radius:  Overrides the filter kernel radius.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        """
+        radius = kwargs.pop("taps", radius)
 
         if radius is None:
-            from .bicubic import Bicubic
-
-            radius = Bicubic(b, c).kernel_radius
+            if (b, c) == (0, 0):
+                radius = 1
+            else:
+                radius = 2
 
         super().__init__(radius, b, c, **kwargs)
 
 
 class EwaLanczos(Placebo):
-    _kernel = 'ewa_lanczos'
+    """Ewa Lanczos resizer."""
+
+    _kernel = "ewa_lanczos"
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+        """
+        Initialize the kernel with a specific number of taps and optional keyword arguments.
+
+        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        but only if the method explicitly accepts them as named parameters.
+        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        the one passed to `func` takes precedence.
+
+        :param taps:    The number of taps used for Lanczos interpolation.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaJinc(Placebo):
-    _kernel = 'ewa_jinc'
+    """Ewa Jinc resizer."""
+
+    _kernel = "ewa_jinc"
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+        """
+        Initialize the kernel with a specific number of taps and optional keyword arguments.
+
+        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        but only if the method explicitly accepts them as named parameters.
+        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        the one passed to `func` takes precedence.
+
+        :param taps:    The number of taps used for Jinc interpolation.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaGinseng(Placebo):
-    _kernel = 'ewa_ginseng'
+    """Ewa Ginseng resizer."""
+
+    _kernel = "ewa_ginseng"
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+        """
+        Initialize the kernel with a specific number of taps and optional keyword arguments.
+
+        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        but only if the method explicitly accepts them as named parameters.
+        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        the one passed to `func` takes precedence.
+
+        :param taps:    The number of taps used for Ginseng interpolation.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaHann(Placebo):
-    _kernel = 'ewa_hann'
+    """Ewa Hann resizer."""
+
+    _kernel = "ewa_hann"
 
     def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+        """
+        Initialize the kernel with a specific number of taps and optional keyword arguments.
+
+        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        but only if the method explicitly accepts them as named parameters.
+        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        the one passed to `func` takes precedence.
+
+        :param taps:    The number of taps used for Hann interpolation.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaRobidoux(Placebo):
-    _kernel = 'ewa_robidoux'
+    """Ewa Robidoux resizer."""
+
+    _kernel = "ewa_robidoux"
 
     def __init__(self, **kwargs: Any) -> None:
+        """
+        Initialize the kernel with optional keyword arguments.
+
+        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        but only if the method explicitly accepts them as named parameters.
+        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        the one passed to `func` takes precedence.
+
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        """
         super().__init__(None, None, None, **kwargs)
 
 
 class EwaRobidouxSharp(Placebo):
-    _kernel = 'ewa_robidouxsharp'
+    """Ewa Robidoux Sharp resizer."""
+
+    _kernel = "ewa_robidouxsharp"
 
     def __init__(self, **kwargs: Any) -> None:
+        """
+        Initialize the kernel with optional keyword arguments.
+
+        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        but only if the method explicitly accepts them as named parameters.
+        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        the one passed to `func` takes precedence.
+
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        """
         super().__init__(None, None, None, **kwargs)

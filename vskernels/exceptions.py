@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
+
+from jetpytools import fallback
 
 from vstools import CustomValueError, FuncExceptT
 
@@ -11,42 +13,48 @@ __all__ = [
     'UnknownKernelError'
 ]
 
+class _UnknownBaseScalerError(CustomValueError):
+    """Base Scaler error class"""
 
-class UnknownScalerError(CustomValueError):
+    _placeholder: ClassVar[str]
+    _message: ClassVar[str]
+
+    def __init__(
+        self, func: FuncExceptT, name: str, message: str | None = None, **kwargs: Any
+    ) -> None:
+        """
+        Instantiate a new exception with pretty printing and more.
+
+        :param func:        Function this exception was raised from.
+        :param name:        Base scaler name.
+        :param message:     Message of the error.
+        """
+        super().__init__(fallback(message, self._message), func, **{self._placeholder: name}, **kwargs)
+
+
+class UnknownScalerError(_UnknownBaseScalerError):
     """Raised when an unknown scaler is passed."""
 
-    def __init__(
-        self, func: FuncExceptT, scaler: str, message: str = 'Unknown concrete scaler "{scaler}"!',
-        **kwargs: Any
-    ) -> None:
-        super().__init__(message, func, scaler=scaler, **kwargs)
+    _placeholder = "scaler"
+    _message = 'Unknown concrete scaler "{scaler}"!'
 
 
-class UnknownDescalerError(CustomValueError):
+class UnknownDescalerError(_UnknownBaseScalerError):
     """Raised when an unknown descaler is passed."""
 
-    def __init__(
-        self, func: FuncExceptT, descaler: str, message: str = 'Unknown concrete descaler "{descaler}"!',
-        **kwargs: Any
-    ) -> None:
-        super().__init__(message, func, descaler=descaler, **kwargs)
+    _placeholder = "descaler"
+    _message = 'Unknown concrete descaler "{descaler}"!'
 
 
-class UnknownResamplerError(CustomValueError):
+class UnknownResamplerError(_UnknownBaseScalerError):
     """Raised when an unknown resampler is passed."""
 
-    def __init__(
-        self, func: FuncExceptT, resampler: str, message: str = 'Unknown concrete resampler "{resampler}"!',
-        **kwargs: Any
-    ) -> None:
-        super().__init__(message, func, resampler=resampler, **kwargs)
+    _placeholder = "resampler"
+    _message = 'Unknown concrete resampler "{resampler}"!'
 
 
-class UnknownKernelError(CustomValueError):
+class UnknownKernelError(_UnknownBaseScalerError):
     """Raised when an unknown kernel is passed."""
 
-    def __init__(
-        self, func: FuncExceptT, kernel: str, message: str = 'Unknown concrete kernel "{kernel}"!',
-        **kwargs: Any
-    ) -> None:
-        super().__init__(message, func, kernel=kernel, **kwargs)
+    _placeholder = "kernel"
+    _message = 'Unknown concrete kernel "{kernel}"!'
