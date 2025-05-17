@@ -37,27 +37,27 @@ class TestChromaLocation(TestCase):
 
     def test_get_offsets(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8)
-        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.LEFT)
+        off_left, off_top = ChromaLocation.LEFT.get_offsets(clip)
         self.assertEqual(off_left, -0.5)
         self.assertEqual(off_top, 0.0)
 
-        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.CENTER)
+        off_left, off_top = ChromaLocation.CENTER.get_offsets(clip)
         self.assertEqual(off_left, 0.0)
         self.assertEqual(off_top, 0.0)
 
-        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.TOP_LEFT)
+        off_left, off_top = ChromaLocation.TOP_LEFT.get_offsets(clip)
         self.assertEqual(off_left, -0.5)
         self.assertEqual(off_top, -0.5)
 
-        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.TOP)
+        off_left, off_top = ChromaLocation.TOP.get_offsets(clip)
         self.assertEqual(off_left, 0.0)
         self.assertEqual(off_top, -0.5)
 
-        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.BOTTOM_LEFT)
+        off_left, off_top = ChromaLocation.BOTTOM_LEFT.get_offsets(clip)
         self.assertEqual(off_left, -0.5)
         self.assertEqual(off_top, 0.5)
 
-        off_left, off_top = ChromaLocation.get_offsets(clip, ChromaLocation.BOTTOM)
+        off_left, off_top = ChromaLocation.BOTTOM.get_offsets(clip)
         self.assertEqual(off_left, 0.0)
         self.assertEqual(off_top, 0.5)
 
