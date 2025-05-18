@@ -49,6 +49,39 @@ def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Calla
     def _wrapped(self: _BaseScalerT, *args: P.args, **kwargs: P.kwargs) -> R:
         init_kwargs = dict[str, Any]()
 
+        # TODO: remove this
+        if not TYPE_CHECKING:
+            if isinstance(self, vs.VideoNode):
+                import inspect
+                import re
+                import pathlib
+                import warnings
+
+                warnings.simplefilter("always", DeprecationWarning)
+                warnings.warn(
+                    f"The `{method.__name__}` must be called on an instance, not the class. "
+                    "For example, use: Bicubic().scale(...) instead of Bicubic.scale(...)",
+                    DeprecationWarning,
+                    2,
+                    skip_file_prefixes=(str(pathlib.Path(__file__).resolve()),)
+                )
+
+                frame_infos = inspect.stack()
+                frame_info = frame_infos[1]
+                f0 = inspect.currentframe()
+                f1 = f0.f_back  # pyright: ignore
+
+                try:
+                    if (code := frame_info.code_context):
+                        match = re.search(rf'(\w+)\.{method.__name__}', code[0])
+                        if match:
+                            clip = self
+                            self = eval(match.group(1), f1.f_globals, f1.f_locals)()  # pyright: ignore
+                            args = (clip, ) + args  # pyright: ignore
+                finally:
+                    frame_infos.clear()
+                    del frame_info, f0, f1
+
         for k in self.kwargs.copy():
             if k in signature.parameters:
                 init_kwargs[k] = self.kwargs.get(k)
