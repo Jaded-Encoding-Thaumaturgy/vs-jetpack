@@ -1,11 +1,13 @@
-from typing import Sequence, Any, Literal
+from typing import Any, Literal, Sequence
 
 import pytest
 
-from jetpytools import CustomValueError, FuncExceptT, to_arr, norm_display_name
+from jetpytools import CustomValueError, FuncExceptT, norm_display_name, to_arr
 
-from vsrgtools import BlurMatrix, bilateral, box_blur, flux_smooth, gauss_blur, median_blur, min_blur, sbr, side_box_blur
-from vstools import ConvMode, DitherType, PlanesT, core, depth, get_prop, vs, invert_planes
+from vsrgtools import (
+    BlurMatrix, bilateral, box_blur, flux_smooth, gauss_blur, median_blur, min_blur, sbr, side_box_blur
+)
+from vstools import ConvMode, DitherType, PlanesT, core, depth, get_prop, invert_planes, vs
 
 color_bars = core.colorbars.ColorBars(format=vs.YUV444P12).std.Loop(10)
 
