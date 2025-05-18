@@ -1,0 +1,32 @@
+name: Set up colorbars
+description: Build and install colorbars
+inputs:
+  colorbars-version:
+    description: colorbars version
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Checkout colorsbars
+      uses: actions/checkout@v4
+      with:
+        repository: ifb/vapoursynth-colorbars
+        path: .vapoursynth-colorbars
+
+    - name: Install colorbars
+      shell: bash
+      run: |
+        pushd .vapoursynth-colorbars
+        ./autogen.sh
+        ./configure --prefix=/usr
+        make -j$(nproc)
+        sudo make install -j$(nproc)
+        sudo mkdir -p /usr/lib/vapoursynth
+        popd
+        rm -rf .vapoursynth-colorbars
+
+    - name: Verify colorbars install
+      shell: python
+      run: |
+        import vapoursynth
+        print(vapoursynth.core.colorbars)

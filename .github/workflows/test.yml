@@ -3,7 +3,7 @@ name: Test Python code
 on:
   push:
     branches:
-      - main
+      - tests
     paths:
       - '.github/actions/**'
       - '.github/workflows/test.yml'
@@ -60,6 +60,9 @@ jobs:
         uses: ./.github/actions/setup-vszip
         with:
           vszip-version: ${{ matrix.vszip-version }}
+
+      - name: Set up colorbars
+        uses: ./.github/actions/setup-colorbars
 
       - name: Install dependencies
         run: |
