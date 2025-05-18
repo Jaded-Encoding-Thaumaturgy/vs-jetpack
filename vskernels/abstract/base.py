@@ -11,7 +11,7 @@ from inspect import Signature
 from math import ceil
 from types import NoneType
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, NoReturn, TypeVar, Union, cast, overload
+    TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Literal, NoReturn, TypeVar, Union, cast, overload
 )
 
 from jetpytools import P, R, T_co
@@ -97,12 +97,13 @@ def _base_ensure_obj(
     return cls.from_param(value, func_except)()  # type: ignore[arg-type]
 
 
-def _check_kernel_radius(cls: type[_BaseScalerT]) -> _BaseScalerT:
+@functools.cache
+def _check_kernel_radius(cls: type[BaseScaler]) -> Literal[True]:
     if cls in abstract_kernels:
         raise CustomRuntimeError(f"Can't instantiate abstract class {cls.__name__}!", cls)
 
     if "kernel_radius" in set((attr for sub_cls in cls.__mro__ for attr in sub_cls.__dict__.keys())):
-        return super(BaseScaler, cls).__new__(cls)
+        return True
 
     raise CustomRuntimeError(
         "When inheriting from BaseScaler, you must implement the kernel radius by either adding "
@@ -239,7 +240,8 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             """
             Create a new instance of the scaler, validating kernel radius if applicable.
             """
-            return _check_kernel_radius(cls)
+            if _check_kernel_radius(cls):
+                return super().__new__(cls)
 
     def __init__(self, **kwargs: Any) -> None:
         """
