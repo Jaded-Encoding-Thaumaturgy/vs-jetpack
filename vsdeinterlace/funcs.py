@@ -23,8 +23,13 @@ __all__ = [
 
 class InterpolateOverlay(CustomIntEnum):
     IVTC_TXT60 = 0
+    """For 60i overlaid on 24t"""
+
     DEC_TXT60 = 1
+    """For 60i overlaid on 24d"""
+
     IVTC_TXT30 = 2
+    """For 30p overlaid on 24t"""
 
     def __call__(
         self,
