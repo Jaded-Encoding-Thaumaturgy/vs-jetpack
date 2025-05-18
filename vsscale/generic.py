@@ -3,8 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Protocol
 
-from jetpytools import inject_self
-
 from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
 from vstools import ConstantFormatVideoNode, MatrixT, check_variable, plane, vs
 
@@ -61,7 +59,6 @@ class BaseGenericScaler(Scaler, ABC):
         super().__init__(**kwargs)
 
     @abstractmethod
-    @inject_self.cached
     def scale(
         self,
         clip: vs.VideoNode,
@@ -129,7 +126,6 @@ class GenericScaler(BaseGenericScaler, partial_abstract=True):
         self.func = _func_no_op if func is None else func
         super().__init__(kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
 
-    @inject_self.cached
     def scale(
         self,
         clip: vs.VideoNode,

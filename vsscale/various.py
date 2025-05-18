@@ -10,7 +10,7 @@ from vsrgtools import box_blur, gauss_blur
 from vsrgtools.rgtools import Repair
 from vstools import (
     ConstantFormatVideoNode, CustomOverflowError, PlanesT, VSFunctionNoArgs, check_ref_clip, check_variable,
-    check_variable_format, core, inject_self, scale_delta, vs
+    check_variable_format, core, scale_delta, vs
 )
 
 from .generic import BaseGenericScaler, GenericScaler
@@ -85,7 +85,6 @@ class ClampScaler(GenericScaler):
 
         super().__init__(None, kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
 
-    @inject_self.cached
     def scale(
         self,
         clip: vs.VideoNode,
@@ -181,7 +180,6 @@ class DPID(BaseGenericScaler):
         else:
             self._ref_scaler = Scaler.ensure_obj(ref, self.__class__)
 
-    @inject_self.cached
     def scale(
         self,
         clip: vs.VideoNode,

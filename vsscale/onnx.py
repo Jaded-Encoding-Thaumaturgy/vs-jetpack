@@ -11,7 +11,7 @@ from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vstools import (
     ConstantFormatVideoNode, CustomValueError, DitherType, Matrix, MatrixT, ProcessVariableResClip, SPath, SPathLike,
     check_variable_format, check_variable_resolution, core, depth, get_color_family, get_nvidia_version,
-    get_video_format, get_y, inject_self, join, limiter, padder, vs
+    get_video_format, get_y, join, limiter, padder, vs
 )
 
 from .generic import BaseGenericScaler
@@ -132,7 +132,6 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         self.max_instances = max_instances
 
-    @inject_self.cached
     def scale(
         self,
         clip: vs.VideoNode,
@@ -374,7 +373,7 @@ class ArtCNN(BaseArtCNNLuma):
     ```py
     from vsscale import ArtCNN
 
-    doubled = ArtCNN.scale(clip, clip.width * 2, clip.height * 2)
+    doubled = ArtCNN().scale(clip, clip.width * 2, clip.height * 2)
     ```
     """
 
@@ -389,7 +388,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F32.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F32().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
 
@@ -403,7 +402,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F32_DS.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F32_DS().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
 
@@ -420,7 +419,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C16F64.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C16F64().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
 
@@ -434,7 +433,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C16F64_DS.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C16F64_DS().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
 
@@ -449,7 +448,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        chroma_upscaled = ArtCNN.C4F32_Chroma.scale(clip)
+        chroma_upscaled = ArtCNN.C4F32_Chroma().scale(clip)
         ```
         """
 
@@ -464,7 +463,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        chroma_upscaled = ArtCNN.C16F64_Chroma.scale(clip)
+        chroma_upscaled = ArtCNN.C16F64_Chroma().scale(clip)
         ```
         """
 
@@ -479,7 +478,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.R16F96.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.R16F96().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
 
@@ -493,7 +492,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.R8F64.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.R8F64().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
 
@@ -507,7 +506,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.R8F64_DS.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.R8F64_DS().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
 
@@ -522,7 +521,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        chroma_upscaled = ArtCNN.R8F64_Chroma.scale(clip)
+        chroma_upscaled = ArtCNN.R8F64_Chroma().scale(clip)
         ```
         """
 
@@ -538,7 +537,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F16.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F16().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
 
@@ -552,7 +551,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F16_DS.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F16_DS().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
 
@@ -646,7 +645,7 @@ class Waifu2x(BaseWaifu2xRGB):
     ```py
     from vsscale import Waifu2x
 
-    doubled = Waifu2x.scale(clip, clip.width * 2, clip.height * 2)
+    doubled = Waifu2x().scale(clip, clip.width * 2, clip.height * 2)
     ```
     """
     _model = 6
@@ -660,7 +659,7 @@ class Waifu2x(BaseWaifu2xRGB):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.AnimeStyleArt.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.AnimeStyleArt().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
         _model = 0
@@ -673,7 +672,7 @@ class Waifu2x(BaseWaifu2xRGB):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.AnimeStyleArtRGB.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.AnimeStyleArtRGB().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
         _model = 1
@@ -686,7 +685,7 @@ class Waifu2x(BaseWaifu2xRGB):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.Photo.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.Photo().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
         _model = 2
@@ -699,7 +698,7 @@ class Waifu2x(BaseWaifu2xRGB):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.UpConv7AnimeStyleArt.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.UpConv7AnimeStyleArt().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
         _model = 3
@@ -712,7 +711,7 @@ class Waifu2x(BaseWaifu2xRGB):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.UpConv7Photo.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.UpConv7Photo().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
         _model = 4
@@ -725,7 +724,7 @@ class Waifu2x(BaseWaifu2xRGB):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.UpResNet10.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.UpResNet10().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
         _model = 5
@@ -738,14 +737,13 @@ class Waifu2x(BaseWaifu2xRGB):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.Cunet.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.Cunet().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
         _model = 6
         _static_kernel_radius = 16
 
         if TYPE_CHECKING:
-            @inject_self.cached
             def scale(
                 self,
                 clip: vs.VideoNode,
@@ -812,7 +810,7 @@ class Waifu2x(BaseWaifu2xRGB):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetArt.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetArt().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
         _model = 7
@@ -825,7 +823,7 @@ class Waifu2x(BaseWaifu2xRGB):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetPhoto.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetPhoto().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
         _model = 8
@@ -838,7 +836,7 @@ class Waifu2x(BaseWaifu2xRGB):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetPhotoV2.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetPhotoV2().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
         _model = 9
@@ -851,7 +849,7 @@ class Waifu2x(BaseWaifu2xRGB):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetArtScan.scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetArtScan().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
         _model = 10
@@ -910,7 +908,6 @@ class BaseDPIR(BaseOnnxScaler):
             **kwargs
         )
 
-    @inject_self.cached
     def scale(
         self,
         clip: vs.VideoNode,

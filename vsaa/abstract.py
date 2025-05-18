@@ -16,7 +16,7 @@ from typing_extensions import Self
 from vsexprtools import norm_expr
 from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
 from vskernels.types import LeftShift, TopShift
-from vstools import ConstantFormatVideoNode, check_progressive, check_variable, core, inject_self, vs
+from vstools import ConstantFormatVideoNode, check_progressive, check_variable, core, vs
 
 from .enums import AADirection
 
@@ -185,7 +185,6 @@ class SuperSampler(Interpolater, Scaler, ABC):
         """
         return kwargs
 
-    @inject_self.cached
     def scale(
         self,
         clip: vs.VideoNode,

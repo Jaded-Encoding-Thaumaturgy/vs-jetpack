@@ -6,7 +6,7 @@ from typing import Any
 from jetpytools import SPath, SPathLike
 
 from vskernels import Catrom, KernelLike, ScalerLike
-from vstools import ConstantFormatVideoNode, check_variable, core, depth, inject_self, join, vs
+from vstools import ConstantFormatVideoNode, check_variable, core, depth, join, vs
 
 from .generic import BaseGenericScaler
 
@@ -33,7 +33,6 @@ class PlaceboShader(BaseGenericScaler):
 
         self.shader = SPath(shader).resolve().to_str()
 
-    @inject_self.cached
     def scale(
         self,
         clip: vs.VideoNode,
