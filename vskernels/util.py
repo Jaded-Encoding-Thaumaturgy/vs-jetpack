@@ -4,6 +4,7 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from functools import partial, wraps
 from math import exp
+from types import GenericAlias
 from typing import TYPE_CHECKING, Any, Callable, Concatenate, Generic, TypeVar, Union, overload
 
 from jetpytools import P
@@ -74,7 +75,7 @@ class NoScale(Scaler, Generic[_ScalerT], partial_abstract=True):
 
         return super().scale(clip, width, height, shift, **kwargs)
 
-    def __class_getitem__(cls, scaler: type[_ScalerT]) -> type[NoScale[_ScalerT]]:
+    def __class_getitem__(cls, scaler: Any) -> GenericAlias:
         """
         Specialize NoScale with a given scaler kernel.
 
@@ -86,8 +87,9 @@ class NoScale(Scaler, Generic[_ScalerT], partial_abstract=True):
         :param scaler:  A Scaler type used to specialize NoScale.
         :return:        A new subclass of NoScale using the provided kernel.
         """
-        return BaseScalerMeta(  # type: ignore[return-value]
-            cls.__name__, (scaler, cls), cls.__dict__.copy(), partial_abstract=True
+        return GenericAlias(
+            BaseScalerMeta(cls.__name__, (scaler, cls), cls.__dict__.copy(), partial_abstract=True),
+            (scaler, )
         )
 
     @classmethod
@@ -98,7 +100,7 @@ class NoScale(Scaler, Generic[_ScalerT], partial_abstract=True):
         :param scaler:  A Scaler instance, type or string used as a base for specialization.
         :return:        A dynamically created NoScale subclass based on the given scaler.
         """
-        return NoScale.__class_getitem__(Scaler.from_param(scaler))
+        return NoScale[Scaler.from_param(scaler)]  # type: ignore[return-value,misc]
 
 
 @dataclass
