@@ -14,7 +14,7 @@ from typing import Any, Callable, ClassVar, overload
 from typing_extensions import Self
 
 from vsexprtools import norm_expr
-from vskernels import Catrom, Kernel, KernelT, Scaler, ScalerT
+from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
 from vskernels.types import LeftShift, TopShift
 from vstools import ConstantFormatVideoNode, check_progressive, check_variable, core, inject_self, vs
 
@@ -80,10 +80,10 @@ class Interpolater(_SingleInterpolate, ABC):
     transpose_first: bool = False
     """Transpose the clip before any operation."""
 
-    shifter: KernelT = Catrom
+    shifter: KernelLike = Catrom
     """Kernel used for shifting operations. Default to Catrom."""
 
-    scaler: ScalerT | None = None
+    scaler: ScalerLike | None = None
     """Scaler used for additional scaling operations. If None, default to `shifter`"""
 
     def __post_init__(self) -> None:

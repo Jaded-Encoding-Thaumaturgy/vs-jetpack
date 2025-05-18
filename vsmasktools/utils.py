@@ -5,7 +5,7 @@ from typing import Any, Callable, Concatenate, Generic, Iterable, overload
 from jetpytools import P0, R
 
 from vsexprtools import ExprOp, complexpr_available, norm_expr
-from vskernels import Bilinear, Kernel, KernelT
+from vskernels import Bilinear, Kernel, KernelLike
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
     ColorRange, ConstantFormatVideoNode, CustomValueError, FrameRangeN, FrameRangesN, FuncExceptT, P, check_ref_clip,
@@ -30,7 +30,7 @@ __all__ = [
 ]
 
 
-def max_planes(*_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelT = Bilinear) -> ConstantFormatVideoNode:
+def max_planes(*_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelLike = Bilinear) -> ConstantFormatVideoNode:
     clips = flatten_vnodes(_clips)
 
     assert check_variable_format(clips, max_planes)

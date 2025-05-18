@@ -6,7 +6,7 @@ from functools import partial
 from jetpytools import P, R
 
 from vsexprtools import norm_expr
-from vskernels import Bilinear, Box, Catrom, NoScale, Scaler, ScalerT
+from vskernels import Bilinear, Box, Catrom, NoScale, Scaler, ScalerLike
 from vsmasktools import EdgeDetect, EdgeDetectT, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
 from vsscale import ArtCNN
@@ -155,8 +155,8 @@ def based_aa(
     mask: vs.VideoNode | EdgeDetectT | Literal[False] = Prewitt,
     mask_thr: int = 60,
     pscale: float = 0.0,
-    downscaler: ScalerT | None = None,
-    supersampler: ScalerT | Literal[False] = ArtCNN,
+    downscaler: ScalerLike | None = None,
+    supersampler: ScalerLike | Literal[False] = ArtCNN,
     double_rate: bool = False,
     antialiaser: Antialiaser | None = None,
     prefilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] = False,

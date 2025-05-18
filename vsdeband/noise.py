@@ -7,7 +7,7 @@ from typing import Any, Callable, Iterable, Protocol, cast
 
 from vsdenoise import PrefilterT
 from vsexprtools import complexpr_available, norm_expr
-from vskernels import BicubicAuto, Bilinear, Catrom, Kernel, KernelT, Lanczos, LinearLight, Scaler, ScalerT
+from vskernels import BicubicAuto, Bilinear, Catrom, Kernel, KernelLike, Lanczos, LinearLight, Scaler, ScalerLike
 from vsmasktools import adg_mask
 from vsrgtools import BlurMatrix
 from vstools import (
@@ -81,11 +81,11 @@ class Grainer(ABC):
 
     def __init__(
         self, strength: float | tuple[float, float] = 0.25,
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerT = Lanczos,
+        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
         dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
         postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
         luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True, *,
-        matrix: MatrixT | None = None, kernel: KernelT = Catrom, neutral_out: bool = False,
+        matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False,
         **kwargs: Any
     ) -> None:
         super().__init__()
@@ -413,11 +413,11 @@ class LinearLightGrainer(Grainer):
 
     def __init__(
         self, strength: float | tuple[float, float],
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerT = Lanczos,
+        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
         dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
         postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
         luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True,
-        *, gamma: float = 1.0, matrix: MatrixT | None = None, kernel: KernelT = Catrom, neutral_out: bool = False,
+        *, gamma: float = 1.0, matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False,
         **kwargs: Any
     ) -> None:
         super().__init__(
@@ -481,12 +481,12 @@ class ChickenDreamBase(LinearLightGrainer):
 
     def __init__(
         self, strength: float | tuple[float, float], draft: bool,
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerT = Lanczos,
+        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
         dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
         postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
         luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True, *,
         rad: float = 0.25, res: int = 1024, dev: float = 0.0, gamma: float = 1.0,
-        matrix: MatrixT | None = None, kernel: KernelT = Catrom, neutral_out: bool = False, **kwargs: Any
+        matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False, **kwargs: Any
     ) -> None:
         super().__init__(
             strength, size, sharp, dynamic, temporal_average, postprocess, protect_chroma, luma_scaling, fade_limits,
@@ -508,12 +508,12 @@ class ChickenDreamBase(LinearLightGrainer):
 class ChickenDreamBox(ChickenDreamBase):
     def __init__(
         self, strength: float | tuple[float, float] = 0.25,
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerT = Lanczos,
+        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
         dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
         postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
         luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True,
         *, res: int = 1024, dev: float = 0.0, gamma: float = 1.0,
-        matrix: MatrixT | None = None, kernel: KernelT = Catrom, neutral_out: bool = False, **kwargs: Any
+        matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False, **kwargs: Any
     ) -> None:
         super().__init__(
             strength, True, size, sharp, dynamic, temporal_average, postprocess, protect_chroma, luma_scaling,
@@ -527,12 +527,12 @@ class ChickenDreamBox(ChickenDreamBase):
 class ChickenDreamGauss(ChickenDreamBase):
     def __init__(
         self, strength: float | tuple[float, float] = 0.35,
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerT = Lanczos,
+        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
         dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
         postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
         luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True,
         *, rad: float = 0.25, res: int = 1024, dev: float = 0.0, gamma: float = 1.0,
-        matrix: MatrixT | None = None, kernel: KernelT = Catrom, neutral_out: bool = False, **kwargs: Any
+        matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False, **kwargs: Any
     ) -> None:
         super().__init__(
             strength, False, size, sharp, dynamic, temporal_average, postprocess, protect_chroma, luma_scaling,
@@ -546,12 +546,12 @@ class FilmGrain(LinearLightGrainer):
 
     def __init__(
         self, strength: float | tuple[float, float] = 0.8,
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerT = Lanczos,
+        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
         dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
         postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
         luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True,
         *, rad: float = 0.1, iterations: int = 800, dev: float = 0.0, gamma: float = 1.0,
-        matrix: MatrixT | None = None, kernel: KernelT = Catrom, neutral_out: bool = False, **kwargs: Any
+        matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False, **kwargs: Any
     ) -> None:
         super().__init__(
             strength, size, sharp, dynamic, temporal_average, postprocess, protect_chroma, luma_scaling, fade_limits,

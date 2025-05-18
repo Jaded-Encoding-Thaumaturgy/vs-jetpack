@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat, TypeAli
 from jetpytools import KwargsT
 
 from vsexprtools import norm_expr
-from vskernels import Bilinear, Catrom, Kernel, KernelT, ScalerT
+from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vstools import (
     ConstantFormatVideoNode, CustomValueError, DitherType, Matrix, MatrixT, ProcessVariableResClip, SPath, SPathLike,
     check_variable_format, check_variable_resolution, core, depth, get_color_family, get_nvidia_version,
@@ -86,9 +86,9 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         overlap: int | tuple[int, int] | None = None,
         max_instances: int = 2,
         *,
-        kernel: KernelT = Catrom,
-        scaler: ScalerT | None = None,
-        shifter: KernelT | None = None,
+        kernel: KernelLike = Catrom,
+        scaler: ScalerLike | None = None,
+        shifter: KernelLike | None = None,
         **kwargs: Any
     ) -> None:
         """
@@ -276,9 +276,9 @@ class BaseArtCNN(BaseOnnxScaler):
         overlap: int | tuple[int, int] | None = None,
         max_instances: int = 2,
         *,
-        kernel: KernelT = Catrom,
-        scaler: ScalerT | None = None,
-        shifter: KernelT | None = None,
+        kernel: KernelLike = Catrom,
+        scaler: ScalerLike | None = None,
+        shifter: KernelLike | None = None,
         **kwargs: Any
     ) -> None:
         """
@@ -576,9 +576,9 @@ class BaseWaifu2x(BaseOnnxScaler):
         overlap: int | tuple[int, int] | None = None,
         max_instances: int = 2,
         *,
-        kernel: KernelT = Catrom,
-        scaler: ScalerT | None = None,
-        shifter: KernelT | None = None,
+        kernel: KernelLike = Catrom,
+        scaler: ScalerLike | None = None,
+        shifter: KernelLike | None = None,
         **kwargs: Any
     ) -> None:
         """
@@ -872,9 +872,9 @@ class BaseDPIR(BaseOnnxScaler):
         tilesize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
         *,
-        kernel: KernelT = Catrom,
-        scaler: ScalerT | None = None,
-        shifter: KernelT | None = None,
+        kernel: KernelLike = Catrom,
+        scaler: ScalerLike | None = None,
+        shifter: KernelLike | None = None,
         **kwargs: Any
     ) -> None:
         """

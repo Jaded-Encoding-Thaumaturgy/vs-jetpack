@@ -4,7 +4,7 @@ from functools import cached_property, wraps
 from typing import Any, Callable, TypeVar
 
 from vsexprtools import norm_expr
-from vskernels import Bilinear, BorderHandling, Hermite, Kernel, KernelT, Scaler, ScalerT
+from vskernels import Bilinear, BorderHandling, Hermite, Kernel, KernelLike, Scaler, ScalerLike
 from vskernels.types import LeftShift, TopShift
 from vsmasktools import KirschTCanny, based_diff_mask
 from vsmasktools.utils import _get_region_expr
@@ -33,9 +33,9 @@ class RescaleBase:
         self,
         clip: vs.VideoNode,
         /,
-        kernel: KernelT,
-        upscaler: ScalerT = ArtCNN,
-        downscaler: ScalerT = Hermite(linear=True),
+        kernel: KernelLike,
+        upscaler: ScalerLike = ArtCNN,
+        downscaler: ScalerLike = Hermite(linear=True),
         field_based: FieldBasedT | bool | None = None,
         border_handling: int | BorderHandling = BorderHandling.MIRROR
     ) -> None:
@@ -246,9 +246,9 @@ class Rescale(RescaleBase):
         clip: vs.VideoNode,
         /,
         height: int | float,
-        kernel: KernelT,
-        upscaler: ScalerT = ArtCNN,
-        downscaler: ScalerT = Hermite(linear=True),
+        kernel: KernelLike,
+        upscaler: ScalerLike = ArtCNN,
+        downscaler: ScalerLike = Hermite(linear=True),
         width: int | float | None = None,
         base_height: int | None = None,
         base_width: int | None = None,
@@ -430,7 +430,7 @@ class Rescale(RescaleBase):
         self._ignore_mask = None
 
     def default_line_mask(
-        self, clip: vs.VideoNode | None = None, scaler: ScalerT = Bilinear, **kwargs: Any
+        self, clip: vs.VideoNode | None = None, scaler: ScalerLike = Bilinear, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
         Load a default Kirsch line mask in the class instance. Additionnaly, it is returned.

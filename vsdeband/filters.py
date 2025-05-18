@@ -4,7 +4,7 @@ from functools import partial
 from math import sqrt
 
 from vsexprtools import norm_expr
-from vskernels import Bilinear, Point, Scaler, ScalerT
+from vskernels import Bilinear, Point, Scaler, ScalerLike
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
     ColorRange, ColorRangeT, PlanesT, check_ref_clip, check_variable, cround, depth, expect_bits, get_plane_sizes,
@@ -22,7 +22,7 @@ def guided_filter(
     clip: vs.VideoNode, guidance: vs.VideoNode | None = None, radius: int | list[int] | None = None,
     thr: float | list[float] = 1 / 3, mode: GuidedFilterMode = GuidedFilterMode.GRADIENT,
     use_gauss: bool = False, planes: PlanesT = None, range_in: ColorRangeT | None = None,
-    down_ratio: int = 0, downscaler: ScalerT = Point, upscaler: ScalerT = Bilinear
+    down_ratio: int = 0, downscaler: ScalerLike = Point, upscaler: ScalerLike = Bilinear
 ) -> vs.VideoNode:
     assert check_variable(clip, guided_filter)
 

@@ -5,7 +5,7 @@ import warnings
 from typing import Any, TypeAlias, Union, overload
 
 from vsexprtools import ExprOp, norm_expr
-from vskernels import Bilinear, Catrom, Kernel, KernelT
+from vskernels import Bilinear, Catrom, Kernel, KernelLike
 from vsrgtools import bilateral, gauss_blur, remove_grain
 from vsrgtools.rgtools import RemoveGrain
 from vstools import (
@@ -27,7 +27,7 @@ __all__ = [
 
 
 def diff_rescale(
-    clip: vs.VideoNode, height: int, kernel: KernelT = Catrom,
+    clip: vs.VideoNode, height: int, kernel: KernelLike = Catrom,
     thr: float = 0.216, expand: int = 2, func: FuncExceptT | None = None
 ) -> ConstantFormatVideoNode:
     return based_diff_mask(clip, height, kernel, thr, expand=2 + expand, func=func)
@@ -156,7 +156,7 @@ def based_diff_mask(
 
 @overload
 def based_diff_mask(
-    clip: vs.VideoNode, height: int, kernel: KernelT,
+    clip: vs.VideoNode, height: int, kernel: KernelLike,
     /,
     thr: float = 0.216,
     prefilter: int | KwargsT | bool | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = False,
@@ -188,7 +188,7 @@ def based_diff_mask(
 
 
 def based_diff_mask(
-    clip: vs.VideoNode, ref_or_height: vs.VideoNode | int, kernel: KernelT | None = None,
+    clip: vs.VideoNode, ref_or_height: vs.VideoNode | int, kernel: KernelLike | None = None,
     /,
     thr: float = 0.216,
     prefilter: int | KwargsT | bool | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = False,

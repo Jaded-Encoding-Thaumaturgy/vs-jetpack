@@ -6,7 +6,7 @@ from typing import Any, Callable, ClassVar, Concatenate, Sequence
 
 from vsaa import Eedi3, Nnedi3, SangNom
 from vsexprtools import ExprOp, complexpr_available, norm_expr
-from vskernels import Catrom, Kernel, KernelT, Point, Scaler, ScalerT
+from vskernels import Catrom, Kernel, KernelLike, Point, Scaler, ScalerLike
 from vsrgtools import box_blur, gauss_blur, limit_filter
 from vsscale import ScalingArgs
 from vstools import (
@@ -425,10 +425,10 @@ class ChromaReconstruct(ABC):
         - https://github.com/Jaded-Encoding-Thaumaturgy/vapoursynth-reconstruct
     """
 
-    kernel: KernelT = field(default=Catrom, kw_only=True)
+    kernel: KernelLike = field(default=Catrom, kw_only=True)
     """Base kernel used to shift/scale luma and chroma planes."""
 
-    scaler: ScalerT | None = field(default=None, kw_only=True)
+    scaler: ScalerLike | None = field(default=None, kw_only=True)
     """Base kernel used to shift/scale luma and chroma planes."""
 
     _default_diff_sigma: ClassVar[float] = 0.5
@@ -612,7 +612,7 @@ class GenericChromaRecon(ChromaReconstruct):
     native_res: int | float | None = None
     """Native resolution of the show."""
 
-    native_kernel: KernelT = Catrom
+    native_kernel: KernelLike = Catrom
     """Native kernel of the show."""
 
     src_left: float = field(default=0.5, kw_only=True)
@@ -676,10 +676,10 @@ class MissingFieldsChromaRecon(GenericChromaRecon):
     Base helper function for reconstructing chroma with missing fields.
     """
 
-    dm_wscaler: ScalerT = Nnedi3
+    dm_wscaler: ScalerLike = Nnedi3
     """Scaler used to interpolate the width/height."""
 
-    dm_hscaler: ScalerT | None = Nnedi3
+    dm_hscaler: ScalerLike | None = Nnedi3
     """Scaler used to interpolate the height."""
 
     def __post_init__(self) -> None:
@@ -717,8 +717,8 @@ class PAWorksChromaRecon(MissingFieldsChromaRecon):
             demanglers to the original descaled luma or details would just get crushed.
 
     """
-    dm_wscaler: ScalerT = field(default_factory=lambda: SangNom(128))
-    dm_hscaler: ScalerT = Nnedi3
+    dm_wscaler: ScalerLike = field(default_factory=lambda: SangNom(128))
+    dm_hscaler: ScalerLike = Nnedi3
 
     def get_mangled_luma(self, clip: vs.VideoNode, y_base: vs.VideoNode) -> vs.VideoNode:
         cm_width, _ = get_plane_sizes(y_base, 1)
@@ -764,8 +764,8 @@ class Point422ChromaRecon(MissingFieldsChromaRecon):
     Demangler for content that has undergone from 4:4:4 => 4:2:2 with point, then 4:2:0 with some neutral scaler.
     """
 
-    dm_wscaler: ScalerT = field(default_factory=lambda: SangNom(128))
-    dm_hscaler: ScalerT = field(
+    dm_wscaler: ScalerLike = field(default_factory=lambda: SangNom(128))
+    dm_hscaler: ScalerLike = field(
         default_factory=lambda: Eedi3(0.35, 0.55, 20, 2, 10, vcheck=3, sclip_aa=Nnedi3)
     )
 

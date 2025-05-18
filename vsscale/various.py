@@ -4,7 +4,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
 
 from vsexprtools import ExprOp, combine, complexpr_available, expr_func, norm_expr
-from vskernels import Catrom, Hermite, KernelT, LinearScaler, Scaler, ScalerT
+from vskernels import Catrom, Hermite, KernelLike, LinearScaler, Scaler, ScalerLike
 from vsmasktools import ringing_mask
 from vsrgtools import box_blur, gauss_blur
 from vsrgtools.rgtools import Repair
@@ -27,8 +27,8 @@ class ClampScaler(GenericScaler):
 
     def __init__(
         self,
-        base_scaler: ScalerT,
-        reference: ScalerT | vs.VideoNode,
+        base_scaler: ScalerLike,
+        reference: ScalerLike | vs.VideoNode,
         strength: int = 80,
         overshoot: float | None = None,
         undershoot: float | None = None,
@@ -36,9 +36,9 @@ class ClampScaler(GenericScaler):
         operator: Literal[ExprOp.MAX, ExprOp.MIN] | None = ExprOp.MIN,
         masked: bool = True,
         *,
-        kernel: KernelT = Catrom,
-        scaler: ScalerT | None = None,
-        shifter: KernelT | None = None,
+        kernel: KernelLike = Catrom,
+        scaler: ScalerLike | None = None,
+        shifter: KernelLike | None = None,
         **kwargs: Any
     ) -> None:
         """
@@ -159,7 +159,7 @@ class DPID(BaseGenericScaler):
     def __init__(
         self,
         sigma: float = 0.1,
-        ref: vs.VideoNode | ScalerT = Catrom,
+        ref: vs.VideoNode | ScalerLike = Catrom,
         planes: PlanesT = None,
         **kwargs: Any
     ) -> None:
@@ -235,7 +235,7 @@ class SSIM(LinearScaler):
 
     def __init__(
         self,
-        scaler: ScalerT = Hermite,
+        scaler: ScalerLike = Hermite,
         smooth: int | float | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | None = None,
         **kwargs: Any
     ) -> None:

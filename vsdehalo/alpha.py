@@ -7,7 +7,7 @@ from jetpytools import P, R
 from vsaa import Nnedi3
 from vsdenoise import Prefilter
 from vsexprtools import ExprOp, combine, norm_expr
-from vskernels import Bilinear, BSpline, Lanczos, Mitchell, Point, Scaler, ScalerT
+from vskernels import Bilinear, BSpline, Lanczos, Mitchell, Point, Scaler, ScalerLike
 from vsmasktools import EdgeDetect, Morpho, RadiusT, Robinson3, XxpandMode, grow_mask, retinex
 from vsrgtools import (
     BlurMatrixBase, box_blur, contrasharpening, contrasharpening_dehalo, gauss_blur,
@@ -86,7 +86,7 @@ def _dehalo_schizo_norm(*values: FloatIterArr) -> list[tuple[list[float], ...]]:
 
 
 def _dehalo_supersample_minmax(
-    clip: vs.VideoNode, ref: vs.VideoNode, ss: list[float], supersampler: ScalerT, supersampler_ref: ScalerT,
+    clip: vs.VideoNode, ref: vs.VideoNode, ss: list[float], supersampler: ScalerLike, supersampler_ref: ScalerLike,
     planes: PlanesT, func: FuncExceptT
 ) -> vs.VideoNode:
     supersampler = Scaler.ensure_obj(supersampler, func)
@@ -149,7 +149,7 @@ class FineDehalo(Generic[P, R]):
         thlimi: int = 50, thlima: int = 100,
         exclude: bool = True,
         edgeproc: float = 0.0, edgemask: EdgeDetect = Robinson3(),
-        pre_ss: int = 1, pre_supersampler: ScalerT = Bilinear,
+        pre_ss: int = 1, pre_supersampler: ScalerLike = Bilinear,
         show_mask: int | FineDehalo.Masks = 1,
         planes: PlanesT = 0,
         first_plane: bool = False,
@@ -220,10 +220,10 @@ def fine_dehalo(
     planes: PlanesT = 0,
     show_mask: int | FineDehalo.Masks | bool = False,
     mask_radius: RadiusT = 1,
-    downscaler: ScalerT = Mitchell,
-    upscaler: ScalerT = BSpline,
-    supersampler: ScalerT = Lanczos(3), supersampler_ref: ScalerT = Mitchell,
-    pre_ss: float = 1.0, pre_supersampler: ScalerT = Nnedi3(0, field=0), pre_downscaler: ScalerT = Point,
+    downscaler: ScalerLike = Mitchell,
+    upscaler: ScalerLike = BSpline,
+    supersampler: ScalerLike = Lanczos(3), supersampler_ref: ScalerLike = Mitchell,
+    pre_ss: float = 1.0, pre_supersampler: ScalerLike = Nnedi3(0, field=0), pre_downscaler: ScalerLike = Point,
     mask_coords: Sequence[int] | None = None,
     func: FuncExceptT | None = None
 ) -> vs.VideoNode:
@@ -481,9 +481,9 @@ def dehalo_alpha(
     clip: vs.VideoNode, rx: FloatIterArr = 2.0, ry: FloatIterArr | None = None, darkstr: FloatIterArr = 0.0,
     brightstr: FloatIterArr = 1.0, lowsens: FloatIterArr = 50.0, highsens: FloatIterArr = 50.0,
     sigma_mask: float | bool = False, ss: FloatIterArr = 1.5, planes: PlanesT = 0, show_mask: bool = False,
-    mask_radius: RadiusT = 1, downscaler: ScalerT = Mitchell, upscaler: ScalerT = BSpline,
-    supersampler: ScalerT = Lanczos(3), supersampler_ref: ScalerT = Mitchell, pre_ss: float = 1.0,
-    pre_supersampler: ScalerT = Nnedi3(0, field=0), pre_downscaler: ScalerT = Point,
+    mask_radius: RadiusT = 1, downscaler: ScalerLike = Mitchell, upscaler: ScalerLike = BSpline,
+    supersampler: ScalerLike = Lanczos(3), supersampler_ref: ScalerLike = Mitchell, pre_ss: float = 1.0,
+    pre_supersampler: ScalerLike = Nnedi3(0, field=0), pre_downscaler: ScalerLike = Point,
     mask_coords: Sequence[int] | None = None,
     func: FuncExceptT | None = None
 ) -> vs.VideoNode:
@@ -592,9 +592,9 @@ def dehalo_sigma(
     clip: vs.VideoNode, brightstr: FloatIterArr = 1.0, darkstr: FloatIterArr = 0.0,
     lowsens: FloatIterArr = 50.0, highsens: FloatIterArr = 50.0, ss: FloatIterArr = 1.5,
     blur_func: Prefilter = Prefilter.GAUSS, planes: PlanesT = 0,
-    supersampler: ScalerT = Lanczos(3), supersampler_ref: ScalerT = Mitchell,
-    pre_ss: float = 1.0, pre_supersampler: ScalerT = Nnedi3(0, field=0),
-    pre_downscaler: ScalerT = Point, mask_radius: RadiusT = 1, sigma_mask: float | bool = False,
+    supersampler: ScalerLike = Lanczos(3), supersampler_ref: ScalerLike = Mitchell,
+    pre_ss: float = 1.0, pre_supersampler: ScalerLike = Nnedi3(0, field=0),
+    pre_downscaler: ScalerLike = Point, mask_radius: RadiusT = 1, sigma_mask: float | bool = False,
     mask_coords: Sequence[int] | None = None,
     show_mask: bool = False, func: FuncExceptT | None = None, **kwargs: Any
 ) -> vs.VideoNode:
@@ -728,8 +728,8 @@ def dehalo_merge(
     clip: vs.VideoNode, dehalo: vs.VideoNode, darkstr: list[float] | float = 0.0, brightstr: list[float] | float = 1.0,
     lowsens: list[float] | float = 50.0, highsens: list[float] | float = 50.0, sigma_mask: float | bool = False,
     ss: list[float] | float = 1.5, planes: PlanesT = 0, show_mask: bool = False, mask_radius: RadiusT = 1,
-    supersampler: ScalerT = Lanczos(3), supersampler_ref: ScalerT = Mitchell, pre_ss: float = 1.0,
-    pre_supersampler: ScalerT = Nnedi3(0, field=0), pre_downscaler: ScalerT = Point,
+    supersampler: ScalerLike = Lanczos(3), supersampler_ref: ScalerLike = Mitchell, pre_ss: float = 1.0,
+    pre_supersampler: ScalerLike = Nnedi3(0, field=0), pre_downscaler: ScalerLike = Point,
     mask_coords: Sequence[int] | None = None, func: FuncExceptT | None = None
 ) -> vs.VideoNode:
     """
