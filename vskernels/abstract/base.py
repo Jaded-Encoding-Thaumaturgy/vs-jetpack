@@ -35,10 +35,10 @@ __all__ = [
     "Resampler",
     "Kernel",
 
-    "ScalerT",
-    "DescalerT",
-    "ResamplerT",
-    "KernelT"
+    "ScalerLike",
+    "DescalerLike",
+    "ResamplerLike",
+    "KernelLike"
 ]
 
 
@@ -787,7 +787,7 @@ class Kernel(Scaler, Descaler, Resampler):
         return core.std.ShufflePlanes(shifted_planes, [0, 0, 0], clip.format.color_family)
 
     @classmethod
-    def from_param(cls, kernel: KernelT | None = None, /, func_except: FuncExceptT | None = None) -> type[Self]:
+    def from_param(cls, kernel: KernelLike | None = None, /, func_except: FuncExceptT | None = None) -> type[Self]:
         """
         Resolve and return a kernel class from a string name, class type, or instance.
 
@@ -800,7 +800,7 @@ class Kernel(Scaler, Descaler, Resampler):
         return _base_from_param(cls, kernel, cls._err_class, func_except)
 
     @classmethod
-    def ensure_obj(cls, kernel: KernelT | None = None, /, func_except: FuncExceptT | None = None) -> Self:
+    def ensure_obj(cls, kernel: KernelLike | None = None, /, func_except: FuncExceptT | None = None) -> Self:
         """
         Ensure that the given kernel input is returned as a kernel instance.
 
@@ -917,7 +917,7 @@ class Kernel(Scaler, Descaler, Resampler):
         ) | self.get_params_args(False, clip, **kwargs)
 
 
-ScalerT = Union[str, type[Scaler], Scaler]
+ScalerLike = Union[str, type[Scaler], Scaler]
 """
 Type alias for anything that can resolve to a Scaler.
 
@@ -927,7 +927,7 @@ This includes:
 - An instance of a `Scaler`.
 """
 
-DescalerT = Union[str, type[Descaler], Descaler]
+DescalerLike = Union[str, type[Descaler], Descaler]
 """
 Type alias for anything that can resolve to a Descaler.
 
@@ -937,7 +937,7 @@ This includes:
 - An instance of a `Descaler`.
 """
 
-ResamplerT = Union[str, type[Resampler], Resampler]
+ResamplerLike = Union[str, type[Resampler], Resampler]
 """
 Type alias for anything that can resolve to a Resampler.
 
@@ -947,7 +947,7 @@ This includes:
 - An instance of a `Resampler`.
 """
 
-KernelT = Union[str, type[Kernel], Kernel]
+KernelLike = Union[str, type[Kernel], Kernel]
 """
 Type alias for anything that can resolve to a Kernel.
 

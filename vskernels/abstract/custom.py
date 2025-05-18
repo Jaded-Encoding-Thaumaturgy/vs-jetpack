@@ -19,7 +19,7 @@ from .complex import ComplexKernel
 __all__ = [
     "CustomKernel",
     "CustomComplexKernel",
-    "CustomComplexKernelT",
+    "CustomComplexKernelLike",
     "CustomComplexTapsKernel",
 ]
 
@@ -98,7 +98,7 @@ class CustomComplexKernel(CustomKernel, ComplexKernel):
     """
 
 
-CustomComplexKernelT = Union[str, type[CustomComplexKernel], CustomComplexKernel]
+CustomComplexKernelLike = Union[str, type[CustomComplexKernel], CustomComplexKernel]
 """
 Type alias for anything that can resolve to a CustomComplexKernel.
 

@@ -15,7 +15,7 @@ from vstools import (
     VideoFormatT, cachedproperty, check_variable_format, depth, get_video_format, vs, vs_object
 )
 
-from .abstract import Resampler, ResamplerT, Scaler, ScalerT
+from .abstract import Resampler, ResamplerLike, Scaler, ScalerLike
 from .abstract.base import BaseScalerMeta
 from .kernels import Catrom, Point
 from .types import Center, LeftShift, Slope, TopShift
@@ -91,7 +91,7 @@ class NoScale(Scaler, Generic[_ScalerT], partial_abstract=True):
         )
 
     @classmethod
-    def from_scaler(cls, scaler: ScalerT) -> type[NoScale[Scaler]]:
+    def from_scaler(cls, scaler: ScalerLike) -> type[NoScale[Scaler]]:
         """
         Create a specialized NoScale class using a specific scaler.
 
@@ -187,7 +187,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
     and sigmoid center has to be in range 0.0-1.0 (inclusive).
     """
 
-    resampler: ResamplerT | None = Catrom
+    resampler: ResamplerLike = Catrom
     """Resampler for converting to linear format and converting back to input clip format."""
 
     out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
@@ -200,7 +200,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         func: Callable[Concatenate[vs.VideoNode, P], vs.VideoNode],
         /,
         sigmoid: bool | tuple[Slope, Center] = False,
-        resampler: ResamplerT | None = Catrom,
+        resampler: ResamplerLike = Catrom,
         out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
     ) -> Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]:
         """
@@ -219,7 +219,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         /,
         *,
         sigmoid: bool | tuple[Slope, Center] = False,
-        resampler: ResamplerT | None = Catrom,
+        resampler: ResamplerLike = Catrom,
         out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
     ) -> Callable[
         [Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]],
@@ -240,7 +240,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         func: Callable[Concatenate[vs.VideoNode, P], vs.VideoNode] | None = None,
         /,
         sigmoid: bool | tuple[Slope, Center] = False,
-        resampler: ResamplerT | None = Catrom,
+        resampler: ResamplerLike = Catrom,
         out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
     ) -> Union[
         Callable[Concatenate[vs.VideoNode, P], vs.VideoNode],
@@ -285,7 +285,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         self._wclip = self.clip
         self._curve = Transfer.from_video(self.clip)
         self._matrix = Matrix.from_video(self.clip)
-        self._resampler = Resampler.ensure_obj(self.resampler or Catrom)
+        self._resampler = Resampler.ensure_obj(self.resampler)
 
         self._exited = False
 
@@ -306,7 +306,7 @@ def resample_to(
     clip: vs.VideoNode,
     out_fmt: int | VideoFormatT | HoldsVideoFormatT,
     matrix: MatrixT | None = None,
-    resampler: ResamplerT = Catrom
+    resampler: ResamplerLike = Catrom
 ) -> vs.VideoNode:
     out_fmt = get_video_format(out_fmt)
     assert clip.format

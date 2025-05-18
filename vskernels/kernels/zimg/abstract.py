@@ -10,7 +10,7 @@ from ...types import LeftShift, TopShift
 __all__ = [
     "ZimgBobber",
     "ZimgComplexKernel",
-    "ZimgComplexKernelT",
+    "ZimgComplexKernelLike",
 ]
 
 
@@ -74,7 +74,7 @@ class ZimgComplexKernel(ComplexKernel, ZimgBobber):
     _implemented_funcs: ClassVar[tuple[str, ...]] = ("scale", "descale", "rescale", "resample", "shift", "bob")
 
 
-ZimgComplexKernelT = Union[str, type[ZimgComplexKernel], ZimgComplexKernel]
+ZimgComplexKernelLike = Union[str, type[ZimgComplexKernel], ZimgComplexKernel]
 """
 Type alias for anything that can resolve to a ZimgComplexKernel.
 

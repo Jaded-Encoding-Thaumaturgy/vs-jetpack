@@ -27,9 +27,11 @@ __all__ = [
     "LinearDescaler",
     "KeepArScaler",
     "ComplexScaler",
-    "ComplexScalerT",
+    "ComplexScalerLike",
+    "ComplexDescaler",
+    "ComplexDescalerLike",
     "ComplexKernel",
-    "ComplexKernelT",
+    "ComplexKernelLike",
 ]
 
 
@@ -126,7 +128,12 @@ def _linearize(
 
         fmt = obj.kwargs.pop("format", kwargs.pop("format", None))
 
-        with LinearLight(clip, sigmoid, obj if isinstance(obj, Resampler) else None, fmt) as ll:
+        llargs = dict[str, Any](clip=clip, sigmoid=sigmoid, out_fmt=fmt)
+
+        if isinstance(obj, Resampler):
+            llargs.update(resampler=obj)
+
+        with LinearLight(**llargs) as ll:
             ll.linear = op_partial(ll.linear, **kwargs)
 
         return ll.out  # type: ignore[return-value]
@@ -771,7 +778,7 @@ class ComplexKernel(Kernel, ComplexDescaler, ComplexScaler):
     """
 
 
-ComplexScalerT = Union[str, type[ComplexScaler], ComplexScaler]
+ComplexScalerLike = Union[str, type[ComplexScaler], ComplexScaler]
 """
 Type alias for anything that can resolve to a ComplexScaler.
 
@@ -781,7 +788,7 @@ This includes:
 - An instance of a `ComplexScaler`.
 """
 
-ComplexDescalerT = Union[str, type[ComplexDescaler], ComplexDescaler]
+ComplexDescalerLike = Union[str, type[ComplexDescaler], ComplexDescaler]
 """
 Type alias for anything that can resolve to a ComplexDescaler.
 
@@ -791,7 +798,7 @@ This includes:
 - An instance of a `ComplexDescaler`.
 """
 
-ComplexKernelT = Union[str, type[ComplexKernel], ComplexKernel]
+ComplexKernelLike = Union[str, type[ComplexKernel], ComplexKernel]
 """
 Type alias for anything that can resolve to a ComplexKernel.
 
