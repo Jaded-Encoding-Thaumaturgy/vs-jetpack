@@ -3,10 +3,9 @@ from __future__ import annotations
 import warnings
 
 from functools import partial
-from fractions import Fraction
 
-from jetpytools import CustomIntEnum
-from vsdenoise import MVTools, MVToolsPreset
+from jetpytools import CustomIntEnum, KwargsT
+from vsdenoise import MVTools, MVToolsPreset, prefilter_to_full_range
 from vsexprtools import norm_expr
 from vsrgtools import BlurMatrix, sbr
 from vstools import (
@@ -28,36 +27,30 @@ class InterpolateOverlay(CustomIntEnum):
     DEC_TXT60 = 1
     """For 60i overlaid on 24d"""
 
-    IVTC_TXT30 = 2
-    """For 30p overlaid on 24t"""
-
     def __call__(
         self,
         clip: vs.VideoNode,
         pattern: int,
         preset: MVToolsPreset = MVToolsPreset.HQ_COHERENCE,
-        blksize: int | tuple[int, int] = 16,
+        blksize: int | tuple[int, int] = 8,
         refine: int = 1,
         thsad_recalc: int | None = None,
     ) -> vs.VideoNode:
         def select_every(clip: vs.VideoNode, cycle: int, offsets: int | list[int]) -> vs.VideoNode:
-            def select_clip(clip: vs.VideoNode, cycle: int, offsets: list[int]) -> list[vs.VideoNode]:
-                clips = list[vs.VideoNode]()
-
-                for x in offsets:
-                    shifted = shift_clip(clip, x)
-
-                    if cycle != 1:
-                        shifted = shifted.std.SelectEvery(cycle, 0)
-
-                    clips.append(shifted)
-
-                return clips
-
             if isinstance(offsets, int):
                 offsets = [offsets]
 
-            return core.std.Interleave(select_clip(clip, cycle, offsets))
+            clips = list[vs.VideoNode]()
+
+            for x in offsets:
+                shifted = shift_clip(clip, x)
+
+                if cycle != 1:
+                    shifted = shifted.std.SelectEvery(cycle, 0)
+
+                clips.append(shifted)
+
+            return core.std.Interleave(clips)
 
         def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
             return (x[0] // 2, x[1] // 2)
@@ -66,9 +59,8 @@ class InterpolateOverlay(CustomIntEnum):
 
         InvalidFramerateError.check(InterpolateOverlay, clip, (60000, 1001))
 
-        mod = 10 if self == InterpolateOverlay.IVTC_TXT30 else 5
-        field_ref = pattern * 2 % mod
-        invpos = (mod - field_ref) % mod
+        field_ref = pattern * 2 % 5
+        invpos = (5 - field_ref) % 5
 
         blksize = blksize if isinstance(blksize, tuple) else (blksize, blksize)
 
@@ -79,11 +71,8 @@ class InterpolateOverlay(CustomIntEnum):
             case InterpolateOverlay.DEC_TXT60:
                 clean = select_every(clip, 5, 4 - invpos)
                 judder = select_every(clip, 5, [1 - invpos, 2 - invpos])
-            case InterpolateOverlay.IVTC_TXT30:
-                clean = select_every(clip, 5, -1 - invpos // 2)
-                judder = select_every(clip, 1, -1 - invpos).std.SelectEvery(10, (0, 1, 2, 3, 4, 5, 6, 7, 9))
 
-        mv = MVTools(judder, **preset)
+        mv = MVTools(judder, **preset | KwargsT(search_clip=partial(prefilter_to_full_range, slope=1)))
         mv.analyze(tr=1, blksize=blksize, overlap=_floor_div_tuple(blksize))
 
         if refine:
@@ -93,20 +82,14 @@ class InterpolateOverlay(CustomIntEnum):
 
                 mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
-        if self == InterpolateOverlay.IVTC_TXT30:
-            comp = mv.flow_fps(fps=Fraction(4, 1)).std.SelectEvery(4, (1, 2, 3))
-            fixed = core.std.Interleave([clean, comp]).std.SelectEvery(8, (3, 5, 7, 0, 1, 2, 4, 6))
-        else:
-            comp = mv.flow_interpolate(interleave=False)[0]
-            fixed = core.std.Interleave([clean, comp[::2]])
+        comp = mv.flow_interpolate(interleave=False)[0]
+        fixed = core.std.Interleave([clean, comp[::2]])
 
         match self:
             case InterpolateOverlay.IVTC_TXT60:
                 return fixed[invpos // 2 :]
             case InterpolateOverlay.DEC_TXT60:
                 return fixed[invpos // 3 :]
-            case InterpolateOverlay.IVTC_TXT30:
-                return fixed[(1, 2, 3, 3, 4)[invpos // 2] :]
 
 
 class FixInterlacedFades(CustomEnum):
