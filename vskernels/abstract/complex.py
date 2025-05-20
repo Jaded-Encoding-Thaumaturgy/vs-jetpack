@@ -241,6 +241,22 @@ class LinearDescaler(Descaler):
             """
             ...
 
+        def _linear_rescale(
+            self,
+            clip: vs.VideoNode,
+            width: int | None,
+            height: int | None,
+            shift: tuple[TopShift, LeftShift],
+            **kwargs: Any,
+        ) -> ConstantFormatVideoNode:
+            """
+            An optional function to be implemented by subclasses.
+
+            If implemented, this will override the default rescale behavior,
+            allowing custom linear rescaling logic to be applied instead of the base descaler's method.
+            """
+            ...
+
     def descale(
         self,
         clip: vs.VideoNode,
@@ -282,6 +298,51 @@ class LinearDescaler(Descaler):
             sigmoid,
             partial(super().descale, width=width, height=height, shift=shift),
             self.descale,
+            **kwargs,
+        )
+
+    def rescale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        *,
+        # LinearDescaler adds `linear` and `sigmoid` parameters
+        linear: bool | None = None,
+        sigmoid: bool | tuple[Slope, Center] = False,
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode:
+        """
+        Rescale a clip to the given resolution from a previously descaled clip,
+        optionally using linear light processing.
+
+        This method behaves like the base `Descaler.rescale()` but adds support for
+        linear or sigmoid-based preprocessing and postprocessing. When enabled, the clip
+        is linearized before the rescaling operation and de-linearized afterward.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
+        :param clip:                The source clip.
+        :param width:               Target scaled width (defaults to clip width if None).
+        :param height:              Target scaled height (defaults to clip height if None).
+        :param shift:               Subpixel shift (top, left) applied during rescaling.
+        :param linear:              Whether to linearize the input before rescaling. If None, inferred from sigmoid.
+        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+                                    `True` applies the defaults values (6.5, 0.75).
+                                    Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
+                                    and sigmoid center has to be in range 0.0-1.0 (inclusive).
+        :return:                    The rescaled video node, optionally processed in linear light.
+        """
+        return _linearize(
+            self,
+            clip,
+            linear,
+            sigmoid,
+            partial(super().rescale, width=width, height=height, shift=shift),
+            self.rescale,
             **kwargs,
         )
 
