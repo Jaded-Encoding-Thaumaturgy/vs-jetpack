@@ -770,7 +770,7 @@ class ComplexDescaler(LinearDescaler):
         # `linear` and `sigmoid` parameters from LinearDescaler
         linear: bool | None = None,
         sigmoid: bool | tuple[Slope, Center] = False,
-        # ComplexDescaler adds border_handling, sample_grid_model, field_based,  ignore_mask and blur
+        # ComplexDescaler adds border_handling, sample_grid_model, field_based, ignore_mask and blur
         border_handling: int | BorderHandling = BorderHandling.MIRROR,
         sample_grid_model: int | SampleGridModel = SampleGridModel.MATCH_EDGES,
         field_based: FieldBasedT | None = None,
@@ -779,7 +779,8 @@ class ComplexDescaler(LinearDescaler):
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
-        Rescale a clip to the given resolution from a previously descaled clip.
+        Rescale a clip to the given resolution from a previously descaled clip,
+        with image borders handling and sampling grid alignment, optionally using linear light processing.
 
         Keyword arguments passed during initialization are automatically injected here,
         unless explicitly overridden by the arguments provided at call time.
@@ -811,7 +812,7 @@ class ComplexDescaler(LinearDescaler):
 
         de_base_args = (width, height // (1 + field_based.is_inter))
         kwargs.update(
-            border_handling=BorderHandling.from_param(border_handling, self.descale), ignore_mask=ignore_mask, blur=blur
+            border_handling=BorderHandling.from_param(border_handling, self.rescale), ignore_mask=ignore_mask, blur=blur
         )
 
         sample_grid_model = SampleGridModel(sample_grid_model)
@@ -819,15 +820,15 @@ class ComplexDescaler(LinearDescaler):
         if field_based.is_inter:
             raise NotImplementedError
         else:
-            shift = _descale_shift_norm(shift, True, self.descale)
+            shift = _descale_shift_norm(shift, True, self.rescale)
 
             kwargs, shift = sample_grid_model.for_src(clip, width, height, shift, **kwargs)
 
-            descaled = super().descale(
-                clip, **self.get_descale_args(clip, shift, *de_base_args, **kwargs), linear=linear, sigmoid=sigmoid
+            rescaled = super().rescale(
+                clip, **self.get_rescale_args(clip, shift, *de_base_args, **kwargs), linear=linear, sigmoid=sigmoid
             )
 
-        return depth(descaled, bits)
+        return depth(rescaled, bits)
 
 
 class ComplexKernel(Kernel, ComplexDescaler, ComplexScaler):
