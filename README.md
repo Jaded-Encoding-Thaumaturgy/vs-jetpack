@@ -65,7 +65,6 @@ for example using [vsrepo](https://github.com/vapoursynth/vsrepo).
 |                                        |                                        | [zsmooth](https://github.com/adworacz/zsmooth) |
 |                                        |                                        | [bilateralgpu](https://github.com/WolframRhodium/VapourSynth-BilateralGPU) |
 |                                        |                                        | [dpid](https://github.com/WolframRhodium/VapourSynth-dpid) |
-|                                        |                                        | [misc](https://github.com/vapoursynth/vs-miscfilters-obsolete) |
 
 [^1]: Can be considered mandatory
 [^2]: Deprecated
