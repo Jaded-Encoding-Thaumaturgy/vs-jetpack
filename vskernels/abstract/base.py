@@ -274,7 +274,9 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             Create a new instance of the scaler, validating kernel radius if applicable.
             """
             if _check_kernel_radius(cls):
-                return super().__new__(cls)
+                obj = super().__new__(cls)
+                obj.kwargs = {}
+                return obj
 
     def __init__(self, **kwargs: Any) -> None:
         """

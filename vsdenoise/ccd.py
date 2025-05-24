@@ -9,7 +9,7 @@ from typing import Any
 
 from typing_extensions import deprecated
 
-from vsaa import Nnedi3
+from vsaa import NNEDI3
 from vsexprtools import complexpr_available, norm_expr
 from vskernels import Bicubic, Point
 from vsscale import SSIM
@@ -276,13 +276,13 @@ def ccd(
     if not is_subsampled:
         yuv, yuvref = src, ref
     elif mode in {CCDMode.NNEDI_BICUBIC, CCDMode.NNEDI_SSIM}:
-        ref_clips = list[list[ConstantFormatVideoNode] | None]([split(src), ref and split(ref) or None])
+        ref_clips = list[list[ConstantFormatVideoNode] | None]([split(src), ref and split(ref) or None])  # pyright: ignore
 
         src_left += 0.125 * divw
 
         yuv, yuvref = [
             join(planes[:1] + [
-                Nnedi3().scale(p, p.width * divw, p.height * divh) for p in planes[1:]
+                NNEDI3().scale(p, p.width * divw, p.height * divh) for p in planes[1:]
             ]) if planes else None for planes in ref_clips
         ]
     else:

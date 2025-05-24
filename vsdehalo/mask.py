@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from math import sqrt
 
-from vsaa import Nnedi3
+from vsaa import NNEDI3
 from vsexprtools import norm_expr
 from vsmasktools import Morpho, PrewittTCanny
 from vsrgtools import BlurMatrix
@@ -38,7 +38,7 @@ def base_dehalo_mask(
     luma = get_y(src)
 
     if pre_ss:
-        luma = Nnedi3.scale(luma, luma.width * 2, luma.height * 2)
+        luma = NNEDI3().supersample(luma)
 
     exp_edges = norm_expr(
         [luma, Morpho.maximum(luma, iterations=2)], 'y x - {shift} - range_half *',
