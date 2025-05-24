@@ -17,7 +17,7 @@ from vsmasktools import Coordinates, Morpho
 from vsrgtools import BlurMatrix, gauss_blur, median_blur, remove_grain, repair, unsharpen
 from vstools import (
     ConstantFormatVideoNode, ConvMode, CustomRuntimeError, FieldBased, FieldBasedT, KwargsT, VSFunctionKwArgs,
-    check_variable, core, fallback, normalize_seq, scale_delta, vs, vs_object
+    check_variable, core, fallback, normalize_seq, scale_delta, sc_detect, vs, vs_object
 )
 
 from .utils import reinterlace, reweave
@@ -615,7 +615,7 @@ class QTempGaussMC(vs_object):
         if self.prefilter_tr:
             scenechange = self.prefilter_sc_threshold is not False
 
-            scenes = search.misc.SCDetect(self.prefilter_sc_threshold) if scenechange else search
+            scenes = sc_detect(search, self.prefilter_sc_threshold) if scenechange else search
             smoothed = BlurMatrix.BINOMIAL(self.prefilter_tr, mode=ConvMode.TEMPORAL, scenechange=scenechange)(scenes)
             smoothed = self.mask_shimmer(smoothed, search, **self.prefilter_mask_shimmer_args)
         else:
