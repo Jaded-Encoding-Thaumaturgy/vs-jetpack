@@ -242,7 +242,7 @@ class QTempGaussMC(vs_object):
         self,
         *,
         tr: int = 2,
-        sc_threshold: float | None | Literal[False] = None,
+        sc_threshold: float | Literal[False] = 0.1,
         postprocess: SearchPostProcess = SearchPostProcess.GAUSSBLUR_EDGESOFTEN,
         strength: tuple[float, float] = (1.9, 0.1),
         limit: tuple[int | float, int | float, int | float] = (3, 7, 2),
