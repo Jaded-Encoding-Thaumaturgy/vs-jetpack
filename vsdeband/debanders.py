@@ -437,3 +437,60 @@ def placebo_deband(
                 debanded = _placebo(debanded, thr[p], grain_val, planes)
 
     return debanded
+
+
+class _mdb_bilateral_debander_func(Protocol):
+    def __call__(
+        self,
+        clip: vs.VideoNode,
+        radius: int,
+        thr: int | Sequence[int],
+        grain: float | Sequence[float],
+    ) -> vs.VideoNode: ...
+
+
+def mdb_bilateral(
+    clip: vs.VideoNode,
+    radius: int = 16,
+    thr: int | Sequence[int] = 260,
+    lthr: int | tuple[int, int] = (153, 0),
+    elast: float = 3.0,
+    bright_thr: int | None = None,
+    debander: _mdb_bilateral_debander_func = f3k_deband
+) -> vs.VideoNode:
+    """
+    Multi stage debanding, bilateral-esque filter.
+
+    This function is more of a last resort for extreme banding.
+
+    Example usage:
+    ```py
+    from vsdeband import mdb_bilateral, f3k_deband
+    from functools import partial
+
+    debanded = mdb_bilateral(clip, 17, 320, debander=partial(f3k_deband, split_planes=True))
+    ```
+
+    :param clip:        Input clip.
+    :param radius:      Banding detection range.
+    :param thr:         Banding detection thr(s) for planes.
+    :param lthr:        Threshold of the limiting. Refer to `vsrgtools.limit_filter`.
+    :param elast:       Elasticity of the limiting. Refer to `vsrgtools.limit_filter`.
+    :param bright_thr:  Limiting over the bright areas. Refer to `vsrgtools.limit_filter`.
+    :param debander:    Specify what Debander to use. You can pass an instance with custom arguments.
+
+    :return:            Debanded clip.
+    """
+    assert check_variable(clip, mdb_bilateral)
+
+    clip, bits = expect_bits(clip, 16)
+
+    rad1, rad2, rad3 = round(radius * 4 / 3), round(radius * 2 / 3), round(radius / 3)
+
+    db1 = debander(clip, rad1, [max(1, th // 2) for th in to_arr(thr)], 0.0)
+    db2 = debander(db1, rad2, thr, 0)
+    db3 = debander(db2, rad3, thr, 0)
+
+    limit = limit_filter(db3, db2, clip, thr=lthr, elast=elast, bright_thr=bright_thr)
+
+    return depth(limit, bits)
