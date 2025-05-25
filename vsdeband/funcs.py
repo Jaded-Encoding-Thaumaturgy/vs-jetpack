@@ -9,7 +9,7 @@ from vsmasktools import FDoG, Morpho, flat_mask, texture_mask
 from vsrgtools import BlurMatrix, MeanMode, box_blur, gauss_blur, limit_filter, remove_grain
 from vstools import (
     ColorRange, FunctionUtil, PlanesT, VSFunctionKwArgs, check_ref_clip, check_variable, depth, expect_bits, fallback,
-    normalize_planes, normalize_seq, scale_value, to_arr, vs
+    normalize_planes, normalize_seq, scale_value, vs
 )
 
 from .abstract import Debander
@@ -20,8 +20,6 @@ from .placebo import Placebo
 from .types import GuidedFilterMode
 
 __all__ = [
-    'mdb_bilateral',
-
     'masked_deband',
 
     'pfdeband',
@@ -30,48 +28,6 @@ __all__ = [
 
     'DebandPassPresets', 'multi_deband'
 ]
-
-
-def mdb_bilateral(
-    clip: vs.VideoNode, radius: int = 16,
-    thr: int | list[int] = 260,
-    lthr: int | tuple[int, int] = (153, 0), elast: float = 3.0,
-    bright_thr: int | None = None,
-    debander: type[Debander] | Debander = F3kdb
-) -> vs.VideoNode:
-    """
-    Multi stage debanding, bilateral-esque filter.
-
-    This function is more of a last resort for extreme banding.
-    Recommend values are ~40-60 for luma and chroma strengths.
-
-    :param clip:        Input clip.
-    :param radius:      Banding detection range.
-    :param thr:         Banding detection thr(s) for planes.
-    :param lthr:        Threshold of the limiting. Refer to `vsrgtools.limit_filter`.
-    :param elast:       Elasticity of the limiting. Refer to `vsrgtools.limit_filter`.
-    :param bright_thr:  Limiting over the bright areas. Refer to `vsrgtools.limit_filter`.
-    :param debander:    Specify what Debander to use. You can pass an instance with custom arguments.
-
-    :return:            Debanded clip.
-    """
-
-    assert check_variable(clip, mdb_bilateral)
-
-    if not isinstance(debander, Debander):
-        debander = debander()
-
-    clip, bits = expect_bits(clip, 16)
-
-    rad1, rad2, rad3 = round(radius * 4 / 3), round(radius * 2 / 3), round(radius / 3)
-
-    db1 = debander.deband(clip, radius=rad1, thr=[max(1, th // 2) for th in to_arr(thr)], grain=0.0)
-    db2 = debander.deband(db1, radius=rad2, thr=thr, grain=0)
-    db3 = debander.deband(db2, radius=rad3, thr=thr, grain=0)
-
-    limit = limit_filter(db3, db2, clip, thr=lthr, elast=elast, bright_thr=bright_thr)
-
-    return depth(limit, bits)
 
 
 def masked_deband(
