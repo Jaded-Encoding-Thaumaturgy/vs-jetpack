@@ -283,74 +283,6 @@ def f3k_deband(
     return depth(debanded, bits)
 
 
-class PlaceboDeband(Generic[P, R]):
-    """
-    Class decorator that wraps the [placebo_deband][vsdeband.debanders.placebo_deband] function
-    and extends its functionality.
-
-    It is not meant to be used directly.
-    """
-
-    def __init__(self, placebo_deband: Callable[P, R]) -> None:
-        self._func = placebo_deband
-
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-        return self._func(*args, **kwargs)
-
-    class Dither(CustomIntEnum):
-        NONE = -1
-        """
-        No dithering.
-        """
-
-        BLUE_NOISE = 0
-        """
-        Dither with blue noise. Very high quality, but requires the use of a LUT.
-
-        Warning: Computing a blue noise texture with a large size can be
-        very slow, however this only needs to be performed once.
-        Even so, using this with a `lut_size` greater than 6 is generally ill-advised.
-        This is the preferred/default dither method.
-        """
-
-        ORDERED_LUT = 1
-        """
-        Dither with an ordered (bayer) dither matrix, using a LUT.
-
-        Low quality, and since this also uses a LUT, there's generally no advantage to picking
-        this instead of `BLUE_NOISE`.
-
-        It's mainly there for testing.
-        """
-
-        ORDERED_FIXED = 2
-        """
-        The same as `ORDERED_LUT`, but uses fixed function math instead of a LUT.
-
-        This is faster, but only supports a fixed dither matrix size of 16x16 (equal to a `lut_size` of 4).
-        """
-
-        WHITE_NOISE = 3
-        """
-        Dither with white noise.
-
-        This does not require a LUT and is fairly cheap to compute.
-        Unlike the other modes it doesn't show any repeating patterns either spatially or temporally,
-        but the downside is that this is visually fairly jarring due to the presence of low frequencies
-        in the noise spectrum.
-
-        Used as a fallback when the above methods are not available.
-        """
-
-        @property
-        def kwargs(self) -> dict[str, Any]:
-            """Get arguments you must pass to .placebo.Debander for this dither mode."""
-            if self is PlaceboDeband.Dither.NONE:
-                return dict(dither=False, dither_algo=0)
-            return dict(dither=True, dither_algo=self.value)
-
-
-@PlaceboDeband
 def placebo_deband(
     clip: vs.VideoNode,
     radius: float = 16.0,
@@ -359,7 +291,6 @@ def placebo_deband(
     planes: PlanesT = None,
     *,
     iterations: int = 4,
-    dither: PlaceboDeband.Dither = PlaceboDeband.Dither.BLUE_NOISE,
     **kwargs: Any
 ) -> vs.VideoNode:
     """
@@ -380,7 +311,6 @@ def placebo_deband(
     :param planes:      Which planes to process. Defaults to all planes.
     :param iterations:  Number of debanding steps to perform per sample.
                         More iterations yield stronger effect but quickly lose efficiency beyond 4.
-    :param dither:      Type of dithering algorithm to apply. See [Dither][vsdeband.debanders.PlaceboDeband.Dither].
     :return:            Debanded and optionally grained clip.
     """
 
@@ -401,7 +331,7 @@ def placebo_deband(
             plane |= pow(2, p)
 
         return clip.placebo.Deband(
-            plane, iterations, threshold, radius, grain_val * (1 << 5) * 0.8, **dither.kwargs | kwargs
+            plane, iterations, threshold, radius, grain_val * (1 << 5) * 0.8, **kwargs
         )
 
     set_grn = set(ngrain)
