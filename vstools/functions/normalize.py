@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Iterable, Iterator, Literal, Sequence, overload
 
 import vapoursynth as vs
-from jetpytools import T, norm_display_name, norm_func_name, normalize_list_to_ranges, to_arr
+from jetpytools import T, FuncExceptT, norm_display_name, norm_func_name, normalize_list_to_ranges, to_arr
 from jetpytools import (
     flatten as jetp_flatten,
     invert_ranges as jetp_invert_ranges,
@@ -23,6 +23,7 @@ __all__ = [
     'normalize_franges',
     'normalize_ranges',
     'invert_ranges',
+    'normalize_param_planes',
     'norm_func_name', 'norm_display_name'
 ]
 
@@ -74,6 +75,35 @@ def invert_planes(clip: vs.VideoNode, planes: PlanesT = None) -> list[int]:
     :return:            Sorted inverted list of planes.
     """
     return sorted(set(normalize_planes(clip, None)) - set(normalize_planes(clip, planes)))
+
+
+def normalize_param_planes(
+    clip: vs.VideoNode, param: T | Sequence[T], planes: PlanesT, null: T, func: FuncExceptT | None = None
+) -> list[T]:
+    """
+    Normalize a value or sequence to a list mapped to the clip's planes.
+
+    For any plane not included in `planes`, the corresponding output value is set to `null`.
+
+    :param clip:    The input clip whose format and number of planes will be used to determine mapping.
+    :param param:   A single value or a sequence of values to normalize across the clip's planes.
+    :param planes:  The planes to apply the values to. Other planes will receive `null`.
+    :param null:    The default value to use for planes that are not included in `planes`.
+    :param func:    Function returned for custom error handling.
+
+    :return:        A list of length equal to the number of planes in the clip, with `param` values or `null`.
+    """
+    func = func or normalize_param_planes
+
+    from .check import check_variable_format
+
+    assert check_variable_format(clip, func)
+
+    planes = normalize_planes(clip, planes)
+
+    return [
+        p if i in planes else null for i, p in enumerate(normalize_seq(param, clip.format.num_planes))
+    ]
 
 
 @overload
