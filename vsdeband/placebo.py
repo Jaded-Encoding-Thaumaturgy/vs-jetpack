@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Any, Iterable
 
-from vstools import CustomIntEnum, KwargsT, check_variable, fallback, inject_self, join, normalize_seq, split, vs
+from typing_extensions import deprecated
+
+from vstools import ConstantFormatVideoNode, CustomIntEnum, KwargsT, check_variable, fallback, inject_self, join, normalize_seq, split, vs
 
 from .abstract import Debander
 
@@ -13,6 +15,7 @@ __all__ = [
 ]
 
 
+@deprecated('"PlaceboDither" is deprecated, use "placebo_deband.Dither" instead.', category=DeprecationWarning)
 class PlaceboDither(CustomIntEnum):
     NONE = -1
     """No dithering."""
@@ -60,6 +63,7 @@ class PlaceboDither(CustomIntEnum):
         return dict(dither=True, dither_algo=self.value)
 
 
+@deprecated('"Placebo" is deprecated, use "placebo_deband.Dither" instead.', category=DeprecationWarning)
 @dataclass
 class Placebo(Debander):
     """Debander wrapper around libplacebo plugin's Deband function."""
@@ -72,6 +76,7 @@ class Placebo(Debander):
 
     dither: PlaceboDither | None = None
 
+    @deprecated('"Placebo.deband" is deprecated, use "placebo_deband.Dither" instead.', category=DeprecationWarning)
     @inject_self
     def deband(  # type: ignore[override]
         self, clip: vs.VideoNode, radius: float = 16.0, thr: float | list[float] = 3.0,
@@ -107,21 +112,21 @@ class Placebo(Debander):
         assert check_variable(clip, self.__class__.deband)
 
         radius = fallback(self.radius, radius)
-        thr = normalize_seq(fallback(self.thr, thr))  # type: ignore[arg-type]
+        thr = normalize_seq(fallback(self.thr, thr))
         iterations = fallback(self.iterations, iterations)
-        grain = normalize_seq(fallback(self.grain, grain))  # type: ignore[arg-type]
+        ngrain = normalize_seq(fallback(self.grain, grain))
         dither = fallback(self.dither, dither)
 
-        def _placebo(clip: vs.VideoNode, thr: float, grain: float, planes: Iterable[int]) -> vs.VideoNode:
+        def _placebo(clip: vs.VideoNode, thr: float, grain: Any, planes: Iterable[int]) -> ConstantFormatVideoNode:
             plane = 0
             for p in planes:
                 plane |= pow(2, p)
             return clip.placebo.Deband(plane, iterations, thr, radius, grain * (1 << 5) * 0.8, **dither.placebo_args)
 
-        set_grn = set(grain)
+        set_grn = set(ngrain)
 
         if set_grn == {0} or clip.format.num_planes == 1:
-            debs = [_placebo(p, thr, grain[0], [0]) for p, thr in zip(split(clip), thr)]
+            debs = [_placebo(p, t, ngrain[0], [0]) for p, t in zip(split(clip), thr)]
 
             if len(debs) == 1:
                 return debs[0]
@@ -129,7 +134,7 @@ class Placebo(Debander):
             return join(debs, clip.format.color_family)
 
         plane_map = {
-            tuple(i for i in range(clip.format.num_planes) if grain[i] == x): x for x in set_grn - {0}
+            tuple(i for i in range(clip.format.num_planes) if ngrain[i] == x): x for x in set_grn - {0}
         }
 
         debanded = clip
