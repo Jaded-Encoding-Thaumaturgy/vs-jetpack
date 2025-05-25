@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from inspect import Signature
 from types import NoneType
 from typing import Any, Callable, Generic, Literal, Protocol, Sequence, overload
 
@@ -8,7 +7,7 @@ from jetpytools import CustomValueError, P, R, to_arr
 from vsrgtools import limit_filter
 
 from vstools import (
-    ConstantFormatVideoNode, CustomIntEnum, CustomRuntimeError, InvalidColorFamilyError, PlanesT, check_variable, core,
+    ConstantFormatVideoNode, CustomIntEnum, InvalidColorFamilyError, PlanesT, check_variable, core,
     depth, expect_bits, join, normalize_param_planes, normalize_seq, split, vs
 )
 
@@ -218,19 +217,11 @@ def f3k_deband(
                             See [RandomAlgo][vsdeband.debanders.F3KDeband.RandomAlgo].
     :param kwargs:          Additional keyword arguments passed directly to the `neo_f3kdb.Deband` plugin.
 
-    :raises CustomRuntimeError:         If the installed `neo_f3kdb` version is outdated.
     :raises CustomValueError:           If inconsistent grain parameters are provided across chroma planes.
     :raises InvalidColorFamilyError:    If input clip is not YUV or GRAY.
 
     :return:                Debanded and optionally grained clip.
     """
-
-    if 'y_2' not in Signature.from_callable(core.neo_f3kdb.Deband).parameters:
-        raise CustomRuntimeError(
-            "Your version of neo_f3kdb is outdated. "
-            "Please update the plugin to the latest version.",
-            f3k_deband
-    )
 
     InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), f3k_deband)
 
