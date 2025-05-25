@@ -3,9 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal, NamedTuple, NoReturn, Self, Union, overload
 
+from typing_extensions import deprecated
+
 from vstools import (
-    CustomIntEnum, CustomRuntimeError, FuncExceptT, FunctionUtil, PlanesT, core, fallback,
-    inject_self, normalize_seq, vs
+    CustomIntEnum, CustomRuntimeError, FuncExceptT, FunctionUtil, PlanesT, core, fallback, inject_self, normalize_seq,
+    vs
 )
 
 from .abstract import Debander
@@ -17,6 +19,7 @@ __all__ = [
 ]
 
 
+@deprecated('"SampleMode" is deprecated, use "f3k_deband.SampleMode" instead.', category=DeprecationWarning)
 class SampleMode(CustomIntEnum):
     COLUMN = 1
     """Take 2 pixels as reference pixel. Reference pixels are in the same column of current pixel."""
@@ -63,6 +66,7 @@ class SampleModeMidDiffInfo(NamedTuple):
     thr_max: int | list[int]
 
 
+@deprecated('"RandomAlgo" is deprecated, use "f3k_deband.RandomAlgo" instead.', category=DeprecationWarning)
 class RandomAlgo(CustomIntEnum):
     """Random number algorithm for reference positions / grains."""
 
@@ -107,6 +111,7 @@ class RandomAlgoWithInfo(int):
 RandomAlgoT = RandomAlgo | RandomAlgoWithInfo
 
 
+@deprecated('"F3kdb" is deprecated, use "f3k_deband" instead.', category=DeprecationWarning)
 @dataclass
 class F3kdb(Debander):
     """Debander wrapper around the f3kdb plugin."""
@@ -122,6 +127,7 @@ class F3kdb(Debander):
 
     blur_first: bool | None = None
 
+    @deprecated('"F3kdb.deband" is deprecated, use "f3k_deband" instead.', category=DeprecationWarning)
     @inject_self
     def deband(  # type: ignore[override]
         self, clip: vs.VideoNode,
