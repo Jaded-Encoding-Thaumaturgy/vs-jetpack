@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from functools import reduce
 from typing import Any, Callable, Iterable, Protocol, cast
 
-from vsdenoise import PrefilterT
+from vsdenoise import PrefilterLike
 from vsexprtools import complexpr_available, norm_expr
 from vskernels import BicubicAuto, Bilinear, Catrom, Kernel, KernelLike, Lanczos, LinearLight, Scaler, ScalerLike
 from vsmasktools import adg_mask
@@ -575,7 +575,7 @@ class ChickenDream(ChickenDreamBox):
 
 
 def multi_graining(
-    clip: vs.VideoNode, *grainers: MultiGrainerT, prefilter: vs.VideoNode | PrefilterT | None = None
+    clip: vs.VideoNode, *grainers: MultiGrainerT, prefilter: vs.VideoNode | PrefilterLike | None = None
 ) -> vs.VideoNode:
     """
     Interface for applying multiple grainers to a clip.

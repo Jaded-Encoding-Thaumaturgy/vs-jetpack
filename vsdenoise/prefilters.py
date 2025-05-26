@@ -5,7 +5,7 @@ This module implements prefilters for denoisers.
 from __future__ import annotations
 
 from enum import auto
-from typing import Any, Literal, Sequence, cast, overload
+from typing import Any, Literal, Sequence, TypeAlias, cast, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError, KwargsT
 
@@ -20,6 +20,9 @@ from .fft import DFTTest, SLocationT
 
 __all__ = [
     'Prefilter', 'PrefilterPartial', 'MultiPrefilter',
+    'PrefilterLike',
+
+    # TODO: Remove this
     'PrefilterT',
 
     'prefilter_to_full_range',
@@ -534,7 +537,11 @@ class MultiPrefilter(AbstractPrefilter):
         return clip
 
 
-PrefilterT = Prefilter | PrefilterPartial | MultiPrefilter
+PrefilterLike: TypeAlias = Prefilter | PrefilterPartial | MultiPrefilter
+"""
+Prefilter-like type, which can be a single prefilter, a partial prefilter, or a sequence of prefilters.
+"""
+PrefilterT = PrefilterLike
 
 
 def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: float = 0.0625) -> ConstantFormatVideoNode:
