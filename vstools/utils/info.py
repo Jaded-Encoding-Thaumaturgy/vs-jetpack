@@ -5,6 +5,7 @@ from typing import Any, SupportsFloat, overload
 
 import vapoursynth as vs
 from jetpytools import fallback, mod_x
+from vstools import ConstantFormatVideoNode
 
 from ..enums.other import Dar, Sar
 from ..exceptions import UnsupportedSubsamplingError
@@ -124,7 +125,7 @@ def get_framerate(clip: vs.VideoNode | Fraction | tuple[int, int] | float) -> Fr
     return Fraction(clip)
 
 
-def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) -> tuple[vs.VideoNode, int]:
+def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) -> tuple[ConstantFormatVideoNode, int]:
     """
     Expected output bitdepth for a clip.
 
@@ -137,6 +138,7 @@ def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) 
 
     :return:                Tuple containing the clip dithered to the expected depth and the original bitdepth.
     """
+    assert check_variable_format(clip, expect_bits)
 
     bits = get_depth(clip)
 
