@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from types import NoneType
-from typing import Any, Callable, Generic, Literal, Protocol, Sequence, overload
+from typing import Any, Callable, Generic, Literal, Protocol, Sequence, TypeVar, overload
 
 from jetpytools import CustomValueError, P, R, to_arr
-from vsrgtools import limit_filter
+from vsrgtools import gauss_blur, limit_filter
+from vsdenoise import PrefilterLike
 
 from vstools import (
     ConstantFormatVideoNode, CustomIntEnum, InvalidColorFamilyError, PlanesT, check_variable, core,
@@ -413,5 +414,54 @@ def mdb_bilateral(
     db3 = debander(db2, rad3, thr, 0)
 
     limit = limit_filter(db3, db2, clip, thr=lthr, elast=elast, bright_thr=bright_thr)
+
+    return depth(limit, bits)
+
+
+class _SupportPlanesParam(Protocol):
+    """
+    Protocol for functions that support planes parameter.
+    """
+
+    def __call__(self, clip: vs.VideoNode, *, planes: PlanesT = ..., **kwargs: Any) -> vs.VideoNode:
+        ...
+
+
+def pfdeband(
+    clip: vs.VideoNode,
+    radius: int = 16,
+    thr: float | Sequence[float] = 96,
+    lthr: float | tuple[float, float] = 0.5,
+    elast: float = 1.5,
+    bright_thr: int | None = None,
+    prefilter: PrefilterLike | _SupportPlanesParam = gauss_blur,
+    debander: DebanderFunc[Any] = f3k_deband,
+    planes: PlanesT = None,
+    **kwargs: Any
+) -> vs.VideoNode:
+    """
+    Prefilter and deband a clip.
+
+    :param clip:        Input clip.
+    :param radius:      Banding detection range.
+    :param thr:         Banding detection thr(s) for planes.
+    :param lthr:        Threshold of the limiting. Refer to `vsrgtools.limit_filter`.
+    :param elast:       Elasticity of the limiting. Refer to `vsrgtools.limit_filter`.
+    :param bright_thr:  Limiting over the bright areas. Refer to `vsrgtools.limit_filter`.
+    :param prefilter:   Prefilter used to blur the clip before debanding.
+    :param debander:    Specifies what debander callable to use.
+    :param planes:      Planes to process
+
+    :return:              Debanded clip.
+    """
+    clip, bits = expect_bits(clip, 16)
+
+    blur = prefilter(clip, planes=planes, **kwargs)
+    diff = clip.std.MakeDiff(blur, planes=planes)
+
+    deband = debander(blur, radius, thr, planes=planes)
+
+    merge = deband.std.MergeDiff(diff, planes=planes)
+    limit = limit_filter(merge, clip, thr=lthr, elast=elast, bright_thr=bright_thr)
 
     return depth(limit, bits)
