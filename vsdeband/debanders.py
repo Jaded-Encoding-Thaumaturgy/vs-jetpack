@@ -361,24 +361,32 @@ def placebo_deband(
     return debanded
 
 
-class _mdb_bilateral_debander_func(Protocol):
+_Nb = TypeVar("_Nb", int, float, contravariant=True)
+
+
+class DebanderFunc(Protocol[_Nb]):
+    """
+    Protocol for debanding functions.
+    """
+
     def __call__(
         self,
         clip: vs.VideoNode,
-        radius: int,
-        thr: int | Sequence[int],
-        grain: float | Sequence[float],
+        radius: int = ...,
+        thr: _Nb | Sequence[_Nb] = ...,
+        grain: float | Sequence[float] = ...,
+        planes: PlanesT = ...,
     ) -> vs.VideoNode: ...
 
 
 def mdb_bilateral(
     clip: vs.VideoNode,
     radius: int = 16,
-    thr: int | Sequence[int] = 260,
+    thr: float = 260,
     lthr: int | tuple[int, int] = (153, 0),
     elast: float = 3.0,
     bright_thr: int | None = None,
-    debander: _mdb_bilateral_debander_func = f3k_deband
+    debander: DebanderFunc[Any] = f3k_deband
 ) -> vs.VideoNode:
     """
     Multi stage debanding, bilateral-esque filter.
@@ -399,7 +407,7 @@ def mdb_bilateral(
     :param lthr:        Threshold of the limiting. Refer to `vsrgtools.limit_filter`.
     :param elast:       Elasticity of the limiting. Refer to `vsrgtools.limit_filter`.
     :param bright_thr:  Limiting over the bright areas. Refer to `vsrgtools.limit_filter`.
-    :param debander:    Specify what Debander to use. You can pass an instance with custom arguments.
+    :param debander:    Specifies what debander callable to use.
 
     :return:            Debanded clip.
     """
