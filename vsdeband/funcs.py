@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import ceil
 from typing import Any, Sequence
 
-from vsdenoise import PrefilterT, frequency_merge
+from vsdenoise import frequency_merge
 from vsexprtools import ExprOp, norm_expr
 from vsmasktools import FDoG, Morpho, flat_mask, texture_mask
 from vsrgtools import BlurMatrix, MeanMode, box_blur, gauss_blur, limit_filter, remove_grain
@@ -21,8 +21,6 @@ from .types import GuidedFilterMode
 
 __all__ = [
     'masked_deband',
-
-    'pfdeband',
 
     'guided_deband',
 
@@ -50,44 +48,6 @@ def masked_deband(
     masked = deband.std.MaskedMerge(clip, deband_mask)
 
     return depth(masked, bits)
-
-
-def pfdeband(
-    clip: vs.VideoNode, radius: int = 16, thr: float | list[float] = 96,
-    lthr: float | tuple[float, float] = 0.5, elast: float = 1.5,
-    bright_thr: int | None = None, prefilter: PrefilterT | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = gauss_blur,
-    debander: type[Debander] | Debander = F3kdb, planes: PlanesT = None,
-    **kwargs: Any
-) -> vs.VideoNode:
-    """
-    Prefilter and deband a clip.
-
-    :param clip:          Input clip.
-    :param radius:        Banding detection range.
-    :param thr:           Banding detection thr(s) for planes.
-    :param lthr:          Threshold of the limiting. Refer to `vsrgtools.limit_filter`.
-    :param elast:         Elasticity of the limiting. Refer to `vsrgtools.limit_filter`.
-    :param bright_thr:    Limiting over the bright areas. Refer to `vsrgtools.limit_filter`.
-    :param prefilter:     Prefilter used to blur the clip before debanding.
-    :param debander:      Specify what Debander to use. You can pass an instance with custom arguments.
-    :param planes:        Planes to process
-
-    :return:              Debanded clip.
-    """
-    func = FunctionUtil(clip, pfdeband, planes, (vs.YUV, vs.GRAY), (8, 16))
-
-    if not isinstance(debander, Debander):
-        debander = debander()
-
-    blur = prefilter(func.work_clip, planes=planes, **kwargs)
-    diff = func.work_clip.std.MakeDiff(blur, planes=planes)
-
-    deband = debander.deband(blur, radius=radius, thr=thr, planes=planes)
-
-    merge = deband.std.MergeDiff(diff, planes=planes)
-    limit = limit_filter(merge, func.work_clip, thr=lthr, elast=elast, bright_thr=bright_thr)
-
-    return func.return_clip(limit)
 
 
 def guided_deband(
