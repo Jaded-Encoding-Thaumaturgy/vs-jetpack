@@ -22,8 +22,6 @@ from .types import GuidedFilterMode
 __all__ = [
     'masked_deband',
 
-    'pfdeband',
-
     'guided_deband',
 
     'DebandPassPresets', 'multi_deband'
