@@ -4,12 +4,12 @@ from types import NoneType
 from typing import Any, Callable, Generic, Literal, Protocol, Sequence, TypeVar, overload
 
 from jetpytools import CustomValueError, P, R, to_arr
-from vsrgtools import gauss_blur, limit_filter
-from vsdenoise import PrefilterLike
 
+from vsdenoise import PrefilterLike
+from vsrgtools import gauss_blur, limit_filter
 from vstools import (
-    ConstantFormatVideoNode, CustomIntEnum, InvalidColorFamilyError, PlanesT, check_variable, core,
-    depth, expect_bits, join, normalize_param_planes, normalize_seq, split, vs
+    ConstantFormatVideoNode, CustomIntEnum, InvalidColorFamilyError, PlanesT, check_variable, core, depth, expect_bits,
+    join, normalize_param_planes, normalize_seq, split, vs
 )
 
 
@@ -249,7 +249,7 @@ def f3k_deband(
     )
 
     if split_planes:
-        return join(
+        debanded_planes = [
             f3k_deband(
                 p,
                 radius,
@@ -264,7 +264,8 @@ def f3k_deband(
                 **kwargs
             )
             for p, t, g in zip(split(clip), [y, cb, cr], [grainy] + ngrainc)
-        ).std.CopyFrameProps(clip)
+        ]
+        return core.std.ShufflePlanes(debanded_planes, [0] * clip.format.num_planes, clip.format.color_family, clip)
 
     debanded = core.neo_f3kdb.Deband(
         clip,
