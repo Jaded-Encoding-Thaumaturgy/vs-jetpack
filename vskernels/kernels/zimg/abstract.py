@@ -19,7 +19,7 @@ class ZimgBobber(BaseScaler):
     Abstract scaler class that applies bob deinterlacing using a zimg-based resizer.
     """
 
-    bob_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize.Bob
+    bob_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Bob
     """Bob function called internally when performing bobbing operations."""
 
     _implemented_funcs: ClassVar[tuple[str, ...]] = ("bob", "deinterlace")
