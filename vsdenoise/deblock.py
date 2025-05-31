@@ -4,14 +4,14 @@ from typing import Any, Sequence, SupportsFloat, cast
 
 from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomStrEnum
 
-from vsaa import Nnedi3
+from vsaa import Deinterlacer, NNEDI3, BWDIF
 from vsexprtools import norm_expr
 from vsmasktools import FDoG, GenericMaskT, Morpho, adg_mask, normalize_mask, strength_zones_mask
 from vsrgtools import MeanMode, gauss_blur, repair
 from vsscale import DPIR
 from vstools import (
-    Align, ConstantFormatVideoNode, FrameRangeN, FrameRangesN, FunctionUtil, PlanesT, VSFunctionNoArgs,
-    check_progressive, check_variable_format, core, depth, fallback, get_plane_sizes, get_y, join, normalize_ranges,
+    Align, ConstantFormatVideoNode, FrameRangeN, FrameRangesN, FunctionUtil, PlanesT, check_progressive,
+    check_variable_format, core, depth, fallback, get_plane_sizes, get_y, join, normalize_ranges,
     normalize_seq, padder, plane, replace_ranges, shift_clip_multi, vs
 )
 
@@ -100,7 +100,7 @@ class dpir(CustomStrEnum):
             for r, s in zones:
                 if s is None or not isinstance(s, vs.VideoNode) and float(s) == 0:
                     no_dpir_zones.extend(normalize_ranges(clip, r))
-    
+
             dpired = replace_ranges(dpired, clip, no_dpir_zones, exclusive=exclusive_ranges)
 
         return dpired
@@ -214,7 +214,7 @@ def deblock_qed(
 
 
 def mpeg2stinx(
-    clip: vs.VideoNode, bobber: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    clip: vs.VideoNode, bobber: Deinterlacer = NNEDI3(tff=True), mask: bool = True,
     radius: int | tuple[int, int] = 2, limit: float | None = 1.0
 ) -> vs.VideoNode:
     """
@@ -223,6 +223,7 @@ def mpeg2stinx(
     General artifact removal is better accomplished with actual denoisers.
 
     :param clip:       Clip to process
+    :param mask:       Whether to use BWDIF motion masking.
     :param bobber:     Callable to use in place of the internal deinterlacing filter.
     :param radius:     x, y radius of min-max clipping (i.e. repair) to remove artifacts.
     :param limit:      If specified, temporal limiting is used, where the changes by crossfieldrepair
@@ -252,7 +253,7 @@ def mpeg2stinx(
     def _temporal_limit(src: vs.VideoNode, flt: vs.VideoNode, adj: vs.VideoNode | None) -> vs.VideoNode:
         if limit is None:
             return flt
-        
+
         assert adj
 
         diff = norm_expr([core.std.Interleave([src] * 2), adj], 'x y - abs', func=mpeg2stinx).std.SeparateFields(True)
@@ -263,17 +264,18 @@ def mpeg2stinx(
 
         return norm_expr([flt, src, diff], 'z {limit} * LIM! x y LIM@ - y LIM@ + clip', limit=limit, func=mpeg2stinx)
 
-    def _default_bob(clip: vs.VideoNode) -> vs.VideoNode:
-        bobber = Nnedi3(field=3)
-        bobbed = bobber.interpolate(clip, double_y=False)
-        return clip.bwdif.Bwdif(field=3, edeint=bobbed)
-    
+    def _bob_func(clip: vs.VideoNode) -> vs.VideoNode:
+        bobbed = bobber.bob(clip)
+
+        if mask:
+            bobbed = BWDIF(tff=True, edeint=bobbed).bob(clip)
+
+        return bobbed
+
     assert check_progressive(clip, mpeg2stinx)
 
     sw, sh = normalize_seq(radius, 2)
-
-    if not bobber:
-        bobber = _default_bob
+    bobber = bobber.copy(tff=True)
 
     if limit is not None:
         adjs = shift_clip_multi(clip)
@@ -282,7 +284,7 @@ def mpeg2stinx(
     else:
         adj = None
 
-    fixed1 = _temporal_limit(clip, _crossfield_repair(clip, bobber(clip)), adj)
-    fixed2 = _temporal_limit(fixed1, _crossfield_repair(fixed1, bobber(fixed1)), adj)
+    fixed1 = _temporal_limit(clip, _crossfield_repair(clip, _bob_func(clip)), adj)
+    fixed2 = _temporal_limit(fixed1, _crossfield_repair(fixed1, _bob_func(fixed1)), adj)
 
     return fixed1.std.Merge(fixed2).std.SetFieldBased(0)

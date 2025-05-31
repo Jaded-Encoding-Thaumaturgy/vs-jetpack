@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Callable, ClassVar, Concatenate, Sequence
 
-from vsaa import Eedi3, Nnedi3, SangNom
+from vsaa import EEDI3, NNEDI3, SangNom
 from vsexprtools import ExprOp, complexpr_available, norm_expr
 from vskernels import Catrom, Kernel, KernelLike, Point, Scaler, ScalerLike
 from vsrgtools import box_blur, gauss_blur, limit_filter
@@ -676,10 +676,10 @@ class MissingFieldsChromaRecon(GenericChromaRecon):
     Base helper function for reconstructing chroma with missing fields.
     """
 
-    dm_wscaler: ScalerLike = Nnedi3
+    dm_wscaler: ScalerLike = NNEDI3
     """Scaler used to interpolate the width/height."""
 
-    dm_hscaler: ScalerLike | None = Nnedi3
+    dm_hscaler: ScalerLike | None = NNEDI3
     """Scaler used to interpolate the height."""
 
     def __post_init__(self) -> None:
@@ -718,7 +718,7 @@ class PAWorksChromaRecon(MissingFieldsChromaRecon):
 
     """
     dm_wscaler: ScalerLike = field(default_factory=lambda: SangNom(128))
-    dm_hscaler: ScalerLike = Nnedi3
+    dm_hscaler: ScalerLike = NNEDI3
 
     def get_mangled_luma(self, clip: vs.VideoNode, y_base: vs.VideoNode) -> vs.VideoNode:
         cm_width, _ = get_plane_sizes(y_base, 1)
@@ -766,7 +766,8 @@ class Point422ChromaRecon(MissingFieldsChromaRecon):
 
     dm_wscaler: ScalerLike = field(default_factory=lambda: SangNom(128))
     dm_hscaler: ScalerLike = field(
-        default_factory=lambda: Eedi3(0.35, 0.55, 20, 2, 10, vcheck=3, sclip_aa=Nnedi3)
+        # sclip=NNEDI3() didn't work before and has not been re-implemented either
+        default_factory=lambda: EEDI3(0.35, 0.55, 20, 2, 10, vcheck=3, sclip=NNEDI3())  # type: ignore
     )
 
     def demangle_chroma(self, mangled: vs.VideoNode, y_base: vs.VideoNode) -> vs.VideoNode:

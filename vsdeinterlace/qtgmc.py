@@ -7,7 +7,7 @@ from numpy import linalg, zeros
 from typing_extensions import Self
 
 from vskernels import Catrom
-from vsaa import Interpolater, Nnedi3
+from vsaa import Deinterlacer, NNEDI3
 from vsdeband import AddNoise
 from vsdenoise import (
     DFTTest, MaskMode, MotionVectors, MVDirection, MVTools, MVToolsPreset, mc_clamp, prefilter_to_full_range
@@ -225,7 +225,6 @@ class QTempGaussMC(vs_object):
         self.clip = clip
         self.input_type = input_type
         self.tff = clip_fieldbased.is_tff
-        self.field = -1 if not clip_fieldbased.is_inter else clip_fieldbased.field + 2
 
         if self.input_type == self.InputType.PROGRESSIVE and clip_fieldbased.is_inter:
             raise CustomRuntimeError(f'{self.input_type} incompatible with interlaced video!', self.__class__)
@@ -304,7 +303,7 @@ class QTempGaussMC(vs_object):
         *,
         tr: int = 2,
         thsad: int | tuple[int, int] = 640,
-        bobber: Interpolater = Nnedi3(nsize=1, nns=4, qual=2, pscrn=1),
+        bobber: Deinterlacer = NNEDI3(nsize=1),
         noise_restore: float = 0.0,
         degrain_args: KwargsT | None = None,
         mask_args: KwargsT | None | Literal[False] = None,
@@ -325,7 +324,7 @@ class QTempGaussMC(vs_object):
 
         self.basic_tr = tr
         self.basic_thsad = thsad
-        self.basic_bobber = bobber.copy(field=self.field)
+        self.basic_bobber = bobber.copy(tff=self.tff)
         self.basic_noise_restore = noise_restore
         self.basic_degrain_args = fallback(degrain_args, KwargsT())
         self.basic_mask_shimmer_args = fallback(mask_shimmer_args, KwargsT())
@@ -337,7 +336,7 @@ class QTempGaussMC(vs_object):
         self,
         *,
         tr: int = 1,
-        bobber: Interpolater | None = None,
+        bobber: Deinterlacer | None = None,
         mode: SourceMatchMode = SourceMatchMode.NONE,
         similarity: float = 0.5,
         enhance: float = 0.5,
@@ -355,7 +354,7 @@ class QTempGaussMC(vs_object):
         """
 
         self.match_tr = tr
-        self.match_bobber = fallback(bobber, self.basic_bobber).copy(field=self.field)
+        self.match_bobber = fallback(bobber, self.basic_bobber).copy(tff=self.tff)
         self.match_mode = mode
         self.match_similarity = similarity
         self.match_enhance = enhance
@@ -703,9 +702,7 @@ class QTempGaussMC(vs_object):
         if self.input_type == self.InputType.PROGRESSIVE:
             self.bobbed = self.denoise_output
         else:
-            self.bobbed = self.basic_bobber.interpolate(
-                input_clip, False, **self.basic_bobber.get_aa_args(self.denoise_output)
-            )
+            self.bobbed = self.basic_bobber.deinterlace(input_clip)
 
         if self.basic_mask_args is not False and self.input_type == self.InputType.REPAIR:
             mask = self.mv.mask(
@@ -754,7 +751,7 @@ class QTempGaussMC(vs_object):
         if self.input_type == self.InputType.PROGRESSIVE:
             bobbed1 = adjusted1
         else:
-            bobbed1 = self.basic_bobber.interpolate(adjusted1, False, **self.basic_bobber.get_aa_args(adjusted1))
+            bobbed1 = self.basic_bobber.deinterlace(adjusted1)
         match1 = self.binomial_degrain(bobbed1, self.basic_tr)
 
         if self.match_mode > self.SourceMatchMode.BASIC:
@@ -768,7 +765,7 @@ class QTempGaussMC(vs_object):
             if self.input_type == self.InputType.PROGRESSIVE:
                 bobbed2 = diff
             else:
-                bobbed2 = self.match_bobber.interpolate(diff, False, **self.match_bobber.get_aa_args(diff))
+                bobbed2 = self.match_bobber.deinterlace(diff)
             match2 = self.binomial_degrain(bobbed2, self.match_tr)
 
             if self.match_mode == self.SourceMatchMode.TWICE_REFINED:

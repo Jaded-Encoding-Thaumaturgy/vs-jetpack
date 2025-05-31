@@ -9,7 +9,7 @@ from typing import Any
 
 from typing_extensions import deprecated
 
-from vsaa import Nnedi3
+from vsaa import NNEDI3
 from vsexprtools import complexpr_available, norm_expr
 from vskernels import Bicubic, Point
 from vsscale import SSIM
@@ -282,7 +282,7 @@ def ccd(
 
         yuv, yuvref = [
             join(planes[:1] + [
-                Nnedi3().scale(p, p.width * divw, p.height * divh) for p in planes[1:]
+                NNEDI3().scale(p, p.width * divw, p.height * divh) for p in planes[1:]
             ]) if planes else None for planes in ref_clips
         ]
     else:

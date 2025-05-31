@@ -4,7 +4,7 @@ from functools import partial
 from math import ceil, log
 from typing import Any, Sequence, cast
 
-from vsaa import Nnedi3
+from vsaa import NNEDI3
 from vsdenoise import Prefilter, PrefilterT, frequency_merge, nl_means
 from vsexprtools import ExprOp, ExprToken, norm_expr
 from vskernels import Catrom, Point, Scaler, ScalerLike
@@ -30,7 +30,7 @@ def smooth_dering(
     mrad: int = 1, msmooth: int = 1, minp: int = 1, mthr: float = 0.24, incedge: bool = False,
     thr: int = 12, elast: float = 2.0, darkthr: int | None = None,
     contra: int | float | bool = 1.2, drrep: int = 13, pre_ss: float = 1.0,
-    pre_supersampler: ScalerLike = Nnedi3(0, field=0),
+    pre_supersampler: ScalerLike = NNEDI3(noshift=(True, False)),
     pre_downscaler: ScalerLike = Point, planes: PlanesT = 0, show_mask: bool = False
 ) -> vs.VideoNode:
     """
@@ -165,7 +165,7 @@ def smooth_dering(
 
 def vine_dehalo(
     clip: vs.VideoNode, strength: float | Sequence[float] = 16.0, sharp: float = 0.5, sigma: float | list[float] = 1.0,
-    supersampler: ScalerLike = Nnedi3, downscaler: ScalerLike = Catrom, planes: PlanesT = 0, **kwargs: Any
+    supersampler: ScalerLike = NNEDI3, downscaler: ScalerLike = Catrom, planes: PlanesT = 0, **kwargs: Any
 ) -> vs.VideoNode:
     """
     Dehalo via non-local errors filtering.

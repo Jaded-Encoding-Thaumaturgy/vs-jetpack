@@ -99,10 +99,10 @@ def vfm(
 
     Example usage:
 
-    .. code-block:: python
-
-        # Run vsaa.Nnedi3 on combed frames
-        >>> vfm(clip, postprocess=lambda x: Nnedi3().interpolate(x, double_y=False))
+    ```py
+        # Run vsaa.NNEDI3 on combed frames
+        vfm(clip, postprocess=NNEDI3().deinterlace)
+    ```
 
     :param clip:            Input clip to field matching telecine on.
     :param tff:             Field order of the input clip.

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Generic, Literal
+from typing import TYPE_CHECKING, Any, Literal
 from functools import partial
-
-from jetpytools import P, R
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Box, Catrom, NoScale, Scaler, ScalerLike
@@ -11,12 +9,11 @@ from vsmasktools import EdgeDetect, EdgeDetectT, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
 from vsscale import ArtCNN
 from vstools import (
-    ConstantFormatVideoNode, CustomValueError, FormatsMismatchError, FunctionUtil, KwargsT, PlanesT, VSFunctionNoArgs,
-    check_variable_format, fallback, get_peak_value, get_y, limiter, scale_mask, vs
+    ConstantFormatVideoNode, CustomValueError, FormatsMismatchError, FunctionUtil, PlanesT, VSFunctionNoArgs,
+    check_variable_format, fallback, get_peak_value, get_y, limiter, scale_mask, vs, ConvMode
 )
 
-from .abstract import Antialiaser
-from .antialiasers import Eedi3, Nnedi3
+from .deinterlacers import AntiAliaser, NNEDI3, EEDI3
 
 __all__ = [
     'pre_aa',
@@ -25,59 +22,32 @@ __all__ = [
 ]
 
 
-class PreAA(Generic[P, R]):
-    """
-    Class decorator that wraps the [pre_aa][vsaa.funcs.pre_aa] function
-    and extends its functionality.
-
-    It is not meant to be used directly.
-    """
-
-    def __init__(self, pre_aa: Callable[P, R]) -> None:
-        self._func = pre_aa
-
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-        return self._func(*args, **kwargs)
-
-    def custom(
-        self,
-        clip: vs.VideoNode,
-        sharpen: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
-        aa: Antialiaser,
-        planes: PlanesT = None, **kwargs: Any
-    ) -> vs.VideoNode:
-        func = FunctionUtil(clip, pre_aa, planes)
-
-        field = kwargs.pop('field', 3)
-
-        if field < 2:
-            field += 2
-
-        antialiaser = aa.copy(field=field, **kwargs)
-
-        wclip = func.work_clip
-
-        for _ in range(2):
-            bob = antialiaser.interpolate(wclip, False)
-            sharp = sharpen(wclip)
-            limit = MeanMode.MEDIAN(sharp, wclip, bob[::2], bob[1::2])
-            wclip = limit.std.Transpose()
-
-        return func.return_clip(wclip)
-
-
-@PreAA
 def pre_aa(
     clip: vs.VideoNode,
-    strength: float = 1.0,
-    sigma: float = 1.0,
-    aa: Antialiaser = Nnedi3(),
+    sharpener: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] = partial(
+        unsharpen, blur=partial(gauss_blur, mode=ConvMode.VERTICAL, sigma=1)
+    ),
+    antialiaser: AntiAliaser = NNEDI3(),
+    direction: AntiAliaser.AADirection = AntiAliaser.AADirection.BOTH,
     planes: PlanesT = None,
-    **kwargs: Any
 ) -> vs.VideoNode:
-    return pre_aa.custom(
-        clip, lambda clip: unsharpen(clip, strength, partial(gauss_blur, sigma=sigma), planes), aa, planes, **kwargs
-    )
+    func = FunctionUtil(clip, pre_aa, planes)
+
+    wclip = func.work_clip
+
+    for x in AntiAliaser.AADirection:
+        if direction in (x, AntiAliaser.AADirection.BOTH):
+            if x == AntiAliaser.AADirection.HORIZONTAL:
+                wclip = antialiaser.transpose(wclip)
+
+            aa = antialiaser.antialias(wclip, AntiAliaser.AADirection.VERTICAL)
+            sharp = sharpener(wclip)
+            limit = MeanMode.MEDIAN(wclip, aa, sharp)
+
+            if x == AntiAliaser.AADirection.HORIZONTAL:
+                wclip = antialiaser.transpose(limit)
+
+    return func.return_clip(wclip)
 
 
 def clamp_aa(
@@ -85,8 +55,8 @@ def clamp_aa(
     strength: float = 1.0,
     mthr: float = 0.25,
     mask: vs.VideoNode | EdgeDetectT | Literal[False] = False,
-    weak_aa: vs.VideoNode | Antialiaser | None = None,
-    strong_aa: vs.VideoNode | Antialiaser | None = None,
+    weak_aa: vs.VideoNode | AntiAliaser | None = None,
+    strong_aa: vs.VideoNode | AntiAliaser | None = None,
     ref: vs.VideoNode | None = None,
     planes: PlanesT = 0
 ) -> ConstantFormatVideoNode:
@@ -97,8 +67,8 @@ def clamp_aa(
     :param strength:            Set threshold strength for over/underflow value for clamping.
     :param mthr:                Binarize threshold for the mask, float.
     :param mask:                Clip to use for custom mask or an EdgeDetect to use custom masker.
-    :param weak_aa:             Antialiaser for the weaker aa. Default is Nnedi3
-    :param strong_aa:           Antialiaser for the stronger aa. Default is Eedi3
+    :param weak_aa:             AntiAliaser for the weaker aa. Default is NNEDI3.
+    :param strong_aa:           AntiAliaser for the stronger aa. Default is EEDI3.
     :param ref:                 Reference clip for clamping.
 
     :return:                    Antialiased clip.
@@ -108,15 +78,15 @@ def clamp_aa(
 
     if not isinstance(weak_aa, vs.VideoNode):
         if weak_aa is None:
-            weak_aa = Nnedi3()
+            weak_aa = NNEDI3()
 
-        weak_aa = weak_aa.aa(func.work_clip)
+        weak_aa = weak_aa.antialias(func.work_clip)
 
     if not isinstance(strong_aa, vs.VideoNode):
         if strong_aa is None:
-            strong_aa = Eedi3()
+            strong_aa = EEDI3()
 
-        strong_aa = strong_aa.aa(func.work_clip)
+        strong_aa = strong_aa.antialias(func.work_clip)
 
     ref = fallback(ref, func.work_clip)
 
@@ -157,8 +127,7 @@ def based_aa(
     pscale: float = 0.0,
     downscaler: ScalerLike | None = None,
     supersampler: ScalerLike | Literal[False] = ArtCNN,
-    double_rate: bool = False,
-    antialiaser: Antialiaser | None = None,
+    antialiaser: AntiAliaser | None = None,
     prefilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] = False,
     postfilter: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] | None = None,
     show_mask: bool = False, **aa_kwargs: Any
@@ -166,9 +135,9 @@ def based_aa(
     """
     Perform based anti-aliasing on a video clip.
 
-    This function works by super- or downsampling the clip and applying an antialiaser to that image.
+    This function works by super- or downsampling the clip and applying an AntiAliaser to that image.
     The result is then merged with the original clip using an edge mask, and it's limited
-    to areas where the antialiaser was actually applied.
+    to areas where the AntiAliaser was actually applied.
 
     Sharp supersamplers will yield better results, so long as they do not introduce too much ringing.
     For downscalers, you will want to use a neutral kernel.
@@ -196,7 +165,6 @@ def based_aa(
                                   The supersampler should ideally be fairly sharp without
                                   introducing too much ringing.
                                   Default: ArtCNN (R8F64).
-    :param double_rate:           Whether to use double-rate antialiasing.
                                   If True, both fields will be processed separately, which may improve
                                   anti-aliasing strength at the cost of increased processing time and detail loss.
                                   Default: False.
@@ -265,16 +233,19 @@ def based_aa(
     ss = supersampler.scale(ss_clip, aaw, aah)
 
     if not antialiaser:
-        antialiaser = Eedi3(mclip=Bilinear().scale(mask, ss.width, ss.height) if mask else None, sclip_aa=True)
-        aa_kwargs = KwargsT(alpha=0.125, beta=0.25, vthresh0=12, vthresh1=24, field=1) | aa_kwargs
+        antialiaser = EEDI3(
+            alpha=0.125, beta=0.25, gamma=40, vthresh=(12, 24, None),
+            mclip=Bilinear().scale(mask, ss.width, ss.height) if mask else None,
+            sclip=ss
+        )
 
-    aa = getattr(antialiaser, 'draa' if double_rate else 'aa')(ss, **aa_kwargs)
+    aa = antialiaser.antialias(ss, **aa_kwargs)
 
-    aa = downscaler.scale(aa, func.work_clip.width, func.work_clip.height)
+    aa = downscaler.scale(aa, func.work_clip.width, func.work_clip.height)  # type: ignore
 
     if pscale != 1.0 and not isinstance(supersampler, NoScale):
         no_aa = downscaler.scale(ss, func.work_clip.width, func.work_clip.height)
-        aa = norm_expr([func.work_clip, aa, no_aa], 'x z x - {pscale} * + y z - +', pscale=pscale, func=func.func)
+        aa = norm_expr([func.work_clip, aa, no_aa], 'x z x - {pscale} * + y z - +', pscale=pscale, func=func.func)  # type: ignore
 
     if callable(postfilter):
         aa = postfilter(aa)
