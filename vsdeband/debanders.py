@@ -365,7 +365,7 @@ def placebo_deband(
 _Nb = TypeVar("_Nb", int, float, contravariant=True)
 
 
-class DebanderFunc(Protocol[_Nb]):
+class _DebanderFunc(Protocol[_Nb]):
     """
     Protocol for debanding functions.
     """
@@ -387,7 +387,7 @@ def mdb_bilateral(
     lthr: int | tuple[int, int] = (153, 0),
     elast: float = 3.0,
     bright_thr: int | None = None,
-    debander: DebanderFunc[Any] = f3k_deband
+    debander: _DebanderFunc[Any] = f3k_deband
 ) -> vs.VideoNode:
     """
     Multi stage debanding, bilateral-esque filter.
@@ -444,7 +444,7 @@ def pfdeband(
     elast: float = 1.5,
     bright_thr: int | None = None,
     prefilter: PrefilterLike | _SupportPlanesParam = gauss_blur,
-    debander: DebanderFunc[Any] = f3k_deband,
+    debander: _DebanderFunc[Any] = f3k_deband,
     planes: PlanesT = None,
     **kwargs: Any
 ) -> vs.VideoNode:
