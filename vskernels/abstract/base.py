@@ -51,8 +51,8 @@ def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Calla
         if not TYPE_CHECKING:
             if isinstance(self, vs.VideoNode):
                 import inspect
-                import re
                 import pathlib
+                import re
                 import warnings
 
                 warnings.simplefilter("always", DeprecationWarning)
@@ -482,6 +482,9 @@ class Scaler(BaseScaler):
         :return:        Final dictionary of keyword arguments for the scale function.
         """
         return dict(width=width, height=height, src_top=shift[0], src_left=shift[1]) | self.kwargs | kwargs
+
+
+_ScalerT = TypeVar("_ScalerT", bound=Scaler)
 
 
 class Descaler(BaseScaler):
