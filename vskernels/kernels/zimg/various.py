@@ -72,3 +72,6 @@ class Lanczos(ZimgComplexKernel):
     @ZimgComplexKernel.cached_property
     def kernel_radius(self) -> int:
         return ceil(self.taps)
+
+    def _pretty_string(self, **attrs: Any) -> str:
+        return super()._pretty_string(**dict(taps=self.taps) | attrs)
