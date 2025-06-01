@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Sequence
-
 import vapoursynth as vs
 from jetpytools import normalize_seq
 
@@ -194,7 +192,7 @@ def get_lowest_value(
 def get_lowest_values(
     clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
     range_in: ColorRangeT | None = None, family: vs.ColorFamily | None = None
-) -> Sequence[float]:
+) -> list[float]:
     """Get the lowest values of all planes of a specified format."""
 
     return normalize_seq([
@@ -221,7 +219,7 @@ def get_neutral_value(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) -> 
     return 1 << (get_depth(fmt) - 1)
 
 
-def get_neutral_values(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) -> Sequence[float]:
+def get_neutral_values(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) -> list[float]:
     """Get the neutral values of all planes of a specified format."""
 
     fmt = get_video_format(clip_or_depth)
@@ -268,7 +266,7 @@ def get_peak_value(
 def get_peak_values(
     clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
     range_in: ColorRangeT | None = None, family: vs.ColorFamily | None = None
-) -> Sequence[float]:
+) -> list[float]:
     """Get the peak values of all planes of a specified format."""
 
     return normalize_seq([
