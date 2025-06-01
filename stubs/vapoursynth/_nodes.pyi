@@ -854,6 +854,18 @@ class _Plugin_nlm_ispc_VideoNode_Bound(Plugin):
 # end implementation
 
 
+# implementation: noise
+
+class _Plugin_noise_Core_Bound(Plugin):
+    """This class implements the module definitions for the "noise" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Add(self, clip: VideoNode, var: float | None = None, uvar: float | None = None, type: int | None = None, hcorr: float | None = None, vcorr: float | None = None, xsize: float | None = None, ysize: float | None = None, scale: float | None = None, seed: int | None = None, constant: int | None = None, every: int | None = None, opt: int | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_noise_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "noise" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Add(self, var: float | None = None, uvar: float | None = None, type: int | None = None, hcorr: float | None = None, vcorr: float | None = None, xsize: float | None = None, ysize: float | None = None, scale: float | None = None, seed: int | None = None, constant: int | None = None, every: int | None = None, opt: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
+
 
 # implementation: placebo
 
@@ -1847,6 +1859,11 @@ class VideoNode(RawNode):
     def nlm_ispc(self) -> _Plugin_nlm_ispc_VideoNode_Bound:
         """Non-local means denoise filter implemented in ISPC"""
     # end instance
+    # instance_bound_VideoNode: noise
+    @property
+    def noise(self) -> _Plugin_noise_VideoNode_Bound:
+        """Noise generator"""
+    # end instance
     # instance_bound_VideoNode: placebo
     @property
     def placebo(self) -> _Plugin_placebo_VideoNode_Bound:
@@ -2224,6 +2241,10 @@ class Core:
     @property
     def nlm_ispc(self) -> _Plugin_nlm_ispc_Core_Bound:
         """Non-local means denoise filter implemented in ISPC"""
+    # end instance
+    @property
+    def noise(self) -> _Plugin_noise_Core_Bound:
+        """Noise generator"""
     # end instance
     # instance_bound_Core: placebo
     @property
