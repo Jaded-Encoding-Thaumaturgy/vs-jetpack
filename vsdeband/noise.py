@@ -500,7 +500,7 @@ def _protect_neutral_chroma(
     else:
         expr = "x neutral - abs {blend} / 1 min 1 swap - y neutral - abs {blend} / 1 min 1 swap - * range_max *"
 
-    mask = norm_expr(split(clip)[1:], expr, blend=blend)
+    mask = norm_expr([get_u(clip), get_v(clip)], expr, blend=blend)
 
     return core.std.MaskedMerge(
         grained, base_clip, core.std.ShufflePlanes([clip, mask, mask], [0, 0, 0], vs.YUV, clip), [1, 2]
