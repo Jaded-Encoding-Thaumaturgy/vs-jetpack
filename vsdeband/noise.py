@@ -364,7 +364,7 @@ class Grainer(AbstractGrainer, CustomEnum):
                     clip, 8, 0.0, strength, planes, iterations=1, **kwds
                 ),
                 **kwargs,
-                func=self.name
+                func=self.name,
             )
         else:
             xsize, ysize = kwargs.pop("size", (None, None))
@@ -376,7 +376,7 @@ class Grainer(AbstractGrainer, CustomEnum):
                     clip, strength[0], strength[1], type=self.value, constant=static, **kwds
                 ),
                 **kwargs,
-                func=self.name
+                func=self.name,
             )
 
         return grained
@@ -403,8 +403,9 @@ def _apply_grainer(
     scaler = Scaler.ensure_obj(scaler, func)
     temporal_avg, temporal_rad = temporal if isinstance(temporal, tuple) else (temporal, 1)
     protect_neutral_chroma = (
-        True if clip.format.color_family is vs.YUV else False
-        if protect_neutral_chroma is None else protect_neutral_chroma
+        True
+        if clip.format.color_family is vs.YUV
+        else False if protect_neutral_chroma is None else protect_neutral_chroma
     )
     protect_edges = protect_edges if isinstance(protect_edges, tuple) else (protect_edges, protect_edges)
     protect_edges_blend = kwargs.pop("protect_edges_blend", 0.0)
