@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import auto
-from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, Union, overload
+from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, TypeAlias, Union, overload
 
 from jetpytools import MISSING, CustomEnum, FuncExceptT, MissingT
 
@@ -226,6 +226,7 @@ class Grainer(AbstractGrainer, CustomEnum):
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
+        **kwargs: Any,
     ) -> vs.VideoNode: ...
 
     @overload
@@ -241,13 +242,48 @@ class Grainer(AbstractGrainer, CustomEnum):
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
+        **kwargs: Any,
+    ) -> GrainerPartial: ...
+
+    @overload
+    def __call__(
+        self,
+        clip: vs.VideoNode,
+        /,
+        strength: float | tuple[float, float] = ...,
+        static: bool = False,
+        scale: float | tuple[float, float] = 1.0,
+        scaler: ScalerLike = LanczosTwoPasses,
+        temporal: float | tuple[float, int] = (0.0, 0),
+        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        protect_edges: bool | EdgeLimits = True,
+        protect_neutral_chroma: bool | None = None,
+        luma_scaling: float | None = None,
+        **kwargs: Any,
+    ) -> vs.VideoNode: ...
+
+    @overload
+    def __call__(
+        self,
+        /,
+        *,
+        strength: float | tuple[float, float] = ...,
+        static: bool = False,
+        scale: float | tuple[float, float] = 1.0,
+        scaler: ScalerLike = LanczosTwoPasses,
+        temporal: float | tuple[float, int] = (0.0, 0),
+        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        protect_edges: bool | EdgeLimits = True,
+        protect_neutral_chroma: bool | None = None,
+        luma_scaling: float | None = None,
+        **kwargs: Any,
     ) -> GrainerPartial: ...
 
     def __call__(
         self,
         clip: vs.VideoNode | MissingT = MISSING,
         /,
-        strength: float | Sequence[float] | None = None,
+        strength: float | Sequence[float] = 0,
         static: bool = False,
         scale: float | tuple[float, float] = 1.0,
         scaler: ScalerLike = LanczosTwoPasses,
@@ -290,13 +326,21 @@ class Grainer(AbstractGrainer, CustomEnum):
 
         :return:                        Grained video clip, or a `GrainerPartial` if `clip` is not provided.
         """
+        kwargs.update(
+            strength=strength,
+            scale=scale,
+            scaler=scaler,
+            temporal=temporal,
+            protect_edges=protect_edges,
+            post_process=post_process,
+            protect_neutral_chroma=protect_neutral_chroma,
+            luma_scaling=luma_scaling,
+        )
 
         if clip is MISSING:
-            # TODO:
-            return GrainerPartial()
+            return GrainerPartial(self, **kwargs)
 
         assert check_variable(clip, self.name)
-        assert strength is not None
 
         if self == Grainer.PLACEBO:
             assert static is False, "PlaceboGrain does not support static noise!"
@@ -306,16 +350,8 @@ class Grainer(AbstractGrainer, CustomEnum):
                 lambda clip, strength, planes, **kwds: placebo_deband(
                     clip, 8, 0.0, strength, planes, iterations=1, **kwds
                 ),
-                normalize_seq(strength, clip.format.num_planes),
-                scale,
-                scaler,
-                temporal,
-                protect_edges,
-                post_process,
-                protect_neutral_chroma,
-                luma_scaling,
-                self.name,
                 **kwargs,
+                func=self.name
             )
         else:
             xsize, ysize = kwargs.pop("size", (None, None))
@@ -326,16 +362,8 @@ class Grainer(AbstractGrainer, CustomEnum):
                 lambda clip, strength, planes, **kwds: core.noise.Add(
                     clip, strength[0], strength[1], type=self.value, constant=static, **kwds
                 ),
-                normalize_seq(strength, clip.format.num_planes),
-                scale,
-                scaler,
-                temporal,
-                protect_edges,
-                post_process,
-                protect_neutral_chroma,
-                luma_scaling,
-                self.name,
                 **kwargs,
+                func=self.name
             )
 
         return grained
@@ -344,7 +372,7 @@ class Grainer(AbstractGrainer, CustomEnum):
 def _apply_grainer(
     clip: ConstantFormatVideoNode,
     grainer_function: _GrainerFunc,
-    strength: Sequence[float],
+    strength: float | Sequence[float],
     scale: float | tuple[float, float],
     scaler: ScalerLike,
     temporal: float | tuple[float, int],
@@ -357,6 +385,7 @@ def _apply_grainer(
 ) -> tuple[vs.VideoNode, vs.VideoNode]:
 
     # Normalize params
+    strength = normalize_seq(strength, clip.format.num_planes)
     scale = scale if isinstance(scale, tuple) else (scale, scale)
     scaler = Scaler.ensure_obj(scaler, func)
     temporal_avg, temporal_rad = temporal if isinstance(temporal, tuple) else (temporal, 1)
@@ -462,4 +491,31 @@ def _protect_neutral_chroma(
     )
 
 
-class GrainerPartial(AbstractGrainer): ...
+class GrainerPartial(AbstractGrainer):
+    """A partially-applied grainer wrapper."""
+
+    def __init__(self, grainer: Grainer, **kwargs: Any) -> None:
+        """
+        Stores a grainer function, allowing it to be reused with different clips.
+
+        :param grainer:     [Grainer][vsdeband.noise.Grainer] enumeration.
+        :param kwargs:      Arguments for the specified grainer.
+        """
+        self.grainer = grainer
+        self.kwargs = kwargs
+
+    def __call__(self, clip: vs.VideoNode, /, **kwargs: Any) -> vs.VideoNode:
+        """
+        Apply the grainer to the given clip with optional argument overrides.
+
+        :param clip:        Clip to be processed.
+        :param kwargs:      Additional keyword arguments to override or extend the stored ones.
+        :return:            Processed clip.
+        """
+        return self.grainer(clip, **self.kwargs | kwargs)
+
+
+GrainerLike: TypeAlias = Grainer | GrainerPartial
+"""
+Grainer-like type, which can be a single grainer or a partial grainer.
+"""
