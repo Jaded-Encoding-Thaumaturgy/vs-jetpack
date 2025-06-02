@@ -5,7 +5,7 @@ from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, Union, 
 
 from jetpytools import MISSING, CustomEnum, FuncExceptT, MissingT
 
-from vsexprtools import ExprList, norm_expr
+from vsexprtools import norm_expr
 from vskernels import BaseScalerSpecializer, BicubicAuto, Lanczos, LeftShift, Scaler, ScalerLike, TopShift
 from vskernels.abstract.base import _ScalerT
 from vsmasktools import adg_mask
@@ -392,7 +392,7 @@ def _apply_grainer(
         elif hi is False:
             hi = get_peak_values(clip, ColorRange.FULL)
 
-        grained = _protect_pixel_range(clip, grained, lo, hi, protect_edges_blend)
+        grained = _protect_pixel_range(clip, grained, to_arr(lo), to_arr(hi), protect_edges_blend)
 
     # Postprocess
     if post_process is not None:
@@ -422,52 +422,22 @@ def _apply_grainer(
 def _protect_pixel_range(
     clip: ConstantFormatVideoNode,
     grained: vs.VideoNode,
-    low: float | Sequence[float | Literal[False]],
-    high: float | Sequence[float | Literal[False]],
+    low: list[float],
+    high: list[float],
     blend: float = 0.0,
 ) -> vs.VideoNode:
+    if not blend:
+        expr = "y neutral - abs A! x A@ - {lo} < x A@ + {hi} > or neutral y ?"
+    else:
+        expr = (
+            "y neutral - abs A! "
+            "x A@ -                  range_min - {lo}                  - {blend} / "
+            "x A@ + range_max swap - range_min - {hi} range_max swap - - {blend} / "
+            "min 0 1 clamp "
+            "y neutral - * neutral + "
+        )
 
-    low = to_arr(low)
-    high = to_arr(high)
-
-    limit_exprs = list[ExprList]()
-
-    for lo, hi in zip(low, high):
-        if not lo and not hi:
-            limit_exprs.append(ExprList(["y"]))
-            continue
-
-        limit_expr = ExprList(["y neutral - abs A!"])
-
-        if lo is not False:
-            limit_expr.append(f"x A@ - lo_A! lo_A@ {lo} <")
-        if hi is not False:
-            limit_expr.append(f"x A@ + hi_A! hi_A@ {hi} >")
-
-        if lo is not False and hi is not False:
-            limit_expr.append("or")
-
-        # limit_expr.append("neutral y ?")
-        limit_expr.append("neutral")
-
-        if blend:
-            if lo is not False:
-                limit_expr.append(f"x {lo} - {lo} {blend} + {lo} - / lo_coef!")
-                limit_expr.append(f"lo_A@ {lo} {blend} + < neutral lo_coef@ * y 1 lo_coef@ - * +")
-
-            if hi is not False:
-                limit_expr.append(f"x {hi} {blend} - - {hi} {hi} {blend} - - / hi_coef!")
-                limit_expr.append(f"hi_A@ {hi} {blend} - > y hi_coef@ * neutral 1 hi_coef@ - * +")
-
-            tern = ["?"] * (int(bool(lo)) + int(bool(hi)))
-            limit_expr.append("y", *tern)
-        else:
-            limit_expr.append("y")
-
-        limit_expr.append("?")
-        limit_exprs.append(limit_expr)
-
-    return norm_expr([clip, grained], tuple(limit_exprs))
+    return norm_expr([clip, grained], expr, lo=low, hi=high, blend=blend)
 
 
 def _protect_neutral_chroma(
