@@ -263,13 +263,19 @@ class Grainer(AbstractGrainer, CustomEnum):
 
         If no clip is passed, a partially applied grainer with the provided arguments is returned instead.
 
-        :param clip:                    The input clip to apply grain to. If omitted, returns a partially applied grainer.
-        :param strength:                Grain strength. A single float applies uniform strength to all planes. A sequence allows per-plane control.
+        :param clip:                    The input clip to apply grain to.
+                                        If omitted, returns a partially applied grainer.
+        :param strength:                Grain strength.
+                                        A single float applies uniform strength to all planes.
+                                        A sequence allows per-plane control.
         :param static:                  If True, the grain pattern is static (unchanging across frames).
-        :param scale:                   Scaling factor for the grain layer. Can be a float (uniform scaling) or a tuple (width, height scaling).
+        :param scale:                   Scaling divisor for the grain layer. Can be a float (uniform scaling)
+                                        or a tuple (width, height scaling).
         :param scaler:                  Scaler used to resize the grain layer when `scale` is not 1.0.
-        :param temporal:                Temporal grain smoothing parameters. Either a float (weight) or a tuple of (weight, radius).
-        :param post_process:            One or more functions applied after grain generation (and temporal smoothing, if used).
+        :param temporal:                Temporal grain smoothing parameters.
+                                        Either a float (weight) or a tuple of (weight, radius).
+        :param post_process:            One or more functions applied after grain generation
+                                        (and temporal smoothing, if used).
         :param protect_edges:           Protects edge regions of each plane from graining.
                                         - True: Use legal range based on clip format.
                                         - False: Disable edge protection.
@@ -277,7 +283,8 @@ class Grainer(AbstractGrainer, CustomEnum):
         :param protect_neutral_chroma:  Whether to disable graining on neutral chroma.
         :param luma_scaling:            Sensitivity of the luma-adaptive graining mask.
                                         Higher values reduce grain in brighter areas; negative values invert behavior.
-        :param kwargs:                  Additional arguments to pass to the graining function or additional advanced options:
+        :param kwargs:                  Additional arguments to pass to the graining function
+                                        or additional advanced options:
                                         - ``protect_edges_blend``: Blend range to soften edge protection thresholds.
                                         - ``protect_neutral_chroma_blend``: Blend range for neutral chroma protection.
 
