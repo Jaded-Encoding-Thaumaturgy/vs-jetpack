@@ -429,11 +429,11 @@ def _protect_pixel_range(
         expr = "y neutral - abs A! x A@ - {lo} < x A@ + {hi} > or neutral y ?"
     else:
         expr = (
-            "y neutral - abs A! "
-            "x A@ -                  range_min - {lo}                  - {blend} / "
-            "x A@ + range_max swap - range_min - {hi} range_max swap - - {blend} / "
+            "y neutral - N! N@ abs A! "
+            "x A@ - range_min - {lo}      - {blend} / "
+            "x A@ + range_min + {hi} swap - {blend} / "
             "min 0 1 clamp "
-            "y neutral - * neutral + "
+            "N@ * neutral + "
         )
 
     return norm_expr([clip, grained], expr, lo=low, hi=high, blend=blend)
