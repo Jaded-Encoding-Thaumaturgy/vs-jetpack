@@ -20,6 +20,9 @@ from .debanders import placebo_deband
 
 __all__ = [
     "Grainer",
+    "ScalerTwoPasses",
+    "LanczosTwoPasses",
+    "GrainFactoryBicubic",
 ]
 
 
@@ -349,6 +352,10 @@ def _apply_grainer(
     scale = scale if isinstance(scale, tuple) else (scale, scale)
     scaler = Scaler.ensure_obj(scaler, func)
     temporal_avg, temporal_rad = temporal if isinstance(temporal, tuple) else (temporal, 1)
+    protect_neutral_chroma = (
+        True if clip.format.color_family is vs.YUV else False
+        if protect_neutral_chroma is None else protect_neutral_chroma
+    )
     protect_edges = protect_edges if isinstance(protect_edges, tuple) else (protect_edges, protect_edges)
     protect_edges_blend = kwargs.pop("protect_edges_blend", 0.0)
     protect_neutral_chroma_blend = kwargs.pop("protect_neutral_chroma_blend", 0.0)
@@ -399,13 +406,6 @@ def _apply_grainer(
         for pp in to_arr(post_process):
             grained = pp(grained)
 
-    # Protect neutral chroma
-    if protect_neutral_chroma is None:
-        if clip.format.color_family is vs.YUV:
-            protect_neutral_chroma = True
-        else:
-            protect_neutral_chroma = False
-
     if protect_neutral_chroma is True:
         if clip.format.color_family is vs.RGB:
             raise InvalidColorFamilyError(func, clip.format, vs.YUV)
@@ -413,8 +413,7 @@ def _apply_grainer(
         grained = _protect_neutral_chroma(grained, clip, base_clip, protect_neutral_chroma_blend)
 
     if luma_scaling is not None:
-        mask = adg_mask(clip, luma_scaling)
-        grained = core.std.MaskedMerge(base_clip, grained, mask, planes)
+        grained = core.std.MaskedMerge(base_clip, grained, adg_mask(clip, luma_scaling), planes)
 
     return grained, core.std.MergeDiff(clip, grained, planes)
 
