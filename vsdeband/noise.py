@@ -70,13 +70,14 @@ class ScalerTwoPasses(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=
         assert check_variable(clip, self.__class__)
 
         width, height = self._wh_norm(clip, width, height)
-        mod = max(clip.format.subsampling_w, clip.format.subsampling_h) << 1
 
         if width / clip.width > 1.5 or height / clip.height > 1.5:
             # If the scale is too big, we need to scale it in two passes, else the window
             # will be too big and the grain will be dampened down too much
-            sx, sy = mod_x((width + clip.width) / 2, mod), mod_x((height + clip.height) / 2, mod)
-            clip = super().scale(clip, sx, sy, (0, 0), **kwargs)
+            mod = max(clip.format.subsampling_w, clip.format.subsampling_h) << 1
+            clip = super().scale(
+                clip, mod_x((width + clip.width) / 2, mod), mod_x((height + clip.height) / 2, mod), **kwargs
+            )
 
         return super().scale(clip, width, height, (0, 0), **kwargs)
 
