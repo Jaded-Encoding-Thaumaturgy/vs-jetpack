@@ -12,8 +12,8 @@ from vsmasktools import adg_mask
 from vsrgtools import BlurMatrix
 from vstools import (
     ColorRange, ConstantFormatVideoNode, ConvMode, InvalidColorFamilyError, PlanesT, check_variable, core,
-    get_lowest_values, get_neutral_values, get_peak_values, mod_x, normalize_param_planes, normalize_seq, split, to_arr,
-    vs
+    get_lowest_values, get_neutral_values, get_peak_value, get_peak_values, get_u, get_v, mod_x, normalize_param_planes,
+    normalize_seq, to_arr, vs
 )
 
 from .debanders import placebo_deband
@@ -409,7 +409,9 @@ def _apply_grainer(
     )
     protect_edges = protect_edges if isinstance(protect_edges, tuple) else (protect_edges, protect_edges)
     protect_edges_blend = kwargs.pop("protect_edges_blend", 0.0)
-    protect_neutral_chroma_blend = kwargs.pop("protect_neutral_chroma_blend", 0.0)
+    protect_neutral_chroma_blend = kwargs.pop(
+        "protect_neutral_chroma_blend", 2 / 255 * get_peak_value(clip, range_in=ColorRange.FULL)
+    )
 
     planes = [i for i, s in zip(range(clip.format.num_planes), strength) if s]
     (scalex, scaley), mod = scale, max(clip.format.subsampling_w, clip.format.subsampling_h) << 1
