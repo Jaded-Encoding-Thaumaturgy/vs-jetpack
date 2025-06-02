@@ -110,22 +110,35 @@ class Grainer(AbstractGrainer, CustomEnum):
     """Enum representing different grain/noise generation algorithms."""
 
     GAUSS = auto()
-    """Gaussian noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)"""
+    """
+    Gaussian noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    """
 
     PERLIN = auto()
-    """Perlin noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)"""
+    """
+    Perlin noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    """
 
     SIMPLEX = auto()
-    """Simplex noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)"""
+    """
+    Simplex noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    """
 
     FBM_SIMPLEX = auto()
-    """Fractional Brownian Motion based on Simplex noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)"""
+    """
+    Fractional Brownian Motion based on Simplex noise.
+    Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    """
 
     POISSON = auto()
-    """Poisson-distributed noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)"""
+    """
+    Poisson-distributed noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    """
 
     PLACEBO = auto()
-    """Grain effect provided by the `libplacebo` rendering library."""
+    """
+    Grain effect provided by the `libplacebo` rendering library.
+    """
 
     @overload
     def __call__(  # type: ignore[misc]
