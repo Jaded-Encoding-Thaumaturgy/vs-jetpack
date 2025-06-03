@@ -201,7 +201,7 @@ class Grainer(AbstractGrainer, CustomEnum):
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
         *,
-        size: tuple[float, float] = ...,
+        size: tuple[float, float] = (2.0, 2.0),
         **kwargs: Any,
     ) -> vs.VideoNode: ...
 
@@ -223,7 +223,7 @@ class Grainer(AbstractGrainer, CustomEnum):
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
-        size: tuple[float, float] = ...,
+        size: tuple[float, float] = (2.0, 2.0),
         **kwargs: Any,
     ) -> GrainerPartial: ...
 
