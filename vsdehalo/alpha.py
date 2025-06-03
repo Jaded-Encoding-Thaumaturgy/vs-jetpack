@@ -598,7 +598,7 @@ def dehalo_sigma(
     supersampler: ScalerLike = Lanczos(3), supersampler_ref: ScalerLike = Mitchell,
     pre_ss: float = 1.0, pre_supersampler: ScalerLike = NNEDI3(noshift=(True, False)),
     pre_downscaler: ScalerLike = Point, mask_radius: RadiusT = 1, sigma_mask: float | bool = False,
-    mask_coords: Sequence[int] | None = None,
+    mask_coords: Sequence[int] | None = None, mask_dehalo: bool = True,
     show_mask: bool = False, func: FuncExceptT | None = None, **kwargs: Any
 ) -> vs.VideoNode:
     func = func or dehalo_alpha
@@ -638,8 +638,9 @@ def dehalo_sigma(
 
         if show_mask:
             return mask
-
-        dehalo = dehalo.std.MaskedMerge(work_clip, mask, planes)
+        
+        if mask_dehalo:
+            dehalo = dehalo.std.MaskedMerge(work_clip, mask, planes)
 
         dehalo = _dehalo_supersample_minmax(work_clip, dehalo, ss_i, supersampler, supersampler_ref, planes, func)
 
