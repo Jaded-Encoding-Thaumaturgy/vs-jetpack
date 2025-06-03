@@ -1,11 +1,10 @@
 from functools import partial
 from math import factorial
-from typing import Literal, MutableMapping, Protocol, cast, Any
+from typing import Literal, MutableMapping, Protocol, cast
 
 from jetpytools import CustomIntEnum
 from numpy import linalg, zeros
 from typing_extensions import Self
-import warnings
 
 from vskernels import Catrom
 from vsaa import Deinterlacer, NNEDI3
@@ -46,6 +45,7 @@ class QTempGaussMC(vs_object):
         deinterlace = (
             QTempGaussMC(clip)
             .prefilter()
+            .analyze()
             .denoise()
             .basic()
             .source_match()
@@ -264,6 +264,41 @@ class QTempGaussMC(vs_object):
         self.prefilter_soften_limit = limit
         self.prefilter_range_expansion_args: KwargsT | Literal[False] = fallback(range_expansion_args, KwargsT())
         self.prefilter_mask_shimmer_args = fallback(mask_shimmer_args, KwargsT())
+
+        return self
+    
+    def analyze(
+        self,
+        *,
+        force_tr: int = 1,
+        preset: MVToolsPreset = MVToolsPreset.HQ_SAD,
+        blksize: int | tuple[int, int] = 16,
+        refine: int = 1,
+        thsad_recalc: int | None = None,
+        thscd: int | tuple[int | None, int | float | None] | None = (180, 38.5),
+    ) -> Self:
+        """
+        Configure parameters for the motion analysis stage.
+
+        :param force_tr:        Always analyze motion to at least this, even if otherwise unnecessary.
+        :param preset:          MVTools preset defining base values for the MVTools object.
+        :param blksize:         Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+        :param refine:          Number of times to recalculate motion vectors with halved block size.
+        :param thsad_recalc:    Only bad quality new vectors with a SAD above this will be re-estimated by search.
+                                thsad value is scaled to 8x8 block size.
+        :param thscd:           Scene change detection thresholds:
+                                 - First value: SAD threshold for considering a block changed between frames.
+                                 - Second value: Percentage of changed blocks needed to trigger a scene change.
+        """
+
+        preset.pop('search_clip', None)
+
+        self.analyze_tr = force_tr
+        self.analyze_preset = preset
+        self.analyze_blksize = blksize if isinstance(blksize, tuple) else (blksize, blksize)
+        self.analyze_refine = refine
+        self.analyze_thsad_recalc = thsad_recalc
+        self.analyze_thscd = thscd
 
         return self
 
@@ -603,7 +638,7 @@ class QTempGaussMC(vs_object):
 
             degrained.append(
                 self.mv.degrain(
-                    clip, vectors=vectors, thsad=self.basic_thsad, thscd=self.thscd, **self.basic_degrain_args
+                    clip, vectors=vectors, thsad=self.basic_thsad, thscd=self.analyze_thscd, **self.basic_degrain_args
                 )
             )
             vectors.clear()
@@ -611,6 +646,8 @@ class QTempGaussMC(vs_object):
         return core.std.AverageFrames([clip, *degrained], _get_weights(tr))
 
     def _apply_prefilter(self) -> None:
+        self.draft = Catrom(tff=self.tff).bob(self.clip) if self.input_type == self.InputType.INTERLACE else self.clip
+
         if self.input_type == self.InputType.REPAIR:
             search = BlurMatrix.BINOMIAL()(self.draft, mode=ConvMode.VERTICAL)
         else:
@@ -647,13 +684,35 @@ class QTempGaussMC(vs_object):
 
         self.prefilter_output = blurred
 
+    def _apply_analyze(self) -> None:
+        def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
+            return (x[0] // 2, x[1] // 2)
+
+        tr = max(1, self.analyze_tr, self.denoise_tr, self.basic_tr, self.match_tr, self.final_tr)
+        blksize = self.analyze_blksize
+
+        self.mv = MVTools(self.draft, self.prefilter_output, **self.analyze_preset)
+        self.mv.analyze(tr=tr, blksize=blksize, overlap=_floor_div_tuple(blksize))
+
+        if self.analyze_refine:
+            if self.analyze_thsad_recalc is None:
+                self.analyze_thsad_recalc = round(
+                    (self.basic_thsad[0] if isinstance(self.basic_thsad, tuple) else self.basic_thsad) / 2
+                )
+
+            for _ in range(self.analyze_refine):
+                blksize = _floor_div_tuple(blksize)
+                overlap = _floor_div_tuple(blksize)
+
+                self.mv.recalculate(thsad=self.analyze_thsad_recalc, blksize=blksize, overlap=overlap)
+
     def _apply_denoise(self) -> None:
         if not self.denoise_mode:
             self.denoise_output = self.clip
         else:
             if self.denoise_tr:
                 denoised = self.mv.compensate(
-                    tr=self.denoise_tr, thscd=self.thscd,
+                    tr=self.denoise_tr, thscd=self.analyze_thscd,
                     temporal_func=lambda clip: self.denoise_func(clip, tr=self.denoise_tr),
                     **self.denoise_func_comp_args,
                 )
@@ -690,7 +749,7 @@ class QTempGaussMC(vs_object):
 
                     noise_comp, _ = self.mv.compensate(
                         noise, direction=MVDirection.BACKWARD,
-                        tr=1, thscd=self.thscd, interleave=False,
+                        tr=1, thscd=self.analyze_thscd, interleave=False,
                         **self.denoise_stabilize_comp_args,
                     )
 
@@ -709,7 +768,7 @@ class QTempGaussMC(vs_object):
         if self.input_type == self.InputType.REPAIR and self.basic_mask_args is not False:
             mask = self.mv.mask(
                 self.prefilter_output, direction=MVDirection.BACKWARD,
-                kind=MaskMode.SAD, thscd=self.thscd, **self.basic_mask_args,
+                kind=MaskMode.SAD, thscd=self.analyze_thscd, **self.basic_mask_args,
             )
             self.bobbed = self.denoise_output.std.MaskedMerge(self.bobbed, mask)
 
@@ -740,7 +799,9 @@ class QTempGaussMC(vs_object):
         assert check_variable(clip, self._apply_source_match)
         assert check_variable(ref, self._apply_source_match)
 
-        def _error_adjustment(clip: ConstantFormatVideoNode, ref: ConstantFormatVideoNode, tr: int) -> ConstantFormatVideoNode:
+        def _error_adjustment(
+            clip: ConstantFormatVideoNode, ref: ConstantFormatVideoNode, tr: int
+        ) -> ConstantFormatVideoNode:
             tr_f = 2 * tr - 1
             binomial_coeff = factorial(tr_f) // factorial(tr) // factorial(tr_f - tr)
             error_adj = 2**tr_f / (binomial_coeff + self.match_similarity * (2**tr_f - binomial_coeff))
@@ -799,7 +860,7 @@ class QTempGaussMC(vs_object):
         )
         processed_diff = repair.Mode.MINMAX_SQUARE1(processed_diff, remove_grain.Mode.MINMAX_AROUND2(processed_diff))
 
-        return reweave(fields_src, fields_flt.std.MakeDiff(processed_diff), self.tff)
+        return core.std.SetFieldBased(reweave(fields_src, fields_flt.std.MakeDiff(processed_diff), self.tff), 0)
 
     def _apply_sharpen(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         assert check_variable(clip, self._apply_sharpen)
@@ -857,7 +918,7 @@ class QTempGaussMC(vs_object):
             if self.limit_mode in (self.SharpLimitMode.TEMPORAL_PRESMOOTH, self.SharpLimitMode.TEMPORAL_POSTSMOOTH):
                 clip = mc_clamp(
                     clip, self.bobbed, self.mv, clamp=self.limit_clamp,
-                    tr=self.limit_radius, thscd=self.thscd, **self.limit_comp_args,
+                    tr=self.limit_radius, thscd=self.analyze_thscd, **self.limit_comp_args,
                 )
 
         return clip
@@ -872,7 +933,9 @@ class QTempGaussMC(vs_object):
 
     def _apply_final(self) -> None:
         smoothed = self.mv.degrain(
-            self.basic_output, tr=self.final_tr, thsad=self.final_thsad, thscd=self.thscd, **self.final_degrain_args
+            self.basic_output, tr=self.final_tr,
+            thsad=self.final_thsad, thscd=self.analyze_thscd,
+            **self.final_degrain_args,
         )
         smoothed = self._mask_shimmer(smoothed, self.bobbed, **self.final_mask_shimmer_args)
 
@@ -890,12 +953,14 @@ class QTempGaussMC(vs_object):
         if not angle_out * self.motion_blur_fps_divisor == angle_in:
             blur_level = (angle_out * self.motion_blur_fps_divisor - angle_in) * 100 / 360
 
-            processed = self.mv.flow_blur(self.final_output, blur=blur_level, thscd=self.thscd, **self.motion_blur_args)
+            processed = self.mv.flow_blur(
+                self.final_output, blur=blur_level, thscd=self.analyze_thscd, **self.motion_blur_args
+            )
 
             if self.motion_blur_mask_args is not False:
                 mask = self.mv.mask(
                     self.prefilter_output, direction=MVDirection.BACKWARD,
-                    kind=MaskMode.MOTION, thscd=self.thscd, **self.motion_blur_mask_args,
+                    kind=MaskMode.MOTION, thscd=self.analyze_thscd, **self.motion_blur_mask_args,
                 )
 
                 processed = self.final_output.std.MaskedMerge(processed, mask)
@@ -907,73 +972,21 @@ class QTempGaussMC(vs_object):
 
         self.motion_blur_output = processed
 
-    def deinterlace(
-        self,
-        *,
-        force_tr: int = 1,
-        preset: MVToolsPreset = MVToolsPreset.HQ_SAD,
-        blksize: int | tuple[int, int] = 16,
-        refine: int = 1,
-        thsad_recalc: int | None = None,
-        thscd: int | tuple[int | None, int | float | None] | None = (180, 38.5),
-    ) -> ConstantFormatVideoNode:
+    def deinterlace(self) -> ConstantFormatVideoNode:
         """
         Start the deinterlacing process.
 
-        :param force_tr:        Always analyze motion to at least this, even if otherwise unnecessary.
-        :param preset:          MVTools preset defining base values for the MVTools object.
-        :param blksize:         Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
-        :param refine:          Number of times to recalculate motion vectors with halved block size.
-        :param thsad_recalc:    Only bad quality new vectors with a SAD above this will be re-estimated by search.
-                                thsad value is scaled to 8x8 block size.
-        :param thscd:           Scene change detection thresholds:
-                                 - First value: SAD threshold for considering a block changed between frames.
-                                 - Second value: Percentage of changed blocks needed to trigger a scene change.
-
-        :return:                Deinterlaced clip.
+        :return:    Deinterlaced clip.
         """
 
-        def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
-            return (x[0] // 2, x[1] // 2)
-
-        self.draft = Catrom(tff=self.tff).bob(self.clip) if self.input_type == self.InputType.INTERLACE else self.clip
-        self.thscd = thscd
-
-        tr = max(1, force_tr, self.denoise_tr, self.basic_tr, self.match_tr, self.final_tr)
-        blksize = blksize if isinstance(blksize, tuple) else (blksize, blksize)
-        preset.pop('search_clip', None)
-
         self._apply_prefilter()
-
-        self.mv = MVTools(self.draft, self.prefilter_output, **preset)
-        self.mv.analyze(tr=tr, blksize=blksize, overlap=_floor_div_tuple(blksize))
-
-        if refine:
-            if thsad_recalc is None:
-                thsad_recalc = round(
-                    (self.basic_thsad[0] if isinstance(self.basic_thsad, tuple) else self.basic_thsad) / 2
-                )
-
-            for _ in range(refine):
-                blksize = _floor_div_tuple(blksize)
-                overlap = _floor_div_tuple(blksize)
-
-                self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
-
+        self._apply_analyze()
         self._apply_denoise()
         self._apply_basic()
         self._apply_final()
         self._apply_motion_blur()
 
-        return core.std.SetFieldBased(self.motion_blur_output, 0)
-    
-    def process(self, **kwargs: Any) -> ConstantFormatVideoNode:
-        warnings.warn(
-            'QTempGaussMC: process() is deprecated and will be removed in a future version. '
-            'Use deinterlace() instead.',
-            DeprecationWarning
-        )
-        return self.deinterlace(**kwargs)
+        return self.motion_blur_output
 
     def __vs_del__(self, core_id: int) -> None:
         for k, v in self.__dict__.items():
