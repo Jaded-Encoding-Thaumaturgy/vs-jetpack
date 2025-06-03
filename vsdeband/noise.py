@@ -336,8 +336,9 @@ class Grainer(AbstractGrainer, CustomEnum):
                                         Higher values reduce grain in brighter areas; negative values invert behavior.
         :param kwargs:                  Additional arguments to pass to the graining function
                                         or additional advanced options:
-                                        - ``protect_edges_blend``: Blend range to soften edge protection thresholds.
-                                        - ``protect_neutral_chroma_blend``: Blend range for neutral chroma protection.
+                                        - ``protect_edges_blend``: Blend range (float) to soften edge protection thresholds.
+                                        - ``protect_neutral_chroma_blend``: Blend range (float) for neutral chroma protection.
+                                        - ``neutral_out``: (Boolean) Output the neutral layer instead of the merged clip.
 
         :return:                        Grained video clip, or a `GrainerPartial` if `clip` is not provided.
         """
@@ -360,7 +361,7 @@ class Grainer(AbstractGrainer, CustomEnum):
         if self == Grainer.PLACEBO:
             assert static is False, "PlaceboGrain does not support static noise!"
 
-            neutral_out, grained = _apply_grainer(
+            grained = _apply_grainer(
                 clip,
                 lambda clip, strength, planes, **kwds: placebo_deband(
                     clip, 8, 0.0, strength, planes, iterations=1, **kwds
@@ -372,7 +373,7 @@ class Grainer(AbstractGrainer, CustomEnum):
             xsize, ysize = kwargs.pop("size", (None, None))
             kwargs.update(xsize=xsize, ysize=ysize)
 
-            neutral_out, grained = _apply_grainer(
+            grained = _apply_grainer(
                 clip,
                 lambda clip, strength, planes, **kwds: core.noise.Add(
                     clip, strength[0], strength[1], type=self.value, constant=static, **kwds
@@ -397,8 +398,7 @@ def _apply_grainer(
     luma_scaling: float | None,
     func: FuncExceptT,
     **kwargs: Any,
-) -> tuple[vs.VideoNode, vs.VideoNode]:
-
+) -> vs.VideoNode:
     # Normalize params
     strength = normalize_seq(strength, clip.format.num_planes)
     scale = scale if isinstance(scale, tuple) else (scale, scale)
@@ -414,6 +414,7 @@ def _apply_grainer(
     protect_neutral_chroma_blend = kwargs.pop(
         "protect_neutral_chroma_blend", 2 / 255 * get_peak_value(clip, range_in=ColorRange.FULL)
     )
+    neutral_out = kwargs.pop("neutral_out", False)
 
     planes = [i for i, s in zip(range(clip.format.num_planes), strength) if s]
     (scalex, scaley), mod = scale, max(clip.format.subsampling_w, clip.format.subsampling_h) << 1
@@ -470,7 +471,7 @@ def _apply_grainer(
     if luma_scaling is not None:
         grained = core.std.MaskedMerge(base_clip, grained, adg_mask(clip, luma_scaling), planes)
 
-    return grained, core.std.MergeDiff(clip, grained, planes)
+    return core.std.MergeDiff(clip, grained, planes) if not neutral_out else grained
 
 
 def _protect_pixel_range(
@@ -568,6 +569,7 @@ class AddNoiseBase:
         self.protect_chroma = protect_chroma
         self.luma_scaling = luma_scaling
         self.fade_limits = fade_limits
+        self.neutral_out = neutral_out
         self.kwargs = kwargs
 
     @inject_self
@@ -593,6 +595,7 @@ class AddNoiseBase:
             self.fade_limits,
             self.protect_chroma,
             self.luma_scaling,
+            neutral_out=self.neutral_out,
             **self.kwargs | kwargs,
         )
 
