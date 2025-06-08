@@ -860,7 +860,9 @@ class QTempGaussMC(vs_object):
         )
         processed_diff = repair.Mode.MINMAX_SQUARE1(processed_diff, remove_grain.Mode.MINMAX_AROUND2(processed_diff))
 
-        return core.std.SetFieldBased(reweave(fields_src, fields_flt.std.MakeDiff(processed_diff), self.tff), 0)
+        out = reweave(fields_src, fields_flt.std.MakeDiff(processed_diff), self.tff)
+
+        return core.std.SetFieldBased(out, FieldBased.PROGRESSIVE)
 
     def _apply_sharpen(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         assert check_variable(clip, self._apply_sharpen)
