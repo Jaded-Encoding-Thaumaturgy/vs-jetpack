@@ -14,7 +14,7 @@ from vsrgtools import BlurMatrix
 from vstools import (
     ColorRange, ConstantFormatVideoNode, ConvMode, InvalidColorFamilyError, PlanesT, check_variable, core,
     get_lowest_values, get_neutral_values, get_peak_value, get_peak_values, get_u, get_v, mod_x, normalize_param_planes,
-    normalize_seq, to_arr, vs
+    normalize_seq, scale_value, to_arr, vs
 )
 
 from .debanders import placebo_deband
@@ -412,7 +412,7 @@ def _apply_grainer(
     protect_edges = protect_edges if isinstance(protect_edges, tuple) else (protect_edges, protect_edges)
     protect_edges_blend = kwargs.pop("protect_edges_blend", 0.0)
     protect_neutral_chroma_blend = kwargs.pop(
-        "protect_neutral_chroma_blend", 2 / 255 * get_peak_value(clip, range_in=ColorRange.FULL)
+        "protect_neutral_chroma_blend", scale_value(2, 8, 16, ColorRange.FULL, ColorRange.FULL)
     )
     neutral_out = kwargs.pop("neutral_out", False)
 
@@ -425,6 +425,7 @@ def _apply_grainer(
         mod_x(clip.height / scaley, mod),
         length=clip.num_frames + temporal_rad * 2,
         color=get_neutral_values(clip),
+        keep=True,
     )
     # Applying grain
     grained = grainer_function(base_clip, strength, planes, **kwargs)
@@ -466,7 +467,7 @@ def _apply_grainer(
         if clip.format.color_family is vs.RGB:
             raise InvalidColorFamilyError(func, clip.format, vs.YUV)
 
-        grained = _protect_neutral_chroma(grained, clip, base_clip, protect_neutral_chroma_blend)
+        grained = _protect_neutral_chroma(clip, grained, base_clip, protect_neutral_chroma_blend)
 
     if luma_scaling is not None:
         grained = core.std.MaskedMerge(base_clip, grained, adg_mask(clip, luma_scaling), planes)
@@ -496,7 +497,7 @@ def _protect_pixel_range(
 
 
 def _protect_neutral_chroma(
-    grained: vs.VideoNode, clip: vs.VideoNode, base_clip: vs.VideoNode, blend: float = 0.0
+    clip: vs.VideoNode, grained: vs.VideoNode, base_clip: vs.VideoNode, blend: float = 0.0
 ) -> vs.VideoNode:
     if not blend:
         expr = "x neutral = y neutral = and range_max 0 ?"
