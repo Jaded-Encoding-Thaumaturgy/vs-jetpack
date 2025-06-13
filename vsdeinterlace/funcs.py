@@ -22,10 +22,13 @@ __all__ = [
 
 class InterpolateOverlay(CustomIntEnum):
     IVTC_TXT60 = 0
-    """For 60i overlaid on 24t"""
+    """For 60i overlaid ontop 24t"""
 
     DEC_TXT60 = 1
-    """For 60i overlaid on 24d"""
+    """For 60i overlaid ontop 24d"""
+
+    IVTC_TXT30 = 2
+    """For 30p overlaid ontop 24t"""
 
     def __call__(
         self,
@@ -36,6 +39,20 @@ class InterpolateOverlay(CustomIntEnum):
         refine: int = 1,
         thsad_recalc: int | None = None,
     ) -> vs.VideoNode:
+        """
+        Virtually oversamples the video to 120 fps with motion interpolation on credits only, and decimates to 24 fps.
+        Requires manually specifying the 3:2 pulldown pattern (the clip must be split into parts if it changes).
+
+        :param clip:             The clip to process.
+        :param pattern:          First frame of any clean-combed-combed-clean-clean sequence.
+        :param preset:           MVTools preset defining base values for the MVTools object. Default is HQ_COHERENCE.
+        :param blksize:          Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+        :param refine:           Number of times to recalculate motion vectors with halved block size.
+        :param thsad_recalc:     Only bad quality new vectors with a SAD above this will be re-estimated by search.
+                                 thsad value is scaled to 8x8 block size.
+
+        :return:                 Decimated clip with text resampled down to 24p.
+        """
         def select_every(clip: vs.VideoNode, cycle: int, offsets: int | list[int]) -> vs.VideoNode:
             if isinstance(offsets, int):
                 offsets = [offsets]
@@ -82,14 +99,19 @@ class InterpolateOverlay(CustomIntEnum):
 
                 mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
-        comp = mv.flow_interpolate(interleave=False)[0]
-        fixed = core.std.Interleave([clean, comp[::2]])
+        if self == InterpolateOverlay.IVTC_TXT30:
+            pass
+        else:
+            comp = mv.flow_interpolate(interleave=False)[0]
+            fixed = core.std.Interleave([clean, comp[::2]])
 
         match self:
             case InterpolateOverlay.IVTC_TXT60:
                 return fixed[invpos // 2 :]
             case InterpolateOverlay.DEC_TXT60:
                 return fixed[invpos // 3 :]
+            case InterpolateOverlay.IVTC_TXT30:
+                return clip
 
 
 class FixInterlacedFades(CustomEnum):
