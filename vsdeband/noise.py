@@ -13,8 +13,8 @@ from vsmasktools import adg_mask
 from vsrgtools import BlurMatrix
 from vstools import (
     ColorRange, ConstantFormatVideoNode, ConvMode, InvalidColorFamilyError, PlanesT, check_variable, core,
-    get_lowest_values, get_neutral_values, get_peak_value, get_peak_values, get_u, get_v, mod_x, normalize_param_planes,
-    normalize_seq, scale_value, to_arr, vs
+    get_lowest_values, get_neutral_values, get_peak_values, get_u, get_v, mod_x, normalize_param_planes, normalize_seq,
+    scale_value, to_arr, vs
 )
 
 from .debanders import placebo_deband
