@@ -336,6 +336,7 @@ class Grainer(AbstractGrainer, CustomEnum):
                                         Higher values reduce grain in brighter areas; negative values invert behavior.
         :param kwargs:                  Additional arguments to pass to the graining function
                                         or additional advanced options:
+                                        - ``temporal_avg_func``: Temporal average function to use instead of the default standard mean.
                                         - ``protect_edges_blend``: Blend range (float) to soften edge protection thresholds.
                                         - ``protect_neutral_chroma_blend``: Blend range (float) for neutral chroma protection.
                                         - ``neutral_out``: (Boolean) Output the neutral layer instead of the merged clip.
@@ -404,6 +405,7 @@ def _apply_grainer(
     scale = scale if isinstance(scale, tuple) else (scale, scale)
     scaler = Scaler.ensure_obj(scaler, func)
     temporal_avg, temporal_rad = temporal if isinstance(temporal, tuple) else (temporal, 1)
+    temporal_avg_func = kwargs.pop("temporal_avg_func", BlurMatrix.MEAN(temporal_rad, mode=ConvMode.TEMPORAL))
     protect_neutral_chroma = (
         True
         if clip.format.color_family is vs.YUV
@@ -435,9 +437,8 @@ def _apply_grainer(
         grained = scaler.scale(grained, clip.width, clip.height)
 
     # Temporal average if radius > 0
-    # TODO: add a way to customize the average?
     if temporal_rad > 0:
-        average = BlurMatrix.MEAN(taps=temporal_rad, mode=ConvMode.TEMPORAL)(grained, planes)
+        average = temporal_avg_func(grained, planes)
         grained = core.std.Merge(grained, average, normalize_param_planes(grained, temporal_avg, planes, 0))[
             temporal_rad:-temporal_rad
         ]
