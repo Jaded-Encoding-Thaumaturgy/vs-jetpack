@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import json
+import shutil
+import subprocess
+import tempfile
 from fractions import Fraction
-from typing import Callable, Iterator, Literal, NamedTuple
+from typing import Callable, Iterator, Literal, NamedTuple, cast, Any
 
 import vapoursynth as vs
-
-from jetpytools import Coordinate, CustomIntEnum, CustomStrEnum, Position, Sentinel, SentinelT, Size
+from jetpytools import (Coordinate, CustomIntEnum, CustomRuntimeError,
+                        CustomStrEnum, Position, Sentinel, SentinelT, Size,
+                        SPath)
 from typing_extensions import Self
 
 from ..types import ConstantFormatVideoNode, HoldsPropValueT, VideoNodeT
@@ -294,6 +299,9 @@ class SceneChangeMode(CustomIntEnum):
     WWXD_SCXVID_INTERSECTION = 0  # WWXD & SCXVID
     """Only get the scene changes if both wwxd and scxvid mark a frame as being a scene change."""
 
+    AV_SCENECHANGE = 4
+    """Get the scene changes using av-scenechange <https://github.com/rust-av/av-scenechange>."""
+
     @property
     def is_WWXD(self) -> bool:
         """Check whether a mode that uses wwxd is used."""
@@ -311,6 +319,12 @@ class SceneChangeMode(CustomIntEnum):
             SceneChangeMode.SCXVID, SceneChangeMode.WWXD_SCXVID_UNION,
             SceneChangeMode.WWXD_SCXVID_INTERSECTION
         )
+
+    @property
+    def is_AV_SCENECHANGE(self) -> bool:
+        """Check whether a mode that uses av-scenechange is used."""
+
+        return self == SceneChangeMode.AV_SCENECHANGE
 
     def ensure_presence(self, clip: vs.VideoNode, akarin: bool | None = None) -> ConstantFormatVideoNode:
         """Ensures all the frame properties necessary for scene change detection are created."""
@@ -338,6 +352,9 @@ class SceneChangeMode(CustomIntEnum):
                 )
             stats_clip.append(clip.wwxd.WWXD())
 
+        if self.is_AV_SCENECHANGE:
+            stats_clip.append(self._prepare_av_scenechange(clip))
+
         return self._prepare_akarin(clip, stats_clip, akarin)
 
     @property
@@ -347,6 +364,9 @@ class SceneChangeMode(CustomIntEnum):
 
         if self.is_SCXVID:
             yield '_SceneChangePrev'
+
+        if self.is_AV_SCENECHANGE:
+            yield 'AVSceneChange'
 
     def check_cb(self, akarin: bool | None = None) -> Callable[[vs.VideoFrame], bool]:
         if akarin is None:
@@ -421,3 +441,97 @@ class SceneChangeMode(CustomIntEnum):
             return merge_clip_props(clip, *stats_clip)
 
         return stats_clip[0]
+
+    def _render_clip(
+        self, clip: vs.VideoNode, cmd: list[str], func: Callable[..., Any],
+        output_path: SPath | None = None, check_exists: bool = True
+    ) -> tuple[bytes | None, dict[str, Any] | None]:
+        """
+        Render a clip for external scene change detection programs.
+
+        :param clip:            Clip to render
+        :param cmd:             Command to execute
+        :param func:            Function to use in error messages
+        :param output_path:     Path to output file to check
+        :param check_exists:    Whether to check if output file exists
+
+        :return:                A tuple containing the stderr output and the data
+                                from the output file if it exists.
+        """
+
+        with tempfile.NamedTemporaryFile(suffix='.y4m', delete=False) as temp_file:
+            temp_path = SPath(temp_file.name)
+
+        try:
+            from ..functions.render import clip_async_render
+
+            clip_async_render(clip, temp_path, 'Rendering clip for scene detection...', y4m=True)
+
+            process = subprocess.Popen(
+                cmd,
+                stdin=open(temp_path, 'rb'),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+            stdout, stderr = process.communicate()
+
+            if process.returncode != 0:
+                raise CustomRuntimeError(
+                    f'Failed to run {cmd[0]}!\n\tError: {stderr.decode()}',
+                    func
+                )
+
+            if output_path and check_exists:
+                if not output_path.exists():
+                    raise CustomRuntimeError(
+                        f'Could not locate the output file at \"{output_path}\"!',
+                        func
+                    )
+
+                with open(output_path, 'r') as f:
+                    return stderr, json.load(f)
+
+            return stderr, None
+
+        finally:
+            try:
+                temp_path.unlink()
+            except OSError:
+                pass
+
+    def _prepare_av_scenechange(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+        """Prepare a clip for av-scenechange detection by running av-scenechange."""
+
+        if not (av_scenechange_path := shutil.which('av-scenechange')):
+            raise CustomRuntimeError(
+                'av-scenechange not found! Please build it from https://github.com/rust-av/av-scenechange',
+                self._prepare_av_scenechange
+            )
+
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as scene_file:
+            self._av_scenechange_file = scene_path = SPath(scene_file.name)
+
+        _, scene_data = self._render_clip(
+            clip,
+            [av_scenechange_path, '-o', scene_path.to_str(), '-'],
+            self._prepare_av_scenechange,
+            scene_path
+        )
+
+        if scene_data is None:
+            raise CustomRuntimeError(
+                'Failed to get scene data from av-scenechange!',
+                self._prepare_av_scenechange
+            )
+
+        scene_frames = {int(frame) for frame in scene_data}
+
+        def _add_scene_props(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
+            f = f.copy()
+
+            f.props['AVSceneChange'] = int(n in scene_frames)
+
+            return f
+
+        return cast(ConstantFormatVideoNode, clip.std.ModifyFrame(clip, _add_scene_props))
