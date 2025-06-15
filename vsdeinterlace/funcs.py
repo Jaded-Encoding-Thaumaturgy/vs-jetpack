@@ -74,8 +74,8 @@ class InterpolateOverlay(CustomIntEnum):
         def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
             return (x[0] // 2, x[1] // 2)
 
-        assert check_variable(clip, InterpolateOverlay)
-        assert check_variable(bobbed, InterpolateOverlay)
+        assert check_variable(clip, self.__class__)
+        assert check_variable(bobbed, self.__class__)
         assert check_ref_clip(bobbed, clip)
 
         field_ref = pattern * 2 % 5
@@ -94,7 +94,7 @@ class InterpolateOverlay(CustomIntEnum):
                 offsets = list(range(0, 10))
                 offsets.pop(8)
 
-                clean = IVTCycles.cycle_05.decimate(clip, pattern)
+                clean = IVTCycles.cycle_05.decimate(clip, pattern % 5)
                 judder = select_every(bobbed, 1, -1 - invpos).std.SelectEvery(10, offsets)
 
         mv = MVTools(judder, **preset | KwargsT(search_clip=partial(prefilter_to_full_range, slope=1)))
