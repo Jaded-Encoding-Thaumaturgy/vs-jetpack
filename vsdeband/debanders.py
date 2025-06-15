@@ -12,6 +12,13 @@ from vstools import (
     join, normalize_param_planes, normalize_seq, split, vs
 )
 
+__all__ = [
+    "f3k_deband",
+    "placebo_deband",
+    "mdb_bilateral",
+    "pfdeband",
+]
+
 
 class F3KDeband(Generic[P, R]):
     """
