@@ -241,11 +241,11 @@ def based_aa(
 
     aa = antialiaser.antialias(ss, **aa_kwargs)
 
-    aa = downscaler.scale(aa, func.work_clip.width, func.work_clip.height)  # type: ignore
+    aa = downscaler.scale(aa, func.work_clip.width, func.work_clip.height)
 
     if pscale != 1.0 and not isinstance(supersampler, NoScale):
         no_aa = downscaler.scale(ss, func.work_clip.width, func.work_clip.height)
-        aa = norm_expr([func.work_clip, aa, no_aa], 'x z x - {pscale} * + y z - +', pscale=pscale, func=func.func)  # type: ignore
+        aa = norm_expr([func.work_clip, aa, no_aa], 'x z x - {pscale} * + y z - +', pscale=pscale, func=func.func)
 
     if callable(postfilter):
         aa = postfilter(aa)

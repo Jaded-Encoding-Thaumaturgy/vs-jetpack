@@ -702,15 +702,15 @@ class MVTools(vs_object):
             degrain_args.update(thsad=thsad, thsad2=thsad2, limit=limit)
         else:
             thsad, thsadc = normalize_seq(thsad, 2)
-            limit, limitc = normalize_seq(limit, 2)
+            nlimit, nlimitc = normalize_seq(limit, 2)
 
-            if limit is not None:
-                limit = scale_delta(limit, 8, clip)  # type: ignore[assignment]
+            if nlimit is not None:
+                nlimit = scale_delta(nlimit, 8, clip)
 
-            if limitc is not None:
-                limitc = scale_delta(limitc, 8, clip)  # type: ignore[assignment]
+            if nlimitc is not None:
+                nlimitc = scale_delta(nlimitc, 8, clip)
 
-            degrain_args.update(thsad=thsad, thsadc=thsadc, limit=limit, limitc=limitc)
+            degrain_args.update(thsad=thsad, thsadc=thsadc, limit=nlimit, limitc=nlimitc)
 
         degrain_args = self.degrain_args | KwargsNotNone(degrain_args)
 

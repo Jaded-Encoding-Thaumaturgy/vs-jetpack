@@ -596,7 +596,7 @@ class ChromaReconstruct(ABC):
             if out_mode == ReconOutput.i420:
                 targ_sizes = tuple[int, int](targ_size // 2 for targ_size in targ_sizes)  # type: ignore
 
-            shifted_chroma = (self._scaler.scale(p, *targ_sizes) for p in shifted_chroma)  # type: ignore
+            shifted_chroma = (self._scaler.scale(p, *targ_sizes) for p in shifted_chroma)
 
         return depth(join(y_base, *shifted_chroma), clip)
 
