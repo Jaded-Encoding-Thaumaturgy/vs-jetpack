@@ -116,6 +116,9 @@ exclude = ["docs", "scripts", "site", "stubs", "tests"]
 [tool.hatch.version]
 path = "_metadata.py"
 
+[tool.pytest.ini_options]
+pythonpath = "."
+
 [tool.mypy]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
 
