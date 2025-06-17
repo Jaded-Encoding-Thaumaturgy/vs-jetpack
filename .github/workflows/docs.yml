@@ -16,6 +16,14 @@ permissions:
 jobs:
   docs-build:
     runs-on: ubuntu-24.04
+
+    strategy:
+      matrix:
+        vs-versions:
+          - 71
+        python-version:
+          - "3.13"
+
     env:
       PROD: true
     steps:
@@ -30,7 +38,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: ${{ matrix.python-version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
@@ -40,7 +48,7 @@ jobs:
       - name: Set up VapourSynth
         uses: ./.github/actions/setup-vapoursynth
         with:
-          vapoursynth-version: 70
+          vapoursynth-version: ${{ matrix.vs-versions }}
 
       - name: Install dependencies
         run: |
