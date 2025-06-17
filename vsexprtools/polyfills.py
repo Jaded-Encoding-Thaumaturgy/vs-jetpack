@@ -51,8 +51,8 @@ builtin_methods = {
 
 Py_ssize_t = ctypes.c_int64 if ctypes.sizeof(ctypes.c_void_p) == 8 else ctypes.c_int32
 
-tp_as_dict = {}
-tp_func_dict = {}
+tp_as_dict = dict[tuple[Any, Any], Any]()
+tp_func_dict = dict[tuple[Any, Any], Any]()
 
 
 class PyObject(ctypes.Structure):
@@ -301,7 +301,7 @@ def curse(klass: Any, attr: Any, func: Any) -> None:
                 cfunc_t = ftype
 
         if (klass, attr) not in tp_as_dict:
-            tp_as_dict[(klass, attr)] = ctypes.cast(getattr(tyobj, impl_method), cfunc_t)
+            tp_as_dict[(klass, attr)] = ctypes.cast(getattr(tyobj, impl_method), cfunc_t)  # type: ignore[type-var]
 
         cfunc = cfunc_t(wrapper)
         tp_func_dict[(klass, attr)] = cfunc
@@ -322,7 +322,7 @@ def reverse(klass: Any, attr: Any) -> None:
                     cfunc_t = ftype
 
             setattr(tp_as, impl_method,
-                    ctypes.cast(ctypes.c_void_p(None), cfunc_t))
+                    ctypes.cast(ctypes.c_void_p(None), cfunc_t))  # type: ignore[type-var]
         else:
             if (klass, attr) not in tp_as_dict:
                 return

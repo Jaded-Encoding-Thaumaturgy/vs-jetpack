@@ -753,6 +753,8 @@ class Morpho:
         else:
             conv_mode = ConvMode.SQUARE
 
+        Func = GenericVSFunction[ConstantFormatVideoNode]
+
         if not complexpr_available:
             if radius > 1 or conv_mode != ConvMode.SQUARE:
                 raise CustomValueError(
@@ -765,7 +767,7 @@ class Morpho:
                     "If akarin plugin is not available, you can't have custom coordinates", func, coords
                 )
 
-            xxflate_func = core.lazy.std.Inflate if inflate else core.lazy.std.Deflate
+            xxflate_func: Func = core.lazy.std.Inflate if inflate else core.lazy.std.Deflate
             kwargs.update(planes=planes)
 
             if thr is not None:
@@ -792,7 +794,7 @@ class Morpho:
 
             kwargs.update(expr=expr)
 
-            xxflate_func = cast(GenericVSFunction[ConstantFormatVideoNode], norm_expr)
+            xxflate_func = cast(Func, norm_expr)
 
         return iterate(clip, xxflate_func, iterations, **kwargs)
 

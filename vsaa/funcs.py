@@ -247,7 +247,7 @@ def based_aa(
 
     aa = antialiaser.antialias(ss, **aa_kwargs)
 
-    aa = downscaler.scale(aa, func.work_clip.width, func.work_clip.height)  # type: ignore
+    aa = downscaler.scale(aa, func.work_clip.width, func.work_clip.height)
 
     if pscale != 1.0 and not isinstance(supersampler, NoScale):
         no_aa = downscaler.scale(ss, func.work_clip.width, func.work_clip.height)
