@@ -61,7 +61,6 @@ packages=[
     "vsaa",
     "vsscale",
     "vsdenoise",
-    "vsdenoise.mvtools",
     "vsdehalo",
     "vsdeband",
     "vsdeinterlace",
