@@ -53,45 +53,18 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages=[
     "vstools",
-    "vstools.enums",
-    "vstools.exceptions",
-    "vstools.functions",
-    "vstools.types",
-    "vstools.utils",
-
     "vskernels",
-    "vskernels.abstract",
-    "vskernels.kernels",
-    "vskernels.kernels.custom",
-    "vskernels.kernels.zimg",
-
     "vsexprtools",
-
     "vsrgtools",
-    "vsrgtools.aka_expr",
-
     "vsmasktools",
-    "vsmasktools.edge",
-
     "vsaa",
-
     "vsscale",
-
     "vsdenoise",
     "vsdenoise.mvtools",
-
     "vsdehalo",
-
     "vsdeband",
-
     "vsdeinterlace",
-
     "vssource",
-    "vssource.indexers",
-    "vssource.formats",
-    "vssource.formats.bd",
-    "vssource.formats.dvd",
-    "vssource.formats.dvd.parsedvd",
 ]
 include = [
     "vstools/py.typed",
