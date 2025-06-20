@@ -203,7 +203,7 @@ class DPID(BaseGenericScaler):
             ref = self.ref
 
         if (ref.width, ref.height) != (width, height):
-            ref = self._ref_scaler.scale(ref, width, height)  # type: ignore[assignment]
+            ref = self._ref_scaler.scale(ref, width, height)
 
         kwargs = {
             'lambda': self.sigma, 'planes': self.planes,

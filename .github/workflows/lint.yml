@@ -13,14 +13,14 @@ on:
 permissions:
   contents: read
 
+
+env:  
+  VAPOURSYNTH_VERSION: 71  
+  PYTHON_VERSION: "3.13"  
+
 jobs:
   lint:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        vs-versions: [67]
-        python-version: ['3.12']
 
     steps:
       - uses: actions/checkout@v4
@@ -31,25 +31,24 @@ jobs:
         id: branch-names
         run: echo "current_branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
-      - name: Set up VapourSynth ${{ matrix.vs-versions }}
+      - name: Set up VapourSynth ${{ env.VAPOURSYNTH_VERSION }}
         uses: ./.github/actions/setup-vapoursynth
         with:
-          vapoursynth-version: ${{ matrix.vs-versions }}
+          vapoursynth-version: ${{ env.VAPOURSYNTH_VERSION }}
 
       - name: Install dependencies
         run: |
-          uv venv
-          uv pip install -r requirements.txt -r requirements-dev.txt
+          uv sync --locked
 
       - name: Running ruff
         run: uv run ruff check .

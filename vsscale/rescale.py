@@ -452,7 +452,7 @@ class Rescale(RescaleBase):
         clip = clip if clip else self.doubled
 
         line_mask = KirschTCanny.edgemask(clip, **kwargs).std.Maximum().std.Minimum()
-        line_mask = scaler.scale(  # type: ignore[assignment]
+        line_mask = scaler.scale(
             line_mask, self.clipy.width, self.clipy.height, format=self.clipy.format, **scale_kwargs
         )
 

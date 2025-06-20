@@ -25,6 +25,7 @@ jobs:
       matrix:
         vs-versions: [67]
         python-version: ['3.10', '3.13']
+        vszip-version: [7]
 
     steps:
       - uses: actions/checkout@v4
@@ -58,12 +59,11 @@ jobs:
       - name: Set up vszip
         uses: ./.github/actions/setup-vszip
         with:
-          vszip-version: 6
+          vszip-version: ${{ matrix.vszip-version }}
 
       - name: Install dependencies
         run: |
-          uv venv
-          uv pip install -r requirements.txt -r requirements-dev.txt
+          uv sync --locked
 
       - name: Running tests
         run: uv run pytest --cov-report=term-missing:skip-covered --cov=vskernels --cov=vstools tests
