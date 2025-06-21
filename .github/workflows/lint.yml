@@ -54,7 +54,7 @@ jobs:
         run: uv run ruff check .
 
       - name: Running mypy
-        run: uv run mypy vstools vssource vskernels vsexprtools vsrgtools vsmasktools vsscale vsaa vsdenoise
+        run: uv run mypy vstools vssource vskernels vsexprtools vsrgtools vsmasktools vsscale vsaa vsdenoise vsdeband
 
       - name: Post webhook for failure
         if: failure()
