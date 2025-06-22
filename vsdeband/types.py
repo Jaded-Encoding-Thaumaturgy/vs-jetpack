@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from vstools import CustomIntEnum
 
-__all__ = [
-    'GuidedFilterMode'
-]
+__all__ = ["GuidedFilterMode"]
 
 
 class GuidedFilterMode(CustomIntEnum):

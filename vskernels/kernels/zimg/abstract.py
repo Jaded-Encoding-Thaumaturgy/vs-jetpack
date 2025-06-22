@@ -80,9 +80,7 @@ class ZimgBobber(BaseScaler):
         :param kwargs:  Extra parameters to merge.
         :return:        Final dictionary of keyword arguments for the bob function.
         """
-        return dict(
-            filter=self.__class__.__name__.lower(), src_top=shift[0], src_left=shift[1]
-        ) | self.kwargs | kwargs
+        return dict(filter=self.__class__.__name__.lower(), src_top=shift[0], src_left=shift[1]) | self.kwargs | kwargs
 
 
 class ZimgComplexKernel(ComplexKernel, ZimgBobber):
@@ -94,7 +92,13 @@ class ZimgComplexKernel(ComplexKernel, ZimgBobber):
     """
 
     _implemented_funcs: ClassVar[tuple[str, ...]] = (
-        "scale", "descale", "rescale", "resample", "shift", "bob", "deinterlace"
+        "scale",
+        "descale",
+        "rescale",
+        "resample",
+        "shift",
+        "bob",
+        "deinterlace",
     )
 
 

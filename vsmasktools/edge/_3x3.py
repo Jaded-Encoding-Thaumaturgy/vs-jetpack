@@ -14,28 +14,43 @@ from ..types import XxpandMode
 from ._abstract import EdgeDetect, EuclideanDistance, MagnitudeMatrix, MatrixEdgeDetect, Max, RidgeDetect, SingleMatrix
 
 __all__ = [
-    'Matrix3x3',
+    "Matrix3x3",
     # Single matrix
-    'Laplacian1', 'Laplacian2', 'Laplacian3', 'Laplacian4',
-    'Kayyali',
+    "Laplacian1",
+    "Laplacian2",
+    "Laplacian3",
+    "Laplacian4",
+    "Kayyali",
     # Euclidean Distance
-    'Tritical', 'TriticalTCanny',
-    'Cross',
-    'Prewitt', 'PrewittStd', 'PrewittTCanny',
-    'Sobel', 'SobelStd', 'SobelTCanny', 'ASobel',
-    'Scharr', 'RScharr', 'ScharrTCanny',
-    'Kroon', 'KroonTCanny',
-    'FreyChenG41', 'FreyChen',
+    "Tritical",
+    "TriticalTCanny",
+    "Cross",
+    "Prewitt",
+    "PrewittStd",
+    "PrewittTCanny",
+    "Sobel",
+    "SobelStd",
+    "SobelTCanny",
+    "ASobel",
+    "Scharr",
+    "RScharr",
+    "ScharrTCanny",
+    "Kroon",
+    "KroonTCanny",
+    "FreyChenG41",
+    "FreyChen",
     # Max
-    'Robinson3', 'Robinson5', 'TheToof',
-    'Kirsch', 'KirschTCanny',
+    "Robinson3",
+    "Robinson5",
+    "TheToof",
+    "Kirsch",
+    "KirschTCanny",
     # Misc
-    'MinMax'
+    "MinMax",
 ]
 
 
-class Matrix3x3(EdgeDetect, ABC):
-    ...
+class Matrix3x3(EdgeDetect, ABC): ...
 
 
 # Single matrix
@@ -76,10 +91,7 @@ class Tritical(RidgeDetect, EuclideanDistance, Matrix3x3):
     Plain and simple orthogonal first order derivative.
     """
 
-    matrices = [
-        [0, 0, 0, -1, 0, 1, 0, 0, 0],
-        [0, 1, 0, 0, 0, 0, 0, -1, 0]
-    ]
+    matrices = [[0, 0, 0, -1, 0, 1, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, -1, 0]]
 
 
 class TriticalTCanny(Matrix3x3, EdgeDetect):
@@ -100,19 +112,13 @@ class Cross(RidgeDetect, EuclideanDistance, Matrix3x3):
     Plain and simple cross first order derivative.
     """
 
-    matrices = [
-        [1, 0, 0, 0, 0, 0, 0, 0, -1],
-        [0, 0, -1, 0, 0, 0, 1, 0, 0]
-    ]
+    matrices = [[1, 0, 0, 0, 0, 0, 0, 0, -1], [0, 0, -1, 0, 0, 0, 1, 0, 0]]
 
 
 class Prewitt(RidgeDetect, EuclideanDistance, Matrix3x3):
     """Judith M. S. Prewitt operator."""
 
-    matrices = [
-        [1, 0, -1, 1, 0, -1, 1, 0, -1],
-        [1, 1, 1, 0, 0, 0, -1, -1, -1]
-    ]
+    matrices = [[1, 0, -1, 1, 0, -1, 1, 0, -1], [1, 1, 1, 0, 0, 0, -1, -1, -1]]
 
 
 class PrewittStd(Matrix3x3, EdgeDetect):
@@ -134,10 +140,7 @@ class PrewittTCanny(Matrix3x3, EdgeDetect):
 class Sobel(RidgeDetect, EuclideanDistance, Matrix3x3):
     """Sobel–Feldman operator."""
 
-    matrices = [
-        [1, 0, -1, 2, 0, -2, 1, 0, -1],
-        [1, 2, 1, 0, 0, 0, -1, -2, -1]
-    ]
+    matrices = [[1, 0, -1, 2, 0, -2, 1, 0, -1], [1, 2, 1, 0, 0, 0, -1, -2, -1]]
 
 
 class SobelStd(Matrix3x3, EdgeDetect):
@@ -160,9 +163,7 @@ class ASobel(Matrix3x3, EdgeDetect):
     """Modified Sobel–Feldman operator from AWarpSharp."""
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        return (vs.core.warp.ASobel if get_depth(clip) < 32 else vs.core.warpsf.ASobel)(
-            clip, 255, **kwargs
-        )
+        return (vs.core.warp.ASobel if get_depth(clip) < 32 else vs.core.warpsf.ASobel)(clip, 255, **kwargs)
 
 
 class Scharr(RidgeDetect, EuclideanDistance, Matrix3x3):
@@ -171,10 +172,7 @@ class Scharr(RidgeDetect, EuclideanDistance, Matrix3x3):
     to achieve the perfect rotational symmetry with coefficients 3 and 10.
     """
 
-    matrices = [
-        [-3, 0, 3, -10, 0, 10, -3, 0, 3],
-        [-3, -10, -3, 0, 0, 0, 3, 10, 3]
-    ]
+    matrices = [[-3, 0, 3, -10, 0, 10, -3, 0, 3], [-3, -10, -3, 0, 0, 0, 3, 10, 3]]
     divisors = [3, 3]
 
 
@@ -184,10 +182,7 @@ class RScharr(RidgeDetect, EuclideanDistance, Matrix3x3):
     1st derivatives for a 3x3 kernel with coeffs 47 and 162.
     """
 
-    matrices = [
-        [-47, 0, 47, -162, 0, 162, -47, 0, 47],
-        [-47, -162, -47, 0, 0, 0, 47, 162, 47]
-    ]
+    matrices = [[-47, 0, 47, -162, 0, 162, -47, 0, 47], [-47, -162, -47, 0, 0, 0, 47, 162, 47]]
     divisors = [47, 47]
 
 
@@ -203,10 +198,7 @@ class ScharrTCanny(Matrix3x3, EdgeDetect):
 class Kroon(RidgeDetect, EuclideanDistance, Matrix3x3):
     """Dirk-Jan Kroon operator."""
 
-    matrices = [
-        [-17, 0, 17, -61, 0, 61, -17, 0, 17],
-        [-17, -61, -17, 0, 0, 0, 17, 61, 17]
-    ]
+    matrices = [[-17, 0, 17, -61, 0, 61, -17, 0, 17], [-17, -61, -17, 0, 0, 0, 17, 61, 17]]
     divisors = [17, 17]
 
 
@@ -232,19 +224,9 @@ class FreyChen(MatrixEdgeDetect):
         [-1, 0, 1, 0, 0, 0, 1, 0, -1],
         [1, -2, 1, -2, 4, -2, 1, -2, 1],
         [-2, 1, -2, 1, 4, 1, -2, 1, -2],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1]
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
     ]
-    divisors = [
-        2 * sqrt2,
-        2 * sqrt2,
-        2 * sqrt2,
-        2 * sqrt2,
-        2,
-        2,
-        6,
-        6,
-        3
-    ]
+    divisors = [2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2, 2, 6, 6, 3]
 
     def _preprocess(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
         return depth(clip, 32)
@@ -253,21 +235,18 @@ class FreyChen(MatrixEdgeDetect):
         return depth(clip, input_bits, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
 
     def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode:
-        M = 'x dup * y dup * + z dup * + a dup * +'
-        S = f'b dup * c dup * + d dup * + e dup * + f dup * + {M} +'
-        return norm_expr(clips, f'{M} {S} / sqrt', func=self.__class__)
+        M = "x dup * y dup * + z dup * + a dup * +"
+        S = f"b dup * c dup * + d dup * + e dup * + f dup * + {M} +"
+        return norm_expr(clips, f"{M} {S} / sqrt", func=self.__class__)
 
     def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode]) -> NoReturn:
         raise NotImplementedError
 
 
 class FreyChenG41(RidgeDetect, EuclideanDistance, Matrix3x3):
-    """"Chen Frei" operator. 3x3 matrices from G41Fun."""
+    """ "Chen Frei" operator. 3x3 matrices from G41Fun."""
 
-    matrices = [
-        [-7, 0, 7, -10, 0, 10, -7, 0, 7],
-        [-7, -10, -7, 0, 0, 0, 7, 10, 7]
-    ]
+    matrices = [[-7, 0, 7, -10, 0, 10, -7, 0, 7], [-7, -10, -7, 0, 0, 0, 7, 10, 7]]
     divisors = [7, 7]
 
 
@@ -279,7 +258,7 @@ class Robinson3(Max, Matrix3x3):
         [1, 1, 1, 0, 0, 0, -1, -1, -1],
         [1, 1, 0, 1, 0, -1, 0, -1, -1],
         [1, 0, -1, 1, 0, -1, 1, 0, -1],
-        [0, -1, -1, 1, 0, -1, 1, 1, 0]
+        [0, -1, -1, 1, 0, -1, 1, 1, 0],
     ]
 
 
@@ -290,7 +269,7 @@ class Robinson5(Max, Matrix3x3):
         [1, 2, 1, 0, 0, 0, -1, -2, -1],
         [2, 1, 0, 1, 0, -1, 0, -1, -2],
         [1, 0, -1, 2, 0, -2, 1, 0, -1],
-        [0, -1, -2, 1, 0, -1, 2, 1, 0]
+        [0, -1, -2, 1, 0, -1, 2, 1, 0],
     ]
 
 
@@ -301,7 +280,7 @@ class TheToof(Max, Matrix3x3):
         [5, 10, 5, 0, 0, 0, -5, -10, -5],
         [10, 5, 0, 5, 0, -5, 0, -5, -10],
         [5, 0, -5, 10, 0, -10, 5, 0, -5],
-        [0, -5, -10, 5, 0, -5, 10, 5, 0]
+        [0, -5, -10, 5, 0, -5, 10, 5, 0],
     ]
     divisors = [4] * 4
 
@@ -341,12 +320,15 @@ class MinMax(EdgeDetect):
         super().__init__(**kwargs)
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-
-        return join([
-            ExprOp.SUB.combine(
-                Morpho.expand(p, rad, rad, XxpandMode.ELLIPSE, **kwargs),
-                Morpho.inpand(p, rad, rad, XxpandMode.ELLIPSE, **kwargs)
-            ) if rad > 0 else p for p, rad in zip(
-                split(clip), (self.rady, self.radc, self.radc)[:clip.format.num_planes]
-            )
-        ], clip.format.color_family)
+        return join(
+            [
+                ExprOp.SUB.combine(
+                    Morpho.expand(p, rad, rad, XxpandMode.ELLIPSE, **kwargs),
+                    Morpho.inpand(p, rad, rad, XxpandMode.ELLIPSE, **kwargs),
+                )
+                if rad > 0
+                else p
+                for p, rad in zip(split(clip), (self.rady, self.radc, self.radc)[: clip.format.num_planes])
+            ],
+            clip.format.color_family,
+        )

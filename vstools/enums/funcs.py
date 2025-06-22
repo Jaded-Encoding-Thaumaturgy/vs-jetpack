@@ -4,28 +4,22 @@ from typing import Literal, TypeAlias, Union
 
 from jetpytools import CustomIntEnum, CustomStrEnum
 
-__all__ = [
-    'ConvMode',
-
-    'OneDimConvModeT', 'TwoDimConvModeT', 'SpatialConvModeT', 'TempConvModeT',
-
-    'BaseAlign', 'Align'
-]
+__all__ = ["ConvMode", "OneDimConvModeT", "TwoDimConvModeT", "SpatialConvModeT", "TempConvModeT", "BaseAlign", "Align"]
 
 
 class ConvMode(CustomStrEnum):
     """Convolution mode for .std.Convolution or std.AverageFrames"""
 
-    SQUARE = 's'
+    SQUARE = "s"
     """Square horizontal/vertical convolution."""
 
-    VERTICAL = 'v'
+    VERTICAL = "v"
     """Vertical-only convolution."""
 
-    HORIZONTAL = 'h'
+    HORIZONTAL = "h"
     """Horizontal-only convolution."""
 
-    HV = 'hv'
+    HV = "hv"
     """Horizontal and Vertical convolution"""
 
     TEMPORAL = "t"
@@ -67,10 +61,7 @@ TwoDimConvModeT: TypeAlias = Literal[ConvMode.SQUARE]
 """Type alias for two dimensions convolution mode"""
 
 SpatialConvModeT: TypeAlias = Union[
-    Literal[ConvMode.SQUARE],
-    Literal[ConvMode.HORIZONTAL],
-    Literal[ConvMode.VERTICAL],
-    Literal[ConvMode.HV]
+    Literal[ConvMode.SQUARE], Literal[ConvMode.HORIZONTAL], Literal[ConvMode.VERTICAL], Literal[ConvMode.HV]
 ]
 """Type alias for spatial convolution mode only"""
 

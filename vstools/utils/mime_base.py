@@ -4,11 +4,7 @@ from typing import TYPE_CHECKING
 
 from jetpytools import CustomStrEnum
 
-__all__ = [
-    'FileTypeBase',
-    'FileTypeIndex',
-    'FileTypeIndexWithType'
-]
+__all__ = ["FileTypeBase", "FileTypeIndex", "FileTypeIndexWithType"]
 
 if TYPE_CHECKING:
     from .mime import FileType
@@ -26,7 +22,6 @@ if TYPE_CHECKING:
             """Instantiate FileType.INDEX with its own sub-FileType."""
 
     class FileTypeIndexWithType(FileTypeIndex):  # type: ignore
-
         file_type: FileType
         """Sub-FileType that the index file indexes."""
 else:

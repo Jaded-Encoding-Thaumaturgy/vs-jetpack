@@ -3,12 +3,29 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import wraps
 from typing import (
-    TYPE_CHECKING, Any, Callable, Iterable, Iterator, Literal, NoReturn, SupportsIndex, TypeAlias, cast, overload
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    Iterator,
+    Literal,
+    NoReturn,
+    SupportsIndex,
+    TypeAlias,
+    cast,
+    overload,
 )
 
 from vstools import (
-    ByteData, ColorRangeT, get_depth, get_lowest_value, get_neutral_value, get_peak_value,
-    get_plane_sizes, scale_value, vs
+    ByteData,
+    ColorRangeT,
+    get_depth,
+    get_lowest_value,
+    get_neutral_value,
+    get_peak_value,
+    get_plane_sizes,
+    scale_value,
+    vs,
 )
 
 from .operators import BaseOperator, ExprOperators
@@ -19,19 +36,13 @@ else:
     inline_expr: None
 
 
-__all__ = [
-    'ExprVar', 'ClipVar', 'LiteralVar', 'ComputedVar',
-    'ComplexVar', 'ClipPropsVar',
-    'resolverT', 'ExprOtherT'
-]
+__all__ = ["ExprVar", "ClipVar", "LiteralVar", "ComputedVar", "ComplexVar", "ClipPropsVar", "resolverT", "ExprOtherT"]
 
 
 class ExprVar(int):
     parent_expr: inline_expr | None
 
-    def __new__(
-        cls, x: ByteData, __parent_expr: inline_expr | None = None, /, *args: Any, **kwargs: Any
-    ) -> ExprVar:
+    def __new__(cls, x: ByteData, __parent_expr: inline_expr | None = None, /, *args: Any, **kwargs: Any) -> ExprVar:
         return super().__new__(cls, 0)
 
     def __add__(self, other: ExprOtherT) -> ComputedVar:
@@ -177,7 +188,7 @@ class ExprVar(int):
         return iter([self])  # type: ignore
 
     def __getitem__(self, item: Any) -> NoReturn:
-        raise RuntimeError('You can only access offsetted pixels on constant clips variables')
+        raise RuntimeError("You can only access offsetted pixels on constant clips variables")
 
     def to_str(self, **kwargs: Any) -> str:
         return str(self)
@@ -187,7 +198,7 @@ class ExprVar(int):
             return True
 
         if not self.parent_expr._in_context:
-            raise ValueError('You can only access this variable in context!')
+            raise ValueError("You can only access this variable in context!")
 
         return True
 
@@ -218,10 +229,10 @@ class ComputedVar(ExprVar):
         )
 
     def to_str(self, **kwargs: Any) -> str:
-        return ' '.join([x.to_str(**kwargs) for x in self.operations])
+        return " ".join([x.to_str(**kwargs) for x in self.operations])
 
     def __str__(self) -> str:
-        return ' '.join([str(x) for x in self.operations])
+        return " ".join([str(x) for x in self.operations])
 
 
 resolverT: TypeAlias = Callable[..., LiteralVar]
@@ -237,13 +248,11 @@ class ComplexVar(LiteralVar):
 
     @overload
     @staticmethod
-    def resolver() -> Callable[[Callable[..., Any]], resolverT]:
-        ...
+    def resolver() -> Callable[[Callable[..., Any]], resolverT]: ...
 
     @overload
     @staticmethod
-    def resolver(function: Callable[..., Any] | None = None) -> resolverT:
-        ...
+    def resolver(function: Callable[..., Any] | None = None) -> resolverT: ...
 
     @staticmethod
     def resolver(function: Callable[..., Any] | None = None) -> Callable[[Callable[..., Any]], resolverT] | resolverT:
@@ -267,8 +276,8 @@ class ClipPropsVar:
         self.clip_var = clip_var
 
     def __getattribute__(self, name: str) -> ComputedVar:
-        clip_var: ClipVar = object.__getattribute__(self, 'clip_var')
-        return ComputedVar([LiteralVar(f'{clip_var.char}.{name}')])
+        clip_var: ClipVar = object.__getattribute__(self, "clip_var")
+        return ComputedVar([LiteralVar(f"{clip_var.char}.{name}")])
 
 
 class ClipVar(ExprVar):
@@ -327,7 +336,7 @@ class ClipVar(ExprVar):
 
     @property
     def width(self) -> LiteralVar:
-        return LiteralVar('width')
+        return LiteralVar("width")
 
     @property
     def width_luma(self) -> LiteralVar:
@@ -339,7 +348,7 @@ class ClipVar(ExprVar):
 
     @property
     def height(self) -> LiteralVar:
-        return LiteralVar('height')
+        return LiteralVar("height")
 
     @property
     def height_luma(self) -> LiteralVar:
@@ -355,14 +364,18 @@ class ClipVar(ExprVar):
 
     # Helper functions
     def scale(
-        self, value: float, input_depth: int = 8, range_in: ColorRangeT | None = None,
-        range_out: ColorRangeT | None = None, scale_offsets: bool = True, family: vs.ColorFamily | None = None,
+        self,
+        value: float,
+        input_depth: int = 8,
+        range_in: ColorRangeT | None = None,
+        range_out: ColorRangeT | None = None,
+        scale_offsets: bool = True,
+        family: vs.ColorFamily | None = None,
     ) -> ComplexVar:
         @ComplexVar.resolver
         def _resolve(plane: int = 0, **kwargs: Any) -> Any:
             return scale_value(
-                value, input_depth, get_depth(self.clip),
-                range_in, range_out, scale_offsets, plane in {1, 2}, family
+                value, input_depth, get_depth(self.clip), range_in, range_out, scale_offsets, plane in {1, 2}, family
             )
 
-        return ComplexVar(f'{self.char}.scale({value})', _resolve)
+        return ComplexVar(f"{self.char}.scale({value})", _resolve)

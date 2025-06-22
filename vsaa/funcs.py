@@ -9,17 +9,25 @@ from vsmasktools import EdgeDetect, EdgeDetectT, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
 from vsscale import ArtCNN
 from vstools import (
-    ConstantFormatVideoNode, CustomValueError, FormatsMismatchError, FunctionUtil, PlanesT, VSFunctionNoArgs,
-    check_variable_format, fallback, get_peak_value, get_y, limiter, scale_mask, vs, ConvMode
+    ConstantFormatVideoNode,
+    CustomValueError,
+    FormatsMismatchError,
+    FunctionUtil,
+    PlanesT,
+    VSFunctionNoArgs,
+    check_variable_format,
+    fallback,
+    get_peak_value,
+    get_y,
+    limiter,
+    scale_mask,
+    vs,
+    ConvMode,
 )
 
 from .deinterlacers import AntiAliaser, NNEDI3, EEDI3
 
-__all__ = [
-    'pre_aa',
-    'clamp_aa',
-    'based_aa'
-]
+__all__ = ["pre_aa", "clamp_aa", "based_aa"]
 
 
 def pre_aa(
@@ -59,7 +67,7 @@ def clamp_aa(
     weak_aa: vs.VideoNode | AntiAliaser | None = None,
     strong_aa: vs.VideoNode | AntiAliaser | None = None,
     ref: vs.VideoNode | None = None,
-    planes: PlanesT = 0
+    planes: PlanesT = 0,
 ) -> ConstantFormatVideoNode:
     """
     Clamp a strong aa to a weaker one for the purpose of reducing the stronger's artifacts.
@@ -109,8 +117,10 @@ def clamp_aa(
 
     clamped = norm_expr(
         [func.work_clip, ref, weak_aa, strong_aa],
-        'y z - D1! y a - D2! D1@ D2@ xor x D1@ abs D2@ abs < a z {thr} - z {thr} + clip a ? ?',
-        thr=thr, planes=func.norm_planes, func=func.func
+        "y z - D1! y a - D2! D1@ D2@ xor x D1@ abs D2@ abs < a z {thr} - z {thr} + clip a ? ?",
+        thr=thr,
+        planes=func.norm_planes,
+        func=func.func,
     )
 
     if mask is not False:
@@ -137,7 +147,8 @@ def based_aa(
     antialiaser: AntiAliaser | None = None,
     prefilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] = False,
     postfilter: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] | None = None,
-    show_mask: bool = False, **aa_kwargs: Any
+    show_mask: bool = False,
+    **aa_kwargs: Any,
 ) -> vs.VideoNode:
     """
     Perform based anti-aliasing on a video clip.
@@ -195,7 +206,7 @@ def based_aa(
     func = FunctionUtil(clip, based_aa, 0, (vs.YUV, vs.GRAY))
 
     if rfactor <= 0.0:
-        raise CustomValueError('rfactor must be greater than 0!', based_aa, rfactor)
+        raise CustomValueError("rfactor must be greater than 0!", based_aa, rfactor)
 
     if mask is not False and not isinstance(mask, vs.VideoNode):
         mask = EdgeDetect.ensure_obj(mask, based_aa).edgemask(func.work_clip, 0)
@@ -214,10 +225,14 @@ def based_aa(
     aaw, aah = [round(dimension * rfactor) for dimension in (func.work_clip.width, func.work_clip.height)]
 
     if downscaler is None:
-        downscaler = Box if (
-            max(aaw, func.work_clip.width) % min(aaw, func.work_clip.width) == 0
-            and max(aah, func.work_clip.height) % min(aah, func.work_clip.height) == 0
-        ) else Catrom
+        downscaler = (
+            Box
+            if (
+                max(aaw, func.work_clip.width) % min(aaw, func.work_clip.width) == 0
+                and max(aah, func.work_clip.height) % min(aah, func.work_clip.height) == 0
+            )
+            else Catrom
+        )
 
     supersampler = Scaler.ensure_obj(supersampler, based_aa)
     downscaler = Scaler.ensure_obj(downscaler, based_aa)
@@ -241,8 +256,12 @@ def based_aa(
 
     if not antialiaser:
         antialiaser = EEDI3(
-            alpha=0.125, beta=0.25, gamma=40, vthresh=(12, 24, 4), sclip=ss,
-            mclip=Bilinear().scale(mask, ss.width, ss.height) if mask else None
+            alpha=0.125,
+            beta=0.25,
+            gamma=40,
+            vthresh=(12, 24, 4),
+            sclip=ss,
+            mclip=Bilinear().scale(mask, ss.width, ss.height) if mask else None,
         )
 
     aa = antialiaser.antialias(ss, **aa_kwargs)
@@ -251,7 +270,7 @@ def based_aa(
 
     if pscale != 1.0 and not isinstance(supersampler, NoScale):
         no_aa = downscaler.scale(ss, func.work_clip.width, func.work_clip.height)
-        aa = norm_expr([ss_clip, aa, no_aa], 'x z x - {pscale} * + y z - +', pscale=pscale, func=func.func)
+        aa = norm_expr([ss_clip, aa, no_aa], "x z x - {pscale} * + y z - +", pscale=pscale, func=func.func)
 
     if callable(postfilter):
         aa = postfilter(aa)

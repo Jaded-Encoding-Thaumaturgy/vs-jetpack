@@ -49,11 +49,11 @@ from ._rp import (
 
 
 def _noop_expr() -> str:
-    return ''
+    return ""
 
 
 def _unimpl_expr() -> str:
-    raise NotImplementedError('Unimplemented RGTools expr mode!', _unimpl_expr)
+    raise NotImplementedError("Unimplemented RGTools expr mode!", _unimpl_expr)
 
 
 removegrain_aka_exprs = list[Callable[[], str]](

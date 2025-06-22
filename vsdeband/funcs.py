@@ -8,8 +8,20 @@ from vsexprtools import ExprOp, norm_expr
 from vsmasktools import FDoG, Morpho, flat_mask, texture_mask
 from vsrgtools import BlurMatrix, MeanMode, box_blur, gauss_blur, limit_filter, remove_grain
 from vstools import (
-    ColorRange, FunctionUtil, PlanesT, VSFunctionKwArgs, check_ref_clip, check_variable, depth, expect_bits, fallback,
-    normalize_planes, normalize_seq, scale_value, to_arr, vs
+    ColorRange,
+    FunctionUtil,
+    PlanesT,
+    VSFunctionKwArgs,
+    check_ref_clip,
+    check_variable,
+    depth,
+    expect_bits,
+    fallback,
+    normalize_planes,
+    normalize_seq,
+    scale_value,
+    to_arr,
+    vs,
 )
 
 from .abstract import Debander
@@ -19,25 +31,17 @@ from .mask import deband_detail_mask
 from .placebo import Placebo
 from .types import GuidedFilterMode
 
-__all__ = [
-    'mdb_bilateral',
-
-    'masked_deband',
-
-    'pfdeband',
-
-    'guided_deband',
-
-    'DebandPassPresets', 'multi_deband'
-]
+__all__ = ["mdb_bilateral", "masked_deband", "pfdeband", "guided_deband", "DebandPassPresets", "multi_deband"]
 
 
 def mdb_bilateral(
-    clip: vs.VideoNode, radius: int = 16,
+    clip: vs.VideoNode,
+    radius: int = 16,
     thr: int | list[int] = 260,
-    lthr: int | tuple[int, int] = (153, 0), elast: float = 3.0,
+    lthr: int | tuple[int, int] = (153, 0),
+    elast: float = 3.0,
     bright_thr: int | None = None,
-    debander: type[Debander] | Debander = F3kdb
+    debander: type[Debander] | Debander = F3kdb,
 ) -> vs.VideoNode:
     """
     Multi stage debanding, bilateral-esque filter.
@@ -75,12 +79,17 @@ def mdb_bilateral(
 
 
 def masked_deband(
-    clip: vs.VideoNode, radius: int = 16,
-    thr: float | list[float] = 96, grain: float | list[float] = [0.23, 0],
-    sigma: float = 1.25, rxsigma: list[int] = [50, 220, 300],
-    pf_sigma: float | None = 1.25, brz: tuple[float, float] = (0.038, 0.068),
+    clip: vs.VideoNode,
+    radius: int = 16,
+    thr: float | list[float] = 96,
+    grain: float | list[float] = [0.23, 0],
+    sigma: float = 1.25,
+    rxsigma: list[int] = [50, 220, 300],
+    pf_sigma: float | None = 1.25,
+    brz: tuple[float, float] = (0.038, 0.068),
     rg_mode: int | Sequence[int] = remove_grain.Mode.MINMAX_MEDIAN_OPP,
-    debander: type[Debander] | Debander = F3kdb, **kwargs: Any
+    debander: type[Debander] | Debander = F3kdb,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     clip, bits = expect_bits(clip, 16)
 
@@ -97,11 +106,16 @@ def masked_deband(
 
 
 def pfdeband(
-    clip: vs.VideoNode, radius: int = 16, thr: float | list[float] = 96,
-    lthr: float | tuple[float, float] = 0.5, elast: float = 1.5,
-    bright_thr: int | None = None, prefilter: PrefilterT | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = gauss_blur,
-    debander: type[Debander] | Debander = F3kdb, planes: PlanesT = None,
-    **kwargs: Any
+    clip: vs.VideoNode,
+    radius: int = 16,
+    thr: float | list[float] = 96,
+    lthr: float | tuple[float, float] = 0.5,
+    elast: float = 1.5,
+    bright_thr: int | None = None,
+    prefilter: PrefilterT | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = gauss_blur,
+    debander: type[Debander] | Debander = F3kdb,
+    planes: PlanesT = None,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Prefilter and deband a clip.
@@ -135,10 +149,16 @@ def pfdeband(
 
 
 def guided_deband(
-    clip: vs.VideoNode, radius: int | list[int] | None = None, strength: float = 0.3,
-    thr: int | tuple[int, int] | None = None, mode: GuidedFilterMode = GuidedFilterMode.GRADIENT,
-    rad: int = 0, bin_thr: float | list[float] | None = 0, planes: PlanesT = None,
-    range_in: ColorRange | None = None, **kwargs: Any
+    clip: vs.VideoNode,
+    radius: int | list[int] | None = None,
+    strength: float = 0.3,
+    thr: int | tuple[int, int] | None = None,
+    mode: GuidedFilterMode = GuidedFilterMode.GRADIENT,
+    rad: int = 0,
+    bin_thr: float | list[float] | None = 0,
+    planes: PlanesT = None,
+    range_in: ColorRange | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     assert check_variable(clip, guided_deband)
 
@@ -202,9 +222,14 @@ class DebandPassPresets:
 
 
 def multi_deband(
-    clip: vs.VideoNode, *passes: Debander | tuple[Debander, bool] | tuple[Debander, bool, bool],
-    ref: vs.VideoNode | None = None, base_db: Debander = F3kdb(8, 100), lowpass_db: Debander = Placebo(24, 6.0),
-    edgemask: vs.VideoNode | None = None, textures: vs.VideoNode | None = None, **freq_merge_kwargs: Any
+    clip: vs.VideoNode,
+    *passes: Debander | tuple[Debander, bool] | tuple[Debander, bool, bool],
+    ref: vs.VideoNode | None = None,
+    base_db: Debander = F3kdb(8, 100),
+    lowpass_db: Debander = Placebo(24, 6.0),
+    edgemask: vs.VideoNode | None = None,
+    textures: vs.VideoNode | None = None,
+    **freq_merge_kwargs: Any,
 ) -> vs.VideoNode:
     ref = check_ref_clip(clip, ref, multi_deband)
 
@@ -215,17 +240,18 @@ def multi_deband(
         edges = flat_mask(ref, 6, 0.025, False)
 
         textures = ExprOp.MAX(
-            texture_mask(ref, thr=0.001, blur=3, points=[
-                (False, 1.15), (True, 1.75), (False, 2.5),
-                (True, 5.0), (False, 7.5), (False, 10.0)
-            ]).resize.Bicubic(format=vs.YUV444P16), split_planes=True
+            texture_mask(
+                ref,
+                thr=0.001,
+                blur=3,
+                points=[(False, 1.15), (True, 1.75), (False, 2.5), (True, 5.0), (False, 7.5), (False, 10.0)],
+            ).resize.Bicubic(format=vs.YUV444P16),
+            split_planes=True,
         )
         textures = box_blur(ExprOp.SUB(textures, edges), 2)
-        textures = norm_expr(textures, 'x 2 *', func=guided_filter)
+        textures = norm_expr(textures, "x 2 *", func=guided_filter)
 
-    line_big = ExprOp.ADD(
-        edgemask, gauss_blur(edgemask.std.Maximum(), 0.75), expr_suffix='4 *'
-    ).std.Maximum()
+    line_big = ExprOp.ADD(edgemask, gauss_blur(edgemask.std.Maximum(), 0.75), expr_suffix="4 *").std.Maximum()
 
     linemask_deband = gauss_blur(line_big.std.BinarizeMask(20 << 10), 0.45)
 
@@ -235,7 +261,7 @@ def multi_deband(
     freq_merge_kwargs = dict(mode_high=MeanMode.HARMONIC) | freq_merge_kwargs
 
     def _norm_pass(
-        dbpass: Debander | tuple[Debander, bool] | tuple[Debander, bool, bool]
+        dbpass: Debander | tuple[Debander, bool] | tuple[Debander, bool, bool],
     ) -> tuple[Debander, bool, bool]:
         mask, base_db = False, True
 
@@ -253,11 +279,12 @@ def multi_deband(
         base_deband,
         *(
             debanded
-            if (debanded := debander.deband(clip if base_db else base_deband))
-            and not mask else debanded.std.MaskedMerge(base_deband, textures)
+            if (debanded := debander.deband(clip if base_db else base_deband)) and not mask
+            else debanded.std.MaskedMerge(base_deband, textures)
             for debander, mask, base_db in map(_norm_pass, passes)
         ),
-        lowpass=lambda *args, **kwargs: lowpass_deband, **freq_merge_kwargs
+        lowpass=lambda *args, **kwargs: lowpass_deband,
+        **freq_merge_kwargs,
     )
 
     return deband.std.MaskedMerge(clip.std.Merge(base_deband, 0.5), textures)

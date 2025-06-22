@@ -18,19 +18,7 @@ from ..types import ConstantFormatVideoNode, VideoNodeT
 from ..utils.cache import SceneBasedDynamicCache
 from .info import get_video_format
 
-__all__ = [
-    'change_fps',
-
-    'match_clip',
-
-    'padder_ctx', 'padder',
-
-    'pick_func_stype',
-
-    'set_output',
-
-    'SceneAverageStats'
-]
+__all__ = ["change_fps", "match_clip", "padder_ctx", "padder", "pick_func_stype", "set_output", "SceneAverageStats"]
 
 
 def change_fps(clip: vs.VideoNode, fps: Fraction) -> vs.VideoNode:
@@ -55,16 +43,18 @@ def change_fps(clip: vs.VideoNode, fps: Fraction) -> vs.VideoNode:
 
     factor = (dest_num / dest_den) * (src_den / src_num)
 
-    new_fps_clip = clip.std.BlankClip(
-        length=floor(clip.num_frames * factor), fpsnum=dest_num, fpsden=dest_den
-    )
+    new_fps_clip = clip.std.BlankClip(length=floor(clip.num_frames * factor), fpsnum=dest_num, fpsden=dest_den)
 
     return new_fps_clip.std.FrameEval(lambda n: clip[round(n / factor)])
 
 
 def match_clip(
-    clip: vs.VideoNode, ref: vs.VideoNode, dimensions: bool = True,
-    vformat: bool = True, matrices: bool = True, length: bool = False
+    clip: vs.VideoNode,
+    ref: vs.VideoNode,
+    dimensions: bool = True,
+    vformat: bool = True,
+    matrices: bool = True,
+    length: bool = False,
 ) -> vs.VideoNode:
     """
     Try to match the formats, dimensions, etc. of a reference clip to match the original clip.
@@ -114,7 +104,9 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):
         self.align = align
         self.pad_ops = list[tuple[tuple[int, int, int, int], tuple[int, int]]]()
 
-    def CROP(self, clip: vs.VideoNode, crop_scale: float | tuple[float, float] | None = None) -> ConstantFormatVideoNode:
+    def CROP(
+        self, clip: vs.VideoNode, crop_scale: float | tuple[float, float] | None = None
+    ) -> ConstantFormatVideoNode:
         """
         Crop a clip with the padding values.
 
@@ -156,8 +148,7 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):
         return out
 
     def COLOR(
-        self, clip: vs.VideoNode,
-        color: int | float | bool | None | Sequence[int | float | bool | None] = (False, None)
+        self, clip: vs.VideoNode, color: int | float | bool | None | Sequence[int | float | bool | None] = (False, None)
     ) -> ConstantFormatVideoNode:
         """
         Pad a clip with a constant color.
@@ -192,12 +183,12 @@ class padder:
     ctx = padder_ctx
 
     @staticmethod
-    def _base(clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> tuple[
-        int, int, vs.VideoFormat, int, int
-    ]:
+    def _base(
+        clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0
+    ) -> tuple[int, int, vs.VideoFormat, int, int]:
         from ..functions import check_variable
 
-        assert check_variable(clip, 'padder')
+        assert check_variable(clip, "padder")
 
         width = clip.width + left + right
         height = clip.height + top + bottom
@@ -208,7 +199,7 @@ class padder:
 
         if width % w_sub and height % h_sub:
             raise InvalidSubsamplingError(
-                'padder', fmt, 'Values must result in a mod congruent to the clip\'s subsampling ({subsampling})!'
+                "padder", fmt, "Values must result in a mod congruent to the clip's subsampling ({subsampling})!"
             )
 
         return width, height, fmt, w_sub, h_sub
@@ -241,14 +232,19 @@ class padder:
 
         padded = core.resize.Point(
             core.std.CopyFrameProps(clip, clip.std.BlankClip()),
-            width, height,
-            src_top=-top, src_left=-left,
-            src_width=width, src_height=height
+            width,
+            height,
+            src_top=-top,
+            src_left=-left,
+            src_width=width,
+            src_height=height,
         )
         return core.std.CopyFrameProps(padded, clip)
 
     @classmethod
-    def REPEAT(cls, clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> ConstantFormatVideoNode:
+    def REPEAT(
+        cls, clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0
+    ) -> ConstantFormatVideoNode:
         """
         Pad a clip with repeat mode. This will simply repeat the last row/column till the end.
 
@@ -278,10 +274,11 @@ class padder:
         pads = [
             (left, right, top, bottom),
             (left // w_sub, right // w_sub, top // h_sub, bottom // h_sub),
-        ][:fmt.num_planes]
+        ][: fmt.num_planes]
 
-        return padded.akarin.Expr([
-            """
+        return padded.akarin.Expr(
+            [
+                """
                 X {left} < L! Y {top} < T! X {right} > R! Y {bottom} > B!
 
                 T@ B@ or L@ R@ or and
@@ -303,16 +300,20 @@ class padder:
                         ?
                     ?
                 ?
-            """.format(
-                left=l_, right=r_ - 1, top=t_, bottom=b_ - 1
-            )
-            for l_, r_, t_, b_ in pads
-        ])
+            """.format(left=l_, right=r_ - 1, top=t_, bottom=b_ - 1)
+                for l_, r_, t_, b_ in pads
+            ]
+        )
 
     @classmethod
     def COLOR(
-        cls, clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0,
-        color: int | float | bool | None | MissingT | Sequence[int | float | bool | None | MissingT] = (False, MISSING)
+        cls,
+        clip: vs.VideoNode,
+        left: int = 0,
+        right: int = 0,
+        top: int = 0,
+        bottom: int = 0,
+        color: int | float | bool | None | MissingT | Sequence[int | float | bool | None | MissingT] = (False, MISSING),
     ) -> ConstantFormatVideoNode:
         """
         Pad a clip with a constant color.
@@ -412,8 +413,12 @@ class padder:
 
     @classmethod
     def mod_padding_crop(
-        cls, sizes: tuple[int, int] | vs.VideoNode, mod: int = 16, min: int = 4,
-        crop_scale: float | tuple[float, float] = 2, align: Align = Align.MIDDLE_CENTER
+        cls,
+        sizes: tuple[int, int] | vs.VideoNode,
+        mod: int = 16,
+        min: int = 4,
+        crop_scale: float | tuple[float, float] = 2,
+        align: Align = Align.MIDDLE_CENTER,
     ) -> tuple[tuple[int, int, int, int], tuple[int, int, int, int]]:
         sizes, crop_scale = cls._get_sizes_crop_scale(sizes, crop_scale)
         padding = cls.mod_padding(sizes, mod, min, align)
@@ -439,14 +444,7 @@ def pick_func_stype(
 
 
 @overload
-def set_output(
-    node: vs.VideoNode,
-    index: int = ...,
-    /,
-    *,
-    alpha: vs.VideoNode | None = ...,
-    **kwargs: Any
-) -> None:
+def set_output(node: vs.VideoNode, index: int = ..., /, *, alpha: vs.VideoNode | None = ..., **kwargs: Any) -> None:
     """
     Set output node with optional index, and if available, use vspreview set_output.
 
@@ -459,12 +457,7 @@ def set_output(
 
 @overload
 def set_output(
-    node: vs.VideoNode,
-    name: str | bool | None = ...,
-    /,
-    *,
-    alpha: vs.VideoNode | None = ...,
-    **kwargs: Any
+    node: vs.VideoNode, name: str | bool | None = ..., /, *, alpha: vs.VideoNode | None = ..., **kwargs: Any
 ) -> None:
     """
     Set output node with optional name, and if available, use vspreview set_output.
@@ -479,10 +472,11 @@ def set_output(
 @overload
 def set_output(
     node: vs.VideoNode,
-    index: int = ..., name: str | bool | None = ...,
+    index: int = ...,
+    name: str | bool | None = ...,
     /,
     alpha: vs.VideoNode | None = ...,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> None:
     """
     Set output node with optional index and name, and if available, use vspreview set_output.
@@ -496,12 +490,7 @@ def set_output(
 
 
 @overload
-def set_output(
-    node: vs.AudioNode,
-    index: int = ...,
-    /,
-    **kwargs: Any
-) -> None:
+def set_output(node: vs.AudioNode, index: int = ..., /, **kwargs: Any) -> None:
     """
     Set output node with optional index, and if available, use vspreview set_output.
 
@@ -512,12 +501,7 @@ def set_output(
 
 
 @overload
-def set_output(
-    node: vs.AudioNode,
-    name: str | bool | None = ...,
-    /,
-    **kwargs: Any
-) -> None:
+def set_output(node: vs.AudioNode, name: str | bool | None = ..., /, **kwargs: Any) -> None:
     """
     Set output node with optional name, and if available, use vspreview set_output.
 
@@ -528,12 +512,7 @@ def set_output(
 
 
 @overload
-def set_output(
-    node: vs.AudioNode,
-    index: int = ..., name: str | bool | None = ...,
-    /,
-    **kwargs: Any
-) -> None:
+def set_output(node: vs.AudioNode, index: int = ..., name: str | bool | None = ..., /, **kwargs: Any) -> None:
     """
     Set output node with optional index and name, and if available, use vspreview set_output.
 
@@ -549,7 +528,7 @@ def set_output(
     node: Iterable[vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode]]],
     index: int | Sequence[int] = ...,
     /,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> None:
     """
     Set output node with optional index, and if available, use vspreview set_output.
@@ -565,7 +544,7 @@ def set_output(
     node: Iterable[vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode]]],
     name: str | bool | None = ...,
     /,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> None:
     """
     Set output node with optional name, and if available, use vspreview set_output.
@@ -579,9 +558,10 @@ def set_output(
 @overload
 def set_output(
     node: Iterable[vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode]]],
-    index: int | Sequence[int] = ..., name: str | bool | None = ...,
+    index: int | Sequence[int] = ...,
+    name: str | bool | None = ...,
     /,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> None:
     """
     Set output node with optional index and name, and if available, use vspreview set_output.
@@ -595,10 +575,11 @@ def set_output(
 
 def set_output(
     node: vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode]]],
-    index_or_name: int | Sequence[int] | str | bool | None = None, name: str | bool | None = None,
+    index_or_name: int | Sequence[int] | str | bool | None = None,
+    name: str | bool | None = None,
     /,
     alpha: vs.VideoNode | None = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> None:
     from ..functions import flatten, to_arr
 
@@ -622,6 +603,7 @@ def set_output(
 
     try:
         from vspreview import set_output as vsp_set_output
+
         vsp_set_output(nodes, index, name, alpha=alpha, f_back=2, force_preview=True, **kwargs)
     except ModuleNotFoundError:
         for idx, n in zip(index, nodes):
@@ -629,7 +611,7 @@ def set_output(
 
 
 class SceneAverageStats(SceneBasedDynamicCache):
-    _props_keys = ('Min', 'Max', 'Average')
+    _props_keys = ("Min", "Max", "Average")
 
     class cache(dict[int, tuple[float, float, float]]):
         def __init__(self, clip: vs.VideoNode, keyframes: Keyframes, plane: int) -> None:
@@ -639,37 +621,32 @@ class SceneAverageStats(SceneBasedDynamicCache):
         def __getitem__(self, idx: int) -> tuple[float, float, float]:
             if idx not in self:
                 frame_range = self.keyframes.scenes[idx]
-                cut_clip = self.props[frame_range.start:frame_range.stop]
+                cut_clip = self.props[frame_range.start : frame_range.stop]
 
                 frames_min_max_avg = clip_data_gather(
-                    cut_clip, None, lambda n, f: tuple(
-                        cast(float, f.props[f'PlaneStats{p}'])
-                        for p in SceneAverageStats._props_keys
-                    )
+                    cut_clip,
+                    None,
+                    lambda n, f: tuple(cast(float, f.props[f"PlaneStats{p}"]) for p in SceneAverageStats._props_keys),
                 )
 
-                frames_min, frames_max, frames_avgs = [
-                    [x[i] for x in frames_min_max_avg]
-                    for i in (0, 1, 2)
-                ]
+                frames_min, frames_max, frames_avgs = [[x[i] for x in frames_min_max_avg] for i in (0, 1, 2)]
 
-                self[idx] = (
-                    min(frames_min),
-                    max(frames_max),
-                    sum(frames_avgs) / len(frames_avgs)
-                )
+                self[idx] = (min(frames_min), max(frames_max), sum(frames_avgs) / len(frames_avgs))
 
             return super().__getitem__(idx)
 
     def __init__(
-        self, clip: vs.VideoNode, keyframes: Keyframes | str,
-        prop: str = 'SceneStats', plane: int = 0, cache_size: int = 5
+        self,
+        clip: vs.VideoNode,
+        keyframes: Keyframes | str,
+        prop: str = "SceneStats",
+        plane: int = 0,
+        cache_size: int = 5,
     ) -> None:
         super().__init__(clip, keyframes, cache_size)
 
-        self.prop_keys = tuple(f'{prop}{x}' for x in self._props_keys)
+        self.prop_keys = tuple(f"{prop}{x}" for x in self._props_keys)
         self.scene_avgs = self.__class__.cache(self.clip, self.keyframes, plane)
 
     def get_clip(self, key: int) -> vs.VideoNode:
         return self.clip.std.SetFrameProps(**dict(zip(self.prop_keys, self.scene_avgs[key])))
-

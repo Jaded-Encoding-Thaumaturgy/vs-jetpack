@@ -9,33 +9,34 @@ from jetpytools import (
     invert_ranges as jetp_invert_ranges,
     normalize_range as normalize_franges,
     normalize_ranges as jetp_normalize_ranges,
-    normalize_seq as jetp_normalize_seq
+    normalize_seq as jetp_normalize_seq,
 )
 
 from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, PlanesT, VideoNodeIterableT, VideoNodeT
 
 __all__ = [
-    'normalize_seq',
-    'normalize_planes', 'invert_planes',
-    'to_arr',
-    'flatten', 'flatten_vnodes',
-    'normalize_list_to_ranges',
-    'normalize_franges',
-    'normalize_ranges',
-    'invert_ranges',
-    'normalize_param_planes',
-    'norm_func_name', 'norm_display_name'
+    "normalize_seq",
+    "normalize_planes",
+    "invert_planes",
+    "to_arr",
+    "flatten",
+    "flatten_vnodes",
+    "normalize_list_to_ranges",
+    "normalize_franges",
+    "normalize_ranges",
+    "invert_ranges",
+    "normalize_param_planes",
+    "norm_func_name",
+    "norm_display_name",
 ]
 
 
 @overload
-def normalize_seq(val: T | Sequence[T], length: int = 3) -> list[T]:
-    ...
+def normalize_seq(val: T | Sequence[T], length: int = 3) -> list[T]: ...
 
 
 @overload
-def normalize_seq(val: Any, length: int = 3) -> list[Any]:
-    ...
+def normalize_seq(val: Any, length: int = 3) -> list[Any]: ...
 
 
 def normalize_seq(val: T | Sequence[T], length: int = 3) -> list[T]:
@@ -101,24 +102,19 @@ def normalize_param_planes(
 
     planes = normalize_planes(clip, planes)
 
-    return [
-        p if i in planes else null for i, p in enumerate(normalize_seq(param, clip.format.num_planes))
-    ]
+    return [p if i in planes else null for i, p in enumerate(normalize_seq(param, clip.format.num_planes))]
 
 
 @overload
-def flatten(items: Iterable[Iterable[T]]) -> Iterator[T]:
-    ...
+def flatten(items: Iterable[Iterable[T]]) -> Iterator[T]: ...
 
 
 @overload
-def flatten(items: Iterable[Any]) -> Iterator[Any]:
-    ...
+def flatten(items: Iterable[Any]) -> Iterator[Any]: ...
 
 
 @overload
-def flatten(items: Any) -> Iterator[Any]:
-    ...
+def flatten(items: Any) -> Iterator[Any]: ...
 
 
 def flatten(items: Any) -> Iterator[Any]:
@@ -133,26 +129,20 @@ def flatten(items: Any) -> Iterator[Any]:
 @overload
 def flatten_vnodes(
     *clips: VideoNodeIterableT[VideoNodeT], split_planes: Literal[False] = ...
-) -> Sequence[VideoNodeT]:
-    ...
+) -> Sequence[VideoNodeT]: ...
+
 
 @overload
 def flatten_vnodes(
     *clips: VideoNodeIterableT[VideoNodeT], split_planes: Literal[True] = ...
-) -> Sequence[ConstantFormatVideoNode]:
-    ...
+) -> Sequence[ConstantFormatVideoNode]: ...
 
 
 @overload
-def flatten_vnodes(
-    *clips: VideoNodeIterableT[VideoNodeT], split_planes: bool = ...
-) -> Sequence[VideoNodeT]:
-    ...
+def flatten_vnodes(*clips: VideoNodeIterableT[VideoNodeT], split_planes: bool = ...) -> Sequence[VideoNodeT]: ...
 
 
-def flatten_vnodes(
-    *clips: VideoNodeIterableT[VideoNodeT], split_planes: bool = False
-) -> Sequence[vs.VideoNode]:
+def flatten_vnodes(*clips: VideoNodeIterableT[VideoNodeT], split_planes: bool = False) -> Sequence[vs.VideoNode]:
     """
     Flatten an array of VideoNodes.
 

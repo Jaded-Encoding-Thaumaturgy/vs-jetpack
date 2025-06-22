@@ -7,20 +7,16 @@ from typing import Union
 from vstools import SPath
 
 __all__ = [
-    'IndexFileFrameData',
-    'IndexFileInfo',
-
-    'D2VIndexHeader',
-    'D2VIndexFrameData',
-
-    'DGIndexHeader',
-    'DGIndexFrameData',
-    'DGIndexFooter',
-
-    'D2VIndexFileInfo',
-    'DGIndexFileInfo',
-
-    'AllNeddedDvdFrameData'
+    "IndexFileFrameData",
+    "IndexFileInfo",
+    "D2VIndexHeader",
+    "D2VIndexFrameData",
+    "DGIndexHeader",
+    "DGIndexFrameData",
+    "DGIndexFooter",
+    "D2VIndexFileInfo",
+    "DGIndexFileInfo",
+    "AllNeddedDvdFrameData",
 ]
 
 
@@ -55,7 +51,7 @@ class D2VIndexHeader(_SetItemMeta):
     luminance_filter: tuple[int, ...] = (0, 0)
     clipping: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
     aspect: Fraction = Fraction(16, 9)
-    pic_size: str = ''
+    pic_size: str = ""
     field_op: int = 0
     frame_rate: Fraction = Fraction(30000, 1001)
     location: list[int] = field(default_factory=lambda: [0, 0, 0, 0])

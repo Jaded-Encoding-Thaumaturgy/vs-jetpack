@@ -11,35 +11,58 @@ from inspect import Signature
 from math import ceil
 from types import NoneType
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Literal, NoReturn, TypeVar, Union, cast, get_origin, overload
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Concatenate,
+    Literal,
+    NoReturn,
+    TypeVar,
+    Union,
+    cast,
+    get_origin,
+    overload,
 )
 
 from jetpytools import P, R, T_co
 from typing_extensions import Self, deprecated
 
 from vstools import (
-    ConstantFormatVideoNode, CustomNotImplementedError, CustomRuntimeError, CustomValueError, FuncExceptT,
-    HoldsVideoFormatT, Matrix, MatrixT, VideoFormatT, VideoNodeT, check_correct_subsampling, check_variable_format,
-    check_variable_resolution, core, fallback, get_subclasses, get_video_format, normalize_seq, split, vs, vs_object
+    ConstantFormatVideoNode,
+    CustomNotImplementedError,
+    CustomRuntimeError,
+    CustomValueError,
+    FuncExceptT,
+    HoldsVideoFormatT,
+    Matrix,
+    MatrixT,
+    VideoFormatT,
+    VideoNodeT,
+    check_correct_subsampling,
+    check_variable_format,
+    check_variable_resolution,
+    core,
+    fallback,
+    get_subclasses,
+    get_video_format,
+    normalize_seq,
+    split,
+    vs,
+    vs_object,
 )
 from vstools.enums.color import _norm_props_enums
 
 from ..exceptions import (
-    UnknownDescalerError, UnknownKernelError, UnknownResamplerError, UnknownScalerError, _UnknownBaseScalerError
+    UnknownDescalerError,
+    UnknownKernelError,
+    UnknownResamplerError,
+    UnknownScalerError,
+    _UnknownBaseScalerError,
 )
 from ..types import LeftShift, TopShift
 
-__all__ = [
-    "Scaler",
-    "Descaler",
-    "Resampler",
-    "Kernel",
-
-    "ScalerLike",
-    "DescalerLike",
-    "ResamplerLike",
-    "KernelLike"
-]
+__all__ = ["Scaler", "Descaler", "Resampler", "Kernel", "ScalerLike", "DescalerLike", "ResamplerLike", "KernelLike"]
 
 
 def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Callable[Concatenate[_BaseScalerT, P], R]:
@@ -61,7 +84,7 @@ def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Calla
                     "For example, use: Bicubic().scale(...) instead of Bicubic.scale(...)",
                     DeprecationWarning,
                     2,
-                    skip_file_prefixes=(str(pathlib.Path(__file__).resolve()),)
+                    skip_file_prefixes=(str(pathlib.Path(__file__).resolve()),),
                 )
 
                 frame_infos = inspect.stack()
@@ -70,12 +93,12 @@ def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Calla
                 f1 = f0.f_back  # pyright: ignore
 
                 try:
-                    if (code := frame_info.code_context):
-                        match = re.search(rf'(\w+)\.{method.__name__}', code[0])
+                    if code := frame_info.code_context:
+                        match = re.search(rf"(\w+)\.{method.__name__}", code[0])
                         if match:
                             clip = self
                             self = eval(match.group(1), f1.f_globals, f1.f_locals)()  # pyright: ignore
-                            args = (clip, ) + args  # pyright: ignore
+                            args = (clip,) + args  # pyright: ignore
                 finally:
                     frame_infos.clear()
                     del frame_info, f0, f1
@@ -142,7 +165,7 @@ def _check_kernel_radius(cls: type[BaseScaler]) -> Literal[True]:
         "When inheriting from BaseScaler, you must implement the kernel radius by either adding "
         "the `kernel_radius` property or setting the class variable `_static_kernel_radius`.",
         cls,
-)
+    )
 
 
 abstract_kernels: list[BaseScalerMeta] = []
@@ -213,6 +236,7 @@ class BaseScalerMeta(ABCMeta):
             # If partial_abstract is True, add kernel_radius property
             # if it not implemented by _static_kernel_radius or kernel_radius
             if not hasattr(obj, "_static_kernel_radius") and not hasattr(obj, "kernel_radius"):
+
                 @BaseScaler.cached_property
                 def _partial_abstract_kernel_radius(self: BaseScaler) -> int:
                     raise CustomNotImplementedError("kernel_radius is not implemented!", self.__class__)
@@ -223,6 +247,7 @@ class BaseScalerMeta(ABCMeta):
 
         # If a _static_kernel_radius attr is implemented, check if kernel_radius property is there
         if hasattr(obj, "_static_kernel_radius") and not hasattr(obj, "kernel_radius"):
+
             @BaseScaler.cached_property
             def _static_kernel_radius_property(self: BaseScaler) -> int:
                 return ceil(self._static_kernel_radius)
@@ -262,6 +287,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         """Read only version of functools.cached_property."""
 
         if TYPE_CHECKING:
+
             def __init__(self, func: Callable[Concatenate[_BaseScalerT, P], T_co]) -> None: ...
 
         def __set__(self, instance: None, value: Any) -> NoReturn:  # type: ignore[override]
@@ -269,6 +295,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             raise AttributeError("Can't set attribute")
 
     if not TYPE_CHECKING:
+
         def __new__(cls, *args: Any, **kwargs: Any) -> Self:
             """
             Create a new instance of the scaler, validating kernel radius if applicable.
@@ -300,7 +327,14 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         return self.pretty_string
 
     @staticmethod
-    def _wh_norm(clip: vs.VideoNode, width: int | None = None, height: int | None = None) -> tuple[int, int]:
+    def _wh_norm(
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        test: int = 0,
+        test0: int = 0,
+        test1: int = 0,
+    ) -> tuple[int, int]:
         """
         Normalize width and height to fall back to the clip's dimensions if not provided.
 
@@ -344,6 +378,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         return _base_ensure_obj(cls, scaler, func_except)
 
     if TYPE_CHECKING:
+
         @cached_property
         def kernel_radius(self) -> int:
             """

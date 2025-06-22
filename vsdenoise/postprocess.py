@@ -6,20 +6,36 @@ from vsexprtools import ExprOp, ExprToken, norm_expr
 from vsmasktools import EdgeDetect, EdgeDetectT, FDoGTCanny, range_mask
 from vsrgtools import bilateral, box_blur, gauss_blur
 from vstools import (
-    CustomIndexError, InvalidColorFamilyError, PlanesT, check_ref_clip, check_variable, flatten_vnodes, get_y,
-    normalize_planes, scale_mask, scale_value, vs
+    CustomIndexError,
+    InvalidColorFamilyError,
+    PlanesT,
+    check_ref_clip,
+    check_variable,
+    flatten_vnodes,
+    get_y,
+    normalize_planes,
+    scale_mask,
+    scale_value,
+    vs,
 )
 
 __all__ = [
-    'decrease_size',
+    "decrease_size",
 ]
 
 
 def decrease_size(
-    clip: vs.VideoNode, sigmaS: float = 10.0, sigmaR: float = 0.009,
-    min_in: int = 180, max_in: int = 230, gamma: float = 1.0,
+    clip: vs.VideoNode,
+    sigmaS: float = 10.0,
+    sigmaR: float = 0.009,
+    min_in: int = 180,
+    max_in: int = 230,
+    gamma: float = 1.0,
     mask: vs.VideoNode | tuple[float, float] | tuple[float, float, EdgeDetectT] = (0.0496, 0.125, FDoGTCanny),
-    prefilter: bool | tuple[int, int] | float = True, planes: PlanesT = None, show_mask: bool = False, **kwargs: Any
+    prefilter: bool | tuple[int, int] | float = True,
+    planes: PlanesT = None,
+    show_mask: bool = False,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Forcibly reduce the required bitrate to encode a clip by blurring away noise and grain
@@ -69,7 +85,7 @@ def decrease_size(
     assert check_variable(clip, decrease_size)
 
     if min_in > max_in:
-        raise CustomIndexError('The blur min must be lower than max!', decrease_size, dict(min=min_in, max=max_in))
+        raise CustomIndexError("The blur min must be lower than max!", decrease_size, dict(min=min_in, max=max_in))
 
     InvalidColorFamilyError.check(clip, vs.YUV, decrease_size)
 
@@ -84,7 +100,7 @@ def decrease_size(
         pm_min, pm_max, *emask = mask
 
         if pm_min > pm_max:
-            raise CustomIndexError('The mask min must be lower than max!', decrease_size, dict(min=pm_min, max=pm_max))
+            raise CustomIndexError("The mask min must be lower than max!", decrease_size, dict(min=pm_min, max=pm_max))
 
         pm_min = scale_mask(pm_min, 32, clip)
         pm_max = scale_mask(pm_max, 32, clip)
@@ -103,8 +119,9 @@ def decrease_size(
         mask_planes = flatten_vnodes(yuv444, mask, split_planes=True)
 
         mask = norm_expr(
-            mask_planes, f'x y max z max {pm_min} < 0 {ExprToken.RangeMax} ? a max {pm_max} < 0 {ExprToken.RangeMax} ?',
-            func=decrease_size
+            mask_planes,
+            f"x y max z max {pm_min} < 0 {ExprToken.RangeMax} ? a max {pm_max} < 0 {ExprToken.RangeMax} ?",
+            func=decrease_size,
         )
 
         mask = box_blur(mask, 1, 2)
@@ -123,9 +140,10 @@ def decrease_size(
 
     mask = norm_expr(
         [pre, mask],
-        f'x {ExprOp.clamp(minf, maxf)} {minf} - {maxf} {minf} - / {1 / gamma} '
-        f'pow {ExprOp.clamp(0, 1)} {ExprToken.RangeMax} * y -', planes,
-        func=decrease_size
+        f"x {ExprOp.clamp(minf, maxf)} {minf} - {maxf} {minf} - / {1 / gamma} "
+        f"pow {ExprOp.clamp(0, 1)} {ExprToken.RangeMax} * y -",
+        planes,
+        func=decrease_size,
     )
 
     if show_mask:

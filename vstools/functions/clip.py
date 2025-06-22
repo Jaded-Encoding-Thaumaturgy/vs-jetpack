@@ -5,7 +5,8 @@ from ..types import FrameRange, VideoNodeT
 from .normalize import normalize_franges
 
 __all__ = [
-    'shift_clip', 'shift_clip_multi',
+    "shift_clip",
+    "shift_clip_multi",
 ]
 
 
@@ -29,7 +30,7 @@ def shift_clip(clip: VideoNodeT, offset: int) -> VideoNodeT:
     """
 
     if offset > clip.num_frames - 1:
-        raise FramesLengthError(shift_clip, 'offset')
+        raise FramesLengthError(shift_clip, "offset")
 
     if offset < 0:
         return clip[0] * abs(offset) + clip[:offset]

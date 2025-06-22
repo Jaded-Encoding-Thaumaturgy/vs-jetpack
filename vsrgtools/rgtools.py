@@ -5,16 +5,11 @@ from typing import Callable, Generic, Sequence
 from jetpytools import CustomIntEnum, CustomStrEnum, P, R
 
 from vsexprtools import norm_expr
-from vstools import (
-    ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_variable, normalize_param_planes, vs
-)
+from vstools import ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_variable, normalize_param_planes, vs
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
 
-__all__ = [
-    'repair', 'remove_grain', 'removegrain',
-    'clense', 'vertical_cleaner'
-]
+__all__ = ["repair", "remove_grain", "removegrain", "clense", "vertical_cleaner"]
 
 
 class Repair(Generic[P, R]):
@@ -146,7 +141,7 @@ def repair(
     clip: vs.VideoNode,
     repairclip: vs.VideoNode,
     mode: int | Repair.Mode | Sequence[int | Repair.Mode],
-    planes: PlanesT = None
+    planes: PlanesT = None,
 ) -> ConstantFormatVideoNode:
     """
     Constrains the input `clip` using a `repairclip` by clamping pixel values
@@ -381,16 +376,16 @@ class Clense(Generic[P, R]):
         by the [zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#clense--forwardclense--backwardclense) plugin.
         """
 
-        NONE = ''
+        NONE = ""
         """No clense filtering. Returns the original clip unchanged."""
 
-        BACKWARD = 'BackwardClense'
+        BACKWARD = "BackwardClense"
         """Use the current and previous two frames for temporal median filtering."""
 
-        FORWARD = 'ForwardClense'
+        FORWARD = "ForwardClense"
         """Use the current and next two frames for temporal median filtering."""
 
-        BOTH = 'Clense'
+        BOTH = "Clense"
         """Standard clense: median of previous, current, and next frame."""
 
         def __call__(
@@ -398,7 +393,7 @@ class Clense(Generic[P, R]):
             clip: vs.VideoNode,
             previous_clip: vs.VideoNode | None = None,
             next_clip: vs.VideoNode | None = None,
-            planes: PlanesT = None
+            planes: PlanesT = None,
         ) -> ConstantFormatVideoNode:
             """
             Apply the selected clense mode to a clip using
@@ -419,7 +414,7 @@ def clense(
     previous_clip: vs.VideoNode | None = None,
     next_clip: vs.VideoNode | None = None,
     mode: Clense.Mode | str = Clense.Mode.NONE,
-    planes: PlanesT = None
+    planes: PlanesT = None,
 ) -> ConstantFormatVideoNode:
     """
     Apply a clense (temporal median) filter based on the specified mode.

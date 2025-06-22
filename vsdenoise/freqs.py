@@ -8,23 +8,22 @@ from vsrgtools import MeanMode
 from vstools import CustomValueError, FormatsMismatchError, PlanesT, VSFunctionKwArgs, VSFunctionNoArgs, vs
 
 __all__ = [
-    'frequency_merge',
+    "frequency_merge",
 ]
 
 
 @overload
 def frequency_merge(
-    *_clips: vs.VideoNode | tuple[
-        vs.VideoNode,
-        VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None
+    *_clips: vs.VideoNode
+    | tuple[
+        vs.VideoNode, VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None
     ],
     mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER,
     mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
     lowpass: None = None,
     planes: PlanesT = None,
-    **kwargs: Any
-) -> vs.VideoNode:
-    ...
+    **kwargs: Any,
+) -> vs.VideoNode: ...
 
 
 @overload
@@ -34,21 +33,20 @@ def frequency_merge(
     mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
     lowpass: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode],
     planes: PlanesT = None,
-    **kwargs: Any
-) -> vs.VideoNode:
-    ...
+    **kwargs: Any,
+) -> vs.VideoNode: ...
 
 
 def frequency_merge(
-    *_clips: vs.VideoNode | tuple[
-        vs.VideoNode,
-        VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None
+    *_clips: vs.VideoNode
+    | tuple[
+        vs.VideoNode, VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None
     ],
     mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER,
     mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
     lowpass: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None = None,
     planes: PlanesT = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Merges the frequency components of the input clips.
@@ -104,7 +102,7 @@ def frequency_merge(
         lowpass_funcs.append(func)
 
     if not lowpass_funcs:
-        raise CustomValueError('You must pass at least one lowpass filter!', frequency_merge)
+        raise CustomValueError("You must pass at least one lowpass filter!", frequency_merge)
 
     FormatsMismatchError.check(frequency_merge, *clips)
 
@@ -127,7 +125,7 @@ def frequency_merge(
         except ValueError as e:
             raise CustomValueError(
                 "Could not retrieve low-frequency clip: `mode_low` must be one of the clips provided in `_clips`.",
-                frequency_merge
+                frequency_merge,
             ) from e
     else:
         low_freqs = mode_low(blurred_clips, planes=planes, func=frequency_merge)
@@ -143,7 +141,7 @@ def frequency_merge(
         except ValueError as e:
             raise CustomValueError(
                 "Could not retrieve high-frequency clip: `mode_high` must be one of the clips provided in `_clips`.",
-                frequency_merge
+                frequency_merge,
             ) from e
 
         if not high_freqs:

@@ -8,23 +8,27 @@ from jetpytools import FuncExceptT
 
 from ..enums import FieldBased
 from ..exceptions import (
-    FormatsRefClipMismatchError, ResolutionsRefClipMismatchError, UnsupportedFieldBasedError,
-    VariableFormatError, VariableResolutionError
+    FormatsRefClipMismatchError,
+    ResolutionsRefClipMismatchError,
+    UnsupportedFieldBasedError,
+    VariableFormatError,
+    VariableResolutionError,
 )
 from ..types import ConstantFormatVideoNode, VideoNodeT
 
 __all__ = [
-    'check_ref_clip',
-
-    'check_variable',
-    'check_variable_format',
-    'check_variable_resolution',
-    'check_correct_subsampling',
-    'check_progressive',
+    "check_ref_clip",
+    "check_variable",
+    "check_variable_format",
+    "check_variable_resolution",
+    "check_correct_subsampling",
+    "check_progressive",
 ]
 
 
-def check_ref_clip(src: vs.VideoNode, ref: vs.VideoNode | None, func: FuncExceptT | None = None) -> ConstantFormatVideoNode:
+def check_ref_clip(
+    src: vs.VideoNode, ref: vs.VideoNode | None, func: FuncExceptT | None = None
+) -> ConstantFormatVideoNode:
     """
     Function for ensuring the ref clip's format matches that of the input clip.
 
@@ -57,13 +61,13 @@ def check_ref_clip(src: vs.VideoNode, ref: vs.VideoNode | None, func: FuncExcept
 
 
 @overload
-def check_variable_format(clip: vs.VideoNode, func: FuncExceptT) -> TypeGuard[ConstantFormatVideoNode]:
-    ...
+def check_variable_format(clip: vs.VideoNode, func: FuncExceptT) -> TypeGuard[ConstantFormatVideoNode]: ...
 
 
 @overload
-def check_variable_format(clip: Sequence[vs.VideoNode], func: FuncExceptT) -> TypeGuard[Sequence[ConstantFormatVideoNode]]:
-    ...
+def check_variable_format(
+    clip: Sequence[vs.VideoNode], func: FuncExceptT
+) -> TypeGuard[Sequence[ConstantFormatVideoNode]]: ...
 
 
 def check_variable_format(
@@ -127,15 +131,16 @@ def check_correct_subsampling(
     from ..exceptions import InvalidSubsamplingError
 
     if clip.format:
-        if (
-            (width is not None and width % (1 << clip.format.subsampling_w))
-            or (height is not None and height % (1 << clip.format.subsampling_h))
+        if (width is not None and width % (1 << clip.format.subsampling_w)) or (
+            height is not None and height % (1 << clip.format.subsampling_h)
         ):
             raise InvalidSubsamplingError(
-                func or check_correct_subsampling, clip,
-                'The {subsampling} subsampling is not supported for this resolution!',
-                reason=dict(width=width, height=height)
+                func or check_correct_subsampling,
+                clip,
+                "The {subsampling} subsampling is not supported for this resolution!",
+                reason=dict(width=width, height=height),
             )
+
 
 def check_progressive(clip: VideoNodeT, func: FuncExceptT) -> TypeGuard[VideoNodeT]:
     """

@@ -7,27 +7,29 @@ import vapoursynth as vs
 from jetpytools import MISSING, DataType, FuncExceptT, MissingT, PassthroughC, SingleOrSeq, StrArr, StrArrOpt
 
 __all__ = [
-    'MissingT', 'MISSING',
-
-    'FuncExceptT',
-
-    'VideoNodeT', 'VideoNodeIterableT',
-
-    'DataType', 'VSMapValue', 'BoundVSMapValue', 'VSMapValueCallback',
-
-    'VideoFormatT',
-
-    'HoldsVideoFormatT', 'HoldsPropValueT',
-
-    'VSFunction', 'VSFunctionNoArgs', 'VSFunctionArgs', 'VSFunctionKwArgs', 'VSFunctionAllArgs', 'GenericVSFunction',
-
-    'StrArr', 'StrArrOpt',
-
-    'PassthroughC',
-
-    'ConstantFormatVideoNode',
-
-    'F_VD'
+    "MissingT",
+    "MISSING",
+    "FuncExceptT",
+    "VideoNodeT",
+    "VideoNodeIterableT",
+    "DataType",
+    "VSMapValue",
+    "BoundVSMapValue",
+    "VSMapValueCallback",
+    "VideoFormatT",
+    "HoldsVideoFormatT",
+    "HoldsPropValueT",
+    "VSFunction",
+    "VSFunctionNoArgs",
+    "VSFunctionArgs",
+    "VSFunctionKwArgs",
+    "VSFunctionAllArgs",
+    "GenericVSFunction",
+    "StrArr",
+    "StrArrOpt",
+    "PassthroughC",
+    "ConstantFormatVideoNode",
+    "F_VD",
 ]
 
 
@@ -38,7 +40,7 @@ VideoNodeT_co = TypeVar("VideoNodeT_co", bound=vs.VideoNode, covariant=True)
 VideoNodeIterableT = Union[
     VideoNodeT,
     Iterable[VideoNodeT | Iterable[VideoNodeT]],
-    Iterable[VideoNodeT | Iterable[VideoNodeT | Iterable[VideoNodeT]]]
+    Iterable[VideoNodeT | Iterable[VideoNodeT | Iterable[VideoNodeT]]],
 ]
 
 
@@ -49,19 +51,16 @@ _VSMapValue = Union[
     SingleOrSeq[vs.VideoNode],
     SingleOrSeq[vs.VideoFrame],
     SingleOrSeq[vs.AudioNode],
-    SingleOrSeq[vs.AudioFrame]
+    SingleOrSeq[vs.AudioFrame],
 ]
-VSMapValue = Union[
-    _VSMapValue,
-    SingleOrSeq[Callable[..., _VSMapValue]]
-]
+VSMapValue = Union[_VSMapValue, SingleOrSeq[Callable[..., _VSMapValue]]]
 """Values that a VSMap can hold, so all that a :py:attr:`vs.Function`` can accept in args and can return."""
 
-BoundVSMapValue = TypeVar('BoundVSMapValue', bound=VSMapValue)
+BoundVSMapValue = TypeVar("BoundVSMapValue", bound=VSMapValue)
 """Type variable that can be one of the types in a VSMapValue."""
 
-BoundVSMapValue_0 = TypeVar('BoundVSMapValue_0', bound=VSMapValue)
-BoundVSMapValue_1 = TypeVar('BoundVSMapValue_1', bound=VSMapValue)
+BoundVSMapValue_0 = TypeVar("BoundVSMapValue_0", bound=VSMapValue)
+BoundVSMapValue_1 = TypeVar("BoundVSMapValue_1", bound=VSMapValue)
 
 VSMapValueCallback = Callable[..., VSMapValue]
 """Callback that can be held in a VSMap. It can only return values representable in a VSMap."""
@@ -80,36 +79,33 @@ F_VD = TypeVar("F_VD", bound=Callable[..., vs.VideoNode])
 
 
 class VSFunctionNoArgs(Protocol[VideoNodeT_contra, VideoNodeT_co]):
-    def __call__(self, clip: VideoNodeT_contra) -> VideoNodeT_co:
-        ...
+    def __call__(self, clip: VideoNodeT_contra) -> VideoNodeT_co: ...
 
 
 class VSFunctionArgs(Protocol[VideoNodeT_contra, VideoNodeT_co]):
-    def __call__(self, clip: VideoNodeT_contra, *args: Any) -> VideoNodeT_co:
-        ...
+    def __call__(self, clip: VideoNodeT_contra, *args: Any) -> VideoNodeT_co: ...
 
 
 class VSFunctionKwArgs(Protocol[VideoNodeT_contra, VideoNodeT_co]):
-    def __call__(self, clip: VideoNodeT_contra, **kwargs: Any) -> VideoNodeT_co:
-        ...
+    def __call__(self, clip: VideoNodeT_contra, **kwargs: Any) -> VideoNodeT_co: ...
 
 
 class VSFunctionAllArgs(Protocol[VideoNodeT_contra, VideoNodeT_co]):
-    def __call__(self, clip: VideoNodeT_contra, *args: Any, **kwargs: Any) -> VideoNodeT_co:
-        ...
+    def __call__(self, clip: VideoNodeT_contra, *args: Any, **kwargs: Any) -> VideoNodeT_co: ...
 
 
 VSFunction = Union[
     VSFunctionNoArgs[VideoNodeT, VideoNodeT],
     VSFunctionArgs[VideoNodeT, VideoNodeT],
     VSFunctionKwArgs[VideoNodeT, VideoNodeT],
-    VSFunctionAllArgs[VideoNodeT, VideoNodeT]
+    VSFunctionAllArgs[VideoNodeT, VideoNodeT],
 ]
 """Function that takes a :py:attr:`vs.VideoNode` as its first argument and returns a :py:attr:`vs.VideoNode`."""
 
 GenericVSFunction = Callable[..., VideoNodeT]
 
 if TYPE_CHECKING:
+
     class ConstantFormatVideoNode(vs.VideoNode):
         format: vs.VideoFormat
 

@@ -8,17 +8,14 @@ from ._nodes import AudioNode, VideoNode
 ###
 # Typing
 
-_T = TypeVar('_T')
-_S = TypeVar('_S')
+_T = TypeVar("_T")
+_S = TypeVar("_S")
 _SingleAndSequence = _T | Sequence[_T]
-
 
 @runtime_checkable
 class _SupportsString(Protocol):
     @abstractmethod
-    def __str__(self) -> str:
-        ...
-
+    def __str__(self) -> str: ...
 
 _DataType = str | bytes | bytearray | _SupportsString
 
@@ -30,26 +27,21 @@ _VapourSynthMapValue = Union[
     _SingleAndSequence[VideoFrame],
     _SingleAndSequence[AudioNode],
     _SingleAndSequence[AudioFrame],
-    _SingleAndSequence[_VSMapValueCallback[Any]]
+    _SingleAndSequence[_VSMapValueCallback[Any]],
 ]
 
-_BoundVSMapValue = TypeVar('_BoundVSMapValue', bound=_VapourSynthMapValue)
+_BoundVSMapValue = TypeVar("_BoundVSMapValue", bound=_VapourSynthMapValue)
 
 _VSMapValueCallback = Callable[..., _BoundVSMapValue]
 
-
 class _Future(Generic[_T]):
     def set_result(self, value: _T) -> None: ...
-
     def set_exception(self, exception: BaseException) -> None: ...
-
     def result(self) -> _T: ...
-
     def exception(self) -> NoReturn | None: ...
 
 ###
 # Typed dicts
-
 
 class _VideoFormatInfo(TypedDict):
     id: int

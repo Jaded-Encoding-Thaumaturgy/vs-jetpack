@@ -16,26 +16,19 @@ else:
 
 
 __all__ = [
-    'ClipsCache',
-
-    'DynamicClipsCache',
-
-    'FramesCache',
-
-    'NodeFramesCache',
-
-    'ClipFramesCache',
-
-    'SceneBasedDynamicCache',
-
-    'NodesPropsCache',
-
-    'cache_clip'
+    "ClipsCache",
+    "DynamicClipsCache",
+    "FramesCache",
+    "NodeFramesCache",
+    "ClipFramesCache",
+    "SceneBasedDynamicCache",
+    "NodesPropsCache",
+    "cache_clip",
 ]
 
 
-NodeT = TypeVar('NodeT', bound=vs.RawNode)
-FrameT = TypeVar('FrameT', bound=vs.RawFrame)
+NodeT = TypeVar("NodeT", bound=vs.RawNode)
+FrameT = TypeVar("FrameT", bound=vs.RawFrame)
 
 
 class ClipsCache(vs_object, dict[vs.VideoNode, vs.VideoNode]):
@@ -54,8 +47,7 @@ class DynamicClipsCache(vs_object, dict[T, VideoNodeT]):
         self.cache_size = cache_size
 
     @abstractmethod
-    def get_clip(self, key: T) -> VideoNodeT:
-        ...
+    def get_clip(self, key: T) -> VideoNodeT: ...
 
     def __getitem__(self, __key: T) -> VideoNodeT:
         if __key not in self:
@@ -117,8 +109,7 @@ class NodeFramesCache(vs_object, dict[NodeT, FramesCache[NodeT, FrameT]]):
         self.clear()
 
 
-class ClipFramesCache(NodeFramesCache[vs.VideoNode, vs.VideoFrame]):
-    ...
+class ClipFramesCache(NodeFramesCache[vs.VideoNode, vs.VideoFrame]): ...
 
 
 class SceneBasedDynamicCache(DynamicClipsCache[int, vs.VideoNode]):
@@ -129,8 +120,7 @@ class SceneBasedDynamicCache(DynamicClipsCache[int, vs.VideoNode]):
         self.keyframes = Keyframes.from_param(clip, keyframes)
 
     @abstractmethod
-    def get_clip(self, key: int) -> vs.VideoNode:
-        ...
+    def get_clip(self, key: int) -> vs.VideoNode: ...
 
     def get_eval(self) -> vs.VideoNode:
         return self.clip.std.FrameEval(lambda n: self[self.keyframes.scenes.indices[n]])
@@ -153,7 +143,6 @@ class NodesPropsCache(vs_object, dict[tuple[NodeT, int], MutableMapping[str, _Va
 
 def cache_clip(_clip: NodeT, cache_size: int = 10) -> NodeT:
     if isinstance(_clip, vs.VideoNode):
-
         cache = FramesCache[vs.VideoNode, vs.VideoFrame](_clip, cache_size)
 
         blank = vs.core.std.BlankClip(_clip)

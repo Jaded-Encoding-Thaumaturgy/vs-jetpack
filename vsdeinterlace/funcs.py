@@ -9,17 +9,24 @@ from vsdenoise import MVTools, MVToolsPreset, prefilter_to_full_range
 from vsexprtools import norm_expr
 from vsrgtools import BlurMatrix, sbr
 from vstools import (
-    ConvMode, ConstantFormatVideoNode, FormatsMismatchError, FunctionUtil, VSFunctionKwArgs, PlanesT,
-    check_ref_clip, check_variable, core, limiter, scale_delta, shift_clip, vs,
+    ConvMode,
+    ConstantFormatVideoNode,
+    FormatsMismatchError,
+    FunctionUtil,
+    VSFunctionKwArgs,
+    PlanesT,
+    check_ref_clip,
+    check_variable,
+    core,
+    limiter,
+    scale_delta,
+    shift_clip,
+    vs,
 )
 
 from .enums import IVTCycles
 
-__all__ = [
-    'InterpolateOverlay',
-    'FixInterlacedFades',
-    'vinverse'
-]
+__all__ = ["InterpolateOverlay", "FixInterlacedFades", "vinverse"]
 
 
 class InterpolateOverlay(CustomIntEnum):
@@ -157,31 +164,31 @@ class FixInterlacedFades(CustomIntEnum):
 
         fields = limiter(func.work_clip).std.SeparateFields(tff=True)
 
-        fields = norm_expr(fields, 'x {color} - abs', planes, color=color, func=self.__class__)
+        fields = norm_expr(fields, "x {color} - abs", planes, color=color, func=self.__class__)
         for i in func.norm_planes:
-            fields = fields.std.PlaneStats(None, i, f'P{i}')
+            fields = fields.std.PlaneStats(None, i, f"P{i}")
 
         props_clip = core.akarin.PropExpr(
             [func.work_clip, fields[::2], fields[1::2]],
-            lambda: {
-                f'f{f}Avg{i}': f'{c}.P{i}Average' for f, c in zip('tb', 'yz') for i in func.norm_planes
-            }
+            lambda: {f"f{f}Avg{i}": f"{c}.P{i}Average" for f, c in zip("tb", "yz") for i in func.norm_planes},
         )
 
         expr = (
-            'Y 2 % x.fbAvg{i} x.ftAvg{i} ? AVG! '
-            'AVG@ 0 = x x {color} - x.ftAvg{i} x.fbAvg{i} {expr_mode} AVG@ / * {color} + ?'
+            "Y 2 % x.fbAvg{i} x.ftAvg{i} ? AVG! "
+            "AVG@ 0 = x x {color} - x.ftAvg{i} x.fbAvg{i} {expr_mode} AVG@ / * {color} + ?"
         )
 
         fix = norm_expr(
-            props_clip, expr, planes,
-            i=func.norm_planes, color=color,
-            expr_mode='+ 2 /' if self == self.AVERAGE else 'min',
+            props_clip,
+            expr,
+            planes,
+            i=func.norm_planes,
+            color=color,
+            expr_mode="+ 2 /" if self == self.AVERAGE else "min",
             func=self.__class__,
         )
 
         return func.return_clip(fix)
-
 
 
 def vinverse(
@@ -225,18 +232,21 @@ def vinverse(
     FormatsMismatchError.check(vinverse, clip, blurred, blurred2)
 
     expr = (
-        'x y - D1! D1@ abs D1A! D1A@ {thr} < x y z - {sstr} * D2! D1A@ D2@ abs < D1@ D2@ ? D3! '
-        'D1@ D2@ xor D3@ {scl} * D3@ ? y + '
+        "x y - D1! D1@ abs D1A! D1A@ {thr} < x y z - {sstr} * D2! D1A@ D2@ abs < D1@ D2@ ? D3! "
+        "D1@ D2@ xor D3@ {scl} * D3@ ? y + "
     )
 
     if amnt is not None:
-        expr += 'x {amnt} - x {amnt} + clip '
+        expr += "x {amnt} - x {amnt} + clip "
         amnt = scale_delta(amnt, 8, clip)
 
     return norm_expr(
         [clip, blurred, blurred2],
-        f'{expr} ?',
-        planes, sstr=contra_str, amnt=amnt,
-        scl=scl, thr=scale_delta(thr, 8, clip),
-        func=vinverse
+        f"{expr} ?",
+        planes,
+        sstr=contra_str,
+        amnt=amnt,
+        scl=scl,
+        thr=scale_delta(thr, 8, clip),
+        func=vinverse,
     )

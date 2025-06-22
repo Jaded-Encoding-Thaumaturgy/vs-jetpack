@@ -10,18 +10,32 @@ from vsmasktools import FDoG, GenericMaskT, Morpho, adg_mask, normalize_mask, st
 from vsrgtools import MeanMode, gauss_blur, repair
 from vsscale import DPIR
 from vstools import (
-    Align, ConstantFormatVideoNode, FrameRangeN, FrameRangesN, FieldBased, FunctionUtil, PlanesT,
-    check_progressive, check_variable, check_variable_format, core, depth, fallback, get_plane_sizes,
-    get_y, join, normalize_ranges, normalize_seq, padder, plane, replace_ranges, shift_clip_multi, vs
+    Align,
+    ConstantFormatVideoNode,
+    FrameRangeN,
+    FrameRangesN,
+    FieldBased,
+    FunctionUtil,
+    PlanesT,
+    check_progressive,
+    check_variable,
+    check_variable_format,
+    core,
+    depth,
+    fallback,
+    get_plane_sizes,
+    get_y,
+    join,
+    normalize_ranges,
+    normalize_seq,
+    padder,
+    plane,
+    replace_ranges,
+    shift_clip_multi,
+    vs,
 )
 
-__all__ = [
-    'dpir', 'dpir_mask',
-
-    'deblock_qed',
-
-    'mpeg2stinx'
-]
+__all__ = ["dpir", "dpir_mask", "deblock_qed", "mpeg2stinx"]
 
 _StrengthT = SupportsFloat | vs.VideoNode | None
 
@@ -35,7 +49,7 @@ class dpir(CustomStrEnum):
         clip: vs.VideoNode,
         strength: _StrengthT | Sequence[_StrengthT] = 10,
         zones: Sequence[tuple[FrameRangeN | FrameRangesN, _StrengthT]] | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
         Deep Plug-and-Play Image Restoration
@@ -68,7 +82,7 @@ class dpir(CustomStrEnum):
             if len(strength) == 3:
                 return join(
                     [self.__call__(plane(clip, i), s, zones, **kwargs) for i, s in enumerate(strength)],
-                    clip.format.color_family
+                    clip.format.color_family,
                 )
 
             raise CustomRuntimeError
@@ -83,9 +97,7 @@ class dpir(CustomStrEnum):
 
         exclusive_ranges = kwargs.pop("exclusive", False)
 
-        strength = strength_zones_mask(
-            base_strength, zones, vs.GRAYH, clip.num_frames, exclusive=exclusive_ranges
-        )
+        strength = strength_zones_mask(base_strength, zones, vs.GRAYH, clip.num_frames, exclusive=exclusive_ranges)
 
         if self.value == "deblock":
             dpired = DPIR.DrunetDeblock(strength, **kwargs).scale(clip)
@@ -107,8 +119,13 @@ class dpir(CustomStrEnum):
 
 
 def dpir_mask(
-    clip: vs.VideoNode, low: float = 5, high: float = 10, lines: float | None = None,
-    luma_scaling: float = 12, linemask: GenericMaskT | bool = True, relative: bool = False
+    clip: vs.VideoNode,
+    low: float = 5,
+    high: float = 10,
+    lines: float | None = None,
+    luma_scaling: float = 12,
+    linemask: GenericMaskT | bool = True,
+    relative: bool = False,
 ) -> vs.VideoNode:
     y = depth(get_y(clip), 32)
 
@@ -120,7 +137,7 @@ def dpir_mask(
     if relative:
         mask = gauss_blur(mask, 1.5)
 
-    mask = norm_expr(mask, f'{high} 255 / x {low} 255 / * -', func=dpir_mask)
+    mask = norm_expr(mask, f"{high} 255 / x {low} 255 / * -", func=dpir_mask)
 
     if linemask:
         lines = fallback(lines, high)
@@ -137,11 +154,13 @@ def deblock_qed(
     clip: vs.VideoNode,
     quant_edge: int = 24,
     quant_inner: int = 26,
-    alpha_edge: int = 1, beta_edge: int = 2,
-    alpha_inner: int = 1, beta_inner: int = 2,
+    alpha_edge: int = 1,
+    beta_edge: int = 2,
+    alpha_inner: int = 1,
+    beta_inner: int = 2,
     chroma_mode: int = 0,
     align: Align = Align.TOP_LEFT,
-    planes: PlanesT = None
+    planes: PlanesT = None,
 ) -> ConstantFormatVideoNode:
     """
     A postprocessed Deblock: Uses full frequencies of Deblock's changes on block borders,
@@ -174,9 +193,17 @@ def deblock_qed(
         block = padder.COLOR(
             core.std.BlankClip(
                 clip,
-                width=6, height=6, length=1, color=0,
-                format=func.work_clip.format.replace(color_family=vs.GRAY, subsampling_w=0, subsampling_h=0).id
-            ), 1, 1, 1, 1, True
+                width=6,
+                height=6,
+                length=1,
+                color=0,
+                format=func.work_clip.format.replace(color_family=vs.GRAY, subsampling_w=0, subsampling_h=0).id,
+            ),
+            1,
+            1,
+            1,
+            1,
+            True,
         )
         block = core.std.StackHorizontal([block] * (clip.width // block.width))
         block = core.std.StackVertical([block] * (clip.height // block.height))
@@ -189,21 +216,21 @@ def deblock_qed(
 
         normal, strong = (
             clip.deblock.Deblock(quant_edge, alpha_edge, beta_edge, func.norm_planes if chroma_mode < 2 else 0),
-            clip.deblock.Deblock(quant_inner, alpha_inner, beta_inner, func.norm_planes if chroma_mode != 1 else 0)
+            clip.deblock.Deblock(quant_inner, alpha_inner, beta_inner, func.norm_planes if chroma_mode != 1 else 0),
         )
 
         normalD2, strongD2 = (
-            norm_expr([clip, dclip, block], 'z x y - 0 ? neutral +', planes)
-            for dclip in (normal, strong)
+            norm_expr([clip, dclip, block], "z x y - 0 ? neutral +", planes) for dclip in (normal, strong)
         )
 
         with padder.ctx(16, align=align) as p16:
             strongD2 = p16.CROP(
-                norm_expr(p16.MIRROR(strongD2), 'x neutral - 1.01 * neutral +', planes, func=func.func)
-                .dctf.DCTFilter([1, 1, 0, 0, 0, 0, 0, 0], planes)
+                norm_expr(p16.MIRROR(strongD2), "x neutral - 1.01 * neutral +", planes, func=func.func).dctf.DCTFilter(
+                    [1, 1, 0, 0, 0, 0, 0, 0], planes
+                )
             )
 
-        strongD4 = norm_expr([strongD2, normalD2], 'y neutral = x y ?', planes, func=func.func)
+        strongD4 = norm_expr([strongD2, normalD2], "y neutral = x y ?", planes, func=func.func)
         deblocked = clip.std.MakeDiff(strongD4, planes)
 
         if func.chroma and chroma_mode:
@@ -215,8 +242,12 @@ def deblock_qed(
 
 
 def mpeg2stinx(
-    clip: vs.VideoNode, bobber: Deinterlacer = NNEDI3(), tff: bool = True,
-    mask: bool = True, radius: int | tuple[int, int] = 2, limit: float | None = 1.0,
+    clip: vs.VideoNode,
+    bobber: Deinterlacer = NNEDI3(),
+    tff: bool = True,
+    mask: bool = True,
+    radius: int | tuple[int, int] = 2,
+    limit: float | None = 1.0,
 ) -> ConstantFormatVideoNode:
     """
     This filter is designed to eliminate certain combing-like compression artifacts that show up all too often
@@ -251,11 +282,11 @@ def mpeg2stinx(
 
         assert adj
 
-        diff = norm_expr([core.std.Interleave([src] * 2), adj], 'x y - abs', func=mpeg2stinx).std.SeparateFields(tff)
+        diff = norm_expr([core.std.Interleave([src] * 2), adj], "x y - abs", func=mpeg2stinx).std.SeparateFields(tff)
         diff = MeanMode.MINIMUM([diff.std.SelectEvery(4, (0, 1)), diff.std.SelectEvery(4, (2, 3))])
         diff = Morpho.expand(diff, sw=2, sh=1).std.DoubleWeave(tff)[::2]
 
-        return norm_expr([flt, src, diff], 'z {limit} * LIM! x y LIM@ - y LIM@ + clip', limit=limit, func=mpeg2stinx)
+        return norm_expr([flt, src, diff], "z {limit} * LIM! x y LIM@ - y LIM@ + clip", limit=limit, func=mpeg2stinx)
 
     def _bobfunc(clip: vs.VideoNode) -> vs.VideoNode:
         bobbed = bobber.bob(clip)

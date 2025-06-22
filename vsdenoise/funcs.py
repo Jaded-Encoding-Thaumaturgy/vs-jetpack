@@ -7,74 +7,103 @@ from __future__ import annotations
 from typing import Any, Literal, overload
 
 from vstools import (
-    ConstantFormatVideoNode, KwargsNotNone, PlanesT, VSFunctionNoArgs, check_ref_clip, check_variable, fallback,
-    normalize_seq, scale_delta, vs
+    ConstantFormatVideoNode,
+    KwargsNotNone,
+    PlanesT,
+    VSFunctionNoArgs,
+    check_ref_clip,
+    check_variable,
+    fallback,
+    normalize_seq,
+    scale_delta,
+    vs,
 )
 
 from .mvtools import MotionVectors, MVTools, MVToolsPreset
 from .prefilters import PrefilterPartial
 
 __all__ = [
-    'mc_degrain',
-    'mc_clamp',
+    "mc_degrain",
+    "mc_clamp",
 ]
 
 
 @overload
 def mc_degrain(
-    clip: vs.VideoNode, vectors: MotionVectors | None = None,
+    clip: vs.VideoNode,
+    vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterPartial | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
-    preset: MVToolsPreset = ..., tr: int = 1,
-    blksize: int | tuple[int, int] = 16, refine: int = 1,
-    thsad: int | tuple[int, int] = 400, thsad2: int | tuple[int | None, int | None] | None = None,
-    thsad_recalc: int | None = None, limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None, export_globals: Literal[False] = ...,
-    planes: PlanesT = None
-) -> vs.VideoNode:
-    ...
+    preset: MVToolsPreset = ...,
+    tr: int = 1,
+    blksize: int | tuple[int, int] = 16,
+    refine: int = 1,
+    thsad: int | tuple[int, int] = 400,
+    thsad2: int | tuple[int | None, int | None] | None = None,
+    thsad_recalc: int | None = None,
+    limit: int | tuple[int | None, int | None] | None = None,
+    thscd: int | tuple[int | None, int | None] | None = None,
+    export_globals: Literal[False] = ...,
+    planes: PlanesT = None,
+) -> vs.VideoNode: ...
 
 
 @overload
 def mc_degrain(
-    clip: vs.VideoNode, vectors: MotionVectors | None = None,
+    clip: vs.VideoNode,
+    vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterPartial | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
-    preset: MVToolsPreset = ..., tr: int = 1,
-    blksize: int | tuple[int, int] = 16, refine: int = 1,
-    thsad: int | tuple[int, int] = 400, thsad2: int | tuple[int | None, int | None] | None = None,
-    thsad_recalc: int | None = None, limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None, export_globals: Literal[True] = ...,
-    planes: PlanesT = None
-) -> tuple[vs.VideoNode, MVTools]:
-    ...
+    preset: MVToolsPreset = ...,
+    tr: int = 1,
+    blksize: int | tuple[int, int] = 16,
+    refine: int = 1,
+    thsad: int | tuple[int, int] = 400,
+    thsad2: int | tuple[int | None, int | None] | None = None,
+    thsad_recalc: int | None = None,
+    limit: int | tuple[int | None, int | None] | None = None,
+    thscd: int | tuple[int | None, int | None] | None = None,
+    export_globals: Literal[True] = ...,
+    planes: PlanesT = None,
+) -> tuple[vs.VideoNode, MVTools]: ...
 
 
 @overload
 def mc_degrain(
-    clip: vs.VideoNode, vectors: MotionVectors | None = None,
+    clip: vs.VideoNode,
+    vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterPartial | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
-    preset: MVToolsPreset = ..., tr: int = 1,
-    blksize: int | tuple[int, int] = 16, refine: int = 1,
-    thsad: int | tuple[int, int] = 400, thsad2: int | tuple[int | None, int | None] | None = None,
-    thsad_recalc: int | None = None, limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None, export_globals: bool = ...,
-    planes: PlanesT = None
-) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]:
-    ...
+    preset: MVToolsPreset = ...,
+    tr: int = 1,
+    blksize: int | tuple[int, int] = 16,
+    refine: int = 1,
+    thsad: int | tuple[int, int] = 400,
+    thsad2: int | tuple[int | None, int | None] | None = None,
+    thsad_recalc: int | None = None,
+    limit: int | tuple[int | None, int | None] | None = None,
+    thscd: int | tuple[int | None, int | None] | None = None,
+    export_globals: bool = ...,
+    planes: PlanesT = None,
+) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]: ...
 
 
 def mc_degrain(
-    clip: vs.VideoNode, vectors: MotionVectors | None = None,
+    clip: vs.VideoNode,
+    vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterPartial | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
-    preset: MVToolsPreset = MVToolsPreset.HQ_SAD, tr: int = 1,
-    blksize: int | tuple[int, int] = 16, refine: int = 1,
-    thsad: int | tuple[int, int] = 400, thsad2: int | tuple[int | None, int | None] | None = None,
-    thsad_recalc: int | None = None, limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None, export_globals: bool = False,
-    planes: PlanesT = None
+    preset: MVToolsPreset = MVToolsPreset.HQ_SAD,
+    tr: int = 1,
+    blksize: int | tuple[int, int] = 16,
+    refine: int = 1,
+    thsad: int | tuple[int, int] = 400,
+    thsad2: int | tuple[int | None, int | None] | None = None,
+    thsad_recalc: int | None = None,
+    limit: int | tuple[int | None, int | None] | None = None,
+    thscd: int | tuple[int | None, int | None] | None = None,
+    export_globals: bool = False,
+    planes: PlanesT = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]:
     """
     Perform temporal denoising using motion compensation.
@@ -110,6 +139,7 @@ def mc_degrain(
     :return:                  Motion compensated and temporally filtered clip with reduced noise.
                               If export_globals is true: A tuple containing the processed clip and the MVTools object.
     """
+
     def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
         return (x[0] // 2, x[1] // 2)
 
@@ -139,8 +169,12 @@ def mc_degrain(
 
 
 def mc_clamp(
-    flt: vs.VideoNode, src: vs.VideoNode, mv_obj: MVTools, ref: vs.VideoNode | None = None,
-    clamp: int | float | tuple[int | float, int | float] = 0, **kwargs: Any,
+    flt: vs.VideoNode,
+    src: vs.VideoNode,
+    mv_obj: MVTools,
+    ref: vs.VideoNode | None = None,
+    clamp: int | float | tuple[int | float, int | float] = 0,
+    **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     from vsexprtools import norm_expr
     from vsrgtools import MeanMode
@@ -160,7 +194,7 @@ def mc_clamp(
 
     return norm_expr(
         [flt, comp_min, comp_max],
-        'x y {undershoot} - z {overshoot} + clip',
+        "x y {undershoot} - z {overshoot} + clip",
         undershoot=scale_delta(undershoot, 8, flt),
         overshoot=scale_delta(overshoot, 8, flt),
     )

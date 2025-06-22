@@ -94,7 +94,6 @@ class Gaussian(CustomComplexTapsKernel):
                 return 0.0
             return 4 * (sigma**2)
 
-
     def __init__(self, sigma: float = 0.5, taps: float = 2, **kwargs: Any) -> None:
         """
         Initialize the kernel with a specific sigma and number of taps.

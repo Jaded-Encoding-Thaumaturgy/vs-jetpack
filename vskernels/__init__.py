@@ -1,5 +1,3 @@
-# ruff: noqa: F401, F403
-
 from .abstract import *
 from .exceptions import *
 from .kernels import *
@@ -29,13 +27,14 @@ _alias_map = {
 }
 warnings.simplefilter("always", DeprecationWarning)
 
+
 @cache
 def _warn_deprecated(name: str) -> None:
     warnings.warn(
         f"'{name}' is deprecated and will be removed in a future version. Use '{name[:-1]}Like' instead.",
         DeprecationWarning,
         stacklevel=3,
-        skip_file_prefixes=(str(Path(__file__).resolve()),)
+        skip_file_prefixes=(str(Path(__file__).resolve()),),
     )
 
 

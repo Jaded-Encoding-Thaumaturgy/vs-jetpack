@@ -9,17 +9,21 @@ from vsmasktools import ringing_mask
 from vsrgtools import box_blur, gauss_blur
 from vsrgtools.rgtools import Repair
 from vstools import (
-    ConstantFormatVideoNode, CustomOverflowError, PlanesT, VSFunctionNoArgs, check_ref_clip, check_variable,
-    check_variable_format, core, scale_delta, vs
+    ConstantFormatVideoNode,
+    CustomOverflowError,
+    PlanesT,
+    VSFunctionNoArgs,
+    check_ref_clip,
+    check_variable,
+    check_variable_format,
+    core,
+    scale_delta,
+    vs,
 )
 
 from .generic import BaseGenericScaler, GenericScaler
 
-__all__ = [
-    'ClampScaler',
-    'DPID',
-    'SSIM'
-]
+__all__ = ["ClampScaler", "DPID", "SSIM"]
 
 
 class ClampScaler(GenericScaler):
@@ -39,7 +43,7 @@ class ClampScaler(GenericScaler):
         kernel: KernelLike = Catrom,
         scaler: ScalerLike | None = None,
         shifter: KernelLike | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """
         :param base_scaler:     Scaler to clamp.
@@ -91,9 +95,8 @@ class ClampScaler(GenericScaler):
         width: int | None = None,
         height: int | None = None,
         shift: tuple[float, float] = (0, 0),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
-
         width, height = self._wh_norm(clip, width, height)
 
         base = self.base_scaler.scale(clip, width, height, shift, **kwargs)
@@ -110,13 +113,14 @@ class ClampScaler(GenericScaler):
 
         if TYPE_CHECKING:
             from vstools import check_variable_format
+
             assert check_variable_format(base, self.__class__)
             assert check_variable_format(smooth, self.__class__)
 
         merge_weight = self.strength / 100
 
         if self.limit is True:
-            expression = 'x {merge_weight} * y {ref_weight} * + a {undershoot} - z {overshoot} + clip'
+            expression = "x {merge_weight} * y {ref_weight} * + a {undershoot} - z {overshoot} + clip"
 
             merged = norm_expr(
                 [base, smooth, smooth.std.Maximum(), smooth.std.Minimum()],
@@ -125,7 +129,7 @@ class ClampScaler(GenericScaler):
                 ref_weight=1.0 - merge_weight,
                 undershoot=scale_delta(self.undershoot, 32, clip),
                 overshoot=scale_delta(self.overshoot, 32, clip),
-                func=self.__class__
+                func=self.__class__,
             )
         else:
             merged = smooth.std.Merge(base, merge_weight)
@@ -156,11 +160,7 @@ class DPID(BaseGenericScaler):
     """Rapid, Detail-Preserving Image Downscaler for VapourSynth"""
 
     def __init__(
-        self,
-        sigma: float = 0.1,
-        ref: vs.VideoNode | ScalerLike = Catrom,
-        planes: PlanesT = None,
-        **kwargs: Any
+        self, sigma: float = 0.1, ref: vs.VideoNode | ScalerLike = Catrom, planes: PlanesT = None, **kwargs: Any
     ) -> None:
         """
         :param sigma:       The power factor of range kernel. It can be used to tune the amplification
@@ -186,7 +186,7 @@ class DPID(BaseGenericScaler):
         width: int | None = None,
         height: int | None = None,
         shift: tuple[float, float] = (0, 0),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.__class__)
 
@@ -205,10 +205,12 @@ class DPID(BaseGenericScaler):
         if (ref.width, ref.height) != (width, height):
             ref = self._ref_scaler.scale(ref, width, height)
 
-        kwargs = {
-            'lambda': self.sigma, 'planes': self.planes,
-            'src_left': shift[1], 'src_top': shift[0]
-        } | self.kwargs | kwargs | {'read_chromaloc': True}
+        kwargs = (
+            {"lambda": self.sigma, "planes": self.planes, "src_left": shift[1], "src_top": shift[0]}
+            | self.kwargs
+            | kwargs
+            | {"read_chromaloc": True}
+        )
 
         return core.dpid.DpidRaw(clip, ref, **kwargs)
 
@@ -235,7 +237,7 @@ class SSIM(LinearScaler):
         self,
         scaler: ScalerLike = Hermite,
         smooth: int | float | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """
         :param scaler:      Scaler to be used for downscaling, defaults to Hermite.
@@ -273,22 +275,22 @@ class SSIM(LinearScaler):
 
         l1 = self.scaler.scale(clip, width, height, shift, **(kwargs | self.kwargs))
 
-        l1_sq, c_sq = [expr_func(x, 'x dup *') for x in (l1, clip)]
+        l1_sq, c_sq = [expr_func(x, "x dup *") for x in (l1, clip)]
 
         l2 = self.scaler.scale(c_sq, width, height, shift, **(kwargs | self.kwargs))
 
         m, sl_m_square, sh_m_square = [self.filter_func(x) for x in (l1, l1_sq, l2)]
 
         if complexpr_available:
-            merge_expr = f'z dup * SQ! x SQ@ - SQD! SQD@ {1e-6} < 0 y SQ@ - SQD@ / sqrt ?'
+            merge_expr = f"z dup * SQ! x SQ@ - SQD! SQD@ {1e-6} < 0 y SQ@ - SQD@ / sqrt ?"
         else:
-            merge_expr = f'x z dup * - {1e-6} < 0 y z dup * - x z dup * - / sqrt ?'
+            merge_expr = f"x z dup * - {1e-6} < 0 y z dup * - x z dup * - / sqrt ?"
 
         r = expr_func([sl_m_square, sh_m_square, m], merge_expr)
 
-        t = expr_func([r, m], 'x y *')
+        t = expr_func([r, m], "x y *")
 
-        return expr_func([self.filter_func(m), self.filter_func(r), l1, self.filter_func(t)], 'x y z * + a -')
+        return expr_func([self.filter_func(m), self.filter_func(r), l1, self.filter_func(t)], "x y z * + a -")
 
     @Scaler.cached_property
     def kernel_radius(self) -> int:

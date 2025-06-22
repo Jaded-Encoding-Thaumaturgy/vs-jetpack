@@ -5,27 +5,34 @@ import pytest
 from vstools import FramePropError, core, get_prop, merge_clip_props, vs
 
 clip = core.std.BlankClip(
-    format=vs.YUV420P8, width=1920, height=1080,
+    format=vs.YUV420P8,
+    width=1920,
+    height=1080,
 )
 
 clip = core.std.SetFrameProps(
     clip,
-    _Matrix=1, _Transfer=1, _Primaries=1,
-    __StrProp="test string", __IntProp=123, __FloatProp=123.456,
-    __BoolProp=True, __BytesProp=b"test bytes",
-    __VideoFrameProp=clip.get_frame(0)
+    _Matrix=1,
+    _Transfer=1,
+    _Primaries=1,
+    __StrProp="test string",
+    __IntProp=123,
+    __FloatProp=123.456,
+    __BoolProp=True,
+    __BytesProp=b"test bytes",
+    __VideoFrameProp=clip.get_frame(0),
 )
 
 video_frame = clip.get_frame(0)
 
 clip2 = core.std.BlankClip(
-    format=vs.YUV420P8, width=1920, height=1080,
+    format=vs.YUV420P8,
+    width=1920,
+    height=1080,
 )
 
-clip2 = core.std.SetFrameProps(
-    clip2,
-    _Matrix=5, _RandomProp=1, __AnotherRandomProp="gsdgsdgs"
-)
+clip2 = core.std.SetFrameProps(clip2, _Matrix=5, _RandomProp=1, __AnotherRandomProp="gsdgsdgs")
+
 
 @pytest.mark.parametrize("prop_name", ["_Matrix", "_Transfer", "_Primaries"])
 def test_get_prop_video_node_input(prop_name: str) -> None:
@@ -82,7 +89,7 @@ def test_get_prop_func() -> None:
         ("__IntProp", int, 123),
         ("__FloatProp", float, 123),
         ("__BoolProp", int, 1),
-    ]
+    ],
 )
 def test_get_prop_cast_int_success(prop_name: str, prop_type: type, expected: Any) -> None:
     """Test get_prop casting to int (success cases)."""
@@ -95,7 +102,7 @@ def test_get_prop_cast_int_success(prop_name: str, prop_type: type, expected: An
         ("__StrProp", str),
         ("__BytesProp", bytes),
         ("__VideoFrameProp", vs.VideoFrame),
-    ]
+    ],
 )
 def test_get_prop_cast_int_fail(prop_name: str, prop_type: type) -> None:
     """Test get_prop casting to int (expected failures)."""
@@ -109,7 +116,7 @@ def test_get_prop_cast_int_fail(prop_name: str, prop_type: type) -> None:
         ("__IntProp", int, 123.0),
         ("__FloatProp", float, 123.456),
         ("__BoolProp", int, 1.0),
-    ]
+    ],
 )
 def test_get_prop_cast_float_success(prop_name: str, prop_type: type, expected: float) -> None:
     """Test get_prop casting to float (success cases)."""
@@ -122,7 +129,7 @@ def test_get_prop_cast_float_success(prop_name: str, prop_type: type, expected: 
         ("__StrProp", str),
         ("__BytesProp", bytes),
         ("__VideoFrameProp", vs.VideoFrame),
-    ]
+    ],
 )
 def test_get_prop_cast_float_fail(prop_name: str, prop_type: type) -> None:
     """Test get_prop casting to float (expected failures)."""
@@ -139,7 +146,7 @@ def test_get_prop_cast_float_fail(prop_name: str, prop_type: type) -> None:
         ("__BoolProp", int, True),
         ("__BytesProp", bytes, True),
         ("__VideoFrameProp", vs.VideoFrame, True),
-    ]
+    ],
 )
 def test_get_prop_cast_bool(prop_name: str, prop_type: type[Any], expected: Literal[True]) -> None:
     """Test get_prop casting to bool."""
@@ -155,7 +162,7 @@ def test_get_prop_cast_bool(prop_name: str, prop_type: type[Any], expected: Lite
         ("__BoolProp", int, "1"),
         ("__BytesProp", bytes, "b'test bytes'"),
         ("__VideoFrameProp", vs.VideoFrame, str(video_frame)),
-    ]
+    ],
 )
 def test_get_prop_cast_str(prop_name: str, prop_type: type[Any], expected: str) -> None:
     """Test get_prop casting to str."""
@@ -169,11 +176,9 @@ def test_get_prop_cast_str(prop_name: str, prop_type: type[Any], expected: str) 
         ("__BytesProp", bytes, bytes, b"test bytes"),
         ("__IntProp", int, bytes, bytes(123)),
         ("__BoolProp", int, bytes, bytes(1)),
-    ]
+    ],
 )
-def test_get_prop_cast_bytes_success(
-    prop_name: str, prop_type: type, cast: Any, expected: bytes
-) -> None:
+def test_get_prop_cast_bytes_success(prop_name: str, prop_type: type, cast: Any, expected: bytes) -> None:
     """Test get_prop casting to bytes (success cases)."""
     assert get_prop(clip, prop_name, prop_type, cast=cast) == expected
 
@@ -183,7 +188,7 @@ def test_get_prop_cast_bytes_success(
     [
         ("__VideoFrameProp", vs.VideoFrame),
         ("__FloatProp", float),
-    ]
+    ],
 )
 def test_get_prop_cast_bytes_fail(prop_name: str, prop_type: type) -> None:
     """Test get_prop casting to bytes (expected failures)."""
@@ -205,7 +210,7 @@ def test_get_prop_cast_custom() -> None:
 
     def custom_cast(x: Any) -> str:
         if isinstance(x, bytes):
-            x = x.decode('utf-8')
+            x = x.decode("utf-8")
         return f"Custom: {x}"
 
     assert get_prop(clip, "__StrProp", str, cast=custom_cast) == "Custom: test string"

@@ -7,10 +7,7 @@ from vstools import CustomIntEnum, KwargsT, check_variable, fallback, inject_sel
 
 from .abstract import Debander
 
-__all__ = [
-    'PlaceboDither',
-    'Placebo'
-]
+__all__ = ["PlaceboDither", "Placebo"]
 
 
 class PlaceboDither(CustomIntEnum):
@@ -74,8 +71,13 @@ class Placebo(Debander):
 
     @inject_self
     def deband(  # type: ignore[override]
-        self, clip: vs.VideoNode, radius: float = 16.0, thr: float | list[float] = 3.0,
-        iterations: int = 4, grain: float | list[float] = 0.0, dither: PlaceboDither = PlaceboDither.DEFAULT
+        self,
+        clip: vs.VideoNode,
+        radius: float = 16.0,
+        thr: float | list[float] = 3.0,
+        iterations: int = 4,
+        grain: float | list[float] = 0.0,
+        dither: PlaceboDither = PlaceboDither.DEFAULT,
     ) -> vs.VideoNode:
         """
         Main deband function, wrapper for `placebo.Deband <https:/github.com/Lypheo/vs-placebo#vs-placebo>`_
@@ -128,9 +130,7 @@ class Placebo(Debander):
 
             return join(debs, clip.format.color_family)
 
-        plane_map = {
-            tuple(i for i in range(clip.format.num_planes) if grain[i] == x): x for x in set_grn - {0}
-        }
+        plane_map = {tuple(i for i in range(clip.format.num_planes) if grain[i] == x): x for x in set_grn - {0}}
 
         debanded = clip
         for planes, grain_val in plane_map.items():

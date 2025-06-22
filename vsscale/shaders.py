@@ -11,7 +11,7 @@ from vstools import ConstantFormatVideoNode, check_variable, core, depth, join, 
 from .generic import BaseGenericScaler
 
 __all__ = [
-    'PlaceboShader',
+    "PlaceboShader",
 ]
 
 
@@ -27,7 +27,7 @@ class PlaceboShader(BaseGenericScaler):
         kernel: KernelLike = Catrom,
         scaler: ScalerLike | None = None,
         shifter: KernelLike | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
 
@@ -39,7 +39,7 @@ class PlaceboShader(BaseGenericScaler):
         width: int | None = None,
         height: int | None = None,
         shift: tuple[float, float] = (0, 0),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.__class__)
 
@@ -64,15 +64,15 @@ class PlaceboShader(BaseGenericScaler):
                 output = join(output, blank, blank)
 
         # Configure filter param mainly used for chroma planes if input clip is GRAY. Box was slightly faster.
-        if 'filter' not in kwargs:
-            kwargs['filter'] = 'box' if output.format.num_planes == 1 else 'ewa_lanczos'
+        if "filter" not in kwargs:
+            kwargs["filter"] = "box" if output.format.num_planes == 1 else "ewa_lanczos"
 
         output = core.placebo.Shader(
             output,
             self.shader,
             output.width * ceil(width / output.width),
             output.height * ceil(height / output.height),
-            **kwargs
+            **kwargs,
         )
 
         return self._finish_scale(output, clip, width, height, shift)

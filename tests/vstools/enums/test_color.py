@@ -1,8 +1,14 @@
 from unittest import TestCase
 
 from vstools import (
-    ColorRange, Matrix, Primaries, Transfer, UnsupportedMatrixError, UnsupportedPrimariesError,
-    UnsupportedTransferError, vs
+    ColorRange,
+    Matrix,
+    Primaries,
+    Transfer,
+    UnsupportedMatrixError,
+    UnsupportedPrimariesError,
+    UnsupportedTransferError,
+    vs,
 )
 
 

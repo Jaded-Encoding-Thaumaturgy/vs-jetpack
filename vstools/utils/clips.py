@@ -9,8 +9,19 @@ from typing import Any, Callable, Literal, Union, overload
 from jetpytools import P, CustomValueError, FuncExceptT, KwargsT, T
 
 from ..enums import (
-    ChromaLocation, ChromaLocationT, ColorRange, ColorRangeT, FieldBased, FieldBasedT, Matrix, MatrixT, Primaries,
-    PrimariesT, PropEnum, Transfer, TransferT
+    ChromaLocation,
+    ChromaLocationT,
+    ColorRange,
+    ColorRangeT,
+    FieldBased,
+    FieldBasedT,
+    Matrix,
+    MatrixT,
+    Primaries,
+    PrimariesT,
+    PropEnum,
+    Transfer,
+    TransferT,
 )
 from ..functions import DitherType, check_variable_format, depth
 from ..types import ConstantFormatVideoNode, HoldsVideoFormatT, VideoFormatT, VideoNodeT
@@ -19,15 +30,14 @@ from .cache import DynamicClipsCache
 from .info import get_depth
 
 __all__ = [
-    'finalize_clip',
-    'finalize_output',
-    'initialize_clip',
-    'initialize_input',
-
-    'ProcessVariableClip',
-    'ProcessVariableResClip',
-    'ProcessVariableFormatClip',
-    'ProcessVariableResFormatClip'
+    "finalize_clip",
+    "finalize_output",
+    "initialize_clip",
+    "initialize_input",
+    "ProcessVariableClip",
+    "ProcessVariableResClip",
+    "ProcessVariableFormatClip",
+    "ProcessVariableResFormatClip",
 ]
 
 
@@ -36,7 +46,8 @@ def finalize_clip(
     bits: VideoFormatT | HoldsVideoFormatT | int | None = 10,
     clamp_tv_range: bool | None = None,
     dither_type: DitherType = DitherType.AUTO,
-    *, func: FuncExceptT | None = None
+    *,
+    func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Finalize a clip for output to the encoder.
@@ -71,30 +82,35 @@ def finalize_clip(
 
 @overload
 def finalize_output(
-    function: Callable[P, vs.VideoNode], /, *, bits: int | None = 10,
-    clamp_tv_range: bool = True, dither_type: DitherType = DitherType.AUTO, func: FuncExceptT | None = None
-) -> Callable[P, ConstantFormatVideoNode]:
-    ...
+    function: Callable[P, vs.VideoNode],
+    /,
+    *,
+    bits: int | None = 10,
+    clamp_tv_range: bool = True,
+    dither_type: DitherType = DitherType.AUTO,
+    func: FuncExceptT | None = None,
+) -> Callable[P, ConstantFormatVideoNode]: ...
 
 
 @overload
 def finalize_output(
     *,
     bits: int | None = 10,
-    clamp_tv_range: bool = True, dither_type: DitherType = DitherType.AUTO, func: FuncExceptT | None = None
-) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, ConstantFormatVideoNode]]:
-    ...
+    clamp_tv_range: bool = True,
+    dither_type: DitherType = DitherType.AUTO,
+    func: FuncExceptT | None = None,
+) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, ConstantFormatVideoNode]]: ...
 
 
 def finalize_output(
     function: Callable[P, vs.VideoNode] | None = None,
-    /, *,
+    /,
+    *,
     bits: int | None = 10,
-    clamp_tv_range: bool = True, dither_type: DitherType = DitherType.AUTO, func: FuncExceptT | None = None
-) -> Union[
-    Callable[P, vs.VideoNode],
-    Callable[[Callable[P, vs.VideoNode]], Callable[P, ConstantFormatVideoNode]]
-]:
+    clamp_tv_range: bool = True,
+    dither_type: DitherType = DitherType.AUTO,
+    func: FuncExceptT | None = None,
+) -> Union[Callable[P, vs.VideoNode], Callable[[Callable[P, vs.VideoNode]], Callable[P, ConstantFormatVideoNode]]]:
     """Decorator implementation of finalize_clip."""
 
     if function is None:
@@ -108,7 +124,8 @@ def finalize_output(
 
 
 def initialize_clip(
-    clip: vs.VideoNode, bits: int | None = None,
+    clip: vs.VideoNode,
+    bits: int | None = None,
     matrix: MatrixT | None = None,
     transfer: TransferT | None = None,
     primaries: PrimariesT | None = None,
@@ -116,7 +133,9 @@ def initialize_clip(
     color_range: ColorRangeT | None = None,
     field_based: FieldBasedT | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.AUTO, *, func: FuncExceptT | None = None
+    dither_type: DitherType = DitherType.AUTO,
+    *,
+    func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Initialize a clip with default props.
@@ -159,13 +178,17 @@ def initialize_clip(
         (Primaries, primaries),
         (ChromaLocation, chroma_location),
         (ColorRange, color_range),
-        (FieldBased, field_based)
+        (FieldBased, field_based),
     ]
 
-    clip = PropEnum.ensure_presences(clip, [
-        (cls if strict else cls.from_video(clip, False, func)) if value is None else cls.from_param(value, func)
-        for cls, value in values
-    ], func)
+    clip = PropEnum.ensure_presences(
+        clip,
+        [
+            (cls if strict else cls.from_video(clip, False, func)) if value is None else cls.from_param(value, func)
+            for cls, value in values
+        ],
+        func,
+    )
 
     if bits is None:
         bits = max(get_depth(clip), 16)
@@ -178,7 +201,8 @@ def initialize_clip(
 @overload
 def initialize_input(
     function: Callable[P, VideoNodeT],
-    /, *,
+    /,
+    *,
     bits: int | None = 16,
     matrix: MatrixT | None = None,
     transfer: TransferT | None = None,
@@ -187,9 +211,9 @@ def initialize_input(
     color_range: ColorRangeT | None = None,
     field_based: FieldBasedT | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.AUTO, func: FuncExceptT | None = None
-) -> Callable[P, VideoNodeT]:
-    ...
+    dither_type: DitherType = DitherType.AUTO,
+    func: FuncExceptT | None = None,
+) -> Callable[P, VideoNodeT]: ...
 
 
 @overload
@@ -203,14 +227,14 @@ def initialize_input(
     color_range: ColorRangeT | None = None,
     field_based: FieldBasedT | None = None,
     dither_type: DitherType = DitherType.AUTO,
-    func: FuncExceptT | None = None
-) -> Callable[[Callable[P, VideoNodeT]], Callable[P, VideoNodeT]]:
-    ...
+    func: FuncExceptT | None = None,
+) -> Callable[[Callable[P, VideoNodeT]], Callable[P, VideoNodeT]]: ...
 
 
 def initialize_input(
     function: Callable[P, vs.VideoNode] | None = None,
-    /, *,
+    /,
+    *,
     bits: int | None = 16,
     matrix: MatrixT | None = None,
     transfer: TransferT | None = None,
@@ -219,11 +243,9 @@ def initialize_input(
     color_range: ColorRangeT | None = None,
     field_based: FieldBasedT | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.AUTO, func: FuncExceptT | None = None
-) -> Union[
-    Callable[P, VideoNodeT],
-    Callable[[Callable[P, VideoNodeT]], Callable[P, VideoNodeT]]
-]:
+    dither_type: DitherType = DitherType.AUTO,
+    func: FuncExceptT | None = None,
+) -> Union[Callable[P, VideoNodeT], Callable[[Callable[P, VideoNodeT]], Callable[P, VideoNodeT]]]:
     """
     Decorator implementation of ``initialize_clip``
     """
@@ -232,16 +254,28 @@ def initialize_input(
         return partial(
             initialize_input,
             bits=bits,
-            matrix=matrix, transfer=transfer, primaries=primaries,
-            chroma_location=chroma_location, color_range=color_range,
-            field_based=field_based, strict=strict, dither_type=dither_type, func=func
+            matrix=matrix,
+            transfer=transfer,
+            primaries=primaries,
+            chroma_location=chroma_location,
+            color_range=color_range,
+            field_based=field_based,
+            strict=strict,
+            dither_type=dither_type,
+            func=func,
         )
 
     init_args = dict[str, Any](
         bits=bits,
-        matrix=matrix, transfer=transfer, primaries=primaries,
-        chroma_location=chroma_location, color_range=color_range,
-        field_based=field_based, strict=strict, dither_type=dither_type, func=func
+        matrix=matrix,
+        transfer=transfer,
+        primaries=primaries,
+        chroma_location=chroma_location,
+        color_range=color_range,
+        field_based=field_based,
+        strict=strict,
+        dither_type=dither_type,
+        func=func,
     )
 
     @wraps(function)
@@ -265,7 +299,7 @@ def initialize_input(
                 return function(*args, **kwargs2 | {name: initialize_clip(param.default, **init_args)})  # type: ignore
 
         raise CustomValueError(
-            'No VideoNode found in positional, keyword, nor default arguments!', func or initialize_input
+            "No VideoNode found in positional, keyword, nor default arguments!", func or initialize_input
         )
 
     return _wrapper
@@ -275,10 +309,11 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
     """A helper class for processing variable format/resolution clip"""
 
     def __init__(
-        self, clip: VideoNodeT,
+        self,
+        clip: VideoNodeT,
         out_dim: tuple[int, int] | Literal[False] | None = None,
         out_fmt: int | vs.VideoFormat | Literal[False] | None = None,
-        cache_size: int = 10
+        cache_size: int = 10,
     ) -> None:
         """
         :param clip:            Clip to process
@@ -325,10 +360,7 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
         return self.process(self.normalize(self.clip, key))
 
     @classmethod
-    def from_clip(
-        cls,
-        clip: VideoNodeT
-    ) -> VideoNodeT:
+    def from_clip(cls, clip: VideoNodeT) -> VideoNodeT:
         """
         Process a variable format/resolution clip.
 
@@ -344,7 +376,7 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
         func: Callable[[VideoNodeT], VideoNodeT],
         out_dim: tuple[int, int] | Literal[False] | None = None,
         out_fmt: int | vs.VideoFormat | Literal[False] | None = None,
-        cache_size: int = 10
+        cache_size: int = 10,
     ) -> VideoNodeT:
         """
         Process a variable format/resolution clip with a given function
@@ -356,6 +388,7 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
         :param cache_size:  The maximum number of VideoNode allowed in the cache. Defaults to 10
         :return:            Processed variable clip.
         """
+
         def process(self: ProcessVariableClip[T, VideoNodeT], clip: VideoNodeT) -> VideoNodeT:
             return func(clip)
 
@@ -380,7 +413,7 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
         Normalize the given node to the format/resolution specified by the unique key `cast_to`
 
         :param clip:        Clip to normalize.
-        :param cast_to:     The target resolution or format to which the clip should be cast or normalized. 
+        :param cast_to:     The target resolution or format to which the clip should be cast or normalized.
         :return:            Normalized clip.
         """
 
