@@ -194,12 +194,12 @@ def source(
 
             idx_info = indexer.get_info(filepath_dgi, 0).footer
 
-            props |= dict(DgiFieldOp=0, DgiOrder=idx_info.order, DgiFilm=idx_info.film)
+            props |= {"DgiFieldOp": 0, "DgiOrder": idx_info.order, "DgiFilm": idx_info.film}
 
             indexer_kwargs = dict[str, Any]()
             if idx_info.film >= film_thr:
-                indexer_kwargs |= dict(fieldop=1)
-                props |= dict(DgiFieldOp=1, _FieldBased=0)
+                indexer_kwargs |= {"fieldop": 1}
+                props |= {"DgiFieldOp": 1, "_FieldBased": 0}
 
             clip = indexer.source_func(filepath_dgi, **indexer_kwargs)
         except (RuntimeError, AttributeError, FileNotFoundError):
@@ -235,10 +235,10 @@ def source(
     if clip is None:
         raise CustomRuntimeError(f'None of the indexers you have installed work on this file! "{filepath}"')
 
-    props |= dict(IdxFilePath=str(filepath))
+    props |= {"IdxFilePath": str(filepath)}
 
     if name:
-        props |= dict(Name=name)
+        props |= {"Name": name}
 
     clip = clip.std.SetFrameProps(**props)
 

@@ -140,7 +140,7 @@ class CustomMaskFromRanges(CustomMaskFromClipsAndRanges):
     ranges: Mapping[FilePathType, FrameRangeN | FrameRangesN]
 
     def __post_init__(self) -> None:
-        self.clips = [self.idx.source(str(file), bits=-1) for file in self.ranges.keys()]
+        self.clips = [self.idx.source(str(file), bits=-1) for file in self.ranges]
 
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]:
         return [normalize_ranges(clip, ranges) for ranges in self.ranges.values()]
@@ -168,7 +168,7 @@ class HardsubMask(DeferredMask):
         masks = [self.get_mask(hardsub, ref)]
         partials_dehardsubbed = [hardsub]
         dehardsub_masks = list[ConstantFormatVideoNode]()
-        partials = partials + [ref]
+        partials = [*partials, ref]
 
         thr = scale_value(self.bin_thr, 32, masks[-1])
 

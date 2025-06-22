@@ -112,7 +112,7 @@ class FileSignatures(list[FileSignature]):
         )
 
     def load_headers_data(
-        cls, *, custom_header_data: str | Path | list[FileSignature] | None = None, force: bool = False
+        self, *, custom_header_data: str | Path | list[FileSignature] | None = None, force: bool = False
     ) -> list[FileSignature]:
         """
         Load file signatures from json file. This is cached unless ``custom_header_data`` is set.
@@ -123,10 +123,10 @@ class FileSignatures(list[FileSignature]):
         :return:                    List of parsed FileSignature from json file.
         """
 
-        if cls._file_headers_data is None or force or custom_header_data:
+        if self._file_headers_data is None or force or custom_header_data:
             header_data: list[dict[str, Any]] = []
 
-            filenames = {cls.file_headers_path}
+            filenames = {self.file_headers_path}
 
             if custom_header_data and not isinstance(custom_header_data, list):
                 filenames.add(Path(custom_header_data))
@@ -135,8 +135,7 @@ class FileSignatures(list[FileSignature]):
                 header_data.extend(json.loads(filename.read_text()))
 
             _file_headers_data = list(
-                dict(
-                    {
+                {
                         FileSignature(
                             info["file_type"],
                             info["ext"],
@@ -146,16 +145,15 @@ class FileSignatures(list[FileSignature]):
                             sorted([bytes.fromhex(signature) for signature in info["signatures"]], reverse=True),
                         ): 0
                         for info in header_data
-                    }
-                ).keys()
+                    }.keys()
             )
 
-            cls._file_headers_data = _file_headers_data
+            self._file_headers_data = _file_headers_data
 
             if isinstance(custom_header_data, list):
                 return custom_header_data + _file_headers_data
 
-        return cls._file_headers_data
+        return self._file_headers_data
 
     @inject_self
     def parse(self, filename: Path) -> FileSignature | None:
@@ -236,17 +234,16 @@ class FileType(FileTypeBase):
         if value is None:
             return FileType.AUTO
 
-        if isinstance(value, str):
-            if "/" in value:
-                fbase, ftype, *_ = value.split("/")
+        if isinstance(value, str) and "/" in value:
+            fbase, ftype, *_ = value.split("/")
 
-                if fbase == "index":
-                    return FileType.INDEX(ftype)  # type: ignore[misc]
+            if fbase == "index":
+                return FileType.INDEX(ftype)  # type: ignore[misc]
 
-                if value.endswith("-image"):
-                    return FileType.IMAGE
+            if value.endswith("-image"):
+                return FileType.IMAGE
 
-                return FileType(ftype)
+            return FileType(ftype)
 
         return FileType.OTHER
 

@@ -642,7 +642,7 @@ def join(*_planes: Any, **kwargs: Any) -> vs.VideoNode:
                 continue
 
             if p_key is None:
-                planes_map |= {i: n for i, n in enumerate(flatten_vnodes(node, split_planes=True))}
+                planes_map |= dict(enumerate(flatten_vnodes(node, split_planes=True)))
             else:
                 planes_map |= {i: plane(node, min(i, node.format.num_planes - 1)) for i in to_arr(p_key)}
 
@@ -713,9 +713,8 @@ def plane(clip: vs.VideoNode, index: int, /, strict: bool = True) -> ConstantFor
     if clip.format.num_planes == 1 and index == 0:
         return clip
 
-    if not strict:
-        if clip.format.color_family is vs.RGB:
-            clip = vs.core.std.RemoveFrameProps(clip, "_Matrix")
+    if not strict and clip.format.color_family is vs.RGB:
+        clip = vs.core.std.RemoveFrameProps(clip, "_Matrix")
 
     return vs.core.std.ShufflePlanes(clip, index, vs.GRAY)
 

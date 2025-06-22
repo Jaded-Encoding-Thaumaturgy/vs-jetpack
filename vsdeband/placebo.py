@@ -53,8 +53,8 @@ class PlaceboDither(CustomIntEnum):
     def placebo_args(self) -> KwargsT:
         """Get arguments you must pass to .placebo.Debander for this dither mode."""
         if self is PlaceboDither.NONE:
-            return dict(dither=False, dither_algo=0)
-        return dict(dither=True, dither_algo=self.value)
+            return {"dither": False, "dither_algo": 0}
+        return {"dither": True, "dither_algo": self.value}
 
 
 @dataclass
@@ -134,7 +134,7 @@ class Placebo(Debander):
 
         debanded = clip
         for planes, grain_val in plane_map.items():
-            if len(set(thr[p] for p in planes)) == 1:
+            if len({thr[p] for p in planes}) == 1:
                 debanded = _placebo(debanded, thr[planes[0]], grain_val, planes)
             else:
                 for p in planes:

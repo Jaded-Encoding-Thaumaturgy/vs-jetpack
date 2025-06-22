@@ -272,7 +272,7 @@ class Timecodes(list[FrameDur]):
                 func,
                 "",
                 "timecodes file length mismatch with specified length!",
-                reason=dict(timecodes=len(norm_timecodes), clip=length),
+                reason={"timecodes": len(norm_timecodes), "clip": length},
             )
 
         return cls(FrameDur(i, f.numerator, f.denominator) for i, f in enumerate(norm_timecodes))
@@ -335,7 +335,7 @@ class Timecodes(list[FrameDur]):
         elif format == Timecodes.V2:
             acc = Fraction()  # in milliseconds
 
-            for time in self + [Fraction()]:
+            for time in [*self, Fraction()]:
                 ns = round(acc * 10**6)
                 ms, dec = divmod(ns, 10**6)
                 out_text.append(f"{ms}.{dec:06}")
@@ -343,7 +343,7 @@ class Timecodes(list[FrameDur]):
 
         out_path.unlink(True)
         out_path.touch()
-        out_path.write_text("\n".join(out_text + [""]))
+        out_path.write_text("\n".join([*out_text, ""]))
 
 
 class Keyframes(list[int]):
@@ -369,7 +369,7 @@ class Keyframes(list[int]):
             self.indices = LinearRangeLut(self)
 
     def __init__(self, iterable: Iterable[int] = [], *, _dummy: bool = False) -> None:
-        super().__init__(sorted(list(iterable)))
+        super().__init__(sorted(iterable))
 
         self._dummy = _dummy
 
@@ -600,7 +600,7 @@ class LWIndex:
 
         if length and (idxlen := ((indexend - indexstart) // 2)) != length:
             raise FramesLengthError(
-                func, "", "index file length mismatch with specified length!", reason=dict(index=idxlen, clip=length)
+                func, "", "index file length mismatch with specified length!", reason={"index": idxlen, "clip": length}
             )
 
         sinfomatch = LWIndex.Regex.streaminfo.match(data[indexstart - 2])

@@ -130,16 +130,19 @@ def check_correct_subsampling(
     """
     from ..exceptions import InvalidSubsamplingError
 
-    if clip.format:
-        if (width is not None and width % (1 << clip.format.subsampling_w)) or (
-            height is not None and height % (1 << clip.format.subsampling_h)
-        ):
-            raise InvalidSubsamplingError(
-                func or check_correct_subsampling,
-                clip,
-                "The {subsampling} subsampling is not supported for this resolution!",
-                reason=dict(width=width, height=height),
-            )
+    if (
+        clip.format
+        and (
+            (width is not None and width % (1 << clip.format.subsampling_w))
+            or (height is not None and height % (1 << clip.format.subsampling_h))
+        )
+    ):
+        raise InvalidSubsamplingError(
+            func or check_correct_subsampling,
+            clip,
+            "The {subsampling} subsampling is not supported for this resolution!",
+            reason={"width": width, "height": height},
+        )
 
 
 def check_progressive(clip: VideoNodeT, func: FuncExceptT) -> TypeGuard[VideoNodeT]:

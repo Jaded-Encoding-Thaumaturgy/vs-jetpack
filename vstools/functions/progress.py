@@ -15,6 +15,7 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 from rich.text import Text
+from typing_extensions import Self
 
 __all__ = [
     "BarColumn",
@@ -41,7 +42,7 @@ class RenderProgressCTX:
         self.progress = progress
         self.task_id = task_id
 
-    def __enter__(self) -> RenderProgressCTX:
+    def __enter__(self) -> Self:
         self.progress.__enter__()
         return self
 

@@ -66,7 +66,7 @@ class SampleGridModel(CustomIntEnum):
             src_width = src_width * (width - 1) / (src_width - 1)
             src_height = src_height * (height - 1) / (src_height - 1)
 
-            kwargs |= dict(src_width=src_width, src_height=src_height)
+            kwargs |= {"src_width": src_width, "src_height": src_height}
             shift_x, shift_y, *_ = tuple(
                 (x / 2 + y for x, y in zip(((height - src_height), (width - src_width)), shift))
             )

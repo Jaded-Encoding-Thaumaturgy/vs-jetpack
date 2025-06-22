@@ -28,6 +28,7 @@ from vstools import (
 )
 
 from .util import ExprVarRangeT, ExprVars, ExprVarsT, complexpr_available
+from typing_extensions import Self
 
 __all__ = ["ExprList", "ExprOp", "ExprToken", "TupleExprList"]
 
@@ -178,7 +179,7 @@ class ExprOpBase(str):
     value: str
     n_op: int
 
-    def __new__(cls, value: str, n_op: int) -> ExprOpBase:
+    def __new__(cls, value: str, n_op: int) -> Self:
         self = super().__new__(cls, value)
         self.n_op = n_op
 
@@ -299,7 +300,7 @@ class ExprOp(ExprOpBase, CustomEnum):
     def matrix(
         cls, var: str | ExprVarsT, radius: int, mode: ConvMode, exclude: Iterable[tuple[int, int]] | None = None
     ) -> TupleExprList:
-        exclude = list(exclude) if exclude else list()
+        exclude = list(exclude) if exclude else []
 
         match mode:
             case ConvMode.SQUARE:
@@ -412,10 +413,7 @@ class ExprOp(ExprOpBase, CustomEnum):
     ) -> tuple[ExprVarsT, ExprVarsT]:
         planesa = ExprVars(planesa)
 
-        if planesb is None:
-            planesb = ExprVars(planesa.stop, planesa.stop + len(planesa))
-        else:
-            planesb = ExprVars(planesb)
+        planesb = ExprVars(planesa.stop, planesa.stop + len(planesa)) if planesb is None else ExprVars(planesb)
 
         if len(planesa) != len(planesb):
             raise CustomIndexError("Both clips must have an equal amount of planes!", func)

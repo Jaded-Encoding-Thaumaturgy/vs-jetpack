@@ -198,7 +198,7 @@ class IsoFileCore:
                 if block_mode == BLOCK_MODE_FIRST_CELL:
                     current_angle = 1
                     angle_start_cell_i = cell_i
-                elif block_mode == BLOCK_MODE_IN_BLOCK or block_mode == BLOCK_MODE_LAST_CELL:
+                elif block_mode in (BLOCK_MODE_IN_BLOCK, BLOCK_MODE_LAST_CELL):
                     current_angle += 1
 
                 if block_mode == 0:
@@ -321,7 +321,7 @@ class IsoFileCore:
         # you could either always add the end as chapter or stretch the last chapter till the end
         # Guess #1: We only need to handle the case where last is not acually a chapter so stretching
         # is the only correct solution there, adding would be wrong
-        output_chapters = [0] + output_chapters
+        output_chapters = [0, *output_chapters]
         lastchpt = len(rnode)
         if output_chapters[-1] != lastchpt:
             patched_end_chapter = output_chapters[-1]
@@ -455,7 +455,7 @@ class IsoFileCore:
         if self._ifo_files is not None:
             return self._ifo_files
 
-        ifo_files = [f for f in sorted(self.mount_path.glob("*.[iI][fF][oO]"))]
+        ifo_files = sorted(self.mount_path.glob("*.[iI][fF][oO]"))
 
         if not len(ifo_files):
             raise FileNotFoundError("IsoFile: No IFOs found!")

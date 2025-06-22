@@ -85,7 +85,7 @@ def decrease_size(
     assert check_variable(clip, decrease_size)
 
     if min_in > max_in:
-        raise CustomIndexError("The blur min must be lower than max!", decrease_size, dict(min=min_in, max=max_in))
+        raise CustomIndexError("The blur min must be lower than max!", decrease_size, {"min": min_in, "max": max_in})
 
     InvalidColorFamilyError.check(clip, vs.YUV, decrease_size)
 
@@ -100,7 +100,7 @@ def decrease_size(
         pm_min, pm_max, *emask = mask
 
         if pm_min > pm_max:
-            raise CustomIndexError("The mask min must be lower than max!", decrease_size, dict(min=pm_min, max=pm_max))
+            raise CustomIndexError("The mask min must be lower than max!", decrease_size, {"min": pm_min, "max": pm_max})
 
         pm_min = scale_mask(pm_min, 32, clip)
         pm_max = scale_mask(pm_max, 32, clip)
@@ -109,10 +109,7 @@ def decrease_size(
             range_mask(clip, rad=3, radc=2), format=clip.format.replace(subsampling_h=0, subsampling_w=0).id
         )
 
-        if emask:
-            mask = EdgeDetect.ensure_obj(emask[0]).edgemask(pre)
-        else:
-            mask = FDoGTCanny.edgemask(pre)
+        mask = EdgeDetect.ensure_obj(emask[0]).edgemask(pre) if emask else FDoGTCanny.edgemask(pre)
 
         mask = mask.std.Maximum().std.Minimum()
 
@@ -130,10 +127,7 @@ def decrease_size(
         prefilter = (2, 4)
 
     if prefilter:
-        if isinstance(prefilter, tuple):
-            pre = box_blur(pre, *prefilter)
-        else:
-            pre = gauss_blur(pre, prefilter)
+        pre = box_blur(pre, *prefilter) if isinstance(prefilter, tuple) else gauss_blur(pre, prefilter)
 
     minf = scale_value(min_in, 8, pre)
     maxf = scale_value(max_in, 8, pre)

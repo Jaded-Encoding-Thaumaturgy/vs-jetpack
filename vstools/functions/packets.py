@@ -19,6 +19,7 @@ from .file import PackageStorage
 from .timecodes import Keyframes
 
 from ..types import VideoNodeT
+import itertools
 
 __all__ = [
     "ScenePacketStats",
@@ -219,7 +220,7 @@ class VideoPackets(list[int]):
         stats = list[ScenePacketStats]()
 
         try:
-            for start, end in zip(keyframes, keyframes[1:]):
+            for start, end in itertools.pairwise(keyframes):
                 pkt_scenes = self[start:end]
 
                 stats.append(

@@ -123,7 +123,7 @@ class D2VWitch(DVDExtIndexer):
                         int(line[0], 16),
                         int(line[4]),
                         int(line[3]),
-                        list(int(a, 16) for a in line[7:]),
+                        [int(a, 16) for a in line[7:]],
                     )
                 )
         elif file_idx == -1:
@@ -142,7 +142,7 @@ class D2VWitch(DVDExtIndexer):
                         int(line[0], 16),
                         int(line[4]),
                         int(line[3]),
-                        list(int(a, 16) for a in line[7:]),
+                        [int(a, 16) for a in line[7:]],
                     )
                 )
 
@@ -159,7 +159,7 @@ class D2VWitch(DVDExtIndexer):
     ) -> tuple[vs.VideoNode, list[int], list[tuple[int, int]], list[int]]:
         dvddd = self._d2v_vobid_frameset(vob_input_files, output_folder)
 
-        if len(dvddd.keys()) == 1 and (0, 0) in dvddd.keys():
+        if len(dvddd.keys()) == 1 and (0, 0) in dvddd:
             raise CustomValueError(
                 "Youre indexer created a d2v file with only zeros for vobid cellid; "
                 "This usually means outdated/unpatched D2Vwitch",

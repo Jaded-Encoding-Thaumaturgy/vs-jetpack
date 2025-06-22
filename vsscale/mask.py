@@ -109,9 +109,6 @@ def descale_error_mask(
 
         error = ExprOp.MIN(error, ExprOp.MAX(shift_clip_multi(ExprOp.MIN(error, avg), (-tr, tr))))
 
-    if isinstance(blur, int):
-        error = box_blur(error, blur)
-    else:
-        error = gauss_blur(error, blur)
+    error = box_blur(error, blur) if isinstance(blur, int) else gauss_blur(error, blur)
 
     return error

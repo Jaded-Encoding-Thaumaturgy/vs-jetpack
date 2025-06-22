@@ -52,9 +52,6 @@ class VTSIMat:
             lang_type = (buf[0] & 0b1100) >> 2
             audio_format = (buf[0] & 0b11100000) >> 5
 
-            if lang_type:
-                lang = chr(buf[2]) + chr(buf[3])
-            else:
-                lang = "xx"
+            lang = chr(buf[2]) + chr(buf[3]) if lang_type else "xx"
 
             self.vts_audio_attr.append(AudioAttr(audio_format, lang))

@@ -27,10 +27,10 @@ class TestFuncs(TestCase):
         self.assertEqual(fallback(None, 6), 6)
 
     def test_kwargs_fallback(self) -> None:
-        kwargs = dict(overlap=1, search=2, block_size=4, sad_mode=8, motion=12, thSAD=16)
+        kwargs = {"overlap": 1, "search": 2, "block_size": 4, "sad_mode": 8, "motion": 12, "thSAD": 16}
         self.assertEqual(kwargs_fallback(5, (kwargs, "block_size"), 8), 5)
         self.assertEqual(kwargs_fallback(None, (kwargs, "block_size"), 8), 4)
-        self.assertEqual(kwargs_fallback(None, (dict(), "block_size"), 8), 8)
+        self.assertEqual(kwargs_fallback(None, ({}, "block_size"), 8), 8)
 
     def test_functionutil_bitdepth_tuple(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8)

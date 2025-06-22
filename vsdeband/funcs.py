@@ -258,7 +258,7 @@ def multi_deband(
     base_deband = base_db.deband(clip)
     lowpass_deband = lowpass_db.deband(clip).std.MaskedMerge(base_deband, linemask_deband)
 
-    freq_merge_kwargs = dict(mode_high=MeanMode.HARMONIC) | freq_merge_kwargs
+    freq_merge_kwargs = {"mode_high": MeanMode.HARMONIC} | freq_merge_kwargs
 
     def _norm_pass(
         dbpass: Debander | tuple[Debander, bool] | tuple[Debander, bool, bool],

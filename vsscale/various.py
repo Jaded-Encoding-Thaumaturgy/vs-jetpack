@@ -140,10 +140,7 @@ class ClampScaler(GenericScaler):
         if self.operator is not None:
             merge2 = combine([smooth, base], self.operator)
 
-            if self.masked:
-                merged = merged.std.MaskedMerge(merge2, ringing_mask(smooth))
-            else:
-                merged = merge2
+            merged = merged.std.MaskedMerge(merge2, ringing_mask(smooth)) if self.masked else merge2
         elif self.masked:
             merged = merged.std.MaskedMerge(smooth, ringing_mask(smooth))
 

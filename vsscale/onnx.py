@@ -217,15 +217,15 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         from vsmlrt import calc_tilesize
 
         kwargs = (
-            dict(
-                tiles=self.tiles,
-                tilesize=self.tilesize,
-                width=clip.width,
-                height=clip.height,
-                multiple=1,
-                overlap_w=self.overlap_w,
-                overlap_h=self.overlap_h,
-            )
+            {
+                "tiles": self.tiles,
+                "tilesize": self.tilesize,
+                "width": clip.width,
+                "height": clip.height,
+                "multiple": 1,
+                "overlap_w": self.overlap_w,
+                "overlap_h": self.overlap_h,
+            }
             | kwargs
         )
 
@@ -659,7 +659,7 @@ class BaseWaifu2xRGB(BaseWaifu2x):
         assert check_variable_format(clip, self.__class__)
 
         if clip.format != get_video_format(input_clip):
-            kwargs = dict(dither_type=DitherType.ORDERED) | kwargs
+            kwargs = {"dither_type": DitherType.ORDERED} | kwargs
             clip = self.kernel.resample(clip, input_clip, Matrix.from_video(input_clip, func=self.__class__), **kwargs)
 
         return clip
@@ -967,7 +967,7 @@ class BaseDPIR(BaseOnnxScaler):
         return super().scale(clip, width, height, shift, **kwargs)
 
     def calc_tilesize(self, clip: vs.VideoNode, **kwargs: Any) -> tuple[tuple[int, int], tuple[int, int]]:
-        return super().calc_tilesize(clip, **dict(multiple=self.multiple) | kwargs)
+        return super().calc_tilesize(clip, **{"multiple": self.multiple} | kwargs)
 
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         if get_color_family(clip) == vs.GRAY:
@@ -981,7 +981,7 @@ class BaseDPIR(BaseOnnxScaler):
         assert check_variable_format(clip, self.__class__)
 
         if get_video_format(clip) != get_video_format(input_clip):
-            kwargs = dict(dither_type=DitherType.ORDERED) | kwargs
+            kwargs = {"dither_type": DitherType.ORDERED} | kwargs
             clip = self.kernel.resample(clip, input_clip, Matrix.from_video(input_clip, func=self.__class__), **kwargs)
 
         return clip

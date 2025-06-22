@@ -30,6 +30,7 @@ from vstools import (
     vs,
     vs_object,
 )
+import contextlib
 
 __all__ = [
     "ChromaReconstruct",
@@ -153,7 +154,7 @@ class Regression:
             out = None
 
             if chroma_only:
-                ckwargs = kwargs | dict(planes=[1, 2])
+                ckwargs = kwargs | {"planes": [1, 2]}
 
                 key = complex_hash.hash(args, ckwargs)
 
@@ -164,10 +165,8 @@ class Regression:
                         if inc == clip:
                             return outc
 
-                try:
+                with contextlib.suppress(Exception):
                     out = self.func(clip, *args, **ckwargs)
-                except Exception:
-                    ...
 
             if not out:
                 key = complex_hash.hash(args, kwargs)

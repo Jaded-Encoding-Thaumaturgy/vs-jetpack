@@ -71,37 +71,36 @@ def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Calla
     @functools.wraps(method)
     def _wrapped(self: _BaseScalerT, *args: P.args, **kwargs: P.kwargs) -> R:
         # TODO: remove this
-        if not TYPE_CHECKING:
-            if isinstance(self, vs.VideoNode):
-                import inspect
-                import re
-                import pathlib
-                import warnings
+        if not TYPE_CHECKING and isinstance(self, vs.VideoNode):
+            import inspect
+            import re
+            import pathlib
+            import warnings
 
-                warnings.simplefilter("always", DeprecationWarning)
-                warnings.warn(
-                    f"The `{method.__name__}` must be called on an instance, not the class. "
-                    "For example, use: Bicubic().scale(...) instead of Bicubic.scale(...)",
-                    DeprecationWarning,
-                    2,
-                    skip_file_prefixes=(str(pathlib.Path(__file__).resolve()),),
-                )
+            warnings.simplefilter("always", DeprecationWarning)
+            warnings.warn(
+                f"The `{method.__name__}` must be called on an instance, not the class. "
+                "For example, use: Bicubic().scale(...) instead of Bicubic.scale(...)",
+                DeprecationWarning,
+                2,
+                skip_file_prefixes=(str(pathlib.Path(__file__).resolve()),),
+            )
 
-                frame_infos = inspect.stack()
-                frame_info = frame_infos[1]
-                f0 = inspect.currentframe()
-                f1 = f0.f_back  # pyright: ignore
+            frame_infos = inspect.stack()
+            frame_info = frame_infos[1]
+            f0 = inspect.currentframe()
+            f1 = f0.f_back  # pyright: ignore
 
-                try:
-                    if code := frame_info.code_context:
-                        match = re.search(rf"(\w+)\.{method.__name__}", code[0])
-                        if match:
-                            clip = self
-                            self = eval(match.group(1), f1.f_globals, f1.f_locals)()  # pyright: ignore
-                            args = (clip,) + args  # pyright: ignore
-                finally:
-                    frame_infos.clear()
-                    del frame_info, f0, f1
+            try:
+                if code := frame_info.code_context:
+                    match = re.search(rf"(\w+)\.{method.__name__}", code[0])
+                    if match:
+                        clip = self
+                        self = eval(match.group(1), f1.f_globals, f1.f_locals)()  # pyright: ignore
+                        args = (clip, *args)  # pyright: ignore
+            finally:
+                frame_infos.clear()
+                del frame_info, f0, f1
 
         init_kwargs = {k: self.kwargs.pop(k) for k in self.kwargs.keys() & signature.parameters.keys()}
 
@@ -158,7 +157,7 @@ def _check_kernel_radius(cls: type[BaseScaler]) -> Literal[True]:
     if cls in abstract_kernels:
         raise CustomRuntimeError(f"Can't instantiate abstract class {cls.__name__}!", cls)
 
-    if "kernel_radius" in set((attr for sub_cls in cls.__mro__ for attr in sub_cls.__dict__.keys())):
+    if "kernel_radius" in {attr for sub_cls in cls.__mro__ for attr in sub_cls.__dict__}:
         return True
 
     raise CustomRuntimeError(
@@ -513,7 +512,7 @@ class Scaler(BaseScaler):
         :param kwargs:  Extra parameters to merge.
         :return:        Final dictionary of keyword arguments for the scale function.
         """
-        return dict(width=width, height=height, src_top=shift[0], src_left=shift[1]) | self.kwargs | kwargs
+        return {"width": width, "height": height, "src_top": shift[0], "src_left": shift[1]} | self.kwargs | kwargs
 
 
 class Descaler(BaseScaler):
@@ -607,7 +606,7 @@ class Descaler(BaseScaler):
         :param kwargs:  Extra keyword arguments to merge.
         :return:        Combined keyword argument dictionary.
         """
-        return dict(width=width, height=height, src_top=shift[0], src_left=shift[1]) | self.kwargs | kwargs
+        return {"width": width, "height": height, "src_top": shift[0], "src_left": shift[1]} | self.kwargs | kwargs
 
     def get_rescale_args(
         self,
@@ -627,7 +626,7 @@ class Descaler(BaseScaler):
         :param kwargs:  Extra keyword arguments to merge.
         :return:        Combined keyword argument dictionary.
         """
-        return dict(width=width, height=height, src_top=shift[0], src_left=shift[1]) | self.kwargs | kwargs
+        return {"width": width, "height": height, "src_top": shift[0], "src_left": shift[1]} | self.kwargs | kwargs
 
 
 class Resampler(BaseScaler):
@@ -695,11 +694,11 @@ class Resampler(BaseScaler):
         :return:            A dictionary containing the resampling arguments.
         """
         return (
-            dict(
-                format=get_video_format(format).id,
-                matrix=Matrix.from_param(matrix),
-                matrix_in=Matrix.from_param(matrix_in),
-            )
+            {
+                "format": get_video_format(format).id,
+                "matrix": Matrix.from_param(matrix),
+                "matrix_in": Matrix.from_param(matrix_in),
+            }
             | self.kwargs
             | kwargs
         )
@@ -859,7 +858,7 @@ class Kernel(Scaler, Descaler, Resampler):
 
         :return:            Dictionary of combined parameters.
         """
-        return dict(width=width, height=height) | self.kwargs | kwargs
+        return {"width": width, "height": height} | self.kwargs | kwargs
 
     def get_scale_args(
         self,
@@ -880,7 +879,7 @@ class Kernel(Scaler, Descaler, Resampler):
 
         :return:        Dictionary of keyword arguments for the scale function.
         """
-        return dict(src_top=shift[0], src_left=shift[1]) | self.get_params_args(False, clip, width, height, **kwargs)
+        return {"src_top": shift[0], "src_left": shift[1]} | self.get_params_args(False, clip, width, height, **kwargs)
 
     def get_descale_args(
         self,
@@ -901,7 +900,7 @@ class Kernel(Scaler, Descaler, Resampler):
 
         :return:        Dictionary of keyword arguments for the descale function.
         """
-        return dict(src_top=shift[0], src_left=shift[1]) | self.get_params_args(True, clip, width, height, **kwargs)
+        return {"src_top": shift[0], "src_left": shift[1]} | self.get_params_args(True, clip, width, height, **kwargs)
 
     def get_rescale_args(
         self,
@@ -922,7 +921,7 @@ class Kernel(Scaler, Descaler, Resampler):
 
         :return:        Dictionary of keyword arguments for the rescale function.
         """
-        return dict(src_top=shift[0], src_left=shift[1]) | self.get_params_args(True, clip, width, height, **kwargs)
+        return {"src_top": shift[0], "src_left": shift[1]} | self.get_params_args(True, clip, width, height, **kwargs)
 
     def get_resample_args(
         self,
@@ -946,9 +945,9 @@ class Kernel(Scaler, Descaler, Resampler):
 
         :return:            Dictionary of keyword arguments for the resample function.
         """
-        return dict(
-            format=get_video_format(format).id, matrix=Matrix.from_param(matrix), matrix_in=Matrix.from_param(matrix_in)
-        ) | self.get_params_args(False, clip, **kwargs)
+        return {
+            "format": get_video_format(format).id, "matrix": Matrix.from_param(matrix), "matrix_in": Matrix.from_param(matrix_in)
+        } | self.get_params_args(False, clip, **kwargs)
 
 
 ScalerLike = Union[str, type[Scaler], Scaler]

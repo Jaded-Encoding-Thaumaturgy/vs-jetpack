@@ -58,8 +58,8 @@ class Lanczos(ZimgComplexKernel):
     ) -> dict[str, Any]:
         args = super().get_params_args(is_descale, clip, width, height, **kwargs)
         if is_descale:
-            return args | dict(taps=self.kernel_radius)
-        return args | dict(filter_param_a=self.kernel_radius)
+            return args | {"taps": self.kernel_radius}
+        return args | {"filter_param_a": self.kernel_radius}
 
     def get_bob_args(
         self,

@@ -75,7 +75,7 @@ class MotionVectors(vs_object):
 
     def __vs_del__(self, core_id: int) -> None:
         for v in self.motion_vectors.values():
-            for k in v.keys():
+            for k in v:
                 if not TYPE_CHECKING:
                     v[k] = None
 

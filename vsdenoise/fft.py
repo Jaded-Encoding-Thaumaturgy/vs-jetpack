@@ -387,7 +387,7 @@ class DFTTest:
             of_error = CustomOverflowError(
                 "Invalid value at index {i}, not in ({bounds})",
                 cls,
-                bounds=list(math.inf if x is None else x for x in bounds),
+                bounds=[math.inf if x is None else x for x in bounds],
             )
 
             low_bound, up_bound = bounds
@@ -988,7 +988,7 @@ class DFTTest:
         :param kwargs:  Additional parameters for the extraction process.
         :return:        The clip with the extracted frequency domain.
         """
-        kwargs = dict(func=self.extract_freq) | kwargs
+        kwargs = {"func": self.extract_freq} | kwargs
         return clip.std.MakeDiff(self.denoise(clip, sloc, **kwargs))
 
     def insert_freq(
@@ -1003,7 +1003,7 @@ class DFTTest:
         :param kwargs:  Additional parameters for the merging process.
         :return:        The merged clip with the inserted frequency domain.
         """
-        return low.std.MergeDiff(self.extract_freq(high, sloc, **dict(func=self.insert_freq) | kwargs))
+        return low.std.MergeDiff(self.extract_freq(high, sloc, **{"func": self.insert_freq} | kwargs))
 
     def merge_freq(
         self, low: vs.VideoNode, high: vs.VideoNode, sloc: SLocationT | SLocation.MultiDim, **kwargs: Any
@@ -1017,7 +1017,7 @@ class DFTTest:
         :param kwargs:  Additional parameters for the merging process.
         :return:        The merged clip with the denoised low-frequency and high-frequency components.
         """
-        return self.insert_freq(self.denoise(low, sloc, **kwargs), high, sloc, **dict(func=self.merge_freq) | kwargs)
+        return self.insert_freq(self.denoise(low, sloc, **kwargs), high, sloc, **{"func": self.merge_freq} | kwargs)
 
 
 SLocationT = Union[
@@ -1072,7 +1072,7 @@ def fft3d(clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
     :param **kwargs:    Additional parameters passed to the FFT3DFilter plugin.
     :return:            A heavily degraded version of DFTTest, with added banding and color shifts.
     """
-    kwargs |= dict(interlaced=FieldBased.from_video(clip, False, fft3d).is_inter)
+    kwargs |= {"interlaced": FieldBased.from_video(clip, False, fft3d).is_inter}
 
     # fft3dfilter requires sigma values to be scaled to bit depth
     # https://github.com/myrsloik/VapourSynth-FFT3DFilter/blob/master/doc/fft3dfilter.md#scaling-parameters-according-to-bit-depth

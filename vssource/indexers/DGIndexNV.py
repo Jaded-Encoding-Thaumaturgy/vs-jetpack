@@ -165,11 +165,11 @@ class DGIndexNV(ExternalIndexer):
             else:
                 continue
 
-            for key in footer.__dict__.keys():
+            for key in footer.__dict__:
                 if key.split("_")[-1].upper() in values:
                     if key == "film":
                         try:
-                            value = [float(v.replace("%", "")) for v in values if "%" in v][0]
+                            value = next(float(v.replace("%", "")) for v in values if "%" in v)
                         except IndexError:
                             value = 0
                     else:

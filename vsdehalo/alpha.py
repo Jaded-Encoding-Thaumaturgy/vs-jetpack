@@ -782,10 +782,7 @@ def dehalomicron(
     dehalo_mask = remove_grain.Mode.BOX_BLUR_NO_CENTER(dehalo_mask)
     dehalo_mask = remove_grain.Mode.MINMAX_MEDIAN_OPP(dehalo_mask)
 
-    if brz:
-        dmask_expr = f"x {scale_mask(abs(brz), 32, y)} {'>' if brz < 0.0 else '>'} 0 x 2 * ?"
-    else:
-        dmask_expr = "x 2 *"
+    dmask_expr = f"x {scale_mask(abs(brz), 32, y)} {'>' if brz < 0.0 else '>'} 0 x 2 * ?" if brz else "x 2 *"
 
     dehalo_mask = norm_expr(dehalo_mask, dmask_expr, func=func.func)
 

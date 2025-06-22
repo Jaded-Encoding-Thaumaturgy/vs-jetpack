@@ -382,10 +382,7 @@ def prop_compare_cb(
         def _cb_one_px_not_return_frame_n(n: int, f: vs.VideoFrame) -> bool:
             return bool(f[0][0, 0])
 
-        if return_frame_n:
-            callback = _cb_one_px_return_frame_n
-        else:
-            callback = _cb_one_px_not_return_frame_n
+        callback = _cb_one_px_return_frame_n if return_frame_n else _cb_one_px_not_return_frame_n
     else:
         from ..utils import get_prop
 
@@ -399,10 +396,7 @@ def prop_compare_cb(
             assert _op
             return _op(get_prop(f, prop, (float, bool)), ref)
 
-        if return_frame_n:
-            callback = _cb_return_frame_n
-        else:
-            callback = _cb_not_return_frame_n
+        callback = _cb_return_frame_n if return_frame_n else _cb_not_return_frame_n
 
     return src, callback
 

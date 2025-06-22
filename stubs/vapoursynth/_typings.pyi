@@ -9,7 +9,6 @@ from ._nodes import AudioNode, VideoNode
 # Typing
 
 _T = TypeVar("_T")
-_S = TypeVar("_S")
 _SingleAndSequence: TypeAlias = _T | Sequence[_T]
 
 @runtime_checkable

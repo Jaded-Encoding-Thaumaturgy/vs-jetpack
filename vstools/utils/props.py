@@ -176,10 +176,7 @@ def get_prop(
     prop: Any = MISSING
 
     try:
-        if isinstance(key, type) and issubclass(key, PropEnum):
-            key = key.prop_key
-        else:
-            key = str(key)
+        key = key.prop_key if isinstance(key, type) and issubclass(key, PropEnum) else str(key)
 
         prop = props[key]
 

@@ -43,6 +43,7 @@ from vstools import (
 )
 
 from .placebo import Placebo
+import itertools
 
 __all__ = [
     "AddNoise",
@@ -213,7 +214,7 @@ class Grainer(ABC):
                 base_clip = clip
 
             def _try_grain(src: vs.VideoNode, stre: tuple[float, float] = strength, **args: Any) -> vs.VideoNode:
-                args = kwargs | dict(strength=stre, dynamic=dynamic) | args
+                args = kwargs | {"strength": stre, "dynamic": dynamic} | args
                 try:
                     self._check_input(src, **args)
                     grained = self._perform_graining(src, **args)
@@ -569,10 +570,10 @@ class ChickenDreamBase(LinearLightGrainer):
         self.draft = draft
 
     def _get_kw(self, kwargs: KwargsT) -> KwargsT:
-        return super()._get_kw(kwargs) | dict(draft=self.draft)
+        return super()._get_kw(kwargs) | {"draft": self.draft}
 
     def _get_inner_kwargs(self, strength: float, **kwargs: Any) -> KwargsT:
-        return kwargs | dict(sigma=strength, rad=kwargs.get("rad") / 10)
+        return kwargs | {"sigma": strength, "rad": kwargs.get("rad") / 10}
 
     def _perform_linear_graining(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         return core.chkdr.grain(clip, **kwargs)
@@ -620,7 +621,7 @@ class ChickenDreamBox(ChickenDreamBase):
         )
 
     def _get_inner_kwargs(self, strength: float, **kwargs: Any) -> KwargsT:
-        return super()._get_inner_kwargs(0.0, **(kwargs | dict(rad=strength)))
+        return super()._get_inner_kwargs(0.0, **(kwargs | {"rad": strength}))
 
 
 class ChickenDreamGauss(ChickenDreamBase):
@@ -712,7 +713,7 @@ class FilmGrain(LinearLightGrainer):
         )
 
     def _get_inner_kwargs(self, strength: float, **kwargs: Any) -> KwargsT:
-        return kwargs | dict(sigma=strength)
+        return kwargs | {"sigma": strength}
 
     def _perform_linear_graining(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         return join(core.fgrain_cuda.Add(p, **kwargs) for p in split(clip))
@@ -791,7 +792,7 @@ def multi_graining(
         for _, thr, weight in norm_grainers
     ]
 
-    masks = [norm_expr(diffs, "y x -", func=multi_graining) for diffs in zip(masks[:-1], masks[1:])]
+    masks = [norm_expr(diffs, "y x -", func=multi_graining) for diffs in itertools.pairwise(masks)]
 
     if clip.format.num_planes == 3:
         masks = [Bilinear().resample(join(mask, mask, mask), clip) for mask in masks]

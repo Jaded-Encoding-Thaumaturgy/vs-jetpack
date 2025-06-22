@@ -81,7 +81,7 @@ class NLMeans(Generic[P, R]):
                 return clip.nlm_cuda.NLMeans(*args, **kwargs)
 
             if self in [NLMeans.Backend.ACCELERATOR, NLMeans.Backend.GPU, NLMeans.Backend.CPU]:
-                return clip.knlm.KNLMeansCL(*args, **kwargs | dict(device_type=self.value))
+                return clip.knlm.KNLMeansCL(*args, **kwargs | {"device_type": self.value})
 
             if self == NLMeans.Backend.ISPC:
                 return clip.nlm_ispc.NLMeans(*args, **kwargs)
@@ -91,7 +91,7 @@ class NLMeans(Generic[P, R]):
                 return NLMeans.Backend.CUDA.NLMeans(clip, *args, **kwargs)
 
             if hasattr(core, "knlm"):
-                return clip.knlm.KNLMeansCL(*args, **kwargs | dict(device_type="auto"))
+                return clip.knlm.KNLMeansCL(*args, **kwargs | {"device_type": "auto"})
 
             if hasattr(core, "nlm_ispc"):
                 return NLMeans.Backend.ISPC.NLMeans(clip, *args, **kwargs)
@@ -213,7 +213,7 @@ def nl_means(
         return backend.NLMeans(
             clip,
             **{k: p[i] for k, p in params.items()},
-            **dict(channels=channels, rclip=ref, wmode=wmode, wref=wmode.wref) | kwargs,
+            **{"channels": channels, "rclip": ref, "wmode": wmode, "wref": wmode.wref} | kwargs,
         )
 
     if clip.format.color_family in {vs.GRAY, vs.RGB}:

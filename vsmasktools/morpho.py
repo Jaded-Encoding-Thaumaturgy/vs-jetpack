@@ -443,7 +443,7 @@ class Morpho:
     @copy_signature(top_hat)
     @inject_self
     def white_hate(self, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
-        return self.top_hat(*args, **dict(func=self.white_hate) | kwargs)
+        return self.top_hat(*args, **{"func": self.white_hate} | kwargs)
 
     @inject_self
     @copy_signature(_morpho_method)
@@ -480,7 +480,7 @@ class Morpho:
     @copy_signature(bottom_hat)
     @inject_self
     def black_hat(self, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
-        return self.top_hat(*args, **dict(func=self.black_hat) | kwargs)
+        return self.top_hat(*args, **{"func": self.black_hat} | kwargs)
 
     @inject_self
     def outer_hat(
@@ -622,7 +622,7 @@ class Morpho:
                                 Any unprocessed planes will be simply copied.
         """
         midthr, lowval, highval = (
-            thr and list(scale_value(t, 32, clip) for t in to_arr(thr)) for thr in (midthr, lowval, highval)
+            thr and [scale_value(t, 32, clip) for t in to_arr(thr)] for thr in (midthr, lowval, highval)
         )
 
         return core.std.Binarize(clip, midthr, lowval, highval, planes)

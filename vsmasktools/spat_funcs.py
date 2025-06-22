@@ -227,9 +227,6 @@ def texture_mask(
 
     weighted = norm_expr(rm_txt, [expr, ExprOp.TERN * (qm - 1)], func=texture_mask)
 
-    if isinstance(blur, float):
-        weighted = gauss_blur(weighted, blur)
-    else:
-        weighted = box_blur(weighted, blur)
+    weighted = gauss_blur(weighted, blur) if isinstance(blur, float) else box_blur(weighted, blur)
 
     return norm_expr(weighted, f"x {peak * thr} - {1 / (1 - thr)} *", func=texture_mask)

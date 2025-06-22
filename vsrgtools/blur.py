@@ -68,9 +68,8 @@ def box_blur(
     if mode == ConvMode.TEMPORAL:
         return BlurMatrix.MEAN(radius, mode=mode)(clip, planes, passes=passes, **kwargs)
 
-    if not TYPE_CHECKING:
-        if mode == ConvMode.SQUARE:
-            raise CustomValueError("Invalid mode specified", box_blur, mode)
+    if not TYPE_CHECKING and mode == ConvMode.SQUARE:
+        raise CustomValueError("Invalid mode specified", box_blur, mode)
 
     box_args = (
         planes,
@@ -109,12 +108,12 @@ def side_box_blur(
     )
 
     vrt_intermediates = (vrt_flt(clip) for vrt_flt in vrt_filters)
-    intermediates = list(
+    intermediates = [
         hrz_flt(vrt_intermediate)
         for i, vrt_intermediate in enumerate(vrt_intermediates)
         for j, hrz_flt in enumerate(hrz_filters)
         if not i == j == 2
-    )
+    ]
 
     comp_blur = None if inverse else box_blur(clip, radius, 1, planes=planes)
 
@@ -181,12 +180,11 @@ def gauss_blur(
 
     planes = normalize_planes(clip, planes)
 
-    if not TYPE_CHECKING:
-        if mode == ConvMode.SQUARE:
-            raise CustomValueError("Invalid mode specified", gauss_blur, mode)
+    if not TYPE_CHECKING and mode == ConvMode.SQUARE:
+        raise CustomValueError("Invalid mode specified", gauss_blur, mode)
 
     if isinstance(sigma, Sequence):
-        return normalize_radius(clip, gauss_blur, dict(sigma=sigma), planes, mode=mode)
+        return normalize_radius(clip, gauss_blur, {"sigma": sigma}, planes, mode=mode)
 
     fast = kwargs.pop("_fast", False)
 

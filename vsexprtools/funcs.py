@@ -158,7 +158,7 @@ def norm_expr(
     clips = flatten_vnodes(clips, split_planes=split_planes)
 
     if isinstance(expr, str):
-        nexpr = tuple([[expr]])
+        nexpr = ([expr],)
     elif isinstance(expr, tuple):
         if isinstance(expr, TupleExprList):
             if len(expr) < 1:
@@ -173,7 +173,7 @@ def norm_expr(
         else:
             nexpr = tuple([to_arr(x) for x in expr])
     else:
-        nexpr = tuple([to_arr(expr)])
+        nexpr = (to_arr(expr),)
 
     normalized_exprs = [StrList(plane_expr).to_str() for plane_expr in nexpr]
 

@@ -31,7 +31,7 @@ class inline_expr(AbstractContextManager[InlineExpr]):
         self._in_context = False
 
         self._clips = list(clips) if isinstance(clips, Sequence) else [clips]
-        self._clips_char_map = list(ClipVar(char, clip, self) for char, clip in zip(ExprVars.cycle, self._clips))
+        self._clips_char_map = [ClipVar(char, clip, self) for char, clip in zip(ExprVars.cycle, self._clips)]
 
         self._final_clip = None
         self._final_expr_node = self._clips_char_map[0].as_var()

@@ -141,10 +141,7 @@ def smooth_dering(
         else:
             smoothed = contrasharpening_dehalo(smoothed, work_clip, contra, planes=planes)
 
-    if set(rep_dr) != {0}:
-        repclp = repair(work_clip, smoothed, drrep)
-    else:
-        repclp = work_clip
+    repclp = repair(work_clip, smoothed, drrep) if set(rep_dr) != {0} else work_clip
 
     limitclp = limit_filter(repclp, work_clip, None, LimitFilterMode.CLAMPING, planes, thr, elast, darkthr)
 

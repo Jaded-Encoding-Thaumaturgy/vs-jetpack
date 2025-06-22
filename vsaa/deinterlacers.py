@@ -366,7 +366,7 @@ class NNEDI3(SuperSampler):
         return self._deinterlacer_function(clip, field, dh, **self.get_deint_args(**kwargs))
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
-        return dict(nsize=self.nsize, nns=self.nns, qual=self.qual, etype=self.etype, pscrn=self.pscrn) | kwargs
+        return {"nsize": self.nsize, "nns": self.nns, "qual": self.qual, "etype": self.etype, "pscrn": self.pscrn} | kwargs
 
     @Scaler.cached_property
     def kernel_radius(self) -> int:
@@ -476,17 +476,17 @@ class EEDI2(SuperSampler):
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         return (
-            dict(
-                mthresh=self.mthresh,
-                lthresh=self.lthresh,
-                vthresh=self.vthresh,
-                estr=self.estr,
-                dstr=self.dstr,
-                maxd=self.maxd,
-                map=self.map,
-                nt=self.nt,
-                pp=self.pp,
-            )
+            {
+                "mthresh": self.mthresh,
+                "lthresh": self.lthresh,
+                "vthresh": self.vthresh,
+                "estr": self.estr,
+                "dstr": self.dstr,
+                "maxd": self.maxd,
+                "map": self.map,
+                "nt": self.nt,
+                "pp": self.pp,
+            }
             | kwargs
         )
 
@@ -610,9 +610,8 @@ class EEDI3(SuperSampler):
         if callable(self.mclip):
             kwargs.update(mclip=self.mclip(clip))
 
-        if sclip := kwargs.get("sclip"):
-            if sclip.num_frames * 2 == clip.num_frames * (int(double_rate) + 1):
-                kwargs.update(sclip=core.std.Interleave([sclip] * 2))
+        if (sclip := kwargs.get("sclip")) and sclip.num_frames * 2 == clip.num_frames * (int(double_rate) + 1):
+            kwargs.update(sclip=core.std.Interleave([sclip] * 2))
 
         return self._deinterlacer_function(clip, field, dh, **kwargs)
 
@@ -630,21 +629,21 @@ class EEDI3(SuperSampler):
             self.vthresh = (None, None, None)
 
         kwargs = (
-            dict(
-                alpha=self.alpha,
-                beta=self.beta,
-                gamma=self.gamma,
-                nrad=self.nrad,
-                mdis=self.mdis,
-                ucubic=self.ucubic,
-                cost3=self.cost3,
-                vcheck=self.vcheck,
-                vthresh0=self.vthresh[0],
-                vthresh1=self.vthresh[1],
-                vthresh2=self.vthresh[2],
-                sclip=self.sclip,
-                mclip=self.mclip,
-            )
+            {
+                "alpha": self.alpha,
+                "beta": self.beta,
+                "gamma": self.gamma,
+                "nrad": self.nrad,
+                "mdis": self.mdis,
+                "ucubic": self.ucubic,
+                "cost3": self.cost3,
+                "vcheck": self.vcheck,
+                "vthresh0": self.vthresh[0],
+                "vthresh1": self.vthresh[1],
+                "vthresh2": self.vthresh[2],
+                "sclip": self.sclip,
+                "mclip": self.mclip,
+            }
             | kwargs
         )
 
@@ -689,7 +688,7 @@ class SangNom(SuperSampler):
         return self._deinterlacer_function(clip, order, dh, **self.get_deint_args(**kwargs))
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
-        return dict(aa=self.aa) | kwargs
+        return {"aa": self.aa} | kwargs
 
     _static_kernel_radius = 3
 
@@ -721,7 +720,7 @@ class BWDIF(Deinterlacer):
         return self._deinterlacer_function(clip, field, **self.get_deint_args(**kwargs))
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
-        return dict(edeint=self.edeint) | kwargs
+        return {"edeint": self.edeint} | kwargs
 
     def __vs_del__(self, core_id: int) -> None:
         self.edeint = None

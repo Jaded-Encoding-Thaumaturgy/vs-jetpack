@@ -215,15 +215,9 @@ def vinverse(
     :param scl:             Scale factor for vshrpD * vblurD < 0.
     """
 
-    if callable(comb_blur):
-        blurred = comb_blur(clip, planes=planes)
-    else:
-        blurred = comb_blur
+    blurred = comb_blur(clip, planes=planes) if callable(comb_blur) else comb_blur
 
-    if callable(contra_blur):
-        blurred2 = contra_blur(blurred, planes=planes)
-    else:
-        blurred2 = contra_blur
+    blurred2 = contra_blur(blurred, planes=planes) if callable(contra_blur) else contra_blur
 
     assert check_variable(clip, vinverse)
     assert check_variable(blurred, vinverse)

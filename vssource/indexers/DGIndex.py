@@ -22,7 +22,7 @@ class DGIndex(D2VWitch):
 
         if is_linux:
             output = SPath(f"Z:\\{str(output)[1:]}")
-            paths = list(subprocess.check_output(["winepath", "-w", f]).decode("utf-8").strip() for f in files)
+            paths = [subprocess.check_output(["winepath", "-w", f]).decode("utf-8").strip() for f in files]
         else:
             paths = list(map(str, files))
 

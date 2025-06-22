@@ -74,10 +74,7 @@ def scale_var_clip(
 
         return _cached_clips[key]
 
-    if callable(width) or callable(height):
-        out_clip = clip
-    else:
-        out_clip = clip.std.BlankClip(width, height)
+    out_clip = clip if callable(width) or callable(height) else clip.std.BlankClip(width, height)
 
     return out_clip.std.FrameEval(_eval_scale, clip, clip)
 
@@ -233,10 +230,7 @@ class ScalingArgs:
         ratio_height = height / base_clip.height
 
         if width is None:
-            if isinstance(height, int):
-                width = get_w(height, base_clip, 2)
-            else:
-                width = ratio_height * base_clip.width
+            width = get_w(height, base_clip, 2) if isinstance(height, int) else ratio_height * base_clip.width
 
         ratio_width = width / base_clip.width
 

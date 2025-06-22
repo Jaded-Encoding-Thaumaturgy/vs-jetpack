@@ -32,6 +32,7 @@ from vstools import (
 
 from .helpers import BottomCrop, CropRel, LeftCrop, RightCrop, ScalingArgs, TopCrop
 from .onnx import ArtCNN
+import contextlib
 
 __all__ = [
     "Rescale",
@@ -82,10 +83,8 @@ class RescaleBase(vs_object):
         delattr(self, __name)
 
     def _trydelattr(self, attr: str) -> None:
-        try:
+        with contextlib.suppress(AttributeError):
             delattr(self, attr)
-        except AttributeError:
-            pass
 
     @staticmethod
     def _apply_field_based(

@@ -100,10 +100,7 @@ class Indexer(ABC):
     ) -> vs.VideoNode:
         clips = list(clips)
 
-        if len(clips) == 1:
-            clip = clips[0]
-        else:
-            clip = core.std.Splice(clips)
+        clip = clips[0] if len(clips) == 1 else core.std.Splice(clips)
 
         return initialize_clip(clip, bits, matrix, transfer, primaries, chroma_location, color_range, field_based)
 
@@ -238,7 +235,7 @@ class ExternalIndexer(Indexer):
         output_folder: SPathLike | Literal[False] | None = None,
         *cmd_args: str,
     ) -> list[SPath]:
-        if len(unique_folders := list(set([f.get_folder().to_str() for f in files]))) > 1:
+        if len(unique_folders := list({f.get_folder().to_str() for f in files})) > 1:
             return [
                 c
                 for s in (

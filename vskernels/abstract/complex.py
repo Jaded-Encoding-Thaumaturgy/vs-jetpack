@@ -82,7 +82,7 @@ def _check_dynamic_keeparscaler_params(
                 'When passing a dynamic size clip, "sample_grid_model" must be MATCH_EDGES', func, sample_grid_model
             )
         )
-    if any([p is not None for p in [sar, dar, dar_in, keep_ar]]):
+    if any(p is not None for p in [sar, dar, dar_in, keep_ar]):
         exceptions.append(
             CustomNotImplementedError(
                 'When passing a dynamic size clip, "sar", "dar", "dar_in" and "keep_ar" must all be None',
@@ -380,11 +380,10 @@ class KeepArScaler(Scaler):
         dar_in: Dar | float | bool | None,
         keep_ar: bool | None,
     ) -> tuple[float, float, float]:
-        if keep_ar is not None:
-            if None not in (sar, dar, dar_in):
-                raise CustomValueError(
-                    'If "keep_ar" is not None, then at least one of "sar", "dar", or "dar_in" must be None.'
-                )
+        if keep_ar is not None and None not in (sar, dar, dar_in):
+            raise CustomValueError(
+                'If "keep_ar" is not None, then at least one of "sar", "dar", or "dar_in" must be None.'
+            )
 
         # Basically what it does:
         # - If `xar` is Xar or float -> Converted to Xar
@@ -421,10 +420,7 @@ class KeepArScaler(Scaler):
         out_sar: Sar | Literal[False] = False
 
         if src_sar not in {0.0, 1.0}:
-            if src_sar > 1.0:
-                out_dar = (width / src_sar) / height
-            else:
-                out_dar = width / (height * src_sar)
+            out_dar = width / src_sar / height if src_sar > 1.0 else width / (height * src_sar)
 
             out_sar = Sar(1, 1)
 
@@ -753,11 +749,11 @@ class ComplexDescaler(LinearDescaler):
 
             descaled_tf = super().descale(
                 fields[0::2],
-                **de_kwargs_tf | dict(src_top=de_kwargs_tf.get("src_top", 0.0) + field_shift),
+                **de_kwargs_tf | {"src_top": de_kwargs_tf.get("src_top", 0.0) + field_shift},
             )
             descaled_bf = super().descale(
                 fields[1::2],
-                **de_kwargs_bf | dict(src_top=de_kwargs_bf.get("src_top", 0.0) - field_shift),
+                **de_kwargs_bf | {"src_top": de_kwargs_bf.get("src_top", 0.0) - field_shift},
             )
             interleaved = vs.core.std.Interleave([descaled_tf, descaled_bf])
 

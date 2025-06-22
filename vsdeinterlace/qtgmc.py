@@ -243,7 +243,7 @@ class QTempGaussMC(vs_object):
         self.clip = clip
         self.input_type = input_type
         self.tff = clip_fieldbased.is_tff
-        self.double_rate = False if self.input_type == self.InputType.REPAIR else True
+        self.double_rate = self.input_type != self.InputType.REPAIR
 
         if self.input_type == self.InputType.PROGRESSIVE and clip_fieldbased.is_inter:
             raise CustomRuntimeError(f"{self.input_type} incompatible with interlaced video!", self.__class__)
@@ -986,7 +986,7 @@ class QTempGaussMC(vs_object):
     def _apply_motion_blur(self) -> None:
         angle_in, angle_out = self.motion_blur_shutter_angle
 
-        if not angle_out * self.motion_blur_fps_divisor == angle_in:
+        if angle_out * self.motion_blur_fps_divisor != angle_in:
             blur_level = (angle_out * self.motion_blur_fps_divisor - angle_in) * 100 / 360
 
             processed = self.mv.flow_blur(
