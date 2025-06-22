@@ -17,12 +17,12 @@ from ..exceptions import (
 from ..types import ConstantFormatVideoNode, VideoNodeT
 
 __all__ = [
+    "check_correct_subsampling",
+    "check_progressive",
     "check_ref_clip",
     "check_variable",
     "check_variable_format",
     "check_variable_resolution",
-    "check_correct_subsampling",
-    "check_progressive",
 ]
 
 

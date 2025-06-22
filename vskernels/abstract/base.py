@@ -62,7 +62,7 @@ from ..exceptions import (
 )
 from ..types import LeftShift, TopShift
 
-__all__ = ["Scaler", "Descaler", "Resampler", "Kernel", "ScalerLike", "DescalerLike", "ResamplerLike", "KernelLike"]
+__all__ = ["Descaler", "DescalerLike", "Kernel", "KernelLike", "Resampler", "ResamplerLike", "Scaler", "ScalerLike"]
 
 
 def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Callable[Concatenate[_BaseScalerT, P], R]:
@@ -331,9 +331,6 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         clip: vs.VideoNode,
         width: int | None = None,
         height: int | None = None,
-        test: int = 0,
-        test0: int = 0,
-        test1: int = 0,
     ) -> tuple[int, int]:
         """
         Normalize width and height to fall back to the clip's dimensions if not provided.

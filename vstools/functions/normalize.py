@@ -15,19 +15,19 @@ from jetpytools import (
 from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, PlanesT, VideoNodeIterableT, VideoNodeT
 
 __all__ = [
-    "normalize_seq",
-    "normalize_planes",
-    "invert_planes",
-    "to_arr",
     "flatten",
     "flatten_vnodes",
-    "normalize_list_to_ranges",
-    "normalize_franges",
-    "normalize_ranges",
+    "invert_planes",
     "invert_ranges",
-    "normalize_param_planes",
-    "norm_func_name",
     "norm_display_name",
+    "norm_func_name",
+    "normalize_franges",
+    "normalize_list_to_ranges",
+    "normalize_param_planes",
+    "normalize_planes",
+    "normalize_ranges",
+    "normalize_seq",
+    "to_arr",
 ]
 
 
@@ -63,7 +63,7 @@ def normalize_planes(clip: vs.VideoNode, planes: PlanesT = None) -> list[int]:
     else:
         planes = to_arr(planes)
 
-    return list(sorted(set(planes).intersection(range(clip.format.num_planes))))
+    return sorted(set(planes).intersection(range(clip.format.num_planes)))
 
 
 def invert_planes(clip: vs.VideoNode, planes: PlanesT = None) -> list[int]:

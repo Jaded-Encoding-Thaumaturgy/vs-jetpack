@@ -13,11 +13,11 @@ from .mime import FileType
 
 __all__ = [
     "FFProbe",
+    "FFProbeAudioStream",
     "FFProbeNotFoundError",
     "FFProbeStream",
-    "FFProbeVideoStream",
-    "FFProbeAudioStream",
     "FFProbeStreamSideData",
+    "FFProbeVideoStream",
 ]
 
 

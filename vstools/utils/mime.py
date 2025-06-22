@@ -20,7 +20,7 @@ from jetpytools import (
 
 from .mime_base import FileTypeBase, FileTypeIndex, FileTypeIndexWithType
 
-__all__ = ["IndexingType", "FileSignature", "FileSignatures", "FileType", "ParsedFile"]
+__all__ = ["FileSignature", "FileSignatures", "FileType", "IndexingType", "ParsedFile"]
 
 
 class IndexingType(CustomStrEnum):

@@ -19,7 +19,7 @@ from ..types import VideoNodeT
 from .file import PackageStorage
 from .render import clip_async_render
 
-__all__ = ["Timecodes", "Keyframes", "LWIndex"]
+__all__ = ["Keyframes", "LWIndex", "Timecodes"]
 
 
 @cache
@@ -139,7 +139,7 @@ class Timecodes(list[FrameDur]):
         if isinstance(timecodes, Timecodes):
             timecodes = timecodes.to_normalized_ranges()
 
-        times_count = {k: 0 for k in timecodes.values()}
+        times_count = dict.fromkeys(timecodes.values(), 0)
 
         for v in timecodes.values():
             times_count[v] += 1
@@ -382,7 +382,7 @@ class Keyframes(list[int]):
         return _get_keyframes_storage().get_file(key, ext=".txt")
 
     @classmethod
-    def unique(cls: type[KeyframesBoundT], clip: vs.VideoNode, key: str, **kwargs: Any) -> KeyframesBoundT:
+    def unique(cls, clip: vs.VideoNode, key: str, **kwargs: Any) -> Self:
         file = cls._get_unique_path(clip, key)
 
         if file.exists():
@@ -398,12 +398,12 @@ class Keyframes(list[int]):
 
     @classmethod
     def from_clip(
-        cls: type[KeyframesBoundT],
+        cls,
         clip: vs.VideoNode,
         mode: SceneChangeMode | int = WWXD,
         height: int | Literal[False] = 360,
         **kwargs: Any,
-    ) -> KeyframesBoundT:
+    ) -> Self:
         mode = SceneChangeMode(mode)
 
         clip = mode.prepare_clip(clip, height)
@@ -448,7 +448,7 @@ class Keyframes(list[int]):
         return out.std.ModifyFrame(out, _add_scene_idx)
 
     @classmethod
-    def from_file(cls: type[KeyframesBoundT], file: FilePathType, **kwargs: Any) -> KeyframesBoundT:
+    def from_file(cls, file: FilePathType, **kwargs: Any) -> Self:
         file = SPath(str(file)).resolve()
 
         if not file.exists():
@@ -529,7 +529,7 @@ class Keyframes(list[int]):
         out_path.write_text("\n".join(out_text))
 
     @classmethod
-    def from_param(cls: type[KeyframesBoundT], clip: vs.VideoNode, param: KeyframesBoundT | str) -> KeyframesBoundT:
+    def from_param(cls, clip: vs.VideoNode, param: Self | str) -> Self:
         if isinstance(param, str):
             return cls.unique(clip, param)
 

@@ -9,9 +9,9 @@ from ...types import LeftShift, TopShift
 from .abstract import ZimgComplexKernel
 
 __all__ = [
-    "Point",
     "Bilinear",
     "Lanczos",
+    "Point",
 ]
 
 

@@ -9,7 +9,7 @@ from vstools import ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_varia
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
 
-__all__ = ["repair", "remove_grain", "removegrain", "clense", "vertical_cleaner"]
+__all__ = ["clense", "remove_grain", "removegrain", "repair", "vertical_cleaner"]
 
 
 class Repair(Generic[P, R]):

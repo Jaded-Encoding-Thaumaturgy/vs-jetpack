@@ -30,14 +30,14 @@ from .cache import DynamicClipsCache
 from .info import get_depth
 
 __all__ = [
+    "ProcessVariableClip",
+    "ProcessVariableFormatClip",
+    "ProcessVariableResClip",
+    "ProcessVariableResFormatClip",
     "finalize_clip",
     "finalize_output",
     "initialize_clip",
     "initialize_input",
-    "ProcessVariableClip",
-    "ProcessVariableResClip",
-    "ProcessVariableFormatClip",
-    "ProcessVariableResFormatClip",
 ]
 
 

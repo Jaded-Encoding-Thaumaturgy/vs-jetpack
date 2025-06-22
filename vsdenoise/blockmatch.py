@@ -36,7 +36,7 @@ from vstools import (
     normalize_param_planes,
 )
 
-__all__ = ["wnnm", "bm3d"]
+__all__ = ["bm3d", "wnnm"]
 
 
 def wnnm(

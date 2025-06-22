@@ -304,7 +304,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
 
         return LinearLightProcessing(self)
 
-    def __exit__(self, *args: Any, **kwargs: Any) -> None:
+    def __exit__(self, *args: object, **kwargs: Any) -> None:
         self._exited = True
 
     def __vs_del__(self, core_id: int) -> None:

@@ -31,9 +31,9 @@ from vstools import (
 from .fft import DFTTest, SLocationT
 
 __all__ = [
+    "MultiPrefilter",
     "Prefilter",
     "PrefilterPartial",
-    "MultiPrefilter",
     "PrefilterT",
     "prefilter_to_full_range",
 ]

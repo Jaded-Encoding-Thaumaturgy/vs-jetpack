@@ -47,15 +47,15 @@ from ..types import (
 from .base import Descaler, Kernel, Resampler, Scaler
 
 __all__ = [
-    "LinearScaler",
-    "LinearDescaler",
-    "KeepArScaler",
-    "ComplexScaler",
-    "ComplexScalerLike",
     "ComplexDescaler",
     "ComplexDescalerLike",
     "ComplexKernel",
     "ComplexKernelLike",
+    "ComplexScaler",
+    "ComplexScalerLike",
+    "KeepArScaler",
+    "LinearDescaler",
+    "LinearScaler",
 ]
 
 

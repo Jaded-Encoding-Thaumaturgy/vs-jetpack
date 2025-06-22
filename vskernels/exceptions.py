@@ -6,7 +6,7 @@ from jetpytools import fallback
 
 from vstools import CustomValueError, FuncExceptT
 
-__all__ = ["UnknownScalerError", "UnknownDescalerError", "UnknownResamplerError", "UnknownKernelError"]
+__all__ = ["UnknownDescalerError", "UnknownKernelError", "UnknownResamplerError", "UnknownScalerError"]
 
 
 class _UnknownBaseScalerError(CustomValueError):

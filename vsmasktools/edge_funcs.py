@@ -29,7 +29,7 @@ from .spat_funcs import retinex
 from .types import Coordinates, GenericMaskT
 from .utils import normalize_mask
 
-__all__ = ["ringing_mask", "luma_mask", "luma_credit_mask", "tcanny_retinex", "limited_linemask", "dre_edgemask"]
+__all__ = ["dre_edgemask", "limited_linemask", "luma_credit_mask", "luma_mask", "ringing_mask", "tcanny_retinex"]
 
 
 def ringing_mask(

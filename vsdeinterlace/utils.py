@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from vstools import ConstantFormatVideoNode, check_variable, FieldBased, FieldBasedT, core, vs
 
-__all__ = ["telecine_patterns", "get_field_difference", "reinterlace", "reweave"]
+__all__ = ["get_field_difference", "reinterlace", "reweave", "telecine_patterns"]
 
 
 def telecine_patterns(clipa: vs.VideoNode, clipb: vs.VideoNode, length: int = 5) -> list[ConstantFormatVideoNode]:

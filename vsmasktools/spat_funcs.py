@@ -28,7 +28,7 @@ from vstools import (
 from .edge import MinMax
 from .morpho import Morpho
 
-__all__ = ["adg_mask", "retinex", "flat_mask", "texture_mask"]
+__all__ = ["adg_mask", "flat_mask", "retinex", "texture_mask"]
 
 
 @overload
@@ -71,7 +71,7 @@ def adg_mask(
 
     assert check_variable(clip, func)
 
-    use_complex = complexpr_available and clip.format.bits_per_sample > 16 or relative
+    use_complex = (complexpr_available and clip.format.bits_per_sample > 16) or relative
 
     luma, prop = plane(clip, 0), "P" if use_complex else None
     y, y_inv = luma.std.PlaneStats(prop=prop), luma.std.Invert().std.PlaneStats(prop=prop)

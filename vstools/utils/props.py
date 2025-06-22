@@ -28,7 +28,7 @@ from ..types import BoundVSMapValue, ConstantFormatVideoNode, HoldsPropValueT
 from ..types.generic import BoundVSMapValue_0, BoundVSMapValue_1
 from .cache import NodesPropsCache
 
-__all__ = ["get_prop", "get_props", "merge_clip_props", "get_clip_filepath"]
+__all__ = ["get_clip_filepath", "get_prop", "get_props", "merge_clip_props"]
 
 DT = TypeVar("DT")
 CT = TypeVar("CT")

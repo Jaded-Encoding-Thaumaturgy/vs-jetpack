@@ -31,7 +31,7 @@ from .mask import deband_detail_mask
 from .placebo import Placebo
 from .types import GuidedFilterMode
 
-__all__ = ["mdb_bilateral", "masked_deband", "pfdeband", "guided_deband", "DebandPassPresets", "multi_deband"]
+__all__ = ["DebandPassPresets", "guided_deband", "masked_deband", "mdb_bilateral", "multi_deband", "pfdeband"]
 
 
 def mdb_bilateral(

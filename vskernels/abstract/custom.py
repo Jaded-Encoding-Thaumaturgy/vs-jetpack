@@ -17,10 +17,10 @@ from .base import Kernel
 from .complex import ComplexKernel
 
 __all__ = [
-    "CustomKernel",
     "CustomComplexKernel",
     "CustomComplexKernelLike",
     "CustomComplexTapsKernel",
+    "CustomKernel",
 ]
 
 

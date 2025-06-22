@@ -27,7 +27,7 @@ from vstools import (
 
 from .deinterlacers import AntiAliaser, NNEDI3, EEDI3
 
-__all__ = ["pre_aa", "clamp_aa", "based_aa"]
+__all__ = ["based_aa", "clamp_aa", "pre_aa"]
 
 
 def pre_aa(

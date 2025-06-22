@@ -29,7 +29,7 @@ from vstools import (
 
 from .types import Coordinates, XxpandMode
 
-__all__ = ["RadiusT", "Morpho", "grow_mask"]
+__all__ = ["Morpho", "RadiusT", "grow_mask"]
 
 RadiusT = int | tuple[int, SpatialConvModeT]
 

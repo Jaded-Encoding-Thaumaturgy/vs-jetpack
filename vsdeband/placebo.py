@@ -7,7 +7,7 @@ from vstools import CustomIntEnum, KwargsT, check_variable, fallback, inject_sel
 
 from .abstract import Debander
 
-__all__ = ["PlaceboDither", "Placebo"]
+__all__ = ["Placebo", "PlaceboDither"]
 
 
 class PlaceboDither(CustomIntEnum):

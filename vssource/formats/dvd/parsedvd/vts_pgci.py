@@ -7,14 +7,14 @@ from .sector import SectorReadHelper
 from .timespan import TimeSpan
 
 __all__ = [
-    "CellPlayback",
-    "CellPosition",
-    "AudioControl",
-    "PGC",
-    "VTSPgci",
     "BLOCK_MODE_FIRST_CELL",
     "BLOCK_MODE_IN_BLOCK",
     "BLOCK_MODE_LAST_CELL",
+    "PGC",
+    "AudioControl",
+    "CellPlayback",
+    "CellPosition",
+    "VTSPgci",
 ]
 
 BLOCK_MODE_FIRST_CELL = 1

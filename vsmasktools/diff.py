@@ -28,7 +28,7 @@ from .edge import EdgeDetect, EdgeDetectT, ExLaplacian4
 from .morpho import Morpho
 from .types import XxpandMode
 
-__all__ = ["diff_rescale", "diff_creditless", "diff_creditless_oped", "credit_mask", "based_diff_mask"]
+__all__ = ["based_diff_mask", "credit_mask", "diff_creditless", "diff_creditless_oped", "diff_rescale"]
 
 
 def diff_rescale(

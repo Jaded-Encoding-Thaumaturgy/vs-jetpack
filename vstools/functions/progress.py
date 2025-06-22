@@ -20,9 +20,9 @@ __all__ = [
     "BarColumn",
     "FPSColumn",
     "Progress",
+    "RenderProgressCTX",
     "TextColumn",
     "TimeRemainingColumn",
-    "RenderProgressCTX",
     "get_render_progress",
 ]
 

@@ -29,7 +29,7 @@ from vstools import (
 
 from .util import ExprVarRangeT, ExprVars, ExprVarsT, complexpr_available
 
-__all__ = ["ExprOp", "ExprToken", "ExprList", "TupleExprList"]
+__all__ = ["ExprList", "ExprOp", "ExprToken", "TupleExprList"]
 
 
 class ExprTokenBase(str):

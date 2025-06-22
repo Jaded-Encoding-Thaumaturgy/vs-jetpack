@@ -15,17 +15,17 @@ from vstools import (
 )
 
 __all__ = [
-    "MVToolsPlugin",
+    "FlowMode",
     "MVDirection",
-    "SharpMode",
-    "RFilterMode",
-    "SearchMode",
-    "SADMode",
+    "MVToolsPlugin",
+    "MaskMode",
     "MotionMode",
     "PenaltyMode",
+    "RFilterMode",
+    "SADMode",
+    "SearchMode",
+    "SharpMode",
     "SmoothMode",
-    "FlowMode",
-    "MaskMode",
 ]
 
 

@@ -1,8 +1,8 @@
 from vstools import ConstantFormatVideoNode, check_variable, CustomEnum, CustomIntEnum, vs, core
 
 __all__ = [
-    "VFMMode",
     "IVTCycles",
+    "VFMMode",
 ]
 
 

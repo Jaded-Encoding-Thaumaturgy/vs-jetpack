@@ -19,7 +19,7 @@ from vstools import (
 from .enums import IVTCycles, VFMMode
 from .blending import deblend
 
-__all__ = ["sivtc", "jivtc", "vfm", "vdecimate"]
+__all__ = ["jivtc", "sivtc", "vdecimate", "vfm"]
 
 
 def sivtc(
@@ -146,7 +146,7 @@ def vfm(
     if (y := kwargs.pop("y", None)) and not isinstance(y, int):
         vfm_kwargs |= dict(y0=y[0], y1=y[1])
 
-    if not kwargs.get("clip2", None) and func.work_clip.format is not clip.format:
+    if not kwargs.get("clip2") and func.work_clip.format is not clip.format:
         vfm_kwargs |= dict(clip2=clip)
 
     fieldmatch = func.work_clip.vivtc.VFM(**(vfm_kwargs | kwargs))
@@ -186,7 +186,7 @@ def vdecimate(clip: vs.VideoNode, weight: float = 0.0, **kwargs: Any) -> Constan
         else:
             vdecimate_kwargs |= dict(blockx=block[0], blocky=block[1])
 
-    if not kwargs.get("clip2", None) and func.work_clip.format is not clip.format:
+    if not kwargs.get("clip2") and func.work_clip.format is not clip.format:
         vdecimate_kwargs |= dict(clip2=clip)
 
     dryrun = kwargs.pop("dryrun", False)

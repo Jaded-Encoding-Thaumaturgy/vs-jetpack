@@ -35,7 +35,7 @@ from vstools import (
     vs,
 )
 
-__all__ = ["dpir", "dpir_mask", "deblock_qed", "mpeg2stinx"]
+__all__ = ["deblock_qed", "dpir", "dpir_mask", "mpeg2stinx"]
 
 _StrengthT = SupportsFloat | vs.VideoNode | None
 
@@ -110,7 +110,7 @@ class dpir(CustomStrEnum):
             no_dpir_zones = list[tuple[int, int]]()
 
             for r, s in zones:
-                if s is None or not isinstance(s, vs.VideoNode) and float(s) == 0:
+                if s is None or (not isinstance(s, vs.VideoNode) and float(s) == 0):
                     no_dpir_zones.extend(normalize_ranges(clip, r))
 
             dpired = replace_ranges(dpired, clip, no_dpir_zones, exclusive=exclusive_ranges)

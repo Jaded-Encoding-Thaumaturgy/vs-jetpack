@@ -50,7 +50,7 @@ from vstools import (
     vs,
 )
 
-__all__ = ["fine_dehalo", "fine_dehalo2", "dehalo_alpha", "dehalo_sigma", "dehalomicron", "dehalo_merge"]
+__all__ = ["dehalo_alpha", "dehalo_merge", "dehalo_sigma", "dehalomicron", "fine_dehalo", "fine_dehalo2"]
 
 
 FloatIterArr = float | list[float] | tuple[float | list[float], ...]

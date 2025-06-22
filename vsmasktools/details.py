@@ -14,8 +14,8 @@ from .utils import normalize_mask
 __all__ = [
     "detail_mask",
     "detail_mask_neo",
-    "simple_detail_mask",
     "multi_detail_mask",
+    "simple_detail_mask",
 ]
 
 

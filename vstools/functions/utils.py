@@ -22,19 +22,19 @@ __all__ = [
     "depth",
     "depth_func",
     "frame2clip",
-    "get_y",
+    "get_b",
+    "get_g",
+    "get_r",
     "get_u",
     "get_v",
-    "get_r",
-    "get_g",
-    "get_b",
+    "get_y",
     "insert_clip",
-    "plane",
     "join",
+    "limiter",
+    "plane",
+    "sc_detect",
     "split",
     "stack_clips",
-    "limiter",
-    "sc_detect",
 ]
 
 
@@ -628,7 +628,7 @@ def join(*_planes: Any, **kwargs: Any) -> vs.VideoNode:
     from ..functions import flatten_vnodes, to_arr
     from ..utils import get_color_family, get_video_format
 
-    family: vs.ColorFamily | None = kwargs.get("family", None)
+    family: vs.ColorFamily | None = kwargs.get("family")
 
     if isinstance(_planes[-1], vs.ColorFamily):
         family = _planes[-1]

@@ -26,7 +26,7 @@ from ..exceptions import InvalidColorFamilyError
 from ..types import VideoNodeT
 from .progress import get_render_progress
 
-__all__ = ["AsyncRenderConf", "clip_async_render", "clip_data_gather", "prop_compare_cb", "find_prop", "find_prop_rfs"]
+__all__ = ["AsyncRenderConf", "clip_async_render", "clip_data_gather", "find_prop", "find_prop_rfs", "prop_compare_cb"]
 
 
 @dataclass
@@ -377,10 +377,10 @@ def prop_compare_cb(
         src = clip  # type: ignore[assignment]
 
         def _cb_one_px_return_frame_n(n: int, f: vs.VideoFrame) -> int | SentinelT:
-            return Sentinel.check(n, not not f[0][0, 0])
+            return Sentinel.check(n, bool(f[0][0, 0]))
 
         def _cb_one_px_not_return_frame_n(n: int, f: vs.VideoFrame) -> bool:
-            return not not f[0][0, 0]
+            return bool(f[0][0, 0])
 
         if return_frame_n:
             callback = _cb_one_px_return_frame_n

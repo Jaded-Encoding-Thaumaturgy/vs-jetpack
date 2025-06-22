@@ -26,7 +26,7 @@ from vstools import (
 
 from .enums import IVTCycles
 
-__all__ = ["InterpolateOverlay", "FixInterlacedFades", "vinverse"]
+__all__ = ["FixInterlacedFades", "InterpolateOverlay", "vinverse"]
 
 
 class InterpolateOverlay(CustomIntEnum):

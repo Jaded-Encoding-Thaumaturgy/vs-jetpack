@@ -10,20 +10,20 @@ from ..prefilters import prefilter_to_full_range
 from .enums import FlowMode, MaskMode, MotionMode, PenaltyMode, RFilterMode, SADMode, SearchMode, SharpMode, SmoothMode
 
 __all__ = [
-    "SuperArgs",
     "AnalyzeArgs",
-    "RecalculateArgs",
-    "CompensateArgs",
-    "FlowArgs",
-    "DegrainArgs",
-    "FlowInterpolateArgs",
-    "FlowFpsArgs",
     "BlockFpsArgs",
+    "CompensateArgs",
+    "DegrainArgs",
+    "FlowArgs",
     "FlowBlurArgs",
-    "MaskArgs",
-    "ScDetectionArgs",
+    "FlowFpsArgs",
+    "FlowInterpolateArgs",
     "MVToolsPreset",
     "MVToolsPresets",
+    "MaskArgs",
+    "RecalculateArgs",
+    "ScDetectionArgs",
+    "SuperArgs",
 ]
 
 

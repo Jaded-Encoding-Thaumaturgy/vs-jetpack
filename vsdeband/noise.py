@@ -45,15 +45,15 @@ from vstools import (
 from .placebo import Placebo
 
 __all__ = [
-    "Grainer",
-    "GrainPP",
     "AddNoise",
-    "PlaceboGrain",
-    "LinearLightGrainer",
     "ChickenDream",
     "FilmGrain",
-    "multi_graining",
+    "GrainPP",
+    "Grainer",
+    "LinearLightGrainer",
     "MultiGrainerT",
+    "PlaceboGrain",
+    "multi_graining",
 ]
 
 
@@ -291,12 +291,12 @@ class Grainer(ABC):
             low, high = (None, None) if self.fade_limits is True else self.fade_limits
 
             low = [
-                scale_value(threshold, 8, clip.format.bits_per_sample, chroma=not not plane_index)
+                scale_value(threshold, 8, clip.format.bits_per_sample, chroma=bool(plane_index))
                 for plane_index, threshold in enumerate(normalize_seq(fallback(low, 16)))
             ]
 
             high = [
-                scale_value(threshold, 8, clip.format.bits_per_sample, chroma=not not plane_index)
+                scale_value(threshold, 8, clip.format.bits_per_sample, chroma=bool(plane_index))
                 for plane_index, threshold in enumerate(normalize_seq(fallback(high, [235, 240])))
             ]
 

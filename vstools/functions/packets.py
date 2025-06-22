@@ -21,8 +21,8 @@ from .timecodes import Keyframes
 from ..types import VideoNodeT
 
 __all__ = [
-    "VideoPackets",
     "ScenePacketStats",
+    "VideoPackets",
 ]
 
 

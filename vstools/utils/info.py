@@ -12,18 +12,18 @@ from ..functions import check_variable_format, depth
 from ..types import HoldsVideoFormatT, VideoFormatT
 
 __all__ = [
-    "get_var_infos",
-    "get_video_format",
-    "get_depth",
-    "get_sample_type",
-    "get_subsampling",
-    "get_color_family",
-    "get_framerate",
     "expect_bits",
+    "get_color_family",
+    "get_depth",
+    "get_framerate",
+    "get_h",
     "get_plane_sizes",
     "get_resolutions",
+    "get_sample_type",
+    "get_subsampling",
+    "get_var_infos",
+    "get_video_format",
     "get_w",
-    "get_h",
 ]
 
 

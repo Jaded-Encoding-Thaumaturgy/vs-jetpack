@@ -7,19 +7,19 @@ from jetpytools import CustomPermissionError, CustomValueError, FuncExceptT, Sup
 
 __all__ = [
     "InvalidColorspacePathError",
-    "UndefinedMatrixError",
-    "UndefinedTransferError",
-    "UndefinedPrimariesError",
-    "ReservedMatrixError",
-    "ReservedTransferError",
-    "ReservedPrimariesError",
     "InvalidMatrixError",
-    "InvalidTransferError",
     "InvalidPrimariesError",
-    "UnsupportedMatrixError",
-    "UnsupportedTransferError",
-    "UnsupportedPrimariesError",
+    "InvalidTransferError",
+    "ReservedMatrixError",
+    "ReservedPrimariesError",
+    "ReservedTransferError",
+    "UndefinedMatrixError",
+    "UndefinedPrimariesError",
+    "UndefinedTransferError",
     "UnsupportedColorRangeError",
+    "UnsupportedMatrixError",
+    "UnsupportedPrimariesError",
+    "UnsupportedTransferError",
 ]
 
 ########################################################

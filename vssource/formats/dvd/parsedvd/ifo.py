@@ -9,7 +9,7 @@ from .sector import SectorReadHelper
 from .vts_pgci import VTSPgci
 from .vtsi_mat import VTSIMat
 
-__all__ = ["IFO0Title", "IFO0", "PTTInfo", "IFOX", "to_json"]
+__all__ = ["IFO0", "IFOX", "IFO0Title", "PTTInfo", "to_json"]
 
 
 @dataclass

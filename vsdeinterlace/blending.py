@@ -18,7 +18,7 @@ from vstools import (
 from .funcs import vinverse
 from .utils import telecine_patterns
 
-__all__ = ["deblending_helper", "deblend", "deblend_bob", "deblend_fix_kf"]
+__all__ = ["deblend", "deblend_bob", "deblend_fix_kf", "deblending_helper"]
 
 
 def deblending_helper(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, length: int = 5) -> ConstantFormatVideoNode:

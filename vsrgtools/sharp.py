@@ -20,7 +20,7 @@ from .blur import box_blur, gauss_blur, median_blur
 from .enum import BlurMatrix
 from .rgtools import repair
 
-__all__ = ["unsharpen", "fine_sharp", "soothe"]
+__all__ = ["fine_sharp", "soothe", "unsharpen"]
 
 
 def unsharpen(

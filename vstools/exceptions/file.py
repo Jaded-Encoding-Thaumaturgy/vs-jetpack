@@ -9,9 +9,9 @@ from jetpytools import (
 )
 
 __all__ = [
+    "FileIsADirectoryError",
     "FileNotExistsError",
-    "FileWasNotFoundError",
     "FilePermissionError",
     "FileTypeMismatchError",
-    "FileIsADirectoryError",
+    "FileWasNotFoundError",
 ]

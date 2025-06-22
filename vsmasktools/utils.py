@@ -36,14 +36,14 @@ from .edge import EdgeDetect, EdgeDetectT, RidgeDetect, RidgeDetectT
 from .types import GenericMaskT
 
 __all__ = [
-    "max_planes",
-    "region_rel_mask",
-    "region_abs_mask",
-    "squaremask",
-    "replace_squaremask",
     "freeze_replace_squaremask",
+    "max_planes",
     "normalize_mask",
+    "region_abs_mask",
+    "region_rel_mask",
     "rekt_partial",
+    "replace_squaremask",
+    "squaremask",
 ]
 
 

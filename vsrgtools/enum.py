@@ -23,7 +23,7 @@ from vstools import (
     vs,
 )
 
-__all__ = ["LimitFilterMode", "BlurMatrixBase", "BlurMatrix"]
+__all__ = ["BlurMatrix", "BlurMatrixBase", "LimitFilterMode"]
 
 
 class LimitFilterModeMeta:

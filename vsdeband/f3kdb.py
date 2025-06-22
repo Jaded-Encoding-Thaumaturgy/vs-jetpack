@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, NamedTuple, NoReturn, Self, Union, overload
+from typing import Any, Literal, NamedTuple, NoReturn, Self, overload
 
 from vstools import (
     CustomIntEnum,
@@ -18,7 +18,7 @@ from vstools import (
 
 from .abstract import Debander
 
-__all__ = ["SampleMode", "RandomAlgo", "F3kdb"]
+__all__ = ["F3kdb", "RandomAlgo", "SampleMode"]
 
 
 class SampleMode(CustomIntEnum):
@@ -39,12 +39,7 @@ class SampleMode(CustomIntEnum):
 
     @overload
     def __call__(  # type: ignore
-        self: Union[
-            Literal[SampleMode.COLUMN],
-            Literal[SampleMode.SQUARE],
-            Literal[SampleMode.ROW],
-            Literal[SampleMode.COL_ROW_MEAN],
-        ],
+        self: Literal[SampleMode.COLUMN, SampleMode.SQUARE, SampleMode.ROW, SampleMode.COL_ROW_MEAN],
     ) -> NoReturn: ...
 
     @overload
@@ -81,7 +76,7 @@ class RandomAlgo(CustomIntEnum):
     """Gaussian distribution"""
 
     @overload
-    def __call__(self: Literal[RandomAlgo.OLD] | Literal[RandomAlgo.UNIFORM]) -> NoReturn:  # type: ignore
+    def __call__(self: Literal[RandomAlgo.OLD, RandomAlgo.UNIFORM]) -> NoReturn:  # type: ignore
         ...
 
     @overload

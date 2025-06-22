@@ -159,3 +159,4 @@ ignore = ["PYI041"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.*" = ["F401", "F403"]
+"stubs/vapoursynth/**.pyi" = ["RUF022"]

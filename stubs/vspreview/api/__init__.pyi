@@ -1,13 +1,13 @@
 from fractions import Fraction
 from os import PathLike
 from pathlib import Path
-from typing import Any, Iterable, Sequence, overload
+from typing import Any, Iterable, Sequence, overload, TypeAlias
 
 from vapoursynth import AudioNode, RawNode, VideoNode
 
 from vstools import Keyframes, vs
 
-__all__ = ["start_preview", "is_preview", "set_timecodes", "set_scening", "update_node_info", "set_output"]
+__all__ = ["is_preview", "set_output", "set_scening", "set_timecodes", "start_preview", "update_node_info"]
 
 def start_preview(path: str, *args: str) -> None: ...
 def is_preview() -> bool: ...
@@ -21,17 +21,17 @@ def set_scening(
     scenes: Keyframes | list[tuple[int, int]] | list[Keyframes | list[tuple[int, int]]], node: VideoNode, name: str
 ) -> None: ...
 def update_node_info(
-    node_type: type[RawNode] | type[VideoNode] | type[AudioNode], index: int, **kwargs: Any
+    node_type: type[RawNode | VideoNode | AudioNode], index: int, **kwargs: Any
 ) -> None: ...
 
-TimecodesT = (
+TimecodesT: TypeAlias = (
     str
     | PathLike[str]
     | dict[tuple[int | None, int | None], float | tuple[int, int] | Fraction]
     | list[Fraction]
     | None
 )
-ScenesT = Keyframes | list[tuple[int, int]] | list[Keyframes | list[tuple[int, int]]] | None
+ScenesT: TypeAlias = Keyframes | list[tuple[int, int]] | list[Keyframes | list[tuple[int, int]]] | None
 
 @overload
 def set_output(

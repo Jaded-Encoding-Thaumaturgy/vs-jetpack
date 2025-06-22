@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum, IntFlag, auto
-from typing import Any, ClassVar, NoReturn, Sequence, TypeAlias, TypeVar, cast
+from typing import Any, ClassVar, Sequence, TypeAlias, TypeVar, cast
 
 from jetpytools import CustomNotImplementedError, inject_kwargs_params
-from typing_extensions import TypeIs
+from typing_extensions import TypeIs, Self
 
 from vsexprtools import ExprOp, ExprToken, norm_expr
 from vstools import (
@@ -37,14 +37,14 @@ from ..exceptions import UnknownEdgeDetectError, UnknownRidgeDetectError
 __all__ = [
     "EdgeDetect",
     "EdgeDetectT",
+    "EuclideanDistance",
+    "MagDirection",
+    "MagnitudeMatrix",
+    "MatrixEdgeDetect",
+    "Max",
     "RidgeDetect",
     "RidgeDetectT",
-    "MatrixEdgeDetect",
     "SingleMatrix",
-    "EuclideanDistance",
-    "MagnitudeMatrix",
-    "Max",
-    "MagDirection",
     "get_all_edge_detects",
     "get_all_ridge_detect",
 ]
@@ -161,20 +161,20 @@ class EdgeDetect(ABC):
 
     @classmethod
     def from_param(
-        cls: type[EdgeDetectTypeVar],
-        edge_detect: type[EdgeDetectTypeVar] | EdgeDetectTypeVar | str | None = None,
+        cls,
+        edge_detect: type[Self] | Self | str | None = None,
         /,
         func_except: FuncExceptT | None = None,
-    ) -> type[EdgeDetectTypeVar]:
+    ) -> type[Self]:
         return _base_from_param(cls, edge_detect, UnknownEdgeDetectError, [], func_except)
 
     @classmethod
     def ensure_obj(
-        cls: type[EdgeDetectTypeVar],
-        edge_detect: type[EdgeDetectTypeVar] | EdgeDetectTypeVar | str | None = None,
+        cls,
+        edge_detect: type[Self] | Self | str | None = None,
         /,
         func_except: FuncExceptT | None = None,
-    ) -> EdgeDetectTypeVar:
+    ) -> Self:
         return _base_ensure_obj(cls, edge_detect, UnknownEdgeDetectError, [], func_except)
 
     @inject_self
@@ -316,7 +316,7 @@ class MatrixEdgeDetect(EdgeDetect):
         raise NotImplementedError
 
     @abstractmethod
-    def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode | NoReturn:
+    def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode:
         raise NotImplementedError
 
     def _get_matrices(self) -> Sequence[Sequence[float]]:
@@ -354,20 +354,20 @@ class MagnitudeMatrix(MatrixEdgeDetect):
 class RidgeDetect(MatrixEdgeDetect):
     @classmethod
     def from_param(
-        cls: type[RidgeDetectTypeVar],
-        edge_detect: type[RidgeDetectTypeVar] | RidgeDetectTypeVar | str | None = None,
+        cls,
+        edge_detect: type[Self] | Self | str | None = None,
         /,
         func_except: FuncExceptT | None = None,
-    ) -> type[RidgeDetectTypeVar]:
+    ) -> type[Self]:
         return _base_from_param(cls, edge_detect, UnknownRidgeDetectError, [], func_except)
 
     @classmethod
     def ensure_obj(
-        cls: type[RidgeDetectTypeVar],
-        edge_detect: type[RidgeDetectTypeVar] | RidgeDetectTypeVar | str | None = None,
+        cls,
+        edge_detect: type[Self] | Self | str | None = None,
         /,
         func_except: FuncExceptT | None = None,
-    ) -> RidgeDetectTypeVar:
+    ) -> Self:
         return _base_ensure_obj(cls, edge_detect, UnknownRidgeDetectError, [], func_except)
 
     @inject_self
@@ -424,7 +424,7 @@ class SingleMatrix(MatrixEdgeDetect, ABC):
     def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode:
         return clips[0]
 
-    def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode]) -> NoReturn | ConstantFormatVideoNode:
+    def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode:
         raise NotImplementedError
 
 
@@ -432,7 +432,7 @@ class EuclideanDistance(MatrixEdgeDetect, ABC):
     def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode:
         return norm_expr(clips, "x dup * y dup * + sqrt", func=self.__class__)
 
-    def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode]) -> NoReturn | ConstantFormatVideoNode:
+    def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode:
         raise NotImplementedError
 
 
@@ -440,7 +440,7 @@ class Max(MatrixEdgeDetect, ABC):
     def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode:
         return ExprOp.MAX.combine(*clips)
 
-    def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode]) -> NoReturn | ConstantFormatVideoNode:
+    def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode:
         raise NotImplementedError
 
 

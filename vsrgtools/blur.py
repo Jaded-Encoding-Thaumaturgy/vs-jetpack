@@ -34,7 +34,7 @@ from .limit import limit_filter
 from .rgtools import vertical_cleaner
 from .util import normalize_radius
 
-__all__ = ["box_blur", "side_box_blur", "gauss_blur", "min_blur", "sbr", "median_blur", "bilateral", "flux_smooth"]
+__all__ = ["bilateral", "box_blur", "flux_smooth", "gauss_blur", "median_blur", "min_blur", "sbr", "side_box_blur"]
 
 
 def box_blur(

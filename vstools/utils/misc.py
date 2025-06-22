@@ -18,7 +18,7 @@ from ..types import ConstantFormatVideoNode, VideoNodeT
 from ..utils.cache import SceneBasedDynamicCache
 from .info import get_video_format
 
-__all__ = ["change_fps", "match_clip", "padder_ctx", "padder", "pick_func_stype", "set_output", "SceneAverageStats"]
+__all__ = ["SceneAverageStats", "change_fps", "match_clip", "padder", "padder_ctx", "pick_func_stype", "set_output"]
 
 
 def change_fps(clip: vs.VideoNode, fps: Fraction) -> vs.VideoNode:

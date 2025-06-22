@@ -21,16 +21,16 @@ from ..types import HoldsPropValueT, KwargsT
 from .stubs import PropEnum, _base_from_video, _ColorRangeMeta, _MatrixMeta, _PrimariesMeta, _TransferMeta
 
 __all__ = [
-    "PropEnum",
-    "Matrix",
-    "Transfer",
-    "Primaries",
-    "MatrixT",
-    "TransferT",
-    "PrimariesT",
     "ColorRange",
     "ColorRangeT",
+    "Matrix",
     "MatrixCoefficients",
+    "MatrixT",
+    "Primaries",
+    "PrimariesT",
+    "PropEnum",
+    "Transfer",
+    "TransferT",
 ]
 
 

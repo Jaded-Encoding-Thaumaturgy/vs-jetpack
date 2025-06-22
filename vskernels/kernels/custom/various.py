@@ -9,19 +9,19 @@ from ...abstract import CustomComplexKernel, CustomComplexTapsKernel
 from ..zimg import Point, Bilinear, Lanczos
 
 __all__ = [
-    "CustomPoint",
-    "CustomBilinear",
-    "CustomLanczos",
-    "Gaussian",
-    "Box",
     "BlackMan",
     "BlackManMinLobe",
-    "Sinc",
-    "Hann",
-    "Hamming",
-    "Welch",
     "Bohman",
+    "Box",
     "Cosine",
+    "CustomBilinear",
+    "CustomLanczos",
+    "CustomPoint",
+    "Gaussian",
+    "Hamming",
+    "Hann",
+    "Sinc",
+    "Welch",
 ]
 
 

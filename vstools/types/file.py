@@ -17,17 +17,17 @@ from jetpytools import (
 )
 
 __all__ = [
-    "FilePathType",
     "FileDescriptor",
     "FileOpener",
-    "OpenTextModeUpdating",
-    "OpenTextModeWriting",
-    "OpenTextModeReading",
+    "FilePathType",
+    "OpenBinaryMode",
+    "OpenBinaryModeReading",
     "OpenBinaryModeUpdating",
     "OpenBinaryModeWriting",
-    "OpenBinaryModeReading",
     "OpenTextMode",
-    "OpenBinaryMode",
+    "OpenTextModeReading",
+    "OpenTextModeUpdating",
+    "OpenTextModeWriting",
     "SPath",
     "SPathLike",
 ]

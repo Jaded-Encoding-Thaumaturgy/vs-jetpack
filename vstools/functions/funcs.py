@@ -27,7 +27,7 @@ from .check import check_variable
 from .normalize import normalize_planes
 from .utils import depth, join, plane
 
-__all__ = ["iterate", "fallback", "kwargs_fallback", "FunctionUtil"]
+__all__ = ["FunctionUtil", "fallback", "iterate", "kwargs_fallback"]
 
 
 class FunctionUtil(cachedproperty.baseclass, list[int]):
@@ -176,8 +176,8 @@ class FunctionUtil(cachedproperty.baseclass, list[int]):
             clip = clip.resize.Bicubic(format=clip.format.replace(color_family=vs.YUV).id, matrix=self._matrix)
 
         elif (
-            cfamily in (vs.YUV, vs.GRAY)
-            and not set(self.allowed_cfamilies) & {vs.YUV, vs.GRAY}
+            (cfamily in (vs.YUV, vs.GRAY)
+            and not set(self.allowed_cfamilies) & {vs.YUV, vs.GRAY})
             or self.planes not in (0, [0])
         ):
             self.cfamily_converted = True

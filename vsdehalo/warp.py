@@ -23,7 +23,7 @@ from vstools import (
     vs,
 )
 
-__all__ = ["edge_cleaner", "YAHR"]
+__all__ = ["YAHR", "edge_cleaner"]
 
 
 def edge_cleaner(

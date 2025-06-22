@@ -23,7 +23,7 @@ from vstools import (
     vs,
 )
 
-__all__ = ["GeneralMask", "BoundingBox", "DeferredMask"]
+__all__ = ["BoundingBox", "DeferredMask", "GeneralMask"]
 
 
 class GeneralMask(ABC):

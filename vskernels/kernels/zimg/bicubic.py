@@ -9,20 +9,20 @@ from ...types import LeftShift, TopShift
 from .abstract import ZimgComplexKernel
 
 __all__ = [
-    "Bicubic",
-    "BSpline",
-    "Hermite",
-    "Mitchell",
-    "Catrom",
-    "FFmpegBicubic",
     "AdobeBicubic",
     "AdobeBicubicSharper",
     "AdobeBicubicSmoother",
+    "BSpline",
+    "Bicubic",
+    "BicubicAuto",
     "BicubicSharp",
-    "RobidouxSoft",
+    "Catrom",
+    "FFmpegBicubic",
+    "Hermite",
+    "Mitchell",
     "Robidoux",
     "RobidouxSharp",
-    "BicubicAuto",
+    "RobidouxSoft",
 ]
 
 

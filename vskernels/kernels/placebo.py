@@ -9,14 +9,14 @@ from ..types import LeftShift, TopShift
 from ..abstract import ComplexScaler
 
 __all__ = [
-    "Placebo",
     "EwaBicubic",
-    "EwaJinc",
-    "EwaLanczos",
     "EwaGinseng",
     "EwaHann",
+    "EwaJinc",
+    "EwaLanczos",
     "EwaRobidoux",
     "EwaRobidouxSharp",
+    "Placebo",
 ]
 
 

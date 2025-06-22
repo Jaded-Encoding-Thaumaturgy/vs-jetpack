@@ -32,14 +32,14 @@ from vstools import (
 )
 
 __all__ = [
-    "Regression",
-    "ReconOutput",
-    "ReconDiffMode",
     "ChromaReconstruct",
     "GenericChromaRecon",
     "MissingFieldsChromaRecon",
     "PAWorksChromaRecon",
     "Point422ChromaRecon",
+    "ReconDiffMode",
+    "ReconOutput",
+    "Regression",
 ]
 
 
@@ -276,7 +276,7 @@ class Regression:
 
         (blur_x, *blur_ys), (var_x, *var_ys), var_mul = blur_conf.get_bases(clip)
 
-        if 0.0 > weight or weight >= 1.0:
+        if weight < 0.0 or weight >= 1.0:
             raise CustomOverflowError(
                 '"weight" must be between 0.0 and 1.0 (exclusive)!', self.__class__.linear, weight
             )
@@ -330,7 +330,7 @@ class Regression:
 
         (blur_x, *blur_ys), (var_x, *var_ys), var_mul = blur_conf.get_bases(clip)
 
-        if 0.0 > weight or weight >= 1.0:
+        if weight < 0.0 or weight >= 1.0:
             raise CustomOverflowError(
                 '"weight" must be between 0.0 and 1.0 (exclusive)!', self.__class__.sloped_corr, weight
             )

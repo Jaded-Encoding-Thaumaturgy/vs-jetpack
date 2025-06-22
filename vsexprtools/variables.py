@@ -36,7 +36,7 @@ else:
     inline_expr: None
 
 
-__all__ = ["ExprVar", "ClipVar", "LiteralVar", "ComputedVar", "ComplexVar", "ClipPropsVar", "resolverT", "ExprOtherT"]
+__all__ = ["ClipPropsVar", "ClipVar", "ComplexVar", "ComputedVar", "ExprOtherT", "ExprVar", "LiteralVar", "resolverT"]
 
 
 class ExprVar(int):
@@ -193,7 +193,7 @@ class ExprVar(int):
     def to_str(self, **kwargs: Any) -> str:
         return str(self)
 
-    def assert_in_context(self) -> Literal[True] | NoReturn:
+    def assert_in_context(self) -> Literal[True]:
         if not self.parent_expr:
             return True
 

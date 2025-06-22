@@ -19,7 +19,7 @@ class _WinIsoFile(IsoFileCore):
         pbjson, err = subprocess.Popen(
             [
                 SPath(os.environ["WINDIR"]) / "System32" / "WindowsPowerShell" / "v1.0" / "PowerShell.exe",
-                rf'{util}-DiskImage -ImagePath "{str(iso_path)}" | Get-Volume | ConvertTo-Json',
+                rf'{util}-DiskImage -ImagePath "{iso_path!s}" | Get-Volume | ConvertTo-Json',
             ],
             text=True,
             stdout=subprocess.PIPE,

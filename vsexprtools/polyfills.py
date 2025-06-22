@@ -9,7 +9,7 @@ from vstools import copy_func
 from .operators import ExprOperators
 from .variables import ExprVar
 
-__all__ = ["enable_poly", "disable_poly"]
+__all__ = ["disable_poly", "enable_poly"]
 
 global _to_patch
 
@@ -362,7 +362,7 @@ def enable_poly() -> None:
     for k, v in substitutions.items():
         eval(k).__dict__.update(**{k: v[1] for k, v in v.items()})
 
-    for obtype, dunder in builtin_methods.keys():
+    for obtype, dunder in builtin_methods:
         curse(obtype, dunder, getattr(ExprVar, dunder))
 
     _to_patch = False

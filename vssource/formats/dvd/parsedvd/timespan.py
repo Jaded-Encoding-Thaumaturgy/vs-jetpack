@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from vstools import Region
 
-__all__ = ["TimeSpan", "VTS_FRAMERATE"]
+__all__ = ["VTS_FRAMERATE", "TimeSpan"]
 
 
 @dataclass

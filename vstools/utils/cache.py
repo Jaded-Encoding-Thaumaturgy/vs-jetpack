@@ -16,13 +16,13 @@ else:
 
 
 __all__ = [
+    "ClipFramesCache",
     "ClipsCache",
     "DynamicClipsCache",
     "FramesCache",
     "NodeFramesCache",
-    "ClipFramesCache",
-    "SceneBasedDynamicCache",
     "NodesPropsCache",
+    "SceneBasedDynamicCache",
     "cache_clip",
 ]
 

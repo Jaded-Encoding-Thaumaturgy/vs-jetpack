@@ -7,7 +7,7 @@ from vstools import CustomEnum, vs
 from .abstract import GeneralMask
 from .edge._abstract import EdgeDetectT, RidgeDetectT
 
-__all__ = ["XxpandMode", "Coordinates", "GenericMaskT"]
+__all__ = ["Coordinates", "GenericMaskT", "XxpandMode"]
 
 
 class XxpandMode(CustomEnum):

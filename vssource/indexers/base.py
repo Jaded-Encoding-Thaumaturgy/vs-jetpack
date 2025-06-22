@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 PackageStorage(package_name="vssource")
 
 
-__all__ = ["Indexer", "ExternalIndexer", "DVDIndexer", "DVDExtIndexer", "VSSourceFunc"]
+__all__ = ["DVDExtIndexer", "DVDIndexer", "ExternalIndexer", "Indexer", "VSSourceFunc"]
 
 
 class VSSourceFunc(Protocol):
@@ -252,7 +252,7 @@ class ExternalIndexer(Indexer):
 
         dest_folder = self.get_out_folder(output_folder, files[0])
 
-        files = list(sorted(set(files)))
+        files = sorted(set(files))
 
         hash_str = self.get_videos_hash(files)
 

@@ -1158,7 +1158,7 @@ class MVTools(vs_object):
         self,
         clip: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        direction: Literal[MVDirection.FORWARD] | Literal[MVDirection.BACKWARD] = MVDirection.FORWARD,
+        direction: Literal[MVDirection.FORWARD, MVDirection.BACKWARD] = MVDirection.FORWARD,
         delta: int = 1,
         ml: float | None = None,
         gamma: float | None = None,
@@ -1308,7 +1308,7 @@ class MVTools(vs_object):
         self,
         clip: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        direction: Literal[MVDirection.FORWARD] | Literal[MVDirection.BACKWARD] = MVDirection.FORWARD,
+        direction: Literal[MVDirection.FORWARD, MVDirection.BACKWARD] = MVDirection.FORWARD,
         delta: int = 1,
         scenechange: bool | None = None,
     ) -> ConstantFormatVideoNode:

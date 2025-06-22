@@ -5,7 +5,7 @@ from typing import Sequence, SupportsFloat
 
 from vstools import SupportsString
 
-__all__ = ["double_check_dvdnav", "absolute_time_from_timecode", "AC3_FRAME_LENGTH", "PCR_CLOCK"]
+__all__ = ["AC3_FRAME_LENGTH", "PCR_CLOCK", "absolute_time_from_timecode", "double_check_dvdnav"]
 
 # http://www.mpucoder.com/DVD/ass-hdr.html
 AC3_FRAME_LENGTH = 2880

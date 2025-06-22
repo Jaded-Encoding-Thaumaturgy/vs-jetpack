@@ -30,7 +30,7 @@ from vstools import (
 from .exprop import ExprOp, ExprOpBase, ExprList, TupleExprList
 from .util import ExprVars, bitdepth_aware_tokenize_expr, complexpr_available, norm_expr_planes
 
-__all__ = ["expr_func", "combine", "norm_expr"]
+__all__ = ["combine", "expr_func", "norm_expr"]
 
 
 def expr_func(

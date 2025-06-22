@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from .sector import SectorReadHelper
 
-__all__ = ["AUDIO_FORMAT_AC3", "AUDIO_FORMAT_LPCM", "VTSVideoAttr", "AudioAttr", "VTSIMat"]
+__all__ = ["AUDIO_FORMAT_AC3", "AUDIO_FORMAT_LPCM", "AudioAttr", "VTSIMat", "VTSVideoAttr"]
 
 
 AUDIO_FORMAT_AC3 = 0

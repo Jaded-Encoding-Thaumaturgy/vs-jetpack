@@ -9,7 +9,7 @@ from typing import Any, Callable, NamedTuple, Self, TypeAlias, overload
 from vskernels import Scaler
 from vstools import KwargsT, Resolution, get_w, mod2, vs
 
-__all__ = ["scale_var_clip", "CropRel", "CropAbs", "ScalingArgs"]
+__all__ = ["CropAbs", "CropRel", "ScalingArgs", "scale_var_clip"]
 
 
 def scale_var_clip(

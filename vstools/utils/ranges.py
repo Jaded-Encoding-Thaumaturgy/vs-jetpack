@@ -10,11 +10,11 @@ from ..functions import check_ref_clip
 from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, VideoNodeT
 
 __all__ = [
-    "replace_ranges",
+    "interleave_arr",
+    "ranges_product",
     "remap_frames",
     "replace_every",
-    "ranges_product",
-    "interleave_arr",
+    "replace_ranges",
 ]
 
 
@@ -317,7 +317,7 @@ def replace_ranges(
 ) -> vs.VideoNode:
     from ..functions import invert_ranges, normalize_ranges
 
-    if ranges != 0 and not ranges or clip_a is clip_b:
+    if (ranges != 0 and not ranges) or clip_a is clip_b:
         return clip_a
 
     if not mismatch:

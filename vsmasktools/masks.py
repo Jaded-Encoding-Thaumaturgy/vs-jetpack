@@ -44,7 +44,7 @@ def range_mask(clip: vs.VideoNode, rad: int = 2, radc: int = 0) -> ConstantForma
     return join(
         [
             ExprOp.SUB.combine(_minmax(plane, r, True), _minmax(plane, r, False))
-            for plane, r in zip(split(clip), normalize_seq(radc and [rad, radc] or rad, clip.format.num_planes))
+            for plane, r in zip(split(clip), normalize_seq((radc and [rad, radc]) or rad, clip.format.num_planes))
         ]
     )
 

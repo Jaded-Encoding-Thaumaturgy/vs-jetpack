@@ -33,7 +33,7 @@ from vstools import (
 
 from .generic import BaseGenericScaler
 
-__all__ = ["autoselect_backend", "BaseOnnxScaler", "GenericOnnxScaler", "ArtCNN", "Waifu2x", "DPIR"]
+__all__ = ["DPIR", "ArtCNN", "BaseOnnxScaler", "GenericOnnxScaler", "Waifu2x", "autoselect_backend"]
 
 
 def _clean_keywords(kwargs: dict[str, Any], backend: Any) -> dict[str, Any]:

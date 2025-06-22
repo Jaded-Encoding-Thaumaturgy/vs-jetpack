@@ -23,7 +23,7 @@ from vstools import (
 
 from .generic import BaseGenericScaler, GenericScaler
 
-__all__ = ["ClampScaler", "DPID", "SSIM"]
+__all__ = ["DPID", "SSIM", "ClampScaler"]
 
 
 class ClampScaler(GenericScaler):

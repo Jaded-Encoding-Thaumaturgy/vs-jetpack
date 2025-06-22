@@ -9,7 +9,7 @@ from vstools import core, vs
 
 from .base import Indexer
 
-__all__ = ["BestSource", "IMWRI", "LSMAS", "CarefulSource", "FFMS2"]
+__all__ = ["FFMS2", "IMWRI", "LSMAS", "BestSource", "CarefulSource"]
 
 
 @cache

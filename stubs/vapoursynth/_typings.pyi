@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Callable, Generic, NoReturn, Protocol, Sequence, TypedDict, TypeVar, Union, runtime_checkable
+from typing import Any, Callable, Generic, Protocol, Sequence, TypedDict, TypeVar, Union, runtime_checkable, TypeAlias
 
 from ._enums import ColorFamily, SampleType
 from ._frames import AudioFrame, VideoFrame
@@ -10,16 +10,16 @@ from ._nodes import AudioNode, VideoNode
 
 _T = TypeVar("_T")
 _S = TypeVar("_S")
-_SingleAndSequence = _T | Sequence[_T]
+_SingleAndSequence: TypeAlias = _T | Sequence[_T]
 
 @runtime_checkable
 class _SupportsString(Protocol):
     @abstractmethod
     def __str__(self) -> str: ...
 
-_DataType = str | bytes | bytearray | _SupportsString
+_DataType: TypeAlias = str | bytes | bytearray | _SupportsString
 
-_VapourSynthMapValue = Union[
+_VapourSynthMapValue: TypeAlias = Union[
     _SingleAndSequence[int],
     _SingleAndSequence[float],
     _SingleAndSequence[_DataType],
@@ -32,13 +32,13 @@ _VapourSynthMapValue = Union[
 
 _BoundVSMapValue = TypeVar("_BoundVSMapValue", bound=_VapourSynthMapValue)
 
-_VSMapValueCallback = Callable[..., _BoundVSMapValue]
+_VSMapValueCallback: TypeAlias = Callable[..., _BoundVSMapValue]
 
 class _Future(Generic[_T]):
     def set_result(self, value: _T) -> None: ...
     def set_exception(self, exception: BaseException) -> None: ...
     def result(self) -> _T: ...
-    def exception(self) -> NoReturn | None: ...
+    def exception(self) -> None: ...
 
 ###
 # Typed dicts

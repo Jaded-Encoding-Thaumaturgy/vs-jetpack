@@ -6,7 +6,7 @@ from typing import Any, Sequence
 
 from vstools import SPath, copy_signature
 
-__all__ = ["debug_print", "opt_int", "opt_ints", "get_all_vobs"]
+__all__ = ["debug_print", "get_all_vobs", "opt_int", "opt_ints"]
 
 
 DVD_DEBUG = "DVD_DEBUG" in os.environ

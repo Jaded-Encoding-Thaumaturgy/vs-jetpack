@@ -20,14 +20,14 @@ from vstools import (
 )
 
 __all__ = [
-    "Deinterlacer",
-    "AntiAliaser",
-    "SuperSampler",
-    "NNEDI3",
+    "BWDIF",
     "EEDI2",
     "EEDI3",
+    "NNEDI3",
+    "AntiAliaser",
+    "Deinterlacer",
     "SangNom",
-    "BWDIF",
+    "SuperSampler",
     "SupportsBobDeinterlace",
 ]
 
@@ -227,7 +227,7 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
             nshift.reverse()
 
         for x, dim in enumerate(dest_dimensions):
-            is_width = not x and self.transpose_first or not self.transpose_first and x
+            is_width = (not x and self.transpose_first) or (not self.transpose_first and x)
 
             while (clip.width if is_width else clip.height) < dim:
                 delta = max(nshift[x], key=lambda y: abs(y))

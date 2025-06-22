@@ -12,7 +12,7 @@ from typing_extensions import deprecated
 
 from vstools import MatrixT, PlanesT, vs
 
-__all__ = ["ccd", "CCDMode", "CCDPoints"]
+__all__ = ["CCDMode", "CCDPoints", "ccd"]
 
 
 class CCDMode(CustomIntEnum):
@@ -251,8 +251,8 @@ def ccd(
         plusses_points = "+ " * (num_points - 1)
 
         def _get_weight_expr(x: int, y: int, c: str, weight: float | None = None) -> str:
-            scale_str = peak != 1 and f"{peak} / " or ""
-            weigth_str = weight is not None and f"{weight_b} *" or ""
+            scale_str = (peak != 1 and f"{peak} / ") or ""
+            weigth_str = (weight is not None and f"{weight_b} *") or ""
 
             return f"{c}[{x},{y}] {c} - {scale_str} 2 pow {weigth_str}"
 
@@ -310,7 +310,7 @@ def ccd(
     if not is_subsampled:
         yuv, yuvref = src, ref
     elif mode in {CCDMode.NNEDI_BICUBIC, CCDMode.NNEDI_SSIM}:
-        ref_clips = list[list[ConstantFormatVideoNode] | None]([split(src), ref and split(ref) or None])  # pyright: ignore[reportArgumentType]
+        ref_clips = list[list[ConstantFormatVideoNode] | None]([split(src), (ref and split(ref)) or None])  # pyright: ignore[reportArgumentType]
 
         src_left += 0.125 * divw
 

@@ -68,7 +68,7 @@ class TitleAudios(vs_object, list[vs.AudioNode]):
     def __init__(self, title: Title) -> None:
         self.title = title
 
-        self.cache = dict[int, vs.AudioNode | None]({i: None for i in range(len(self.title._audios))})
+        self.cache = dict[int, vs.AudioNode | None](dict.fromkeys(range(len(self.title._audios))))
 
     @overload
     def __getitem__(self, idx: SupportsIndex, /) -> vs.AudioNode: ...
