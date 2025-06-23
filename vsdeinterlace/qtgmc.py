@@ -935,7 +935,7 @@ class QTempGaussMC(vs_object):
     def _apply_back_blend(self, flt: vs.VideoNode, src: vs.VideoNode) -> ConstantFormatVideoNode:
         assert check_variable(flt, self._apply_back_blend)
 
-        if (self.backblend_sigma and self.sharp_mode) or self.sharp_thin:
+        if self.backblend_sigma and (self.sharp_mode or self.sharp_thin):
             flt = flt.std.MakeDiff(gauss_blur(flt.std.MakeDiff(src), self.backblend_sigma))
 
         return flt
