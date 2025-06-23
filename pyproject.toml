@@ -132,7 +132,6 @@ error_summary = true
 [tool.ruff]
 extend-exclude = ["scripts"]
 line-length = 120
-indent-width = 4
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -140,7 +139,6 @@ docstring-code-format = true
 [tool.ruff.lint]
 exclude = [
     "stubs/pymediainfo",
-    "stubs/vspreview",
     "stubs/vspreview",
     "stubs/dfttest2.pyi",
     "stubs/vsmlrt.pyi",
