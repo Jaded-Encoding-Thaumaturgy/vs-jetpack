@@ -611,8 +611,8 @@ def guided_filter(
     if down_ratio:
         down_w, down_h = cround(width / down_ratio), cround(height / down_ratio)
 
-        p = downscaler.scale(p, down_w, down_h)  # type: ignore[assignment]
-        g = downscaler.scale(g, down_w, down_h) if guidance is not None else p  # type: ignore[assignment]
+        p = downscaler.scale(p, down_w, down_h)
+        g = downscaler.scale(g, down_w, down_h) if guidance is not None else p
 
         radius = [cround(rad / down_ratio) for rad in radius]
 
@@ -674,8 +674,8 @@ def guided_filter(
     mean_a, mean_b = blur_filter(a), blur_filter(b)
 
     if down_ratio:
-        mean_a = upscaler.scale(mean_a, width, height)  # type: ignore[assignment]
-        mean_b = upscaler.scale(mean_b, width, height)  # type: ignore[assignment]
+        mean_a = upscaler.scale(mean_a, width, height)
+        mean_b = upscaler.scale(mean_b, width, height)
 
     q = norm_expr([mean_a, guidance_clip, mean_b], 'x y * z +', planes, func=guided_filter)
 
