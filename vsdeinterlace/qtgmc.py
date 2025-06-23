@@ -8,7 +8,7 @@ from typing_extensions import Self
 
 from vskernels import Catrom
 from vsaa import Deinterlacer, NNEDI3
-from vsdeband import AddNoise
+from vsdeband import Grainer
 from vsdenoise import (
     DFTTest, MaskMode, MotionVectors, MVDirection, MVTools, MVToolsPreset, mc_clamp, prefilter_to_full_range
 )
@@ -737,8 +737,8 @@ class QTempGaussMC(vs_object):
                             noise_max = Morpho.maximum(Morpho.maximum(noise_source), coords=Coordinates.HORIZONTAL)
                             noise_min = Morpho.minimum(Morpho.minimum(noise_source), coords=Coordinates.HORIZONTAL)
 
-                            noise_new = AddNoise.GAUSS.grain(
-                                noise_source, 2048, protect_chroma=False, fade_limits=False, neutral_out=True
+                            noise_new = Grainer.GAUSS(
+                                noise_source, 2048, protect_edges=False, protect_neutral_chroma=False, neutral_out=True
                             )
                             noise_new = norm_expr([noise_max, noise_min, noise_new], 'x y - z * range_size / y +')
 
