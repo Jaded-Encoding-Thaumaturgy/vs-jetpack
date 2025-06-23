@@ -1302,7 +1302,8 @@ def _norm_props_enums(kwargs: KwargsT) -> KwargsT:
     return {
         key: (
             (value.value_zimg if hasattr(value, "value_zimg") else int(value))  # pyright: ignore[reportAttributeAccessIssue]
-            if isinstance(value, PropEnum) else value
+            if isinstance(value, PropEnum)
+            else value
         )
         for key, value in kwargs.items()
     }

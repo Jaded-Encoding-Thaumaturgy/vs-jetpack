@@ -231,7 +231,11 @@ __all__ = [
 
 
 def MAKE_VIDEO_ID(  # noqa: N802
-    colorFamily: int, sampleType: int, bitsPerSample: int, subSamplingW: int, subSamplingH: int  # noqa: N803
+    colorFamily: int,  # noqa: N803
+    sampleType: int,  # noqa: N803
+    bitsPerSample: int,  # noqa: N803
+    subSamplingW: int,  # noqa: N803
+    subSamplingH: int,  # noqa: N803
 ) -> PresetVideoFormat:
     return (
         0
