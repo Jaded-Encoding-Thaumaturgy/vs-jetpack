@@ -230,8 +230,8 @@ __all__ = [
 ]
 
 
-def MAKE_VIDEO_ID(
-    colorFamily: int, sampleType: int, bitsPerSample: int, subSamplingW: int, subSamplingH: int
+def MAKE_VIDEO_ID(  # noqa: N802
+    colorFamily: int, sampleType: int, bitsPerSample: int, subSamplingW: int, subSamplingH: int  # noqa: N803
 ) -> PresetVideoFormat:
     return (
         0

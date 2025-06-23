@@ -11,6 +11,8 @@ from .variables import ExprVar
 
 __all__ = ["disable_poly", "enable_poly"]
 
+# ruff: noqa
+
 global _to_patch
 
 dunder_methods = [

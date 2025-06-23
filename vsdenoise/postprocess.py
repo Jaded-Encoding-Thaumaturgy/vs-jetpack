@@ -26,8 +26,8 @@ __all__ = [
 
 def decrease_size(
     clip: vs.VideoNode,
-    sigmaS: float = 10.0,
-    sigmaR: float = 0.009,
+    sigmaS: float = 10.0,  # noqa: N803
+    sigmaR: float = 0.009,  # noqa: N803
     min_in: int = 180,
     max_in: int = 230,
     gamma: float = 1.0,
@@ -56,10 +56,10 @@ def decrease_size(
     :param sigmaR:      Sigma of Gaussian function to calculate range weight.
                         See the `vsrgtools.bilateral` documentation for more information.
                         Default: 0.009.
-    :param min_in:      Starting pixel value for the gradient mask. Must be a value between 0–255.
+    :param min_in:      Starting pixel value for the gradient mask. Must be a value between 0-255.
                         Low values are not recommended, as this will start to blur a lot more detail.
                         Default: 180.
-    :param max_in:      Ending pixel value for the gradient mask. Must be a value between 0–255.
+    :param max_in:      Ending pixel value for the gradient mask. Must be a value between 0-255.
                         This value must be greater than `min_in`. Any pixel values above this will be fully masked.
                         Default: 230.
     :param mask:        Mask node for masking out details from the blur.
@@ -100,7 +100,9 @@ def decrease_size(
         pm_min, pm_max, *emask = mask
 
         if pm_min > pm_max:
-            raise CustomIndexError("The mask min must be lower than max!", decrease_size, {"min": pm_min, "max": pm_max})
+            raise CustomIndexError(
+                "The mask min must be lower than max!", decrease_size, {"min": pm_min, "max": pm_max}
+            )
 
         pm_min = scale_mask(pm_min, 32, clip)
         pm_max = scale_mask(pm_max, 32, clip)

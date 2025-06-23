@@ -12,7 +12,7 @@ __all__ = [
 class CustomBicubic(CustomComplexKernel, Bicubic):
     """Bicubic resizer using the `CustomKernel` class"""
 
-    class bic_vals:
+    class bic_vals:  # noqa: N801
         @staticmethod
         def p0(b: float, c: float) -> float:
             return (6.0 - 2.0 * b) / 6.0

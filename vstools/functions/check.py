@@ -130,12 +130,9 @@ def check_correct_subsampling(
     """
     from ..exceptions import InvalidSubsamplingError
 
-    if (
-        clip.format
-        and (
-            (width is not None and width % (1 << clip.format.subsampling_w))
-            or (height is not None and height % (1 << clip.format.subsampling_h))
-        )
+    if clip.format and (
+        (width is not None and width % (1 << clip.format.subsampling_w))
+        or (height is not None and height % (1 << clip.format.subsampling_h))
     ):
         raise InvalidSubsamplingError(
             func or check_correct_subsampling,

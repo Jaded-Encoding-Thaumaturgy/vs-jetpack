@@ -57,7 +57,8 @@ class InterpolateOverlay(CustomIntEnum):
         :param bobbed:           Bob-deinterlaced clip.
         :param pattern:          First frame of any clean-combed-combed-clean-clean sequence.
         :param preset:           MVTools preset defining base values for the MVTools object. Default is HQ_COHERENCE.
-        :param blksize:          Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+        :param blksize:          Size of a block. Larger blocks are less sensitive to noise, are faster,
+                                but also less accurate.
         :param refine:           Number of times to recalculate motion vectors with halved block size.
         :param thsad_recalc:     Only bad quality new vectors with a SAD above this will be re-estimated by search.
                                  thsad value is scaled to 8x8 block size.

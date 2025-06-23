@@ -307,7 +307,8 @@ class LinearDescaler(Descaler):
         :param height:              Target descaled height (defaults to clip height if None).
         :param shift:               Subpixel shift (top, left) applied during descaling.
         :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+        :param sigmoid:             Whether to use sigmoid transfer curve.
+                                    Can be True, False, or a tuple of (slope, center).
                                     `True` applies the defaults values (6.5, 0.75).
                                     Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
                                     and sigmoid center has to be in range 0.0-1.0 (inclusive).
@@ -352,7 +353,8 @@ class LinearDescaler(Descaler):
         :param height:              Target scaled height (defaults to clip height if None).
         :param shift:               Subpixel shift (top, left) applied during rescaling.
         :param linear:              Whether to linearize the input before rescaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+        :param sigmoid:             Whether to use sigmoid transfer curve.
+                                    Can be True, False, or a tuple of (slope, center).
                                     `True` applies the defaults values (6.5, 0.75).
                                     Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
                                     and sigmoid center has to be in range 0.0-1.0 (inclusive).
@@ -552,7 +554,8 @@ class ComplexScaler(KeepArScaler, LinearScaler):
                                     If a tuple is provided, it is used uniformly.
                                     If a list is given, the shift is applied per plane.
         :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+        :param sigmoid:             Whether to use sigmoid transfer curve.
+                                    Can be True, False, or a tuple of (slope, center).
                                     `True` applies the defaults values (6.5, 0.75).
                                     Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
                                     and sigmoid center has to be in range 0.0-1.0 (inclusive).
@@ -701,7 +704,8 @@ class ComplexDescaler(LinearDescaler):
         :param height:              Target descaled height (defaults to clip height if None).
         :param shift:               Subpixel shift (top, left) or per-field shifts.
         :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+        :param sigmoid:             Whether to use sigmoid transfer curve.
+                                    Can be True, False, or a tuple of (slope, center).
                                     `True` applies the defaults values (6.5, 0.75).
                                     Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
                                     and sigmoid center has to be in range 0.0-1.0 (inclusive).
@@ -798,7 +802,8 @@ class ComplexDescaler(LinearDescaler):
         :param height:              Target scaled height (defaults to clip height if None).
         :param shift:               Subpixel shift (top, left) or per-field shifts.
         :param linear:              Whether to linearize the input before rescaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+        :param sigmoid:             Whether to use sigmoid transfer curve.
+                                    Can be True, False, or a tuple of (slope, center).
                                     `True` applies the defaults values (6.5, 0.75).
                                     Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
                                     and sigmoid center has to be in range 0.0-1.0 (inclusive).

@@ -106,7 +106,7 @@ def edge_cleaner(
     return final
 
 
-def YAHR(
+def YAHR(  # noqa: N802
     clip: vs.VideoNode, blur: int = 2, depth: int | Sequence[int] = 32, expand: float = 5, planes: PlanesT = 0
 ) -> vs.VideoNode:
     assert check_variable(clip, edge_cleaner)
@@ -148,11 +148,11 @@ def YAHR(
 
     y_mask = get_y(work_clip)
 
-    vEdge = norm_expr([y_mask, Morpho.maximum(y_mask, iterations=2)], "y x - 8 range_max * 255 / - 128 *", func=YAHR)
+    v_edge = norm_expr([y_mask, Morpho.maximum(y_mask, iterations=2)], "y x - 8 range_max * 255 / - 128 *", func=YAHR)
 
-    mask1 = vEdge.tcanny.TCanny(sqrt(expand * 2), mode=-1)
+    mask1 = v_edge.tcanny.TCanny(sqrt(expand * 2), mode=-1)
 
-    mask2 = BlurMatrix.BINOMIAL()(vEdge, planes=planes).std.Invert()
+    mask2 = BlurMatrix.BINOMIAL()(v_edge, planes=planes).std.Invert()
 
     mask = limiter(norm_expr([mask1, mask2], "x 16 * y min", func=YAHR))
 

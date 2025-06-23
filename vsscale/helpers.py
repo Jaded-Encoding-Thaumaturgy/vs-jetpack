@@ -202,7 +202,7 @@ class ScalingArgs:
                                 - "h" means only the height is calculated.
                                 - "hw or "wh" mean both width and height are calculated.
         :return:                ScalingArgs object suitable for scaling functions.
-        """
+        """  # noqa: E501
 
     @classmethod
     def from_args(

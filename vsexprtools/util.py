@@ -27,7 +27,7 @@ from vstools import (
     vs,
 )
 
-__all__ = [
+__all__ = [  # noqa: RUF022
     # VS variables
     "complexpr_available",
     # Expr helpers
@@ -40,7 +40,7 @@ __all__ = [
 ]
 
 
-class _complexpr_available:
+class _complexpr_available:  # noqa: N801
     @property
     def fp16(self) -> bool:
         from .funcs import expr_func

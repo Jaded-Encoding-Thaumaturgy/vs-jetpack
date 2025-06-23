@@ -32,11 +32,11 @@ FrameT = TypeVar("FrameT", bound=vs.RawFrame)
 
 
 class ClipsCache(vs_object, dict[vs.VideoNode, vs.VideoNode]):
-    def __delitem__(self, __key: vs.VideoNode) -> None:
-        if __key not in self:
+    def __delitem__(self, key: vs.VideoNode) -> None:
+        if key not in self:
             return
 
-        return super().__delitem__(__key)
+        return super().__delitem__(key)
 
     def __vs_del__(self, core_id: int) -> None:
         self.clear()
@@ -49,14 +49,14 @@ class DynamicClipsCache(vs_object, dict[T, VideoNodeT]):
     @abstractmethod
     def get_clip(self, key: T) -> VideoNodeT: ...
 
-    def __getitem__(self, __key: T) -> VideoNodeT:
-        if __key not in self:
-            self[__key] = self.get_clip(__key)
+    def __getitem__(self, key: T) -> VideoNodeT:
+        if key not in self:
+            self[key] = self.get_clip(key)
 
             if len(self) > self.cache_size:
                 del self[next(iter(self.keys()))]
 
-        return super().__getitem__(__key)
+        return super().__getitem__(key)
 
 
 class FramesCache(vs_object, Generic[NodeT, FrameT], dict[int, FrameT]):
@@ -71,17 +71,17 @@ class FramesCache(vs_object, Generic[NodeT, FrameT], dict[int, FrameT]):
     def get_frame(self, n: int, f: FrameT) -> FrameT:
         return self[n]
 
-    def __setitem__(self, __key: int, __value: FrameT) -> None:
-        super().__setitem__(__key, __value)
+    def __setitem__(self, key: int, value: FrameT) -> None:
+        super().__setitem__(key, value)
 
         if len(self) > self.cache_size:
             del self[next(iter(self.keys()))]
 
-    def __getitem__(self, __key: int) -> FrameT:
-        if __key not in self:
-            self.add_frame(__key, cast(FrameT, self.clip.get_frame(__key)))
+    def __getitem__(self, key: int) -> FrameT:
+        if key not in self:
+            self.add_frame(key, cast(FrameT, self.clip.get_frame(key)))
 
-        return super().__getitem__(__key)
+        return super().__getitem__(key)
 
     def __vs_del__(self, core_id: int) -> None:
         self.clear()
@@ -131,11 +131,11 @@ class SceneBasedDynamicCache(DynamicClipsCache[int, vs.VideoNode]):
 
 
 class NodesPropsCache(vs_object, dict[tuple[NodeT, int], MutableMapping[str, _VapourSynthMapValue]]):
-    def __delitem__(self, __key: tuple[NodeT, int]) -> None:
-        if __key not in self:
+    def __delitem__(self, key: tuple[NodeT, int]) -> None:
+        if key not in self:
             return
 
-        return super().__delitem__(__key)
+        return super().__delitem__(key)
 
     def __vs_del__(self, core_id: int) -> None:
         self.clear()

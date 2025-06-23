@@ -29,6 +29,7 @@ __all__ = [
 ]
 
 
+# ruff: noqa: N802
 class MVToolsPlugin(CustomIntEnum):
     """Abstraction around both mvtools plugin versions."""
 

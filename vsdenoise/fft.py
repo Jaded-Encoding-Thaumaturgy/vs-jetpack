@@ -37,7 +37,7 @@ __all__ = ["DFTTest", "SLocationT", "fft3d"]
 class _BackendBase(CustomEnum):
     kwargs: dict[str, Any]
 
-    def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+    def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
         self = self.resolve()
 
         if self == DFTTest.Backend.OLD:
@@ -285,13 +285,15 @@ class DFTTest:
                 >>> sloc  # rounded to 3 digits
                 >>> {
                     0.0: 4, 0.053: 4.848, 0.105: 5.68, 0.158: 6.528, 0.211: 7.376, 0.25: 8, 0.263: 8.104, 0.316: 8.528,
-                    0.368: 8.944, 0.421: 9.368, 0.474: 9.792, 0.5: 10, 0.526: 12.288, 0.579: 16.952, 0.632: 21.616, 0.684: 26.192,
-                    0.737: 30.856, 0.75: 32, 0.789: 36.992, 0.842: 43.776, 0.895: 50.56, 0.947: 57.216, 1.0: 64
+                    0.368: 8.944, 0.421: 9.368, 0.474: 9.792, 0.5: 10, 0.526: 12.288, 0.579: 16.952, 0.632: 21.616,
+                    0.684: 26.192, 0.737: 30.856, 0.75: 32, 0.789: 36.992, 0.842: 43.776, 0.895: 50.56, 0.947: 57.216,
+                    1.0: 64
                 }
                 ```
 
             :param locations:           A sequence of tuples or a dictionary that specifies frequency and sigma pairs.
-            :param interpolate:         The interpolation method to be used for sigma values. If `None`, no interpolation is done.
+            :param interpolate:         The interpolation method to be used for sigma values.
+                                        If `None`, no interpolation is done.
             :param strict:              If `True`, raises an error if values are out of bounds.
                                         If `False`, it will clamp values to the bounds.
             :raises CustomValueError:   If `locations` has not an even number of items.
@@ -458,9 +460,10 @@ class DFTTest:
 
         @classproperty
         @classmethod
-        def NoProcess(cls) -> Self:
+        def NoProcess(cls) -> Self:  # noqa: N802
             """
-            Returns a pre-defined `SLocation` instance that performs no processing (i.e., sigma is zero for all locations).
+            Returns a pre-defined `SLocation` instance that performs no processing
+            (i.e., sigma is zero for all locations).
 
             :return: A `SLocation` instance with no processing.
             """
@@ -695,12 +698,12 @@ class DFTTest:
         AMD GPU backend using HIPRTC (HIP Runtime Compilation).
         """
 
-        cuFFT = "dfttest2_cuda"
+        cuFFT = "dfttest2_cuda"  # noqa: N815
         """
         NVIDIA GPU backend using precompiled CUDA and cuFFT.
         """
 
-        hipFFT = "dfttest2_hip"
+        hipFFT = "dfttest2_hip"  # noqa: N815
         """
         AMD GPU backend using precompiled HIP and hipFFT.
         """
@@ -798,7 +801,8 @@ class DFTTest:
             """
             This method is used to apply the specified backend configuration with provided keyword arguments.
 
-            Depending on the backend, the arguments may represent device IDs, streams, or other backend-specific settings.
+            Depending on the backend, the arguments may represent device IDs, streams,
+            or other backend-specific settings.
 
             :param kwargs:          Additional configuration parameters for the backend.
             :return:                The configured backend with applied parameters.
@@ -814,7 +818,7 @@ class DFTTest:
             Additional configuration parameters for the backend.
             """
 
-            def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+            def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
                 """
                 Applies the DFTTest denoising filter using the plugin associated with the selected backend.
 
@@ -939,16 +943,16 @@ class DFTTest:
             denoised = DFTTest().denoise(clip, {0: 0, 0.25: 4, 0.5: 8, 0.75: 16, 1.0: 32})
             ```
 
-        :param clip_or_sloc:    Either a video clip or frequency location.
-        :param sloc:            Frequency location (used if `clip_or_sloc` is a video clip).
-        :param tr:              Temporal radius for denoising (equivalent to `tbsize`).
-        :param ftype:           Filter type for denoising (see [FilterType][vsdenoise.fft.DFTTest.FilterType] enum, e.g.).
-        :param swin:            Synthesis window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
-        :param twin:            Temporal window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
-        :param planes:          Planes to apply the denoising filter.
-        :param func:            Function returned for custom error handling.
-        :param kwargs:          Additional parameters for the denoising process.
-        :return:                The denoised video node.
+        :param clip_or_sloc:  Either a video clip or frequency location.
+        :param sloc:          Frequency location (used if `clip_or_sloc` is a video clip).
+        :param tr:            Temporal radius for denoising (equivalent to `tbsize`).
+        :param ftype:         Filter type for denoising (see [FilterType][vsdenoise.fft.DFTTest.FilterType] enum).
+        :param swin:          Synthesis window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
+        :param twin:          Temporal window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
+        :param planes:        Planes to apply the denoising filter.
+        :param func:          Function returned for custom error handling.
+        :param kwargs:        Additional parameters for the denoising process.
+        :return:              The denoised video node.
         """
         func = func or self.denoise
 

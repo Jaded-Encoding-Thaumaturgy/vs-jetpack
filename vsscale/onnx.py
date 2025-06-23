@@ -111,7 +111,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         :param shifter:         Kernel used for shifting operations. Defaults to kernel.
         :param **kwargs:        Additional arguments to pass to the backend.
                                 See the vsmlrt backend's docstring for more details.
-        """
+        """  # noqa: E501
         super().__init__(kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
 
         if model is not None:
@@ -216,18 +216,15 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         from vsmlrt import calc_tilesize
 
-        kwargs = (
-            {
-                "tiles": self.tiles,
-                "tilesize": self.tilesize,
-                "width": clip.width,
-                "height": clip.height,
-                "multiple": 1,
-                "overlap_w": self.overlap_w,
-                "overlap_h": self.overlap_h,
-            }
-            | kwargs
-        )
+        kwargs = {
+            "tiles": self.tiles,
+            "tilesize": self.tilesize,
+            "width": clip.width,
+            "height": clip.height,
+            "multiple": 1,
+            "overlap_w": self.overlap_w,
+            "overlap_h": self.overlap_h,
+        } | kwargs
 
         return calc_tilesize(**kwargs)
 
@@ -303,7 +300,7 @@ class BaseArtCNN(BaseOnnxScaler):
         :param shifter:         Kernel used for shifting operations. Defaults to kernel.
         :param **kwargs:        Additional arguments to pass to the backend.
                                 See the vsmlrt backend's docstring for more details.
-        """
+        """  # noqa: E501
         super().__init__(
             None,
             backend,
@@ -415,7 +412,7 @@ class ArtCNN(BaseArtCNNLuma):
 
         _model = 0
 
-    class C4F32_DS(BaseArtCNNLuma):
+    class C4F32_DS(BaseArtCNNLuma):  # noqa: N801
         """
         The same as C4F32 but intended to also sharpen and denoise.
 
@@ -446,7 +443,7 @@ class ArtCNN(BaseArtCNNLuma):
 
         _model = 2
 
-    class C16F64_DS(BaseArtCNNLuma):
+    class C16F64_DS(BaseArtCNNLuma):  # noqa: N801
         """
         The same as C16F64 but intended to also sharpen and denoise.
 
@@ -460,7 +457,7 @@ class ArtCNN(BaseArtCNNLuma):
 
         _model = 3
 
-    class C4F32_Chroma(BaseArtCNNChroma):
+    class C4F32_Chroma(BaseArtCNNChroma):  # noqa: N801
         """
         The smaller of the two chroma models.\n
         These don't double the input clip and rather just try to enhance the chroma using luma information.
@@ -475,7 +472,7 @@ class ArtCNN(BaseArtCNNLuma):
 
         _model = 4
 
-    class C16F64_Chroma(BaseArtCNNChroma):
+    class C16F64_Chroma(BaseArtCNNChroma):  # noqa: N801
         """
         The bigger of the two chroma models.\n
         These don't double the input clip and rather just try to enhance the chroma using luma information.
@@ -519,7 +516,7 @@ class ArtCNN(BaseArtCNNLuma):
 
         _model = 7
 
-    class R8F64_DS(BaseArtCNNLuma):
+    class R8F64_DS(BaseArtCNNLuma):  # noqa: N801
         """
         The same as R8F64 but intended to also sharpen and denoise.
 
@@ -533,7 +530,7 @@ class ArtCNN(BaseArtCNNLuma):
 
         _model = 8
 
-    class R8F64_Chroma(BaseArtCNNChroma):
+    class R8F64_Chroma(BaseArtCNNChroma):  # noqa: N801
         """
         The new and fancy big chroma model.\n
         These don't double the input clip and rather just try to enhance the chroma using luma information.
@@ -564,7 +561,7 @@ class ArtCNN(BaseArtCNNLuma):
 
         _model = 10
 
-    class C4F16_DS(BaseArtCNNLuma):
+    class C4F16_DS(BaseArtCNNLuma):  # noqa: N801
         """
         The same as C4F16 but intended to also sharpen and denoise.
 
@@ -617,7 +614,7 @@ class BaseWaifu2x(BaseOnnxScaler):
         :param shifter:         Kernel used for shifting operations. Defaults to kernel.
         :param **kwargs:        Additional arguments to pass to the backend.
                                 See the vsmlrt backend's docstring for more details.
-        """
+        """  # noqa: E501
         self.scale_w2x = scale
         self.noise = noise
         super().__init__(
@@ -700,7 +697,7 @@ class _Waifu2xCunet(BaseWaifu2xRGB):
                                 This behavior can be disabled with `postprocess_no_tint_fix=True`
 
             :return:            The scaled clip.
-            """
+            """  # noqa: E501
             ...
 
     def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
@@ -937,7 +934,7 @@ class BaseDPIR(BaseOnnxScaler):
         :param shifter:         Kernel used for shifting operations. Defaults to kernel.
         :param **kwargs:        Additional arguments to pass to the backend.
                                 See the vsmlrt backend's docstring for more details.
-        """
+        """  # noqa: E501
         self.strength = strength
         self.multiple = 8
 
@@ -987,7 +984,7 @@ class BaseDPIR(BaseOnnxScaler):
         return clip
 
     def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        from vsmlrt import DPIR as mlrt_dpir
+        from vsmlrt import DPIR as mlrt_dpir  # noqa: N811
         from vsmlrt import DPIRModel
 
         args = (

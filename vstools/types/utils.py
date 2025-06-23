@@ -34,7 +34,7 @@ __all__ = [
 ]
 
 
-class vs_object(ABC, metaclass=ABCMeta):
+class vs_object(ABC, metaclass=ABCMeta):  # noqa: N801
     """
     Special object that follows the lifecycle of the VapourSynth environment/core.
 

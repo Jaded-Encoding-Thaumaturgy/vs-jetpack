@@ -111,7 +111,7 @@ def replace_ranges(
     clip_b: VideoNodeT,
     ranges: FrameRangeN | FrameRangesN,
     exclusive: bool = False,
-    mismatch: Literal[True] | bool = ...,
+    mismatch: bool = ...,
 ) -> VideoNodeT:
     """
     Replaces frames in a clip with pre-calculated indices.

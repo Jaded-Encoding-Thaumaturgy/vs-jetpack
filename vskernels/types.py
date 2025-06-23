@@ -142,7 +142,9 @@ ShiftT = Union[
 """
 Type alias for shift in both horizontal and vertical directions.
 
-Can either represent a single shift (for progressive video) or separate shifts for top and bottom fields (for interlaced video).
+Can either represent a single shift (for progressive video)
+or separate shifts for top and bottom fields (for interlaced video).
+
 The first value in the tuple represents vertical shift, and the second represents horizontal shift.
 """
 

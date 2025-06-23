@@ -86,7 +86,8 @@ class DeferredMask(GeneralMask):
     ) -> None:
         """
         :param ranges:          The frame ranges that the mask should be applied to.
-        :param bound:           An optional bounding box that defines the area of the frame where the mask will be applied.
+        :param bound:           An optional bounding box that defines the area of the frame
+                                where the mask will be applied.
                                 If None, the mask applies to the whole frame.
         :param blur:            Whether to apply a box blur effect to the mask.
         :param refframes:       A list of reference frames used in building the final mask for each specified range.

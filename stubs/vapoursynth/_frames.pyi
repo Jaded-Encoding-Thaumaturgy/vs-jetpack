@@ -1,6 +1,6 @@
 from ctypes import c_void_p
 from types import MappingProxyType, TracebackType
-from typing import Iterator, Literal, MutableMapping, Self, TypeVar
+from typing import Iterator, Literal, MutableMapping, Self
 
 from ._enums import SampleType
 from ._formats import ChannelLayout, VideoFormat
@@ -64,8 +64,6 @@ class RawFrame:
     ) -> bool | None: ...
     def __getitem__(self, index: int) -> memoryview: ...
     def __len__(self) -> int: ...
-
-RawFrameT = TypeVar("RawFrameT", bound=RawFrame)
 
 class VideoFrame(RawFrame):
     format: VideoFormat

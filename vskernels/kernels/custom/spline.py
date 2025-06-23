@@ -10,6 +10,8 @@ from .helpers import poly3
 
 __all__ = ["Spline"]
 
+# ruff: noqa: N802
+
 
 class Spline(CustomComplexTapsKernel):
     """Spline resizer with an arbitrary number of taps."""

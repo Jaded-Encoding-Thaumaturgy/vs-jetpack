@@ -1,3 +1,5 @@
+# noqa: N999
+
 from __future__ import annotations
 
 import atexit
@@ -63,7 +65,9 @@ class _LinuxIsoFile(IsoFileCore):
         self.loop_path = SPath(loop_path)
 
         if "MountPoints:" in (device_info := self._run_disc_util(self.loop_path, ["info", "-b"], True)):
-            if cur_mount := device_info.split("MountPoints:")[1].split("\n")[0].strip():
+            cur_mount = device_info.split("MountPoints:")[1].split("\n")[0].strip()
+
+            if cur_mount:
                 self.cur_mount = SPath(cur_mount)
 
         return self.cur_mount

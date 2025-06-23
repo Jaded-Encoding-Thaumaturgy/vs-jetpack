@@ -129,7 +129,7 @@ def _limit_filter_lut(
 
     no_elast = elast <= 1
 
-    def limitLut(x: int) -> int:
+    def limitLut(x: int) -> int:  # noqa: N802
         dif = x - neutral
 
         dif_abs = abs(dif)
@@ -201,9 +201,9 @@ def _limit_filter_expr(
 
         return f"{dif_abs} {thr_1} <= x {dif_abs} {thr_2} >= y y {dif} {thr_2} {dif_abs} - * {thr_slope} * + ? ?"
 
-    limitExpr = _limit_xthr_expr(thr)
+    limitExpr = _limit_xthr_expr(thr)  # noqa: N806
 
     if largen_thr != thr:
-        limitExpr = f"x {ref} > {_limit_xthr_expr(largen_thr)} {limitExpr} ?"
+        limitExpr = f"x {ref} > {_limit_xthr_expr(largen_thr)} {limitExpr} ?"  # noqa: N806
 
     return f"{header} {limitExpr}"

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# ruff: noqa
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Callable, ClassVar, Concatenate, Sequence

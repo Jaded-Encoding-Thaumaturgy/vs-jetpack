@@ -71,20 +71,20 @@ class RescaleBase(vs_object):
 
         self.border_handling = BorderHandling(int(border_handling))
 
-    def __delattr__(self, __name: str) -> None:
-        match __name:
+    def __delattr__(self, name: str) -> None:
+        def _delattr(attr: str) -> None:
+            with contextlib.suppress(AttributeError):
+                delattr(self, attr)
+
+        match name:
             case "descale":
-                self._trydelattr("rescale")
-                self._trydelattr("doubled")
+                _delattr("rescale")
+                _delattr("doubled")
             case "doubled":
-                self._trydelattr("upscale")
+                _delattr("upscale")
             case _:
                 pass
-        delattr(self, __name)
-
-    def _trydelattr(self, attr: str) -> None:
-        with contextlib.suppress(AttributeError):
-            delattr(self, attr)
+        delattr(self, name)
 
     @staticmethod
     def _apply_field_based(
@@ -307,7 +307,7 @@ class Rescale(RescaleBase):
                                        - ``2`` (EXTEND): Assume the image was resized with extend padding, where the outermost row was extended infinitely far.
 
                                     Defaults to ``0``.
-        """
+        """  # noqa: E501
         self._line_mask: ConstantFormatVideoNode | None = None
         self._credit_mask: ConstantFormatVideoNode | None = None
         self._ignore_mask: ConstantFormatVideoNode | None = None

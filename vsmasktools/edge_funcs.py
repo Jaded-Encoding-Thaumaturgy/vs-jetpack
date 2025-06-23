@@ -127,7 +127,7 @@ def limited_linemask(
     )
 
 
-class dre_edgemask(CustomEnum):
+class dre_edgemask(CustomEnum):  # noqa: N801
     """Edgemask with dynamic range enhancement prefiltering."""
 
     RETINEX = cast("dre_edgemask", object())

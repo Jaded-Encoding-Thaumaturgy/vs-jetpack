@@ -54,7 +54,9 @@ class QTempGaussMC(vs_object):
     Quasi Temporal Gaussian Motion Compensated (QTGMC)
 
     A very high quality deinterlacer with a range of features for both quality and convenience.
-    These include extensive noise processing capabilities, support for repair of progressive material, precision source matching, shutter speed simulation, etc.
+    These include extensive noise processing capabilities, support for repair of progressive material,
+    precision source matching, shutter speed simulation, etc.
+
     Originally based on TempGaussMC by Didée.
 
     Basic usage:
@@ -198,7 +200,10 @@ class QTempGaussMC(vs_object):
         """Perform back-blending both before and after sharpness limiting."""
 
     class SourceMatchMode(CustomIntEnum):
-        """Creates higher fidelity output with extra processing. will capture more source detail and reduce oversharpening / haloing."""
+        """
+        Creates higher fidelity output with extra processing.
+        Will capture more source detail and reduce oversharpening / haloing.
+        """
 
         NONE = 0
         """No source match processing."""
@@ -272,7 +277,7 @@ class QTempGaussMC(vs_object):
         :param limit:                   3-step limiting thresholds for the gaussian blur post-processing.
         :param range_expansion_args:    Arguments passed to [prefilter_to_full_range][vsdenoise.prefilters.prefilter_to_full_range].
         :param mask_shimmer_args:       Arguments passed to [_mask_shimmer][vsdeinterlace.qtgmc.QTempGaussMC._mask_shimmer].
-        """
+        """  # noqa: E501
 
         self.prefilter_tr = tr
         self.prefilter_sc_threshold = sc_threshold
@@ -299,7 +304,8 @@ class QTempGaussMC(vs_object):
 
         :param force_tr:        Always analyze motion to at least this, even if otherwise unnecessary.
         :param preset:          MVTools preset defining base values for the MVTools object.
-        :param blksize:         Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+        :param blksize:         Size of a block. Larger blocks are less sensitive to noise, are faster,
+                                but also less accurate.
         :param refine:          Number of times to recalculate motion vectors with halved block size.
         :param thsad_recalc:    Only bad quality new vectors with a SAD above this will be re-estimated by search.
                                 thsad value is scaled to 8x8 block size.
@@ -340,7 +346,7 @@ class QTempGaussMC(vs_object):
         :param stabilize:              Weights to use when blending source noise with compensated noise.
         :param func_comp_args:         Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for denoising.
         :param stabilize_comp_args:    Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for stabilization.
-        """
+        """  # noqa: E501
 
         self.denoise_tr = tr
         self.denoise_func = func
@@ -374,7 +380,7 @@ class QTempGaussMC(vs_object):
         :param mask_args:           Arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask]
                                     for [InputType.REPAIR][vsdeinterlace.qtgmc.QTempGaussMC.InputType.REPAIR].
         :param mask_shimmer_args:   Arguments passed to [_mask_shimmer][vsdeinterlace.qtgmc.QTempGaussMC._mask_shimmer].
-        """
+        """  # noqa: E501
 
         self.basic_tr = tr
         self.basic_thsad = thsad
@@ -405,7 +411,7 @@ class QTempGaussMC(vs_object):
         :param similarity:      Temporal similarity of the error created by smoothing.
         :param enhance:         Sharpening strength prior to source match refinement.
         :param degrain_args:    Arguments passed to [_binomial_degrain][vsdeinterlace.qtgmc.QTempGaussMC._binomial_degrain].
-        """
+        """  # noqa: E501
 
         self.match_tr = tr
         self.match_bobber = fallback(bobber, self.basic_bobber).copy(tff=self.tff, double_rate=self.double_rate)
@@ -494,7 +500,7 @@ class QTempGaussMC(vs_object):
         :param radius:       Radius of sharpness limiting.
         :param clamp:        How much undershoot/overshoot to allow.
         :param comp_args:    Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for temporal limiting.
-        """
+        """  # noqa: E501
 
         if mode is None:
             self.limit_mode = self.SharpLimitMode.NONE if self.match_mode else self.SharpLimitMode.TEMPORAL_PRESMOOTH
@@ -524,7 +530,7 @@ class QTempGaussMC(vs_object):
         :param noise_restore:        How much noise to restore after this stage.
         :param degrain_args:         Arguments passed to [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain].
         :param mask_shimmer_args:    Arguments passed to [_mask_shimmer][vsdeinterlace.qtgmc.QTempGaussMC._mask_shimmer].
-        """
+        """  # noqa: E501
 
         self.final_tr = tr
         self.final_thsad = thsad
@@ -549,7 +555,7 @@ class QTempGaussMC(vs_object):
         :param fps_divisor:      Factor by which to reduce framerate.
         :param blur_args:        Arguments passed to [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur].
         :param mask_args:        Arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask].
-        """
+        """  # noqa: E501
 
         self.motion_blur_shutter_angle = shutter_angle
         self.motion_blur_fps_divisor = fps_divisor

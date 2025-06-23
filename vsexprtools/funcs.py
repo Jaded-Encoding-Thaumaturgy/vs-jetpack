@@ -154,7 +154,7 @@ def norm_expr(
                             that will be replaced in the expression string.
                             Iterable values (except str and bytes types) will be associated with the corresponding plane.
     :return:                Evaluated clip.
-    """
+    """  # noqa: E501
     clips = flatten_vnodes(clips, split_planes=split_planes)
 
     if isinstance(expr, str):

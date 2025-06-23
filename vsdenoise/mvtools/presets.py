@@ -278,7 +278,7 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
 
     @classproperty
     @classmethod
-    def HQ_COHERENCE(cls) -> Self:
+    def HQ_COHERENCE(cls) -> Self:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
             analyze_args=AnalyzeArgs(
@@ -294,7 +294,7 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
 
     @classproperty
     @classmethod
-    def HQ_SAD(cls) -> Self:
+    def HQ_SAD(cls) -> Self:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
             analyze_args=AnalyzeArgs(
@@ -320,10 +320,10 @@ class MVToolsPresets:
 
     @classproperty
     @classmethod
-    def HQ_COHERENCE(cls) -> MVToolsPreset:
+    def HQ_COHERENCE(cls) -> MVToolsPreset:  # noqa: N802
         return MVToolsPreset.HQ_COHERENCE
 
     @classproperty
     @classmethod
-    def HQ_SAD(cls) -> MVToolsPreset:
+    def HQ_SAD(cls) -> MVToolsPreset:  # noqa: N802
         return MVToolsPreset.HQ_SAD

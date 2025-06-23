@@ -138,7 +138,12 @@ def _base_ensure_obj(
 
 
 def _is_discard_planes_mode(planes: PlanesT | tuple[PlanesT, bool]) -> TypeIs[tuple[PlanesT, bool]]:
-    return bool(isinstance(planes, tuple) and len(planes) == 2 and (isinstance(planes[0], (int, Sequence)) or planes[0] is None) and isinstance(planes[1], bool))
+    return bool(
+        isinstance(planes, tuple)
+        and len(planes) == 2
+        and (isinstance(planes[0], (int, Sequence)) or planes[0] is None)
+        and isinstance(planes[1], bool)
+    )
 
 
 class EdgeDetect(ABC):

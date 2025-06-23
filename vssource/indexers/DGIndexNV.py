@@ -1,3 +1,5 @@
+# noqa: N999
+
 from __future__ import annotations
 
 import os
@@ -132,7 +134,7 @@ class DGIndexNV(ExternalIndexer):
 
         idx_file_sector = [max_sector - video_sizes[file_idx], max_sector]
 
-        curr_SEQ, frame_data = 0, []
+        curr_seq, frame_data = 0, []
 
         for rawline in lines:
             if len(rawline) == 0:
@@ -143,11 +145,11 @@ class DGIndexNV(ExternalIndexer):
             name = str(line[0])
 
             if name == "SEQ":
-                curr_SEQ = opt_int(line[1]) or 0
+                curr_seq = opt_int(line[1]) or 0
 
-            if curr_SEQ < idx_file_sector[0]:
+            if curr_seq < idx_file_sector[0]:
                 continue
-            elif curr_SEQ > idx_file_sector[1]:
+            elif curr_seq > idx_file_sector[1]:
                 break
 
             try:

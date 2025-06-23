@@ -347,7 +347,7 @@ def fine_dehalo(
     InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
 
     if show_mask is not False and not (0 < int(show_mask) <= 7):
-        raise CustomValueError("valid values for show_mask are 1–7!", func)
+        raise CustomValueError("valid values for show_mask are 1-7!", func)
 
     thmif, thmaf, thlimif, thlimaf = [scale_mask(x, 8, clip) for x in [thmi, thma, thlimi, thlima]]
 
@@ -524,7 +524,7 @@ def fine_dehalo2(
         if mask_h and mask_v:
             return combine([mask_h, mask_v], ExprOp.MAX)
 
-        assert (ret_mask := mask_h or mask_v)
+        assert (ret_mask := mask_h or mask_v)  # noqa: RUF018
 
         return ret_mask
 
@@ -782,7 +782,7 @@ def dehalomicron(
     dehalo_mask = remove_grain.Mode.BOX_BLUR_NO_CENTER(dehalo_mask)
     dehalo_mask = remove_grain.Mode.MINMAX_MEDIAN_OPP(dehalo_mask)
 
-    dmask_expr = f"x {scale_mask(abs(brz), 32, y)} {'>' if brz < 0.0 else '>'} 0 x 2 * ?" if brz else "x 2 *"
+    dmask_expr = f"x {scale_mask(abs(brz), 32, y)} {'>' if brz < 0.0 else '>'} 0 x 2 * ?" if brz else "x 2 *"  # noqa: RUF034
 
     dehalo_mask = norm_expr(dehalo_mask, dmask_expr, func=func.func)
 

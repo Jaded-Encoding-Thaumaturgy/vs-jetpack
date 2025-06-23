@@ -167,7 +167,8 @@ def gauss_blur(
     Applies Gaussian blur to a clip, supporting spatial and temporal modes, and per-plane control.
 
     :param clip:                Source clip.
-    :param sigma:               Standard deviation of the Gaussian kernel. Can be a float or a list for per-plane control.
+    :param sigma:               Standard deviation of the Gaussian kernel.
+                                Can be a float or a list for per-plane control.
     :param taps:                Number of taps in the kernel. Automatically determined if not specified.
     :param mode:                Convolution mode (horizontal, vertical, both, or temporal). Defaults to HV.
     :param planes:              Planes to process. Defaults to all.
@@ -443,7 +444,7 @@ class Bilateral(Generic[P, R]):
         Uses `bilateralgpu_rtc.Bilateral` — a CUDA-based GPU implementation with runtime shader compilation.
         """
 
-        def Bilateral(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+        def Bilateral(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
             """
             Applies the bilateral filter using the plugin associated with the selected backend.
 
@@ -459,8 +460,8 @@ class Bilateral(Generic[P, R]):
 def bilateral(
     clip: vs.VideoNode,
     ref: vs.VideoNode | None = None,
-    sigmaS: float | Sequence[float] | None = None,
-    sigmaR: float | Sequence[float] | None = None,
+    sigmaS: float | Sequence[float] | None = None,  # noqa: N803
+    sigmaR: float | Sequence[float] | None = None,  # noqa: N803
     backend: Bilateral.Backend = Bilateral.Backend.CPU,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:

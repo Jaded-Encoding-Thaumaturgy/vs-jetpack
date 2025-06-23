@@ -66,7 +66,7 @@ class NLMeans(Generic[P, R]):
         CUDA = "cuda"
         """CUDA (GPU-based) implementation."""
 
-        def NLMeans(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+        def NLMeans(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
             """
             Applies the Non-Local Means denoising filter using the plugin associated with the selected backend.
 

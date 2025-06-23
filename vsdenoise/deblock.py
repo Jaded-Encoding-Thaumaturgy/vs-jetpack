@@ -40,7 +40,7 @@ __all__ = ["deblock_qed", "dpir", "dpir_mask", "mpeg2stinx"]
 _StrengthT = SupportsFloat | vs.VideoNode | None
 
 
-class dpir(CustomStrEnum):
+class dpir(CustomStrEnum):  # noqa: N801
     DEBLOCK = cast("dpir", "deblock")
     DENOISE = cast("dpir", "denoise")
 
@@ -219,19 +219,19 @@ def deblock_qed(
             clip.deblock.Deblock(quant_inner, alpha_inner, beta_inner, func.norm_planes if chroma_mode != 1 else 0),
         )
 
-        normalD2, strongD2 = (
+        normal_d2, strong_d2 = (
             norm_expr([clip, dclip, block], "z x y - 0 ? neutral +", planes) for dclip in (normal, strong)
         )
 
         with padder.ctx(16, align=align) as p16:
-            strongD2 = p16.CROP(
-                norm_expr(p16.MIRROR(strongD2), "x neutral - 1.01 * neutral +", planes, func=func.func).dctf.DCTFilter(
+            strong_d2 = p16.CROP(
+                norm_expr(p16.MIRROR(strong_d2), "x neutral - 1.01 * neutral +", planes, func=func.func).dctf.DCTFilter(
                     [1, 1, 0, 0, 0, 0, 0, 0], planes
                 )
             )
 
-        strongD4 = norm_expr([strongD2, normalD2], "y neutral = x y ?", planes, func=func.func)
-        deblocked = clip.std.MakeDiff(strongD4, planes)
+        strong_d4 = norm_expr([strong_d2, normal_d2], "y neutral = x y ?", planes, func=func.func)
+        deblocked = clip.std.MakeDiff(strong_d4, planes)
 
         if func.chroma and chroma_mode:
             deblocked = join([deblocked, strong if chroma_mode == 2 else normal])

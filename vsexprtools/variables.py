@@ -236,7 +236,7 @@ class ComputedVar(ExprVar):
         return " ".join([str(x) for x in self.operations])
 
 
-resolverT: TypeAlias = Callable[..., LiteralVar]
+resolverT: TypeAlias = Callable[..., LiteralVar]  # noqa
 
 
 @dataclass

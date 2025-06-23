@@ -767,7 +767,7 @@ class Morpho:
         else:
             conv_mode = ConvMode.SQUARE
 
-        Func = GenericVSFunction[ConstantFormatVideoNode]
+        Func = GenericVSFunction[ConstantFormatVideoNode]  # noqa: N806
 
         if not complexpr_available:
             if radius > 1 or conv_mode != ConvMode.SQUARE:

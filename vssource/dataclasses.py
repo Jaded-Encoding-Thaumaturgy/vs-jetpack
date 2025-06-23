@@ -46,7 +46,7 @@ class IndexFileInfo(_IndexFileInfoBase):
 class D2VIndexHeader(_SetItemMeta):
     stream_type: int = 0
     MPEG_type: int = 0
-    iDCT_algorithm: int = 0
+    iDCT_algorithm: int = 0  # noqa: N815
     YUVRGB_scale: int = 1
     luminance_filter: tuple[int, ...] = (0, 0)
     clipping: list[int] = field(default_factory=lambda: [0, 0, 0, 0])

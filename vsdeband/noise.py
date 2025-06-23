@@ -58,6 +58,9 @@ __all__ = [
 ]
 
 
+# ruff: noqa
+
+
 class ResolverOneClipArgs(Protocol):
     def __call__(self, grained: vs.VideoNode) -> vs.VideoNode: ...
 

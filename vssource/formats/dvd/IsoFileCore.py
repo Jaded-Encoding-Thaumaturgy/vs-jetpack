@@ -1,3 +1,5 @@
+# noqa: N999
+
 from __future__ import annotations
 
 import datetime

@@ -1,7 +1,6 @@
 from abc import abstractmethod
-from typing import Any, Callable, Generic, Protocol, Sequence, TypedDict, TypeVar, Union, runtime_checkable, TypeAlias
+from typing import Any, Callable, Generic, Protocol, Sequence, TypeVar, Union, runtime_checkable, TypeAlias
 
-from ._enums import ColorFamily, SampleType
 from ._frames import AudioFrame, VideoFrame
 from ._nodes import AudioNode, VideoNode
 
@@ -38,17 +37,3 @@ class _Future(Generic[_T]):
     def set_exception(self, exception: BaseException) -> None: ...
     def result(self) -> _T: ...
     def exception(self) -> None: ...
-
-###
-# Typed dicts
-
-class _VideoFormatInfo(TypedDict):
-    id: int
-    name: str
-    color_family: ColorFamily
-    sample_type: SampleType
-    bits_per_sample: int
-    bytes_per_sample: int
-    subsampling_w: int
-    subsampling_h: int
-    num_planes: int

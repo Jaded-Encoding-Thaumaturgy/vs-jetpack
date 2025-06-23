@@ -282,7 +282,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
     These functions determine which keyword arguments will be extracted from the __init__ method.
     """
 
-    class cached_property(functools.cached_property[T_co]):
+    class cached_property(functools.cached_property[T_co]):  # noqa: N801
         """Read only version of functools.cached_property."""
 
         if TYPE_CHECKING:
@@ -781,7 +781,7 @@ class Kernel(Scaler, Descaler, Resampler):
         :return:                        A new clip with the applied shift.
         :raises VariableFormatError:    If the input clip has variable format.
         :raises CustomValueError:       If the input clip is GRAY but lists of shift has been passed.
-        """
+        """  # noqa: E501
         assert check_variable_format(clip, self.shift)
 
         n_planes = clip.format.num_planes
@@ -824,7 +824,8 @@ class Kernel(Scaler, Descaler, Resampler):
         """
         Resolve and return a kernel class from a string name, class type, or instance.
 
-        :param kernel:              Kernel identifier as a string, class type, or instance. If None, defaults to the current class.
+        :param kernel:              Kernel identifier as a string, class type, or instance.
+                                    If None, defaults to the current class.
         :param func_except:         Function returned for custom error handling.
 
         :return:                    The resolved kernel class.
@@ -946,7 +947,9 @@ class Kernel(Scaler, Descaler, Resampler):
         :return:            Dictionary of keyword arguments for the resample function.
         """
         return {
-            "format": get_video_format(format).id, "matrix": Matrix.from_param(matrix), "matrix_in": Matrix.from_param(matrix_in)
+            "format": get_video_format(format).id,
+            "matrix": Matrix.from_param(matrix),
+            "matrix_in": Matrix.from_param(matrix_in),
         } | self.get_params_args(False, clip, **kwargs)
 
 

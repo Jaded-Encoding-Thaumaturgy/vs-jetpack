@@ -98,10 +98,14 @@ def clip_async_render(
     .. code-block:: python
 
         # Gather scenechanges.
-        >>> scenechanges = clip_async_render(clip, None, 'Searching for scenechanges...', lambda n, f: get_prop(f, "_SceneChange", int))
+        >>> scenechanges = clip_async_render(
+            clip, None, 'Searching for scenechanges...', lambda n, f: get_prop(f, "_SceneChange", int)
+        )
 
         # Gather average planes stats.
-        >>> avg_planes = clip_async_render(clip, None, 'Calculating average planes...', lambda n, f: get_prop(f, "PlaneStatsAverage", float))
+        >>> avg_planes = clip_async_render(
+            clip, None, 'Calculating average planes...', lambda n, f: get_prop(f, "PlaneStatsAverage", float)
+        )
 
     :param clip:            Clip to render.
     :param outfile:         Optional binary output or path to write to.

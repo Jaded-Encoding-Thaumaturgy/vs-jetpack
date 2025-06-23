@@ -467,7 +467,7 @@ class BM3D(Generic[P, R]):
             """
             return self._get_args(radius, "final")
 
-    matrix_rgb2opp: list[float] = [
+    matrix_rgb2opp: tuple[float, ...] = (
         1 / 3,
         1 / 3,
         1 / 3,
@@ -477,12 +477,12 @@ class BM3D(Generic[P, R]):
         1 / 4,
         -1 / 2,
         1 / 4,
-    ]
+    )
     """
     Matrix to convert RGB color space to OPP (Opponent) color space.
     """
 
-    matrix_opp2rgb: list[float] = [1, 1, 2 / 3, 1, 0, -4 / 3, 1, -1, 2 / 3]
+    matrix_opp2rgb: tuple[float, ...] = (1, 1, 2 / 3, 1, 0, -4 / 3, 1, -1, 2 / 3)
     """
     Matrix to convert OPP (Opponent) color space back to RGB color space.
     """
@@ -515,55 +515,44 @@ def bm3d(
         denoised = bm3d(clip, 1.25, 1, profile=bm3d.Profile.NORMAL, backend=bm3d.Backend.CUDA_RTC, ...)
         ```
 
-    :param clip:                            The clip to process.
-                                            If using BM3D.Backend.OLD, the clip format must be YUV444 or RGB,
-                                            as filtering is always performed in the OPPonent color space.
-                                            If using another device type and the clip format is:
-                                                - RGB       -> Processed in OPP format (BM3D algorithm, aka `chroma=False`).
-                                                - YUV444    -> Processed in YUV444 format (CBM3D algorithm, aka `chroma=True`).
-                                                - GRAY      -> Processed as-is.
-                                                - YUVXXX    -> Each plane is processed separately.
-
-    :param sigma:                           Strength of denoising. Valid range is [0, +inf).
-                                            A sequence of up to 3 elements can be used to set different sigma values
-                                            for the Y, U, and V channels.
-                                            If fewer than 3 elements are given, the last value is repeated.
-                                            Defaults to 0.5.
-
-    :param tr:                              The temporal radius for denoising. Valid range is [1, 16].
-                                            Defaults to the radius defined by the profile.
-
-    :param refine:                          Number of refinement steps.
-                                                * 0 means basic estimate only.
-                                                * 1 means basic estimate with one final estimate.
-                                                * n means basic estimate refined with a final estimate n times.
-
-    :param profile:                         The preset profile. Defaults to BM3D.Profile.FAST.
-
-    :param pre:                             A pre-filtered clip for the basic estimate.
-                                            It should be more suitable for block-matching than the input clip,
-                                            and must be of the same format and dimensions.
-                                            Either `pre` or `ref` can be specified, not both.
-                                            Defaults to None.
-
-    :param ref:                             A clip to be used as the basic estimate.
-                                            It replaces BM3D’s internal basic estimate and serves as the reference
-                                            for the final estimate.
-                                            Must be of the same format and dimensions as the input clip.
-                                            Either `ref` or `pre` can be specified, not both.
-                                            Defaults to None.
-
-    :param backend:                         The backend to use for processing. Defaults to BM3D.Backend.AUTO.
-
-    :param basic_args:                      Additional arguments to pass to the basic estimate step.
-                                            Defaults to None.
-
-    :param final_args:                      Additional arguments to pass to the final estimate step.
-                                            Defaults to None.
-
-    :param planes:                          Planes to process. Default to all.
-
-    :param **kwargs:                        Internal keyword arguments for testing purposes.
+    :param clip:        The clip to process.
+                        If using BM3D.Backend.OLD, the clip format must be YUV444 or RGB,
+                        as filtering is always performed in the OPPonent color space.
+                        If using another device type and the clip format is:
+                            - RGB       -> Processed in OPP format (BM3D algorithm, aka `chroma=False`).
+                            - YUV444    -> Processed in YUV444 format (CBM3D algorithm, aka `chroma=True`).
+                            - GRAY      -> Processed as-is.
+                            - YUVXXX    -> Each plane is processed separately.
+    :param sigma:       Strength of denoising. Valid range is [0, +inf).
+                        A sequence of up to 3 elements can be used to set different sigma values
+                        for the Y, U, and V channels.
+                        If fewer than 3 elements are given, the last value is repeated.
+                        Defaults to 0.5.
+    :param tr:          The temporal radius for denoising. Valid range is [1, 16].
+                        Defaults to the radius defined by the profile.
+    :param refine:      Number of refinement steps.
+                            * 0 means basic estimate only.
+                            * 1 means basic estimate with one final estimate.
+                            * n means basic estimate refined with a final estimate n times.
+    :param profile:     The preset profile. Defaults to BM3D.Profile.FAST.
+    :param pre:         A pre-filtered clip for the basic estimate.
+                        It should be more suitable for block-matching than the input clip,
+                        and must be of the same format and dimensions.
+                        Either `pre` or `ref` can be specified, not both.
+                        Defaults to None.
+    :param ref:         A clip to be used as the basic estimate.
+                        It replaces BM3D's internal basic estimate and serves as the reference
+                        for the final estimate.
+                        Must be of the same format and dimensions as the input clip.
+                        Either `ref` or `pre` can be specified, not both.
+                        Defaults to None.
+    :param backend:    The backend to use for processing. Defaults to BM3D.Backend.A
+    :param basic_args:  Additional arguments to pass to the basic estimate step.
+                        Defaults to None.
+    :param final_args:  Additional arguments to pass to the final estimate step.
+                        Defaults to None.
+    :param planes:      Planes to process. Default to all.
+    :param **kwargs:    Internal keyword arguments for testing purposes.
 
     :raises CustomValueError:               If both `pre` and `ref` are specified at the same time.
     :raises UnsupportedProfileError:        If the VERY_NOISY profile is not supported by the selected device type.

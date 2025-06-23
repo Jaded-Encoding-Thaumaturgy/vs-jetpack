@@ -403,8 +403,7 @@ def rekt_partial(
     assert check_variable(clip, rekt_partial._func)
 
     def _filtered_func(clip: vs.VideoNode, *args: P0.args, **kwargs: P0.kwargs) -> ConstantFormatVideoNode:
-        assert check_variable_format(filtered := func(clip, *args, **kwargs), rekt_partial._func)
-        return filtered
+        return func(clip, *args, **kwargs)  # type: ignore
 
     if left == top == right == bottom == 0:
         return _filtered_func(clip, *args, **kwargs)

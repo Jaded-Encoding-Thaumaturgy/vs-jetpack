@@ -148,7 +148,7 @@ class MVTools(vs_object):
         :param flow_blur_args:           Arguments passed to every :py:attr:`MVToolsPlugin.FlowBlur` calls.
         :param mask_args:                Arguments passed to every :py:attr:`MVToolsPlugin.Mask` calls.
         :param sc_detection_args:        Arguments passed to every :py:attr:`MVToolsPlugin.SCDetection` calls.
-        """
+        """  # noqa: E501
 
         assert check_variable(clip, self.__class__)
 
@@ -219,7 +219,7 @@ class MVTools(vs_object):
                            The clip should not be padded.
 
         :return:           The original clip with the super clip attached as a frame property.
-        """
+        """  # noqa: E501
 
         clip = fallback(clip, self.clip)
 
@@ -349,7 +349,7 @@ class MVTools(vs_object):
 
         :return:               A :py:class:`MotionVectors` object containing the analyzed motion vectors for each frame.
                                These vectors describe the estimated motion between frames and can be used for motion compensation.
-        """
+        """  # noqa: E501
 
         super_clip = self.get_super(fallback(super, self.search_clip))
 
@@ -466,7 +466,7 @@ class MVTools(vs_object):
         :param dct:             SAD calculation mode using block DCT (frequency spectrum) for comparing blocks.
                                 For more information, see :py:class:`SADMode`.
         :param scale_lambda:    Whether to scale lambda_ value according to truemotion's default value formula.
-        """
+        """  # noqa: E501
 
         super_clip = self.get_super(fallback(super, self.search_clip))
 
@@ -618,7 +618,7 @@ class MVTools(vs_object):
         :return:                 Motion compensated frames if func is provided, otherwise returns a tuple containing:
                                   - The interleaved compensated frames.
                                   - A tuple of (total_frames, center_offset) for manual frame selection.
-        """
+        """  # noqa: E501
 
         if self.disable_compensate:
             raise CustomRuntimeError("Motion analysis was performed without block overlap!", self.compensate)
@@ -754,7 +754,7 @@ class MVTools(vs_object):
         :return:                 Motion compensated frames if func is provided, otherwise returns a tuple containing:
                                   - The interleaved compensated frames.
                                   - A tuple of (total_frames, center_offset) for manual frame selection.
-        """
+        """  # noqa: E501
 
         clip = fallback(clip, self.clip)
         super_clip = self.get_super(fallback(super, clip))
@@ -833,7 +833,7 @@ class MVTools(vs_object):
                             - Second value: Percentage of changed blocks needed to trigger a scene change.
 
         :return:           Motion compensated and temporally filtered clip with reduced noise.
-        """
+        """  # noqa: E501
 
         clip = fallback(clip, self.clip)
         super_clip = self.get_super(fallback(super, clip))

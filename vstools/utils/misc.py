@@ -90,7 +90,7 @@ def match_clip(
     return clip.std.AssumeFPS(fpsnum=ref.fps.numerator, fpsden=ref.fps.denominator)
 
 
-class padder_ctx(AbstractContextManager["padder_ctx"]):
+class padder_ctx(AbstractContextManager["padder_ctx"]):  # noqa: N801
     """Context manager for the padder class."""
 
     def __init__(self, mod: int = 8, min: int = 0, align: Align = Align.MIDDLE_CENTER) -> None:
@@ -104,7 +104,7 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):
         self.align = align
         self.pad_ops = list[tuple[tuple[int, int, int, int], tuple[int, int]]]()
 
-    def CROP(
+    def CROP(  # noqa: N802
         self, clip: vs.VideoNode, crop_scale: float | tuple[float, float] | None = None
     ) -> ConstantFormatVideoNode:
         """
@@ -123,7 +123,7 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):
 
         return clip.std.Crop(*(x * y for x, y in zip(padding, crop_pad)))
 
-    def MIRROR(self, clip: VideoNodeT) -> VideoNodeT:
+    def MIRROR(self, clip: VideoNodeT) -> VideoNodeT:  # noqa: N802
         """
         Pad a clip with reflect mode. This will reflect the clip on each side.
 
@@ -135,7 +135,7 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):
         self.pad_ops.append((padding, (out.width, out.height)))
         return out
 
-    def REPEAT(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def REPEAT(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:  # noqa: N802
         """
         Pad a clip with repeat mode. This will simply repeat the last row/column till the end.
 
@@ -147,7 +147,7 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):
         self.pad_ops.append((padding, (out.width, out.height)))
         return out
 
-    def COLOR(
+    def COLOR(  # noqa: N802
         self, clip: vs.VideoNode, color: int | float | bool | None | Sequence[int | float | bool | None] = (False, None)
     ) -> ConstantFormatVideoNode:
         """
@@ -177,7 +177,7 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):
         return None
 
 
-class padder:
+class padder:  # noqa: N801
     """Pad out the pixels on the sides by the given amount of pixels."""
 
     ctx = padder_ctx
@@ -205,7 +205,7 @@ class padder:
         return width, height, fmt, w_sub, h_sub
 
     @classmethod
-    def MIRROR(cls, clip: VideoNodeT, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> VideoNodeT:
+    def MIRROR(cls, clip: VideoNodeT, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> VideoNodeT:  # noqa: N802
         """
         Pad a clip with reflect mode. This will reflect the clip on each side.
 
@@ -242,7 +242,7 @@ class padder:
         return core.std.CopyFrameProps(padded, clip)
 
     @classmethod
-    def REPEAT(
+    def REPEAT(  # noqa: N802
         cls, clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0
     ) -> ConstantFormatVideoNode:
         """
@@ -306,7 +306,7 @@ class padder:
         )
 
     @classmethod
-    def COLOR(
+    def COLOR(  # noqa: N802
         cls,
         clip: vs.VideoNode,
         left: int = 0,
@@ -585,10 +585,9 @@ def set_output(
 
     if isinstance(index_or_name, (str, bool)):
         index = None
-        if not TYPE_CHECKING:
+        if not TYPE_CHECKING and isinstance(name, vs.VideoNode):
             # Backward compatible with older api
-            if isinstance(name, vs.VideoNode):
-                alpha = name
+            alpha = name
         name = index_or_name
     else:
         index = index_or_name
@@ -613,7 +612,7 @@ def set_output(
 class SceneAverageStats(SceneBasedDynamicCache):
     _props_keys = ("Min", "Max", "Average")
 
-    class cache(dict[int, tuple[float, float, float]]):
+    class cache(dict[int, tuple[float, float, float]]):  # noqa: N801
         def __init__(self, clip: vs.VideoNode, keyframes: Keyframes, plane: int) -> None:
             self.props = clip.std.PlaneStats(plane=plane)
             self.keyframes = keyframes

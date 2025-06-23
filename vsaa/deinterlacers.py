@@ -59,8 +59,8 @@ class Deinterlacer(vs_object, ABC):
         :param clip:        The input clip.
         :param tff:         The field order of the input clip.
         :param double_rate: Whether to double the FPS.
-        :param dh:          If True, doubles the height of the input by copying each line to every other line of the output,
-                            with the missing lines interpolated.
+        :param dh:          If True, doubles the height of the input by copying each line
+                            to every other line of the output, with the missing lines interpolated.
         :return:            Interpolated clip.
         """
 
@@ -366,7 +366,13 @@ class NNEDI3(SuperSampler):
         return self._deinterlacer_function(clip, field, dh, **self.get_deint_args(**kwargs))
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
-        return {"nsize": self.nsize, "nns": self.nns, "qual": self.qual, "etype": self.etype, "pscrn": self.pscrn} | kwargs
+        return {
+            "nsize": self.nsize,
+            "nns": self.nns,
+            "qual": self.qual,
+            "etype": self.etype,
+            "pscrn": self.pscrn,
+        } | kwargs
 
     @Scaler.cached_property
     def kernel_radius(self) -> int:
@@ -475,20 +481,17 @@ class EEDI2(SuperSampler):
         return self._deinterlacer_function(clip, field, **self.get_deint_args(**kwargs))
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
-        return (
-            {
-                "mthresh": self.mthresh,
-                "lthresh": self.lthresh,
-                "vthresh": self.vthresh,
-                "estr": self.estr,
-                "dstr": self.dstr,
-                "maxd": self.maxd,
-                "map": self.map,
-                "nt": self.nt,
-                "pp": self.pp,
-            }
-            | kwargs
-        )
+        return {
+            "mthresh": self.mthresh,
+            "lthresh": self.lthresh,
+            "vthresh": self.vthresh,
+            "estr": self.estr,
+            "dstr": self.dstr,
+            "maxd": self.maxd,
+            "map": self.map,
+            "nt": self.nt,
+            "pp": self.pp,
+        } | kwargs
 
     @Scaler.cached_property
     def kernel_radius(self) -> int:
@@ -628,24 +631,21 @@ class EEDI3(SuperSampler):
         if self.vthresh is None:
             self.vthresh = (None, None, None)
 
-        kwargs = (
-            {
-                "alpha": self.alpha,
-                "beta": self.beta,
-                "gamma": self.gamma,
-                "nrad": self.nrad,
-                "mdis": self.mdis,
-                "ucubic": self.ucubic,
-                "cost3": self.cost3,
-                "vcheck": self.vcheck,
-                "vthresh0": self.vthresh[0],
-                "vthresh1": self.vthresh[1],
-                "vthresh2": self.vthresh[2],
-                "sclip": self.sclip,
-                "mclip": self.mclip,
-            }
-            | kwargs
-        )
+        kwargs = {
+            "alpha": self.alpha,
+            "beta": self.beta,
+            "gamma": self.gamma,
+            "nrad": self.nrad,
+            "mdis": self.mdis,
+            "ucubic": self.ucubic,
+            "cost3": self.cost3,
+            "vcheck": self.vcheck,
+            "vthresh0": self.vthresh[0],
+            "vthresh1": self.vthresh[1],
+            "vthresh2": self.vthresh[2],
+            "sclip": self.sclip,
+            "mclip": self.mclip,
+        } | kwargs
 
         if not self.opencl and kwargs["mclip"] is not None and kwargs.get("opt") is None:
             # opt=3 appears to always give reliable speed boosts if mclip is used.
@@ -699,7 +699,8 @@ class BWDIF(Deinterlacer):
 
     edeint: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | None = None
     """
-    Allows the specification of an external clip from which to take spatial predictions instead of having Bwdif use cubic interpolation.
+    Allows the specification of an external clip from which to take spatial predictions
+    instead of having Bwdif use cubic interpolation.
     This clip must be the same width, height, and colorspace as the input clip.
     If using same rate output, this clip should have the same number of frames as the input.
     If using double rate output, this clip should have twice as many frames as the input.

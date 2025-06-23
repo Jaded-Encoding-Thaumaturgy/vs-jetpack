@@ -20,9 +20,7 @@ def set_timecodes(
 def set_scening(
     scenes: Keyframes | list[tuple[int, int]] | list[Keyframes | list[tuple[int, int]]], node: VideoNode, name: str
 ) -> None: ...
-def update_node_info(
-    node_type: type[RawNode | VideoNode | AudioNode], index: int, **kwargs: Any
-) -> None: ...
+def update_node_info(node_type: type[RawNode | VideoNode | AudioNode], index: int, **kwargs: Any) -> None: ...
 
 TimecodesT: TypeAlias = (
     str

@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any, Sequence
+from typing import Any, ClassVar, Sequence
 
 from vstools import ColorRange, ConstantFormatVideoNode, depth, vs
 
 from ._abstract import EdgeDetect, EuclideanDistance
+
+# ruff: noqa: RUF022
 
 __all__ = [
     "Matrix1D",
@@ -126,9 +128,9 @@ class Matrix1D(EdgeDetect, ABC): ...
 class TEdge(EuclideanDistance, Matrix1D):
     """(TEdgeMasktype=2) Avisynth plugin."""
 
-    matrices = [[12, -74, 0, 74, -12], [-12, 74, 0, -74, 12]]
-    divisors = [62, 62]
-    mode_types = ["h", "v"]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[12, -74, 0, 74, -12], [-12, 74, 0, -74, 12]]
+    divisors: ClassVar[Sequence[float] | None] = [62, 62]
+    mode_types: ClassVar[Sequence[str] | None] = ["h", "v"]
 
 
 class TEdgeTedgemask(Matrix1D, EdgeDetect):
@@ -139,7 +141,7 @@ class TEdgeTedgemask(Matrix1D, EdgeDetect):
 
 
 class SavitzkyGolay(EuclideanDistance, Matrix1D):
-    mode_types = ["h", "v"]
+    mode_types: ClassVar[Sequence[str] | None] = ["h", "v"]
 
 
 class SavitzkyGolayNormalise(SavitzkyGolay):

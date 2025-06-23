@@ -136,16 +136,16 @@ class FileSignatures(list[FileSignature]):
 
             _file_headers_data = list(
                 {
-                        FileSignature(
-                            info["file_type"],
-                            info["ext"],
-                            info["mime"],
-                            info["offset"],
-                            # This is so when checking a file head we first compare the most specific and long signatures
-                            sorted([bytes.fromhex(signature) for signature in info["signatures"]], reverse=True),
-                        ): 0
-                        for info in header_data
-                    }.keys()
+                    FileSignature(
+                        info["file_type"],
+                        info["ext"],
+                        info["mime"],
+                        info["offset"],
+                        # This is so when checking a file head we first compare the most specific and long signatures
+                        sorted([bytes.fromhex(signature) for signature in info["signatures"]], reverse=True),
+                    ): 0
+                    for info in header_data
+                }.keys()
             )
 
             self._file_headers_data = _file_headers_data

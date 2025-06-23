@@ -101,27 +101,27 @@ def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: PlanesT, **
     if pref_type is Prefilter.BILATERAL:
         planes = normalize_planes(clip, planes)
 
-        sigmaS = cast(float | list[float] | tuple[float | list[float], ...], kwargs.pop("sigmaS", 3.0))
-        sigmaR = cast(float | list[float] | tuple[float | list[float], ...], kwargs.pop("sigmaR", 0.02))
+        sigmaS = cast(float | list[float] | tuple[float | list[float], ...], kwargs.pop("sigmaS", 3.0))  # noqa: N806
+        sigmaR = cast(float | list[float] | tuple[float | list[float], ...], kwargs.pop("sigmaR", 0.02))  # noqa: N806
 
         if isinstance(sigmaS, tuple):
-            baseS, *otherS = sigmaS
+            baseS, *otherS = sigmaS  # noqa: N806
         else:
-            baseS, otherS = sigmaS, []
+            baseS, otherS = sigmaS, []  # noqa: N806
 
         if isinstance(sigmaR, tuple):
-            baseR, *otherR = sigmaR
+            baseR, *otherR = sigmaR  # noqa: N806
         else:
-            baseR, otherR = sigmaR, []
+            baseR, otherR = sigmaR, []  # noqa: N806
 
         base, ref = clip, None
         max_len = max(len(otherS), len(otherR))
 
         if max_len:
-            otherS = list[float | list[float]](reversed(normalize_seq(otherS or baseS, max_len)))
-            otherR = list[float | list[float]](reversed(normalize_seq(otherR or baseR, max_len)))
+            otherS = list[float | list[float]](reversed(normalize_seq(otherS or baseS, max_len)))  # noqa: N806
+            otherR = list[float | list[float]](reversed(normalize_seq(otherR or baseR, max_len)))  # noqa: N806
 
-            for siS, siR in zip(otherS, otherR):
+            for siS, siR in zip(otherS, otherR):  # noqa: N806
                 base, ref = ref or clip, bilateral(base, ref, siS, siR, **kwargs)
 
         return bilateral(clip, ref, baseS, baseR, planes=planes, **kwargs)
@@ -283,8 +283,8 @@ class Prefilter(AbstractPrefilter, CustomEnum):
         planes: PlanesT = None,
         full_range: bool | float = False,
         *,
-        sigmaS: float | list[float] | tuple[float | list[float], ...] = 3.0,
-        sigmaR: float | list[float] | tuple[float | list[float], ...] = 0.02,
+        sigmaS: float | list[float] | tuple[float | list[float], ...] = 3.0,  # noqa: N803
+        sigmaR: float | list[float] | tuple[float | list[float], ...] = 0.02,  # noqa: N803
         **kwargs: Any,
     ) -> vs.VideoNode:
         """
@@ -410,8 +410,8 @@ class Prefilter(AbstractPrefilter, CustomEnum):
         *,
         planes: PlanesT = None,
         full_range: bool | float = False,
-        sigmaS: float | list[float] | tuple[float | list[float], ...] = 3.0,
-        sigmaR: float | list[float] | tuple[float | list[float], ...] = 0.02,
+        sigmaS: float | list[float] | tuple[float | list[float], ...] = 3.0,  # noqa: N803
+        sigmaR: float | list[float] | tuple[float | list[float], ...] = 0.02,  # noqa: N803
         **kwargs: Any,
     ) -> PrefilterPartial:
         """
@@ -556,7 +556,8 @@ def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: floa
 
     :param clip:        Clip to process.
     :param slope:       Slope to amplify the scale of the dark areas relative to bright areas.
-    :param smooth:      Indicates the length of the transition between the amplified dark areas and normal range conversion.
+    :param smooth:      Indicates the length of the transition between the amplified dark areas
+                        and normal range conversion.
 
     :return:            Range expanded clip.
     """

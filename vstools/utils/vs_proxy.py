@@ -6,7 +6,7 @@ import weakref
 
 from ctypes import Structure
 from inspect import Parameter, Signature
-from logging import NOTSET as LogLevelUnset
+from logging import NOTSET as LOGLEVEL_NOTSET
 from logging import Handler, LogRecord
 from math import ceil
 from multiprocessing import cpu_count
@@ -893,7 +893,7 @@ class CoreProxy(CoreProxyBase):
         return getattr(core, name)
 
 
-class proxy_utils:
+class proxy_utils:  # noqa: N801
     @staticmethod
     def get_vs_core(core: CoreProxy) -> Core:
         vs_core_ref, vs_proxy = core.__dict__["vs_core_ref"]
@@ -927,15 +927,15 @@ class proxy_utils:
 
 
 def vstools_isinstance(
-    __obj: object, __class_or_tuple: type | UnionType | tuple[type | UnionType | tuple[Any, ...], ...]
+    obj: object, class_or_tuple: type | UnionType | tuple[type | UnionType | tuple[Any, ...], ...], /
 ) -> bool:
-    if __class_or_tuple in (_CoreProxy, Core) and builtins_isinstance(__obj, CoreProxy):
+    if class_or_tuple in (_CoreProxy, Core) and builtins_isinstance(obj, CoreProxy):
         return True
 
-    if __class_or_tuple is VSPresetVideoFormat and builtins_isinstance(__obj, PresetVideoFormat):
+    if class_or_tuple is VSPresetVideoFormat and builtins_isinstance(obj, PresetVideoFormat):
         return True
 
-    return builtins_isinstance(__obj, __class_or_tuple)
+    return builtins_isinstance(obj, class_or_tuple)
 
 
 if builtins.isinstance is not vstools_isinstance:
@@ -1242,8 +1242,7 @@ if TYPE_CHECKING:
 
     def construct_signature(signature: str, return_signature: str, injected: str | None = None) -> Signature: ...
 
-    def try_enable_introspection(version: int | None = None) -> bool:
-        ...
+    def try_enable_introspection(version: int | None = None) -> bool: ...
 
     class CallbackData:
         def __init__(
@@ -1256,7 +1255,7 @@ if TYPE_CHECKING:
         def receive(self, n: int, result: RawFrame | Exception) -> None: ...
 
     class PythonVSScriptLoggingBridge(Handler):
-        def __init__(self, parent: Handler, level: int = LogLevelUnset) -> None: ...
+        def __init__(self, parent: Handler, level: int = LOGLEVEL_NOTSET) -> None: ...
 
         def emit(self, record: LogRecord) -> None: ...
 

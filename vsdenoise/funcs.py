@@ -116,16 +116,18 @@ def mc_degrain(
     :param prefilter:         Filter or clip to use when performing motion vector search.
     :param mfilter:           Filter or clip to use where degrain couldn't find a matching block.
     :param preset:            MVTools preset defining base values for the MVTools object. Default is HQ_SAD.
-    :param tr:                The temporal radius. This determines how many frames are analyzed before/after the current frame.
-    :param blksize:           Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+    :param tr:                The temporal radius.
+                              This determines how many frames are analyzed before/after the current frame.
+    :param blksize:           Size of a block.
+                              Larger blocks are less sensitive to noise, are faster, but also less accurate.
     :param refine:            Number of times to recalculate motion vectors with halved block size.
     :param thsad:             Defines the soft threshold of block sum absolute differences.
                               Blocks with SAD above this threshold have zero weight for averaging (denoising).
                               Blocks with low SAD have highest weight.
                               The remaining weight is taken from pixels of source clip.
     :param thsad2:            Define the SAD soft threshold for frames with the largest temporal distance.
-                              The actual SAD threshold for each reference frame is interpolated between thsad (nearest frames)
-                              and thsad2 (furthest frames).
+                              The actual SAD threshold for each reference frame is interpolated
+                              between thsad (nearest frames) and thsad2 (furthest frames).
                               Only used with the FLOAT MVTools plugin.
     :param thsad_recalc:      Only bad quality new vectors with a SAD above this will be re-estimated by search.
                               thsad value is scaled to 8x8 block size.

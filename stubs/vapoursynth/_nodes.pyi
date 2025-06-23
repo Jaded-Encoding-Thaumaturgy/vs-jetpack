@@ -5392,7 +5392,7 @@ class _Plugin_resize_Core_Bound(Plugin):
     @overload
     def Bicubic(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -5430,7 +5430,7 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Bicubic(
         self,
@@ -5476,7 +5476,7 @@ class _Plugin_resize_Core_Bound(Plugin):
     @overload
     def Bicubic(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -5514,11 +5514,11 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Bilinear(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -5556,7 +5556,7 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Bilinear(
         self,
@@ -5602,7 +5602,7 @@ class _Plugin_resize_Core_Bound(Plugin):
     @overload
     def Bilinear(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -5640,7 +5640,7 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def Bob(
         self,
         clip: VideoNode,
@@ -5685,7 +5685,7 @@ class _Plugin_resize_Core_Bound(Plugin):
     @overload
     def Lanczos(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -5723,7 +5723,7 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Lanczos(
         self,
@@ -5769,7 +5769,7 @@ class _Plugin_resize_Core_Bound(Plugin):
     @overload
     def Lanczos(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -5807,11 +5807,11 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Point(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -5849,7 +5849,7 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Point(
         self,
@@ -5895,7 +5895,7 @@ class _Plugin_resize_Core_Bound(Plugin):
     @overload
     def Point(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -5933,11 +5933,11 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline16(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -5975,7 +5975,7 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline16(
         self,
@@ -6021,7 +6021,7 @@ class _Plugin_resize_Core_Bound(Plugin):
     @overload
     def Spline16(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -6059,11 +6059,11 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline36(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -6101,7 +6101,7 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline36(
         self,
@@ -6147,7 +6147,7 @@ class _Plugin_resize_Core_Bound(Plugin):
     @overload
     def Spline36(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -6185,11 +6185,11 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline64(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -6227,7 +6227,7 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline64(
         self,
@@ -6273,7 +6273,7 @@ class _Plugin_resize_Core_Bound(Plugin):
     @overload
     def Spline64(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -6311,7 +6311,7 @@ class _Plugin_resize_Core_Bound(Plugin):
         src_height: float | None = None,
         nominal_luminance: float | None = None,
         approximate_gamma: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
 
 class _Plugin_resize_VideoNode_Bound(Plugin):
     """This class implements the module definitions for the "resize" VapourSynth plugin.\n\n*This class cannot be imported.*"""
@@ -7229,7 +7229,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
     @overload
     def Bicubic(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -7270,7 +7270,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Bicubic(
         self,
@@ -7319,7 +7319,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
     @overload
     def Bicubic(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -7360,11 +7360,11 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Bilinear(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -7405,7 +7405,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Bilinear(
         self,
@@ -7454,7 +7454,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
     @overload
     def Bilinear(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -7495,11 +7495,11 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Lanczos(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -7540,7 +7540,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Lanczos(
         self,
@@ -7589,7 +7589,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
     @overload
     def Lanczos(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -7630,11 +7630,11 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Point(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -7675,7 +7675,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Point(
         self,
@@ -7724,7 +7724,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
     @overload
     def Point(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -7765,11 +7765,11 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline16(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -7810,7 +7810,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline16(
         self,
@@ -7859,7 +7859,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
     @overload
     def Spline16(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -7900,11 +7900,11 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline36(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -7945,7 +7945,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline36(
         self,
@@ -7994,7 +7994,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
     @overload
     def Spline36(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -8035,11 +8035,11 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline64(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: None = None,
@@ -8080,7 +8080,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Spline64(
         self,
@@ -8129,7 +8129,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
     @overload
     def Spline64(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -8170,7 +8170,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def Bob(
         self,
         clip: VideoNode,
@@ -8218,7 +8218,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
     @overload
     def Custom(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         custom_kernel: _CustomKernelCallback,
         taps: int,
         width: int | None = None,
@@ -8256,7 +8256,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Custom(
         self,
@@ -8302,7 +8302,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
     @overload
     def Custom(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         custom_kernel: _CustomKernelCallback,
         taps: int,
         width: int | None = None,
@@ -8340,7 +8340,7 @@ class _Plugin_resize2_Core_Bound(Plugin):
         force_h: int | None = None,
         force_v: int | None = None,
         blur: float | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
 
 class _Plugin_resize2_VideoNode_Bound(Plugin):
     """This class implements the module definitions for the "resize2" VapourSynth plugin.\n\n*This class cannot be imported.*"""
@@ -9560,16 +9560,16 @@ class _Plugin_std_Core_Bound(Plugin):
     """This class implements the module definitions for the "std" VapourSynth plugin.\n\n*This class cannot be imported.*"""
     def AddBorders(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         left: int | None = None,
         right: int | None = None,
         top: int | None = None,
         bottom: int | None = None,
         color: _SingleAndSequence[float] | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def AssumeFPS(
-        self, clip: VideoNodeT, src: VideoNode | None = None, fpsnum: int | None = None, fpsden: int | None = None
-    ) -> VideoNodeT: ...
+        self, clip: _VideoNodeT, src: VideoNode | None = None, fpsnum: int | None = None, fpsden: int | None = None
+    ) -> _VideoNodeT: ...
     def AssumeSampleRate(
         self, clip: AudioNode, src: AudioNode | None = None, samplerate: int | None = None
     ) -> AudioNode: ...
@@ -9656,7 +9656,7 @@ class _Plugin_std_Core_Bound(Plugin):
     @overload
     def BlankClip(
         self,
-        clip: VideoNodeT | None = None,
+        clip: _VideoNodeT | None = None,
         width: int | None = None,
         height: int | None = None,
         format: int | None = None,
@@ -9667,7 +9667,7 @@ class _Plugin_std_Core_Bound(Plugin):
         keep: int | None = None,
         varsize: int | None = None,
         varformat: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def BoxBlur(
         self,
         clip: VideoNode,
@@ -9694,8 +9694,8 @@ class _Plugin_std_Core_Bound(Plugin):
         mode: _DataType | None = None,
     ) -> ConstantFormatVideoNode: ...
     def CopyFrameProps(
-        self, clip: VideoNodeT, prop_src: VideoNode, props: _SingleAndSequence[_DataType] | None = None
-    ) -> VideoNodeT: ...
+        self, clip: _VideoNodeT, prop_src: VideoNode, props: _SingleAndSequence[_DataType] | None = None
+    ) -> _VideoNodeT: ...
     def Crop(
         self,
         clip: VideoNode,
@@ -9706,14 +9706,14 @@ class _Plugin_std_Core_Bound(Plugin):
     ) -> ConstantFormatVideoNode: ...
     def CropAbs(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         width: int,
         height: int,
         left: int | None = None,
         top: int | None = None,
         x: int | None = None,
         y: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def CropRel(
         self,
         clip: VideoNode,
@@ -9725,28 +9725,28 @@ class _Plugin_std_Core_Bound(Plugin):
     def Deflate(
         self, clip: VideoNode, planes: _SingleAndSequence[int] | None = None, threshold: float | None = None
     ) -> ConstantFormatVideoNode: ...
-    def DeleteFrames(self, clip: VideoNodeT, frames: _SingleAndSequence[int]) -> VideoNodeT: ...
+    def DeleteFrames(self, clip: _VideoNodeT, frames: _SingleAndSequence[int]) -> _VideoNodeT: ...
     def DoubleWeave(self, clip: VideoNode, tff: int | None = None) -> ConstantFormatVideoNode: ...
-    def DuplicateFrames(self, clip: VideoNodeT, frames: _SingleAndSequence[int]) -> VideoNodeT: ...
+    def DuplicateFrames(self, clip: _VideoNodeT, frames: _SingleAndSequence[int]) -> _VideoNodeT: ...
     def Expr(
         self, clips: _SingleAndSequence[VideoNode], expr: _SingleAndSequence[_DataType], format: int | None = None
     ) -> ConstantFormatVideoNode: ...
-    def FlipHorizontal(self, clip: VideoNodeT) -> VideoNodeT: ...
-    def FlipVertical(self, clip: VideoNodeT) -> VideoNodeT: ...
+    def FlipHorizontal(self, clip: _VideoNodeT) -> _VideoNodeT: ...
+    def FlipVertical(self, clip: _VideoNodeT) -> _VideoNodeT: ...
     def FrameEval(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         eval: _VSMapValueCallback[_VapourSynthMapValue],
         prop_src: _SingleAndSequence[VideoNode] | None = None,
         clip_src: _SingleAndSequence[VideoNode] | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def FreezeFrames(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         first: _SingleAndSequence[int] | None = None,
         last: _SingleAndSequence[int] | None = None,
         replacement: _SingleAndSequence[int] | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def Inflate(
         self, clip: VideoNode, planes: _SingleAndSequence[int] | None = None, threshold: float | None = None
     ) -> ConstantFormatVideoNode: ...
@@ -9774,8 +9774,8 @@ class _Plugin_std_Core_Bound(Plugin):
         mismatch: int | None = None,
         modify_duration: int | None = None,
     ) -> VideoNode: ...
-    def Invert(self, clip: VideoNodeT, planes: _SingleAndSequence[int] | None = None) -> VideoNodeT: ...
-    def InvertMask(self, clip: VideoNodeT, planes: _SingleAndSequence[int] | None = None) -> VideoNodeT: ...
+    def Invert(self, clip: _VideoNodeT, planes: _SingleAndSequence[int] | None = None) -> _VideoNodeT: ...
+    def InvertMask(self, clip: _VideoNodeT, planes: _SingleAndSequence[int] | None = None) -> _VideoNodeT: ...
     def Levels(
         self,
         clip: VideoNode,
@@ -9801,7 +9801,7 @@ class _Plugin_std_Core_Bound(Plugin):
         forcens: _DataType | None = None,
         forceid: _DataType | None = None,
     ) -> None: ...
-    def Loop(self, clip: VideoNodeT, times: int | None = None) -> VideoNodeT: ...
+    def Loop(self, clip: _VideoNodeT, times: int | None = None) -> _VideoNodeT: ...
     def Lut(
         self,
         clip: VideoNode,
@@ -9860,10 +9860,10 @@ class _Plugin_std_Core_Bound(Plugin):
     ) -> ConstantFormatVideoNode: ...
     def ModifyFrame(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         clips: _SingleAndSequence[VideoNode],
         selector: _VSMapValueCallback[_VapourSynthMapValue],
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def PEMVerifier(
         self,
         clip: VideoNode,
@@ -9878,11 +9878,13 @@ class _Plugin_std_Core_Bound(Plugin):
         self, clip: VideoNode, planes: _SingleAndSequence[int] | None = None, scale: float | None = None
     ) -> ConstantFormatVideoNode: ...
     def PropToClip(self, clip: VideoNode, prop: _DataType | None = None) -> ConstantFormatVideoNode: ...
-    def RemoveFrameProps(self, clip: VideoNodeT, props: _SingleAndSequence[_DataType] | None = None) -> VideoNodeT: ...
-    def Reverse(self, clip: VideoNodeT) -> VideoNodeT: ...
+    def RemoveFrameProps(
+        self, clip: _VideoNodeT, props: _SingleAndSequence[_DataType] | None = None
+    ) -> _VideoNodeT: ...
+    def Reverse(self, clip: _VideoNodeT) -> _VideoNodeT: ...
     def SelectEvery(
-        self, clip: VideoNodeT, cycle: int, offsets: _SingleAndSequence[int], modify_duration: int | None = None
-    ) -> VideoNodeT: ...
+        self, clip: _VideoNodeT, cycle: int, offsets: _SingleAndSequence[int], modify_duration: int | None = None
+    ) -> _VideoNodeT: ...
     def SeparateFields(
         self, clip: VideoNode, tff: int | None = None, modify_duration: int | None = None
     ) -> ConstantFormatVideoNode: ...
@@ -9894,16 +9896,16 @@ class _Plugin_std_Core_Bound(Plugin):
         maxsize: int | None = None,
         maxhistory: int | None = None,
     ) -> None: ...
-    def SetFieldBased(self, clip: VideoNodeT, value: int) -> VideoNodeT: ...
+    def SetFieldBased(self, clip: _VideoNodeT, value: int) -> _VideoNodeT: ...
     def SetFrameProp(
         self,
-        clip: VideoNodeT,
+        clip: _VideoNodeT,
         prop: _DataType,
         intval: _SingleAndSequence[int] | None = None,
         floatval: _SingleAndSequence[float] | None = None,
         data: _SingleAndSequence[_DataType] | None = None,
-    ) -> VideoNodeT: ...
-    def SetFrameProps(self, clip: VideoNodeT, **kwargs: _VapourSynthMapValue) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
+    def SetFrameProps(self, clip: _VideoNodeT, **kwargs: _VapourSynthMapValue) -> _VideoNodeT: ...
     def SetMaxCPU(self, cpu: _DataType) -> ConstantFormatVideoNode: ...
     def SetVideoCache(
         self,
@@ -9949,11 +9951,11 @@ class _Plugin_std_Core_Bound(Plugin):
     ) -> AudioNode: ...
     def Transpose(self, clip: VideoNode) -> ConstantFormatVideoNode: ...
     def Trim(
-        self, clip: VideoNodeT, first: int | None = None, last: int | None = None, length: int | None = None
-    ) -> VideoNodeT: ...
-    def Turn180(self, clip: VideoNodeT) -> VideoNodeT: ...
+        self, clip: _VideoNodeT, first: int | None = None, last: int | None = None, length: int | None = None
+    ) -> _VideoNodeT: ...
+    def Turn180(self, clip: _VideoNodeT) -> _VideoNodeT: ...
 
-class _Plugin_std_VideoNode_Bound(Plugin, Generic[VideoNodeT]):
+class _Plugin_std_VideoNode_Bound(Plugin, Generic[_VideoNodeT]):
     """This class implements the module definitions for the "std" VapourSynth plugin.\n\n*This class cannot be imported.*"""
     def AddBorders(
         self,
@@ -9962,10 +9964,10 @@ class _Plugin_std_VideoNode_Bound(Plugin, Generic[VideoNodeT]):
         top: int | None = None,
         bottom: int | None = None,
         color: _SingleAndSequence[float] | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def AssumeFPS(
         self, src: VideoNode | None = None, fpsnum: int | None = None, fpsden: int | None = None
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def AverageFrames(
         self,
         weights: _SingleAndSequence[float],
@@ -10000,7 +10002,7 @@ class _Plugin_std_VideoNode_Bound(Plugin, Generic[VideoNodeT]):
         keep: int | None = None,
         varsize: int | None = None,
         varformat: None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def BlankClip(
         self,
@@ -10028,7 +10030,7 @@ class _Plugin_std_VideoNode_Bound(Plugin, Generic[VideoNodeT]):
         keep: int | None = None,
         varsize: int | None = None,
         varformat: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def BoxBlur(
         self,
         planes: _SingleAndSequence[int] | None = None,
@@ -10050,7 +10052,9 @@ class _Plugin_std_VideoNode_Bound(Plugin, Generic[VideoNodeT]):
         saturate: int | None = None,
         mode: _DataType | None = None,
     ) -> ConstantFormatVideoNode: ...
-    def CopyFrameProps(self, prop_src: VideoNode, props: _SingleAndSequence[_DataType] | None = None) -> VideoNodeT: ...
+    def CopyFrameProps(
+        self, prop_src: VideoNode, props: _SingleAndSequence[_DataType] | None = None
+    ) -> _VideoNodeT: ...
     def Crop(
         self, left: int | None = None, right: int | None = None, top: int | None = None, bottom: int | None = None
     ) -> ConstantFormatVideoNode: ...
@@ -10062,38 +10066,38 @@ class _Plugin_std_VideoNode_Bound(Plugin, Generic[VideoNodeT]):
         top: int | None = None,
         x: int | None = None,
         y: int | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def CropRel(
         self, left: int | None = None, right: int | None = None, top: int | None = None, bottom: int | None = None
     ) -> ConstantFormatVideoNode: ...
     def Deflate(
         self, planes: _SingleAndSequence[int] | None = None, threshold: float | None = None
     ) -> ConstantFormatVideoNode: ...
-    def DeleteFrames(self, frames: _SingleAndSequence[int]) -> VideoNodeT: ...
+    def DeleteFrames(self, frames: _SingleAndSequence[int]) -> _VideoNodeT: ...
     def DoubleWeave(self, tff: int | None = None) -> ConstantFormatVideoNode: ...
-    def DuplicateFrames(self, frames: _SingleAndSequence[int]) -> VideoNodeT: ...
+    def DuplicateFrames(self, frames: _SingleAndSequence[int]) -> _VideoNodeT: ...
     def Expr(self, expr: _SingleAndSequence[_DataType], format: int | None = None) -> ConstantFormatVideoNode: ...
-    def FlipHorizontal(self) -> VideoNodeT: ...
-    def FlipVertical(self) -> VideoNodeT: ...
+    def FlipHorizontal(self) -> _VideoNodeT: ...
+    def FlipVertical(self) -> _VideoNodeT: ...
     def FrameEval(
         self,
         eval: _VSMapValueCallback[_VapourSynthMapValue],
         prop_src: _SingleAndSequence[VideoNode] | None = None,
         clip_src: _SingleAndSequence[VideoNode] | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def FreezeFrames(
         self,
         first: _SingleAndSequence[int] | None = None,
         last: _SingleAndSequence[int] | None = None,
         replacement: _SingleAndSequence[int] | None = None,
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def Inflate(
         self, planes: _SingleAndSequence[int] | None = None, threshold: float | None = None
     ) -> ConstantFormatVideoNode: ...
     @overload
     def Interleave(
         self, extend: int | None = None, mismatch: int | None = None, modify_duration: None = None
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     @overload
     def Interleave(
         self, extend: int | None = None, mismatch: int | None = None, modify_duration: int = ...
@@ -10101,9 +10105,9 @@ class _Plugin_std_VideoNode_Bound(Plugin, Generic[VideoNodeT]):
     @overload
     def Interleave(
         self, extend: int | None = None, mismatch: int | None = None, modify_duration: int | None = None
-    ) -> VideoNodeT: ...
-    def Invert(self, planes: _SingleAndSequence[int] | None = None) -> VideoNodeT: ...
-    def InvertMask(self, planes: _SingleAndSequence[int] | None = None) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
+    def Invert(self, planes: _SingleAndSequence[int] | None = None) -> _VideoNodeT: ...
+    def InvertMask(self, planes: _SingleAndSequence[int] | None = None) -> _VideoNodeT: ...
     def Levels(
         self,
         min_in: _SingleAndSequence[float] | None = None,
@@ -10119,7 +10123,7 @@ class _Plugin_std_VideoNode_Bound(Plugin, Generic[VideoNodeT]):
         max: _SingleAndSequence[float] | None = None,
         planes: _SingleAndSequence[int] | None = None,
     ) -> ConstantFormatVideoNode: ...
-    def Loop(self, times: int | None = None) -> VideoNodeT: ...
+    def Loop(self, times: int | None = None) -> _VideoNodeT: ...
     def Lut(
         self,
         planes: _SingleAndSequence[int] | None = None,
@@ -10167,7 +10171,7 @@ class _Plugin_std_VideoNode_Bound(Plugin, Generic[VideoNodeT]):
     ) -> ConstantFormatVideoNode: ...
     def ModifyFrame(
         self, clips: _SingleAndSequence[VideoNode], selector: _VSMapValueCallback[_VapourSynthMapValue]
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def PEMVerifier(
         self, upper: _SingleAndSequence[float] | None = None, lower: _SingleAndSequence[float] | None = None
     ) -> ConstantFormatVideoNode: ...
@@ -10179,21 +10183,21 @@ class _Plugin_std_VideoNode_Bound(Plugin, Generic[VideoNodeT]):
         self, planes: _SingleAndSequence[int] | None = None, scale: float | None = None
     ) -> ConstantFormatVideoNode: ...
     def PropToClip(self, prop: _DataType | None = None) -> ConstantFormatVideoNode: ...
-    def RemoveFrameProps(self, props: _SingleAndSequence[_DataType] | None = None) -> VideoNodeT: ...
-    def Reverse(self) -> VideoNodeT: ...
+    def RemoveFrameProps(self, props: _SingleAndSequence[_DataType] | None = None) -> _VideoNodeT: ...
+    def Reverse(self) -> _VideoNodeT: ...
     def SelectEvery(
         self, cycle: int, offsets: _SingleAndSequence[int], modify_duration: int | None = None
-    ) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
     def SeparateFields(self, tff: int | None = None, modify_duration: int | None = None) -> ConstantFormatVideoNode: ...
-    def SetFieldBased(self, value: int) -> VideoNodeT: ...
+    def SetFieldBased(self, value: int) -> _VideoNodeT: ...
     def SetFrameProp(
         self,
         prop: _DataType,
         intval: _SingleAndSequence[int] | None = None,
         floatval: _SingleAndSequence[float] | None = None,
         data: _SingleAndSequence[_DataType] | None = None,
-    ) -> VideoNodeT: ...
-    def SetFrameProps(self, **kwargs: Any) -> VideoNodeT: ...
+    ) -> _VideoNodeT: ...
+    def SetFrameProps(self, **kwargs: Any) -> _VideoNodeT: ...
     def SetVideoCache(
         self,
         mode: int | None = None,
@@ -10207,13 +10211,13 @@ class _Plugin_std_VideoNode_Bound(Plugin, Generic[VideoNodeT]):
     def Sobel(
         self, planes: _SingleAndSequence[int] | None = None, scale: float | None = None
     ) -> ConstantFormatVideoNode: ...
-    def Splice(self, mismatch: int | None = None) -> VideoNodeT: ...
+    def Splice(self, mismatch: int | None = None) -> _VideoNodeT: ...
     def SplitPlanes(self) -> _SingleAndSequence[ConstantFormatVideoNode]: ...
-    def StackHorizontal(self) -> VideoNodeT: ...
-    def StackVertical(self) -> VideoNodeT: ...
+    def StackHorizontal(self) -> _VideoNodeT: ...
+    def StackVertical(self) -> _VideoNodeT: ...
     def Transpose(self) -> ConstantFormatVideoNode: ...
-    def Trim(self, first: int | None = None, last: int | None = None, length: int | None = None) -> VideoNodeT: ...
-    def Turn180(self) -> VideoNodeT: ...
+    def Trim(self, first: int | None = None, last: int | None = None, length: int | None = None) -> _VideoNodeT: ...
+    def Turn180(self) -> _VideoNodeT: ...
 
 class _Plugin_std_AudioNode_Bound(Plugin):
     """This class implements the module definitions for the "std" VapourSynth plugin.\n\n*This class cannot be imported.*"""
@@ -11345,7 +11349,7 @@ class VideoNode(RawNode):
         """Smoothing functions in Zig"""
     # end instance
 
-VideoNodeT = TypeVar("VideoNodeT", bound=VideoNode)
+_VideoNodeT = TypeVar("_VideoNodeT", bound=VideoNode)
 
 class AudioNode(RawNode):
     sample_type: SampleType

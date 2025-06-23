@@ -21,7 +21,7 @@ class InlineExpr(NamedTuple):
     out: inline_expr
 
 
-class inline_expr(AbstractContextManager[InlineExpr]):
+class inline_expr(AbstractContextManager[InlineExpr]):  # noqa: N801
     _clips: list[vs.VideoNode]
     _in_context: bool
     _final_clip: vs.VideoNode | None
@@ -31,7 +31,7 @@ class inline_expr(AbstractContextManager[InlineExpr]):
         self._in_context = False
 
         self._clips = list(clips) if isinstance(clips, Sequence) else [clips]
-        self._clips_char_map = [ClipVar(char, clip, self) for char, clip in zip(ExprVars.cycle, self._clips)]
+        self._clips_char_map = [ClipVar(char, clip, self) for char, clip in zip(ExprVars.cycle, self._clips)]  # pyright: ignore[reportArgumentType]
 
         self._final_clip = None
         self._final_expr_node = self._clips_char_map[0].as_var()
@@ -45,9 +45,9 @@ class inline_expr(AbstractContextManager[InlineExpr]):
 
     def __exit__(
         self,
-        __exc_type: type[BaseException] | None,
-        __exc_value: BaseException | None,
-        __traceback: TracebackType | None,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> bool | None:
         self._final_clip = self._get_clip()
 

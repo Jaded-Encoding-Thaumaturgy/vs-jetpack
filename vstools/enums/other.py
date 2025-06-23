@@ -286,7 +286,7 @@ class SceneChangeMode(CustomIntEnum):
     """Only get the scene changes if both wwxd and scxvid mark a frame as being a scene change."""
 
     @property
-    def is_WWXD(self) -> bool:
+    def is_WWXD(self) -> bool:  # noqa: N802
         """Check whether a mode that uses wwxd is used."""
 
         return self in (
@@ -296,7 +296,7 @@ class SceneChangeMode(CustomIntEnum):
         )
 
     @property
-    def is_SCXVID(self) -> bool:
+    def is_SCXVID(self) -> bool:  # noqa: N802
         """Check whether a mode that uses scxvid is used."""
 
         return self in (

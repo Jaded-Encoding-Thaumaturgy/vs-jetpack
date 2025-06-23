@@ -152,7 +152,7 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
     KR = 0.2627; KB = 0.0593
     ```
     Rec. ITU-R BT.2020-2 non-constant luminance system
-    Rec. ITU-R BT.2100-2 Y′CbCr
+    Rec. ITU-R BT.2100-2 Y'CbCr
     See ITU-T H.265 Equations E-28 to E-30
     """
 
@@ -947,28 +947,28 @@ class MatrixCoefficients(NamedTuple):
 
     @classproperty
     @classmethod
-    def SRGB(cls) -> MatrixCoefficients:
+    def SRGB(cls) -> MatrixCoefficients:  # noqa: N802
         """Matrix Coefficients for SRGB."""
 
         return MatrixCoefficients(0.04045, 12.92, 0.055, 2.4)
 
     @classproperty
     @classmethod
-    def BT709(cls) -> MatrixCoefficients:
+    def BT709(cls) -> MatrixCoefficients:  # noqa: N802
         """Matrix Coefficients for BT709."""
 
         return MatrixCoefficients(0.08145, 4.5, 0.0993, 2.22222)
 
     @classproperty
     @classmethod
-    def SMPTE240M(cls) -> MatrixCoefficients:
+    def SMPTE240M(cls) -> MatrixCoefficients:  # noqa: N802
         """Matrix Coefficients for SMPTE240M."""
 
         return MatrixCoefficients(0.0912, 4.0, 0.1115, 2.22222)
 
     @classproperty
     @classmethod
-    def BT2020(cls) -> MatrixCoefficients:
+    def BT2020(cls) -> MatrixCoefficients:  # noqa: N802
         """Matrix Coefficients for BT2020."""
 
         return MatrixCoefficients(0.08145, 4.5, 0.0993, 2.22222)
@@ -1301,7 +1301,8 @@ ColorRangeT: TypeAlias = Union[int, vs.ColorRange, ColorRange, HoldsPropValueT]
 def _norm_props_enums(kwargs: KwargsT) -> KwargsT:
     return {
         key: (
-            (value.value_zimg if hasattr(value, "value_zimg") else int(value)) if isinstance(value, PropEnum) else value
+            (value.value_zimg if hasattr(value, "value_zimg") else int(value))  # pyright: ignore[reportAttributeAccessIssue]
+            if isinstance(value, PropEnum) else value
         )
         for key, value in kwargs.items()
     }

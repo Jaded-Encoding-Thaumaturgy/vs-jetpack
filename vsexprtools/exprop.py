@@ -122,8 +122,8 @@ class ExprToken(ExprTokenBase, CustomEnum):
 
         raise CustomValueError("You are using an unsupported ExprToken!", self.get_value, self)
 
-    def __getitem__(self, __i: SupportsIndex) -> ExprToken:  # type: ignore
-        return ExprTokenBase(f"{self.value}_{ExprVars[__i]}")  # type: ignore
+    def __getitem__(self, i: SupportsIndex) -> ExprToken:  # type: ignore
+        return ExprTokenBase(f"{self.value}_{ExprVars[i]}")  # type: ignore
 
 
 class ExprList(StrList):

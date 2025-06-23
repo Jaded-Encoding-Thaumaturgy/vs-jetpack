@@ -186,7 +186,8 @@ def based_aa(
                                   If True, both fields will be processed separately, which may improve
                                   anti-aliasing strength at the cost of increased processing time and detail loss.
                                   Default: False.
-    :param antialiaser:           Antialiaser used for anti-aliasing. If None, EEDI3 will be selected with these default settings:
+    :param antialiaser:           Antialiaser used for anti-aliasing.
+                                  If None, EEDI3 will be selected with these default settings:
                                   (alpha=0.125, beta=0.25, vthresh0=12, vthresh1=24, field=1).
     :param prefilter:             Prefilter to apply before anti-aliasing.
                                   Must be a VideoNode, a function that takes a VideoNode and returns a VideoNode,

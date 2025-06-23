@@ -59,7 +59,7 @@ __all__ = [
 ]
 
 
-class _base_cmaskcar(vs_object):
+class _BaseCMaskCar(vs_object):
     clips: list[vs.VideoNode]
 
     def __vs_del__(self, core_id: int) -> None:
@@ -67,7 +67,7 @@ class _base_cmaskcar(vs_object):
 
 
 @dataclass
-class CustomMaskFromClipsAndRanges(GeneralMask, _base_cmaskcar):
+class CustomMaskFromClipsAndRanges(GeneralMask, _BaseCMaskCar):
     """Abstract CustomMaskFromClipsAndRanges interface"""
 
     processing: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = field(
@@ -240,7 +240,7 @@ class HardsubSignFades(HardsubMask):
         :param blur:            Whether to apply a box blur effect to the mask.
         :param refframes:       A list of reference frames used in building the final mask for each specified range.
                                 Must have the same length as `ranges`.
-        """
+        """  # noqa: E501
         self.highpass = highpass
         self.expand = expand
         self.edgemask = edgemask
@@ -296,7 +296,7 @@ class HardsubSign(HardsubMask):
         :param blur:            Whether to apply a box blur effect to the mask.
         :param refframes:       A list of reference frames used in building the final mask for each specified range.
                                 Must have the same length as `ranges`.
-        """
+        """  # noqa: E501
         self.thr = thr
         self.minimum = minimum
         self.expand = expand
@@ -347,7 +347,7 @@ class HardsubLine(HardsubMask):
         :param blur:            Whether to apply a box blur effect to the mask.
         :param refframes:       A list of reference frames used in building the final mask for each specified range.
                                 Must have the same length as `ranges`.
-        """
+        """  # noqa: E501
         self.expand = expand
 
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
@@ -421,7 +421,7 @@ class HardsubLineFade(HardsubLine):
         :param refframe:        Weight of the reference frame used in building the final mask for each range.
                                 Must be between 0 and 1.
         :param blur:            Whether to apply a box blur effect to the mask.
-        """
+        """  # noqa: E501
         if refframe < 0 or refframe > 1:
             raise CustomOverflowError('"refframe" must be between 0 and 1!', self.__class__)
 
@@ -459,7 +459,7 @@ class HardsubASS(HardsubMask):
         :param blur:            Whether to apply a box blur effect to the mask.
         :param refframes:       A list of reference frames used in building the final mask for each specified range.
                                 Must have the same length as `ranges`.
-        """
+        """  # noqa: E501
         self.filename = str(filename)
         self.fontdir = fontdir
         super().__init__(ranges, bound, blur=blur, refframes=refframes)

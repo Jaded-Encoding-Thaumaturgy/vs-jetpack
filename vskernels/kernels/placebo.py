@@ -58,7 +58,8 @@ class Placebo(ComplexScaler, abstract=True):
                             A value of 0.0 represents no clamping.
                             A value of 1.0 represents full clamping, i.e. all negative lobes will be removed.
         :param blur:        Additional blur coefficient.
-                            This effectively stretches the kernel, without changing the effective radius of the filter radius.
+                            This effectively stretches the kernel, without changing the effective radius
+                            of the filter radius.
         :param taper:       Additional taper coefficient. This essentially flattens the function's center.
         :param antiring:    Antiringing strength.
         :param kwargs:      Keyword arguments that configure the internal scaling behavior.
