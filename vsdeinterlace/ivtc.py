@@ -139,15 +139,15 @@ def vfm(
 
     if block := kwargs.pop("block", None):
         if isinstance(block, int):
-            vfm_kwargs |= {"blockx": block, "blocky": block}
+            vfm_kwargs.update(blockx=block, blocky=block)
         else:
-            vfm_kwargs |= {"blockx": block[0], "blocky": block[1]}
+            vfm_kwargs.update(blockx=block[0], blocky=block[1])
 
     if (y := kwargs.pop("y", None)) and not isinstance(y, int):
-        vfm_kwargs |= {"y0": y[0], "y1": y[1]}
+        vfm_kwargs.update(y0=y[0], y1=y[1])
 
-    if not kwargs.get("clip2") and func.work_clip.format is not clip.format:
-        vfm_kwargs |= {"clip2": clip}
+    if not kwargs.get("clip2") and func.work_clip.format != clip.format:
+        vfm_kwargs.update(clip2=clip)
 
     fieldmatch = func.work_clip.vivtc.VFM(**(vfm_kwargs | kwargs))
 
@@ -182,12 +182,12 @@ def vdecimate(clip: vs.VideoNode, weight: float = 0.0, **kwargs: Any) -> Constan
 
     if block := kwargs.pop("block", None):
         if isinstance(block, int):
-            vdecimate_kwargs |= {"blockx": block, "blocky": block}
+            vdecimate_kwargs.update(blockx=block, blocky=block)
         else:
-            vdecimate_kwargs |= {"blockx": block[0], "blocky": block[1]}
+            vdecimate_kwargs.update(blockx=block[0], blocky=block[1])
 
-    if not kwargs.get("clip2") and func.work_clip.format is not clip.format:
-        vdecimate_kwargs |= {"clip2": clip}
+    if not kwargs.get("clip2") and func.work_clip.format != clip.format:
+        vdecimate_kwargs.update(clip2=clip)
 
     dryrun = kwargs.pop("dryrun", False)
 
@@ -201,7 +201,7 @@ def vdecimate(clip: vs.VideoNode, weight: float = 0.0, **kwargs: Any) -> Constan
 
         avg = clip.std.AverageFrames(weights=[0, 1 - weight, weight])
         splice = find_prop_rfs(clip, avg, "VDecimateDrop", "==", 1, stats)
-        vdecimate_kwargs |= {"clip2": splice}
+        vdecimate_kwargs.update(clip2=splice)
 
     decimate = func.work_clip.vivtc.VDecimate(**(vdecimate_kwargs | kwargs))
 

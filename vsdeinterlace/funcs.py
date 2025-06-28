@@ -80,7 +80,7 @@ class InterpolateOverlay(CustomIntEnum):
             return core.std.Interleave(clips)
 
         def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
-            return (x[0] // 2, x[1] // 2)
+            return x[0] // 2, x[1] // 2
 
         assert check_variable(clip, self.__class__)
         assert check_variable(bobbed, self.__class__)
@@ -108,12 +108,11 @@ class InterpolateOverlay(CustomIntEnum):
         mv = MVTools(judder, **preset | KwargsT(search_clip=partial(prefilter_to_full_range, slope=1)))
         mv.analyze(tr=1, blksize=blksize, overlap=_floor_div_tuple(blksize))
 
-        if refine:
-            for _ in range(refine):
-                blksize = _floor_div_tuple(blksize)
-                overlap = _floor_div_tuple(blksize)
+        for _ in range(refine):
+            blksize = _floor_div_tuple(blksize)
+            overlap = _floor_div_tuple(blksize)
 
-                mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
+            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
         if self == InterpolateOverlay.IVTC_TXT30:
             comp = mv.flow_fps(fps=clean.fps)

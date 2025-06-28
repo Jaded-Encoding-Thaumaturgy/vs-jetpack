@@ -143,11 +143,12 @@ def mc_degrain(
     """
 
     def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
-        return (x[0] // 2, x[1] // 2)
+        return x[0] // 2, x[1] // 2
 
     mv_args = preset | KwargsNotNone(search_clip=prefilter)
 
     blksize = blksize if isinstance(blksize, tuple) else (blksize, blksize)
+    thsad_recalc = fallback(thsad_recalc, round((thsad[0] if isinstance(thsad, tuple) else thsad) / 2))
     mfilter = mfilter(clip) if callable(mfilter) else fallback(mfilter, clip)
 
     mv = MVTools(clip, vectors=vectors, planes=planes, **mv_args)
@@ -155,15 +156,11 @@ def mc_degrain(
     if not vectors:
         mv.analyze(tr=tr, blksize=blksize, overlap=_floor_div_tuple(blksize))
 
-        if refine:
-            if thsad_recalc is None:
-                thsad_recalc = round((thsad[0] if isinstance(thsad, tuple) else thsad) / 2)
+        for _ in range(refine):
+            blksize = _floor_div_tuple(blksize)
+            overlap = _floor_div_tuple(blksize)
 
-            for _ in range(refine):
-                blksize = _floor_div_tuple(blksize)
-                overlap = _floor_div_tuple(blksize)
-
-                mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
+            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
     den = mv.degrain(mfilter, mv.clip, None, tr, thsad, thsad2, limit, thscd)
 

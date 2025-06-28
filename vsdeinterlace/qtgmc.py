@@ -711,25 +711,23 @@ class QTempGaussMC(vs_object):
 
     def _apply_analyze(self) -> None:
         def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
-            return (x[0] // 2, x[1] // 2)
+            return x[0] // 2, x[1] // 2
 
         tr = max(1, self.analyze_tr, self.denoise_tr, self.basic_tr, self.match_tr, self.final_tr)
         blksize = self.analyze_blksize
+        thsad_recalc = fallback(
+            self.analyze_thsad_recalc,
+            round((self.basic_thsad[0] if isinstance(self.basic_thsad, tuple) else self.basic_thsad) / 2),
+        )
 
         self.mv = MVTools(self.draft, self.prefilter_output, **self.analyze_preset)
         self.mv.analyze(tr=tr, blksize=blksize, overlap=_floor_div_tuple(blksize))
 
-        if self.analyze_refine:
-            if self.analyze_thsad_recalc is None:
-                self.analyze_thsad_recalc = round(
-                    (self.basic_thsad[0] if isinstance(self.basic_thsad, tuple) else self.basic_thsad) / 2
-                )
+        for _ in range(self.analyze_refine):
+            blksize = _floor_div_tuple(blksize)
+            overlap = _floor_div_tuple(blksize)
 
-            for _ in range(self.analyze_refine):
-                blksize = _floor_div_tuple(blksize)
-                overlap = _floor_div_tuple(blksize)
-
-                self.mv.recalculate(thsad=self.analyze_thsad_recalc, blksize=blksize, overlap=overlap)
+            self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
     def _apply_denoise(self) -> None:
         if not self.denoise_mode:
