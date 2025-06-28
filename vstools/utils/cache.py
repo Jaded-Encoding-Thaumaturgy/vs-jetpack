@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Generic, MutableMapping, TypeVar, cast
 from jetpytools import T
 
 from ..functions import Keyframes
-from ..types import vs_object, VideoNodeT
+from ..types import VideoNodeT, vs_object
 from . import vs_proxy as vs
 
 if TYPE_CHECKING:

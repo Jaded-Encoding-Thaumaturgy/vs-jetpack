@@ -1,25 +1,22 @@
 from __future__ import annotations
 
 import io
+import itertools
 import json
 import shutil
 import warnings
-
 from functools import cache
 from subprocess import PIPE, Popen
 from tempfile import NamedTemporaryFile
 from typing import TypedDict
 
 import vapoursynth as vs
-
 from jetpytools import CustomValueError, DependencyNotFoundError, FuncExceptT, SPath, SPathLike
 from typing_extensions import Self
 
+from ..types import VideoNodeT
 from .file import PackageStorage
 from .timecodes import Keyframes
-
-from ..types import VideoNodeT
-import itertools
 
 __all__ = [
     "ScenePacketStats",

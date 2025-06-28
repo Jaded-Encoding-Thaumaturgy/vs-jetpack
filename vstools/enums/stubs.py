@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Iterable, TypeVar, overload
 
 import vapoursynth as vs
-
 from jetpytools import CustomError, CustomIntEnum, FuncExceptT, classproperty
 from typing_extensions import Self
 

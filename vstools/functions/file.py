@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-
 from typing import TYPE_CHECKING
 
 from jetpytools import CustomRuntimeError, SPath, SPathLike, get_script_path

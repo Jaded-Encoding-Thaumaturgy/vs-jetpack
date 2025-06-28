@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 from fractions import Fraction
 
-from vstools import core, vs, Timecodes
+from vstools import Timecodes, core, vs
 from vstools.functions.timecodes import FrameDur
 
 clip = core.std.BlankClip(format=vs.YUV420P16, width=1920, height=1080)

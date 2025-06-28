@@ -3,7 +3,7 @@ from __future__ import annotations
 from vsexprtools import ExprOp, norm_expr
 from vsmasktools import Morpho, XxpandMode
 from vsrgtools import BlurMatrix, box_blur, gauss_blur
-from vstools import ConstantFormatVideoNode, core, ConvMode, get_y, iterate, shift_clip_multi, split, vs, limiter
+from vstools import ConstantFormatVideoNode, ConvMode, core, get_y, iterate, limiter, shift_clip_multi, split, vs
 
 __all__ = ["descale_detail_mask", "descale_error_mask"]
 

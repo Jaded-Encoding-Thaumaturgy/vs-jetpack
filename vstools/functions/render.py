@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import operator
-
 from collections import deque
 from dataclasses import dataclass
 from math import floor
@@ -10,7 +9,6 @@ from pathlib import Path
 from typing import Any, BinaryIO, Callable, Literal, Union, overload
 
 import vapoursynth as vs
-
 from jetpytools import (
     CustomRuntimeError,
     CustomValueError,

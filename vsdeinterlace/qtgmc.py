@@ -6,8 +6,7 @@ from jetpytools import CustomIntEnum
 from numpy import linalg, zeros
 from typing_extensions import Self
 
-from vskernels import Catrom
-from vsaa import Deinterlacer, NNEDI3
+from vsaa import NNEDI3, Deinterlacer
 from vsdeband import AddNoise
 from vsdenoise import (
     DFTTest,
@@ -20,6 +19,7 @@ from vsdenoise import (
     prefilter_to_full_range,
 )
 from vsexprtools import norm_expr
+from vskernels import Catrom
 from vsmasktools import Coordinates, Morpho
 from vsrgtools import BlurMatrix, gauss_blur, median_blur, remove_grain, repair, unsharpen
 from vstools import (
@@ -34,8 +34,8 @@ from vstools import (
     core,
     fallback,
     normalize_seq,
-    scale_delta,
     sc_detect,
+    scale_delta,
     vs,
     vs_object,
 )

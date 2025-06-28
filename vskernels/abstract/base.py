@@ -5,7 +5,6 @@ This module defines the base abstract interfaces for general scaling operations.
 from __future__ import annotations
 
 import functools
-
 from abc import ABC, ABCMeta
 from inspect import Signature
 from math import ceil
@@ -73,8 +72,8 @@ def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Calla
         # TODO: remove this
         if not TYPE_CHECKING and isinstance(self, vs.VideoNode):
             import inspect
-            import re
             import pathlib
+            import re
             import warnings
 
             warnings.simplefilter("always", DeprecationWarning)

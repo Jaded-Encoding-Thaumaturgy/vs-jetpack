@@ -264,6 +264,7 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
         )
 
     if TYPE_CHECKING:
+
         def supersample(
             self, clip: VideoNodeT, rfactor: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
         ) -> VideoNodeT:
@@ -651,7 +652,7 @@ class EEDI3(SuperSampler):
         width: int | None = None,
         height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         return super().scale(clip, width, height, shift, **self._set_sclip_mclip(kwargs))
 
@@ -671,7 +672,7 @@ class EEDI3(SuperSampler):
             "vthresh0": self.vthresh[0],
             "vthresh1": self.vthresh[1],
             "vthresh2": self.vthresh[2],
-            "sclip": self.sclip
+            "sclip": self.sclip,
         }
 
         if not self.opencl:

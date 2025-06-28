@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import string
-
 from functools import partial, wraps
 from typing import Any, Callable, Iterable, Literal, Mapping, Sequence, Union, overload
 from weakref import WeakValueDictionary
 
 import vapoursynth as vs
-
-from jetpytools import P, CustomIndexError, CustomStrEnum, CustomValueError, FuncExceptT, normalize_seq
+from jetpytools import CustomIndexError, CustomStrEnum, CustomValueError, FuncExceptT, P, normalize_seq
 
 from ..enums import ColorRange, ColorRangeT, Matrix
 from ..exceptions import ClipLengthError, InvalidColorFamilyError

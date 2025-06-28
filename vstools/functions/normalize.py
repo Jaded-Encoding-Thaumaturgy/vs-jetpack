@@ -3,12 +3,20 @@ from __future__ import annotations
 from typing import Any, Iterable, Iterator, Literal, Sequence, overload
 
 import vapoursynth as vs
-from jetpytools import T, FuncExceptT, norm_display_name, norm_func_name, normalize_list_to_ranges, to_arr
+from jetpytools import FuncExceptT, T, norm_display_name, norm_func_name, normalize_list_to_ranges, to_arr
 from jetpytools import (
     flatten as jetp_flatten,
+)
+from jetpytools import (
     invert_ranges as jetp_invert_ranges,
+)
+from jetpytools import (
     normalize_range as normalize_franges,
+)
+from jetpytools import (
     normalize_ranges as jetp_normalize_ranges,
+)
+from jetpytools import (
     normalize_seq as jetp_normalize_seq,
 )
 

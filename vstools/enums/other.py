@@ -4,7 +4,6 @@ from fractions import Fraction
 from typing import Callable, Iterator, Literal, NamedTuple
 
 import vapoursynth as vs
-
 from jetpytools import Coordinate, CustomIntEnum, CustomStrEnum, Position, Sentinel, SentinelT, Size
 from typing_extensions import Self
 

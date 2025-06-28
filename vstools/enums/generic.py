@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeAlias, Union
 
 import vapoursynth as vs
-
 from jetpytools import FuncExceptT
 
 from ..exceptions import (

@@ -50,7 +50,8 @@ def mc_degrain(
 
 @overload
 def mc_degrain(
-    clip: vs.VideoNode, vectors: MotionVectors | None = None,
+    clip: vs.VideoNode,
+    vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     preset: MVToolsPreset = ...,
@@ -69,7 +70,8 @@ def mc_degrain(
 
 @overload
 def mc_degrain(
-    clip: vs.VideoNode, vectors: MotionVectors | None = None,
+    clip: vs.VideoNode,
+    vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     preset: MVToolsPreset = ...,
@@ -87,7 +89,8 @@ def mc_degrain(
 
 
 def mc_degrain(
-    clip: vs.VideoNode, vectors: MotionVectors | None = None,
+    clip: vs.VideoNode,
+    vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     preset: MVToolsPreset = MVToolsPreset.HQ_SAD,

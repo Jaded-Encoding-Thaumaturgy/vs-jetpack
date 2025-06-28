@@ -4,7 +4,7 @@ from typing import Any, Sequence, SupportsFloat, cast
 
 from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomStrEnum
 
-from vsaa import Deinterlacer, NNEDI3, BWDIF
+from vsaa import BWDIF, NNEDI3, Deinterlacer
 from vsexprtools import norm_expr
 from vsmasktools import FDoG, GenericMaskT, Morpho, adg_mask, normalize_mask, strength_zones_mask
 from vsrgtools import MeanMode, gauss_blur, repair
@@ -12,9 +12,9 @@ from vsscale import DPIR
 from vstools import (
     Align,
     ConstantFormatVideoNode,
+    FieldBased,
     FrameRangeN,
     FrameRangesN,
-    FieldBased,
     FunctionUtil,
     PlanesT,
     check_progressive,

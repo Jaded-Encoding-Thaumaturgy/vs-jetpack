@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from scipy import interpolate
 from functools import partial
+
+from scipy import interpolate
 
 from vsexprtools import norm_expr
 from vstools import (
@@ -9,9 +10,9 @@ from vstools import (
     ConvMode,
     FunctionUtil,
     GenericVSFunction,
-    check_ref_clip,
     PlanesT,
     VSFunctionNoArgs,
+    check_ref_clip,
     check_variable,
     vs,
 )

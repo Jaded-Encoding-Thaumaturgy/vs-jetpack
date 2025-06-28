@@ -27,7 +27,7 @@ from vstools import (
     vs,
 )
 
-from .exprop import ExprOp, ExprOpBase, ExprList, TupleExprList
+from .exprop import ExprList, ExprOp, ExprOpBase, TupleExprList
 from .util import ExprVars, bitdepth_aware_tokenize_expr, complexpr_available, norm_expr_planes
 
 __all__ = ["combine", "expr_func", "norm_expr"]

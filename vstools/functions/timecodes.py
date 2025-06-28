@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
@@ -9,7 +8,6 @@ from pathlib import Path
 from typing import Any, ClassVar, Iterable, Literal, NamedTuple, TypeVar, overload
 
 import vapoursynth as vs
-
 from jetpytools import CustomValueError, FilePathType, FuncExceptT, LinearRangeLut, Sentinel, SPath, inject_self
 from typing_extensions import Self
 

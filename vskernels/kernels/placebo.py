@@ -5,8 +5,8 @@ from typing import Any, ClassVar
 
 from vstools import core, fallback, vs
 
-from ..types import LeftShift, TopShift
 from ..abstract import ComplexScaler
+from ..types import LeftShift, TopShift
 
 __all__ = [
     "EwaBicubic",

@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from typing import Sequence
 
-from jetpytools import copy_func, erase_module as jetp_erase_module, F
+from jetpytools import F, copy_func
+from jetpytools import erase_module as jetp_erase_module
 
 __all__ = ["copy_func", "erase_module"]
 

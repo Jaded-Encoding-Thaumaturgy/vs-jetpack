@@ -8,18 +8,18 @@ from jetpytools import FuncExceptT, T, cachedproperty, fallback, iterate, kwargs
 from vstools.exceptions.color import InvalidColorspacePathError
 
 from ..enums import (
-    ColorRange,
-    ColorRangeT,
-    Matrix,
-    MatrixT,
-    Transfer,
-    TransferT,
-    Primaries,
-    PrimariesT,
     ChromaLocation,
     ChromaLocationT,
+    ColorRange,
+    ColorRangeT,
     FieldBased,
     FieldBasedT,
+    Matrix,
+    MatrixT,
+    Primaries,
+    PrimariesT,
+    Transfer,
+    TransferT,
 )
 from ..exceptions import UndefinedMatrixError
 from ..types import ConstantFormatVideoNode, HoldsVideoFormatT, PlanesT, VideoFormatT

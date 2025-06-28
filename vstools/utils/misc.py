@@ -7,7 +7,6 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence, cast, overload
 
 import vapoursynth as vs
-
 from jetpytools import MISSING, MissingT, P
 from typing_extensions import Self
 

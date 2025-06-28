@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from functools import cached_property, wraps
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
@@ -32,7 +33,6 @@ from vstools import (
 
 from .helpers import BottomCrop, CropRel, LeftCrop, RightCrop, ScalingArgs, TopCrop
 from .onnx import ArtCNN
-import contextlib
 
 __all__ = [
     "Rescale",

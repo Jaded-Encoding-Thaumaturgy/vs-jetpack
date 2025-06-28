@@ -5,14 +5,14 @@ from typing import Any, cast
 from vsexprtools import complexpr_available, expr_func, norm_expr
 from vstools import (
     ConstantFormatVideoNode,
-    check_variable,
-    check_ref_clip,
     VSFunctionNoArgs,
+    check_ref_clip,
+    check_variable,
+    core,
     join,
     shift_clip,
     shift_clip_multi,
     vs,
-    core,
 )
 
 from .funcs import vinverse

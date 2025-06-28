@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from abc import abstractmethod
 import inspect
-
+from abc import abstractmethod
 from functools import partial, wraps
 from typing import Any, Callable, Literal, Union, overload
 
-from jetpytools import P, CustomValueError, FuncExceptT, KwargsT, T
+from jetpytools import CustomValueError, FuncExceptT, KwargsT, P, T
 
 from ..enums import (
     ChromaLocation,

@@ -1,14 +1,23 @@
 from __future__ import annotations
 
 import sys
-
 from types import UnionType
-from typing import Any, Callable, Iterable, Literal, MutableMapping, Sequence, TypeVar, _UnionGenericAlias  # type: ignore[attr-defined]
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    Literal,
+    MutableMapping,
+    Sequence,
+    TypeVar,
+    _UnionGenericAlias,  # type: ignore[attr-defined]
+    get_args,
+    get_origin,
+    overload,
+)
 from typing import cast as typing_cast
-from typing import get_args, get_origin, overload
 
 import vapoursynth as vs
-
 from jetpytools import (
     MISSING,
     FileWasNotFoundError,

@@ -62,9 +62,7 @@ def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: PlanesT, **
         peak = get_peak_value(clip)
         pref_mask: vs.VideoNode | Literal[False] | tuple[int, int] | None = kwargs.pop("pref_mask", None)
 
-        dftt = DFTTest(sloc={0.0: 4, 0.2: 9, 1.0: 15}).denoise(
-            clip, kwargs.pop("sloc", None), planes=planes, **kwargs
-        )
+        dftt = DFTTest(sloc={0.0: 4, 0.2: 9, 1.0: 15}).denoise(clip, kwargs.pop("sloc", None), planes=planes, **kwargs)
 
         if pref_mask is False:
             return dftt

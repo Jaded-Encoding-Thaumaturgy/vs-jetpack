@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import warnings
-
 from typing import Any, TypeAlias, Union, overload
 
 from vsexprtools import ExprOp, norm_expr

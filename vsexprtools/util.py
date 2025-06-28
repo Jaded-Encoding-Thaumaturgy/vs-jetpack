@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from itertools import count
 import re
+from itertools import count
 from typing import Callable, Iterable, Iterator, Sequence, SupportsIndex, TypeAlias, overload
 
 from jetpytools import SupportsString

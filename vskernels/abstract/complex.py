@@ -5,7 +5,6 @@ This module defines the abstract classes for scaling, descaling and resampling o
 from __future__ import annotations
 
 import sys
-
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, Union, overload
 

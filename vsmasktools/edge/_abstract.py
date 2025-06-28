@@ -5,7 +5,7 @@ from enum import Enum, IntFlag, auto
 from typing import Any, ClassVar, Sequence, TypeAlias, TypeVar, cast
 
 from jetpytools import CustomNotImplementedError, inject_kwargs_params
-from typing_extensions import TypeIs, Self
+from typing_extensions import Self, TypeIs
 
 from vsexprtools import ExprOp, ExprToken, norm_expr
 from vstools import (

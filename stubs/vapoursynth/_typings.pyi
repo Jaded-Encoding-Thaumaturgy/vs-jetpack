@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Callable, Generic, Protocol, Sequence, TypeVar, Union, runtime_checkable, TypeAlias
+from typing import Any, Callable, Generic, Protocol, Sequence, TypeAlias, TypeVar, Union, runtime_checkable
 
 from ._frames import AudioFrame, VideoFrame
 from ._nodes import AudioNode, VideoNode

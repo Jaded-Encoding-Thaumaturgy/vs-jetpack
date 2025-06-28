@@ -4,6 +4,8 @@ from itertools import cycle
 from math import isqrt
 from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, SupportsIndex, overload
 
+from typing_extensions import Self
+
 from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
@@ -28,7 +30,6 @@ from vstools import (
 )
 
 from .util import ExprVarRangeT, ExprVars, ExprVarsT, complexpr_available
-from typing_extensions import Self
 
 __all__ = ["ExprList", "ExprOp", "ExprToken", "TupleExprList"]
 

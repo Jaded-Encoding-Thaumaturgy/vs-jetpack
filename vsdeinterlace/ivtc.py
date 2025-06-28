@@ -16,8 +16,8 @@ from vstools import (
     vs,
 )
 
-from .enums import IVTCycles, VFMMode
 from .blending import deblend
+from .enums import IVTCycles, VFMMode
 
 __all__ = ["jivtc", "sivtc", "vdecimate", "vfm"]
 

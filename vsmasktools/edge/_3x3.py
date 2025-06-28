@@ -6,7 +6,7 @@ import math
 from abc import ABC
 from typing import Any, ClassVar, NoReturn, Sequence
 
-from vsexprtools import norm_expr, ExprOp
+from vsexprtools import ExprOp, norm_expr
 from vstools import ColorRange, ConstantFormatVideoNode, KwargsT, depth, get_depth, join, split, vs
 
 from ..morpho import Morpho

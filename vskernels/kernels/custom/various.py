@@ -6,7 +6,7 @@ from typing import Any
 from vstools import vs
 
 from ...abstract import CustomComplexKernel, CustomComplexTapsKernel
-from ..zimg import Point, Bilinear, Lanczos
+from ..zimg import Bilinear, Lanczos, Point
 
 __all__ = [
     "BlackMan",

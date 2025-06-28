@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Callable, Literal, Protocol, Sequence, TypeGuard, TypeVar, Union, overload
 
 import vapoursynth as vs
-
 from jetpytools import CustomValueError, flatten, interleave_arr, ranges_product
 
 from ..functions import check_ref_clip

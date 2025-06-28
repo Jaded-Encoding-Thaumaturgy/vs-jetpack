@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Sequence
 
 from vsexprtools import ExprOp

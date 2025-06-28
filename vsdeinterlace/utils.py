@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from vstools import ConstantFormatVideoNode, check_variable, FieldBased, FieldBasedT, core, vs
+from vstools import ConstantFormatVideoNode, FieldBased, FieldBasedT, check_variable, core, vs
 
 __all__ = ["get_field_difference", "reinterlace", "reweave", "telecine_patterns"]
 

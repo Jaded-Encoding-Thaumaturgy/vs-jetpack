@@ -5,8 +5,8 @@ from typing import Any, ClassVar, Sequence
 
 from jetpytools import KwargsT
 
-from vstools import ColorRange, ConstantFormatVideoNode, depth, vs
 from vsexprtools import norm_expr
+from vstools import ColorRange, ConstantFormatVideoNode, depth, vs
 
 from ._abstract import EdgeDetect, EuclideanDistance, MagnitudeMatrix, Max, RidgeDetect, SingleMatrix
 

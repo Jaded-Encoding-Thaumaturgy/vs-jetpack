@@ -32,8 +32,8 @@ from vstools import (
     depth,
     get_y,
     join,
-    vs,
     normalize_param_planes,
+    vs,
 )
 
 __all__ = ["bm3d", "wnnm"]

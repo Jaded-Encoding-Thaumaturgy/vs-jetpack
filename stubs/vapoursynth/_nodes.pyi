@@ -10487,21 +10487,77 @@ class _Plugin_text_VideoNode_Bound(Plugin):
 
 # end implementation
 
-
 # implementation: vivtc
 
 class _Plugin_vivtc_Core_Bound(Plugin):
     """This class implements the module definitions for the "vivtc" VapourSynth plugin.\n\n*This class cannot be imported.*"""
-    def VDecimate(self, clip: VideoNode, cycle: int | None = None, chroma: int | None = None, dupthresh: float | None = None, scthresh: float | None = None, blockx: int | None = None, blocky: int | None = None, clip2: VideoNode | None = None, ovr: _DataType | None = None, dryrun: int | None = None) -> ConstantFormatVideoNode: ...
-    def VFM(self, clip: VideoNode, order: int, field: int | None = None, mode: int | None = None, mchroma: int | None = None, cthresh: int | None = None, mi: int | None = None, chroma: int | None = None, blockx: int | None = None, blocky: int | None = None, y0: int | None = None, y1: int | None = None, scthresh: float | None = None, micmatch: int | None = None, micout: int | None = None, clip2: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+    def VDecimate(
+        self,
+        clip: VideoNode,
+        cycle: int | None = None,
+        chroma: int | None = None,
+        dupthresh: float | None = None,
+        scthresh: float | None = None,
+        blockx: int | None = None,
+        blocky: int | None = None,
+        clip2: VideoNode | None = None,
+        ovr: _DataType | None = None,
+        dryrun: int | None = None,
+    ) -> ConstantFormatVideoNode: ...
+    def VFM(
+        self,
+        clip: VideoNode,
+        order: int,
+        field: int | None = None,
+        mode: int | None = None,
+        mchroma: int | None = None,
+        cthresh: int | None = None,
+        mi: int | None = None,
+        chroma: int | None = None,
+        blockx: int | None = None,
+        blocky: int | None = None,
+        y0: int | None = None,
+        y1: int | None = None,
+        scthresh: float | None = None,
+        micmatch: int | None = None,
+        micout: int | None = None,
+        clip2: VideoNode | None = None,
+    ) -> ConstantFormatVideoNode: ...
 
 class _Plugin_vivtc_VideoNode_Bound(Plugin):
     """This class implements the module definitions for the "vivtc" VapourSynth plugin.\n\n*This class cannot be imported.*"""
-    def VDecimate(self, cycle: int | None = None, chroma: int | None = None, dupthresh: float | None = None, scthresh: float | None = None, blockx: int | None = None, blocky: int | None = None, clip2: VideoNode | None = None, ovr: _DataType | None = None, dryrun: int | None = None) -> ConstantFormatVideoNode: ...
-    def VFM(self, order: int, field: int | None = None, mode: int | None = None, mchroma: int | None = None, cthresh: int | None = None, mi: int | None = None, chroma: int | None = None, blockx: int | None = None, blocky: int | None = None, y0: int | None = None, y1: int | None = None, scthresh: float | None = None, micmatch: int | None = None, micout: int | None = None, clip2: VideoNode | None = None) -> ConstantFormatVideoNode: ...
+    def VDecimate(
+        self,
+        cycle: int | None = None,
+        chroma: int | None = None,
+        dupthresh: float | None = None,
+        scthresh: float | None = None,
+        blockx: int | None = None,
+        blocky: int | None = None,
+        clip2: VideoNode | None = None,
+        ovr: _DataType | None = None,
+        dryrun: int | None = None,
+    ) -> ConstantFormatVideoNode: ...
+    def VFM(
+        self,
+        order: int,
+        field: int | None = None,
+        mode: int | None = None,
+        mchroma: int | None = None,
+        cthresh: int | None = None,
+        mi: int | None = None,
+        chroma: int | None = None,
+        blockx: int | None = None,
+        blocky: int | None = None,
+        y0: int | None = None,
+        y1: int | None = None,
+        scthresh: float | None = None,
+        micmatch: int | None = None,
+        micout: int | None = None,
+        clip2: VideoNode | None = None,
+    ) -> ConstantFormatVideoNode: ...
 
 # end implementation
-
 
 # implementation: vszip
 

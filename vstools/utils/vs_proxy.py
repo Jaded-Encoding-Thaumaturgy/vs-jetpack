@@ -3,7 +3,6 @@ from __future__ import annotations
 import builtins
 import gc
 import weakref
-
 from ctypes import Structure
 from inspect import Parameter, Signature
 from logging import NOTSET as LOGLEVEL_NOTSET
@@ -15,7 +14,6 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, NoReturn
 from weakref import ReferenceType
 
 import vapoursynth as vs
-
 from vapoursynth import (
     AUDIO,
     BACK_CENTER,
@@ -768,7 +766,6 @@ if not TYPE_CHECKING:
     import re
     import sys
     import warnings
-
     from pathlib import Path
     from types import ModuleType
 
@@ -1266,11 +1263,11 @@ else:
         PythonVSScriptLoggingBridge,
         StandaloneEnvironmentPolicy,
         VSScriptEnvironmentPolicy,
+        _FastManager,
+        construct_signature,
     )
     from vapoursynth import __file__ as vs_file
     from vapoursynth import __pyx_capi__ as pyx_capi
     from vapoursynth import _construct_parameter as construct_parameter
     from vapoursynth import _construct_type as construct_type
-    from vapoursynth import _FastManager
     from vapoursynth import _try_enable_introspection as try_enable_introspection
-    from vapoursynth import construct_signature

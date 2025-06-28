@@ -4,6 +4,7 @@ from typing import Any, Literal, cast, overload
 
 import vapoursynth as vs
 from jetpytools import KwargsT
+
 from vstools import PropEnum
 
 from ..enums import ChromaLocation, ColorRange, Matrix, Primaries, Transfer

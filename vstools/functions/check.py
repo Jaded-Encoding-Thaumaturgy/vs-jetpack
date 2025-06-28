@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Sequence, TypeGuard, overload
 
 import vapoursynth as vs
-
 from jetpytools import FuncExceptT
 
 from ..enums import FieldBased

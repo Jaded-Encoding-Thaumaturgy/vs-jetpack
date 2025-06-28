@@ -1,7 +1,7 @@
 from fractions import Fraction
 from os import PathLike
 from pathlib import Path
-from typing import Any, Iterable, Sequence, overload, TypeAlias
+from typing import Any, Iterable, Sequence, TypeAlias, overload
 
 from vapoursynth import AudioNode, RawNode, VideoNode
 

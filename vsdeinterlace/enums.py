@@ -1,4 +1,4 @@
-from vstools import ConstantFormatVideoNode, check_variable, CustomEnum, CustomIntEnum, vs, core
+from vstools import ConstantFormatVideoNode, CustomEnum, CustomIntEnum, check_variable, core, vs
 
 __all__ = [
     "IVTCycles",

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
 from functools import partial
+from typing import TYPE_CHECKING, Any, Literal
 
 from vsexprtools import norm_expr
 from vskernels import Box, Catrom, NoScale, Scaler, ScalerLike
@@ -9,11 +9,24 @@ from vsmasktools import EdgeDetect, EdgeDetectT, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
 from vsscale import ArtCNN
 from vstools import (
-    ConstantFormatVideoNode, CustomValueError, FormatsMismatchError, FunctionUtil, PlanesT, VSFunctionNoArgs,
-    check_variable_format, fallback, get_peak_value, get_y, limiter, scale_mask, vs, ConvMode, KwargsT
+    ConstantFormatVideoNode,
+    ConvMode,
+    CustomValueError,
+    FormatsMismatchError,
+    FunctionUtil,
+    KwargsT,
+    PlanesT,
+    VSFunctionNoArgs,
+    check_variable_format,
+    fallback,
+    get_peak_value,
+    get_y,
+    limiter,
+    scale_mask,
+    vs,
 )
 
-from .deinterlacers import AntiAliaser, NNEDI3, EEDI3
+from .deinterlacers import EEDI3, NNEDI3, AntiAliaser
 
 __all__ = ["based_aa", "clamp_aa", "pre_aa"]
 
@@ -135,7 +148,8 @@ def based_aa(
     antialiaser: AntiAliaser | None = None,
     prefilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] = False,
     postfilter: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] | KwargsT | None = None,
-    show_mask: bool = False, **aa_kwargs: Any
+    show_mask: bool = False,
+    **aa_kwargs: Any,
 ) -> vs.VideoNode:
     """
     Perform based anti-aliasing on a video clip.

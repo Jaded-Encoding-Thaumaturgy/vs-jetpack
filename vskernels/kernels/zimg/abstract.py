@@ -6,7 +6,6 @@ from ...abstract import ComplexKernel
 from ...abstract.base import BaseScaler
 from ...types import LeftShift, TopShift
 
-
 __all__ = [
     "ZimgBobber",
     "ZimgComplexKernel",

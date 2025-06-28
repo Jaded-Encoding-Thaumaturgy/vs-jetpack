@@ -16,6 +16,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import Self
+
 from vstools import (
     ByteData,
     ColorRangeT,
@@ -29,7 +31,6 @@ from vstools import (
 )
 
 from .operators import BaseOperator, ExprOperators
-from typing_extensions import Self
 
 if TYPE_CHECKING:
     from .manager import inline_expr
