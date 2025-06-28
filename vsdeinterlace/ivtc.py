@@ -139,9 +139,9 @@ def vfm(
 
     if block := kwargs.pop("block", None):
         if isinstance(block, int):
-            vfm_kwargs.update(blockx=block, blocky=block)
-        else:
-            vfm_kwargs.update(blockx=block[0], blocky=block[1])
+            block = (block, block)
+
+        vfm_kwargs.update(blockx=block[0], blocky=block[1])
 
     if (y := kwargs.pop("y", None)) and not isinstance(y, int):
         vfm_kwargs.update(y0=y[0], y1=y[1])
@@ -182,9 +182,9 @@ def vdecimate(clip: vs.VideoNode, weight: float = 0.0, **kwargs: Any) -> Constan
 
     if block := kwargs.pop("block", None):
         if isinstance(block, int):
-            vdecimate_kwargs.update(blockx=block, blocky=block)
-        else:
-            vdecimate_kwargs.update(blockx=block[0], blocky=block[1])
+            block = (block, block)
+
+        vdecimate_kwargs.update(blockx=block[0], blocky=block[1])
 
     if not kwargs.get("clip2") and func.work_clip.format != clip.format:
         vdecimate_kwargs.update(clip2=clip)
