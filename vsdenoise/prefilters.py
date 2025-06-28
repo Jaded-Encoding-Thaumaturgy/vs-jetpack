@@ -33,8 +33,8 @@ from .fft import DFTTest, SLocationT
 __all__ = [
     "MultiPrefilter",
     "Prefilter",
-    "PrefilterPartial",
     "PrefilterLike",
+    "PrefilterPartial",
     "prefilter_to_full_range",
 ]
 

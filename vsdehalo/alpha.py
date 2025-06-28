@@ -216,7 +216,7 @@ class FineDehalo(Generic[P, R]):
         :param exclude:             If True, add an addionnal step to exclude edges close to each other
         :param edgeproc:            If > 0, it will add the edgemask to the processing, defaults to 0.0
         :param edgemask:            Internal mask used for detecting the edges, defaults to Robinson3()
-        :param pre_ss:              Supersampling rate used before anything else. This value will be be rounded.
+        :param pre_ss:              Supersampling rate used before anything else.
         :param pre_supersampler:    Supersampler used for ``pre_ss``.
         :param show_mask:           Whether to show the computed halo mask. 1-7 values to select intermediate masks.
         :param planes:              Planes to process.
@@ -227,10 +227,8 @@ class FineDehalo(Generic[P, R]):
         """
         work_clip = get_y(clip)
 
-        if pre_ss > 1.0:
-            pre_ss = max(round(pre_ss), 2)
-
-            work_clip = Scaler.ensure_obj(pre_supersampler, func).scale(  # type: ignore[assignment]
+        if pre_ss > 1:
+            work_clip = Scaler.ensure_obj(pre_supersampler, func).scale(
                 work_clip, work_clip.width * pre_ss, work_clip.height * pre_ss, (-(0.5 / pre_ss), -(0.5 / pre_ss))
             )
 

@@ -659,23 +659,23 @@ class EEDI3(SuperSampler):
         if self.vthresh is None:
             self.vthresh = (None, None, None)
 
-        eedi3_args = dict(
-            alpha=self.alpha,
-            beta=self.beta,
-            gamma=self.gamma,
-            nrad=self.nrad,
-            mdis=self.mdis,
-            ucubic=self.ucubic,
-            cost3=self.cost3,
-            vcheck=self.vcheck,
-            vthresh0=self.vthresh[0],
-            vthresh1=self.vthresh[1],
-            vthresh2=self.vthresh[2],
-            sclip=self.sclip
-        )
+        eedi3_args = {
+            "alpha": self.alpha,
+            "beta": self.beta,
+            "gamma": self.gamma,
+            "nrad": self.nrad,
+            "mdis": self.mdis,
+            "ucubic": self.ucubic,
+            "cost3": self.cost3,
+            "vcheck": self.vcheck,
+            "vthresh0": self.vthresh[0],
+            "vthresh1": self.vthresh[1],
+            "vthresh2": self.vthresh[2],
+            "sclip": self.sclip
+        }
 
         if not self.opencl:
-            eedi3_args |= dict(mclip=self.mclip)
+            eedi3_args |= {"mclip": self.mclip}
 
         return eedi3_args | kwargs
 

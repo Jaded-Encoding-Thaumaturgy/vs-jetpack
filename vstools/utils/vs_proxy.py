@@ -972,7 +972,7 @@ def _get_core_with_cb(self: VSCoreProxy | None = None) -> Core:
 
     if (core_id := id(_vs_core)) not in core_on_creation_callbacks_cores:
         for cb_id in list(core_on_creation_callbacks.keys()):
-            callback_ref = core_on_creation_callbacks.get(cb_id, None)
+            callback_ref = core_on_creation_callbacks.get(cb_id)
 
             if callback_ref and (callback := callback_ref()):
                 try:

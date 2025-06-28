@@ -205,7 +205,7 @@ class BlurMatrixBase(list[_Nb]):
         # to the center frame.
         expr.append(vars_[r], self[r])
 
-        for k, w in enumerate(self[:r] + ([None] + self[r + 1 :])):
+        for k, w in enumerate([*self[:r], None, *self[r + 1:]]):
             if w is not None:
                 expr.append(f"cond{k}@", 0, w, ExprOp.TERN)
 

@@ -364,7 +364,7 @@ class Keyframes(list[int]):
 
         def __init__(self, kf: Keyframes) -> None:
             if kf:
-                super().__init__({i: range(x, y) for i, (x, y) in enumerate(zip(kf, kf[1:] + [1 << 32]))})
+                super().__init__({i: range(x, y) for i, (x, y) in enumerate(zip(kf, [*kf[1:], 1 << 32]))})
 
             self.indices = LinearRangeLut(self)
 
