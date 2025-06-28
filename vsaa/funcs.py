@@ -4,25 +4,13 @@ from typing import TYPE_CHECKING, Any, Literal
 from functools import partial
 
 from vsexprtools import norm_expr
-from vskernels import Bilinear, Box, Catrom, NoScale, Scaler, ScalerLike
+from vskernels import Box, Catrom, NoScale, Scaler, ScalerLike
 from vsmasktools import EdgeDetect, EdgeDetectT, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
 from vsscale import ArtCNN
 from vstools import (
-    ConstantFormatVideoNode,
-    CustomValueError,
-    FormatsMismatchError,
-    FunctionUtil,
-    PlanesT,
-    VSFunctionNoArgs,
-    check_variable_format,
-    fallback,
-    get_peak_value,
-    get_y,
-    limiter,
-    scale_mask,
-    vs,
-    ConvMode,
+    ConstantFormatVideoNode, CustomValueError, FormatsMismatchError, FunctionUtil, PlanesT, VSFunctionNoArgs,
+    check_variable_format, fallback, get_peak_value, get_y, limiter, scale_mask, vs, ConvMode, KwargsT
 )
 
 from .deinterlacers import AntiAliaser, NNEDI3, EEDI3
@@ -146,9 +134,8 @@ def based_aa(
     supersampler: ScalerLike | Literal[False] = ArtCNN,
     antialiaser: AntiAliaser | None = None,
     prefilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] = False,
-    postfilter: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] | None = None,
-    show_mask: bool = False,
-    **aa_kwargs: Any,
+    postfilter: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] | KwargsT | None = None,
+    show_mask: bool = False, **aa_kwargs: Any
 ) -> vs.VideoNode:
     """
     Perform based anti-aliasing on a video clip.
@@ -256,14 +243,7 @@ def based_aa(
     ss = supersampler.scale(ss_clip, aaw, aah)
 
     if not antialiaser:
-        antialiaser = EEDI3(
-            alpha=0.125,
-            beta=0.25,
-            gamma=40,
-            vthresh=(12, 24, 4),
-            sclip=ss,
-            mclip=Bilinear().scale(mask, ss.width, ss.height) if mask else None,
-        )
+        antialiaser = EEDI3(alpha=0.125, beta=0.25, gamma=40, vthresh=(12, 24, 4), sclip=ss)
 
     aa = antialiaser.antialias(ss, **aa_kwargs)
 
@@ -275,8 +255,9 @@ def based_aa(
 
     if callable(postfilter):
         aa = postfilter(aa)
-    elif postfilter is None:
-        aa = MeanMode.MEDIAN(aa, ss_clip, bilateral(aa, func.work_clip, 2, 1 / 255))
+    elif postfilter is not False:
+        postfilter_args = KwargsT(sigmaS=2, sigmaR=1 / 255) | fallback(postfilter, KwargsT())
+        aa = MeanMode.MEDIAN(aa, ss_clip, bilateral(aa, func.work_clip, **postfilter_args))
 
     if mask:
         aa = func.work_clip.std.MaskedMerge(aa, mask)

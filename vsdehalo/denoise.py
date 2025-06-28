@@ -5,7 +5,7 @@ from math import ceil, log
 from typing import Any, Sequence, cast
 
 from vsaa import NNEDI3
-from vsdenoise import Prefilter, PrefilterT, frequency_merge, nl_means
+from vsdenoise import Prefilter, PrefilterLike, frequency_merge, nl_means
 from vsexprtools import ExprOp, ExprToken, norm_expr
 from vskernels import Catrom, Point, Scaler, ScalerLike
 from vsmasktools import Morpho, Prewitt
@@ -37,7 +37,7 @@ __all__ = ["smooth_dering", "vine_dehalo"]
 
 def smooth_dering(
     clip: vs.VideoNode,
-    smooth: vs.VideoNode | PrefilterT = Prefilter.MINBLUR(radius=1),
+    smooth: vs.VideoNode | PrefilterLike = Prefilter.MINBLUR(radius=1),
     ringmask: vs.VideoNode | None = None,
     mrad: int = 1,
     msmooth: int = 1,

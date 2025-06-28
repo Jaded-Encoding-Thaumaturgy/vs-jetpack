@@ -20,7 +20,7 @@ from vstools import (
 )
 
 from .mvtools import MotionVectors, MVTools, MVToolsPreset
-from .prefilters import PrefilterPartial
+from .prefilters import PrefilterLike
 
 __all__ = [
     "mc_clamp",
@@ -32,7 +32,7 @@ __all__ = [
 def mc_degrain(
     clip: vs.VideoNode,
     vectors: MotionVectors | None = None,
-    prefilter: vs.VideoNode | PrefilterPartial | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     preset: MVToolsPreset = ...,
     tr: int = 1,
@@ -50,9 +50,8 @@ def mc_degrain(
 
 @overload
 def mc_degrain(
-    clip: vs.VideoNode,
-    vectors: MotionVectors | None = None,
-    prefilter: vs.VideoNode | PrefilterPartial | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    clip: vs.VideoNode, vectors: MotionVectors | None = None,
+    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     preset: MVToolsPreset = ...,
     tr: int = 1,
@@ -70,9 +69,8 @@ def mc_degrain(
 
 @overload
 def mc_degrain(
-    clip: vs.VideoNode,
-    vectors: MotionVectors | None = None,
-    prefilter: vs.VideoNode | PrefilterPartial | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    clip: vs.VideoNode, vectors: MotionVectors | None = None,
+    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     preset: MVToolsPreset = ...,
     tr: int = 1,
@@ -89,9 +87,8 @@ def mc_degrain(
 
 
 def mc_degrain(
-    clip: vs.VideoNode,
-    vectors: MotionVectors | None = None,
-    prefilter: vs.VideoNode | PrefilterPartial | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    clip: vs.VideoNode, vectors: MotionVectors | None = None,
+    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     preset: MVToolsPreset = MVToolsPreset.HQ_SAD,
     tr: int = 1,

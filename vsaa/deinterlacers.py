@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
-from typing import Any, Protocol, Sequence, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, Sequence, runtime_checkable
 
+from jetpytools import MISSING
 from typing_extensions import Self
 
 from vskernels import Catrom, ComplexScaler, ComplexScalerLike, LeftShift, Scaler, TopShift
@@ -262,22 +263,23 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
             clip, width, height, (nshift[1], nshift[0])
         )
 
-    def supersample(
-        self, clip: VideoNodeT, rfactor: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
-    ) -> VideoNodeT:
-        """
-        Supersample a clip by a given scaling factor.
+    if TYPE_CHECKING:
+        def supersample(
+            self, clip: VideoNodeT, rfactor: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
+        ) -> VideoNodeT:
+            """
+            Supersample a clip by a given scaling factor.
 
-        Note: Setting `tff=True` results in less chroma shift for non-centered chroma locations.
+            Note: Setting `tff=True` results in less chroma shift for non-centered chroma locations.
 
-        :param clip:                The source clip.
-        :param rfactor:             Scaling factor for supersampling.
-        :param shift:               Subpixel shift (top, left) applied during scaling.
-        :param kwargs:              Additional arguments forwarded to the scale function.
-        :raises CustomValueError:   If resulting resolution is non-positive.
-        :return:                    The supersampled clip.
-        """
-        return super().supersample(clip, rfactor, shift, **kwargs)
+            :param clip:                The source clip.
+            :param rfactor:             Scaling factor for supersampling.
+            :param shift:               Subpixel shift (top, left) applied during scaling.
+            :param kwargs:              Additional arguments forwarded to the scale function.
+            :raises CustomValueError:   If resulting resolution is non-positive.
+            :return:                    The supersampled clip.
+            """
+            ...
 
 
 @dataclass
@@ -596,6 +598,17 @@ class EEDI3(SuperSampler):
     opencl: bool = False
     """Enables the use of the OpenCL variant for processing."""
 
+    def _set_sclip_mclip(self, kwargs: dict[str, Any]) -> dict[str, Any]:
+        sclip, mclip = kwargs.pop("sclip", MISSING), kwargs.pop("mclip", MISSING)
+
+        if sclip is not MISSING:
+            self.sclip = sclip
+
+        if mclip is not MISSING:
+            self.mclip = mclip
+
+        return kwargs
+
     @property
     def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
         return core.lazy.eedi3m.EEDI3CL if self.opencl else core.lazy.eedi3m.EEDI3
@@ -618,6 +631,11 @@ class EEDI3(SuperSampler):
 
         return self._deinterlacer_function(clip, field, dh, **kwargs)
 
+    def antialias(
+        self, clip: vs.VideoNode, direction: AntiAliaser.AADirection = AntiAliaser.AADirection.BOTH, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        return super().antialias(clip, direction, **self._set_sclip_mclip(kwargs))
+
     def transpose(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
         if isinstance(self.sclip, vs.VideoNode):
             self.sclip = self.sclip.std.Transpose()
@@ -627,31 +645,39 @@ class EEDI3(SuperSampler):
 
         return super().transpose(clip)
 
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        return super().scale(clip, width, height, shift, **self._set_sclip_mclip(kwargs))
+
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         if self.vthresh is None:
             self.vthresh = (None, None, None)
 
-        kwargs = {
-            "alpha": self.alpha,
-            "beta": self.beta,
-            "gamma": self.gamma,
-            "nrad": self.nrad,
-            "mdis": self.mdis,
-            "ucubic": self.ucubic,
-            "cost3": self.cost3,
-            "vcheck": self.vcheck,
-            "vthresh0": self.vthresh[0],
-            "vthresh1": self.vthresh[1],
-            "vthresh2": self.vthresh[2],
-            "sclip": self.sclip,
-            "mclip": self.mclip,
-        } | kwargs
+        eedi3_args = dict(
+            alpha=self.alpha,
+            beta=self.beta,
+            gamma=self.gamma,
+            nrad=self.nrad,
+            mdis=self.mdis,
+            ucubic=self.ucubic,
+            cost3=self.cost3,
+            vcheck=self.vcheck,
+            vthresh0=self.vthresh[0],
+            vthresh1=self.vthresh[1],
+            vthresh2=self.vthresh[2],
+            sclip=self.sclip
+        )
 
-        if not self.opencl and kwargs["mclip"] is not None and kwargs.get("opt") is None:
-            # opt=3 appears to always give reliable speed boosts if mclip is used.
-            kwargs["opt"] = 3
+        if not self.opencl:
+            eedi3_args |= dict(mclip=self.mclip)
 
-        return kwargs
+        return eedi3_args | kwargs
 
     @Scaler.cached_property
     def kernel_radius(self) -> int:

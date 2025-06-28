@@ -34,7 +34,7 @@ __all__ = [
     "MultiPrefilter",
     "Prefilter",
     "PrefilterPartial",
-    "PrefilterT",
+    "PrefilterLike",
     "prefilter_to_full_range",
 ]
 
@@ -62,7 +62,7 @@ def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: PlanesT, **
         peak = get_peak_value(clip)
         pref_mask: vs.VideoNode | Literal[False] | tuple[int, int] | None = kwargs.pop("pref_mask", None)
 
-        dftt = DFTTest(sloc={0.0: 4, 0.2: 9, 1.0: 15}, tr=0).denoise(
+        dftt = DFTTest(sloc={0.0: 4, 0.2: 9, 1.0: 15}).denoise(
             clip, kwargs.pop("sloc", None), planes=planes, **kwargs
         )
 
@@ -546,7 +546,7 @@ class MultiPrefilter(AbstractPrefilter):
         return clip
 
 
-PrefilterT = Prefilter | PrefilterPartial | MultiPrefilter
+PrefilterLike = Prefilter | PrefilterPartial | MultiPrefilter
 
 
 def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: float = 0.0625) -> ConstantFormatVideoNode:
