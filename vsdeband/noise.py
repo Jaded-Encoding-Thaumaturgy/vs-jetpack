@@ -463,9 +463,12 @@ def _apply_grainer(
         grained = _protect_pixel_range(clip, grained, to_arr(lo), to_arr(hi), protect_edges_blend)
 
     # Postprocess
-    if post_process is not None:
-        for pp in to_arr(post_process):
-            grained = pp(grained)
+    if post_process:
+        if callable(post_process):
+            grained = post_process(grained)
+        else:
+            for pp in post_process:
+                grained = pp(grained)
 
     if protect_neutral_chroma is True:
         if clip.format.color_family is vs.RGB:
