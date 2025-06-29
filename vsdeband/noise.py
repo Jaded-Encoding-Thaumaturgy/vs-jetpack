@@ -111,28 +111,28 @@ class AbstractGrainer:
 class Grainer(AbstractGrainer, CustomEnum):
     """Enum representing different grain/noise generation algorithms."""
 
-    GAUSS = auto()
+    GAUSS = 0
     """
     Gaussian noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
     """
 
-    PERLIN = auto()
+    PERLIN = 1
     """
     Perlin noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
     """
 
-    SIMPLEX = auto()
+    SIMPLEX = 2
     """
     Simplex noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
     """
 
-    FBM_SIMPLEX = auto()
+    FBM_SIMPLEX = 3
     """
     Fractional Brownian Motion based on Simplex noise.
     Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
     """
 
-    POISSON = auto()
+    POISSON = 4
     """
     Poisson-distributed noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
     """
