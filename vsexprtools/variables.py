@@ -50,7 +50,7 @@ class ExprVar(int):
     def __add__(self, other: ExprOtherT) -> ComputedVar:
         return ExprOperators.ADD(self, other)
 
-    def __iadd__(self, other: ExprOtherT) -> Self:
+    def __iadd__(self, other: ExprOtherT) -> ComputedVar:  # noqa: PYI034
         return ExprOperators.ADD(self, other)
 
     def __radd__(self, other: ExprOtherT) -> ComputedVar:
@@ -59,7 +59,7 @@ class ExprVar(int):
     def __sub__(self, other: ExprOtherT) -> ComputedVar:
         return ExprOperators.SUB(self, other)
 
-    def __isub__(self, other: ExprOtherT) -> Self:
+    def __isub__(self, other: ExprOtherT) -> ComputedVar:  # noqa: PYI034
         return ExprOperators.SUB(self, other)
 
     def __rsub__(self, other: ExprOtherT) -> ComputedVar:
@@ -68,7 +68,7 @@ class ExprVar(int):
     def __mul__(self, other: ExprOtherT) -> ComputedVar:
         return ExprOperators.MUL(self, other)
 
-    def __imul__(self, other: ExprOtherT) -> Self:
+    def __imul__(self, other: ExprOtherT) -> ComputedVar:  # noqa: PYI034
         return ExprOperators.MUL(self, other)
 
     def __rmul__(self, other: ExprOtherT) -> ComputedVar:
@@ -80,13 +80,13 @@ class ExprVar(int):
     def __rtruediv__(self, other: ExprOtherT) -> ComputedVar:  # type: ignore
         return ExprOperators.DIV(other, self)
 
-    def __itruediv__(self, other: ExprOtherT) -> Self:
+    def __itruediv__(self, other: ExprOtherT) -> ComputedVar:  # noqa: PYI034
         return ExprOperators.DIV(self, other)
 
     def __floordiv__(self, other: ExprOtherT) -> ComputedVar:
         return ExprOperators.FLOOR(ExprOperators.DIV(self, other))
 
-    def __ifloordiv__(self, other: ExprOtherT) -> Self:
+    def __ifloordiv__(self, other: ExprOtherT) -> ComputedVar:  # noqa: PYI034
         return ExprOperators.FLOOR(ExprOperators.DIV(self, other))
 
     def __rfloordiv__(self, other: ExprOtherT) -> ComputedVar:

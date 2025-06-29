@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from types import UnionType
-from typing import (
+from typing import (  # type: ignore[attr-defined]
     Any,
     Callable,
     Iterable,
@@ -10,7 +10,7 @@ from typing import (
     MutableMapping,
     Sequence,
     TypeVar,
-    _UnionGenericAlias,  # type: ignore[attr-defined]
+    _UnionGenericAlias,  # pyright: ignore[reportAttributeAccessIssue]
     get_args,
     get_origin,
     overload,

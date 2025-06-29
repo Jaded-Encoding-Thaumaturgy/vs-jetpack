@@ -127,8 +127,8 @@ class InvalidColorFamilyError(CustomValueError):
             message,
             func,
             wrong=wrong_str,
-            correct=iter({get_color_family(c).name for c in to_arr(correct)}),
-            **kwargs,  # type: ignore[arg-type]
+            correct=iter({get_color_family(c).name for c in to_arr(correct)}),  # type: ignore[arg-type]
+            **kwargs,
         )
 
     @staticmethod
