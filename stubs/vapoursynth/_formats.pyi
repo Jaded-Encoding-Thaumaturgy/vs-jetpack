@@ -1,9 +1,19 @@
-from typing import Iterator, Literal, Self, overload
+from typing import Iterator, Literal, Self, TypedDict, overload
 
 from ._enums import AudioChannels, ColorFamily, SampleType
-from ._typings import _VideoFormatInfo
 
 __all__ = ["VideoFormat", "ChannelLayout"]
+
+class _VideoFormatInfo(TypedDict):
+    id: int
+    name: str
+    color_family: ColorFamily
+    sample_type: SampleType
+    bits_per_sample: int
+    bytes_per_sample: int
+    subsampling_w: int
+    subsampling_h: int
+    num_planes: int
 
 class VideoFormat:
     id: int
