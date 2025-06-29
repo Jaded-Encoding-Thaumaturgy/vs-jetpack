@@ -144,10 +144,7 @@ class Grainer(AbstractGrainer, CustomEnum):
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Union[
-            Literal[Grainer.GAUSS],
-            Literal[Grainer.POISSON],
-        ],
+        self: Literal[Grainer.GAUSS] | Literal[Grainer.POISSON],
         clip: vs.VideoNode,
         /,
         strength: float | tuple[float, float] = ...,
@@ -164,10 +161,7 @@ class Grainer(AbstractGrainer, CustomEnum):
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Union[
-            Literal[Grainer.GAUSS],
-            Literal[Grainer.POISSON],
-        ],
+        self: Literal[Grainer.GAUSS] | Literal[Grainer.POISSON],
         /,
         *,
         strength: float | tuple[float, float] = ...,
@@ -201,7 +195,7 @@ class Grainer(AbstractGrainer, CustomEnum):
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
         *,
-        size: tuple[float, float] = (2.0, 2.0),
+        size: int | tuple[float | None, float | None] | None = (2.0, 2.0),
         **kwargs: Any,
     ) -> vs.VideoNode: ...
 
@@ -223,7 +217,7 @@ class Grainer(AbstractGrainer, CustomEnum):
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
-        size: tuple[float, float] = (2.0, 2.0),
+        size: int | tuple[float | None, float | None] | None = (2.0, 2.0),
         **kwargs: Any,
     ) -> GrainerPartial: ...
 
@@ -371,8 +365,10 @@ class Grainer(AbstractGrainer, CustomEnum):
                 func=self.name,
             )
         else:
-            xsize, ysize = kwargs.pop("size", (None, None))
-            kwargs.update(xsize=xsize, ysize=ysize)
+            if not isinstance(size := kwargs.pop("size", (None, None)), tuple):
+                size = (size, size)
+
+            kwargs.update(xsize=size[0], ysize=size[1])
 
             grained = _apply_grainer(
                 clip,
