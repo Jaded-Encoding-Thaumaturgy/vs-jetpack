@@ -12,9 +12,9 @@ from vskernels.abstract.base import _ScalerT
 from vsmasktools import adg_mask
 from vsrgtools import BlurMatrix
 from vstools import (
-    ColorRange, ConstantFormatVideoNode, ConvMode, InvalidColorFamilyError, PlanesT, check_variable, core,
+    ColorRange, ConstantFormatVideoNode, ConvMode, PlanesT, check_variable, core,
     get_lowest_values, get_neutral_values, get_peak_values, get_u, get_v, mod_x, normalize_param_planes, normalize_seq,
-    scale_delta, to_arr, vs
+    scale_delta, split, to_arr, vs
 )
 
 from .debanders import placebo_deband
@@ -469,9 +469,6 @@ def _apply_grainer(
                 grained = pp(grained)
 
     if protect_neutral_chroma is True:
-        if clip.format.color_family is vs.RGB:
-            raise InvalidColorFamilyError(func, clip.format, vs.YUV)
-
         grained = _protect_neutral_chroma(clip, grained, base_clip, protect_neutral_chroma_blend)
 
     if luma_scaling is not None:
@@ -502,18 +499,24 @@ def _protect_pixel_range(
 
 
 def _protect_neutral_chroma(
-    clip: vs.VideoNode, grained: vs.VideoNode, base_clip: vs.VideoNode, blend: float = 0.0
+    clip: ConstantFormatVideoNode, grained: vs.VideoNode, base_clip: vs.VideoNode, blend: float = 0.0
 ) -> vs.VideoNode:
-    if not blend:
-        expr = "x neutral = y neutral = and range_max 0 ?"
+
+    if clip.format.color_family is vs.YUV:
+        if not blend:
+            expr = "x neutral = y neutral = and range_max 0 ?"
+        else:
+            expr = "x neutral - abs {blend} / 1 min 1 swap - y neutral - abs {blend} / 1 min 1 swap - * range_max *"
+
+        mask = norm_expr([get_u(clip), get_v(clip)], expr, blend=blend)
+
+        return core.std.MaskedMerge(
+            grained, base_clip, core.std.ShufflePlanes([clip, mask, mask], [0, 0, 0], vs.YUV, clip), [1, 2]
+        )
     else:
-        expr = "x neutral - abs {blend} / 1 min 1 swap - y neutral - abs {blend} / 1 min 1 swap - * range_max *"
+        mask = norm_expr(split(clip), "x y = x z = and range_max *")
 
-    mask = norm_expr([get_u(clip), get_v(clip)], expr, blend=blend)
-
-    return core.std.MaskedMerge(
-        grained, base_clip, core.std.ShufflePlanes([clip, mask, mask], [0, 0, 0], vs.YUV, clip), [1, 2]
-    )
+        return core.std.MaskedMerge(grained, base_clip, mask)
 
 
 class GrainerPartial(AbstractGrainer):
