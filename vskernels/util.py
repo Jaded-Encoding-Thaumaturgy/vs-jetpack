@@ -46,8 +46,12 @@ class BaseScalerSpecializerMeta(BaseScalerMeta):
         **kwargs: Any,
     ) -> BaseScalerSpecializerMeta:
         if specializer is not None:
-            namespace["__orig_bases__"] = (specializer, ) + namespace["__orig_bases__"]
+            name = f"{name}[{specializer.__name__}]"
             bases = (specializer, ) + bases
+            namespace["__orig_bases__"] = (specializer, ) + namespace["__orig_bases__"]
+
+            del namespace["kernel_radius"]
+            del namespace["_default_scaler"]
 
         obj = super().__new__(mcls, name, bases, namespace, **kwargs)
         obj.__isspecialized__ = bool(specializer)
