@@ -308,6 +308,13 @@ class Grainer(AbstractGrainer, CustomEnum):
 
         If no clip is passed, a partially applied grainer with the provided arguments is returned instead.
 
+        Example usage:
+            ```py
+            # For PERLIN, SIMPLEX, and FBM_SIMPLEX, it is recommended to use `size` instead of `scale`,
+            # as `size` allows for direct internal customization of each grain type.
+            grained = Grainer.PERLIN(clip, (1.65, 0.65), temporal=(0.25, 2), luma_scaling=4, size=3.0, seed=333)
+            ```
+
         :param clip:                    The input clip to apply grain to.
                                         If omitted, returns a partially applied grainer.
         :param strength:                Grain strength.
