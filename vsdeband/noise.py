@@ -422,6 +422,9 @@ def _apply_grainer(
     planes = [i for i, s in zip(range(clip.format.num_planes), strength) if s]
     (scalex, scaley), mod = scale, max(clip.format.subsampling_w, clip.format.subsampling_h) << 1
 
+    if not planes:
+        return clip
+
     # Making a neutral blank clip
     base_clip = clip.std.BlankClip(
         mod_x(clip.width / scalex, mod),
