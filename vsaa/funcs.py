@@ -137,7 +137,8 @@ def based_aa(
     antialiaser: AntiAliaser | None = None,
     prefilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] = False,
     postfilter: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] | KwargsT | None = None,
-    show_mask: bool = False, **aa_kwargs: Any
+    show_mask: bool = False,
+    **aa_kwargs: Any,
 ) -> vs.VideoNode:
     """
     Perform based anti-aliasing on a video clip.
@@ -241,6 +242,17 @@ def based_aa(
 
     if not antialiaser:
         antialiaser = EEDI3(alpha=0.125, beta=0.25, gamma=40, vthresh=(12, 24, 4), sclip=ss)
+
+    # Only uses mclip if `use_mclip` is True,
+    # if mclip isn't in aa_kwargs
+    # and antialiaser is an instance of EEDI3
+    if aa_kwargs.pop("use_mclip", False) and "mclip" not in aa_kwargs and isinstance(antialiaser, EEDI3):
+        mclip = None
+
+        if mask:
+            mclip = mask if isinstance(supersampler, NoScale) else vs.core.resize.Bilinear(mask, ss.width, ss.height)
+
+        aa_kwargs.update(mclip=mclip)
 
     aa = antialiaser.antialias(ss, **aa_kwargs)
 
