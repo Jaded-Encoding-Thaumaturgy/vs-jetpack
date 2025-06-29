@@ -417,7 +417,7 @@ def _apply_grainer(
     protect_edges = protect_edges if isinstance(protect_edges, tuple) else (protect_edges, protect_edges)
     protect_edges_blend = kwargs.pop("protect_edges_blend", 0.0)
     protect_neutral_chroma_blend = kwargs.pop(
-        "protect_neutral_chroma_blend", scale_value(2, 8, 16, ColorRange.FULL, ColorRange.FULL)
+        "protect_neutral_chroma_blend", scale_value(2, 8, clip, ColorRange.FULL, ColorRange.FULL)
     )
     neutral_out = kwargs.pop("neutral_out", False)
 
