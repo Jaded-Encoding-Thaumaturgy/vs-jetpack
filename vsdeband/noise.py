@@ -468,11 +468,14 @@ def _apply_grainer(
             for pp in post_process:
                 grained = pp(grained)
 
-    if protect_neutral_chroma is True:
-        grained = _protect_neutral_chroma(clip, grained, base_clip, protect_neutral_chroma_blend)
+    if protect_neutral_chroma or luma_scaling is not None:
+        base_clip = clip.std.BlankClip(length=clip.num_frames, color=get_neutral_values(clip), keep=True)
 
-    if luma_scaling is not None:
-        grained = core.std.MaskedMerge(base_clip, grained, adg_mask(clip, luma_scaling), planes)
+        if protect_neutral_chroma:
+            grained = _protect_neutral_chroma(clip, grained, base_clip, protect_neutral_chroma_blend)
+
+        if luma_scaling is not None:
+            grained = core.std.MaskedMerge(base_clip, grained, adg_mask(clip, luma_scaling), planes)
 
     return core.std.MergeDiff(clip, grained, planes) if not neutral_out else grained
 
@@ -513,10 +516,10 @@ def _protect_neutral_chroma(
         return core.std.MaskedMerge(
             grained, base_clip, core.std.ShufflePlanes([clip, mask, mask], [0, 0, 0], vs.YUV, clip), [1, 2]
         )
-    else:
-        mask = norm_expr(split(clip), "x y = x z = and range_max *")
 
-        return core.std.MaskedMerge(grained, base_clip, mask)
+    mask = norm_expr(split(clip), "x y = x z = and range_max *")
+
+    return core.std.MaskedMerge(grained, base_clip, mask)
 
 
 class GrainerPartial(AbstractGrainer):
