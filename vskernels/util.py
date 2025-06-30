@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import partial, wraps
 from math import exp
 from types import GenericAlias
-from typing import TYPE_CHECKING, Any, Callable, Concatenate, Generic, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Generic, TypeVar, Union, overload
 
 from jetpytools import P
 from typing_extensions import Self
@@ -17,32 +17,96 @@ from vstools import (
 )
 
 from .abstract import Resampler, ResamplerLike, Scaler, ScalerLike
-from .abstract.base import BaseScalerMeta
+from .abstract.base import BaseScaler, BaseScalerMeta, _BaseScalerT, _ScalerT
 from .kernels import Catrom, Point
 from .types import Center, LeftShift, Slope, TopShift
 
 __all__ = [
     'LinearLight',
+    'BaseScalerSpecializer',
     'NoScale',
 
     'resample_to'
 ]
 
-_ScalerT = TypeVar("_ScalerT", bound=Scaler)
 
-class NoScale(Scaler, Generic[_ScalerT], partial_abstract=True):
+class BaseScalerSpecializerMeta(BaseScalerMeta):
+    """Meta class for BaseScalerSpecializer to handle specialization logic."""
+
+    __isspecialized__: bool
+
+    def __new__(
+        mcls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        /,
+        *,
+        specializer: type[BaseScaler] | None = None,
+        **kwargs: Any,
+    ) -> BaseScalerSpecializerMeta:
+        if specializer is not None:
+            name = f"{name}[{specializer.__name__}]"
+            bases = (specializer, ) + bases
+            namespace["__orig_bases__"] = (specializer, ) + namespace["__orig_bases__"]
+
+            del namespace["kernel_radius"]
+            del namespace["_default_scaler"]
+
+        obj = super().__new__(mcls, name, bases, namespace, **kwargs)
+        obj.__isspecialized__ = bool(specializer)
+
+        return obj
+
+
+class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseScalerSpecializerMeta, abstract=True):
+    """
+    An abstract base class to provide specialization logic for Scaler-like classes.
+    """
+
+    _default_scaler: ClassVar[type[BaseScaler]]
+
+    if not TYPE_CHECKING:
+        def __new__(cls, *args: Any, **kwargs: Any) -> Self:
+            if not cls.__isspecialized__:
+                return cls.__class_getitem__(cls._default_scaler)()
+
+            return super().__new__(cls, *args, **kwargs)
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__()
+
+        for k in kwargs:
+            if hasattr(self, k):
+                setattr(self, k, kwargs.pop(k))
+
+        self.kwargs = kwargs
+
+    def __class_getitem__(cls, base_scaler: Any) -> GenericAlias:
+        """
+        Specialize this class with a given scaler kernel.
+
+        :param base_scaler: A BaseScaler type used to specialize this class.
+        :return:            A new subclass using the provided kernel.
+        """
+        if isinstance(base_scaler, TypeVar):
+            return GenericAlias(cls, (base_scaler, ))
+
+        specialized_scaler = BaseScalerSpecializerMeta(
+            cls.__name__, (cls, ), cls.__dict__.copy(), specializer=base_scaler, partial_abstract=True
+        )
+
+        return GenericAlias(specialized_scaler, (base_scaler, ))
+
+
+class NoScale(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
     """
     A utility scaler class that performs no scaling on the input clip.
 
     If used without a specified scaler, it defaults to inheriting from `Catrom`.
     """
 
-    if not TYPE_CHECKING:
-        def __new__(cls, *args: Any, **kwargs: Any) -> Self:
-            if cls.__bases__ == (Scaler, Generic):
-                return cls.__class_getitem__(Catrom)()
-
-            return super().__new__(cls, *args, **kwargs)
+    _default_scaler = Catrom
 
     def scale(
         self,
@@ -74,23 +138,6 @@ class NoScale(Scaler, Generic[_ScalerT], partial_abstract=True):
             return clip
 
         return super().scale(clip, width, height, shift, **kwargs)
-
-    def __class_getitem__(cls, scaler: Any) -> GenericAlias:
-        """
-        Specialize NoScale with a given scaler kernel.
-
-        Example:
-        ```py
-        NoScale[Bicubic]
-        ```
-
-        :param scaler:  A Scaler type used to specialize NoScale.
-        :return:        A new subclass of NoScale using the provided kernel.
-        """
-        return GenericAlias(
-            BaseScalerMeta(cls.__name__, (scaler, cls), cls.__dict__.copy(), partial_abstract=True),
-            (scaler, )
-        )
 
     @classmethod
     def from_scaler(cls, scaler: ScalerLike) -> type[NoScale[Scaler]]:

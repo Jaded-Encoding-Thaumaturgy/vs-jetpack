@@ -805,6 +805,17 @@ class _Plugin_mvsf_VideoNode_Bound(Plugin):
 # end implementation
 
 
+# implementation: neo_f3kdb
+
+class _Plugin_neo_f3kdb_Core_Bound(Plugin):
+    """This class implements the module definitions for the "neo_f3kdb" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Deband(self, clip: VideoNode, range: int | None = None, y: int | None = None, cb: int | None = None, cr: int | None = None, grainy: int | None = None, grainc: int | None = None, sample_mode: int | None = None, seed: int | None = None, blur_first: int | None = None, dynamic_grain: int | None = None, opt: int | None = None, mt: int | None = None, dither_algo: int | None = None, keep_tv_range: int | None = None, output_depth: int | None = None, random_algo_ref: int | None = None, random_algo_grain: int | None = None, random_param_ref: float | None = None, random_param_grain: float | None = None, preset: _DataType | None = None, y_1: int | None = None, cb_1: int | None = None, cr_1: int | None = None, y_2: int | None = None, cb_2: int | None = None, cr_2: int | None = None, scale: int | None = None, angle_boost: float | None = None, max_angle: float | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_neo_f3kdb_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "neo_f3kdb" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Deband(self, range: int | None = None, y: int | None = None, cb: int | None = None, cr: int | None = None, grainy: int | None = None, grainc: int | None = None, sample_mode: int | None = None, seed: int | None = None, blur_first: int | None = None, dynamic_grain: int | None = None, opt: int | None = None, mt: int | None = None, dither_algo: int | None = None, keep_tv_range: int | None = None, output_depth: int | None = None, random_algo_ref: int | None = None, random_algo_grain: int | None = None, random_param_ref: float | None = None, random_param_grain: float | None = None, preset: _DataType | None = None, y_1: int | None = None, cb_1: int | None = None, cr_1: int | None = None, y_2: int | None = None, cb_2: int | None = None, cr_2: int | None = None, scale: int | None = None, angle_boost: float | None = None, max_angle: float | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
 
 
 _ReturnDict_nlm_cuda_Version = TypedDict(
@@ -842,6 +853,18 @@ class _Plugin_nlm_ispc_VideoNode_Bound(Plugin):
 
 # end implementation
 
+
+# implementation: noise
+
+class _Plugin_noise_Core_Bound(Plugin):
+    """This class implements the module definitions for the "noise" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Add(self, clip: VideoNode, var: float | None = None, uvar: float | None = None, type: int | None = None, hcorr: float | None = None, vcorr: float | None = None, xsize: float | None = None, ysize: float | None = None, scale: float | None = None, seed: int | None = None, constant: int | None = None, every: int | None = None, opt: int | None = None) -> ConstantFormatVideoNode: ...
+
+class _Plugin_noise_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "noise" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Add(self, var: float | None = None, uvar: float | None = None, type: int | None = None, hcorr: float | None = None, vcorr: float | None = None, xsize: float | None = None, ysize: float | None = None, scale: float | None = None, seed: int | None = None, constant: int | None = None, every: int | None = None, opt: int | None = None) -> ConstantFormatVideoNode: ...
+
+# end implementation
 
 
 # implementation: placebo
@@ -1821,6 +1844,11 @@ class VideoNode(RawNode):
     def mvsf(self) -> _Plugin_mvsf_VideoNode_Bound:
         """MVTools Single Precision"""
     # end instance
+    # instance_bound_VideoNode: neo_f3kdb
+    @property
+    def neo_f3kdb(self) -> _Plugin_neo_f3kdb_VideoNode_Bound:
+        """Neo F3KDB Deband Filter r9"""
+    # end instance
     # instance_bound_VideoNode: nlm_cuda
     @property
     def nlm_cuda(self) -> _Plugin_nlm_cuda_VideoNode_Bound:
@@ -1830,6 +1858,11 @@ class VideoNode(RawNode):
     @property
     def nlm_ispc(self) -> _Plugin_nlm_ispc_VideoNode_Bound:
         """Non-local means denoise filter implemented in ISPC"""
+    # end instance
+    # instance_bound_VideoNode: noise
+    @property
+    def noise(self) -> _Plugin_noise_VideoNode_Bound:
+        """Noise generator"""
     # end instance
     # instance_bound_VideoNode: placebo
     @property
@@ -2194,6 +2227,11 @@ class Core:
     def mvsf(self) -> _Plugin_mvsf_Core_Bound:
         """MVTools Single Precision"""
     # end instance
+    # instance_bound_Core: neo_f3kdb
+    @property
+    def neo_f3kdb(self) -> _Plugin_neo_f3kdb_Core_Bound:
+        """Neo F3KDB Deband Filter r9"""
+    # end instance
     # instance_bound_Core: nlm_cuda
     @property
     def nlm_cuda(self) -> _Plugin_nlm_cuda_Core_Bound:
@@ -2203,6 +2241,10 @@ class Core:
     @property
     def nlm_ispc(self) -> _Plugin_nlm_ispc_Core_Bound:
         """Non-local means denoise filter implemented in ISPC"""
+    # end instance
+    @property
+    def noise(self) -> _Plugin_noise_Core_Bound:
+        """Noise generator"""
     # end instance
     # instance_bound_Core: placebo
     @property

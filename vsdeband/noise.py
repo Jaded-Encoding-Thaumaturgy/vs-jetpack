@@ -1,652 +1,652 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from functools import reduce
-from typing import Any, Callable, Iterable, Protocol, cast
+from enum import auto
+from typing import Any, Callable, ClassVar, Iterable, Literal, Protocol, Sequence, TypeAlias, Union, overload
 
-from vsdenoise import PrefilterLike
-from vsexprtools import complexpr_available, norm_expr
-from vskernels import BicubicAuto, Bilinear, Catrom, Kernel, KernelLike, Lanczos, LinearLight, Scaler, ScalerLike
+from jetpytools import MISSING, CustomEnum, FuncExceptT, MissingT, fallback, inject_self
+from typing_extensions import deprecated
+
+from vsexprtools import norm_expr
+from vskernels import BaseScalerSpecializer, BicubicAuto, Lanczos, LeftShift, Scaler, ScalerLike, TopShift
+from vskernels.abstract.base import _ScalerT
 from vsmasktools import adg_mask
 from vsrgtools import BlurMatrix
 from vstools import (
-    ColorRange, CustomIndexError, CustomOverflowError, CustomValueError, InvalidColorFamilyError,
-    KwargsT, Matrix, MatrixT, PlanesT, check_variable, core, depth, fallback, get_neutral_value,
-    get_neutral_values, get_peak_value, get_sample_type, get_y, inject_self, join, limiter, mod_x,
-    normalize_seq, plane, scale_value, split, to_arr, ConvMode, vs
+    ColorRange, ConstantFormatVideoNode, ConvMode, PlanesT, check_variable, core,
+    get_lowest_values, get_neutral_values, get_peak_values, get_u, get_v, mod_x, normalize_param_planes, normalize_seq,
+    scale_delta, split, to_arr, vs
 )
 
-from .placebo import Placebo
+from .debanders import placebo_deband
 
 __all__ = [
-    'Grainer', 'GrainPP',
-
-    'AddNoise', 'PlaceboGrain',
-
-    'LinearLightGrainer',
-
-    'ChickenDream', 'FilmGrain',
-
-    'multi_graining', 'MultiGrainerT'
+    "Grainer",
+    "ScalerTwoPasses",
+    "LanczosTwoPasses",
+    "GrainFactoryBicubic",
+    "AddNoise",
 ]
 
 
-class ResolverOneClipArgs(Protocol):
-    def __call__(self, grained: vs.VideoNode) -> vs.VideoNode:
-        ...
+EdgeLimits = tuple[float | Sequence[float] | bool, float | Sequence[float] | bool]
+"""
+Tuple representing lower and upper edge limits for each plane.
+
+Format: (low, high)
+
+Each element can be:
+- A float: the same limit is applied to all planes.
+- A sequence of floats: individual limits for each plane.
+- True: use the default legal range per plane.
+- False: no limits are applied.
+"""
 
 
-class ResolverTwoClipsArgs(Protocol):
-    def __call__(self, grained: vs.VideoNode, clip: vs.VideoNode) -> vs.VideoNode:
-        ...
+class _GrainerFunc(Protocol):
+    """Protocol for a graining function applied to a VideoNode."""
+
+    def __call__(
+        self, clip: vs.VideoNode, strength: Sequence[float], planes: PlanesT, **kwargs: Any
+    ) -> vs.VideoNode: ...
 
 
-@dataclass
-class GrainPP:
-    Resolver = Callable[[vs.VideoNode], 'GrainPP']
+class _PostProcessFunc(Protocol):
+    """Protocol for a post-processing function applied after graining."""
 
-    value: str
-    kwargs: KwargsT = field(default_factory=lambda: KwargsT())
-
-    @classmethod
-    def Bump(cls, strength: float = 0.1) -> GrainPP:
-        return cls('x[-1,1] x - {strength} * x +', KwargsT(strength=strength + 1.0))
-
-    @classmethod
-    def NormBrightness(cls) -> ResolverOneClipArgs:
-        def _resolve(grained: vs.VideoNode) -> vs.VideoNode:
-            assert grained.format
-
-            for i in range(grained.format.num_planes):
-                grained = grained.std.PlaneStats(plane=i, prop=f'PS{i}')
-
-            if get_sample_type(grained) is vs.FLOAT:
-                return norm_expr(grained, 'x x.PS{plane_idx}Average -', func=cls.NormBrightness)
-
-            return norm_expr(
-                grained, 'x neutral range_size / x.PS{plane_idx}Average - range_size * +', func=cls.NormBrightness
-            )
-
-        return _resolve
+    def __call__(self, grained: vs.VideoNode) -> vs.VideoNode: ...
 
 
-FadeLimits = tuple[int | Iterable[int] | None, int | Iterable[int] | None]
-GrainPostProcessT = ResolverOneClipArgs | ResolverTwoClipsArgs | str | GrainPP | GrainPP.Resolver
-GrainPostProcessesT = GrainPostProcessT | list[GrainPostProcessT]
+class ScalerTwoPasses(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
+    """Abstract scaler class that applies scaling in two passes."""
 
+    _default_scaler = Lanczos
 
-class Grainer(ABC):
-    """Abstract graining interface"""
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        **kwargs: Any,
+    ) -> vs.VideoNode | ConstantFormatVideoNode:
+        assert check_variable(clip, self.__class__)
 
-    def __init__(
-        self, strength: float | tuple[float, float] = 0.25,
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
-        dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
-        postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
-        luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True, *,
-        matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False,
-        **kwargs: Any
-    ) -> None:
-        super().__init__()
+        width, height = self._wh_norm(clip, width, height)
 
-        self.strength = strength
-        self.size = size if isinstance(size, tuple) else (size, size)
-        self.neutral_out = neutral_out
-        self.dynamic = dynamic
-        self.postprocess = postprocess
-        self.protect_chroma = protect_chroma
-        self.luma_scaling = luma_scaling
-        self.fade_limits = fade_limits
-        self.kwargs = kwargs
-
-        if isinstance(sharp, (float, int)):
-            self.scaler: Scaler = BicubicAuto(sharp)
-        else:
-            self.scaler = Scaler.ensure_obj(sharp, self.__class__)
-
-        if isinstance(temporal_average, tuple):
-            self.temporal_average, self.temporal_radius = temporal_average
-        else:
-            self.temporal_average, self.temporal_radius = temporal_average, 1
-
-        self.matrix = Matrix.from_param(matrix, self.__class__)
-        self.kernel = Kernel.ensure_obj(kernel, self.__class__)
-
-    def _is_input_dependent(self, clip: vs.VideoNode, **kwargs: Any) -> bool:
-        return False
-
-    def _get_kw(self, kwargs: KwargsT) -> KwargsT:
-        return self.kwargs | kwargs
-
-    @abstractmethod
-    def _perform_graining(
-        self, clip: vs.VideoNode, strength: tuple[float, float], dynamic: bool = True, **kwargs: Any
-    ) -> vs.VideoNode:
-        ...
-
-    def _check_input(
-        self, clip: vs.VideoNode, strength: tuple[float, float], dynamic: bool = True, **kwargs: Any
-    ) -> None:
-        ...
-
-    @inject_self.init_kwargs.clean
-    def grain(
-        self, clip: vs.VideoNode, strength: float | tuple[float, float] | None = None,
-        dynamic: bool | None = None, **kwargs: Any
-    ) -> vs.VideoNode:
-        assert clip.format
-
-        kwargs = self._get_kw(kwargs)
-
-        if strength is None:
-            strength = self.strength
-
-        dynamic = fallback(dynamic, self.dynamic)
-        strength = strength if isinstance(strength, tuple) else (
-            strength, strength if clip.format.num_planes > 1 else 0.0
-        )
-
-        if max(strength) <= 0.0:
-            return clip
-
-        if strength[0] <= 0.0 and strength[1] > 0.0:
-            planes: PlanesT = [1, 2]
-        elif strength[0] > 0.0 and strength[1] <= 0.0:
-            planes = 0
-        else:
-            planes = None
-
-        do_taverage = (
-            dynamic
-            and self.temporal_average > 0 and self.temporal_radius > 0
-            and (clip.num_frames > self.temporal_radius * 2)
-        )
-        do_protect_chroma = self.protect_chroma and strength[1] > 0.0 and clip.format.color_family is vs.YUV
-        input_dep = self._is_input_dependent(clip, **kwargs)
-
-        def _wrap_implementation(clip: vs.VideoNode, neutral_out: bool) -> vs.VideoNode:
-            if input_dep and do_taverage and not kwargs.get('unsafe_graining', False):
-                raise CustomValueError(
-                    'You can\'t have temporal averaging with input dependent graining as it will create ghosting!'
-                )
-
-            if neutral_out and not input_dep:
-                length = clip.num_frames + ((self.temporal_radius * 2) if do_taverage else 0)
-                base_clip = clip.std.BlankClip(length=length, color=get_neutral_values(clip))
-            elif do_taverage:
-                base_clip = (clip[0] * self.temporal_radius) + clip + (clip[-1] * self.temporal_radius)
-            else:
-                base_clip = clip
-
-            def _try_grain(src: vs.VideoNode, stre: tuple[float, float] = strength, **args: Any) -> vs.VideoNode:
-                args = kwargs | dict(strength=stre, dynamic=dynamic) | args
-                try:
-                    self._check_input(src, **args)
-                    grained = self._perform_graining(src, **args)
-                except NotImplementedError as e:
-                    reason, *_ = map(str, e.args)
-
-                    if reason == 'dynamic-only':
-                        grained = _try_grain(src[src.num_frames // 2], dynamic=True)
-                    elif reason.startswith('bad-depth'):
-                        good_depth = int(reason.split('-')[-1])
-                        grained = _try_grain(depth(src, good_depth))
-                        grained = depth(grained, src)
-                    elif reason == 'single-plane':
-                        str_luma, str_chroma = strength
-
-                        if str_luma > 0 and str_chroma > 0:
-                            return join(
-                                _try_grain(plane(src, 0), str_luma),
-                                _try_grain(plane(src, 1), str_chroma),
-                                _try_grain(plane(src, 2), str_chroma)
-                            )
-                        elif str_luma > 0:
-                            return join(
-                                _try_grain(plane(src, 0), str_luma),
-                                src
-                            )
-                        elif str_chroma > 0:
-                            return join(
-                                src,
-                                _try_grain(plane(src, 1), str_chroma),
-                                _try_grain(plane(src, 2), str_chroma)
-                            )
-
-                        return src
-                    else:
-                        raise e
-
-                return grained
-
-            grained = _try_grain(base_clip)
-
-            if input_dep and neutral_out:
-                grained = clip.std.MakeDiff(grained)
-
-            return grained
-
-        if (
-            self.size == (1.0, 1.0) and not do_taverage and not self.postprocess
-            and not do_protect_chroma and self.luma_scaling is None and not self.fade_limits
-        ):
-            return _wrap_implementation(clip, self.neutral_out)
-
-        (sizex, sizey), mod = self.size, max(clip.format.subsampling_w, clip.format.subsampling_h) << 1
-        sx, sy = mod_x(clip.width / sizex, mod), mod_x(clip.height / sizey, mod)
-
-        if (sx, sy) != (clip.width, clip.height):
-            sxa, sya = mod_x((clip.width + sx) / 2, mod), mod_x((clip.height + sy) / 2, mod)
-
-            grained = _wrap_implementation(self.scaler.scale(clip, sx, sy), True)
-
+        if width / clip.width > 1.5 or height / clip.height > 1.5:
             # If the scale is too big, we need to scale it in two passes, else the window
             # will be too big and the grain will be dampened down too much
-            if max(self.size) > 1.5:
-                grained = self.scaler.scale(grained, sxa, sya)
-
-            grained = self.scaler.scale(grained, clip.width, clip.height)
-        else:
-            grained = _wrap_implementation(clip, True)
-
-        if do_taverage:
-            average = BlurMatrix.MEAN(taps=self.temporal_radius, mode=ConvMode.TEMPORAL)(grained)
-            grained = grained.std.Merge(average, self.temporal_average)
-            grained = grained[self.temporal_radius:-self.temporal_radius]
-
-        if self.fade_limits:
-            low, high = (None, None) if self.fade_limits is True else self.fade_limits
-
-            low = [
-                scale_value(
-                    threshold, 8, clip.format.bits_per_sample,
-                    chroma=not not plane_index
-                )
-                for plane_index, threshold in enumerate(normalize_seq(fallback(low, 16)))
-            ]
-
-            high = [
-                scale_value(
-                    threshold, 8, clip.format.bits_per_sample,
-                    chroma=not not plane_index
-                )
-                for plane_index, threshold in enumerate(normalize_seq(fallback(high, [235, 240])))
-            ]
-
-            if complexpr_available:
-                limit_expr = 'y neutral - abs A! x A@ - {low} < x A@ + {high} > or neutral y ?'
-            else:
-                limit_expr = 'x y neutral - abs - {low} < x y neutral - abs + {high} > or neutral y ?'
-
-            grained = norm_expr([clip, grained], limit_expr, planes, low=low, high=high, func=self.__class__.grain)
-
-        if self.postprocess:
-            for postprocess in cast(list[GrainPostProcessT], to_arr(self.postprocess)):
-                if callable(postprocess):
-                    try:
-                        postprocess = postprocess(grained, clip)
-                    except TypeError:
-                        postprocess = postprocess(grained)
-
-                if isinstance(postprocess, vs.VideoNode):
-                    grained = postprocess
-                else:
-                    if isinstance(postprocess, GrainPP):
-                        postprocess, ppkwargs = postprocess.value, postprocess.kwargs
-                    else:
-                        ppkwargs = KwargsT()
-
-                    # fuck importing re
-                    uses_y = ' y ' in postprocess or postprocess.startswith('y ') or postprocess.endswith(' y')  #type: ignore
-                    grained = norm_expr(
-                        [grained, clip] if uses_y else grained, postprocess, **ppkwargs, func=self.__class__.grain
-                    )
-
-        neutral = get_neutral_value(clip)
-
-        if self.neutral_out:
-            merge_clip = grained.std.MakeDiff(grained)[0].std.Loop(grained.num_frames)
-        else:
-            merge_clip, grained = clip, clip.std.MergeDiff(grained, planes)
-
-        if do_protect_chroma:
-            neutral_mask = Lanczos().resample(clip, clip.format.replace(subsampling_h=0, subsampling_w=0))
-
-            neutral_mask = norm_expr(
-                split(neutral_mask), f'y {neutral} = z {neutral} = and {get_peak_value(clip, range_in=ColorRange.FULL)} 0 ?',
-                func=self.__class__.grain
+            mod = max(clip.format.subsampling_w, clip.format.subsampling_h) << 1
+            clip = super().scale(
+                clip, mod_x((width + clip.width) / 2, mod), mod_x((height + clip.height) / 2, mod), **kwargs
             )
 
-            grained = grained.std.MaskedMerge(merge_clip, neutral_mask, [1, 2])
+        return super().scale(clip, width, height, (0, 0), **kwargs)
 
-        if self.luma_scaling is not None:
-            mask = adg_mask(clip, self.luma_scaling, func=self.grain)
 
-            grained = merge_clip.std.MaskedMerge(grained, mask)
+LanczosTwoPasses = ScalerTwoPasses[Lanczos]
+"""Lanczos resizer that applies scaling in two passes."""
+
+
+class GrainFactoryBicubic(BicubicAuto):
+    """Bicubic scaler originally implemented in GrainFactory with a sharp parameter."""
+
+    def __init__(self, sharp: float = 50, **kwargs: Any) -> None:
+        """
+        Initialize the scaler with optional arguments.
+
+        :param sharp:   Sharpness of the scaler. Defaults to 50 which corresponds to Catrom scaling.
+        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        """
+        super().__init__(sharp / -50 + 1, None, **kwargs)
+
+
+class AbstractGrainer:
+    """Abstract grainer base class."""
+
+    def __call__(self, clip: vs.VideoNode, /, **kwargs: Any) -> vs.VideoNode | GrainerPartial:
+        raise NotImplementedError
+
+
+class Grainer(AbstractGrainer, CustomEnum):
+    """Enum representing different grain/noise generation algorithms."""
+
+    GAUSS = 0
+    """
+    Gaussian noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    """
+
+    PERLIN = 1
+    """
+    Perlin noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    """
+
+    SIMPLEX = 2
+    """
+    Simplex noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    """
+
+    FBM_SIMPLEX = 3
+    """
+    Fractional Brownian Motion based on Simplex noise.
+    Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    """
+
+    POISSON = 4
+    """
+    Poisson-distributed noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    """
+
+    PLACEBO = auto()
+    """
+    Grain effect provided by the `libplacebo` rendering library.
+    """
+
+    @overload
+    def __call__(  # type: ignore[misc]
+        self: Literal[Grainer.GAUSS] | Literal[Grainer.POISSON],
+        clip: vs.VideoNode,
+        /,
+        strength: float | tuple[float, float] = ...,
+        static: bool = False,
+        scale: float | tuple[float, float] = 1.0,
+        scaler: ScalerLike = LanczosTwoPasses,
+        temporal: float | tuple[float, int] = (0.0, 0),
+        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        protect_edges: bool | EdgeLimits = True,
+        protect_neutral_chroma: bool | None = None,
+        luma_scaling: float | None = None,
+        **kwargs: Any,
+    ) -> vs.VideoNode: ...
+
+    @overload
+    def __call__(  # type: ignore[misc]
+        self: Literal[Grainer.GAUSS] | Literal[Grainer.POISSON],
+        /,
+        *,
+        strength: float | tuple[float, float] = ...,
+        static: bool = False,
+        scale: float | tuple[float, float] = 1.0,
+        scaler: ScalerLike = LanczosTwoPasses,
+        temporal: float | tuple[float, int] = (0.0, 0),
+        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        protect_edges: bool | EdgeLimits = True,
+        protect_neutral_chroma: bool | None = None,
+        luma_scaling: float | None = None,
+        **kwargs: Any,
+    ) -> GrainerPartial: ...
+
+    @overload
+    def __call__(  # type: ignore[misc]
+        self: Union[
+            Literal[Grainer.PERLIN],
+            Literal[Grainer.SIMPLEX],
+            Literal[Grainer.FBM_SIMPLEX],
+        ],
+        clip: vs.VideoNode,
+        /,
+        strength: float | tuple[float, float] = ...,
+        static: bool = False,
+        scale: float | tuple[float, float] = 1.0,
+        scaler: ScalerLike = LanczosTwoPasses,
+        temporal: float | tuple[float, int] = (0.0, 0),
+        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        protect_edges: bool | EdgeLimits = True,
+        protect_neutral_chroma: bool | None = None,
+        luma_scaling: float | None = None,
+        *,
+        size: int | tuple[float | None, float | None] | None = (2.0, 2.0),
+        **kwargs: Any,
+    ) -> vs.VideoNode: ...
+
+    @overload
+    def __call__(  # type: ignore[misc]
+        self: Union[
+            Literal[Grainer.PERLIN],
+            Literal[Grainer.SIMPLEX],
+            Literal[Grainer.FBM_SIMPLEX],
+        ],
+        /,
+        *,
+        strength: float | tuple[float, float] = ...,
+        static: bool = False,
+        scale: float | tuple[float, float] = 1.0,
+        scaler: ScalerLike = LanczosTwoPasses,
+        temporal: float | tuple[float, int] = (0.0, 0),
+        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        protect_edges: bool | EdgeLimits = True,
+        protect_neutral_chroma: bool | None = None,
+        luma_scaling: float | None = None,
+        size: int | tuple[float | None, float | None] | None = (2.0, 2.0),
+        **kwargs: Any,
+    ) -> GrainerPartial: ...
+
+    @overload
+    def __call__(  # type: ignore[misc]
+        self: Literal[Grainer.PLACEBO],
+        clip: vs.VideoNode,
+        /,
+        strength: float | Sequence[float] = ...,
+        *,
+        scale: float | tuple[float, float] = 1.0,
+        scaler: ScalerLike = LanczosTwoPasses,
+        temporal: float | tuple[float, int] = (0.0, 0),
+        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        protect_edges: bool | EdgeLimits = True,
+        protect_neutral_chroma: bool | None = None,
+        luma_scaling: float | None = None,
+        **kwargs: Any,
+    ) -> vs.VideoNode: ...
+
+    @overload
+    def __call__(  # type: ignore[misc]
+        self: Literal[Grainer.PLACEBO],
+        /,
+        *,
+        strength: float | Sequence[float] = ...,
+        scale: float | tuple[float, float] = 1.0,
+        scaler: ScalerLike = LanczosTwoPasses,
+        temporal: float | tuple[float, int] = (0.0, 0),
+        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        protect_edges: bool | EdgeLimits = True,
+        protect_neutral_chroma: bool | None = None,
+        luma_scaling: float | None = None,
+        **kwargs: Any,
+    ) -> GrainerPartial: ...
+
+    @overload
+    def __call__(
+        self,
+        clip: vs.VideoNode,
+        /,
+        strength: float | tuple[float, float] = ...,
+        static: bool = False,
+        scale: float | tuple[float, float] = 1.0,
+        scaler: ScalerLike = LanczosTwoPasses,
+        temporal: float | tuple[float, int] = (0.0, 0),
+        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        protect_edges: bool | EdgeLimits = True,
+        protect_neutral_chroma: bool | None = None,
+        luma_scaling: float | None = None,
+        **kwargs: Any,
+    ) -> vs.VideoNode: ...
+
+    @overload
+    def __call__(
+        self,
+        /,
+        *,
+        strength: float | tuple[float, float] = ...,
+        static: bool = False,
+        scale: float | tuple[float, float] = 1.0,
+        scaler: ScalerLike = LanczosTwoPasses,
+        temporal: float | tuple[float, int] = (0.0, 0),
+        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        protect_edges: bool | EdgeLimits = True,
+        protect_neutral_chroma: bool | None = None,
+        luma_scaling: float | None = None,
+        **kwargs: Any,
+    ) -> GrainerPartial: ...
+
+    def __call__(
+        self,
+        clip: vs.VideoNode | MissingT = MISSING,
+        /,
+        strength: float | Sequence[float] = 0,
+        static: bool = False,
+        scale: float | tuple[float, float] = 1.0,
+        scaler: ScalerLike = LanczosTwoPasses,
+        temporal: float | tuple[float, int] = (0.0, 0),
+        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        protect_edges: bool | EdgeLimits = True,
+        protect_neutral_chroma: bool | None = None,
+        luma_scaling: float | None = None,
+        **kwargs: Any,
+    ) -> vs.VideoNode | GrainerPartial:
+        """
+        Apply grain to a clip using the selected graining method.
+
+        If no clip is passed, a partially applied grainer with the provided arguments is returned instead.
+
+        Example usage:
+            ```py
+            # For PERLIN, SIMPLEX, and FBM_SIMPLEX, it is recommended to use `size` instead of `scale`,
+            # as `size` allows for direct internal customization of each grain type.
+            grained = Grainer.PERLIN(clip, (1.65, 0.65), temporal=(0.25, 2), luma_scaling=4, size=3.0, seed=333)
+            ```
+
+        :param clip:                    The input clip to apply grain to.
+                                        If omitted, returns a partially applied grainer.
+        :param strength:                Grain strength.
+                                        A single float applies uniform strength to all planes.
+                                        A sequence allows per-plane control.
+        :param static:                  If True, the grain pattern is static (unchanging across frames).
+        :param scale:                   Scaling divisor for the grain layer. Can be a float (uniform scaling)
+                                        or a tuple (width, height scaling).
+        :param scaler:                  Scaler used to resize the grain layer when `scale` is not 1.0.
+        :param temporal:                Temporal grain smoothing parameters.
+                                        Either a float (weight) or a tuple of (weight, radius).
+        :param post_process:            One or more functions applied after grain generation
+                                        (and temporal smoothing, if used).
+        :param protect_edges:           Protects edge regions of each plane from graining.
+                                        - True: Use legal range based on clip format.
+                                        - False: Disable edge protection.
+                                        - Tuple: Specify custom edge limits per plane (see `EdgeLimits`).
+        :param protect_neutral_chroma:  Whether to disable graining on neutral chroma.
+        :param luma_scaling:            Sensitivity of the luma-adaptive graining mask.
+                                        Higher values reduce grain in brighter areas; negative values invert behavior.
+        :param kwargs:                  Additional arguments to pass to the graining function
+                                        or additional advanced options:
+                                        - ``temporal_avg_func``: Temporal average function to use instead of the default standard mean.
+                                        - ``protect_edges_blend``: Blend range (float) to soften edge protection thresholds.
+                                        - ``protect_neutral_chroma_blend``: Blend range (float) for neutral chroma protection.
+                                        - ``neutral_out``: (Boolean) Output the neutral layer instead of the merged clip.
+
+        :return:                        Grained video clip, or a `GrainerPartial` if `clip` is not provided.
+        """
+        kwargs.update(
+            strength=strength,
+            scale=scale,
+            scaler=scaler,
+            temporal=temporal,
+            protect_edges=protect_edges,
+            post_process=post_process,
+            protect_neutral_chroma=protect_neutral_chroma,
+            luma_scaling=luma_scaling,
+        )
+
+        if clip is MISSING:
+            return GrainerPartial(self, **kwargs)
+
+        assert check_variable(clip, self.name)
+
+        if self == Grainer.PLACEBO:
+            assert static is False, "PlaceboGrain does not support static noise!"
+
+            grained = _apply_grainer(
+                clip,
+                lambda clip, strength, planes, **kwds: placebo_deband(
+                    clip, 8, 0.0, strength, planes, iterations=1, **kwds
+                ),
+                **kwargs,
+                func=self.name,
+            )
+        else:
+            if not isinstance(size := kwargs.pop("size", (None, None)), tuple):
+                size = (size, size)
+
+            kwargs.update(xsize=size[0], ysize=size[1])
+
+            grained = _apply_grainer(
+                clip,
+                lambda clip, strength, planes, **kwds: core.noise.Add(
+                    clip, strength[0], strength[1], type=self.value, constant=static, **kwds
+                ),
+                **kwargs,
+                func=self.name,
+            )
 
         return grained
 
 
-class AddNoiseBase(Grainer):
-    def _get_kw(self, kwargs: KwargsT) -> KwargsT:
-        kwargs = super()._get_kw(kwargs)
+def _apply_grainer(
+    clip: ConstantFormatVideoNode,
+    grainer_function: _GrainerFunc,
+    strength: float | Sequence[float],
+    scale: float | tuple[float, float],
+    scaler: ScalerLike,
+    temporal: float | tuple[float, int],
+    protect_edges: bool | EdgeLimits,
+    post_process: Callable[..., vs.VideoNode] | Iterable[Callable[..., vs.VideoNode]] | None,
+    protect_neutral_chroma: bool | None,
+    luma_scaling: float | None,
+    func: FuncExceptT,
+    **kwargs: Any,
+) -> vs.VideoNode:
+    # Normalize params
+    strength = normalize_seq(strength, clip.format.num_planes)
+    scale = scale if isinstance(scale, tuple) else (scale, scale)
+    scaler = Scaler.ensure_obj(scaler, func)
+    temporal_avg, temporal_rad = temporal if isinstance(temporal, tuple) else (temporal, 1)
+    temporal_avg_func = kwargs.pop("temporal_avg_func", BlurMatrix.MEAN(temporal_rad, mode=ConvMode.TEMPORAL))
+    protect_neutral_chroma = (
+        (True if clip.format.color_family is vs.YUV else False)
+        if protect_neutral_chroma is None
+        else protect_neutral_chroma
+    )
+    protect_edges = protect_edges if isinstance(protect_edges, tuple) else (protect_edges, protect_edges)
+    protect_edges_blend = kwargs.pop("protect_edges_blend", 0.0)
+    protect_neutral_chroma_blend = kwargs.pop("protect_neutral_chroma_blend", scale_delta(2, 8, clip))
+    neutral_out = kwargs.pop("neutral_out", False)
 
-        if hasattr(self, '_noise_type'):
-            kwargs.update(type=self._noise_type)
-        elif 'type' not in kwargs:
-            raise ValueError('Type must be specified! Alternatively, you can use a subclass like AddNoise.GAUSS.')
+    planes = [i for i, s in zip(range(clip.format.num_planes), strength) if s]
+    (scalex, scaley), mod = scale, max(clip.format.subsampling_w, clip.format.subsampling_h) << 1
 
-        return kwargs
+    if not planes:
+        return clip
 
-    def _is_poisson(self, **kwargs: Any) -> bool:
-        return kwargs.get('type') == 4
+    # Making a neutral blank clip
+    base_clip = clip.std.BlankClip(
+        mod_x(clip.width / scalex, mod),
+        mod_x(clip.height / scaley, mod),
+        length=clip.num_frames + temporal_rad * 2,
+        color=get_neutral_values(clip),
+        keep=True,
+    )
+    # Applying grain
+    grained = grainer_function(base_clip, strength, planes, **kwargs)
 
-    def _is_input_dependent(self, clip: vs.VideoNode, **kwargs: Any) -> bool:
-        return self._is_poisson(**kwargs)
+    # Scaling up if needed
+    if (base_clip.width, base_clip.height) != (clip.width, clip.height):
+        grained = scaler.scale(grained, clip.width, clip.height)
 
-    def _check_input(
-        self, clip: vs.VideoNode, strength: tuple[float, float], dynamic: bool = True, **kwargs: Any
+    # Temporal average if radius > 0
+    if temporal_rad > 0:
+        average = temporal_avg_func(grained, planes)
+        grained = core.std.Merge(grained, average, normalize_param_planes(grained, temporal_avg, planes, 0))[
+            temporal_rad:-temporal_rad
+        ]
+
+    # Protect edges eg. excluding grain outside of the legal limited ranges
+    if protect_edges != (False, False):
+        lo, hi = protect_edges
+
+        if lo is True:
+            lo = get_lowest_values(clip, ColorRange.from_video(clip))
+        elif lo is False:
+            lo = get_lowest_values(clip, ColorRange.FULL)
+
+        if hi is True:
+            hi = get_peak_values(clip, ColorRange.from_video(clip))
+        elif hi is False:
+            hi = get_peak_values(clip, ColorRange.FULL)
+
+        grained = _protect_pixel_range(clip, grained, to_arr(lo), to_arr(hi), protect_edges_blend)
+
+    # Postprocess
+    if post_process:
+        if callable(post_process):
+            grained = post_process(grained)
+        else:
+            for pp in post_process:
+                grained = pp(grained)
+
+    if protect_neutral_chroma or luma_scaling is not None:
+        base_clip = clip.std.BlankClip(length=clip.num_frames, color=get_neutral_values(clip), keep=True)
+
+        if protect_neutral_chroma:
+            grained = _protect_neutral_chroma(clip, grained, base_clip, protect_neutral_chroma_blend)
+
+        if luma_scaling is not None:
+            grained = core.std.MaskedMerge(base_clip, grained, adg_mask(clip, luma_scaling), planes)
+
+    return core.std.MergeDiff(clip, grained, planes) if not neutral_out else grained
+
+
+def _protect_pixel_range(
+    clip: ConstantFormatVideoNode,
+    grained: vs.VideoNode,
+    low: list[float],
+    high: list[float],
+    blend: float = 0.0,
+) -> vs.VideoNode:
+    if not blend:
+        expr = "y neutral - abs A! x A@ - {lo} < x A@ + {hi} > or neutral y ?"
+    else:
+        expr = (
+            "y neutral - N! N@ abs A! "
+            "x A@ - range_min - {lo}      - {blend} / "
+            "x A@ + range_min + {hi} swap - {blend} / "
+            "min 0 1 clamp "
+            "N@ * neutral + "
+        )
+
+    return norm_expr([clip, grained], expr, lo=low, hi=high, blend=blend)
+
+
+def _protect_neutral_chroma(
+    clip: ConstantFormatVideoNode, grained: vs.VideoNode, base_clip: vs.VideoNode, blend: float = 0.0
+) -> vs.VideoNode:
+
+    if clip.format.color_family is vs.YUV:
+        if not blend:
+            expr = "x neutral = y neutral = and range_max 0 ?"
+        else:
+            expr = "x neutral - abs {blend} / 1 min 1 swap - y neutral - abs {blend} / 1 min 1 swap - * range_max *"
+
+        mask = norm_expr([get_u(clip), get_v(clip)], expr, blend=blend)
+
+        return core.std.MaskedMerge(
+            grained, base_clip, core.std.ShufflePlanes([clip, mask, mask], [0, 0, 0], vs.YUV, clip), [1, 2]
+        )
+
+    mask = norm_expr(split(clip), "x y = x z = and range_max *")
+
+    return core.std.MaskedMerge(grained, base_clip, mask)
+
+
+class GrainerPartial(AbstractGrainer):
+    """A partially-applied grainer wrapper."""
+
+    def __init__(self, grainer: Grainer, **kwargs: Any) -> None:
+        """
+        Stores a grainer function, allowing it to be reused with different clips.
+
+        :param grainer:     [Grainer][vsdeband.noise.Grainer] enumeration.
+        :param kwargs:      Arguments for the specified grainer.
+        """
+        self.grainer = grainer
+        self.kwargs = kwargs
+
+    def __call__(self, clip: vs.VideoNode, /, **kwargs: Any) -> vs.VideoNode:
+        """
+        Apply the grainer to the given clip with optional argument overrides.
+
+        :param clip:        Clip to be processed.
+        :param kwargs:      Additional keyword arguments to override or extend the stored ones.
+        :return:            Processed clip.
+        """
+        return self.grainer(clip, **self.kwargs | kwargs)
+
+
+GrainerLike: TypeAlias = Grainer | GrainerPartial
+"""
+Grainer-like type, which can be a single grainer or a partial grainer.
+"""
+
+
+class AddNoiseBase:
+    _noise_type: ClassVar[int]
+
+    def __init__(
+        self,
+        strength: float | tuple[float, float] = 0.25,
+        size: float | tuple[float, float] = (1.0, 1.0),
+        sharp: float | ScalerLike = Lanczos,
+        dynamic: bool = True,
+        temporal_average: int | tuple[float, int] = (0.0, 1),
+        postprocess: Any | None = None,
+        protect_chroma: bool = True,
+        luma_scaling: float | None = None,
+        fade_limits: bool | Any = True,
+        *,
+        matrix: Any | None = None,
+        kernel: Any = None,
+        neutral_out: bool = False,
+        **kwargs: Any,
     ) -> None:
-        if self._is_poisson(**kwargs):
-            if not dynamic:
-                raise NotImplementedError('dynamic-only')
+        self.strength = strength
+        self.size = size
+        self.sharp = sharp
+        self.dynamic = dynamic
+        self.temporal_average = temporal_average
+        self.postprocess = postprocess
+        self.protect_chroma = protect_chroma
+        self.luma_scaling = luma_scaling
+        self.fade_limits = fade_limits
+        self.neutral_out = neutral_out
+        self.kwargs = kwargs
 
-            assert clip.format
-
-            if clip.format.bits_per_sample > 16:
-                raise NotImplementedError('bad-depth-16')
-
-            if min(*strength) < 0.0 or max(*strength) >= 1.0:
-                raise ValueError('Poisson noise strength must be between 0.0 and 1.0 (not inclusive)!')
-
-    def _perform_graining(
-        self, clip: vs.VideoNode, strength: tuple[float, float], dynamic: bool = True, **kwargs: Any
+    @inject_self
+    def grain(
+        self,
+        clip: vs.VideoNode,
+        strength: float | tuple[float, float] | None = None,
+        dynamic: bool | None = None,
+        **kwargs: Any,
     ) -> vs.VideoNode:
-        if self._is_poisson(**kwargs):
-            assert clip.format
-
-            scale = ((1 << (clip.format.bits_per_sample - 8)) - 1) if clip.format.bits_per_sample > 8 else 255
-            strength = (((1.0 - stre) * scale) if stre else 0.0 for stre in strength)
-
-        kwargs.setdefault('ysize', kwargs.get('xsize', 2.0))
-
-        return core.noise.Add(clip, *strength, constant=not dynamic, **kwargs)
+        return Grainer(self._noise_type)(  # type: ignore[call-overload, misc]
+            clip,
+            fallback(strength, self.strength),
+            not fallback(dynamic, self.dynamic),
+            self.size,
+            (
+                GrainFactoryBicubic(self.sharp + 50)
+                if isinstance(self.sharp, (float, int))
+                else ScalerTwoPasses[Scaler.from_param(self.sharp)]  # type: ignore[misc]
+            ),
+            self.temporal_average,
+            self.postprocess,
+            self.fade_limits,
+            self.protect_chroma,
+            self.luma_scaling,
+            neutral_out=self.neutral_out,
+            **self.kwargs | kwargs,
+        )
 
 
 class AddNoise(AddNoiseBase):
-    """Built-in noise.Add plugin. https://github.com/wwww-wwww/vs-noise"""
-
+    @deprecated(
+        '"AddNoise.GAUSS" is deprecated and will be removed in a future version. Use Grainer.GAUSS instead.',
+        category=DeprecationWarning,
+    )
     class GAUSS(AddNoiseBase):
         _noise_type = 0
 
+    @deprecated(
+        '"AddNoise.PERLIN" is deprecated and will be removed in a future version. Use Grainer.PERLIN instead.',
+        category=DeprecationWarning,
+    )
     class PERLIN(AddNoiseBase):
         _noise_type = 1
 
+    @deprecated(
+        '"AddNoise.SIMPLEX" is deprecated and will be removed in a future version. Use Grainer.SIMPLEX instead.',
+        category=DeprecationWarning,
+    )
     class SIMPLEX(AddNoiseBase):
         _noise_type = 2
 
+    @deprecated(
+        '"AddNoise.FBM_SIMPLEX" is deprecated and will be removed in a future version. Use Grainer.FBM_SIMPLEX instead.',
+        category=DeprecationWarning,
+    )
     class FBM_SIMPLEX(AddNoiseBase):
         _noise_type = 3
 
+    @deprecated(
+        '"AddNoise.POISSON" is deprecated and will be removed in a future version. Use Grainer.POISSON instead.',
+        category=DeprecationWarning,
+    )
     class POISSON(AddNoiseBase):
         _noise_type = 4
-
-
-class PlaceboGrain(Grainer):
-    """placebo.Deband plugin. https://github.com/Lypheo/vs-placebo"""
-
-    def _check_input(
-        self, clip: vs.VideoNode, strength: tuple[float, float], dynamic: bool = True, **kwargs: Any
-    ) -> None:
-        if not dynamic:
-            raise NotImplementedError('dynamic-only')
-
-    def _perform_graining(
-        self, clip: vs.VideoNode, strength: tuple[float, float], dynamic: bool = True, **kwargs: Any
-    ) -> vs.VideoNode:
-        return Placebo.deband(clip, 8, 1, 1, list(strength), **kwargs)
-
-
-class LinearLightGrainer(Grainer):
-    """Base grainer depending on linear RGB clip, input dependent."""
-
-    def __init__(
-        self, strength: float | tuple[float, float],
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
-        dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
-        postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
-        luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True,
-        *, gamma: float = 1.0, matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False,
-        **kwargs: Any
-    ) -> None:
-        super().__init__(
-            strength, size, sharp, dynamic, temporal_average, postprocess, protect_chroma, luma_scaling, fade_limits,
-            matrix=matrix, kernel=kernel, neutral_out=neutral_out, **kwargs
-        )
-
-        if not 0.0 <= gamma <= 1.0:
-            raise CustomOverflowError('Gamma must be between 0.0 and 1.0 (inclusive)!', self.__class__, gamma)
-        self.gamma = gamma
-
-    def _is_input_dependent(self, clip: vs.VideoNode, **kwargs: Any) -> bool:
-        return True
-
-    @abstractmethod
-    def _get_inner_kwargs(self, strength: float, **kwargs: Any) -> KwargsT:
-        ...
-
-    @abstractmethod
-    def _perform_linear_graining(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        ...
-
-    def _check_input(
-        self, clip: vs.VideoNode, strength: float | tuple[float, float], dynamic: bool = True, **kwargs: Any
-    ) -> None:
-        assert check_variable(clip, self.__class__.grain)
-
-        if clip.format.bits_per_sample != 32:
-            raise NotImplementedError('bad-depth-32')
-
-        if not dynamic:
-            raise NotImplementedError('dynamic-only')
-
-    def _perform_graining(
-        self, clip: vs.VideoNode, strength: float | tuple[float, float], dynamic: bool | int = True, **kwargs: Any
-    ) -> vs.VideoNode:
-        if isinstance(strength, tuple):
-            if strength[0] != strength[1]:
-                assert clip.format
-                if clip.format.color_family is vs.YUV:
-                    return join(
-                        self._perform_graining(get_y(clip), strength[0]) if strength[0] else get_y(clip),
-                        self._perform_graining(clip, strength[1]) if strength[1] else clip,
-                    )
-
-                raise CustomValueError('GRAY/RGB clips can\'t have different graining strength for chroma!')
-            else:
-                strength = strength[0]
-
-        gamma = 1.0 - (self.gamma / 2)
-
-        with LinearLight(clip, True, (6.5, gamma), self.kernel) as ll:
-            kwargs = self._get_inner_kwargs(strength, **kwargs)
-            ll.linear = self._perform_linear_graining(limiter(ll.linear, func=self.__class__), **kwargs)
-
-        return ll.out
-
-
-class ChickenDreamBase(LinearLightGrainer):
-    """chkdr.grain plugin. https://github.com/EleonoreMizo/chickendream"""
-
-    def __init__(
-        self, strength: float | tuple[float, float], draft: bool,
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
-        dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
-        postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
-        luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True, *,
-        rad: float = 0.25, res: int = 1024, dev: float = 0.0, gamma: float = 1.0,
-        matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False, **kwargs: Any
-    ) -> None:
-        super().__init__(
-            strength, size, sharp, dynamic, temporal_average, postprocess, protect_chroma, luma_scaling, fade_limits,
-            matrix=matrix, kernel=kernel, neutral_out=neutral_out, rad=rad, res=res, dev=dev, gamma=gamma, **kwargs
-        )
-
-        self.draft = draft
-
-    def _get_kw(self, kwargs: KwargsT) -> KwargsT:
-        return super()._get_kw(kwargs) | dict(draft=self.draft)
-
-    def _get_inner_kwargs(self, strength: float, **kwargs: Any) -> KwargsT:
-        return kwargs | dict(sigma=strength, rad=kwargs.get('rad') / 10)
-
-    def _perform_linear_graining(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        return core.chkdr.grain(clip, **kwargs)
-
-
-class ChickenDreamBox(ChickenDreamBase):
-    def __init__(
-        self, strength: float | tuple[float, float] = 0.25,
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
-        dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
-        postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
-        luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True,
-        *, res: int = 1024, dev: float = 0.0, gamma: float = 1.0,
-        matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False, **kwargs: Any
-    ) -> None:
-        super().__init__(
-            strength, True, size, sharp, dynamic, temporal_average, postprocess, protect_chroma, luma_scaling,
-            fade_limits, matrix=matrix, kernel=kernel, neutral_out=neutral_out, res=res, dev=dev, gamma=gamma, **kwargs
-        )
-
-    def _get_inner_kwargs(self, strength: float, **kwargs: Any) -> KwargsT:
-        return super()._get_inner_kwargs(0.0, **(kwargs | dict(rad=strength)))
-
-
-class ChickenDreamGauss(ChickenDreamBase):
-    def __init__(
-        self, strength: float | tuple[float, float] = 0.35,
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
-        dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
-        postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
-        luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True,
-        *, rad: float = 0.25, res: int = 1024, dev: float = 0.0, gamma: float = 1.0,
-        matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False, **kwargs: Any
-    ) -> None:
-        super().__init__(
-            strength, False, size, sharp, dynamic, temporal_average, postprocess, protect_chroma, luma_scaling,
-            fade_limits, matrix=matrix, kernel=kernel, neutral_out=neutral_out, rad=rad, res=res, dev=dev,
-            gamma=gamma, **kwargs
-        )
-
-
-class FilmGrain(LinearLightGrainer):
-    """fgrain_cuda.Add plugin. https://github.com/AmusementClub/vs-fgrain-cuda"""
-
-    def __init__(
-        self, strength: float | tuple[float, float] = 0.8,
-        size: float | tuple[float, float] = (1.0, 1.0), sharp: float | ScalerLike = Lanczos,
-        dynamic: bool = True, temporal_average: int | tuple[float, int] = (0.0, 1),
-        postprocess: GrainPostProcessesT | None = None, protect_chroma: bool = True,
-        luma_scaling: float | None = None, fade_limits: bool | FadeLimits = True,
-        *, rad: float = 0.1, iterations: int = 800, dev: float = 0.0, gamma: float = 1.0,
-        matrix: MatrixT | None = None, kernel: KernelLike = Catrom, neutral_out: bool = False, **kwargs: Any
-    ) -> None:
-        super().__init__(
-            strength, size, sharp, dynamic, temporal_average, postprocess, protect_chroma, luma_scaling, fade_limits,
-            matrix=matrix, kernel=kernel, neutral_out=neutral_out, gamma=gamma,
-            grain_radius_mean=rad, num_iterations=iterations, grain_radius_std=dev, **kwargs
-        )
-
-    def _get_inner_kwargs(self, strength: float, **kwargs: Any) -> KwargsT:
-        return kwargs | dict(sigma=strength)
-
-    def _perform_linear_graining(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        return join(core.fgrain_cuda.Add(p, **kwargs) for p in split(clip))
-
-
-class ChickenDream(ChickenDreamBox):
-    class BOX(ChickenDreamBox):
-        ...
-
-    class GAUSS(ChickenDreamGauss):
-        ...
-
-
-def multi_graining(
-    clip: vs.VideoNode, *grainers: MultiGrainerT, prefilter: vs.VideoNode | PrefilterLike | None = None
-) -> vs.VideoNode:
-    """
-    Interface for applying multiple grainers to a clip.
-
-    :param clip:        Input clip.
-    :param grainers:    Grainers to apply. Can be a grainer, or a tuple of a grainer/None and threshold, overflow.
-                        The threshold is the upper threshold of where the grainer will be applied.
-                        The overflow is the range of the hard threshold.
-                        If a grainer is None, the original clip will be applied in that range.
-                        For example:
-                            MultiGrainer((None, 0.1), (AddNoise, 0.5))
-
-                        Will apply no grain for values <= 0.1 & > 0.5, AddNoise for values <= 0.5.
-    :param prefilter:   Clip or prefilter for making theh clip used for the threshold masks.
-    """
-
-    assert check_variable(clip, multi_graining)
-
-    InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV))
-
-    length = len(grainers)
-
-    if length < 2:
-        raise CustomIndexError('You need to give at least two grainers!')
-
-    norm_grainers = sorted([
-        (
-            grainer if len(grainer) == 3 else (
-                (*grainer, 1 / length) if len(grainer) == 2 else (None, 1.0, 1 / length)
-            )
-        ) if isinstance(grainer, tuple) else (grainer, 1.0, 1 / length)
-        for grainer in grainers
-    ], key=lambda x: x[1])
-
-    if all(grainer is None for grainer, *_ in norm_grainers):
-        raise CustomValueError('No valid grainers given!')
-    elif any(grainer.neutral_out for grainer, *_ in norm_grainers if isinstance(grainer, Grainer)):
-        raise CustomValueError('You can\'t set neutral_out in any grainer!')
-
-    if prefilter is None:
-        prefilter = get_y(clip)
-    elif callable(prefilter):
-        prefilter = prefilter(get_y(clip))
-
-    prefilter = depth(get_y(prefilter), clip)
-
-    peak = get_peak_value(clip)
-    masks = [prefilter.std.BlankClip(color=0)] + [
-        norm_expr(
-            prefilter,
-            'x {min_thr} >= x {max_thr} <= and x {min_thr} - {max_thr} {min_thr} '
-            '- / {peak} * {peak} - abs x {min_thr} < {peak} x {max_thr} > 0 x ? ? ?',
-            min_thr=f'{thr} {weight} {peak} * 2 / -', max_thr=f'{thr} {weight} {peak} * 2 / +',
-            peak=peak, func=multi_graining
-        ) for _, thr, weight in norm_grainers
-    ]
-
-    masks = [norm_expr(diffs, 'y x -', func=multi_graining) for diffs in zip(masks[:-1], masks[1:])]
-
-    if clip.format.num_planes == 3:
-        masks = [Bilinear().resample(join(mask, mask, mask), clip) for mask in masks]
-
-    graineds = [grainer.grain(clip) if grainer else clip for grainer, *_ in norm_grainers]
-
-    clips_merge = [
-        clip.std.MaskedMerge(grained, mask) for grained, mask in zip(graineds, masks)
-    ]
-
-    return reduce(lambda x, y: y.std.MergeDiff(clip.std.MakeDiff(x)), clips_merge, clip)
-
-
-MultiGrainerT = Grainer | type[Grainer] | tuple[Grainer | type[Grainer] | None, float] | tuple[
-    Grainer | type[Grainer] | None, float, float
-]
