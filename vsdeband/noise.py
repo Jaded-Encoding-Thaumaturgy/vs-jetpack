@@ -410,9 +410,9 @@ def _apply_grainer(
     temporal_avg, temporal_rad = temporal if isinstance(temporal, tuple) else (temporal, 1)
     temporal_avg_func = kwargs.pop("temporal_avg_func", BlurMatrix.MEAN(temporal_rad, mode=ConvMode.TEMPORAL))
     protect_neutral_chroma = (
-        True
-        if clip.format.color_family is vs.YUV
-        else False if protect_neutral_chroma is None else protect_neutral_chroma
+        (True if clip.format.color_family is vs.YUV else False)
+        if protect_neutral_chroma is None
+        else protect_neutral_chroma
     )
     protect_edges = protect_edges if isinstance(protect_edges, tuple) else (protect_edges, protect_edges)
     protect_edges_blend = kwargs.pop("protect_edges_blend", 0.0)
