@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, MutableMapping, TypeVar, cast
+from threading import Lock
+from typing import TYPE_CHECKING, Any, Callable, Generic, MutableMapping, TypeVar, cast
 
 from jetpytools import T
 
@@ -30,12 +31,203 @@ __all__ = [
 
     'NodesPropsCache',
 
-    'cache_clip'
+    'cache_clip',
+
+    'GlobalCache',
+
+    'get_cached_value',
+
+    'set_cached_value',
+
+    'clear_cache',
+
+    'cache_value'
 ]
 
 
 NodeT = TypeVar('NodeT', bound=vs.RawNode)
 FrameT = TypeVar('FrameT', bound=vs.RawFrame)
+CacheKeyT = TypeVar('CacheKeyT')
+CacheValueT = TypeVar('CacheValueT')
+
+
+class GlobalCache:
+    """Thread-safe global cache for storing arbitrary values."""
+
+    def __init__(self) -> None:
+        self._cache: dict[Any, Any] = {}
+        self._lock = Lock()
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        """
+        Get a value from cache, and return a default value if not found.
+
+        Args:
+            key: Cache key
+            default: Default value to return if key not found
+
+        Returns:
+            The cached value or the default value if not found
+        """
+
+        with self._lock:
+            return self._cache.get(key, default)
+
+    def set(self, key: Any, value: Any) -> None:
+        """
+        Set a value in cache.
+
+        If the key already exists, the value will be updated.
+
+        Args:
+            key: Cache key
+            value: Value to cache
+        """
+
+        with self._lock:
+            self._cache[key] = value
+
+    def delete(self, key: Any) -> bool:
+        """
+        Delete a key from cache, and return True if key existed.
+
+        Args:
+            key: Cache key
+
+        Returns:
+            True if key existed, False otherwise
+        """
+
+        with self._lock:
+            if key in self._cache:
+                del self._cache[key]
+
+                return True
+
+            return False
+
+    def clear(self) -> None:
+        """Clear all cache entries."""
+
+        with self._lock:
+            self._cache.clear()
+
+    def get_or_set(self, key: Any, callback: Callable[[], Any], force: bool = False) -> Any:
+        """
+        Get a value from cache, or compute it using callback if not found.
+
+        Args:
+            key: Cache key
+            callback: Function to call if value needs to be computed
+            force: If True, always recompute the value
+
+        Returns:
+            The cached or computed value
+        """
+
+        if not force:
+            if (cached_value := self.get(key)) is not None:
+                return cached_value
+
+        new_value = callback()
+        self.set(key, new_value)
+
+        return new_value
+
+    def __len__(self) -> int:
+        """
+        Return number of cache entries.
+
+        Returns:
+            The number of cache entries
+        """
+
+        with self._lock:
+            return len(self._cache)
+
+    def __contains__(self, key: Any) -> bool:
+        """
+        Check if key exists.
+
+        Args:
+            key: Cache key
+
+        Returns:
+            True if key exists, False otherwise
+        """
+
+        with self._lock:
+            return key in self._cache
+
+
+_global_cache = GlobalCache()
+
+
+def get_cached_value(key: Any, default: Any = None) -> Any:
+    """
+    Get a value from the global cache.
+
+    This function should be used if a value if expected to be cached already.
+    If you're uncertain, use `func:cache_value` instead.
+
+    Args:
+        key: Cache key
+        default: Default value to return if key not found
+
+    Returns:
+        The cached value or the default value if not found
+    """
+
+    return _global_cache.get(key, default)
+
+
+def set_cached_value(key: Any, value: Any) -> None:
+    """
+    Set a value in the global cache.
+
+    Args:
+        key: Cache key
+        value: Value to cache
+    """
+
+    _global_cache.set(key, value)
+
+
+def clear_cache() -> None:
+    """Clear the global cache."""
+
+    _global_cache.clear()
+
+
+def cache_value(key: Any, callback: Callable[[], Any], force: bool = False) -> Any:
+    """
+    Get a value from cache or compute it using callback.
+
+    This is the main function for caching expensive operations like plugin version checks,
+    optimization parameter calculations, etc.
+
+    Example:
+
+        .. code-block:: python
+            # Cache vs-jetpack version check
+            >>> from importlib.metadata import version as fetch_version
+            >>> from packaging.version import Version
+            >>> version = cache_value('vsjetpack_version', lambda: Version(fetch_version('vsjetpack')))
+            >>> version
+            ... <Version('0.4.0')>
+            >>> cache_value('vsjetpack_version')
+            ... <Version('0.4.0')>
+
+    Args:
+        key: Unique identifier for the cached value
+        callback: Function that returns the value to cache
+        force: If True, always recompute the value
+
+    Returns:
+        The cached or computed value
+    """
+
+    return _global_cache.get_or_set(key, callback, force)
 
 
 class ClipsCache(vs_object, dict[vs.VideoNode, vs.VideoNode]):
