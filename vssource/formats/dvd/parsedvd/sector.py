@@ -4,16 +4,15 @@ import os
 from io import BufferedReader, BytesIO
 from pprint import pformat
 from struct import unpack
+from typing import ClassVar
 
 from vstools import SPath, SPathLike
 
-__all__ = [
-    'SectorReadHelper'
-]
+__all__ = ["SectorReadHelper"]
 
 
 class SectorReadHelper:
-    _byte_size_lut = {1: 'B', 2: 'H', 4: 'I', 8: 'Q'}
+    _byte_size_lut: ClassVar[dict[int, str]] = {1: "B", 2: "H", 4: "I", 8: "Q"}
     file: SPath | None = None
 
     def __init__(self, ifo: bytes | SPathLike | BufferedReader) -> None:
@@ -22,7 +21,7 @@ class SectorReadHelper:
 
         if not isinstance(ifo, BufferedReader):
             self.file = SPath(ifo)
-            ifo = self.file.open('rb')
+            ifo = self.file.open("rb")
 
         self.ifo = ifo
 
@@ -33,7 +32,7 @@ class SectorReadHelper:
     def _goto_sector_ptr(self, pos: int) -> None:
         self.ifo.seek(pos, os.SEEK_SET)
 
-        ptr, = self._unpack_byte(4)
+        (ptr,) = self._unpack_byte(4)
 
         self.ifo.seek(ptr * 2048, os.SEEK_SET)
 
@@ -46,7 +45,7 @@ class SectorReadHelper:
 
         bytecnt = sum(n_list)
 
-        stra = ">" + ''.join(self._byte_size_lut.get(a, 'B') for a in n_list)
+        stra = ">" + "".join(self._byte_size_lut.get(a, "B") for a in n_list)
 
         buf = self.ifo.read(bytecnt)
 

@@ -12,14 +12,12 @@ from jetpytools import CustomIndexError, CustomRuntimeError, FuncExceptT, check_
 from .mime import FileType
 
 __all__ = [
-    'FFProbe', 'FFProbeNotFoundError',
-
-    'FFProbeStream',
-
-    'FFProbeVideoStream',
-    'FFProbeAudioStream',
-
-    'FFProbeStreamSideData',
+    "FFProbe",
+    "FFProbeAudioStream",
+    "FFProbeNotFoundError",
+    "FFProbeStream",
+    "FFProbeStreamSideData",
+    "FFProbeVideoStream",
 ]
 
 
@@ -127,67 +125,80 @@ class FFProbeAudioStream(FFProbeStream):
 class FFProbe:
     json_decoder: JSONDecoder
 
-    def __init__(self, *, func: FuncExceptT | None = None, bin_path: str | Path = 'ffprobe') -> None:
+    def __init__(self, *, func: FuncExceptT | None = None, bin_path: str | Path = "ffprobe") -> None:
         self.bin_path = Path(bin_path)
 
         if not which(str(self.bin_path)):
-            raise FFProbeNotFoundError('FFprobe was not found!', func)
+            raise FFProbeNotFoundError("FFprobe was not found!", func)
 
         self.json_decoder = JSONDecoder(
-            object_pairs_hook=None,
-            object_hook=None,
-            parse_constant=None,
-            parse_float=None,
-            parse_int=None,
-            strict=True
+            object_pairs_hook=None, object_hook=None, parse_constant=None, parse_float=None, parse_int=None, strict=True
         )
 
     @overload
     def _get_stream(
-        self, filename: str | Path, file_type: FileType | None = FileType.VIDEO,
-        *, index: int = 0, func: FuncExceptT | None = None
-    ) -> FFProbeStream | None:
-        ...
+        self,
+        filename: str | Path,
+        file_type: FileType | None = FileType.VIDEO,
+        *,
+        index: int = 0,
+        func: FuncExceptT | None = None,
+    ) -> FFProbeStream | None: ...
 
     @overload
     def _get_stream(
-        self, filename: str | Path, file_type: FileType | None = FileType.VIDEO,
-        *, index: None = None, func: FuncExceptT | None = None
-    ) -> list[FFProbeStream] | None:
-        ...
+        self,
+        filename: str | Path,
+        file_type: FileType | None = FileType.VIDEO,
+        *,
+        index: None = None,
+        func: FuncExceptT | None = None,
+    ) -> list[FFProbeStream] | None: ...
 
     def _get_stream(
-        self, filename: str | Path, file_type: FileType | None = FileType.VIDEO,
-        *, index: int | None = 0, func: FuncExceptT | None = None
+        self,
+        filename: str | Path,
+        file_type: FileType | None = FileType.VIDEO,
+        *,
+        index: int | None = 0,
+        func: FuncExceptT | None = None,
     ) -> FFProbeStream | list[FFProbeStream] | None:
-        check_perms(filename, 'r', func=func)
+        check_perms(filename, "r", func=func)
 
         if index is not None and index < 0:
-            raise CustomIndexError('Stream index must be positive!', func)
+            raise CustomIndexError("Stream index must be positive!", func)
 
         if file_type is None:
             select_streams = tuple[str]()
         else:
-            idx_str = '' if index is None else f':{index}'
-            select_streams = ('-select_streams', f'{file_type[0]}{idx_str}')
+            idx_str = "" if index is None else f":{index}"
+            select_streams = ("-select_streams", f"{file_type[0]}{idx_str}")
 
-        ffprobe_output = run([
-            str(self.bin_path), str(filename),
-            *select_streams,
-            '-show_streams',
-            '-print_format', 'json',
-            '-loglevel', 'panic'
-        ], stdout=PIPE, check=True, encoding='utf-8')
+        ffprobe_output = run(
+            [
+                str(self.bin_path),
+                str(filename),
+                *select_streams,
+                "-show_streams",
+                "-print_format",
+                "json",
+                "-loglevel",
+                "panic",
+            ],
+            stdout=PIPE,
+            check=True,
+            encoding="utf-8",
+        )
 
         if ffprobe_output.stderr:
             raise CustomRuntimeError(ffprobe_output.stderr, func)
 
         ffprobe_data = self.json_decoder.decode(ffprobe_output.stdout)
 
-        if 'streams' not in ffprobe_data or not ffprobe_data['streams']:
+        if "streams" not in ffprobe_data or not ffprobe_data["streams"]:
             return None
 
-        ffprobe_streams: list[dict[str, Any]] = ffprobe_data['streams']
+        ffprobe_streams: list[dict[str, Any]] = ffprobe_data["streams"]
 
         ffprobe_obj_type = FFProbeStream
 
@@ -203,14 +214,12 @@ class FFProbe:
 
     @inject_self
     def get_stream(
-        self, filename: str | Path, file_type: FileType | None,
-        *, index: int = 0, func: FuncExceptT | None = None
+        self, filename: str | Path, file_type: FileType | None, *, index: int = 0, func: FuncExceptT | None = None
     ) -> FFProbeStream | None:
         return self._get_stream(filename, file_type, index=index, func=func or self.get_stream)
 
     @inject_self
     def get_streams(
-        self, filename: str | Path, file_type: FileType | None,
-        *, func: FuncExceptT | None = None
+        self, filename: str | Path, file_type: FileType | None, *, func: FuncExceptT | None = None
     ) -> list[FFProbeStream] | None:
         return self._get_stream(filename, file_type, index=None, func=self.get_streams if func is None else func)

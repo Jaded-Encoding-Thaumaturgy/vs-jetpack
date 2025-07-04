@@ -7,12 +7,7 @@ from vstools import CustomEnum, vs
 from .abstract import GeneralMask
 from .edge._abstract import EdgeDetectT, RidgeDetectT
 
-__all__ = [
-    'XxpandMode',
-    'Coordinates',
-
-    'GenericMaskT'
-]
+__all__ = ["Coordinates", "GenericMaskT", "XxpandMode"]
 
 
 class XxpandMode(CustomEnum):
@@ -48,6 +43,5 @@ class Coordinates(tuple[int, ...], CustomEnum):
 
 
 GenericMaskT = Union[
-    vs.VideoNode, Callable[[vs.VideoNode, vs.VideoNode], vs.VideoNode],
-    EdgeDetectT, RidgeDetectT, GeneralMask, str
+    vs.VideoNode, Callable[[vs.VideoNode, vs.VideoNode], vs.VideoNode], EdgeDetectT, RidgeDetectT, GeneralMask, str
 ]

@@ -9,27 +9,27 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, TypeGuard
 
 from jetpytools import (
-    CustomRuntimeError, CustomStrEnum, CustomValueError, FilePathType, FuncExceptT, complex_hash, inject_self
+    CustomRuntimeError,
+    CustomStrEnum,
+    CustomValueError,
+    FilePathType,
+    FuncExceptT,
+    complex_hash,
+    inject_self,
 )
 
 from .mime_base import FileTypeBase, FileTypeIndex, FileTypeIndexWithType
 
-__all__ = [
-    'IndexingType',
-    'FileSignature',
-    'FileSignatures',
-    'FileType',
-    'ParsedFile'
-]
+__all__ = ["FileSignature", "FileSignatures", "FileType", "IndexingType", "ParsedFile"]
 
 
 class IndexingType(CustomStrEnum):
     """Enum of common indexing file extensions."""
 
-    DGI = '.dgi'
+    DGI = ".dgi"
     """DGIndexNV index file, mostly used for interlaced/telecined content."""
 
-    LWI = '.lwi'
+    LWI = ".lwi"
     """LSMAS index file."""
 
 
@@ -89,7 +89,7 @@ class FileSignature(NamedTuple):
             if signature_len < ignore or signature_len <= max_signature_length:
                 continue
 
-            if signature == file_bytes[self.offset:signature_len + self.offset]:
+            if signature == file_bytes[self.offset : signature_len + self.offset]:
                 max_signature_length = signature_len
 
         return max_signature_length
@@ -99,9 +99,7 @@ class FileSignatures(list[FileSignature]):
     """Structure wrapping a json file holding all file signatures."""
 
     _file_headers_data: list[FileSignature] | None = None
-    file_headers_path = Path(
-        path.join(path.dirname(path.abspath(__file__)), '__file_headers.json')
-    )
+    file_headers_path = Path(path.join(path.dirname(path.abspath(__file__)), "__file_headers.json"))
     """Custom path for the json containing file headers."""
 
     def __init__(self, *, custom_header_data: str | Path | list[FileSignature] | None = None, force: bool = False):
@@ -114,7 +112,7 @@ class FileSignatures(list[FileSignature]):
         )
 
     def load_headers_data(
-        cls, *, custom_header_data: str | Path | list[FileSignature] | None = None, force: bool = False
+        self, *, custom_header_data: str | Path | list[FileSignature] | None = None, force: bool = False
     ) -> list[FileSignature]:
         """
         Load file signatures from json file. This is cached unless ``custom_header_data`` is set.
@@ -125,10 +123,10 @@ class FileSignatures(list[FileSignature]):
         :return:                    List of parsed FileSignature from json file.
         """
 
-        if cls._file_headers_data is None or force or custom_header_data:
+        if self._file_headers_data is None or force or custom_header_data:
             header_data: list[dict[str, Any]] = []
 
-            filenames = {cls.file_headers_path}
+            filenames = {self.file_headers_path}
 
             if custom_header_data and not isinstance(custom_header_data, list):
                 filenames.add(Path(custom_header_data))
@@ -137,21 +135,25 @@ class FileSignatures(list[FileSignature]):
                 header_data.extend(json.loads(filename.read_text()))
 
             _file_headers_data = list(
-                dict({
+                {
                     FileSignature(
-                        info['file_type'], info['ext'], info['mime'], info['offset'],
+                        info["file_type"],
+                        info["ext"],
+                        info["mime"],
+                        info["offset"],
                         # This is so when checking a file head we first compare the most specific and long signatures
-                        sorted([bytes.fromhex(signature) for signature in info['signatures']], reverse=True)
-                    ): 0 for info in header_data
-                }).keys()
+                        sorted([bytes.fromhex(signature) for signature in info["signatures"]], reverse=True),
+                    ): 0
+                    for info in header_data
+                }.keys()
             )
 
-            cls._file_headers_data = _file_headers_data
+            self._file_headers_data = _file_headers_data
 
             if isinstance(custom_header_data, list):
                 return custom_header_data + _file_headers_data
 
-        return cls._file_headers_data
+        return self._file_headers_data
 
     @inject_self
     def parse(self, filename: Path) -> FileSignature | None:
@@ -163,7 +165,7 @@ class FileSignatures(list[FileSignature]):
         :return:                The input file's mime signature.
         """
 
-        with open(filename, 'rb') as file:
+        with open(filename, "rb") as file:
             file_bytes = file.read(self.max_signature_len)
 
         max_signature_len = 0
@@ -184,9 +186,7 @@ class FileSignatures(list[FileSignature]):
         if not found_signatures:
             return None
 
-        signature_match_ext = [
-            mime for mime in found_signatures if f'.{mime.ext}' == filename.suffix
-        ]
+        signature_match_ext = [mime for mime in found_signatures if f".{mime.ext}" == filename.suffix]
 
         if signature_match_ext:
             return signature_match_ext[0]
@@ -197,36 +197,36 @@ class FileSignatures(list[FileSignature]):
 class FileType(FileTypeBase):
     """Enum for file types and mime types."""
 
-    AUTO = 'auto'
+    AUTO = "auto"
     """Special file type for :py:attr:`FileType.parse`."""
 
-    VIDEO = 'video'
+    VIDEO = "video"
     """File type for video files."""
 
-    AUDIO = 'audio'
+    AUDIO = "audio"
     """File type for audio files."""
 
-    CHAPTERS = 'chapters'
+    CHAPTERS = "chapters"
     """File type for chapters files."""
 
     if not TYPE_CHECKING:
-        INDEX = 'index'
-        INDEX_AUDIO = f'{INDEX}_{AUDIO}'
-        INDEX_VIDEO = f'{INDEX}_{VIDEO}'
+        INDEX = "index"
+        INDEX_AUDIO = f"{INDEX}_{AUDIO}"
+        INDEX_VIDEO = f"{INDEX}_{VIDEO}"
 
-    IMAGE = 'image'
+    IMAGE = "image"
     """File type for image files."""
 
-    ARCHIVE = 'archive'
+    ARCHIVE = "archive"
     """File type for archive files."""
 
-    FONT = 'font'
+    FONT = "font"
     """File type for font files."""
 
-    DOCUMENT = 'document'
+    DOCUMENT = "document"
     """File type for documents."""
 
-    OTHER = 'other'
+    OTHER = "other"
     """File type for generic files, like applications."""
 
     @classmethod
@@ -234,17 +234,16 @@ class FileType(FileTypeBase):
         if value is None:
             return FileType.AUTO
 
-        if isinstance(value, str):
-            if '/' in value:
-                fbase, ftype, *_ = value.split('/')
+        if isinstance(value, str) and "/" in value:
+            fbase, ftype, *_ = value.split("/")
 
-                if fbase == 'index':
-                    return FileType.INDEX(ftype)  # type: ignore[misc]
+            if fbase == "index":
+                return FileType.INDEX(ftype)  # type: ignore[misc]
 
-                if value.endswith('-image'):
-                    return FileType.IMAGE
+            if value.endswith("-image"):
+                return FileType.IMAGE
 
-                return FileType(ftype)
+            return FileType(ftype)
 
         return FileType.OTHER
 
@@ -277,7 +276,7 @@ class FileType(FileTypeBase):
         if header is not None:
             file_type = FileType(header.file_type)
             mime = header.mime
-            ext = f'.{header.ext}'
+            ext = f".{header.ext}"
         else:
             stream: FFProbeStream | None = None
             ffprobe = FFProbe(func=func)
@@ -289,12 +288,10 @@ class FileType(FileTypeBase):
                     stream = ffprobe.get_stream(filename, FileType.AUDIO)
 
                 if not stream:
-                    raise CustomRuntimeError(
-                        f'No usable video/audio stream found in {filename}', func
-                    )
+                    raise CustomRuntimeError(f"No usable video/audio stream found in {filename}", func)
 
                 file_type = FileType(stream.codec_type)
-                mime = f'{file_type.value}/{stream.codec_name}'
+                mime = f"{file_type.value}/{stream.codec_name}"
             except Exception as e:
                 if force_ffprobe:
                     raise e
@@ -312,11 +309,11 @@ class FileType(FileTypeBase):
         encoding = encodings_map.get(filename.suffix, None)
 
         if not file_type or not mime:
-            return ParsedFile(filename, ext, encoding, FileType.OTHER, 'file/unknown')
+            return ParsedFile(filename, ext, encoding, FileType.OTHER, "file/unknown")
 
         if self is not FileType.AUTO and self is not file_type:
             raise CustomValueError(
-                'FileType mismatch! self is {good}, file is {bad}!', FileType.parse, good=self, bad=file_type
+                "FileType mismatch! self is {good}, file is {bad}!", FileType.parse, good=self, bad=file_type
             )
 
         return ParsedFile(filename, ext, encoding, file_type, mime)
@@ -341,13 +338,11 @@ class FileType(FileTypeBase):
             if file_type is FileType.VIDEO:
                 return FileType.INDEX_VIDEO  # type: ignore
 
-        raise CustomValueError(
-            'You can only have Video, Audio or Other index file types!', str(FileType.INDEX)
-        )
+        raise CustomValueError("You can only have Video, Audio or Other index file types!", str(FileType.INDEX))
 
 
 for _fty, _ftyp in [
     (FileType.AUDIO, FileType.INDEX_AUDIO),  # type: ignore
-    (FileType.VIDEO, FileType.INDEX_VIDEO)  # type: ignore
+    (FileType.VIDEO, FileType.INDEX_VIDEO),  # type: ignore
 ]:
-    setattr(_ftyp, 'file_type', _fty)
+    setattr(_ftyp, "file_type", _fty)

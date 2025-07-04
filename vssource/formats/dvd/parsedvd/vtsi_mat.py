@@ -4,14 +4,7 @@ from dataclasses import dataclass
 
 from .sector import SectorReadHelper
 
-__all__ = [
-    'AUDIO_FORMAT_AC3',
-    'AUDIO_FORMAT_LPCM',
-
-    'VTSVideoAttr',
-    'AudioAttr',
-    'VTSIMat'
-]
+__all__ = ["AUDIO_FORMAT_AC3", "AUDIO_FORMAT_LPCM", "AudioAttr", "VTSIMat", "VTSVideoAttr"]
 
 
 AUDIO_FORMAT_AC3 = 0
@@ -37,7 +30,10 @@ class VTSIMat:
     vts_audio_attr: list[AudioAttr]
 
     def __init__(self, reader: SectorReadHelper):
-        vb0, vb1, = reader._seek_unpack_byte(0x0200, 1, 1)
+        (
+            vb0,
+            vb1,
+        ) = reader._seek_unpack_byte(0x0200, 1, 1)
 
         # beware http://www.mpucoder.com/DVD/ifo.html#vidatt
         # does not match libdvdread picture_size is at different position
@@ -48,7 +44,7 @@ class VTSIMat:
         self.vts_video_attr = VTSVideoAttr(mpeg_version, video_format, picture_size)
         self.vts_audio_attr = list[AudioAttr]()
 
-        num_audio, = reader._seek_unpack_byte(0x0202, 2)
+        (num_audio,) = reader._seek_unpack_byte(0x0202, 2)
 
         for _ in range(num_audio):
             buf = reader.ifo.read(8)
@@ -56,9 +52,6 @@ class VTSIMat:
             lang_type = (buf[0] & 0b1100) >> 2
             audio_format = (buf[0] & 0b11100000) >> 5
 
-            if lang_type:
-                lang = chr(buf[2]) + chr(buf[3])
-            else:
-                lang = 'xx'
+            lang = chr(buf[2]) + chr(buf[3]) if lang_type else "xx"
 
             self.vts_audio_attr.append(AudioAttr(audio_format, lang))

@@ -5,33 +5,56 @@ This module defines the abstract classes for scaling, descaling and resampling o
 from __future__ import annotations
 
 import sys
-
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, Union, overload
 
 from jetpytools import CustomIndexError, CustomNotImplementedError, CustomValueError, FuncExceptT, fallback
 
 from vstools import (
-    ChromaLocation, ConstantFormatVideoNode, Dar, FieldBased, FieldBasedT, KwargsT, Resolution, Sar, VideoNodeT,
-    check_correct_subsampling, check_variable_format, depth, expect_bits, get_video_format, normalize_seq, split, vs
+    ChromaLocation,
+    ConstantFormatVideoNode,
+    Dar,
+    FieldBased,
+    FieldBasedT,
+    KwargsT,
+    Resolution,
+    Sar,
+    VideoNodeT,
+    check_correct_subsampling,
+    check_variable_format,
+    depth,
+    expect_bits,
+    get_video_format,
+    normalize_seq,
+    split,
+    vs,
 )
 
 from ..types import (
-    BorderHandling, BotFieldLeftShift, BotFieldTopShift, Center, LeftShift, SampleGridModel, ShiftT, Slope,
-    TopFieldLeftShift, TopFieldTopShift, TopShift
+    BorderHandling,
+    BotFieldLeftShift,
+    BotFieldTopShift,
+    Center,
+    LeftShift,
+    SampleGridModel,
+    ShiftT,
+    Slope,
+    TopFieldLeftShift,
+    TopFieldTopShift,
+    TopShift,
 )
 from .base import Descaler, Kernel, Resampler, Scaler
 
 __all__ = [
-    "LinearScaler",
-    "LinearDescaler",
-    "KeepArScaler",
-    "ComplexScaler",
-    "ComplexScalerLike",
     "ComplexDescaler",
     "ComplexDescalerLike",
     "ComplexKernel",
     "ComplexKernelLike",
+    "ComplexScaler",
+    "ComplexScalerLike",
+    "KeepArScaler",
+    "LinearDescaler",
+    "LinearScaler",
 ]
 
 
@@ -42,32 +65,28 @@ def _check_dynamic_keeparscaler_params(
     dar: Any,
     dar_in: Any,
     keep_ar: Any,
-    func: FuncExceptT
+    func: FuncExceptT,
 ) -> bool:
     exceptions = list[CustomNotImplementedError]()
 
     if border_handling != BorderHandling.MIRROR:
         exceptions.append(
             CustomNotImplementedError(
-                'When passing a dynamic size clip, "border_handling" must be MIRROR',
-                func,
-                border_handling
+                'When passing a dynamic size clip, "border_handling" must be MIRROR', func, border_handling
             )
         )
     if sample_grid_model != SampleGridModel.MATCH_EDGES:
         exceptions.append(
             CustomNotImplementedError(
-                'When passing a dynamic size clip, "sample_grid_model" must be MATCH_EDGES',
-                func,
-                sample_grid_model
+                'When passing a dynamic size clip, "sample_grid_model" must be MATCH_EDGES', func, sample_grid_model
             )
         )
-    if any([p is not None for p in [sar, dar, dar_in, keep_ar]]):
+    if any(p is not None for p in [sar, dar, dar_in, keep_ar]):
         exceptions.append(
             CustomNotImplementedError(
                 'When passing a dynamic size clip, "sar", "dar", "dar_in" and "keep_ar" must all be None',
                 func,
-                (sar, dar, dar_in, keep_ar)
+                (sar, dar, dar_in, keep_ar),
             )
         )
 
@@ -85,19 +104,19 @@ def _descale_shift_norm(
     shift: ShiftT, assume_progressive: Literal[True] = ..., func: FuncExceptT | None = None
 ) -> tuple[TopShift, LeftShift]: ...
 
+
 @overload
 def _descale_shift_norm(
     shift: ShiftT, assume_progressive: Literal[False] = ..., func: FuncExceptT | None = None
 ) -> tuple[tuple[TopFieldTopShift, BotFieldTopShift], tuple[TopFieldLeftShift, BotFieldLeftShift]]: ...
+
 
 def _descale_shift_norm(shift: ShiftT, assume_progressive: bool = True, func: FuncExceptT | None = None) -> Any:
     if assume_progressive:
         if any(isinstance(sh, tuple) for sh in shift):
             raise CustomValueError("You can't descale per-field when the input is progressive!", func, shift)
     else:
-        shift_y, shift_x = tuple[tuple[float, float], ...](
-            sh if isinstance(sh, tuple) else (sh, sh) for sh in shift
-        )
+        shift_y, shift_x = tuple[tuple[float, float], ...](sh if isinstance(sh, tuple) else (sh, sh) for sh in shift)
         shift = shift_y, shift_x
 
     return shift
@@ -152,6 +171,7 @@ class LinearScaler(Scaler):
     """
 
     if TYPE_CHECKING:
+
         def _linear_scale(
             self,
             clip: vs.VideoNode,
@@ -210,7 +230,7 @@ class LinearScaler(Scaler):
             sigmoid,
             partial(super().scale, width=width, height=height, shift=shift),
             self.scale,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -225,6 +245,7 @@ class LinearDescaler(Descaler):
     """
 
     if TYPE_CHECKING:
+
         def _linear_descale(
             self,
             clip: vs.VideoNode,
@@ -285,7 +306,8 @@ class LinearDescaler(Descaler):
         :param height:              Target descaled height (defaults to clip height if None).
         :param shift:               Subpixel shift (top, left) applied during descaling.
         :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+        :param sigmoid:             Whether to use sigmoid transfer curve.
+                                    Can be True, False, or a tuple of (slope, center).
                                     `True` applies the defaults values (6.5, 0.75).
                                     Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
                                     and sigmoid center has to be in range 0.0-1.0 (inclusive).
@@ -330,7 +352,8 @@ class LinearDescaler(Descaler):
         :param height:              Target scaled height (defaults to clip height if None).
         :param shift:               Subpixel shift (top, left) applied during rescaling.
         :param linear:              Whether to linearize the input before rescaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+        :param sigmoid:             Whether to use sigmoid transfer curve.
+                                    Can be True, False, or a tuple of (slope, center).
                                     `True` applies the defaults values (6.5, 0.75).
                                     Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
                                     and sigmoid center has to be in range 0.0-1.0 (inclusive).
@@ -358,30 +381,20 @@ class KeepArScaler(Scaler):
         dar_in: Dar | float | bool | None,
         keep_ar: bool | None,
     ) -> tuple[float, float, float]:
-        if keep_ar is not None:
-            if None not in (sar, dar, dar_in):
-                raise CustomValueError(
-                    'If "keep_ar" is not None, then at least one of "sar", "dar", or "dar_in" must be None.'
-                )
+        if keep_ar is not None and None not in (sar, dar, dar_in):
+            raise CustomValueError(
+                'If "keep_ar" is not None, then at least one of "sar", "dar", or "dar_in" must be None.'
+            )
 
         # Basically what it does:
         # - If `xar` is Xar or float -> Converted to Xar
         # - If `xar` is None         -> It fallbacks to bool(keep_ar). Becomes True or False
         # - If `xar` is True         -> Value after the `or`
         # - If `xar` is False        -> Fallback value: Sar(1, 1), Dar(0) or out_dar
-        src_sar = Sar.from_param(
-            sar if sar is not None else bool(keep_ar),
-            Sar(1, 1)
-        ) or Sar.from_clip(clip)
+        src_sar = Sar.from_param(sar if sar is not None else bool(keep_ar), Sar(1, 1)) or Sar.from_clip(clip)
 
-        out_dar = Dar.from_param(
-            dar if dar is not None else bool(keep_ar),
-            Dar(0)
-        ) or Dar.from_res(width, height)
-        src_dar = Dar.from_param(
-            dar_in if dar_in is not None else bool(keep_ar),
-            out_dar
-        ) or Dar.from_clip(clip, False)
+        out_dar = Dar.from_param(dar if dar is not None else bool(keep_ar), Dar(0)) or Dar.from_res(width, height)
+        src_dar = Dar.from_param(dar_in if dar_in is not None else bool(keep_ar), out_dar) or Dar.from_clip(clip, False)
 
         return float(src_sar), float(src_dar), float(out_dar)
 
@@ -408,10 +421,7 @@ class KeepArScaler(Scaler):
         out_sar: Sar | Literal[False] = False
 
         if src_sar not in {0.0, 1.0}:
-            if src_sar > 1.0:
-                out_dar = (width / src_sar) / height
-            else:
-                out_dar = width / (height * src_sar)
+            out_dar = width / src_sar / height if src_sar > 1.0 else width / (height * src_sar)
 
             out_sar = Sar(1, 1)
 
@@ -543,7 +553,8 @@ class ComplexScaler(KeepArScaler, LinearScaler):
                                     If a tuple is provided, it is used uniformly.
                                     If a list is given, the shift is applied per plane.
         :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+        :param sigmoid:             Whether to use sigmoid transfer curve.
+                                    Can be True, False, or a tuple of (slope, center).
                                     `True` applies the defaults values (6.5, 0.75).
                                     Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
                                     and sigmoid center has to be in range 0.0-1.0 (inclusive).
@@ -565,7 +576,7 @@ class ComplexScaler(KeepArScaler, LinearScaler):
             dar=dar,
             dar_in=dar_in,
             keep_ar=keep_ar,
-            blur=blur
+            blur=blur,
         )
 
         shift_top, shift_left = shift
@@ -600,15 +611,13 @@ class ComplexScaler(KeepArScaler, LinearScaler):
         chromaloc_in = ChromaLocation(
             fallback(kwargs.pop("chromaloc_in", None), self.kwargs.get("chromaloc_in"), chromaloc)
         )
-        chromaloc_out = ChromaLocation(
-            fallback(kwargs.pop("chromaloc", None), self.kwargs.get("chromaloc"), chromaloc)
-        )
+        chromaloc_out = ChromaLocation(fallback(kwargs.pop("chromaloc", None), self.kwargs.get("chromaloc"), chromaloc))
 
         off_left, off_top = chromaloc_in.get_offsets(format_in)
         off_left_out, off_top_out = chromaloc_out.get_offsets(format_out)
 
-        factor_w = 1 / 2 ** format_in.subsampling_w
-        factor_h = 1 / 2 ** format_in.subsampling_h
+        factor_w = 1 / 2**format_in.subsampling_w
+        factor_h = 1 / 2**format_in.subsampling_h
 
         # Offsets for format out
         offc_left = (abs(off_left) + off_left_out) * factor_w
@@ -628,8 +637,8 @@ class ComplexScaler(KeepArScaler, LinearScaler):
 
         for i, (plane, top, left) in enumerate(zip(split(clip), shift_top, shift_left)):
             if i:
-                w = round(width * 1 / 2 ** format_out.subsampling_h)
-                h = round(height * 1 / 2 ** format_out.subsampling_h)
+                w = round(width * 1 / 2**format_out.subsampling_h)
+                h = round(height * 1 / 2**format_out.subsampling_h)
             else:
                 w, h = width, height
 
@@ -640,7 +649,7 @@ class ComplexScaler(KeepArScaler, LinearScaler):
                     h,
                     (top, left),
                     format=format_out.replace(color_family=vs.GRAY, subsampling_w=0, subsampling_h=0),
-                    **kwargs
+                    **kwargs,
                 )
             )
 
@@ -694,7 +703,8 @@ class ComplexDescaler(LinearDescaler):
         :param height:              Target descaled height (defaults to clip height if None).
         :param shift:               Subpixel shift (top, left) or per-field shifts.
         :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+        :param sigmoid:             Whether to use sigmoid transfer curve.
+                                    Can be True, False, or a tuple of (slope, center).
                                     `True` applies the defaults values (6.5, 0.75).
                                     Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
                                     and sigmoid center has to be in range 0.0-1.0 (inclusive).
@@ -719,7 +729,7 @@ class ComplexDescaler(LinearDescaler):
             sigmoid=sigmoid,
             border_handling=BorderHandling.from_param(border_handling, self.descale),
             ignore_mask=ignore_mask,
-            blur=blur
+            blur=blur,
         )
 
         sample_grid_model = SampleGridModel(sample_grid_model)
@@ -742,11 +752,11 @@ class ComplexDescaler(LinearDescaler):
 
             descaled_tf = super().descale(
                 fields[0::2],
-                **de_kwargs_tf | dict(src_top=de_kwargs_tf.get("src_top", 0.0) + field_shift),
+                **de_kwargs_tf | {"src_top": de_kwargs_tf.get("src_top", 0.0) + field_shift},
             )
             descaled_bf = super().descale(
                 fields[1::2],
-                **de_kwargs_bf | dict(src_top=de_kwargs_bf.get("src_top", 0.0) - field_shift),
+                **de_kwargs_bf | {"src_top": de_kwargs_bf.get("src_top", 0.0) - field_shift},
             )
             interleaved = vs.core.std.Interleave([descaled_tf, descaled_bf])
 
@@ -791,7 +801,8 @@ class ComplexDescaler(LinearDescaler):
         :param height:              Target scaled height (defaults to clip height if None).
         :param shift:               Subpixel shift (top, left) or per-field shifts.
         :param linear:              Whether to linearize the input before rescaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
+        :param sigmoid:             Whether to use sigmoid transfer curve.
+                                    Can be True, False, or a tuple of (slope, center).
                                     `True` applies the defaults values (6.5, 0.75).
                                     Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
                                     and sigmoid center has to be in range 0.0-1.0 (inclusive).

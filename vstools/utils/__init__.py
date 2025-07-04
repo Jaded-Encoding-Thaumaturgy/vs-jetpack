@@ -1,5 +1,3 @@
-# ruff: noqa: F401, F403
-
 from . import vs_proxy as vapoursynth
 from .cache import *
 from .clips import *

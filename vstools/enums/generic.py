@@ -3,20 +3,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeAlias, Union
 
 import vapoursynth as vs
-
 from jetpytools import FuncExceptT
 
 from ..exceptions import (
-    UndefinedChromaLocationError, UndefinedFieldBasedError, UnsupportedChromaLocationError, UnsupportedFieldBasedError
+    UndefinedChromaLocationError,
+    UndefinedFieldBasedError,
+    UnsupportedChromaLocationError,
+    UnsupportedFieldBasedError,
 )
 from ..types import HoldsVideoFormatT, VideoFormatT
 from .stubs import _base_from_video, _ChromaLocationMeta, _FieldBasedMeta
 
-__all__ = [
-    'ChromaLocation', 'ChromaLocationT',
-
-    'FieldBased', 'FieldBasedT'
-]
+__all__ = ["ChromaLocation", "ChromaLocationT", "FieldBased", "FieldBasedT"]
 
 
 class ChromaLocation(_ChromaLocationMeta):  # type: ignore[misc]
@@ -30,7 +28,7 @@ class ChromaLocation(_ChromaLocationMeta):  # type: ignore[misc]
             return cls.LEFT
 
         if value > cls.BOTTOM:
-            raise UnsupportedChromaLocationError(f'ChromaLocation({value}) is unsupported.', cls)
+            raise UnsupportedChromaLocationError(f"ChromaLocation({value}) is unsupported.", cls)
 
         return None
 
@@ -108,7 +106,7 @@ class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
             return cls.PROGRESSIVE
 
         if value > cls.TFF:
-            raise UnsupportedFieldBasedError(f'FieldBased({value}) is unsupported.', cls)
+            raise UnsupportedFieldBasedError(f"FieldBased({value}) is unsupported.", cls)
 
         return None
 
@@ -122,6 +120,7 @@ class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
     """The frame is interlaced and the field order is top field first."""
 
     if not TYPE_CHECKING:
+
         @classmethod
         def from_param(cls: Any, value_or_tff: Any, func_except: Any = None) -> FieldBased | None:
             if isinstance(value_or_tff, bool):
@@ -170,8 +169,7 @@ class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
 
         if self == self.PROGRESSIVE:
             raise UnsupportedFieldBasedError(
-                'Progressive video aren\'t field based!',
-                f'{self.__class__.__name__}.field'
+                "Progressive video aren't field based!", f"{self.__class__.__name__}.field"
             )
 
         return self.value - 1
@@ -192,8 +190,7 @@ class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
 
         if self == self.PROGRESSIVE:
             raise UnsupportedFieldBasedError(
-                'Progressive video aren\'t field based!',
-                f'{self.__class__.__name__}.inverted_field'
+                "Progressive video aren't field based!", f"{self.__class__.__name__}.inverted_field"
             )
 
         return FieldBased.BFF if self.is_tff else FieldBased.TFF

@@ -1,10 +1,11 @@
 """
 This module implements wrappers for FFT (Fast Fourier Transform) based plugins.
 """
+
 from __future__ import annotations
 
-from functools import cache
 import math
+from functools import cache
 from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Sequence, TypeAlias, Union, overload
 
 from jetpytools import KwargsNotNone, MismatchError, classproperty
@@ -12,24 +13,31 @@ from typing_extensions import Self, deprecated
 from vapoursynth import Plugin
 
 from vstools import (
-    ConstantFormatVideoNode, CustomEnum, CustomIntEnum, CustomOverflowError, CustomRuntimeError, CustomValueError,
-    FieldBased, FuncExceptT, PlanesT, SupportsFloatOrIndex, check_progressive, core, flatten, get_depth,
-    get_sample_type, vs
+    ConstantFormatVideoNode,
+    CustomEnum,
+    CustomIntEnum,
+    CustomOverflowError,
+    CustomRuntimeError,
+    CustomValueError,
+    FieldBased,
+    FuncExceptT,
+    PlanesT,
+    SupportsFloatOrIndex,
+    check_progressive,
+    core,
+    flatten,
+    get_depth,
+    get_sample_type,
+    vs,
 )
 
-__all__ = [
-    'DFTTest',
-
-    'SLocationT',
-
-    'fft3d'
-]
+__all__ = ["DFTTest", "SLocationT", "fft3d"]
 
 
 class _BackendBase(CustomEnum):
     kwargs: dict[str, Any]
 
-    def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+    def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
         self = self.resolve()
 
         if self == DFTTest.Backend.OLD:
@@ -101,7 +109,7 @@ class DFTTest:
             Defines how sigma values should be interpolated across frequency locations.
             """
 
-            LINEAR = 'linear'
+            LINEAR = "linear"
             """
             Linear Interpolation:
 
@@ -122,7 +130,7 @@ class DFTTest:
             resulting in a smoother transition between values than linear interpolation.
             """
 
-            SPLINE_LINEAR = 'slinear'
+            SPLINE_LINEAR = "slinear"
             """
             Spline-Linear Interpolation:
 
@@ -132,7 +140,7 @@ class DFTTest:
             making it useful for smoother transitions but retaining linear simplicity where needed.
             """
 
-            QUADRATIC = 'quadratic'
+            QUADRATIC = "quadratic"
             """
             Quadratic Interpolation:
 
@@ -142,7 +150,7 @@ class DFTTest:
             for certain types of data.
             """
 
-            CUBIC = 'cubic'
+            CUBIC = "cubic"
             """
             Cubic Interpolation:
 
@@ -152,7 +160,7 @@ class DFTTest:
             especially when higher smoothness is needed between data points.
             """
 
-            NEAREST = 'nearest'
+            NEAREST = "nearest"
             """
             Nearest Neighbor Interpolation:
 
@@ -162,7 +170,7 @@ class DFTTest:
             This can result in discontinuous transitions, especially if the data is not uniform.
             """
 
-            NEAREST_UP = 'nearest-up'
+            NEAREST_UP = "nearest-up"
             """
             Nearest Neighbor with Rounding Up:
 
@@ -172,7 +180,7 @@ class DFTTest:
             avoiding underestimation.
             """
 
-            ZERO = 'zero'
+            ZERO = "zero"
             """
             Zero Order Hold (ZOH):
 
@@ -194,7 +202,9 @@ class DFTTest:
                 """
 
             @overload
-            def __call__(self, location: SLocationT | None, /, *, res: int = 20, digits: int = 3) -> DFTTest.SLocation | None:
+            def __call__(
+                self, location: SLocationT | None, /, *, res: int = 20, digits: int = 3
+            ) -> DFTTest.SLocation | None:
                 """
                 Interpolates sigma values for a given location or returns `None` if no location is provided.
 
@@ -212,7 +222,8 @@ class DFTTest:
                 t_loc: SLocationT | None,
                 /,
                 *,
-                res: int = 20, digits: int = 3
+                res: int = 20,
+                digits: int = 3,
             ) -> DFTTest.SLocation.MultiDim:
                 """
                 Interpolates sigma values for horizontal, vertical, and temporal locations.
@@ -261,7 +272,7 @@ class DFTTest:
             self,
             locations: Sequence[Frequency | Sigma] | Sequence[tuple[Frequency, Sigma]] | Mapping[Frequency, Sigma],
             interpolate: InterMode | None = None,
-            strict: bool = True
+            strict: bool = True,
         ) -> None:
             """
             Initializes the SLocation object by processing frequency-sigma pairs and sorting them.
@@ -274,13 +285,15 @@ class DFTTest:
                 >>> sloc  # rounded to 3 digits
                 >>> {
                     0.0: 4, 0.053: 4.848, 0.105: 5.68, 0.158: 6.528, 0.211: 7.376, 0.25: 8, 0.263: 8.104, 0.316: 8.528,
-                    0.368: 8.944, 0.421: 9.368, 0.474: 9.792, 0.5: 10, 0.526: 12.288, 0.579: 16.952, 0.632: 21.616, 0.684: 26.192,
-                    0.737: 30.856, 0.75: 32, 0.789: 36.992, 0.842: 43.776, 0.895: 50.56, 0.947: 57.216, 1.0: 64
+                    0.368: 8.944, 0.421: 9.368, 0.474: 9.792, 0.5: 10, 0.526: 12.288, 0.579: 16.952, 0.632: 21.616,
+                    0.684: 26.192, 0.737: 30.856, 0.75: 32, 0.789: 36.992, 0.842: 43.776, 0.895: 50.56, 0.947: 57.216,
+                    1.0: 64
                 }
                 ```
 
             :param locations:           A sequence of tuples or a dictionary that specifies frequency and sigma pairs.
-            :param interpolate:         The interpolation method to be used for sigma values. If `None`, no interpolation is done.
+            :param interpolate:         The interpolation method to be used for sigma values.
+                                        If `None`, no interpolation is done.
             :param strict:              If `True`, raises an error if values are out of bounds.
                                         If `False`, it will clamp values to the bounds.
             :raises CustomValueError:   If `locations` has not an even number of items.
@@ -293,7 +306,7 @@ class DFTTest:
                 if len(locations) % 2:
                     raise CustomValueError(
                         "locations must resolve to an even number of items, pairing frequency and sigma respectively",
-                        self.__class__
+                        self.__class__,
                     )
 
                 frequencies, sigmas = list(locations[0::2]), list(locations[1::2])
@@ -345,7 +358,7 @@ class DFTTest:
             raise MismatchError(
                 self.__class__,
                 [self.frequencies, self.sigmas],
-                "Frequencies and sigmas must have the same number of items."
+                "Frequencies and sigmas must have the same number of items.",
             )
 
         def __reversed__(self) -> Self:
@@ -354,9 +367,7 @@ class DFTTest:
 
             :return: A new `SLocation` instance with reversed frequency-sigma pairs.
             """
-            return self.__class__(
-                dict(zip((1 - f for f in reversed(self.frequencies)), list(reversed(self.sigmas))))
-            )
+            return self.__class__(dict(zip((1 - f for f in reversed(self.frequencies)), list(reversed(self.sigmas)))))
 
         @classmethod
         def bounds_check(
@@ -376,8 +387,9 @@ class DFTTest:
             values = list(values)
 
             of_error = CustomOverflowError(
-                "Invalid value at index {i}, not in ({bounds})", cls,
-                bounds=list(math.inf if x is None else x for x in bounds)
+                "Invalid value at index {i}, not in ({bounds})",
+                cls,
+                bounds=[math.inf if x is None else x for x in bounds],
             )
 
             low_bound, up_bound = bounds
@@ -399,13 +411,11 @@ class DFTTest:
 
         @overload
         @classmethod
-        def from_param(cls, location: SLocationT | Literal[False]) -> Self:
-            ...
+        def from_param(cls, location: SLocationT | Literal[False]) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(cls, location: SLocationT | Literal[False] | None) -> Self | None:
-            ...
+        def from_param(cls, location: SLocationT | Literal[False] | None) -> Self | None: ...
 
         @classmethod
         def from_param(cls, location: SLocationT | Literal[False] | None) -> Self | None:
@@ -443,16 +453,17 @@ class DFTTest:
 
             frequencies = list({round(x / (res - 1), digits) for x in range(res)})
             sigmas = interp1d(  # FIXME: interp1d is deprecated
-                list(self.frequencies), list(self.sigmas), method.value, fill_value='extrapolate'
+                list(self.frequencies), list(self.sigmas), method.value, fill_value="extrapolate"
             )(frequencies)
 
             return self.__class__(dict(zip(frequencies, (float(s) for s in sigmas))) | dict(self), strict=False)
 
         @classproperty
         @classmethod
-        def NoProcess(cls) -> Self:
+        def NoProcess(cls) -> Self:  # noqa: N802
             """
-            Returns a pre-defined `SLocation` instance that performs no processing (i.e., sigma is zero for all locations).
+            Returns a pre-defined `SLocation` instance that performs no processing
+            (i.e., sigma is zero for all locations).
 
             :return: A `SLocation` instance with no processing.
             """
@@ -468,7 +479,7 @@ class DFTTest:
                 self,
                 horizontal: SLocationT | Literal[False] | None = None,
                 vertical: SLocationT | Literal[False] | None = None,
-                temporal: SLocationT | Literal[False] | None = None
+                temporal: SLocationT | Literal[False] | None = None,
             ) -> None:
                 """
                 Initializes a `MultiDim` object with specified frequency-sigma mappings for horizontal,
@@ -477,7 +488,9 @@ class DFTTest:
                 Example:
                     Denoise only on the vertical dimension:
                     ```py
-                    sloc = DFTTest.SLocation.MultiDim(vertical=[(0.0, 8.0), (0.25, 16.0), (0.5, 0.0), (0.75, 16.0), (1.0, 0.0)])
+                    sloc = DFTTest.SLocation.MultiDim(
+                        vertical=[(0.0, 8.0), (0.25, 16.0), (0.5, 0.0), (0.75, 16.0), (1.0, 0.0)]
+                    )
 
                     denoised = DFTTest(clip).denoise(sloc)
                     ```
@@ -488,7 +501,7 @@ class DFTTest:
                 :raise CustomValueError:    If no dimension is specified.
                 """
                 if not (horizontal or vertical or temporal):
-                    raise CustomValueError('You must specify at least one dimension!', self.__class__)
+                    raise CustomValueError("You must specify at least one dimension!", self.__class__)
 
                 self.horizontal = DFTTest.SLocation.from_param(horizontal)
                 self.vertical = DFTTest.SLocation.from_param(vertical)
@@ -685,12 +698,12 @@ class DFTTest:
         AMD GPU backend using HIPRTC (HIP Runtime Compilation).
         """
 
-        cuFFT = "dfttest2_cuda"
+        cuFFT = "dfttest2_cuda"  # noqa: N815
         """
         NVIDIA GPU backend using precompiled CUDA and cuFFT.
         """
 
-        hipFFT = "dfttest2_hip"
+        hipFFT = "dfttest2_hip"  # noqa: N815
         """
         AMD GPU backend using precompiled HIP and hipFFT.
         """
@@ -788,7 +801,8 @@ class DFTTest:
             """
             This method is used to apply the specified backend configuration with provided keyword arguments.
 
-            Depending on the backend, the arguments may represent device IDs, streams, or other backend-specific settings.
+            Depending on the backend, the arguments may represent device IDs, streams,
+            or other backend-specific settings.
 
             :param kwargs:          Additional configuration parameters for the backend.
             :return:                The configured backend with applied parameters.
@@ -804,7 +818,7 @@ class DFTTest:
             Additional configuration parameters for the backend.
             """
 
-            def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+            def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
                 """
                 Applies the DFTTest denoising filter using the plugin associated with the selected backend.
 
@@ -843,7 +857,7 @@ class DFTTest:
         clip: vs.VideoNode | None = None,
         backend: Backend = Backend.AUTO,
         sloc: SLocationT | SLocation.MultiDim | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """
         Initializes the `DFTTest` class with the provided clip, backend, and frequency location.
@@ -851,7 +865,7 @@ class DFTTest:
         Example:
             ```py
             dfttest = DFTTest(clip, DFTTest.Backend.OLD)
-            denoised_low_frequencies = dfttest.denoise({0: 16, 0.25: 8, 0.5:0, 1.0: 0})
+            denoised_low_frequencies = dfttest.denoise({0: 16, 0.25: 8, 0.5: 0, 1.0: 0})
             denoised_high_frequencies = dfttest.denoise([(0, 0), (0.5, 0), (0.75, 16), (1.0, 32)])
             ```
 
@@ -879,9 +893,8 @@ class DFTTest:
         twin: int | SynthesisType | None = None,
         planes: PlanesT = None,
         func: FuncExceptT | None = None,
-        **kwargs: Any
-    ) -> vs.VideoNode:
-        ...
+        **kwargs: Any,
+    ) -> vs.VideoNode: ...
 
     @overload
     def denoise(
@@ -895,9 +908,8 @@ class DFTTest:
         twin: int | SynthesisType | None = None,
         planes: PlanesT = None,
         func: FuncExceptT | None = None,
-        **kwargs: Any
-    ) -> vs.VideoNode:
-        ...
+        **kwargs: Any,
+    ) -> vs.VideoNode: ...
 
     def denoise(
         self,
@@ -910,7 +922,7 @@ class DFTTest:
         twin: int | SynthesisType | None = None,
         planes: PlanesT = None,
         func: FuncExceptT | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> vs.VideoNode:
         """
         Denoises a clip using Discrete Fourier Transform (DFT).
@@ -931,16 +943,16 @@ class DFTTest:
             denoised = DFTTest().denoise(clip, {0: 0, 0.25: 4, 0.5: 8, 0.75: 16, 1.0: 32})
             ```
 
-        :param clip_or_sloc:    Either a video clip or frequency location.
-        :param sloc:            Frequency location (used if `clip_or_sloc` is a video clip).
-        :param tr:              Temporal radius for denoising (equivalent to `tbsize`).
-        :param ftype:           Filter type for denoising (see [FilterType][vsdenoise.fft.DFTTest.FilterType] enum, e.g.).
-        :param swin:            Synthesis window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
-        :param twin:            Temporal window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
-        :param planes:          Planes to apply the denoising filter.
-        :param func:            Function returned for custom error handling.
-        :param kwargs:          Additional parameters for the denoising process.
-        :return:                The denoised video node.
+        :param clip_or_sloc:  Either a video clip or frequency location.
+        :param sloc:          Frequency location (used if `clip_or_sloc` is a video clip).
+        :param tr:            Temporal radius for denoising (equivalent to `tbsize`).
+        :param ftype:         Filter type for denoising (see [FilterType][vsdenoise.fft.DFTTest.FilterType] enum).
+        :param swin:          Synthesis window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
+        :param twin:          Temporal window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
+        :param planes:        Planes to apply the denoising filter.
+        :param func:          Function returned for custom error handling.
+        :param kwargs:        Additional parameters for the denoising process.
+        :return:              The denoised video node.
         """
         func = func or self.denoise
 
@@ -954,17 +966,11 @@ class DFTTest:
             nsloc = clip_or_sloc
 
         if nclip is None:
-            raise CustomValueError('You must pass a clip!', func)
+            raise CustomValueError("You must pass a clip!", func)
 
         assert check_progressive(nclip, func)
 
-        ckwargs = dict[str, Any](
-            tbsize=tr * 2 + 1,
-            ftype=ftype,
-            swin=swin,
-            twin=twin,
-            planes=planes
-        )
+        ckwargs = dict[str, Any](tbsize=tr * 2 + 1, ftype=ftype, swin=swin, twin=twin, planes=planes)
 
         if isinstance(nsloc, DFTTest.SLocation.MultiDim):
             ckwargs.update(ssx=nsloc.horizontal, ssy=nsloc.vertical, sst=nsloc.temporal)
@@ -977,9 +983,7 @@ class DFTTest:
 
         return self.backend.DFTTest(nclip, **KwargsNotNone(ckwargs) | self.default_args | kwargs)
 
-    def extract_freq(
-        self, clip: vs.VideoNode, sloc: SLocationT | SLocation.MultiDim, **kwargs: Any
-    ) -> vs.VideoNode:
+    def extract_freq(self, clip: vs.VideoNode, sloc: SLocationT | SLocation.MultiDim, **kwargs: Any) -> vs.VideoNode:
         """
         Extracts the frequency domain from the given clip by subtracting the denoised clip from the original.
 
@@ -988,7 +992,7 @@ class DFTTest:
         :param kwargs:  Additional parameters for the extraction process.
         :return:        The clip with the extracted frequency domain.
         """
-        kwargs = dict(func=self.extract_freq) | kwargs
+        kwargs = {"func": self.extract_freq} | kwargs
         return clip.std.MakeDiff(self.denoise(clip, sloc, **kwargs))
 
     def insert_freq(
@@ -1003,7 +1007,7 @@ class DFTTest:
         :param kwargs:  Additional parameters for the merging process.
         :return:        The merged clip with the inserted frequency domain.
         """
-        return low.std.MergeDiff(self.extract_freq(high, sloc, **dict(func=self.insert_freq) | kwargs))
+        return low.std.MergeDiff(self.extract_freq(high, sloc, **{"func": self.insert_freq} | kwargs))
 
     def merge_freq(
         self, low: vs.VideoNode, high: vs.VideoNode, sloc: SLocationT | SLocation.MultiDim, **kwargs: Any
@@ -1017,9 +1021,7 @@ class DFTTest:
         :param kwargs:  Additional parameters for the merging process.
         :return:        The merged clip with the denoised low-frequency and high-frequency components.
         """
-        return self.insert_freq(
-            self.denoise(low, sloc, **kwargs), high, sloc, **dict(func=self.merge_freq) | kwargs
-        )
+        return self.insert_freq(self.denoise(low, sloc, **kwargs), high, sloc, **{"func": self.merge_freq} | kwargs)
 
 
 SLocationT = Union[
@@ -1028,7 +1030,7 @@ SLocationT = Union[
     DFTTest.SLocation,
     Sequence[Frequency | Sigma],
     Sequence[tuple[Frequency, Sigma]],
-    Mapping[Frequency, Sigma]
+    Mapping[Frequency, Sigma],
 ]
 """
 A type that represents various ways to specify a location in the frequency domain for denoising operations.
@@ -1074,13 +1076,13 @@ def fft3d(clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
     :param **kwargs:    Additional parameters passed to the FFT3DFilter plugin.
     :return:            A heavily degraded version of DFTTest, with added banding and color shifts.
     """
-    kwargs |= dict(interlaced=FieldBased.from_video(clip, False, fft3d).is_inter)
+    kwargs |= {"interlaced": FieldBased.from_video(clip, False, fft3d).is_inter}
 
     # fft3dfilter requires sigma values to be scaled to bit depth
     # https://github.com/myrsloik/VapourSynth-FFT3DFilter/blob/master/doc/fft3dfilter.md#scaling-parameters-according-to-bit-depth
     sigma_multiplier = 1.0 / 256.0 if get_sample_type(clip) is vs.FLOAT else 1 << (get_depth(clip) - 8)
 
-    for sigma in ['sigma', 'sigma2', 'sigma3', 'sigma4', 'smin ', 'smax']:
+    for sigma in ["sigma", "sigma2", "sigma3", "sigma4", "smin ", "smax"]:
         if sigma in kwargs:
             kwargs[sigma] *= sigma_multiplier
 

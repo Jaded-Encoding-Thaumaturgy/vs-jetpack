@@ -4,37 +4,35 @@ from typing import Any, Literal, cast, overload
 
 import vapoursynth as vs
 from jetpytools import KwargsT
+
 from vstools import PropEnum
 
 from ..enums import ChromaLocation, ColorRange, Matrix, Primaries, Transfer
 from ..enums.stubs import PropEnumT
 
-__all__ = [
-    'video_heuristics',
-
-    'video_resample_heuristics'
-]
+__all__ = ["video_heuristics", "video_resample_heuristics"]
 
 
 @overload
 def video_heuristics(
-    clip: vs.VideoNode, props: vs.FrameProps | bool | None = None,
-    prop_in: bool = True, assumed_return: Literal[False] = ...
-) -> dict[str, PropEnum]:
-    ...
+    clip: vs.VideoNode,
+    props: vs.FrameProps | bool | None = None,
+    prop_in: bool = True,
+    assumed_return: Literal[False] = ...,
+) -> dict[str, PropEnum]: ...
 
 
 @overload
 def video_heuristics(
-    clip: vs.VideoNode, props: vs.FrameProps | bool | None = None,
-    prop_in: bool = True, assumed_return: Literal[True] = ...
-) -> tuple[dict[str, PropEnum], list[str]]:
-    ...
+    clip: vs.VideoNode,
+    props: vs.FrameProps | bool | None = None,
+    prop_in: bool = True,
+    assumed_return: Literal[True] = ...,
+) -> tuple[dict[str, PropEnum], list[str]]: ...
 
 
 def video_heuristics(
-    clip: vs.VideoNode, props: vs.FrameProps | bool | None = None,
-    prop_in: bool = True, assumed_return: bool = False
+    clip: vs.VideoNode, props: vs.FrameProps | bool | None = None, prop_in: bool = True, assumed_return: bool = False
 ) -> dict[str, PropEnum] | tuple[dict[str, PropEnum], list[str]]:
     """
     Determine the video heuristics from the frame properties.
@@ -76,20 +74,24 @@ def video_heuristics(
 
     if props:
         heuristics |= {
-            'matrix': try_or_fallback(Matrix), 'primaries': try_or_fallback(Primaries),
-            'transfer': try_or_fallback(Transfer), 'range': try_or_fallback(ColorRange),
-            'chromaloc': try_or_fallback(ChromaLocation)
+            "matrix": try_or_fallback(Matrix),
+            "primaries": try_or_fallback(Primaries),
+            "transfer": try_or_fallback(Transfer),
+            "range": try_or_fallback(ColorRange),
+            "chromaloc": try_or_fallback(ChromaLocation),
         }
     else:
         heuristics |= {
-            'matrix': Matrix.from_res(clip), 'primaries': Primaries.from_res(clip),
-            'transfer': Transfer.from_res(clip), 'range': ColorRange.from_res(clip),
-            'chromaloc': ChromaLocation.from_res(clip)
+            "matrix": Matrix.from_res(clip),
+            "primaries": Primaries.from_res(clip),
+            "transfer": Transfer.from_res(clip),
+            "range": ColorRange.from_res(clip),
+            "chromaloc": ChromaLocation.from_res(clip),
         }
 
         assumed_props.extend(v.prop_key for v in heuristics.values())
 
-    out_props = {f'{k}_in' if prop_in else k: v for k, v in heuristics.items()}
+    out_props = {f"{k}_in" if prop_in else k: v for k, v in heuristics.items()}
 
     if assumed_return:
         return out_props, assumed_props
@@ -109,7 +111,7 @@ def video_resample_heuristics(clip: vs.VideoNode, kwargs: KwargsT | None = None,
     :return:                Keyword arguments to pass on to the resize plugin or Kernel.resample.
     """
     from .check import check_variable_format
-    
+
     assert check_variable_format(clip, video_resample_heuristics)
 
     video_fmt = clip.format.replace(**fmt_kwargs)

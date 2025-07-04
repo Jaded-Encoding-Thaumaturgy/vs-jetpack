@@ -6,21 +6,37 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Callable, Generic, Sequence, cast
 
 from jetpytools import (
-    CustomEnum, CustomRuntimeError, CustomStrEnum, CustomValueError, KwargsT, P, R, fallback, interleave_arr,
-    normalize_seq
+    CustomEnum,
+    CustomRuntimeError,
+    CustomStrEnum,
+    CustomValueError,
+    KwargsT,
+    P,
+    R,
+    fallback,
+    interleave_arr,
+    normalize_seq,
 )
 
 from vsexprtools import norm_expr
 from vskernels import Point
 from vstools import (
-    ConstantFormatVideoNode, FunctionUtil, PlanesT, UnsupportedVideoFormatError, check_progressive, check_ref_clip,
-    check_variable, core, depth, get_y, join, vs, normalize_param_planes
+    ConstantFormatVideoNode,
+    FunctionUtil,
+    PlanesT,
+    UnsupportedVideoFormatError,
+    check_progressive,
+    check_ref_clip,
+    check_variable,
+    core,
+    depth,
+    get_y,
+    join,
+    normalize_param_planes,
+    vs,
 )
 
-__all__ = [
-    'wnnm',
-    'bm3d'
-]
+__all__ = ["bm3d", "wnnm"]
 
 
 def wnnm(
@@ -32,7 +48,7 @@ def wnnm(
     merge_factor: float = 0.1,
     self_refine: bool = False,
     planes: PlanesT = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Weighted Nuclear Norm Minimization Denoise algorithm.
@@ -92,10 +108,10 @@ def wnnm(
         else:
             previous = norm_expr(
                 [func.work_clip, previous, denoised],
-                'x y - {merge_factor} * z +',
+                "x y - {merge_factor} * z +",
                 planes,
                 merge_factor=merge_factor,
-                func=func.func
+                func=func.func,
             )
 
         if self_refine and denoised:
@@ -121,9 +137,7 @@ else:
     _Plugin = Any
 
 
-def _clean_keywords(
-    kwargs: dict[str, Any], function: _VSFunction
-) -> dict[str, Any]:
+def _clean_keywords(kwargs: dict[str, Any], function: _VSFunction) -> dict[str, Any]:
     return {k: v for k, v in kwargs.items() if k in signature(function).parameters}
 
 
@@ -247,10 +261,7 @@ class BM3D(Generic[P, R]):
 
             def freeze_dict(d: dict[str, Any]) -> Any:
                 """Recursively convert all dictionaries into MappingProxyType."""
-                return MappingProxyType({
-                    k: freeze_dict(v) if isinstance(v, dict) else v
-                    for k, v in d.items()
-                })
+                return MappingProxyType({k: freeze_dict(v) if isinstance(v, dict) else v for k, v in d.items()})
 
             config = {
                 BM3D.Profile.FAST: {
@@ -456,20 +467,22 @@ class BM3D(Generic[P, R]):
             """
             return self._get_args(radius, "final")
 
-    matrix_rgb2opp: list[float] = [
-        1 / 3, 1 / 3, 1 / 3,
-        1 / 2, 0, -1 / 2,
-        1 / 4, -1 / 2, 1 / 4,
-    ]
+    matrix_rgb2opp: tuple[float, ...] = (
+        1 / 3,
+        1 / 3,
+        1 / 3,
+        1 / 2,
+        0,
+        -1 / 2,
+        1 / 4,
+        -1 / 2,
+        1 / 4,
+    )
     """
     Matrix to convert RGB color space to OPP (Opponent) color space.
     """
 
-    matrix_opp2rgb: list[float] = [
-        1, 1, 2 / 3,
-        1, 0, -4 / 3,
-        1, -1, 2 / 3
-    ]
+    matrix_opp2rgb: tuple[float, ...] = (1, 1, 2 / 3, 1, 0, -4 / 3, 1, -1, 2 / 3)
     """
     Matrix to convert OPP (Opponent) color space back to RGB color space.
     """
@@ -502,55 +515,44 @@ def bm3d(
         denoised = bm3d(clip, 1.25, 1, profile=bm3d.Profile.NORMAL, backend=bm3d.Backend.CUDA_RTC, ...)
         ```
 
-    :param clip:                            The clip to process.
-                                            If using BM3D.Backend.OLD, the clip format must be YUV444 or RGB,
-                                            as filtering is always performed in the OPPonent color space.
-                                            If using another device type and the clip format is:
-                                                - RGB       -> Processed in OPP format (BM3D algorithm, aka `chroma=False`).
-                                                - YUV444    -> Processed in YUV444 format (CBM3D algorithm, aka `chroma=True`).
-                                                - GRAY      -> Processed as-is.
-                                                - YUVXXX    -> Each plane is processed separately.
-
-    :param sigma:                           Strength of denoising. Valid range is [0, +inf).
-                                            A sequence of up to 3 elements can be used to set different sigma values
-                                            for the Y, U, and V channels.
-                                            If fewer than 3 elements are given, the last value is repeated.
-                                            Defaults to 0.5.
-
-    :param tr:                              The temporal radius for denoising. Valid range is [1, 16].
-                                            Defaults to the radius defined by the profile.
-
-    :param refine:                          Number of refinement steps.
-                                                * 0 means basic estimate only.
-                                                * 1 means basic estimate with one final estimate.
-                                                * n means basic estimate refined with a final estimate n times.
-
-    :param profile:                         The preset profile. Defaults to BM3D.Profile.FAST.
-
-    :param pre:                             A pre-filtered clip for the basic estimate.
-                                            It should be more suitable for block-matching than the input clip,
-                                            and must be of the same format and dimensions.
-                                            Either `pre` or `ref` can be specified, not both.
-                                            Defaults to None.
-
-    :param ref:                             A clip to be used as the basic estimate.
-                                            It replaces BM3D’s internal basic estimate and serves as the reference
-                                            for the final estimate.
-                                            Must be of the same format and dimensions as the input clip.
-                                            Either `ref` or `pre` can be specified, not both.
-                                            Defaults to None.
-
-    :param backend:                         The backend to use for processing. Defaults to BM3D.Backend.AUTO.
-
-    :param basic_args:                      Additional arguments to pass to the basic estimate step.
-                                            Defaults to None.
-
-    :param final_args:                      Additional arguments to pass to the final estimate step.
-                                            Defaults to None.
-
-    :param planes:                          Planes to process. Default to all.
-
-    :param **kwargs:                        Internal keyword arguments for testing purposes.
+    :param clip:        The clip to process.
+                        If using BM3D.Backend.OLD, the clip format must be YUV444 or RGB,
+                        as filtering is always performed in the OPPonent color space.
+                        If using another device type and the clip format is:
+                            - RGB       -> Processed in OPP format (BM3D algorithm, aka `chroma=False`).
+                            - YUV444    -> Processed in YUV444 format (CBM3D algorithm, aka `chroma=True`).
+                            - GRAY      -> Processed as-is.
+                            - YUVXXX    -> Each plane is processed separately.
+    :param sigma:       Strength of denoising. Valid range is [0, +inf).
+                        A sequence of up to 3 elements can be used to set different sigma values
+                        for the Y, U, and V channels.
+                        If fewer than 3 elements are given, the last value is repeated.
+                        Defaults to 0.5.
+    :param tr:          The temporal radius for denoising. Valid range is [1, 16].
+                        Defaults to the radius defined by the profile.
+    :param refine:      Number of refinement steps.
+                            * 0 means basic estimate only.
+                            * 1 means basic estimate with one final estimate.
+                            * n means basic estimate refined with a final estimate n times.
+    :param profile:     The preset profile. Defaults to BM3D.Profile.FAST.
+    :param pre:         A pre-filtered clip for the basic estimate.
+                        It should be more suitable for block-matching than the input clip,
+                        and must be of the same format and dimensions.
+                        Either `pre` or `ref` can be specified, not both.
+                        Defaults to None.
+    :param ref:         A clip to be used as the basic estimate.
+                        It replaces BM3D's internal basic estimate and serves as the reference
+                        for the final estimate.
+                        Must be of the same format and dimensions as the input clip.
+                        Either `ref` or `pre` can be specified, not both.
+                        Defaults to None.
+    :param backend:    The backend to use for processing. Defaults to BM3D.Backend.A
+    :param basic_args:  Additional arguments to pass to the basic estimate step.
+                        Defaults to None.
+    :param final_args:  Additional arguments to pass to the final estimate step.
+                        Defaults to None.
+    :param planes:      Planes to process. Default to all.
+    :param **kwargs:    Internal keyword arguments for testing purposes.
 
     :raises CustomValueError:               If both `pre` and `ref` are specified at the same time.
     :raises UnsupportedProfileError:        If the VERY_NOISY profile is not supported by the selected device type.
@@ -581,9 +583,7 @@ def bm3d(
     matrix_opp2rgb = kwargs.pop("matrix_rgb2opp", BM3D.matrix_opp2rgb)
 
     if backend != BM3D.Backend.OLD and profile == BM3D.Profile.VERY_NOISY:
-        raise UnsupportedProfileError(
-            "The VERY_NOISY profile is only supported with BM3D.Backend.OLD.", func
-        )
+        raise UnsupportedProfileError("The VERY_NOISY profile is only supported with BM3D.Backend.OLD.", func)
 
     def _bm3d_wolfram(
         preclip: ConstantFormatVideoNode,
@@ -594,11 +594,7 @@ def bm3d(
         """Internal function for WolframRhodium implementation."""
 
         if not ref:
-            b_args = (
-                _clean_keywords(profile.basic_args(radius_basic), backend.plugin.BM3Dv2)
-                | nbasic_args
-                | kwargs
-            )
+            b_args = _clean_keywords(profile.basic_args(radius_basic), backend.plugin.BM3Dv2) | nbasic_args | kwargs
             b_args.update(chroma=chroma)
 
             basic = backend.plugin.BM3Dv2(preclip, pre, nsigma, **b_args)
@@ -608,11 +604,7 @@ def bm3d(
         if not refine:
             final = basic
         else:
-            f_args = (
-                _clean_keywords(profile.final_args(radius_final), backend.plugin.BM3Dv2)
-                | nfinal_args
-                | kwargs
-            )
+            f_args = _clean_keywords(profile.final_args(radius_final), backend.plugin.BM3Dv2) | nfinal_args | kwargs
             f_args.update(chroma=chroma)
 
             final = basic
@@ -642,13 +634,11 @@ def bm3d(
             r = b_args["radius"]
 
             if r > 0:
-                basic = core.bm3d.VBasic(
-                    preclip, pre, profile, nsigma, matrix=100, **b_args
-                ).bm3d.VAggregate(r, preclip.format.sample_type)
-            else:
-                basic = core.bm3d.Basic(
-                    preclip, pre, profile, nsigma, matrix=100, **b_args
+                basic = core.bm3d.VBasic(preclip, pre, profile, nsigma, matrix=100, **b_args).bm3d.VAggregate(
+                    r, preclip.format.sample_type
                 )
+            else:
+                basic = core.bm3d.Basic(preclip, pre, profile, nsigma, matrix=100, **b_args)
         else:
             basic = ref
 
@@ -662,13 +652,11 @@ def bm3d(
 
             for _ in range(refine):
                 if r > 0:
-                    final = core.bm3d.VFinal(
-                        preclip, final, profile, nsigma, matrix=100, **f_args
-                    ).bm3d.VAggregate(r, preclip.format.sample_type)
-                else:
-                    final = core.bm3d.Final(
-                        preclip, final, profile, nsigma, matrix=100, **f_args
+                    final = core.bm3d.VFinal(preclip, final, profile, nsigma, matrix=100, **f_args).bm3d.VAggregate(
+                        r, preclip.format.sample_type
                     )
+                else:
+                    final = core.bm3d.Final(preclip, final, profile, nsigma, matrix=100, **f_args)
 
         if 0 in nsigma:
             final = join({p: preclip if s == 0 else final for p, s in zip(range(3), nsigma)}, vs.YUV)
@@ -728,7 +716,8 @@ def bm3d(
     if backend == BM3D.Backend.OLD:
         raise UnsupportedVideoFormatError(
             "When using `BM3D.Backend.OLD`, the input clip must be in YUV444 or RGB format.",
-            func, clip.format.color_family
+            func,
+            clip.format.color_family,
         )
 
     denoised = _bm3d_wolfram(preclip, prepre, preref)

@@ -5,16 +5,11 @@ from typing import Callable, Generic, Sequence
 from jetpytools import CustomIntEnum, CustomStrEnum, P, R
 
 from vsexprtools import norm_expr
-from vstools import (
-    ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_variable, normalize_param_planes, vs
-)
+from vstools import ConstantFormatVideoNode, KwargsNotNone, PlanesT, check_variable, normalize_param_planes, vs
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
 
-__all__ = [
-    'repair', 'remove_grain', 'removegrain',
-    'clense', 'vertical_cleaner'
-]
+__all__ = ["clense", "remove_grain", "removegrain", "repair", "vertical_cleaner"]
 
 
 class Repair(Generic[P, R]):
@@ -36,7 +31,7 @@ class Repair(Generic[P, R]):
         Enum that specifies the mode for repairing or limiting a source clip using a reference clip.
 
         These modes define different spatial strategies for constraining each pixel in the source clip
-        based on the reference clip's local neighborhood, typically using 3×3 squares or line-sensitive patterns.
+        based on the reference clip's local neighborhood, typically using 3x3 squares or line-sensitive patterns.
 
         Commonly used in denoising, artifact removal, or detail-preserving restoration.
         """
@@ -45,16 +40,16 @@ class Repair(Generic[P, R]):
         """No repair. The input plane is passed through unchanged."""
 
         MINMAX_SQUARE1 = 1
-        """Clamp using the 1st min/max from a 3×3 square in the reference clip."""
+        """Clamp using the 1st min/max from a 3x3 square in the reference clip."""
 
         MINMAX_SQUARE2 = 2
-        """Clamp using the 2nd min/max from a 3×3 square in the reference clip."""
+        """Clamp using the 2nd min/max from a 3x3 square in the reference clip."""
 
         MINMAX_SQUARE3 = 3
-        """Clamp using the 3rd min/max from a 3×3 square in the reference clip."""
+        """Clamp using the 3rd min/max from a 3x3 square in the reference clip."""
 
         MINMAX_SQUARE4 = 4
-        """Clamp using the 4th min/max from a 3×3 square in the reference clip."""
+        """Clamp using the 4th min/max from a 3x3 square in the reference clip."""
 
         LINE_CLIP_MIN = 5
         """Line-sensitive clamping with minimal alteration."""
@@ -72,7 +67,7 @@ class Repair(Generic[P, R]):
         """Line-sensitive clamp using the closest neighbors."""
 
         MINMAX_SQUARE_REF_CLOSE = 10
-        """Replace pixel with the closest value in the 3×3 reference square."""
+        """Replace pixel with the closest value in the 3x3 reference square."""
 
         MINMAX_SQUARE_REF1 = 11
         """Same as mode 1, but clips with min/max of 1st rank and the center pixel of the reference clip."""
@@ -146,7 +141,7 @@ def repair(
     clip: vs.VideoNode,
     repairclip: vs.VideoNode,
     mode: int | Repair.Mode | Sequence[int | Repair.Mode],
-    planes: PlanesT = None
+    planes: PlanesT = None,
 ) -> ConstantFormatVideoNode:
     """
     Constrains the input `clip` using a `repairclip` by clamping pixel values
@@ -156,7 +151,7 @@ def repair(
     the corrections within reasonable bounds derived from the reference (`repairclip`). Often used in detail
     restoration workflows.
 
-    - Modes 1–24 directly map to [zsmooth.Repair](https://github.com/adworacz/zsmooth?tab=readme-ov-file#repair) plugin modes.
+    - Modes 1-24 directly map to [zsmooth.Repair](https://github.com/adworacz/zsmooth?tab=readme-ov-file#repair) plugin modes.
     - Modes 26+ fall back to expression-based implementations.
 
     Example:
@@ -175,7 +170,7 @@ def repair(
                           See [Repair.Mode][vsrgtools.rgtools.Repair.Mode] for details.
     :param planes:        Planes to process. Default to all.
     :return:              Clip with repaired pixels, bounded by the reference.
-    """
+    """  # noqa: E501
     assert check_variable(clip, repair)
     assert check_variable(repairclip, repair)
 
@@ -218,7 +213,7 @@ class RemoveGrain(Generic[P, R]):
         """The input plane is simply passed through."""
 
         MINMAX_AROUND1 = 1
-        """Clamp pixel to the min/max of its 3×3 neighborhood (excluding center)."""
+        """Clamp pixel to the min/max of its 3x3 neighborhood (excluding center)."""
 
         MINMAX_AROUND2 = 2
         """Clamp to the second lowest/highest in the neighborhood."""
@@ -248,7 +243,7 @@ class RemoveGrain(Generic[P, R]):
         """Replaces pixel with its closest neighbor. A poor but sharp denoiser."""
 
         BINOMIAL_BLUR = 11
-        """Deprecated. Use `BlurMatrix.BINOMIAL`. Applies weighted 3×3 blur."""
+        """Deprecated. Use `BlurMatrix.BINOMIAL`. Applies weighted 3x3 blur."""
 
         BOB_TOP_CLOSE = 13
         """Interpolate top field using the closest neighboring pixels."""
@@ -272,7 +267,7 @@ class RemoveGrain(Generic[P, R]):
         """Deprecated. Use `BlurMatrix.MEAN_NO_CENTER`. Mean of neighborhood (excluding center)."""
 
         MEAN = 20
-        """Deprecated. Use `BlurMatrix.MEAN`. Arithmetic mean of 3×3 neighborhood."""
+        """Deprecated. Use `BlurMatrix.MEAN`. Arithmetic mean of 3x3 neighborhood."""
 
         BOX_BLUR_NO_CENTER = MEAN_NO_CENTER
         """Alias for MEAN_NO_CENTER."""
@@ -325,7 +320,7 @@ def remove_grain(
     Supports a variety of pixel clamping, edge-aware filtering, and blur strategies.
     See [RemoveGrain.Mode][vsrgtools.rgtools.RemoveGrain.Mode] for all available modes.
 
-    - Modes 1–24 are natively implemented in [zsmooth.RemoveGrain](https://github.com/adworacz/zsmooth?tab=readme-ov-file#removegrain).
+    - Modes 1-24 are natively implemented in [zsmooth.RemoveGrain](https://github.com/adworacz/zsmooth?tab=readme-ov-file#removegrain).
     - Modes 25+ fall back to expression-based implementations.
 
     Example:
@@ -379,18 +374,18 @@ class Clense(Generic[P, R]):
 
         Each mode maps to a function provided
         by the [zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#clense--forwardclense--backwardclense) plugin.
-        """
+        """  # noqa: E501
 
-        NONE = ''
+        NONE = ""
         """No clense filtering. Returns the original clip unchanged."""
 
-        BACKWARD = 'BackwardClense'
+        BACKWARD = "BackwardClense"
         """Use the current and previous two frames for temporal median filtering."""
 
-        FORWARD = 'ForwardClense'
+        FORWARD = "ForwardClense"
         """Use the current and next two frames for temporal median filtering."""
 
-        BOTH = 'Clense'
+        BOTH = "Clense"
         """Standard clense: median of previous, current, and next frame."""
 
         def __call__(
@@ -398,7 +393,7 @@ class Clense(Generic[P, R]):
             clip: vs.VideoNode,
             previous_clip: vs.VideoNode | None = None,
             next_clip: vs.VideoNode | None = None,
-            planes: PlanesT = None
+            planes: PlanesT = None,
         ) -> ConstantFormatVideoNode:
             """
             Apply the selected clense mode to a clip using
@@ -409,7 +404,7 @@ class Clense(Generic[P, R]):
             :param next_clip:        Optional alternate clip to source next frames. Defaults to `clip`.
             :param planes:           Planes to process. Defaults to all.
             :return:                 Clensed clip with temporal median filtering.
-            """
+            """  # noqa: E501
             return clense(clip, previous_clip, next_clip, self, planes)
 
 
@@ -419,7 +414,7 @@ def clense(
     previous_clip: vs.VideoNode | None = None,
     next_clip: vs.VideoNode | None = None,
     mode: Clense.Mode | str = Clense.Mode.NONE,
-    planes: PlanesT = None
+    planes: PlanesT = None,
 ) -> ConstantFormatVideoNode:
     """
     Apply a clense (temporal median) filter based on the specified mode.

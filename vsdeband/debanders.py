@@ -8,15 +8,26 @@ from jetpytools import CustomValueError, P, R, to_arr
 from vsdenoise import PrefilterLike
 from vsrgtools import gauss_blur, limit_filter
 from vstools import (
-    ConstantFormatVideoNode, CustomIntEnum, InvalidColorFamilyError, PlanesT, check_variable, core, depth, expect_bits,
-    join, normalize_param_planes, normalize_seq, split, vs
+    ConstantFormatVideoNode,
+    CustomIntEnum,
+    InvalidColorFamilyError,
+    PlanesT,
+    check_variable,
+    core,
+    depth,
+    expect_bits,
+    join,
+    normalize_param_planes,
+    normalize_seq,
+    split,
+    vs,
 )
 
 __all__ = [
     "f3k_deband",
-    "placebo_deband",
     "mdb_bilateral",
     "pfdeband",
+    "placebo_deband",
 ]
 
 
@@ -69,13 +80,13 @@ class F3KDeband(Generic[P, R]):
 
         MEAN_DIFF_INT = 5
         """
-        Similar to COL_ROW_MEAN, but includes configurable maximum and median 
+        Similar to COL_ROW_MEAN, but includes configurable maximum and median
         difference thresholds for finer control and detail preservation.
         """
 
         MEAN_DIFF_FLOAT = 6
         """
-        Similar to COL_ROW_MEAN, but includes configurable maximum and median 
+        Similar to COL_ROW_MEAN, but includes configurable maximum and median
         difference thresholds for finer control and detail preservation.
         """
 
@@ -87,8 +98,12 @@ class F3KDeband(Generic[P, R]):
         @overload
         def __call__(  # type: ignore[misc]
             self: Literal[F3KDeband.SampleMode.MEAN_DIFF_INT],
-            y1: int | None = None, cb1: int | None = None, cr1: int | None = None,
-            y2: int | None = None, cb2: int | None = None, cr2: int | None = None,
+            y1: int | None = None,
+            cb1: int | None = None,
+            cr1: int | None = None,
+            y2: int | None = None,
+            cb2: int | None = None,
+            cr2: int | None = None,
             /,
         ) -> Literal[F3KDeband.SampleMode.MEAN_DIFF_INT]:
             """
@@ -121,8 +136,12 @@ class F3KDeband(Generic[P, R]):
         @overload
         def __call__(  # type: ignore[misc]
             self: Literal[F3KDeband.SampleMode.MEAN_DIFF_FLOAT],
-            y1: int | None = None, cb1: int | None = None, cr1: int | None = None,
-            y2: int | None = None, cb2: int | None = None, cr2: int | None = None,
+            y1: int | None = None,
+            cb1: int | None = None,
+            cr1: int | None = None,
+            y2: int | None = None,
+            cb2: int | None = None,
+            cr2: int | None = None,
             /,
         ) -> Literal[F3KDeband.SampleMode.MEAN_DIFF_FLOAT]:
             """
@@ -155,8 +174,12 @@ class F3KDeband(Generic[P, R]):
         @overload
         def __call__(  # type: ignore[misc]
             self: Literal[F3KDeband.SampleMode.MEAN_DIFF_GRADIENT],
-            y1: int | None = None, cb1: int | None = None, cr1: int | None = None,
-            y2: int | None = None, cb2: int | None = None, cr2: int | None = None,
+            y1: int | None = None,
+            cb1: int | None = None,
+            cr1: int | None = None,
+            y2: int | None = None,
+            cb2: int | None = None,
+            cr2: int | None = None,
             /,
             angle_boost: float | None = None,
             max_angle: float | None = None,
@@ -200,7 +223,9 @@ class F3KDeband(Generic[P, R]):
             y1_or_thr_max: int | None | Sequence[int | None] = None,
             cb1_or_thr_mid: int | None | Sequence[int | None] = None,
             cr1: int | None = None,
-            y2: int | None = None, cb2: int | None = None, cr2: int | None = None,
+            y2: int | None = None,
+            cb2: int | None = None,
+            cr2: int | None = None,
             angle_boost: float | None = None,
             max_angle: float | None = None,
         ) -> Any:
@@ -227,7 +252,8 @@ class F3KDeband(Generic[P, R]):
             This threshold applies to the midDif checks.
             midDif measures how much the current pixel deviates from the midpoint of a pair of opposing reference pixels
             (one check for the vertical pair, one for the horizontal pair).
-            If the current pixel is far from this midpoint (i.e., midDif is greater than or equal to y2 / cb2 / cr2), it might indicate a texture.
+            If the current pixel is far from this midpoint (i.e., midDif is greater than or equal to y2 / cb2 / cr2),
+            it might indicate a texture.
 
             This helps distinguish true banding in gradients from textured areas or complex details.
 
@@ -264,7 +290,7 @@ class F3KDeband(Generic[P, R]):
         """
         Random number generation algorithm used for reference positions or grain patterns.
         """
-    
+
         sigma: float | None
         """Standard deviation value used only for GAUSSIAN."""
 
@@ -282,7 +308,9 @@ class F3KDeband(Generic[P, R]):
         """Gaussian distribution. Supports custom standard deviation via `__call__`."""
 
         def __call__(  # type: ignore[misc]
-            self: Literal[F3KDeband.RandomAlgo.GAUSSIAN], sigma: float, /,  # pyright: ignore[reportGeneralTypeIssues]
+            self: Literal[F3KDeband.RandomAlgo.GAUSSIAN],  # pyright: ignore[reportGeneralTypeIssues]
+            sigma: float,
+            /,
         ) -> Literal[F3KDeband.RandomAlgo.GAUSSIAN]:
             """
             Configure the standard deviation for the GAUSSIAN algorithm.
@@ -315,7 +343,7 @@ def f3k_deband(
     blur_first: bool = True,
     seed: int | None = None,
     random: F3KDeband.RandomAlgo | tuple[F3KDeband.RandomAlgo, F3KDeband.RandomAlgo] = F3KDeband.RandomAlgo.UNIFORM,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Debanding filter wrapper using the `neo_f3kdb` plugin.
@@ -329,14 +357,16 @@ def f3k_deband(
                             is less than the corresponding threshold.
     :param grain:           Amount of grain to add after debanding. Accepts a float or sequence of floats.
     :param planes:          Specifies which planes to process. Default is all planes.
-    :param sample_mode:     Strategy used to sample reference pixels. See [SampleMode][vsdeband.debanders.F3KDeband.SampleMode].
+    :param sample_mode:     Strategy used to sample reference pixels.
+                            See [SampleMode][vsdeband.debanders.F3KDeband.SampleMode].
     :param dynamic_grain:   If True, generates a unique grain pattern for each frame.
     :param blur_first:      If True, compares current pixel to the mean of surrounding pixels.
                             If False, compares directly to all reference pixels. A pixel is marked as banded
                             only if all pixel-wise differences are below threshold.
     :param seed:            Random seed for grain generation.
     :param random:          Random number generation strategy.
-                            Can be a single value for both reference and grain, or a tuple specifying separate algorithms.
+                            Can be a single value for both reference and grain,
+                            or a tuple specifying separate algorithms.
                             See [RandomAlgo][vsdeband.debanders.F3KDeband.RandomAlgo].
     :param kwargs:          Additional keyword arguments passed directly to the `neo_f3kdb.Deband` plugin.
 
@@ -360,13 +390,13 @@ def f3k_deband(
 
     kwargs = (
         sample_mode.kwargs
-        | dict(
-            scale=True,
-            random_algo_ref=random_ref,
-            random_algo_grain=random_ref.sigma,
-            random_param_ref=random_grain,
-            random_param_grain=random_grain.sigma
-        )
+        | {
+            "scale": True,
+            "random_algo_ref": random_ref,
+            "random_algo_grain": random_ref.sigma,
+            "random_param_ref": random_grain,
+            "random_param_grain": random_grain.sigma,
+        }
         | kwargs
     )
 
@@ -382,7 +412,7 @@ def f3k_deband(
         seed,
         blur_first,
         dynamic_grain,
-        **kwargs
+        **kwargs,
     )
 
     return depth(debanded, bits)
@@ -396,7 +426,7 @@ def placebo_deband(
     planes: PlanesT = None,
     *,
     iterations: int = 4,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Debanding wrapper around the `placebo.Deband` filter from the VapourSynth `vs-placebo` plugin.
@@ -412,7 +442,8 @@ def placebo_deband(
                         but may remove fine details. Accepts a single float or a sequence per plane.
     :param grain:       Amount of grain/noise to add after debanding. Helps mask residual artifacts.
                         Accepts a float or a sequence per plane.
-                        Note: For HDR content, grain can significantly affect brightness — consider reducing or disabling.
+                        Note: For HDR content, grain can significantly affect brightness.
+                        Consider reducing or disabling.
     :param planes:      Which planes to process. Defaults to all planes.
     :param iterations:  Number of debanding steps to perform per sample.
                         More iterations yield stronger effect but quickly lose efficiency beyond 4.
@@ -435,9 +466,7 @@ def placebo_deband(
         for p in planes:
             plane |= pow(2, p)
 
-        return clip.placebo.Deband(
-            plane, iterations, threshold, radius, grain_val * (1 << 5) * 0.8, **kwargs
-        )
+        return clip.placebo.Deband(plane, iterations, threshold, radius, grain_val * (1 << 5) * 0.8, **kwargs)
 
     set_grn = set(ngrain)
 
@@ -449,14 +478,12 @@ def placebo_deband(
 
         return join(debs, clip.format.color_family)
 
-    plane_map = {
-        tuple(i for i in range(clip.format.num_planes) if ngrain[i] == x): x for x in set_grn - {0}
-    }
+    plane_map = {tuple(i for i in range(clip.format.num_planes) if ngrain[i] == x): x for x in set_grn - {0}}
 
     debanded = clip
 
     for planes, grain_val in plane_map.items():
-        if len(set(thr[p] for p in planes)) == 1:
+        if len({thr[p] for p in planes}) == 1:
             debanded = _placebo(debanded, thr[planes[0]], grain_val, planes)
         else:
             for p in planes:
@@ -490,7 +517,7 @@ def mdb_bilateral(
     lthr: int | tuple[int, int] = (153, 0),
     elast: float = 3.0,
     bright_thr: int | None = None,
-    debander: _DebanderFunc[Any] = f3k_deband
+    debander: _DebanderFunc[Any] = f3k_deband,
 ) -> vs.VideoNode:
     """
     Multi stage debanding, bilateral-esque filter.
@@ -535,8 +562,7 @@ class _SupportPlanesParam(Protocol):
     Protocol for functions that support planes parameter.
     """
 
-    def __call__(self, clip: vs.VideoNode, *, planes: PlanesT = ..., **kwargs: Any) -> vs.VideoNode:
-        ...
+    def __call__(self, clip: vs.VideoNode, *, planes: PlanesT = ..., **kwargs: Any) -> vs.VideoNode: ...
 
 
 def pfdeband(
@@ -549,7 +575,7 @@ def pfdeband(
     prefilter: PrefilterLike | _SupportPlanesParam = gauss_blur,
     debander: _DebanderFunc[Any] = f3k_deband,
     planes: PlanesT = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Prefilter and deband a clip.

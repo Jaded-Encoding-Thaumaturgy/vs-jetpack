@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import string
-
 from functools import partial, wraps
 from typing import Any, Callable, Iterable, Literal, Mapping, Sequence, Union, overload
 from weakref import WeakValueDictionary
 
 import vapoursynth as vs
-
-from jetpytools import P, CustomIndexError, CustomStrEnum, CustomValueError, FuncExceptT, normalize_seq
+from jetpytools import CustomIndexError, CustomStrEnum, CustomValueError, FuncExceptT, P, normalize_seq
 
 from ..enums import ColorRange, ColorRangeT, Matrix
 from ..exceptions import ClipLengthError, InvalidColorFamilyError
@@ -17,85 +15,83 @@ from .check import check_variable_format
 from .clip import shift_clip
 
 __all__ = [
-    'EXPR_VARS',
-
-    'DitherType',
-
-    'depth', 'depth_func',
-
-    'frame2clip',
-
-    'get_y', 'get_u', 'get_v',
-    'get_r', 'get_g', 'get_b',
-
-    'insert_clip',
-
-    'plane',
-    'join', 'split',
-
-    'stack_clips',
-
-    'limiter',
-    'sc_detect'
+    "EXPR_VARS",
+    "DitherType",
+    "depth",
+    "depth_func",
+    "frame2clip",
+    "get_b",
+    "get_g",
+    "get_r",
+    "get_u",
+    "get_v",
+    "get_y",
+    "insert_clip",
+    "join",
+    "limiter",
+    "plane",
+    "sc_detect",
+    "split",
+    "stack_clips",
 ]
 
 
-EXPR_VARS = (alph := list(string.ascii_lowercase))[(idx := alph.index('x')):] + alph[:idx]
+EXPR_VARS = (alph := list(string.ascii_lowercase))[(idx := alph.index("x")) :] + alph[:idx]
 """Variables to access clips in Expr."""
 
 
 class DitherType(CustomStrEnum):
     """Enum for `zimg_dither_type_e` and fmtc `dmode`."""
 
-    AUTO = 'auto'
+    AUTO = "auto"
     """Choose automatically."""
 
-    NONE = 'none'
+    NONE = "none"
     """Round to nearest."""
 
-    ORDERED = 'ordered'
+    ORDERED = "ordered"
     """Bayer patterned dither."""
 
-    RANDOM = 'random'
+    RANDOM = "random"
     """Pseudo-random noise of magnitude 0.5."""
 
-    ERROR_DIFFUSION = 'error_diffusion'
+    ERROR_DIFFUSION = "error_diffusion"
     """Floyd-Steinberg error diffusion."""
 
-    ERROR_DIFFUSION_FMTC = 'error_diffusion_fmtc'
+    ERROR_DIFFUSION_FMTC = "error_diffusion_fmtc"
     """
     Floyd-Steinberg error diffusion.
     Modified for serpentine scan (avoids worm artefacts).
     """
 
-    SIERRA_2_4A = 'sierra_2_4a'
+    SIERRA_2_4A = "sierra_2_4a"
     """
     Another type of error diffusion.
     Quick and excellent quality, similar to Floyd-Steinberg.
     """
 
-    STUCKI = 'stucki'
+    STUCKI = "stucki"
     """
     Another error diffusion kernel.
     Preserves delicate edges better but distorts gradients.
     """
 
-    ATKINSON = 'atkinson'
+    ATKINSON = "atkinson"
     """
     Another error diffusion kernel.
     Generates distinct patterns but keeps clean the flat areas (noise modulation).
     """
 
-    OSTROMOUKHOV = 'ostromoukhov'
+    OSTROMOUKHOV = "ostromoukhov"
     """
     Another error diffusion kernel.
     Slow, available only for integer input at the moment. Avoids usual F-S artefacts.
     """
 
-    VOID = 'void'
+    VOID = "void"
     """A way to generate blue-noise dither and has a much better visual aspect than ordered dithering."""
 
-    QUASIRANDOM = 'quasirandom'
+    QUASIRANDOM = "quasirandom"
     """
     Dither using quasirandom sequences.
     Good intermediary between void, cluster, and error diffusion algorithms.
@@ -115,8 +111,10 @@ class DitherType(CustomStrEnum):
 
         if not self.is_fmtc:
             return clip.resize.Point(
-                format=fmt_out.id, dither_type=self.value.lower(),
-                range_in=range_in.value_zimg, range=range_out.value_zimg
+                format=fmt_out.id,
+                dither_type=self.value.lower(),
+                range_in=range_in.value_zimg,
+                range=range_out.value_zimg,
             )
 
         if fmt.sample_type is vs.FLOAT:
@@ -128,8 +126,10 @@ class DitherType(CustomStrEnum):
                 clip = DitherType.NONE.apply(clip, fmt.replace(bits_per_sample=32), range_in, range_out)
 
         return clip.fmtc.bitdepth(
-            dmode=_dither_fmtc_types.get(self), bits=fmt_out.bits_per_sample,
-            fulls=range_in is ColorRange.FULL, fulld=range_out is ColorRange.FULL
+            dmode=_dither_fmtc_types.get(self),
+            bits=fmt_out.bits_per_sample,
+            fulls=range_in is ColorRange.FULL,
+            fulld=range_out is ColorRange.FULL,
         )
 
     @property
@@ -141,8 +141,11 @@ class DitherType(CustomStrEnum):
     @overload
     @staticmethod
     def should_dither(
-        in_fmt: VideoFormatT | HoldsVideoFormatT, out_fmt: VideoFormatT | HoldsVideoFormatT, /,
-        in_range: ColorRangeT | None = None, out_range: ColorRangeT | None = None
+        in_fmt: VideoFormatT | HoldsVideoFormatT,
+        out_fmt: VideoFormatT | HoldsVideoFormatT,
+        /,
+        in_range: ColorRangeT | None = None,
+        out_range: ColorRangeT | None = None,
     ) -> bool:
         """
         Automatically determines whether dithering is needed for a given depth/range/sample type conversion.
@@ -171,9 +174,13 @@ class DitherType(CustomStrEnum):
     @overload
     @staticmethod
     def should_dither(
-        in_bits: int, out_bits: int, /,
-        in_range: ColorRangeT | None = None, out_range: ColorRangeT | None = None,
-        in_sample_type: vs.SampleType | None = None, out_sample_type: vs.SampleType | None = None,
+        in_bits: int,
+        out_bits: int,
+        /,
+        in_range: ColorRangeT | None = None,
+        out_range: ColorRangeT | None = None,
+        in_sample_type: vs.SampleType | None = None,
+        out_sample_type: vs.SampleType | None = None,
     ) -> bool:
         """
         Automatically determines whether dithering is needed for a given depth/range/sample type conversion.
@@ -204,17 +211,20 @@ class DitherType(CustomStrEnum):
     @staticmethod
     def should_dither(
         in_bits_or_fmt: int | VideoFormatT | HoldsVideoFormatT,
-        out_bits_or_fmt: int | VideoFormatT | HoldsVideoFormatT, /,
-        in_range: ColorRangeT | None = None, out_range: ColorRangeT | None = None,
-        in_sample_type: vs.SampleType | None = None, out_sample_type: vs.SampleType | None = None,
+        out_bits_or_fmt: int | VideoFormatT | HoldsVideoFormatT,
+        /,
+        in_range: ColorRangeT | None = None,
+        out_range: ColorRangeT | None = None,
+        in_sample_type: vs.SampleType | None = None,
+        out_sample_type: vs.SampleType | None = None,
     ) -> bool:
         from ..utils import get_video_format
 
         in_fmt = get_video_format(in_bits_or_fmt, sample_type=in_sample_type)
         out_fmt = get_video_format(out_bits_or_fmt, sample_type=out_sample_type)
 
-        in_range = ColorRange.from_param(in_range, (DitherType.should_dither, 'in_range'))
-        out_range = ColorRange.from_param(out_range, (DitherType.should_dither, 'out_range'))
+        in_range = ColorRange.from_param(in_range, (DitherType.should_dither, "in_range"))
+        out_range = ColorRange.from_param(out_range, (DitherType.should_dither, "out_range"))
 
         if out_fmt.sample_type is vs.FLOAT:
             return False
@@ -233,7 +243,7 @@ class DitherType(CustomStrEnum):
 
         if in_bits > out_bits:
             return True
-        
+
         return in_range == ColorRange.FULL and bool(out_bits % in_bits)
 
 
@@ -249,9 +259,13 @@ _dither_fmtc_types: dict[DitherType, int] = {
 
 
 def depth(
-    clip: vs.VideoNode, bitdepth: VideoFormatT | HoldsVideoFormatT | int | None = None, /,
-    sample_type: int | vs.SampleType | None = None, *,
-    range_in: ColorRangeT | None = None, range_out: ColorRangeT | None = None,
+    clip: vs.VideoNode,
+    bitdepth: VideoFormatT | HoldsVideoFormatT | int | None = None,
+    /,
+    sample_type: int | vs.SampleType | None = None,
+    *,
+    range_in: ColorRangeT | None = None,
+    range_out: ColorRangeT | None = None,
     dither_type: str | DitherType = DitherType.AUTO,
 ) -> ConstantFormatVideoNode:
     """
@@ -304,10 +318,10 @@ def depth(
     range_out = ColorRange.from_param_or_video(range_out, clip)
     range_in = ColorRange.from_param_or_video(range_in, clip)
 
-    if (
-        in_fmt.bits_per_sample, in_fmt.sample_type, range_in
-    ) == (
-        out_fmt.bits_per_sample, out_fmt.sample_type, range_out
+    if (in_fmt.bits_per_sample, in_fmt.sample_type, range_in) == (
+        out_fmt.bits_per_sample,
+        out_fmt.sample_type,
+        range_out,
     ):
         return clip
 
@@ -322,9 +336,7 @@ def depth(
             dither_type = DitherType.ERROR_DIFFUSION if out_fmt.bits_per_sample == 8 else DitherType.ORDERED
         dither_type = dither_type if should_dither else DitherType.NONE
 
-    new_format = in_fmt.replace(
-        bits_per_sample=out_fmt.bits_per_sample, sample_type=out_fmt.sample_type
-    )
+    new_format = in_fmt.replace(bits_per_sample=out_fmt.bits_per_sample, sample_type=out_fmt.sample_type)
 
     return dither_type.apply(clip, new_format, range_in, range_out)
 
@@ -345,10 +357,7 @@ def frame2clip(frame: vs.VideoFrame) -> ConstantFormatVideoNode:
 
     if _f2c_cache.get(key, None) is None:
         _f2c_cache[key] = blank_clip = vs.core.std.BlankClip(
-            None, frame.width, frame.height,
-            frame.format.id, 1, 1, 1,
-            [0] * frame.format.num_planes,
-            True
+            None, frame.width, frame.height, frame.format.id, 1, 1, 1, [0] * frame.format.num_planes, True
         )
     else:
         blank_clip = _f2c_cache[key]
@@ -477,7 +486,7 @@ def insert_clip(
     """
 
     if start_frame == 0:
-        return vs.core.std.Splice([insert, clip[insert.num_frames:]])
+        return vs.core.std.Splice([insert, clip[insert.num_frames :]])
 
     pre = clip[:start_frame]
     insert_diff = (start_frame + insert.num_frames) - clip.num_frames
@@ -490,8 +499,9 @@ def insert_clip(
 
     if strict:
         raise ClipLengthError(
-            'Inserted clip is too long and exceeds the final frame of the input clip.',
-            insert_clip, {'clip': clip.num_frames, 'diff': insert_diff}
+            "Inserted clip is too long and exceeds the final frame of the input clip.",
+            insert_clip,
+            {"clip": clip.num_frames, "diff": insert_diff},
         )
 
     return vs.core.std.Splice([pre, insert[:-insert_diff]])
@@ -510,7 +520,9 @@ def join(luma: vs.VideoNode, chroma: vs.VideoNode, family: vs.ColorFamily | None
 
 
 @overload
-def join(y: vs.VideoNode, u: vs.VideoNode, v: vs.VideoNode, family: Literal[vs.ColorFamily.YUV]) -> ConstantFormatVideoNode:
+def join(
+    y: vs.VideoNode, u: vs.VideoNode, v: vs.VideoNode, family: Literal[vs.ColorFamily.YUV]
+) -> ConstantFormatVideoNode:
     """
     Join a list of planes together to form a single YUV clip.
 
@@ -596,7 +608,9 @@ def join(planes: Iterable[vs.VideoNode], family: vs.ColorFamily | None = None) -
 
 
 @overload
-def join(planes: Mapping[PlanesT, vs.VideoNode | None], family: vs.ColorFamily | None = None) -> ConstantFormatVideoNode:
+def join(
+    planes: Mapping[PlanesT, vs.VideoNode | None], family: vs.ColorFamily | None = None
+) -> ConstantFormatVideoNode:
     """
     Join a map of planes together to form a single clip.
 
@@ -612,7 +626,7 @@ def join(*_planes: Any, **kwargs: Any) -> vs.VideoNode:
     from ..functions import flatten_vnodes, to_arr
     from ..utils import get_color_family, get_video_format
 
-    family: vs.ColorFamily | None = kwargs.get('family', None)
+    family: vs.ColorFamily | None = kwargs.get("family")
 
     if isinstance(_planes[-1], vs.ColorFamily):
         family = _planes[-1]
@@ -626,20 +640,20 @@ def join(*_planes: Any, **kwargs: Any) -> vs.VideoNode:
                 continue
 
             if p_key is None:
-                planes_map |= {i: n for i, n in enumerate(flatten_vnodes(node, split_planes=True))}
+                planes_map |= dict(enumerate(flatten_vnodes(node, split_planes=True)))
             else:
                 planes_map |= {i: plane(node, min(i, node.format.num_planes - 1)) for i in to_arr(p_key)}
 
         return join(*(planes_map[i] for i in sorted(planes_map.keys())))
 
-    planes = list[vs.VideoNode](_planes[0] if (
-        isinstance(_planes[0], Iterable) and not isinstance(_planes[0], vs.VideoNode)
-    ) else _planes)
+    planes = list[vs.VideoNode](
+        _planes[0] if (isinstance(_planes[0], Iterable) and not isinstance(_planes[0], vs.VideoNode)) else _planes
+    )
 
     n_clips = len(planes)
 
     if not n_clips:
-        raise CustomIndexError('Not enough clips/planes passed!', join)
+        raise CustomIndexError("Not enough clips/planes passed!", join)
 
     if n_clips == 1 and (family is None or family is (planes[0].format and planes[0].format.color_family)):
         return planes[0]
@@ -673,13 +687,13 @@ def join(*_planes: Any, **kwargs: Any) -> vs.VideoNode:
         clip = vs.core.std.ShufflePlanes(planes[:3], [0, 0, 0], family)
 
         if n_clips == 4:
-            clip = clip.std.ClipToProp(planes[-1], '_Alpha')
+            clip = clip.std.ClipToProp(planes[-1], "_Alpha")
 
         return clip
     elif n_clips > 4:
-        raise CustomValueError('Too many clips or planes passed!', join)
+        raise CustomValueError("Too many clips or planes passed!", join)
 
-    raise CustomValueError('Not enough clips or planes passed!', join)
+    raise CustomValueError("Not enough clips or planes passed!", join)
 
 
 def plane(clip: vs.VideoNode, index: int, /, strict: bool = True) -> ConstantFormatVideoNode:
@@ -697,9 +711,8 @@ def plane(clip: vs.VideoNode, index: int, /, strict: bool = True) -> ConstantFor
     if clip.format.num_planes == 1 and index == 0:
         return clip
 
-    if not strict:
-        if clip.format.color_family is vs.RGB:
-            clip = vs.core.std.RemoveFrameProps(clip, '_Matrix')
+    if not strict and clip.format.color_family is vs.RGB:
+        clip = vs.core.std.RemoveFrameProps(clip, "_Matrix")
 
     return vs.core.std.ShufflePlanes(clip, index, vs.GRAY)
 
@@ -715,18 +728,20 @@ def split(clip: vs.VideoNode, /) -> list[ConstantFormatVideoNode]:
 
     assert check_variable_format(clip, split)
 
-    return [clip] if clip.format.num_planes == 1 else [
-        plane(clip, i, False) for i in range(clip.format.num_planes)
-    ]
+    return [clip] if clip.format.num_planes == 1 else [plane(clip, i, False) for i in range(clip.format.num_planes)]
 
 
 depth_func = depth
 
 
 def stack_clips(
-    clips: Sequence[vs.VideoNode | Sequence[vs.VideoNode | Sequence[
-        vs.VideoNode | Sequence[vs.VideoNode | Sequence[vs.VideoNode | Sequence[vs.VideoNode]]]
-    ]]]
+    clips: Sequence[
+        vs.VideoNode
+        | Sequence[
+            vs.VideoNode
+            | Sequence[vs.VideoNode | Sequence[vs.VideoNode | Sequence[vs.VideoNode | Sequence[vs.VideoNode]]]]
+        ]
+    ],
 ) -> vs.VideoNode:
     """
     Stack clips in the following repeating order: hor->ver->hor->ver->...
@@ -736,15 +751,18 @@ def stack_clips(
     :return:        Stacked clips.
     """
 
-    return vs.core.std.StackHorizontal([
-        inner_clips if isinstance(inner_clips, vs.VideoNode) else (
-            vs.core.std.StackVertical([
-                clipa if isinstance(clipa, vs.VideoNode) else stack_clips(clipa)
-                for clipa in inner_clips
-            ])
-        )
-        for inner_clips in clips
-    ])
+    return vs.core.std.StackHorizontal(
+        [
+            inner_clips
+            if isinstance(inner_clips, vs.VideoNode)
+            else (
+                vs.core.std.StackVertical(
+                    [clipa if isinstance(clipa, vs.VideoNode) else stack_clips(clipa) for clipa in inner_clips]
+                )
+            )
+            for inner_clips in clips
+        ]
+    )
 
 
 @overload
@@ -756,7 +774,7 @@ def limiter(
     *,
     tv_range: bool = False,
     planes: PlanesT = None,
-    func: FuncExceptT | None = None
+    func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Wraps `vs-zip <https://github.com/dnjulek/vapoursynth-zip>`.Limiter but only processes
@@ -784,7 +802,7 @@ def limiter(
     *,
     tv_range: bool = False,
     planes: PlanesT = None,
-    func: FuncExceptT | None = None
+    func: FuncExceptT | None = None,
 ) -> Callable[P, ConstantFormatVideoNode]:
     """
     Wraps `vs-zip <https://github.com/dnjulek/vapoursynth-zip>`.Limiter but only processes
@@ -812,7 +830,7 @@ def limiter(
     max_val: float | Sequence[float] | None = None,
     tv_range: bool = False,
     planes: PlanesT = None,
-    func: FuncExceptT | None = None
+    func: FuncExceptT | None = None,
 ) -> Callable[[Callable[P, ConstantFormatVideoNode]], Callable[P, ConstantFormatVideoNode]]:
     """
     Wraps `vs-zip <https://github.com/dnjulek/vapoursynth-zip>`.Limiter but only processes
@@ -840,11 +858,11 @@ def limiter(
     *,
     tv_range: bool = False,
     planes: PlanesT = None,
-    func: FuncExceptT | None = None
+    func: FuncExceptT | None = None,
 ) -> Union[
     ConstantFormatVideoNode,
     Callable[P, ConstantFormatVideoNode],
-    Callable[[Callable[P, ConstantFormatVideoNode]], Callable[P, ConstantFormatVideoNode]]
+    Callable[[Callable[P, ConstantFormatVideoNode]], Callable[P, ConstantFormatVideoNode]],
 ]:
     """
     Wraps `vs-zip <https://github.com/dnjulek/vapoursynth-zip>`.Limiter but only processes
@@ -880,12 +898,7 @@ def limiter(
 
     assert check_variable_format(clip, func)
 
-    if all([
-        clip.format.sample_type == vs.INTEGER,
-        min_val is None,
-        max_val is None,
-        tv_range is False
-    ]):
+    if all([clip.format.sample_type == vs.INTEGER, min_val is None, max_val is None, tv_range is False]):
         return clip
 
     if not (min_val == max_val is None):

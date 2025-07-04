@@ -10,20 +10,20 @@ from ..prefilters import prefilter_to_full_range
 from .enums import FlowMode, MaskMode, MotionMode, PenaltyMode, RFilterMode, SADMode, SearchMode, SharpMode, SmoothMode
 
 __all__ = [
-    "SuperArgs",
     "AnalyzeArgs",
-    "RecalculateArgs",
-    "CompensateArgs",
-    "FlowArgs",
-    "DegrainArgs",
-    "FlowInterpolateArgs",
-    "FlowFpsArgs",
     "BlockFpsArgs",
+    "CompensateArgs",
+    "DegrainArgs",
+    "FlowArgs",
     "FlowBlurArgs",
-    "MaskArgs",
-    "ScDetectionArgs",
+    "FlowFpsArgs",
+    "FlowInterpolateArgs",
     "MVToolsPreset",
-    "MVToolsPresets"
+    "MVToolsPresets",
+    "MaskArgs",
+    "RecalculateArgs",
+    "ScDetectionArgs",
+    "SuperArgs",
 ]
 
 
@@ -190,7 +190,7 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
         block_fps_args: BlockFpsArgs | KwargsT | None = None,
         flow_blur_args: FlowBlurArgs | KwargsT | None = None,
         mask_args: MaskArgs | KwargsT | None = None,
-        sc_detection_args: ScDetectionArgs | KwargsT | None = None
+        sc_detection_args: ScDetectionArgs | KwargsT | None = None,
     ) -> None:
         self._dict = dict[str, Any](
             search_clip=search_clip,
@@ -209,7 +209,7 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
             block_fps_args=block_fps_args,
             flow_blur_args=flow_blur_args,
             mask_args=mask_args,
-            sc_detection_args=sc_detection_args
+            sc_detection_args=sc_detection_args,
         )
 
     def __str__(self) -> str:
@@ -252,23 +252,19 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
         return self.__class__(**self._dict | dict(value))
 
     @overload
-    def __ror__(self, value: MutableMapping[str, Any], /) -> dict[str, Any]:
-        ...
+    def __ror__(self, value: MutableMapping[str, Any], /) -> dict[str, Any]: ...
 
     @overload
-    def __ror__(self, value: MutableMapping[T1, T2], /) -> dict[str | T1, Any | T2]:
-        ...
+    def __ror__(self, value: MutableMapping[T1, T2], /) -> dict[str | T1, Any | T2]: ...
 
     def __ror__(self, value: Any, /) -> Any:
         return self.__class__(**dict(value) | self._dict)
 
     @overload  # type: ignore[misc]
-    def __ior__(self, value: SupportsKeysAndGetItem[str, Any], /) -> Self:
-        ...
+    def __ior__(self, value: SupportsKeysAndGetItem[str, Any], /) -> Self: ...
 
     @overload
-    def __ior__(self, value: Iterable[tuple[str, Any]], /) -> Self:
-        ...
+    def __ior__(self, value: Iterable[tuple[str, Any]], /) -> Self: ...
 
     def __ior__(self, value: Any, /) -> Self:  # type: ignore[misc]
         self._dict |= dict[str, Any](value)
@@ -282,7 +278,7 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
 
     @classproperty
     @classmethod
-    def HQ_COHERENCE(cls) -> Self:
+    def HQ_COHERENCE(cls) -> Self:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
             analyze_args=AnalyzeArgs(
@@ -293,12 +289,12 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
                 blksize=8,
                 overlap=4,
                 dct=SADMode.SATD,
-            )
+            ),
         )
 
     @classproperty
     @classmethod
-    def HQ_SAD(cls) -> Self:
+    def HQ_SAD(cls) -> Self:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
             analyze_args=AnalyzeArgs(
@@ -311,23 +307,23 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
                 overlap=4,
                 dct=SADMode.SATD,
                 truemotion=MotionMode.SAD,
-            )
+            ),
         )
 
+
 @deprecated(
-    "MVToolsPresets class is deprecated and will be removed in a future version. "
-    "Use MVToolsPreset instead."
-    , category=DeprecationWarning
+    "MVToolsPresets class is deprecated and will be removed in a future version. Use MVToolsPreset instead.",
+    category=DeprecationWarning,
 )
 class MVToolsPresets:
     """Presets for arguments passed to MVTools functions."""
 
     @classproperty
     @classmethod
-    def HQ_COHERENCE(cls) -> MVToolsPreset:
+    def HQ_COHERENCE(cls) -> MVToolsPreset:  # noqa: N802
         return MVToolsPreset.HQ_COHERENCE
 
     @classproperty
     @classmethod
-    def HQ_SAD(cls) -> MVToolsPreset:
+    def HQ_SAD(cls) -> MVToolsPreset:  # noqa: N802
         return MVToolsPreset.HQ_SAD

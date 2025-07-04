@@ -1,30 +1,44 @@
 from __future__ import annotations
 
 from enum import auto
-from typing import Any, Callable, ClassVar, Iterable, Literal, Protocol, Sequence, TypeAlias, Union, overload
+from typing import Any, Callable, ClassVar, Iterable, Literal, Protocol, Sequence, TypeAlias, TypeVar, overload
 
 from jetpytools import MISSING, CustomEnum, FuncExceptT, MissingT, fallback, inject_self
 from typing_extensions import deprecated
 
 from vsexprtools import norm_expr
 from vskernels import BaseScalerSpecializer, BicubicAuto, Lanczos, LeftShift, Scaler, ScalerLike, TopShift
-from vskernels.abstract.base import _ScalerT
 from vsmasktools import adg_mask
 from vsrgtools import BlurMatrix
 from vstools import (
-    ColorRange, ConstantFormatVideoNode, ConvMode, PlanesT, check_variable, core,
-    get_lowest_values, get_neutral_values, get_peak_values, get_u, get_v, mod_x, normalize_param_planes, normalize_seq,
-    scale_delta, split, to_arr, vs
+    ColorRange,
+    ConstantFormatVideoNode,
+    ConvMode,
+    PlanesT,
+    check_variable,
+    core,
+    get_lowest_values,
+    get_neutral_values,
+    get_peak_values,
+    get_u,
+    get_v,
+    mod_x,
+    normalize_param_planes,
+    normalize_seq,
+    scale_delta,
+    split,
+    to_arr,
+    vs,
 )
 
 from .debanders import placebo_deband
 
 __all__ = [
-    "Grainer",
-    "ScalerTwoPasses",
-    "LanczosTwoPasses",
-    "GrainFactoryBicubic",
     "AddNoise",
+    "GrainFactoryBicubic",
+    "Grainer",
+    "LanczosTwoPasses",
+    "ScalerTwoPasses",
 ]
 
 
@@ -54,6 +68,9 @@ class _PostProcessFunc(Protocol):
     """Protocol for a post-processing function applied after graining."""
 
     def __call__(self, grained: vs.VideoNode) -> vs.VideoNode: ...
+
+
+_ScalerT = TypeVar("_ScalerT", bound=Scaler)
 
 
 class ScalerTwoPasses(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
@@ -144,7 +161,7 @@ class Grainer(AbstractGrainer, CustomEnum):
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Literal[Grainer.GAUSS] | Literal[Grainer.POISSON],
+        self: Literal[Grainer.GAUSS, Grainer.POISSON],
         clip: vs.VideoNode,
         /,
         strength: float | tuple[float, float] = ...,
@@ -161,7 +178,7 @@ class Grainer(AbstractGrainer, CustomEnum):
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Literal[Grainer.GAUSS] | Literal[Grainer.POISSON],
+        self: Literal[Grainer.GAUSS, Grainer.POISSON],
         /,
         *,
         strength: float | tuple[float, float] = ...,
@@ -178,11 +195,7 @@ class Grainer(AbstractGrainer, CustomEnum):
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Union[
-            Literal[Grainer.PERLIN],
-            Literal[Grainer.SIMPLEX],
-            Literal[Grainer.FBM_SIMPLEX],
-        ],
+        self: Literal[Grainer.PERLIN, Grainer.SIMPLEX, Grainer.FBM_SIMPLEX],
         clip: vs.VideoNode,
         /,
         strength: float | tuple[float, float] = ...,
@@ -201,11 +214,7 @@ class Grainer(AbstractGrainer, CustomEnum):
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Union[
-            Literal[Grainer.PERLIN],
-            Literal[Grainer.SIMPLEX],
-            Literal[Grainer.FBM_SIMPLEX],
-        ],
+        self: Literal[Grainer.PERLIN, Grainer.SIMPLEX, Grainer.FBM_SIMPLEX],
         /,
         *,
         strength: float | tuple[float, float] = ...,
@@ -343,7 +352,7 @@ class Grainer(AbstractGrainer, CustomEnum):
                                         - ``neutral_out``: (Boolean) Output the neutral layer instead of the merged clip.
 
         :return:                        Grained video clip, or a `GrainerPartial` if `clip` is not provided.
-        """
+        """  # noqa: E501
         kwargs.update(
             strength=strength,
             scale=scale,
@@ -410,9 +419,7 @@ def _apply_grainer(
     temporal_avg, temporal_rad = temporal if isinstance(temporal, tuple) else (temporal, 1)
     temporal_avg_func = kwargs.pop("temporal_avg_func", BlurMatrix.MEAN(temporal_rad, mode=ConvMode.TEMPORAL))
     protect_neutral_chroma = (
-        (True if clip.format.color_family is vs.YUV else False)
-        if protect_neutral_chroma is None
-        else protect_neutral_chroma
+        (clip.format.color_family is vs.YUV) if protect_neutral_chroma is None else protect_neutral_chroma
     )
     protect_edges = protect_edges if isinstance(protect_edges, tuple) else (protect_edges, protect_edges)
     protect_edges_blend = kwargs.pop("protect_edges_blend", 0.0)
@@ -507,7 +514,6 @@ def _protect_pixel_range(
 def _protect_neutral_chroma(
     clip: ConstantFormatVideoNode, grained: vs.VideoNode, base_clip: vs.VideoNode, blend: float = 0.0
 ) -> vs.VideoNode:
-
     if clip.format.color_family is vs.YUV:
         if not blend:
             expr = "x neutral = y neutral = and range_max 0 ?"
@@ -638,10 +644,11 @@ class AddNoise(AddNoiseBase):
         _noise_type = 2
 
     @deprecated(
-        '"AddNoise.FBM_SIMPLEX" is deprecated and will be removed in a future version. Use Grainer.FBM_SIMPLEX instead.',
+        '"AddNoise.FBM_SIMPLEX" is deprecated and will be removed in a future version. '
+        "Use Grainer.FBM_SIMPLEX instead.",
         category=DeprecationWarning,
     )
-    class FBM_SIMPLEX(AddNoiseBase):
+    class FBM_SIMPLEX(AddNoiseBase):  # noqa: N801
         _noise_type = 3
 
     @deprecated(

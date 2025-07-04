@@ -4,20 +4,21 @@ from typing import Any, cast
 
 from vsexprtools import complexpr_available, expr_func, norm_expr
 from vstools import (
-    ConstantFormatVideoNode, check_variable, check_ref_clip,
-    VSFunctionNoArgs, join, shift_clip, shift_clip_multi, vs, core
+    ConstantFormatVideoNode,
+    VSFunctionNoArgs,
+    check_ref_clip,
+    check_variable,
+    core,
+    join,
+    shift_clip,
+    shift_clip_multi,
+    vs,
 )
 
 from .funcs import vinverse
 from .utils import telecine_patterns
 
-__all__ = [
-    'deblending_helper',
-
-    'deblend', 'deblend_bob',
-
-    'deblend_fix_kf'
-]
+__all__ = ["deblend", "deblend_bob", "deblend_fix_kf", "deblending_helper"]
 
 
 def deblending_helper(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, length: int = 5) -> ConstantFormatVideoNode:
@@ -43,9 +44,7 @@ def deblending_helper(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, lengt
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
 
     if complexpr_available:
-        index_src = expr_func(
-            prop_srcs, f'x._Combed N {length} % 1 + y._Combed {length} 0 ? + 0 ?', vs.GRAY8
-        )
+        index_src = expr_func(prop_srcs, f"x._Combed N {length} % 1 + y._Combed {length} 0 ? + 0 ?", vs.GRAY8)
 
         return core.std.FrameEval(fieldmatched, lambda n, f: inters[f[0][0, 0]], index_src)
 
@@ -79,7 +78,7 @@ def deblend(
     :return: Deblended clip.
     """
 
-    deblended = norm_expr(shift_clip_multi(clip, (-1, 2)), 'z a 2 / - y x 2 / - +', func=deblend)
+    deblended = norm_expr(shift_clip_multi(clip, (-1, 2)), "z a 2 / - y x 2 / - +", func=deblend)
 
     if decomber:
         deblended = decomber(deblended, **kwargs)
@@ -105,7 +104,7 @@ def deblend_bob(bobbed: vs.VideoNode, fieldmatched: vs.VideoNode | None = None) 
     ab0, bc0, c0 = shift_clip_multi(bobbed[::2], (0, 2))
     bc1, ab1, a1 = shift_clip_multi(bobbed[1::2])
 
-    deblended = norm_expr([a1, ab1, ab0, bc1, bc0, c0], ('b', 'y x - z + b c - a + + 2 /'), func=deblend_bob)
+    deblended = norm_expr([a1, ab1, ab0, bc1, bc0, c0], ("b", "y x - z + b c - a + + 2 /"), func=deblend_bob)
 
     if fieldmatched:
         return deblending_helper(fieldmatched, deblended)
@@ -129,9 +128,7 @@ def deblend_fix_kf(deblended: vs.VideoNode, fieldmatched: vs.VideoNode) -> Const
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
 
     if complexpr_available:
-        index_src = expr_func(
-            prop_srcs, 'x._Combed x.VFMSceneChange and y.VFMSceneChange 2 0 ? 1 ?', vs.GRAY8
-        )
+        index_src = expr_func(prop_srcs, "x._Combed x.VFMSceneChange and y.VFMSceneChange 2 0 ? 1 ?", vs.GRAY8)
 
         return core.std.FrameEval(deblended, lambda n, f: shifted_clips[f[0][0, 0]], index_src)
 

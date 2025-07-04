@@ -7,25 +7,27 @@ from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
 from vstools import ConstantFormatVideoNode, MatrixT, check_variable, plane, vs
 
 __all__ = [
-    'BaseGenericScaler',
-    'GenericScaler',
+    "BaseGenericScaler",
+    "GenericScaler",
 ]
 
 
 class _GeneriScaleNoShift(Protocol):
     def __call__(
-        self, clip: ConstantFormatVideoNode, width: int, height: int,
-        *args: Any, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
-        ...
+        self, clip: ConstantFormatVideoNode, width: int, height: int, *args: Any, **kwargs: Any
+    ) -> ConstantFormatVideoNode: ...
 
 
 class _GeneriScaleWithShift(Protocol):
     def __call__(
-        self, clip: ConstantFormatVideoNode, width: int, height: int, shift: tuple[float, float],
-        *args: Any, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
-        ...
+        self,
+        clip: ConstantFormatVideoNode,
+        width: int,
+        height: int,
+        shift: tuple[float, float],
+        *args: Any,
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode: ...
 
 
 def _func_no_op(clip: ConstantFormatVideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
@@ -44,7 +46,7 @@ class BaseGenericScaler(Scaler, ABC):
         kernel: KernelLike = Catrom,
         scaler: ScalerLike | None = None,
         shifter: KernelLike | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """
         Initializes the BaseGenericScaler.
@@ -67,7 +69,7 @@ class BaseGenericScaler(Scaler, ABC):
         width: int | None = None,
         height: int | None = None,
         shift: tuple[float, float] = (0, 0),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.__class__)
 
@@ -79,12 +81,12 @@ class BaseGenericScaler(Scaler, ABC):
         self,
         clip: ConstantFormatVideoNode,
         input_clip: ConstantFormatVideoNode,
-        width: int, height: int,
+        width: int,
+        height: int,
         shift: tuple[float, float] = (0, 0),
         matrix: MatrixT | None = None,
-        copy_props: bool = False
+        copy_props: bool = False,
     ) -> ConstantFormatVideoNode:
-
         if input_clip.format.num_planes == 1:
             clip = plane(clip, 0)
 
@@ -113,7 +115,7 @@ class GenericScaler(BaseGenericScaler, partial_abstract=True):
         kernel: KernelLike = Catrom,
         scaler: ScalerLike | None = None,
         shifter: KernelLike | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """
         Apply an arbitrary scaling function.
@@ -134,7 +136,7 @@ class GenericScaler(BaseGenericScaler, partial_abstract=True):
         width: int | None = None,
         height: int | None = None,
         shift: tuple[float, float] = (0, 0),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         assert check_variable(clip, self.__class__)
 

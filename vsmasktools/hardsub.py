@@ -10,10 +10,32 @@ from vskernels import Point
 from vsrgtools import box_blur, median_blur
 from vssource import IMWRI, Indexer
 from vstools import (
-    ColorRange, ConstantFormatVideoNode, CustomOverflowError, FileNotExistsError, FilePathType, FrameRangeN,
-    FrameRangesN, Matrix, VSFunctionNoArgs, check_variable, core, depth, fallback, get_lowest_value, get_neutral_value,
-    get_neutral_values, get_peak_value, get_y, iterate, limiter, normalize_ranges, replace_ranges, scale_delta,
-    scale_value, vs, vs_object
+    ColorRange,
+    ConstantFormatVideoNode,
+    CustomOverflowError,
+    FileNotExistsError,
+    FilePathType,
+    FrameRangeN,
+    FrameRangesN,
+    Matrix,
+    VSFunctionNoArgs,
+    check_variable,
+    core,
+    depth,
+    fallback,
+    get_lowest_value,
+    get_neutral_value,
+    get_neutral_values,
+    get_peak_value,
+    get_y,
+    iterate,
+    limiter,
+    normalize_ranges,
+    replace_ranges,
+    scale_delta,
+    scale_value,
+    vs,
+    vs_object,
 )
 
 from .abstract import BoundingBox, DeferredMask, GeneralMask
@@ -23,24 +45,21 @@ from .types import GenericMaskT, XxpandMode
 from .utils import max_planes, normalize_mask
 
 __all__ = [
-    'CustomMaskFromFolder',
-    'CustomMaskFromRanges',
-
-    'HardsubMask',
-    'HardsubSignFades',
-    'HardsubSign',
-    'HardsubLine',
-    'HardsubLineFade',
-    'HardsubASS',
-
-    'bounded_dehardsub',
-    'diff_hardsub_mask',
-
-    'get_all_sign_masks'
+    "CustomMaskFromFolder",
+    "CustomMaskFromRanges",
+    "HardsubASS",
+    "HardsubLine",
+    "HardsubLineFade",
+    "HardsubMask",
+    "HardsubSign",
+    "HardsubSignFades",
+    "bounded_dehardsub",
+    "diff_hardsub_mask",
+    "get_all_sign_masks",
 ]
 
 
-class _base_cmaskcar(vs_object):
+class _BaseCMaskCar(vs_object):
     clips: list[vs.VideoNode]
 
     def __vs_del__(self, core_id: int) -> None:
@@ -48,7 +67,7 @@ class _base_cmaskcar(vs_object):
 
 
 @dataclass
-class CustomMaskFromClipsAndRanges(GeneralMask, _base_cmaskcar):
+class CustomMaskFromClipsAndRanges(GeneralMask, _BaseCMaskCar):
     """Abstract CustomMaskFromClipsAndRanges interface"""
 
     processing: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = field(
@@ -69,15 +88,15 @@ class CustomMaskFromClipsAndRanges(GeneralMask, _base_cmaskcar):
         mask = vs.core.std.BlankClip(
             ref,
             format=ref.format.replace(color_family=vs.GRAY, subsampling_h=0, subsampling_w=0).id,
-            keep=True, color=0
+            keep=True,
+            color=0,
         )
 
         matrix = Matrix.from_video(ref)
 
         for maskclip, mask_ranges in zip(self.clips, self.frame_ranges(ref)):
             maskclip = Point().resample(
-                maskclip.std.AssumeFPS(ref), mask, matrix,
-                range_in=ColorRange.FULL, range=ColorRange.FULL
+                maskclip.std.AssumeFPS(ref), mask, matrix, range_in=ColorRange.FULL, range=ColorRange.FULL
             )
             maskclip = self.processing(maskclip)
             maskclip = vs.core.std.Loop(maskclip, mask.num_frames)
@@ -87,8 +106,7 @@ class CustomMaskFromClipsAndRanges(GeneralMask, _base_cmaskcar):
         return mask
 
     @abstractmethod
-    def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]:
-        ...
+    def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]: ...
 
 
 @dataclass
@@ -101,14 +119,14 @@ class CustomMaskFromFolder(CustomMaskFromClipsAndRanges):
         if not (folder_path := Path(str(self.folder_path))).is_dir():
             raise FileNotExistsError('"folder_path" must be an existing path directory!', self.get_mask)
 
-        self.files = list(folder_path.glob('*'))
+        self.files = list(folder_path.glob("*"))
 
         self.clips = [self.idx.source(file, bits=-1) for file in self.files]
 
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]:
         return [
             [(other[-1] if other else end, end)]
-            for (*other, end) in (map(int, name.stem.split('_')) for name in self.files)
+            for (*other, end) in (map(int, name.stem.split("_")) for name in self.files)
         ]
 
 
@@ -122,7 +140,7 @@ class CustomMaskFromRanges(CustomMaskFromClipsAndRanges):
     ranges: Mapping[FilePathType, FrameRangeN | FrameRangesN]
 
     def __post_init__(self) -> None:
-        self.clips = [self.idx.source(str(file), bits=-1) for file in self.ranges.keys()]
+        self.clips = [self.idx.source(str(file), bits=-1) for file in self.ranges]
 
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]:
         return [normalize_ranges(clip, ranges) for ranges in self.ranges.values()]
@@ -150,20 +168,16 @@ class HardsubMask(DeferredMask):
         masks = [self.get_mask(hardsub, ref)]
         partials_dehardsubbed = [hardsub]
         dehardsub_masks = list[ConstantFormatVideoNode]()
-        partials = partials + [ref]
+        partials = [*partials, ref]
 
         thr = scale_value(self.bin_thr, 32, masks[-1])
 
         for p in partials:
-            masks.append(
-                ExprOp.SUB.combine(masks[-1], self.get_mask(p, ref))
-            )
+            masks.append(ExprOp.SUB.combine(masks[-1], self.get_mask(p, ref)))
             dehardsub_masks.append(
                 iterate(expr_func([masks[-1]], f"x {thr} < 0 x ?"), core.lazy.std.Maximum, 4).std.Inflate()
             )
-            partials_dehardsubbed.append(
-                partials_dehardsubbed[-1].std.MaskedMerge(p, dehardsub_masks[-1])
-            )
+            partials_dehardsubbed.append(partials_dehardsubbed[-1].std.MaskedMerge(p, dehardsub_masks[-1]))
 
             masks[-1] = masks[-1].std.MaskedMerge(masks[-1].std.Invert(), masks[-2])
 
@@ -212,7 +226,7 @@ class HardsubSignFades(HardsubMask):
         expand_mode: XxpandMode = XxpandMode.RECTANGLE,
         *,
         blur: bool = False,
-        refframes: int | list[int | None] | None = None
+        refframes: int | list[int | None] | None = None,
     ) -> None:
         """
         :param ranges:          The frame ranges that the mask should be applied to.
@@ -226,7 +240,7 @@ class HardsubSignFades(HardsubMask):
         :param blur:            Whether to apply a box blur effect to the mask.
         :param refframes:       A list of reference frames used in building the final mask for each specified range.
                                 Must have the same length as `ranges`.
-        """
+        """  # noqa: E501
         self.highpass = highpass
         self.expand = expand
         self.edgemask = edgemask
@@ -235,15 +249,12 @@ class HardsubSignFades(HardsubMask):
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        clipedge, refedge = (
-            box_blur(normalize_mask(self.edgemask, x, **kwargs))
-            for x in (clip, ref)
-        )
+        clipedge, refedge = (box_blur(normalize_mask(self.edgemask, x, **kwargs)) for x in (clip, ref))
 
         highpass = scale_delta(self.highpass, 32, clip)
 
         mask = median_blur(
-            norm_expr([clipedge, refedge], f'x y - {highpass} < 0 {ExprToken.RangeMax} ?', func=self.__class__)
+            norm_expr([clipedge, refedge], f"x y - {highpass} < 0 {ExprToken.RangeMax} ?", func=self.__class__)
         )
 
         return max_planes(Morpho.inflate(Morpho.expand(mask, self.expand, mode=self.expand_mode), iterations=4))
@@ -271,7 +282,7 @@ class HardsubSign(HardsubMask):
         expand_mode: XxpandMode = XxpandMode.RECTANGLE,
         *,
         blur: bool = False,
-        refframes: int | list[int | None] | None = None
+        refframes: int | list[int | None] | None = None,
     ) -> None:
         """
         :param ranges:          The frame ranges that the mask should be applied to.
@@ -285,7 +296,7 @@ class HardsubSign(HardsubMask):
         :param blur:            Whether to apply a box blur effect to the mask.
         :param refframes:       A list of reference frames used in building the final mask for each specified range.
                                 Must have the same length as `ranges`.
-        """
+        """  # noqa: E501
         self.thr = thr
         self.minimum = minimum
         self.expand = expand
@@ -297,7 +308,7 @@ class HardsubSign(HardsubMask):
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         assert check_variable(clip, self._mask)
 
-        hsmf = norm_expr([clip, ref], 'x y - abs', func=self.__class__)
+        hsmf = norm_expr([clip, ref], "x y - abs", func=self.__class__)
         hsmf = core.resize.Bilinear(hsmf, format=clip.format.replace(subsampling_w=0, subsampling_h=0).id)
 
         hsmf = ExprOp.MAX(hsmf, split_planes=True)
@@ -326,7 +337,7 @@ class HardsubLine(HardsubMask):
         expand: int | None = None,
         *,
         blur: bool = False,
-        refframes: int | list[int | None] | None = None
+        refframes: int | list[int | None] | None = None,
     ) -> None:
         """
         :param ranges:          The frame ranges that the mask should be applied to.
@@ -336,7 +347,7 @@ class HardsubLine(HardsubMask):
         :param blur:            Whether to apply a box blur effect to the mask.
         :param refframes:       A list of reference frames used in building the final mask for each specified range.
                                 Must have the same length as `ranges`.
-        """
+        """  # noqa: E501
         self.expand = expand
 
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
@@ -349,16 +360,18 @@ class HardsubLine(HardsubMask):
         y_range = get_peak_value(clip) - get_lowest_value(clip)
         uv_range = get_peak_value(clip, chroma=True) - get_lowest_value(clip, chroma=True)
 
-        uv_abs = f' {get_neutral_value(clip)} - abs '
-        yexpr = f'x y - abs {y_range * 0.7} > 255 0 ?'
+        uv_abs = f" {get_neutral_value(clip)} - abs "
+        yexpr = f"x y - abs {y_range * 0.7} > 255 0 ?"
         uv_thr = uv_range * 0.8
-        uvexpr = f'x {uv_abs} {uv_thr} < y {uv_abs} {uv_thr} < and 255 0 ?'
+        uvexpr = f"x {uv_abs} {uv_thr} < y {uv_abs} {uv_thr} < and 255 0 ?"
 
         right = core.resize.Point(clip, src_left=4)
 
         subedge = norm_expr(
-            [clip, right], (yexpr, uvexpr), format=clip.format.replace(sample_type=vs.INTEGER, bits_per_sample=8),
-            func=self.__class__
+            [clip, right],
+            (yexpr, uvexpr),
+            format=clip.format.replace(sample_type=vs.INTEGER, bits_per_sample=8),
+            func=self.__class__,
         )
 
         subedge = ExprOp.MIN(subedge.resize.Bicubic(format=vs.YUV444P8), split_planes=True)
@@ -368,12 +381,12 @@ class HardsubLine(HardsubMask):
         clips = [box_blur(clip_y), box_blur(ref_y)]
         diff = norm_expr(
             clips,
-            'x {upper} > x {lower} < or x y - abs {mindiff} > and 255 0 ?',
+            "x {upper} > x {lower} < or x y - abs {mindiff} > and 255 0 ?",
             upper=scale_value(0.8, 32, clip),
             lower=scale_value(0.2, 32, clip),
             mindiff=y_range * 0.1,
             format=vs.GRAY8,
-            func=self.__class__
+            func=self.__class__,
         )
         diff = Morpho.maximum(diff, iterations=2, func=self.__class__)
 
@@ -408,7 +421,7 @@ class HardsubLineFade(HardsubLine):
         :param refframe:        Weight of the reference frame used in building the final mask for each range.
                                 Must be between 0 and 1.
         :param blur:            Whether to apply a box blur effect to the mask.
-        """
+        """  # noqa: E501
         if refframe < 0 or refframe > 1:
             raise CustomOverflowError('"refframe" must be between 0 and 1!', self.__class__)
 
@@ -417,10 +430,7 @@ class HardsubLineFade(HardsubLine):
         super().__init__(ranges, bound, expand, blur=blur, refframes=None)
 
     def get_mask(self, clip: vs.VideoNode, /, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        self.refframes = [
-            r[0] + round((r[1] - r[0]) * self.ref_float)
-            for r in normalize_ranges(ref, self.ranges)
-        ]
+        self.refframes = [r[0] + round((r[1] - r[0]) * self.ref_float) for r in normalize_ranges(ref, self.ranges)]
 
         return super().get_mask(clip, ref)
 
@@ -439,7 +449,7 @@ class HardsubASS(HardsubMask):
         *,
         fontdir: str | None = None,
         blur: bool = False,
-        refframes: int | list[int | None] | None = None
+        refframes: int | list[int | None] | None = None,
     ) -> None:
         """
         :param filename:        Subtitle file.
@@ -449,14 +459,14 @@ class HardsubASS(HardsubMask):
         :param blur:            Whether to apply a box blur effect to the mask.
         :param refframes:       A list of reference frames used in building the final mask for each specified range.
                                 Must have the same length as `ranges`.
-        """
+        """  # noqa: E501
         self.filename = str(filename)
         self.fontdir = fontdir
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
     @limiter
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        mask = core.sub.TextFile(ref, self.filename, fontdir=self.fontdir, blend=False).std.PropToClip('_Alpha')
+        mask = core.sub.TextFile(ref, self.filename, fontdir=self.fontdir, blend=False).std.PropToClip("_Alpha")
 
         mask = mask.std.Binarize(1)
 

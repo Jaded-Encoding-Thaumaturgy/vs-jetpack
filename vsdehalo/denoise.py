@@ -10,28 +10,50 @@ from vsexprtools import ExprOp, ExprToken, norm_expr
 from vskernels import Catrom, Point, Scaler, ScalerLike
 from vsmasktools import Morpho, Prewitt
 from vsrgtools import (
-    LimitFilterMode, contrasharpening, contrasharpening_dehalo, gauss_blur, limit_filter, median_blur, repair
+    LimitFilterMode,
+    contrasharpening,
+    contrasharpening_dehalo,
+    gauss_blur,
+    limit_filter,
+    median_blur,
+    repair,
 )
 from vstools import (
-    ConstantFormatVideoNode, FunctionUtil, PlanesT, check_progressive, check_ref_clip, core, fallback, mod4, plane,
-    to_arr, vs
+    ConstantFormatVideoNode,
+    FunctionUtil,
+    PlanesT,
+    check_progressive,
+    check_ref_clip,
+    core,
+    fallback,
+    mod4,
+    plane,
+    to_arr,
+    vs,
 )
 
-__all__ = [
-    'smooth_dering',
-    'vine_dehalo'
-]
+__all__ = ["smooth_dering", "vine_dehalo"]
 
 
 def smooth_dering(
     clip: vs.VideoNode,
     smooth: vs.VideoNode | PrefilterLike = Prefilter.MINBLUR(radius=1),
     ringmask: vs.VideoNode | None = None,
-    mrad: int = 1, msmooth: int = 1, minp: int = 1, mthr: float = 0.24, incedge: bool = False,
-    thr: int = 12, elast: float = 2.0, darkthr: int | None = None,
-    contra: int | float | bool = 1.2, drrep: int = 13, pre_ss: float = 1.0,
+    mrad: int = 1,
+    msmooth: int = 1,
+    minp: int = 1,
+    mthr: float = 0.24,
+    incedge: bool = False,
+    thr: int = 12,
+    elast: float = 2.0,
+    darkthr: int | None = None,
+    contra: int | float | bool = 1.2,
+    drrep: int = 13,
+    pre_ss: float = 1.0,
     pre_supersampler: ScalerLike = NNEDI3(noshift=(True, False)),
-    pre_downscaler: ScalerLike = Point, planes: PlanesT = 0, show_mask: bool = False
+    pre_downscaler: ScalerLike = Point,
+    planes: PlanesT = 0,
+    show_mask: bool = False,
 ) -> vs.VideoNode:
     """
     Applies deringing by using a smart smoother near edges (where ringing
@@ -94,9 +116,10 @@ def smooth_dering(
     pre_downscaler = Scaler.ensure_obj(pre_downscaler, smooth_dering)
 
     if pre_ss > 1.0:
-        work_clip = cast(ConstantFormatVideoNode, pre_supersampler.scale(
-            work_clip, mod4(work_clip.width * pre_ss), mod4(work_clip.height * pre_ss)
-        ))
+        work_clip = cast(
+            ConstantFormatVideoNode,
+            pre_supersampler.scale(work_clip, mod4(work_clip.width * pre_ss), mod4(work_clip.height * pre_ss)),
+        )
 
     darkthr = fallback(darkthr, thr // 4)
 
@@ -118,14 +141,9 @@ def smooth_dering(
         else:
             smoothed = contrasharpening_dehalo(smoothed, work_clip, contra, planes=planes)
 
-    if set(rep_dr) != {0}:
-        repclp = repair(work_clip, smoothed, drrep)
-    else:
-        repclp = work_clip
+    repclp = repair(work_clip, smoothed, drrep) if set(rep_dr) != {0} else work_clip
 
-    limitclp = limit_filter(
-        repclp, work_clip, None, LimitFilterMode.CLAMPING, planes, thr, elast, darkthr
-    )
+    limitclp = limit_filter(repclp, work_clip, None, LimitFilterMode.CLAMPING, planes, thr, elast, darkthr)
 
     if ringmask is None:
         prewittm = Prewitt.edgemask(work_clip, mthr)
@@ -148,8 +166,7 @@ def smooth_dering(
                 imask = Morpho.inpand(Morpho.inflate(fmask, planes=planes), ceil(minp / 2), planes=planes)
 
             ringmask = norm_expr(
-                [omask, imask], [f'{ExprToken.RangeMax} {ExprToken.RangeMax} y - / x *', ExprOp.clamp()],
-                func=func.func
+                [omask, imask], [f"{ExprToken.RangeMax} {ExprToken.RangeMax} y - / x *", ExprOp.clamp()], func=func.func
             )
 
     dering = work_clip.std.MaskedMerge(limitclp, ringmask, planes)
@@ -164,8 +181,14 @@ def smooth_dering(
 
 
 def vine_dehalo(
-    clip: vs.VideoNode, strength: float | Sequence[float] = 16.0, sharp: float = 0.5, sigma: float | list[float] = 1.0,
-    supersampler: ScalerLike = NNEDI3, downscaler: ScalerLike = Catrom, planes: PlanesT = 0, **kwargs: Any
+    clip: vs.VideoNode,
+    strength: float | Sequence[float] = 16.0,
+    sharp: float = 0.5,
+    sigma: float | list[float] = 1.0,
+    supersampler: ScalerLike = NNEDI3,
+    downscaler: ScalerLike = Catrom,
+    planes: PlanesT = 0,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Dehalo via non-local errors filtering.
@@ -190,7 +213,7 @@ def vine_dehalo(
     downscaler = Scaler.ensure_obj(downscaler, func.func)
 
     sharp = min(max(sharp, 0.0), 1.0)
-    simr = kwargs.pop('simr', None)
+    simr = kwargs.pop("simr", None)
 
     # Only God knows how these were derived.
     constants0 = 0.3926327792690057290863679493724 * sharp
@@ -208,10 +231,7 @@ def vine_dehalo(
     smoothed = core.std.Merge(supersampled, smoothed, weight)
 
     highpassed = frequency_merge(
-        func.work_clip, smoothed,
-        mode_low=func.work_clip,
-        mode_high=smoothed,
-        lowpass=partial(gauss_blur, sigma=sigma)
+        func.work_clip, smoothed, mode_low=func.work_clip, mode_high=smoothed, lowpass=partial(gauss_blur, sigma=sigma)
     )
 
     refined = func.work_clip.std.MakeDiff(highpassed)

@@ -2,20 +2,32 @@ from __future__ import annotations
 
 from functools import partial
 from os import PathLike
-from typing import Any, Iterable, Literal, Protocol, Sequence, overload
+from typing import Any, Callable, Iterable, Literal, overload
 
 from vstools import (
-    ChromaLocationT, ColorRangeT, CustomRuntimeError, FieldBasedT, FileType, FileTypeMismatchError, IndexingType,
-    MatrixT, ParsedFile, PrimariesT, SPath, SPathLike, TransferT, check_perms, copy_signature, initialize_clip,
-    match_clip, to_arr, vs
+    ChromaLocationT,
+    ColorRangeT,
+    CustomRuntimeError,
+    FieldBasedT,
+    FileType,
+    FileTypeMismatchError,
+    IndexingType,
+    MatrixT,
+    ParsedFile,
+    PrimariesT,
+    SPath,
+    SPathLike,
+    TransferT,
+    check_perms,
+    initialize_clip,
+    match_clip,
+    to_arr,
+    vs,
 )
 
 from .indexers import IMWRI, LSMAS, BestSource, D2VWitch, DGIndex, DGIndexNV, Indexer
 
-__all__ = [
-    'parse_video_filepath',
-    'source'
-]
+__all__ = ["parse_video_filepath", "source"]
 
 
 def parse_video_filepath(filepath: SPathLike | Iterable[SPathLike]) -> tuple[SPath, ParsedFile]:
@@ -25,9 +37,9 @@ def parse_video_filepath(filepath: SPathLike | Iterable[SPathLike]) -> tuple[SPa
     try:
         filepath = next(iter(Indexer.normalize_filenames(filepath)))
     except StopIteration:
-        raise CustomRuntimeError('No files provided!', source, filepath)
+        raise CustomRuntimeError("No files provided!", source, filepath)
 
-    check_perms(filepath, 'r', strict=True, func=source)
+    check_perms(filepath, "r", strict=True, func=source)
 
     file = FileType.parse(filepath) if filepath.exists() else None
 
@@ -36,7 +48,7 @@ def parse_video_filepath(filepath: SPathLike | Iterable[SPathLike]) -> tuple[SPa
 
     if not file or not _check_file_type(FileType(file.file_type)):
         for itype in IndexingType:
-            if (newpath := filepath.with_suffix(f'{filepath.suffix}{itype.value}')).exists():
+            if (newpath := filepath.with_suffix(f"{filepath.suffix}{itype.value}")).exists():
                 file = FileType.parse(newpath)
 
     if not file or not _check_file_type(FileType(file.file_type)):
@@ -45,71 +57,11 @@ def parse_video_filepath(filepath: SPathLike | Iterable[SPathLike]) -> tuple[SPa
     return filepath, file
 
 
-class source_func(Protocol):
-    @overload
-    def __call__(
-        self,
-        filepath: SPathLike | Sequence[SPathLike],
-        bits: int | None = None, *,
-        matrix: MatrixT | None = None,
-        transfer: TransferT | None = None,
-        primaries: PrimariesT | None = None,
-        chroma_location: ChromaLocationT | None = None,
-        color_range: ColorRangeT | None = None,
-        field_based: FieldBasedT | None = None,
-        ref: vs.VideoNode | None = None,
-        film_thr: float = 99.0,
-        name: str | Literal[False] = False,
-        **kwargs: Any
-    ) -> vs.VideoNode:
-        ...
-
-    @overload
-    def __call__(
-        self,
-        bits: int | None = None, *,
-        matrix: MatrixT | None = None,
-        transfer: TransferT | None = None,
-        primaries: PrimariesT | None = None,
-        chroma_location: ChromaLocationT | None = None,
-        color_range: ColorRangeT | None = None,
-        field_based: FieldBasedT | None = None,
-        ref: vs.VideoNode | None = None,
-        film_thr: float = 99.0,
-        name: str | Literal[False] = False,
-        **kwargs: Any
-    ) -> source_func:
-        ...
-
-    @overload
-    def __call__(
-        self,
-        filepath: None,
-        bits: int | None = None, *,
-        matrix: MatrixT | None = None,
-        transfer: TransferT | None = None,
-        primaries: PrimariesT | None = None,
-        chroma_location: ChromaLocationT | None = None,
-        color_range: ColorRangeT | None = None,
-        field_based: FieldBasedT | None = None,
-        ref: vs.VideoNode | None = None,
-        film_thr: float = 99.0,
-        name: str | Literal[False] = False,
-        **kwargs: Any
-    ) -> source_func:
-        ...
-
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        ...
-
-
-_source_func: source_func = ...  # type: ignore
-
-
-@copy_signature(_source_func)
+@overload
 def source(
-    filepath: SPathLike | Iterable[SPathLike] | None = None,
-    bits: int | None = None, *,
+    filepath: SPathLike | Iterable[SPathLike],
+    bits: int | None = None,
+    *,
     matrix: MatrixT | None = None,
     transfer: TransferT | None = None,
     primaries: PrimariesT | None = None,
@@ -119,13 +71,74 @@ def source(
     ref: vs.VideoNode | None = None,
     film_thr: float = 99.0,
     name: str | Literal[False] = False,
-    **kwargs: Any
-) -> vs.VideoNode | source_func:
+    **kwargs: Any,
+) -> vs.VideoNode: ...
+
+
+@overload
+def source(
+    *,
+    bits: int | None = None,
+    matrix: MatrixT | None = None,
+    transfer: TransferT | None = None,
+    primaries: PrimariesT | None = None,
+    chroma_location: ChromaLocationT | None = None,
+    color_range: ColorRangeT | None = None,
+    field_based: FieldBasedT | None = None,
+    ref: vs.VideoNode | None = None,
+    film_thr: float = 99.0,
+    name: str | Literal[False] = False,
+    **kwargs: Any,
+) -> Callable[[str], vs.VideoNode]: ...
+
+
+@overload
+def source(
+    filepath: None,
+    bits: int | None = None,
+    *,
+    matrix: MatrixT | None = None,
+    transfer: TransferT | None = None,
+    primaries: PrimariesT | None = None,
+    chroma_location: ChromaLocationT | None = None,
+    color_range: ColorRangeT | None = None,
+    field_based: FieldBasedT | None = None,
+    ref: vs.VideoNode | None = None,
+    film_thr: float = 99.0,
+    name: str | Literal[False] = False,
+    **kwargs: Any,
+) -> Callable[[str], vs.VideoNode]: ...
+
+
+def source(
+    filepath: SPathLike | Iterable[SPathLike] | None = None,
+    bits: int | None = None,
+    *,
+    matrix: MatrixT | None = None,
+    transfer: TransferT | None = None,
+    primaries: PrimariesT | None = None,
+    chroma_location: ChromaLocationT | None = None,
+    color_range: ColorRangeT | None = None,
+    field_based: FieldBasedT | None = None,
+    ref: vs.VideoNode | None = None,
+    film_thr: float = 99.0,
+    name: str | Literal[False] = False,
+    **kwargs: Any,
+) -> vs.VideoNode | Callable[[str], vs.VideoNode]:
     if filepath is None:
-        return partial(  # type: ignore
-            source, bits=bits if bits is not None else filepath, matrix=matrix, transfer=transfer, primaries=primaries,
-            chroma_location=chroma_location, color_range=color_range, field_based=field_based, ref=ref,
-            film_thr=film_thr, name=name, **kwargs
+        return partial(
+            source,
+            bits=bits if bits is not None else filepath,
+            matrix=matrix,
+            transfer=transfer,
+            primaries=primaries,
+            chroma_location=chroma_location,
+            color_range=color_range,
+            field_based=field_based,
+            ref=ref,
+            film_thr=film_thr,
+            name=name,
+            **kwargs,
         )
 
     clip = None
@@ -135,7 +148,7 @@ def source(
 
     props = dict[str, Any]()
 
-    to_skip = to_arr(kwargs.get('_to_skip', []))
+    to_skip = to_arr(kwargs.get("_to_skip", []))
 
     if file.ext is IndexingType.LWI:
         clip = LSMAS.source_func(filepath, **kwargs)
@@ -157,27 +170,27 @@ def source(
                     if video_format is not None:
                         video_fmt = str(video_format).strip().lower()
 
-                        if video_fmt == 'ffv1':
+                        if video_fmt == "ffv1":
                             raise RuntimeError
 
-                        bitdepth = trackmeta.get('bit_depth')
+                        bitdepth = trackmeta.get("bit_depth")
 
-                        if bitdepth is not None and video_fmt == 'avc' and int(bitdepth) > 8:
+                        if bitdepth is not None and video_fmt == "avc" and int(bitdepth) > 8:
                             raise RuntimeError
 
             indexer, filepath_dgi = DGIndexNV(), SPath(filepath)
 
-            if filepath_dgi.suffix != '.dgi':
+            if filepath_dgi.suffix != ".dgi":
                 filepath_dgi = next(iter(indexer.index([filepath_dgi], False, False)))
 
             idx_info = indexer.get_info(filepath_dgi, 0).footer
 
-            props |= dict(DgiFieldOp=0, DgiOrder=idx_info.order, DgiFilm=idx_info.film)
+            props |= {"DgiFieldOp": 0, "DgiOrder": idx_info.order, "DgiFilm": idx_info.film}
 
             indexer_kwargs = dict[str, Any]()
             if idx_info.film >= film_thr:
-                indexer_kwargs |= dict(fieldop=1)
-                props |= dict(DgiFieldOp=1, _FieldBased=0)
+                indexer_kwargs |= {"fieldop": 1}
+                props |= {"DgiFieldOp": 1, "_FieldBased": 0}
 
             clip = indexer.source_func(filepath_dgi, **indexer_kwargs)
         except (RuntimeError, AttributeError, FileNotFoundError):
@@ -203,9 +216,9 @@ def source(
                     clip = indexerr.source(filepath, bits=bits)
                     break
                 except Exception as e:
-                    if 'bgr0 is not supported' in str(e):
+                    if "bgr0 is not supported" in str(e):
                         try:
-                            clip = indexerr.source(filepath, format='rgb24', bits=bits)
+                            clip = indexerr.source(filepath, format="rgb24", bits=bits)
                             break
                         except Exception:
                             ...
@@ -213,10 +226,10 @@ def source(
     if clip is None:
         raise CustomRuntimeError(f'None of the indexers you have installed work on this file! "{filepath}"')
 
-    props |= dict(IdxFilePath=str(filepath))
+    props |= {"IdxFilePath": str(filepath)}
 
     if name:
-        props |= dict(Name=name)
+        props |= {"Name": name}
 
     clip = clip.std.SetFrameProps(**props)
 
@@ -224,7 +237,12 @@ def source(
         clip = match_clip(clip, ref, length=file.file_type is FileType.IMAGE)
 
     return initialize_clip(
-        clip, bits, matrix=matrix, transfer=transfer,
-        primaries=primaries, chroma_location=chroma_location,
-        color_range=color_range, field_based=field_based
+        clip,
+        bits,
+        matrix=matrix,
+        transfer=transfer,
+        primaries=primaries,
+        chroma_location=chroma_location,
+        color_range=color_range,
+        field_based=field_based,
     )

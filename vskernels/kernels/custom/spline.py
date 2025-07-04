@@ -10,6 +10,8 @@ from .helpers import poly3
 
 __all__ = ["Spline"]
 
+# ruff: noqa: N802
+
 
 class Spline(CustomComplexTapsKernel):
     """Spline resizer with an arbitrary number of taps."""
@@ -31,9 +33,9 @@ class Spline(CustomComplexTapsKernel):
         # derivatives match
         eqns += [
             (
-                [0] * (4 * i)  # noqa: W504
-                + [3 * (i + 1) ** 2, 2 * (i + 1), 1, 0]  # noqa: W504
-                + [-3 * (i + 1) ** 2, -2 * (i + 1), -1, 0]  # noqa: W504
+                [0] * (4 * i)
+                + [3 * (i + 1) ** 2, 2 * (i + 1), 1, 0]
+                + [-3 * (i + 1) ** 2, -2 * (i + 1), -1, 0]
                 + [0] * (4 * (n - i - 2))
             )
             for i in range(n - 1)

@@ -12,18 +12,20 @@ from .types import GenericMaskT
 from .utils import normalize_mask
 
 __all__ = [
-    'detail_mask',
-    'detail_mask_neo',
-    'simple_detail_mask',
-    'multi_detail_mask',
+    "detail_mask",
+    "detail_mask_neo",
+    "multi_detail_mask",
+    "simple_detail_mask",
 ]
 
 
 @limiter
 def detail_mask(
-    clip: vs.VideoNode, brz_mm: float, brz_ed: float,
+    clip: vs.VideoNode,
+    brz_mm: float,
+    brz_ed: float,
     minmax: MinMax = MinMax(rady=3, radc=2),
-    edge: GenericMaskT = Kirsch
+    edge: GenericMaskT = Kirsch,
 ) -> ConstantFormatVideoNode:
     assert check_variable(clip, detail_mask)
 
@@ -41,8 +43,12 @@ def detail_mask(
 
 @limiter
 def detail_mask_neo(
-    clip: vs.VideoNode, sigma: float = 1.0, detail_brz: float = 0.05, lines_brz: float = 0.08,
-    edgemask: GenericMaskT = Prewitt, rg_mode: RemoveGrain.Mode = remove_grain.Mode.MINMAX_MEDIAN_OPP
+    clip: vs.VideoNode,
+    sigma: float = 1.0,
+    detail_brz: float = 0.05,
+    lines_brz: float = 0.08,
+    edgemask: GenericMaskT = Prewitt,
+    rg_mode: RemoveGrain.Mode = remove_grain.Mode.MINMAX_MEDIAN_OPP,
 ) -> ConstantFormatVideoNode:
     assert check_variable(clip, detail_mask_neo)
 
@@ -88,7 +94,7 @@ def multi_detail_mask(clip: vs.VideoNode, thr: float = 0.015) -> ConstantFormatV
 
     return ExprOp.MIN.combine(
         ExprOp.MIN.combine(
-            simple_detail_mask(clip, brz_a=1, brz_b=2 * thr),
-            Morpho.maximum(general_mask, iterations=4).std.Inflate()
-        ), general_mask.std.Maximum()
+            simple_detail_mask(clip, brz_a=1, brz_b=2 * thr), Morpho.maximum(general_mask, iterations=4).std.Inflate()
+        ),
+        general_mask.std.Maximum(),
     )

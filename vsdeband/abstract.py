@@ -5,13 +5,10 @@ from typing import Any
 
 from vstools import inject_self, vs
 
-__all__ = [
-    'Debander'
-]
+__all__ = ["Debander"]
 
 
 class Debander:
     @abstractmethod
     @inject_self
-    def deband(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        ...
+    def deband(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode: ...

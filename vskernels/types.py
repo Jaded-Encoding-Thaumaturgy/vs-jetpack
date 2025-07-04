@@ -8,11 +8,17 @@ from jetpytools import CustomNotImplementedError
 from vstools import CustomIntEnum, KwargsT, padder, vs
 
 __all__ = [
-    'BorderHandling', 'SampleGridModel',
-    'TopShift', 'LeftShift',
-    'TopFieldTopShift', 'TopFieldLeftShift', 'BotFieldTopShift', 'BotFieldLeftShift',
-    'ShiftT',
-    'Slope', 'Center'
+    "BorderHandling",
+    "BotFieldLeftShift",
+    "BotFieldTopShift",
+    "Center",
+    "LeftShift",
+    "SampleGridModel",
+    "ShiftT",
+    "Slope",
+    "TopFieldLeftShift",
+    "TopFieldTopShift",
+    "TopShift",
 ]
 
 
@@ -24,9 +30,7 @@ class BorderHandling(CustomIntEnum):
     def prepare_clip(
         self, clip: vs.VideoNode, min_pad: int = 2, shift: tuple[TopShift, LeftShift] = (0, 0)
     ) -> tuple[vs.VideoNode, tuple[TopShift, LeftShift]]:
-        pad_w, pad_h = (
-            self.pad_amount(size, min_pad) for size in (clip.width, clip.height)
-        )
+        pad_w, pad_h = (self.pad_amount(size, min_pad) for size in (clip.width, clip.height))
 
         if pad_w == pad_h == 0:
             return clip, shift
@@ -62,7 +66,7 @@ class SampleGridModel(CustomIntEnum):
             src_width = src_width * (width - 1) / (src_width - 1)
             src_height = src_height * (height - 1) / (src_height - 1)
 
-            kwargs |= dict(src_width=src_width, src_height=src_height)
+            kwargs |= {"src_width": src_width, "src_height": src_height}
             shift_x, shift_y, *_ = tuple(
                 (x / 2 + y for x, y in zip(((height - src_height), (width - src_width)), shift))
             )
@@ -73,16 +77,16 @@ class SampleGridModel(CustomIntEnum):
     def for_dst(
         self, clip: vs.VideoNode, width: int, height: int, shift: tuple[float, float], **kwargs: Any
     ) -> tuple[KwargsT, tuple[float, float]]:
-        src_width = kwargs.get('src_width', width)
-        src_height = kwargs.get('src_height', height)
+        src_width = kwargs.get("src_width", width)
+        src_height = kwargs.get("src_height", height)
 
         return self(src_width, src_height, width, height, shift, kwargs)
 
     def for_src(
         self, clip: vs.VideoNode, width: int, height: int, shift: tuple[float, float], **kwargs: Any
     ) -> tuple[KwargsT, tuple[float, float]]:
-        src_width = kwargs.get('src_width', clip.width)
-        src_height = kwargs.get('src_height', clip.height)
+        src_width = kwargs.get("src_width", clip.width)
+        src_height = kwargs.get("src_height", clip.height)
 
         return self(width, height, src_width, src_height, shift, kwargs)
 
@@ -132,14 +136,15 @@ Used when processing interlaced video to describe the horizontal shift of the bo
 ShiftT = Union[
     tuple[TopShift, LeftShift],
     tuple[
-        TopShift | tuple[TopFieldTopShift, BotFieldTopShift],
-        LeftShift | tuple[TopFieldLeftShift, BotFieldLeftShift]
-    ]
+        TopShift | tuple[TopFieldTopShift, BotFieldTopShift], LeftShift | tuple[TopFieldLeftShift, BotFieldLeftShift]
+    ],
 ]
 """
 Type alias for shift in both horizontal and vertical directions.
 
-Can either represent a single shift (for progressive video) or separate shifts for top and bottom fields (for interlaced video).
+Can either represent a single shift (for progressive video)
+or separate shifts for top and bottom fields (for interlaced video).
+
 The first value in the tuple represents vertical shift, and the second represents horizontal shift.
 """
 

@@ -12,9 +12,7 @@ from typing_extensions import deprecated
 
 from vstools import MatrixT, PlanesT, vs
 
-__all__ = [
-    'ccd', 'CCDMode', 'CCDPoints'
-]
+__all__ = ["CCDMode", "CCDPoints", "ccd"]
 
 
 class CCDMode(CustomIntEnum):
@@ -86,10 +84,17 @@ class CCDPoints(CustomIntEnum):
 
 @deprecated("`ccd` will be deprecated when zsmooth CCD will be implemented.", category=PendingDeprecationWarning)
 def ccd(
-    src: vs.VideoNode, thr: float = 4, tr: int = 0, ref: vs.VideoNode | None = None,
-    mode: int | CCDMode | None = None, scale: float | None = None, matrix: MatrixT | None = None,
+    src: vs.VideoNode,
+    thr: float = 4,
+    tr: int = 0,
+    ref: vs.VideoNode | None = None,
+    mode: int | CCDMode | None = None,
+    scale: float | None = None,
+    matrix: MatrixT | None = None,
     ref_points: int | CCDPoints | None = CCDPoints.LOW | CCDPoints.MEDIUM,
-    i444: bool = False, planes: PlanesT = None, **ssim_kwargs: Any
+    i444: bool = False,
+    planes: PlanesT = None,
+    **ssim_kwargs: Any,
 ) -> vs.VideoNode:
     """
     Camcorder Color Denoise is an original VirtualDub filter made by Sergey Stolyarevsky.
@@ -124,9 +129,22 @@ def ccd(
     from vskernels import Bicubic, Point
     from vsscale import SSIM
     from vstools import (
-        EXPR_VARS, ConstantFormatVideoNode, CustomIndexError, InvalidColorFamilyError, Matrix,
-        UnsupportedSubsamplingError, check_ref_clip, check_variable, fallback, get_peak_value, join, normalize_planes,
-        plane, shift_clip, split, vs
+        EXPR_VARS,
+        ConstantFormatVideoNode,
+        CustomIndexError,
+        InvalidColorFamilyError,
+        Matrix,
+        UnsupportedSubsamplingError,
+        check_ref_clip,
+        check_variable,
+        fallback,
+        get_peak_value,
+        join,
+        normalize_planes,
+        plane,
+        shift_clip,
+        split,
+        vs,
     )
 
     assert check_variable(src, ccd)
@@ -138,17 +156,17 @@ def ccd(
 
     if complexpr_available:
         if tr < 0 or tr > 3:
-            raise CustomIndexError('Temporal radius must be between 0 and 3 (inclusive)!', ccd, tr)
+            raise CustomIndexError("Temporal radius must be between 0 and 3 (inclusive)!", ccd, tr)
         elif tr > src.num_frames // 2:
-            raise CustomIndexError('Temporal radius must be less than half of the clip length!', ccd, tr)
+            raise CustomIndexError("Temporal radius must be less than half of the clip length!", ccd, tr)
     elif tr < 0:
-        raise CustomIndexError('Temporal radius must be more than 0!', ccd, tr)
+        raise CustomIndexError("Temporal radius must be more than 0!", ccd, tr)
 
     is_yuv = src.format.color_family is vs.YUV
     is_subsampled = src.format.subsampling_h or src.format.subsampling_w
 
     if mode is not None and not is_subsampled:
-        raise UnsupportedSubsamplingError(f'{mode} is available only for subsampled video!', ccd)
+        raise UnsupportedSubsamplingError(f"{mode} is available only for subsampled video!", ccd)
 
     mode = fallback(CCDMode.from_param(mode), CCDMode.CHROMA_ONLY)
     if not isinstance(ref_points, int):
@@ -165,13 +183,11 @@ def ccd(
     def _ccd_expr(src: vs.VideoNode, rgb: vs.VideoNode) -> vs.VideoNode:
         nonlocal scale
 
-        rgb_clips = [
-            vs.core.std.ShufflePlanes([rgb, rgb, rgb], [i, i, i], vs.RGB) for i in range(3)
-        ]
+        rgb_clips = [vs.core.std.ShufflePlanes([rgb, rgb, rgb], [i, i, i], vs.RGB) for i in range(3)]
 
         peak = get_peak_value(src, False)
 
-        thrs = thr ** 2 / (255 ** 2 * 3)
+        thrs = thr**2 / (255**2 * 3)
 
         expr_clips = [src, *rgb_clips]
 
@@ -187,21 +203,36 @@ def ccd(
         l_d, m_d, h_d = round(scale * 4), round(scale * 8), round(scale * 12)
 
         low_points = {
-            'F': (-l_d, -l_d), 'G': (+l_d, -l_d),
-            'J': (-l_d, +l_d), 'K': (+l_d, +l_d),
+            "F": (-l_d, -l_d),
+            "G": (+l_d, -l_d),
+            "J": (-l_d, +l_d),
+            "K": (+l_d, +l_d),
         }
 
         med_points = {
-            'Q': (-m_d, -m_d), 'R': (0, -m_d), 'S': (+m_d, -m_d),
-            'T': (-m_d, 0), '                   U': (+m_d, 0),
-            'V': (-m_d, +m_d), 'W': (0, +m_d), 'X': (+m_d, +m_d),
+            "Q": (-m_d, -m_d),
+            "R": (0, -m_d),
+            "S": (+m_d, -m_d),
+            "T": (-m_d, 0),
+            "                   U": (+m_d, 0),
+            "V": (-m_d, +m_d),
+            "W": (0, +m_d),
+            "X": (+m_d, +m_d),
         }
 
         high_points = {
-            'A': (-h_d, -h_d), 'B': (-l_d, -h_d), 'C': (+l_d, -h_d), 'D': (+h_d, -h_d),
-            'E': (-h_d, -l_d), '                                      H': (+h_d, -l_d),
-            'I': (-h_d, +l_d), '                                      L': (+h_d, +l_d),
-            'M': (-h_d, +h_d), 'N': (-l_d, +h_d), 'O': (+l_d, +h_d), 'P': (+h_d, +h_d),
+            "A": (-h_d, -h_d),
+            "B": (-l_d, -h_d),
+            "C": (+l_d, -h_d),
+            "D": (+h_d, -h_d),
+            "E": (-h_d, -l_d),
+            "                                      H": (+h_d, -l_d),
+            "I": (-h_d, +l_d),
+            "                                      L": (+h_d, +l_d),
+            "M": (-h_d, +h_d),
+            "N": (-l_d, +h_d),
+            "O": (+l_d, +h_d),
+            "P": (+h_d, +h_d),
         }
 
         if ref_points == CCDPoints.ALL:
@@ -216,14 +247,14 @@ def ccd(
         tr_nclips = tr * 2 + 1
         num_points = len(expr_points.keys())
 
-        plusses_plane = '+ ' * (tr_nclips - 1)
-        plusses_points = '+ ' * (num_points - 1)
+        plusses_plane = "+ " * (tr_nclips - 1)
+        plusses_points = "+ " * (num_points - 1)
 
         def _get_weight_expr(x: int, y: int, c: str, weight: float | None = None) -> str:
-            scale_str = peak != 1 and f'{peak} / ' or ''
-            weigth_str = weight is not None and f'{weight_b} *' or ''
+            scale_str = (peak != 1 and f"{peak} / ") or ""
+            weigth_str = (weight is not None and f"{weight_b} *") or ""
 
-            return f'{c}[{x},{y}] {c} - {scale_str} 2 pow {weigth_str}'
+            return f"{c}[{x},{y}] {c} - {scale_str} 2 pow {weigth_str}"
 
         expression = list[str]()
 
@@ -242,19 +273,19 @@ def ccd(
                         rgb_expr.append(_get_weight_expr(x, y, bc, weight_b))
                         rgb_expr.append(_get_weight_expr(x, y, fc, weight_f))
 
-                    rgb_expr.append(f'{plusses_plane} {tr_nclips} /')
+                    rgb_expr.append(f"{plusses_plane} {tr_nclips} /")
 
             expression.append(f"{' '.join(rgb_expr)} + + {char}!")
 
         for char in expr_points:
-            expression.append(f'{char}@ {thrs} < 1 0 ?')
+            expression.append(f"{char}@ {thrs} < 1 0 ?")
 
-        expression.append(f'{plusses_points} 1 + WQ!')
+        expression.append(f"{plusses_points} 1 + WQ!")
 
         for char, (x, y) in expr_points.items():
-            expression.append(f'{char}@ {thrs} < x[{x},{y}] 0 ?')
+            expression.append(f"{char}@ {thrs} < x[{x},{y}] 0 ?")
 
-        expression.append(f'{plusses_points} x + WQ@ /')
+        expression.append(f"{plusses_points} x + WQ@ /")
 
         return norm_expr(expr_clips, expression, planes, src444_format, func=ccd)
 
@@ -279,14 +310,15 @@ def ccd(
     if not is_subsampled:
         yuv, yuvref = src, ref
     elif mode in {CCDMode.NNEDI_BICUBIC, CCDMode.NNEDI_SSIM}:
-        ref_clips = list[list[ConstantFormatVideoNode] | None]([split(src), ref and split(ref) or None])  # pyright: ignore[reportArgumentType]
+        ref_clips = list[list[ConstantFormatVideoNode] | None]([split(src), (ref and split(ref)) or None])  # pyright: ignore[reportArgumentType]
 
         src_left += 0.125 * divw
 
         yuv, yuvref = [
-            join(planes[:1] + [
-                NNEDI3().scale(p, p.width * divw, p.height * divh) for p in planes[1:]
-            ]) if planes else None for planes in ref_clips
+            join(planes[:1] + [NNEDI3().scale(p, p.width * divw, p.height * divh) for p in planes[1:]])
+            if planes
+            else None
+            for planes in ref_clips
         ]
     else:
         yuv = vs.core.resize.Bicubic(src, yuvw, yuvh, format=src444_format.id)

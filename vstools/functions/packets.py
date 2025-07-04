@@ -1,33 +1,32 @@
 from __future__ import annotations
 
 import io
+import itertools
 import json
 import shutil
 import warnings
-
 from functools import cache
 from subprocess import PIPE, Popen
 from tempfile import NamedTemporaryFile
 from typing import TypedDict
 
 import vapoursynth as vs
-
 from jetpytools import CustomValueError, DependencyNotFoundError, FuncExceptT, SPath, SPathLike
 from typing_extensions import Self
 
+from ..types import VideoNodeT
 from .file import PackageStorage
 from .timecodes import Keyframes
 
-from..types import VideoNodeT
-
 __all__ = [
-    'VideoPackets',
-    'ScenePacketStats',
+    "ScenePacketStats",
+    "VideoPackets",
 ]
+
 
 @cache
 def _get_packet_storage() -> PackageStorage:
-    return PackageStorage(package_name='packets')
+    return PackageStorage(package_name="packets")
 
 
 class ScenePacketStats(TypedDict):
@@ -53,8 +52,7 @@ class VideoPackets(list[int]):
 
     @classmethod
     def from_video(
-        cls, src_file: SPathLike, out_file: SPathLike | None = None,
-        offset: int = 0, *, func: FuncExceptT | None = None
+        cls, src_file: SPathLike, out_file: SPathLike | None = None, offset: int = 0, *, func: FuncExceptT | None = None
     ) -> Self:
         """
         Obtain packet sizes from a video file.
@@ -86,46 +84,60 @@ class VideoPackets(list[int]):
         src_file = SPath(src_file)
 
         if not src_file.exists():
-            raise CustomValueError('Source file not found!', func, src_file.absolute())
+            raise CustomValueError("Source file not found!", func, src_file.absolute())
 
         if out_file is None:
-            out_file = src_file.with_stem(src_file.stem + '_packets').with_suffix('.txt')
+            out_file = src_file.with_stem(src_file.stem + "_packets").with_suffix(".txt")
 
         if video_packets := cls.from_file(out_file, func=func):
             return video_packets
 
-        out_file = _get_packet_storage().get_file(out_file, ext='.txt')
+        out_file = _get_packet_storage().get_file(out_file, ext=".txt")
 
-        if not shutil.which('ffprobe'):
-            raise DependencyNotFoundError(func, 'ffprobe', 'Could not find {package}! Make sure it\'s in your PATH!')
+        if not shutil.which("ffprobe"):
+            raise DependencyNotFoundError(func, "ffprobe", "Could not find {package}! Make sure it's in your PATH!")
 
-        proc = Popen([
-            'ffprobe', '-hide_banner', '-show_frames', '-show_streams', '-threads', str(vs.core.num_threads),
-            '-loglevel', 'quiet', '-print_format', 'json', '-select_streams', 'v:0', src_file.to_str()
-        ], stdout=PIPE)
+        proc = Popen(
+            [
+                "ffprobe",
+                "-hide_banner",
+                "-show_frames",
+                "-show_streams",
+                "-threads",
+                str(vs.core.num_threads),
+                "-loglevel",
+                "quiet",
+                "-print_format",
+                "json",
+                "-select_streams",
+                "v:0",
+                src_file.to_str(),
+            ],
+            stdout=PIPE,
+        )
 
-        with NamedTemporaryFile('a+', delete=False) as tempfile:
+        with NamedTemporaryFile("a+", delete=False) as tempfile:
             assert proc.stdout
 
-            for line in io.TextIOWrapper(proc.stdout, 'utf-8'):
+            for line in io.TextIOWrapper(proc.stdout, "utf-8"):
                 tempfile.write(line)
 
             tempfile.flush()
 
         try:
-            with open(tempfile.name, 'r') as f:
+            with open(tempfile.name, "r") as f:
                 data = dict(json.load(f))
         finally:
             SPath(tempfile.name).unlink()
 
-        if not (frames := data.get('frames', {})):
-            raise CustomValueError(f'No frames found in file, \'{src_file}\'! Your file may be corrupted!', func)
+        if not (frames := data.get("frames", {})):
+            raise CustomValueError(f"No frames found in file, '{src_file}'! Your file may be corrupted!", func)
 
-        pkt_sizes = [int(dict(frame).get('pkt_size', -1)) for frame in frames]
+        pkt_sizes = [int(dict(frame).get("pkt_size", -1)) for frame in frames]
 
-        print(f'Writing packet sizes to \'{out_file.absolute()}\'...')
+        print(f"Writing packet sizes to '{out_file.absolute()}'...")
 
-        out_file.write_text('\n'.join(map(str, pkt_sizes)), 'utf-8', newline='\n')
+        out_file.write_text("\n".join(map(str, pkt_sizes)), "utf-8", newline="\n")
 
         if offset < 0:
             pkt_sizes = [-1] * -offset + pkt_sizes
@@ -147,22 +159,26 @@ class VideoPackets(list[int]):
         """
 
         if file is not None:
-            file = _get_packet_storage().get_file(file, ext='.txt')
+            file = _get_packet_storage().get_file(file, ext=".txt")
 
             if file.exists() and not file.stat().st_size:
                 file.unlink()
 
         if file is not None and file.exists():
-            with file.open('r+') as f:
+            with file.open("r+") as f:
                 return cls(map(int, f.readlines()))
 
         return None
 
     @classmethod
     def from_clip(
-        cls, clip: vs.VideoNode,
-        out_file: SPathLike, src_file: SPathLike | None = None,
-        offset: int = 0, *, func: FuncExceptT | None = None
+        cls,
+        clip: vs.VideoNode,
+        out_file: SPathLike,
+        src_file: SPathLike | None = None,
+        offset: int = 0,
+        *,
+        func: FuncExceptT | None = None,
     ) -> Self:
         """
         Obtain packet sizes from a given clip.
@@ -179,13 +195,13 @@ class VideoPackets(list[int]):
 
         func = func or cls.from_video
 
-        out_file = SPath(str(out_file)).stem + f'_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}'
+        out_file = SPath(str(out_file)).stem + f"_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}"
 
         if video_packets := cls.from_file(out_file, func=func):
             return video_packets
 
         if (src_file := get_clip_filepath(clip, src_file, func=func)) is None:
-            raise CustomValueError('You must provide a source file!', func)
+            raise CustomValueError("You must provide a source file!", func)
 
         return cls.from_video(src_file, out_file, offset, func=func)
 
@@ -201,25 +217,23 @@ class VideoPackets(list[int]):
         stats = list[ScenePacketStats]()
 
         try:
-            for start, end in zip(keyframes, keyframes[1:]):
+            for start, end in itertools.pairwise(keyframes):
                 pkt_scenes = self[start:end]
 
                 stats.append(
                     ScenePacketStats(
                         PktSceneAvgSize=sum(pkt_scenes) / len(pkt_scenes),
                         PktSceneMaxSize=max(pkt_scenes),
-                        PktSceneMinSize=min(pkt_scenes)
+                        PktSceneMinSize=min(pkt_scenes),
                     )
                 )
         except ValueError as e:
-            raise CustomValueError('Some kind of error occurred!', self.get_scenestats, str(e))
+            raise CustomValueError("Some kind of error occurred!", self.get_scenestats, str(e))
 
         return stats
 
     def apply_props(
-        self, clip: VideoNodeT,
-        keyframes: Keyframes | None = None,
-        *, func: FuncExceptT | None = None
+        self, clip: VideoNodeT, keyframes: Keyframes | None = None, *, func: FuncExceptT | None = None
     ) -> VideoNodeT:
         """
         Apply packet size properties to a clip.
@@ -238,7 +252,7 @@ class VideoPackets(list[int]):
 
         def _set_sizes_props(n: int) -> vs.VideoNode:
             if (pkt_size := self[n]) < 0:
-                warnings.warn(f'{func}: \'Frame {n} bitrate could not be determined!\'')
+                warnings.warn(f"{func}: 'Frame {n} bitrate could not be determined!'")
 
             return clip.std.SetFrameProps(PktSize=pkt_size)
 
@@ -247,19 +261,14 @@ class VideoPackets(list[int]):
 
         def _set_scene_stats(n: int, keyframes: Keyframes) -> vs.VideoNode:
             if (pkt_size := self[n]) < 0:
-                warnings.warn(f'{func}: \'Frame {n} bitrate could not be determined!\'')
+                warnings.warn(f"{func}: 'Frame {n} bitrate could not be determined!'")
 
             try:
                 return clip.std.SetFrameProps(PktSize=pkt_size, **scenestats[keyframes.scenes.indices[n]])
             except Exception:
-                warnings.warn(f'{func}: \'Could not find stats for a section... (Frame: {n})\'')
+                warnings.warn(f"{func}: 'Could not find stats for a section... (Frame: {n})'")
 
-                return clip.std.SetFrameProps(
-                    PktSize=-1,
-                    PktSceneAvgSize=-1,
-                    PktSceneMaxSize=-1,
-                    PktSceneMinSize=-1
-                )
+                return clip.std.SetFrameProps(PktSize=-1, PktSceneAvgSize=-1, PktSceneMaxSize=-1, PktSceneMinSize=-1)
 
         scenestats = self.get_scenestats(keyframes)
 

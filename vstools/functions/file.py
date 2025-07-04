@@ -1,22 +1,17 @@
 from __future__ import annotations
 
 import inspect
-
 from typing import TYPE_CHECKING
 
 from jetpytools import CustomRuntimeError, SPath, SPathLike, get_script_path
 
-__all__ = [
-    'PackageStorage'
-]
+__all__ = ["PackageStorage"]
 
 
 class PackageStorage:
-    BASE_FOLDER = SPath('.vsjet')
+    BASE_FOLDER = SPath(".vsjet")
 
-    def __init__(
-        self, cwd: SPathLike | None = None, *, mode: int = 0o777, package_name: str | None = None
-    ) -> None:
+    def __init__(self, cwd: SPathLike | None = None, *, mode: int = 0o777, package_name: str | None = None) -> None:
         if not package_name:
             frame = inspect.stack()[1]
             module = inspect.getmodule(frame[0])
@@ -28,9 +23,9 @@ class PackageStorage:
                 frame = module = None
 
         if not package_name:
-            raise CustomRuntimeError('Can\'t determine package name!')
+            raise CustomRuntimeError("Can't determine package name!")
 
-        package_name = package_name.strip('.').split('.')[0]
+        package_name = package_name.strip(".").split(".")[0]
 
         if not cwd:
             cwd = SPath(get_script_path())
@@ -40,13 +35,13 @@ class PackageStorage:
         cwd = cwd.get_folder()
         base_folder = cwd / self.BASE_FOLDER
 
-        for old_names in ('.vsstg', '.vsiew'):
-            old_base_folder = (cwd / '.vsstg')
+        for old_names in (".vsstg", ".vsiew"):
+            old_base_folder = cwd / ".vsstg"
 
             if old_base_folder.exists():
                 old_base_folder.move_dir(base_folder)
 
-        old_folder = cwd / f'.{package_name}'
+        old_folder = cwd / f".{package_name}"
         new_folder = base_folder / package_name
 
         if old_folder.exists():

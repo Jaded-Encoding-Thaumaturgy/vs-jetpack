@@ -5,8 +5,19 @@ import operator as op
 from copy import copy
 from dataclasses import dataclass
 from typing import (
-    TYPE_CHECKING, Any, Callable, Generic, Iterable, Sequence, SupportsAbs, SupportsIndex, SupportsRound, TypeAlias,
-    Union, cast, overload
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    Iterable,
+    Sequence,
+    SupportsAbs,
+    SupportsIndex,
+    SupportsRound,
+    TypeAlias,
+    Union,
+    cast,
+    overload,
 )
 
 from vstools import R, SupportsFloatOrIndex, SupportsRichComparison, SupportsTrunc, T
@@ -21,14 +32,21 @@ else:
 
 
 __all__ = [
-    'ExprOperators', 'BaseOperator',
-
-    'UnaryBaseOperator', 'BinaryBaseOperator', 'TernaryBaseOperator',
-    'UnaryOperator', 'BinaryOperator', 'TernaryOperator',
-
-    'UnaryMathOperator', 'UnaryBoolOperator',
-    'BinaryMathOperator', 'BinaryBoolOperator',
-    'TernaryIfOperator', 'TernaryCompOperator', 'TernaryPixelAccessOperator',
+    "BaseOperator",
+    "BinaryBaseOperator",
+    "BinaryBoolOperator",
+    "BinaryMathOperator",
+    "BinaryOperator",
+    "ExprOperators",
+    "TernaryBaseOperator",
+    "TernaryCompOperator",
+    "TernaryIfOperator",
+    "TernaryOperator",
+    "TernaryPixelAccessOperator",
+    "UnaryBaseOperator",
+    "UnaryBoolOperator",
+    "UnaryMathOperator",
+    "UnaryOperator",
 ]
 
 SuppRC: TypeAlias = SupportsRichComparison
@@ -36,6 +54,7 @@ SuppRC: TypeAlias = SupportsRichComparison
 
 def _norm_lit(arg: str | ExprOtherT | BaseOperator) -> ExprVar | BaseOperator:
     from .variables import ExprVar, LiteralVar
+
     if isinstance(arg, (ExprVar, BaseOperator)):
         return arg
 
@@ -61,18 +80,21 @@ class BaseOperator:
 class UnaryBaseOperator(BaseOperator):
     def __call__(self, arg0: ExprOtherT) -> ComputedVar:
         from .variables import ComputedVar
+
         return ComputedVar(_normalize_args(arg0, self))
 
 
 class BinaryBaseOperator(BaseOperator):
     def __call__(self, arg0: ExprOtherT, arg1: ExprOtherT) -> ComputedVar:
         from .variables import ComputedVar
+
         return ComputedVar(_normalize_args(arg0, arg1, self))
 
 
 class TernaryBaseOperator(BaseOperator):
     def __call__(self, arg0: ExprOtherT, arg1: ExprOtherT, arg2: ExprOtherT) -> ComputedVar:
         from .variables import ComputedVar
+
         return ComputedVar(_normalize_args(arg0, arg1, arg2, self))
 
 
@@ -128,6 +150,7 @@ class TernaryPixelAccessOperator(Generic[T], TernaryBaseOperator):
 
     def __call__(self, char: str, x: T, y: T) -> ComputedVar:  # type: ignore
         from .variables import ComputedVar
+
         self.set_vars(char, x, y)
         return ComputedVar([copy(self)])
 
@@ -137,8 +160,8 @@ class TernaryPixelAccessOperator(Generic[T], TernaryBaseOperator):
         self.y = y
 
     def __str__(self) -> str:
-        if not hasattr(self, 'char'):
-            raise ValueError('TernaryPixelAccessOperator: You have to call set_vars!')
+        if not hasattr(self, "char"):
+            raise ValueError("TernaryPixelAccessOperator: You have to call set_vars!")
 
         return self.rpn_name.format(char=str(self.char), x=int(self.x), y=int(self.y))  # type: ignore[call-overload]
 
@@ -209,16 +232,14 @@ class ExprOperators:
     # 3 Arguments
     TERN = TernaryIfOperator(ExprOp.TERN, lambda x, y, z: (x if z else y))
 
-    CLAMP = TernaryCompOperator(
-        ExprOp.CLAMP, lambda x, y, z: max(y, min(x, z))
-    )
+    CLAMP = TernaryCompOperator(ExprOp.CLAMP, lambda x, y, z: max(y, min(x, z)))
 
     # Aliases
     IF = TERN
 
     # Special Operators
     REL_PIX = TernaryPixelAccessOperator[int](ExprOp.REL_PIX)
-    ABS_PIX = TernaryPixelAccessOperator[Union[int, 'ExprVar']](ExprOp.ABS_PIX)
+    ABS_PIX = TernaryPixelAccessOperator[Union[int, "ExprVar"]](ExprOp.ABS_PIX)
 
     # Helper Functions
 
@@ -235,6 +256,7 @@ class ExprOperators:
     @classmethod
     def as_var(cls, arg0: ExprOtherT | Sequence[ExprOtherT]) -> ComputedVar | list[ComputedVar]:
         from .variables import ComputedVar
+
         if isinstance(arg0, Sequence):
             return cast(list[ComputedVar], list(arg0))
         return cast(ComputedVar, arg0)

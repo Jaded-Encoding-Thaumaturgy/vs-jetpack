@@ -5,14 +5,22 @@ from typing import Any, Iterable
 
 from typing_extensions import deprecated
 
-from vstools import ConstantFormatVideoNode, CustomIntEnum, KwargsT, check_variable, fallback, inject_self, join, normalize_seq, split, vs
+from vstools import (
+    ConstantFormatVideoNode,
+    CustomIntEnum,
+    KwargsT,
+    check_variable,
+    fallback,
+    inject_self,
+    join,
+    normalize_seq,
+    split,
+    vs,
+)
 
 from .abstract import Debander
 
-__all__ = [
-    'PlaceboDither',
-    'Placebo'
-]
+__all__ = ["Placebo", "PlaceboDither"]
 
 
 @deprecated('"PlaceboDither" is deprecated, use "placebo_deband.Dither" instead.', category=DeprecationWarning)
@@ -59,8 +67,8 @@ class PlaceboDither(CustomIntEnum):
     def placebo_args(self) -> KwargsT:
         """Get arguments you must pass to .placebo.Debander for this dither mode."""
         if self is PlaceboDither.NONE:
-            return dict(dither=False, dither_algo=0)
-        return dict(dither=True, dither_algo=self.value)
+            return {"dither": False, "dither_algo": 0}
+        return {"dither": True, "dither_algo": self.value}
 
 
 @deprecated('"Placebo" is deprecated, use "placebo_deband.Dither" instead.', category=DeprecationWarning)
@@ -79,8 +87,13 @@ class Placebo(Debander):
     @deprecated('"Placebo.deband" is deprecated, use "placebo_deband.Dither" instead.', category=DeprecationWarning)
     @inject_self
     def deband(  # type: ignore[override]
-        self, clip: vs.VideoNode, radius: float = 16.0, thr: float | list[float] = 3.0,
-        iterations: int = 4, grain: float | list[float] = 0.0, dither: PlaceboDither = PlaceboDither.DEFAULT
+        self,
+        clip: vs.VideoNode,
+        radius: float = 16.0,
+        thr: float | list[float] = 3.0,
+        iterations: int = 4,
+        grain: float | list[float] = 0.0,
+        dither: PlaceboDither = PlaceboDither.DEFAULT,
     ) -> vs.VideoNode:
         """
         Main deband function, wrapper for `placebo.Deband <https:/github.com/Lypheo/vs-placebo#vs-placebo>`_
@@ -133,13 +146,11 @@ class Placebo(Debander):
 
             return join(debs, clip.format.color_family)
 
-        plane_map = {
-            tuple(i for i in range(clip.format.num_planes) if ngrain[i] == x): x for x in set_grn - {0}
-        }
+        plane_map = {tuple(i for i in range(clip.format.num_planes) if ngrain[i] == x): x for x in set_grn - {0}}
 
         debanded = clip
         for planes, grain_val in plane_map.items():
-            if len(set(thr[p] for p in planes)) == 1:
+            if len({thr[p] for p in planes}) == 1:
                 debanded = _placebo(debanded, thr[planes[0]], grain_val, planes)
             else:
                 for p in planes:

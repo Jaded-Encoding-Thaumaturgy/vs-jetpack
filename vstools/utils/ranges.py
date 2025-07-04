@@ -3,45 +3,39 @@ from __future__ import annotations
 from typing import Callable, Literal, Protocol, Sequence, TypeGuard, TypeVar, Union, overload
 
 import vapoursynth as vs
-
 from jetpytools import CustomValueError, flatten, interleave_arr, ranges_product
 
 from ..functions import check_ref_clip
 from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, VideoNodeT
 
 __all__ = [
-    'replace_ranges',
-
-    'remap_frames',
-
-    'replace_every',
-
-    'ranges_product',
-
-    'interleave_arr',
+    "interleave_arr",
+    "ranges_product",
+    "remap_frames",
+    "replace_every",
+    "replace_ranges",
 ]
 
 
 _VideoFrameT_contra = TypeVar(
     "_VideoFrameT_contra",
-    vs.VideoFrame, Sequence[vs.VideoFrame], vs.VideoFrame | Sequence[vs.VideoFrame],
-    contravariant=True
+    vs.VideoFrame,
+    Sequence[vs.VideoFrame],
+    vs.VideoFrame | Sequence[vs.VideoFrame],
+    contravariant=True,
 )
 
 
 class _RangesCallBack(Protocol):
-    def __call__(self, n: int, /) -> bool:
-        ...
+    def __call__(self, n: int, /) -> bool: ...
 
 
 class _RangesCallBackF(Protocol[_VideoFrameT_contra]):
-    def __call__(self, f: _VideoFrameT_contra, /) -> bool:
-        ...
+    def __call__(self, f: _VideoFrameT_contra, /) -> bool: ...
 
 
 class _RangesCallBackNF(Protocol[_VideoFrameT_contra]):
-    def __call__(self, n: int, f: _VideoFrameT_contra, /) -> bool:
-        ...
+    def __call__(self, n: int, f: _VideoFrameT_contra, /) -> bool: ...
 
 
 _RangesCallBackT = Union[
@@ -52,26 +46,21 @@ _RangesCallBackT = Union[
     _RangesCallBackNF[Sequence[vs.VideoFrame]],
 ]
 
-def _is_cb_nf(cb: Callable[..., bool], params: set[str]) -> TypeGuard[
-    _RangesCallBackNF[vs.VideoFrame] | _RangesCallBackNF[Sequence[vs.VideoFrame]]
-]:
-    if 'f' in params and 'n' in params:
-        return True
-    return False
+
+def _is_cb_nf(
+    cb: Callable[..., bool], params: set[str]
+) -> TypeGuard[_RangesCallBackNF[vs.VideoFrame] | _RangesCallBackNF[Sequence[vs.VideoFrame]]]:
+    return bool("f" in params and "n" in params)
 
 
-def _is_cb_f(cb: Callable[..., bool], params: set[str]) -> TypeGuard[
-    _RangesCallBackF[vs.VideoFrame] | _RangesCallBackF[Sequence[vs.VideoFrame]]
-]:
-    if 'f' in params:
-        return True
-    return False
+def _is_cb_f(
+    cb: Callable[..., bool], params: set[str]
+) -> TypeGuard[_RangesCallBackF[vs.VideoFrame] | _RangesCallBackF[Sequence[vs.VideoFrame]]]:
+    return "f" in params
 
 
 def _is_cb_n(cb: Callable[..., bool], params: set[str]) -> TypeGuard[_RangesCallBack]:
-    if 'n' in params:
-        return True
-    return False
+    return "n" in params
 
 
 @overload
@@ -80,7 +69,7 @@ def replace_ranges(
     clip_b: vs.VideoNode,
     ranges: FrameRangeN | FrameRangesN,
     exclusive: bool = False,
-    mismatch: Literal[False] = ...
+    mismatch: Literal[False] = ...,
 ) -> ConstantFormatVideoNode:
     """
     Replaces frames in a clip with pre-calculated indices.
@@ -121,7 +110,7 @@ def replace_ranges(
     clip_b: VideoNodeT,
     ranges: FrameRangeN | FrameRangesN,
     exclusive: bool = False,
-    mismatch: Literal[True] | bool = ...
+    mismatch: bool = ...,
 ) -> VideoNodeT:
     """
     Replaces frames in a clip with pre-calculated indices.
@@ -158,11 +147,7 @@ def replace_ranges(
 
 @overload
 def replace_ranges(
-    clip_a: vs.VideoNode,
-    clip_b: vs.VideoNode,
-    ranges: _RangesCallBack,
-    *,
-    mismatch: bool = False
+    clip_a: vs.VideoNode, clip_b: vs.VideoNode, ranges: _RangesCallBack, *, mismatch: bool = False
 ) -> vs.VideoNode:
     """
     Replaces frames in a clip on-the-fly with a callback.
@@ -190,7 +175,7 @@ def replace_ranges(
     ranges: _RangesCallBackF[vs.VideoFrame] | _RangesCallBackNF[vs.VideoFrame],
     *,
     mismatch: bool = False,
-    prop_src: vs.VideoNode
+    prop_src: vs.VideoNode,
 ) -> vs.VideoNode:
     """
     Replaces frames in a clip on-the-fly with a callback.
@@ -198,14 +183,12 @@ def replace_ranges(
     Example usage:
     ```py
     # Replace frames from ``clip_a`` with ``clip_b`` if the picture type of ``clip_a`` is P.
-    clip = replace_ranges(clip_a, clip_b, lambda f: get_prop(f, '_PictType', str) == 'P', prop_src=clip_a)
+    clip = replace_ranges(clip_a, clip_b, lambda f: get_prop(f, "_PictType", str) == "P", prop_src=clip_a)
 
     # Replace frames from ``clip_a`` with ``clip_b`` if the picture type of ``clip_a`` is P
     # and if the frame number is between 200 and 299 (inclusive)
     clip = replace_ranges(
-        clip_a, clip_b,
-        lambda n, f: get_prop(f, '_PictType', str) == 'P' and n in range(200, 300),
-        prop_src=clip_a
+        clip_a, clip_b, lambda n, f: get_prop(f, "_PictType", str) == "P" and n in range(200, 300), prop_src=clip_a
     )
     ```
 
@@ -227,7 +210,7 @@ def replace_ranges(
     ranges: _RangesCallBackF[Sequence[vs.VideoFrame]] | _RangesCallBackNF[Sequence[vs.VideoFrame]],
     *,
     mismatch: bool = False,
-    prop_src: Sequence[vs.VideoNode]
+    prop_src: Sequence[vs.VideoNode],
 ) -> vs.VideoNode:
     """
     Replaces frames in a clip on-the-fly with a callback.
@@ -239,17 +222,16 @@ def replace_ranges(
 
     # Replace frames from ``clip_a`` with ``clip_b`` if the picture type of all the ``prop_srcs`` is P.
     clip = replace_ranges(
-        clip_a, clip_b,
-        lambda f: all(get_prop(frame, '_PictType', str) == 'P' for frame in f),
-        prop_src=prop_srcs
+        clip_a, clip_b, lambda f: all(get_prop(frame, "_PictType", str) == "P" for frame in f), prop_src=prop_srcs
     )
 
     # Replace frames from ``clip_a`` with ``clip_b`` if the picture type of all the ``prop_srcs`` is P
     # and if the frame number is between 200 and 299 (inclusive)
     clip = replace_ranges(
-        clip_a, clip_b,
-        lambda n, f: all(get_prop(frame, '_PictType', str) == 'P' for frame in f) and n in range(200, 300),
-        prop_src=prop_srcs
+        clip_a,
+        clip_b,
+        lambda n, f: all(get_prop(frame, "_PictType", str) == "P" for frame in f) and n in range(200, 300),
+        prop_src=prop_srcs,
     )
     ```
 
@@ -272,7 +254,7 @@ def replace_ranges(
     exclusive: bool = False,
     mismatch: bool = False,
     *,
-    prop_src: vs.VideoNode | Sequence[vs.VideoNode] | None = None
+    prop_src: vs.VideoNode | Sequence[vs.VideoNode] | None = None,
 ) -> vs.VideoNode:
     """
     Replaces frames in a clip, either with pre-calculated indices or on-the-fly with a callback.
@@ -324,11 +306,11 @@ def replace_ranges(
     exclusive: bool = False,
     mismatch: bool = False,
     *,
-    prop_src: vs.VideoNode | Sequence[vs.VideoNode] | None = None
+    prop_src: vs.VideoNode | Sequence[vs.VideoNode] | None = None,
 ) -> vs.VideoNode:
     from ..functions import invert_ranges, normalize_ranges
 
-    if ranges != 0 and not ranges or clip_a is clip_b:
+    if (ranges != 0 and not ranges) or clip_a is clip_b:
         return clip_a
 
     if not mismatch:
@@ -345,11 +327,11 @@ def replace_ranges(
 
         callback = ranges
 
-        if 'f' in params and not prop_src:
+        if "f" in params and not prop_src:
             raise CustomValueError(
                 'To use frame properties in the callback (parameter "f"), '
-                'you must specify one or more source clips via `prop_src`!',
-                replace_ranges
+                "you must specify one or more source clips via `prop_src`!",
+                replace_ranges,
             )
 
         if _is_cb_nf(callback, params):
@@ -361,32 +343,31 @@ def replace_ranges(
                 base_clip, lambda n, f: clip_b if callback(f) else clip_a, prop_src, [clip_a, clip_b]
             )
         if _is_cb_n(callback, params):
-            return vs.core.std.FrameEval(
-                base_clip, lambda n: clip_b if callback(n) else clip_a, None, [clip_a, clip_b]
-            )
+            return vs.core.std.FrameEval(base_clip, lambda n: clip_b if callback(n) else clip_a, None, [clip_a, clip_b])
 
-        raise CustomValueError(
-            'Callback must have signature ((n, f) | (n) | (f)) -> bool!', replace_ranges, callback
-        )
+        raise CustomValueError("Callback must have signature ((n, f) | (n) | (f)) -> bool!", replace_ranges, callback)
 
     shift = 1 - exclusive
     b_ranges = normalize_ranges(clip_b, ranges)
 
-    if hasattr(vs.core, 'vszip'):
+    if hasattr(vs.core, "vszip"):
         return vs.core.vszip.RFS(
-            clip_a, clip_b,
-            [y for (s, e) in b_ranges
-             for y in range(
-                 s, e + (not exclusive if s != e else 1) + (1 if e == clip_b.num_frames - 1 and exclusive else 0)
-             )
+            clip_a,
+            clip_b,
+            [
+                y
+                for (s, e) in b_ranges
+                for y in range(
+                    s, e + (not exclusive if s != e else 1) + (1 if e == clip_b.num_frames - 1 and exclusive else 0)
+                )
             ],
-            mismatch=mismatch
+            mismatch=mismatch,
         )
 
     a_ranges = invert_ranges(clip_a, clip_b, b_ranges)
 
-    a_trims = [clip_a[max(0, start - exclusive):end + shift + exclusive] for start, end in a_ranges]
-    b_trims = [clip_b[start:end + shift] for start, end in b_ranges]
+    a_trims = [clip_a[max(0, start - exclusive) : end + shift + exclusive] for start, end in a_ranges]
+    b_trims = [clip_b[start : end + shift] for start, end in b_ranges]
 
     if a_ranges:
         main, other = (a_trims, b_trims) if (a_ranges[0][0] == 0) else (b_trims, a_trims)
@@ -397,9 +378,7 @@ def replace_ranges(
 
 
 def remap_frames(clip: vs.VideoNode, ranges: Sequence[int | tuple[int, int]]) -> ConstantFormatVideoNode:
-    frame_map = list[int](flatten(
-        f if isinstance(f, int) else range(f[0], f[1] + 1) for f in ranges
-    ))
+    frame_map = list[int](flatten(f if isinstance(f, int) else range(f[0], f[1] + 1) for f in ranges))
 
     base = vs.core.std.BlankClip(clip, length=len(frame_map))
 

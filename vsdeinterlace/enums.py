@@ -1,8 +1,8 @@
-from vstools import ConstantFormatVideoNode, check_variable, CustomEnum, CustomIntEnum, vs, core
+from vstools import ConstantFormatVideoNode, CustomEnum, CustomIntEnum, check_variable, core, vs
 
 __all__ = [
-    'VFMMode',
-    'IVTCycles',
+    "IVTCycles",
+    "VFMMode",
 ]
 
 
@@ -45,13 +45,13 @@ class IVTCycles(CustomEnum):
     Each pattern defines a sequence of frame indices to keep during decimation.
     """
 
-    CYCLE_10 = [[0, 3, 6, 8], [0, 2, 5, 8], [0, 2, 4, 7], [2, 4, 6, 9], [1, 4, 6, 8]]
+    CYCLE_10 = ((0, 3, 6, 8), (0, 2, 5, 8), (0, 2, 4, 7), (2, 4, 6, 9), (1, 4, 6, 8))
     """Pattern for standard field-based 2:3 pulldown."""
 
-    CYCLE_08 = [[0, 3, 4, 6], [0, 2, 5, 6], [0, 2, 4, 7], [0, 2, 4, 7], [1, 2, 4, 6]]
+    CYCLE_08 = ((0, 3, 4, 6), (0, 2, 5, 6), (0, 2, 4, 7), (0, 2, 4, 7), (1, 2, 4, 6))
     """Pattern for 2:3:3:2 pulldown."""
 
-    CYCLE_05 = [[0, 1, 3, 4], [0, 1, 2, 4], [0, 1, 2, 3], [1, 2, 3, 4], [0, 2, 3, 4]]
+    CYCLE_05 = ((0, 1, 3, 4), (0, 1, 2, 4), (0, 1, 2, 3), (1, 2, 3, 4), (0, 2, 3, 4))
     """Pattern for standard frame-based 2:3 pulldown."""
 
     @property

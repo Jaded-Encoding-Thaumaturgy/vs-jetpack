@@ -4,20 +4,32 @@ from enum import IntFlag
 from typing import Any
 
 from vstools import (
-    ConstantFormatVideoNode, CustomIntEnum, CustomValueError, VSFunctionAllArgs, check_variable_format, core, fallback,
-    vs
+    ConstantFormatVideoNode,
+    CustomIntEnum,
+    CustomValueError,
+    VSFunctionAllArgs,
+    check_variable_format,
+    core,
+    fallback,
+    vs,
 )
 
 __all__ = [
-    'MVToolsPlugin',
-
-    'MVDirection',
-
-    'SharpMode', 'RFilterMode', 'SearchMode', 'SADMode', 'MotionMode',
-    'PenaltyMode', 'SmoothMode', 'FlowMode', 'MaskMode'
+    "FlowMode",
+    "MVDirection",
+    "MVToolsPlugin",
+    "MaskMode",
+    "MotionMode",
+    "PenaltyMode",
+    "RFilterMode",
+    "SADMode",
+    "SearchMode",
+    "SharpMode",
+    "SmoothMode",
 ]
 
 
+# ruff: noqa: N802
 class MVToolsPlugin(CustomIntEnum):
     """Abstraction around both mvtools plugin versions."""
 
@@ -103,12 +115,12 @@ class MVToolsPlugin(CustomIntEnum):
         """Get the Degrain function for motion compensated denoising."""
 
         if tr is None and self is not MVToolsPlugin.FLOAT:
-            raise CustomValueError('This implementation needs a temporal radius!', f'{self.name}.Degrain')
+            raise CustomValueError("This implementation needs a temporal radius!", f"{self.name}.Degrain")
 
         try:
             return getattr(self.namespace, f"Degrain{fallback(tr, '')}")
         except AttributeError:
-            raise CustomValueError('This temporal radius isn\'t supported!', f'{self.name}.Degrain', tr)
+            raise CustomValueError("This temporal radius isn't supported!", f"{self.name}.Degrain", tr)
 
     @classmethod
     def from_video(cls, clip: vs.VideoNode) -> MVToolsPlugin:

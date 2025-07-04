@@ -4,18 +4,27 @@ from types import TracebackType
 from typing import overload
 
 from rich.console import Console
-from rich.progress import (BarColumn, Progress, ProgressColumn, Task, TaskID,
-                           TextColumn, TimeElapsedColumn, TimeRemainingColumn)
+from rich.progress import (
+    BarColumn,
+    Progress,
+    ProgressColumn,
+    Task,
+    TaskID,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 from rich.text import Text
+from typing_extensions import Self
 
 __all__ = [
-    'BarColumn',
-    'FPSColumn',
-    'Progress',
-    'TextColumn',
-    'TimeRemainingColumn',
-    'RenderProgressCTX',
-    'get_render_progress'
+    "BarColumn",
+    "FPSColumn",
+    "Progress",
+    "RenderProgressCTX",
+    "TextColumn",
+    "TimeRemainingColumn",
+    "get_render_progress",
 ]
 
 
@@ -33,7 +42,7 @@ class RenderProgressCTX:
         self.progress = progress
         self.task_id = task_id
 
-    def __enter__(self) -> RenderProgressCTX:
+    def __enter__(self) -> Self:
         self.progress.__enter__()
         return self
 
@@ -43,29 +52,24 @@ class RenderProgressCTX:
         self.progress.__exit__(exc_type, exc_val, exc_tb)
 
     @overload
-    def update(self) -> None:
-        ...
+    def update(self) -> None: ...
 
     @overload
-    def update(self, *, advance: int) -> None:
-        ...
+    def update(self, *, advance: int) -> None: ...
 
     @overload
-    def update(self, completed: int, total: int) -> None:
-        ...
+    def update(self, completed: int, total: int) -> None: ...
 
     def update(self, completed: int | None = None, total: int | None = None, advance: int = 1) -> None:
         return self.progress.update(self.task_id, completed=completed, total=total, advance=advance)
 
 
 @overload
-def get_render_progress() -> Progress:
-    ...
+def get_render_progress() -> Progress: ...
 
 
 @overload
-def get_render_progress(title: str, total: int) -> RenderProgressCTX:
-    ...
+def get_render_progress(title: str, total: int) -> RenderProgressCTX: ...
 
 
 def get_render_progress(title: str | None = None, total: int | None = None) -> RenderProgressCTX | Progress:

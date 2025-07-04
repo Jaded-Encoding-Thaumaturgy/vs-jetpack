@@ -8,22 +8,28 @@ from typing_extensions import Self
 
 from vskernels import Catrom, ComplexScaler, ComplexScalerLike, LeftShift, Scaler, TopShift
 from vstools import (
-    ChromaLocation, ConstantFormatVideoNode, VideoNodeT, VSFunctionAllArgs, VSFunctionNoArgs, check_variable, core,
-    normalize_seq, vs, vs_object
+    ChromaLocation,
+    ConstantFormatVideoNode,
+    VideoNodeT,
+    VSFunctionAllArgs,
+    VSFunctionNoArgs,
+    check_variable,
+    core,
+    normalize_seq,
+    vs,
+    vs_object,
 )
 
 __all__ = [
-    "Deinterlacer",
-    "AntiAliaser",
-    "SuperSampler",
-
-    "NNEDI3",
+    "BWDIF",
     "EEDI2",
     "EEDI3",
+    "NNEDI3",
+    "AntiAliaser",
+    "Deinterlacer",
     "SangNom",
-    "BWDIF",
-
-    "SupportsBobDeinterlace"
+    "SuperSampler",
+    "SupportsBobDeinterlace",
 ]
 
 
@@ -54,8 +60,8 @@ class Deinterlacer(vs_object, ABC):
         :param clip:        The input clip.
         :param tff:         The field order of the input clip.
         :param double_rate: Whether to double the FPS.
-        :param dh:          If True, doubles the height of the input by copying each line to every other line of the output,
-                            with the missing lines interpolated.
+        :param dh:          If True, doubles the height of the input by copying each line
+                            to every other line of the output, with the missing lines interpolated.
         :return:            Interpolated clip.
         """
 
@@ -188,7 +194,7 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
         width: int | None = None,
         height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
         Scale the given clip using super sampling method.
@@ -208,11 +214,11 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
         sy, sx = shift
 
         cloc = list(ChromaLocation.from_video(clip).get_offsets(clip))
-        subsampling = [2 ** clip.format.subsampling_w, 2 ** clip.format.subsampling_h]
+        subsampling = [2**clip.format.subsampling_w, 2**clip.format.subsampling_h]
 
         nshift: list[list[float]] = [
             normalize_seq(sx, clip.format.num_planes),
-            normalize_seq(sy, clip.format.num_planes)
+            normalize_seq(sy, clip.format.num_planes),
         ]
 
         if not self.transpose_first:
@@ -222,7 +228,7 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
             nshift.reverse()
 
         for x, dim in enumerate(dest_dimensions):
-            is_width = not x and self.transpose_first or not self.transpose_first and x
+            is_width = (not x and self.transpose_first) or (not self.transpose_first and x)
 
             while (clip.width if is_width else clip.height) < dim:
                 delta = max(nshift[x], key=lambda y: abs(y))
@@ -258,6 +264,7 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
         )
 
     if TYPE_CHECKING:
+
         def supersample(
             self, clip: VideoNodeT, rfactor: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
         ) -> VideoNodeT:
@@ -362,13 +369,13 @@ class NNEDI3(SuperSampler):
         return self._deinterlacer_function(clip, field, dh, **self.get_deint_args(**kwargs))
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
-        return dict(
-            nsize=self.nsize,
-            nns=self.nns,
-            qual=self.qual,
-            etype=self.etype,
-            pscrn=self.pscrn
-        ) | kwargs
+        return {
+            "nsize": self.nsize,
+            "nns": self.nns,
+            "qual": self.qual,
+            "etype": self.etype,
+            "pscrn": self.pscrn,
+        } | kwargs
 
     @Scaler.cached_property
     def kernel_radius(self) -> int:
@@ -477,17 +484,17 @@ class EEDI2(SuperSampler):
         return self._deinterlacer_function(clip, field, **self.get_deint_args(**kwargs))
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
-        return dict(
-            mthresh=self.mthresh,
-            lthresh=self.lthresh,
-            vthresh=self.vthresh,
-            estr=self.estr,
-            dstr=self.dstr,
-            maxd=self.maxd,
-            map=self.map,
-            nt=self.nt,
-            pp=self.pp
-        ) | kwargs
+        return {
+            "mthresh": self.mthresh,
+            "lthresh": self.lthresh,
+            "vthresh": self.vthresh,
+            "estr": self.estr,
+            "dstr": self.dstr,
+            "maxd": self.maxd,
+            "map": self.map,
+            "nt": self.nt,
+            "pp": self.pp,
+        } | kwargs
 
     @Scaler.cached_property
     def kernel_radius(self) -> int:
@@ -625,7 +632,6 @@ class EEDI3(SuperSampler):
     def antialias(
         self, clip: vs.VideoNode, direction: AntiAliaser.AADirection = AntiAliaser.AADirection.BOTH, **kwargs: Any
     ) -> ConstantFormatVideoNode:
-
         kwargs = self._set_sclip_mclip(kwargs)
 
         if self.sclip and self.double_rate:
@@ -651,7 +657,7 @@ class EEDI3(SuperSampler):
         width: int | None = None,
         height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         return super().scale(clip, width, height, shift, **self._set_sclip_mclip(kwargs))
 
@@ -659,25 +665,25 @@ class EEDI3(SuperSampler):
         if self.vthresh is None:
             self.vthresh = (None, None, None)
 
-        eedi3_args = dict(
-            alpha=self.alpha,
-            beta=self.beta,
-            gamma=self.gamma,
-            nrad=self.nrad,
-            mdis=self.mdis,
-            ucubic=self.ucubic,
-            cost3=self.cost3,
-            vcheck=self.vcheck,
-            vthresh0=self.vthresh[0],
-            vthresh1=self.vthresh[1],
-            vthresh2=self.vthresh[2],
-            sclip=self.sclip
-        )
+        eedi3_kwargs = {
+            "alpha": self.alpha,
+            "beta": self.beta,
+            "gamma": self.gamma,
+            "nrad": self.nrad,
+            "mdis": self.mdis,
+            "ucubic": self.ucubic,
+            "cost3": self.cost3,
+            "vcheck": self.vcheck,
+            "vthresh0": self.vthresh[0],
+            "vthresh1": self.vthresh[1],
+            "vthresh2": self.vthresh[2],
+            "sclip": self.sclip,
+        }
 
         if not self.opencl:
-            eedi3_args |= dict(mclip=self.mclip)
+            eedi3_kwargs.update(mclip=self.mclip)
 
-        return eedi3_args | kwargs
+        return eedi3_kwargs | kwargs
 
     @Scaler.cached_property
     def kernel_radius(self) -> int:
@@ -714,7 +720,7 @@ class SangNom(SuperSampler):
         return self._deinterlacer_function(clip, order, dh, **self.get_deint_args(**kwargs))
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
-        return dict(aa=self.aa) | kwargs
+        return {"aa": self.aa} | kwargs
 
     _static_kernel_radius = 3
 
@@ -725,7 +731,8 @@ class BWDIF(Deinterlacer):
 
     edeint: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | None = None
     """
-    Allows the specification of an external clip from which to take spatial predictions instead of having Bwdif use cubic interpolation.
+    Allows the specification of an external clip from which to take spatial predictions
+    instead of having Bwdif use cubic interpolation.
     This clip must be the same width, height, and colorspace as the input clip.
     If using same rate output, this clip should have the same number of frames as the input.
     If using double rate output, this clip should have twice as many frames as the input.
@@ -746,7 +753,7 @@ class BWDIF(Deinterlacer):
         return self._deinterlacer_function(clip, field, **self.get_deint_args(**kwargs))
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
-        return dict(edeint=self.edeint) | kwargs
+        return {"edeint": self.edeint} | kwargs
 
     def __vs_del__(self, core_id: int) -> None:
         self.edeint = None

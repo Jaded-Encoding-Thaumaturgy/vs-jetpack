@@ -9,17 +9,7 @@ from vstools import core, vs
 
 from .base import Indexer
 
-__all__ = [
-    'BestSource',
-
-    'IMWRI',
-
-    'LSMAS',
-
-    'CarefulSource',
-
-    'FFMS2'
-]
+__all__ = ["FFMS2", "IMWRI", "LSMAS", "BestSource", "CarefulSource"]
 
 
 @cache
@@ -29,16 +19,19 @@ def _add_handler_func_bs() -> None:
     try:
         from vspreview import is_preview
     except ImportError:
+
         def is_preview() -> bool:
             return False
 
     def handler_func_best_source(m_type: vs.MessageType, msg: str) -> None:
-        if all([
-            m_type == vs.MESSAGE_TYPE_INFORMATION,
-            msg.startswith("VideoSource "),
-            getLogger().level <= WARNING,
-            is_preview()
-        ]):
+        if all(
+            [
+                m_type == vs.MESSAGE_TYPE_INFORMATION,
+                msg.startswith("VideoSource "),
+                getLogger().level <= WARNING,
+                is_preview(),
+            ]
+        ):
             print(msg, end="\r")
 
     core.add_log_handler(handler_func_best_source)

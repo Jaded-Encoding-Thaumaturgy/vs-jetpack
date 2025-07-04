@@ -3,17 +3,14 @@ from __future__ import annotations
 from vsexprtools import ExprOp, norm_expr
 from vsmasktools import Morpho, XxpandMode
 from vsrgtools import BlurMatrix, box_blur, gauss_blur
-from vstools import ConstantFormatVideoNode, core, ConvMode, get_y, iterate, shift_clip_multi, split, vs, limiter
+from vstools import ConstantFormatVideoNode, ConvMode, core, get_y, iterate, limiter, shift_clip_multi, split, vs
 
-__all__ = [
-    'descale_detail_mask', 'descale_error_mask'
-]
+__all__ = ["descale_detail_mask", "descale_error_mask"]
 
 
 @limiter
 def descale_detail_mask(
-    clip: vs.VideoNode, rescaled: vs.VideoNode, thr: float = 0.05,
-    inflate: int = 2, xxpand: tuple[int, int] = (4, 0)
+    clip: vs.VideoNode, rescaled: vs.VideoNode, thr: float = 0.05, inflate: int = 2, xxpand: tuple[int, int] = (4, 0)
 ) -> ConstantFormatVideoNode:
     """
     Mask non-native resolution detail to prevent detail loss and artifacting.
@@ -33,7 +30,7 @@ def descale_detail_mask(
 
     :return:            Mask containing all the native FHD detail.
     """
-    mask = norm_expr([get_y(clip), get_y(rescaled)], 'x y - abs', func=descale_detail_mask)
+    mask = norm_expr([get_y(clip), get_y(rescaled)], "x y - abs", func=descale_detail_mask)
 
     mask = Morpho.binarize(mask, thr)
 
@@ -51,10 +48,13 @@ def descale_detail_mask(
 
 @limiter
 def descale_error_mask(
-    clip: vs.VideoNode, rescaled: vs.VideoNode,
+    clip: vs.VideoNode,
+    rescaled: vs.VideoNode,
     thr: float | list[float] = 0.038,
     expands: int | tuple[int, int, int] = (2, 2, 3),
-    blur: int | float = 3, bwbias: int = 1, tr: int = 0
+    blur: int | float = 3,
+    bwbias: int = 1,
+    tr: int = 0,
 ) -> ConstantFormatVideoNode:
     """
     Create an error mask from the original and rescaled clip.
@@ -71,13 +71,13 @@ def descale_error_mask(
     """
     y, *chroma = split(clip)
 
-    error = norm_expr([y, rescaled], 'x y - abs', func=descale_error_mask)
+    error = norm_expr([y, rescaled], "x y - abs", func=descale_error_mask)
 
     if bwbias > 1 and chroma:
-        chroma_abs = norm_expr(chroma, 'x neutral - abs y neutral - abs max')
+        chroma_abs = norm_expr(chroma, "x neutral - abs y neutral - abs max")
         chroma_abs = core.resize.Bicubic(chroma_abs, y.width, y.height)
 
-        bias = norm_expr([y, chroma_abs], f'x ymax >= x ymin <= or y 0 = and {bwbias} 1 ?', func=descale_error_mask)
+        bias = norm_expr([y, chroma_abs], f"x ymax >= x ymin <= or y 0 = and {bwbias} 1 ?", func=descale_error_mask)
         bias = Morpho.expand(bias, 2, func=descale_error_mask)
 
         error = ExprOp.MUL(error, bias)
@@ -109,9 +109,6 @@ def descale_error_mask(
 
         error = ExprOp.MIN(error, ExprOp.MAX(shift_clip_multi(ExprOp.MIN(error, avg), (-tr, tr))))
 
-    if isinstance(blur, int):
-        error = box_blur(error, blur)
-    else:
-        error = gauss_blur(error, blur)
+    error = box_blur(error, blur) if isinstance(blur, int) else gauss_blur(error, blur)
 
     return error

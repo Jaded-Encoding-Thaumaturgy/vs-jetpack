@@ -5,6 +5,7 @@ from typing import Any, SupportsFloat, overload
 
 import vapoursynth as vs
 from jetpytools import fallback, mod_x
+
 from vstools import ConstantFormatVideoNode
 
 from ..enums.other import Dar, Sar
@@ -13,25 +14,25 @@ from ..functions import check_variable_format, depth
 from ..types import HoldsVideoFormatT, VideoFormatT
 
 __all__ = [
-    'get_var_infos',
-    'get_video_format',
-
-    'get_depth', 'get_sample_type', 'get_subsampling', 'get_color_family', 'get_framerate',
-
-    'expect_bits',
-
-    'get_plane_sizes', 'get_resolutions',
-
-    'get_w', 'get_h'
+    "expect_bits",
+    "get_color_family",
+    "get_depth",
+    "get_framerate",
+    "get_h",
+    "get_plane_sizes",
+    "get_resolutions",
+    "get_sample_type",
+    "get_subsampling",
+    "get_var_infos",
+    "get_video_format",
+    "get_w",
 ]
 
 
 def get_var_infos(frame: vs.VideoNode | vs.VideoFrame) -> tuple[vs.VideoFormat, int, int]:
     """Get information from a variable resolution clip or frame."""
 
-    if isinstance(frame, vs.VideoNode) and not (
-        frame.width and frame.height and frame.format
-    ):
+    if isinstance(frame, vs.VideoNode) and not (frame.width and frame.height and frame.format):
         with frame.get_frame(0) as frame:
             return get_var_infos(frame)
 
@@ -167,9 +168,7 @@ def get_resolutions(clip: vs.VideoNode | vs.VideoFrame) -> tuple[tuple[int, int,
 
     assert clip.format
 
-    return tuple(
-        (plane, *get_plane_sizes(clip, plane)) for plane in range(clip.format.num_planes)
-    )
+    return tuple((plane, *get_plane_sizes(clip, plane)) for plane in range(clip.format.num_planes))
 
 
 def get_subsampling(clip: VideoFormatT | HoldsVideoFormatT, /) -> str | None:
@@ -189,51 +188,47 @@ def get_subsampling(clip: VideoFormatT | HoldsVideoFormatT, /) -> str | None:
         return None
 
     if fmt.subsampling_w == 2 and fmt.subsampling_h == 2:
-        return '410'
+        return "410"
 
     if fmt.subsampling_w == 2 and fmt.subsampling_h == 0:
-        return '411'
+        return "411"
 
     if fmt.subsampling_w == 1 and fmt.subsampling_h == 1:
-        return '420'
+        return "420"
 
     if fmt.subsampling_w == 1 and fmt.subsampling_h == 0:
-        return '422'
+        return "422"
 
     if fmt.subsampling_w == 0 and fmt.subsampling_h == 1:
-        return '440'
+        return "440"
 
     if fmt.subsampling_w == 0 and fmt.subsampling_h == 0:
-        return '444'
+        return "444"
 
-    raise UnsupportedSubsamplingError('Unknown subsampling.', get_subsampling)
-
-
-@overload
-def get_w(height: float, ar: SupportsFloat = 16 / 9, /, mod: int = 2) -> int:
-    ...
+    raise UnsupportedSubsamplingError("Unknown subsampling.", get_subsampling)
 
 
 @overload
-def get_w(height: float, ref: vs.VideoNode | vs.VideoFrame, /, mod: int | None = None) -> int:
-    ...
+def get_w(height: float, ar: SupportsFloat = 16 / 9, /, mod: int = 2) -> int: ...
 
 
 @overload
-def get_w(height: float, dar: Dar, /, mod: int | None = None) -> int:
-    ...
+def get_w(height: float, ref: vs.VideoNode | vs.VideoFrame, /, mod: int | None = None) -> int: ...
 
 
 @overload
-def get_w(height: float, sar: Sar, /, mod: int | None = None) -> int:
-    ...
+def get_w(height: float, dar: Dar, /, mod: int | None = None) -> int: ...
+
+
+@overload
+def get_w(height: float, sar: Sar, /, mod: int | None = None) -> int: ...
 
 
 def get_w(
     height: float,
     ar_or_ref: vs.VideoNode | vs.VideoFrame | SupportsFloat | Dar | Sar = 16 / 9,
     /,
-    mod: int | None = None
+    mod: int | None = None,
 ) -> int:
     """
     Calculate the width given a height and an aspect ratio.
@@ -275,30 +270,26 @@ def get_w(
 
 
 @overload
-def get_h(width: float, ar: SupportsFloat = 16 / 9, /, mod: int = 2) -> int:
-    ...
+def get_h(width: float, ar: SupportsFloat = 16 / 9, /, mod: int = 2) -> int: ...
 
 
 @overload
-def get_h(width: float, ref: vs.VideoNode | vs.VideoFrame, /, mod: int | None = None) -> int:
-    ...
+def get_h(width: float, ref: vs.VideoNode | vs.VideoFrame, /, mod: int | None = None) -> int: ...
 
 
 @overload
-def get_h(width: float, dar: Dar, /, mod: int | None = None) -> int:
-    ...
+def get_h(width: float, dar: Dar, /, mod: int | None = None) -> int: ...
 
 
 @overload
-def get_h(width: float, sar: Sar, /, mod: int | None = None) -> int:
-    ...
+def get_h(width: float, sar: Sar, /, mod: int | None = None) -> int: ...
 
 
 def get_h(
     width: float,
     ar_or_ref: vs.VideoNode | vs.VideoFrame | SupportsFloat | Dar | Sar = 16 / 9,
     /,
-    mod: int | None = None
+    mod: int | None = None,
 ) -> int:
     """
     Calculate the height given a width and an aspect ratio.

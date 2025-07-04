@@ -7,14 +7,14 @@ from .sector import SectorReadHelper
 from .timespan import TimeSpan
 
 __all__ = [
-    'CellPlayback',
-    'CellPosition',
-    'AudioControl',
-    'PGC',
-    'VTSPgci',
-    'BLOCK_MODE_FIRST_CELL',
-    'BLOCK_MODE_IN_BLOCK',
-    'BLOCK_MODE_LAST_CELL',
+    "BLOCK_MODE_FIRST_CELL",
+    "BLOCK_MODE_IN_BLOCK",
+    "BLOCK_MODE_LAST_CELL",
+    "PGC",
+    "AudioControl",
+    "CellPlayback",
+    "CellPosition",
+    "VTSPgci",
 ]
 
 BLOCK_MODE_FIRST_CELL = 1
@@ -117,10 +117,7 @@ class VTSPgci:
 
             reader.ifo.seek(pgc_base + offset_playback, os.SEEK_SET)
 
-            cell_playback_bytes = [
-                reader._unpack_byte(1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 4, 4)
-                for _ in range(num_cells)
-            ]
+            cell_playback_bytes = [reader._unpack_byte(1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 4, 4) for _ in range(num_cells)]
 
             cell_playback = [
                 CellPlayback(
@@ -134,7 +131,8 @@ class VTSPgci:
                     last_sector=a[8 + 3],
                     first_ilvu_end_sector=a[6 + 3],
                     last_vobu_start_sector=a[7 + 3],
-                ) for a in cell_playback_bytes
+                )
+                for a in cell_playback_bytes
             ]
 
             reader.ifo.seek(bk, os.SEEK_SET)
@@ -149,6 +147,6 @@ class VTSPgci:
                     program_map=program_map,
                     cell_position=cell_position,
                     cell_playback=cell_playback,
-                    audio_control=audio_control
+                    audio_control=audio_control,
                 )
             )

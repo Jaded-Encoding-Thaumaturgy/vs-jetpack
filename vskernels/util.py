@@ -12,22 +12,28 @@ from typing_extensions import Self
 
 from vsexprtools import norm_expr
 from vstools import (
-    ConstantFormatVideoNode, CustomRuntimeError, CustomValueError, HoldsVideoFormatT, Matrix, MatrixT, Transfer,
-    VideoFormatT, cachedproperty, check_variable_format, depth, get_video_format, vs, vs_object
+    ConstantFormatVideoNode,
+    CustomRuntimeError,
+    CustomValueError,
+    HoldsVideoFormatT,
+    Matrix,
+    MatrixT,
+    Transfer,
+    VideoFormatT,
+    cachedproperty,
+    check_variable_format,
+    depth,
+    get_video_format,
+    vs,
+    vs_object,
 )
 
 from .abstract import Resampler, ResamplerLike, Scaler, ScalerLike
-from .abstract.base import BaseScaler, BaseScalerMeta, _BaseScalerT, _ScalerT
+from .abstract.base import BaseScaler, BaseScalerMeta, _BaseScalerT
 from .kernels import Catrom, Point
 from .types import Center, LeftShift, Slope, TopShift
 
-__all__ = [
-    'LinearLight',
-    'BaseScalerSpecializer',
-    'NoScale',
-
-    'resample_to'
-]
+__all__ = ["BaseScalerSpecializer", "LinearLight", "NoScale", "resample_to"]
 
 
 class BaseScalerSpecializerMeta(BaseScalerMeta):
@@ -35,7 +41,7 @@ class BaseScalerSpecializerMeta(BaseScalerMeta):
 
     __isspecialized__: bool
 
-    def __new__(
+    def __new__(  # noqa: PYI034
         mcls,
         name: str,
         bases: tuple[type, ...],
@@ -47,8 +53,8 @@ class BaseScalerSpecializerMeta(BaseScalerMeta):
     ) -> BaseScalerSpecializerMeta:
         if specializer is not None:
             name = f"{name}[{specializer.__name__}]"
-            bases = (specializer, ) + bases
-            namespace["__orig_bases__"] = (specializer, ) + namespace["__orig_bases__"]
+            bases = (specializer, *bases)
+            namespace["__orig_bases__"] = (specializer, *namespace["__orig_bases__"])
 
             del namespace["kernel_radius"]
             del namespace["_default_scaler"]
@@ -67,6 +73,7 @@ class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseSca
     _default_scaler: ClassVar[type[BaseScaler]]
 
     if not TYPE_CHECKING:
+
         def __new__(cls, *args: Any, **kwargs: Any) -> Self:
             if not cls.__isspecialized__:
                 return cls.__class_getitem__(cls._default_scaler)()
@@ -90,13 +97,16 @@ class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseSca
         :return:            A new subclass using the provided kernel.
         """
         if isinstance(base_scaler, TypeVar):
-            return GenericAlias(cls, (base_scaler, ))
+            return GenericAlias(cls, (base_scaler,))
 
         specialized_scaler = BaseScalerSpecializerMeta(
-            cls.__name__, (cls, ), cls.__dict__.copy(), specializer=base_scaler, partial_abstract=True
+            cls.__name__, (cls,), cls.__dict__.copy(), specializer=base_scaler, partial_abstract=True
         )
 
-        return GenericAlias(specialized_scaler, (base_scaler, ))
+        return GenericAlias(specialized_scaler, (base_scaler,))
+
+
+_ScalerT = TypeVar("_ScalerT", bound=Scaler)
 
 
 class NoScale(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
@@ -131,7 +141,8 @@ class NoScale(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
         if width != clip.width or height != clip.height:
             raise CustomValueError(
                 "When using NoScale, `width` and `height` must match the clip's dimensions.",
-                self.__class__, (width, height)
+                self.__class__,
+                (width, height),
             )
 
         if shift == (0, 0) and not kwargs and not self.kwargs:
@@ -161,16 +172,18 @@ class LinearLightProcessing(cachedproperty.baseclass):
             vs.RGBS if self.ll._wclip.format.color_family in (vs.YUV, vs.RGB) else vs.GRAYS,
             matrix_in=self.ll._matrix,
             transfer_in=self.ll._curve,
-            transfer=Transfer.LINEAR
+            transfer=Transfer.LINEAR,
         )
 
         if self.ll.sigmoid:
             wclip = norm_expr(
                 wclip,
-                '{center} 1 {slope} / 1 x 0 max 1 min {scale} * {offset} + / 1 - log * -',
-                center=self.ll._scenter, slope=self.ll._sslope,
-                scale=self.ll._sscale, offset=self.ll._soffset,
-                func=self.__class__
+                "{center} 1 {slope} / 1 x 0 max 1 min {scale} * {offset} + / 1 - log * -",
+                center=self.ll._scenter,
+                slope=self.ll._sslope,
+                scale=self.ll._sscale,
+                offset=self.ll._soffset,
+                func=self.__class__,
             )
 
         return wclip
@@ -179,7 +192,7 @@ class LinearLightProcessing(cachedproperty.baseclass):
         """Setter for `linear` cached property."""
         if self.ll._exited:
             raise CustomRuntimeError(
-                'You can\'t set .linear after going out of the context manager!', func=self.__class__
+                "You can't set .linear after going out of the context manager!", func=self.__class__
             )
         self._linear = processed
 
@@ -190,19 +203,21 @@ class LinearLightProcessing(cachedproperty.baseclass):
     def out(self) -> vs.VideoNode:
         if not self.ll._exited:
             raise CustomRuntimeError(
-                'You can\'t get .out while still inside of the context manager!', func=self.__class__
+                "You can't get .out while still inside of the context manager!", func=self.__class__
             )
 
-        if not hasattr(self, '_linear'):
-            raise CustomValueError('You need to set .linear before getting .out!', self.__class__)
+        if not hasattr(self, "_linear"):
+            raise CustomValueError("You need to set .linear before getting .out!", self.__class__)
 
         if self.ll.sigmoid:
             processed = norm_expr(
                 self._linear,
-                '1 1 {slope} {center} x 0 max 1 min - * exp + / {offset} - {scale} /',
-                slope=self.ll._sslope, center=self.ll._scenter,
-                offset=self.ll._soffset, scale=self.ll._sscale,
-                func=self.__class__
+                "1 1 {slope} {center} x 0 max 1 min - * exp + / {offset} - {scale} /",
+                slope=self.ll._sslope,
+                center=self.ll._scenter,
+                offset=self.ll._soffset,
+                scale=self.ll._sscale,
+                func=self.__class__,
             )
         else:
             processed = self._linear
@@ -250,7 +265,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         /,
         sigmoid: bool | tuple[Slope, Center] = False,
         resampler: ResamplerLike = Catrom,
-        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
+        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None,
     ) -> Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]:
         """
         Example:
@@ -269,10 +284,9 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         *,
         sigmoid: bool | tuple[Slope, Center] = False,
         resampler: ResamplerLike = Catrom,
-        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
+        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None,
     ) -> Callable[
-        [Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]],
-        Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
+        [Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]], Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
     ]:
         """
         Example:
@@ -290,13 +304,12 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         /,
         sigmoid: bool | tuple[Slope, Center] = False,
         resampler: ResamplerLike = Catrom,
-        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
+        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None,
     ) -> Union[
         Callable[Concatenate[vs.VideoNode, P], vs.VideoNode],
         Callable[
-            [Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]],
-            Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
-        ]
+            [Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]], Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
+        ],
     ]:
         """Decorator version of LinearLight."""
 
@@ -321,10 +334,10 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
             self._sslope, self._scenter = self.sigmoid
 
             if not 1.0 <= self._sslope <= 20.0:
-                raise CustomValueError('sigmoid slope has to be in range 1.0-20.0 (inclusive).', self.__class__)
+                raise CustomValueError("sigmoid slope has to be in range 1.0-20.0 (inclusive).", self.__class__)
 
             if not 0.0 <= self._scenter <= 1.0:
-                raise CustomValueError('sigmoid center has to be in range 0.0-1.0 (inclusive).', self.__class__)
+                raise CustomValueError("sigmoid center has to be in range 0.0-1.0 (inclusive).", self.__class__)
 
             self._soffset = 1.0 / (1 + exp(self._sslope * self._scenter))
             self._sscale = 1.0 / (1 + exp(self._sslope * (self._scenter - 1))) - self._soffset
@@ -340,7 +353,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
 
         return LinearLightProcessing(self)
 
-    def __exit__(self, *args: Any, **kwargs: Any) -> None:
+    def __exit__(self, *args: object, **kwargs: Any) -> None:
         self._exited = True
 
     def __vs_del__(self, core_id: int) -> None:
@@ -355,7 +368,7 @@ def resample_to(
     clip: vs.VideoNode,
     out_fmt: int | VideoFormatT | HoldsVideoFormatT,
     matrix: MatrixT | None = None,
-    resampler: ResamplerLike = Catrom
+    resampler: ResamplerLike = Catrom,
 ) -> vs.VideoNode:
     out_fmt = get_video_format(out_fmt)
     assert clip.format

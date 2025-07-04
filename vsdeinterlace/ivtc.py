@@ -3,21 +3,30 @@ from __future__ import annotations
 from typing import Any
 
 from vstools import (
-    ConstantFormatVideoNode, FieldBased, FieldBasedT, FunctionUtil, InvalidFramerateError,
-    VSFunctionKwArgs, VSFunctionNoArgs, core, find_prop_rfs, join, vs
+    ConstantFormatVideoNode,
+    FieldBased,
+    FieldBasedT,
+    FunctionUtil,
+    InvalidFramerateError,
+    VSFunctionKwArgs,
+    VSFunctionNoArgs,
+    core,
+    find_prop_rfs,
+    join,
+    vs,
 )
 
-from .enums import IVTCycles, VFMMode
 from .blending import deblend
+from .enums import IVTCycles, VFMMode
 
-__all__ = [
-    'sivtc', 'jivtc',
-    'vfm', 'vdecimate'
-]
+__all__ = ["jivtc", "sivtc", "vdecimate", "vfm"]
 
 
 def sivtc(
-    clip: vs.VideoNode, pattern: int = 0, tff: FieldBasedT | bool | None = None, ivtc_cycle: IVTCycles = IVTCycles.CYCLE_10
+    clip: vs.VideoNode,
+    pattern: int = 0,
+    tff: FieldBasedT | bool | None = None,
+    ivtc_cycle: IVTCycles = IVTCycles.CYCLE_10,
 ) -> ConstantFormatVideoNode:
     """
     Simplest form of a fieldmatching function.
@@ -41,12 +50,15 @@ def sivtc(
 
 
 def jivtc(
-    clip: vs.VideoNode, pattern: int, tff: FieldBasedT | bool | None = None, chroma_only: bool = True,
+    clip: vs.VideoNode,
+    pattern: int,
+    tff: FieldBasedT | bool | None = None,
+    chroma_only: bool = True,
     postprocess: VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = deblend,
     postdecimate: IVTCycles | None = IVTCycles.CYCLE_05,
     ivtc_cycle: IVTCycles = IVTCycles.CYCLE_10,
     final_ivtc_cycle: IVTCycles = IVTCycles.CYCLE_08,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
     This function should only be used when a normal ivtc or ivtc + bobber leaves chroma blend to every fourth frame.
@@ -83,10 +95,11 @@ def jivtc(
 
 
 def vfm(
-    clip: vs.VideoNode, tff: FieldBasedT | bool | None = None,
+    clip: vs.VideoNode,
+    tff: FieldBasedT | bool | None = None,
     mode: VFMMode = VFMMode.TWO_WAY_MATCH_THIRD_COMBED,
     postprocess: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
     Perform field matching using VFM.
@@ -124,23 +137,23 @@ def vfm(
 
     vfm_kwargs = dict[str, Any](order=tff, mode=mode)
 
-    if block := kwargs.pop('block', None):
+    if block := kwargs.pop("block", None):
         if isinstance(block, int):
-            vfm_kwargs |= dict(blockx=block, blocky=block)
-        else:
-            vfm_kwargs |= dict(blockx=block[0], blocky=block[1])
+            block = (block, block)
 
-    if (y := kwargs.pop('y', None)) and not isinstance(y, int):
-        vfm_kwargs |= dict(y0=y[0], y1=y[1])
+        vfm_kwargs.update(blockx=block[0], blocky=block[1])
 
-    if not kwargs.get('clip2', None) and func.work_clip.format is not clip.format:
-        vfm_kwargs |= dict(clip2=clip)
+    if (y := kwargs.pop("y", None)) and not isinstance(y, int):
+        vfm_kwargs.update(y0=y[0], y1=y[1])
+
+    if not kwargs.get("clip2") and func.work_clip.format != clip.format:
+        vfm_kwargs.update(clip2=clip)
 
     fieldmatch = func.work_clip.vivtc.VFM(**(vfm_kwargs | kwargs))
 
     if postprocess:
         if callable(postprocess):
-            postprocess = postprocess(kwargs.get('clip2', clip))
+            postprocess = postprocess(kwargs.get("clip2", clip))
 
         fieldmatch = find_prop_rfs(fieldmatch, postprocess, "_Combed", "==", 1)
 
@@ -167,16 +180,16 @@ def vdecimate(clip: vs.VideoNode, weight: float = 0.0, **kwargs: Any) -> Constan
 
     vdecimate_kwargs = dict[str, Any]()
 
-    if block := kwargs.pop('block', None):
+    if block := kwargs.pop("block", None):
         if isinstance(block, int):
-            vdecimate_kwargs |= dict(blockx=block, blocky=block)
-        else:
-            vdecimate_kwargs |= dict(blockx=block[0], blocky=block[1])
+            block = (block, block)
 
-    if not kwargs.get('clip2', None) and func.work_clip.format is not clip.format:
-        vdecimate_kwargs |= dict(clip2=clip)
+        vdecimate_kwargs.update(blockx=block[0], blocky=block[1])
 
-    dryrun = kwargs.pop('dryrun', False)
+    if not kwargs.get("clip2") and func.work_clip.format != clip.format:
+        vdecimate_kwargs.update(clip2=clip)
+
+    dryrun = kwargs.pop("dryrun", False)
 
     if dryrun or weight:
         stats = func.work_clip.vivtc.VDecimate(dryrun=True, **(vdecimate_kwargs | kwargs))
@@ -184,11 +197,11 @@ def vdecimate(clip: vs.VideoNode, weight: float = 0.0, **kwargs: Any) -> Constan
         if dryrun:
             return func.return_clip(stats)
 
-        clip = kwargs.pop('clip2', clip)
+        clip = kwargs.pop("clip2", clip)
 
         avg = clip.std.AverageFrames(weights=[0, 1 - weight, weight])
         splice = find_prop_rfs(clip, avg, "VDecimateDrop", "==", 1, stats)
-        vdecimate_kwargs |= dict(clip2=splice)
+        vdecimate_kwargs.update(clip2=splice)
 
     decimate = func.work_clip.vivtc.VDecimate(**(vdecimate_kwargs | kwargs))
 

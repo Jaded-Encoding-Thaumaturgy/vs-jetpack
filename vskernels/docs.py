@@ -3,7 +3,15 @@ from __future__ import annotations
 from typing import Any
 
 from vstools import (
-    ConstantFormatVideoNode, HoldsVideoFormatT, Matrix, MatrixT, VideoFormatT, core, depth, get_video_format, vs
+    ConstantFormatVideoNode,
+    HoldsVideoFormatT,
+    Matrix,
+    MatrixT,
+    VideoFormatT,
+    core,
+    depth,
+    get_video_format,
+    vs,
 )
 
 from .abstract import Kernel

@@ -1,3 +1,5 @@
+# noqa: N999
+
 from __future__ import annotations
 
 import datetime
@@ -16,19 +18,24 @@ from ...indexers import DVDExtIndexer, DVDSRCIndexer, ExternalIndexer
 from ...rff import apply_rff_video
 from ...utils import debug_print
 from .parsedvd import (
-    AUDIO_FORMAT_AC3, AUDIO_FORMAT_LPCM, BLOCK_MODE_FIRST_CELL, BLOCK_MODE_IN_BLOCK, BLOCK_MODE_LAST_CELL, IFO0, IFOX,
-    SectorReadHelper, to_json
+    AUDIO_FORMAT_AC3,
+    AUDIO_FORMAT_LPCM,
+    BLOCK_MODE_FIRST_CELL,
+    BLOCK_MODE_IN_BLOCK,
+    BLOCK_MODE_LAST_CELL,
+    IFO0,
+    IFOX,
+    SectorReadHelper,
+    to_json,
 )
 from .title import Title
 from .utils import absolute_time_from_timecode, double_check_dvdnav
 
-__all__ = [
-    'IsoFileCore'
-]
+__all__ = ["IsoFileCore"]
 
 
 class IsoFileCore:
-    _subfolder = 'VIDEO_TS'
+    _subfolder = "VIDEO_TS"
 
     ifo0: IFO0
     vts: list[IFOX]
@@ -36,7 +43,8 @@ class IsoFileCore:
     title_count: int
 
     def __init__(
-        self, path: SPath | str,
+        self,
+        path: SPath | str,
         indexer: DVDExtIndexer | type[DVDExtIndexer] | None = None,
     ):
         """
@@ -51,9 +59,9 @@ class IsoFileCore:
         self._vob_files: list[SPath] | None = None
         self._ifo_files: list[SPath] | None = None
 
-        if not hasattr(core, 'dvdsrc2'):
+        if not hasattr(core, "dvdsrc2"):
             raise DependencyNotFoundError(
-                self.__class__, '', 'dvdsrc2 is needed for {cfunc} to work!', cfunc=self.__class__
+                self.__class__, "", "dvdsrc2 is needed for {cfunc} to work!", cfunc=self.__class__
             )
 
         self.iso_path = SPath(path).absolute()
@@ -64,6 +72,7 @@ class IsoFileCore:
         ifo0: IFO0 | None = None
         ifos: Sequence[SPathLike | bytes] = []
         if indexer is None:
+
             def _getifo(i: int) -> bytes:
                 return cast(bytes, core.dvdsrc2.Ifo(str(self.iso_path), i))
 
@@ -71,7 +80,7 @@ class IsoFileCore:
 
             # remove in 2025
             if len(_ifo0b) <= 30:
-                warnings.warn('Newer VapourSynth is required for dvdsrc2 information gathering without mounting!')
+                warnings.warn("Newer VapourSynth is required for dvdsrc2 information gathering without mounting!")
             else:
                 ifo0 = IFO0(SectorReadHelper(_ifo0b))
                 ifos = [_getifo(i) for i in range(1, ifo0.num_vts + 1)]
@@ -145,7 +154,7 @@ class IsoFileCore:
         tt = tt_srpt[title_idx]
 
         if tt.nr_of_angles != 1 and angle_nr is None:
-            raise CustomValueError('No angle_nr given for multi angle title', self.get_title)
+            raise CustomValueError("No angle_nr given for multi angle title", self.get_title)
 
         target_vts = self.vts[tt.title_set_nr - 1]
         target_title = target_vts.vts_ptt_srpt[tt.vts_ttn - 1]
@@ -154,32 +163,30 @@ class IsoFileCore:
 
         for ptt in target_title[1:]:
             if ptt.pgcn != target_title[0].pgcn:
-                warnings.warn('Title is not one program chain (currently untested)')
+                warnings.warn("Title is not one program chain (currently untested)")
 
         vobidcellids_to_take = list[tuple[int, int]]()
         is_chapter = list[bool]()
 
         i = 0
         while i < len(target_title):
-            ptt_to_take_for_pgc = len([
-                ppt for ppt in target_title[i:] if target_title[i].pgcn == ppt.pgcn
-            ])
+            ptt_to_take_for_pgc = len([ppt for ppt in target_title[i:] if target_title[i].pgcn == ppt.pgcn])
 
             assert ptt_to_take_for_pgc >= 1
 
-            title_programs = [a.pgn for a in target_title[i:i + ptt_to_take_for_pgc]]
+            title_programs = [a.pgn for a in target_title[i : i + ptt_to_take_for_pgc]]
             target_pgc = target_vts.vts_pgci.pgcs[target_title[i].pgcn - 1]
             pgc_programs = target_pgc.program_map
 
             if title_programs[0] != 1 or pgc_programs[0] != 1:
-                warnings.warn('Open Title does not start at the first cell (open issue in github with sample)\n')
+                warnings.warn("Open Title does not start at the first cell (open issue in github with sample)\n")
 
             target_programs = [
                 a[1] for a in list(filter(lambda x: (x[0] + 1) in title_programs, enumerate(pgc_programs)))
             ]
 
             if target_programs != pgc_programs:
-                warnings.warn('Open the program chain does not include all ptts\n')
+                warnings.warn("Open the program chain does not include all ptts\n")
 
             current_angle = 1
             angle_start_cell_i: int
@@ -193,7 +200,7 @@ class IsoFileCore:
                 if block_mode == BLOCK_MODE_FIRST_CELL:
                     current_angle = 1
                     angle_start_cell_i = cell_i
-                elif block_mode == BLOCK_MODE_IN_BLOCK or block_mode == BLOCK_MODE_LAST_CELL:
+                elif block_mode in (BLOCK_MODE_IN_BLOCK, BLOCK_MODE_LAST_CELL):
                     current_angle += 1
 
                 if block_mode == 0:
@@ -211,8 +218,12 @@ class IsoFileCore:
         assert len(is_chapter) == len(vobidcellids_to_take)
 
         rnode, rff, vobids, dvdsrc_ranges = self.indexer.parse_vts(
-            tt, disable_rff, vobidcellids_to_take, target_vts, self.output_folder,
-            [] if isinstance(self.indexer, DVDSRCIndexer) else self._get_title_vob_files_for_vts(tt.title_set_nr)
+            tt,
+            disable_rff,
+            vobidcellids_to_take,
+            target_vts,
+            self.output_folder,
+            [] if isinstance(self.indexer, DVDSRCIndexer) else self._get_title_vob_files_for_vts(tt.title_set_nr),
         )
 
         region = Region.from_framerate(rnode.fps)
@@ -243,16 +254,17 @@ class IsoFileCore:
                 asd = (rffcnt * 3 + 2 * (len(rff) - rffcnt)) / len(rff)
 
                 fcc = len(rnode) * 5
-                new_fps = Fraction(rfps.numerator * fcc * 2, int(fcc * rfps.denominator * asd),)
+                new_fps = Fraction(
+                    rfps.numerator * fcc * 2,
+                    int(fcc * rfps.denominator * asd),
+                )
 
                 rnode = core.std.AssumeFPS(rnode, fpsnum=new_fps.numerator, fpsden=new_fps.denominator)
 
                 durationcodes = timecodes = [Fraction(rfps.denominator * (a + 2), rfps.numerator * 2) for a in rff]
                 absolutetime = absolute_time_from_timecode(timecodes)
 
-        changes = [
-            *(i for i, pvob, nvob in zip(count(1), vobids[:-1], vobids[1:]) if nvob != pvob), len(rnode)
-        ]
+        changes = [*(i for i, pvob, nvob in zip(count(1), vobids[:-1], vobids[1:]) if nvob != pvob), len(rnode)]
 
         assert len(changes) == len(is_chapter)
 
@@ -277,14 +289,16 @@ class IsoFileCore:
             if rfps.denominator == 1001:
                 dvnavchapters = [a * 1.001 for a in dvnavchapters]
 
-            adjusted = [absolutetime[i] if i != len(
-                absolutetime) else absolutetime[i - 1] + durationcodes[i - 1] for i in output_chapters]
+            adjusted = [
+                absolutetime[i] if i != len(absolutetime) else absolutetime[i - 1] + durationcodes[i - 1]
+                for i in output_chapters
+            ]
             if len(adjusted) != len(dvnavchapters):
                 warnings.warn(
-                    'dvdnavchapters length do not match our chapters '
-                    f'{len(adjusted)} {len(dvnavchapters)} (open an issue in github)'
+                    "dvdnavchapters length do not match our chapters "
+                    f"{len(adjusted)} {len(dvnavchapters)} (open an issue in github)"
                 )
-                print(adjusted, '\n\n\n', dvnavchapters)
+                print(adjusted, "\n\n\n", dvnavchapters)
             else:
                 framelen = rfps.denominator / rfps.numerator
                 for i in range(len(adjusted)):
@@ -293,11 +307,11 @@ class IsoFileCore:
                     # but on ~24p pal rffd it does not lol
                     if abs(adjusted[i] - dvnavchapters[i]) > framelen * 20:
                         warnings.warn(
-                            f'dvdnavchapters do not match our chapters {len(adjusted)} {len(dvnavchapters)}'
-                            ' (open an issue in github)\n'
-                            f' index: {i} {adjusted[i]}'
+                            f"dvdnavchapters do not match our chapters {len(adjusted)} {len(dvnavchapters)}"
+                            " (open an issue in github)\n"
+                            f" index: {i} {adjusted[i]}"
                         )
-                        print(adjusted, '\n\n\n', dvnavchapters)
+                        print(adjusted, "\n\n\n", dvnavchapters)
                         break
         else:
             debug_print("Skipping sanity check with dvdnav")
@@ -309,12 +323,12 @@ class IsoFileCore:
         # you could either always add the end as chapter or stretch the last chapter till the end
         # Guess #1: We only need to handle the case where last is not acually a chapter so stretching
         # is the only correct solution there, adding would be wrong
-        output_chapters = [0] + output_chapters
+        output_chapters = [0, *output_chapters]
         lastchpt = len(rnode)
         if output_chapters[-1] != lastchpt:
             patched_end_chapter = output_chapters[-1]
             output_chapters[-1] = lastchpt
-#            output_chapters += [lastchpt]
+        #            output_chapters += [lastchpt]
 
         audios = list[str]()
         for i, ac in enumerate(target_pgc.audio_control):
@@ -328,7 +342,7 @@ class IsoFileCore:
                 else:
                     aformat = "unk"
 
-                audios += [f'{aformat}({audio.language})']
+                audios += [f"{aformat}({audio.language})"]
             else:
                 audios += ["none"]
 
@@ -337,15 +351,23 @@ class IsoFileCore:
         assert output_chapters[0] == 0
         assert output_chapters[-1] == len(rnode)
         return Title(
-            rnode, output_chapters, changes, self, title_idx, tt.title_set_nr,
-            vobidcellids_to_take, dvdsrc_ranges, absolutetime, durationcodesf,
-            audios, patched_end_chapter
+            rnode,
+            output_chapters,
+            changes,
+            self,
+            title_idx,
+            tt.title_set_nr,
+            vobidcellids_to_take,
+            dvdsrc_ranges,
+            absolutetime,
+            durationcodesf,
+            audios,
+            patched_end_chapter,
         )
 
     def _get_title_vob_files_for_vts(self, vts: int) -> Sequence[SPath]:
         return [
-            vob for vob in self.vob_files
-            if f'VTS_{vts:02}_' in (s := vob.to_str()) and not s.upper().endswith('0.VOB')
+            vob for vob in self.vob_files if f"VTS_{vts:02}_" in (s := vob.to_str()) and not s.upper().endswith("0.VOB")
         ]
 
     def __repr__(self) -> str:
@@ -368,7 +390,7 @@ class IsoFileCore:
                 current_time += chap_time
                 seconds += [chap_time]
                 vobids += [(vobid.vob_id_nr, vobid.cell_nr)]
-            to_print += f'Title: {i + 1:02}\n'
+            to_print += f"Title: {i + 1:02}\n"
             lastv = None
 
             crnt = 0.0
@@ -421,12 +443,10 @@ class IsoFileCore:
         if self._vob_files is not None:
             return self._vob_files
 
-        vob_files = [
-            f for f in sorted(self.mount_path.glob('*.[vV][oO][bB]')) if f.stem != 'VIDEO_TS'
-        ]
+        vob_files = [f for f in sorted(self.mount_path.glob("*.[vV][oO][bB]")) if f.stem != "VIDEO_TS"]
 
         if not len(vob_files):
-            raise FileNotFoundError('IsoFile: No VOBs found!')
+            raise FileNotFoundError("IsoFile: No VOBs found!")
 
         self._vob_files = vob_files
 
@@ -437,12 +457,10 @@ class IsoFileCore:
         if self._ifo_files is not None:
             return self._ifo_files
 
-        ifo_files = [
-            f for f in sorted(self.mount_path.glob('*.[iI][fF][oO]'))
-        ]
+        ifo_files = sorted(self.mount_path.glob("*.[iI][fF][oO]"))
 
         if not len(ifo_files):
-            raise FileNotFoundError('IsoFile: No IFOs found!')
+            raise FileNotFoundError("IsoFile: No IFOs found!")
 
         self._ifo_files = ifo_files
 
@@ -457,28 +475,28 @@ class IsoFileCore:
         raise NotImplementedError()
 
     def _double_check_json(self) -> None:
-        if hasattr(core, 'dvdsrc'):
+        if hasattr(core, "dvdsrc"):
             our_json = to_json(self.ifo0, self.vts)
 
             dvdsrc_json = json.loads(cast(str, core.dvdsrc.Json(str(self.iso_path))))
 
-            for key in ('dvdpath', 'current_vts', 'current_domain'):
+            for key in ("dvdpath", "current_vts", "current_domain"):
                 dvdsrc_json.pop(key, None)
 
-            for ifo in dvdsrc_json.get('ifos', []):
-                ifo['pgci_ut'] = []
+            for ifo in dvdsrc_json.get("ifos", []):
+                ifo["pgci_ut"] = []
 
             ja = json.dumps(dvdsrc_json, sort_keys=True)
             jb = json.dumps(our_json, sort_keys=True)
 
             if ja != jb:
                 warnings.warn(
-                    f'libdvdread json does not match python implentation\n'
-                    f'json a,b have been written to {self.output_folder}'
+                    f"libdvdread json does not match python implentation\n"
+                    f"json a,b have been written to {self.output_folder}"
                 )
 
-                for k, v in [('a', ja), ('b', jb)]:
-                    with open(os.path.join(self.output_folder, f'{k}.json'), 'wt') as file:
+                for k, v in [("a", ja), ("b", jb)]:
+                    with open(os.path.join(self.output_folder, f"{k}.json"), "wt") as file:
                         file.write(v)
         else:
-            debug_print('We don\'t have dvdsrc and can\'t double check the json output with libdvdread.')
+            debug_print("We don't have dvdsrc and can't double check the json output with libdvdread.")

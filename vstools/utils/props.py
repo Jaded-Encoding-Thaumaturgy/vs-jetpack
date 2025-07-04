@@ -1,16 +1,34 @@
 from __future__ import annotations
 
 import sys
-
 from types import UnionType
-from typing import Any, Callable, Iterable, Literal, MutableMapping, Sequence, TypeVar, _UnionGenericAlias  # type: ignore[attr-defined]
+from typing import (  # type: ignore[attr-defined]
+    Any,
+    Callable,
+    Iterable,
+    Literal,
+    MutableMapping,
+    Sequence,
+    TypeVar,
+    _UnionGenericAlias,  # pyright: ignore[reportAttributeAccessIssue]
+    get_args,
+    get_origin,
+    overload,
+)
 from typing import cast as typing_cast
-from typing import get_args, get_origin, overload
 
 import vapoursynth as vs
-
 from jetpytools import (
-    MISSING, FileWasNotFoundError, FuncExceptT, MissingT, SPath, SPathLike, SupportsString, T, normalize_seq, to_arr
+    MISSING,
+    FileWasNotFoundError,
+    FuncExceptT,
+    MissingT,
+    SPath,
+    SPathLike,
+    SupportsString,
+    T,
+    normalize_seq,
+    to_arr,
 )
 
 from ..enums import PropEnum
@@ -19,15 +37,10 @@ from ..types import BoundVSMapValue, ConstantFormatVideoNode, HoldsPropValueT
 from ..types.generic import BoundVSMapValue_0, BoundVSMapValue_1
 from .cache import NodesPropsCache
 
-__all__ = [
-    'get_prop',
-    'get_props',
-    'merge_clip_props',
-    'get_clip_filepath'
-]
+__all__ = ["get_clip_filepath", "get_prop", "get_props", "merge_clip_props"]
 
-DT = TypeVar('DT')
-CT = TypeVar('CT')
+DT = TypeVar("DT")
+CT = TypeVar("CT")
 
 
 _get_prop_cache = NodesPropsCache[vs.RawNode]()
@@ -52,75 +65,91 @@ def _normalize_types(types: type[T] | Iterable[type[T]]) -> tuple[type[T], ...]:
 
 @overload
 def get_prop(
-    obj: HoldsPropValueT, key: SupportsString | PropEnum,
-    t: type[BoundVSMapValue],
-    *, func: FuncExceptT | None = None
-) -> BoundVSMapValue:
-    ...
+    obj: HoldsPropValueT, key: SupportsString | PropEnum, t: type[BoundVSMapValue], *, func: FuncExceptT | None = None
+) -> BoundVSMapValue: ...
+
 
 @overload
 def get_prop(
-    obj: HoldsPropValueT, key: SupportsString | PropEnum,
+    obj: HoldsPropValueT,
+    key: SupportsString | PropEnum,
     t: tuple[type[BoundVSMapValue], type[BoundVSMapValue_0]],
-    *, func: FuncExceptT | None = None
-) -> BoundVSMapValue | BoundVSMapValue_0:
-    ...
+    *,
+    func: FuncExceptT | None = None,
+) -> BoundVSMapValue | BoundVSMapValue_0: ...
+
 
 @overload
 def get_prop(
-    obj: HoldsPropValueT, key: SupportsString | PropEnum,
+    obj: HoldsPropValueT,
+    key: SupportsString | PropEnum,
     t: tuple[type[BoundVSMapValue], type[BoundVSMapValue_0], type[BoundVSMapValue_1]],
-    *, func: FuncExceptT | None = None
-) -> BoundVSMapValue | BoundVSMapValue_0 | BoundVSMapValue_1:
-    ...
+    *,
+    func: FuncExceptT | None = None,
+) -> BoundVSMapValue | BoundVSMapValue_0 | BoundVSMapValue_1: ...
+
 
 @overload
 def get_prop(
-    obj: HoldsPropValueT, key: SupportsString | PropEnum,
+    obj: HoldsPropValueT,
+    key: SupportsString | PropEnum,
     t: tuple[type[BoundVSMapValue], ...],
-    *, func: FuncExceptT | None = None
-) -> Any:
-    ...
+    *,
+    func: FuncExceptT | None = None,
+) -> Any: ...
+
 
 @overload
 def get_prop(
-    obj: HoldsPropValueT, key: SupportsString | PropEnum,
+    obj: HoldsPropValueT,
+    key: SupportsString | PropEnum,
     t: type[BoundVSMapValue] | tuple[type[BoundVSMapValue], ...],
-    cast: type[CT] | Callable[[BoundVSMapValue], CT], *, func: FuncExceptT | None = None
-) -> CT:
-    ...
+    cast: type[CT] | Callable[[BoundVSMapValue], CT],
+    *,
+    func: FuncExceptT | None = None,
+) -> CT: ...
+
 
 @overload
 def get_prop(
-    obj: HoldsPropValueT, key: SupportsString | PropEnum,
+    obj: HoldsPropValueT,
+    key: SupportsString | PropEnum,
     t: type[BoundVSMapValue] | tuple[type[BoundVSMapValue], ...],
-    *, default: DT | MissingT = ...,
-    func: FuncExceptT | None = None
-) -> BoundVSMapValue | DT:
-    ...
+    *,
+    default: DT | MissingT = ...,
+    func: FuncExceptT | None = None,
+) -> BoundVSMapValue | DT: ...
+
 
 @overload
 def get_prop(
-    obj: HoldsPropValueT, key: SupportsString | PropEnum,
+    obj: HoldsPropValueT,
+    key: SupportsString | PropEnum,
     t: type[BoundVSMapValue] | tuple[type[BoundVSMapValue], ...],
-    cast: type[CT] | Callable[[BoundVSMapValue], CT], default: DT | MissingT = ...,
-    func: FuncExceptT | None = None
-) -> CT | DT:
-    ...
+    cast: type[CT] | Callable[[BoundVSMapValue], CT],
+    default: DT | MissingT = ...,
+    func: FuncExceptT | None = None,
+) -> CT | DT: ...
+
 
 @overload
 def get_prop(
-    obj: HoldsPropValueT, key: SupportsString | PropEnum, t: type[BoundVSMapValue],
-    cast: type[CT] | Callable[[BoundVSMapValue], CT] | None, default: DT | MissingT,
-    func: FuncExceptT | None = None
-) -> BoundVSMapValue | CT | DT:
-    ...
+    obj: HoldsPropValueT,
+    key: SupportsString | PropEnum,
+    t: type[BoundVSMapValue],
+    cast: type[CT] | Callable[[BoundVSMapValue], CT] | None,
+    default: DT | MissingT,
+    func: FuncExceptT | None = None,
+) -> BoundVSMapValue | CT | DT: ...
+
 
 def get_prop(
-    obj: HoldsPropValueT, key: SupportsString | PropEnum,
+    obj: HoldsPropValueT,
+    key: SupportsString | PropEnum,
     t: type[BoundVSMapValue] | tuple[type[BoundVSMapValue], ...],
-    cast: type[CT] | Callable[[BoundVSMapValue], CT] | None = None, default: DT | MissingT = MISSING,
-    func: FuncExceptT | None = None
+    cast: type[CT] | Callable[[BoundVSMapValue], CT] | None = None,
+    default: DT | MissingT = MISSING,
+    func: FuncExceptT | None = None,
 ) -> BoundVSMapValue | CT | DT:
     """
     Get FrameProp ``prop`` from frame ``frame`` with expected type ``t`` to satisfy the type checker.
@@ -156,10 +185,7 @@ def get_prop(
     prop: Any = MISSING
 
     try:
-        if isinstance(key, type) and issubclass(key, PropEnum):
-            key = key.prop_key
-        else:
-            key = str(key)
+        key = key.prop_key if isinstance(key, type) and issubclass(key, PropEnum) else str(key)
 
         prop = props[key]
 
@@ -167,7 +193,7 @@ def get_prop(
 
         if not isinstance(prop, norm_t):
             if all(issubclass(ty, str) for ty in norm_t) and isinstance(prop, bytes):
-                return prop.decode('utf-8')  # type: ignore[return-value]
+                return prop.decode("utf-8")  # type: ignore[return-value]
             raise TypeError
 
         if cast is None:
@@ -181,11 +207,14 @@ def get_prop(
         func = func or get_prop
 
         if isinstance(e, KeyError) or prop is MISSING:
-            e = FramePropError(func, str(key), 'Key {key} not present in props!')
+            e = FramePropError(func, str(key), "Key {key} not present in props!")
         elif isinstance(e, TypeError):
             e = FramePropError(
-                func, str(key), 'Key {key} did not contain expected type: Expected {t} got {prop_t}!',
-                t=t, prop_t=type(prop)
+                func,
+                str(key),
+                "Key {key} did not contain expected type: Expected {t} got {prop_t}!",
+                t=t,
+                prop_t=type(prop),
             )
         else:
             e = FramePropError(func, str(key))
@@ -194,13 +223,11 @@ def get_prop(
 
 
 @overload
-def merge_clip_props(*clips: ConstantFormatVideoNode, main_idx: int = 0) -> ConstantFormatVideoNode:
-    ...
+def merge_clip_props(*clips: ConstantFormatVideoNode, main_idx: int = 0) -> ConstantFormatVideoNode: ...
 
 
 @overload
-def merge_clip_props(*clips: vs.VideoNode, main_idx: int = 0) -> vs.VideoNode:
-    ...
+def merge_clip_props(*clips: vs.VideoNode, main_idx: int = 0) -> vs.VideoNode: ...
 
 
 def merge_clip_props(*clips: vs.VideoNode, main_idx: int = 0) -> vs.VideoNode:
@@ -235,23 +262,24 @@ def merge_clip_props(*clips: vs.VideoNode, main_idx: int = 0) -> vs.VideoNode:
 
 @overload
 def get_clip_filepath(
-    clip: vs.VideoNode, fallback: SPathLike | None = ..., strict: Literal[False] = ..., *, func: FuncExceptT | None = ...
-) -> SPath | None:
-    ...
+    clip: vs.VideoNode,
+    fallback: SPathLike | None = ...,
+    strict: Literal[False] = ...,
+    *,
+    func: FuncExceptT | None = ...,
+) -> SPath | None: ...
 
 
 @overload
 def get_clip_filepath(
     clip: vs.VideoNode, fallback: SPathLike | None = ..., strict: Literal[True] = ..., *, func: FuncExceptT | None = ...
-) -> SPath:
-    ...
+) -> SPath: ...
 
 
 @overload
 def get_clip_filepath(
     clip: vs.VideoNode, fallback: SPathLike | None = ..., strict: bool = ..., *, func: FuncExceptT | None = ...
-) -> SPath | None:
-    ...
+) -> SPath | None: ...
 
 
 def get_clip_filepath(
@@ -278,13 +306,13 @@ def get_clip_filepath(
     func = func or get_clip_filepath
 
     if fallback is not None and not (fallback_path := SPath(fallback)).exists() and strict:
-        raise FileWasNotFoundError('Fallback file not found!', func, fallback_path.absolute())
+        raise FileWasNotFoundError("Fallback file not found!", func, fallback_path.absolute())
 
-    if not (path := get_prop(clip, 'IdxFilePath', str, default=MISSING if strict else False, func=func)):
+    if not (path := get_prop(clip, "IdxFilePath", str, default=MISSING if strict else False, func=func)):
         return fallback_path if fallback is not None else None
 
     if not (spath := SPath(str(path))).exists() and not fallback:
-        raise FileWasNotFoundError('File not found!', func, spath.absolute())
+        raise FileWasNotFoundError("File not found!", func, spath.absolute())
 
     if spath.exists():
         return spath
@@ -292,7 +320,7 @@ def get_clip_filepath(
     if fallback is not None and fallback_path.exists():
         return fallback_path
 
-    raise FileWasNotFoundError('File not found!', func, spath.absolute())
+    raise FileWasNotFoundError("File not found!", func, spath.absolute())
 
 
 @overload
@@ -301,9 +329,8 @@ def get_props(
     keys: Sequence[SupportsString | PropEnum],
     t: type[BoundVSMapValue],
     *,
-    func: FuncExceptT | None = None
-) -> dict[str, BoundVSMapValue]:
-    ...
+    func: FuncExceptT | None = None,
+) -> dict[str, BoundVSMapValue]: ...
 
 
 @overload
@@ -313,9 +340,8 @@ def get_props(
     t: type[BoundVSMapValue],
     cast: type[CT] | Callable[[BoundVSMapValue], CT],
     *,
-    func: FuncExceptT | None = None
-) -> dict[str, CT]:
-    ...
+    func: FuncExceptT | None = None,
+) -> dict[str, CT]: ...
 
 
 @overload
@@ -325,9 +351,8 @@ def get_props(
     t: type[BoundVSMapValue],
     *,
     default: DT,
-    func: FuncExceptT | None = None
-) -> dict[str, BoundVSMapValue | DT]:
-    ...
+    func: FuncExceptT | None = None,
+) -> dict[str, BoundVSMapValue | DT]: ...
 
 
 @overload
@@ -337,9 +362,8 @@ def get_props(
     t: type[BoundVSMapValue],
     cast: type[CT] | Callable[[BoundVSMapValue], CT],
     default: DT,
-    func: FuncExceptT | None = None
-) -> dict[str, CT | DT]:
-    ...
+    func: FuncExceptT | None = None,
+) -> dict[str, CT | DT]: ...
 
 
 @overload
@@ -349,18 +373,20 @@ def get_props(
     t: Sequence[type[BoundVSMapValue]],
     cast: Sequence[type[CT] | Callable[[BoundVSMapValue], CT]] | None = None,
     default: DT | Sequence[DT] | MissingT = ...,
-    func: FuncExceptT | None = None
-) -> dict[str, Any]:
-    ...
+    func: FuncExceptT | None = None,
+) -> dict[str, Any]: ...
 
 
 def get_props(
     obj: HoldsPropValueT,
     keys: Sequence[SupportsString | PropEnum],
     t: type[BoundVSMapValue] | Sequence[type[BoundVSMapValue]],
-    cast: type[CT] | Callable[[BoundVSMapValue], CT] | Sequence[type[CT] | Callable[[BoundVSMapValue], CT]] | None = None,
+    cast: type[CT]
+    | Callable[[BoundVSMapValue], CT]
+    | Sequence[type[CT] | Callable[[BoundVSMapValue], CT]]
+    | None = None,
     default: DT | Sequence[DT] | MissingT = MISSING,
-    func: FuncExceptT | None = None
+    func: FuncExceptT | None = None,
 ) -> dict[str, Any]:
     """
     Get multiple frame properties from a clip.
@@ -382,7 +408,7 @@ def get_props(
                                 or a default value if provided.
     """
 
-    func = func or 'get_props'
+    func = func or "get_props"
 
     if not keys:
         return {}

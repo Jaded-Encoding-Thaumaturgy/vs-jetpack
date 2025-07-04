@@ -12,9 +12,7 @@ if TYPE_CHECKING:
     from ..formats.dvd.parsedvd import IFOX, IFO0Title
 
 
-__all__ = [
-    'DVDSRCIndexer'
-]
+__all__ = ["DVDSRCIndexer"]
 
 
 def get_sectorranges_for_vobcellpair(current_vts: IFOX, pair_id: tuple[int, int]) -> list[tuple[int, int]]:
@@ -27,14 +25,17 @@ def get_sectorranges_for_vobcellpair(current_vts: IFOX, pair_id: tuple[int, int]
 
 class DVDSRCIndexer(DVDIndexer):
     def parse_vts(
-        self, title: IFO0Title, disable_rff: bool, vobidcellids_to_take: list[tuple[int, int]],
-        target_vts: IFOX, output_folder: SPath, vob_input_files: Sequence[SPath]
+        self,
+        title: IFO0Title,
+        disable_rff: bool,
+        vobidcellids_to_take: list[tuple[int, int]],
+        target_vts: IFOX,
+        output_folder: SPath,
+        vob_input_files: Sequence[SPath],
     ) -> tuple[vs.VideoNode, list[int], list[tuple[int, int]], list[int]]:
         admap = target_vts.vts_vobu_admap
 
-        all_ranges = [
-            x for a in vobidcellids_to_take for x in get_sectorranges_for_vobcellpair(target_vts, a)
-        ]
+        all_ranges = [x for a in vobidcellids_to_take for x in get_sectorranges_for_vobcellpair(target_vts, a)]
 
         vts_indices = list[int]()
         for a in all_ranges:
@@ -60,7 +61,7 @@ class DVDSRCIndexer(DVDIndexer):
         return rnode, staff.rff, _vobids, vts_indices
 
     def _extract_data(self, rawnode: vs.VideoNode) -> AllNeddedDvdFrameData:
-        dd = bytes(get_prop(rawnode, 'InfoFrame', vs.VideoFrame)[0])
+        dd = bytes(get_prop(rawnode, "InfoFrame", vs.VideoFrame)[0])
 
         assert len(dd) == len(rawnode) * 4
 

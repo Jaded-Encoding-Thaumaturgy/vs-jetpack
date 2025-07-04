@@ -17,10 +17,10 @@ from .base import Kernel
 from .complex import ComplexKernel
 
 __all__ = [
-    "CustomKernel",
     "CustomComplexKernel",
     "CustomComplexKernelLike",
     "CustomComplexTapsKernel",
+    "CustomKernel",
 ]
 
 
@@ -139,4 +139,4 @@ class CustomComplexTapsKernel(CustomComplexKernel):
         return ceil(self.taps)
 
     def _pretty_string(self, **attrs: Any) -> str:
-        return super()._pretty_string(**dict(taps=self.taps) | attrs)
+        return super()._pretty_string(**{"taps": self.taps} | attrs)

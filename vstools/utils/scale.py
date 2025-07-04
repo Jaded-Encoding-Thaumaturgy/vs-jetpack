@@ -8,10 +8,15 @@ from ..types import HoldsVideoFormatT, VideoFormatT
 from .info import get_depth, get_video_format
 
 __all__ = [
-    'scale_value', 'scale_mask', 'scale_delta',
-
-    'get_lowest_value', 'get_neutral_value', 'get_peak_value',
-    'get_lowest_values', 'get_neutral_values', 'get_peak_values',
+    "get_lowest_value",
+    "get_lowest_values",
+    "get_neutral_value",
+    "get_neutral_values",
+    "get_peak_value",
+    "get_peak_values",
+    "scale_delta",
+    "scale_mask",
+    "scale_value",
 ]
 
 
@@ -23,7 +28,7 @@ def scale_value(
     range_out: ColorRangeT | None = None,
     scale_offsets: bool = True,
     chroma: bool = False,
-    family: vs.ColorFamily | None = None
+    family: vs.ColorFamily | None = None,
 ) -> int | float:
     """
     Converts the value to the specified bit depth, or bit depth of the clip/format specified.
@@ -102,7 +107,7 @@ def scale_value(
 def scale_mask(
     value: int | float,
     input_depth: int | VideoFormatT | HoldsVideoFormatT,
-    output_depth: int | VideoFormatT | HoldsVideoFormatT
+    output_depth: int | VideoFormatT | HoldsVideoFormatT,
 ) -> int | float:
     """
     Converts the value to the specified bit depth, or bit depth of the clip/format specified.
@@ -153,8 +158,10 @@ def scale_delta(
 
 
 def get_lowest_value(
-    clip_or_depth: int | VideoFormatT | HoldsVideoFormatT, chroma: bool = False,
-    range_in: ColorRangeT | None = None, family: vs.ColorFamily | None = None
+    clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
+    chroma: bool = False,
+    range_in: ColorRangeT | None = None,
+    family: vs.ColorFamily | None = None,
 ) -> float:
     """
     Returns the lowest value for the specified bit depth, or bit depth of the clip/format specified.
@@ -169,7 +176,7 @@ def get_lowest_value(
 
     fmt = get_video_format(clip_or_depth)
 
-    if (is_rgb := vs.RGB in (fmt.color_family, family)):
+    if is_rgb := vs.RGB in (fmt.color_family, family):
         chroma = False
 
     if fmt.sample_type is vs.FLOAT:
@@ -191,14 +198,18 @@ def get_lowest_value(
 
 def get_lowest_values(
     clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
-    range_in: ColorRangeT | None = None, family: vs.ColorFamily | None = None
+    range_in: ColorRangeT | None = None,
+    family: vs.ColorFamily | None = None,
 ) -> list[float]:
     """Get the lowest values of all planes of a specified format."""
 
-    return normalize_seq([
-        get_lowest_value(clip_or_depth, False, range_in, family),
-        get_lowest_value(clip_or_depth, True, range_in, family)
-    ], get_video_format(clip_or_depth).num_planes)
+    return normalize_seq(
+        [
+            get_lowest_value(clip_or_depth, False, range_in, family),
+            get_lowest_value(clip_or_depth, True, range_in, family),
+        ],
+        get_video_format(clip_or_depth).num_planes,
+    )
 
 
 def get_neutral_value(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) -> float:
@@ -227,8 +238,10 @@ def get_neutral_values(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) ->
 
 
 def get_peak_value(
-    clip_or_depth: int | VideoFormatT | HoldsVideoFormatT, chroma: bool = False,
-    range_in: ColorRangeT | None = None, family: vs.ColorFamily | None = None
+    clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
+    chroma: bool = False,
+    range_in: ColorRangeT | None = None,
+    family: vs.ColorFamily | None = None,
 ) -> float:
     """
     Returns the peak value for the specified bit depth, or bit depth of the clip/format specified.
@@ -243,7 +256,7 @@ def get_peak_value(
 
     fmt = get_video_format(clip_or_depth)
 
-    if (is_rgb := vs.RGB in (fmt.color_family, family)):
+    if is_rgb := vs.RGB in (fmt.color_family, family):
         chroma = False
 
     if fmt.sample_type is vs.FLOAT:
@@ -265,11 +278,12 @@ def get_peak_value(
 
 def get_peak_values(
     clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
-    range_in: ColorRangeT | None = None, family: vs.ColorFamily | None = None
+    range_in: ColorRangeT | None = None,
+    family: vs.ColorFamily | None = None,
 ) -> list[float]:
     """Get the peak values of all planes of a specified format."""
 
-    return normalize_seq([
-        get_peak_value(clip_or_depth, False, range_in, family),
-        get_peak_value(clip_or_depth, True, range_in, family)
-    ], get_video_format(clip_or_depth).num_planes)
+    return normalize_seq(
+        [get_peak_value(clip_or_depth, False, range_in, family), get_peak_value(clip_or_depth, True, range_in, family)],
+        get_video_format(clip_or_depth).num_planes,
+    )

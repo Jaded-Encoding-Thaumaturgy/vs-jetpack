@@ -9,13 +9,7 @@ from .sector import SectorReadHelper
 from .vts_pgci import VTSPgci
 from .vtsi_mat import VTSIMat
 
-__all__ = [
-    'IFO0Title',
-    'IFO0',
-    'PTTInfo',
-    'IFOX',
-    'to_json'
-]
+__all__ = ["IFO0", "IFOX", "IFO0Title", "PTTInfo", "to_json"]
 
 
 @dataclass
@@ -34,7 +28,7 @@ class IFO0:
 
     def __init__(self, reader: SectorReadHelper):
         reader.ifo.seek(0x3E, os.SEEK_SET)
-        self.num_vts, = reader._unpack_byte(2)
+        (self.num_vts,) = reader._unpack_byte(2)
 
         # tt_srpt
         reader._goto_sector_ptr(0x00C4)
@@ -44,9 +38,7 @@ class IFO0:
         for _ in range(num_title):
             _, nr_of_angles, nr_of_ptts, _, title_set_nr, vts_ttn, sector = reader._unpack_byte(1, 1, 2, 2, 1, 1, 4)
 
-            tt_srpt += [
-                IFO0Title(title_set_nr, sector, nr_of_angles, nr_of_ptts, vts_ttn)
-            ]
+            tt_srpt += [IFO0Title(title_set_nr, sector, nr_of_angles, nr_of_ptts, vts_ttn)]
         self.tt_srpt = tt_srpt
 
 
@@ -73,7 +65,7 @@ class IFOX:
 
     def _vobu_admap(self, reader: SectorReadHelper) -> None:
         reader._goto_sector_ptr(0x00E4)
-        end, = reader._unpack_byte(4)
+        (end,) = reader._unpack_byte(4)
 
         self.vts_vobu_admap = []
         cnt = (end + 1 - 4) // 4
@@ -91,17 +83,11 @@ class IFOX:
         total_ptts = (end - correction + 4 + 1 - 4) // 4
 
         all_ptts_x = list(reader._unpack_byte(2, 2, repeat=total_ptts))
-        all_ptts = [
-            (all_ptts_x[i * 2 + 0], all_ptts_x[i * 2 + 1])
-            for i in range(len(all_ptts_x) // 2)
-        ]
+        all_ptts = [(all_ptts_x[i * 2 + 0], all_ptts_x[i * 2 + 1]) for i in range(len(all_ptts_x) // 2)]
 
         offsets = [a // 4 for a in offsets] + [len(all_ptts)]
 
-        titles = [
-            [PTTInfo(p[1], p[0]) for p in all_ptts[offsets[a]:offsets[a + 1]]]
-            for a in range(num)
-        ]
+        titles = [[PTTInfo(p[1], p[0]) for p in all_ptts[offsets[a] : offsets[a + 1]]] for a in range(num)]
 
         self.vts_ptt_srpt = titles
 
@@ -111,20 +97,20 @@ def to_json(ifo0: IFO0, vts: list[IFOX]) -> dict[str, list[dict[str, Any]]]:
 
     # ifo0
     i0 = dict[str, list[dict[str, Any]]]()
-    i0['tt_srpt'] = [asdict(a) for a in ifo0.tt_srpt]
-    i0['pgci_ut'] = []
-    i0['vts_c_adt'] = []
-    i0['vts_pgcit'] = []
-    i0['vts_ptt_srpt'] = []
+    i0["tt_srpt"] = [asdict(a) for a in ifo0.tt_srpt]
+    i0["pgci_ut"] = []
+    i0["vts_c_adt"] = []
+    i0["vts_pgcit"] = []
+    i0["vts_ptt_srpt"] = []
     jj = [asdict(a) for a in vts]
     for ad in jj:
-        cadt = ad['vts_c_adt']
-        ad['vts_c_adt'] = cadt['cell_adr_table']
-        ad['vts_pgcit'] = ad['vts_pgci']['pgcs']
-        del ad['vts_pgci']
-        ad['pgci_ut'] = []
-        ad['tt_srpt'] = []
+        cadt = ad["vts_c_adt"]
+        ad["vts_c_adt"] = cadt["cell_adr_table"]
+        ad["vts_pgcit"] = ad["vts_pgci"]["pgcs"]
+        del ad["vts_pgci"]
+        ad["pgci_ut"] = []
+        ad["tt_srpt"] = []
 
-    crnt['ifos'] = [i0, *jj]
+    crnt["ifos"] = [i0, *jj]
 
     return crnt

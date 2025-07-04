@@ -41,7 +41,7 @@ dev = [
     "pycodestyle>=2.11.1",
     "pytest>=8.3.4, <9.0.0",
     "pytest-cov>=6.0.0, <7.0.0",
-    "ruff>=0.11.9",
+    "ruff>=0.12.1",
     "scipy-stubs>=1.15.2.1",
     "twine>=6.1.0",
     "types-psutil>=7.0.0.20250218",
@@ -128,3 +128,42 @@ show_column_numbers = true
 pretty = true
 color_output = true
 error_summary = true
+
+[tool.ruff]
+extend-exclude = ["scripts"]
+line-length = 120
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+exclude = [
+    "stubs/pymediainfo",
+    "stubs/vspreview",
+    "stubs/dfttest2.pyi",
+    "stubs/vsmlrt.pyi",
+]
+extend-select = [
+    "E",
+    "C4",
+    "I",
+    "PYI",
+    "Q",
+    "SIM",
+    "N",
+    "W",
+    "RUF"
+]
+ignore = ["PYI041"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.*" = ["F401", "F403"]
+"stubs/vapoursynth/**.pyi" = [
+    "E501",
+    "N801",
+    "N802",
+    "N803",
+    "PYI021",
+    "PYI002",
+    "RUF022",
+]

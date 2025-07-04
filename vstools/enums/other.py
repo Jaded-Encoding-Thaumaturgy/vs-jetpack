@@ -4,22 +4,12 @@ from fractions import Fraction
 from typing import Callable, Iterator, Literal, NamedTuple
 
 import vapoursynth as vs
-
 from jetpytools import Coordinate, CustomIntEnum, CustomStrEnum, Position, Sentinel, SentinelT, Size
 from typing_extensions import Self
 
 from ..types import ConstantFormatVideoNode, HoldsPropValueT, VideoNodeT
 
-__all__ = [
-    'Direction',
-    'Dar', 'Sar',
-    'Region',
-    'Resolution',
-    'Coordinate',
-    'Position',
-    'Size',
-    'SceneChangeMode'
-]
+__all__ = ["Coordinate", "Dar", "Direction", "Position", "Region", "Resolution", "Sar", "SceneChangeMode", "Size"]
 
 
 class Direction(CustomIntEnum):
@@ -156,7 +146,7 @@ class Sar(_Xar):
 
         from ..utils import get_prop
 
-        return cls(get_prop(clip, '_SARNum', int, None, 1), get_prop(clip, '_SARDen', int, None, 1))
+        return cls(get_prop(clip, "_SARNum", int, None, 1), get_prop(clip, "_SARDen", int, None, 1))
 
     @classmethod
     def from_ar(cls, active_area: int | Fraction, height: int, dar: Dar) -> Self:
@@ -186,10 +176,10 @@ class Sar(_Xar):
 class Region(CustomStrEnum):
     """StrEnum signifying an analog television region."""
 
-    UNKNOWN = 'unknown'
+    UNKNOWN = "unknown"
     """Unknown region."""
 
-    NTSC = 'NTSC'
+    NTSC = "NTSC"
     """
     The first American standard for analog television broadcast was developed by
     National Television System Committee (NTSC) in 1941.
@@ -197,23 +187,23 @@ class Region(CustomStrEnum):
     For more information see `this <https://en.wikipedia.org/wiki/NTSC>`_.
     """
 
-    NTSCi = 'NTSCi'
+    NTSCi = "NTSCi"
     """Interlaced NTSC."""
 
-    PAL = 'PAL'
+    PAL = "PAL"
     """
     Phase Alternating Line (PAL) colour encoding system.
 
     For more information see `this <https://en.wikipedia.org/wiki/PAL>`_.
     """
 
-    PALi = 'PALi'
+    PALi = "PALi"
     """Interlaced PAL."""
 
-    FILM = 'FILM'
+    FILM = "FILM"
     """True 24fps content."""
 
-    NTSC_FILM = 'NTSC (FILM)'
+    NTSC_FILM = "NTSC (FILM)"
     """NTSC 23.976fps content."""
 
     @property
@@ -276,7 +266,7 @@ class Resolution(NamedTuple):
         return self.__class__(self.height, self.width)
 
     def __str__(self) -> str:
-        return f'{self.width}x{self.height}'
+        return f"{self.width}x{self.height}"
 
 
 class SceneChangeMode(CustomIntEnum):
@@ -295,21 +285,23 @@ class SceneChangeMode(CustomIntEnum):
     """Only get the scene changes if both wwxd and scxvid mark a frame as being a scene change."""
 
     @property
-    def is_WWXD(self) -> bool:
+    def is_WWXD(self) -> bool:  # noqa: N802
         """Check whether a mode that uses wwxd is used."""
 
         return self in (
-            SceneChangeMode.WWXD, SceneChangeMode.WWXD_SCXVID_UNION,
-            SceneChangeMode.WWXD_SCXVID_INTERSECTION
+            SceneChangeMode.WWXD,
+            SceneChangeMode.WWXD_SCXVID_UNION,
+            SceneChangeMode.WWXD_SCXVID_INTERSECTION,
         )
 
     @property
-    def is_SCXVID(self) -> bool:
+    def is_SCXVID(self) -> bool:  # noqa: N802
         """Check whether a mode that uses scxvid is used."""
 
         return self in (
-            SceneChangeMode.SCXVID, SceneChangeMode.WWXD_SCXVID_UNION,
-            SceneChangeMode.WWXD_SCXVID_INTERSECTION
+            SceneChangeMode.SCXVID,
+            SceneChangeMode.WWXD_SCXVID_UNION,
+            SceneChangeMode.WWXD_SCXVID_INTERSECTION,
         )
 
     def ensure_presence(self, clip: vs.VideoNode, akarin: bool | None = None) -> ConstantFormatVideoNode:
@@ -323,18 +315,18 @@ class SceneChangeMode(CustomIntEnum):
         stats_clip = list[ConstantFormatVideoNode]()
 
         if self.is_SCXVID:
-            if not hasattr(vs.core, 'scxvid'):
+            if not hasattr(vs.core, "scxvid"):
                 raise CustomRuntimeError(
-                    'You are missing scxvid!\n\tDownload it from https://github.com/dubhater/vapoursynth-scxvid',
-                    self.ensure_presence
+                    "You are missing scxvid!\n\tDownload it from https://github.com/dubhater/vapoursynth-scxvid",
+                    self.ensure_presence,
                 )
             stats_clip.append(clip.scxvid.Scxvid())
 
         if self.is_WWXD:
-            if not hasattr(vs.core, 'wwxd'):
+            if not hasattr(vs.core, "wwxd"):
                 raise CustomRuntimeError(
-                    'You are missing wwxd!\n\tDownload it from https://github.com/dubhater/vapoursynth-wwxd',
-                    self.ensure_presence
+                    "You are missing wwxd!\n\tDownload it from https://github.com/dubhater/vapoursynth-wwxd",
+                    self.ensure_presence,
                 )
             stats_clip.append(clip.wwxd.WWXD())
 
@@ -343,34 +335,36 @@ class SceneChangeMode(CustomIntEnum):
     @property
     def prop_keys(self) -> Iterator[str]:
         if self.is_WWXD:
-            yield 'Scenechange'
+            yield "Scenechange"
 
         if self.is_SCXVID:
-            yield '_SceneChangePrev'
+            yield "_SceneChangePrev"
 
     def check_cb(self, akarin: bool | None = None) -> Callable[[vs.VideoFrame], bool]:
         if akarin is None:
-            akarin = hasattr(vs.core, 'akarin')
+            akarin = hasattr(vs.core, "akarin")
 
         if akarin:
-            return (lambda f: bool(f[0][0, 0]))
+            return lambda f: bool(f[0][0, 0])
 
         keys = set(self.prop_keys)
         prop_key = next(iter(keys))
 
         if self is SceneChangeMode.WWXD_SCXVID_UNION:
-            return (lambda f: any(f.props[key] == 1 for key in keys))
+            return lambda f: any(f.props[key] == 1 for key in keys)
 
         if self is SceneChangeMode.WWXD_SCXVID_INTERSECTION:
-            return (lambda f: all(f.props[key] == 1 for key in keys))
+            return lambda f: all(f.props[key] == 1 for key in keys)
 
-        return (lambda f: f.props[prop_key] == 1)
+        return lambda f: f.props[prop_key] == 1
 
     def lambda_cb(self, akarin: bool | None = None) -> Callable[[int, vs.VideoFrame], SentinelT | int]:
         callback = self.check_cb(akarin)
-        return (lambda n, f: Sentinel.check(n, callback(f)))
+        return lambda n, f: Sentinel.check(n, callback(f))
 
-    def prepare_clip(self, clip: vs.VideoNode, height: int | Literal[False] = 360, akarin: bool | None = None) -> ConstantFormatVideoNode:
+    def prepare_clip(
+        self, clip: vs.VideoNode, height: int | Literal[False] = 360, akarin: bool | None = None
+    ) -> ConstantFormatVideoNode:
         """
         Prepare a clip for scene change metric calculations.
 
@@ -402,13 +396,12 @@ class SceneChangeMode(CustomIntEnum):
         from ..utils import merge_clip_props
 
         if akarin is None:
-            akarin = hasattr(vs.core, 'akarin')
+            akarin = hasattr(vs.core, "akarin")
 
         if akarin:
-
             keys = list(self.prop_keys)
 
-            expr = ' '.join([f'x.{k}' for k in keys]) + (' and' * (len(keys) - 1))
+            expr = " ".join([f"x.{k}" for k in keys]) + (" and" * (len(keys) - 1))
 
             blank = clip.std.BlankClip(1, 1, vs.GRAY8, keep=True)
 

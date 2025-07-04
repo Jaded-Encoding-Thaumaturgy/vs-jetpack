@@ -3,23 +3,20 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Iterable, TypeVar, overload
 
 import vapoursynth as vs
-
 from jetpytools import CustomError, CustomIntEnum, FuncExceptT, classproperty
 from typing_extensions import Self
 
 from ..types import VideoNodeT
 
 __all__ = [
-    'PropEnum',
-
-    '_base_from_video',
-
-    '_MatrixMeta',
-    '_TransferMeta',
-    '_PrimariesMeta',
-    '_ColorRangeMeta',
-    '_ChromaLocationMeta',
-    '_FieldBasedMeta'
+    "PropEnum",
+    "_ChromaLocationMeta",
+    "_ColorRangeMeta",
+    "_FieldBasedMeta",
+    "_MatrixMeta",
+    "_PrimariesMeta",
+    "_TransferMeta",
+    "_base_from_video",
 ]
 
 
@@ -37,34 +34,23 @@ class PropEnum(CustomIntEnum):
     def prop_key(cls) -> str:
         """The key used in props to store the enum."""
 
-        return f'_{cls.__name__}'
+        return f"_{cls.__name__}"
 
     if TYPE_CHECKING:
-        def __new__(
-            cls, value: int | Self | vs.VideoNode | vs.VideoFrame | vs.FrameProps | None
-        ) -> Self:
-            ...
+
+        def __new__(cls, value: int | Self | vs.VideoNode | vs.VideoFrame | vs.FrameProps | None) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value: None, func_except: FuncExceptT | None = None
-        ) -> None:
-            ...
+        def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value: int | Self, func_except: FuncExceptT | None = None
-        ) -> Self:
-            ...
+        def from_param(cls, value: int | Self, func_except: FuncExceptT | None = None) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value: int | Self | None, func_except: FuncExceptT | None = None
-        ) -> Self | None:
-            ...
+        def from_param(cls, value: int | Self | None, func_except: FuncExceptT | None = None) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
@@ -84,8 +70,7 @@ class PropEnum(CustomIntEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False,
-        func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
     ) -> Self:
         """Get an enum member from the frame properties or optionally fall back to resolution when strict=False."""
 
@@ -93,9 +78,11 @@ class PropEnum(CustomIntEnum):
 
     @classmethod
     def from_param_or_video(
-        cls, value: Any,
+        cls,
+        value: Any,
         src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
-        strict: bool = False, func_except: FuncExceptT | None = None
+        strict: bool = False,
+        func_except: FuncExceptT | None = None,
     ) -> Self:
         """
         Get the enum member from a value that can be casted to this prop value
@@ -116,9 +103,7 @@ class PropEnum(CustomIntEnum):
         return cls.from_video(src, strict, func_except)
 
     @classmethod
-    def ensure_presence(
-        cls, clip: VideoNodeT, value: int | Self | None, func: FuncExceptT | None = None
-    ) -> VideoNodeT:
+    def ensure_presence(cls, clip: VideoNodeT, value: int | Self | None, func: FuncExceptT | None = None) -> VideoNodeT:
         """Ensure the presence of the property in the VideoNode."""
 
         enum_value = cls.from_param_or_video(value, clip, True, func)
@@ -136,13 +121,15 @@ class PropEnum(CustomIntEnum):
     ) -> VideoNodeT:
         """Ensure the presence of multiple PropEnums at once."""
 
-        return vs.core.std.SetFrameProps(clip, **{
-            value.prop_key: value.value
-            for value in [
-                cls if isinstance(cls, PropEnum) else cls.from_video(clip, True, func)
-                for cls in prop_enums
-            ]
-        })
+        return vs.core.std.SetFrameProps(
+            clip,
+            **{
+                value.prop_key: value.value
+                for value in [
+                    cls if isinstance(cls, PropEnum) else cls.from_video(clip, True, func) for cls in prop_enums
+                ]
+            },
+        )
 
     @property
     def pretty_string(self) -> str:
@@ -150,7 +137,7 @@ class PropEnum(CustomIntEnum):
 
         from string import capwords
 
-        return capwords(self.string.replace('_', ' '))
+        return capwords(self.string.replace("_", " "))
 
     @property
     def string(self) -> str:
@@ -164,12 +151,15 @@ class PropEnum(CustomIntEnum):
         return int(value) in map(int, cls.__members__.values())
 
 
-PropEnumT = TypeVar('PropEnumT', bound=PropEnum)
+PropEnumT = TypeVar("PropEnumT", bound=PropEnum)
 
 
 def _base_from_video(
-    cls: type[PropEnumT], src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, exception: type[CustomError],
-    strict: bool, func: FuncExceptT | None = None
+    cls: type[PropEnumT],
+    src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+    exception: type[CustomError],
+    strict: bool,
+    func: FuncExceptT | None = None,
 ) -> PropEnumT:
     from ..utils import get_prop
 
@@ -179,12 +169,12 @@ def _base_from_video(
 
     if value is None or cls.is_unknown(value):
         if strict:
-            raise exception('{class_name} is undefined.', func, class_name=cls, reason=value)
+            raise exception("{class_name} is undefined.", func, class_name=cls, reason=value)
 
         if isinstance(src, vs.FrameProps):
-            raise exception('Can\'t determine {class_name} from FrameProps.', func, class_name=cls)
+            raise exception("Can't determine {class_name} from FrameProps.", func, class_name=cls)
 
-        if all(hasattr(src, x) for x in ('width', 'height')):
+        if all(hasattr(src, x) for x in ("width", "height")):
             return cls.from_res(src)
 
     return cls(value)
@@ -195,29 +185,21 @@ if TYPE_CHECKING:
     from .generic import ChromaLocation, ChromaLocationT, FieldBased, FieldBasedT
 
     class _MatrixMeta(PropEnum, vs.MatrixCoefficients):  # type: ignore[misc]
-        def __new__(cls, value: MatrixT) -> Self:
-            ...
+        def __new__(cls, value: MatrixT) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value: None, func_except: FuncExceptT | None = None
-        ) -> None:
-            ...
+        def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value: int | Matrix | MatrixT, func_except: FuncExceptT | None = None
-        ) -> Self:
-            ...
+        def from_param(cls, value: int | Matrix | MatrixT, func_except: FuncExceptT | None = None) -> Self: ...
 
         @overload
         @classmethod
         def from_param(
             cls, value: int | Matrix | MatrixT | None, func_except: FuncExceptT | None = None
-        ) -> Self | None:
-            ...
+        ) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
@@ -232,36 +214,29 @@ if TYPE_CHECKING:
 
         @classmethod
         def from_param_or_video(
-            cls, value: int | Matrix | MatrixT | None,
+            cls,
+            value: int | Matrix | MatrixT | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
-            strict: bool = False, func_except: FuncExceptT | None = None
-        ) -> Matrix:
-            ...
+            strict: bool = False,
+            func_except: FuncExceptT | None = None,
+        ) -> Matrix: ...
 
     class _TransferMeta(PropEnum, vs.TransferCharacteristics):  # type: ignore[misc]
-        def __new__(cls, value: TransferT) -> Self:
-            ...
+        def __new__(cls, value: TransferT) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value: None, func_except: FuncExceptT | None = None
-        ) -> None:
-            ...
+        def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value: int | Transfer | TransferT, func_except: FuncExceptT | None = None
-        ) -> Self:
-            ...
+        def from_param(cls, value: int | Transfer | TransferT, func_except: FuncExceptT | None = None) -> Self: ...
 
         @overload
         @classmethod
         def from_param(
             cls, value: int | Transfer | TransferT | None, func_except: FuncExceptT | None = None
-        ) -> Self | None:
-            ...
+        ) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
@@ -277,36 +252,29 @@ if TYPE_CHECKING:
 
         @classmethod
         def from_param_or_video(
-            cls, value: int | Transfer | TransferT | None,
+            cls,
+            value: int | Transfer | TransferT | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
-            strict: bool = False, func_except: FuncExceptT | None = None
-        ) -> Transfer:
-            ...
+            strict: bool = False,
+            func_except: FuncExceptT | None = None,
+        ) -> Transfer: ...
 
     class _PrimariesMeta(PropEnum, vs.ColorPrimaries):  # type: ignore[misc]
-        def __new__(cls, value: PrimariesT) -> Self:
-            ...
+        def __new__(cls, value: PrimariesT) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value: None, func_except: FuncExceptT | None = None
-        ) -> None:
-            ...
+        def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value: int | Primaries | PrimariesT, func_except: FuncExceptT | None = None
-        ) -> Self:
-            ...
+        def from_param(cls, value: int | Primaries | PrimariesT, func_except: FuncExceptT | None = None) -> Self: ...
 
         @overload
         @classmethod
         def from_param(
             cls, value: int | Primaries | PrimariesT | None, func_except: FuncExceptT | None = None
-        ) -> Self | None:
-            ...
+        ) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
@@ -322,36 +290,29 @@ if TYPE_CHECKING:
 
         @classmethod
         def from_param_or_video(
-            cls, value: int | Primaries | PrimariesT | None,
+            cls,
+            value: int | Primaries | PrimariesT | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
-            strict: bool = False, func_except: FuncExceptT | None = None
-        ) -> Primaries:
-            ...
+            strict: bool = False,
+            func_except: FuncExceptT | None = None,
+        ) -> Primaries: ...
 
     class _ColorRangeMeta(PropEnum, vs.ColorPrimaries):  # type: ignore[misc]
-        def __new__(cls, value: ColorRangeT) -> Self:
-            ...
+        def __new__(cls, value: ColorRangeT) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value: None, func_except: FuncExceptT | None = None
-        ) -> None:
-            ...
+        def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value: int | ColorRange | ColorRangeT, func_except: FuncExceptT | None = None
-        ) -> Self:
-            ...
+        def from_param(cls, value: int | ColorRange | ColorRangeT, func_except: FuncExceptT | None = None) -> Self: ...
 
         @overload
         @classmethod
         def from_param(
             cls, value: int | ColorRange | ColorRangeT | None, func_except: FuncExceptT | None = None
-        ) -> Self | None:
-            ...
+        ) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
@@ -367,38 +328,31 @@ if TYPE_CHECKING:
 
         @classmethod
         def from_param_or_video(
-            cls, value: int | ColorRange | ColorRangeT | None,
+            cls,
+            value: int | ColorRange | ColorRangeT | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
-            strict: bool = False, func_except: FuncExceptT | None = None
-        ) -> ColorRange:
-            ...
+            strict: bool = False,
+            func_except: FuncExceptT | None = None,
+        ) -> ColorRange: ...
 
     class _ChromaLocationMeta(PropEnum, vs.ChromaLocation):  # type: ignore[misc]
-        def __new__(cls, value: ChromaLocationT) -> Self:
-            ...
+        def __new__(cls, value: ChromaLocationT) -> Self: ...
+
+        @overload
+        @classmethod
+        def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
 
         @overload
         @classmethod
         def from_param(
-            cls, value: None, func_except: FuncExceptT | None = None
-        ) -> None:
-            ...
+            cls, value: int | ChromaLocation | ChromaLocationT, func_except: FuncExceptT | None = None
+        ) -> Self: ...
 
         @overload
         @classmethod
         def from_param(
-            cls, value: int | ChromaLocation | ChromaLocationT,
-            func_except: FuncExceptT | None = None
-        ) -> Self:
-            ...
-
-        @overload
-        @classmethod
-        def from_param(
-            cls, value: int | ChromaLocation | ChromaLocationT | None,
-            func_except: FuncExceptT | None = None
-        ) -> Self | None:
-            ...
+            cls, value: int | ChromaLocation | ChromaLocationT | None, func_except: FuncExceptT | None = None
+        ) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
@@ -414,36 +368,29 @@ if TYPE_CHECKING:
 
         @classmethod
         def from_param_or_video(
-            cls, value: int | ChromaLocation | ChromaLocationT | None,
+            cls,
+            value: int | ChromaLocation | ChromaLocationT | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
-            strict: bool = False, func_except: FuncExceptT | None = None
-        ) -> ChromaLocation:
-            ...
+            strict: bool = False,
+            func_except: FuncExceptT | None = None,
+        ) -> ChromaLocation: ...
 
     class _FieldBasedMeta(PropEnum, vs.FieldBased):  # type: ignore[misc]
-        def __new__(cls, value: FieldBasedT) -> Self:
-            ...
+        def __new__(cls, value: FieldBasedT) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value_or_tff: None, func_except: FuncExceptT | None = None
-        ) -> None:
-            ...
+        def from_param(cls, value_or_tff: None, func_except: FuncExceptT | None = None) -> None: ...
 
         @overload
         @classmethod
-        def from_param(
-            cls, value_or_tff: int | FieldBasedT | bool, func_except: FuncExceptT | None = None
-        ) -> Self:
-            ...
+        def from_param(cls, value_or_tff: int | FieldBasedT | bool, func_except: FuncExceptT | None = None) -> Self: ...
 
         @overload
         @classmethod
         def from_param(
             cls, value_or_tff: int | FieldBasedT | bool | None, func_except: FuncExceptT | None = None
-        ) -> Self | None:
-            ...
+        ) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value_or_tff: Any, func_except: Any = None) -> Self | None:
@@ -460,17 +407,17 @@ if TYPE_CHECKING:
 
         @classmethod
         def from_param_or_video(
-            cls, value_or_tff: int | FieldBasedT | bool | None,
+            cls,
+            value_or_tff: int | FieldBasedT | bool | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
-            strict: bool = False, func_except: FuncExceptT | None = None
-        ) -> FieldBased:
-            ...
+            strict: bool = False,
+            func_except: FuncExceptT | None = None,
+        ) -> FieldBased: ...
 
         @classmethod
         def ensure_presence(
             cls, clip: VideoNodeT, tff: bool | int | FieldBasedT | None, func: FuncExceptT | None = None
-        ) -> VideoNodeT:
-            ...
+        ) -> VideoNodeT: ...
 else:
     _MatrixMeta = _TransferMeta = _PrimariesMeta = _ColorRangeMeta = _ChromaLocationMeta = PropEnum
 

@@ -5,18 +5,18 @@ from typing import Any, ClassVar
 
 from vstools import core, fallback, vs
 
-from ..types import LeftShift, TopShift
 from ..abstract import ComplexScaler
+from ..types import LeftShift, TopShift
 
 __all__ = [
-    "Placebo",
     "EwaBicubic",
-    "EwaJinc",
-    "EwaLanczos",
     "EwaGinseng",
     "EwaHann",
+    "EwaJinc",
+    "EwaLanczos",
     "EwaRobidoux",
     "EwaRobidouxSharp",
+    "Placebo",
 ]
 
 
@@ -58,7 +58,8 @@ class Placebo(ComplexScaler, abstract=True):
                             A value of 0.0 represents no clamping.
                             A value of 1.0 represents full clamping, i.e. all negative lobes will be removed.
         :param blur:        Additional blur coefficient.
-                            This effectively stretches the kernel, without changing the effective radius of the filter radius.
+                            This effectively stretches the kernel, without changing the effective radius
+                            of the filter radius.
         :param taper:       Additional taper coefficient. This essentially flattens the function's center.
         :param antiring:    Antiringing strength.
         :param kwargs:      Keyword arguments that configure the internal scaling behavior.
@@ -81,23 +82,23 @@ class Placebo(ComplexScaler, abstract=True):
         **kwargs: Any,
     ) -> dict[str, Any]:
         return (
-            dict(
-                sx=kwargs.pop("src_left", shift[1]),
-                sy=kwargs.pop("src_top", shift[0]),
-                width=width,
-                height=height,
-                filter=self._kernel,
-                radius=self.taps,
-                param1=self.b,
-                param2=self.c,
-                clamp=self.clamp,
-                taper=self.taper,
-                blur=self.blur,
-                antiring=self.antiring,
-            )
+            {
+                "sx": kwargs.pop("src_left", shift[1]),
+                "sy": kwargs.pop("src_top", shift[0]),
+                "width": width,
+                "height": height,
+                "filter": self._kernel,
+                "radius": self.taps,
+                "param1": self.b,
+                "param2": self.c,
+                "clamp": self.clamp,
+                "taper": self.taper,
+                "blur": self.blur,
+                "antiring": self.antiring,
+            }
             | self.kwargs
             | kwargs
-            | dict(linearize=False, sigmoidize=False)
+            | {"linearize": False, "sigmoidize": False}
         )
 
     @ComplexScaler.cached_property
@@ -136,10 +137,7 @@ class EwaBicubic(Placebo):
         radius = kwargs.pop("taps", radius)
 
         if radius is None:
-            if (b, c) == (0, 0):
-                radius = 1
-            else:
-                radius = 2
+            radius = 1 if (b, c) == (0, 0) else 2
 
         super().__init__(radius, b, c, **kwargs)
 

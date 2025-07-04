@@ -10,9 +10,28 @@ from jetpytools import CustomIntEnum, CustomStrEnum, FuncExceptT, P, R, cround
 from vsexprtools import ExprOp, ExprVars, complexpr_available, norm_expr
 from vskernels import Bilinear, Gaussian, Point, Scaler, ScalerLike
 from vstools import (
-    ColorRange, ConstantFormatVideoNode, ConvMode, CustomValueError, KwargsT, OneDimConvModeT, PlanesT,
-    SpatialConvModeT, TempConvModeT, VSFunctionNoArgs, check_ref_clip, check_variable, check_variable_format, core,
-    depth, expect_bits, get_plane_sizes, join, normalize_planes, normalize_seq, split, vs
+    ColorRange,
+    ConstantFormatVideoNode,
+    ConvMode,
+    CustomValueError,
+    KwargsT,
+    OneDimConvModeT,
+    PlanesT,
+    SpatialConvModeT,
+    TempConvModeT,
+    VSFunctionNoArgs,
+    check_ref_clip,
+    check_variable,
+    check_variable_format,
+    core,
+    depth,
+    expect_bits,
+    get_plane_sizes,
+    join,
+    normalize_planes,
+    normalize_seq,
+    split,
+    vs,
 )
 
 from .enum import BlurMatrix, BlurMatrixBase, LimitFilterMode
@@ -22,11 +41,15 @@ from .rgtools import vertical_cleaner
 from .util import normalize_radius
 
 __all__ = [
-    'box_blur', 'side_box_blur',
-    'gauss_blur',
-    'min_blur', 'sbr', 'median_blur',
-    'bilateral', 'flux_smooth',
-    'guided_filter'
+    "bilateral",
+    "box_blur",
+    "flux_smooth",
+    "gauss_blur",
+    "guided_filter",
+    "median_blur",
+    "min_blur",
+    "sbr",
+    "side_box_blur",
 ]
 
 
@@ -35,7 +58,8 @@ def box_blur(
     radius: int | Sequence[int] = 1,
     passes: int = 1,
     mode: OneDimConvModeT | TempConvModeT = ConvMode.HV,
-    planes: PlanesT = None, **kwargs: Any
+    planes: PlanesT = None,
+    **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
     Applies a box blur to the input clip.
@@ -60,22 +84,22 @@ def box_blur(
     if mode == ConvMode.TEMPORAL:
         return BlurMatrix.MEAN(radius, mode=mode)(clip, planes, passes=passes, **kwargs)
 
-    if not TYPE_CHECKING:
-        if mode == ConvMode.SQUARE:
-            raise CustomValueError("Invalid mode specified", box_blur, mode)
+    if not TYPE_CHECKING and mode == ConvMode.SQUARE:
+        raise CustomValueError("Invalid mode specified", box_blur, mode)
 
     box_args = (
         planes,
-        radius, 0 if mode == ConvMode.VERTICAL else passes,
-        radius, 0 if mode == ConvMode.HORIZONTAL else passes
+        radius,
+        0 if mode == ConvMode.VERTICAL else passes,
+        radius,
+        0 if mode == ConvMode.HORIZONTAL else passes,
     )
 
     return clip.vszip.BoxBlur(*box_args)
 
 
 def side_box_blur(
-    clip: vs.VideoNode, radius: int | list[int] = 1, planes: PlanesT = None,
-    inverse: bool = False
+    clip: vs.VideoNode, radius: int | list[int] = 1, planes: PlanesT = None, inverse: bool = False
 ) -> ConstantFormatVideoNode:
     assert check_variable_format(clip, side_box_blur)
 
@@ -92,26 +116,27 @@ def side_box_blur(
 
     vrt_filters, hrz_filters = list[list[partial[ConstantFormatVideoNode]]](
         [
-            partial(conv_m1, mode=mode), partial(conv_m2, mode=mode),
-            partial(blur_pt, hradius=hr, vradius=vr, hpasses=h, vpasses=v)
-        ] for h, hr, v, vr, mode in [
-            (0, None, 1, radius, ConvMode.VERTICAL), (1, radius, 0, None, ConvMode.HORIZONTAL)
+            partial(conv_m1, mode=mode),
+            partial(conv_m2, mode=mode),
+            partial(blur_pt, hradius=hr, vradius=vr, hpasses=h, vpasses=v),
         ]
+        for h, hr, v, vr, mode in [(0, None, 1, radius, ConvMode.VERTICAL), (1, radius, 0, None, ConvMode.HORIZONTAL)]
     )
 
     vrt_intermediates = (vrt_flt(clip) for vrt_flt in vrt_filters)
-    intermediates = list(
+    intermediates = [
         hrz_flt(vrt_intermediate)
         for i, vrt_intermediate in enumerate(vrt_intermediates)
-        for j, hrz_flt in enumerate(hrz_filters) if not i == j == 2
-    )
+        for j, hrz_flt in enumerate(hrz_filters)
+        if not i == j == 2
+    ]
 
     comp_blur = None if inverse else box_blur(clip, radius, 1, planes=planes)
 
     if complexpr_available:
-        template = '{cum} x - abs {new} x - abs < {cum} {new} ?'
+        template = "{cum} x - abs {new} x - abs < {cum} {new} ?"
 
-        cum_expr, cumc = '', 'y'
+        cum_expr, cumc = "", "y"
         n_inter = len(intermediates)
 
         for i, newc, var in zip(count(), ExprVars[2:26], ExprVars[4:26]):
@@ -122,12 +147,12 @@ def side_box_blur(
 
             if i != n_inter - 2:
                 cumc = var.upper()
-                cum_expr += f' {cumc}! '
-                cumc = f'{cumc}@'
+                cum_expr += f" {cumc}! "
+                cumc = f"{cumc}@"
 
         if comp_blur:
             clips = [clip, *intermediates, comp_blur]
-            cum_expr = f'x {cum_expr} - {ExprVars[n_inter + 1]} +'
+            cum_expr = f"x {cum_expr} - {ExprVars[n_inter + 1]} +"
         else:
             clips = [clip, *intermediates]
 
@@ -152,13 +177,14 @@ def gauss_blur(
     taps: int | None = None,
     mode: OneDimConvModeT | TempConvModeT = ConvMode.HV,
     planes: PlanesT = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
     Applies Gaussian blur to a clip, supporting spatial and temporal modes, and per-plane control.
 
     :param clip:                Source clip.
-    :param sigma:               Standard deviation of the Gaussian kernel. Can be a float or a list for per-plane control.
+    :param sigma:               Standard deviation of the Gaussian kernel.
+                                Can be a float or a list for per-plane control.
     :param taps:                Number of taps in the kernel. Automatically determined if not specified.
     :param mode:                Convolution mode (horizontal, vertical, both, or temporal). Defaults to HV.
     :param planes:              Planes to process. Defaults to all.
@@ -171,12 +197,11 @@ def gauss_blur(
 
     planes = normalize_planes(clip, planes)
 
-    if not TYPE_CHECKING:
-        if mode == ConvMode.SQUARE:
-            raise CustomValueError("Invalid mode specified", gauss_blur, mode)
+    if not TYPE_CHECKING and mode == ConvMode.SQUARE:
+        raise CustomValueError("Invalid mode specified", gauss_blur, mode)
 
     if isinstance(sigma, Sequence):
-        return normalize_radius(clip, gauss_blur, dict(sigma=sigma), planes, mode=mode)
+        return normalize_radius(clip, gauss_blur, {"sigma": sigma}, planes, mode=mode)
 
     fast = kwargs.pop("_fast", False)
 
@@ -184,6 +209,7 @@ def gauss_blur(
     taps = BlurMatrix.GAUSS.get_taps(sigma_constant, taps)
 
     if not mode.is_temporal:
+
         def _resize2_blur(plane: ConstantFormatVideoNode, sigma: float, taps: int) -> ConstantFormatVideoNode:
             resize_kwargs = dict[str, Any]()
 
@@ -203,17 +229,14 @@ def gauss_blur(
                 plane = core.resize.Bilinear(plane, wdown, hdown)
                 sigma = sigma_constant
             else:
-                resize_kwargs.update({f'force_{k}': k in mode for k in 'hv'})
+                resize_kwargs.update({f"force_{k}": k in mode for k in "hv"})
 
             return Gaussian(sigma, taps).scale(plane, **resize_kwargs | kwargs)  # type: ignore[return-value]
 
         if not {*range(clip.format.num_planes)} - {*planes}:
             return _resize2_blur(clip, sigma, taps)
 
-        return join([
-            _resize2_blur(p, sigma, taps) if i in planes else p
-            for i, p in enumerate(split(clip))
-        ])
+        return join([_resize2_blur(p, sigma, taps) if i in planes else p for i, p in enumerate(split(clip))])
 
     kernel = BlurMatrix.GAUSS(taps, sigma=sigma, mode=mode, scale_value=1023)
 
@@ -225,7 +248,7 @@ def min_blur(
     radius: int | Sequence[int] = 1,
     mode: tuple[ConvMode, ConvMode] = (ConvMode.HV, ConvMode.SQUARE),
     planes: PlanesT = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
     Combines binomial (Gaussian-like) blur and median filtering for a balanced smoothing effect.
@@ -267,6 +290,7 @@ _SbrBlurT = Union[
     VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
 ]
 
+
 def sbr(
     clip: vs.VideoNode,
     radius: int | Sequence[int] = 1,
@@ -276,7 +300,7 @@ def sbr(
     planes: PlanesT = None,
     *,
     func: FuncExceptT | None = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
     A helper function for high-pass filtering a blur difference, inspired by an AviSynth script by Didée.
@@ -321,30 +345,31 @@ def sbr(
 
     return norm_expr(
         [clip, diff, blurred_diff],
-        'y neutral - D1! y z - D2! D1@ D2@ xor x x D1@ abs D2@ abs < D1@ D2@ ? - ?',
-        planes=planes, func=func
+        "y neutral - D1! y z - D2! D1@ D2@ xor x x D1@ abs D2@ abs < D1@ D2@ ? - ?",
+        planes=planes,
+        func=func,
     )
 
 
 @overload
 def median_blur(
-    clip: vs.VideoNode, radius: int | Sequence[int] = 1, mode: SpatialConvModeT = ConvMode.SQUARE, planes: PlanesT = None
-) -> ConstantFormatVideoNode:
-    ...
+    clip: vs.VideoNode,
+    radius: int | Sequence[int] = 1,
+    mode: SpatialConvModeT = ConvMode.SQUARE,
+    planes: PlanesT = None,
+) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def median_blur(
     clip: vs.VideoNode, radius: int = 1, mode: Literal[ConvMode.TEMPORAL] = ..., planes: PlanesT = None
-) -> ConstantFormatVideoNode:
-    ...
+) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def median_blur(
     clip: vs.VideoNode, radius: int | Sequence[int] = 1, mode: ConvMode = ConvMode.SQUARE, planes: PlanesT = None
-) -> ConstantFormatVideoNode:
-    ...
+) -> ConstantFormatVideoNode: ...
 
 
 def median_blur(
@@ -385,7 +410,7 @@ def median_blur(
     for r in radius:
         expr_passes = list[str]()
 
-        for mat in ExprOp.matrix('x', r, mode, [(0, 0)]):
+        for mat in ExprOp.matrix("x", r, mode, [(0, 0)]):
             rb = len(mat) + 1
             st = rb - 1
             sp = rb // 2 - 1
@@ -420,22 +445,22 @@ class Bilateral(Generic[P, R]):
         Enum specifying which backend implementation of the bilateral filter to use.
         """
 
-        CPU = 'vszip'
+        CPU = "vszip"
         """
         Uses `vszip.Bilateral` — a fast, CPU-based implementation written in Zig.
         """
 
-        GPU = 'bilateralgpu'
+        GPU = "bilateralgpu"
         """
         Uses `bilateralgpu.Bilateral` — a CUDA-based GPU implementation.
         """
 
-        GPU_RTC = 'bilateralgpu_rtc'
+        GPU_RTC = "bilateralgpu_rtc"
         """
         Uses `bilateralgpu_rtc.Bilateral` — a CUDA-based GPU implementation with runtime shader compilation.
         """
 
-        def Bilateral(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+        def Bilateral(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
             """
             Applies the bilateral filter using the plugin associated with the selected backend.
 
@@ -451,10 +476,10 @@ class Bilateral(Generic[P, R]):
 def bilateral(
     clip: vs.VideoNode,
     ref: vs.VideoNode | None = None,
-    sigmaS: float | Sequence[float] | None = None,
-    sigmaR: float | Sequence[float] | None = None,
+    sigmaS: float | Sequence[float] | None = None,  # noqa: N803
+    sigmaR: float | Sequence[float] | None = None,  # noqa: N803
     backend: Bilateral.Backend = Bilateral.Backend.CPU,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
     Applies a bilateral filter for edge-preserving and noise-reducing smoothing.
@@ -562,6 +587,9 @@ class GuidedFilter(Generic[P, R]):
         """Gradient Domain Guided Image Filter"""
 
 
+# ruff: noqa: N806
+
+
 @GuidedFilter
 def guided_filter(
     clip: vs.VideoNode,
@@ -573,7 +601,7 @@ def guided_filter(
     planes: PlanesT = None,
     down_ratio: int = 0,
     downscaler: ScalerLike = Point,
-    upscaler: ScalerLike = Bilinear
+    upscaler: ScalerLike = Bilinear,
 ) -> vs.VideoNode:
     assert check_variable(clip, guided_filter)
 
@@ -587,8 +615,7 @@ def guided_filter(
     thr = normalize_seq(thr, clip.format.num_planes)
 
     size = normalize_seq(
-        [220, 225, 225] if ColorRange.from_video(clip, func=guided_filter).is_full else 256,
-        clip.format.num_planes
+        [220, 225, 225] if ColorRange.from_video(clip, func=guided_filter).is_full else 256, clip.format.num_planes
     )
 
     thr = [t / s for t, s in zip(thr, size)]
@@ -596,9 +623,7 @@ def guided_filter(
     if radius is None:
         radius = [
             round(max((w - 1280) / 160 + 12, (h - 720) / 90 + 12))
-            for w, h in [
-                get_plane_sizes(clip, i) for i in range(clip.format.num_planes)
-            ]
+            for w, h in [get_plane_sizes(clip, i) for i in range(clip.format.num_planes)]
         ]
 
     check_ref_clip(clip, guidance)
@@ -616,60 +641,65 @@ def guided_filter(
 
         radius = [cround(rad / down_ratio) for rad in radius]
 
-    blur_filter = partial(
-        gauss_blur, sigma=[rad / 2 * sqrt(2) for rad in radius], planes=planes
-    ) if use_gauss else partial(
-        box_blur, radius=[rad + 1 for rad in radius], planes=planes
+    blur_filter = (
+        partial(gauss_blur, sigma=[rad / 2 * sqrt(2) for rad in radius], planes=planes)
+        if use_gauss
+        else partial(box_blur, radius=[rad + 1 for rad in radius], planes=planes)
     )
 
-    blur_filter_corr = partial(
-        gauss_blur, sigma=1 / 2 * sqrt(2), planes=planes
-    ) if use_gauss else partial(box_blur, radius=2, planes=planes)
+    blur_filter_corr = (
+        partial(gauss_blur, sigma=1 / 2 * sqrt(2), planes=planes)
+        if use_gauss
+        else partial(box_blur, radius=2, planes=planes)
+    )
 
     mean_p = blur_filter(p)
     mean_I = blur_filter(g) if guidance is not None else mean_p
 
-    I_square = norm_expr(g, 'x dup *', planes, func=guided_filter)
+    I_square = norm_expr(g, "x dup *", planes, func=guided_filter)
     corr_I = blur_filter(I_square)
-    corr_Ip = blur_filter(norm_expr([g, p], 'x y *', planes, func=guided_filter)) if guidance is not None else corr_I
+    corr_Ip = blur_filter(norm_expr([g, p], "x y *", planes, func=guided_filter)) if guidance is not None else corr_I
 
-    var_I = norm_expr([corr_I, mean_I], 'x y dup * -', planes, func=guided_filter)
-    cov_Ip = norm_expr([corr_Ip, mean_I, mean_p], 'x y z * -', planes, func=guided_filter) if guidance is not None else var_I
+    var_I = norm_expr([corr_I, mean_I], "x y dup * -", planes, func=guided_filter)
+    cov_Ip = (
+        norm_expr([corr_Ip, mean_I, mean_p], "x y z * -", planes, func=guided_filter) if guidance is not None else var_I
+    )
 
     if mode is GuidedFilter.Mode.ORIGINAL:
-        a = norm_expr([cov_Ip, var_I], 'x y {thr} + /', planes, thr=thr, func=guided_filter)
+        a = norm_expr([cov_Ip, var_I], "x y {thr} + /", planes, thr=thr, func=guided_filter)
     else:
         if set(radius) == {1}:
             var_I_1 = var_I
         else:
             mean_I_1 = blur_filter_corr(g)
             corr_I_1 = blur_filter_corr(I_square)
-            var_I_1 = norm_expr([corr_I_1, mean_I_1], 'x y dup * -', planes, func=guided_filter)
+            var_I_1 = norm_expr([corr_I_1, mean_I_1], "x y dup * -", planes, func=guided_filter)
 
         if mode is GuidedFilter.Mode.WEIGHTED:
             weight_in = var_I_1
         else:
-            weight_in = norm_expr([var_I, var_I_1], 'x y * sqrt', planes, func=guided_filter)
+            weight_in = norm_expr([var_I, var_I_1], "x y * sqrt", planes, func=guided_filter)
 
-        denominator = norm_expr([weight_in], '1 x {eps} + /', planes, eps=1e-06, func=guided_filter)
+        denominator = norm_expr([weight_in], "1 x {eps} + /", planes, eps=1e-06, func=guided_filter)
 
         denominator = denominator.std.PlaneStats(None, 0)
 
-        weight = norm_expr([weight_in, denominator], 'x 1e-06 + y.PlaneStatsAverage *', planes, func=guided_filter)
+        weight = norm_expr([weight_in, denominator], "x 1e-06 + y.PlaneStatsAverage *", planes, func=guided_filter)
 
         if mode is GuidedFilter.Mode.WEIGHTED:
-            a = norm_expr([cov_Ip, var_I, weight], 'x y {thr} z / + /', planes, thr=thr, func=guided_filter)
+            a = norm_expr([cov_Ip, var_I, weight], "x y {thr} z / + /", planes, thr=thr, func=guided_filter)
         else:
             weight_in = weight_in.std.PlaneStats(None, 0)
 
             a = norm_expr(
                 [cov_Ip, weight_in, weight, var_I],
-                'x {thr} 1 1 1 -4 y.PlaneStatsMin y.PlaneStatsAverage 1e-6 - - / '
-                'y y.PlaneStatsAverage - * exp + / - * z / + a {thr} z / + /',
-                planes, thr=thr
+                "x {thr} 1 1 1 -4 y.PlaneStatsMin y.PlaneStatsAverage 1e-6 - - / "
+                "y y.PlaneStatsAverage - * exp + / - * z / + a {thr} z / + /",
+                planes,
+                thr=thr,
             )
 
-    b = norm_expr([mean_p, a, mean_I], 'x y z * -', planes, func=guided_filter)
+    b = norm_expr([mean_p, a, mean_I], "x y z * -", planes, func=guided_filter)
 
     mean_a, mean_b = blur_filter(a), blur_filter(b)
 
@@ -677,6 +707,6 @@ def guided_filter(
         mean_a = upscaler.scale(mean_a, width, height)
         mean_b = upscaler.scale(mean_b, width, height)
 
-    q = norm_expr([mean_a, guidance_clip, mean_b], 'x y * z +', planes, func=guided_filter)
+    q = norm_expr([mean_a, guidance_clip, mean_b], "x y * z +", planes, func=guided_filter)
 
     return depth(q, bits)

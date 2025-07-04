@@ -9,14 +9,21 @@ from typing_extensions import Self
 
 from vsexprtools import ExprList, ExprOp, ExprToken, ExprVars
 from vstools import (
-    ConstantFormatVideoNode, ConvMode, CustomIntEnum, CustomValueError, KwargsT, PlanesT, check_variable,
-    core, fallback, iterate, shift_clip_multi, vs
+    ConstantFormatVideoNode,
+    ConvMode,
+    CustomIntEnum,
+    CustomValueError,
+    KwargsT,
+    PlanesT,
+    check_variable,
+    core,
+    fallback,
+    iterate,
+    shift_clip_multi,
+    vs,
 )
 
-__all__ = [
-    'LimitFilterMode',
-    'BlurMatrixBase', 'BlurMatrix'
-]
+__all__ = ["BlurMatrix", "BlurMatrixBase", "LimitFilterMode"]
 
 
 class LimitFilterModeMeta:
@@ -25,6 +32,7 @@ class LimitFilterModeMeta:
 
 class LimitFilterMode(LimitFilterModeMeta, CustomIntEnum):
     """Two sources, one filtered"""
+
     SIMPLE_MIN = auto()
     SIMPLE_MAX = auto()
     """One source, two filtered"""
@@ -37,7 +45,7 @@ class LimitFilterMode(LimitFilterModeMeta, CustomIntEnum):
 
     @property
     def op(self) -> str:
-        return '<' if 'MIN' in self._name_ else '>'
+        return "<" if "MIN" in self._name_ else ">"
 
     def __call__(self, force_expr: bool = True) -> Self:
         self.force_expr = force_expr
@@ -45,7 +53,7 @@ class LimitFilterMode(LimitFilterModeMeta, CustomIntEnum):
         return self
 
 
-_Nb = TypeVar('_Nb', bound=float | int)
+_Nb = TypeVar("_Nb", bound=float | int)
 
 
 class BlurMatrixBase(list[_Nb]):
@@ -66,7 +74,10 @@ class BlurMatrixBase(list[_Nb]):
     """
 
     def __init__(
-        self, __iterable: Iterable[_Nb], /, mode: ConvMode = ConvMode.SQUARE,
+        self,
+        __iterable: Iterable[_Nb],
+        /,
+        mode: ConvMode = ConvMode.SQUARE,
     ) -> None:
         """
         :param __iterable:  Iterable of kernel coefficients.
@@ -76,9 +87,15 @@ class BlurMatrixBase(list[_Nb]):
         super().__init__(__iterable)
 
     def __call__(
-        self, clip: vs.VideoNode, planes: PlanesT = None,
-        bias: float | None = None, divisor: float | None = None, saturate: bool = True,
-        passes: int = 1, expr_kwargs: KwargsT | None = None, **conv_kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        planes: PlanesT = None,
+        bias: float | None = None,
+        divisor: float | None = None,
+        saturate: bool = True,
+        passes: int = 1,
+        expr_kwargs: KwargsT | None = None,
+        **conv_kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
         Apply the blur kernel to the given clip via spatial or temporal convolution.
@@ -116,17 +133,22 @@ class BlurMatrixBase(list[_Nb]):
                 return iterate(clip, core.std.Convolution, passes, self, bias, divisor, planes, saturate, self.mode)
 
             return iterate(
-                clip, ExprOp.convolution("x", self, bias, fallback(divisor, True), saturate, self.mode, **conv_kwargs),
-                passes, planes=planes, **expr_kwargs
+                clip,
+                ExprOp.convolution("x", self, bias, fallback(divisor, True), saturate, self.mode, **conv_kwargs),
+                passes,
+                planes=planes,
+                **expr_kwargs,
             )
 
-        if all([
-            not fp16,
-            len(self) <= 31,
-            not bias,
-            saturate,
-            (len(conv_kwargs) == 0 or (len(conv_kwargs) == 1 and "scenechange" in conv_kwargs))
-        ]):
+        if all(
+            [
+                not fp16,
+                len(self) <= 31,
+                not bias,
+                saturate,
+                (len(conv_kwargs) == 0 or (len(conv_kwargs) == 1 and "scenechange" in conv_kwargs)),
+            ]
+        ):
             return iterate(clip, core.std.AverageFrames, passes, self, divisor, planes=planes, **conv_kwargs)
 
         return self._averageframes_akarin(clip, planes, bias, divisor, saturate, passes, expr_kwargs, **conv_kwargs)
@@ -157,35 +179,39 @@ class BlurMatrixBase(list[_Nb]):
         # This ensures that the expression excludes frames that follow detected scene changes.
         for i, (var, weight) in enumerate(zip(back_vars, self[:r])):
             expr.append(
-                var, weight, ExprOp.MUL,
-                [[f"{back_vars[ii][0]}._SceneChangeNext", ExprOp.NOT, ExprOp.MUL]
-                 for ii in range(i, len(back_vars))],
-                ExprOp.DUP, f"cond{i}!"
+                var,
+                weight,
+                ExprOp.MUL,
+                [[f"{back_vars[ii][0]}._SceneChangeNext", ExprOp.NOT, ExprOp.MUL] for ii in range(i, len(back_vars))],
+                ExprOp.DUP,
+                f"cond{i}!",
             )
 
-        forw_vars = vars_[r + 1:]
+        forw_vars = vars_[r + 1 :]
         forw_vars.reverse()
 
         # Same thing for forward (next) clips.
-        for j, (var, weight) in enumerate(zip(forw_vars, reversed(self[r + 1:]))):
+        for j, (var, weight) in enumerate(zip(forw_vars, reversed(self[r + 1 :]))):
             expr.append(
-                var, weight, ExprOp.MUL,
-                [[f"{forw_vars[jj][0]}._SceneChangePrev", ExprOp.NOT, ExprOp.MUL]
-                 for jj in range(j, len(forw_vars))],
-                ExprOp.DUP, f"cond{len(vars_) - j - 1}!"
+                var,
+                weight,
+                ExprOp.MUL,
+                [[f"{forw_vars[jj][0]}._SceneChangePrev", ExprOp.NOT, ExprOp.MUL] for jj in range(j, len(forw_vars))],
+                ExprOp.DUP,
+                f"cond{len(vars_) - j - 1}!",
             )
 
         # If a scene change is detected, all the weights beyond it are applied
         # to the center frame.
         expr.append(vars_[r], self[r])
 
-        for k, w in enumerate(self[:r] + ([None] + self[r + 1:])):
+        for k, w in enumerate([*self[:r], None, *self[r + 1 :]]):
             if w is not None:
                 expr.append(f"cond{k}@", 0, w, ExprOp.TERN)
 
         expr.append(ExprOp.ADD * r * 2, ExprOp.MUL, ExprOp.ADD * r * 2)
 
-        if (premultiply := conv_kwargs.get("premultiply", None)):
+        if premultiply := conv_kwargs.get("premultiply", None):
             expr.append(premultiply, ExprOp.MUL)
 
         if divisor:
@@ -199,7 +225,7 @@ class BlurMatrixBase(list[_Nb]):
         if not saturate:
             expr.append(ExprOp.ABS)
 
-        if (multiply := conv_kwargs.get("multiply", None)):
+        if multiply := conv_kwargs.get("multiply", None):
             expr.append(multiply, ExprOp.MUL)
 
         if conv_kwargs.get("clamp", False):
@@ -248,31 +274,30 @@ class BlurMatrix(CustomEnum):
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[BlurMatrix.MEAN_NO_CENTER], taps: int = 1, *, mode: ConvMode = ConvMode.SQUARE
-    ) -> BlurMatrixBase[int]:
-        ...
+    ) -> BlurMatrixBase[int]: ...
 
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[BlurMatrix.MEAN], taps: int = 1, *, mode: ConvMode = ConvMode.SQUARE
-    ) -> BlurMatrixBase[int]:
-        ...
+    ) -> BlurMatrixBase[int]: ...
 
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[BlurMatrix.BINOMIAL], taps: int = 1, *, mode: ConvMode = ConvMode.HV
-    ) -> BlurMatrixBase[int]:
-        ...
+    ) -> BlurMatrixBase[int]: ...
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Literal[BlurMatrix.GAUSS], taps: int | None = None, *, sigma: float = 0.5, mode: ConvMode = ConvMode.HV,
-        **kwargs: Any
-    ) -> BlurMatrixBase[float]:
-        ...
+        self: Literal[BlurMatrix.GAUSS],
+        taps: int | None = None,
+        *,
+        sigma: float = 0.5,
+        mode: ConvMode = ConvMode.HV,
+        **kwargs: Any,
+    ) -> BlurMatrixBase[float]: ...
 
     @overload
-    def __call__(self, taps: int | None = None, **kwargs: Any) -> Any:
-        ...
+    def __call__(self, taps: int | None = None, **kwargs: Any) -> Any: ...
 
     def __call__(self, taps: int | None = None, **kwargs: Any) -> Any:
         """
@@ -299,7 +324,7 @@ class BlurMatrix(CustomEnum):
                 taps = fallback(taps, 1)
                 mode = kwargs.pop("mode", ConvMode.SQUARE)
 
-                kernel = BlurMatrixBase[int]([1 for _ in range(((2 * taps + 1)))], mode)
+                kernel = BlurMatrixBase[int]([1 for _ in range((2 * taps + 1))], mode)
 
             case BlurMatrix.BINOMIAL:
                 taps = fallback(taps, 1)
@@ -328,13 +353,13 @@ class BlurMatrix(CustomEnum):
                 taps = self.get_taps(sigma, taps)
 
                 if taps < 0:
-                    raise CustomValueError('Taps must be >= 0!')
+                    raise CustomValueError("Taps must be >= 0!")
 
                 if sigma > 0.0:
                     half_pisqrt = 1.0 / sqrt(2.0 * pi) * sigma
-                    doub_qsigma = 2 * sigma ** 2
+                    doub_qsigma = 2 * sigma**2
 
-                    high, *mat = [half_pisqrt * exp(-x ** 2 / doub_qsigma) for x in range(taps + 1)]
+                    high, *mat = [half_pisqrt * exp(-(x**2) / doub_qsigma) for x in range(taps + 1)]
 
                     mat = [x * scale_value / high for x in mat]
                     mat = [*mat[::-1], scale_value, *mat]

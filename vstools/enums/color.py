@@ -6,23 +6,31 @@ import vapoursynth as vs
 from jetpytools import FuncExceptT, classproperty
 
 from ..exceptions import (
-    ReservedMatrixError, ReservedPrimariesError, ReservedTransferError, UndefinedMatrixError, UndefinedPrimariesError,
-    UndefinedTransferError, UnsupportedColorRangeError, UnsupportedMatrixError, UnsupportedPrimariesError,
-    UnsupportedTransferError
+    ReservedMatrixError,
+    ReservedPrimariesError,
+    ReservedTransferError,
+    UndefinedMatrixError,
+    UndefinedPrimariesError,
+    UndefinedTransferError,
+    UnsupportedColorRangeError,
+    UnsupportedMatrixError,
+    UnsupportedPrimariesError,
+    UnsupportedTransferError,
 )
 from ..types import HoldsPropValueT, KwargsT
 from .stubs import PropEnum, _base_from_video, _ColorRangeMeta, _MatrixMeta, _PrimariesMeta, _TransferMeta
 
 __all__ = [
-    'PropEnum',
-
-    'Matrix', 'Transfer', 'Primaries',
-    'MatrixT', 'TransferT', 'PrimariesT',
-
-    'ColorRange',
-    'ColorRangeT',
-
-    'MatrixCoefficients'
+    "ColorRange",
+    "ColorRangeT",
+    "Matrix",
+    "MatrixCoefficients",
+    "MatrixT",
+    "Primaries",
+    "PrimariesT",
+    "PropEnum",
+    "Transfer",
+    "TransferT",
 ]
 
 
@@ -41,13 +49,14 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
             return value
 
         if Matrix.RGB < value < Matrix.ICTCP:
-            raise ReservedMatrixError(f'Matrix({value}) is reserved.', cls)
+            raise ReservedMatrixError(f"Matrix({value}) is reserved.", cls)
 
         if value > Matrix.ICTCP:
             raise UnsupportedMatrixError(
-                f'Matrix({value}) is current unsupported. '
-                'If you believe this to be in error, please leave an issue '
-                'in the vs-tools GitHub repository.', cls
+                f"Matrix({value}) is current unsupported. "
+                "If you believe this to be in error, please leave an issue "
+                "in the vs-tools GitHub repository.",
+                cls,
             )
 
         return None
@@ -143,7 +152,7 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
     KR = 0.2627; KB = 0.0593
     ```
     Rec. ITU-R BT.2020-2 non-constant luminance system
-    Rec. ITU-R BT.2100-2 Y′CbCr
+    Rec. ITU-R BT.2100-2 Y'CbCr
     See ITU-T H.265 Equations E-28 to E-30
     """
 
@@ -250,7 +259,7 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
 
         if transfer not in _transfer_matrix_map:
             if strict:
-                raise UnsupportedTransferError(f'{transfer} is not supported!', cls.from_transfer)
+                raise UnsupportedTransferError(f"{transfer} is not supported!", cls.from_transfer)
 
             return cls(transfer.value)
 
@@ -272,7 +281,7 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
 
         if primaries not in _primaries_matrix_map:
             if strict:
-                raise UnsupportedPrimariesError(f'{primaries} is not supported!', cls.from_primaries)
+                raise UnsupportedPrimariesError(f"{primaries} is not supported!", cls.from_primaries)
 
             return cls(primaries.value)
 
@@ -302,13 +311,14 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
             return value
 
         if Transfer.BT709 < value < Transfer.STD_B67 or value == 0:
-            raise ReservedTransferError(f'Transfer({value}) is reserved.', cls)
+            raise ReservedTransferError(f"Transfer({value}) is reserved.", cls)
 
         if value > Transfer.STD_B67:
             raise UnsupportedTransferError(
-                f'Transfer({value}) is current unsupported. '
-                'If you believe this to be in error, please leave an issue '
-                'in the vs-tools GitHub repository.', cls
+                f"Transfer({value}) is current unsupported. "
+                "If you believe this to be in error, please leave an issue "
+                "in the vs-tools GitHub repository.",
+                cls,
             )
 
         return None
@@ -496,7 +506,7 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
 
         if matrix not in _matrix_transfer_map:
             if strict:
-                raise UnsupportedMatrixError(f'{matrix} is not supported!', cls.from_matrix)
+                raise UnsupportedMatrixError(f"{matrix} is not supported!", cls.from_matrix)
 
             return cls(matrix.value)
 
@@ -518,7 +528,7 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
 
         if primaries not in _primaries_transfer_map:
             if strict:
-                raise UnsupportedPrimariesError(f'{primaries} is not supported!', cls.from_primaries)
+                raise UnsupportedPrimariesError(f"{primaries} is not supported!", cls.from_primaries)
 
             return cls(primaries.value)
 
@@ -540,8 +550,8 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
 
         if self >= self.GAMMA18:
             raise ReservedTransferError(
-                'This transfer isn\'t a VapourSynth internal transfer, but a libplacebo one!',
-                f'{self.__class__.__name__}.value_vs'
+                "This transfer isn't a VapourSynth internal transfer, but a libplacebo one!",
+                f"{self.__class__.__name__}.value_vs",
             )
 
         return self.value
@@ -576,13 +586,14 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
             return value
 
         if cls.BT709 < value < cls.JEDEC_P22:
-            raise ReservedPrimariesError(f'Primaries({value}) is reserved.', cls)
+            raise ReservedPrimariesError(f"Primaries({value}) is reserved.", cls)
 
         if value > cls.JEDEC_P22:
             raise UnsupportedPrimariesError(
-                f'Primaries({value}) is current unsupported. '
-                'If you believe this to be in error, please leave an issue '
-                'in the vs-tools GitHub repository.', cls
+                f"Primaries({value}) is current unsupported. "
+                "If you believe this to be in error, please leave an issue "
+                "in the vs-tools GitHub repository.",
+                cls,
             )
 
         return None
@@ -854,7 +865,7 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
 
         if matrix not in _matrix_primaries_map:
             if strict:
-                raise UnsupportedMatrixError(f'{matrix} is not supported!', cls.from_matrix)
+                raise UnsupportedMatrixError(f"{matrix} is not supported!", cls.from_matrix)
 
             return cls(matrix.value)
 
@@ -876,7 +887,7 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
 
         if transfer not in _transfer_primaries_map:
             if strict:
-                raise UnsupportedTransferError(f'{transfer} is not supported!', cls.from_transfer)
+                raise UnsupportedTransferError(f"{transfer} is not supported!", cls.from_transfer)
 
             return cls(transfer.value)
 
@@ -898,8 +909,8 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
 
         if self >= self.APPLE:
             raise ReservedPrimariesError(
-                'This primaries isn\'t a VapourSynth internal primaries, but a libplacebo one!',
-                f'{self.__class__.__name__}.value_vs'
+                "This primaries isn't a VapourSynth internal primaries, but a libplacebo one!",
+                f"{self.__class__.__name__}.value_vs",
             )
 
         return self.value
@@ -936,28 +947,28 @@ class MatrixCoefficients(NamedTuple):
 
     @classproperty
     @classmethod
-    def SRGB(cls) -> MatrixCoefficients:
+    def SRGB(cls) -> MatrixCoefficients:  # noqa: N802
         """Matrix Coefficients for SRGB."""
 
         return MatrixCoefficients(0.04045, 12.92, 0.055, 2.4)
 
     @classproperty
     @classmethod
-    def BT709(cls) -> MatrixCoefficients:
+    def BT709(cls) -> MatrixCoefficients:  # noqa: N802
         """Matrix Coefficients for BT709."""
 
         return MatrixCoefficients(0.08145, 4.5, 0.0993, 2.22222)
 
     @classproperty
     @classmethod
-    def SMPTE240M(cls) -> MatrixCoefficients:
+    def SMPTE240M(cls) -> MatrixCoefficients:  # noqa: N802
         """Matrix Coefficients for SMPTE240M."""
 
         return MatrixCoefficients(0.0912, 4.0, 0.1115, 2.22222)
 
     @classproperty
     @classmethod
-    def BT2020(cls) -> MatrixCoefficients:
+    def BT2020(cls) -> MatrixCoefficients:  # noqa: N802
         """Matrix Coefficients for BT2020."""
 
         return MatrixCoefficients(0.08145, 4.5, 0.0993, 2.22222)
@@ -967,7 +978,7 @@ class MatrixCoefficients(NamedTuple):
         """Matrix Coefficients from a Matrix object's value."""
 
         if matrix not in _matrix_matrixcoeff_map:
-            raise UnsupportedMatrixError(f'{matrix} is not supported!', cls.from_matrix)
+            raise UnsupportedMatrixError(f"{matrix} is not supported!", cls.from_matrix)
 
         return _matrix_matrixcoeff_map[matrix]
 
@@ -976,7 +987,7 @@ class MatrixCoefficients(NamedTuple):
         """Matrix Coefficients from a Transfer object's value."""
 
         if transfer not in _transfer_matrixcoeff_map:
-            raise UnsupportedTransferError(f'{transfer} is not supported!', cls.from_transfer)
+            raise UnsupportedTransferError(f"{transfer} is not supported!", cls.from_transfer)
 
         return _transfer_matrixcoeff_map[transfer]
 
@@ -985,7 +996,7 @@ class MatrixCoefficients(NamedTuple):
         """Matrix Coefficients from a Primaries object's value."""
 
         if primaries not in _primaries_matrixcoeff_map:
-            raise UnsupportedPrimariesError(f'{primaries} is not supported!', cls.from_primaries)
+            raise UnsupportedPrimariesError(f"{primaries} is not supported!", cls.from_primaries)
 
         return _primaries_matrixcoeff_map[primaries]
 
@@ -1005,7 +1016,7 @@ class ColorRange(_ColorRangeMeta):  # type: ignore[misc]
             return value
 
         if value > ColorRange.LIMITED:
-            raise UnsupportedPrimariesError(f'ColorRange({value}) is unsupported.', cls)
+            raise UnsupportedPrimariesError(f"ColorRange({value}) is unsupported.", cls)
 
         return None
 
@@ -1112,7 +1123,7 @@ _matrix_matrixcoeff_map = {
     Matrix.BT470BG: MatrixCoefficients.BT709,
     Matrix.SMPTE240M: MatrixCoefficients.SMPTE240M,
     Matrix.BT2020CL: MatrixCoefficients.BT2020,
-    Matrix.BT2020NCL: MatrixCoefficients.BT2020
+    Matrix.BT2020NCL: MatrixCoefficients.BT2020,
 }
 
 _transfer_matrixcoeff_map = {
@@ -1122,7 +1133,7 @@ _transfer_matrixcoeff_map = {
     Transfer.BT470BG: MatrixCoefficients.BT709,
     Transfer.SMPTE240M: MatrixCoefficients.SMPTE240M,
     Transfer.BT2020_10: MatrixCoefficients.BT2020,
-    Transfer.BT2020_12: MatrixCoefficients.BT2020
+    Transfer.BT2020_12: MatrixCoefficients.BT2020,
 }
 
 _primaries_matrixcoeff_map = {
@@ -1130,7 +1141,7 @@ _primaries_matrixcoeff_map = {
     Primaries.SMPTE170M: MatrixCoefficients.BT709,
     Primaries.BT470BG: MatrixCoefficients.BT709,
     Primaries.SMPTE240M: MatrixCoefficients.SMPTE240M,
-    Primaries.BT2020: MatrixCoefficients.BT2020
+    Primaries.BT2020: MatrixCoefficients.BT2020,
 }
 
 _transfer_placebo_map = {
@@ -1174,107 +1185,103 @@ _primaries_placebo_map = {
     Primaries.ACES_1: 17,
 }
 
-_placebo_transfer_map = {
-    value: key for key, value in _transfer_placebo_map.items()
-}
+_placebo_transfer_map = {value: key for key, value in _transfer_placebo_map.items()}
 
-_placebo_primaries_map = {
-    value: key for key, value in _primaries_placebo_map.items()
-}
+_placebo_primaries_map = {value: key for key, value in _primaries_placebo_map.items()}
 
 _matrix_name_map = {
-    Matrix.RGB: 'gbr',
-    Matrix.BT709: 'bt709',
-    Matrix.UNKNOWN: 'unknown',
-    Matrix.FCC: 'fcc',
-    Matrix.BT470BG: 'bt470bg',
-    Matrix.SMPTE170M: 'smpte170m',
-    Matrix.SMPTE240M: 'smpte240m',
-    Matrix.YCGCO: 'ycgco',
-    Matrix.BT2020NCL: 'bt2020nc',
-    Matrix.BT2020CL: 'bt2020c',
-    Matrix.CHROMANCL: 'chroma-derived-nc',
-    Matrix.CHROMACL: 'chroma-derived-c',
-    Matrix.ICTCP: 'ictcp'
+    Matrix.RGB: "gbr",
+    Matrix.BT709: "bt709",
+    Matrix.UNKNOWN: "unknown",
+    Matrix.FCC: "fcc",
+    Matrix.BT470BG: "bt470bg",
+    Matrix.SMPTE170M: "smpte170m",
+    Matrix.SMPTE240M: "smpte240m",
+    Matrix.YCGCO: "ycgco",
+    Matrix.BT2020NCL: "bt2020nc",
+    Matrix.BT2020CL: "bt2020c",
+    Matrix.CHROMANCL: "chroma-derived-nc",
+    Matrix.CHROMACL: "chroma-derived-c",
+    Matrix.ICTCP: "ictcp",
 }
 
 _transfer_name_map = {
-    Transfer.BT709: 'bt709',
-    Transfer.UNKNOWN: 'unknown',
-    Transfer.BT470M: 'bt470m',
-    Transfer.BT470BG: 'bt470bg',
-    Transfer.BT601: 'smpte170m',
-    Transfer.SMPTE240M: 'smpte240m',
-    Transfer.LINEAR: 'linear',
-    Transfer.LOG100: 'log100',
-    Transfer.LOG316: 'log316',
-    Transfer.XVYCC: 'iec61966-2-4',
-    Transfer.SRGB: 'iec61966-2-1',
-    Transfer.BT2020_10: 'bt2020-10',
-    Transfer.BT2020_12: 'bt2020-12',
-    Transfer.ST2084: 'smpte2084',
-    Transfer.STD_B67: 'arib-std-b67'
+    Transfer.BT709: "bt709",
+    Transfer.UNKNOWN: "unknown",
+    Transfer.BT470M: "bt470m",
+    Transfer.BT470BG: "bt470bg",
+    Transfer.BT601: "smpte170m",
+    Transfer.SMPTE240M: "smpte240m",
+    Transfer.LINEAR: "linear",
+    Transfer.LOG100: "log100",
+    Transfer.LOG316: "log316",
+    Transfer.XVYCC: "iec61966-2-4",
+    Transfer.SRGB: "iec61966-2-1",
+    Transfer.BT2020_10: "bt2020-10",
+    Transfer.BT2020_12: "bt2020-12",
+    Transfer.ST2084: "smpte2084",
+    Transfer.STD_B67: "arib-std-b67",
 }
 
 _primaries_name_map = {
-    Primaries.BT709: 'bt709',
-    Primaries.UNKNOWN: 'unknown',
-    Primaries.BT470M: 'bt470m',
-    Primaries.BT470BG: 'bt470bg',
-    Primaries.SMPTE170M: 'smpte170m',
-    Primaries.SMPTE240M: 'smpte240m',
-    Primaries.FILM: 'film',
-    Primaries.BT2020: 'bt2020',
-    Primaries.ST428: 'smpte428',
-    Primaries.ST431_2: 'smpte431',
-    Primaries.ST432_1: 'smpte432',
-    Primaries.JEDEC_P22: 'jedec-p22'
+    Primaries.BT709: "bt709",
+    Primaries.UNKNOWN: "unknown",
+    Primaries.BT470M: "bt470m",
+    Primaries.BT470BG: "bt470bg",
+    Primaries.SMPTE170M: "smpte170m",
+    Primaries.SMPTE240M: "smpte240m",
+    Primaries.FILM: "film",
+    Primaries.BT2020: "bt2020",
+    Primaries.ST428: "smpte428",
+    Primaries.ST431_2: "smpte431",
+    Primaries.ST432_1: "smpte432",
+    Primaries.JEDEC_P22: "jedec-p22",
 }
 
 _matrix_pretty_name_map = {
-    Matrix.RGB: 'RGB',
-    Matrix.BT709: 'BT.709',
-    Matrix.FCC: 'FCC',
-    Matrix.BT470BG: 'BT.470bg',
-    Matrix.SMPTE170M: 'SMPTE ST 170m',
-    Matrix.SMPTE240M: 'SMPTE ST 240m',
-    Matrix.YCGCO: 'YCgCo',
-    Matrix.BT2020NCL: 'BT.2020 non-constant luminance',
-    Matrix.BT2020CL: 'BT.2020 constant luminance',
-    Matrix.CHROMANCL: 'Chromaticity derived non-constant luminance',
-    Matrix.CHROMACL: 'Chromaticity derived constant luminance',
-    Matrix.ICTCP: 'ICtCp'
+    Matrix.RGB: "RGB",
+    Matrix.BT709: "BT.709",
+    Matrix.FCC: "FCC",
+    Matrix.BT470BG: "BT.470bg",
+    Matrix.SMPTE170M: "SMPTE ST 170m",
+    Matrix.SMPTE240M: "SMPTE ST 240m",
+    Matrix.YCGCO: "YCgCo",
+    Matrix.BT2020NCL: "BT.2020 non-constant luminance",
+    Matrix.BT2020CL: "BT.2020 constant luminance",
+    Matrix.CHROMANCL: "Chromaticity derived non-constant luminance",
+    Matrix.CHROMACL: "Chromaticity derived constant luminance",
+    Matrix.ICTCP: "ICtCp",
 }
 
 _transfer_pretty_name_map = {
-    Transfer.BT709: 'BT.709',
-    Transfer.BT470M: 'BT.470m',
-    Transfer.BT470BG: 'BT.470bg',
-    Transfer.BT601: 'BT.601',
-    Transfer.SMPTE240M: 'SMPTE ST 240m',
-    Transfer.LINEAR: 'Linear',
-    Transfer.LOG100: 'Log 1:100 contrast',
-    Transfer.LOG316: 'Log 1:316 contrast',
-    Transfer.XVYCC: 'xvYCC',
-    Transfer.SRGB: 'sRGB',
-    Transfer.BT2020_10: 'BT.2020 10 bits',
-    Transfer.BT2020_12: 'BT.2020 12 bits',
-    Transfer.ST2084: 'SMPTE ST 2084 (PQ)',
-    Transfer.STD_B67: 'ARIB std-b67 (HLG)'
+    Transfer.BT709: "BT.709",
+    Transfer.BT470M: "BT.470m",
+    Transfer.BT470BG: "BT.470bg",
+    Transfer.BT601: "BT.601",
+    Transfer.SMPTE240M: "SMPTE ST 240m",
+    Transfer.LINEAR: "Linear",
+    Transfer.LOG100: "Log 1:100 contrast",
+    Transfer.LOG316: "Log 1:316 contrast",
+    Transfer.XVYCC: "xvYCC",
+    Transfer.SRGB: "sRGB",
+    Transfer.BT2020_10: "BT.2020 10 bits",
+    Transfer.BT2020_12: "BT.2020 12 bits",
+    Transfer.ST2084: "SMPTE ST 2084 (PQ)",
+    Transfer.STD_B67: "ARIB std-b67 (HLG)",
 }
 
 _primaries_pretty_name_map = {
-    Primaries.BT709: 'BT.709',
-    Primaries.BT470M: 'BT.470m',
-    Primaries.BT470BG: 'BT.470bg',
-    Primaries.SMPTE170M: 'SMPTE ST 170m',
-    Primaries.SMPTE240M: 'SMPTE ST 240m',
-    Primaries.FILM: 'Film',
-    Primaries.BT2020: 'BT.2020',
-    Primaries.ST428: 'SMPTE ST 428 (XYZ)',
-    Primaries.ST431_2: 'DCI-P3, DCI white point',
-    Primaries.ST432_1: 'DCI-P3 D65 white point',
-    Primaries.JEDEC_P22: 'JEDEC P22 (EBU 3213-E)'
+    Primaries.BT709: "BT.709",
+    Primaries.BT470M: "BT.470m",
+    Primaries.BT470BG: "BT.470bg",
+    Primaries.SMPTE170M: "SMPTE ST 170m",
+    Primaries.SMPTE240M: "SMPTE ST 240m",
+    Primaries.FILM: "Film",
+    Primaries.BT2020: "BT.2020",
+    Primaries.ST428: "SMPTE ST 428 (XYZ)",
+    Primaries.ST431_2: "DCI-P3, DCI white point",
+    Primaries.ST432_1: "DCI-P3 D65 white point",
+    Primaries.JEDEC_P22: "JEDEC P22 (EBU 3213-E)",
 }
 
 
@@ -1294,7 +1301,9 @@ ColorRangeT: TypeAlias = Union[int, vs.ColorRange, ColorRange, HoldsPropValueT]
 def _norm_props_enums(kwargs: KwargsT) -> KwargsT:
     return {
         key: (
-            (value.value_zimg if hasattr(value, 'value_zimg') else int(value))
-            if isinstance(value, PropEnum) else value
-        ) for key, value in kwargs.items()
+            (value.value_zimg if hasattr(value, "value_zimg") else int(value))  # pyright: ignore[reportAttributeAccessIssue]
+            if isinstance(value, PropEnum)
+            else value
+        )
+        for key, value in kwargs.items()
     }

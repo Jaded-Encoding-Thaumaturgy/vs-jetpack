@@ -4,17 +4,34 @@ from itertools import cycle
 from math import isqrt
 from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, SupportsIndex, overload
 
+from typing_extensions import Self
+
 from vstools import (
-    ColorRange, ConstantFormatVideoNode, ConvMode, CustomEnum, CustomIndexError, CustomValueError, FuncExceptT,
-    HoldsVideoFormatT, PlanesT, StrArrOpt, StrList, VideoFormatT, VideoNodeIterableT, VideoNodeT, flatten,
-    flatten_vnodes, get_lowest_value, get_neutral_value, get_peak_value, vs
+    ColorRange,
+    ConstantFormatVideoNode,
+    ConvMode,
+    CustomEnum,
+    CustomIndexError,
+    CustomValueError,
+    FuncExceptT,
+    HoldsVideoFormatT,
+    PlanesT,
+    StrArrOpt,
+    StrList,
+    VideoFormatT,
+    VideoNodeIterableT,
+    VideoNodeT,
+    flatten,
+    flatten_vnodes,
+    get_lowest_value,
+    get_neutral_value,
+    get_peak_value,
+    vs,
 )
 
 from .util import ExprVarRangeT, ExprVars, ExprVarsT, complexpr_available
 
-__all__ = [
-    'ExprOp', 'ExprToken', 'ExprList', 'TupleExprList'
-]
+__all__ = ["ExprList", "ExprOp", "ExprToken", "TupleExprList"]
 
 
 class ExprTokenBase(str):
@@ -22,29 +39,29 @@ class ExprTokenBase(str):
 
 
 class ExprToken(ExprTokenBase, CustomEnum):
-    LumaMin = 'ymin'
-    ChromaMin = 'cmin'
-    LumaMax = 'ymax'
-    ChromaMax = 'cmax'
-    Neutral = 'neutral'
-    RangeHalf = 'range_half'
-    RangeSize = 'range_size'
-    RangeMin = 'range_min'
-    LumaRangeMin = 'yrange_min'
-    ChromaRangeMin = 'crange_min'
-    RangeMax = 'range_max'
-    LumaRangeMax = 'yrange_max'
-    ChromaRangeMax = 'crange_max'
-    RangeInMin = 'range_in_min'
-    LumaRangeInMin = 'yrange_in_min'
-    ChromaRangeInMin = 'crange_in_min'
-    RangeInMax = 'range_in_max'
-    LumaRangeInMax = 'yrange_in_max'
-    ChromaRangeInMax = 'crange_in_max'
+    LumaMin = "ymin"
+    ChromaMin = "cmin"
+    LumaMax = "ymax"
+    ChromaMax = "cmax"
+    Neutral = "neutral"
+    RangeHalf = "range_half"
+    RangeSize = "range_size"
+    RangeMin = "range_min"
+    LumaRangeMin = "yrange_min"
+    ChromaRangeMin = "crange_min"
+    RangeMax = "range_max"
+    LumaRangeMax = "yrange_max"
+    ChromaRangeMax = "crange_max"
+    RangeInMin = "range_in_min"
+    LumaRangeInMin = "yrange_in_min"
+    ChromaRangeInMin = "crange_in_min"
+    RangeInMax = "range_in_max"
+    LumaRangeInMax = "yrange_in_max"
+    ChromaRangeInMax = "crange_in_max"
 
     @property
     def is_chroma(self) -> bool:
-        return 'chroma' in self._name_.lower()
+        return "chroma" in self._name_.lower()
 
     def get_value(self, clip: vs.VideoNode, chroma: bool | None = None, range_in: ColorRange | None = None) -> float:
         if self is ExprToken.LumaMin:
@@ -106,37 +123,51 @@ class ExprToken(ExprTokenBase, CustomEnum):
 
         raise CustomValueError("You are using an unsupported ExprToken!", self.get_value, self)
 
-    def __getitem__(self, __i: SupportsIndex) -> ExprToken:  # type: ignore
-        return ExprTokenBase(f'{self.value}_{ExprVars[__i]}')  # type: ignore
+    def __getitem__(self, i: SupportsIndex) -> ExprToken:  # type: ignore
+        return ExprTokenBase(f"{self.value}_{ExprVars[i]}")  # type: ignore
 
 
 class ExprList(StrList):
     def __call__(
-        self, *clips: VideoNodeIterableT[VideoNodeT], planes: PlanesT = None,
-        format: HoldsVideoFormatT | VideoFormatT | None = None, opt: bool | None = None,
-        boundary: bool = True, func: FuncExceptT | None = None,
-        split_planes: bool = False, **kwargs: Any
+        self,
+        *clips: VideoNodeIterableT[VideoNodeT],
+        planes: PlanesT = None,
+        format: HoldsVideoFormatT | VideoFormatT | None = None,
+        opt: bool | None = None,
+        boundary: bool = True,
+        func: FuncExceptT | None = None,
+        split_planes: bool = False,
+        **kwargs: Any,
     ) -> VideoNodeT:
         from .funcs import norm_expr
 
-        return norm_expr(
-            flatten_vnodes(*clips), self, planes, format, opt, boundary, func, split_planes, **kwargs
-        )
+        return norm_expr(flatten_vnodes(*clips), self, planes, format, opt, boundary, func, split_planes, **kwargs)
 
 
 class TupleExprList(tuple[ExprList, ...]):
     def __call__(
-        self, *clips: VideoNodeIterableT[VideoNodeT], planes: PlanesT = None,
-        format: HoldsVideoFormatT | VideoFormatT | None = None, opt: bool | None = None,
-        boundary: bool = True, func: FuncExceptT | None = None,
-        split_planes: bool = False, **kwargs: Any
+        self,
+        *clips: VideoNodeIterableT[VideoNodeT],
+        planes: PlanesT = None,
+        format: HoldsVideoFormatT | VideoFormatT | None = None,
+        opt: bool | None = None,
+        boundary: bool = True,
+        func: FuncExceptT | None = None,
+        split_planes: bool = False,
+        **kwargs: Any,
     ) -> VideoNodeT:
         clip: Sequence[VideoNodeT] | VideoNodeT = flatten_vnodes(*clips)
 
         for exprlist in self:
             clip = exprlist(
-                clip, planes=planes, format=format, opt=opt, boundary=boundary,
-                func=func, split_planes=split_planes, **kwargs
+                clip,
+                planes=planes,
+                format=format,
+                opt=opt,
+                boundary=boundary,
+                func=func,
+                split_planes=split_planes,
+                **kwargs,
             )
 
         return clip[0] if isinstance(clip, Sequence) else clip
@@ -149,16 +180,21 @@ class ExprOpBase(str):
     value: str
     n_op: int
 
-    def __new__(cls, value: str, n_op: int) -> ExprOpBase:
+    def __new__(cls, value: str, n_op: int) -> Self:
         self = super().__new__(cls, value)
         self.n_op = n_op
 
         return self
 
     def combine(
-        self, *clips: vs.VideoNode | Iterable[vs.VideoNode | Iterable[vs.VideoNode]],
-        suffix: StrArrOpt = None, prefix: StrArrOpt = None, expr_suffix: StrArrOpt = None,
-        expr_prefix: StrArrOpt = None, planes: PlanesT = None, **expr_kwargs: Any
+        self,
+        *clips: vs.VideoNode | Iterable[vs.VideoNode | Iterable[vs.VideoNode]],
+        suffix: StrArrOpt = None,
+        prefix: StrArrOpt = None,
+        expr_suffix: StrArrOpt = None,
+        expr_prefix: StrArrOpt = None,
+        planes: PlanesT = None,
+        **expr_kwargs: Any,
     ) -> ConstantFormatVideoNode:
         from .funcs import combine
 
@@ -205,15 +241,19 @@ class ExprOp(ExprOpBase, CustomEnum):
     CLAMP = "clamp", 3
 
     # Special Operators
-    REL_PIX = '{char:s}[{x:d},{y:d}]', 3
-    ABS_PIX = '{x:d} {y:d} {char:s}[]', 3
+    REL_PIX = "{char:s}[{x:d},{y:d}]", 3
+    ABS_PIX = "{x:d} {y:d} {char:s}[]", 3
 
     @overload
     def __call__(
-        self, *clips: VideoNodeIterableT[VideoNodeT], suffix: StrArrOpt = None,
-        prefix: StrArrOpt = None, expr_suffix: StrArrOpt = None,
-        expr_prefix: StrArrOpt = None, planes: PlanesT = None,
-        **expr_kwargs: Any
+        self,
+        *clips: VideoNodeIterableT[VideoNodeT],
+        suffix: StrArrOpt = None,
+        prefix: StrArrOpt = None,
+        expr_suffix: StrArrOpt = None,
+        expr_prefix: StrArrOpt = None,
+        planes: PlanesT = None,
+        **expr_kwargs: Any,
     ) -> VideoNodeT:
         """Call combine with this ExprOp."""
 
@@ -250,9 +290,8 @@ class ExprOp(ExprOpBase, CustomEnum):
 
     @classmethod
     def clamp(
-        cls, min: float | ExprToken = ExprToken.RangeMin, max: float | ExprToken = ExprToken.RangeMax, c: str = ''
+        cls, min: float | ExprToken = ExprToken.RangeMin, max: float | ExprToken = ExprToken.RangeMax, c: str = ""
     ) -> ExprList:
-
         if complexpr_available:
             return ExprList([c, min, max, ExprOp.CLAMP])
 
@@ -262,72 +301,85 @@ class ExprOp(ExprOpBase, CustomEnum):
     def matrix(
         cls, var: str | ExprVarsT, radius: int, mode: ConvMode, exclude: Iterable[tuple[int, int]] | None = None
     ) -> TupleExprList:
-        exclude = list(exclude) if exclude else list()
+        exclude = list(exclude) if exclude else []
 
         match mode:
             case ConvMode.SQUARE:
-                coordinates = [
-                    (x, y)
-                    for y in range(-radius, radius + 1)
-                    for x in range(-radius, radius + 1)
-                ]
+                coordinates = [(x, y) for y in range(-radius, radius + 1) for x in range(-radius, radius + 1)]
             case ConvMode.VERTICAL:
                 coordinates = [(0, xy) for xy in range(-radius, radius + 1)]
             case ConvMode.HORIZONTAL:
                 coordinates = [(xy, 0) for xy in range(-radius, radius + 1)]
             case ConvMode.HV:
-                return TupleExprList([
-                    cls.matrix(var, radius, ConvMode.VERTICAL, exclude)[0],
-                    cls.matrix(var, radius, ConvMode.HORIZONTAL, exclude)[0],
-               ])
+                return TupleExprList(
+                    [
+                        cls.matrix(var, radius, ConvMode.VERTICAL, exclude)[0],
+                        cls.matrix(var, radius, ConvMode.HORIZONTAL, exclude)[0],
+                    ]
+                )
             case ConvMode.TEMPORAL:
                 if len(var) != radius * 2 + 1:
                     raise CustomValueError(
-                        "`var` must have a number of elements proportional to the radius",
-                        cls.matrix, var
+                        "`var` must have a number of elements proportional to the radius", cls.matrix, var
                     )
 
                 return TupleExprList([ExprList(v for v in var)])
             case _:
                 raise NotImplementedError
 
-        return TupleExprList([ExprList([
-            var if x == y == 0 else
-            ExprOp.REL_PIX(var, x, y)
-            for (x, y) in coordinates
-            if (x, y) not in exclude
-        ])])
+        return TupleExprList(
+            [
+                ExprList(
+                    [
+                        var if x == y == 0 else ExprOp.REL_PIX(var, x, y)
+                        for (x, y) in coordinates
+                        if (x, y) not in exclude
+                    ]
+                )
+            ]
+        )
 
     @classmethod
     def convolution(
-        cls, var: str | ExprVarsT, matrix: Iterable[SupportsFloat] | Iterable[Iterable[SupportsFloat]],
-        bias: float | None = None, divisor: float | bool = True, saturate: bool = True,
-        mode: ConvMode = ConvMode.HV, premultiply: float | int | None = None,
-        multiply: float | int | None = None, clamp: bool = False
+        cls,
+        var: str | ExprVarsT,
+        matrix: Iterable[SupportsFloat] | Iterable[Iterable[SupportsFloat]],
+        bias: float | None = None,
+        divisor: float | bool = True,
+        saturate: bool = True,
+        mode: ConvMode = ConvMode.HV,
+        premultiply: float | int | None = None,
+        multiply: float | int | None = None,
+        clamp: bool = False,
     ) -> TupleExprList:
         convolution = list[float](flatten(matrix))
 
         if not (conv_len := len(convolution)) % 2:
-            raise CustomValueError('Convolution length must be odd!', cls.convolution, matrix)
+            raise CustomValueError("Convolution length must be odd!", cls.convolution, matrix)
         elif conv_len < 3:
-            raise CustomValueError('You must pass at least 3 convolution items!', cls.convolution, matrix)
+            raise CustomValueError("You must pass at least 3 convolution items!", cls.convolution, matrix)
         elif mode == ConvMode.SQUARE and conv_len != isqrt(conv_len) ** 2:
             raise CustomValueError(
-                'With square mode, convolution must represent a '
-                'horizontal*vertical square (radius*radius n items)!', cls.convolution
+                "With square mode, convolution must represent a horizontal*vertical square (radius*radius n items)!",
+                cls.convolution,
             )
 
         radius = conv_len // 2 if mode != ConvMode.SQUARE else isqrt(conv_len) // 2
 
         rel_pixels = cls.matrix(var, radius, mode)
 
-        output = TupleExprList([
-            ExprList([
-                rel_pix if weight == 1 else [rel_pix, weight, ExprOp.MUL]
-                for rel_pix, weight in zip(rel_px, convolution)
-                if weight != 0
-            ]) for rel_px in rel_pixels
-        ])
+        output = TupleExprList(
+            [
+                ExprList(
+                    [
+                        rel_pix if weight == 1 else [rel_pix, weight, ExprOp.MUL]
+                        for rel_pix, weight in zip(rel_px, convolution)
+                        if weight != 0
+                    ]
+                )
+                for rel_px in rel_pixels
+            ]
+        )
 
         for out in output:
             out.extend(ExprOp.ADD * out.mlength)
@@ -362,13 +414,10 @@ class ExprOp(ExprOpBase, CustomEnum):
     ) -> tuple[ExprVarsT, ExprVarsT]:
         planesa = ExprVars(planesa)
 
-        if planesb is None:
-            planesb = ExprVars(planesa.stop, planesa.stop + len(planesa))
-        else:
-            planesb = ExprVars(planesb)
+        planesb = ExprVars(planesa.stop, planesa.stop + len(planesa)) if planesb is None else ExprVars(planesb)
 
         if len(planesa) != len(planesb):
-            raise CustomIndexError('Both clips must have an equal amount of planes!', func)
+            raise CustomIndexError("Both clips must have an equal amount of planes!", func)
 
         return planesa, planesb
 

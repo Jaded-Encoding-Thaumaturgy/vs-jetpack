@@ -6,43 +6,37 @@ import vapoursynth as vs
 from jetpytools import CustomPermissionError, CustomValueError, FuncExceptT, SupportsString
 
 __all__ = [
-    'InvalidColorspacePathError',
-
-    'UndefinedMatrixError',
-    'UndefinedTransferError',
-    'UndefinedPrimariesError',
-
-    'ReservedMatrixError',
-    'ReservedTransferError',
-    'ReservedPrimariesError',
-
-    'InvalidMatrixError',
-    'InvalidTransferError',
-    'InvalidPrimariesError',
-
-    'UnsupportedMatrixError',
-    'UnsupportedTransferError',
-    'UnsupportedPrimariesError',
-    'UnsupportedColorRangeError'
+    "InvalidColorspacePathError",
+    "InvalidMatrixError",
+    "InvalidPrimariesError",
+    "InvalidTransferError",
+    "ReservedMatrixError",
+    "ReservedPrimariesError",
+    "ReservedTransferError",
+    "UndefinedMatrixError",
+    "UndefinedPrimariesError",
+    "UndefinedTransferError",
+    "UnsupportedColorRangeError",
+    "UnsupportedMatrixError",
+    "UnsupportedPrimariesError",
+    "UnsupportedTransferError",
 ]
 
 ########################################################
 # Colorspace
 
+
 class InvalidColorspacePathError(CustomValueError):
     """Raised when there is no path between two colorspaces."""
 
-    def __init__(
-        self, func: FuncExceptT, message: SupportsString | None = None,
-        **kwargs: Any
-    ) -> None:
-        def_msg = 'Unable to convert between colorspaces! '
-        def_msg += 'Please provide more colorspace information (e.g., matrix, transfer, primaries).'
+    def __init__(self, func: FuncExceptT, message: SupportsString | None = None, **kwargs: Any) -> None:
+        def_msg = "Unable to convert between colorspaces! "
+        def_msg += "Please provide more colorspace information (e.g., matrix, transfer, primaries)."
 
         if isinstance(message, vs.Error):
             error_msg = str(message)
-            if 'Resize error:' in error_msg:
-                kwargs['reason'] = error_msg[error_msg.find('(') + 1:error_msg.rfind(')')]
+            if "Resize error:" in error_msg:
+                kwargs["reason"] = error_msg[error_msg.find("(") + 1 : error_msg.rfind(")")]
                 message = def_msg
 
         super().__init__(message or def_msg, func, **kwargs)
@@ -62,7 +56,7 @@ class InvalidColorspacePathError(CustomValueError):
         try:
             to_check.get_frame(0).close()
         except vs.Error as e:
-            if 'no path between colorspaces' in str(e):
+            if "no path between colorspaces" in str(e):
                 raise InvalidColorspacePathError(func, e)
             raise
 
@@ -87,14 +81,18 @@ class InvalidMatrixError(CustomValueError):
     """Raised when an invalid matrix is passed."""
 
     def __init__(
-        self, func: FuncExceptT, matrix: int = 2, message: SupportsString = 'You can\'t set a matrix of {matrix}!',
-        **kwargs: Any
+        self,
+        func: FuncExceptT,
+        matrix: int = 2,
+        message: SupportsString = "You can't set a matrix of {matrix}!",
+        **kwargs: Any,
     ) -> None:
         super().__init__(message, func, matrix=matrix, **kwargs)
 
 
 ########################################################
 # Transfer
+
 
 class UndefinedTransferError(CustomValueError):
     """Raised when an undefined transfer is passed."""
@@ -112,14 +110,18 @@ class InvalidTransferError(CustomValueError):
     """Raised when an invalid matrix is passed."""
 
     def __init__(
-        self, func: FuncExceptT, transfer: int = 2,
-        message: SupportsString = 'You can\'t set a transfer of {transfer}!', **kwargs: Any
+        self,
+        func: FuncExceptT,
+        transfer: int = 2,
+        message: SupportsString = "You can't set a transfer of {transfer}!",
+        **kwargs: Any,
     ) -> None:
         super().__init__(message, func, transfer=transfer, **kwargs)
 
 
 ########################################################
 # Primaries
+
 
 class UndefinedPrimariesError(CustomValueError):
     """Raised when an undefined primaries value is passed."""
@@ -137,14 +139,18 @@ class InvalidPrimariesError(CustomValueError):
     """Raised when an invalid matrix is passed."""
 
     def __init__(
-        self, func: FuncExceptT, primaries: int = 2,
-        message: SupportsString = 'You can\'t set primaries of {primaries}!', **kwargs: Any
+        self,
+        func: FuncExceptT,
+        primaries: int = 2,
+        message: SupportsString = "You can't set primaries of {primaries}!",
+        **kwargs: Any,
     ) -> None:
         super().__init__(message, func, primaries=primaries, **kwargs)
 
 
 ########################################################
 # ColorRange
+
 
 class UnsupportedColorRangeError(CustomValueError):
     """Raised when a unsupported color range value is passed."""

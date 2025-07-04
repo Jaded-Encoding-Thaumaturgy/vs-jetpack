@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
@@ -9,7 +8,6 @@ from pathlib import Path
 from typing import Any, ClassVar, Iterable, Literal, NamedTuple, TypeVar, overload
 
 import vapoursynth as vs
-
 from jetpytools import CustomValueError, FilePathType, FuncExceptT, LinearRangeLut, Sentinel, SPath, inject_self
 from typing_extensions import Self
 
@@ -19,16 +17,12 @@ from ..types import VideoNodeT
 from .file import PackageStorage
 from .render import clip_async_render
 
-__all__ = [
-    'Timecodes',
-    'Keyframes',
-    'LWIndex'
-]
+__all__ = ["Keyframes", "LWIndex", "Timecodes"]
 
 
 @cache
 def _get_keyframes_storage() -> PackageStorage:
-    return PackageStorage(package_name='keyframes')
+    return PackageStorage(package_name="keyframes")
 
 
 @dataclass
@@ -132,18 +126,18 @@ class Timecodes(list[FrameDur]):
             if end + 1 > len(norm_timecodes):
                 norm_timecodes += [1 / fps] * (end + 1 - len(norm_timecodes))
 
-            norm_timecodes[start:end + 1] = [1 / fps] * (end + 1 - start)
+            norm_timecodes[start : end + 1] = [1 / fps] * (end + 1 - start)
 
         return norm_timecodes
 
     @classmethod
-    def separate_norm_timecodes(cls, timecodes: Timecodes | dict[tuple[int, int], Fraction]) -> tuple[
-        Fraction, dict[tuple[int, int], Fraction]
-    ]:
+    def separate_norm_timecodes(
+        cls, timecodes: Timecodes | dict[tuple[int, int], Fraction]
+    ) -> tuple[Fraction, dict[tuple[int, int], Fraction]]:
         if isinstance(timecodes, Timecodes):
             timecodes = timecodes.to_normalized_ranges()
 
-        times_count = {k: 0 for k in timecodes.values()}
+        times_count = dict.fromkeys(timecodes.values(), 0)
 
         for v in timecodes.values():
             times_count[v] += 1
@@ -155,9 +149,9 @@ class Timecodes(list[FrameDur]):
         return major_time, minor_fps
 
     @classmethod
-    def accumulate_norm_timecodes(cls, timecodes: Timecodes | dict[tuple[int, int], Fraction]) -> tuple[
-        Fraction, dict[Fraction, list[tuple[int, int]]]
-    ]:
+    def accumulate_norm_timecodes(
+        cls, timecodes: Timecodes | dict[tuple[int, int], Fraction]
+    ) -> tuple[Fraction, dict[Fraction, list[tuple[int, int]]]]:
         if isinstance(timecodes, Timecodes):
             timecodes = timecodes.to_normalized_ranges()
 
@@ -186,13 +180,11 @@ class Timecodes(list[FrameDur]):
         def _get_timecode(n: int, f: vs.VideoFrame) -> FrameDur:
             return FrameDur(n, get_prop(f, "_DurationNum", int), get_prop(f, "_DurationDen", int))
 
-        return cls(clip_async_render(clip, None, 'Fetching timecodes...', _get_timecode, **kwargs))
+        return cls(clip_async_render(clip, None, "Fetching timecodes...", _get_timecode, **kwargs))
 
     @overload
     @classmethod
-    def from_file(
-        cls, file: FilePathType, ref: vs.VideoNode, /, *, func: FuncExceptT | None = None
-    ) -> Self:
+    def from_file(cls, file: FilePathType, ref: vs.VideoNode, /, *, func: FuncExceptT | None = None) -> Self:
         """
         Read the timecodes from a given file.
 
@@ -220,8 +212,12 @@ class Timecodes(list[FrameDur]):
 
     @classmethod
     def from_file(
-        cls, file: FilePathType, ref_or_length: int | vs.VideoNode, den: int | None = None,
-        /, func: FuncExceptT | None = None
+        cls,
+        file: FilePathType,
+        ref_or_length: int | vs.VideoNode,
+        den: int | None = None,
+        /,
+        func: FuncExceptT | None = None,
     ) -> Self:
         func = func or cls.from_file
 
@@ -230,14 +226,17 @@ class Timecodes(list[FrameDur]):
         length = ref_or_length if isinstance(ref_or_length, int) else ref_or_length.num_frames
 
         fb_den = (
-            None if ref_or_length.fps_den in {0, 1} else ref_or_length.fps_den
-        ) if isinstance(ref_or_length, vs.VideoNode) else None
+            (None if ref_or_length.fps_den in {0, 1} else ref_or_length.fps_den)
+            if isinstance(ref_or_length, vs.VideoNode)
+            else None
+        )
 
         denominator = den or fb_den or 1001
 
         version, *_timecodes = file.read_text().splitlines()
 
-        if 'v1' in version:
+        if "v1" in version:
+
             def _norm(xd: str) -> Fraction:
                 return Fraction(round(denominator / float(xd)), denominator)
 
@@ -246,35 +245,35 @@ class Timecodes(list[FrameDur]):
             timecodes_d = dict[tuple[int | None, int | None], Fraction]()
 
             for line in _timecodes:
-                if line.startswith('#'):
+                if line.startswith("#"):
                     continue
 
-                if line.startswith('Assume'):
+                if line.startswith("Assume"):
                     assume = _norm(_timecodes[0][7:])
                     continue
 
-                starts, ends, _fps = line.split(',')
+                starts, ends, _fps = line.split(",")
                 timecodes_d[(int(starts), int(ends) + 1)] = _norm(_fps)
 
             norm_timecodes = cls.normalize_range_timecodes(timecodes_d, length, assume)
-        elif 'v2' in version:
-            timecodes_l = [float(t) for t in _timecodes if not t.startswith('#')]
+        elif "v2" in version:
+            timecodes_l = [float(t) for t in _timecodes if not t.startswith("#")]
             norm_timecodes = [
-                Fraction(denominator, int(denominator / float(f'{round((x - y) * 100, 4) / 100000:.08f}'[:-1])))
+                Fraction(denominator, int(denominator / float(f"{round((x - y) * 100, 4) / 100000:.08f}"[:-1])))
                 for x, y in zip(timecodes_l[1:], timecodes_l[:-1])
             ]
         else:
-            raise CustomValueError('timecodes file not supported!', func, file)
+            raise CustomValueError("timecodes file not supported!", func, file)
 
         if len(norm_timecodes) != length:
             raise FramesLengthError(
-                func, '', 'timecodes file length mismatch with specified length!',
-                reason=dict(timecodes=len(norm_timecodes), clip=length)
+                func,
+                "",
+                "timecodes file length mismatch with specified length!",
+                reason={"timecodes": len(norm_timecodes), "clip": length},
             )
 
-        return cls(
-            FrameDur(i, f.numerator, f.denominator) for i, f in enumerate(norm_timecodes)
-        )
+        return cls(FrameDur(i, f.numerator, f.denominator) for i, f in enumerate(norm_timecodes))
 
     def assume_vfr(self, clip: VideoNodeT, func: FuncExceptT | None = None) -> VideoNodeT:
         """
@@ -296,8 +295,10 @@ class Timecodes(list[FrameDur]):
 
         for other_fps, fps_ranges in minor_fps.items():
             assumed_clip = replace_ranges(
-                assumed_clip, vs.core.std.AssumeFPS(clip, None, other_fps.numerator, other_fps.denominator),
-                fps_ranges, mismatch=True
+                assumed_clip,
+                vs.core.std.AssumeFPS(clip, None, other_fps.numerator, other_fps.denominator),
+                fps_ranges,
+                mismatch=True,
             )
 
         return assumed_clip
@@ -317,35 +318,30 @@ class Timecodes(list[FrameDur]):
 
         out_path = Path(str(out)).resolve()
 
-        check_perms(out_path, 'w+', func=func)
+        check_perms(out_path, "w+", func=func)
 
         InvalidTimecodeVersionError.check(self.to_file, format)
 
-        out_text = [
-            f'# timecode format v{format}'
-        ]
+        out_text = [f"# timecode format v{format}"]
 
         if format == Timecodes.V1:
             major_time, minor_fps = self.separate_norm_timecodes(self)
 
-            out_text.append(f'Assume {round(float(major_time), 12)}')
+            out_text.append(f"Assume {round(float(major_time), 12)}")
 
-            out_text.extend([
-                ','.join(map(str, [*frange, round(float(fps), 12)]))
-                for frange, fps in minor_fps.items()
-            ])
+            out_text.extend([",".join(map(str, [*frange, round(float(fps), 12)])) for frange, fps in minor_fps.items()])
         elif format == Timecodes.V2:
-            acc = Fraction()    # in milliseconds
+            acc = Fraction()  # in milliseconds
 
-            for time in self + [Fraction()]:
-                ns = round(acc * 10 ** 6)
-                ms, dec = divmod(ns, 10 ** 6)
+            for time in [*self, Fraction()]:
+                ns = round(acc * 10**6)
+                ms, dec = divmod(ns, 10**6)
                 out_text.append(f"{ms}.{dec:06}")
                 acc += Fraction(time.numerator * 1000, time.denominator)
 
         out_path.unlink(True)
         out_path.touch()
-        out_path.write_text('\n'.join(out_text + ['']))
+        out_path.write_text("\n".join([*out_text, ""]))
 
 
 class Keyframes(list[int]):
@@ -362,18 +358,16 @@ class Keyframes(list[int]):
     SCXVID: ClassVar = SceneChangeMode.SCXVID
 
     class _Scenes(dict[int, range]):
-        __slots__ = ('indices', )
+        __slots__ = ("indices",)
 
         def __init__(self, kf: Keyframes) -> None:
             if kf:
-                super().__init__({
-                    i: range(x, y) for i, (x, y) in enumerate(zip(kf, kf[1:] + [1 << 32]))
-                })
+                super().__init__({i: range(x, y) for i, (x, y) in enumerate(zip(kf, [*kf[1:], 1 << 32]))})
 
             self.indices = LinearRangeLut(self)
 
     def __init__(self, iterable: Iterable[int] = [], *, _dummy: bool = False) -> None:
-        super().__init__(sorted(list(iterable)))
+        super().__init__(sorted(iterable))
 
         self._dummy = _dummy
 
@@ -381,14 +375,12 @@ class Keyframes(list[int]):
 
     @staticmethod
     def _get_unique_path(clip: vs.VideoNode, key: str) -> SPath:
-        key = SPath(str(key)).stem + f'_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}'
+        key = SPath(str(key)).stem + f"_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}"
 
-        return _get_keyframes_storage().get_file(key, ext='.txt')
+        return _get_keyframes_storage().get_file(key, ext=".txt")
 
     @classmethod
-    def unique(
-        cls: type[KeyframesBoundT], clip: vs.VideoNode, key: str, **kwargs: Any
-    ) -> KeyframesBoundT:
+    def unique(cls, clip: vs.VideoNode, key: str, **kwargs: Any) -> Self:
         file = cls._get_unique_path(clip, key)
 
         if file.exists():
@@ -404,22 +396,29 @@ class Keyframes(list[int]):
 
     @classmethod
     def from_clip(
-        cls: type[KeyframesBoundT], clip: vs.VideoNode, mode: SceneChangeMode | int = WWXD, height: int | Literal[False] = 360,
-        **kwargs: Any
-    ) -> KeyframesBoundT:
-
+        cls,
+        clip: vs.VideoNode,
+        mode: SceneChangeMode | int = WWXD,
+        height: int | Literal[False] = 360,
+        **kwargs: Any,
+    ) -> Self:
         mode = SceneChangeMode(mode)
 
         clip = mode.prepare_clip(clip, height)
 
-        frames = clip_async_render(clip, None, 'Detecting scene changes...', mode.lambda_cb(), **kwargs)
+        frames = clip_async_render(clip, None, "Detecting scene changes...", mode.lambda_cb(), **kwargs)
 
         return cls(Sentinel.filter(frames))
 
     @inject_self.with_args(_dummy=True)
     def to_clip(
-        self, clip: vs.VideoNode, *, mode: SceneChangeMode | int = WWXD, height: int | Literal[False] = 360,
-        prop_key: str = next(iter(SceneChangeMode.SCXVID.prop_keys)), scene_idx_prop: bool = False
+        self,
+        clip: vs.VideoNode,
+        *,
+        mode: SceneChangeMode | int = WWXD,
+        height: int | Literal[False] = 360,
+        prop_key: str = next(iter(SceneChangeMode.SCXVID.prop_keys)),
+        scene_idx_prop: bool = False,
     ) -> vs.VideoNode:
         from ..utils import replace_ranges
 
@@ -447,48 +446,49 @@ class Keyframes(list[int]):
         return out.std.ModifyFrame(out, _add_scene_idx)
 
     @classmethod
-    def from_file(cls: type[KeyframesBoundT], file: FilePathType, **kwargs: Any) -> KeyframesBoundT:
+    def from_file(cls, file: FilePathType, **kwargs: Any) -> Self:
         file = SPath(str(file)).resolve()
 
         if not file.exists():
             raise FileNotFoundError
 
         if file.stat().st_size <= 0:
-            raise OSError('File is empty!')
+            raise OSError("File is empty!")
 
-        lines = [
-            line.strip() for line in file.read_lines('utf-8')
-            if line and not line.startswith('#')
-        ]
+        lines = [line.strip() for line in file.read_lines("utf-8") if line and not line.startswith("#")]
 
         if not lines:
-            raise ValueError('No keyframe could be found!')
+            raise ValueError("No keyframe could be found!")
 
         kf_type: int | None = None
 
         line = lines[0].lower()
 
-        if line.startswith('fps'):
+        if line.startswith("fps"):
             kf_type = Keyframes.XVID
-        elif line.startswith(('i', 'b', 'p', 'n')):
+        elif line.startswith(("i", "b", "p", "n")):
             kf_type = Keyframes.V1
 
         if kf_type is None:
-            raise ValueError('Could not determine keyframe file type!')
+            raise ValueError("Could not determine keyframe file type!")
 
         if kf_type == Keyframes.V1:
-            return cls(i for i, line in enumerate(lines) if line.startswith('i'))
+            return cls(i for i, line in enumerate(lines) if line.startswith("i"))
 
         if kf_type == Keyframes.XVID:
-            split_lines = [line.split(' ') for line in lines]
+            split_lines = [line.split(" ") for line in lines]
 
-            return cls(int(n) for n, t, *_ in split_lines if t.lower() == 'i')
+            return cls(int(n) for n, t, *_ in split_lines if t.lower() == "i")
 
-        raise ValueError('Invalid keyframe file type!')
+        raise ValueError("Invalid keyframe file type!")
 
     def to_file(
-        self, out: FilePathType, format: int = V1, func: FuncExceptT | None = None,
-        header: bool = True, force: bool = False
+        self,
+        out: FilePathType,
+        format: int = V1,
+        func: FuncExceptT | None = None,
+        header: bool = True,
+        force: bool = False,
     ) -> None:
         from ..utils import check_perms
 
@@ -504,33 +504,30 @@ class Keyframes(list[int]):
 
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
-        check_perms(out_path, 'w+', func=func)
+        check_perms(out_path, "w+", func=func)
 
         if format == Keyframes.V1:
-            out_text = [
-                *(['# keyframe format v1', 'fps 0', ''] if header else []),
-                *(f'{n} I -1' for n in self), ''
-            ]
+            out_text = [*(["# keyframe format v1", "fps 0", ""] if header else []), *(f"{n} I -1" for n in self), ""]
         elif format == Keyframes.XVID:
             lut_self = set(self)
             out_text = list[str]()
 
             if header:
-                out_text.extend(['# XviD 2pass stat file', ''])
+                out_text.extend(["# XviD 2pass stat file", ""])
 
             for i in range(max(self)):
                 if i in lut_self:
-                    out_text.append('i')
+                    out_text.append("i")
                     lut_self.remove(i)
                 else:
-                    out_text.append('b')
+                    out_text.append("b")
 
         out_path.unlink(True)
         out_path.touch()
-        out_path.write_text('\n'.join(out_text))
+        out_path.write_text("\n".join(out_text))
 
     @classmethod
-    def from_param(cls: type[KeyframesBoundT], clip: vs.VideoNode, param: KeyframesBoundT | str) -> KeyframesBoundT:
+    def from_param(cls, clip: vs.VideoNode, param: Self | str) -> Self:
         if isinstance(param, str):
             return cls.unique(clip, param)
 
@@ -540,7 +537,7 @@ class Keyframes(list[int]):
         return cls(param)
 
 
-KeyframesBoundT = TypeVar('KeyframesBoundT', bound=Keyframes)
+KeyframesBoundT = TypeVar("KeyframesBoundT", bound=Keyframes)
 
 
 @dataclass
@@ -595,23 +592,20 @@ class LWIndex:
 
         length = ref_or_length.num_frames if isinstance(ref_or_length, vs.VideoNode) else ref_or_length
 
-        data = file.read_text('latin1').splitlines()
+        data = file.read_text("latin1").splitlines()
 
         indexstart, indexend = data.index("</StreamInfo>") + 1, data.index("</LibavReaderIndex>")
 
         if length and (idxlen := ((indexend - indexstart) // 2)) != length:
             raise FramesLengthError(
-                func, '', 'index file length mismatch with specified length!',
-                reason=dict(index=idxlen, clip=length)
+                func, "", "index file length mismatch with specified length!", reason={"index": idxlen, "clip": length}
             )
 
         sinfomatch = LWIndex.Regex.streaminfo.match(data[indexstart - 2])
 
         assert sinfomatch
 
-        timebase_num, timebase_den = [
-            int(i) for i in sinfomatch.group("TimeBase").split("/")
-        ]
+        timebase_num, timebase_den = [int(i) for i in sinfomatch.group("TimeBase").split("/")]
 
         streaminfo = LWIndex.StreamInfo(
             int(sinfomatch.group("Codec")),
@@ -629,14 +623,12 @@ class LWIndex:
             match_second = LWIndex.Regex.frame_second.match(data[i + 1])
 
             for match, keys in [
-                (match_first, ['Index', 'POS', 'PTS', 'DTS', 'EDI']),
-                (match_second, ['Key', 'Pic', 'POC', 'Repeat', 'Field'])
+                (match_first, ["Index", "POS", "PTS", "DTS", "EDI"]),
+                (match_second, ["Key", "Pic", "POC", "Repeat", "Field"]),
             ]:
                 assert match
 
-                frames.append(
-                    LWIndex.Frame(*(int(match.group(x)) for x in keys))
-                )
+                frames.append(LWIndex.Frame(*(int(match.group(x)) for x in keys)))
 
         frames = sorted(frames, key=lambda x: x.pts)
 

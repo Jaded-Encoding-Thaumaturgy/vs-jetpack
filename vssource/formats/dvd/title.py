@@ -13,9 +13,7 @@ from .utils import AC3_FRAME_LENGTH, PCR_CLOCK, absolute_time_from_timecode
 if TYPE_CHECKING:
     from .IsoFileCore import IsoFileCore
 
-__all__ = [
-    'Title'
-]
+__all__ = ["Title"]
 
 
 @dataclass
@@ -45,42 +43,38 @@ class SplitTitle:
             for i in range(len(self.chapters) - 1)
         ]
 
-        chapter_lengths_str = [
-            str(datetime.timedelta(seconds=x)) for x in chapter_lengths
-        ]
+        chapter_lengths_str = [str(datetime.timedelta(seconds=x)) for x in chapter_lengths]
 
-        timestrings = [
-            str(datetime.timedelta(seconds=_absolute_time[x])) for x in self.chapters
-        ]
+        timestrings = [str(datetime.timedelta(seconds=_absolute_time[x])) for x in self.chapters]
 
-        to_print = ['Chapters:']
+        to_print = ["Chapters:"]
 
-        to_print.extend([
-            f'{i:02} {tms:015} {cptls:015} {cpt}'
-            for i, tms, cptls, cpt in zip(count(1), timestrings, chapter_lengths_str, self.chapters)
-        ])
+        to_print.extend(
+            [
+                f"{i:02} {tms:015} {cptls:015} {cpt}"
+                for i, tms, cptls, cpt in zip(count(1), timestrings, chapter_lengths_str, self.chapters)
+            ]
+        )
 
-        to_print.append('Audios: (fz)')
+        to_print.append("Audios: (fz)")
 
         if len(self.audios) >= 1:
-            to_print.extend([f'{i} {a}' for i, a in enumerate(self.audios)])
+            to_print.extend([f"{i} {a}" for i, a in enumerate(self.audios)])
 
-        return '\n'.join(to_print)
+        return "\n".join(to_print)
 
 
 class TitleAudios(vs_object, list[vs.AudioNode]):
     def __init__(self, title: Title) -> None:
         self.title = title
 
-        self.cache = dict[int, vs.AudioNode | None]({i: None for i in range(len(self.title._audios))})
+        self.cache = dict[int, vs.AudioNode | None](dict.fromkeys(range(len(self.title._audios))))
 
     @overload
-    def __getitem__(self, idx: SupportsIndex, /) -> vs.AudioNode:
-        ...
+    def __getitem__(self, idx: SupportsIndex, /) -> vs.AudioNode: ...
 
     @overload
-    def __getitem__(self, slicidx: slice, /) -> list[vs.AudioNode]:
-        ...
+    def __getitem__(self, slicidx: slice, /) -> list[vs.AudioNode]: ...
 
     def __getitem__(self, key: SupportsIndex | slice) -> vs.AudioNode | list[vs.AudioNode]:
         self.title._assert_dvdsrc2(self.__class__)
@@ -93,43 +87,46 @@ class TitleAudios(vs_object, list[vs.AudioNode]):
         if i not in self.cache:
             raise KeyError
 
-        if (_anode := self.cache[i]):
+        if _anode := self.cache[i]:
             return _anode
 
         asd = self.title._audios[i]
 
         anode: vs.AudioNode
         args = (str(self.title._core.iso_path), self.title._vts, i, self.title._dvdsrc_ranges)
-        if asd.startswith('ac3'):
+        if asd.startswith("ac3"):
             anode = vs.core.dvdsrc2.FullVtsAc3(*args)
-        elif asd.startswith('lpcm'):
+        elif asd.startswith("lpcm"):
             anode = vs.core.dvdsrc2.FullVtsLpcm(*args)
         else:
-            raise CustomValueError('Invalid index for audio node!', self.__class__)
+            raise CustomValueError("Invalid index for audio node!", self.__class__)
 
-        strt = (get_prop(anode, 'Stuff_Start_PTS', int) * anode.sample_rate) / PCR_CLOCK
-        endd = (get_prop(anode, 'Stuff_End_PTS', int) * anode.sample_rate) / PCR_CLOCK
+        strt = (get_prop(anode, "Stuff_Start_PTS", int) * anode.sample_rate) / PCR_CLOCK
+        endd = (get_prop(anode, "Stuff_End_PTS", int) * anode.sample_rate) / PCR_CLOCK
 
         debug_print(
-            'splice', round((strt / anode.sample_rate) * 1000 * 10) / 10,
-            'ms', round((endd / anode.sample_rate) * 1000 * 10) / 10, 'ms'
+            "splice",
+            round((strt / anode.sample_rate) * 1000 * 10) / 10,
+            "ms",
+            round((endd / anode.sample_rate) * 1000 * 10) / 10,
+            "ms",
         )
 
         start, end = int(strt), int(endd)
 
         if start >= 0:
-            anode = anode[start:len(anode) - end]
+            anode = anode[start : len(anode) - end]
         else:
-            anode = vs.core.std.BlankAudio(anode, length=-start) + anode[:len(anode) - end]
+            anode = vs.core.std.BlankAudio(anode, length=-start) + anode[: len(anode) - end]
 
         self.cache[i] = anode
-        total_dura = (self.title._absolute_time[-1] + self.title._duration_times[-1])
+        total_dura = self.title._absolute_time[-1] + self.title._duration_times[-1]
         delta = abs(total_dura - anode.num_samples / anode.sample_rate) * 1000
 
-        debug_print(f'delta {delta}ms')
+        debug_print(f"delta {delta}ms")
 
         if delta > 50:
-            debug_print(f'Rather big audio/video length delta ({delta}) might be indicator that something is off!')
+            debug_print(f"Rather big audio/video length delta ({delta}) might be indicator that something is off!")
 
         return anode
 
@@ -170,7 +167,7 @@ class Title:
     @property
     def audio(self) -> vs.AudioNode:
         if not self.audios:
-            raise CustomValueError(f'No main audio found in this {self.__class__.__name__}!')
+            raise CustomValueError(f"No main audio found in this {self.__class__.__name__}!")
         return self.audios[0]
 
     def split_at(self, splits: list[int], audio: int | list[int] | None = None) -> tuple[SplitTitle, ...]:
@@ -178,11 +175,11 @@ class Title:
         last_chpt = -1
         for a in self.chapters:
             if a < 0:
-                raise CustomValueError(f'Negative chapter point {a}', self.split_at)
+                raise CustomValueError(f"Negative chapter point {a}", self.split_at)
             if a <= last_chpt:
-                raise CustomValueError(f'Chapter must be monotonly increasing {a} before {last_chpt}', self.split_at)
+                raise CustomValueError(f"Chapter must be monotonly increasing {a} before {last_chpt}", self.split_at)
             if a > len(self.video):
-                raise CustomValueError('Chapter must not be higher than video length', self.split_at)
+                raise CustomValueError("Chapter must not be higher than video length", self.split_at)
             last_chpt = a
         output_cnt = SplitHelper._sanitize_splits(self, splits)
         video = SplitHelper.split_video(self, splits)
@@ -195,9 +192,7 @@ class Title:
 
             auds = [SplitHelper.split_audio(self, splits, a) for a in audio]
 
-            audios = [
-                [auds[j][i] for j in range(audio_per_output_cnt)] for i in range(output_cnt)
-            ]
+            audios = [[auds[j][i] for j in range(audio_per_output_cnt)] for i in range(output_cnt)]
         else:
             audios = [[]] * output_cnt
 
@@ -210,9 +205,7 @@ class Title:
 
         from_to_s.append((fromy, len(self.chapters) - 1))
 
-        return tuple(
-            SplitTitle(v, a, c, self, f) for v, a, c, f in zip(video, audios, chapters, from_to_s)
-        )
+        return tuple(SplitTitle(v, a, c, self, f) for v, a, c, f in zip(video, audios, chapters, from_to_s))
 
     def split_ranges(
         self, split: list[tuple[int, int]], audio: list[int] | int | None = None
@@ -238,68 +231,68 @@ class Title:
         return self.split_at([start, end + 1], audio)[1]
 
     def preview(self, split: SplitTitle | Sequence[SplitTitle] | None = None) -> None:
-        set_output(self.video, f'title v{self._title}')
+        set_output(self.video, f"title v{self._title}")
 
         if split is not None:
             split = to_arr(split)
 
             for i, s in enumerate(split):
                 if s.video:
-                    set_output(s.video, f'split {i}')
+                    set_output(s.video, f"split {i}")
 
             for i, s in enumerate(split):
                 if len(s.audios) >= 1:
                     for j, audio in enumerate(s.audios):
                         if audio:
-                            set_output(audio, f'split {i} - {j}')
+                            set_output(audio, f"split {i} - {j}")
 
     def _assert_dvdsrc2(self, func: FuncExceptT) -> None:
         if not self._dvdsrc_ranges:
-            raise CustomValueError('Title needs to be opened with dvdsrc2!', func)
+            raise CustomValueError("Title needs to be opened with dvdsrc2!", func)
 
     def dump_ac3(self, a: str, audio_i: int = 0, only_calc_delay: bool = False) -> float:
         self._assert_dvdsrc2(self.dump_ac3)
 
-        if not self._audios[audio_i].startswith('ac3'):
-            raise CustomValueError(f'Audio at {audio_i} is not ac3', self.dump_ac3)
+        if not self._audios[audio_i].startswith("ac3"):
+            raise CustomValueError(f"Audio at {audio_i} is not ac3", self.dump_ac3)
 
         nd = vs.core.dvdsrc2.RawAc3(str(self._core.iso_path), self._vts, audio_i, self._dvdsrc_ranges)
 
         if not only_calc_delay:
-            with open(a, 'wb') as wrt:
+            with open(a, "wb") as wrt:
                 for f in nd.frames():
                     wrt.write(bytes(f[0]))
 
-        return float(get_prop(nd, 'Stuff_Start_PTS', int)) / PCR_CLOCK
+        return float(get_prop(nd, "Stuff_Start_PTS", int)) / PCR_CLOCK
 
     def __repr__(self) -> str:
         chapters = [*self.chapters]
         chapter_lengths = [
-            (self._absolute_time[chapters[i + 1] - 1]
-             + self._duration_times[chapters[i + 1] - 1]) - self._absolute_time[chapters[i]]
+            (self._absolute_time[chapters[i + 1] - 1] + self._duration_times[chapters[i + 1] - 1])
+            - self._absolute_time[chapters[i]]
             for i in range(len(self.chapters) - 1)
         ]
 
         chapter_lengths_str = [str(datetime.timedelta(seconds=x)) for x in chapter_lengths]
         timestrings = [str(datetime.timedelta(seconds=self._absolute_time[x])) for x in self.chapters[:-1]]
 
-        to_print = 'Chapters:\n'
+        to_print = "Chapters:\n"
         for i in range(len(timestrings)):
-            to_print += f'{i + 1:02} {timestrings[i]:015} {chapter_lengths_str[i]:015} {self.chapters[i]}'
+            to_print += f"{i + 1:02} {timestrings[i]:015} {chapter_lengths_str[i]:015} {self.chapters[i]}"
 
             if i == 0:
-                to_print += ' (faked)'
+                to_print += " (faked)"
 
             if self._patched_end_chapter is not None and i == len(timestrings) - 1:
                 delta = self.chapters[i] - self._patched_end_chapter
-                to_print += f' (originally {self._patched_end_chapter} delta {delta})'
+                to_print += f" (originally {self._patched_end_chapter} delta {delta})"
 
-            to_print += '\n'
+            to_print += "\n"
 
-        to_print += f'\ncellchange: {self.cell_changes}\n'
-        to_print += '\nAudios: (fz)\n'
+        to_print += f"\ncellchange: {self.cell_changes}\n"
+        to_print += "\nAudios: (fz)\n"
         for i, a in enumerate(self._audios):
-            to_print += f'{i} {a}\n'
+            to_print += f"{i} {a}\n"
 
         return to_print.strip()
 
@@ -309,24 +302,24 @@ class SplitHelper:
     def split_range_ac3(title: Title, f: int, t: int, audio_i: int, outfile: str) -> float:
         nd = vs.core.dvdsrc2.RawAc3(str(title._core.iso_path), title._vts, audio_i, title._dvdsrc_ranges)
 
-        start, end = (get_prop(nd, f'Stuff_{x}_PTS', int) for x in ('Start', 'End'))
+        start, end = (get_prop(nd, f"Stuff_{x}_PTS", int) for x in ("Start", "End"))
 
-        debug_print(f'Stuff_Start_PTS pts {start} Stuff_End_PTS {end}')
+        debug_print(f"Stuff_Start_PTS pts {start} Stuff_End_PTS {end}")
 
-        raw_start = (title._absolute_time[title.chapters[f - 1]] * PCR_CLOCK)
-        raw_end = ((title._absolute_time[title.chapters[t]] + title._duration_times[title.chapters[t]]) * PCR_CLOCK)
+        raw_start = title._absolute_time[title.chapters[f - 1]] * PCR_CLOCK
+        raw_end = (title._absolute_time[title.chapters[t]] + title._duration_times[title.chapters[t]]) * PCR_CLOCK
 
         start_pts = raw_start + start
         end_pts = start_pts + (raw_end - raw_start)
 
         audio_offset_pts = 0.0
 
-        with open(outfile, 'wb') as outf:
-            debug_print(f'start_pts  {start_pts} end_pts {end_pts}')
+        with open(outfile, "wb") as outf:
+            debug_print(f"start_pts  {start_pts} end_pts {end_pts}")
 
             start = int(start_pts / AC3_FRAME_LENGTH)
 
-            debug_print('first ', start, len(nd))
+            debug_print("first ", start, len(nd))
 
             for i, frame in enumerate(nd.frames(close=True)):
                 pkt_start_pts = i * AC3_FRAME_LENGTH
@@ -342,8 +335,8 @@ class SplitHelper:
                 if pkt_end_pts > end_pts:
                     break
 
-        debug_print('wrote', (i - (start_pts // AC3_FRAME_LENGTH)))
-        debug_print('offset is', (audio_offset_pts) / 90, 'ms')
+        debug_print("wrote", (i - (start_pts // AC3_FRAME_LENGTH)))
+        debug_print("offset is", (audio_offset_pts) / 90, "ms")
 
         return audio_offset_pts / PCR_CLOCK
 
@@ -391,16 +384,18 @@ class SplitHelper:
         for a in splits:
             assert isinstance(a, int)
             if not (a > lasta):
-                raise CustomValueError('Chapter splits are not ordered correctly!', SplitHelper._sanitize_splits)
+                raise CustomValueError("Chapter splits are not ordered correctly!", SplitHelper._sanitize_splits)
             if not (a <= len(title.chapters)):
-                raise CustomValueError('Chapter split is out of bounds!', SplitHelper._sanitize_splits)
+                raise CustomValueError("Chapter split is out of bounds!", SplitHelper._sanitize_splits)
 
             lasta = a
 
         return len(splits) + 1
 
     @staticmethod
-    def _cut_split(title: Title, splits: list[int], a: T, b: Callable[[Title, T, int, int], T | None]) -> tuple[T | None, ...]:
+    def _cut_split(
+        title: Title, splits: list[int], a: T, b: Callable[[Title, T, int, int], T | None]
+    ) -> tuple[T | None, ...]:
         out, last = list[T | None](), 0
 
         for s in splits:
@@ -428,13 +423,14 @@ class SplitHelper:
     @staticmethod
     def _cut_fz_a(title: Title, anode: vs.AudioNode, start: int, end: int) -> vs.AudioNode | None:
         chapter_idxs = [title.chapters[i] for i in (start, end)]
-        timecodes = [title._absolute_time[i] if i != len(
-            title._absolute_time) else title._absolute_time[i - 1] + title._duration_times[i - 1] for i in chapter_idxs]
-
-        samples_start, samples_end, *_ = [
-            min(round(i * anode.sample_rate), anode.num_samples)
-            for i in timecodes
+        timecodes = [
+            title._absolute_time[i]
+            if i != len(title._absolute_time)
+            else title._absolute_time[i - 1] + title._duration_times[i - 1]
+            for i in chapter_idxs
         ]
+
+        samples_start, samples_end, *_ = [min(round(i * anode.sample_rate), anode.num_samples) for i in timecodes]
 
         if samples_start == samples_end:
             return None

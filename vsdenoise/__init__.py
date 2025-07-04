@@ -1,5 +1,3 @@
-# ruff: noqa: F401, F403
-
 from .blockmatch import *
 from .ccd import *
 from .deblock import *

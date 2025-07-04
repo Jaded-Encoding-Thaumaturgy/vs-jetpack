@@ -4,69 +4,86 @@ from __future__ import annotations
 
 import math
 from abc import ABC
-from typing import Any, NoReturn, Sequence
+from typing import Any, ClassVar, NoReturn, Sequence
 
-from vsexprtools import norm_expr, ExprOp
+from vsexprtools import ExprOp, norm_expr
 from vstools import ColorRange, ConstantFormatVideoNode, KwargsT, depth, get_depth, join, split, vs
 
 from ..morpho import Morpho
 from ..types import XxpandMode
 from ._abstract import EdgeDetect, EuclideanDistance, MagnitudeMatrix, MatrixEdgeDetect, Max, RidgeDetect, SingleMatrix
 
+# ruff: noqa: RUF022
+
 __all__ = [
-    'Matrix3x3',
+    "Matrix3x3",
     # Single matrix
-    'Laplacian1', 'Laplacian2', 'Laplacian3', 'Laplacian4',
-    'Kayyali',
+    "Laplacian1",
+    "Laplacian2",
+    "Laplacian3",
+    "Laplacian4",
+    "Kayyali",
     # Euclidean Distance
-    'Tritical', 'TriticalTCanny',
-    'Cross',
-    'Prewitt', 'PrewittStd', 'PrewittTCanny',
-    'Sobel', 'SobelStd', 'SobelTCanny', 'ASobel',
-    'Scharr', 'RScharr', 'ScharrTCanny',
-    'Kroon', 'KroonTCanny',
-    'FreyChenG41', 'FreyChen',
+    "Tritical",
+    "TriticalTCanny",
+    "Cross",
+    "Prewitt",
+    "PrewittStd",
+    "PrewittTCanny",
+    "Sobel",
+    "SobelStd",
+    "SobelTCanny",
+    "ASobel",
+    "Scharr",
+    "RScharr",
+    "ScharrTCanny",
+    "Kroon",
+    "KroonTCanny",
+    "FreyChenG41",
+    "FreyChen",
     # Max
-    'Robinson3', 'Robinson5', 'TheToof',
-    'Kirsch', 'KirschTCanny',
+    "Robinson3",
+    "Robinson5",
+    "TheToof",
+    "Kirsch",
+    "KirschTCanny",
     # Misc
-    'MinMax'
+    "MinMax",
 ]
 
 
-class Matrix3x3(EdgeDetect, ABC):
-    ...
+class Matrix3x3(EdgeDetect, ABC): ...
 
 
 # Single matrix
 class Laplacian1(SingleMatrix, Matrix3x3):
     """Pierre-Simon de Laplace operator 1st implementation."""
 
-    matrices = [[0, -1, 0, -1, 4, -1, 0, -1, 0]]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[0, -1, 0, -1, 4, -1, 0, -1, 0]]
 
 
 class Laplacian2(SingleMatrix, Matrix3x3):
     """Pierre-Simon de Laplace operator 2nd implementation."""
 
-    matrices = [[1, -2, 1, -2, 4, -2, 1, -2, 1]]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[1, -2, 1, -2, 4, -2, 1, -2, 1]]
 
 
 class Laplacian3(SingleMatrix, Matrix3x3):
     """Pierre-Simon de Laplace operator 3rd implementation."""
 
-    matrices = [[2, -1, 2, -1, -4, -1, 2, -1, 2]]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[2, -1, 2, -1, -4, -1, 2, -1, 2]]
 
 
 class Laplacian4(SingleMatrix, Matrix3x3):
     """Pierre-Simon de Laplace operator 4th implementation."""
 
-    matrices = [[-1, -1, -1, -1, 8, -1, -1, -1, -1]]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[-1, -1, -1, -1, 8, -1, -1, -1, -1]]
 
 
 class Kayyali(SingleMatrix, Matrix3x3):
     """Kayyali operator."""
 
-    matrices = [[6, 0, -6, 0, 0, 0, -6, 0, 6]]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[6, 0, -6, 0, 0, 0, -6, 0, 6]]
 
 
 # Euclidean Distance
@@ -76,10 +93,7 @@ class Tritical(RidgeDetect, EuclideanDistance, Matrix3x3):
     Plain and simple orthogonal first order derivative.
     """
 
-    matrices = [
-        [0, 0, 0, -1, 0, 1, 0, 0, 0],
-        [0, 1, 0, 0, 0, 0, 0, -1, 0]
-    ]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[0, 0, 0, -1, 0, 1, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, -1, 0]]
 
 
 class TriticalTCanny(Matrix3x3, EdgeDetect):
@@ -100,19 +114,13 @@ class Cross(RidgeDetect, EuclideanDistance, Matrix3x3):
     Plain and simple cross first order derivative.
     """
 
-    matrices = [
-        [1, 0, 0, 0, 0, 0, 0, 0, -1],
-        [0, 0, -1, 0, 0, 0, 1, 0, 0]
-    ]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[1, 0, 0, 0, 0, 0, 0, 0, -1], [0, 0, -1, 0, 0, 0, 1, 0, 0]]
 
 
 class Prewitt(RidgeDetect, EuclideanDistance, Matrix3x3):
     """Judith M. S. Prewitt operator."""
 
-    matrices = [
-        [1, 0, -1, 1, 0, -1, 1, 0, -1],
-        [1, 1, 1, 0, 0, 0, -1, -1, -1]
-    ]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[1, 0, -1, 1, 0, -1, 1, 0, -1], [1, 1, 1, 0, 0, 0, -1, -1, -1]]
 
 
 class PrewittStd(Matrix3x3, EdgeDetect):
@@ -132,23 +140,20 @@ class PrewittTCanny(Matrix3x3, EdgeDetect):
 
 
 class Sobel(RidgeDetect, EuclideanDistance, Matrix3x3):
-    """Sobel–Feldman operator."""
+    """Sobel-Feldman operator."""
 
-    matrices = [
-        [1, 0, -1, 2, 0, -2, 1, 0, -1],
-        [1, 2, 1, 0, 0, 0, -1, -2, -1]
-    ]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[1, 0, -1, 2, 0, -2, 1, 0, -1], [1, 2, 1, 0, 0, 0, -1, -2, -1]]
 
 
 class SobelStd(Matrix3x3, EdgeDetect):
-    """Sobel–Feldman Vapoursynth plugin operator."""
+    """Sobel-Feldman Vapoursynth plugin operator."""
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         return clip.std.Sobel(**kwargs)
 
 
 class SobelTCanny(Matrix3x3, EdgeDetect):
-    """Sobel–Feldman Vapoursynth plugin operator."""
+    """Sobel-Feldman Vapoursynth plugin operator."""
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         _scale_constant = 1.0 if clip.format.sample_type == vs.FLOAT else (7 / 3 * 1.002 - 0.0001) / 2
@@ -157,12 +162,10 @@ class SobelTCanny(Matrix3x3, EdgeDetect):
 
 
 class ASobel(Matrix3x3, EdgeDetect):
-    """Modified Sobel–Feldman operator from AWarpSharp."""
+    """Modified Sobel-Feldman operator from AWarpSharp."""
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        return (vs.core.warp.ASobel if get_depth(clip) < 32 else vs.core.warpsf.ASobel)(
-            clip, 255, **kwargs
-        )
+        return (vs.core.warp.ASobel if get_depth(clip) < 32 else vs.core.warpsf.ASobel)(clip, 255, **kwargs)
 
 
 class Scharr(RidgeDetect, EuclideanDistance, Matrix3x3):
@@ -171,11 +174,8 @@ class Scharr(RidgeDetect, EuclideanDistance, Matrix3x3):
     to achieve the perfect rotational symmetry with coefficients 3 and 10.
     """
 
-    matrices = [
-        [-3, 0, 3, -10, 0, 10, -3, 0, 3],
-        [-3, -10, -3, 0, 0, 0, 3, 10, 3]
-    ]
-    divisors = [3, 3]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[-3, 0, 3, -10, 0, 10, -3, 0, 3], [-3, -10, -3, 0, 0, 0, 3, 10, 3]]
+    divisors: ClassVar[Sequence[float] | None] = [3, 3]
 
 
 class RScharr(RidgeDetect, EuclideanDistance, Matrix3x3):
@@ -184,11 +184,11 @@ class RScharr(RidgeDetect, EuclideanDistance, Matrix3x3):
     1st derivatives for a 3x3 kernel with coeffs 47 and 162.
     """
 
-    matrices = [
+    matrices: ClassVar[Sequence[Sequence[float]]] = [
         [-47, 0, 47, -162, 0, 162, -47, 0, 47],
-        [-47, -162, -47, 0, 0, 0, 47, 162, 47]
+        [-47, -162, -47, 0, 0, 0, 47, 162, 47],
     ]
-    divisors = [47, 47]
+    divisors: ClassVar[Sequence[float] | None] = [47, 47]
 
 
 class ScharrTCanny(Matrix3x3, EdgeDetect):
@@ -203,11 +203,11 @@ class ScharrTCanny(Matrix3x3, EdgeDetect):
 class Kroon(RidgeDetect, EuclideanDistance, Matrix3x3):
     """Dirk-Jan Kroon operator."""
 
-    matrices = [
+    matrices: ClassVar[Sequence[Sequence[float]]] = [
         [-17, 0, 17, -61, 0, 61, -17, 0, 17],
-        [-17, -61, -17, 0, 0, 0, 17, 61, 17]
+        [-17, -61, -17, 0, 0, 0, 17, 61, 17],
     ]
-    divisors = [17, 17]
+    divisors: ClassVar[Sequence[float] | None] = [17, 17]
 
 
 class KroonTCanny(Matrix3x3, EdgeDetect):
@@ -223,7 +223,7 @@ class FreyChen(MatrixEdgeDetect):
     """Chen Frei operator. 3x3 matrices properly implemented."""
 
     sqrt2 = math.sqrt(2)
-    matrices = [
+    matrices: ClassVar[Sequence[Sequence[float]]] = [
         [1, sqrt2, 1, 0, 0, 0, -1, -sqrt2, -1],
         [1, 0, -1, sqrt2, 0, -sqrt2, 1, 0, -1],
         [0, -1, sqrt2, 1, 0, -1, -sqrt2, 1, 0],
@@ -232,19 +232,9 @@ class FreyChen(MatrixEdgeDetect):
         [-1, 0, 1, 0, 0, 0, 1, 0, -1],
         [1, -2, 1, -2, 4, -2, 1, -2, 1],
         [-2, 1, -2, 1, 4, 1, -2, 1, -2],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1]
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
     ]
-    divisors = [
-        2 * sqrt2,
-        2 * sqrt2,
-        2 * sqrt2,
-        2 * sqrt2,
-        2,
-        2,
-        6,
-        6,
-        3
-    ]
+    divisors: ClassVar[Sequence[float] | None] = [2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2, 2, 6, 6, 3]
 
     def _preprocess(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
         return depth(clip, 32)
@@ -253,63 +243,60 @@ class FreyChen(MatrixEdgeDetect):
         return depth(clip, input_bits, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
 
     def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode:
-        M = 'x dup * y dup * + z dup * + a dup * +'
-        S = f'b dup * c dup * + d dup * + e dup * + f dup * + {M} +'
-        return norm_expr(clips, f'{M} {S} / sqrt', func=self.__class__)
+        M = "x dup * y dup * + z dup * + a dup * +"  # noqa: N806
+        S = f"b dup * c dup * + d dup * + e dup * + f dup * + {M} +"  # noqa: N806
+        return norm_expr(clips, f"{M} {S} / sqrt", func=self.__class__)
 
     def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode]) -> NoReturn:
         raise NotImplementedError
 
 
 class FreyChenG41(RidgeDetect, EuclideanDistance, Matrix3x3):
-    """"Chen Frei" operator. 3x3 matrices from G41Fun."""
+    """ "Chen Frei" operator. 3x3 matrices from G41Fun."""
 
-    matrices = [
-        [-7, 0, 7, -10, 0, 10, -7, 0, 7],
-        [-7, -10, -7, 0, 0, 0, 7, 10, 7]
-    ]
-    divisors = [7, 7]
+    matrices: ClassVar[Sequence[Sequence[float]]] = [[-7, 0, 7, -10, 0, 10, -7, 0, 7], [-7, -10, -7, 0, 0, 0, 7, 10, 7]]
+    divisors: ClassVar[Sequence[float] | None] = [7, 7]
 
 
 # Max
 class Robinson3(Max, Matrix3x3):
     """Robinson compass operator level 3."""
 
-    matrices = [
+    matrices: ClassVar[Sequence[Sequence[float]]] = [
         [1, 1, 1, 0, 0, 0, -1, -1, -1],
         [1, 1, 0, 1, 0, -1, 0, -1, -1],
         [1, 0, -1, 1, 0, -1, 1, 0, -1],
-        [0, -1, -1, 1, 0, -1, 1, 1, 0]
+        [0, -1, -1, 1, 0, -1, 1, 1, 0],
     ]
 
 
 class Robinson5(Max, Matrix3x3):
     """Robinson compass operator level 5."""
 
-    matrices = [
+    matrices: ClassVar[Sequence[Sequence[float]]] = [
         [1, 2, 1, 0, 0, 0, -1, -2, -1],
         [2, 1, 0, 1, 0, -1, 0, -1, -2],
         [1, 0, -1, 2, 0, -2, 1, 0, -1],
-        [0, -1, -2, 1, 0, -1, 2, 1, 0]
+        [0, -1, -2, 1, 0, -1, 2, 1, 0],
     ]
 
 
 class TheToof(Max, Matrix3x3):
     """TheToof compass operator from SharpAAMCmod."""
 
-    matrices = [
+    matrices: ClassVar[Sequence[Sequence[float]]] = [
         [5, 10, 5, 0, 0, 0, -5, -10, -5],
         [10, 5, 0, 5, 0, -5, 0, -5, -10],
         [5, 0, -5, 10, 0, -10, 5, 0, -5],
-        [0, -5, -10, 5, 0, -5, 10, 5, 0]
+        [0, -5, -10, 5, 0, -5, 10, 5, 0],
     ]
-    divisors = [4] * 4
+    divisors: ClassVar[Sequence[float] | None] = [4] * 4
 
 
 class Kirsch(MagnitudeMatrix, Max, Matrix3x3):
     """Russell Kirsch compass operator."""
 
-    matrices = [
+    matrices: ClassVar[Sequence[Sequence[float]]] = [
         [5, 5, 5, -3, 0, -3, -3, -3, -3],  # N
         [5, 5, -3, 5, 0, -3, -3, -3, -3],  # NW
         [5, -3, -3, 5, 0, -3, 5, -3, -3],  # W
@@ -341,12 +328,15 @@ class MinMax(EdgeDetect):
         super().__init__(**kwargs)
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-
-        return join([
-            ExprOp.SUB.combine(
-                Morpho.expand(p, rad, rad, XxpandMode.ELLIPSE, **kwargs),
-                Morpho.inpand(p, rad, rad, XxpandMode.ELLIPSE, **kwargs)
-            ) if rad > 0 else p for p, rad in zip(
-                split(clip), (self.rady, self.radc, self.radc)[:clip.format.num_planes]
-            )
-        ], clip.format.color_family)
+        return join(
+            [
+                ExprOp.SUB.combine(
+                    Morpho.expand(p, rad, rad, XxpandMode.ELLIPSE, **kwargs),
+                    Morpho.inpand(p, rad, rad, XxpandMode.ELLIPSE, **kwargs),
+                )
+                if rad > 0
+                else p
+                for p, rad in zip(split(clip), (self.rady, self.radc, self.radc)[: clip.format.num_planes])
+            ],
+            clip.format.color_family,
+        )

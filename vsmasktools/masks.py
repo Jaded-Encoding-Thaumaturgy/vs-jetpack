@@ -4,18 +4,29 @@ from typing import TYPE_CHECKING, Sequence, SupportsFloat
 
 from vsexprtools import ExprOp
 from vstools import (
-    ConstantFormatVideoNode, DitherType, FrameRangeN, FrameRangesN, HoldsVideoFormatT, VideoFormatT, check_ref_clip,
-    check_variable, check_variable_format, depth, get_video_format, join, limiter, normalize_ranges, normalize_seq,
-    split, vs
+    ConstantFormatVideoNode,
+    DitherType,
+    FrameRangeN,
+    FrameRangesN,
+    HoldsVideoFormatT,
+    VideoFormatT,
+    check_ref_clip,
+    check_variable,
+    check_variable_format,
+    depth,
+    get_video_format,
+    join,
+    limiter,
+    normalize_ranges,
+    normalize_seq,
+    split,
+    vs,
 )
 
 from .morpho import Morpho
 from .types import Coordinates
 
-__all__ = [
-    'range_mask',
-    'strength_zones_mask'
-]
+__all__ = ["range_mask", "strength_zones_mask"]
 
 
 @limiter
@@ -30,14 +41,12 @@ def range_mask(clip: vs.VideoNode, rad: int = 2, radc: int = 0) -> ConstantForma
 
         return clip
 
-    return join([
-        ExprOp.SUB.combine(
-            _minmax(plane, r, True),
-            _minmax(plane, r, False)
-        ) for plane, r in zip(
-            split(clip), normalize_seq(radc and [rad, radc] or rad, clip.format.num_planes)
-        )
-    ])
+    return join(
+        [
+            ExprOp.SUB.combine(_minmax(plane, r, True), _minmax(plane, r, False))
+            for plane, r in zip(split(clip), normalize_seq((radc and [rad, radc]) or rad, clip.format.num_planes))
+        ]
+    )
 
 
 def strength_zones_mask(
@@ -74,10 +83,7 @@ def strength_zones_mask(
         base_clip = vs.core.std.BlankClip(format=get_video_format(format).id, length=length, color=base, keep=True)
     else:
         base_clip = vs.core.std.BlankClip(
-            format=get_video_format(format).id,
-            length=length,
-            color=float(base),
-            keep=True
+            format=get_video_format(format).id, length=length, color=float(base), keep=True
         )
 
     if not zones:
@@ -113,7 +119,4 @@ def strength_zones_mask(
 
     cache_strength_clips.clear()
 
-    return vs.core.std.FrameEval(
-        base_clip, lambda n: strength_clips[indices[n][0]][indices[n][1]], clip_src=base_clip
-    )
-
+    return vs.core.std.FrameEval(base_clip, lambda n: strength_clips[indices[n][0]][indices[n][1]], clip_src=base_clip)

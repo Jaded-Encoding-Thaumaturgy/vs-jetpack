@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# ruff: noqa
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Callable, ClassVar, Concatenate, Sequence
@@ -10,21 +12,37 @@ from vskernels import Catrom, Kernel, KernelLike, Point, Scaler, ScalerLike
 from vsrgtools import box_blur, gauss_blur, limit_filter
 from vsscale import ScalingArgs
 from vstools import (
-    P1, CustomIntEnum, CustomOverflowError, CustomStrEnum, FuncExceptT, InvalidColorFamilyError,
-    InvalidSubsamplingError, P, VSFunction, complex_hash, depth, flatten, get_plane_sizes, get_subsampling, inject_self,
-    join, split, vs, vs_object
+    P1,
+    CustomIntEnum,
+    CustomOverflowError,
+    CustomStrEnum,
+    FuncExceptT,
+    InvalidColorFamilyError,
+    InvalidSubsamplingError,
+    P,
+    VSFunction,
+    complex_hash,
+    depth,
+    flatten,
+    get_plane_sizes,
+    get_subsampling,
+    inject_self,
+    join,
+    split,
+    vs,
+    vs_object,
 )
+import contextlib
 
 __all__ = [
-    'Regression',
-
-    'ReconOutput', 'ReconDiffMode',
-
-    'ChromaReconstruct', 'GenericChromaRecon', 'MissingFieldsChromaRecon',
-
-    'PAWorksChromaRecon',
-
-    'Point422ChromaRecon'
+    "ChromaReconstruct",
+    "GenericChromaRecon",
+    "MissingFieldsChromaRecon",
+    "PAWorksChromaRecon",
+    "Point422ChromaRecon",
+    "ReconDiffMode",
+    "ReconOutput",
+    "Regression",
 ]
 
 
@@ -83,8 +101,10 @@ class Regression:
 
         @classmethod
         def from_param(
-            cls, func: Callable[Concatenate[vs.VideoNode, P1], vs.VideoNode] | Regression.BlurConf,
-            *args: P1.args, **kwargs: P1.kwargs
+            cls,
+            func: Callable[Concatenate[vs.VideoNode, P1], vs.VideoNode] | Regression.BlurConf,
+            *args: P1.args,
+            **kwargs: P1.kwargs,
         ) -> Regression.BlurConf:
             """
             Get a :py:attr:`BlurConf` from generic parameters.
@@ -116,9 +136,7 @@ class Regression:
                 )
             return self
 
-        def __call__(
-            self, clip: vs.VideoNode, chroma_only: bool = False, *args: Any, **kwargs: Any
-        ) -> vs.VideoNode:
+        def __call__(self, clip: vs.VideoNode, chroma_only: bool = False, *args: Any, **kwargs: Any) -> vs.VideoNode:
             """
             Blur a clip with the current config.
 
@@ -138,7 +156,7 @@ class Regression:
             out = None
 
             if chroma_only:
-                ckwargs = kwargs | dict(planes=[1, 2])
+                ckwargs = kwargs | {"planes": [1, 2]}
 
                 key = complex_hash.hash(args, ckwargs)
 
@@ -149,10 +167,8 @@ class Regression:
                         if inc == clip:
                             return outc
 
-                try:
+                with contextlib.suppress(Exception):
                     out = self.func(clip, *args, **ckwargs)
-                except Exception:
-                    ...
 
             if not out:
                 key = complex_hash.hash(args, kwargs)
@@ -203,16 +219,11 @@ class Regression:
             blur = [self(shifted) for shifted in planes]
 
             variation = [
-                norm_expr([
-                    Ex, self(ExprOp.MUL.combine(shifted, suffix=ExprOp.DUP))
-                ], 'y x dup * - 0 max', func=self)
+                norm_expr([Ex, self(ExprOp.MUL.combine(shifted, suffix=ExprOp.DUP))], "y x dup * - 0 max", func=self)
                 for Ex, shifted in zip(blur, planes)
             ]
 
-            var_mul = [
-                self(ExprOp.MUL.combine(planes[0], shifted_y))
-                for shifted_y in planes[1:]
-            ]
+            var_mul = [self(ExprOp.MUL.combine(planes[0], shifted_y)) for shifted_y in planes[1:]]
 
             return blur, variation, var_mul
 
@@ -227,8 +238,10 @@ class Regression:
 
     @classmethod
     def from_param(
-        cls, func: Callable[Concatenate[vs.VideoNode, P1], vs.VideoNode] | Regression.BlurConf,
-        *args: P1.args, **kwargs: P1.kwargs
+        cls,
+        func: Callable[Concatenate[vs.VideoNode, P1], vs.VideoNode] | Regression.BlurConf,
+        *args: P1.args,
+        **kwargs: P1.kwargs,
     ) -> Regression:
         """
         Get a :py:attr:`Regression` from generic parameters.
@@ -243,8 +256,12 @@ class Regression:
         return Regression(Regression.BlurConf.from_param(func, *args, **kwargs))
 
     def linear(
-        self, clip: vs.VideoNode | Sequence[vs.VideoNode], weight: float = 0.0,
-        intercept_scale: float = 50.0, *args: Any, **kwargs: Any
+        self,
+        clip: vs.VideoNode | Sequence[vs.VideoNode],
+        weight: float = 0.0,
+        intercept_scale: float = 50.0,
+        *args: Any,
+        **kwargs: Any,
     ) -> list[Regression.Linear]:
         """
         Perform a simple linear regression.
@@ -260,28 +277,28 @@ class Regression:
 
         (blur_x, *blur_ys), (var_x, *var_ys), var_mul = blur_conf.get_bases(clip)
 
-        if 0.0 > weight or weight >= 1.0:
+        if weight < 0.0 or weight >= 1.0:
             raise CustomOverflowError(
                 '"weight" must be between 0.0 and 1.0 (exclusive)!', self.__class__.linear, weight
             )
 
         cov_xys = [
-            norm_expr([vm_y, blur_x, Ey], 'x y z * -', func=self.__class__.linear) for vm_y, Ey in zip(var_mul, blur_ys)
+            norm_expr([vm_y, blur_x, Ey], "x y z * -", func=self.__class__.linear) for vm_y, Ey in zip(var_mul, blur_ys)
         ]
 
-        slopes = [norm_expr([cov_xy, var_x], f'x y {self.eps} + /', func=self.__class__.linear) for cov_xy in cov_xys]
+        slopes = [norm_expr([cov_xy, var_x], f"x y {self.eps} + /", func=self.__class__.linear) for cov_xy in cov_xys]
 
-        scale_str = f'{intercept_scale} /' if intercept_scale != 0 else ''
+        scale_str = f"{intercept_scale} /" if intercept_scale != 0 else ""
         intercepts = [
-            norm_expr([blur_y, slope, blur_x], f'x y z * - {scale_str}', func=self.__class__.linear)
+            norm_expr([blur_y, slope, blur_x], f"x y z * - {scale_str}", func=self.__class__.linear)
             for blur_y, slope in zip(blur_ys, slopes)
         ]
 
-        weight_str = f'{1 - weight} - {weight} / dup 0 > swap 0 ?' if weight > 0.0 else ''
+        weight_str = f"{1 - weight} - {weight} / dup 0 > swap 0 ?" if weight > 0.0 else ""
 
         corrs = [
             norm_expr(
-                [cov_xy, var_x, var_y], f'x dup * y z * {self.eps} + / sqrt {weight_str}', func=self.__class__.linear
+                [cov_xy, var_x, var_y], f"x dup * y z * {self.eps} + / sqrt {weight_str}", func=self.__class__.linear
             )
             for cov_xy, var_y in zip(cov_xys, var_ys)
         ]
@@ -292,8 +309,12 @@ class Regression:
         ]
 
     def sloped_corr(
-        self, clip: vs.VideoNode | Sequence[vs.VideoNode], weight: float = 0.5, avg: bool = False,
-        *args: Any, **kwargs: Any
+        self,
+        clip: vs.VideoNode | Sequence[vs.VideoNode],
+        weight: float = 0.5,
+        avg: bool = False,
+        *args: Any,
+        **kwargs: Any,
     ) -> list[vs.VideoNode]:
         """
         Compute correlation of slopes of a simple regression.
@@ -310,24 +331,26 @@ class Regression:
 
         (blur_x, *blur_ys), (var_x, *var_ys), var_mul = blur_conf.get_bases(clip)
 
-        if 0.0 > weight or weight >= 1.0:
+        if weight < 0.0 or weight >= 1.0:
             raise CustomOverflowError(
                 '"weight" must be between 0.0 and 1.0 (exclusive)!', self.__class__.sloped_corr, weight
             )
 
         coeff_x, coeff_y = weight, 1.0 - weight
 
-        weight_str = f'{coeff_x} - {coeff_y} / 0 max' if coeff_x else ''
+        weight_str = f"{coeff_x} - {coeff_y} / 0 max" if coeff_x else ""
 
         corr_slopes = [
             norm_expr(
                 [Exys_y, blur_x, Ex_y, var_x, var_y],
-                f'x y z * - XYS! XYS@ a {self.eps} + / XYS@ dup * a b * {self.eps} + / sqrt {weight_str} *',
-                func=self.__class__.sloped_corr
-            ) if complexpr_available else norm_expr(
-                [norm_expr([Exys_y, blur_x, Ex_y], 'x y z * -'), var_x, var_y],
-                f'x y {self.eps} + / x dup * y z * {self.eps} + / sqrt {weight_str} *',
-                func=self.__class__.sloped_corr
+                f"x y z * - XYS! XYS@ a {self.eps} + / XYS@ dup * a b * {self.eps} + / sqrt {weight_str} *",
+                func=self.__class__.sloped_corr,
+            )
+            if complexpr_available
+            else norm_expr(
+                [norm_expr([Exys_y, blur_x, Ex_y], "x y z * -"), var_x, var_y],
+                f"x y {self.eps} + / x dup * y z * {self.eps} + / sqrt {weight_str} *",
+                func=self.__class__.sloped_corr,
             )
             for Exys_y, Ex_y, var_y in zip(var_mul, blur_ys, var_ys)
         ]
@@ -335,10 +358,7 @@ class Regression:
         if not avg:
             return corr_slopes
 
-        return [
-            blur_conf(corr_slope)
-            for corr_slope in corr_slopes
-        ]
+        return [blur_conf(corr_slope) for corr_slope in corr_slopes]
 
 
 class ReconOutput(CustomIntEnum):
@@ -381,19 +401,19 @@ class ReconDiffModeConf:
 
 
 class ReconDiffMode(CustomStrEnum):
-    SIMPLE = 'x y +'
+    SIMPLE = "x y +"
     """Simple demangled chroma + regressed diff merge. It is the most simple merge available."""
 
-    BOOSTX = 'x z * y +'
+    BOOSTX = "x z * y +"
     """Demangled chroma * luma diff + regressed diff merge. Pay attention to overshoot."""
 
-    BOOSTY = 'x y z * +'
+    BOOSTY = "x y z * +"
     """Demangled chroma + regressed diff * luma diff merge. Pay attention to overshoot."""
 
-    MEAN = f'{SIMPLE} x z * y z / + + 2 /'
+    MEAN = f"{SIMPLE} x z * y z / + + 2 /"
     """Simple mean of ``SIMPLE``, ``BOOSTX``, and ``BOOSTY``. Will give a dampened output."""
 
-    MEDIAN = f'{MEAN} AX! {BOOSTX} BX! {BOOSTY} CX! a BX@ - abs BD! a AX@ - abs BD@ < AX@ BD@ a CX@ - abs > BX@ CX@ ? ?'
+    MEDIAN = f"{MEAN} AX! {BOOSTX} BX! {BOOSTY} CX! a BX@ - abs BD! a AX@ - abs BD@ < AX@ BD@ a CX@ - abs > BX@ CX@ ? ?"
     """
     The most complex merge available, combining all other modes while still
     avoiding overshoots and undershoots while retaining the sharpness.
@@ -484,11 +504,11 @@ class ChromaReconstruct(ABC):
         """
 
     def get_chroma_shift(self, y_width: int, c_width: int) -> float:
-        return (0.5 * c_width / y_width)
+        return 0.5 * c_width / y_width
 
-    def _get_bases(self, clip: vs.VideoNode, include_edges: bool, func: FuncExceptT) -> tuple[
-        vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, Sequence[vs.VideoNode], Sequence[vs.VideoNode]
-    ]:
+    def _get_bases(
+        self, clip: vs.VideoNode, include_edges: bool, func: FuncExceptT
+    ) -> tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, Sequence[vs.VideoNode], Sequence[vs.VideoNode]]:
         InvalidColorFamilyError.check(clip, vs.YUV, func)
 
         clip32 = depth(clip, 32)
@@ -497,8 +517,8 @@ class ChromaReconstruct(ABC):
 
         base = self.get_base_clip(clip32)
 
-        if get_subsampling(base) != '444':
-            raise InvalidSubsamplingError(self.__class__, base, '``get_base_clip`` should return a YUV444 clip!')
+        if get_subsampling(base) != "444":
+            raise InvalidSubsamplingError(self.__class__, base, "``get_base_clip`` should return a YUV444 clip!")
 
         y_base, *chroma_base = split(base)
 
@@ -529,11 +549,15 @@ class ChromaReconstruct(ABC):
 
     @inject_self.init_kwargs
     def reconstruct(
-        self, clip: vs.VideoNode, sigma: float, radius: int,
+        self,
+        clip: vs.VideoNode,
+        sigma: float,
+        radius: int,
         diff_mode: ReconDiffMode | ReconDiffModeConf,
         out_mode: ReconOutput | bool | None,
-        include_edges: bool, lin_cutoff: float = 0.0,
-        **kwargs: Any
+        include_edges: bool,
+        lin_cutoff: float = 0.0,
+        **kwargs: Any,
     ) -> vs.VideoNode:
         """
         Run the actual reconstructing implemented in this class.
@@ -553,25 +577,27 @@ class ChromaReconstruct(ABC):
 
         y, y_base, y_m, y_dm, chroma_base, chroma_dm = self._get_bases(clip, include_edges, self.reconstruct)
 
-        reg = Regression.from_param(Regression.BlurConf(gauss_blur, sigma=sigma))  #pyright: ignore
+        reg = Regression.from_param(Regression.BlurConf(gauss_blur, sigma=sigma))  # pyright: ignore
 
         if not isinstance(diff_mode, ReconDiffModeConf):
             diff_mode = diff_mode()
 
         chroma_regs = reg.linear([y_dm, *chroma_dm], lin_cutoff, diff_mode.inter_scale)
 
-        y_diff = norm_expr((y_base, y_dm), 'x y -', func=self.reconstruct)
+        y_diff = norm_expr((y_base, y_dm), "x y -", func=self.reconstruct)
 
         y_diffxb = gauss_blur(
-            norm_expr((y_base, y_dm), f'x y / {reg.eps} 1 clamp'), diff_mode.diff_sigma, func=self.reconstruct
+            norm_expr((y_base, y_dm), f"x y / {reg.eps} 1 clamp"), diff_mode.diff_sigma, func=self.reconstruct
         )
 
         fixup = (
             y_diff.recon.Reconstruct(  # type: ignore
-                reg.slope, reg.correlation, radius=radius, intercept=(
-                    None if diff_mode.inter_scale == 0.0 else reg.intercept
-                )
-            ) for reg in chroma_regs
+                reg.slope,
+                reg.correlation,
+                radius=radius,
+                intercept=(None if diff_mode.inter_scale == 0.0 else reg.intercept),
+            )
+            for reg in chroma_regs
         )
 
         fixed_chroma = (
@@ -632,21 +658,17 @@ class GenericChromaRecon(ChromaReconstruct):
 
         de_args = ScalingArgs.from_args(clip, self.native_res)
 
-        descale = self._native_kernel.descale(
-            clip, de_args.width, de_args.height, **de_args.kwargs()
-        )
+        descale = self._native_kernel.descale(clip, de_args.width, de_args.height, **de_args.kwargs())
 
         return join(
             self._kernel.shift(descale, de_args.src_top / 2, -de_args.src_left / 2),
-            self._scaler.scale(clip, de_args.width, de_args.height, format=vs.YUV444PS)
+            self._scaler.scale(clip, de_args.width, de_args.height, format=vs.YUV444PS),
         )
 
     def get_mangled_luma(self, clip: vs.VideoNode, y_base: vs.VideoNode) -> vs.VideoNode:
         c_width, c_height = get_plane_sizes(clip, 1)
 
-        return Catrom().scale(
-            y_base, c_width, c_height, (0, -0.5 + self.get_chroma_shift(clip.width, c_width))
-        )
+        return Catrom().scale(y_base, c_width, c_height, (0, -0.5 + self.get_chroma_shift(clip.width, c_width)))
 
     def demangle_chroma(self, mangled: vs.VideoNode, y_base: vs.VideoNode) -> vs.VideoNode:
         return self._kernel.scale(
@@ -661,11 +683,15 @@ class GenericChromaRecon(ChromaReconstruct):
 
     @inject_self.init_kwargs
     def reconstruct(
-        self, clip: vs.VideoNode, sigma: float = 1.5, radius: int = 2,
+        self,
+        clip: vs.VideoNode,
+        sigma: float = 1.5,
+        radius: int = 2,
         diff_mode: ReconDiffMode | ReconDiffModeConf = ReconDiffMode.MEAN,
         out_mode: ReconOutput | bool | None = ReconOutput.i420,
-        include_edges: bool = False, lin_cutoff: float = 0.0,
-        **kwargs: Any
+        include_edges: bool = False,
+        lin_cutoff: float = 0.0,
+        **kwargs: Any,
     ) -> vs.VideoNode:
         return super().reconstruct(clip, sigma, radius, diff_mode, out_mode, include_edges, lin_cutoff)
 
@@ -717,6 +743,7 @@ class PAWorksChromaRecon(MissingFieldsChromaRecon):
             demanglers to the original descaled luma or details would just get crushed.
 
     """
+
     dm_wscaler: ScalerLike = field(default_factory=lambda: SangNom(128))
     dm_hscaler: ScalerLike = NNEDI3
 
@@ -749,11 +776,15 @@ class PAWorksChromaRecon(MissingFieldsChromaRecon):
 
     @inject_self.init_kwargs
     def reconstruct(
-        self, clip: vs.VideoNode, sigma: float = 2.0, radius: int = 4,
+        self,
+        clip: vs.VideoNode,
+        sigma: float = 2.0,
+        radius: int = 4,
         diff_mode: ReconDiffMode | ReconDiffModeConf = ReconDiffMode.MEDIAN,
         out_mode: ReconOutput | bool | None = ReconOutput.NATIVE,
-        include_edges: bool = True, lin_cutoff: float = 0.0,
-        **kwargs: Any
+        include_edges: bool = True,
+        lin_cutoff: float = 0.0,
+        **kwargs: Any,
     ) -> vs.VideoNode:
         return super().reconstruct(clip, sigma, radius, diff_mode, out_mode, include_edges, lin_cutoff)
 
@@ -776,10 +807,14 @@ class Point422ChromaRecon(MissingFieldsChromaRecon):
 
     @inject_self.init_kwargs
     def reconstruct(
-        self, clip: vs.VideoNode, sigma: float = 1.5, radius: int = 2,
+        self,
+        clip: vs.VideoNode,
+        sigma: float = 1.5,
+        radius: int = 2,
         diff_mode: ReconDiffMode | ReconDiffModeConf = ReconDiffMode.MEDIAN,
         out_mode: ReconOutput | bool | None = ReconOutput.i444,
-        include_edges: bool = True, lin_cutoff: float = 0.0,
-        **kwargs: Any
+        include_edges: bool = True,
+        lin_cutoff: float = 0.0,
+        **kwargs: Any,
     ) -> vs.VideoNode:
         return super().reconstruct(clip, sigma, radius, diff_mode, out_mode, include_edges, lin_cutoff)

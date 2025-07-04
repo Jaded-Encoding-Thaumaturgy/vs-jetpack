@@ -7,7 +7,7 @@ from vstools import ConstantFormatVideoNode, check_variable_format, vs, vs_objec
 from .enums import MVDirection
 
 __all__ = [
-    'MotionVectors',
+    "MotionVectors",
 ]
 
 
@@ -57,10 +57,8 @@ class MotionVectors(vs_object):
         """Check if motion vectors are available."""
 
         return bool(
-            (
-                self.motion_vectors[MVDirection.BACKWARD]
-                and self.motion_vectors[MVDirection.FORWARD]
-            ) or hasattr(self, "mv_multi")
+            (self.motion_vectors[MVDirection.BACKWARD] and self.motion_vectors[MVDirection.FORWARD])
+            or hasattr(self, "mv_multi")
         )
 
     def set_vector(self, vector: vs.VideoNode, direction: MVDirection, delta: int) -> None:
@@ -77,7 +75,7 @@ class MotionVectors(vs_object):
 
     def __vs_del__(self, core_id: int) -> None:
         for v in self.motion_vectors.values():
-            for k in v.keys():
+            for k in v:
                 if not TYPE_CHECKING:
                     v[k] = None
 

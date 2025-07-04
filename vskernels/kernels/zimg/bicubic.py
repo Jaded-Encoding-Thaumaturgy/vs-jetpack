@@ -9,20 +9,20 @@ from ...types import LeftShift, TopShift
 from .abstract import ZimgComplexKernel
 
 __all__ = [
-    "Bicubic",
-    "BSpline",
-    "Hermite",
-    "Mitchell",
-    "Catrom",
-    "FFmpegBicubic",
     "AdobeBicubic",
     "AdobeBicubicSharper",
     "AdobeBicubicSmoother",
+    "BSpline",
+    "Bicubic",
+    "BicubicAuto",
     "BicubicSharp",
-    "RobidouxSoft",
+    "Catrom",
+    "FFmpegBicubic",
+    "Hermite",
+    "Mitchell",
     "Robidoux",
     "RobidouxSharp",
-    "BicubicAuto",
+    "RobidouxSoft",
 ]
 
 
@@ -51,8 +51,8 @@ class Bicubic(ZimgComplexKernel):
     ) -> dict[str, Any]:
         args = super().get_params_args(is_descale, clip, width, height, **kwargs)
         if is_descale:
-            return args | dict(b=self.b, c=self.c)
-        return args | dict(filter_param_a=self.b, filter_param_b=self.c)
+            return args | {"b": self.b, "c": self.c}
+        return args | {"filter_param_a": self.b, "filter_param_b": self.c}
 
     def get_bob_args(
         self,
@@ -71,7 +71,7 @@ class Bicubic(ZimgComplexKernel):
         return 2
 
     def _pretty_string(self, **attrs: Any) -> str:
-        return super()._pretty_string(**dict(b=self.b, c=self.c) | attrs)
+        return super()._pretty_string(**{"b": self.b, "c": self.c} | attrs)
 
 
 class BSpline(Bicubic):

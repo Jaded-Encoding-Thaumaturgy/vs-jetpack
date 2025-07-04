@@ -12,7 +12,7 @@ __all__ = [
 class CustomBicubic(CustomComplexKernel, Bicubic):
     """Bicubic resizer using the `CustomKernel` class"""
 
-    class bic_vals:
+    class bic_vals:  # noqa: N801
         @staticmethod
         def p0(b: float, c: float) -> float:
             return (6.0 - 2.0 * b) / 6.0
@@ -49,10 +49,10 @@ class CustomBicubic(CustomComplexKernel, Bicubic):
     def kernel(self, *, x: float) -> float:
         x, b, c = abs(x), self.b, self.c
 
-        if (x < 1.0):
+        if x < 1.0:
             return poly3(x, self.bic_vals.p0(b, c), 0.0, self.bic_vals.p2(b, c), self.bic_vals.p3(b, c))
 
-        if (x < 2.0):
+        if x < 2.0:
             return poly3(
                 x, self.bic_vals.q0(b, c), self.bic_vals.q1(b, c), self.bic_vals.q2(b, c), self.bic_vals.q3(b, c)
             )

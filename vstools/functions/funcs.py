@@ -8,8 +8,18 @@ from jetpytools import FuncExceptT, T, cachedproperty, fallback, iterate, kwargs
 from vstools.exceptions.color import InvalidColorspacePathError
 
 from ..enums import (
-    ColorRange, ColorRangeT, Matrix, MatrixT, Transfer, TransferT, Primaries, PrimariesT,
-    ChromaLocation, ChromaLocationT, FieldBased, FieldBasedT
+    ChromaLocation,
+    ChromaLocationT,
+    ColorRange,
+    ColorRangeT,
+    FieldBased,
+    FieldBasedT,
+    Matrix,
+    MatrixT,
+    Primaries,
+    PrimariesT,
+    Transfer,
+    TransferT,
 )
 from ..exceptions import UndefinedMatrixError
 from ..types import ConstantFormatVideoNode, HoldsVideoFormatT, PlanesT, VideoFormatT
@@ -17,11 +27,7 @@ from .check import check_variable
 from .normalize import normalize_planes
 from .utils import depth, join, plane
 
-__all__ = [
-    'iterate', 'fallback', 'kwargs_fallback',
-
-    'FunctionUtil'
-]
+__all__ = ["FunctionUtil", "fallback", "iterate", "kwargs_fallback"]
 
 
 class FunctionUtil(cachedproperty.baseclass, list[int]):
@@ -47,13 +53,23 @@ class FunctionUtil(cachedproperty.baseclass, list[int]):
     """
 
     def __init__(
-        self, clip: vs.VideoNode, func: FuncExceptT, planes: PlanesT = None,
-        color_family: VideoFormatT | HoldsVideoFormatT | vs.ColorFamily | Iterable[
-            VideoFormatT | HoldsVideoFormatT | vs.ColorFamily
-        ] | None = None, bitdepth: int | range | tuple[int, int] | set[int] | None = None,
-        *, matrix: MatrixT | None = None, transfer: TransferT | None = None,
-        primaries: PrimariesT | None = None, range_in: ColorRangeT | None = None,
-        chromaloc: ChromaLocationT | None = None, order: FieldBasedT | None = None
+        self,
+        clip: vs.VideoNode,
+        func: FuncExceptT,
+        planes: PlanesT = None,
+        color_family: VideoFormatT
+        | HoldsVideoFormatT
+        | vs.ColorFamily
+        | Iterable[VideoFormatT | HoldsVideoFormatT | vs.ColorFamily]
+        | None = None,
+        bitdepth: int | range | tuple[int, int] | set[int] | None = None,
+        *,
+        matrix: MatrixT | None = None,
+        transfer: TransferT | None = None,
+        primaries: PrimariesT | None = None,
+        range_in: ColorRangeT | None = None,
+        chromaloc: ChromaLocationT | None = None,
+        order: FieldBasedT | None = None,
     ) -> None:
         """
         :param clip:            Clip to process.
@@ -149,23 +165,26 @@ class FunctionUtil(cachedproperty.baseclass, list[int]):
         if cfamily is vs.RGB:
             if not self._matrix:
                 raise UndefinedMatrixError(
-                    'You must specify a matrix for RGB to {} conversions!'.format(
-                        '/'.join(cf.name for cf in sorted(self.allowed_cfamilies, key=lambda x: x.name))
+                    "You must specify a matrix for RGB to {} conversions!".format(
+                        "/".join(cf.name for cf in sorted(self.allowed_cfamilies, key=lambda x: x.name))
                     ),
-                    self.func
+                    self.func,
                 )
 
             self.cfamily_converted = True
 
             clip = clip.resize.Bicubic(format=clip.format.replace(color_family=vs.YUV).id, matrix=self._matrix)
 
-        elif cfamily in (vs.YUV, vs.GRAY) and not set(self.allowed_cfamilies) & {vs.YUV, vs.GRAY} or self.planes not in (0, [0]):
+        elif (
+            cfamily in (vs.YUV, vs.GRAY) and not set(self.allowed_cfamilies) & {vs.YUV, vs.GRAY}
+        ) or self.planes not in (0, [0]):
             self.cfamily_converted = True
 
             clip = clip.resize.Bicubic(
                 format=clip.format.replace(color_family=vs.RGB, subsampling_h=0, subsampling_w=0).id,
-                matrix_in=self._matrix, chromaloc_in=self._chromaloc,
-                range_in=self._range_in.value_zimg if self._range_in else None
+                matrix_in=self._matrix,
+                chromaloc_in=self._chromaloc,
+                range_in=self._range_in.value_zimg if self._range_in else None,
             )
 
             InvalidColorspacePathError.check(self.func, clip)
@@ -312,7 +331,8 @@ class FunctionUtil(cachedproperty.baseclass, list[int]):
             processed = processed.resize.Bicubic(
                 format=self.clip.format.id,
                 matrix=self.matrix if self.norm_clip.format.color_family is vs.RGB else None,
-                chromaloc=self.chromaloc, range=self.color_range.value_zimg
+                chromaloc=self.chromaloc,
+                range=self.color_range.value_zimg,
             )
 
         return processed
@@ -323,7 +343,4 @@ class FunctionUtil(cachedproperty.baseclass, list[int]):
         Unprocessed planes will be set to the given "null" value.
         """
 
-        return [
-            x if i in self else null
-            for i, x in enumerate(normalize_seq(seq, self.num_planes))
-        ]
+        return [x if i in self else null for i, x in enumerate(normalize_seq(seq, self.num_planes))]

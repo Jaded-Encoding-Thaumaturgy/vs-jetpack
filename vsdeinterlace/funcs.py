@@ -9,17 +9,24 @@ from vsdenoise import MVTools, MVToolsPreset, prefilter_to_full_range
 from vsexprtools import norm_expr
 from vsrgtools import BlurMatrix, sbr
 from vstools import (
-    ConvMode, ConstantFormatVideoNode, FormatsMismatchError, FunctionUtil, VSFunctionKwArgs, PlanesT,
-    check_ref_clip, check_variable, core, limiter, scale_delta, shift_clip, vs,
+    ConstantFormatVideoNode,
+    ConvMode,
+    FormatsMismatchError,
+    FunctionUtil,
+    PlanesT,
+    VSFunctionKwArgs,
+    check_ref_clip,
+    check_variable,
+    core,
+    limiter,
+    scale_delta,
+    shift_clip,
+    vs,
 )
 
 from .enums import IVTCycles
 
-__all__ = [
-    'InterpolateOverlay',
-    'FixInterlacedFades',
-    'vinverse'
-]
+__all__ = ["FixInterlacedFades", "InterpolateOverlay", "vinverse"]
 
 
 class InterpolateOverlay(CustomIntEnum):
@@ -50,7 +57,8 @@ class InterpolateOverlay(CustomIntEnum):
         :param bobbed:           Bob-deinterlaced clip.
         :param pattern:          First frame of any clean-combed-combed-clean-clean sequence.
         :param preset:           MVTools preset defining base values for the MVTools object. Default is HQ_COHERENCE.
-        :param blksize:          Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+        :param blksize:          Size of a block. Larger blocks are less sensitive to noise, are faster,
+                                but also less accurate.
         :param refine:           Number of times to recalculate motion vectors with halved block size.
         :param thsad_recalc:     Only bad quality new vectors with a SAD above this will be re-estimated by search.
                                  thsad value is scaled to 8x8 block size.
@@ -72,7 +80,7 @@ class InterpolateOverlay(CustomIntEnum):
             return core.std.Interleave(clips)
 
         def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
-            return (x[0] // 2, x[1] // 2)
+            return x[0] // 2, x[1] // 2
 
         assert check_variable(clip, self.__class__)
         assert check_variable(bobbed, self.__class__)
@@ -100,12 +108,11 @@ class InterpolateOverlay(CustomIntEnum):
         mv = MVTools(judder, **preset | KwargsT(search_clip=partial(prefilter_to_full_range, slope=1)))
         mv.analyze(tr=1, blksize=blksize, overlap=_floor_div_tuple(blksize))
 
-        if refine:
-            for _ in range(refine):
-                blksize = _floor_div_tuple(blksize)
-                overlap = _floor_div_tuple(blksize)
+        for _ in range(refine):
+            blksize = _floor_div_tuple(blksize)
+            overlap = _floor_div_tuple(blksize)
 
-                mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
+            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
         if self == InterpolateOverlay.IVTC_TXT30:
             comp = mv.flow_fps(fps=clean.fps)
@@ -157,31 +164,31 @@ class FixInterlacedFades(CustomIntEnum):
 
         fields = limiter(func.work_clip).std.SeparateFields(tff=True)
 
-        fields = norm_expr(fields, 'x {color} - abs', planes, color=color, func=self.__class__)
+        fields = norm_expr(fields, "x {color} - abs", planes, color=color, func=self.__class__)
         for i in func.norm_planes:
-            fields = fields.std.PlaneStats(None, i, f'P{i}')
+            fields = fields.std.PlaneStats(None, i, f"P{i}")
 
         props_clip = core.akarin.PropExpr(
             [func.work_clip, fields[::2], fields[1::2]],
-            lambda: {
-                f'f{f}Avg{i}': f'{c}.P{i}Average' for f, c in zip('tb', 'yz') for i in func.norm_planes
-            }
+            lambda: {f"f{f}Avg{i}": f"{c}.P{i}Average" for f, c in zip("tb", "yz") for i in func.norm_planes},
         )
 
         expr = (
-            'Y 2 % x.fbAvg{i} x.ftAvg{i} ? AVG! '
-            'AVG@ 0 = x x {color} - x.ftAvg{i} x.fbAvg{i} {expr_mode} AVG@ / * {color} + ?'
+            "Y 2 % x.fbAvg{i} x.ftAvg{i} ? AVG! "
+            "AVG@ 0 = x x {color} - x.ftAvg{i} x.fbAvg{i} {expr_mode} AVG@ / * {color} + ?"
         )
 
         fix = norm_expr(
-            props_clip, expr, planes,
-            i=func.norm_planes, color=color,
-            expr_mode='+ 2 /' if self == self.AVERAGE else 'min',
+            props_clip,
+            expr,
+            planes,
+            i=func.norm_planes,
+            color=color,
+            expr_mode="+ 2 /" if self == self.AVERAGE else "min",
             func=self.__class__,
         )
 
         return func.return_clip(fix)
-
 
 
 def vinverse(
@@ -208,15 +215,9 @@ def vinverse(
     :param scl:             Scale factor for vshrpD * vblurD < 0.
     """
 
-    if callable(comb_blur):
-        blurred = comb_blur(clip, planes=planes)
-    else:
-        blurred = comb_blur
+    blurred = comb_blur(clip, planes=planes) if callable(comb_blur) else comb_blur
 
-    if callable(contra_blur):
-        blurred2 = contra_blur(blurred, planes=planes)
-    else:
-        blurred2 = contra_blur
+    blurred2 = contra_blur(blurred, planes=planes) if callable(contra_blur) else contra_blur
 
     assert check_variable(clip, vinverse)
     assert check_variable(blurred, vinverse)
@@ -225,18 +226,21 @@ def vinverse(
     FormatsMismatchError.check(vinverse, clip, blurred, blurred2)
 
     expr = (
-        'x y - D1! D1@ abs D1A! D1A@ {thr} < x y z - {sstr} * D2! D1A@ D2@ abs < D1@ D2@ ? D3! '
-        'D1@ D2@ xor D3@ {scl} * D3@ ? y + '
+        "x y - D1! D1@ abs D1A! D1A@ {thr} < x y z - {sstr} * D2! D1A@ D2@ abs < D1@ D2@ ? D3! "
+        "D1@ D2@ xor D3@ {scl} * D3@ ? y + "
     )
 
     if amnt is not None:
-        expr += 'x {amnt} - x {amnt} + clip '
+        expr += "x {amnt} - x {amnt} + clip "
         amnt = scale_delta(amnt, 8, clip)
 
     return norm_expr(
         [clip, blurred, blurred2],
-        f'{expr} ?',
-        planes, sstr=contra_str, amnt=amnt,
-        scl=scl, thr=scale_delta(thr, 8, clip),
-        func=vinverse
+        f"{expr} ?",
+        planes,
+        sstr=contra_str,
+        amnt=amnt,
+        scl=scl,
+        thr=scale_delta(thr, 8, clip),
+        func=vinverse,
     )

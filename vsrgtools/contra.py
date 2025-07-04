@@ -5,19 +5,24 @@ from typing import Callable, Sequence
 
 from vsexprtools import norm_expr
 from vstools import (
-    ConstantFormatVideoNode, CustomValueError, GenericVSFunction, PlanesT, check_ref_clip, check_variable, core,
-    iterate, normalize_param_planes, normalize_planes, vs
+    ConstantFormatVideoNode,
+    CustomValueError,
+    GenericVSFunction,
+    PlanesT,
+    check_ref_clip,
+    check_variable,
+    core,
+    iterate,
+    normalize_param_planes,
+    normalize_planes,
+    vs,
 )
 
 from .blur import box_blur, median_blur, min_blur
 from .enum import BlurMatrix
 from .rgtools import RemoveGrain, Repair, remove_grain, repair
 
-__all__ = [
-    'contrasharpening',
-    'contrasharpening_dehalo',
-    'contrasharpening_median'
-]
+__all__ = ["contrasharpening", "contrasharpening_dehalo", "contrasharpening_median"]
 
 
 def contrasharpening(
@@ -26,7 +31,7 @@ def contrasharpening(
     radius: int = 1,
     sharp: vs.VideoNode | GenericVSFunction[vs.VideoNode] | None = None,
     mode: int | Repair.Mode = repair.Mode.MINMAX_SQUARE3,
-    planes: PlanesT = 0
+    planes: PlanesT = 0,
 ) -> ConstantFormatVideoNode:
     """
     contra-sharpening: sharpen the denoised clip, but don't add more to any pixel than what was previously removed.
@@ -56,11 +61,7 @@ def contrasharpening(
         blurred = BlurMatrix.BINOMIAL(taps=radius)(damp, planes=planes)
 
     # Difference of a simple kernel blur
-    diff_blur = core.std.MakeDiff(
-        sharp if sharp else damp,
-        flt if sharp else blurred,
-        planes
-    )
+    diff_blur = core.std.MakeDiff(sharp if sharp else damp, flt if sharp else blurred, planes)
 
     # Difference achieved by the filtering
     diff_flt = src.std.MakeDiff(flt, planes)
@@ -70,7 +71,7 @@ def contrasharpening(
 
     # abs(diff) after limiting may not be bigger than before
     # Apply the limited difference (sharpening is just inverse blurring)
-    expr = 'y neutral - Y! z neutral - Z! Y@ abs Z@ abs < Y@ Z@ ? x +'
+    expr = "y neutral - Y! z neutral - Z! Y@ abs Z@ abs < Y@ Z@ ? x +"
 
     return norm_expr([flt, limit, diff_blur], expr, planes, func=contrasharpening)
 
@@ -97,8 +98,11 @@ def contrasharpening_dehalo(
 
     return norm_expr(
         [flt, src, blur, blur2],
-        'y x - D1! z a - {alpha} * {level} * D2! D1@ D2@ xor x x D1@ abs D2@ abs < D1@ D2@ ? + ?',
-        planes, alpha=alpha, level=level, func=contrasharpening_dehalo
+        "y x - D1! z a - {alpha} * {level} * D2! D1@ D2@ xor x x D1@ abs D2@ abs < D1@ D2@ ? + ?",
+        planes,
+        alpha=alpha,
+        level=level,
+        func=contrasharpening_dehalo,
     )
 
 
@@ -106,7 +110,7 @@ def contrasharpening_median(
     flt: vs.VideoNode,
     src: vs.VideoNode,
     mode: int | Sequence[int] | RemoveGrain.Mode | Callable[..., ConstantFormatVideoNode] = box_blur,
-    planes: PlanesT = 0
+    planes: PlanesT = 0,
 ) -> ConstantFormatVideoNode:
     """
     :param flt:         Filtered clip
@@ -126,8 +130,6 @@ def contrasharpening_median(
     elif callable(mode):
         repaired = mode(flt, planes=planes)
     else:
-        raise CustomValueError('Invalid mode or function passed!', contrasharpening_median)
+        raise CustomValueError("Invalid mode or function passed!", contrasharpening_median)
 
-    return norm_expr(
-        [flt, src, repaired], 'x dup + z - x y min x y max clip', planes, func=contrasharpening_median
-    )
+    return norm_expr([flt, src, repaired], "x dup + z - x y min x y max clip", planes, func=contrasharpening_median)

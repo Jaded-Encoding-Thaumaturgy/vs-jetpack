@@ -9,7 +9,33 @@ import vapoursynth as vs
 if typing.TYPE_CHECKING:
     from vstools import ConstantFormatVideoNode
 
-__all__ = ['Backend', 'BackendV2', 'Waifu2x', 'Waifu2xModel', 'DPIR', 'DPIRModel', 'RealESRGAN', 'RealESRGANModel', 'RealESRGANv2', 'RealESRGANv2Model', 'CUGAN', 'RIFE', 'RIFEModel', 'RIFEMerge', 'SAFA', 'SAFAModel', 'SAFAAdaptiveMode', 'SCUNet', 'SCUNetModel', 'SwinIR', 'SwinIRModel', 'ArtCNN', 'ArtCNNModel', 'inference', 'flexible_inference']
+__all__ = [
+    "Backend",
+    "BackendV2",
+    "Waifu2x",
+    "Waifu2xModel",
+    "DPIR",
+    "DPIRModel",
+    "RealESRGAN",
+    "RealESRGANModel",
+    "RealESRGANv2",
+    "RealESRGANv2Model",
+    "CUGAN",
+    "RIFE",
+    "RIFEModel",
+    "RIFEMerge",
+    "SAFA",
+    "SAFAModel",
+    "SAFAAdaptiveMode",
+    "SCUNet",
+    "SCUNetModel",
+    "SwinIR",
+    "SwinIRModel",
+    "ArtCNN",
+    "ArtCNNModel",
+    "inference",
+    "flexible_inference",
+]
 
 class Backend:
     @dataclass(frozen=False)
@@ -19,6 +45,7 @@ class Backend:
         fp16: bool = ...
         fp16_blacklist_ops: typing.Sequence[str] | None = ...
         supports_onnx_serialization: bool = ...
+
     @dataclass(frozen=False)
     class ORT_CUDA:
         device_id: int = ...
@@ -32,6 +59,7 @@ class Backend:
         output_format: int = ...
         tf32: bool = ...
         supports_onnx_serialization: bool = ...
+
     @dataclass(frozen=False)
     class OV_CPU:
         fp16: bool = ...
@@ -41,6 +69,7 @@ class Backend:
         bf16: bool = ...
         num_threads: int = ...
         supports_onnx_serialization: bool = ...
+
     @dataclass(frozen=False)
     class TRT:
         max_shapes: tuple[int, int] | None = ...
@@ -74,6 +103,7 @@ class Backend:
         tiling_optimization_level: int = ...
         l2_limit_for_tiling: int = ...
         supports_onnx_serialization: bool = ...
+
     @dataclass(frozen=False)
     class OV_GPU:
         fp16: bool = ...
@@ -81,12 +111,14 @@ class Backend:
         device_id: int = ...
         fp16_blacklist_ops: typing.Sequence[str] | None = ...
         supports_onnx_serialization: bool = ...
+
     @dataclass(frozen=False)
     class NCNN_VK:
         fp16: bool = ...
         device_id: int = ...
         num_streams: int = ...
         supports_onnx_serialization: bool = ...
+
     @dataclass(frozen=False)
     class ORT_DML:
         device_id: int = ...
@@ -95,6 +127,7 @@ class Backend:
         fp16: bool = ...
         fp16_blacklist_ops: typing.Sequence[str] | None = ...
         supports_onnx_serialization: bool = ...
+
     @dataclass(frozen=False)
     class MIGX:
         device_id: int = ...
@@ -107,9 +140,11 @@ class Backend:
         custom_env: dict[str, str] = ...
         custom_args: list[str] = ...
         supports_onnx_serialization: bool = ...
+
     @dataclass(frozen=False)
     class OV_NPU:
         supports_onnx_serialization: bool = ...
+
     @dataclass(frozen=False)
     class ORT_COREML:
         num_streams: int = ...
@@ -118,7 +153,19 @@ class Backend:
         fp16_blacklist_ops: typing.Sequence[str] | None = ...
         ml_program: int = ...
         supports_onnx_serialization: bool = ...
-backendT = Backend.OV_CPU | Backend.ORT_CPU | Backend.ORT_CUDA | Backend.TRT | Backend.OV_GPU | Backend.NCNN_VK | Backend.ORT_DML | Backend.MIGX | Backend.OV_NPU | Backend.ORT_COREML
+
+backendT = (
+    Backend.OV_CPU
+    | Backend.ORT_CPU
+    | Backend.ORT_CUDA
+    | Backend.TRT
+    | Backend.OV_GPU
+    | Backend.NCNN_VK
+    | Backend.ORT_DML
+    | Backend.MIGX
+    | Backend.OV_NPU
+    | Backend.ORT_COREML
+)
 
 class Waifu2xModel(enum.IntEnum):
     anime_style_art = 0
@@ -133,7 +180,17 @@ class Waifu2xModel(enum.IntEnum):
     swin_unet_photo_v2 = 9
     swin_unet_art_scan = 10
 
-def Waifu2x(clip: vs.VideoNode, noise: typing.Literal[-1, 0, 1, 2, 3] = -1, scale: typing.Literal[1, 2, 4] = 2, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, model: Waifu2xModel = ..., backend: backendT = ..., preprocess: bool = True) -> ConstantFormatVideoNode: ...
+def Waifu2x(
+    clip: vs.VideoNode,
+    noise: typing.Literal[-1, 0, 1, 2, 3] = -1,
+    scale: typing.Literal[1, 2, 4] = 2,
+    tiles: int | tuple[int, int] | None = None,
+    tilesize: int | tuple[int, int] | None = None,
+    overlap: int | tuple[int, int] | None = None,
+    model: Waifu2xModel = ...,
+    backend: backendT = ...,
+    preprocess: bool = True,
+) -> ConstantFormatVideoNode: ...
 
 class DPIRModel(enum.IntEnum):
     drunet_gray = 0
@@ -141,7 +198,15 @@ class DPIRModel(enum.IntEnum):
     drunet_deblocking_grayscale = 2
     drunet_deblocking_color = 3
 
-def DPIR(clip: vs.VideoNode, strength: typing.SupportsFloat | vs.VideoNode | None, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, model: DPIRModel = ..., backend: backendT = ...) -> ConstantFormatVideoNode: ...
+def DPIR(
+    clip: vs.VideoNode,
+    strength: typing.SupportsFloat | vs.VideoNode | None,
+    tiles: int | tuple[int, int] | None = None,
+    tilesize: int | tuple[int, int] | None = None,
+    overlap: int | tuple[int, int] | None = None,
+    model: DPIRModel = ...,
+    backend: backendT = ...,
+) -> ConstantFormatVideoNode: ...
 
 class RealESRGANModel(enum.IntEnum):
     animevideo_xsx2 = 0
@@ -155,12 +220,33 @@ class RealESRGANModel(enum.IntEnum):
     animejanaiV3_HD_L3 = 5010
     Ani4Kv2_G6i2_Compact = 7000
     Ani4Kv2_G6i2_UltraCompact = 7001
+
 RealESRGANv2Model = RealESRGANModel
 
-def RealESRGAN(clip: vs.VideoNode, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, model: RealESRGANv2Model = ..., backend: backendT = ..., scale: float | None = None) -> vs.VideoNode: ...
+def RealESRGAN(
+    clip: vs.VideoNode,
+    tiles: int | tuple[int, int] | None = None,
+    tilesize: int | tuple[int, int] | None = None,
+    overlap: int | tuple[int, int] | None = None,
+    model: RealESRGANv2Model = ...,
+    backend: backendT = ...,
+    scale: float | None = None,
+) -> vs.VideoNode: ...
+
 RealESRGANv2 = RealESRGAN
 
-def CUGAN(clip: vs.VideoNode, noise: typing.Literal[-1, 0, 1, 2, 3] = -1, scale: typing.Literal[2, 3, 4] = 2, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, backend: backendT = ..., alpha: float = 1.0, version: typing.Literal[1, 2] = 1, conformance: bool = True) -> vs.VideoNode: ...
+def CUGAN(
+    clip: vs.VideoNode,
+    noise: typing.Literal[-1, 0, 1, 2, 3] = -1,
+    scale: typing.Literal[2, 3, 4] = 2,
+    tiles: int | tuple[int, int] | None = None,
+    tilesize: int | tuple[int, int] | None = None,
+    overlap: int | tuple[int, int] | None = None,
+    backend: backendT = ...,
+    alpha: float = 1.0,
+    version: typing.Literal[1, 2] = 1,
+    conformance: bool = True,
+) -> vs.VideoNode: ...
 
 class RIFEModel(enum.IntEnum):
     v4_0 = 40
@@ -199,8 +285,32 @@ class RIFEModel(enum.IntEnum):
     v4_26 = 426
     v4_26_heavy = 4262
 
-def RIFEMerge(clipa: vs.VideoNode, clipb: vs.VideoNode, mask: vs.VideoNode, scale: float = 1.0, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, model: RIFEModel = ..., backend: backendT = ..., ensemble: bool = False, _implementation: typing.Literal[1, 2] | None = None) -> vs.VideoNode: ...
-def RIFE(clip: vs.VideoNode, multi: int | Fraction = 2, scale: float = 1.0, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, model: RIFEModel = ..., backend: backendT = ..., ensemble: bool = False, video_player: bool = False, _implementation: typing.Literal[1, 2] | None = None) -> vs.VideoNode: ...
+def RIFEMerge(
+    clipa: vs.VideoNode,
+    clipb: vs.VideoNode,
+    mask: vs.VideoNode,
+    scale: float = 1.0,
+    tiles: int | tuple[int, int] | None = None,
+    tilesize: int | tuple[int, int] | None = None,
+    overlap: int | tuple[int, int] | None = None,
+    model: RIFEModel = ...,
+    backend: backendT = ...,
+    ensemble: bool = False,
+    _implementation: typing.Literal[1, 2] | None = None,
+) -> vs.VideoNode: ...
+def RIFE(
+    clip: vs.VideoNode,
+    multi: int | Fraction = 2,
+    scale: float = 1.0,
+    tiles: int | tuple[int, int] | None = None,
+    tilesize: int | tuple[int, int] | None = None,
+    overlap: int | tuple[int, int] | None = None,
+    model: RIFEModel = ...,
+    backend: backendT = ...,
+    ensemble: bool = False,
+    video_player: bool = False,
+    _implementation: typing.Literal[1, 2] | None = None,
+) -> vs.VideoNode: ...
 
 class SAFAModel(enum.IntEnum):
     v0_1 = 1
@@ -213,7 +323,15 @@ class SAFAAdaptiveMode(enum.IntEnum):
     adaptive1x = 1
     adaptive = 2
 
-def SAFA(clip: vs.VideoNode, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, model: SAFAModel = ..., adaptive: SAFAAdaptiveMode = ..., backend: backendT = ...) -> vs.VideoNode: ...
+def SAFA(
+    clip: vs.VideoNode,
+    tiles: int | tuple[int, int] | None = None,
+    tilesize: int | tuple[int, int] | None = None,
+    overlap: int | tuple[int, int] | None = None,
+    model: SAFAModel = ...,
+    adaptive: SAFAAdaptiveMode = ...,
+    backend: backendT = ...,
+) -> vs.VideoNode: ...
 
 class SCUNetModel(enum.IntEnum):
     scunet_color_15 = 0
@@ -225,7 +343,14 @@ class SCUNetModel(enum.IntEnum):
     scunet_gray_25 = 6
     scunet_gray_50 = 7
 
-def SCUNet(clip: vs.VideoNode, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, model: SCUNetModel = ..., backend: backendT = ...) -> vs.VideoNode: ...
+def SCUNet(
+    clip: vs.VideoNode,
+    tiles: int | tuple[int, int] | None = None,
+    tilesize: int | tuple[int, int] | None = None,
+    overlap: int | tuple[int, int] | None = None,
+    model: SCUNetModel = ...,
+    backend: backendT = ...,
+) -> vs.VideoNode: ...
 
 class SwinIRModel(enum.IntEnum):
     lightweightSR_DIV2K_s64w8_SwinIR_S_x2 = 0
@@ -256,7 +381,14 @@ class SwinIRModel(enum.IntEnum):
     colorCAR_DFWB_s126w7_SwinIR_M_jpeg30 = 26
     colorCAR_DFWB_s126w7_SwinIR_M_jpeg40 = 27
 
-def SwinIR(clip: vs.VideoNode, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, model: SwinIRModel = ..., backend: backendT = ...) -> vs.VideoNode: ...
+def SwinIR(
+    clip: vs.VideoNode,
+    tiles: int | tuple[int, int] | None = None,
+    tilesize: int | tuple[int, int] | None = None,
+    overlap: int | tuple[int, int] | None = None,
+    model: SwinIRModel = ...,
+    backend: backendT = ...,
+) -> vs.VideoNode: ...
 
 class ArtCNNModel(enum.IntEnum):
     ArtCNN_C4F32 = 0
@@ -272,31 +404,94 @@ class ArtCNNModel(enum.IntEnum):
     ArtCNN_C4F16 = 10
     ArtCNN_C4F16_DS = 11
 
-def ArtCNN(clip: vs.VideoNode, tiles: int | tuple[int, int] | None = None, tilesize: int | tuple[int, int] | None = None, overlap: int | tuple[int, int] | None = None, model: ArtCNNModel = ..., backend: backendT = ...) -> ConstantFormatVideoNode: ...
-def inference(clips: vs.VideoNode | list[vs.VideoNode], network_path: str, overlap: tuple[int, int] = (0, 0), tilesize: tuple[int, int] | None = None, backend: backendT = ..., input_name: str | None = 'input', batch_size: int = 1) -> ConstantFormatVideoNode: ...
-def flexible_inference(clips: vs.VideoNode | list[vs.VideoNode], network_path: str, overlap: tuple[int, int] = (0, 0), tilesize: tuple[int, int] | None = None, backend: backendT = ..., input_name: str | None = 'input', flexible_output_prop: str = 'vsmlrt_flexible', batch_size: int = 1) -> list[vs.VideoNode]: ...
+def ArtCNN(
+    clip: vs.VideoNode,
+    tiles: int | tuple[int, int] | None = None,
+    tilesize: int | tuple[int, int] | None = None,
+    overlap: int | tuple[int, int] | None = None,
+    model: ArtCNNModel = ...,
+    backend: backendT = ...,
+) -> ConstantFormatVideoNode: ...
+def inference(
+    clips: vs.VideoNode | list[vs.VideoNode],
+    network_path: str,
+    overlap: tuple[int, int] = (0, 0),
+    tilesize: tuple[int, int] | None = None,
+    backend: backendT = ...,
+    input_name: str | None = "input",
+    batch_size: int = 1,
+) -> ConstantFormatVideoNode: ...
+def flexible_inference(
+    clips: vs.VideoNode | list[vs.VideoNode],
+    network_path: str,
+    overlap: tuple[int, int] = (0, 0),
+    tilesize: tuple[int, int] | None = None,
+    backend: backendT = ...,
+    input_name: str | None = "input",
+    flexible_output_prop: str = "vsmlrt_flexible",
+    batch_size: int = 1,
+) -> list[vs.VideoNode]: ...
 
 class BackendV2:
     @staticmethod
-    def TRT(*, num_streams: int = 1, fp16: bool = False, tf32: bool = False, output_format: int = 0, workspace: int | None = None, use_cuda_graph: bool = False, static_shape: bool = True, min_shapes: tuple[int, int] = (0, 0), opt_shapes: tuple[int, int] | None = None, max_shapes: tuple[int, int] | None = None, force_fp16: bool = False, use_cublas: bool = False, use_cudnn: bool = False, device_id: int = 0, **kwargs : typing.Any) -> Backend.TRT: ...
+    def TRT(
+        *,
+        num_streams: int = 1,
+        fp16: bool = False,
+        tf32: bool = False,
+        output_format: int = 0,
+        workspace: int | None = None,
+        use_cuda_graph: bool = False,
+        static_shape: bool = True,
+        min_shapes: tuple[int, int] = (0, 0),
+        opt_shapes: tuple[int, int] | None = None,
+        max_shapes: tuple[int, int] | None = None,
+        force_fp16: bool = False,
+        use_cublas: bool = False,
+        use_cudnn: bool = False,
+        device_id: int = 0,
+        **kwargs: typing.Any,
+    ) -> Backend.TRT: ...
     @staticmethod
-    def NCNN_VK(*, num_streams: int = 1, fp16: bool = False, device_id: int = 0, **kwargs : typing.Any) -> Backend.NCNN_VK: ...
+    def NCNN_VK(
+        *, num_streams: int = 1, fp16: bool = False, device_id: int = 0, **kwargs: typing.Any
+    ) -> Backend.NCNN_VK: ...
     @staticmethod
-    def ORT_CUDA(*, num_streams: int = 1, fp16: bool = False, cudnn_benchmark: bool = True, device_id: int = 0, **kwargs : typing.Any) -> Backend.ORT_CUDA: ...
+    def ORT_CUDA(
+        *,
+        num_streams: int = 1,
+        fp16: bool = False,
+        cudnn_benchmark: bool = True,
+        device_id: int = 0,
+        **kwargs: typing.Any,
+    ) -> Backend.ORT_CUDA: ...
     @staticmethod
-    def OV_CPU(*, num_streams: int | str = 1, bf16: bool = False, bind_thread: bool = True, num_threads: int = 0, **kwargs : typing.Any) -> Backend.OV_CPU: ...
+    def OV_CPU(
+        *,
+        num_streams: int | str = 1,
+        bf16: bool = False,
+        bind_thread: bool = True,
+        num_threads: int = 0,
+        **kwargs: typing.Any,
+    ) -> Backend.OV_CPU: ...
     @staticmethod
-    def ORT_CPU(*, num_streams: int = 1, **kwargs : typing.Any) -> Backend.ORT_CPU: ...
+    def ORT_CPU(*, num_streams: int = 1, **kwargs: typing.Any) -> Backend.ORT_CPU: ...
     @staticmethod
-    def OV_GPU(*, num_streams: int | str = 1, fp16: bool = False, device_id: int = 0, **kwargs : typing.Any) -> Backend.OV_GPU: ...
+    def OV_GPU(
+        *, num_streams: int | str = 1, fp16: bool = False, device_id: int = 0, **kwargs: typing.Any
+    ) -> Backend.OV_GPU: ...
     @staticmethod
-    def ORT_DML(*, device_id: int = 0, num_streams: int = 1, fp16: bool = False, **kwargs : typing.Any) -> Backend.ORT_DML: ...
+    def ORT_DML(
+        *, device_id: int = 0, num_streams: int = 1, fp16: bool = False, **kwargs: typing.Any
+    ) -> Backend.ORT_DML: ...
     @staticmethod
-    def MIGX(*, fp16: bool = False, opt_shapes: tuple[int, int] | None = None, **kwargs : typing.Any) -> Backend.MIGX: ...
+    def MIGX(
+        *, fp16: bool = False, opt_shapes: tuple[int, int] | None = None, **kwargs: typing.Any
+    ) -> Backend.MIGX: ...
     @staticmethod
-    def OV_NPU(**kwargs : typing.Any) -> Backend.OV_NPU: ...
+    def OV_NPU(**kwargs: typing.Any) -> Backend.OV_NPU: ...
     @staticmethod
-    def ORT_COREML(*, num_streams: int = 1, fp16: bool = False, **kwargs : typing.Any) -> Backend.ORT_COREML: ...
+    def ORT_COREML(*, num_streams: int = 1, fp16: bool = False, **kwargs: typing.Any) -> Backend.ORT_COREML: ...
 
 def calc_tilesize(
     tiles: typing.Optional[typing.Union[int, typing.Tuple[int, int]]],
@@ -305,12 +500,6 @@ def calc_tilesize(
     height: int,
     multiple: int,
     overlap_w: int,
-    overlap_h: int
-) -> typing.Tuple[typing.Tuple[int, int], typing.Tuple[int, int]]:
-    ...
-
-def init_backend(
-    backend: backendT,
-    trt_opt_shapes: typing.Tuple[int, int]
-) -> backendT:
-    ...
+    overlap_h: int,
+) -> typing.Tuple[typing.Tuple[int, int], typing.Tuple[int, int]]: ...
+def init_backend(backend: backendT, trt_opt_shapes: typing.Tuple[int, int]) -> backendT: ...

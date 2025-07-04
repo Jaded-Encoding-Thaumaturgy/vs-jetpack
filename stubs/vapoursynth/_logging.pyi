@@ -1,6 +1,4 @@
-__all__ = ['LogHandle', 'Error']
-
+__all__ = ["LogHandle", "Error"]
 
 class LogHandle: ...
-
 class Error(Exception): ...

@@ -5,21 +5,45 @@ from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal, MutableMapping, Union, overload
 
 from vstools import (
-    ColorRange, ConstantFormatVideoNode, CustomRuntimeError, FieldBased, InvalidColorFamilyError, KwargsNotNone,
-    KwargsT, PlanesT, VSFunctionNoArgs, check_variable, check_variable_format, core, depth, fallback, get_prop,
-    normalize_planes, normalize_seq, scale_delta, vs, vs_object
+    ColorRange,
+    ConstantFormatVideoNode,
+    CustomRuntimeError,
+    FieldBased,
+    InvalidColorFamilyError,
+    KwargsNotNone,
+    KwargsT,
+    PlanesT,
+    VSFunctionNoArgs,
+    check_variable,
+    check_variable_format,
+    core,
+    depth,
+    fallback,
+    get_prop,
+    normalize_planes,
+    normalize_seq,
+    scale_delta,
+    vs,
+    vs_object,
 )
 
 from .enums import (
-    FlowMode, MaskMode, MotionMode, MVDirection, MVToolsPlugin, PenaltyMode, RFilterMode, SADMode, SearchMode,
-    SharpMode, SmoothMode
+    FlowMode,
+    MaskMode,
+    MotionMode,
+    MVDirection,
+    MVToolsPlugin,
+    PenaltyMode,
+    RFilterMode,
+    SADMode,
+    SearchMode,
+    SharpMode,
+    SmoothMode,
 )
 from .motion import MotionVectors
 from .utils import normalize_thscd, planes_to_mvtools
 
-__all__ = [
-    'MVTools'
-]
+__all__ = ["MVTools"]
 
 
 class MVTools(vs_object):
@@ -68,10 +92,13 @@ class MVTools(vs_object):
     """Clip to process."""
 
     def __init__(
-        self, clip: vs.VideoNode, search_clip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+        self,
+        clip: vs.VideoNode,
+        search_clip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
         vectors: MotionVectors | None = None,
         pad: int | tuple[int | None, int | None] | None = None,
-        pel: int | None = None, planes: PlanesT = None,
+        pel: int | None = None,
+        planes: PlanesT = None,
         *,
         super_args: KwargsT | None = None,
         analyze_args: KwargsT | None = None,
@@ -84,7 +111,7 @@ class MVTools(vs_object):
         block_fps_args: KwargsT | None = None,
         flow_blur_args: KwargsT | None = None,
         mask_args: KwargsT | None = None,
-        sc_detection_args: KwargsT | None = None
+        sc_detection_args: KwargsT | None = None,
     ) -> None:
         """
         MVTools is a collection of functions for motion estimation and compensation in video.
@@ -121,7 +148,7 @@ class MVTools(vs_object):
         :param flow_blur_args:           Arguments passed to every :py:attr:`MVToolsPlugin.FlowBlur` calls.
         :param mask_args:                Arguments passed to every :py:attr:`MVToolsPlugin.Mask` calls.
         :param sc_detection_args:        Arguments passed to every :py:attr:`MVToolsPlugin.SCDetection` calls.
-        """
+        """  # noqa: E501
 
         assert check_variable(clip, self.__class__)
 
@@ -160,10 +187,13 @@ class MVTools(vs_object):
         self.sc_detection_args = fallback(sc_detection_args, KwargsT())
 
     def super(
-        self, clip: vs.VideoNode | None = None, vectors: MotionVectors | None = None,
-        levels: int | None = None, sharp: SharpMode | None = None,
+        self,
+        clip: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        levels: int | None = None,
+        sharp: SharpMode | None = None,
         rfilter: RFilterMode | None = None,
-        pelclip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None
+        pelclip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     ) -> ConstantFormatVideoNode:
         """
         Get source clip and prepare special "super" clip with multilevel (hierarchical scaled) frames data.
@@ -189,7 +219,7 @@ class MVTools(vs_object):
                            The clip should not be padded.
 
         :return:           The original clip with the super clip attached as a frame property.
-        """
+        """  # noqa: E501
 
         clip = fallback(clip, self.clip)
 
@@ -198,7 +228,7 @@ class MVTools(vs_object):
         if vectors.scaled:
             self.expand_analysis_data(vectors)
 
-            hpad, vpad = vectors.analysis_data['Analysis_Padding']
+            hpad, vpad = vectors.analysis_data["Analysis_Padding"]
         else:
             hpad, vpad = self.pad
 
@@ -206,16 +236,22 @@ class MVTools(vs_object):
             pelclip = pelclip(clip)
 
         super_args = self.super_args | KwargsNotNone(
-            hpad=hpad, vpad=vpad, pel=self.pel, levels=levels, chroma=self.chroma,
-            sharp=sharp, rfilter=rfilter, pelclip=pelclip
+            hpad=hpad,
+            vpad=vpad,
+            pel=self.pel,
+            levels=levels,
+            chroma=self.chroma,
+            sharp=sharp,
+            rfilter=rfilter,
+            pelclip=pelclip,
         )
-        
-        if levels := super_args.pop('levels', None) is None and clip is not self.search_clip:
+
+        if levels := super_args.pop("levels", None) is None and clip is not self.search_clip:
             levels = 1
 
         super_clip = self.mvtools.Super(clip, levels=levels, **super_args)
 
-        super_clip = clip.std.ClipToProp(super_clip, prop='MSuper')
+        super_clip = clip.std.ClipToProp(super_clip, prop="MSuper")
 
         if clip is self.clip:
             self.clip = super_clip
@@ -226,15 +262,30 @@ class MVTools(vs_object):
         return super_clip
 
     def analyze(
-        self, super: vs.VideoNode | None = None, tr: int = 1,
-        blksize: int | tuple[int | None, int | None] | None = None, levels: int | None = None,
-        search: SearchMode | None = None, searchparam: int | None = None,
-        pelsearch: int | None = None, lambda_: int | None = None, truemotion: MotionMode | None = None,
-        lsad: int | None = None, plevel: PenaltyMode | None = None, global_: bool | None = None,
-        pnew: int | None = None, pzero: int | None = None, pglobal: int | None = None,
-        overlap: int | tuple[int | None, int | None] | None = None, divide: bool | None = None,
-        badsad: int | None = None, badrange: int | None = None, meander: bool | None = None,
-        trymany: bool | None = None, dct: SADMode | None = None, scale_lambda: bool = True
+        self,
+        super: vs.VideoNode | None = None,
+        tr: int = 1,
+        blksize: int | tuple[int | None, int | None] | None = None,
+        levels: int | None = None,
+        search: SearchMode | None = None,
+        searchparam: int | None = None,
+        pelsearch: int | None = None,
+        lambda_: int | None = None,
+        truemotion: MotionMode | None = None,
+        lsad: int | None = None,
+        plevel: PenaltyMode | None = None,
+        global_: bool | None = None,
+        pnew: int | None = None,
+        pzero: int | None = None,
+        pglobal: int | None = None,
+        overlap: int | tuple[int | None, int | None] | None = None,
+        divide: bool | None = None,
+        badsad: int | None = None,
+        badrange: int | None = None,
+        meander: bool | None = None,
+        trymany: bool | None = None,
+        dct: SADMode | None = None,
+        scale_lambda: bool = True,
     ) -> None:
         """
         Analyze motion vectors in a clip using block matching.
@@ -298,7 +349,7 @@ class MVTools(vs_object):
 
         :return:               A :py:class:`MotionVectors` object containing the analyzed motion vectors for each frame.
                                These vectors describe the estimated motion between frames and can be used for motion compensation.
-        """
+        """  # noqa: E501
 
         super_clip = self.get_super(fallback(super, self.search_clip))
 
@@ -309,14 +360,31 @@ class MVTools(vs_object):
             lambda_ = lambda_ * blksize * fallback(blksizev, blksize) // 64
 
         analyze_args = self.analyze_args | KwargsNotNone(
-            blksize=blksize, blksizev=blksizev, levels=levels,
-            search=search, searchparam=searchparam, pelsearch=pelsearch,
-            lambda_=lambda_, chroma=self.chroma, truemotion=truemotion,
-            lsad=lsad, plevel=plevel, global_=global_,
-            pnew=pnew, pzero=pzero, pglobal=pglobal,
-            overlap=overlap, overlapv=overlapv, divide=divide,
-            badsad=badsad, badrange=badrange, meander=meander, trymany=trymany,
-            fields=self.fieldbased.is_inter, tff=self.fieldbased.is_tff, dct=dct
+            blksize=blksize,
+            blksizev=blksizev,
+            levels=levels,
+            search=search,
+            searchparam=searchparam,
+            pelsearch=pelsearch,
+            lambda_=lambda_,
+            chroma=self.chroma,
+            truemotion=truemotion,
+            lsad=lsad,
+            plevel=plevel,
+            global_=global_,
+            pnew=pnew,
+            pzero=pzero,
+            pglobal=pglobal,
+            overlap=overlap,
+            overlapv=overlapv,
+            divide=divide,
+            badsad=badsad,
+            badrange=badrange,
+            meander=meander,
+            trymany=trymany,
+            fields=self.fieldbased.is_inter,
+            tff=self.fieldbased.is_tff,
+            dct=dct,
         )
 
         if self.vectors.has_vectors:
@@ -327,7 +395,7 @@ class MVTools(vs_object):
         if self.mvtools is MVToolsPlugin.FLOAT:
             self.vectors.mv_multi = self.mvtools.Analyze(super_clip, radius=self.vectors.tr, **analyze_args)
         else:
-            if not any((analyze_args.get('overlap'), analyze_args.get('overlapv'))):
+            if not any((analyze_args.get("overlap"), analyze_args.get("overlapv"))):
                 self.disable_compensate = True
 
             for delta in range(1, self.vectors.tr + 1):
@@ -336,16 +404,27 @@ class MVTools(vs_object):
                         self.mvtools.Analyze(
                             super_clip, isb=direction is MVDirection.BACKWARD, delta=delta, **analyze_args
                         ),
-                        direction, delta,
+                        direction,
+                        delta,
                     )
 
     def recalculate(
-        self, super: vs.VideoNode | None = None, vectors: MotionVectors | None = None,
-        thsad: int | None = None, smooth: SmoothMode | None = None,
-        blksize: int | tuple[int | None, int | None] | None = None, search: SearchMode | None = None,
-        searchparam: int | None = None, lambda_: int | None = None, truemotion: MotionMode | None = None,
-        pnew: int | None = None, overlap: int | tuple[int | None, int | None] | None = None,
-        divide: bool | None = None, meander: bool | None = None, dct: SADMode | None = None, scale_lambda: bool = True
+        self,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        thsad: int | None = None,
+        smooth: SmoothMode | None = None,
+        blksize: int | tuple[int | None, int | None] | None = None,
+        search: SearchMode | None = None,
+        searchparam: int | None = None,
+        lambda_: int | None = None,
+        truemotion: MotionMode | None = None,
+        pnew: int | None = None,
+        overlap: int | tuple[int | None, int | None] | None = None,
+        divide: bool | None = None,
+        meander: bool | None = None,
+        dct: SADMode | None = None,
+        scale_lambda: bool = True,
     ) -> None:
         """
         Refines and recalculates motion vectors that were previously estimated, optionally using a different super clip or parameters.
@@ -387,7 +466,7 @@ class MVTools(vs_object):
         :param dct:             SAD calculation mode using block DCT (frequency spectrum) for comparing blocks.
                                 For more information, see :py:class:`SADMode`.
         :param scale_lambda:    Whether to scale lambda_ value according to truemotion's default value formula.
-        """
+        """  # noqa: E501
 
         super_clip = self.get_super(fallback(super, self.search_clip))
 
@@ -402,9 +481,23 @@ class MVTools(vs_object):
             lambda_ = lambda_ * blksize * fallback(blksizev, blksize) // 64
 
         recalculate_args = self.recalculate_args | KwargsNotNone(
-            thsad=thsad, smooth=smooth, blksize=blksize, blksizev=blksizev, search=search, searchparam=searchparam,
-            lambda_=lambda_, chroma=self.chroma, truemotion=truemotion, pnew=pnew, overlap=overlap, overlapv=overlapv,
-            divide=divide, meander=meander, fields=self.fieldbased.is_inter, tff=self.fieldbased.is_tff, dct=dct
+            thsad=thsad,
+            smooth=smooth,
+            blksize=blksize,
+            blksizev=blksizev,
+            search=search,
+            searchparam=searchparam,
+            lambda_=lambda_,
+            chroma=self.chroma,
+            truemotion=truemotion,
+            pnew=pnew,
+            overlap=overlap,
+            overlapv=overlapv,
+            divide=divide,
+            meander=meander,
+            fields=self.fieldbased.is_inter,
+            tff=self.fieldbased.is_tff,
+            dct=dct,
         )
 
         vectors.analysis_data.clear()
@@ -412,7 +505,7 @@ class MVTools(vs_object):
         if self.mvtools is MVToolsPlugin.FLOAT:
             vectors.mv_multi = self.mvtools.Recalculate(super_clip, vectors=vectors.mv_multi, **recalculate_args)
         else:
-            if not any((recalculate_args.get('overlap'), recalculate_args.get('overlapv'))):
+            if not any((recalculate_args.get("overlap"), recalculate_args.get("overlapv"))):
                 self.disable_compensate = True
 
             for delta in range(1, vectors.tr + 1):
@@ -421,53 +514,79 @@ class MVTools(vs_object):
                         self.mvtools.Recalculate(
                             super_clip, self.get_vector(vectors, direction=direction, delta=delta), **recalculate_args
                         ),
-                        direction, delta,
+                        direction,
+                        delta,
                     )
 
     @overload
     def compensate(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, scbehavior: bool | None = None,
-        thsad: int | None = None, thsad2: int | None = None,
-        time: float | None = None, thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: Literal[True] = True, temporal_func: None = None
-    ) -> tuple[ConstantFormatVideoNode, tuple[int, int]]:
-        ...
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        direction: MVDirection = MVDirection.BOTH,
+        tr: int | None = None,
+        scbehavior: bool | None = None,
+        thsad: int | None = None,
+        thsad2: int | None = None,
+        time: float | None = None,
+        thscd: int | tuple[int | None, int | float | None] | None = None,
+        interleave: Literal[True] = True,
+        temporal_func: None = None,
+    ) -> tuple[ConstantFormatVideoNode, tuple[int, int]]: ...
 
     @overload
     def compensate(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, scbehavior: bool | None = None,
-        thsad: int | None = None, thsad2: int | None = None,
-        time: float | None = None, thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: Literal[True] = True, temporal_func: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] = ...
-    ) -> ConstantFormatVideoNode:
-        ...
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        direction: MVDirection = MVDirection.BOTH,
+        tr: int | None = None,
+        scbehavior: bool | None = None,
+        thsad: int | None = None,
+        thsad2: int | None = None,
+        time: float | None = None,
+        thscd: int | tuple[int | None, int | float | None] | None = None,
+        interleave: Literal[True] = True,
+        temporal_func: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] = ...,
+    ) -> ConstantFormatVideoNode: ...
 
     @overload
     def compensate(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, scbehavior: bool | None = None,
-        thsad: int | None = None, thsad2: int | None = None,
-        time: float | None = None, thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: Literal[False] = False, temporal_func: None = None
-    ) -> tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]]:
-        ...
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        direction: MVDirection = MVDirection.BOTH,
+        tr: int | None = None,
+        scbehavior: bool | None = None,
+        thsad: int | None = None,
+        thsad2: int | None = None,
+        time: float | None = None,
+        thscd: int | tuple[int | None, int | float | None] | None = None,
+        interleave: Literal[False] = False,
+        temporal_func: None = None,
+    ) -> tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]]: ...
 
     def compensate(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, scbehavior: bool | None = None,
-        thsad: int | None = None, thsad2: int | None = None,
-        time: float | None = None, thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: bool = True, temporal_func: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        direction: MVDirection = MVDirection.BOTH,
+        tr: int | None = None,
+        scbehavior: bool | None = None,
+        thsad: int | None = None,
+        thsad2: int | None = None,
+        time: float | None = None,
+        thscd: int | tuple[int | None, int | float | None] | None = None,
+        interleave: bool = True,
+        temporal_func: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     ) -> Union[
         ConstantFormatVideoNode,
         tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]],
-        tuple[ConstantFormatVideoNode, tuple[int, int]]
+        tuple[ConstantFormatVideoNode, tuple[int, int]],
     ]:
         """
         Perform motion compensation by moving blocks from reference frames to the current frame according to motion vectors.
@@ -499,10 +618,10 @@ class MVTools(vs_object):
         :return:                 Motion compensated frames if func is provided, otherwise returns a tuple containing:
                                   - The interleaved compensated frames.
                                   - A tuple of (total_frames, center_offset) for manual frame selection.
-        """
+        """  # noqa: E501
 
         if self.disable_compensate:
-            raise CustomRuntimeError('Motion analysis was performed without block overlap!', self.compensate)
+            raise CustomRuntimeError("Motion analysis was performed without block overlap!", self.compensate)
 
         clip = fallback(clip, self.clip)
         super_clip = self.get_super(fallback(super, clip))
@@ -512,8 +631,14 @@ class MVTools(vs_object):
         thscd1, thscd2 = normalize_thscd(thscd)
 
         compensate_args = self.compensate_args | KwargsNotNone(
-            scbehavior=scbehavior, thsad=thsad, thsad2=thsad2, time=time, fields=self.fieldbased.is_inter,
-            thscd1=thscd1, thscd2=thscd2, tff=self.fieldbased.is_tff
+            scbehavior=scbehavior,
+            thsad=thsad,
+            thsad2=thsad2,
+            time=time,
+            fields=self.fieldbased.is_inter,
+            thscd1=thscd1,
+            thscd2=thscd2,
+            tff=self.fieldbased.is_tff,
         )
 
         comp_back, comp_fwrd = [
@@ -541,44 +666,65 @@ class MVTools(vs_object):
 
     @overload
     def flow(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, time: float | None = None, mode: FlowMode | None = None,
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        direction: MVDirection = MVDirection.BOTH,
+        tr: int | None = None,
+        time: float | None = None,
+        mode: FlowMode | None = None,
         thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: Literal[True] = True, temporal_func: None = None
-    ) -> tuple[ConstantFormatVideoNode, tuple[int, int]]:
-        ...
+        interleave: Literal[True] = True,
+        temporal_func: None = None,
+    ) -> tuple[ConstantFormatVideoNode, tuple[int, int]]: ...
 
     @overload
     def flow(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, time: float | None = None, mode: FlowMode | None = None,
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        direction: MVDirection = MVDirection.BOTH,
+        tr: int | None = None,
+        time: float | None = None,
+        mode: FlowMode | None = None,
         thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: Literal[True] = True, temporal_func: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] = ...
-    ) -> ConstantFormatVideoNode:
-        ...
+        interleave: Literal[True] = True,
+        temporal_func: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] = ...,
+    ) -> ConstantFormatVideoNode: ...
 
     @overload
     def flow(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, time: float | None = None, mode: FlowMode | None = None,
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        direction: MVDirection = MVDirection.BOTH,
+        tr: int | None = None,
+        time: float | None = None,
+        mode: FlowMode | None = None,
         thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: Literal[False] = False, temporal_func: None = None
-    ) -> tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]]:
-        ...
+        interleave: Literal[False] = False,
+        temporal_func: None = None,
+    ) -> tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]]: ...
 
     def flow(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, time: float | None = None, mode: FlowMode | None = None,
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        direction: MVDirection = MVDirection.BOTH,
+        tr: int | None = None,
+        time: float | None = None,
+        mode: FlowMode | None = None,
         thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: bool = True, temporal_func: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None
+        interleave: bool = True,
+        temporal_func: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     ) -> Union[
         ConstantFormatVideoNode,
         tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]],
-        tuple[ConstantFormatVideoNode, tuple[int, int]]
+        tuple[ConstantFormatVideoNode, tuple[int, int]],
     ]:
         """
         Performs motion compensation using pixel-level motion vectors interpolated from block vectors.
@@ -608,7 +754,7 @@ class MVTools(vs_object):
         :return:                 Motion compensated frames if func is provided, otherwise returns a tuple containing:
                                   - The interleaved compensated frames.
                                   - A tuple of (total_frames, center_offset) for manual frame selection.
-        """
+        """  # noqa: E501
 
         clip = fallback(clip, self.clip)
         super_clip = self.get_super(fallback(super, clip))
@@ -618,8 +764,12 @@ class MVTools(vs_object):
         thscd1, thscd2 = normalize_thscd(thscd)
 
         flow_args = self.flow_args | KwargsNotNone(
-            time=time, mode=mode, fields=self.fieldbased.is_inter,
-            thscd1=thscd1, thscd2=thscd2, tff=self.fieldbased.is_tff
+            time=time,
+            mode=mode,
+            fields=self.fieldbased.is_inter,
+            thscd1=thscd1,
+            thscd2=thscd2,
+            tff=self.fieldbased.is_tff,
         )
 
         flow_back, flow_fwrd = [
@@ -646,8 +796,11 @@ class MVTools(vs_object):
         return interleaved, (cycle, offset)
 
     def degrain(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, tr: int | None = None,
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        tr: int | None = None,
         thsad: int | tuple[int | None, int | None] | None = None,
         thsad2: int | tuple[int | None, int | None] | None = None,
         limit: int | tuple[int | None, int | None] | None = None,
@@ -680,7 +833,7 @@ class MVTools(vs_object):
                             - Second value: Percentage of changed blocks needed to trigger a scene change.
 
         :return:           Motion compensated and temporally filtered clip with reduced noise.
-        """
+        """  # noqa: E501
 
         clip = fallback(clip, self.clip)
         super_clip = self.get_super(fallback(super, clip))
@@ -695,8 +848,7 @@ class MVTools(vs_object):
         if self.mvtools is MVToolsPlugin.FLOAT:
             if tr == 1:
                 raise CustomRuntimeError(
-                    f'Cannot degrain with a temporal radius of {tr} while using {self.mvtools}!',
-                    self.degrain
+                    f"Cannot degrain with a temporal radius of {tr} while using {self.mvtools}!", self.degrain
                 )
 
             degrain_args.update(thsad=thsad, thsad2=thsad2, limit=limit)
@@ -729,40 +881,57 @@ class MVTools(vs_object):
 
     @overload
     def flow_interpolate(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, time: float | None = None,
-        ml: float | None = None, blend: bool | None = None,
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        time: float | None = None,
+        ml: float | None = None,
+        blend: bool | None = None,
         thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: Literal[True] = ..., multi: int | None = None
-    ) -> ConstantFormatVideoNode:
-        ...
+        interleave: Literal[True] = ...,
+        multi: int | None = None,
+    ) -> ConstantFormatVideoNode: ...
 
     @overload
     def flow_interpolate(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, time: float | None = None,
-        ml: float | None = None, blend: bool | None = None,
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        time: float | None = None,
+        ml: float | None = None,
+        blend: bool | None = None,
         thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: Literal[False] = ..., multi: int | None = None
-    ) -> list[ConstantFormatVideoNode]:
-        ...
+        interleave: Literal[False] = ...,
+        multi: int | None = None,
+    ) -> list[ConstantFormatVideoNode]: ...
 
     @overload
     def flow_interpolate(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, time: float | None = None,
-        ml: float | None = None, blend: bool | None = None,
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        time: float | None = None,
+        ml: float | None = None,
+        blend: bool | None = None,
         thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: bool = ..., multi: int | None = None
-    ) -> ConstantFormatVideoNode | list[ConstantFormatVideoNode]:
-        ...
+        interleave: bool = ...,
+        multi: int | None = None,
+    ) -> ConstantFormatVideoNode | list[ConstantFormatVideoNode]: ...
 
     def flow_interpolate(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, time: float | None = None,
-        ml: float | None = None, blend: bool | None = None,
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        time: float | None = None,
+        ml: float | None = None,
+        blend: bool | None = None,
         thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: bool = True, multi: int | None = None
+        interleave: bool = True,
+        multi: int | None = None,
     ) -> ConstantFormatVideoNode | list[ConstantFormatVideoNode]:
         """
         Motion interpolation function that creates an intermediate frame between two frames.
@@ -814,10 +983,10 @@ class MVTools(vs_object):
         if multi:
             if multi < 2:
                 raise CustomRuntimeError(
-                    'Invalid framerate multiplier specified!', self.flow_interpolate, f'{multi} < 2'
+                    "Invalid framerate multiplier specified!", self.flow_interpolate, f"{multi} < 2"
                 )
 
-            flow_interpolate_args.pop('time', None)
+            flow_interpolate_args.pop("time", None)
 
             for pos in range(1, multi):
                 time = pos * 100 / multi
@@ -836,10 +1005,15 @@ class MVTools(vs_object):
         return interpolated
 
     def flow_fps(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, fps: Fraction | None = None,
-        mask: int | None = None, ml: float | None = None, blend: bool | None = None,
-        thscd: int | tuple[int | None, int | float | None] | None = None
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        fps: Fraction | None = None,
+        mask: int | None = None,
+        ml: float | None = None,
+        blend: bool | None = None,
+        thscd: int | tuple[int | None, int | float | None] | None = None,
     ) -> ConstantFormatVideoNode:
         """
         Changes the framerate of the clip by interpolating frames between existing frames.
@@ -885,10 +1059,15 @@ class MVTools(vs_object):
         return self.mvtools.FlowFPS(clip, super_clip, vect_b, vect_f, **flow_fps_args)
 
     def block_fps(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, fps: Fraction | None = None,
-        mode: int | None = None, ml: float | None = None, blend: bool | None = None,
-        thscd: int | tuple[int | None, int | float | None] | None = None
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        fps: Fraction | None = None,
+        mode: int | None = None,
+        ml: float | None = None,
+        blend: bool | None = None,
+        thscd: int | tuple[int | None, int | float | None] | None = None,
     ) -> ConstantFormatVideoNode:
         """
         Changes the framerate of the clip by interpolating frames between existing frames
@@ -935,9 +1114,13 @@ class MVTools(vs_object):
         return self.mvtools.BlockFPS(clip, super_clip, vect_b, vect_f, **block_fps_args)
 
     def flow_blur(
-        self, clip: vs.VideoNode | None = None, super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None, blur: float | None = None,
-        prec: int | None = None, thscd: int | tuple[int | None, int | float | None] | None = None
+        self,
+        clip: vs.VideoNode | None = None,
+        super: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        blur: float | None = None,
+        prec: int | None = None,
+        thscd: int | tuple[int | None, int | float | None] | None = None,
     ) -> ConstantFormatVideoNode:
         """
         Creates a motion blur effect by simulating finite shutter time, similar to film cameras.
@@ -972,11 +1155,17 @@ class MVTools(vs_object):
         return self.mvtools.FlowBlur(clip, super_clip, vect_b, vect_f, **flow_blur_args)
 
     def mask(
-        self, clip: vs.VideoNode | None = None, vectors: MotionVectors | None = None,
-        direction: Literal[MVDirection.FORWARD] | Literal[MVDirection.BACKWARD] = MVDirection.FORWARD,
-        delta: int = 1, ml: float | None = None, gamma: float | None = None,
-        kind: MaskMode | None = None, time: float | None = None, ysc: int | None = None,
-        thscd: int | tuple[int | None, int | float | None] | None = None
+        self,
+        clip: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        direction: Literal[MVDirection.FORWARD, MVDirection.BACKWARD] = MVDirection.FORWARD,
+        delta: int = 1,
+        ml: float | None = None,
+        gamma: float | None = None,
+        kind: MaskMode | None = None,
+        time: float | None = None,
+        ysc: int | None = None,
+        thscd: int | tuple[int | None, int | float | None] | None = None,
     ) -> ConstantFormatVideoNode:
         """
         Creates a mask clip from motion vectors data.
@@ -1018,8 +1207,11 @@ class MVTools(vs_object):
         return depth(mask_clip, clip, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
 
     def sc_detection(
-        self, clip: vs.VideoNode | None = None, vectors: MotionVectors | None = None,
-        delta: int = 1, thscd: int | tuple[int | None, int | float | None] | None = None
+        self,
+        clip: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        delta: int = 1,
+        thscd: int | tuple[int | None, int | float | None] | None = None,
     ) -> ConstantFormatVideoNode:
         """
         Creates scene change frameprops from motion vectors data.
@@ -1066,12 +1258,22 @@ class MVTools(vs_object):
 
         if self.mvtools is MVToolsPlugin.FLOAT:
             raise CustomRuntimeError(
-                f'Motion vector manipulation not supported with {self.mvtools}!', self.scale_vectors
+                f"Motion vector manipulation not supported with {self.mvtools}!", self.scale_vectors
             )
 
         supported_blksize = (
-            (4, 4), (8, 4), (8, 8), (16, 2), (16, 8), (16, 16), (32, 16),
-            (32, 32), (64, 32), (64, 64), (128, 64), (128, 128)
+            (4, 4),
+            (8, 4),
+            (8, 8),
+            (16, 2),
+            (16, 8),
+            (16, 16),
+            (32, 16),
+            (32, 32),
+            (64, 32),
+            (64, 64),
+            (128, 64),
+            (128, 128),
         )
 
         vectors = fallback(vectors, self.vectors)
@@ -1081,30 +1283,34 @@ class MVTools(vs_object):
         if scalex > 1 and scaley > 1:
             self.expand_analysis_data(vectors)
 
-            blksizex, blksizev = vectors.analysis_data['Analysis_BlockSize']
+            blksizex, blksizev = vectors.analysis_data["Analysis_BlockSize"]
 
             scaled_blksize = (blksizex * scalex, blksizev * scaley)
 
             if strict and scaled_blksize not in supported_blksize:
-                raise CustomRuntimeError('Unsupported block size!', self.scale_vectors, scaled_blksize)
+                raise CustomRuntimeError("Unsupported block size!", self.scale_vectors, scaled_blksize)
 
             vectors.analysis_data.clear()
             vectors.scaled = True
 
-            self.clip = core.std.RemoveFrameProps(self.clip, 'MSuper')
-            self.search_clip = core.std.RemoveFrameProps(self.search_clip, 'MSuper')
+            self.clip = core.std.RemoveFrameProps(self.clip, "MSuper")
+            self.search_clip = core.std.RemoveFrameProps(self.search_clip, "MSuper")
 
             for delta in range(1, vectors.tr + 1):
                 for direction in MVDirection:
                     vectors.set_vector(
                         self.get_vector(vectors, direction=direction, delta=delta).manipmv.ScaleVect(scalex, scaley),
-                        direction, delta,
+                        direction,
+                        delta,
                     )
 
     def show_vector(
-        self, clip: vs.VideoNode | None = None, vectors: MotionVectors | None = None,
-        direction: Literal[MVDirection.FORWARD] | Literal[MVDirection.BACKWARD] = MVDirection.FORWARD,
-        delta: int = 1, scenechange: bool | None = None
+        self,
+        clip: vs.VideoNode | None = None,
+        vectors: MotionVectors | None = None,
+        direction: Literal[MVDirection.FORWARD, MVDirection.BACKWARD] = MVDirection.FORWARD,
+        delta: int = 1,
+        scenechange: bool | None = None,
     ) -> ConstantFormatVideoNode:
         """
         Draws generated vectors onto a clip.
@@ -1121,7 +1327,7 @@ class MVTools(vs_object):
         """
 
         if self.mvtools is MVToolsPlugin.FLOAT:
-            raise CustomRuntimeError(f'Motion vector manipulation not supported with {self.mvtools}!', self.show_vector)
+            raise CustomRuntimeError(f"Motion vector manipulation not supported with {self.mvtools}!", self.show_vector)
 
         clip = fallback(clip, self.clip)
 
@@ -1139,15 +1345,23 @@ class MVTools(vs_object):
 
         if self.mvtools is MVToolsPlugin.FLOAT:
             raise CustomRuntimeError(
-                f'Motion vector manipulation not supported with {self.mvtools}!', self.expand_analysis_data
+                f"Motion vector manipulation not supported with {self.mvtools}!", self.expand_analysis_data
             )
 
         vectors = fallback(vectors, self.vectors)
 
         props_list = (
-            'Analysis_BlockSize', 'Analysis_Pel', 'Analysis_LevelCount', 'Analysis_CpuFlags', 'Analysis_MotionFlags',
-            'Analysis_FrameSize', 'Analysis_Overlap', 'Analysis_BlockCount', 'Analysis_BitsPerSample',
-            'Analysis_ChromaRatio', 'Analysis_Padding'
+            "Analysis_BlockSize",
+            "Analysis_Pel",
+            "Analysis_LevelCount",
+            "Analysis_CpuFlags",
+            "Analysis_MotionFlags",
+            "Analysis_FrameSize",
+            "Analysis_Overlap",
+            "Analysis_BlockCount",
+            "Analysis_BitsPerSample",
+            "Analysis_ChromaRatio",
+            "Analysis_Padding",
         )
 
         if not vectors.analysis_data:
@@ -1175,10 +1389,10 @@ class MVTools(vs_object):
         clip = fallback(clip, self.clip)
 
         try:
-            super_clip = clip.std.PropToClip(prop='MSuper')
+            super_clip = clip.std.PropToClip(prop="MSuper")
         except vs.Error:
             clip = self.super(clip)
-            super_clip = clip.std.PropToClip(prop='MSuper')
+            super_clip = clip.std.PropToClip(prop="MSuper")
 
         return super_clip
 
@@ -1201,7 +1415,9 @@ class MVTools(vs_object):
 
         if delta > vectors.tr:
             raise CustomRuntimeError(
-                'Tried to get a motion vector delta larger than what exists!', self.get_vector, f'{delta} > {vectors.tr}'
+                "Tried to get a motion vector delta larger than what exists!",
+                self.get_vector,
+                f"{delta} > {vectors.tr}",
             )
 
         if self.mvtools is MVToolsPlugin.FLOAT:
@@ -1211,32 +1427,37 @@ class MVTools(vs_object):
 
     @overload
     def get_vectors(
-        self, vectors: MotionVectors | None = None,
+        self,
+        vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, multi: Literal[False] = ...
-    ) -> tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]]:
-        ...
+        tr: int | None = None,
+        multi: Literal[False] = ...,
+    ) -> tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]]: ...
 
     @overload
     def get_vectors(
-        self, vectors: MotionVectors | None = None,
+        self,
+        vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, multi: Literal[True] = ...
-    ) -> ConstantFormatVideoNode:
-        ...
+        tr: int | None = None,
+        multi: Literal[True] = ...,
+    ) -> ConstantFormatVideoNode: ...
 
     @overload
     def get_vectors(
-        self, vectors: MotionVectors | None = None,
+        self,
+        vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, multi: bool = ...
-    ) -> ConstantFormatVideoNode | tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]]:
-        ...
+        tr: int | None = None,
+        multi: bool = ...,
+    ) -> ConstantFormatVideoNode | tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]]: ...
 
     def get_vectors(
-        self, vectors: MotionVectors | None = None,
+        self,
+        vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
-        tr: int | None = None, multi: bool = False
+        tr: int | None = None,
+        multi: bool = False,
     ) -> ConstantFormatVideoNode | tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]]:
         """
         Get the backward and forward vectors.
@@ -1260,11 +1481,11 @@ class MVTools(vs_object):
 
         if tr > vectors.tr:
             raise CustomRuntimeError(
-                'Tried to obtain more motion vectors than what exist!', self.get_vectors, f'{tr} > {vectors.tr}'
+                "Tried to obtain more motion vectors than what exist!", self.get_vectors, f"{tr} > {vectors.tr}"
             )
 
         if multi and self.mvtools is MVToolsPlugin.FLOAT:
-            mv_multi =  vectors.mv_multi
+            mv_multi = vectors.mv_multi
 
             if tr != vectors.tr:
                 trim = vectors.tr - tr

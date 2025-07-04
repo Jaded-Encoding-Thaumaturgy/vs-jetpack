@@ -1,7 +1,18 @@
 from unittest import TestCase
 
 from vstools import (
-    ColorRange, DitherType, InvalidColorFamilyError, depth, get_b, get_g, get_r, get_u, get_v, get_y, plane, vs
+    ColorRange,
+    DitherType,
+    InvalidColorFamilyError,
+    depth,
+    get_b,
+    get_g,
+    get_r,
+    get_u,
+    get_v,
+    get_y,
+    plane,
+    vs,
 )
 
 

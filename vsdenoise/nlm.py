@@ -5,19 +5,25 @@ This module implements a wrapper for non local means denoisers
 from __future__ import annotations
 
 import warnings
-
 from typing import Any, Callable, Generic, Sequence
 
 from jetpytools import CustomRuntimeError, CustomStrEnum, P, R
 
 from vstools import (
-    ConstantFormatVideoNode, CustomIntEnum, PlanesT, check_variable, core, join, normalize_planes, normalize_seq,
-    to_arr, vs
+    ConstantFormatVideoNode,
+    CustomIntEnum,
+    PlanesT,
+    check_variable,
+    core,
+    join,
+    normalize_planes,
+    normalize_seq,
+    to_arr,
+    vs,
 )
 
-__all__ = [
-    'nl_means'
-]
+__all__ = ["nl_means"]
+
 
 class NLMeans(Generic[P, R]):
     """
@@ -38,28 +44,28 @@ class NLMeans(Generic[P, R]):
         Enum representing available backends on which to run the plugin.
         """
 
-        AUTO = 'auto'
+        AUTO = "auto"
         """
         Automatically selects the best available backend.
         Priority: "cuda" -> "accelerator" -> "gpu" -> "cpu" -> "ispc".
         """
 
-        ACCELERATOR = 'accelerator'
+        ACCELERATOR = "accelerator"
         """Dedicated OpenCL accelerators."""
 
-        GPU = 'gpu'
+        GPU = "gpu"
         """An OpenCL device that is a GPU."""
 
-        CPU = 'cpu'
+        CPU = "cpu"
         """An OpenCL device that is the host processor."""
 
-        ISPC = 'ispc'
+        ISPC = "ispc"
         """ISPC (CPU-based) implementation."""
 
-        CUDA = 'cuda'
+        CUDA = "cuda"
         """CUDA (GPU-based) implementation."""
 
-        def NLMeans(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+        def NLMeans(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
             """
             Applies the Non-Local Means denoising filter using the plugin associated with the selected backend.
 
@@ -74,7 +80,7 @@ class NLMeans(Generic[P, R]):
                 return clip.nlm_cuda.NLMeans(*args, **kwargs)
 
             if self in [NLMeans.Backend.ACCELERATOR, NLMeans.Backend.GPU, NLMeans.Backend.CPU]:
-                return clip.knlm.KNLMeansCL(*args, **kwargs | dict(device_type=self.value))
+                return clip.knlm.KNLMeansCL(*args, **kwargs | {"device_type": self.value})
 
             if self == NLMeans.Backend.ISPC:
                 return clip.nlm_ispc.NLMeans(*args, **kwargs)
@@ -84,7 +90,7 @@ class NLMeans(Generic[P, R]):
                 return NLMeans.Backend.CUDA.NLMeans(clip, *args, **kwargs)
 
             if hasattr(core, "knlm"):
-                return clip.knlm.KNLMeansCL(*args, **kwargs | dict(device_type="auto"))
+                return clip.knlm.KNLMeansCL(*args, **kwargs | {"device_type": "auto"})
 
             if hasattr(core, "nlm_ispc"):
                 return NLMeans.Backend.ISPC.NLMeans(clip, *args, **kwargs)
@@ -150,7 +156,7 @@ def nl_means(
     ref: vs.VideoNode | None = None,
     wmode: NLMeans.WeightMode = NLMeans.WeightMode.WELSCH,
     planes: PlanesT = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
     Convenience wrapper for NLMeans implementations.
@@ -197,22 +203,16 @@ def nl_means(
     params = dict[str, list[float] | list[int]](h=to_arr(h), d=to_arr(tr), a=to_arr(a), s=to_arr(s))
 
     # TODO: Remove legacy support for old arguments.
-    for sargs, kargs in zip(
-        ["strength", "sr", "simr"],
-        ["h", "a", "s"]
-    ):
+    for sargs, kargs in zip(["strength", "sr", "simr"], ["h", "a", "s"]):
         if sargs in kwargs:
-            warnings.warn(
-                f"nl_means: '{sargs}' argument is deprecated, use '{kargs}' instead",
-                DeprecationWarning
-            )
+            warnings.warn(f"nl_means: '{sargs}' argument is deprecated, use '{kargs}' instead", DeprecationWarning)
             params[kargs] = to_arr(kwargs.pop(sargs))
 
     def _nl_means(i: int, channels: str) -> ConstantFormatVideoNode:
         return backend.NLMeans(
             clip,
             **{k: p[i] for k, p in params.items()},
-            **dict(channels=channels, rclip=ref, wmode=wmode, wref=wmode.wref) | kwargs
+            **{"channels": channels, "rclip": ref, "wmode": wmode, "wref": wmode.wref} | kwargs,
         )
 
     if clip.format.color_family in {vs.GRAY, vs.RGB}:
@@ -220,22 +220,22 @@ def nl_means(
             if len(set(p)) > 1:
                 warnings.warn(
                     f'nl_means: only "{doc}" first value will be used since clip is {clip.format.color_family.name}',
-                    UserWarning
+                    UserWarning,
                 )
 
-        return _nl_means(0, 'AUTO')
+        return _nl_means(0, "AUTO")
 
     if (
         all(len(p) < 2 for p in params.values())
         and clip.format.subsampling_w == clip.format.subsampling_h == 0
         and planes == [0, 1, 2]
     ):
-        return _nl_means(0, 'YUV')
+        return _nl_means(0, "YUV")
 
     for k, p in params.items():
         params[k] = normalize_seq(p, 2)
 
-    luma = _nl_means(0, 'Y') if 0 in planes else None
-    chroma = _nl_means(1, 'UV') if 1 in planes or 2 in planes else None
+    luma = _nl_means(0, "Y") if 0 in planes else None
+    chroma = _nl_means(1, "UV") if 1 in planes or 2 in planes else None
 
     return join({None: clip, tuple(planes): chroma, 0: luma})

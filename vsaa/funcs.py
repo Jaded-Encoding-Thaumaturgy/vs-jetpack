@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
 from functools import partial
+from typing import TYPE_CHECKING, Any, Literal
 
 from vsexprtools import norm_expr
 from vskernels import Box, Catrom, NoScale, Scaler, ScalerLike
@@ -9,17 +9,26 @@ from vsmasktools import EdgeDetect, EdgeDetectT, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
 from vsscale import ArtCNN
 from vstools import (
-    ConstantFormatVideoNode, CustomValueError, FormatsMismatchError, FunctionUtil, PlanesT, VSFunctionNoArgs,
-    check_variable_format, fallback, get_peak_value, get_y, limiter, scale_mask, vs, ConvMode, KwargsT
+    ConstantFormatVideoNode,
+    ConvMode,
+    CustomValueError,
+    FormatsMismatchError,
+    FunctionUtil,
+    KwargsT,
+    PlanesT,
+    VSFunctionNoArgs,
+    check_variable_format,
+    fallback,
+    get_peak_value,
+    get_y,
+    limiter,
+    scale_mask,
+    vs,
 )
 
-from .deinterlacers import AntiAliaser, NNEDI3, EEDI3
+from .deinterlacers import EEDI3, NNEDI3, AntiAliaser
 
-__all__ = [
-    'pre_aa',
-    'clamp_aa',
-    'based_aa'
-]
+__all__ = ["based_aa", "clamp_aa", "pre_aa"]
 
 
 def pre_aa(
@@ -59,7 +68,7 @@ def clamp_aa(
     weak_aa: vs.VideoNode | AntiAliaser | None = None,
     strong_aa: vs.VideoNode | AntiAliaser | None = None,
     ref: vs.VideoNode | None = None,
-    planes: PlanesT = 0
+    planes: PlanesT = 0,
 ) -> ConstantFormatVideoNode:
     """
     Clamp a strong aa to a weaker one for the purpose of reducing the stronger's artifacts.
@@ -109,8 +118,10 @@ def clamp_aa(
 
     clamped = norm_expr(
         [func.work_clip, ref, weak_aa, strong_aa],
-        'y z - D1! y a - D2! D1@ D2@ xor x D1@ abs D2@ abs < a z {thr} - z {thr} + clip a ? ?',
-        thr=thr, planes=func.norm_planes, func=func.func
+        "y z - D1! y a - D2! D1@ D2@ xor x D1@ abs D2@ abs < a z {thr} - z {thr} + clip a ? ?",
+        thr=thr,
+        planes=func.norm_planes,
+        func=func.func,
     )
 
     if mask is not False:
@@ -173,7 +184,11 @@ def based_aa(
                                   The supersampler should ideally be fairly sharp without
                                   introducing too much ringing.
                                   Default: ArtCNN (R8F64).
-    :param antialiaser:           Antialiaser used for anti-aliasing. If None, EEDI3 will be selected with these default settings:
+                                  If True, both fields will be processed separately, which may improve
+                                  anti-aliasing strength at the cost of increased processing time and detail loss.
+                                  Default: False.
+    :param antialiaser:           Antialiaser used for anti-aliasing.
+                                  If None, EEDI3 will be selected with these default settings:
                                   (alpha=0.125, beta=0.25, vthresh0=12, vthresh1=24, field=1).
     :param prefilter:             Prefilter to apply before anti-aliasing.
                                   Must be a VideoNode, a function that takes a VideoNode and returns a VideoNode,
@@ -193,7 +208,7 @@ def based_aa(
     func = FunctionUtil(clip, based_aa, 0, (vs.YUV, vs.GRAY))
 
     if rfactor <= 0.0:
-        raise CustomValueError('rfactor must be greater than 0!', based_aa, rfactor)
+        raise CustomValueError("rfactor must be greater than 0!", based_aa, rfactor)
 
     if mask is not False and not isinstance(mask, vs.VideoNode):
         mask = EdgeDetect.ensure_obj(mask, based_aa).edgemask(func.work_clip, 0)
@@ -212,10 +227,14 @@ def based_aa(
     aaw, aah = [round(dimension * rfactor) for dimension in (func.work_clip.width, func.work_clip.height)]
 
     if downscaler is None:
-        downscaler = Box if (
-            max(aaw, func.work_clip.width) % min(aaw, func.work_clip.width) == 0
-            and max(aah, func.work_clip.height) % min(aah, func.work_clip.height) == 0
-        ) else Catrom
+        downscaler = (
+            Box
+            if (
+                max(aaw, func.work_clip.width) % min(aaw, func.work_clip.width) == 0
+                and max(aah, func.work_clip.height) % min(aah, func.work_clip.height) == 0
+            )
+            else Catrom
+        )
 
     supersampler = Scaler.ensure_obj(supersampler, based_aa)
     downscaler = Scaler.ensure_obj(downscaler, based_aa)
@@ -257,7 +276,7 @@ def based_aa(
 
     if pscale != 1.0 and not isinstance(supersampler, NoScale):
         no_aa = downscaler.scale(ss, func.work_clip.width, func.work_clip.height)
-        aa = norm_expr([ss_clip, aa, no_aa], 'x z x - {pscale} * + y z - +', pscale=pscale, func=func.func)
+        aa = norm_expr([ss_clip, aa, no_aa], "x z x - {pscale} * + y z - +", pscale=pscale, func=func.func)
 
     if callable(postfilter):
         aa = postfilter(aa)

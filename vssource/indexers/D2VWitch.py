@@ -1,3 +1,5 @@
+# noqa: N999
+
 from __future__ import annotations
 
 import re
@@ -14,55 +16,53 @@ from .base import DVDExtIndexer
 if TYPE_CHECKING:
     from ..formats.dvd.parsedvd import IFOX, IFO0Title
 
-__all__ = [
-    'D2VWitch'
-]
+__all__ = ["D2VWitch"]
 
 
 class D2VWitch(DVDExtIndexer):
-    _bin_path = 'd2vwitch'
-    _ext = 'd2v'
+    _bin_path = "d2vwitch"
+    _ext = "d2v"
     _source_func: ClassVar[Callable[..., vs.VideoNode]] = core.lazy.d2v.Source
 
-    _default_args = ('--single-input', )
+    _default_args = ("--single-input",)
 
     def get_cmd(self, files: list[SPath], output: SPath) -> list[str]:
-        return list(map(str, [self._get_bin_path(), *files, '--output', output]))
+        return list(map(str, [self._get_bin_path(), *files, "--output", output]))
 
     def update_video_filenames(self, index_path: SPath, filepaths: list[SPath]) -> None:
-        with open(index_path, 'r') as file:
+        with open(index_path, "r") as file:
             file_content = file.read()
 
-        lines = file_content.split('\n')
+        lines = file_content.split("\n")
 
         str_filepaths = list(map(str, filepaths))
 
-        if 'DGIndex' not in lines[0]:
+        if "DGIndex" not in lines[0]:
             self.file_corrupted(index_path)
 
         if not (n_files := int(lines[1])) or n_files != len(str_filepaths):
             self.file_corrupted(index_path)
 
-        end_videos = lines.index('')
+        end_videos = lines.index("")
 
         if lines[2:end_videos] == str_filepaths:
             return
 
         lines[2:end_videos] = str_filepaths
 
-        with open(index_path, 'w') as file:
-            file.write('\n'.join(lines))
+        with open(index_path, "w") as file:
+            file.write("\n".join(lines))
 
     @lru_cache
     def get_info(self, index_path: SPath, file_idx: int = -1) -> D2VIndexFileInfo:
-        with open(index_path, 'r') as f:
+        with open(index_path, "r") as f:
             file_content = f.read()
 
-        lines = file_content.split('\n')
+        lines = file_content.split("\n")
 
         head, lines = lines[:2], lines[2:]
 
-        if 'DGIndex' not in head[0]:
+        if "DGIndex" not in head[0]:
             self.file_corrupted(index_path)
 
         raw_header, lines = self._split_lines(self._split_lines(lines)[1])
@@ -70,34 +70,34 @@ class D2VWitch(DVDExtIndexer):
         header = D2VIndexHeader()
 
         for rlin in raw_header:
-            if split_val := rlin.rstrip().split('='):
+            if split_val := rlin.rstrip().split("="):
                 key: str = split_val[0].upper()
-                values: list[str] = ','.join(split_val[1:]).split(',')
+                values: list[str] = ",".join(split_val[1:]).split(",")
             else:
                 continue
 
-            if key == 'STREAM_TYPE':
+            if key == "STREAM_TYPE":
                 header.stream_type = int(values[0])
-            elif key == 'MPEG_TYPE':
+            elif key == "MPEG_TYPE":
                 header.MPEG_type = int(values[0])
-            elif key == 'IDCT_ALGORITHM':
+            elif key == "IDCT_ALGORITHM":
                 header.iDCT_algorithm = int(values[0])
-            elif key == 'YUVRGB_SCALE':
+            elif key == "YUVRGB_SCALE":
                 header.YUVRGB_scale = int(values[0])
-            elif key == 'LUMINANCE_FILTER':
+            elif key == "LUMINANCE_FILTER":
                 header.luminance_filter = tuple(map(int, values))
-            elif key == 'CLIPPING':
+            elif key == "CLIPPING":
                 header.clipping = list(map(int, values))
-            elif key == 'ASPECT_RATIO':
-                header.aspect = Fraction(*list(map(int, values[0].split(':'))))
-            elif key == 'PICTURE_SIZE':
+            elif key == "ASPECT_RATIO":
+                header.aspect = Fraction(*list(map(int, values[0].split(":"))))
+            elif key == "PICTURE_SIZE":
                 header.pic_size = str(values[0])
-            elif key == 'FIELD_OPERATION':
+            elif key == "FIELD_OPERATION":
                 header.field_op = int(values[0])
-            elif key == 'FRAME_RATE':
-                if matches := re.search(r'.*\((\d+\/\d+)', values[0]):
+            elif key == "FRAME_RATE":
+                if matches := re.search(r".*\((\d+\/\d+)", values[0]):
                     header.frame_rate = Fraction(matches.group(1))
-            elif key == 'LOCATION':
+            elif key == "LOCATION":
                 header.location = list(map(partial(int, base=16), values))
 
         frame_data = list[D2VIndexFrameData]()
@@ -116,12 +116,18 @@ class D2VWitch(DVDExtIndexer):
                 elif ffile_idx > file_idx:
                     break
 
-                frame_data.append(D2VIndexFrameData(
-                    int(line[1]), 'I', int(line[5]),
-                    int(line[6]), int(line[0], 16),
-                    int(line[4]), int(line[3]),
-                    list(int(a, 16) for a in line[7:])
-                ))
+                frame_data.append(
+                    D2VIndexFrameData(
+                        int(line[1]),
+                        "I",
+                        int(line[5]),
+                        int(line[6]),
+                        int(line[0], 16),
+                        int(line[4]),
+                        int(line[3]),
+                        [int(a, 16) for a in line[7:]],
+                    )
+                )
         elif file_idx == -1:
             for rawline in lines:
                 if len(rawline) == 0:
@@ -129,25 +135,37 @@ class D2VWitch(DVDExtIndexer):
 
                 line = rawline.split(" ")
 
-                frame_data.append(D2VIndexFrameData(
-                    int(line[1]), 'I', int(line[5]),
-                    int(line[6]), int(line[0], 16),
-                    int(line[4]), int(line[3]),
-                    list(int(a, 16) for a in line[7:])
-                ))
+                frame_data.append(
+                    D2VIndexFrameData(
+                        int(line[1]),
+                        "I",
+                        int(line[5]),
+                        int(line[6]),
+                        int(line[0], 16),
+                        int(line[4]),
+                        int(line[3]),
+                        [int(a, 16) for a in line[7:]],
+                    )
+                )
 
         return D2VIndexFileInfo(index_path, file_idx, header, frame_data)
 
     def parse_vts(
-        self, title: IFO0Title, disable_rff: bool, vobidcellids_to_take: list[tuple[int, int]],
-        target_vts: IFOX, output_folder: SPath, vob_input_files: Sequence[SPath]
+        self,
+        title: IFO0Title,
+        disable_rff: bool,
+        vobidcellids_to_take: list[tuple[int, int]],
+        target_vts: IFOX,
+        output_folder: SPath,
+        vob_input_files: Sequence[SPath],
     ) -> tuple[vs.VideoNode, list[int], list[tuple[int, int]], list[int]]:
         dvddd = self._d2v_vobid_frameset(vob_input_files, output_folder)
 
-        if len(dvddd.keys()) == 1 and (0, 0) in dvddd.keys():
+        if len(dvddd.keys()) == 1 and (0, 0) in dvddd:
             raise CustomValueError(
-                'Youre indexer created a d2v file with only zeros for vobid cellid; '
-                'This usually means outdated/unpatched D2Vwitch', self.parse_vts
+                "Youre indexer created a d2v file with only zeros for vobid cellid; "
+                "This usually means outdated/unpatched D2Vwitch",
+                self.parse_vts,
             )
 
         frameranges = [x for y in [dvddd[a] for a in vobidcellids_to_take] for x in y]

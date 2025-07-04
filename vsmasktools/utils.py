@@ -8,9 +8,27 @@ from vsexprtools import ExprOp, complexpr_available, norm_expr
 from vskernels import Bilinear, Kernel, KernelLike
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
-    ColorRange, ConstantFormatVideoNode, CustomValueError, FrameRangeN, FrameRangesN, FuncExceptT, P, check_ref_clip,
-    check_variable, check_variable_format, core, depth, flatten_vnodes, get_lowest_values, get_peak_values, insert_clip,
-    normalize_ranges, plane, replace_ranges, split, vs
+    ColorRange,
+    ConstantFormatVideoNode,
+    CustomValueError,
+    FrameRangeN,
+    FrameRangesN,
+    FuncExceptT,
+    P,
+    check_ref_clip,
+    check_variable,
+    check_variable_format,
+    core,
+    depth,
+    flatten_vnodes,
+    get_lowest_values,
+    get_peak_values,
+    insert_clip,
+    normalize_ranges,
+    plane,
+    replace_ranges,
+    split,
+    vs,
 )
 
 from .abstract import GeneralMask
@@ -18,19 +36,20 @@ from .edge import EdgeDetect, EdgeDetectT, RidgeDetect, RidgeDetectT
 from .types import GenericMaskT
 
 __all__ = [
-    'max_planes',
-
-    'region_rel_mask', 'region_abs_mask',
-
-    'squaremask', 'replace_squaremask', 'freeze_replace_squaremask',
-
-    'normalize_mask',
-
-    'rekt_partial'
+    "freeze_replace_squaremask",
+    "max_planes",
+    "normalize_mask",
+    "region_abs_mask",
+    "region_rel_mask",
+    "rekt_partial",
+    "replace_squaremask",
+    "squaremask",
 ]
 
 
-def max_planes(*_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelLike = Bilinear) -> ConstantFormatVideoNode:
+def max_planes(
+    *_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelLike = Bilinear
+) -> ConstantFormatVideoNode:
     clips = flatten_vnodes(_clips)
 
     assert check_variable_format(clips, max_planes)
@@ -39,53 +58,55 @@ def max_planes(*_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelLi
 
     width, height, fmt = clips[0].width, clips[0].height, clips[0].format.replace(subsampling_w=0, subsampling_h=0)
 
-    return ExprOp.MAX.combine(
-        split(resizer.scale(clip, width, height, format=fmt)) for clip in clips
-    )
+    return ExprOp.MAX.combine(split(resizer.scale(clip, width, height, format=fmt)) for clip in clips)
 
 
 def _get_region_expr(
-    clip: vs.VideoNode | vs.VideoFrame, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0,
-    replace: str | int = 0, rel: bool = False
+    clip: vs.VideoNode | vs.VideoFrame,
+    left: int = 0,
+    right: int = 0,
+    top: int = 0,
+    bottom: int = 0,
+    replace: str | int = 0,
+    rel: bool = False,
 ) -> str:
     right, bottom = right + 1, bottom + 1
 
     if isinstance(replace, int):
-        replace = f'{replace} x'
+        replace = f"{replace} x"
 
     if rel:
-        return f'X {left} < X {right} > or Y {top} < Y {bottom} > or or {replace} ?'
+        return f"X {left} < X {right} > or Y {top} < Y {bottom} > or or {replace} ?"
 
-    return f'X {left} < X {clip.width - right} > or Y {top} < Y {clip.height - bottom} > or or {replace} ?'
+    return f"X {left} < X {clip.width - right} > or Y {top} < Y {clip.height - bottom} > or or {replace} ?"
 
 
-def region_rel_mask(clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> ConstantFormatVideoNode:
+def region_rel_mask(
+    clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0
+) -> ConstantFormatVideoNode:
     assert check_variable_format(clip, region_rel_mask)
 
     if complexpr_available:
-        return norm_expr(
-            clip, _get_region_expr(clip, left, right, top, bottom, 0), func=region_rel_mask
-        )
+        return norm_expr(clip, _get_region_expr(clip, left, right, top, bottom, 0), func=region_rel_mask)
 
     cropped = vs.core.std.Crop(clip, left, right, top, bottom)
 
     return vs.core.std.AddBorders(cropped, left, right, top, bottom)
 
 
-def region_abs_mask(clip: vs.VideoNode, width: int, height: int, left: int = 0, top: int = 0) -> ConstantFormatVideoNode:
+def region_abs_mask(
+    clip: vs.VideoNode, width: int, height: int, left: int = 0, top: int = 0
+) -> ConstantFormatVideoNode:
     assert check_variable_format(clip, region_rel_mask)
 
     def _crop(w: int, h: int) -> ConstantFormatVideoNode:
         cropped = vs.core.std.CropAbs(clip, width, height, left, top)
-        return vs.core.std.AddBorders(
-            cropped, left, w - width - left, top, h - height - top
-        )
+        return vs.core.std.AddBorders(cropped, left, w - width - left, top, h - height - top)
 
     if 0 in {clip.width, clip.height}:
         if complexpr_available:
             return norm_expr(
-                clip, _get_region_expr(clip, left, left + width, top, top + height, 0, True),
-                func=region_rel_mask
+                clip, _get_region_expr(clip, left, left + width, top, top + height, 0, True), func=region_rel_mask
             )
 
         return vs.core.std.FrameEval(clip, lambda f, n: _crop(f.width, f.height), clip)
@@ -94,9 +115,14 @@ def region_abs_mask(clip: vs.VideoNode, width: int, height: int, left: int = 0, 
 
 
 def squaremask(
-    clip: vs.VideoNode, width: int, height: int, offset_x: int, offset_y: int, invert: bool = False,
+    clip: vs.VideoNode,
+    width: int,
+    height: int,
+    offset_x: int,
+    offset_y: int,
+    invert: bool = False,
     force_gray: bool = True,
-    func: FuncExceptT | None = None
+    func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Create a square used for simple masking.
@@ -121,24 +147,25 @@ def squaremask(
 
     assert check_variable(clip, func)
 
-    mask_format = clip.format.replace(
-        color_family=vs.GRAY, subsampling_w=0, subsampling_h=0
-    ) if force_gray else clip.format
+    mask_format = (
+        clip.format.replace(color_family=vs.GRAY, subsampling_w=0, subsampling_h=0) if force_gray else clip.format
+    )
 
     if offset_x + width > clip.width or offset_y + height > clip.height:
-        raise CustomValueError('mask exceeds clip size!', func)
+        raise CustomValueError("mask exceeds clip size!", func)
 
     if complexpr_available:
         base_clip = vs.core.std.BlankClip(
-            clip,
-            None, None, mask_format.id, 1,
-            color=get_lowest_values(mask_format, ColorRange.FULL),
-            keep=True
+            clip, None, None, mask_format.id, 1, color=get_lowest_values(mask_format, ColorRange.FULL), keep=True
         )
         exprs = [
             _get_region_expr(
-                base_clip, offset_x, clip.width - width - offset_x, offset_y, clip.height - height - offset_y,
-                'range_max x' if invert else 'x range_max'
+                base_clip,
+                offset_x,
+                clip.width - width - offset_x,
+                offset_y,
+                clip.height - height - offset_y,
+                "range_max x" if invert else "x range_max",
             )
         ]
 
@@ -148,11 +175,13 @@ def squaremask(
                 ratio_x = p.width / base_clip.width
                 ratio_y = p.height / base_clip.height
                 exprs.append(
-                        _get_region_expr(
+                    _get_region_expr(
                         p,
-                        int(offset_x * ratio_x), int((clip.width - width - offset_x) * ratio_x),
-                        int(offset_y * ratio_y), int((clip.height - height - offset_y) * ratio_y),
-                        'range_max x' if invert else 'x range_max'
+                        int(offset_x * ratio_x),
+                        int((clip.width - width - offset_x) * ratio_x),
+                        int(offset_y * ratio_y),
+                        int((clip.height - height - offset_y) * ratio_y),
+                        "range_max x" if invert else "x range_max",
                     )
                 )
 
@@ -163,8 +192,12 @@ def squaremask(
         )
 
         mask = core.std.AddBorders(
-            base_clip, offset_x, clip.width - width - offset_x, offset_y, clip.height - height - offset_y,
-            [0] * mask_format.num_planes
+            base_clip,
+            offset_x,
+            clip.width - width - offset_x,
+            offset_y,
+            clip.height - height - offset_y,
+            [0] * mask_format.num_planes,
         )
         if invert:
             mask = core.std.Invert(mask)
@@ -176,9 +209,14 @@ def squaremask(
 
 
 def replace_squaremask(
-    clipa: vs.VideoNode, clipb: vs.VideoNode, mask_params: tuple[int, int, int, int],
-    ranges: FrameRangeN | FrameRangesN | None = None, blur_sigma: int | float | None = None,
-    invert: bool = False, func: FuncExceptT | None = None, show_mask: bool = False
+    clipa: vs.VideoNode,
+    clipb: vs.VideoNode,
+    mask_params: tuple[int, int, int, int],
+    ranges: FrameRangeN | FrameRangesN | None = None,
+    blur_sigma: int | float | None = None,
+    invert: bool = False,
+    func: FuncExceptT | None = None,
+    show_mask: bool = False,
 ) -> ConstantFormatVideoNode:
     """
     Replace an area of the frame with another clip using a simple square mask.
@@ -231,8 +269,11 @@ def replace_squaremask(
 
 
 def freeze_replace_squaremask(
-    mask: vs.VideoNode, insert: vs.VideoNode, mask_params: tuple[int, int, int, int],
-    frame: int, frame_range: tuple[int, int]
+    mask: vs.VideoNode,
+    insert: vs.VideoNode,
+    mask_params: tuple[int, int, int, int],
+    frame: int,
+    frame_range: tuple[int, int],
 ) -> ConstantFormatVideoNode:
     start, end = frame_range
 
@@ -242,39 +283,33 @@ def freeze_replace_squaremask(
 
 
 @overload
-def normalize_mask(mask: vs.VideoNode, clip: vs.VideoNode) -> ConstantFormatVideoNode:
-    ...
+def normalize_mask(mask: vs.VideoNode, clip: vs.VideoNode) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def normalize_mask(
     mask: Callable[[vs.VideoNode, vs.VideoNode], vs.VideoNode], clip: vs.VideoNode, ref: vs.VideoNode
-) -> ConstantFormatVideoNode:
-    ...
+) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def normalize_mask(
     mask: EdgeDetectT | RidgeDetectT, clip: vs.VideoNode, *, ridge: bool = ..., **kwargs: Any
-) -> ConstantFormatVideoNode:
-    ...
+) -> ConstantFormatVideoNode: ...
 
 
 @overload
-def normalize_mask(mask: GeneralMask, clip: vs.VideoNode, ref: vs.VideoNode) -> ConstantFormatVideoNode:
-    ...
+def normalize_mask(mask: GeneralMask, clip: vs.VideoNode, ref: vs.VideoNode) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def normalize_mask(
     mask: GenericMaskT, clip: vs.VideoNode, ref: vs.VideoNode | None = ..., *, ridge: bool = ..., **kwargs: Any
-) -> ConstantFormatVideoNode:
-    ...
+) -> ConstantFormatVideoNode: ...
 
 
 def normalize_mask(
-    mask: GenericMaskT, clip: vs.VideoNode, ref: vs.VideoNode | None = None,
-    *, ridge: bool = False, **kwargs: Any
+    mask: GenericMaskT, clip: vs.VideoNode, ref: vs.VideoNode | None = None, *, ridge: bool = False, **kwargs: Any
 ) -> ConstantFormatVideoNode:
     if isinstance(mask, (str, type)):
         return normalize_mask(EdgeDetect.ensure_obj(mask, normalize_mask), clip, ref, ridge=ridge, **kwargs)
@@ -288,7 +323,7 @@ def normalize_mask(
         cmask = mask.get_mask(clip, ref)
     elif callable(mask):
         if ref is None:
-            raise CustomValueError('This mask function requires a ref to be specified!')
+            raise CustomValueError("This mask function requires a ref to be specified!")
 
         cmask = mask(clip, ref)
     else:
@@ -307,7 +342,7 @@ class RektPartial(Generic[P, R]):
 
     def __init__(self, rekt_partial: Callable[P, R]) -> None:
         self._func = rekt_partial
-        
+
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
 
@@ -318,8 +353,12 @@ class RektPartial(Generic[P, R]):
         self,
         clip: vs.VideoNode,
         func: Callable[Concatenate[vs.VideoNode, P0], vs.VideoNode],
-        width: int, height: int, offset_x: int = 0, offset_y: int = 0,
-        *args: P0.args, **kwargs: P0.kwargs
+        width: int,
+        height: int,
+        offset_x: int = 0,
+        offset_y: int = 0,
+        *args: P0.args,
+        **kwargs: P0.kwargs,
     ) -> ConstantFormatVideoNode:
         """
         Creates a rectangular mask to apply fixes only within the masked area,
@@ -341,8 +380,12 @@ class RektPartial(Generic[P, R]):
 def rekt_partial(
     clip: vs.VideoNode,
     func: Callable[Concatenate[vs.VideoNode, P0], vs.VideoNode],
-    left: int = 0, right: int = 0, top: int = 0, bottom: int = 0,
-    *args: P0.args, **kwargs: P0.kwargs
+    left: int = 0,
+    right: int = 0,
+    top: int = 0,
+    bottom: int = 0,
+    *args: P0.args,
+    **kwargs: P0.kwargs,
 ) -> ConstantFormatVideoNode:
     """
     Creates a rectangular mask to apply fixes only within the masked area,
@@ -360,8 +403,7 @@ def rekt_partial(
     assert check_variable(clip, rekt_partial._func)
 
     def _filtered_func(clip: vs.VideoNode, *args: P0.args, **kwargs: P0.kwargs) -> ConstantFormatVideoNode:
-        assert check_variable_format(filtered := func(clip, *args, **kwargs), rekt_partial._func)
-        return filtered
+        return func(clip, *args, **kwargs)  # type: ignore
 
     if left == top == right == bottom == 0:
         return _filtered_func(clip, *args, **kwargs)
@@ -377,36 +419,65 @@ def rekt_partial(
 
         ratio_w, ratio_h = 1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h
 
-        vals = list(filter(None, [
-            ('X {left} >= ' if left else None),
-            ('X {right} < ' if right else None),
-            ('Y {top} >= ' if top else None),
-            ('Y {bottom} < ' if bottom else None)
-        ]))
+        vals = list(
+            filter(
+                None,
+                [
+                    ("X {left} >= " if left else None),
+                    ("X {right} < " if right else None),
+                    ("Y {top} >= " if top else None),
+                    ("Y {bottom} < " if bottom else None),
+                ],
+            )
+        )
 
         return norm_expr(
-            [clip, filtered], [*vals, ['and'] * (len(vals) - 1), 'y x ?'],
-            left=[left, left / ratio_w], right=[clip.width - right, (clip.width - right) / ratio_w],
-            top=[top, top / ratio_h], bottom=[clip.height - bottom, (clip.height - bottom) / ratio_h],
-            func=rekt_partial._func
+            [clip, filtered],
+            [*vals, ["and"] * (len(vals) - 1), "y x ?"],
+            left=[left, left / ratio_w],
+            right=[clip.width - right, (clip.width - right) / ratio_w],
+            top=[top, top / ratio_h],
+            bottom=[clip.height - bottom, (clip.height - bottom) / ratio_h],
+            func=rekt_partial._func,
         )
 
     if not (top or bottom) and (right or left):
-        return core.std.StackHorizontal(list(filter(None, [
-            clip.std.CropAbs(left, clip.height) if left else None,
-            filtered,
-            clip.std.CropAbs(right, clip.height, x=clip.width - right) if right else None,
-        ])))
+        return core.std.StackHorizontal(
+            list(
+                filter(
+                    None,
+                    [
+                        clip.std.CropAbs(left, clip.height) if left else None,
+                        filtered,
+                        clip.std.CropAbs(right, clip.height, x=clip.width - right) if right else None,
+                    ],
+                )
+            )
+        )
 
     if (top or bottom) and (right or left):
-        filtered = core.std.StackHorizontal(list(filter(None, [
-            clip.std.CropAbs(left, filtered.height, y=top) if left else None,
-            filtered,
-            clip.std.CropAbs(right, filtered.height, x=clip.width - right, y=top) if right else None,
-        ])))
+        filtered = core.std.StackHorizontal(
+            list(
+                filter(
+                    None,
+                    [
+                        clip.std.CropAbs(left, filtered.height, y=top) if left else None,
+                        filtered,
+                        clip.std.CropAbs(right, filtered.height, x=clip.width - right, y=top) if right else None,
+                    ],
+                )
+            )
+        )
 
-    return core.std.StackVertical(list(filter(None, [
-        clip.std.CropAbs(clip.width, top) if top else None,
-        filtered,
-        clip.std.CropAbs(clip.width, bottom, y=clip.height - bottom) if bottom else None,
-    ])))
+    return core.std.StackVertical(
+        list(
+            filter(
+                None,
+                [
+                    clip.std.CropAbs(clip.width, top) if top else None,
+                    filtered,
+                    clip.std.CropAbs(clip.width, bottom, y=clip.height - bottom) if bottom else None,
+                ],
+            )
+        )
+    )
