@@ -36,11 +36,6 @@ if TYPE_CHECKING:
 else:
     Backend = Any
 
-if TYPE_CHECKING:
-    from vsmlrt import backendT as Backend
-else:
-    Backend = Any
-
 from .generic import BaseGenericScaler
 
 __all__ = ["DPIR", "ArtCNN", "BaseOnnxScaler", "GenericOnnxScaler", "Waifu2x", "autoselect_backend"]
