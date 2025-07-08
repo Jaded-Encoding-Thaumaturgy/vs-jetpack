@@ -15,6 +15,7 @@ from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
     PlanesT,
+    UnsupportedColorFamilyError,
     check_variable,
     core,
     get_lowest_values,
@@ -389,7 +390,11 @@ class Grainer(AbstractGrainer, CustomEnum):
             grained = _apply_grainer(
                 clip,
                 lambda clip, strength, planes, **kwds: core.noise.Add(
-                    clip, strength[0], strength[1], type=self.value, constant=static, **kwds
+                    clip,
+                    *strength[:2],  # type: ignore[misc]
+                    type=self.value,
+                    constant=static,
+                    **kwds,
                 ),
                 **kwargs,
                 func=self.name,
@@ -468,7 +473,7 @@ def _apply_grainer(
         elif hi is False:
             hi = get_peak_values(clip, ColorRange.FULL)
 
-        grained = _protect_pixel_range(clip, grained, to_arr(lo), to_arr(hi), protect_edges_blend)
+        grained = _protect_pixel_range(clip, grained, to_arr(lo), to_arr(hi), protect_edges_blend, func)
 
     # Postprocess
     if post_process:
@@ -482,7 +487,7 @@ def _apply_grainer(
         base_clip = clip.std.BlankClip(length=clip.num_frames, color=get_neutral_values(clip), keep=True)
 
         if protect_neutral_chroma:
-            grained = _protect_neutral_chroma(clip, grained, base_clip, protect_neutral_chroma_blend)
+            grained = _protect_neutral_chroma(clip, grained, base_clip, protect_neutral_chroma_blend, func)
 
         if luma_scaling is not None:
             grained = core.std.MaskedMerge(base_clip, grained, adg_mask(clip, luma_scaling), planes)
@@ -496,6 +501,7 @@ def _protect_pixel_range(
     low: list[float],
     high: list[float],
     blend: float = 0.0,
+    func: FuncExceptT | None = None,
 ) -> vs.VideoNode:
     if not blend:
         expr = "y neutral - abs A! x A@ - {lo} < x A@ + {hi} > or neutral y ?"
@@ -508,27 +514,34 @@ def _protect_pixel_range(
             "N@ * neutral + "
         )
 
-    return norm_expr([clip, grained], expr, lo=low, hi=high, blend=blend)
+    return norm_expr([clip, grained], expr, func=func, lo=low, hi=high, blend=blend)
 
 
 def _protect_neutral_chroma(
-    clip: ConstantFormatVideoNode, grained: vs.VideoNode, base_clip: vs.VideoNode, blend: float = 0.0
+    clip: ConstantFormatVideoNode,
+    grained: vs.VideoNode,
+    base_clip: vs.VideoNode,
+    blend: float = 0.0,
+    func: FuncExceptT | None = None,
 ) -> vs.VideoNode:
-    if clip.format.color_family is vs.YUV:
-        if not blend:
-            expr = "x neutral = y neutral = and range_max 0 ?"
-        else:
-            expr = "x neutral - abs {blend} / 1 min 1 swap - y neutral - abs {blend} / 1 min 1 swap - * range_max *"
+    match clip.format.color_family:
+        case vs.YUV:
+            if not blend:
+                expr = "x neutral = y neutral = and range_max 0 ?"
+            else:
+                expr = "x neutral - abs {blend} / 1 min 1 swap - y neutral - abs {blend} / 1 min 1 swap - * range_max *"
 
-        mask = norm_expr([get_u(clip), get_v(clip)], expr, blend=blend)
+            mask = norm_expr([get_u(clip), get_v(clip)], expr, func=func, blend=blend)
 
-        return core.std.MaskedMerge(
-            grained, base_clip, core.std.ShufflePlanes([clip, mask, mask], [0, 0, 0], vs.YUV, clip), [1, 2]
-        )
-
-    mask = norm_expr(split(clip), "x y = x z = and range_max *")
-
-    return core.std.MaskedMerge(grained, base_clip, mask)
+            return core.std.MaskedMerge(
+                grained, base_clip, core.std.ShufflePlanes([clip, mask, mask], [0, 0, 0], vs.YUV, clip), [1, 2]
+            )
+        case vs.RGB:
+            return core.std.MaskedMerge(
+                grained, base_clip, norm_expr(split(clip), "x y = x z = and range_max *", func=func)
+            )
+        case _:
+            raise UnsupportedColorFamilyError("Can't use `protect_neutral_chroma=True` when input clip is GRAY", func)
 
 
 class GrainerPartial(AbstractGrainer):

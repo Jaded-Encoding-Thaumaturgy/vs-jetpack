@@ -2,7 +2,7 @@
 
 from abc import ABC
 from logging import warning
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, SupportsFloat, TypeAlias, TypeVar, runtime_checkable
 
 from jetpytools import KwargsT
 
@@ -31,16 +31,34 @@ from vstools import (
     vs,
 )
 
+if TYPE_CHECKING:
+    from vsmlrt import backendT as Backend
+else:
+    Backend = Any
+
+if TYPE_CHECKING:
+    from vsmlrt import backendT as Backend
+else:
+    Backend = Any
+
 from .generic import BaseGenericScaler
 
 __all__ = ["DPIR", "ArtCNN", "BaseOnnxScaler", "GenericOnnxScaler", "Waifu2x", "autoselect_backend"]
 
 
-def _clean_keywords(kwargs: dict[str, Any], backend: Any) -> dict[str, Any]:
+_IntT = TypeVar("_IntT", bound=int)
+
+
+@runtime_checkable
+class _SupportsFP16(Protocol):
+    fp16: bool
+
+
+def _clean_keywords(kwargs: dict[str, Any], backend: Backend) -> dict[str, Any]:
     return {k: v for k, v in kwargs.items() if k in backend.__dataclass_fields__}
 
 
-def autoselect_backend(**kwargs: Any) -> Any:
+def autoselect_backend(**kwargs: Any) -> Backend:
     """
     Try to select the best backend for the current system.
     If the system has an NVIDIA GPU: TRT > CUDA (ORT) > Vulkan > OpenVINO GPU
@@ -85,7 +103,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
     def __init__(
         self,
         model: SPathLike | None = None,
-        backend: Any | None = None,
+        backend: Backend | None = None,
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
@@ -97,6 +115,8 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         **kwargs: Any,
     ) -> None:
         """
+        Initializes the scaler with the specified parameters.
+
         :param model:           Path to the ONNX model file.
         :param backend:         The backend to be used with the vs-mlrt framework.
                                 If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
@@ -231,7 +251,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         """Performs preprocessing on the clip prior to inference."""
 
-        clip = depth(clip, 16 if self.backend.fp16 else 32, vs.FLOAT)
+        clip = depth(clip, self._pick_precision(16, 32), vs.FLOAT)
         return limiter(clip, func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
@@ -250,8 +270,18 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         return inference(clip, self.model, overlaps, tiles, self.backend, **kwargs)
 
+    def _pick_precision(self, fp16: _IntT, fp32: _IntT) -> _IntT:
+        from vsmlrt import Backend
 
-class GenericOnnxScaler(BaseOnnxScaler):
+        return (
+            fp16
+            if (isinstance(self.backend, _SupportsFP16) and self.backend.fp16)
+            and not isinstance(self.backend, (Backend.OV_CPU, Backend.OV_GPU, Backend.OV_NPU))
+            else fp32
+        )
+
+
+class GenericOnnxScaler(BaseOnnxScaler, partial_abstract=True):
     """
     Generic scaler class for an ONNX model.
 
@@ -266,8 +296,6 @@ class GenericOnnxScaler(BaseOnnxScaler):
     ```
     """
 
-    _static_kernel_radius = 2
-
 
 class BaseArtCNN(BaseOnnxScaler):
     _model: ClassVar[int]
@@ -275,7 +303,7 @@ class BaseArtCNN(BaseOnnxScaler):
 
     def __init__(
         self,
-        backend: Any | None = None,
+        backend: Backend | None = None,
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
@@ -287,6 +315,8 @@ class BaseArtCNN(BaseOnnxScaler):
         **kwargs: Any,
     ) -> None:
         """
+        Initializes the scaler with the specified parameters.
+
         :param backend:         The backend to be used with the vs-mlrt framework.
                                 If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
         :param tiles:           Whether to split the image into multiple tiles.
@@ -364,10 +394,7 @@ class BaseArtCNNChroma(BaseArtCNN):
             clip = chroma_scaler.resample(
                 clip,
                 clip.format.replace(
-                    subsampling_h=0,
-                    subsampling_w=0,
-                    sample_type=vs.FLOAT,
-                    bits_per_sample=16 if self.backend.fp16 else 32,
+                    subsampling_h=0, subsampling_w=0, sample_type=vs.FLOAT, bits_per_sample=self._pick_precision(16, 32)
                 ),
             )
             return limiter(clip, func=self.__class__)
@@ -587,7 +614,7 @@ class BaseWaifu2x(BaseOnnxScaler):
         self,
         scale: Literal[1, 2, 4] = 2,
         noise: Literal[-1, 0, 1, 2, 3] = -1,
-        backend: Any | None = None,
+        backend: Backend | None = None,
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
@@ -599,6 +626,8 @@ class BaseWaifu2x(BaseOnnxScaler):
         **kwargs: Any,
     ) -> None:
         """
+        Initializes the scaler with the specified parameters.
+
         :param scale:           Upscaling factor. 1 = no uspcaling, 2 = 2x, 4 = 4x.
         :param noise:           Noise reduction level. -1 = none, 0 = low, 1 = medium, 2 = high, 3 = highest.
         :param backend:         The backend to be used with the vs-mlrt framework.
@@ -649,7 +678,7 @@ class BaseWaifu2x(BaseOnnxScaler):
 
 class BaseWaifu2xRGB(BaseWaifu2x):
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        clip = self.kernel.resample(clip, vs.RGBH if self.backend.fp16 else vs.RGBS, Matrix.RGB)
+        clip = self.kernel.resample(clip, self._pick_precision(vs.RGBH, vs.RGBS), Matrix.RGB)
         return limiter(clip, func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
@@ -906,7 +935,7 @@ class BaseDPIR(BaseOnnxScaler):
     def __init__(
         self,
         strength: SupportsFloat | vs.VideoNode = 10,
-        backend: Any | None = None,
+        backend: Backend | None = None,
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
@@ -917,7 +946,7 @@ class BaseDPIR(BaseOnnxScaler):
         **kwargs: Any,
     ) -> None:
         """
-        Initializes the class with the specified parameters.
+        Initializes the scaler with the specified parameters.
 
         :param strength:        Threshold (8-bit scale) strength for deblocking/denoising.
                                 If a VideoNode is used, it must be in GRAY8, GRAYH, or GRAYS format, with pixel values
@@ -970,7 +999,7 @@ class BaseDPIR(BaseOnnxScaler):
         if get_color_family(clip) == vs.GRAY:
             return super().preprocess_clip(clip, **kwargs)
 
-        clip = self.kernel.resample(clip, vs.RGBH if self.backend.fp16 else vs.RGBS, Matrix.RGB)
+        clip = self.kernel.resample(clip, self._pick_precision(vs.RGBH, vs.RGBS), Matrix.RGB)
 
         return limiter(clip, func=self.__class__)
 

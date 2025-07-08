@@ -112,7 +112,7 @@ def mc_degrain(
     The weighting factors for each block depend on their SAD from the current frame.
 
     :param clip:              The clip to process.
-    :param vectors:           Motion vectors to use. Can be a MotionVectors object or another MVTools instance.
+    :param vectors:           Motion vectors to use.
     :param prefilter:         Filter or clip to use when performing motion vector search.
     :param mfilter:           Filter or clip to use where degrain couldn't find a matching block.
     :param preset:            MVTools preset defining base values for the MVTools object. Default is HQ_SAD.

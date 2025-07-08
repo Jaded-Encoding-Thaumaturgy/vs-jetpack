@@ -43,7 +43,7 @@ __all__ = [
 def finalize_clip(
     clip: vs.VideoNode,
     bits: VideoFormatT | HoldsVideoFormatT | int | None = 10,
-    clamp_tv_range: bool | None = None,
+    clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     *,
     func: FuncExceptT | None = None,
@@ -53,7 +53,7 @@ def finalize_clip(
 
     :param clip:            Clip to output.
     :param bits:            Bitdepth to output to.
-    :param clamp_tv_range:  Whether to clamp to tv range. If None, decide based on clip properties.
+    :param clamp_tv_range:  Whether to clamp to tv range.
     :param dither_type:     Dithering used for the bitdepth conversion.
     :param func:            Function returned for custom error handling.
                             This should only be set by VS package developers.
@@ -67,12 +67,6 @@ def finalize_clip(
     if bits:
         clip = depth(clip, bits, dither_type=dither_type)
 
-    if clamp_tv_range is None:
-        try:
-            clamp_tv_range = ColorRange.from_video(clip, strict=True).is_limited
-        except Exception:
-            clamp_tv_range = True
-
     if clamp_tv_range:
         clip = limiter(clip, tv_range=clamp_tv_range)
 
@@ -85,7 +79,7 @@ def finalize_output(
     /,
     *,
     bits: int | None = 10,
-    clamp_tv_range: bool = True,
+    clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExceptT | None = None,
 ) -> Callable[P, ConstantFormatVideoNode]: ...
@@ -95,7 +89,7 @@ def finalize_output(
 def finalize_output(
     *,
     bits: int | None = 10,
-    clamp_tv_range: bool = True,
+    clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExceptT | None = None,
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, ConstantFormatVideoNode]]: ...
@@ -106,7 +100,7 @@ def finalize_output(
     /,
     *,
     bits: int | None = 10,
-    clamp_tv_range: bool = True,
+    clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExceptT | None = None,
 ) -> Union[Callable[P, vs.VideoNode], Callable[[Callable[P, vs.VideoNode]], Callable[P, ConstantFormatVideoNode]]]:

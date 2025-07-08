@@ -459,7 +459,7 @@ class Rescale(RescaleBase):
         self, clip: vs.VideoNode | None = None, scaler: ScalerLike = Bilinear, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
-        Load a default Kirsch line mask in the class instance. Additionnaly, it is returned.
+        Load a default Kirsch line mask in the class instance. Additionally, it is returned.
 
         :param clip:    Reference clip, defaults to doubled clip if None.
         :param scaler:  Scaled used for matching the source clip format, defaults to Bilinear
