@@ -4,7 +4,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
 
 from vsexprtools import ExprOp, combine, complexpr_available, expr_func, norm_expr
-from vskernels import Catrom, Hermite, KernelLike, LinearScaler, Scaler, ScalerLike
+from vskernels import Catrom, ComplexScaler, ComplexScalerLike, Hermite, KernelLike, Scaler, ScalerLike
 from vsmasktools import ringing_mask
 from vsrgtools import box_blur, gauss_blur
 from vsrgtools.rgtools import Repair
@@ -216,7 +216,7 @@ class DPID(BaseGenericScaler):
         return self._ref_scaler.kernel_radius
 
 
-class SSIM(LinearScaler):
+class SSIM(ComplexScaler):
     """
     SSIM downsampler is an image downscaling technique that aims to optimize
     for the perceptual quality of the downscaled results.
@@ -232,11 +232,13 @@ class SSIM(LinearScaler):
 
     def __init__(
         self,
-        scaler: ScalerLike = Hermite,
+        scaler: ComplexScalerLike = Hermite,
         smooth: int | float | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | None = None,
         **kwargs: Any,
     ) -> None:
         """
+        Initialize the scaler.
+
         :param scaler:      Scaler to be used for downscaling, defaults to Hermite.
         :param smooth:      Image smoothening method.
                             If you pass an int, it specifies the "radius" of the internally-used boxfilter,
@@ -248,7 +250,7 @@ class SSIM(LinearScaler):
         """
         super().__init__(**kwargs)
 
-        self.scaler = Scaler.from_param(scaler)()
+        self.scaler = ComplexScaler.from_param(scaler)()
 
         if smooth is None:
             smooth = (self.scaler.kernel_radius + 1.0) / 3
