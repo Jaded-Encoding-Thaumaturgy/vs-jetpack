@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+import json
 import re
-
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
 from pathlib import Path
-from typing import Any, ClassVar, Iterable, Literal, NamedTuple, TypeVar, overload
+from typing import (Any, ClassVar, Iterable, Literal, NamedTuple, TypeVar,
+                    overload)
 
 import vapoursynth as vs
-
-from jetpytools import CustomValueError, FilePathType, FuncExceptT, LinearRangeLut, Sentinel, SPath, inject_self
+from jetpytools import (CustomValueError, FilePathType, FuncExceptT,
+                        LinearRangeLut, Sentinel, SPath, inject_self)
 from typing_extensions import Self
 
 from ..enums import Matrix, SceneChangeMode
@@ -357,6 +358,7 @@ class Keyframes(list[int]):
 
     V1 = 1
     XVID = -1
+    AV_SCENECHANGE = -2
 
     WWXD: ClassVar = SceneChangeMode.WWXD
     SCXVID: ClassVar = SceneChangeMode.SCXVID
@@ -412,7 +414,11 @@ class Keyframes(list[int]):
 
         clip = mode.prepare_clip(clip, height)
 
-        frames = clip_async_render(clip, None, 'Detecting scene changes...', mode.lambda_cb(), **kwargs)
+        if mode.is_AV_SCENECHANGE:
+            # No need to render clip twice, it will already be rendered in `prepare_clip` once.
+            frames = Keyframes.from_file(mode._av_scenechange_file)
+        else:
+            frames = clip_async_render(clip, None, 'Detecting scene changes...', mode.lambda_cb(), **kwargs)
 
         return cls(Sentinel.filter(frames))
 
@@ -456,35 +462,33 @@ class Keyframes(list[int]):
         if file.stat().st_size <= 0:
             raise OSError('File is empty!')
 
-        lines = [
-            line.strip() for line in file.read_lines('utf-8')
-            if line and not line.startswith('#')
-        ]
+        try:
+            with open(file) as f:
+                data = json.load(f)
+
+                # Check for AV_SCENECHANGE format
+                if scene_changes := data.get('scene_changes'):
+                    return cls(scene_changes)
+        except json.JSONDecodeError:
+            pass
+
+        lines = [line.strip() for line in file.read_lines('utf-8') if line and not line.startswith('#')]
 
         if not lines:
-            raise ValueError('No keyframe could be found!')
+            raise CustomValueError('No keyframe could be found!', cls.from_file, file)
 
-        kf_type: int | None = None
+        first_line = lines[0].lower()
 
-        line = lines[0].lower()
-
-        if line.startswith('fps'):
-            kf_type = Keyframes.XVID
-        elif line.startswith(('i', 'b', 'p', 'n')):
-            kf_type = Keyframes.V1
-
-        if kf_type is None:
-            raise ValueError('Could not determine keyframe file type!')
-
-        if kf_type == Keyframes.V1:
-            return cls(i for i, line in enumerate(lines) if line.startswith('i'))
-
-        if kf_type == Keyframes.XVID:
+        # Check for XVID format
+        if first_line.startswith('fps'):
             split_lines = [line.split(' ') for line in lines]
-
             return cls(int(n) for n, t, *_ in split_lines if t.lower() == 'i')
 
-        raise ValueError('Invalid keyframe file type!')
+        # Check for V1 format
+        if first_line.startswith(('i', 'b', 'p', 'n')):
+            return cls(i for i, line in enumerate(lines) if line.startswith('i'))
+
+        raise CustomValueError('Could not determine keyframe file type!', cls.from_file, file)
 
     def to_file(
         self, out: FilePathType, format: int = V1, func: FuncExceptT | None = None,
