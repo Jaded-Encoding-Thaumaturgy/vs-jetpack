@@ -23,7 +23,7 @@ from .abstract import Debander
 __all__ = ["Placebo", "PlaceboDither"]
 
 
-@deprecated('"PlaceboDither" is deprecated, use "placebo_deband.Dither" instead.', category=DeprecationWarning)
+@deprecated('"PlaceboDither" is deprecated and will be removed in a future version', category=DeprecationWarning)
 class PlaceboDither(CustomIntEnum):
     NONE = -1
     """No dithering."""
@@ -71,7 +71,7 @@ class PlaceboDither(CustomIntEnum):
         return {"dither": True, "dither_algo": self.value}
 
 
-@deprecated('"Placebo" is deprecated, use "placebo_deband.Dither" instead.', category=DeprecationWarning)
+@deprecated('"Placebo" is deprecated, use "placebo_deband" instead.', category=DeprecationWarning)
 @dataclass
 class Placebo(Debander):
     """Debander wrapper around libplacebo plugin's Deband function."""
@@ -84,7 +84,7 @@ class Placebo(Debander):
 
     dither: PlaceboDither | None = None
 
-    @deprecated('"Placebo.deband" is deprecated, use "placebo_deband.Dither" instead.', category=DeprecationWarning)
+    @deprecated('"Placebo.deband" is deprecated, use "placebo_deband" instead.', category=DeprecationWarning)
     @inject_self
     def deband(  # type: ignore[override]
         self,
