@@ -56,7 +56,9 @@ class _Feature(Enum):
 
 
 class MagDirection(IntFlag):
-    """Direction of magnitude calculation."""
+    """
+    Direction of magnitude calculation.
+    """
 
     N = auto()
     NW = auto()
@@ -147,7 +149,9 @@ def _is_discard_planes_mode(planes: PlanesT | tuple[PlanesT, bool]) -> TypeIs[tu
 
 
 class EdgeDetect(ABC):
-    """Abstract edge detection interface."""
+    """
+    Abstract edge detection interface.
+    """
 
     kwargs: KwargsT | None = None
 
@@ -190,13 +194,15 @@ class EdgeDetect(ABC):
         Makes edge mask based on convolution kernel.
         The resulting mask can be thresholded with lthr, hthr and multiplied with multi.
 
-        :param clip:            Source clip
-        :param lthr:            Low threshold. Anything below lthr will be set to 0
-        :param hthr:            High threshold. Anything above hthr will be set to the range max
-        :param multi:           Multiply all pixels by this before thresholding
-        :param clamp:           Clamp to TV or full range if True or specified range `(low, high)`
+        Args:
+            clip: Source clip
+            lthr: Low threshold. Anything below lthr will be set to 0
+            hthr: High threshold. Anything above hthr will be set to the range max
+            multi: Multiply all pixels by this before thresholding
+            clamp: Clamp to TV or full range if True or specified range `(low, high)`
 
-        :return:                Mask clip
+        Returns:
+            Mask clip
         """
         return self._mask(clip, lthr, hthr, multi, clamp, _Feature.EDGE, planes, **kwargs)
 
@@ -377,16 +383,19 @@ class RidgeDetect(MatrixEdgeDetect):
     ) -> vs.VideoNode:
         """
         Makes ridge mask based on convolution kernel.
+
         The resulting mask can be thresholded with lthr, hthr and multiplied with multi.
         Using a 32-bit float clip is recommended.
 
-        :param clip:            Source clip
-        :param lthr:            Low threshold. Anything below lthr will be set to 0
-        :param hthr:            High threshold. Anything above hthr will be set to the range max
-        :param multi:           Multiply all pixels by this before thresholding
-        :param clamp:           Clamp to TV or full range if True or specified range `(low, high)`
+        Args:
+            clip: Source clip
+            lthr: Low threshold. Anything below lthr will be set to 0
+            hthr: High threshold. Anything above hthr will be set to the range max
+            multi: Multiply all pixels by this before thresholding
+            clamp: Clamp to TV or full range if True or specified range `(low, high)`
 
-        :return:                Mask clip
+        Returns:
+            Mask clip
         """
         return self._mask(clip, lthr, hthr, multi, clamp, _Feature.RIDGE, planes, **kwargs)
 
@@ -449,13 +458,15 @@ def get_all_edge_detects(
     """
     Returns all the EdgeDetect subclasses
 
-    :param clip:        Source clip
-    :param lthr:        See :py:func:`EdgeDetect.get_mask`
-    :param hthr:        See :py:func:`EdgeDetect.get_mask`
-    :param multi:       See :py:func:`EdgeDetect.get_mask`
-    :param clamp:       Clamp to TV or full range if True or specified range `(low, high)`
+    Args:
+        clip: Source clip
+        lthr: See [EdgeDetect.get_mask][vsmasktools.edge.EdgeDetect.edgemask]
+        hthr: See [EdgeDetect.get_mask][vsmasktools.edge.EdgeDetect.edgemask]
+        multi: See [EdgeDetect.get_mask][vsmasktools.edge.EdgeDetect.edgemask]
+        clamp: Clamp to TV or full range if True or specified range `(low, high)`
 
-    :return:            A list edge masks
+    Returns:
+        A list edge masks
     """
 
     def _all_subclasses(cls: type[EdgeDetect] = EdgeDetect) -> set[type[EdgeDetect]]:
@@ -495,13 +506,15 @@ def get_all_ridge_detect(
     """
     Returns all the RidgeDetect subclasses
 
-    :param clip:        Source clip
-    :param lthr:        See :py:func:`EdgeDetect.get_mask`
-    :param hthr:        See :py:func:`EdgeDetect.get_mask`
-    :param multi:       See :py:func:`EdgeDetect.get_mask`
-    :param clamp:       Clamp to TV or full range if True or specified range `(low, high)`
+    Args:
+        clip: Source clip
+        lthr: See [RidgeDetect.get_mask][vsmasktools.edge.RidgeDetect.ridgemask]
+        hthr: See [RidgeDetect.get_mask][vsmasktools.edge.RidgeDetect.ridgemask]
+        multi: See [RidgeDetect.get_mask][vsmasktools.edge.RidgeDetect.ridgemask]
+        clamp: Clamp to TV or full range if True or specified range `(low, high)`
 
-    :return:            A list edge masks
+    Returns:
+        A list edge masks
     """
 
     def _all_subclasses(cls: type[RidgeDetect] = RidgeDetect) -> set[type[RidgeDetect]]:

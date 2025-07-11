@@ -204,26 +204,28 @@ class FineDehalo(Generic[P, R]):
         """
         The fine_dehalo mask.
 
-        :param clip:                Source clip.
-        :param dehaloed:            Optional dehaloed clip to mask. If this is specified, instead of returning
-                                    the mask, the function will return the maskedmerged clip to this.
-        :param rx:                  Horizontal radius for halo removal.
-        :param ry:                  Vertical radius for halo removal.
-        :param thmi:                Minimum threshold for sharp edges; keep only the sharpest edges (line edges).
-        :param thma:                Maximum threshold for sharp edges; keep only the sharpest edges (line edges).
-        :param thlimi:              Minimum limiting threshold; include more edges than previously ignored details.
-        :param thlima:              Maximum limiting threshold; include more edges than previously ignored details.
-        :param exclude:             If True, add an addionnal step to exclude edges close to each other
-        :param edgeproc:            If > 0, it will add the edgemask to the processing, defaults to 0.0
-        :param edgemask:            Internal mask used for detecting the edges, defaults to Robinson3()
-        :param pre_ss:              Supersampling rate used before anything else.
-        :param pre_supersampler:    Supersampler used for ``pre_ss``.
-        :param show_mask:           Whether to show the computed halo mask. 1-7 values to select intermediate masks.
-        :param planes:              Planes to process.
-        :param first_plane:         Whether to mask chroma planes with luma mask.
-        :param func:                Function from where this function was called.
+        Args:
+            clip: Source clip.
+            dehaloed: Optional dehaloed clip to mask. If this is specified, instead of returning the mask, the function
+                will return the maskedmerged clip to this.
+            rx: Horizontal radius for halo removal.
+            ry: Vertical radius for halo removal.
+            thmi: Minimum threshold for sharp edges; keep only the sharpest edges (line edges).
+            thma: Maximum threshold for sharp edges; keep only the sharpest edges (line edges).
+            thlimi: Minimum limiting threshold; include more edges than previously ignored details.
+            thlima: Maximum limiting threshold; include more edges than previously ignored details.
+            exclude: If True, add an addionnal step to exclude edges close to each other
+            edgeproc: If > 0, it will add the edgemask to the processing, defaults to 0.0
+            edgemask: Internal mask used for detecting the edges, defaults to Robinson3()
+            pre_ss: Supersampling rate used before anything else.
+            pre_supersampler: Supersampler used for ``pre_ss``.
+            show_mask: Whether to show the computed halo mask. 1-7 values to select intermediate masks.
+            planes: Planes to process.
+            first_plane: Whether to mask chroma planes with luma mask.
+            func: Function from where this function was called.
 
-        :return:                    Mask or masked clip.
+        Returns:
+            Mask or masked clip.
         """
         work_clip = get_y(clip)
 
@@ -303,39 +305,39 @@ def fine_dehalo(
     * 2nd => 2.0 for luma, 2.4 for chroma
     * 3rd => 2.2 for luma, 2.0 for u, 2.1 for v
 
-    :param clip:                Source clip.
-    :param rx:                  Horizontal radius for halo removal.
-    :param ry:                  Vertical radius for halo removal.
-    :param darkstr:             Strength factor for dark halos.
-    :param brightstr:           Strength factor for bright halos.
-    :param lowsens:             Sensitivity setting for how weak the dehalo has to be to get fully accepted.
-    :param highsens:            Sensitivity setting for how strong the dehalo has to be to get fully discarded.
-    :param thmi:                Minimum threshold for sharp edges; keep only the sharpest edges (line edges).
-    :param thma:                Maximum threshold for sharp edges; keep only the sharpest edges (line edges).
-    :param thlimi:              Minimum limiting threshold; include more edges than previously ignored details.
-    :param thlima:              Maximum limiting threshold; include more edges than previously ignored details.
-    :param sigma_mask:          Blurring strength for the mask.
-    :param ss:                  Supersampling factor, to avoid creation of aliasing.
-    :param contra:              Contrasharpening. If True or int, will use :py:func:`contrasharpening`
-                                otherwise uses :py:func:`contrasharpening_fine_dehalo` with specified level.
-    :param exclude:             If True, add an addionnal step to exclude edges close to each other
-    :param edgeproc:            If > 0, it will add the edgemask to the processing, defaults to 0.0
-    :param edgemask:            Internal mask used for detecting the edges, defaults to Robinson3()
-    :param planes:              Planes to process.
-    :param show_mask:           Whether to show the computed halo mask. 1-7 values to select intermediate masks.
-    :param mask_radius:         Mask expanding radius with ``gradient``.
-    :param downscaler:          Scaler used to downscale the clip.
-    :param upscaler:            Scaler used to upscale the downscaled clip.
-    :param supersampler:        Scaler used to supersampler the rescaled clip to `ss` factor.
-    :param supersampler_ref:    Reference scaler used to clamp the supersampled clip. Has to be blurrier.
-    :param pre_ss:              Supersampling rate used before anything else.
-    :param pre_supersampler:    Supersampler used for ``pre_ss``.
-    :param pre_downscaler:      Downscaler used for undoing the upscaling done by ``pre_supersampler``.
-    :param func:                Function from where this function was called.
+    Args:
+        clip: Source clip.
+        rx: Horizontal radius for halo removal.
+        ry: Vertical radius for halo removal.
+        darkstr: Strength factor for dark halos.
+        brightstr: Strength factor for bright halos.
+        lowsens: Sensitivity setting for how weak the dehalo has to be to get fully accepted.
+        highsens: Sensitivity setting for how strong the dehalo has to be to get fully discarded.
+        thmi: Minimum threshold for sharp edges; keep only the sharpest edges (line edges).
+        thma: Maximum threshold for sharp edges; keep only the sharpest edges (line edges).
+        thlimi: Minimum limiting threshold; include more edges than previously ignored details.
+        thlima: Maximum limiting threshold; include more edges than previously ignored details.
+        sigma_mask: Blurring strength for the mask.
+        ss: Supersampling factor, to avoid creation of aliasing.
+        contra: Contrasharpening. If True or int, will use [contrasharpening][vsdehalo.contrasharpening] otherwise uses
+            [contrasharpening_fine_dehalo][vsdehalo.contrasharpening_fine_dehalo] with specified level.
+        exclude: If True, add an addionnal step to exclude edges close to each other
+        edgeproc: If > 0, it will add the edgemask to the processing, defaults to 0.0
+        edgemask: Internal mask used for detecting the edges, defaults to Robinson3()
+        planes: Planes to process.
+        show_mask: Whether to show the computed halo mask. 1-7 values to select intermediate masks.
+        mask_radius: Mask expanding radius with ``gradient``.
+        downscaler: Scaler used to downscale the clip.
+        upscaler: Scaler used to upscale the downscaled clip.
+        supersampler: Scaler used to supersampler the rescaled clip to `ss` factor.
+        supersampler_ref: Reference scaler used to clamp the supersampled clip. Has to be blurrier.
+        pre_ss: Supersampling rate used before anything else.
+        pre_supersampler: Supersampler used for ``pre_ss``.
+        pre_downscaler: Downscaler used for undoing the upscaling done by ``pre_supersampler``.
+        func: Function from where this function was called.
 
-    :return:                    Dehaloed clip.
-
-
+    Returns:
+        Dehaloed clip.
     """
     func = func or "fine_dehalo"
 
@@ -471,17 +473,18 @@ def fine_dehalo2(
     """
     Halo removal function for 2nd order halos.
 
-    :param clip:            Source clip.
-    :param mode:            Horizontal/Vertical or both ways.
-    :param radius:          Radius for the fixing convolution.
-    :param mask_radius:     Radius for mask growing.
-    :param brightstr:       Strength factor for bright halos.
-    :param darkstr:         Strength factor for dark halos.
-    :param dark:            Whether to filter for dark or bright haloing.
-                            None for disable merging with source clip.
-    :param show_mask:       Whether to return the computed mask.
+    Args:
+        clip: Source clip.
+        mode: Horizontal/Vertical or both ways.
+        radius: Radius for the fixing convolution.
+        mask_radius: Radius for mask growing.
+        brightstr: Strength factor for bright halos.
+        darkstr: Strength factor for dark halos.
+        dark: Whether to filter for dark or bright haloing. None for disable merging with source clip.
+        show_mask: Whether to return the computed mask.
 
-    :return:            Dehaloed clip.
+    Returns:
+        Dehaloed clip.
     """
     func = fine_dehalo2
 
@@ -588,28 +591,30 @@ def dehalo_alpha(
      * 2nd => 2.0 for luma, 2.4 for chroma
      * 3rd => 2.2 for luma, 2.0 for u, 2.1 for v
 
-    :param clip:                Source clip.
-    :param rx:                  Horizontal radius for halo removal.
-    :param ry:                  Vertical radius for halo removal.
-    :param darkstr:             Strength factor for dark halos.
-    :param brightstr:           Strength factor for bright halos.
-    :param lowsens:             Sensitivity setting for defining how weak the dehalo has to be to get fully accepted.
-    :param highsens:            Sensitivity setting for define how strong the dehalo has to be to get fully discarded.
-    :param sigma_mask:          Blurring strength for the mask.
-    :param ss:                  Supersampling factor, to avoid creation of aliasing.
-    :param planes:              Planes to process.
-    :param show_mask:           Whether to show the computed halo mask.
-    :param mask_radius:         Mask expanding radius with ``gradient``.
-    :param downscaler:          Scaler used to downscale the clip.
-    :param upscaler:            Scaler used to upscale the downscaled clip.
-    :param supersampler:        Scaler used to supersampler the rescaled clip to `ss` factor.
-    :param supersampler_ref:    Reference scaler used to clamp the supersampled clip. Has to be blurrier.
-    :param pre_ss:              Supersampling rate used before anything else.
-    :param pre_supersampler:    Supersampler used for ``pre_ss``.
-    :param pre_downscaler:      Downscaler used for undoing the upscaling done by ``pre_supersampler``.
-    :param func:                Function from where this function was called.
+    Args:
+        clip: Source clip.
+        rx: Horizontal radius for halo removal.
+        ry: Vertical radius for halo removal.
+        darkstr: Strength factor for dark halos.
+        brightstr: Strength factor for bright halos.
+        lowsens: Sensitivity setting for defining how weak the dehalo has to be to get fully accepted.
+        highsens: Sensitivity setting for define how strong the dehalo has to be to get fully discarded.
+        sigma_mask: Blurring strength for the mask.
+        ss: Supersampling factor, to avoid creation of aliasing.
+        planes: Planes to process.
+        show_mask: Whether to show the computed halo mask.
+        mask_radius: Mask expanding radius with ``gradient``.
+        downscaler: Scaler used to downscale the clip.
+        upscaler: Scaler used to upscale the downscaled clip.
+        supersampler: Scaler used to supersampler the rescaled clip to `ss` factor.
+        supersampler_ref: Reference scaler used to clamp the supersampled clip. Has to be blurrier.
+        pre_ss: Supersampling rate used before anything else.
+        pre_supersampler: Supersampler used for ``pre_ss``.
+        pre_downscaler: Downscaler used for undoing the upscaling done by ``pre_supersampler``.
+        func: Function from where this function was called.
 
-    :return:                    Dehaloed clip.
+    Returns:
+        Dehaloed clip.
     """
 
     func = func or dehalo_alpha
@@ -853,25 +858,27 @@ def dehalo_merge(
 
     ``darkstr``, ``brightstr``, ``lowsens``, ``highsens``, ``ss`` are all configurable per plane.
 
-    :param clip:                Source clip.
-    :param dehalo:              Dehaloed clip.
-    :param darkstr:             Strength factor for dark halos.
-    :param brightstr:           Strength factor for bright halos.
-    :param lowsens:             Sensitivity setting for defining how weak the dehalo has to be to get fully accepted.
-    :param highsens:            Sensitivity setting for define how strong the dehalo has to be to get fully discarded.
-    :param sigma_mask:          Blurring strength for the mask.
-    :param ss:                  Supersampling factor, to avoid creation of aliasing.
-    :param planes:              Planes to process.
-    :param show_mask:           Whether to show the computed halo mask.
-    :param mask_radius:         Mask expanding radius with ``gradient``.
-    :param supersampler:        Scaler used to supersampler the rescaled clip to `ss` factor.
-    :param supersampler_ref:    Reference scaler used to clamp the supersampled clip. Has to be blurrier.
-    :param pre_ss:              Supersampling rate used before anything else.
-    :param pre_supersampler:    Supersampler used for ``pre_ss``.
-    :param pre_downscaler:      Downscaler used for undoing the upscaling done by ``pre_supersampler``.
-    :param func:                Function from where this function was called.
+    Args:
+        clip: Source clip.
+        dehalo: Dehaloed clip.
+        darkstr: Strength factor for dark halos.
+        brightstr: Strength factor for bright halos.
+        lowsens: Sensitivity setting for defining how weak the dehalo has to be to get fully accepted.
+        highsens: Sensitivity setting for define how strong the dehalo has to be to get fully discarded.
+        sigma_mask: Blurring strength for the mask.
+        ss: Supersampling factor, to avoid creation of aliasing.
+        planes: Planes to process.
+        show_mask: Whether to show the computed halo mask.
+        mask_radius: Mask expanding radius with ``gradient``.
+        supersampler: Scaler used to supersampler the rescaled clip to `ss` factor.
+        supersampler_ref: Reference scaler used to clamp the supersampled clip. Has to be blurrier.
+        pre_ss: Supersampling rate used before anything else.
+        pre_supersampler: Supersampler used for ``pre_ss``.
+        pre_downscaler: Downscaler used for undoing the upscaling done by ``pre_supersampler``.
+        func: Function from where this function was called.
 
-    :return:                    Merged clip.
+    Returns:
+        Merged clip.
     """
 
     func = func or dehalo_merge

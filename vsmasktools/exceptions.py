@@ -11,7 +11,9 @@ __all__ = [
 
 
 class UnknownEdgeDetectError(CustomValueError):
-    """Raised when an unknown edge detect is passed."""
+    """
+    Raised when an unknown edge detect is passed.
+    """
 
     def __init__(
         self,
@@ -24,7 +26,9 @@ class UnknownEdgeDetectError(CustomValueError):
 
 
 class UnknownRidgeDetectError(CustomValueError):
-    """Raised when an unknown ridge detect is passed."""
+    """
+    Raised when an unknown ridge detect is passed.
+    """
 
     def __init__(
         self,

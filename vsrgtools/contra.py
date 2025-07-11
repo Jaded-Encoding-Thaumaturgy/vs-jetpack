@@ -37,14 +37,16 @@ def contrasharpening(
     contra-sharpening: sharpen the denoised clip, but don't add more to any pixel than what was previously removed.
     Script by Didée, at the VERY GRAINY thread (http://forum.doom9.org/showthread.php?p=1076491#post1076491)
 
-    :param flt:         Filtered clip
-    :param src:         Source clip
-    :param radius:      Spatial radius for sharpening.
-    :param sharp:       Optional pre-sharpened clip or function to use.
-    :param mode:        Mode of Repair to limit the difference
-    :param planes:      Planes to process, defaults to None
+    Args:
+        flt: Filtered clip
+        src: Source clip
+        radius: Spatial radius for sharpening.
+        sharp: Optional pre-sharpened clip or function to use.
+        mode: Mode of Repair to limit the difference
+        planes: Planes to process, defaults to None
 
-    :return:            Contrasharpened clip
+    Returns:
+        Contrasharpened clip
     """
 
     assert check_variable(src, contrasharpening)
@@ -80,11 +82,13 @@ def contrasharpening_dehalo(
     flt: vs.VideoNode, src: vs.VideoNode, level: float = 1.4, alpha: float = 2.49, planes: PlanesT = 0
 ) -> ConstantFormatVideoNode:
     """
-    :param flt:         Dehaloed clip
-    :param src:         Source clip
-    :param level:       Strength level
+    Args:
+        flt: Dehaloed clip
+        src: Source clip
+        level: Strength level
 
-    :return:            Contrasharpened clip
+    Returns:
+        Contrasharpened clip
     """
     assert check_variable(src, contrasharpening_dehalo)
     assert check_variable(flt, contrasharpening_dehalo)
@@ -113,11 +117,14 @@ def contrasharpening_median(
     planes: PlanesT = 0,
 ) -> ConstantFormatVideoNode:
     """
-    :param flt:         Filtered clip
-    :param src:         Source clip
-    :param mode:        Function or the RemoveGrain mode used to blur/repair the filtered clip.
-    :param planes:      Planes to process, defaults to None
-    :return:            Contrasharpened clip
+    Args:
+        flt: Filtered clip
+        src: Source clip
+        mode: Function or the RemoveGrain mode used to blur/repair the filtered clip.
+        planes: Planes to process, defaults to None
+
+    Returns:
+        Contrasharpened clip
     """
     assert check_variable(src, contrasharpening_median)
     assert check_variable(flt, contrasharpening_median)

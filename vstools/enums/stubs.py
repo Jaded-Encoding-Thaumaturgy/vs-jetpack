@@ -25,14 +25,18 @@ class PropEnum(CustomIntEnum):
 
     @classmethod
     def is_unknown(cls, value: int | Self) -> bool:
-        """Whether the value represents an unknown value."""
+        """
+        Whether the value represents an unknown value.
+        """
 
         return False
 
     @classproperty
     @classmethod
     def prop_key(cls) -> str:
-        """The key used in props to store the enum."""
+        """
+        The key used in props to store the enum.
+        """
 
         return f"_{cls.__name__}"
 
@@ -54,7 +58,9 @@ class PropEnum(CustomIntEnum):
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
-            """Get the enum member from its int representation."""
+            """
+            Get the enum member from its int representation.
+            """
 
     @classmethod
     def _missing_(cls, value: Any) -> Self | None:
@@ -64,7 +70,9 @@ class PropEnum(CustomIntEnum):
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Self:
-        """Get an enum member from the video resolution with heuristics."""
+        """
+        Get an enum member from the video resolution with heuristics.
+        """
 
         raise NotImplementedError
 
@@ -72,7 +80,9 @@ class PropEnum(CustomIntEnum):
     def from_video(
         cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
     ) -> Self:
-        """Get an enum member from the frame properties or optionally fall back to resolution when strict=False."""
+        """
+        Get an enum member from the frame properties or optionally fall back to resolution when strict=False.
+        """
 
         raise NotImplementedError
 
@@ -90,10 +100,11 @@ class PropEnum(CustomIntEnum):
 
         If `strict=False`, gather the heuristics using the clip's size or format.
 
-        :param value:           Value to cast.
-        :param src:             Clip to get prop from.
-        :param strict:          Be strict about the frame properties. Default: False.
-        :param func_except:     Function returned for custom error handling.
+        Args:
+            value: Value to cast.
+            src: Clip to get prop from.
+            strict: Be strict about the frame properties. Default: False.
+            func_except: Function returned for custom error handling.
         """
         value = cls.from_param(value, func_except)
 
@@ -104,14 +115,18 @@ class PropEnum(CustomIntEnum):
 
     @classmethod
     def ensure_presence(cls, clip: VideoNodeT, value: int | Self | None, func: FuncExceptT | None = None) -> VideoNodeT:
-        """Ensure the presence of the property in the VideoNode."""
+        """
+        Ensure the presence of the property in the VideoNode.
+        """
 
         enum_value = cls.from_param_or_video(value, clip, True, func)
 
         return vs.core.std.SetFrameProp(clip, enum_value.prop_key, enum_value.value)
 
     def apply(self, clip: VideoNodeT) -> VideoNodeT:
-        """Applies the property to the VideoNode."""
+        """
+        Applies the property to the VideoNode.
+        """
 
         return vs.core.std.SetFrameProp(clip, self.prop_key, self.value)
 
@@ -119,7 +134,9 @@ class PropEnum(CustomIntEnum):
     def ensure_presences(
         clip: VideoNodeT, prop_enums: Iterable[type[PropEnumT] | PropEnumT], func: FuncExceptT | None = None
     ) -> VideoNodeT:
-        """Ensure the presence of multiple PropEnums at once."""
+        """
+        Ensure the presence of multiple PropEnums at once.
+        """
 
         return vs.core.std.SetFrameProps(
             clip,
@@ -133,7 +150,9 @@ class PropEnum(CustomIntEnum):
 
     @property
     def pretty_string(self) -> str:
-        """Get a pretty, displayable string of the enum member."""
+        """
+        Get a pretty, displayable string of the enum member.
+        """
 
         from string import capwords
 
@@ -141,13 +160,17 @@ class PropEnum(CustomIntEnum):
 
     @property
     def string(self) -> str:
-        """Get the string representation used in resize plugin/encoders."""
+        """
+        Get the string representation used in resize plugin/encoders.
+        """
 
         return self._name_.lower()
 
     @classmethod
     def is_valid(cls, value: int) -> bool:
-        """Check if the given value is a valid int value of this enum."""
+        """
+        Check if the given value is a valid int value of this enum.
+        """
         return int(value) in map(int, cls.__members__.values())
 
 
@@ -206,10 +229,12 @@ if TYPE_CHECKING:
             """
             Determine the Matrix through a parameter.
 
-            :param value:           Value or Matrix object.
-            :param func_except:     Function returned for custom error handling.
+            Args:
+                value: Value or Matrix object.
+                func_except: Function returned for custom error handling.
 
-            :return:                Matrix object or None.
+            Returns:
+                Matrix object or None.
             """
 
         @classmethod
@@ -243,11 +268,13 @@ if TYPE_CHECKING:
             """
             Determine the Transfer through a parameter.
 
-            :param value:           Value or Transfer object.
-            :param func_except:     Function returned for custom error handling.
-                                    This should only be set by VS package developers.
+            Args:
+                value: Value or Transfer object.
+                func_except: Function returned for custom error handling. This should only be set by VS package
+                    developers.
 
-            :return:                Transfer object or None.
+            Returns:
+                Transfer object or None.
             """
 
         @classmethod
@@ -281,11 +308,13 @@ if TYPE_CHECKING:
             """
             Determine the Primaries through a parameter.
 
-            :param value:           Value or Primaries object.
-            :param func_except:     Function returned for custom error handling.
-                                    This should only be set by VS package developers.
+            Args:
+                value: Value or Primaries object.
+                func_except: Function returned for custom error handling. This should only be set by VS package
+                    developers.
 
-            :return:                Primaries object or None.
+            Returns:
+                Primaries object or None.
             """
 
         @classmethod
@@ -319,11 +348,13 @@ if TYPE_CHECKING:
             """
             Determine the ColorRange through a parameter.
 
-            :param value:           Value or ColorRange object.
-            :param func_except:     Function returned for custom error handling.
-                                    This should only be set by VS package developers.
+            Args:
+                value: Value or ColorRange object.
+                func_except: Function returned for custom error handling. This should only be set by VS package
+                    developers.
 
-            :return:                ColorRange object or None.
+            Returns:
+                ColorRange object or None.
             """
 
         @classmethod
@@ -359,11 +390,13 @@ if TYPE_CHECKING:
             """
             Determine the ChromaLocation through a parameter.
 
-            :param value:           Value or ChromaLocation object.
-            :param func_except:     Function returned for custom error handling.
-                                    This should only be set by VS package developers.
+            Args:
+                value: Value or ChromaLocation object.
+                func_except: Function returned for custom error handling. This should only be set by VS package
+                    developers.
 
-            :return:                ChromaLocation object or None.
+            Returns:
+                ChromaLocation object or None.
             """
 
         @classmethod
@@ -397,12 +430,13 @@ if TYPE_CHECKING:
             """
             Determine the type of field through a parameter.
 
-            :param value_or_tff:    Value or FieldBased object.
-                                    If it's bool, it specifies whether it's TFF or BFF.
-            :param func_except:     Function returned for custom error handling.
-                                    This should only be set by VS package developers.
+            Args:
+                value_or_tff: Value or FieldBased object. If it's bool, it specifies whether it's TFF or BFF.
+                func_except: Function returned for custom error handling. This should only be set by VS package
+                    developers.
 
-            :return:                FieldBased object or None.
+            Returns:
+                FieldBased object or None.
             """
 
         @classmethod

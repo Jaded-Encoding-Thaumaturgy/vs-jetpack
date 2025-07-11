@@ -52,39 +52,41 @@ def frequency_merge(
     Merges the frequency components of the input clips.
 
     Example:
-    - Replacing the high-frequency details of a Blu-ray source with the sharper components from a web stream:
 
-    ``` py
-        delowpass = frequency_merge(
-            bluray_src, (web_src, lambda clip: Lanczos(taps=4).scale(clip, blur=4/3, force=True)),
-            mode_high=web_src,
-            mode_low=bluray_src
-        )
-    ```
+       - Replacing the high-frequency details of a Blu-ray source with the sharper components from a web stream:
 
-    - Lehmer merging 34 sources (stop doing that please)
+         ``` py
+         delowpass = frequency_merge(
+             bluray_src,
+             (web_src, lambda clip: Lanczos(taps=4).scale(clip, blur=4 / 3, force=True)),
+             mode_high=web_src,
+             mode_low=bluray_src,
+         )
+         ```
 
-    ``` py
-        merged = frequency_merge(*clips, lowpass=lambda clip: DFTTest().denoise(clip, ...))
-    ```
+       - Lehmer merging 34 sources (stop doing that please)
 
-    :param _clips:      A variable number of tuples, each containing a clip and an optional lowpass filter function.
-                        The lowpass function can either be a standard function or one that supports per-plane filtering.
-    :param mode_high:   The mean mode to use for the high frequency components
-                        or specifying the clip with the high frequency components.
-                        If a clip is passed, it must be one of the clips provided in `_clips`.
-                        Defaults to `MeanMode.LEHMER`.
-    :param mode_low:    The mean mode to use for the low frequency components
-                        or specifying the clip with the low frequency components.
-                        If a clip is passed, it must be one of the clips provided in `_clips`.
-                        Defaults to `MeanMode.ARITHMETIC`.
-    :param lowpass:     A global lowpass function applied to all provided clips.
-                        If set, ``_clips`` must consist solely of VideoNodes.
-    :param planes:      Planes to process. If specified, this will be passed to the lowpass functions.
-                        If None, it won't be included. Defaults to None.
-    :param **kwargs:    Additional keyword arguments passed to the lowpass functions.
+         ``` py
+         merged = frequency_merge(*clips, lowpass=lambda clip: DFTTest().denoise(clip, ...))
+         ```
 
-    :return:            A clip representing the merged output of the frequency-separated clips.
+    Args:
+        *_clips: A variable number of tuples, each containing a clip and an optional lowpass filter function. The
+            lowpass function can either be a standard function or one that supports per-plane filtering.
+        mode_high: The mean mode to use for the high frequency components or specifying the clip with the high frequency
+            components. If a clip is passed, it must be one of the clips provided in `_clips`. Defaults to
+            `MeanMode.LEHMER`.
+        mode_low: The mean mode to use for the low frequency components or specifying the clip with the low frequency
+            components. If a clip is passed, it must be one of the clips provided in `_clips`. Defaults to
+            `MeanMode.ARITHMETIC`.
+        lowpass: A global lowpass function applied to all provided clips. If set, ``_clips`` must consist solely of
+            VideoNodes.
+        planes: Planes to process. If specified, this will be passed to the lowpass functions. If None, it won't be
+            included. Defaults to None.
+        **kwargs: Additional keyword arguments passed to the lowpass functions.
+
+    Returns:
+        A clip representing the merged output of the frequency-separated clips.
     """
 
     clips = list[vs.VideoNode]()

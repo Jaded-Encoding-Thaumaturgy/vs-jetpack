@@ -211,17 +211,19 @@ class LinearScaler(Scaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:        The source clip.
-        :param width:       Target width (defaults to clip width if None).
-        :param height:      Target height (defaults to clip height if None).
-        :param shift:       Subpixel shift (top, left) applied during scaling.
-        :param linear:      Whether to linearize the input before scaling. If None, inferred from sigmoid.
-        :param sigmoid:     Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center).
-                            `True` applies the defaults values (6.5, 0.75).
-                            Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
-                            and sigmoid center has to be in range 0.0-1.0 (inclusive).
-        :param kwargs:      Additional arguments forwarded to the scale function.
-        :return:            Scaled video clip.
+        Args:
+            clip: The source clip.
+            width: Target width (defaults to clip width if None).
+            height: Target height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) applied during scaling.
+            linear: Whether to linearize the input before scaling. If None, inferred from sigmoid.
+            sigmoid: Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center). `True`
+                applies the defaults values (6.5, 0.75). Keep in mind sigmoid slope has to be in range 1.0-20.0
+                (inclusive) and sigmoid center has to be in range 0.0-1.0 (inclusive).
+            **kwargs: Additional arguments forwarded to the scale function.
+
+        Returns:
+            Scaled video clip.
         """
         return _linearize(
             self,
@@ -301,17 +303,18 @@ class LinearDescaler(Descaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:                The source clip.
-        :param width:               Target descaled width (defaults to clip width if None).
-        :param height:              Target descaled height (defaults to clip height if None).
-        :param shift:               Subpixel shift (top, left) applied during descaling.
-        :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve.
-                                    Can be True, False, or a tuple of (slope, center).
-                                    `True` applies the defaults values (6.5, 0.75).
-                                    Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
-                                    and sigmoid center has to be in range 0.0-1.0 (inclusive).
-        :return:                    The descaled video node, optionally processed in linear light.
+        Args:
+            clip: The source clip.
+            width: Target descaled width (defaults to clip width if None).
+            height: Target descaled height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) applied during descaling.
+            linear: Whether to linearize the input before descaling. If None, inferred from sigmoid.
+            sigmoid: Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center). `True`
+                applies the defaults values (6.5, 0.75). Keep in mind sigmoid slope has to be in range 1.0-20.0
+                (inclusive) and sigmoid center has to be in range 0.0-1.0 (inclusive).
+
+        Returns:
+            The descaled video node, optionally processed in linear light.
         """
         return _linearize(
             self,
@@ -347,17 +350,18 @@ class LinearDescaler(Descaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:                The source clip.
-        :param width:               Target scaled width (defaults to clip width if None).
-        :param height:              Target scaled height (defaults to clip height if None).
-        :param shift:               Subpixel shift (top, left) applied during rescaling.
-        :param linear:              Whether to linearize the input before rescaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve.
-                                    Can be True, False, or a tuple of (slope, center).
-                                    `True` applies the defaults values (6.5, 0.75).
-                                    Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
-                                    and sigmoid center has to be in range 0.0-1.0 (inclusive).
-        :return:                    The rescaled video node, optionally processed in linear light.
+        Args:
+            clip: The source clip.
+            width: Target scaled width (defaults to clip width if None).
+            height: Target scaled height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) applied during rescaling.
+            linear: Whether to linearize the input before rescaling. If None, inferred from sigmoid.
+            sigmoid: Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center). `True`
+                applies the defaults values (6.5, 0.75). Keep in mind sigmoid slope has to be in range 1.0-20.0
+                (inclusive) and sigmoid center has to be in range 0.0-1.0 (inclusive).
+
+        Returns:
+            The rescaled video node, optionally processed in linear light.
         """
         return _linearize(
             self,
@@ -467,17 +471,20 @@ class KeepArScaler(Scaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:                The source clip.
-        :param width:               Target width (defaults to clip width if None).
-        :param height:              Target height (defaults to clip height if None).
-        :param shift:               Subpixel shift (top, left) applied during scaling.
-        :param border_handling:     Method for handling image borders during sampling.
-        :param sample_grid_model:   Model used to align sampling grid.
-        :param sar:                 Sample aspect ratio to assume or convert to.
-        :param dar:                 Desired display aspect ratio.
-        :param dar_in:              Input display aspect ratio, if different from clip's.
-        :param keep_ar:             Whether to adjust dimensions to preserve aspect ratio.
-        :return:                    Scaled clip, optionally aspect-corrected.
+        Args:
+            clip: The source clip.
+            width: Target width (defaults to clip width if None).
+            height: Target height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) applied during scaling.
+            border_handling: Method for handling image borders during sampling.
+            sample_grid_model: Model used to align sampling grid.
+            sar: Sample aspect ratio to assume or convert to.
+            dar: Desired display aspect ratio.
+            dar_in: Input display aspect ratio, if different from clip's.
+            keep_ar: Whether to adjust dimensions to preserve aspect ratio.
+
+        Returns:
+            Scaled clip, optionally aspect-corrected.
         """
         width, height = self._wh_norm(clip, width, height)
 
@@ -546,26 +553,26 @@ class ComplexScaler(KeepArScaler, LinearScaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:                The source clip.
-        :param width:               Target width (defaults to clip width if None).
-        :param height:              Target height (defaults to clip height if None).
-        :param shift:               Subpixel shift (top, left) applied during scaling.
-                                    If a tuple is provided, it is used uniformly.
-                                    If a list is given, the shift is applied per plane.
-        :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve.
-                                    Can be True, False, or a tuple of (slope, center).
-                                    `True` applies the defaults values (6.5, 0.75).
-                                    Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
-                                    and sigmoid center has to be in range 0.0-1.0 (inclusive).
-        :param border_handling:     Method for handling image borders during sampling.
-        :param sample_grid_model:   Model used to align sampling grid.
-        :param sar:                 Sample aspect ratio to assume or convert to.
-        :param dar:                 Desired display aspect ratio.
-        :param dar_in:              Input display aspect ratio, if different from clip's.
-        :param keep_ar:             Whether to adjust dimensions to preserve aspect ratio.
-        :param blur:                Amount of blur to apply during scaling.
-        :return:                    Scaled clip, optionally aspect-corrected and linearized.
+        Args:
+            clip: The source clip.
+            width: Target width (defaults to clip width if None).
+            height: Target height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) applied during scaling. If a tuple is provided, it is used uniformly. If a
+                list is given, the shift is applied per plane.
+            linear: Whether to linearize the input before descaling. If None, inferred from sigmoid.
+            sigmoid: Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center). `True`
+                applies the defaults values (6.5, 0.75). Keep in mind sigmoid slope has to be in range 1.0-20.0
+                (inclusive) and sigmoid center has to be in range 0.0-1.0 (inclusive).
+            border_handling: Method for handling image borders during sampling.
+            sample_grid_model: Model used to align sampling grid.
+            sar: Sample aspect ratio to assume or convert to.
+            dar: Desired display aspect ratio.
+            dar_in: Input display aspect ratio, if different from clip's.
+            keep_ar: Whether to adjust dimensions to preserve aspect ratio.
+            blur: Amount of blur to apply during scaling.
+
+        Returns:
+            Scaled clip, optionally aspect-corrected and linearized.
         """
         kwargs.update(
             linear=linear,
@@ -698,23 +705,24 @@ class ComplexDescaler(LinearDescaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:                The source clip.
-        :param width:               Target descaled width (defaults to clip width if None).
-        :param height:              Target descaled height (defaults to clip height if None).
-        :param shift:               Subpixel shift (top, left) or per-field shifts.
-        :param linear:              Whether to linearize the input before descaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve.
-                                    Can be True, False, or a tuple of (slope, center).
-                                    `True` applies the defaults values (6.5, 0.75).
-                                    Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
-                                    and sigmoid center has to be in range 0.0-1.0 (inclusive).
-        :param border_handling:     Method for handling image borders during sampling.
-        :param sample_grid_model:   Model used to align sampling grid.
-        :param field_based:         Field-based processing mode (interlaced or progressive).
-        :param ignore_mask:         Optional mask specifying areas to ignore during descaling.
-        :param blur:                Amount of blur to apply during scaling.
-        :param kwargs:              Additional arguments passed to `descale_function`.
-        :return:                    The descaled video node, optionally processed in linear light.
+        Args:
+            clip: The source clip.
+            width: Target descaled width (defaults to clip width if None).
+            height: Target descaled height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) or per-field shifts.
+            linear: Whether to linearize the input before descaling. If None, inferred from sigmoid.
+            sigmoid: Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center). `True`
+                applies the defaults values (6.5, 0.75). Keep in mind sigmoid slope has to be in range 1.0-20.0
+                (inclusive) and sigmoid center has to be in range 0.0-1.0 (inclusive).
+            border_handling: Method for handling image borders during sampling.
+            sample_grid_model: Model used to align sampling grid.
+            field_based: Field-based processing mode (interlaced or progressive).
+            ignore_mask: Optional mask specifying areas to ignore during descaling.
+            blur: Amount of blur to apply during scaling.
+            **kwargs: Additional arguments passed to `descale_function`.
+
+        Returns:
+            The descaled video node, optionally processed in linear light.
         """
         width, height = self._wh_norm(clip, width, height)
         check_correct_subsampling(clip, width, height)
@@ -796,23 +804,24 @@ class ComplexDescaler(LinearDescaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:                The source clip.
-        :param width:               Target scaled width (defaults to clip width if None).
-        :param height:              Target scaled height (defaults to clip height if None).
-        :param shift:               Subpixel shift (top, left) or per-field shifts.
-        :param linear:              Whether to linearize the input before rescaling. If None, inferred from sigmoid.
-        :param sigmoid:             Whether to use sigmoid transfer curve.
-                                    Can be True, False, or a tuple of (slope, center).
-                                    `True` applies the defaults values (6.5, 0.75).
-                                    Keep in mind sigmoid slope has to be in range 1.0-20.0 (inclusive)
-                                    and sigmoid center has to be in range 0.0-1.0 (inclusive).
-        :param border_handling:     Method for handling image borders during sampling.
-        :param sample_grid_model:   Model used to align sampling grid.
-        :param field_based:         Field-based processing mode (interlaced or progressive).
-        :param ignore_mask:         Optional mask specifying areas to ignore during rescaling.
-        :param blur:                Amount of blur to apply during rescaling.
-        :param kwargs:              Additional arguments passed to `rescale_function`.
-        :return:                    The scaled clip.
+        Args:
+            clip: The source clip.
+            width: Target scaled width (defaults to clip width if None).
+            height: Target scaled height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) or per-field shifts.
+            linear: Whether to linearize the input before rescaling. If None, inferred from sigmoid.
+            sigmoid: Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center). `True`
+                applies the defaults values (6.5, 0.75). Keep in mind sigmoid slope has to be in range 1.0-20.0
+                (inclusive) and sigmoid center has to be in range 0.0-1.0 (inclusive).
+            border_handling: Method for handling image borders during sampling.
+            sample_grid_model: Model used to align sampling grid.
+            field_based: Field-based processing mode (interlaced or progressive).
+            ignore_mask: Optional mask specifying areas to ignore during rescaling.
+            blur: Amount of blur to apply during rescaling.
+            **kwargs: Additional arguments passed to `rescale_function`.
+
+        Returns:
+            The scaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         check_correct_subsampling(clip, width, height)

@@ -23,15 +23,17 @@ def scale_var_clip(
     """
     Scale a variable clip to constant or variable resolution.
 
-    :param clip:            Source clip.
-    :param scaler:          A scaler instance or a callable that returns a scaler instance.
-    :param width:           A width integer or a callable that returns the width.
-                            If None, it will be calculated from the height and the aspect ratio of the clip.
-    :param height:          A height integer or a callable that returns the height.
-    :param shift:           Optional top shift, left shift tuple or a callable that returns the shifts.
-                            Defaults to no shift.
-    :param debug:           If True, the `var_width` and `var_height` props will be added to the clip.
-    :return:                Scaled clip.
+    Args:
+        clip: Source clip.
+        scaler: A scaler instance or a callable that returns a scaler instance.
+        width: A width integer or a callable that returns the width. If None, it will be calculated from the height and
+            the aspect ratio of the clip.
+        height: A height integer or a callable that returns the height.
+        shift: Optional top shift, left shift tuple or a callable that returns the shifts. Defaults to no shift.
+        debug: If True, the `var_width` and `var_height` props will be added to the clip.
+
+    Returns:
+        Scaled clip.
     """
     _cached_clips = dict[str, vs.VideoNode]()
 
@@ -154,22 +156,7 @@ class ScalingArgs:
         src_top: float = ...,
         src_left: float = ...,
         mode: str = "hw",
-    ) -> Self:
-        """
-        Get (de)scaling arguments for integer scaling.
-
-        :param base_clip:       Source clip.
-        :param height:          Target (de)scaling height.
-        :param width:           Target (de)scaling width.
-                                If None, it will be calculated from the height and the aspect ratio of the base_clip.
-        :param src_top:         Vertical offset.
-        :param src_left:        Horizontal offset.
-        :param mode:            Scaling mode:
-                                - "w" means only the width is calculated.
-                                - "h" means only the height is calculated.
-                                - "hw or "wh" mean both width and height are calculated.
-        :return:                ScalingArgs object suitable for scaling functions.
-        """
+    ) -> Self: ...
 
     @overload
     @classmethod
@@ -184,25 +171,7 @@ class ScalingArgs:
         src_left: float = ...,
         crop: tuple[LeftCrop, RightCrop, TopCrop, BottomCrop] | CropRel | CropAbs = ...,
         mode: str = "hw",
-    ) -> Self:
-        """
-        Get (de)scaling arguments for fractional scaling.
-
-        :param base_clip:       Source clip.
-        :param height:          Target (de)scaling height. Casting to float will ensure fractional calculations.
-        :param width:           Target (de)scaling width. Casting to float will ensure fractional calculations.
-                                If None, it will be calculated from the height and the aspect ratio of the base_clip.
-        :param base_height:     The height from which to contain the clip. If None, it will be calculated from the height.
-        :param base_width:      The width from which to contain the clip. If None, it will be calculated from the width.
-        :param src_top:         Vertical offset.
-        :param src_left:        Horizontal offset.
-        :param crop:            Tuple of cropping values, or relative/absolute crop specification.
-        :param mode:            Scaling mode:
-                                - "w" means only the width is calculated.
-                                - "h" means only the height is calculated.
-                                - "hw or "wh" mean both width and height are calculated.
-        :return:                ScalingArgs object suitable for scaling functions.
-        """  # noqa: E501
+    ) -> Self: ...
 
     @classmethod
     def from_args(
@@ -217,6 +186,28 @@ class ScalingArgs:
         crop: tuple[LeftCrop, RightCrop, TopCrop, BottomCrop] | CropRel | CropAbs | None = None,
         mode: str = "hw",
     ) -> Self:
+        """
+        Get (de)scaling arguments for integer scaling.
+
+        Args:
+            base_clip: Source clip.
+            height:  Target (de)scaling height. Casting to float will ensure fractional calculations.
+            width: Target (de)scaling width. Casting to float will ensure fractional calculations. If None, it will be
+                calculated from the height and the aspect ratio of the base_clip.
+            base_height: The height from which to contain the clip. If None, it will be calculated from the height.
+            base_width: The width from which to contain the clip. If None, it will be calculated from the width.
+            src_top: Vertical offset.
+            src_left: Horizontal offset.
+            crop: Tuple of cropping values, or relative/absolute crop specification.
+            mode: Scaling mode:
+
+                   - "w" means only the width is calculated.
+                   - "h" means only the height is calculated.
+                   - "hw or "wh" mean both width and height are calculated.
+
+        Returns:
+            ScalingArgs object suitable for scaling functions.
+        """
         if crop:
             if isinstance(crop, CropAbs):
                 crop = crop.to_rel(base_clip)

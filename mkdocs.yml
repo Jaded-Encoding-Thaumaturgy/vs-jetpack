@@ -57,7 +57,7 @@ plugins:
             - https://www.vapoursynth.com/doc/objects.inv
           options:
             docstring_section_style: list
-            docstring_style: "sphinx"
+            docstring_style: "google"
             filters:
               - "!^_"
               - "^__call__$"

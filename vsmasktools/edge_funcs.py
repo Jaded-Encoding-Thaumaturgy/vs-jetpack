@@ -128,10 +128,14 @@ def limited_linemask(
 
 
 class dre_edgemask(CustomEnum):  # noqa: N801
-    """Edgemask with dynamic range enhancement prefiltering."""
+    """
+    Edgemask with dynamic range enhancement prefiltering.
+    """
 
     RETINEX = cast("dre_edgemask", object())
-    """Retinex-based edgemask."""
+    """
+    Retinex-based edgemask.
+    """
 
     CLAHE = cast("dre_edgemask", object())
     """
@@ -187,13 +191,16 @@ class dre_edgemask(CustomEnum):  # noqa: N801
         This function serves as a wrapper around the `retinex` and `vszip.CLAHE` functions,
         applying one of them as a prefilter before generating the edgemask.
 
-        :param clip:            Source clip.
-        :param tsigma:          Sigma value for TCanny edge detection. Defaults to 1.
-        :param brz:             Binarization threshold (32-bit float scale). Defaults to 0.122.
-        :param sigmas:          Sigma values for the retinex prefilter. Defaults to [50, 200, 350].
-        :param limit:           Limit for CLAHE prefilter. Defaults to 0.0305.
-        :param tile:            Tile size for CLAHE prefilter. Defaults to 5.
-        :return:                Edgemask clip with applied DRE prefiltering.
+        Args:
+            clip: Source clip.
+            tsigma: Sigma value for TCanny edge detection. Defaults to 1.
+            brz: Binarization threshold (32-bit float scale). Defaults to 0.122.
+            sigmas: Sigma values for the retinex prefilter. Defaults to [50, 200, 350].
+            limit: Limit for CLAHE prefilter. Defaults to 0.0305.
+            tile: Tile size for CLAHE prefilter. Defaults to 5.
+
+        Returns:
+            Edgemask clip with applied DRE prefiltering.
         """
         luma = get_y(clip)
 

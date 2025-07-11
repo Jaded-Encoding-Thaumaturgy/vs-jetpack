@@ -35,7 +35,9 @@ __all__ = [
 
 
 class Matrix(_MatrixMeta):  # type: ignore[misc]
-    """Matrix coefficients ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.5)."""
+    """
+    Matrix coefficients ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.5).
+    """
 
     _value_: int
 
@@ -88,7 +90,9 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
     """
 
     UNKNOWN = 2
-    """Image characteristics are unknown or are determined by the application."""
+    """
+    Image characteristics are unknown or are determined by the application.
+    """
 
     FCC = 4
     """
@@ -104,7 +108,7 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
     ```
     KR = 0.299; KB = 0.114
     ```
-    (Functionally the same as :py:attr:`Matrix.SMPTE170M`)
+    (Functionally the same as [Matrix.SMPTE170M][vstools.Matrix.SMPTE170M])
     Rec. ITU-R BT.470-6 System B, G (historical)
     Rec. ITU-R BT.601-7 625
     Rec. ITU-R BT.1358-0 625 (historical)
@@ -120,7 +124,7 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
     ```
     Kr = 0.299; Kb = 0.114
     ```
-    (Functionally the same as :py:attr:`Matrix.BT470BG`)
+    (Functionally the same as [Matrix.BT470BG][vstools.Matrix.BT470BG])
     Rec. ITU-R BT.601-7 525
     Rec. ITU-R BT.1358-1 525 or 625 (historical)
     Rec. ITU-R BT.1700-0 NTSC
@@ -195,7 +199,9 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
 
     @classmethod
     def is_unknown(cls, value: int | Matrix) -> bool:
-        """Check if Matrix is Matrix.UNKNOWN."""
+        """
+        Check if Matrix is Matrix.UNKNOWN.
+        """
 
         return value == cls.UNKNOWN
 
@@ -204,9 +210,11 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
         """
         Guess the matrix based on the clip's resolution.
 
-        :param frame:       Input clip or frame.
+        Args:
+            frame: Input clip or frame.
 
-        :return:            Matrix object.
+        Returns:
+            Matrix object.
         """
 
         from ..utils import get_var_infos
@@ -231,14 +239,16 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
         """
         Obtain the matrix of a clip from the frame properties.
 
-        :param src:                         Input clip, frame, or props.
-        :param strict:                      Be strict about the frame properties.
-                                            Will ALWAYS error with Matrix.UNKNOWN.
+        Args:
+            src: Input clip, frame, or props.
+            strict: Be strict about the frame properties. Will ALWAYS error with Matrix.UNKNOWN.
 
-        :return:                            Matrix object.
+        Returns:
+            Matrix object.
 
-        :raises UndefinedMatrixError:       Matrix is undefined.
-        :raises UndefinedMatrixError:       Matrix can not be determined from the frameprops.
+        Raises:
+            UndefinedMatrixError: Matrix is undefined.
+            UndefinedMatrixError: Matrix can not be determined from the frameprops.
         """
 
         return _base_from_video(cls, src, UndefinedMatrixError, strict, func)
@@ -248,13 +258,15 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
         """
         Obtain the matrix from a Transfer object.
 
-        :param transfer:                        Transfer object.
-        :param strict:                          Be strict about the transfer-matrix mapping.
-                                                Will ALWAYS error with Transfer.UNKNOWN.
+        Args:
+            transfer: Transfer object.
+            strict: Be strict about the transfer-matrix mapping. Will ALWAYS error with Transfer.UNKNOWN.
 
-        :return:                                Matrix object.
+        Returns:
+            Matrix object.
 
-        :raises UnsupportedTransferError:       Transfer is not supported.
+        Raises:
+            UnsupportedTransferError: Transfer is not supported.
         """
 
         if transfer not in _transfer_matrix_map:
@@ -270,13 +282,15 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
         """
         Obtain the matrix from a Primaries object.
 
-        :param primaries:                       Primaries object.
-        :param strict:                          Be strict about the primaries-matrix mapping.
-                                                Will ALWAYS error with Primaries.UNKNOWN.
+        Args:
+            primaries: Primaries object.
+            strict: Be strict about the primaries-matrix mapping. Will ALWAYS error with Primaries.UNKNOWN.
 
-        :return:                                Matrix object.
+        Returns:
+            Matrix object.
 
-        :raises UnsupportedPrimariesError:      Primaries is not supported.
+        Raises:
+            UnsupportedPrimariesError: Primaries is not supported.
         """
 
         if primaries not in _primaries_matrix_map:
@@ -297,7 +311,9 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
 
 
 class Transfer(_TransferMeta):  # type: ignore[misc]
-    """Transfer characteristics ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.4)."""
+    """
+    Transfer characteristics ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.4).
+    """
 
     _value_: int
 
@@ -325,8 +341,9 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
 
     BT709 = 1
     """
-    (Functionally the same as :py:attr:`Transfer.BT601`, :py:attr:`Transfer.BT2020_10`,
-    and :py:attr:`Transfer.BT2020_12`)
+    (Functionally the same as [Transfer.BT601][vstools.Transfer.BT601],
+    [Transfer.BT2020_10][vstools.Transfer.BT2020_10],
+    and [Transfer.BT2020_12][vstools.Transfer.BT2020_12])
     Rec. ITU-R BT.709-6
     Rec. ITU-R BT.1361-0 conventional
     Colour gamut system (historical)
@@ -335,7 +352,9 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
     GAMMA24 = BT709  # Not exactly, but since zimg assumes infinite contrast BT1886 is effectively GAMMA24 here.
 
     UNKNOWN = 2
-    """Image characteristics are unknown or are determined by the application."""
+    """
+    Image characteristics are unknown or are determined by the application.
+    """
 
     BT470M = 4
     """
@@ -355,8 +374,9 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
 
     BT601 = 6
     """
-    (Functionally the same as :py:attr:`Transfer.BT709`, :py:attr:`Transfer.BT2020_10`,
-    and :py:attr:`Transfer.BT2020_12`)
+    (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709],
+    [Transfer.BT2020_10][vstools.Transfer.BT2020_10],
+    and [Transfer.BT2020_12][vstools.Transfer.BT2020_12])
     Rec. ITU-R BT.601-7 525 or 625
     Rec. ITU-R BT.1358-1 525 or 625 (historical)
     Rec. ITU-R BT.1700-0 NTSC
@@ -364,37 +384,47 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
     """
 
     SMPTE240M = 7
-    """SMPTE ST 240 (1999, historical)."""
+    """
+    SMPTE ST 240 (1999, historical).
+    """
 
     LINEAR = 8
-    """Linear transfer characteristics."""
+    """
+    Linear transfer characteristics.
+    """
 
     LOG100 = 9
-    """Logarithmic transfer characteristic (100:1 range)."""
+    """
+    Logarithmic transfer characteristic (100:1 range).
+    """
 
     LOG316 = 10
-    """Logarithmic transfer characteristic (100 * sqrt(10):1 range)."""
+    """
+    Logarithmic transfer characteristic (100 * sqrt(10):1 range).
+    """
 
     XVYCC = 11
-    """IEC 61966-2-4."""
+    """
+    IEC 61966-2-4.
+    """
 
     SRGB = 13
     """
-    IEC 61966-2-1 sRGB when matrix is equal to :py:attr:`Matrix.RGB`
-    IEC 61966-2-1 sYCC when matrix is equal to :py:attr:`Matrix.BT470BG`
+    IEC 61966-2-1 sRGB when matrix is equal to [Matrix.RGB][vstools.Matrix.RGB]
+    IEC 61966-2-1 sYCC when matrix is equal to [Matrix.BT470BG][vstools.Matrix.BT470BG]
     """
 
     BT2020_10 = 14
     """
-    (Functionally the same as :py:attr:`Transfer.BT709`, :py:attr:`Transfer.BT601`,
-    and :py:attr:`Transfer.BT2020_12`)
+    (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709], [Transfer.BT601][vstools.Transfer.BT601],
+    and [Transfer.BT2020_12][vstools.Transfer.BT2020_12])
     Rec. ITU-R BT.2020-2
     """
 
     BT2020_12 = 15
     """
-    (Functionally the same as :py:attr:`Transfer.BT709`, :py:attr:`Transfer.BT601`,
-    and :py:attr:`Transfer.BT2020_10`)
+    (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709], [Transfer.BT601][vstools.Transfer.BT601],
+    and [Transfer.BT2020_10][vstools.Transfer.BT2020_10])
     Rec. ITU-R BT.2020-2
     """
 
@@ -417,35 +447,53 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
     """
 
     GAMMA18 = 104
-    """Pure power gamma 1.8"""
+    """
+    Pure power gamma 1.8
+    """
 
     GAMMA20 = 105
-    """Pure power gamma 2.0"""
+    """
+    Pure power gamma 2.0
+    """
 
     GAMMA26 = 108
-    """Pure power gamma 2.6"""
+    """
+    Pure power gamma 2.6
+    """
 
     PROPHOTO = 110
-    """ProPhoto RGB (ROMM)"""
+    """
+    ProPhoto RGB (ROMM)
+    """
     ROMM = PROPHOTO
 
     ST428 = 111
-    """Digital Cinema Distribution Master (XYZ)"""
+    """
+    Digital Cinema Distribution Master (XYZ)
+    """
     XYZ = ST428
 
     VLOG = 114
-    """Panasonic V-Log (VARICAM)"""
+    """
+    Panasonic V-Log (VARICAM)
+    """
     VARICAM = VLOG
 
     SLOG_1 = 115
-    """Sony S-Log1"""
+    """
+    Sony S-Log1
+    """
 
     SLOG_2 = 116
-    """Sony S-Log2"""
+    """
+    Sony S-Log2
+    """
 
     @classmethod
     def is_unknown(cls, value: int | Transfer) -> bool:
-        """Check if Transfer is unknown."""
+        """
+        Check if Transfer is unknown.
+        """
 
         return value == cls.UNKNOWN
 
@@ -454,9 +502,11 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
         """
         Guess the transfer based on the clip's resolution.
 
-        :param frame:       Input clip or frame.
+        Args:
+            frame: Input clip or frame.
 
-        :return:            Transfer object.
+        Returns:
+            Transfer object.
         """
 
         from ..utils import get_var_infos
@@ -478,14 +528,16 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
         """
         Obtain the transfer of a clip from the frame properties.
 
-        :param src:                         Input clip, frame, or props.
-        :param strict:                      Be strict about the properties.
-                                            The result may NOT be Transfer.UNKNOWN.
+        Args:
+            src: Input clip, frame, or props.
+            strict: Be strict about the properties. The result may NOT be Transfer.UNKNOWN.
 
-        :return:                            Transfer object.
+        Returns:
+            Transfer object.
 
-        :raises UndefinedTransferError:     Transfer is undefined.
-        :raises UndefinedTransferError:     Transfer can not be determined from the frameprops.
+        Raises:
+            UndefinedTransferError: Transfer is undefined.
+            UndefinedTransferError: Transfer can not be determined from the frameprops.
         """
 
         return _base_from_video(cls, src, UndefinedTransferError, strict, func)
@@ -495,13 +547,15 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
         """
         Obtain the transfer from a Matrix object.
 
-        :param matrix:                          Matrix object.
-        :param strict:                          Be strict about the matrix-transfer mapping.
-                                                Will ALWAYS error with Matrix.UNKNOWN.
+        Args:
+            matrix: Matrix object.
+            strict: Be strict about the matrix-transfer mapping. Will ALWAYS error with Matrix.UNKNOWN.
 
-        :return:                                Transfer object.
+        Returns:
+            Transfer object.
 
-        :raises UnsupportedMatrixError:         Matrix is not supported.
+        Raises:
+            UnsupportedMatrixError: Matrix is not supported.
         """
 
         if matrix not in _matrix_transfer_map:
@@ -517,13 +571,15 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
         """
         Obtain the transfer from a Primaries object.
 
-        :param primaries:                       Primaries object.
-        :param strict:                          Be strict about the primaries-transfer mapping.
-                                                Will ALWAYS error with Primaries.UNKNOWN.
+        Args:
+            primaries: Primaries object.
+            strict: Be strict about the primaries-transfer mapping. Will ALWAYS error with Primaries.UNKNOWN.
 
-        :return:                                Transfer object.
+        Returns:
+            Transfer object.
 
-        :raises UnsupportedPrimariesError:      Primaries is not supported.
+        Raises:
+            UnsupportedPrimariesError: Primaries is not supported.
         """
 
         if primaries not in _primaries_transfer_map:
@@ -536,7 +592,9 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
 
     @classmethod
     def from_libplacebo(cls, val: int) -> int:
-        """Obtain the transfer from libplacebo."""
+        """
+        Obtain the transfer from libplacebo.
+        """
 
         return _placebo_transfer_map[val]
 
@@ -545,7 +603,8 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
         """
         VapourSynth value.
 
-        :raises ReservedTransferError:      Transfer is not an internal transfer, but a libplacebo one.
+        Raises:
+            ReservedTransferError: Transfer is not an internal transfer, but a libplacebo one.
         """
 
         if self >= self.GAMMA18:
@@ -558,7 +617,9 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
 
     @property
     def value_libplacebo(self) -> int:
-        """libplacebo value."""
+        """
+        libplacebo value.
+        """
 
         return _transfer_placebo_map[self]
 
@@ -572,7 +633,9 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
 
 
 class Primaries(_PrimariesMeta):  # type: ignore[misc]
-    """Color primaries ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.3)."""
+    """
+    Color primaries ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.3).
+    """
 
     _value_: int
 
@@ -616,7 +679,9 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
     """
 
     UNKNOWN = 2
-    """Unspecified Image characteristics are unknown or are determined by the application."""
+    """
+    Unspecified Image characteristics are unknown or are determined by the application.
+    """
 
     BT470M = 4
     """
@@ -655,7 +720,7 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
 
     SMPTE170M = 6
     """
-    (Functionally the same as :py:attr:`Primaries.SMPTE240M`)
+    (Functionally the same as [Primaries.SMPTE240M][vstools.Primaries.SMPTE240M])
     ```
     Primary      x      y
     Green     0.3100 0.5950
@@ -673,7 +738,7 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
 
     SMPTE240M = 7
     """
-    (Functionally the same as :py:attr:`Primaries.SMPTE170M`)
+    (Functionally the same as [Primaries.SMPTE170M][vstools.Primaries.SMPTE170M])
     ```
     Primary      x      y
     Green     0.3100 0.5950
@@ -777,31 +842,47 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
     """
 
     APPLE = 107
-    """Apple RGB."""
+    """
+    Apple RGB.
+    """
 
     ADOBE = 108
-    """Adobe RGB (1998)."""
+    """
+    Adobe RGB (1998).
+    """
 
     PROPHOTO = 109
-    """ProPhoto RGB (ROMM)."""
+    """
+    ProPhoto RGB (ROMM).
+    """
     ROMM = PROPHOTO
 
     VGAMUT = 113
-    """Panasonic V-Gamut (VARICAM)."""
+    """
+    Panasonic V-Gamut (VARICAM).
+    """
     VARICAM = VGAMUT
 
     SGAMUT = 114
-    """Sony S-Gamut."""
+    """
+    Sony S-Gamut.
+    """
 
     ACES_0 = 116
-    """ACES Primaries #0 (ultra wide)"""
+    """
+    ACES Primaries #0 (ultra wide)
+    """
 
     ACES_1 = 117
-    """ACES Primaries #1"""
+    """
+    ACES Primaries #1
+    """
 
     @classmethod
     def is_unknown(cls, value: int | Primaries) -> bool:
-        """Check if Primaries is unknown."""
+        """
+        Check if Primaries is unknown.
+        """
 
         return value == cls.UNKNOWN
 
@@ -810,9 +891,11 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
         """
         Guess the primaries based on the clip's resolution.
 
-        :param frame:       Input clip or frame.
+        Args:
+            frame: Input clip or frame.
 
-        :return:            Primaries object.
+        Returns:
+            Primaries object.
         """
 
         from ..utils import get_var_infos
@@ -837,14 +920,16 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
         """
         Obtain the primaries of a clip from the frame properties.
 
-        :param src:                         Input clip, frame, or props.
-        :param strict:                      Be strict about the frame properties.
-                                            Will ALWAYS error with Primaries.UNKNOWN.
+        Args:
+            src: Input clip, frame, or props.
+            strict: Be strict about the frame properties. Will ALWAYS error with Primaries.UNKNOWN.
 
-        :return:                            Primaries object.
+        Returns:
+            Primaries object.
 
-        :raises UndefinedPrimariesError:    Primaries is undefined.
-        :raises UndefinedPrimariesError:    Primaries can not be determined from the frame properties.
+        Raises:
+            UndefinedPrimariesError: Primaries is undefined.
+            UndefinedPrimariesError: Primaries can not be determined from the frame properties.
         """
 
         return _base_from_video(cls, src, UndefinedPrimariesError, strict, func)
@@ -854,13 +939,15 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
         """
         Obtain the primaries from a Matrix object.
 
-        :param matrix:                          Matrix object.
-        :param strict:                          Be strict about the matrix-primaries mapping.
-                                                Will ALWAYS error with Matrix.UNKNOWN.
+        Args:
+            matrix: Matrix object.
+            strict: Be strict about the matrix-primaries mapping. Will ALWAYS error with Matrix.UNKNOWN.
 
-        :return:                                Primaries object.
+        Returns:
+            Primaries object.
 
-        :raises UnsupportedMatrixError:         Matrix is not supported.
+        Raises:
+            UnsupportedMatrixError: Matrix is not supported.
         """
 
         if matrix not in _matrix_primaries_map:
@@ -876,13 +963,15 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
         """
         Obtain the primaries from a Transfer object.
 
-        :param transfer:                        Transfer object.
-        :param strict:                          Be strict about the transfer-primaries mapping.
-                                                Will ALWAYS error with Transfer.UNKNOWN.
+        Args:
+            transfer: Transfer object.
+            strict: Be strict about the transfer-primaries mapping. Will ALWAYS error with Transfer.UNKNOWN.
 
-        :return:                                Matrix object.
+        Returns:
+            Matrix object.
 
-        :raises UnsupportedTransferError:       Transfer is not supported.
+        Raises:
+            UnsupportedTransferError: Transfer is not supported.
         """
 
         if transfer not in _transfer_primaries_map:
@@ -895,7 +984,9 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
 
     @classmethod
     def from_libplacebo(cls, val: int) -> int:
-        """Obtain the primaries from libplacebo."""
+        """
+        Obtain the primaries from libplacebo.
+        """
 
         return _placebo_primaries_map[val]
 
@@ -904,7 +995,8 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
         """
         VapourSynth value.
 
-        :raises ReservedPrimariesError:      Primaries are not an internal primaries, but a libplacebo one.
+        Raises:
+            ReservedPrimariesError: Primaries are not an internal primaries, but a libplacebo one.
         """
 
         if self >= self.APPLE:
@@ -917,7 +1009,9 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
 
     @property
     def value_libplacebo(self) -> int:
-        """libplacebo value."""
+        """
+        libplacebo value.
+        """
 
         return _primaries_placebo_map[self]
 
@@ -931,7 +1025,9 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
 
 
 class MatrixCoefficients(NamedTuple):
-    """Class representing Linear <-> Gamma conversion matrix coefficients."""
+    """
+    Class representing Linear <-> Gamma conversion matrix coefficients.
+    """
 
     k0: float
     """Coefficient representing the offset of the linear value relative to the gamma value."""
@@ -948,34 +1044,44 @@ class MatrixCoefficients(NamedTuple):
     @classproperty
     @classmethod
     def SRGB(cls) -> MatrixCoefficients:  # noqa: N802
-        """Matrix Coefficients for SRGB."""
+        """
+        Matrix Coefficients for SRGB.
+        """
 
         return MatrixCoefficients(0.04045, 12.92, 0.055, 2.4)
 
     @classproperty
     @classmethod
     def BT709(cls) -> MatrixCoefficients:  # noqa: N802
-        """Matrix Coefficients for BT709."""
+        """
+        Matrix Coefficients for BT709.
+        """
 
         return MatrixCoefficients(0.08145, 4.5, 0.0993, 2.22222)
 
     @classproperty
     @classmethod
     def SMPTE240M(cls) -> MatrixCoefficients:  # noqa: N802
-        """Matrix Coefficients for SMPTE240M."""
+        """
+        Matrix Coefficients for SMPTE240M.
+        """
 
         return MatrixCoefficients(0.0912, 4.0, 0.1115, 2.22222)
 
     @classproperty
     @classmethod
     def BT2020(cls) -> MatrixCoefficients:  # noqa: N802
-        """Matrix Coefficients for BT2020."""
+        """
+        Matrix Coefficients for BT2020.
+        """
 
         return MatrixCoefficients(0.08145, 4.5, 0.0993, 2.22222)
 
     @classmethod
     def from_matrix(cls, matrix: Matrix) -> MatrixCoefficients:
-        """Matrix Coefficients from a Matrix object's value."""
+        """
+        Matrix Coefficients from a Matrix object's value.
+        """
 
         if matrix not in _matrix_matrixcoeff_map:
             raise UnsupportedMatrixError(f"{matrix} is not supported!", cls.from_matrix)
@@ -984,7 +1090,9 @@ class MatrixCoefficients(NamedTuple):
 
     @classmethod
     def from_transfer(cls, transfer: Transfer) -> MatrixCoefficients:
-        """Matrix Coefficients from a Transfer object's value."""
+        """
+        Matrix Coefficients from a Transfer object's value.
+        """
 
         if transfer not in _transfer_matrixcoeff_map:
             raise UnsupportedTransferError(f"{transfer} is not supported!", cls.from_transfer)
@@ -993,7 +1101,9 @@ class MatrixCoefficients(NamedTuple):
 
     @classmethod
     def from_primaries(cls, primaries: Primaries) -> MatrixCoefficients:
-        """Matrix Coefficients from a Primaries object's value."""
+        """
+        Matrix Coefficients from a Primaries object's value.
+        """
 
         if primaries not in _primaries_matrixcoeff_map:
             raise UnsupportedPrimariesError(f"{primaries} is not supported!", cls.from_primaries)
@@ -1002,7 +1112,9 @@ class MatrixCoefficients(NamedTuple):
 
 
 class ColorRange(_ColorRangeMeta):  # type: ignore[misc]
-    """Pixel Range ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Equations E-10 through E-20."""
+    """
+    Pixel Range ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Equations E-10 through E-20.
+    """
 
     _value_: int
 
@@ -1039,7 +1151,9 @@ class ColorRange(_ColorRangeMeta):  # type: ignore[misc]
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> ColorRange:
-        """Guess the color range from the frame resolution."""
+        """
+        Guess the color range from the frame resolution.
+        """
 
         from ..utils import get_var_infos
 
@@ -1057,36 +1171,45 @@ class ColorRange(_ColorRangeMeta):  # type: ignore[misc]
         """
         Obtain the color range of a clip from the frame properties.
 
-        :param src:                         Input clip, frame, or props.
-        :param strict:                      Be strict about the frame properties.
-                                            Sets the ColorRange as MISSING if prop is not there.
+        Args:
+            src: Input clip, frame, or props.
+            strict: Be strict about the frame properties. Sets the ColorRange as MISSING if prop is not there.
 
-        :return:                            ColorRange object.
+        Returns:
+            ColorRange object.
         """
 
         return _base_from_video(cls, src, UnsupportedColorRangeError, strict, func)
 
     @property
     def value_vs(self) -> int:
-        """VapourSynth (props) value."""
+        """
+        VapourSynth (props) value.
+        """
 
         return self.value
 
     @property
     def value_zimg(self) -> int:
-        """zimg (resize plugin) value."""
+        """
+        zimg (resize plugin) value.
+        """
 
         return ~self.value + 2
 
     @property
     def is_limited(self) -> bool:
-        """Check if ColorRange is limited."""
+        """
+        Check if ColorRange is limited.
+        """
 
         return bool(self.value)
 
     @property
     def is_full(self) -> bool:
-        """Check if ColorRange is full."""
+        """
+        Check if ColorRange is full.
+        """
 
         return not self.value
 
@@ -1286,16 +1409,16 @@ _primaries_pretty_name_map = {
 
 
 MatrixT: TypeAlias = Union[int, vs.MatrixCoefficients, Matrix, HoldsPropValueT]
-"""Type alias for values that can be used to initialize a :py:attr:`Matrix`."""
+"""Type alias for values that can be used to initialize a [Matrix][vstools.Matrix]."""
 
 TransferT: TypeAlias = Union[int, vs.TransferCharacteristics, Transfer, HoldsPropValueT]
-"""Type alias for values that can be used to initialize a :py:attr:`Transfer`."""
+"""Type alias for values that can be used to initialize a [Transfer][vstools.Transfer]."""
 
 PrimariesT: TypeAlias = Union[int, vs.ColorPrimaries, Primaries, HoldsPropValueT]
-"""Type alias for values that can be used to initialize a :py:attr:`Primaries`."""
+"""Type alias for values that can be used to initialize a [Primaries][vstools.Primaries]."""
 
 ColorRangeT: TypeAlias = Union[int, vs.ColorRange, ColorRange, HoldsPropValueT]
-"""Type alias for values that can be used to initialize a :py:attr:`ColorRange`."""
+"""Type alias for values that can be used to initialize a [ColorRange][vstools.ColorRange]."""
 
 
 def _norm_props_enums(kwargs: KwargsT) -> KwargsT:

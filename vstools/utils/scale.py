@@ -33,19 +33,19 @@ def scale_value(
     """
     Converts the value to the specified bit depth, or bit depth of the clip/format specified.
 
-    :param value:           Value to scale.
-    :param input_depth:     Input bit depth, or clip, frame, format from where to get it.
-    :param output_depth:    Output bit depth, or clip, frame, format from where to get it.
-    :param range_in:        Color range of the input value
-    :param range_out:       Color range of the desired output.
-    :param scale_offsets:   Whether or not to apply & map YUV zero-point offsets.
-                            Set to True when converting absolute color values.
-                            Set to False when converting color deltas.
-                            Only relevant if integer formats are involved.
-    :param chroma:          Whether or not to treat values as chroma values instead of luma.
-    :param family:          Which color family to assume for calculations.
+    Args:
+        value: Value to scale.
+        input_depth: Input bit depth, or clip, frame, format from where to get it.
+        output_depth: Output bit depth, or clip, frame, format from where to get it.
+        range_in: Color range of the input value
+        range_out: Color range of the desired output.
+        scale_offsets: Whether or not to apply & map YUV zero-point offsets. Set to True when converting absolute color
+            values. Set to False when converting color deltas. Only relevant if integer formats are involved.
+        chroma: Whether or not to treat values as chroma values instead of luma.
+        family: Which color family to assume for calculations.
 
-    :return:                Scaled value.
+    Returns:
+        Scaled value.
     """
 
     out_value = float(value)
@@ -113,11 +113,13 @@ def scale_mask(
     Converts the value to the specified bit depth, or bit depth of the clip/format specified.
     Intended for mask clips which are always full range.
 
-    :param value:           Value to scale.
-    :param input_depth:     Input bit depth, or clip, frame, format from where to get it.
-    :param output_depth:    Output bit depth, or clip, frame, format from where to get it.
+    Args:
+        value: Value to scale.
+        input_depth: Input bit depth, or clip, frame, format from where to get it.
+        output_depth: Output bit depth, or clip, frame, format from where to get it.
 
-    :return:                Scaled value.
+    Returns:
+        Scaled value.
     """
 
     return scale_value(value, input_depth, output_depth, ColorRange.FULL, ColorRange.FULL)
@@ -135,13 +137,15 @@ def scale_delta(
     Uses the clip's range (if only one clip is passed) for both depths.
     Intended for filter thresholds.
 
-    :param value:           Value to scale.
-    :param input_depth:     Input bit depth, or clip, frame, format from where to get it.
-    :param output_depth:    Output bit depth, or clip, frame, format from where to get it.
-    :param range_in:        Color range of the input value
-    :param range_out:       Color range of the desired output.
+    Args:
+        value: Value to scale.
+        input_depth: Input bit depth, or clip, frame, format from where to get it.
+        output_depth: Output bit depth, or clip, frame, format from where to get it.
+        range_in: Color range of the input value
+        range_out: Color range of the desired output.
 
-    :return:                Scaled value.
+    Returns:
+        Scaled value.
     """
 
     if isinstance(input_depth, vs.VideoNode) != isinstance(output_depth, vs.VideoNode):
@@ -166,12 +170,14 @@ def get_lowest_value(
     """
     Returns the lowest value for the specified bit depth, or bit depth of the clip/format specified.
 
-    :param clip_or_depth:   Input bit depth, or clip, frame, format from where to get it.
-    :param chroma:          Whether to get luma (default) or chroma plane value.
-    :param range_in:        Whether to get limited or full range lowest value.
-    :param family:          Which color family to assume for calculations.
+    Args:
+        clip_or_depth: Input bit depth, or clip, frame, format from where to get it.
+        chroma: Whether to get luma (default) or chroma plane value.
+        range_in: Whether to get limited or full range lowest value.
+        family: Which color family to assume for calculations.
 
-    :return:                Lowest possible value.
+    Returns:
+        Lowest possible value.
     """
 
     fmt = get_video_format(clip_or_depth)
@@ -201,7 +207,9 @@ def get_lowest_values(
     range_in: ColorRangeT | None = None,
     family: vs.ColorFamily | None = None,
 ) -> list[float]:
-    """Get the lowest values of all planes of a specified format."""
+    """
+    Get the lowest values of all planes of a specified format.
+    """
 
     return normalize_seq(
         [
@@ -217,9 +225,11 @@ def get_neutral_value(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) -> 
     Returns the neutral point value (e.g. as used by std.MakeDiff) for the specified bit depth,
     or bit depth of the clip/format specified.
 
-    :param clip_or_depth:   Input bit depth, or clip, frame, format from where to get it.
+    Args:
+        clip_or_depth: Input bit depth, or clip, frame, format from where to get it.
 
-    :return:                Neutral value.
+    Returns:
+        Neutral value.
     """
 
     fmt = get_video_format(clip_or_depth)
@@ -231,7 +241,9 @@ def get_neutral_value(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) -> 
 
 
 def get_neutral_values(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) -> list[float]:
-    """Get the neutral values of all planes of a specified format."""
+    """
+    Get the neutral values of all planes of a specified format.
+    """
 
     fmt = get_video_format(clip_or_depth)
     return normalize_seq(get_neutral_value(fmt), fmt.num_planes)
@@ -246,12 +258,14 @@ def get_peak_value(
     """
     Returns the peak value for the specified bit depth, or bit depth of the clip/format specified.
 
-    :param clip_or_depth:   Input bit depth, or clip, frame, format from where to get it.
-    :param chroma:          Whether to get luma (default) or chroma plane value.
-    :param range_in:        Whether to get limited or full range peak value.
-    :param family:          Which color family to assume for calculations.
+    Args:
+        clip_or_depth: Input bit depth, or clip, frame, format from where to get it.
+        chroma: Whether to get luma (default) or chroma plane value.
+        range_in: Whether to get limited or full range peak value.
+        family: Which color family to assume for calculations.
 
-    :return:                Highest possible value.
+    Returns:
+        Highest possible value.
     """
 
     fmt = get_video_format(clip_or_depth)
@@ -281,7 +295,9 @@ def get_peak_values(
     range_in: ColorRangeT | None = None,
     family: vs.ColorFamily | None = None,
 ) -> list[float]:
-    """Get the peak values of all planes of a specified format."""
+    """
+    Get the peak values of all planes of a specified format.
+    """
 
     return normalize_seq(
         [get_peak_value(clip_or_depth, False, range_in, family), get_peak_value(clip_or_depth, True, range_in, family)],

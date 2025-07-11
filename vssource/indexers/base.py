@@ -47,7 +47,9 @@ class VSSourceFunc(Protocol):
 
 
 class Indexer(ABC):
-    """Abstract indexer interface."""
+    """
+    Abstract indexer interface.
+    """
 
     _source_func: ClassVar[Callable[..., vs.VideoNode]]
 
@@ -159,12 +161,16 @@ class ExternalIndexer(Indexer):
 
     @abstractmethod
     def get_cmd(self, files: list[SPath], output: SPath) -> list[str]:
-        """Returns the indexer command"""
+        """
+        Returns the indexer command
+        """
         raise NotImplementedError
 
     @abstractmethod
     def get_info(self, index_path: SPath, file_idx: int = 0) -> IndexFileType:
-        """Returns info about the indexing file"""
+        """
+        Returns info about the indexing file
+        """
         raise NotImplementedError
 
     @abstractmethod

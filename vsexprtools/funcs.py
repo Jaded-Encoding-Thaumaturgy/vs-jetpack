@@ -136,25 +136,29 @@ def norm_expr(
     """
     Evaluates an expression per pixel.
 
-    :param clips:           Input clip(s).
-    :param expr:            Expression to be evaluated.
-                            A single str will be processed for all planes.
-                            A list will be concatenated to form a single expr for all planes.
-                            A tuple of these types will allow specification of different expr for each planes.
-                            A TupleExprList will make a norm_expr call for each expression within this tuple.
-    :param planes:          Plane to process, defaults to all.
-    :param format:          Output format, defaults to the first clip format.
-    :param opt:             Forces integer evaluation as much as possible.
-    :param boundary:        Specifies the default boundary condition for relative pixel accesses:
-                            - 0 means clamped
-                            - 1 means mirrored
-    :param split_planes:    Splits the VideoNodes into their individual planes.
-    :param **kwargs:        Additional keywords arguments to be passed to the expression function.
-                            These arguments are key-value pairs, where the keys are placeholders
-                            that will be replaced in the expression string.
-                            Iterable values (except str and bytes types) will be associated with the corresponding plane.
-    :return:                Evaluated clip.
-    """  # noqa: E501
+    Args:
+        clips: Input clip(s).
+        expr: Expression to be evaluated.
+
+               - A single str will be processed for all planes.
+               - A list will be concatenated to form a single expr for all planes.
+               - A tuple of these types will allow specification of different expr for each planes.
+               - A TupleExprList will make a norm_expr call for each expression within this tuple.
+        planes: Plane to process, defaults to all.
+        format: Output format, defaults to the first clip format.
+        opt: Forces integer evaluation as much as possible.
+        boundary: Specifies the default boundary condition for relative pixel accesses:
+
+               - 0 means clamped
+               - 1 means mirrored
+        split_planes: Splits the VideoNodes into their individual planes.
+        **kwargs: Additional keywords arguments to be passed to the expression function. These arguments are key-value
+            pairs, where the keys are placeholders that will be replaced in the expression string. Iterable values
+            (except str and bytes types) will be associated with the corresponding plane.
+
+    Returns:
+        Evaluated clip.
+    """
     clips = flatten_vnodes(clips, split_planes=split_planes)
 
     if isinstance(expr, str):

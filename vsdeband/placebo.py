@@ -26,7 +26,9 @@ __all__ = ["Placebo", "PlaceboDither"]
 @deprecated('"PlaceboDither" is deprecated and will be removed in a future version', category=DeprecationWarning)
 class PlaceboDither(CustomIntEnum):
     NONE = -1
-    """No dithering."""
+    """
+    No dithering.
+    """
 
     BLUE_NOISE = 0
     """
@@ -65,7 +67,9 @@ class PlaceboDither(CustomIntEnum):
 
     @property
     def placebo_args(self) -> KwargsT:
-        """Get arguments you must pass to .placebo.Debander for this dither mode."""
+        """
+        Get arguments you must pass to .placebo.Debander for this dither mode.
+        """
         if self is PlaceboDither.NONE:
             return {"dither": False, "dither_algo": 0}
         return {"dither": True, "dither_algo": self.value}
@@ -74,7 +78,9 @@ class PlaceboDither(CustomIntEnum):
 @deprecated('"Placebo" is deprecated, use "placebo_deband" instead.', category=DeprecationWarning)
 @dataclass
 class Placebo(Debander):
-    """Debander wrapper around libplacebo plugin's Deband function."""
+    """
+    Debander wrapper around libplacebo plugin's Deband function.
+    """
 
     radius: float | None = None
     thr: float | list[float] | None = None
@@ -98,28 +104,23 @@ class Placebo(Debander):
         """
         Main deband function, wrapper for `placebo.Deband <https:/github.com/Lypheo/vs-placebo#vs-placebo>`_
 
-        :param clip:            Source clip
-        :param radius:          The debanding filter's initial radius.
-                                The radius increases linearly for each iteration.
-                                A higher radius will find more gradients,
-                                but a lower radius will smooth more aggressively.
-        :param thr:             The debanding filter's cut-off threshold.
-                                Higher numbers increase the debanding strength dramatically,
-                                but progressively diminish image details.
-        :param iterations:      The number of debanding steps to perform per sample.
-                                Each step reduces a bit more banding,
-                                but takes time to compute.
-                                Note that the strength of each step falls off very quickly,
-                                so high numbers (> 4) are practically useless.
-        :param grain:           Add some extra noise to the image.
-                                This significantly helps cover up remaining quantization artifacts.
-                                Higher numbers add more noise.
-                                Note: When debanding HDR sources, even a small amount of grain can result
-                                in a very big change to the brightness level.
-                                It's recommended to either scale this value down or disable it entirely for HDR.
-        :param dither:          Specify what kind of Placebo dithering will be used.
+        Args:
+            clip: Source clip
+            radius: The debanding filter's initial radius. The radius increases linearly for each iteration. A higher
+                radius will find more gradients, but a lower radius will smooth more aggressively.
+            thr: The debanding filter's cut-off threshold. Higher numbers increase the debanding strength dramatically,
+                but progressively diminish image details.
+            iterations: The number of debanding steps to perform per sample. Each step reduces a bit more banding, but
+                takes time to compute. Note that the strength of each step falls off very quickly, so high numbers (> 4)
+                are practically useless.
+            grain: Add some extra noise to the image. This significantly helps cover up remaining quantization
+                artifacts. Higher numbers add more noise. Note: When debanding HDR sources, even a small amount of grain
+                can result in a very big change to the brightness level. It's recommended to either scale this value
+                down or disable it entirely for HDR.
+            dither: Specify what kind of Placebo dithering will be used.
 
-        :return:                Debanded clip
+        Returns:
+            Debanded clip
         """
 
         assert check_variable(clip, self.__class__.deband)

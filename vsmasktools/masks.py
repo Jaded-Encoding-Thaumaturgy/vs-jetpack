@@ -60,13 +60,16 @@ def strength_zones_mask(
     """
     Creates a mask based on a threshold strength, with optional adjustments using defined zones.
 
-    :param base:        The base clip used to generate the strength mask.
-                        If set to None, a blank mask (all zeros) will be created using the specified format.
-    :param zones:       Optional list of zones to define varying strength regions. Defaults to None.
-    :param format:      Pixel format for the mask. Defaults to vs.GRAYS.
-    :param length:      Total number of frames for the mask. If None, uses the length of the base clip.
-    :param exclusive:   Whether to use exclusive (Python-style) ranges for the zones. Defaults to False.
-    :return:            A mask clip representing the defined strength zones.
+    Args:
+        base: The base clip used to generate the strength mask. If set to None, a blank mask (all zeros) will be created
+            using the specified format.
+        zones: Optional list of zones to define varying strength regions. Defaults to None.
+        format: Pixel format for the mask. Defaults to vs.GRAYS.
+        length: Total number of frames for the mask. If None, uses the length of the base clip.
+        exclusive: Whether to use exclusive (Python-style) ranges for the zones. Defaults to False.
+
+    Returns:
+        A mask clip representing the defined strength zones.
     """
 
     if isinstance(base, vs.VideoNode):

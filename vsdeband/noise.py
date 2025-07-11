@@ -58,7 +58,9 @@ Each element can be:
 
 
 class _GrainerFunc(Protocol):
-    """Protocol for a graining function applied to a VideoNode."""
+    """
+    Protocol for a graining function applied to a VideoNode.
+    """
 
     def __call__(
         self, clip: vs.VideoNode, strength: Sequence[float], planes: PlanesT, **kwargs: Any
@@ -66,7 +68,9 @@ class _GrainerFunc(Protocol):
 
 
 class _PostProcessFunc(Protocol):
-    """Protocol for a post-processing function applied after graining."""
+    """
+    Protocol for a post-processing function applied after graining.
+    """
 
     def __call__(self, grained: vs.VideoNode) -> vs.VideoNode: ...
 
@@ -75,7 +79,9 @@ _ScalerT = TypeVar("_ScalerT", bound=Scaler)
 
 
 class ScalerTwoPasses(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
-    """Abstract scaler class that applies scaling in two passes."""
+    """
+    Abstract scaler class that applies scaling in two passes.
+    """
 
     _default_scaler = Lanczos
 
@@ -103,56 +109,65 @@ class ScalerTwoPasses(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=
 
 
 LanczosTwoPasses = ScalerTwoPasses[Lanczos]
-"""Lanczos resizer that applies scaling in two passes."""
+"""
+Lanczos resizer that applies scaling in two passes.
+"""
 
 
 class GrainFactoryBicubic(BicubicAuto):
-    """Bicubic scaler originally implemented in GrainFactory with a sharp parameter."""
+    """
+    Bicubic scaler originally implemented in GrainFactory with a sharp parameter.
+    """
 
     def __init__(self, sharp: float = 50, **kwargs: Any) -> None:
         """
         Initialize the scaler with optional arguments.
 
-        :param sharp:   Sharpness of the scaler. Defaults to 50 which corresponds to Catrom scaling.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            sharp: Sharpness of the scaler. Defaults to 50 which corresponds to Catrom scaling.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(sharp / -50 + 1, None, **kwargs)
 
 
 class AbstractGrainer:
-    """Abstract grainer base class."""
+    """
+    Abstract grainer base class.
+    """
 
     def __call__(self, clip: vs.VideoNode, /, **kwargs: Any) -> vs.VideoNode | GrainerPartial:
         raise NotImplementedError
 
 
 class Grainer(AbstractGrainer, CustomEnum):
-    """Enum representing different grain/noise generation algorithms."""
+    """
+    Enum representing different grain/noise generation algorithms.
+    """
 
     GAUSS = 0
     """
-    Gaussian noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    Gaussian noise. Built-in [vs-noise](https://github.com/wwww-wwww/vs-noise) plugin.
     """
 
     PERLIN = 1
     """
-    Perlin noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    Perlin noise. Built-in [vs-noise](https://github.com/wwww-wwww/vs-noise) plugin.
     """
 
     SIMPLEX = 2
     """
-    Simplex noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    Simplex noise. Built-in [vs-noise](https://github.com/wwww-wwww/vs-noise) plugin.
     """
 
     FBM_SIMPLEX = 3
     """
     Fractional Brownian Motion based on Simplex noise.
-    Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    Built-in [vs-noise](https://github.com/wwww-wwww/vs-noise) plugin.
     """
 
     POISSON = 4
     """
-    Poisson-distributed noise. Built-in `noise` plugin. [vs-noise](https://github.com/wwww-wwww/vs-noise)
+    Poisson-distributed noise. Built-in [vs-noise](https://github.com/wwww-wwww/vs-noise) plugin.
     """
 
     PLACEBO = auto()
@@ -325,35 +340,48 @@ class Grainer(AbstractGrainer, CustomEnum):
             grained = Grainer.PERLIN(clip, (1.65, 0.65), temporal=(0.25, 2), luma_scaling=4, size=3.0, seed=333)
             ```
 
-        :param clip:                    The input clip to apply grain to.
-                                        If omitted, returns a partially applied grainer.
-        :param strength:                Grain strength.
-                                        A single float applies uniform strength to all planes.
-                                        A sequence allows per-plane control.
-        :param static:                  If True, the grain pattern is static (unchanging across frames).
-        :param scale:                   Scaling divisor for the grain layer. Can be a float (uniform scaling)
-                                        or a tuple (width, height scaling).
-        :param scaler:                  Scaler used to resize the grain layer when `scale` is not 1.0.
-        :param temporal:                Temporal grain smoothing parameters.
-                                        Either a float (weight) or a tuple of (weight, radius).
-        :param post_process:            One or more functions applied after grain generation
-                                        (and temporal smoothing, if used).
-        :param protect_edges:           Protects edge regions of each plane from graining.
-                                        - True: Use legal range based on clip format.
-                                        - False: Disable edge protection.
-                                        - Tuple: Specify custom edge limits per plane (see `EdgeLimits`).
-        :param protect_neutral_chroma:  Whether to disable graining on neutral chroma.
-        :param luma_scaling:            Sensitivity of the luma-adaptive graining mask.
-                                        Higher values reduce grain in brighter areas; negative values invert behavior.
-        :param kwargs:                  Additional arguments to pass to the graining function
-                                        or additional advanced options:
-                                        - ``temporal_avg_func``: Temporal average function to use instead of the default standard mean.
-                                        - ``protect_edges_blend``: Blend range (float) to soften edge protection thresholds.
-                                        - ``protect_neutral_chroma_blend``: Blend range (float) for neutral chroma protection.
-                                        - ``neutral_out``: (Boolean) Output the neutral layer instead of the merged clip.
+        Args:
+            clip:
+                The input clip to apply grain to. If omitted, returns a partially applied grainer.
+            strength:
+                Grain strength.
+                A single float applies uniform strength to all planes.
+                A sequence allows per-plane control.
 
-        :return:                        Grained video clip, or a `GrainerPartial` if `clip` is not provided.
-        """  # noqa: E501
+            static:
+                If True, the grain pattern is static (unchanging across frames).
+            scale:
+                Scaling divisor for the grain layer.
+                Can be a float (uniform scaling) or a tuple (width, height scaling).
+            scaler:
+                Scaler used to resize the grain layer when `scale` is not 1.0.
+            temporal:
+                Temporal grain smoothing parameters. Either a float (weight) or a tuple of (weight, radius).
+            post_process:
+                One or more functions applied after grain generation (and temporal smoothing, if used).
+            protect_edges:
+                Protects edge regions of each plane from graining.
+
+                   - True: Use legal range based on clip format.
+                   - False: Disable edge protection.
+                   - Tuple: Specify custom edge limits per plane (see `EdgeLimits`).
+
+            protect_neutral_chroma:
+                Whether to disable graining on neutral chroma.
+            luma_scaling:
+                Sensitivity of the luma-adaptive graining mask.
+                Higher values reduce grain in brighter areas; negative values invert behavior.
+            **kwargs:
+                Additional arguments to pass to the graining function or additional advanced options:
+
+                   - ``temporal_avg_func``: Temporal average function to use instead of the default standard mean.
+                   - ``protect_edges_blend``: Blend range (float) to soften edge protection thresholds.
+                   - ``protect_neutral_chroma_blend``: Blend range (float) for neutral chroma protection.
+                   - ``neutral_out``: (Boolean) Output the neutral layer instead of the merged clip.
+
+        Returns:
+            Grained video clip, or a `GrainerPartial` if `clip` is not provided.
+        """
         kwargs.update(
             strength=strength,
             scale=scale,
@@ -545,14 +573,17 @@ def _protect_neutral_chroma(
 
 
 class GrainerPartial(AbstractGrainer):
-    """A partially-applied grainer wrapper."""
+    """
+    A partially-applied grainer wrapper.
+    """
 
     def __init__(self, grainer: Grainer, **kwargs: Any) -> None:
         """
         Stores a grainer function, allowing it to be reused with different clips.
 
-        :param grainer:     [Grainer][vsdeband.noise.Grainer] enumeration.
-        :param kwargs:      Arguments for the specified grainer.
+        Args:
+            grainer: [Grainer][vsdeband.noise.Grainer] enumeration.
+            **kwargs: Arguments for the specified grainer.
         """
         self.grainer = grainer
         self.kwargs = kwargs
@@ -561,9 +592,12 @@ class GrainerPartial(AbstractGrainer):
         """
         Apply the grainer to the given clip with optional argument overrides.
 
-        :param clip:        Clip to be processed.
-        :param kwargs:      Additional keyword arguments to override or extend the stored ones.
-        :return:            Processed clip.
+        Args:
+            clip: Clip to be processed.
+            **kwargs: Additional keyword arguments to override or extend the stored ones.
+
+        Returns:
+            Processed clip.
         """
         return self.grainer(clip, **self.kwargs | kwargs)
 

@@ -29,10 +29,14 @@ __all__ = [
 
 
 class FPSColumn(ProgressColumn):
-    """Progress rendering."""
+    """
+    Progress rendering.
+    """
 
     def render(self, task: Task) -> Text:
-        """Render bar."""
+        """
+        Render bar.
+        """
 
         return Text(f"{task.speed or 0:.02f} fps")
 
@@ -73,7 +77,9 @@ def get_render_progress(title: str, total: int) -> RenderProgressCTX: ...
 
 
 def get_render_progress(title: str | None = None, total: int | None = None) -> RenderProgressCTX | Progress:
-    """Return render progress."""
+    """
+    Return render progress.
+    """
 
     if title and total:
         progress = get_render_progress()

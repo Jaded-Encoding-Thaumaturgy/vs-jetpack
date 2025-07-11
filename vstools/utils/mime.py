@@ -24,17 +24,25 @@ __all__ = ["FileSignature", "FileSignatures", "FileType", "IndexingType", "Parse
 
 
 class IndexingType(CustomStrEnum):
-    """Enum of common indexing file extensions."""
+    """
+    Enum of common indexing file extensions.
+    """
 
     DGI = ".dgi"
-    """DGIndexNV index file, mostly used for interlaced/telecined content."""
+    """
+    DGIndexNV index file, mostly used for interlaced/telecined content.
+    """
 
     LWI = ".lwi"
-    """LSMAS index file."""
+    """
+    LSMAS index file.
+    """
 
 
 class ParsedFile(NamedTuple):
-    """Structure for file info."""
+    """
+    Structure for file info.
+    """
 
     path: Path
     """Resolved path of the file."""
@@ -54,7 +62,9 @@ class ParsedFile(NamedTuple):
 
 @complex_hash
 class FileSignature(NamedTuple):
-    """Child structure of FileSignatures, holding info of certain types of files and their signatures."""
+    """
+    Child structure of FileSignatures, holding info of certain types of files and their signatures.
+    """
 
     file_type: str
     """FileType as a str."""
@@ -75,10 +85,12 @@ class FileSignature(NamedTuple):
         """
         Verify the signature of the file.
 
-        :param file_bytes:  Header bytes of the file to be checked.
-        :param ignore:      If a found signature is shorter than this length, it will be ignored.
+        Args:
+            file_bytes: Header bytes of the file to be checked.
+            ignore: If a found signature is shorter than this length, it will be ignored.
 
-        :return:            Length of the found signature.
+        Returns:
+            Length of the found signature.
         """
 
         max_signature_length = 0
@@ -96,14 +108,20 @@ class FileSignature(NamedTuple):
 
 
 class FileSignatures(list[FileSignature]):
-    """Structure wrapping a json file holding all file signatures."""
+    """
+    Structure wrapping a json file holding all file signatures.
+    """
 
     _file_headers_data: list[FileSignature] | None = None
     file_headers_path = Path(path.join(path.dirname(path.abspath(__file__)), "__file_headers.json"))
-    """Custom path for the json containing file headers."""
+    """
+    Custom path for the json containing file headers.
+    """
 
     def __init__(self, *, custom_header_data: str | Path | list[FileSignature] | None = None, force: bool = False):
-        """Fetch all the file signatures, optionally with added custom signatures."""
+        """
+        Fetch all the file signatures, optionally with added custom signatures.
+        """
 
         self.extend(self.load_headers_data(custom_header_data=custom_header_data, force=force))
 
@@ -117,10 +135,12 @@ class FileSignatures(list[FileSignature]):
         """
         Load file signatures from json file. This is cached unless ``custom_header_data`` is set.
 
-        :param custom_header_data:  Custom header data path file or custom list of already parsed FileSignature.
-        :param force:               Ignore cache and reload header data from disk.
+        Args:
+            custom_header_data: Custom header data path file or custom list of already parsed FileSignature.
+            force: Ignore cache and reload header data from disk.
 
-        :return:                    List of parsed FileSignature from json file.
+        Returns:
+            List of parsed FileSignature from json file.
         """
 
         if self._file_headers_data is None or force or custom_header_data:
@@ -160,9 +180,11 @@ class FileSignatures(list[FileSignature]):
         """
         Parse a given file.
 
-        :param filename:        Path to file.
+        Args:
+            filename: Path to file.
 
-        :return:                The input file's mime signature.
+        Returns:
+            The input file's mime signature.
         """
 
         with open(filename, "rb") as file:
@@ -195,19 +217,29 @@ class FileSignatures(list[FileSignature]):
 
 
 class FileType(FileTypeBase):
-    """Enum for file types and mime types."""
+    """
+    Enum for file types and mime types.
+    """
 
     AUTO = "auto"
-    """Special file type for :py:attr:`FileType.parse`."""
+    """
+    Special file type for [FileType.parse][vstools.FileType.parse].
+    """
 
     VIDEO = "video"
-    """File type for video files."""
+    """
+    File type for video files.
+    """
 
     AUDIO = "audio"
-    """File type for audio files."""
+    """
+    File type for audio files.
+    """
 
     CHAPTERS = "chapters"
-    """File type for chapters files."""
+    """
+    File type for chapters files.
+    """
 
     if not TYPE_CHECKING:
         INDEX = "index"
@@ -215,19 +247,29 @@ class FileType(FileTypeBase):
         INDEX_VIDEO = f"{INDEX}_{VIDEO}"
 
     IMAGE = "image"
-    """File type for image files."""
+    """
+    File type for image files.
+    """
 
     ARCHIVE = "archive"
-    """File type for archive files."""
+    """
+    File type for archive files.
+    """
 
     FONT = "font"
-    """File type for font files."""
+    """
+    File type for font files.
+    """
 
     DOCUMENT = "document"
-    """File type for documents."""
+    """
+    File type for documents.
+    """
 
     OTHER = "other"
-    """File type for generic files, like applications."""
+    """
+    File type for generic files, like applications.
+    """
 
     @classmethod
     def _missing_(cls, value: Any) -> FileType:
@@ -255,12 +297,13 @@ class FileType(FileTypeBase):
         Parse infos from a file. If the FileType is different than AUTO, this function will throw if the file
         is a different FileType than what this method was called on.
 
-        :param path:        Path of the file to be parsed.
-        :param func:        Function returned for custom error handling.
-                            This should only be set by VS package developers.
+        Args:
+            path: Path of the file to be parsed.
+            func: Function returned for custom error handling. This should only be set by VS package developers.
         :force_ffprobe:     Only rely on ffprobe to parse the file info.
 
-        :return:            ParsedFile object, holding the file's info.
+        Returns:
+            ParsedFile object, holding the file's info.
         """
 
         from .ffprobe import FFProbe, FFProbeStream
@@ -319,12 +362,16 @@ class FileType(FileTypeBase):
         return ParsedFile(filename, ext, encoding, file_type, mime)
 
     def is_index(self) -> TypeGuard[FileTypeIndexWithType]:  # type: ignore
-        """Verify whether the FileType is an INDEX that holds its own FileType (e.g. mime: index/video)."""
+        """
+        Verify whether the FileType is an INDEX that holds its own FileType (e.g. mime: index/video).
+        """
 
         return self in {FileType.INDEX, FileType.INDEX_AUDIO, FileType.INDEX_VIDEO}  # type: ignore
 
     def __call__(self: FileTypeIndex, file_type: str | FileType) -> FileTypeIndexWithType:  # type: ignore
-        """Get an INDEX FileType of another FileType (Video, Audio, Other)."""
+        """
+        Get an INDEX FileType of another FileType (Video, Audio, Other).
+        """
 
         if self is not FileType.INDEX:
             raise NotImplementedError

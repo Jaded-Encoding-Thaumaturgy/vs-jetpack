@@ -12,7 +12,9 @@ __all__ = [
 
 
 class Spline16(ZimgComplexKernel):
-    """Spline16 resizer."""
+    """
+    Spline16 resizer.
+    """
 
     scale_function = resample_function = core.lazy.resize2.Spline16
     descale_function = core.lazy.descale.Despline16
@@ -21,7 +23,9 @@ class Spline16(ZimgComplexKernel):
 
 
 class Spline36(ZimgComplexKernel):
-    """Spline36 resizer."""
+    """
+    Spline36 resizer.
+    """
 
     scale_function = resample_function = core.lazy.resize2.Spline36
     descale_function = core.lazy.descale.Despline36
@@ -30,7 +34,9 @@ class Spline36(ZimgComplexKernel):
 
 
 class Spline64(ZimgComplexKernel):
-    """Spline64 resizer."""
+    """
+    Spline64 resizer.
+    """
 
     scale_function = resample_function = core.lazy.resize2.Spline64
     descale_function = core.lazy.descale.Despline64

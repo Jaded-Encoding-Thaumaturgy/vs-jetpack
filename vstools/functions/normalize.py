@@ -48,7 +48,9 @@ def normalize_seq(val: Any, length: int = 3) -> list[Any]: ...
 
 
 def normalize_seq(val: T | Sequence[T], length: int = 3) -> list[T]:
-    """Normalize a sequence to the given length."""
+    """
+    Normalize a sequence to the given length.
+    """
 
     return jetp_normalize_seq(val, length)
 
@@ -57,11 +59,12 @@ def normalize_planes(clip: vs.VideoNode, planes: PlanesT = None) -> list[int]:
     """
     Normalize a sequence of planes.
 
-    :param clip:        Input clip.
-    :param planes:      Array of planes. If None, returns all planes of the input clip's format.
-                        Default: None.
+    Args:
+        clip: Input clip.
+        planes: Array of planes. If None, returns all planes of the input clip's format. Default: None.
 
-    :return:            Sorted list of planes.
+    Returns:
+        Sorted list of planes.
     """
 
     assert clip.format
@@ -75,10 +78,12 @@ def invert_planes(clip: vs.VideoNode, planes: PlanesT = None) -> list[int]:
     """
     Invert a sequence of planes.
 
-    :param clip:        Input clip.
-    :param planes:      Array of planes. If None, selects all planes of the input clip's format.
+    Args:
+        clip: Input clip.
+        planes: Array of planes. If None, selects all planes of the input clip's format.
 
-    :return:            Sorted inverted list of planes.
+    Returns:
+        Sorted inverted list of planes.
     """
     return sorted(set(normalize_planes(clip, None)) - set(normalize_planes(clip, planes)))
 
@@ -91,13 +96,15 @@ def normalize_param_planes(
 
     For any plane not included in `planes`, the corresponding output value is set to `null`.
 
-    :param clip:    The input clip whose format and number of planes will be used to determine mapping.
-    :param param:   A single value or a sequence of values to normalize across the clip's planes.
-    :param planes:  The planes to apply the values to. Other planes will receive `null`.
-    :param null:    The default value to use for planes that are not included in `planes`.
-    :param func:    Function returned for custom error handling.
+    Args:
+        clip: The input clip whose format and number of planes will be used to determine mapping.
+        param: A single value or a sequence of values to normalize across the clip's planes.
+        planes: The planes to apply the values to. Other planes will receive `null`.
+        null: The default value to use for planes that are not included in `planes`.
+        func: Function returned for custom error handling.
 
-    :return:        A list of length equal to the number of planes in the clip, with `param` values or `null`.
+    Returns:
+        A list of length equal to the number of planes in the clip, with `param` values or `null`.
     """
     func = func or normalize_param_planes
 
@@ -123,7 +130,9 @@ def flatten(items: Any) -> Iterator[Any]: ...
 
 
 def flatten(items: Any) -> Iterator[Any]:
-    """Flatten an array of values, clips and frames included."""
+    """
+    Flatten an array of values, clips and frames included.
+    """
 
     if isinstance(items, (vs.RawNode, vs.RawFrame)):
         yield items
@@ -151,11 +160,12 @@ def flatten_vnodes(*clips: VideoNodeIterableT[VideoNodeT], split_planes: bool = 
     """
     Flatten an array of VideoNodes.
 
-    :param clips:           An array of clips to flatten into a list.
-    :param split_planes:    Optionally split the VideoNodes into their individual planes as well.
-                            Default: False.
+    Args:
+        *clips: An array of clips to flatten into a list.
+        split_planes: Optionally split the VideoNodes into their individual planes as well. Default: False.
 
-    :return:                Flattened list of VideoNodes.
+    Returns:
+        Flattened list of VideoNodes.
     """
 
     from .utils import split
@@ -179,8 +189,6 @@ def normalize_ranges(clip: vs.VideoNode, ranges: FrameRangeN | FrameRangesN) -> 
 
     Examples:
 
-    .. code-block:: python
-
         >>> clip.num_frames
         1000
         >>> normalize_ranges(clip, (None, None))
@@ -190,11 +198,12 @@ def normalize_ranges(clip: vs.VideoNode, ranges: FrameRangeN | FrameRangesN) -> 
         >>> normalize_ranges(clip, [(24, 100), (80, 150)])
         [(24, 150)]
 
+    Args:
+        clip: Input clip.
+        ranges: Frame range or list of frame ranges.
 
-    :param clip:        Input clip.
-    :param ranges:      Frame range or list of frame ranges.
-
-    :return:            List of positive frame ranges.
+    Returns:
+        List of positive frame ranges.
     """
 
     return jetp_normalize_ranges(ranges, clip.num_frames)
@@ -208,18 +217,18 @@ def invert_ranges(
 
     Example:
 
-    .. code-block:: python
-
         >>> franges = [(100, 200), 600, (1200, 2400)]
         >>> invert_ranges(core.std.BlankClip(length=10000), core.std.BlankClip(length=10000), franges)
         [(0, 99), (201, 599), (601, 1199), (2401, 9999)]
 
-    :param clipa:          Original clip.
-    :param clipb:          Replacement clip.
-    :param ranges:         Ranges to replace clipa (original clip) with clipb (replacement clip).
-                           These ranges will be inverted. For more info, see `replace_ranges`.
+    Args:
+        clipa: Original clip.
+        clipb: Replacement clip.
+        ranges: Ranges to replace clipa (original clip) with clipb (replacement clip). These ranges will be inverted.
+            For more info, see `replace_ranges`.
 
-    :return:                A list of inverted frame ranges.
+    Returns:
+        A list of inverted frame ranges.
     """
 
     return jetp_invert_ranges(ranges, clipa.num_frames, None if clipb is None else clipb.num_frames)

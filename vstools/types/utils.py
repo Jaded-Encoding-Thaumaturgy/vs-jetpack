@@ -72,11 +72,15 @@ class vs_object(ABC, metaclass=ABCMeta):  # noqa: N801
     if TYPE_CHECKING:
 
         def __vs_del__(self, core_id: int) -> None:
-            """Special dunder that will be called when a core is getting freed."""
+            """
+            Special dunder that will be called when a core is getting freed.
+            """
 
 
 class VSDebug(Singleton, init=True):
-    """Special class that follows the VapourSynth lifecycle for debug purposes."""
+    """
+    Special class that follows the VapourSynth lifecycle for debug purposes.
+    """
 
     _print_func: Callable[..., None] = print
 
@@ -84,10 +88,10 @@ class VSDebug(Singleton, init=True):
         """
         Print useful debug information.
 
-        :param env_life:    Print creation/destroy of VapourSynth environment.
-        :param core_fetch:  Print traceback of the code that led to the first concrete core fetch.
-                            Especially useful when trying to find the code path that is
-                            locking you into a EnvironmentPolicy.
+        Args:
+            env_life: Print creation/destroy of VapourSynth environment.
+            core_fetch: Print traceback of the code that led to the first concrete core fetch. Especially useful when
+                trying to find the code path that is locking you into a EnvironmentPolicy.
         """
 
         from ..utils.vs_proxy import register_on_creation

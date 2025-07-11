@@ -18,9 +18,11 @@ def planes_to_mvtools(input_planes: Sequence[int]) -> int:
         - 3: Process UV planes only
         - 4: Process all planes
 
-    :param input_planes:    Sequence of plane indices (0=Y, 1=U, 2=V) to process.
+    Args:
+        input_planes: Sequence of plane indices (0=Y, 1=U, 2=V) to process.
 
-    :return:                Integer value used by MVTools to specify which planes to process.
+    Returns:
+        Integer value used by MVTools to specify which planes to process.
     """
 
     planes = set(input_planes)
@@ -43,10 +45,12 @@ def normalize_thscd(
     """
     Normalize and scale the thscd parameter.
 
-    :param thscd:    thscd value to scale and/or normalize.
-    :param scale:    Whether to scale thscd2 from 0-100 percentage threshold to 0-255.
+    Args:
+        thscd: thscd value to scale and/or normalize.
+        scale: Whether to scale thscd2 from 0-100 percentage threshold to 0-255.
 
-    :return:         Scaled and/or normalized thscd tuple.
+    Returns:
+        Scaled and/or normalized thscd tuple.
     """
 
     thscd1, thscd2 = thscd if isinstance(thscd, tuple) else (thscd, None)

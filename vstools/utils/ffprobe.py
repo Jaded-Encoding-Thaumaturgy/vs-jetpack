@@ -22,7 +22,9 @@ __all__ = [
 
 
 class FFProbeNotFoundError(CustomRuntimeError):
-    """Raised when the FFProbe executable was not found in the system."""
+    """
+    Raised when the FFProbe executable was not found in the system.
+    """
 
 
 class FFProbeStreamSideData:

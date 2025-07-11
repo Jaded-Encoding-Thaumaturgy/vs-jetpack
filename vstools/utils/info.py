@@ -30,7 +30,9 @@ __all__ = [
 
 
 def get_var_infos(frame: vs.VideoNode | vs.VideoFrame) -> tuple[vs.VideoFormat, int, int]:
-    """Get information from a variable resolution clip or frame."""
+    """
+    Get information from a variable resolution clip or frame.
+    """
 
     if isinstance(frame, vs.VideoNode) and not (frame.width and frame.height and frame.format):
         with frame.get_frame(0) as frame:
@@ -47,15 +49,18 @@ def get_video_format(
     """
     Retrieve a VapourSynth VideoFormat object from various input types.
 
-    :param value:           The format source. This can be:
-                            - A bidepth format if `value < 32`
-                            - A unique format ID
-                            - A VideoFormat-like object
-                            - An object holding a VideoFormat (i.e., exposing a `format` attribute)
-    :param sample_type:     Optional override for the sample type.
-                            Accepts either an integer or a SampleType.
-                            If None, the default or inferred sample type is used.
-    :return:                A VideoFormat object derived from the input.
+    Args:
+        value: The format source. This can be:
+               - A bidepth format if `value < 32`
+               - A unique format ID
+               - A VideoFormat-like object
+               - An object holding a VideoFormat (i.e., exposing a `format` attribute)
+
+        sample_type: Optional override for the sample type. Accepts either an integer or a SampleType. If None, the
+            default or inferred sample type is used.
+
+    Returns:
+        A VideoFormat object derived from the input.
     """
 
     from ..utils.vs_enums import VSPresetVideoFormat
@@ -88,13 +93,17 @@ def get_video_format(
 
 
 def get_depth(clip: VideoFormatT | HoldsVideoFormatT, /) -> int:
-    """Get the bitdepth of a given clip or value."""
+    """
+    Get the bitdepth of a given clip or value.
+    """
 
     return get_video_format(clip).bits_per_sample
 
 
 def get_sample_type(clip: VideoFormatT | HoldsVideoFormatT | vs.SampleType, /) -> vs.SampleType:
-    """Get the sample type of a given clip."""
+    """
+    Get the sample type of a given clip.
+    """
 
     if isinstance(clip, vs.SampleType):
         return clip
@@ -103,7 +112,9 @@ def get_sample_type(clip: VideoFormatT | HoldsVideoFormatT | vs.SampleType, /) -
 
 
 def get_color_family(clip: VideoFormatT | HoldsVideoFormatT | vs.ColorFamily, /) -> vs.ColorFamily:
-    """Get the color family of a given clip."""
+    """
+    Get the color family of a given clip.
+    """
 
     if isinstance(clip, vs.ColorFamily):
         return clip
@@ -112,7 +123,9 @@ def get_color_family(clip: VideoFormatT | HoldsVideoFormatT | vs.ColorFamily, /)
 
 
 def get_framerate(clip: vs.VideoNode | Fraction | tuple[int, int] | float) -> Fraction:
-    """Get the framerate from any object holding it."""
+    """
+    Get the framerate from any object holding it.
+    """
 
     if isinstance(clip, vs.VideoNode):
         return clip.fps
@@ -133,11 +146,12 @@ def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) 
     This function is meant to be used when a clip may not match the expected input bitdepth.
     Both the dithered clip and the original bitdepth are returned.
 
-    :param clip:            Input clip.
-    :param expected_depth:  Expected bitdepth.
-                            Default: 16.
+    Args:
+        clip: Input clip.
+        expected_depth: Expected bitdepth. Default: 16.
 
-    :return:                Tuple containing the clip dithered to the expected depth and the original bitdepth.
+    Returns:
+        Tuple containing the clip dithered to the expected depth and the original bitdepth.
     """
     assert check_variable_format(clip, expect_bits)
 
@@ -150,7 +164,9 @@ def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) 
 
 
 def get_plane_sizes(frame: vs.VideoNode | vs.VideoFrame, /, index: int) -> tuple[int, int]:
-    """Get the size of a given clip's plane using the index."""
+    """
+    Get the size of a given clip's plane using the index.
+    """
 
     assert frame.format and frame.width
 
@@ -164,7 +180,9 @@ def get_plane_sizes(frame: vs.VideoNode | vs.VideoFrame, /, index: int) -> tuple
 
 
 def get_resolutions(clip: vs.VideoNode | vs.VideoFrame) -> tuple[tuple[int, int, int], ...]:
-    """Get a tuple containing the resolutions of every plane of the given clip."""
+    """
+    Get a tuple containing the resolutions of every plane of the given clip.
+    """
 
     assert clip.format
 
@@ -175,11 +193,14 @@ def get_subsampling(clip: VideoFormatT | HoldsVideoFormatT, /) -> str | None:
     """
     Get the subsampling of a clip as a human-readable name.
 
-    :param clip:                Input clip.
+    Args:
+        clip: Input clip.
 
-    :return:                    String with a human-readable name.
+    Returns:
+        String with a human-readable name.
 
-    :raises CustomValueError:   Unknown subsampling.
+    Raises:
+        CustomValueError: Unknown subsampling.
     """
 
     fmt = get_video_format(clip)
@@ -238,13 +259,14 @@ def get_w(
 
     The output is rounded by default (as fractional output resolutions are not supported anywhere).
 
-    :param height:          Height to use for the calculation.
-    :param ar_or_ref:       Aspect ratio, reference clip, or Dar/Sar object from which the AR will be calculated.
-                            Default: 1.778 (16 / 9).
-    :param mod:             Mod for the output width to comply to. If None, do not force it to comply to anything.
-                            Default: None.
+    Args:
+        height: Height to use for the calculation.
+        ar_or_ref: Aspect ratio, reference clip, or Dar/Sar object from which the AR will be calculated. Default: 1.778
+            (16 / 9).
+        mod: Mod for the output width to comply to. If None, do not force it to comply to anything. Default: None.
 
-    :return:                Calculated width.
+    Returns:
+        Calculated width.
     """
 
     if isinstance(ar_or_ref, (Dar, Sar)):
@@ -299,13 +321,14 @@ def get_h(
 
     The output is rounded by default (as fractional output resolutions are not supported anywhere).
 
-    :param width:           Width to use for the calculation.
-    :param ar_or_ref:       Aspect ratio, reference clip, or Dar/Sar object from which the AR will be calculated.
-                            Default: 1.778 (16 / 9).
-    :param mod:             Mod for the output width to comply to. If None, do not force it to comply to anything.
-                            Default: None.
+    Args:
+        width: Width to use for the calculation.
+        ar_or_ref: Aspect ratio, reference clip, or Dar/Sar object from which the AR will be calculated. Default: 1.778
+            (16 / 9).
+        mod: Mod for the output width to comply to. If None, do not force it to comply to anything. Default: None.
 
-    :return:                Calculated height.
+    Returns:
+        Calculated height.
     """
 
     if isinstance(ar_or_ref, (Dar, Sar)):

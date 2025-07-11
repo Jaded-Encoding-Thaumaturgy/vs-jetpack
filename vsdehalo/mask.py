@@ -24,16 +24,18 @@ def base_dehalo_mask(
     """
     Based on `muvsfunc.YAHRmask`, stand-alone version with some tweaks. Adopted from jvsfunc.
 
-    :param src:         Input clip.
-    :param expand:      Expansion of edge mask.
-    :param iterations:  Protects parallel lines and corners that are usually damaged by strong dehaloing.
-    :param brz0:        Adjusts the internal line thickness.
-    :param brz1:        Adjusts the internal line thickness.
-    :param shift:       8-bit corrective shift value for fine-tuning expansion.
-    :param pre_ss:      Perform the mask creation at 2x.
-    :param multi:       Final pixel value multiplier.
+    Args:
+        src: Input clip.
+        expand: Expansion of edge mask.
+        iterations: Protects parallel lines and corners that are usually damaged by strong dehaloing.
+        brz0: Adjusts the internal line thickness.
+        brz1: Adjusts the internal line thickness.
+        shift: 8-bit corrective shift value for fine-tuning expansion.
+        pre_ss: Perform the mask creation at 2x.
+        multi: Final pixel value multiplier.
 
-    :return:            Dehalo mask.
+    Returns:
+        Dehalo mask.
     """
 
     assert check_progressive(src, base_dehalo_mask)

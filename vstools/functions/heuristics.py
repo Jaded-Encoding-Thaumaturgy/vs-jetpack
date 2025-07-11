@@ -37,19 +37,17 @@ def video_heuristics(
     """
     Determine the video heuristics from the frame properties.
 
-    :param clip:        Input clip.
-    :param props:       FrameProps object.
-                        If true, it will grab props info from the clip.
-                        If None/False, obtains from just from input clip.
-                        Default: None.
-    :param prop_in:     Return the dict with keys in the form of `{prop_name}_in` parameter.
-                        For example, `matrix_in` instead of `matrix`.
-                        For more information, please refer to the
-                        `Resize docs <https://www.vapoursynth.com/doc/functions/video/resize.html>`_.
-                        Default: True.
+    Args:
+        clip: Input clip.
+        props: FrameProps object. If true, it will grab props info from the clip. If None/False, obtains from just from
+            input clip. Default: None.
+        prop_in: Return the dict with keys in the form of `{prop_name}_in` parameter. For example, `matrix_in` instead
+            of `matrix`. For more information, please refer to the `Resize docs
+            <https://www.vapoursynth.com/doc/functions/video/resize.html>`_. Default: True.
 
-    :return:            A dict containing all the video heuristics that could be determined,
-                        optionally using key names derived from the resize plugin.
+    Returns:
+        A dict containing all the video heuristics that could be determined, optionally using key names derived from the
+        resize plugin.
     """
 
     assumed_props = list[str]()
@@ -103,12 +101,14 @@ def video_resample_heuristics(clip: vs.VideoNode, kwargs: KwargsT | None = None,
     """
     Get a kwargs object for a video's heuristics to pass to the resize plugin or Kernel.resample.
 
-    :param clip:            Clip to derive the heuristics from.
-    :param kwargs:          Keyword arguments for the _out parameters.
-    :param fmt_kwargs:      Keyword arguments to pass to the output kwargs.
-                            These will override any heuristics that were derived from the input clip!
+    Args:
+        clip: Clip to derive the heuristics from.
+        kwargs: Keyword arguments for the _out parameters.
+        **fmt_kwargs: Keyword arguments to pass to the output kwargs. These will override any heuristics that were
+            derived from the input clip!
 
-    :return:                Keyword arguments to pass on to the resize plugin or Kernel.resample.
+    Returns:
+        Keyword arguments to pass on to the resize plugin or Kernel.resample.
     """
     from .check import check_variable_format
 

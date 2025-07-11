@@ -107,97 +107,159 @@ class QTempGaussMC(vs_object):
     """Output of the motion blur stage."""
 
     class InputType(CustomIntEnum):
-        """Processing routine to use for the input."""
+        """
+        Processing routine to use for the input.
+        """
 
         INTERLACE = 0
-        """Deinterlace interlaced input."""
+        """
+        Deinterlace interlaced input.
+        """
 
         PROGRESSIVE = 1
-        """Deshimmer general progressive material that contains less severe problems."""
+        """
+        Deshimmer general progressive material that contains less severe problems.
+        """
 
         REPAIR = 2
-        """Repair badly deinterlaced material with considerable horizontal artefacts."""
+        """
+        Repair badly deinterlaced material with considerable horizontal artefacts.
+        """
 
     class SearchPostProcess(CustomIntEnum):
-        """Prefiltering to apply in order to assist with motion search."""
+        """
+        Prefiltering to apply in order to assist with motion search.
+        """
 
         NONE = 0
-        """No post-processing."""
+        """
+        No post-processing.
+        """
 
         GAUSSBLUR = 1
-        """Gaussian blur."""
+        """
+        Gaussian blur.
+        """
 
         GAUSSBLUR_EDGESOFTEN = 2
-        """Gaussian blur & edge softening."""
+        """
+        Gaussian blur & edge softening.
+        """
 
     class NoiseProcessMode(CustomIntEnum):
-        """How to handle processing noise in the source."""
+        """
+        How to handle processing noise in the source.
+        """
 
         NONE = 0
-        """No noise processing."""
+        """
+        No noise processing.
+        """
 
         DENOISE = 1
-        """Denoise source & optionally restore some noise back at the end of basic or final stages."""
+        """
+        Denoise source & optionally restore some noise back at the end of basic or final stages.
+        """
 
         IDENTIFY = 2
-        """Identify noise only & optionally restore some noise back at the end of basic or final stages."""
+        """
+        Identify noise only & optionally restore some noise back at the end of basic or final stages.
+        """
 
     class NoiseDeintMode(CustomIntEnum):
-        """When noise is taken from interlaced source, how to 'deinterlace' it before restoring."""
+        """
+        When noise is taken from interlaced source, how to 'deinterlace' it before restoring.
+        """
 
         WEAVE = 0
-        """Double weave source noise, lags behind by one frame."""
+        """
+        Double weave source noise, lags behind by one frame.
+        """
 
         BOB = 1
-        """Bob source noise, results in coarse noise."""
+        """
+        Bob source noise, results in coarse noise.
+        """
 
         GENERATE = 2
-        """Generates fresh noise lines."""
+        """
+        Generates fresh noise lines.
+        """
 
     class SharpMode(CustomIntEnum):
-        """How to re-sharpen the clip after temporally blurring."""
+        """
+        How to re-sharpen the clip after temporally blurring.
+        """
 
         NONE = 0
-        """No re-sharpening."""
+        """
+        No re-sharpening.
+        """
 
         UNSHARP = 1
-        """Re-sharpening using unsharpening."""
+        """
+        Re-sharpening using unsharpening.
+        """
 
         UNSHARP_MINMAX = 2
-        """Re-sharpening using unsharpening clamped to the local 3x3 min/max average."""
+        """
+        Re-sharpening using unsharpening clamped to the local 3x3 min/max average.
+        """
 
     class SharpLimitMode(CustomIntEnum):
-        """How to limit and when to apply re-sharpening of the clip."""
+        """
+        How to limit and when to apply re-sharpening of the clip.
+        """
 
         NONE = 0
-        """No sharpness limiting."""
+        """
+        No sharpness limiting.
+        """
 
         SPATIAL_PRESMOOTH = 1
-        """Spatial sharpness limiting prior to final stage."""
+        """
+        Spatial sharpness limiting prior to final stage.
+        """
 
         TEMPORAL_PRESMOOTH = 2
-        """Temporal sharpness limiting prior to final stage."""
+        """
+        Temporal sharpness limiting prior to final stage.
+        """
 
         SPATIAL_POSTSMOOTH = 3
-        """Spatial sharpness limiting after the final stage."""
+        """
+        Spatial sharpness limiting after the final stage.
+        """
 
         TEMPORAL_POSTSMOOTH = 4
-        """Temporal sharpness limiting after the final stage."""
+        """
+        Temporal sharpness limiting after the final stage.
+        """
 
     class BackBlendMode(CustomIntEnum):
-        """When to back blend (blurred) difference between pre & post sharpened clip."""
+        """
+        When to back blend (blurred) difference between pre & post sharpened clip.
+        """
 
         NONE = 0
-        """No back-blending."""
+        """
+        No back-blending.
+        """
 
         PRELIMIT = 1
-        """Perform back-blending prior to sharpness limiting."""
+        """
+        Perform back-blending prior to sharpness limiting.
+        """
 
         POSTLIMIT = 2
-        """Perform back-blending after sharpness limiting."""
+        """
+        Perform back-blending after sharpness limiting.
+        """
 
         BOTH = 3
-        """Perform back-blending both before and after sharpness limiting."""
+        """
+        Perform back-blending both before and after sharpness limiting.
+        """
 
     class SourceMatchMode(CustomIntEnum):
         """
@@ -206,28 +268,44 @@ class QTempGaussMC(vs_object):
         """
 
         NONE = 0
-        """No source match processing."""
+        """
+        No source match processing.
+        """
 
         BASIC = 1
-        """Conservative halfway stage that rarely introduces artefacts."""
+        """
+        Conservative halfway stage that rarely introduces artefacts.
+        """
 
         REFINED = 2
-        """Restores almost exact source detail but is sensitive to noise & can introduce occasional aliasing."""
+        """
+        Restores almost exact source detail but is sensitive to noise & can introduce occasional aliasing.
+        """
 
         TWICE_REFINED = 3
-        """Restores almost exact source detail."""
+        """
+        Restores almost exact source detail.
+        """
 
     class LosslessMode(CustomIntEnum):
-        """When to put exact source fields into result & clean any artefacts."""
+        """
+        When to put exact source fields into result & clean any artefacts.
+        """
 
         NONE = 0
-        """Do not restore source fields."""
+        """
+        Do not restore source fields.
+        """
 
         PRESHARPEN = 1
-        """Restore source fields prior to re-sharpening. Not exactly lossless."""
+        """
+        Restore source fields prior to re-sharpening. Not exactly lossless.
+        """
 
         POSTSMOOTH = 2
-        """Restore source fields after final temporal smooth. True lossless but less stable."""
+        """
+        Restore source fields after final temporal smooth. True lossless but less stable.
+        """
 
     def __init__(
         self,
@@ -236,9 +314,10 @@ class QTempGaussMC(vs_object):
         tff: FieldBasedT | bool | None = None,
     ) -> None:
         """
-        :param clip:          Clip to process.
-        :param input_type:    Indicates processing routine.
-        :param tff:           Field order of the clip.
+        Args:
+            clip: Clip to process.
+            input_type: Indicates processing routine.
+            tff: Field order of the clip.
         """
 
         assert check_variable(clip, self.__class__)
@@ -270,14 +349,16 @@ class QTempGaussMC(vs_object):
         """
         Configure parameters for the prefilter stage.
 
-        :param tr:                      Radius of the initial temporal binomial smooth.
-        :param sc_threshold:            Threshold for scene changes, disables sc detection if False.
-        :param postprocess:             Post-processing routine to use.
-        :param strength:                Tuple containing gaussian blur sigma & blend weight of the blur.
-        :param limit:                   3-step limiting thresholds for the gaussian blur post-processing.
-        :param range_expansion_args:    Arguments passed to [prefilter_to_full_range][vsdenoise.prefilters.prefilter_to_full_range].
-        :param mask_shimmer_args:       Arguments passed to [_mask_shimmer][vsdeinterlace.qtgmc.QTempGaussMC._mask_shimmer].
-        """  # noqa: E501
+        Args:
+            tr: Radius of the initial temporal binomial smooth.
+            sc_threshold: Threshold for scene changes, disables sc detection if False.
+            postprocess: Post-processing routine to use.
+            strength: Tuple containing gaussian blur sigma & blend weight of the blur.
+            limit: 3-step limiting thresholds for the gaussian blur post-processing.
+            range_expansion_args: Arguments passed to
+                [prefilter_to_full_range][vsdenoise.prefilters.prefilter_to_full_range].
+            mask_shimmer_args: mask_shimmer_args: Arguments passed to the mask_shimmer call.
+        """
 
         self.prefilter_tr = tr
         self.prefilter_sc_threshold = sc_threshold
@@ -302,16 +383,15 @@ class QTempGaussMC(vs_object):
         """
         Configure parameters for the motion analysis stage.
 
-        :param force_tr:        Always analyze motion to at least this, even if otherwise unnecessary.
-        :param preset:          MVTools preset defining base values for the MVTools object.
-        :param blksize:         Size of a block. Larger blocks are less sensitive to noise, are faster,
-                                but also less accurate.
-        :param refine:          Number of times to recalculate motion vectors with halved block size.
-        :param thsad_recalc:    Only bad quality new vectors with a SAD above this will be re-estimated by search.
-                                thsad value is scaled to 8x8 block size.
-        :param thscd:           Scene change detection thresholds:
-                                 - First value: SAD threshold for considering a block changed between frames.
-                                 - Second value: Percentage of changed blocks needed to trigger a scene change.
+        Args:
+            force_tr: Always analyze motion to at least this, even if otherwise unnecessary.
+            preset: MVTools preset defining base values for the MVTools object.
+            blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+            refine: Number of times to recalculate motion vectors with halved block size.
+            thsad_recalc: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value
+                is scaled to 8x8 block size.
+            thscd: Scene change detection thresholds: - First value: SAD threshold for considering a block changed
+                between frames. - Second value: Percentage of changed blocks needed to trigger a scene change.
         """
 
         preset.pop("search_clip", None)
@@ -339,14 +419,17 @@ class QTempGaussMC(vs_object):
         """
         Configure parameters for the denoise stage.
 
-        :param tr:                     Temporal radius of the denoising function & it's motion compensation.
-        :param func:                   Denoising function to use.
-        :param mode:                   Noise handling method to use.
-        :param deint:                  Noise deinterlacing method to use.
-        :param stabilize:              Weights to use when blending source noise with compensated noise.
-        :param func_comp_args:         Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for denoising.
-        :param stabilize_comp_args:    Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for stabilization.
-        """  # noqa: E501
+        Args:
+            tr: Temporal radius of the denoising function & it's motion compensation.
+            func: Denoising function to use.
+            mode: Noise handling method to use.
+            deint: Noise deinterlacing method to use.
+            stabilize: Weights to use when blending source noise with compensated noise.
+            func_comp_args: Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for
+                denoising.
+            stabilize_comp_args: Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate]
+                for stabilization.
+        """
 
         self.denoise_tr = tr
         self.denoise_func = func
@@ -372,15 +455,16 @@ class QTempGaussMC(vs_object):
         """
         Configure parameters for the basic stage.
 
-        :param tr:                  Temporal radius of the motion compensated binomial smooth.
-        :param thsad:               Thsad of the motion compensated binomial smooth.
-        :param bobber:              Bobber to use for initial spatial interpolation.
-        :param noise_restore:       How much noise to restore after this stage.
-        :param degrain_args:        Arguments passed to [_binomial_degrain][vsdeinterlace.qtgmc.QTempGaussMC._binomial_degrain].
-        :param mask_args:           Arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask]
-                                    for [InputType.REPAIR][vsdeinterlace.qtgmc.QTempGaussMC.InputType.REPAIR].
-        :param mask_shimmer_args:   Arguments passed to [_mask_shimmer][vsdeinterlace.qtgmc.QTempGaussMC._mask_shimmer].
-        """  # noqa: E501
+        Args:
+            tr: Temporal radius of the motion compensated binomial smooth.
+            thsad: Thsad of the motion compensated binomial smooth.
+            bobber: Bobber to use for initial spatial interpolation.
+            noise_restore: How much noise to restore after this stage.
+            degrain_args: Arguments passed to the binomial_degrain call.
+            mask_args: Arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask] for
+                [InputType.REPAIR][vsdeinterlace.qtgmc.QTempGaussMC.InputType.REPAIR].
+            mask_shimmer_args: Arguments passed to the mask_shimmer call.
+        """
 
         self.basic_tr = tr
         self.basic_thsad = thsad
@@ -405,13 +489,14 @@ class QTempGaussMC(vs_object):
         """
         Configure parameters for the source_match stage.
 
-        :param tr:              Temporal radius of the refinement motion compensated binomial smooth.
-        :param bobber:          Bobber to use for refined spatial interpolation.
-        :param mode:            Specifies number of refinement steps to perform.
-        :param similarity:      Temporal similarity of the error created by smoothing.
-        :param enhance:         Sharpening strength prior to source match refinement.
-        :param degrain_args:    Arguments passed to [_binomial_degrain][vsdeinterlace.qtgmc.QTempGaussMC._binomial_degrain].
-        """  # noqa: E501
+        Args:
+            tr: Temporal radius of the refinement motion compensated binomial smooth.
+            bobber: Bobber to use for refined spatial interpolation.
+            mode: Specifies number of refinement steps to perform.
+            similarity: Temporal similarity of the error created by smoothing.
+            enhance: Sharpening strength prior to source match refinement.
+            degrain_args: Arguments passed to the binomial_degrain call.
+        """
 
         self.match_tr = tr
         self.match_bobber = fallback(bobber, self.basic_bobber).copy(tff=self.tff, double_rate=self.double_rate)
@@ -430,7 +515,8 @@ class QTempGaussMC(vs_object):
         """
         Configure parameter for the lossless stage.
 
-        :param mode:    Specifies at which stage to re-weave the original fields.
+        Args:
+            mode: Specifies at which stage to re-weave the original fields.
         """
 
         self.lossless_mode = mode
@@ -448,12 +534,13 @@ class QTempGaussMC(vs_object):
         """
         Configure parameters for the sharpen stage.
 
-        :param mode:        Specifies the type of sharpening to use.
-        :param strength:    Sharpening strength.
-        :param clamp:       Clamp the sharpening strength of
-                            [SharpMode.UNSHARP_MINMAX][vsdeinterlace.qtgmc.QTempGaussMC.SharpMode.UNSHARP_MINMAX]
-                            to the min/max average plus/minus this.
-        :param thin:        How much to vertically thin edges.
+        Args:
+            mode: Specifies the type of sharpening to use.
+            strength: Sharpening strength.
+            clamp: Clamp the sharpening strength of
+                [SharpMode.UNSHARP_MINMAX][vsdeinterlace.qtgmc.QTempGaussMC.SharpMode.UNSHARP_MINMAX] to the min/max
+                average plus/minus this.
+            thin: How much to vertically thin edges.
         """
 
         if mode is None:
@@ -476,8 +563,9 @@ class QTempGaussMC(vs_object):
         """
         Configure parameters for the back_blend stage.
 
-        :param mode:     Specifies at which stage to perform back-blending.
-        :param sigma:    Gaussian blur sigma.
+        Args:
+            mode: Specifies at which stage to perform back-blending.
+            sigma: Gaussian blur sigma.
         """
 
         self.backblend_mode = mode
@@ -496,11 +584,13 @@ class QTempGaussMC(vs_object):
         """
         Configure parameters for the sharpen_limit stage.
 
-        :param mode:         Specifies type of limiting & at which stage to perform it.
-        :param radius:       Radius of sharpness limiting.
-        :param clamp:        How much undershoot/overshoot to allow.
-        :param comp_args:    Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for temporal limiting.
-        """  # noqa: E501
+        Args:
+            mode: Specifies type of limiting & at which stage to perform it.
+            radius: Radius of sharpness limiting.
+            clamp: How much undershoot/overshoot to allow.
+            comp_args: Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for
+                temporal limiting.
+        """
 
         if mode is None:
             self.limit_mode = self.SharpLimitMode.NONE if self.match_mode else self.SharpLimitMode.TEMPORAL_PRESMOOTH
@@ -525,12 +615,13 @@ class QTempGaussMC(vs_object):
         """
         Configure parameters for the final stage.
 
-        :param tr:                   Temporal radius of the motion compensated smooth.
-        :param thsad:                Thsad of the motion compensated smooth.
-        :param noise_restore:        How much noise to restore after this stage.
-        :param degrain_args:         Arguments passed to [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain].
-        :param mask_shimmer_args:    Arguments passed to [_mask_shimmer][vsdeinterlace.qtgmc.QTempGaussMC._mask_shimmer].
-        """  # noqa: E501
+        Args:
+            tr: Temporal radius of the motion compensated smooth.
+            thsad: Thsad of the motion compensated smooth.
+            noise_restore: How much noise to restore after this stage.
+            degrain_args: Arguments passed to [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain].
+            mask_shimmer_args: mask_shimmer_args: Arguments passed to the mask_shimmer call.
+        """
 
         self.final_tr = tr
         self.final_thsad = thsad
@@ -551,11 +642,13 @@ class QTempGaussMC(vs_object):
         """
         Configure parameters for the motion blur stage.
 
-        :param shutter_angle:    Tuple containing the source and output shutter angle. Will apply motion blur if they do not match.
-        :param fps_divisor:      Factor by which to reduce framerate.
-        :param blur_args:        Arguments passed to [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur].
-        :param mask_args:        Arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask].
-        """  # noqa: E501
+        Args:
+            shutter_angle: Tuple containing the source and output shutter angle. Will apply motion blur if they do not
+                match.
+            fps_divisor: Factor by which to reduce framerate.
+            blur_args: Arguments passed to [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur].
+            mask_args: Arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask].
+        """
 
         self.motion_blur_shutter_angle = shutter_angle
         self.motion_blur_fps_divisor = fps_divisor
@@ -576,11 +669,12 @@ class QTempGaussMC(vs_object):
         Compare processed clip with reference clip,
         only allow thin, horizontal areas of difference, i.e. bob shimmer fixes.
 
-        :param flt:                 Processed clip to perform masking on.
-        :param src:                 Unprocessed clip to restore from.
-        :param threshold:           Threshold of change to perform masking.
-        :param erosion_distance:    How much to deflate then reflate to remove thin areas.
-        :param over_dilation:       Extra inflation to ensure areas to restore back are fully caught.
+        Args:
+            flt: Processed clip to perform masking on.
+            src: Unprocessed clip to restore from.
+            threshold: Threshold of change to perform masking.
+            erosion_distance: How much to deflate then reflate to remove thin areas.
+            over_dilation: Extra inflation to ensure areas to restore back are fully caught.
         """
 
         assert check_variable(flt, self._mask_shimmer)
@@ -1019,7 +1113,8 @@ class QTempGaussMC(vs_object):
         """
         Start the deinterlacing process.
 
-        :return:    Deinterlaced clip.
+        Returns:
+            Deinterlaced clip.
         """
 
         self._apply_prefilter()

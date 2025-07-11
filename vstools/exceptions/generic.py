@@ -60,11 +60,15 @@ class FramesLengthError(CustomOverflowError):
 
 
 class ClipLengthError(CustomOverflowError):
-    """Raised when a generic clip length error occurs."""
+    """
+    Raised when a generic clip length error occurs.
+    """
 
 
 class VariableFormatError(CustomValueError):
-    """Raised when clip is of a variable format."""
+    """
+    Raised when clip is of a variable format.
+    """
 
     def __init__(
         self, func: FuncExceptT, message: SupportsString = "Variable-format clips not supported!", **kwargs: Any
@@ -73,7 +77,9 @@ class VariableFormatError(CustomValueError):
 
 
 class VariableResolutionError(CustomValueError):
-    """Raised when clip is of a variable resolution."""
+    """
+    Raised when clip is of a variable resolution.
+    """
 
     def __init__(
         self, func: FuncExceptT, message: SupportsString = "Variable-resolution clips not supported!", **kwargs: Any
@@ -82,11 +88,15 @@ class VariableResolutionError(CustomValueError):
 
 
 class UnsupportedVideoFormatError(CustomValueError):
-    """Raised when an undefined video format value is passed."""
+    """
+    Raised when an undefined video format value is passed.
+    """
 
 
 class InvalidVideoFormatError(CustomValueError):
-    """Raised when the given clip has an invalid format."""
+    """
+    Raised when the given clip has an invalid format.
+    """
 
     def __init__(
         self,
@@ -101,11 +111,15 @@ class InvalidVideoFormatError(CustomValueError):
 
 
 class UnsupportedColorFamilyError(CustomValueError):
-    """Raised when an undefined color family value is passed."""
+    """
+    Raised when an undefined color family value is passed.
+    """
 
 
 class InvalidColorFamilyError(CustomValueError):
-    """Raised when the given clip uses an invalid format."""
+    """
+    Raised when the given clip uses an invalid format.
+    """
 
     def __init__(
         self,
@@ -145,17 +159,17 @@ class InvalidColorFamilyError(CustomValueError):
         """
         Check whether the given values are correct, and if not, throw this exception.
 
-        :param to_check:                    Value to check. Must be either a ColorFamily value,
-                                            or a value a ColorFamily can be derived from such as VideoFormat.
-        :param correct:                     A correct value or an array of correct color families.
-        :param func:                        Function returned for custom error handling.
-                                            This should only be set by VS package developers.
-        :param message:                     Message to print when throwing the exception.
-                                            The message will be formatted to display the correct and wrong values
-                                            (`{correct}` and `{wrong}` respectively).
-        :param kwargs:                      Keyword arguments to pass on to the exception.
+        Args:
+            to_check: Value to check. Must be either a ColorFamily value, or a value a ColorFamily can be derived from
+                such as VideoFormat.
+            correct: A correct value or an array of correct color families.
+            func: Function returned for custom error handling. This should only be set by VS package developers.
+            message: Message to print when throwing the exception. The message will be formatted to display the correct
+                and wrong values (`{correct}` and `{wrong}` respectively).
+            **kwargs: Keyword arguments to pass on to the exception.
 
-        :raises InvalidColorFamilyError:    Given color family is not in list of correct color families.
+        Raises:
+            InvalidColorFamilyError: Given color family is not in list of correct color families.
         """
         from ..functions import to_arr
         from ..utils import get_color_family
@@ -170,11 +184,15 @@ class InvalidColorFamilyError(CustomValueError):
 
 
 class UnsupportedSubsamplingError(CustomValueError):
-    """Raised when an undefined subsampling value is passed."""
+    """
+    Raised when an undefined subsampling value is passed.
+    """
 
 
 class InvalidSubsamplingError(CustomValueError):
-    """Raised when the given clip has invalid subsampling."""
+    """
+    Raised when the given clip has invalid subsampling.
+    """
 
     def __init__(
         self,
@@ -191,7 +209,9 @@ class InvalidSubsamplingError(CustomValueError):
 
 
 class FormatsMismatchError(MismatchError):
-    """Raised when clips with different formats are given."""
+    """
+    Raised when clips with different formats are given.
+    """
 
     @classmethod
     def _item_to_name(cls, item: VideoFormatT | HoldsVideoFormatT) -> str:
@@ -215,7 +235,9 @@ class FormatsMismatchError(MismatchError):
 
 
 class FormatsRefClipMismatchError(MismatchRefError, FormatsMismatchError):
-    """Raised when a ref clip and the main clip have different formats."""
+    """
+    Raised when a ref clip and the main clip have different formats.
+    """
 
     def __init__(
         self,
@@ -241,7 +263,9 @@ class FormatsRefClipMismatchError(MismatchRefError, FormatsMismatchError):
 
 
 class ResolutionsMismatchError(MismatchError):
-    """Raised when clips with different resolutions are given."""
+    """
+    Raised when clips with different resolutions are given.
+    """
 
     @classmethod
     def _item_to_name(cls, item: Resolution | vs.VideoNode) -> str:
@@ -265,7 +289,9 @@ class ResolutionsMismatchError(MismatchError):
 
 
 class ResolutionsRefClipMismatchError(MismatchRefError, ResolutionsMismatchError):
-    """Raised when a ref clip and the main clip have different resolutions."""
+    """
+    Raised when a ref clip and the main clip have different resolutions.
+    """
 
     def __init__(
         self,
@@ -286,7 +312,9 @@ class ResolutionsRefClipMismatchError(MismatchRefError, ResolutionsMismatchError
 
 
 class LengthMismatchError(MismatchError):
-    """Raised when clips with a different number of total frames are given."""
+    """
+    Raised when clips with a different number of total frames are given.
+    """
 
     @classmethod
     def _item_to_name(cls, item: int | Sized) -> str:
@@ -308,7 +336,9 @@ class LengthMismatchError(MismatchError):
 
 
 class LengthRefClipMismatchError(MismatchRefError, LengthMismatchError):
-    """Raised when a ref clip and the main clip have a different number of total frames."""
+    """
+    Raised when a ref clip and the main clip have a different number of total frames.
+    """
 
     def __init__(
         self,
@@ -329,7 +359,9 @@ class LengthRefClipMismatchError(MismatchRefError, LengthMismatchError):
 
 
 class FramerateMismatchError(MismatchError):
-    """Raised when clips with a different framerate are given."""
+    """
+    Raised when clips with a different framerate are given.
+    """
 
     @classmethod
     def _item_to_name(cls, item: vs.VideoNode | Fraction | tuple[int, int] | float) -> str:
@@ -355,7 +387,9 @@ class FramerateMismatchError(MismatchError):
 
 
 class FramerateRefClipMismatchError(MismatchRefError, FramerateMismatchError):
-    """Raised when a ref clip and the main clip have a different framerate."""
+    """
+    Raised when a ref clip and the main clip have a different framerate.
+    """
 
     def __init__(
         self,
@@ -381,7 +415,9 @@ class FramerateRefClipMismatchError(MismatchRefError, FramerateMismatchError):
 
 
 class FramePropError(CustomKeyError):
-    """Raised when there is an error with the frame props."""
+    """
+    Raised when there is an error with the frame props.
+    """
 
     def __init__(
         self,
@@ -394,7 +430,9 @@ class FramePropError(CustomKeyError):
 
 
 class TopFieldFirstError(CustomValueError):
-    """Raised when the user must pass a TFF argument."""
+    """
+    Raised when the user must pass a TFF argument.
+    """
 
     def __init__(
         self, func: FuncExceptT, message: SupportsString = "You must set `tff` for this clip!", **kwargs: Any
@@ -403,7 +441,9 @@ class TopFieldFirstError(CustomValueError):
 
 
 class InvalidFramerateError(CustomValueError):
-    """Raised when the given clip has an invalid framerate."""
+    """
+    Raised when the given clip has an invalid framerate.
+    """
 
     def __init__(
         self,
@@ -429,17 +469,17 @@ class InvalidFramerateError(CustomValueError):
         """
         Check whether the given values are correct, and if not, throw this exception.
 
-        :param to_check:                Value to check. Must be either a VideoNode holding the correct framerate,
-                                        a Fraction, a tuple representing a fraction, or a float.
-        :param correct:                 A correct value or an array of correct values.
-        :param func:                    Function returned for custom error handling.
-                                        This should only be set by VS package developers.
-        :param message:                 Message to print when throwing the exception.
-                                        The message will be formatted to display the correct and wrong values
-                                        (`{correct}` and `{wrong}` respectively).
-        :param kwargs:                  Keyword arguments to pass on to the exception.
+        Args:
+            to_check: Value to check. Must be either a VideoNode holding the correct framerate, a Fraction, a tuple
+                representing a fraction, or a float.
+            correct: A correct value or an array of correct values.
+            func: Function returned for custom error handling. This should only be set by VS package developers.
+            message: Message to print when throwing the exception. The message will be formatted to display the correct
+                and wrong values (`{correct}` and `{wrong}` respectively).
+            **kwargs: Keyword arguments to pass on to the exception.
 
-        :raises InvalidFramerateError:  Given framerate is not in list of correct framerates.
+        Raises:
+            InvalidFramerateError: Given framerate is not in list of correct framerates.
         """
         from ..utils import get_framerate
 
@@ -461,7 +501,9 @@ class InvalidFramerateError(CustomValueError):
 
 
 class InvalidTimecodeVersionError(CustomValueError):
-    """Raised when an invalid timecode version is passed."""
+    """
+    Raised when an invalid timecode version is passed.
+    """
 
     def __init__(
         self,
@@ -483,17 +525,16 @@ class InvalidTimecodeVersionError(CustomValueError):
         """
         Check whether the given values are correct, and if not, throw this exception.
 
-        :param func:                            Function returned for custom error handling.
-                                                This should only be set by VS package developers.
-        :param to_check:                        Value to check. Must be an integer representing the timecodes version.
-        :param correct:                         A correct value or an array of correct values.
-                                                Defaults to [1, 2] (V1, V2).
-        :param message:                         Message to print when throwing the exception.
-                                                The message will be formatted to display the correct and wrong values
-                                                (`{correct}` and `{wrong}` respectively).
-        :param kwargs:                          Keyword arguments to pass on to the exception.
+        Args:
+            func: Function returned for custom error handling. This should only be set by VS package developers.
+            to_check: Value to check. Must be an integer representing the timecodes version.
+            correct: A correct value or an array of correct values. Defaults to [1, 2] (V1, V2).
+            message: Message to print when throwing the exception. The message will be formatted to display the correct
+                and wrong values (`{correct}` and `{wrong}` respectively).
+            **kwargs: Keyword arguments to pass on to the exception.
 
-        :raises InvalidTimecodeVersionError:    Given timecodes version is not in list of correct versions.
+        Raises:
+            InvalidTimecodeVersionError: Given timecodes version is not in list of correct versions.
         """
         from ..functions import to_arr
 

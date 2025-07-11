@@ -15,11 +15,17 @@ if TYPE_CHECKING:
 
     class FileTypeBase(FileTypeIndexBase, CustomStrEnum):
         def __new__(cls, value_or_mime: str | FileType | None = None) -> FileType:
-            """Instantiate the FileType with a string or mime ex video,index/video."""
+            """
+            Instantiate the FileType with a string or mime ex video,index/video.
+            """
+            ...
 
     class FileTypeIndex(FileType):  # type: ignore
         def __call__(self, file_type: str | FileType) -> FileTypeIndexWithType:
-            """Instantiate FileType.INDEX with its own sub-FileType."""
+            """
+            Instantiate FileType.INDEX with its own sub-FileType.
+            """
+            ...
 
     class FileTypeIndexWithType(FileTypeIndex):  # type: ignore
         file_type: FileType

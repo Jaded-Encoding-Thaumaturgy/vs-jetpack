@@ -154,18 +154,20 @@ def get_prop(
     """
     Get FrameProp ``prop`` from frame ``frame`` with expected type ``t`` to satisfy the type checker.
 
-    :param obj:                 Clip or frame containing props.
-    :param key:                 Prop to get.
-    :param t:                   type of prop.
-    :param cast:                Cast value to this type, if specified.
-    :param default:             Fallback value.
-    :param func:                Function returned for custom error handling.
-                                This should only be set by VS package developers.
+    Args:
+        obj: Clip or frame containing props.
+        key: Prop to get.
+        t: type of prop.
+        cast: Cast value to this type, if specified.
+        default: Fallback value.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
 
-    :return:                    frame.prop[key].
+    Returns:
+        frame.prop[key].
 
-    :raises FramePropError:     ``key`` is not found in props.
-    :raises FramePropError:     ``key`` is of the wrong type.
+    Raises:
+        FramePropError: ``key`` is not found in props.
+        FramePropError: ``key`` is of the wrong type.
     """
     props: MutableMapping[str, Any]
 
@@ -237,10 +239,12 @@ def merge_clip_props(*clips: vs.VideoNode, main_idx: int = 0) -> vs.VideoNode:
     The props of the main clip (defined by main_idx) will be overwritten,
     and all other props will be added to it.
 
-    :param clips:       Clips which will be merged.
-    :param main_idx:    Index of the main clip to which all other clips props will be merged.
+    Args:
+        *clips: Clips which will be merged.
+        main_idx: Index of the main clip to which all other clips props will be merged.
 
-    :return:            First clip with all the frameprops of every other given clip merged into it.
+    Returns:
+        First clip with all the frameprops of every other given clip merged into it.
     """
 
     if len(clips) == 1:
@@ -291,16 +295,16 @@ def get_clip_filepath(
     This functions checks for the `IdxFilePath` frame property.
     It also checks to ensure the file exists, and throws an error if it doesn't.
 
-    :param clip:                    The clip to get the file path from.
-    :param fallback:                Fallback file path to use if the `prop` is not found.
-    :param strict:                  If True, will raise an error if the `prop` is not found.
-                                    This makes it so the function will NEVER return False.
-                                    Default: False.
-    :param func:                    Function returned for error handling.
-                                    This should only be set by VS package developers.
+    Args:
+        clip: The clip to get the file path from.
+        fallback: Fallback file path to use if the `prop` is not found.
+        strict: If True, will raise an error if the `prop` is not found. This makes it so the function will NEVER return
+            False. Default: False.
+        func: Function returned for error handling. This should only be set by VS package developers.
 
-    :raises FileWasNotFoundError:   The file path was not found.
-    :raises FramePropError:         The property was not found in the clip.
+    Raises:
+        FileWasNotFoundError: The file path was not found.
+        FramePropError: The property was not found in the clip.
     """
 
     func = func or get_clip_filepath
@@ -391,21 +395,19 @@ def get_props(
     """
     Get multiple frame properties from a clip.
 
-    :param obj:                 Clip or frame containing props.
-    :param keys:                List of props to get.
-    :param t:                   Type of prop or list of types of props.
-                                If fewer types are provided than props,
-                                the last type will be used for the remaining props.
-    :param cast:                Cast value to this type, if specified.
-    :param default:             Fallback value. Can be a single value or a list of values.
-                                If a list is provided, it must be the same length as keys.
-    :param func:                Function returned for custom error handling.
-                                This should only be set by VS package developers.
+    Args:
+        obj: Clip or frame containing props.
+        keys: List of props to get.
+        t: Type of prop or list of types of props. If fewer types are provided than props, the last type will be used
+            for the remaining props.
+        cast: Cast value to this type, if specified.
+        default: Fallback value. Can be a single value or a list of values. If a list is provided, it must be the same
+            length as keys.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
 
-    :return:                    Dictionary mapping property names to their values.
-                                Values will be of type specified by cast if provided,
-                                otherwise of the type(s) specified in ``t``
-                                or a default value if provided.
+    Returns:
+        Dictionary mapping property names to their values. Values will be of type specified by cast if provided,
+        otherwise of the type(s) specified in ``t`` or a default value if provided.
     """
 
     func = func or "get_props"

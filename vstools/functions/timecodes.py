@@ -27,7 +27,9 @@ def _get_keyframes_storage() -> PackageStorage:
 
 @dataclass
 class FrameDur:
-    """A fraction representing the duration of a specific frame."""
+    """
+    A fraction representing the duration of a specific frame.
+    """
 
     frame: int
     """The frame number."""
@@ -39,7 +41,9 @@ class FrameDur:
     """The frame duration's denominator."""
 
     def to_fraction(self) -> Fraction:
-        """Convert the FrameDur to a Fraction that represents the frame duration."""
+        """
+        Convert the FrameDur to a Fraction that represents the frame duration.
+        """
 
         return Fraction(self.numerator, self.denominator)
 
@@ -57,7 +61,9 @@ class FrameDur:
 
 
 class Timecodes(list[FrameDur]):
-    """A list of frame durations, together representing a (possibly variable) frame rate."""
+    """
+    A list of frame durations, together representing a (possibly variable) frame rate.
+    """
 
     V1 = 1
     """
@@ -86,12 +92,16 @@ class Timecodes(list[FrameDur]):
     """
 
     def to_fractions(self) -> list[Fraction]:
-        """Convert to a list of frame lengths, representing the individual framerates."""
+        """
+        Convert to a list of frame lengths, representing the individual framerates.
+        """
 
         return [t.to_fraction() for t in self]
 
     def to_normalized_ranges(self) -> dict[tuple[int, int], Fraction]:
-        """Convert to a list of normalized frame ranges and their assigned framerate."""
+        """
+        Convert to a list of normalized frame ranges and their assigned framerate.
+        """
 
         timecodes_ranges = dict[tuple[int, int], Fraction]()
 
@@ -113,7 +123,9 @@ class Timecodes(list[FrameDur]):
     def normalize_range_timecodes(
         cls, timecodes: dict[tuple[int | None, int | None], Fraction], length: int, assume: Fraction | None = None
     ) -> list[Fraction]:
-        """Convert from normalized ranges to a list of frame duration."""
+        """
+        Convert from normalized ranges to a list of frame duration.
+        """
 
         from .funcs import fallback
 
@@ -172,8 +184,9 @@ class Timecodes(list[FrameDur]):
         """
         Get the timecodes from a given clip.
 
-        :param clip:        Clip to gather metrics from.
-        :param kwargs:      Keyword arguments to pass on to `clip_async_render`.
+        Args:
+            clip: Clip to gather metrics from.
+            **kwargs: Keyword arguments to pass on to `clip_async_render`.
         """
         from ..utils import get_prop
 
@@ -188,10 +201,10 @@ class Timecodes(list[FrameDur]):
         """
         Read the timecodes from a given file.
 
-        :param file:            File to read.
-        :param ref:             Reference clip to get the total number of frames from.
-        :param func:            Function returned for custom error handling.
-                                This should only be set by VS package developers.
+        Args:
+            file: File to read.
+            ref: Reference clip to get the total number of frames from.
+            func: Function returned for custom error handling. This should only be set by VS package developers.
         """
 
     @overload
@@ -202,12 +215,11 @@ class Timecodes(list[FrameDur]):
         """
         Read the timecodes from a given file.
 
-        :param file:            File to read.
-        :param length:          Total number of frames.
-        :param den:             The frame rate denominator. If None, try to obtain it from the ref if possible,
-                                else fall back to 1001.
-        :param func:            Function returned for custom error handling.
-                                This should only be set by VS package developers.
+        Args:
+            file: File to read.
+            length: Total number of frames.
+            den: The frame rate denominator. If None, try to obtain it from the ref if possible, else fall back to 1001.
+            func: Function returned for custom error handling. This should only be set by VS package developers.
         """
 
     @classmethod
@@ -279,11 +291,12 @@ class Timecodes(list[FrameDur]):
         """
         Force the given clip to be assumed to be vfr by other applications.
 
-        :param clip:        Clip to process.
-        :param func:        Function returned for custom error handling.
-                            This should only be set by VS package developers.
+        Args:
+            clip: Clip to process.
+            func: Function returned for custom error handling. This should only be set by VS package developers.
 
-        :return:            Clip that should always be assumed to be vfr by other applications.
+        Returns:
+            Clip that should always be assumed to be vfr by other applications.
         """
         from ..utils import replace_ranges
 
@@ -309,8 +322,9 @@ class Timecodes(list[FrameDur]):
 
         This file should always be muxed into the video container when working with Variable Frame Rate video.
 
-        :param out:         Path to write the file to.
-        :param format:      Format to write the file to.
+        Args:
+            out: Path to write the file to.
+            format: Format to write the file to.
         """
         from ..utils import check_perms
 

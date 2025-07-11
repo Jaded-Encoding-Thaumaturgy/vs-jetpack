@@ -26,19 +26,29 @@ __all__ = ["F3kdb", "RandomAlgo", "SampleMode"]
 @deprecated('"SampleMode" is deprecated, use "f3k_deband.SampleMode" instead.', category=DeprecationWarning)
 class SampleMode(CustomIntEnum):
     COLUMN = 1
-    """Take 2 pixels as reference pixel. Reference pixels are in the same column of current pixel."""
+    """
+    Take 2 pixels as reference pixel. Reference pixels are in the same column of current pixel.
+    """
 
     SQUARE = 2
-    """Take 4 pixels as reference pixel. Reference pixels are in the square around current pixel."""
+    """
+    Take 4 pixels as reference pixel. Reference pixels are in the square around current pixel.
+    """
 
     ROW = 3
-    """Take 2 pixels as reference pixel. Reference pixels are in the same row of current pixel."""
+    """
+    Take 2 pixels as reference pixel. Reference pixels are in the same row of current pixel.
+    """
 
     COL_ROW_MEAN = 4
-    """Arithmetic mean of COLUMN and ROW. Reference points are randomly picked within the range."""
+    """
+    Arithmetic mean of COLUMN and ROW. Reference points are randomly picked within the range.
+    """
 
     MEAN_DIFF = 5
-    """Similar to COL_ROW_MEAN, adds max/mid diff thresholds."""
+    """
+    Similar to COL_ROW_MEAN, adds max/mid diff thresholds.
+    """
 
     @overload
     def __call__(  # type: ignore
@@ -68,16 +78,24 @@ class SampleModeMidDiffInfo(NamedTuple):
 
 @deprecated('"RandomAlgo" is deprecated, use "f3k_deband.RandomAlgo" instead.', category=DeprecationWarning)
 class RandomAlgo(CustomIntEnum):
-    """Random number algorithm for reference positions / grains."""
+    """
+    Random number algorithm for reference positions / grains.
+    """
 
     OLD = 0
-    """Algorithm in old versions"""
+    """
+    Algorithm in old versions
+    """
 
     UNIFORM = 1
-    """Uniform distribution"""
+    """
+    Uniform distribution
+    """
 
     GAUSSIAN = 2
-    """Gaussian distribution"""
+    """
+    Gaussian distribution
+    """
 
     @overload
     def __call__(self: Literal[RandomAlgo.OLD, RandomAlgo.UNIFORM]) -> NoReturn:  # type: ignore
@@ -118,7 +136,9 @@ RandomAlgoT = RandomAlgo | RandomAlgoWithInfo
 @deprecated('"F3kdb" is deprecated, use "f3k_deband" instead.', category=DeprecationWarning)
 @dataclass
 class F3kdb(Debander):
-    """Debander wrapper around the f3kdb plugin."""
+    """
+    Debander wrapper around the f3kdb plugin.
+    """
 
     radius: int | None = None
     thr: int | list[int] | None = None
@@ -148,20 +168,20 @@ class F3kdb(Debander):
         _func: FuncExceptT | None = None,
     ) -> vs.VideoNode:
         """
-        :param clip:            Input clip.
-        :param radius:          Banding detection range.
-        :param thr:             Banding detection threshold for respective plane.
-                                If difference between current pixel and reference pixel is less than threshold,
-                                it will be considered as banded
-        :param grain:           Specifies amount of grains added in the last debanding stage.
-        :param sample_mode:     Determines how pixels are taken as reference.
-        :param dynamic_grain:   Use different grain pattern for each frame.
-        :param blur_first:      If True current pixel is compared with average value of all pixels.
-                                If False current pixel is compared with all pixels.
-                                The pixel is considered as banded pixel only if all differences are less than threshold.
-        :param seed:            Seed for random number generation
-        :param random:          Random number algorithm for reference positions / grains.
-        :param planes:          Which planes to process.
+        Args:
+            clip: Input clip.
+            radius: Banding detection range.
+            thr: Banding detection threshold for respective plane. If difference between current pixel and reference
+                pixel is less than threshold, it will be considered as banded
+            grain: Specifies amount of grains added in the last debanding stage.
+            sample_mode: Determines how pixels are taken as reference.
+            dynamic_grain: Use different grain pattern for each frame.
+            blur_first: If True current pixel is compared with average value of all pixels. If False current pixel is
+                compared with all pixels. The pixel is considered as banded pixel only if all differences are less than
+                threshold.
+            seed: Seed for random number generation
+            random: Random number algorithm for reference positions / grains.
+            planes: Which planes to process.
         """
         func = FunctionUtil(clip, _func or self.deband, planes, (vs.GRAY, vs.YUV), (8, 16))
 

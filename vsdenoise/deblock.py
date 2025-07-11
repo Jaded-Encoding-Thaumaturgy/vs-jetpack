@@ -54,16 +54,19 @@ class dpir(CustomStrEnum):  # noqa: N801
         """
         Deep Plug-and-Play Image Restoration
 
-        :param clip:            Clip to process.
-        :param strength:        Threshold (8-bit scale) strength for deblocking/denoising.
-                                This can be:
-                                - A single value or VideoNode applied to all planes,
-                                - A sequence of values VideoNodes to specify per-plane thresholds.
+        Args:
+            clip: Clip to process.
+            strength: Threshold (8-bit scale) strength for deblocking/denoising.
+                This can be:
 
-                                If a VideoNode is used, it must be in GRAY8, GRAYH, or GRAYS format, with pixel values
-                                representing the 8-bit thresholds.
-        :param zones:           Apply different strength in specified zones.
-        :param **kwargs:        Additional arguments to be passed to `vsscale.DPIR`.
+                  - A single value or VideoNode applied to all planes.
+                  - A sequence of values VideoNodes to specify per-plane thresholds.
+
+                If a VideoNode is used, it must be in GRAY8, GRAYH, or GRAYS format,
+                with pixel values representing the 8-bit thresholds.
+
+            zones: Apply different strength in specified zones.
+            **kwargs: Additional arguments to be passed to `vsscale.DPIR`.
         """
         func = "dpir." + str(self.value)
 
@@ -166,21 +169,25 @@ def deblock_qed(
     A postprocessed Deblock: Uses full frequencies of Deblock's changes on block borders,
     but DCT-lowpassed changes on block interiours.
 
-    :param clip:            Clip to process.
-    :param quant_edge:      Strength of block edge deblocking.
-    :param quant_inner:     Strength of block internal deblocking.
-    :param alpha_edge:      Halfway "sensitivity" and halfway a strength modifier for borders.
-    :param beta_edge:       "Sensitivity to detect blocking" for borders.
-    :param alpha_inner:     Halfway "sensitivity" and halfway a strength modifier for block interiors.
-    :param beta_inner:      "Sensitivity to detect blocking" for block interiors.
-    :param chroma_mode:      Chroma deblocking behaviour.
-                            - 0 = use proposed method for chroma deblocking
-                            - 1 = directly use chroma deblock from the normal Deblock
-                            - 2 = directly use chroma deblock from the strong Deblock
-    :param align:           Where to align the blocks for eventual padding.
-    :param planes:          What planes to process.
+    Args:
+        clip: Clip to process.
+        quant_edge: Strength of block edge deblocking.
+        quant_inner: Strength of block internal deblocking.
+        alpha_edge: Halfway "sensitivity" and halfway a strength modifier for borders.
+        beta_edge: "Sensitivity to detect blocking" for borders.
+        alpha_inner: Halfway "sensitivity" and halfway a strength modifier for block interiors.
+        beta_inner: "Sensitivity to detect blocking" for block interiors.
+        chroma_mode: Chroma deblocking behaviour.
 
-    :return:                Deblocked clip
+               - 0 = use proposed method for chroma deblocking
+               - 1 = directly use chroma deblock from the normal Deblock
+               - 2 = directly use chroma deblock from the strong Deblock
+
+        align: Where to align the blocks for eventual padding.
+        planes: What planes to process.
+
+    Returns:
+        Deblocked clip
     """
     func = FunctionUtil(clip, deblock_qed, planes)
 
@@ -254,15 +261,17 @@ def mpeg2stinx(
     in hard-telecined MPEG-2 encodes, and works to a smaller extent on bitrate-starved hard-telecined AVC as well.
     General artifact removal is better accomplished with actual denoisers.
 
-    :param clip:       Clip to process.
-    :param tff:        The field order.
-    :param mask:       Whether to use BWDIF motion masking.
-    :param bobber:     Callable to use in place of the internal deinterlacing filter.
-    :param radius:     x, y radius of min-max clipping (i.e. repair) to remove artifacts.
-    :param limit:      If specified, temporal limiting is used, where the changes by crossfieldrepair
-                       are limited to this times the difference between the current frame and its neighbours.
+    Args:
+        clip: Clip to process.
+        tff: The field order.
+        mask: Whether to use BWDIF motion masking.
+        bobber: Callable to use in place of the internal deinterlacing filter.
+        radius: x, y radius of min-max clipping (i.e. repair) to remove artifacts.
+        limit: If specified, temporal limiting is used, where the changes by crossfieldrepair are limited to this times
+            the difference between the current frame and its neighbours.
 
-    :return:           Clip with cross-field noise reduced.
+    Returns:
+        Clip with cross-field noise reduced.
     """
 
     def _crossfield_repair(clip: vs.VideoNode, bobbed: vs.VideoNode) -> vs.VideoNode:

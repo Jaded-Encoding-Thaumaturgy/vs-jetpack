@@ -31,16 +31,22 @@ class LimitFilterModeMeta:
 
 
 class LimitFilterMode(LimitFilterModeMeta, CustomIntEnum):
-    """Two sources, one filtered"""
+    """
+    Two sources, one filtered
+    """
 
     SIMPLE_MIN = auto()
     SIMPLE_MAX = auto()
-    """One source, two filtered"""
+    """
+    One source, two filtered
+    """
     SIMPLE2_MIN = auto()
     SIMPLE2_MAX = auto()
     DIFF_MIN = auto()
     DIFF_MAX = auto()
-    """One/Two sources, one filtered"""
+    """
+    One/Two sources, one filtered
+    """
     CLAMPING = auto()
 
     @property
@@ -80,8 +86,9 @@ class BlurMatrixBase(list[_Nb]):
         mode: ConvMode = ConvMode.SQUARE,
     ) -> None:
         """
-        :param __iterable:  Iterable of kernel coefficients.
-        :param mode:        Convolution mode to use. Default is SQUARE.
+        Args:
+            __iterable: Iterable of kernel coefficients.
+            mode: Convolution mode to use. Default is SQUARE.
         """
         self.mode = mode
         super().__init__(__iterable)
@@ -103,18 +110,18 @@ class BlurMatrixBase(list[_Nb]):
         Chooses the appropriate backend (`std.Convolution`, `std.AverageFrames`, or `ExprOp.convolution`)
         depending on kernel size, mode, format, and other constraints.
 
-        :param clip:            Source clip.
-        :param planes:          Planes to process. Defaults to all.
-        :param bias:            Value added to result before clamping.
-        :param divisor:         Divides the result of the convolution (before adding bias).
-                                Defaults to sum of kernel values.
-        :param saturate:        If True, negative values are clamped to zero.
-                                If False, absolute values are returned.
-        :param passes:          Number of convolution passes to apply.
-        :param expr_kwargs:     Extra kwargs passed to ExprOp.convolution when used.
-        :param **conv_kwargs:   Any other args passed to the underlying VapourSynth function.
+        Args:
+            clip: Source clip.
+            planes: Planes to process. Defaults to all.
+            bias: Value added to result before clamping.
+            divisor: Divides the result of the convolution (before adding bias). Defaults to sum of kernel values.
+            saturate: If True, negative values are clamped to zero. If False, absolute values are returned.
+            passes: Number of convolution passes to apply.
+            expr_kwargs: Extra kwargs passed to ExprOp.convolution when used.
+            **conv_kwargs: Any other args passed to the underlying VapourSynth function.
 
-        :return:            Processed (blurred) video clip.
+        Returns:
+            Processed (blurred) video clip.
         """
         assert check_variable(clip, self)
 
@@ -239,7 +246,8 @@ class BlurMatrixBase(list[_Nb]):
         """
         Convert a 1D kernel into a 2D square kernel by computing the outer product.
 
-        :return:    New `BlurMatrixBase` instance with 2D kernel and same mode.
+        Returns:
+            New `BlurMatrixBase` instance with 2D kernel and same mode.
         """
         from numpy import outer
 
@@ -256,20 +264,28 @@ class BlurMatrix(CustomEnum):
     """
 
     MEAN_NO_CENTER = auto()
-    """Mean kernel excluding the center pixel. Also aliased as BOX_BLUR_NO_CENTER."""
+    """
+    Mean kernel excluding the center pixel. Also aliased as BOX_BLUR_NO_CENTER.
+    """
 
     BOX_BLUR_NO_CENTER = MEAN_NO_CENTER
 
     MEAN = auto()
-    """Standard mean/box blur kernel including the center pixel. Aliased as BOX_BLUR."""
+    """
+    Standard mean/box blur kernel including the center pixel. Aliased as BOX_BLUR.
+    """
 
     BOX_BLUR = MEAN
 
     BINOMIAL = auto()
-    """Pascal triangle coefficients approximating Gaussian blur."""
+    """
+    Pascal triangle coefficients approximating Gaussian blur.
+    """
 
     GAUSS = auto()
-    """Proper Gaussian kernel defined by `sigma`."""
+    """
+    Proper Gaussian kernel defined by `sigma`.
+    """
 
     @overload
     def __call__(  # type: ignore[misc]
@@ -303,10 +319,13 @@ class BlurMatrix(CustomEnum):
         """
         Generate the blur kernel based on the enum variant.
 
-        :param taps:                Size of the kernel in each direction.
-        :param sigma:               [GAUSS only] Standard deviation of the Gaussian kernel.
-        :param mode:                Convolution mode. Default depends on kernel.
-        :return:                    A `BlurMatrixBase` instance representing the kernel.
+        Args:
+            taps: Size of the kernel in each direction.
+            sigma: [GAUSS only] Standard deviation of the Gaussian kernel.
+            mode: Convolution mode. Default depends on kernel.
+
+        Returns:
+            A `BlurMatrixBase` instance representing the kernel.
         """
         kernel: BlurMatrixBase[Any]
 
@@ -382,8 +401,11 @@ class BlurMatrix(CustomEnum):
 
         This is a shortcut that converts a blur radius to a corresponding sigma value.
 
-        :param radius:  Blur radius.
-        :return:        Gaussian blur matrix.
+        Args:
+            radius: Blur radius.
+
+        Returns:
+            Gaussian blur matrix.
         """
         assert self is BlurMatrix.GAUSS
 
@@ -393,9 +415,12 @@ class BlurMatrix(CustomEnum):
         """
         Compute the number of taps required for a given sigma value.
 
-        :param sigma:   Gaussian sigma value.
-        :param taps:    Optional manual override; if not provided, it's computed from sigma.
-        :return:        Number of taps.
+        Args:
+            sigma: Gaussian sigma value.
+            taps: Optional manual override; if not provided, it's computed from sigma.
+
+        Returns:
+            Number of taps.
         """
         assert self is BlurMatrix.GAUSS
 

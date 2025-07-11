@@ -109,13 +109,16 @@ class F3KDeband(Generic[P, R]):
             """
             Configure MEAN_DIFF_INT using direct values.
 
-            :param y1:      maxDif threshold for luma (Y).
-            :param cb1:     maxDif threshold for blue-difference chroma (U).
-            :param cr1:     maxDif threshold for red-difference chroma (V).
-            :param y2:      midDif threshold for luma (Y).
-            :param cb2:     midDif threshold for blue-difference chroma (U).
-            :param cr2:     midDif threshold for red-difference chroma (V).
-            :return:        The configured enum.
+            Args:
+                y1: maxDif threshold for luma (Y).
+                cb1: maxDif threshold for blue-difference chroma (U).
+                cr1: maxDif threshold for red-difference chroma (V).
+                y2: midDif threshold for luma (Y).
+                cb2: midDif threshold for blue-difference chroma (U).
+                cr2: midDif threshold for red-difference chroma (V).
+
+            Returns:
+                The configured enum.
             """
 
         @overload
@@ -128,9 +131,12 @@ class F3KDeband(Generic[P, R]):
             """
             Configure MEAN_DIFF_INT using threshold sequences.
 
-            :param thr_max:     maxDif thresholds for Y, Cb, and Cr.
-            :param thr_mid:     midDif thresholds for Y, Cb, and Cr.
-            :return:            The configured enum.
+            Args:
+                thr_max: maxDif thresholds for Y, Cb, and Cr.
+                thr_mid: midDif thresholds for Y, Cb, and Cr.
+
+            Returns:
+                The configured enum.
             """
 
         @overload
@@ -147,13 +153,16 @@ class F3KDeband(Generic[P, R]):
             """
             Configure MEAN_DIFF_FLOAT using direct values.
 
-            :param y1:      maxDif threshold for luma (Y).
-            :param cb1:     maxDif threshold for blue-difference chroma (U).
-            :param cr1:     maxDif threshold for red-difference chroma (V).
-            :param y2:      midDif threshold for luma (Y).
-            :param cb2:     midDif threshold for blue-difference chroma (U).
-            :param cr2:     midDif threshold for red-difference chroma (V).
-            :return:        The configured enum.
+            Args:
+                y1: maxDif threshold for luma (Y).
+                cb1: maxDif threshold for blue-difference chroma (U).
+                cr1: maxDif threshold for red-difference chroma (V).
+                y2: midDif threshold for luma (Y).
+                cb2: midDif threshold for blue-difference chroma (U).
+                cr2: midDif threshold for red-difference chroma (V).
+
+            Returns:
+                The configured enum.
             """
 
         @overload
@@ -166,9 +175,12 @@ class F3KDeband(Generic[P, R]):
             """
             Configure MEAN_DIFF_FLOAT using threshold sequences.
 
-            :param thr_max:     maxDif thresholds for Y, Cb, and Cr.
-            :param thr_mid:     midDif thresholds for Y, Cb, and Cr.
-            :return:            The configured enum.
+            Args:
+                thr_max: maxDif thresholds for Y, Cb, and Cr.
+                thr_mid: midDif thresholds for Y, Cb, and Cr.
+
+            Returns:
+                The configured enum.
             """
 
         @overload
@@ -187,15 +199,18 @@ class F3KDeband(Generic[P, R]):
             """
             Configure MEAN_DIFF_GRADIENT using direct values.
 
-            :param y1:          maxDif threshold for luma (Y).
-            :param cb1:         maxDif threshold for blue-difference chroma (U).
-            :param cr1:         maxDif threshold for red-difference chroma (V).
-            :param y2:          midDif threshold for luma (Y).
-            :param cb2:         midDif threshold for blue-difference chroma (U).
-            :param cr2:         midDif threshold for red-difference chroma (V).
-            :param angle_boost: Multiplier to increase the debanding strength on consistent gradients.
-            :param max_angle:   Threshold for the gradient angle check.
-            :return:            The configured enum.
+            Args:
+                y1: maxDif threshold for luma (Y).
+                cb1: maxDif threshold for blue-difference chroma (U).
+                cr1: maxDif threshold for red-difference chroma (V).
+                y2: midDif threshold for luma (Y).
+                cb2: midDif threshold for blue-difference chroma (U).
+                cr2: midDif threshold for red-difference chroma (V).
+                angle_boost: Multiplier to increase the debanding strength on consistent gradients.
+                max_angle: Threshold for the gradient angle check.
+
+            Returns:
+                The configured enum.
             """
 
         @overload
@@ -211,11 +226,14 @@ class F3KDeband(Generic[P, R]):
             """
             Configure MEAN_DIFF_GRADIENT using threshold sequences.
 
-            :param thr_max:     maxDif thresholds for Y, Cb, and Cr.
-            :param thr_mid:     midDif thresholds for Y, Cb, and Cr.
-            :param angle_boost: Multiplier to increase the debanding strength on consistent gradients.
-            :param max_angle:   Threshold for the gradient angle check.
-            :return:            The configured enum.
+            Args:
+                thr_max: maxDif thresholds for Y, Cb, and Cr.
+                thr_mid: midDif thresholds for Y, Cb, and Cr.
+                angle_boost: Multiplier to increase the debanding strength on consistent gradients.
+                max_angle: Threshold for the gradient angle check.
+
+            Returns:
+                The configured enum.
             """
 
         def __call__(
@@ -257,15 +275,18 @@ class F3KDeband(Generic[P, R]):
 
             This helps distinguish true banding in gradients from textured areas or complex details.
 
-            :param y1_or_thr_max:   maxDif threshold for luma (Y) or sequence of max thresholds.
-            :param cb1_or_thr_mid:  maxDif threshold for blue-difference chroma (U) or sequence of mid thresholds.
-            :param cr1:             maxDif threshold for red-difference chroma (V).
-            :param y2:              midDif threshold for luma (Y).
-            :param cb2:             midDif threshold for blue-difference chroma (U).
-            :param cr2:             midDif threshold for red-difference chroma (V).
-            :param angle_boost:     Multiplier to increase the debanding strength on consistent gradients.
-            :param max_angle:       Threshold for the gradient angle check.
-            :return:                The configured enum.
+            Args:
+                y1_or_thr_max: maxDif threshold for luma (Y) or sequence of max thresholds.
+                cb1_or_thr_mid: maxDif threshold for blue-difference chroma (U) or sequence of mid thresholds.
+                cr1: maxDif threshold for red-difference chroma (V).
+                y2: midDif threshold for luma (Y).
+                cb2: midDif threshold for blue-difference chroma (U).
+                cr2: midDif threshold for red-difference chroma (V).
+                angle_boost: Multiplier to increase the debanding strength on consistent gradients.
+                max_angle: Threshold for the gradient angle check.
+
+            Returns:
+                The configured enum.
             """
             assert self >= 5
 
@@ -299,13 +320,19 @@ class F3KDeband(Generic[P, R]):
             self.sigma = sigma
 
         OLD = 0
-        """Legacy algorithm from older versions."""
+        """
+        Legacy algorithm from older versions.
+        """
 
         UNIFORM = 1
-        """Uniform distribution for randomization."""
+        """
+        Uniform distribution for randomization.
+        """
 
         GAUSSIAN = 2
-        """Gaussian distribution. Supports custom standard deviation via `__call__`."""
+        """
+        Gaussian distribution. Supports custom standard deviation via `__call__`.
+        """
 
         def __call__(  # type: ignore[misc]
             self: Literal[F3KDeband.RandomAlgo.GAUSSIAN],  # pyright: ignore[reportGeneralTypeIssues]
@@ -318,8 +345,11 @@ class F3KDeband(Generic[P, R]):
             Only values in the range `[-1.0, 1.0]` are considered valid and used as multipliers.
             Values outside this range are ignored.
 
-            :param sigma:   Standard deviation used for the Gaussian distribution.
-            :return:        A new instance of GAUSSIAN with the given `sigma`.
+            Args:
+                sigma: Standard deviation used for the Gaussian distribution.
+
+            Returns:
+                A new instance of GAUSSIAN with the given `sigma`.
             """
             assert self is F3KDeband.RandomAlgo.GAUSSIAN
 
@@ -350,30 +380,29 @@ def f3k_deband(
 
     More informations can be found in the plugin documentation: https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb
 
-    :param clip:            Input clip.
-    :param radius:          Radius used for banding detection. Valid range is [1, 255].
-    :param thr:             Banding detection threshold(s) for each plane (Y, Cb, Cr).
-                            A pixel is considered banded if the difference with its reference pixel(s)
-                            is less than the corresponding threshold.
-    :param grain:           Amount of grain to add after debanding. Accepts a float or sequence of floats.
-    :param planes:          Specifies which planes to process. Default is all planes.
-    :param sample_mode:     Strategy used to sample reference pixels.
-                            See [SampleMode][vsdeband.debanders.F3KDeband.SampleMode].
-    :param dynamic_grain:   If True, generates a unique grain pattern for each frame.
-    :param blur_first:      If True, compares current pixel to the mean of surrounding pixels.
-                            If False, compares directly to all reference pixels. A pixel is marked as banded
-                            only if all pixel-wise differences are below threshold.
-    :param seed:            Random seed for grain generation.
-    :param random:          Random number generation strategy.
-                            Can be a single value for both reference and grain,
-                            or a tuple specifying separate algorithms.
-                            See [RandomAlgo][vsdeband.debanders.F3KDeband.RandomAlgo].
-    :param kwargs:          Additional keyword arguments passed directly to the `neo_f3kdb.Deband` plugin.
+    Args:
+        clip: Input clip.
+        radius: Radius used for banding detection. Valid range is [1, 255].
+        thr: Banding detection threshold(s) for each plane (Y, Cb, Cr). A pixel is considered banded if the difference
+            with its reference pixel(s) is less than the corresponding threshold.
+        grain: Amount of grain to add after debanding. Accepts a float or sequence of floats.
+        planes: Specifies which planes to process. Default is all planes.
+        sample_mode: Strategy used to sample reference pixels. See
+            [SampleMode][vsdeband.debanders.F3KDeband.SampleMode].
+        dynamic_grain: If True, generates a unique grain pattern for each frame.
+        blur_first: If True, compares current pixel to the mean of surrounding pixels. If False, compares directly to
+            all reference pixels. A pixel is marked as banded only if all pixel-wise differences are below threshold.
+        seed: Random seed for grain generation.
+        random: Random number generation strategy. Can be a single value for both reference and grain, or a tuple
+            specifying separate algorithms. See [RandomAlgo][vsdeband.debanders.F3KDeband.RandomAlgo].
+        **kwargs: Additional keyword arguments passed directly to the `neo_f3kdb.Deband` plugin.
 
-    :raises CustomValueError:           If inconsistent grain parameters are provided across chroma planes.
-    :raises InvalidColorFamilyError:    If input clip is not YUV or GRAY.
+    Raises:
+        CustomValueError: If inconsistent grain parameters are provided across chroma planes.
+        InvalidColorFamilyError: If input clip is not YUV or GRAY.
 
-    :return:                Debanded and optionally grained clip.
+    Returns:
+        Debanded and optionally grained clip.
     """
 
     InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), f3k_deband)
@@ -434,20 +463,21 @@ def placebo_deband(
     For full plugin documentation, see:
     https://github.com/sgt0/vs-placebo?tab=readme-ov-file#deband
 
-    :param clip:        Input clip.
-    :param radius:      Initial debanding radius.
-                        The radius increases linearly with each iteration.
-                        A higher radius will find more gradients, but a lower radius will smooth more aggressively.
-    :param thr:         Cut-off threshold(s) for each plane. Higher values increase debanding strength
-                        but may remove fine details. Accepts a single float or a sequence per plane.
-    :param grain:       Amount of grain/noise to add after debanding. Helps mask residual artifacts.
-                        Accepts a float or a sequence per plane.
-                        Note: For HDR content, grain can significantly affect brightness.
-                        Consider reducing or disabling.
-    :param planes:      Which planes to process. Defaults to all planes.
-    :param iterations:  Number of debanding steps to perform per sample.
-                        More iterations yield stronger effect but quickly lose efficiency beyond 4.
-    :return:            Debanded and optionally grained clip.
+    Args:
+        clip: Input clip.
+        radius: Initial debanding radius. The radius increases linearly with each iteration. A higher radius will find
+            more gradients, but a lower radius will smooth more aggressively.
+        thr: Cut-off threshold(s) for each plane. Higher values increase debanding strength but may remove fine details.
+            Accepts a single float or a sequence per plane.
+        grain: Amount of grain/noise to add after debanding. Helps mask residual artifacts. Accepts a float or a
+            sequence per plane. Note: For HDR content, grain can significantly affect brightness. Consider reducing or
+            disabling.
+        planes: Which planes to process. Defaults to all planes.
+        iterations: Number of debanding steps to perform per sample. More iterations yield stronger effect but quickly
+            lose efficiency beyond 4.
+
+    Returns:
+        Debanded and optionally grained clip.
     """
 
     assert check_variable(clip, placebo_deband)
@@ -532,15 +562,17 @@ def mdb_bilateral(
     debanded = mdb_bilateral(clip, 17, 320, debander=partial(f3k_deband, split_planes=True))
     ```
 
-    :param clip:        Input clip.
-    :param radius:      Banding detection range.
-    :param thr:         Banding detection thr(s) for planes.
-    :param lthr:        Threshold of the limiting. Refer to `vsrgtools.limit_filter`.
-    :param elast:       Elasticity of the limiting. Refer to `vsrgtools.limit_filter`.
-    :param bright_thr:  Limiting over the bright areas. Refer to `vsrgtools.limit_filter`.
-    :param debander:    Specifies what debander callable to use.
+    Args:
+        clip: Input clip.
+        radius: Banding detection range.
+        thr: Banding detection thr(s) for planes.
+        lthr: Threshold of the limiting. Refer to `vsrgtools.limit_filter`.
+        elast: Elasticity of the limiting. Refer to `vsrgtools.limit_filter`.
+        bright_thr: Limiting over the bright areas. Refer to `vsrgtools.limit_filter`.
+        debander: Specifies what debander callable to use.
 
-    :return:            Debanded clip.
+    Returns:
+        Debanded clip.
     """
     assert check_variable(clip, mdb_bilateral)
 
@@ -580,17 +612,19 @@ def pfdeband(
     """
     Prefilter and deband a clip.
 
-    :param clip:        Input clip.
-    :param radius:      Banding detection range.
-    :param thr:         Banding detection thr(s) for planes.
-    :param lthr:        Threshold of the limiting. Refer to `vsrgtools.limit_filter`.
-    :param elast:       Elasticity of the limiting. Refer to `vsrgtools.limit_filter`.
-    :param bright_thr:  Limiting over the bright areas. Refer to `vsrgtools.limit_filter`.
-    :param prefilter:   Prefilter used to blur the clip before debanding.
-    :param debander:    Specifies what debander callable to use.
-    :param planes:      Planes to process
+    Args:
+        clip: Input clip.
+        radius: Banding detection range.
+        thr: Banding detection thr(s) for planes.
+        lthr: Threshold of the limiting. Refer to `vsrgtools.limit_filter`.
+        elast: Elasticity of the limiting. Refer to `vsrgtools.limit_filter`.
+        bright_thr: Limiting over the bright areas. Refer to `vsrgtools.limit_filter`.
+        prefilter: Prefilter used to blur the clip before debanding.
+        debander: Specifies what debander callable to use.
+        planes: Planes to process
 
-    :return:              Debanded clip.
+    Returns:
+        Debanded clip.
     """
     clip, bits = expect_bits(clip, 16)
 

@@ -156,22 +156,7 @@ def based_diff_mask(
     ampl: str | type[EdgeDetect] | EdgeDetect = ...,
     expand: int = 4,
     func: FuncExceptT | None = None,
-) -> ConstantFormatVideoNode:
-    """
-    Make a difference mask between a clean source and a reference clip with additionnal pre and post processing
-
-    :param clip:        Source clip
-    :param ref:         Reference clip
-    :param thr:         Threshold of the amplification expr, defaults to 0.216
-    :param prefilter:   Filter applied before extracting the difference between clip and ref:
-                        - int -> equivalent of number of taps used in the bilateral call applied to the clips
-                        - True -> 5 taps
-                        - KwargsT -> Arguments passed to the bilateral function
-    :param postfilter:  Filter applied to the difference clip. Default is RemoveGrainMode.MINMAX_AROUND2 applied twice.
-    :param ampl:        Amplification expression.
-    :param expand:      Additional expand radius applied to the mask, defaults to 4
-    :return:            Generated mask
-    """
+) -> ConstantFormatVideoNode: ...
 
 
 @overload
@@ -191,23 +176,7 @@ def based_diff_mask(
     ampl: str | type[EdgeDetect] | EdgeDetect = ...,
     expand: int = 4,
     func: FuncExceptT | None = None,
-) -> ConstantFormatVideoNode:
-    """
-    Make a difference mask between a clean source and a rescaled clip with additionnal pre and post processing
-
-    :param clip:        Source clip
-    :param height:      Height to be descaled to
-    :param kernel:      Kernel used for descaling and rescaling
-    :param thr:         Threshold of the amplification expr, defaults to 0.216
-    :param prefilter:   Filter applied before extracting the difference between clip and ref:
-                        - int -> equivalent of number of taps used in the bilateral call applied to the clips
-                        - True -> 5 taps
-                        - KwargsT -> Arguments passed to the bilateral function
-    :param postfilter:  Filter applied to the difference clip. Default is RemoveGrainMode.MINMAX_AROUND2 applied twice.
-    :param ampl:        Amplification expression.
-    :param expand:      Additional expand radius applied to the mask, defaults to 4
-    :return:            Generated mask
-    """
+) -> ConstantFormatVideoNode: ...
 
 
 def based_diff_mask(
@@ -227,6 +196,26 @@ def based_diff_mask(
     expand: int = 4,
     func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
+    """
+    Make a difference mask between a clean source and a reference clip with additionnal pre and post processing
+
+    Args:
+        clip: Source clip
+        ref_or_height: Reference clip or height to be descaled to.
+        kernel: Kernel used for descaling and rescaling
+        thr: Threshold of the amplification expr, defaults to 0.216
+        prefilter: Filter applied before extracting the difference between clip and ref:
+
+               - int -> equivalent of number of taps used in the bilateral call applied to the clips
+               - True -> 5 taps
+               - KwargsT -> Arguments passed to the bilateral function
+        postfilter: Filter applied to the difference clip. Default is RemoveGrainMode.MINMAX_AROUND2 applied twice.
+        ampl: Amplification expression.
+        expand: Additional expand radius applied to the mask, defaults to 4
+
+    Returns:
+        Generated mask
+    """
     func = func or based_diff_mask
 
     assert check_variable(clip, func)

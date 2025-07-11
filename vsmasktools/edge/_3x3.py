@@ -1,4 +1,6 @@
-"""2D matrices 5x5"""
+"""
+2D matrices.
+"""
 
 from __future__ import annotations
 
@@ -57,31 +59,41 @@ class Matrix3x3(EdgeDetect, ABC): ...
 
 # Single matrix
 class Laplacian1(SingleMatrix, Matrix3x3):
-    """Pierre-Simon de Laplace operator 1st implementation."""
+    """
+    Pierre-Simon de Laplace operator 1st implementation.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [[0, -1, 0, -1, 4, -1, 0, -1, 0]]
 
 
 class Laplacian2(SingleMatrix, Matrix3x3):
-    """Pierre-Simon de Laplace operator 2nd implementation."""
+    """
+    Pierre-Simon de Laplace operator 2nd implementation.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [[1, -2, 1, -2, 4, -2, 1, -2, 1]]
 
 
 class Laplacian3(SingleMatrix, Matrix3x3):
-    """Pierre-Simon de Laplace operator 3rd implementation."""
+    """
+    Pierre-Simon de Laplace operator 3rd implementation.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [[2, -1, 2, -1, -4, -1, 2, -1, 2]]
 
 
 class Laplacian4(SingleMatrix, Matrix3x3):
-    """Pierre-Simon de Laplace operator 4th implementation."""
+    """
+    Pierre-Simon de Laplace operator 4th implementation.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [[-1, -1, -1, -1, 8, -1, -1, -1, -1]]
 
 
 class Kayyali(SingleMatrix, Matrix3x3):
-    """Kayyali operator."""
+    """
+    Kayyali operator.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [[6, 0, -6, 0, 0, 0, -6, 0, 6]]
 
@@ -118,20 +130,26 @@ class Cross(RidgeDetect, EuclideanDistance, Matrix3x3):
 
 
 class Prewitt(RidgeDetect, EuclideanDistance, Matrix3x3):
-    """Judith M. S. Prewitt operator."""
+    """
+    Judith M. S. Prewitt operator.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [[1, 0, -1, 1, 0, -1, 1, 0, -1], [1, 1, 1, 0, 0, 0, -1, -1, -1]]
 
 
 class PrewittStd(Matrix3x3, EdgeDetect):
-    """Judith M. S. Prewitt Vapoursynth plugin operator."""
+    """
+    Judith M. S. Prewitt Vapoursynth plugin operator.
+    """
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         return clip.std.Prewitt(**kwargs)
 
 
 class PrewittTCanny(Matrix3x3, EdgeDetect):
-    """Judith M. S. Prewitt TCanny plugin operator."""
+    """
+    Judith M. S. Prewitt TCanny plugin operator.
+    """
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         _scale_constant = 2 if clip.format.sample_type == vs.FLOAT else 7 / 3 * 1.002 - 0.0001
@@ -140,20 +158,26 @@ class PrewittTCanny(Matrix3x3, EdgeDetect):
 
 
 class Sobel(RidgeDetect, EuclideanDistance, Matrix3x3):
-    """Sobel-Feldman operator."""
+    """
+    Sobel-Feldman operator.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [[1, 0, -1, 2, 0, -2, 1, 0, -1], [1, 2, 1, 0, 0, 0, -1, -2, -1]]
 
 
 class SobelStd(Matrix3x3, EdgeDetect):
-    """Sobel-Feldman Vapoursynth plugin operator."""
+    """
+    Sobel-Feldman Vapoursynth plugin operator.
+    """
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         return clip.std.Sobel(**kwargs)
 
 
 class SobelTCanny(Matrix3x3, EdgeDetect):
-    """Sobel-Feldman Vapoursynth plugin operator."""
+    """
+    Sobel-Feldman Vapoursynth plugin operator.
+    """
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         _scale_constant = 1.0 if clip.format.sample_type == vs.FLOAT else (7 / 3 * 1.002 - 0.0001) / 2
@@ -162,7 +186,9 @@ class SobelTCanny(Matrix3x3, EdgeDetect):
 
 
 class ASobel(Matrix3x3, EdgeDetect):
-    """Modified Sobel-Feldman operator from AWarpSharp."""
+    """
+    Modified Sobel-Feldman operator from AWarpSharp.
+    """
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         return (vs.core.warp.ASobel if get_depth(clip) < 32 else vs.core.warpsf.ASobel)(clip, 255, **kwargs)
@@ -192,7 +218,9 @@ class RScharr(RidgeDetect, EuclideanDistance, Matrix3x3):
 
 
 class ScharrTCanny(Matrix3x3, EdgeDetect):
-    """H. Scharr optimised TCanny Vapoursynth plugin operator."""
+    """
+    H. Scharr optimised TCanny Vapoursynth plugin operator.
+    """
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         _scale_constant = 1 / 3 if clip.format.sample_type == vs.FLOAT else 1 / ((3 - math.sqrt(3) / 4) - 0.00053)
@@ -201,7 +229,9 @@ class ScharrTCanny(Matrix3x3, EdgeDetect):
 
 
 class Kroon(RidgeDetect, EuclideanDistance, Matrix3x3):
-    """Dirk-Jan Kroon operator."""
+    """
+    Dirk-Jan Kroon operator.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [-17, 0, 17, -61, 0, 61, -17, 0, 17],
@@ -211,7 +241,9 @@ class Kroon(RidgeDetect, EuclideanDistance, Matrix3x3):
 
 
 class KroonTCanny(Matrix3x3, EdgeDetect):
-    """Dirk-Jan Kroon TCanny Vapoursynth plugin operator."""
+    """
+    Dirk-Jan Kroon TCanny Vapoursynth plugin operator.
+    """
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         _scale_constant = 1 / 17 if clip.format.sample_type == vs.FLOAT else 1 / 14.54325
@@ -220,7 +252,9 @@ class KroonTCanny(Matrix3x3, EdgeDetect):
 
 
 class FreyChen(MatrixEdgeDetect):
-    """Chen Frei operator. 3x3 matrices properly implemented."""
+    """
+    Chen Frei operator. 3x3 matrices properly implemented.
+    """
 
     sqrt2 = math.sqrt(2)
     matrices: ClassVar[Sequence[Sequence[float]]] = [
@@ -252,7 +286,9 @@ class FreyChen(MatrixEdgeDetect):
 
 
 class FreyChenG41(RidgeDetect, EuclideanDistance, Matrix3x3):
-    """ "Chen Frei" operator. 3x3 matrices from G41Fun."""
+    """
+    "Chen Frei" operator. 3x3 matrices from G41Fun.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [[-7, 0, 7, -10, 0, 10, -7, 0, 7], [-7, -10, -7, 0, 0, 0, 7, 10, 7]]
     divisors: ClassVar[Sequence[float] | None] = [7, 7]
@@ -260,7 +296,9 @@ class FreyChenG41(RidgeDetect, EuclideanDistance, Matrix3x3):
 
 # Max
 class Robinson3(Max, Matrix3x3):
-    """Robinson compass operator level 3."""
+    """
+    Robinson compass operator level 3.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [1, 1, 1, 0, 0, 0, -1, -1, -1],
@@ -271,7 +309,9 @@ class Robinson3(Max, Matrix3x3):
 
 
 class Robinson5(Max, Matrix3x3):
-    """Robinson compass operator level 5."""
+    """
+    Robinson compass operator level 5.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [1, 2, 1, 0, 0, 0, -1, -2, -1],
@@ -282,7 +322,9 @@ class Robinson5(Max, Matrix3x3):
 
 
 class TheToof(Max, Matrix3x3):
-    """TheToof compass operator from SharpAAMCmod."""
+    """
+    TheToof compass operator from SharpAAMCmod.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [5, 10, 5, 0, 0, 0, -5, -10, -5],
@@ -294,7 +336,9 @@ class TheToof(Max, Matrix3x3):
 
 
 class Kirsch(MagnitudeMatrix, Max, Matrix3x3):
-    """Russell Kirsch compass operator."""
+    """
+    Russell Kirsch compass operator.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [5, 5, 5, -3, 0, -3, -3, -3, -3],  # N
@@ -309,7 +353,9 @@ class Kirsch(MagnitudeMatrix, Max, Matrix3x3):
 
 
 class KirschTCanny(Matrix3x3, EdgeDetect):
-    """Russell Kirsch compass TCanny Vapoursynth plugin operator."""
+    """
+    Russell Kirsch compass TCanny Vapoursynth plugin operator.
+    """
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         return clip.tcanny.TCanny(op=5, **(KwargsT(sigma=0, mode=1) | kwargs))
@@ -317,7 +363,9 @@ class KirschTCanny(Matrix3x3, EdgeDetect):
 
 # Misc
 class MinMax(EdgeDetect):
-    """Min/max mask with separate luma/chroma radii."""
+    """
+    Min/max mask with separate luma/chroma radii.
+    """
 
     rady: int
     radc: int

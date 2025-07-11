@@ -18,17 +18,16 @@ def descale_detail_mask(
     Descaling without masking is very dangerous, as descaling FHD material often leads to
     heavy artifacting and fine detail loss.
 
-    :param clip:        Original clip.
-    :param rescaled:    Clip rescaled using the presumed native kernel.
-    :param thr:         Binarizing threshold. Lower will catch more.
-                        Assumes float bitdepth input.
-                        Default: 0.05.
-    :param inflate:     Amount of times to ``inflate`` the mask. Default: 2.
-    :param xxpand:      Amount of times to ``Maximum`` the clip by.
-                        The first ``Maximum`` is done before inflating, the second after.
-                        Default: 4 times pre-inflating, 0 times post-inflating.
+    Args:
+        clip: Original clip.
+        rescaled: Clip rescaled using the presumed native kernel.
+        thr: Binarizing threshold. Lower will catch more. Assumes float bitdepth input. Default: 0.05.
+        inflate: Amount of times to ``inflate`` the mask. Default: 2.
+        xxpand: Amount of times to ``Maximum`` the clip by. The first ``Maximum`` is done before inflating, the second
+            after. Default: 4 times pre-inflating, 0 times post-inflating.
 
-    :return:            Mask containing all the native FHD detail.
+    Returns:
+        Mask containing all the native FHD detail.
     """
     mask = norm_expr([get_y(clip), get_y(rescaled)], "x y - abs", func=descale_detail_mask)
 
@@ -59,15 +58,17 @@ def descale_error_mask(
     """
     Create an error mask from the original and rescaled clip.
 
-    :param clip:        Original clip.
-    :param rescaled:    Rescaled clip.
-    :param thr:         Threshold of the minimum difference.
-    :param expands:     Iterations of mask expand at each step (diff, expand, binarize).
-    :param blur:        How much to blur the clip. If int, it will be a box_blur, else gauss_blur.
-    :param bwbias:      Calculate a bias with the clip's chroma.
-    :param tr:          Make the error mask temporally stable with a temporal radius.
+    Args:
+        clip: Original clip.
+        rescaled: Rescaled clip.
+        thr: Threshold of the minimum difference.
+        expands: Iterations of mask expand at each step (diff, expand, binarize).
+        blur: How much to blur the clip. If int, it will be a box_blur, else gauss_blur.
+        bwbias: Calculate a bias with the clip's chroma.
+        tr: Make the error mask temporally stable with a temporal radius.
 
-    :return:            Descale error mask.
+    Returns:
+        Descale error mask.
     """
     y, *chroma = split(clip)
 

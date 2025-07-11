@@ -8,34 +8,54 @@ __all__ = ["Align", "BaseAlign", "ConvMode", "OneDimConvModeT", "SpatialConvMode
 
 
 class ConvMode(CustomStrEnum):
-    """Convolution mode for .std.Convolution or std.AverageFrames"""
+    """
+    Convolution mode for .std.Convolution or std.AverageFrames
+    """
 
     SQUARE = "s"
-    """Square horizontal/vertical convolution."""
+    """
+    Square horizontal/vertical convolution.
+    """
 
     VERTICAL = "v"
-    """Vertical-only convolution."""
+    """
+    Vertical-only convolution.
+    """
 
     HORIZONTAL = "h"
-    """Horizontal-only convolution."""
+    """
+    Horizontal-only convolution.
+    """
 
     HV = "hv"
-    """Horizontal and Vertical convolution"""
+    """
+    Horizontal and Vertical convolution
+    """
 
     TEMPORAL = "t"
-    """Temporal convolution"""
+    """
+    Temporal convolution
+    """
 
     S = SQUARE
-    """Alias for `ConvMode.SQUARE`"""
+    """
+    Alias for `ConvMode.SQUARE`
+    """
 
     V = VERTICAL
-    """Alias for `ConvMode.VERTICAL`"""
+    """
+    Alias for `ConvMode.VERTICAL`
+    """
 
     H = HORIZONTAL
-    """Alias for `ConvMode.HORIZONTAL`"""
+    """
+    Alias for `ConvMode.HORIZONTAL`
+    """
 
     T = TEMPORAL
-    """Alias for `ConvMode.TEMPORAL`"""
+    """
+    Alias for `ConvMode.TEMPORAL`
+    """
 
     @property
     def is_one_dim(self) -> bool:

@@ -51,14 +51,15 @@ def finalize_clip(
     """
     Finalize a clip for output to the encoder.
 
-    :param clip:            Clip to output.
-    :param bits:            Bitdepth to output to.
-    :param clamp_tv_range:  Whether to clamp to tv range.
-    :param dither_type:     Dithering used for the bitdepth conversion.
-    :param func:            Function returned for custom error handling.
-                            This should only be set by VS package developers.
+    Args:
+        clip: Clip to output.
+        bits: Bitdepth to output to.
+        clamp_tv_range: Whether to clamp to tv range.
+        dither_type: Dithering used for the bitdepth conversion.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
 
-    :return:                Dithered down and optionally clamped clip.
+    Returns:
+        Dithered down and optionally clamped clip.
     """
     from ..functions import limiter
 
@@ -104,7 +105,9 @@ def finalize_output(
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExceptT | None = None,
 ) -> Union[Callable[P, vs.VideoNode], Callable[[Callable[P, vs.VideoNode]], Callable[P, ConstantFormatVideoNode]]]:
-    """Decorator implementation of finalize_clip."""
+    """
+    Decorator implementation of [finalize_clip][vstools.finalize_clip].
+    """
 
     if function is None:
         return partial(finalize_output, bits=bits, clamp_tv_range=clamp_tv_range, dither_type=dither_type, func=func)
@@ -135,30 +138,33 @@ def initialize_clip(
 
     It is HIGHLY recommended to always use this function at the beginning of your scripts!
 
-    :param clip:            Clip to initialize.
-    :param bits:            Bits to dither to.
-                            - If 0, no dithering is applied.
-                            - If None, 16 if bit depth is lower than it, else leave untouched.
-                            - If positive integer, dither to that bitdepth.
-    :param matrix:          Matrix property to set. If None, tries to get the Matrix from existing props.
-                            If no props are set or Matrix=2, guess from the video resolution.
-    :param transfer:        Transfer property to set. If None, tries to get the Transfer from existing props.
-                            If no props are set or Transfer=2, guess from the video resolution.
-    :param primaries:       Primaries property to set. If None, tries to get the Primaries from existing props.
-                            If no props are set or Primaries=2, guess from the video resolution.
-    :param chroma_location: ChromaLocation prop to set. If None, tries to get the ChromaLocation from existing props.
-                            If no props are set, guess from the video resolution.
-    :param color_range:     ColorRange prop to set. If None, tries to get the ColorRange from existing props.
-                            If no props are set, assume Limited Range.
-    :param field_based:     FieldBased prop to set. If None, tries to get the FieldBased from existing props.
-                            If no props are set, assume PROGRESSIVE.
-    :param strict:          Whether to be strict about existing properties.
-                            If True, throws an exception if certain frame properties are not found.
-    :param dither_type:     Dithering used for the bitdepth conversion.
-    :param func:            Function returned for custom error handling.
-                            This should only be set by VS package developers.
+    Args:
+        clip: Clip to initialize.
+        bits: Bits to dither to.
 
-    :return:                Clip with relevant frame properties set, and optionally dithered up to 16 bits by default.
+               - If 0, no dithering is applied.
+               - If None, 16 if bit depth is lower than it, else leave untouched.
+               - If positive integer, dither to that bitdepth.
+
+        matrix: Matrix property to set. If None, tries to get the Matrix from existing props. If no props are set or
+            Matrix=2, guess from the video resolution.
+        transfer: Transfer property to set. If None, tries to get the Transfer from existing props. If no props are set
+            or Transfer=2, guess from the video resolution.
+        primaries: Primaries property to set. If None, tries to get the Primaries from existing props. If no props are
+            set or Primaries=2, guess from the video resolution.
+        chroma_location: ChromaLocation prop to set. If None, tries to get the ChromaLocation from existing props. If no
+            props are set, guess from the video resolution.
+        color_range: ColorRange prop to set. If None, tries to get the ColorRange from existing props. If no props are
+            set, assume Limited Range.
+        field_based: FieldBased prop to set. If None, tries to get the FieldBased from existing props. If no props are
+            set, assume PROGRESSIVE.
+        strict: Whether to be strict about existing properties. If True, throws an exception if certain frame properties
+            are not found.
+        dither_type: Dithering used for the bitdepth conversion.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Returns:
+        Clip with relevant frame properties set, and optionally dithered up to 16 bits by default.
     """
 
     func = func or initialize_clip
@@ -240,7 +246,7 @@ def initialize_input(
     func: FuncExceptT | None = None,
 ) -> Union[Callable[P, VideoNodeT], Callable[[Callable[P, VideoNodeT]], Callable[P, VideoNodeT]]]:
     """
-    Decorator implementation of ``initialize_clip``
+    Decorator implementation of [initialize_clip][vstools.initialize_clip]
     """
 
     if function is None:
@@ -299,7 +305,9 @@ def initialize_input(
 
 
 class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
-    """A helper class for processing variable format/resolution clip"""
+    """
+    A helper class for processing variable format/resolution clip.
+    """
 
     def __init__(
         self,
@@ -309,10 +317,11 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
         cache_size: int = 10,
     ) -> None:
         """
-        :param clip:            Clip to process
-        :param out_dim:         Ouput dimension.
-        :param out_fmt:         Output format.
-        :param cache_size:      The maximum number of items allowed in the cache. Defaults to 10
+        Args:
+            clip: Clip to process
+            out_dim: Ouput dimension.
+            out_fmt: Output format.
+            cache_size: The maximum number of items allowed in the cache. Defaults to 10.
         """
         bk_args = KwargsT(length=clip.num_frames, keep=True, varformat=None)
 
@@ -357,8 +366,11 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
         """
         Process a variable format/resolution clip.
 
-        :param clip:    Clip to process.
-        :return:        Processed clip.
+        Args:
+            clip: Clip to process.
+
+        Returns:
+            Processed clip.
         """
         return cls(clip).eval_clip()
 
@@ -374,12 +386,15 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
         """
         Process a variable format/resolution clip with a given function
 
-        :param clip:        Clip to process.
-        :param func:        Function that takes and returns a single VideoNode.
-        :param out_dim:     Ouput dimension.
-        :param out_fmt:     Output format.
-        :param cache_size:  The maximum number of VideoNode allowed in the cache. Defaults to 10
-        :return:            Processed variable clip.
+        Args:
+            clip: Clip to process.
+            func: Function that takes and returns a single VideoNode.
+            out_dim: Ouput dimension.
+            out_fmt: Output format.
+            cache_size: The maximum number of VideoNode allowed in the cache. Defaults to 10.
+
+        Returns:
+            Processed variable clip.
         """
 
         def process(self: ProcessVariableClip[T, VideoNodeT], clip: VideoNodeT) -> VideoNodeT:
@@ -393,35 +408,46 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
     @abstractmethod
     def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> T:
         """
-        Generate a unique key based on the node or frame
+        Generate a unique key based on the node or frame.
         This key will be used to temporarily assert a resolution and format for the clip to process.
 
-        :param frame:       Node or frame from which the unique key is generated.
-        :return:            Unique identifier.
+        Args:
+            frame: Node or frame from which the unique key is generated.
+
+        Returns:
+            Unique identifier.
         """
 
     @abstractmethod
     def normalize(self, clip: VideoNodeT, cast_to: T) -> VideoNodeT:
         """
-        Normalize the given node to the format/resolution specified by the unique key `cast_to`
+        Normalize the given node to the format/resolution specified by the unique key `cast_to`.
 
-        :param clip:        Clip to normalize.
-        :param cast_to:     The target resolution or format to which the clip should be cast or normalized.
-        :return:            Normalized clip.
+        Args:
+            clip: Clip to normalize.
+            cast_to: The target resolution or format to which the clip should be cast or normalized.
+
+        Returns:
+            Normalized clip.
         """
 
     def process(self, clip: VideoNodeT) -> VideoNodeT:
         """
         Process the given clip.
 
-        :param clip:        Clip to process
-        :return:            Processed clip
+        Args:
+            clip: Clip to process.
+
+        Returns:
+            Processed clip.
         """
         return clip
 
 
 class ProcessVariableResClip(ProcessVariableClip[tuple[int, int], VideoNodeT]):
-    """A helper class for processing variable resolution clip"""
+    """
+    A helper class for processing variable resolution clip.
+    """
 
     def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> tuple[int, int]:
         return (frame.width, frame.height)
@@ -432,7 +458,9 @@ class ProcessVariableResClip(ProcessVariableClip[tuple[int, int], VideoNodeT]):
 
 
 class ProcessVariableFormatClip(ProcessVariableClip[vs.VideoFormat, vs.VideoNode]):
-    """A helper class for processing variable format clip"""
+    """
+    A helper class for processing variable format clip.
+    """
 
     def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> vs.VideoFormat:
         assert frame.format
@@ -444,7 +472,9 @@ class ProcessVariableFormatClip(ProcessVariableClip[vs.VideoFormat, vs.VideoNode
 
 
 class ProcessVariableResFormatClip(ProcessVariableClip[tuple[int, int, vs.VideoFormat], vs.VideoNode]):
-    """A helper class for processing variable format and resolution clip"""
+    """
+    A helper class for processing variable format and resolution clip.
+    """
 
     def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> tuple[int, int, vs.VideoFormat]:
         assert frame.format

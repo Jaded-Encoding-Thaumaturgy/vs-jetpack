@@ -12,7 +12,9 @@ __all__ = [
 
 
 class MotionVectors(vs_object):
-    """Class for storing and managing motion vectors for a video clip."""
+    """
+    Class for storing and managing motion vectors for a video clip.
+    """
 
     motion_vectors: dict[MVDirection, dict[int, ConstantFormatVideoNode]]
     """Dictionary containing both backward and forward motion vectors."""
@@ -39,7 +41,9 @@ class MotionVectors(vs_object):
         self.motion_vectors = {w: {} for w in MVDirection}
 
     def clear(self) -> None:
-        """Clear all stored motion vectors and reset the instance."""
+        """
+        Clear all stored motion vectors and reset the instance.
+        """
 
         for v in self.motion_vectors.values():
             v.clear()
@@ -54,7 +58,9 @@ class MotionVectors(vs_object):
 
     @property
     def has_vectors(self) -> bool:
-        """Check if motion vectors are available."""
+        """
+        Check if motion vectors are available.
+        """
 
         return bool(
             (self.motion_vectors[MVDirection.BACKWARD] and self.motion_vectors[MVDirection.FORWARD])
@@ -65,9 +71,10 @@ class MotionVectors(vs_object):
         """
         Store a motion vector.
 
-        :param vector:       Motion vector clip to store.
-        :param direction:    Direction of the motion vector (forward or backward).
-        :param delta:        Frame distance for the motion vector.
+        Args:
+            vector: Motion vector clip to store.
+            direction: Direction of the motion vector (forward or backward).
+            delta: Frame distance for the motion vector.
         """
         assert check_variable_format(vector, self.set_vector)
 
