@@ -66,7 +66,9 @@ def _xxpand_method(
 
 
 class Morpho:
-    """Collection of morphological operations"""
+    """
+    Collection of morphological operations
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None: ...
 
@@ -87,17 +89,16 @@ class Morpho:
         Replaces each pixel with the largest value in its 3x3 neighbourhood.
         This operation is also known as dilation with a radius of 1.
 
-        :param clip:            Clip to process.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become greater than input + threshold
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the 3x3 neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly 8 numbers.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become greater
+                than input + threshold The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the 3x3 neighbourhood are considered. If an element of this array is 0,
+                the corresponding pixel is not considered when finding the maximum value. This must contain exactly 8
+                numbers.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         return self.dilation(clip, 1, thr, iterations, coords, multiply, planes, func=func, **kwargs)
 
@@ -118,16 +119,16 @@ class Morpho:
         Replaces each pixel with the smallest value in its 3x3 neighbourhood.
         This operation is also known as erosion with a radius of 1.
 
-        :param clip:            Clip to process.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the 3x3 neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value. This must contain exactly 8 numbers.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the 3x3 neighbourhood are considered. If an element of this array is 0,
+                the corresponding pixel is not considered when finding the maximum value. This must contain exactly 8
+                numbers.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         return self.erosion(clip, 1, thr, iterations, coords, multiply, planes, func=func, **kwargs)
 
@@ -142,21 +143,18 @@ class Morpho:
         A radius of 1 will replace each pixel with the average of the 8 pixels in its 3x3 neighbourhood.
         A radius of 2 will replace each pixel with the average of the 24 pixels in its 5x5 neighbourhood.
 
-        :param clip:            Clip to process.
-        :param radius:          A single integer specifies the size of the square matrix.
-                                A tuple of an integer and a ConvMode allows specification
-                                of the matrix type dimension as well.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become greater than input + thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly (radius * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48...
-                                When specified, this parameter takes precedence over radius.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            radius: A single integer specifies the size of the square matrix. A tuple of an integer and a ConvMode
+                allows specification of the matrix type dimension as well.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become greater
+                than input + thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the neighbourhood are considered. If an element of this array is 0, the
+                corresponding pixel is not considered when finding the maximum value. This must contain exactly (radius
+                * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48... When specified, this parameter takes precedence over radius.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         return self._xxflate(*args, func=func or self.inflate, inflate=True, **kwargs)
 
@@ -171,21 +169,18 @@ class Morpho:
         A radius of 1 will replace each pixel with the average of the 8 pixels in its 3x3 neighbourhood.
         A radius of 2 will replace each pixel with the average of the 24 pixels in its 5x5 neighbourhood.
 
-        :param clip:            Clip to process.
-        :param radius:          A single integer specifies the size of the square matrix.
-                                A tuple of an integer and a ConvMode allows specification
-                                of the matrix type dimension as well.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly (radius * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48...
-                                When specified, this parameter takes precedence over radius.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            radius: A single integer specifies the size of the square matrix. A tuple of an integer and a ConvMode
+                allows specification of the matrix type dimension as well.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the neighbourhood are considered. If an element of this array is 0, the
+                corresponding pixel is not considered when finding the maximum value. This must contain exactly (radius
+                * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48... When specified, this parameter takes precedence over radius.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         return self._xxflate(*args, func=func or self.deflate, inflate=False, **kwargs)
 
@@ -195,21 +190,18 @@ class Morpho:
         """
         Replaces each pixel with the largest value in its (radius * 2 + 1)x(radius * 2 + 1) neighbourhood.
 
-        :param clip:            Clip to process.
-        :param radius:          A single integer specifies the size of the square matrix.
-                                A tuple of an integer and a ConvMode allows specification
-                                of the matrix type dimension as well.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly (radius * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48...
-                                When specified, this parameter takes precedence over radius.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            radius: A single integer specifies the size of the square matrix. A tuple of an integer and a ConvMode
+                allows specification of the matrix type dimension as well.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the neighbourhood are considered. If an element of this array is 0, the
+                corresponding pixel is not considered when finding the maximum value. This must contain exactly (radius
+                * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48... When specified, this parameter takes precedence over radius.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         return self._mm_func(*args, func=func or self.dilation, mm_func=core.lazy.std.Maximum, op=ExprOp.MAX, **kwargs)
 
@@ -219,21 +211,18 @@ class Morpho:
         """
         Replaces each pixel with the smallest value in its (radius * 2 + 1)x(radius * 2 + 1) neighbourhood.
 
-        :param clip:            Clip to process.
-        :param radius:          A single integer specifies the size of the square matrix.
-                                A tuple of an integer and a ConvMode allows specification
-                                of the matrix type dimension as well.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly (radius * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48...
-                                When specified, this parameter takes precedence over radius.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            radius: A single integer specifies the size of the square matrix. A tuple of an integer and a ConvMode
+                allows specification of the matrix type dimension as well.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the neighbourhood are considered. If an element of this array is 0, the
+                corresponding pixel is not considered when finding the maximum value. This must contain exactly (radius
+                * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48... When specified, this parameter takes precedence over radius.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         return self._mm_func(*args, func=func or self.erosion, mm_func=core.lazy.std.Minimum, op=ExprOp.MIN, **kwargs)
 
@@ -246,14 +235,14 @@ class Morpho:
         Replaces multiple times each pixel with the largest value in its 3x3 neighbourhood.
         Specifying a mode will allow custom growing mode.
 
-        :param clip:            Clip to process.
-        :param sw:              Number of horizontal iterations.
-        :param sh:              Number of vertical iterations.
-        :param mode:            Specifies the expand mode shape.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            sw: Number of horizontal iterations.
+            sh: Number of vertical iterations.
+            mode: Specifies the expand mode shape.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            planes: Which plane to process.
         """
         func = func or self.expand
 
@@ -270,14 +259,14 @@ class Morpho:
         Replaces multiple times each pixel with the smallest value in its 3x3 neighbourhood.
         Specifying a mode will allow custom growing mode.
 
-        :param clip:            Clip to process.
-        :param sw:              Number of horizontal iterations.
-        :param sh:              Number of vertical iterations.
-        :param mode:            Specifies the expand mode shape.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            sw: Number of horizontal iterations.
+            sh: Number of vertical iterations.
+            mode: Specifies the expand mode shape.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            planes: Which plane to process.
         """
         func = func or self.expand
 
@@ -293,21 +282,18 @@ class Morpho:
         """
         A closing is an dilation followed by an erosion.
 
-        :param clip:            Clip to process
-        :param radius:          A single integer specifies the size of the square matrix.
-                                A tuple of an integer and a ConvMode allows specification
-                                of the matrix type dimension as well.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly (radius * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48...
-                                When specified, this parameter takes precedence over radius.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process
+            radius: A single integer specifies the size of the square matrix. A tuple of an integer and a ConvMode
+                allows specification of the matrix type dimension as well.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the neighbourhood are considered. If an element of this array is 0, the
+                corresponding pixel is not considered when finding the maximum value. This must contain exactly (radius
+                * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48... When specified, this parameter takes precedence over radius.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         func = func or self.closing
 
@@ -324,21 +310,18 @@ class Morpho:
         """
         An opening is an erosion followed by an dilation.
 
-        :param clip:            Clip to process
-        :param radius:          A single integer specifies the size of the square matrix.
-                                A tuple of an integer and a ConvMode allows specification
-                                of the matrix type dimension as well.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly (radius * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48...
-                                When specified, this parameter takes precedence over radius.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process
+            radius: A single integer specifies the size of the square matrix. A tuple of an integer and a ConvMode
+                allows specification of the matrix type dimension as well.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the neighbourhood are considered. If an element of this array is 0, the
+                corresponding pixel is not considered when finding the maximum value. This must contain exactly (radius
+                * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48... When specified, this parameter takes precedence over radius.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         func = func or self.opening
 
@@ -364,21 +347,18 @@ class Morpho:
         """
         A morphological gradient is the difference between a dilation and erosion.
 
-        :param clip:            Clip to process.
-        :param radius:          A single integer specifies the size of the square matrix.
-                                A tuple of an integer and a ConvMode allows specification
-                                of the matrix type dimension as well.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly (radius * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48...
-                                When specified, this parameter takes precedence over radius.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            radius: A single integer specifies the size of the square matrix. A tuple of an integer and a ConvMode
+                allows specification of the matrix type dimension as well.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the neighbourhood are considered. If an element of this array is 0, the
+                corresponding pixel is not considered when finding the maximum value. This must contain exactly (radius
+                * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48... When specified, this parameter takes precedence over radius.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         func = func or self.gradient
 
@@ -416,21 +396,18 @@ class Morpho:
         """
         A top hat or a white hat is the difference of the original clip and the opening.
 
-        :param clip:            Clip to process.
-        :param radius:          A single integer specifies the size of the square matrix.
-                                A tuple of an integer and a ConvMode allows specification
-                                of the matrix type dimension as well.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly (radius * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48...
-                                When specified, this parameter takes precedence over radius.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            radius: A single integer specifies the size of the square matrix. A tuple of an integer and a ConvMode
+                allows specification of the matrix type dimension as well.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the neighbourhood are considered. If an element of this array is 0, the
+                corresponding pixel is not considered when finding the maximum value. This must contain exactly (radius
+                * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48... When specified, this parameter takes precedence over radius.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         func = func or self.top_hat
 
@@ -453,21 +430,18 @@ class Morpho:
         """
         A bottom hat or a black hat is the difference of the closing and the original clip.
 
-        :param clip:            Clip to process.
-        :param radius:          A single integer specifies the size of the square matrix.
-                                A tuple of an integer and a ConvMode allows specification
-                                of the matrix type dimension as well.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly (radius * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48...
-                                When specified, this parameter takes precedence over radius.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            radius: A single integer specifies the size of the square matrix. A tuple of an integer and a ConvMode
+                allows specification of the matrix type dimension as well.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the neighbourhood are considered. If an element of this array is 0, the
+                corresponding pixel is not considered when finding the maximum value. This must contain exactly (radius
+                * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48... When specified, this parameter takes precedence over radius.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         func = func or self.bottom_hat
 
@@ -499,21 +473,18 @@ class Morpho:
         """
         An outer hat is the difference of the dilation and the original clip.
 
-        :param clip:            Clip to process.
-        :param radius:          A single integer specifies the size of the square matrix.
-                                A tuple of an integer and a ConvMode allows specification
-                                of the matrix type dimension as well.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly (radius * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48...
-                                When specified, this parameter takes precedence over radius.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            radius: A single integer specifies the size of the square matrix. A tuple of an integer and a ConvMode
+                allows specification of the matrix type dimension as well.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the neighbourhood are considered. If an element of this array is 0, the
+                corresponding pixel is not considered when finding the maximum value. This must contain exactly (radius
+                * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48... When specified, this parameter takes precedence over radius.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         func = func or self.outer_hat
 
@@ -556,21 +527,18 @@ class Morpho:
         """
         An inner hat is the difference of the original clip and the erosion.
 
-        :param clip:            Clip to process.
-        :param radius:          A single integer specifies the size of the square matrix.
-                                A tuple of an integer and a ConvMode allows specification
-                                of the matrix type dimension as well.
-        :param thr:             Threshold (32-bit scale) to limit how much pixels are changed.
-                                Output pixels will not become less than input - thr.
-                                The default is no limit.
-        :param iterations:      Number of times to execute the function.
-        :param coords:          Specifies which pixels from the neighbourhood are considered.
-                                If an element of this array is 0, the corresponding pixel is not considered
-                                when finding the maximum value.
-                                This must contain exactly (radius * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48...
-                                When specified, this parameter takes precedence over radius.
-        :param multiply:        Optional multiplier of the final value.
-        :param planes:          Which plane to process.
+        Args:
+            clip: Clip to process.
+            radius: A single integer specifies the size of the square matrix. A tuple of an integer and a ConvMode
+                allows specification of the matrix type dimension as well.
+            thr: Threshold (32-bit scale) to limit how much pixels are changed. Output pixels will not become less than
+                input - thr. The default is no limit.
+            iterations: Number of times to execute the function.
+            coords: Specifies which pixels from the neighbourhood are considered. If an element of this array is 0, the
+                corresponding pixel is not considered when finding the maximum value. This must contain exactly (radius
+                * 2 + 1) ** 2 - 1 numbers eg. 8, 24, 48... When specified, this parameter takes precedence over radius.
+            multiply: Optional multiplier of the final value.
+            planes: Which plane to process.
         """
         func = func or self.inner_hat
 
@@ -608,18 +576,16 @@ class Morpho:
         """
         Turns every pixel in the image into either lowval, if it's below midthr, or highval, otherwise.
 
-        :param clip:            Clip to process.
-        :param midthr:          Defaults to the middle point of range allowed by the format.
-                                Can be specified for each plane individually.
-        :param lowval:          Value given to pixels that are below threshold.
-                                Can be specified for each plane individually.
-                                Defaults to the lower bound of the format.
-        :param highval:         Value given to pixels that are greater than or equal to threshold.
-                                Defaults to the maximum value allowed by the format.
-                                Can be specified for each plane individually.
-                                Defaults to the upper bound of the format.
-        :param planes:          Specifies which planes will be processed.
-                                Any unprocessed planes will be simply copied.
+        Args:
+            clip: Clip to process.
+            midthr: Defaults to the middle point of range allowed by the format. Can be specified for each plane
+                individually.
+            lowval: Value given to pixels that are below threshold. Can be specified for each plane individually.
+                Defaults to the lower bound of the format.
+            highval: Value given to pixels that are greater than or equal to threshold. Defaults to the maximum value
+                allowed by the format. Can be specified for each plane individually. Defaults to the upper bound of the
+                format.
+            planes: Specifies which planes will be processed. Any unprocessed planes will be simply copied.
         """
         midthr, lowval, highval = (
             thr and [scale_value(t, 32, clip) for t in to_arr(thr)] for thr in (midthr, lowval, highval)

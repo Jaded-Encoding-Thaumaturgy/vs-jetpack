@@ -111,35 +111,35 @@ def mc_degrain(
     Motion compensated blocks from previous and next frames are averaged with the current frame.
     The weighting factors for each block depend on their SAD from the current frame.
 
-    :param clip:              The clip to process.
-    :param vectors:           Motion vectors to use.
-    :param prefilter:         Filter or clip to use when performing motion vector search.
-    :param mfilter:           Filter or clip to use where degrain couldn't find a matching block.
-    :param preset:            MVTools preset defining base values for the MVTools object. Default is HQ_SAD.
-    :param tr:                The temporal radius.
-                              This determines how many frames are analyzed before/after the current frame.
-    :param blksize:           Size of a block.
-                              Larger blocks are less sensitive to noise, are faster, but also less accurate.
-    :param refine:            Number of times to recalculate motion vectors with halved block size.
-    :param thsad:             Defines the soft threshold of block sum absolute differences.
-                              Blocks with SAD above this threshold have zero weight for averaging (denoising).
-                              Blocks with low SAD have highest weight.
-                              The remaining weight is taken from pixels of source clip.
-    :param thsad2:            Define the SAD soft threshold for frames with the largest temporal distance.
-                              The actual SAD threshold for each reference frame is interpolated
-                              between thsad (nearest frames) and thsad2 (furthest frames).
-                              Only used with the FLOAT MVTools plugin.
-    :param thsad_recalc:      Only bad quality new vectors with a SAD above this will be re-estimated by search.
-                              thsad value is scaled to 8x8 block size.
-    :param limit:             Maximum allowed change in pixel values.
-    :param thscd:             Scene change detection thresholds:
-                               - First value: SAD threshold for considering a block changed between frames.
-                               - Second value: Percentage of changed blocks needed to trigger a scene change.
-    :param export_globals:    Whether to return the MVTools object.
-    :param planes:            Which planes to process. Default: None (all planes).
+    Args:
+        clip: The clip to process.
+        vectors: Motion vectors to use.
+        prefilter: Filter or clip to use when performing motion vector search.
+        mfilter: Filter or clip to use where degrain couldn't find a matching block.
+        preset: MVTools preset defining base values for the MVTools object. Default is HQ_SAD.
+        tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
+        blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+        refine: Number of times to recalculate motion vectors with halved block size.
+        thsad: Defines the soft threshold of block sum absolute differences. Blocks with SAD above this threshold have
+            zero weight for averaging (denoising). Blocks with low SAD have highest weight. The remaining weight is
+            taken from pixels of source clip.
+        thsad2: Define the SAD soft threshold for frames with the largest temporal distance. The actual SAD threshold
+            for each reference frame is interpolated between thsad (nearest frames) and thsad2 (furthest frames). Only
+            used with the FLOAT MVTools plugin.
+        thsad_recalc: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value is
+            scaled to 8x8 block size.
+        limit: Maximum allowed change in pixel values.
+        thscd: Scene change detection thresholds:
 
-    :return:                  Motion compensated and temporally filtered clip with reduced noise.
-                              If export_globals is true: A tuple containing the processed clip and the MVTools object.
+               - First value: SAD threshold for considering a block changed between frames.
+               - Second value: Percentage of changed blocks needed to trigger a scene change.
+
+        export_globals: Whether to return the MVTools object.
+        planes: Which planes to process. Default: None (all planes).
+
+    Returns:
+        Motion compensated and temporally filtered clip with reduced noise. If export_globals is true: A tuple
+        containing the processed clip and the MVTools object.
     """
 
     def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:

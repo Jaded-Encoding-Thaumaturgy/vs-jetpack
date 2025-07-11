@@ -789,7 +789,9 @@ if not TYPE_CHECKING:
 
 
 def register_on_creation(callback: Callable[..., None], strict: bool = False) -> None:
-    """Register a callback on every core creation."""
+    """
+    Register a callback on every core creation.
+    """
 
     core_on_creation_callbacks.update({id(callback): weakref.ref(callback)})
 
@@ -801,7 +803,9 @@ def register_on_creation(callback: Callable[..., None], strict: bool = False) ->
 
 
 def unregister_on_creation(callback: Callable[..., None]) -> None:
-    """Unregister this callback from every core creation."""
+    """
+    Unregister this callback from every core creation.
+    """
 
     core_on_creation_callbacks.pop(id(callback), None)
 
@@ -1046,7 +1050,9 @@ _curr_env_proxy = EnvironmentProxy()
 
 
 class VSCoreProxy(CoreProxyBase):
-    """Class for wrapping a VapourSynth core."""
+    """
+    Class for wrapping a VapourSynth core.
+    """
 
     def __init__(self, core: Core | None = None) -> None:
         object.__setattr__(self, "_own_core", core is not None)
@@ -1078,7 +1084,9 @@ class VSCoreProxy(CoreProxyBase):
 
     @property
     def core(self) -> Core:
-        """The underlying VapourSynth Core instance."""
+        """
+        The underlying VapourSynth Core instance.
+        """
 
         return _get_core_with_cb(self)
 
@@ -1114,13 +1122,17 @@ class VSCoreProxy(CoreProxyBase):
         return _objproxies[self]["lazy"]
 
     def register_on_destroy(self, callback: Callable[..., None], on_forced: bool = True) -> None:
-        """Register a callback on this core destroy."""
+        """
+        Register a callback on this core destroy.
+        """
 
         _check_environment()
         register_on_destroy(callback)
 
     def unregister_on_destroy(self, callback: Callable[..., None]) -> None:
-        """Unregister a callback from this core destroy."""
+        """
+        Unregister a callback from this core destroy.
+        """
 
         _check_environment()
         unregister_on_destroy(callback)

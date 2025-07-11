@@ -27,7 +27,9 @@ __all__ = ["DPID", "SSIM", "ClampScaler"]
 
 
 class ClampScaler(GenericScaler):
-    """Clamp a reference Scaler."""
+    """
+    Clamp a reference Scaler.
+    """
 
     def __init__(
         self,
@@ -46,18 +48,18 @@ class ClampScaler(GenericScaler):
         **kwargs: Any,
     ) -> None:
         """
-        :param base_scaler:     Scaler to clamp.
-        :param reference:       Reference Scaler used to clamp base_scaler
-        :param strength:        Strength of clamping. Default to 80. Must be between 0 and 100 (exclusive)
-        :param overshoot:       Overshoot threshold within the 0.0 - 1.0 range.
-        :param undershoot:      Undershoot threshold within the 0.0 - 1.0 range.
-        :param limit:           Whether to use under/overshoot limit (True) or a reference repaired clip for limiting.
-        :param operator:        Whether to take the brightest or darkest pixels in the merge. Defaults to ExprOp.MIN.
-        :param masked:          Whether to mask with a ringing mask or not. Defaults to True
-        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
-                                Defaults to Catrom.
-        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:         Kernel used for shifting operations. Defaults to kernel.
+        Args:
+            base_scaler: Scaler to clamp.
+            reference: Reference Scaler used to clamp base_scaler
+            strength: Strength of clamping. Default to 80. Must be between 0 and 100 (exclusive)
+            overshoot: Overshoot threshold within the 0.0 - 1.0 range.
+            undershoot: Undershoot threshold within the 0.0 - 1.0 range.
+            limit: Whether to use under/overshoot limit (True) or a reference repaired clip for limiting.
+            operator: Whether to take the brightest or darkest pixels in the merge. Defaults to ExprOp.MIN.
+            masked: Whether to mask with a ringing mask or not. Defaults to True
+            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            scaler: Scaler used for scaling operations. Defaults to kernel.
+            shifter: Kernel used for shifting operations. Defaults to kernel.
         """
         self.base_scaler = Scaler.ensure_obj(base_scaler, self.__class__)
 
@@ -154,17 +156,20 @@ class ClampScaler(GenericScaler):
 
 
 class DPID(BaseGenericScaler):
-    """Rapid, Detail-Preserving Image Downscaler for VapourSynth"""
+    """
+    Rapid, Detail-Preserving Image Downscaler for VapourSynth.
+    """
 
     def __init__(
         self, sigma: float = 0.1, ref: vs.VideoNode | ScalerLike = Catrom, planes: PlanesT = None, **kwargs: Any
     ) -> None:
         """
-        :param sigma:       The power factor of range kernel. It can be used to tune the amplification
-                            of the weights of pixels that represent detail—from a box filter over an emphasis
-                            of distinct pixels towards a selection of only the most distinct pixels.
-        :param ref:         VideoNode or Scaler to obtain the downscaled reference for DPID.
-        :param planes:      Sets which planes will be processed. Any unprocessed planes will be simply copied from ref.
+        Args:
+            sigma: The power factor of range kernel. It can be used to tune the amplification of the weights of pixels
+                that represent detail—from a box filter over an emphasis of distinct pixels towards a selection of
+                only the most distinct pixels.
+            ref: VideoNode or Scaler to obtain the downscaled reference for DPID.
+            planes: Sets which planes will be processed. Any unprocessed planes will be simply copied from ref.
         """
         super().__init__(**kwargs)
 
@@ -239,14 +244,12 @@ class SSIM(ComplexScaler):
         """
         Initialize the scaler.
 
-        :param scaler:      Scaler to be used for downscaling, defaults to Hermite.
-        :param smooth:      Image smoothening method.
-                            If you pass an int, it specifies the "radius" of the internally-used boxfilter,
-                            i.e. the window has a size of (2*smooth+1)x(2*smooth+1).
-                            If you pass a float, it specifies the "sigma" of gauss_blur,
-                            i.e. the standard deviation of gaussian blur.
-                            If you pass a function, it acts as a general smoother.
-                            Default uses a gaussian blur based on the scaler's kernel radius.
+        Args:
+            scaler: Scaler to be used for downscaling, defaults to Hermite.
+            smooth: Image smoothening method. If you pass an int, it specifies the "radius" of the internally-used
+                boxfilter, i.e. the window has a size of (2*smooth+1)x(2*smooth+1). If you pass a float, it specifies
+                the "sigma" of gauss_blur, i.e. the standard deviation of gaussian blur. If you pass a function, it acts
+                as a general smoother. Default uses a gaussian blur based on the scaler's kernel radius.
         """
         super().__init__(**kwargs)
 

@@ -129,19 +129,19 @@ def squaremask(
 
     This is a fast and simple mask that's useful for very rough and simple masking.
 
-    :param clip:        The clip to process.
-    :param width:       The width of the square. This must be less than clip.width - offset_x.
-    :param height:      The height of the square. This must be less than clip.height - offset_y.
-    :param offset_x:    The location of the square, offset from the left side of the frame.
-    :param offset_y:    The location of the square, offset from the top of the frame.
-    :param invert:      Invert the mask. This means everything *but* the defined square will be masked.
-                        Default: False.
-    :param force_gray:  Whether to force using GRAY format or clip format.
-    :param func:        Function returned for custom error handling.
-                        This should only be set by VS package developers.
-                        Default: :py:func:`squaremask`.
+    Args:
+        clip: The clip to process.
+        width: The width of the square. This must be less than clip.width - offset_x.
+        height: The height of the square. This must be less than clip.height - offset_y.
+        offset_x: The location of the square, offset from the left side of the frame.
+        offset_y: The location of the square, offset from the top of the frame.
+        invert: Invert the mask. This means everything *but* the defined square will be masked. Default: False.
+        force_gray: Whether to force using GRAY format or clip format.
+        func: Function returned for custom error handling. This should only be set by VS package developers. Default:
+            [squaremask][vsmasktools.squaremask].
 
-    :return:            A mask in the shape of a square.
+    Returns:
+        A mask in the shape of a square.
     """
     func = func or squaremask
 
@@ -224,23 +224,22 @@ def replace_squaremask(
     This is a convenience wrapper merging square masking and framerange replacing functionalities
     into one function, along with additional utilities such as blurring.
 
-    :param clipa:           Base clip to process.
-    :param clipb:           Clip to mask on top of `clipa`.
-    :param mask_params:     Parameters passed to `squaremask`. Expects a tuple of (width, height, offset_x, offset_y).
-    :param ranges:          Frameranges to replace with the masked clip. If `None`, replaces the entire clip.
-                            Default: None.
-    :param blur_sigma:      Post-blurring of the mask to help hide hard edges.
-                            If you pass an int, a :py:func:`box_blur` will be used.
-                            Passing a float will use a :py:func:`gauss_blur` instead.
-                            Default: None.
-    :param invert:          Invert the mask. This means everything *but* the defined square will be masked.
-                            Default: False.
-    :param func:            Function returned for custom error handling.
-                            This should only be set by VS package developers.
-                            Default: :py:func:`squaremask`.
-    :param show_mask:       Return the mask instead of the masked clip.
+    Args:
+        clipa: Base clip to process.
+        clipb: Clip to mask on top of `clipa`.
+        mask_params: Parameters passed to `squaremask`. Expects a tuple of (width, height, offset_x, offset_y).
+        ranges: Frameranges to replace with the masked clip. If `None`, replaces the entire clip. Default: None.
+        blur_sigma: Post-blurring of the mask to help hide hard edges.
+            If you pass an int, a [box_blur][vsrgtools.box_blur] will be used.
+            Passing a float will use a [gauss_blur][vsrgtools.gauss_blur] instead.
+            Default: None.
+        invert: Invert the mask. This means everything *but* the defined square will be masked. Default: False.
+        func: Function returned for custom error handling. This should only be set by VS package developers. Default:
+            [squaremask][vsmasktools.squaremask].
+        show_mask: Return the mask instead of the masked clip.
 
-    :return:                Clip with a squaremask applied, and optionally set to specific frameranges.
+    Returns:
+        Clip with a squaremask applied, and optionally set to specific frameranges.
     """
     func = func or replace_squaremask
 
@@ -364,13 +363,16 @@ class RektPartial(Generic[P, R]):
         Creates a rectangular mask to apply fixes only within the masked area,
         significantly speeding up filters like anti-aliasing and scaling.
 
-        :param clip:            The source video clip to which the mask will be applied.
-        :param func:            The function to be applied within the masked area.
-        :param width:           The width of the rectangular mask.
-        :param height:          The height of the rectangular mask.
-        :param offset_x:        The horizontal offset of the mask from the top-left corner, defaults to 0.
-        :param offset_y:        The vertical offset of the mask from the top-left corner, defaults to 0.
-        :return:                A new clip with the applied mask.
+        Args:
+            clip: The source video clip to which the mask will be applied.
+            func: The function to be applied within the masked area.
+            width: The width of the rectangular mask.
+            height: The height of the rectangular mask.
+            offset_x: The horizontal offset of the mask from the top-left corner, defaults to 0.
+            offset_y: The vertical offset of the mask from the top-left corner, defaults to 0.
+
+        Returns:
+            A new clip with the applied mask.
         """
         nargs = (clip, func, offset_x, clip.width - width - offset_x, offset_y, clip.height - height - offset_y)
         return self._func(*nargs, *args, **kwargs)  # type: ignore
@@ -391,13 +393,16 @@ def rekt_partial(
     Creates a rectangular mask to apply fixes only within the masked area,
     significantly speeding up filters like anti-aliasing and scaling.
 
-    :param clip:            The source video clip to which the mask will be applied.
-    :param func:            The function to be applied within the masked area.
-    :param left:            The left boundary of the mask, defaults to 0.
-    :param right:           The right boundary of the mask, defaults to 0.
-    :param top:             The top boundary of the mask, defaults to 0.
-    :param bottom:          The bottom boundary of the mask, defaults to 0.
-    :return:                A new clip with the applied mask.
+    Args:
+        clip: The source video clip to which the mask will be applied.
+        func: The function to be applied within the masked area.
+        left: The left boundary of the mask, defaults to 0.
+        right: The right boundary of the mask, defaults to 0.
+        top: The top boundary of the mask, defaults to 0.
+        bottom: The bottom boundary of the mask, defaults to 0.
+
+    Returns:
+        A new clip with the applied mask.
     """
 
     assert check_variable(clip, rekt_partial._func)

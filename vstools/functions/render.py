@@ -93,8 +93,6 @@ def clip_async_render(
 
     Example usage:
 
-    .. code-block:: python
-
         # Gather scenechanges.
         >>> scenechanges = clip_async_render(
             clip, None, 'Searching for scenechanges...', lambda n, f: get_prop(f, "_SceneChange", int)
@@ -105,21 +103,17 @@ def clip_async_render(
             clip, None, 'Calculating average planes...', lambda n, f: get_prop(f, "PlaneStatsAverage", float)
         )
 
-    :param clip:            Clip to render.
-    :param outfile:         Optional binary output or path to write to.
-    :param progress:        A message to display during rendering. This is shown alongside the progress.
-    :param callback:        Callback function. Must accept `n` and `f` (like a frameeval would) and return some value.
-                            This function is used to determine what information gets returned per frame.
-                            Default: None.
-    :param prefetch:        The amount of frames to prefetch. 0 means automatically determine.
-                            Default: 0.
-    :param backlog:         How many frames to hold. Useful for if your write of callback is slower
-                            than your frame rendering.
-    :param y4m:             Whether to add YUV4MPEG2 headers to the rendered output. If None, automatically determine.
-                            Default: None.
-    :param async_requests:  Whether to render frames non-consecutively.
-                            If int, determines the number of requests.
-                            Default: False.
+    Args:
+        clip: Clip to render.
+        outfile: Optional binary output or path to write to.
+        progress: A message to display during rendering. This is shown alongside the progress.
+        callback: Callback function. Must accept `n` and `f` (like a frameeval would) and return some value. This
+            function is used to determine what information gets returned per frame. Default: None.
+        prefetch: The amount of frames to prefetch. 0 means automatically determine. Default: 0.
+        backlog: How many frames to hold. Useful for if your write of callback is slower than your frame rendering.
+        y4m: Whether to add YUV4MPEG2 headers to the rendered output. If None, automatically determine. Default: None.
+        async_requests: Whether to render frames non-consecutively. If int, determines the number of requests. Default:
+            False.
     """
 
     from .funcs import fallback
@@ -438,23 +432,22 @@ def find_prop(
 
     Example usage:
 
-    .. code-block:: python
-
         # Return a list of all frames that were marked as combed.
         >>> find_prop(clip, "_Combed", None, True, 0)
 
-    :param src:                 Input clip.
-    :param prop:                Frame prop to perform checks on.
-    :param op:                  Conditional operator to apply between prop and ref ("<", "<=", "==", "!=", ">" or ">=").
-                                If None, check whether a prop is truthy.
-    :param ref:                 Value to be compared with prop.
-    :param range_length:        Amount of frames to finish a sequence, to avoid false negatives.
-                                This will create ranges with a sequence of start-end tuples.
-    :param async_requests:      Whether to render frames non-consecutively.
-                                If int, determines the number of requests.
-                                Default: 1.
+    Args:
+        src: Input clip.
+        prop: Frame prop to perform checks on.
+        op: Conditional operator to apply between prop and ref ("<", "<=", "==", "!=", ">" or ">="). If None, check
+            whether a prop is truthy.
+        ref: Value to be compared with prop.
+        range_length: Amount of frames to finish a sequence, to avoid false negatives. This will create ranges with a
+            sequence of start-end tuples.
+        async_requests: Whether to render frames non-consecutively. If int, determines the number of requests. Default:
+            1.
 
-    :return:                    Frame ranges at the specified conditions.
+    Returns:
+        Frame ranges at the specified conditions.
     """
 
     prop_src, callback = prop_compare_cb(src, prop, op, ref, True)
@@ -483,22 +476,22 @@ def find_prop_rfs(
 
     Example usage:
 
-    .. code-block:: python
-
         # Replace a rescaled clip with the original clip for frames where the error
         # (defined on another clip) is equal to or greater than 0.025.
-        >>> find_prop_rfs(scaled, src, 'PlaneStatsAverage', '>=', 0.025, err_clip)
+        >>> find_prop_rfs(scaled, src, "PlaneStatsAverage", ">=", 0.025, err_clip)
 
-    :param clip_a:          Original clip.
-    :param clip_b:          Replacement clip.
-    :param prop:            Frame prop to perform checks on.
-    :param op:              Conditional operator to apply between prop and ref ("<", "<=", "==", "!=", ">" or ">=").
-                            If None, check whether a prop is truthy. Default: None.
-    :param prop_ref:        Value to be compared with prop.
-    :param ref:             Optional reference clip to read frame properties from. Default: None.
-    :param mismatch:        Accept format or resolution mismatch between clips. Default: False.
+    Args:
+        clip_a: Original clip.
+        clip_b: Replacement clip.
+        prop: Frame prop to perform checks on.
+        op: Conditional operator to apply between prop and ref ("<", "<=", "==", "!=", ">" or ">="). If None, check
+            whether a prop is truthy. Default: None.
+        prop_ref: Value to be compared with prop.
+        ref: Optional reference clip to read frame properties from. Default: None.
+        mismatch: Accept format or resolution mismatch between clips. Default: False.
 
-    :return:                Clip where frames that meet the specified criteria were replaced with a different clip.
+    Returns:
+        Clip where frames that meet the specified criteria were replaced with a different clip.
     """
 
     from ..utils import replace_ranges

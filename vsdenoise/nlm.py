@@ -51,29 +51,44 @@ class NLMeans(Generic[P, R]):
         """
 
         ACCELERATOR = "accelerator"
-        """Dedicated OpenCL accelerators."""
+        """
+        Dedicated OpenCL accelerators.
+        """
 
         GPU = "gpu"
-        """An OpenCL device that is a GPU."""
+        """
+        An OpenCL device that is a GPU.
+        """
 
         CPU = "cpu"
-        """An OpenCL device that is the host processor."""
+        """
+        An OpenCL device that is the host processor.
+        """
 
         ISPC = "ispc"
-        """ISPC (CPU-based) implementation."""
+        """
+        ISPC (CPU-based) implementation.
+        """
 
         CUDA = "cuda"
-        """CUDA (GPU-based) implementation."""
+        """
+        CUDA (GPU-based) implementation.
+        """
 
         def NLMeans(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
             """
             Applies the Non-Local Means denoising filter using the plugin associated with the selected backend.
 
-            :param clip:                    Source clip.
-            :param *args:                   Positional arguments passed to the selected plugin.
-            :param **kwargs:                Keyword arguments passed to the selected plugin.
-            :raises CustomRuntimeError:     If the selected backend is not available or unsupported.
-            :return:                        Denoised clip.
+            Args:
+                clip: Source clip.
+                *args: Positional arguments passed to the selected plugin.
+                **kwargs: Keyword arguments passed to the selected plugin.
+
+            Raises:
+                CustomRuntimeError: If the selected backend is not available or unsupported.
+
+            Returns:
+                Denoised clip.
             """
 
             if self == NLMeans.Backend.CUDA:
@@ -102,7 +117,9 @@ class NLMeans(Generic[P, R]):
             )
 
     class WeightMode(CustomIntEnum):
-        """Enum of weighting modes for Non-Local Means (NLM) denoiser."""
+        """
+        Enum of weighting modes for Non-Local Means (NLM) denoiser.
+        """
 
         wref: float | None
 
@@ -134,10 +151,12 @@ class NLMeans(Generic[P, R]):
 
         def __call__(self, wref: float | None = None) -> NLMeans.WeightMode:
             """
-            :param wref:    Amount of original pixel to contribute to the filter output,
-                            relative to the weight of the most similar pixel found.
+            Args:
+                wref: Amount of original pixel to contribute to the filter output, relative to the weight of the most
+                    similar pixel found.
 
-            :return:        Config with weight mode and ref.
+            Returns:
+                Config with weight mode and ref.
             """
             new_enum = CustomIntEnum(self.__class__.__name__, NLMeans.WeightMode.__members__)  # type: ignore
             member = getattr(new_enum, self.name)
@@ -168,29 +187,24 @@ def nl_means(
         denoised = nl_means(clip, 0.4, backend=nl_means.Backend.CUDA, ...)
         ```
 
-    :param clip:            Source clip.
-    :param h:               Controls the strength of the filtering.
-                            Larger values will remove more noise.
-    :param tr:              Temporal Radius. Temporal size = `(2 * d + 1)`.
-                            Sets the number of past and future frames to uses for denoising the current frame.
-                            d=0 uses 1 frame, while d=1 uses 3 frames and so on.
-                            Usually, larger values result in better denoising.
-                            Also known as the `d` parameter.
-    :param a:               Search Radius. Spatial size = `(2 * a + 1)^2`.
-                            Sets the radius of the search window.
-                            a=1 uses 9 pixel, while a=2 uses 25 pixels and so on.
-                            Usually, larger values result in better denoising.
-    :param s:               Similarity Radius. Similarity neighbourhood size = `(2 * s + 1) ** 2`.
-                            Sets the radius of the similarity neighbourhood window.
-                            The impact on performance is low, therefore it depends on the nature of the noise.
-    :param backend:         Set the backend to use for processing.
-    :param ref:             Reference clip to do weighting calculation.
-                            Also known as the `rclip` parameter.
-    :param wmode:           Weighting function to use.
-    :param planes:          Which planes to process.
-    :param kwargs:          Additional arguments passed to the plugin.
+    Args:
+        clip: Source clip.
+        h: Controls the strength of the filtering. Larger values will remove more noise.
+        tr: Temporal Radius. Temporal size = `(2 * d + 1)`. Sets the number of past and future frames to uses for
+            denoising the current frame. d=0 uses 1 frame, while d=1 uses 3 frames and so on. Usually, larger values
+            result in better denoising. Also known as the `d` parameter.
+        a: Search Radius. Spatial size = `(2 * a + 1)^2`. Sets the radius of the search window. a=1 uses 9 pixel, while
+            a=2 uses 25 pixels and so on. Usually, larger values result in better denoising.
+        s: Similarity Radius. Similarity neighbourhood size = `(2 * s + 1) ** 2`. Sets the radius of the similarity
+            neighbourhood window. The impact on performance is low, therefore it depends on the nature of the noise.
+        backend: Set the backend to use for processing.
+        ref: Reference clip to do weighting calculation. Also known as the `rclip` parameter.
+        wmode: Weighting function to use.
+        planes: Which planes to process.
+        **kwargs: Additional arguments passed to the plugin.
 
-    :return:                Denoised clip.
+    Returns:
+        Denoised clip.
     """
 
     assert check_variable(clip, nl_means)

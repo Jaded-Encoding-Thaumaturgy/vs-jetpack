@@ -16,27 +16,35 @@ __all__ = ["CCDMode", "CCDPoints", "ccd"]
 
 
 class CCDMode(CustomIntEnum):
-    """Processing mode for CCD."""
+    """
+    Processing mode for CCD.
+    """
 
     CHROMA_ONLY = 0
-    """Only process chroma."""
+    """
+    Only process chroma.
+    """
 
     BICUBIC_CHROMA = 1
-    """Process in 4:4:4, downscaling the luma to chroma size."""
+    """
+    Process in 4:4:4, downscaling the luma to chroma size.
+    """
 
     BICUBIC_LUMA = 2
-    """Process in 4:4:4, upscaling the chroma to luma size with :py:class:`Bicubic`."""
+    """
+    Process in 4:4:4, upscaling the chroma to luma size with [Bicubic][vskernels.Bicubic].
+    """
 
     NNEDI_BICUBIC = 3
     """
-    Process in 4:4:4, upscaling the chroma to luma size with :py:class:`NNedi3`,
-    finally downscaling it to the original size with :py:class:`Bicubic`.
+    Process in 4:4:4, upscaling the chroma to luma size NNEDI3,
+    finally downscaling it to the original size with Bicubic.
     """
 
     NNEDI_SSIM = 4
     """
-    Process in 4:4:4, upscaling the chroma to luma size with :py:class:`NNedi3`,
-    finally downscaling it to original size with :py:class:`SSIM`.
+    Process in 4:4:4, upscaling the chroma to luma size with NNEDI3,
+    finally downscaling it to original size with SSIM.
     """
 
 
@@ -79,7 +87,9 @@ class CCDPoints(CustomIntEnum):
     """
 
     ALL = 63
-    """All points combined."""
+    """
+    All points combined.
+    """
 
 
 @deprecated("`ccd` will be deprecated when zsmooth CCD will be implemented.", category=PendingDeprecationWarning)
@@ -104,24 +114,22 @@ def ccd(
     If the euclidean distance between the RGB values of the center pixel and a given pixel in the convolution
     matrix is less than the threshold, then this pixel is considered in the average.
 
-    :param src:         Source clip.
-    :param thr:         Euclidean distance threshold for including pixel in the matrix.
-                        Higher values results in stronger denoising.
-    :param tr:          Temporal radius of the processing.
-    :param ref:         Ref clip to use for calculating the processing to perform on the main clip.
-    :param mode:        Processing mode for CCD. See :py:attr:`vsdenoise.ccd.CCDMode`.
-    :param scale:       Relative scale of the analyzed matrix of points decided by ``ref_points``.
-    :param matrix:      Enum for the matrix of the Clip to process.
-                        See :py:attr:`vstools.enums.color.Matrix` for more info.
-                        If `None`, gets matrix from the "_Matrix" prop of the clip unless it's an RGB clip,
-                        in which case it stays as `None`.
-    :param ref_points:  Sample points of reference for processing.
-                        See :py:attr:`vsdenoise.ccd.CCDPoints`.
-    :param i444:        Output the clip as 4:4:4.
-    :param planes:      Planes to process.
-    :param ssim_kwargs: Keyword arguments to pass to :py:class:`vsscale.SSIM`.
+    Args:
+        src: Source clip.
+        thr: Euclidean distance threshold for including pixel in the matrix. Higher values results in stronger
+            denoising.
+        tr: Temporal radius of the processing.
+        ref: Ref clip to use for calculating the processing to perform on the main clip.
+        mode: Processing mode for CCD. See [CCDMode][vsdenoise.CCDMode].
+        scale: Relative scale of the analyzed matrix of points decided by ``ref_points``.
+        matrix: Enum for the matrix of the Clip to process.
+        ref_points: Sample points of reference for processing. See [CCDPoints][vsdenoise.ccd.CCDPoints].
+        i444: Output the clip as 4:4:4.
+        planes: Planes to process.
+        **ssim_kwargs: Keyword arguments to pass to [SSIM][vsscale.SSIM].
 
-    :return:            Denoised clip.
+    Returns:
+        Denoised clip.
     """
 
     from vsaa import NNEDI3

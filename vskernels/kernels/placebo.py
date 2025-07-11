@@ -50,19 +50,17 @@ class Placebo(ComplexScaler, abstract=True):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param taps:        Overrides the filter kernel radius.
-                            Has no effect if the filter kernel is not resizeable.
-        :param b:           The 'b' parameter for bicubic interpolation.
-        :param c:           The 'c' parameter for bicubic interpolation.
-        :param clamp:       Represents an extra weighting/clamping coefficient for negative weights.
-                            A value of 0.0 represents no clamping.
-                            A value of 1.0 represents full clamping, i.e. all negative lobes will be removed.
-        :param blur:        Additional blur coefficient.
-                            This effectively stretches the kernel, without changing the effective radius
-                            of the filter radius.
-        :param taper:       Additional taper coefficient. This essentially flattens the function's center.
-        :param antiring:    Antiringing strength.
-        :param kwargs:      Keyword arguments that configure the internal scaling behavior.
+        Args:
+            taps: Overrides the filter kernel radius. Has no effect if the filter kernel is not resizeable.
+            b: The 'b' parameter for bicubic interpolation.
+            c: The 'c' parameter for bicubic interpolation.
+            clamp: Represents an extra weighting/clamping coefficient for negative weights. A value of 0.0 represents no
+                clamping. A value of 1.0 represents full clamping, i.e. all negative lobes will be removed.
+            blur: Additional blur coefficient. This effectively stretches the kernel, without changing the effective
+                radius of the filter radius.
+            taper: Additional taper coefficient. This essentially flattens the function's center.
+            antiring: Antiringing strength.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         self.taps = taps
         self.b = b
@@ -116,7 +114,9 @@ class Placebo(ComplexScaler, abstract=True):
 
 
 class EwaBicubic(Placebo):
-    """Ewa Bicubic resizer."""
+    """
+    Ewa Bicubic resizer.
+    """
 
     _kernel = "ewa_robidoux"
 
@@ -129,10 +129,11 @@ class EwaBicubic(Placebo):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param b:       The 'b' parameter for bicubic interpolation.
-        :param c:       The 'c' parameter for bicubic interpolation.
-        :param radius:  Overrides the filter kernel radius.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            b: The 'b' parameter for bicubic interpolation.
+            c: The 'c' parameter for bicubic interpolation.
+            radius: Overrides the filter kernel radius.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         radius = kwargs.pop("taps", radius)
 
@@ -143,7 +144,9 @@ class EwaBicubic(Placebo):
 
 
 class EwaLanczos(Placebo):
-    """Ewa Lanczos resizer."""
+    """
+    Ewa Lanczos resizer.
+    """
 
     _kernel = "ewa_lanczos"
 
@@ -156,14 +159,17 @@ class EwaLanczos(Placebo):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param taps:    The number of taps used for Lanczos interpolation.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            taps: The number of taps used for Lanczos interpolation.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaJinc(Placebo):
-    """Ewa Jinc resizer."""
+    """
+    Ewa Jinc resizer.
+    """
 
     _kernel = "ewa_jinc"
 
@@ -176,14 +182,17 @@ class EwaJinc(Placebo):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param taps:    The number of taps used for Jinc interpolation.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            taps: The number of taps used for Jinc interpolation.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaGinseng(Placebo):
-    """Ewa Ginseng resizer."""
+    """
+    Ewa Ginseng resizer.
+    """
 
     _kernel = "ewa_ginseng"
 
@@ -196,14 +205,17 @@ class EwaGinseng(Placebo):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param taps:    The number of taps used for Ginseng interpolation.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            taps: The number of taps used for Ginseng interpolation.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaHann(Placebo):
-    """Ewa Hann resizer."""
+    """
+    Ewa Hann resizer.
+    """
 
     _kernel = "ewa_hann"
 
@@ -216,14 +228,17 @@ class EwaHann(Placebo):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param taps:    The number of taps used for Hann interpolation.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            taps: The number of taps used for Hann interpolation.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(taps, None, None, **kwargs)
 
 
 class EwaRobidoux(Placebo):
-    """Ewa Robidoux resizer."""
+    """
+    Ewa Robidoux resizer.
+    """
 
     _kernel = "ewa_robidoux"
 
@@ -236,13 +251,16 @@ class EwaRobidoux(Placebo):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(None, None, None, **kwargs)
 
 
 class EwaRobidouxSharp(Placebo):
-    """Ewa Robidoux Sharp resizer."""
+    """
+    Ewa Robidoux Sharp resizer.
+    """
 
     _kernel = "ewa_robidouxsharp"
 
@@ -255,6 +273,7 @@ class EwaRobidouxSharp(Placebo):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(None, None, None, **kwargs)

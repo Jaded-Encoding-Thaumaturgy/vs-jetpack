@@ -13,7 +13,9 @@ __all__ = ["Coordinate", "Dar", "Direction", "Position", "Region", "Resolution",
 
 
 class Direction(CustomIntEnum):
-    """Enum to simplify the direction argument."""
+    """
+    Enum to simplify the direction argument.
+    """
 
     HORIZONTAL = 0
     VERTICAL = 1
@@ -25,19 +27,25 @@ class Direction(CustomIntEnum):
 
     @property
     def is_axis(self) -> bool:
-        """Whether the Direction represents an axis (horizontal/vertical)."""
+        """
+        Whether the Direction represents an axis (horizontal/vertical).
+        """
 
         return self <= self.VERTICAL
 
     @property
     def is_way(self) -> bool:
-        """Whether the Direction is one of the 4 arrow directions."""
+        """
+        Whether the Direction is one of the 4 arrow directions.
+        """
 
         return self > self.VERTICAL
 
     @property
     def string(self) -> str:
-        """A string representation of the Direction."""
+        """
+        A string representation of the Direction.
+        """
 
         return self._name_.lower()
 
@@ -48,9 +56,12 @@ class _Xar(Fraction):
         """
         Get the Xar from a Xar, a boolean, a float or a None object.
 
-        :param value:       Value identifier.
-        :param fallback:    Fallback value.
-        :return:            Xar object or None.
+        Args:
+            value: Value identifier.
+            fallback: Fallback value.
+
+        Returns:
+            Xar object or None.
         """
         if value is False:
             return cls(fallback)
@@ -80,11 +91,13 @@ class Dar(_Xar):
         """
         Get the DAR from the specified dimensions and SAR.
 
-        :param width:      The width of the image.
-        :param height:     The height of the image.
-        :param sar:        The SAR object. Optional.
+        Args:
+            width: The width of the image.
+            height: The height of the image.
+            sar: The SAR object. Optional.
 
-        :return:           A DAR object created using the specified dimensions and SAR.
+        Returns:
+            A DAR object created using the specified dimensions and SAR.
         """
 
         dar = Fraction(width, height)
@@ -102,10 +115,12 @@ class Dar(_Xar):
         """
         Get the DAR from the specified clip and SAR.
 
-        :param clip:     Clip or frame that holds the frame properties.
-        :param sar:      Whether to use SAR metadata.
+        Args:
+            clip: Clip or frame that holds the frame properties.
+            sar: Whether to use SAR metadata.
 
-        :return:         A DAR object created using the specified clip and SAR.
+        Returns:
+            A DAR object created using the specified clip and SAR.
         """
 
         return cls.from_res(clip.width, clip.height, Sar.from_clip(clip) if sar else None)
@@ -114,10 +129,12 @@ class Dar(_Xar):
         """
         Convert the DAR to a SAR object.
 
-        :param active_area:     The active image area. For more information, see ``Sar.from_ar``.
-        :param height:          The height of the image.
+        Args:
+            active_area: The active image area. For more information, see ``Sar.from_ar``.
+            height: The height of the image.
 
-        :return:                A SAR object created using the DAR.
+        Returns:
+            A SAR object created using the DAR.
         """
 
         assert isinstance(active_area, int | Fraction)
@@ -139,9 +156,11 @@ class Sar(_Xar):
         """
         Get the SAR from the clip's frame properties.
 
-        :param clip:        Clip or frame that holds the frame properties.
+        Args:
+            clip: Clip or frame that holds the frame properties.
 
-        :return:            A SAR object of the SAR properties from the given clip.
+        Returns:
+            A SAR object of the SAR properties from the given clip.
         """
 
         from ..utils import get_prop
@@ -156,11 +175,13 @@ class Sar(_Xar):
         For a list of known standards, refer to the following tables:
         `<https://docs.google.com/spreadsheets/d/1pzVHFusLCI7kys2GzK9BTk3w7G8zcLxgHs3DMsurF7g>`_
 
-        :param active_area:     The active image area.
-        :param height:          The height of the image.
-        :param dar:             The DAR object.
+        Args:
+            active_area: The active image area.
+            height: The height of the image.
+            dar: The DAR object.
 
-        :return:                A SAR object created using DAR and active image area information.
+        Returns:
+            A SAR object created using DAR and active image area information.
         """
 
         assert isinstance(active_area, int | Fraction)
@@ -168,16 +189,22 @@ class Sar(_Xar):
         return cls(dar / (Fraction(active_area) / height))
 
     def apply(self, clip: VideoNodeT) -> VideoNodeT:
-        """Apply the SAR values as _SARNum and _SARDen frame properties to a clip."""
+        """
+        Apply the SAR values as _SARNum and _SARDen frame properties to a clip.
+        """
 
         return vs.core.std.SetFrameProps(clip, _SARNum=self.numerator, _SARDen=self.denominator)
 
 
 class Region(CustomStrEnum):
-    """StrEnum signifying an analog television region."""
+    """
+    StrEnum signifying an analog television region.
+    """
 
     UNKNOWN = "unknown"
-    """Unknown region."""
+    """
+    Unknown region.
+    """
 
     NTSC = "NTSC"
     """
@@ -188,7 +215,9 @@ class Region(CustomStrEnum):
     """
 
     NTSCi = "NTSCi"
-    """Interlaced NTSC."""
+    """
+    Interlaced NTSC.
+    """
 
     PAL = "PAL"
     """
@@ -198,23 +227,33 @@ class Region(CustomStrEnum):
     """
 
     PALi = "PALi"
-    """Interlaced PAL."""
+    """
+    Interlaced PAL.
+    """
 
     FILM = "FILM"
-    """True 24fps content."""
+    """
+    True 24fps content.
+    """
 
     NTSC_FILM = "NTSC (FILM)"
-    """NTSC 23.976fps content."""
+    """
+    NTSC 23.976fps content.
+    """
 
     @property
     def framerate(self) -> Fraction:
-        """Obtain the Region's framerate."""
+        """
+        Obtain the Region's framerate.
+        """
 
         return _region_framerate_map[self]
 
     @classmethod
     def from_framerate(cls, framerate: float | Fraction, strict: bool = False) -> Self:
-        """Determine the Region using a given framerate."""
+        """
+        Determine the Region using a given framerate.
+        """
 
         key = Fraction(framerate)
 
@@ -245,14 +284,18 @@ _framerate_region_map = {r.framerate: r for r in Region}
 
 
 class Resolution(NamedTuple):
-    """Tuple representing a resolution."""
+    """
+    Tuple representing a resolution.
+    """
 
     width: int
     height: int
 
     @classmethod
     def from_video(cls, clip: vs.VideoNode) -> Self:
-        """Create a Resolution object using a given clip's dimensions."""
+        """
+        Create a Resolution object using a given clip's dimensions.
+        """
 
         from ..functions import check_variable_resolution
 
@@ -261,7 +304,9 @@ class Resolution(NamedTuple):
         return cls(clip.width, clip.height)
 
     def transpose(self) -> Self:
-        """Flip the Resolution matrix over its diagonal."""
+        """
+        Flip the Resolution matrix over its diagonal.
+        """
 
         return self.__class__(self.height, self.width)
 
@@ -270,23 +315,35 @@ class Resolution(NamedTuple):
 
 
 class SceneChangeMode(CustomIntEnum):
-    """Enum for various scene change modes."""
+    """
+    Enum for various scene change modes.
+    """
 
     WWXD = 1
-    """Get the scene changes using the vapoursynth-wwxd plugin <https://github.com/dubhater/vapoursynth-wwxd>."""
+    """
+    Get the scene changes using the vapoursynth-wwxd plugin <https://github.com/dubhater/vapoursynth-wwxd>.
+    """
 
     SCXVID = 2
-    """Get the scene changes using the vapoursynth-scxvid plugin <https://github.com/dubhater/vapoursynth-scxvid>."""
+    """
+    Get the scene changes using the vapoursynth-scxvid plugin <https://github.com/dubhater/vapoursynth-scxvid>.
+    """
 
     WWXD_SCXVID_UNION = 3  # WWXD | SCXVID
-    """Get every scene change detected by both wwxd or scxvid."""
+    """
+    Get every scene change detected by both wwxd or scxvid.
+    """
 
     WWXD_SCXVID_INTERSECTION = 0  # WWXD & SCXVID
-    """Only get the scene changes if both wwxd and scxvid mark a frame as being a scene change."""
+    """
+    Only get the scene changes if both wwxd and scxvid mark a frame as being a scene change.
+    """
 
     @property
     def is_WWXD(self) -> bool:  # noqa: N802
-        """Check whether a mode that uses wwxd is used."""
+        """
+        Check whether a mode that uses wwxd is used.
+        """
 
         return self in (
             SceneChangeMode.WWXD,
@@ -296,7 +353,9 @@ class SceneChangeMode(CustomIntEnum):
 
     @property
     def is_SCXVID(self) -> bool:  # noqa: N802
-        """Check whether a mode that uses scxvid is used."""
+        """
+        Check whether a mode that uses scxvid is used.
+        """
 
         return self in (
             SceneChangeMode.SCXVID,
@@ -305,7 +364,9 @@ class SceneChangeMode(CustomIntEnum):
         )
 
     def ensure_presence(self, clip: vs.VideoNode, akarin: bool | None = None) -> ConstantFormatVideoNode:
-        """Ensures all the frame properties necessary for scene change detection are created."""
+        """
+        Ensures all the frame properties necessary for scene change detection are created.
+        """
 
         from ..exceptions import CustomRuntimeError
         from ..functions import check_variable_format
@@ -371,15 +432,16 @@ class SceneChangeMode(CustomIntEnum):
         The clip will always be resampled to YUV420 8bit if it's not already,
         as that's what the plugins support.
 
-        :param clip:        Clip to process.
-        :param height:      Output height of the clip. Smaller frame sizes are faster to process,
-                            but may miss more scene changes or introduce more false positives.
-                            Width is automatically calculated. `False` means no resizing operation is performed.
-                            Default: 360.
-        :param akarin:      Use the akarin plugin for speed optimizations. `None` means it will check if its available,
-                            and if it is, use it. Default: None.
+        Args:
+            clip: Clip to process.
+            height: Output height of the clip. Smaller frame sizes are faster to process, but may miss more scene
+                changes or introduce more false positives. Width is automatically calculated. `False` means no resizing
+                operation is performed. Default: 360.
+            akarin: Use the akarin plugin for speed optimizations. `None` means it will check if its available, and if
+                it is, use it. Default: None.
 
-        :return:            A prepared clip for performing scene change metric calculations on.
+        Returns:
+            A prepared clip for performing scene change metric calculations on.
         """
         from ..utils import get_w
 

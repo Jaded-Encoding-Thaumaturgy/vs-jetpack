@@ -11,16 +11,24 @@ __all__ = ["Coordinates", "GenericMaskT", "XxpandMode"]
 
 
 class XxpandMode(CustomEnum):
-    """Expand/inpand mode"""
+    """
+    Expand/inpand mode
+    """
 
     RECTANGLE = object()
-    """Rectangular shape"""
+    """
+    Rectangular shape
+    """
 
     ELLIPSE = object()
-    """Elliptical shape"""
+    """
+    Elliptical shape
+    """
 
     LOSANGE = object()
-    """Diamond shape"""
+    """
+    Diamond shape
+    """
 
 
 class Coordinates(tuple[int, ...], CustomEnum):

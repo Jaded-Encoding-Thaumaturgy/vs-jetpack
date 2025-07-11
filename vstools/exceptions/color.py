@@ -27,7 +27,9 @@ __all__ = [
 
 
 class InvalidColorspacePathError(CustomValueError):
-    """Raised when there is no path between two colorspaces."""
+    """
+    Raised when there is no path between two colorspaces.
+    """
 
     def __init__(self, func: FuncExceptT, message: SupportsString | None = None, **kwargs: Any) -> None:
         def_msg = "Unable to convert between colorspaces! "
@@ -46,11 +48,12 @@ class InvalidColorspacePathError(CustomValueError):
         """
         Check if there's a valid colorspace path for the given clip.
 
-        :param func:        Function returned for custom error handling.
-                            This should only be set by VS package developers.
-        :param to_check:    Value to check. Must be a VideoNode.
+        Args:
+            func: Function returned for custom error handling. This should only be set by VS package developers.
+            to_check: Value to check. Must be a VideoNode.
 
-        :raises InvalidColorspacePathError: If there's no valid colorspace path.
+        Raises:
+            InvalidColorspacePathError: If there's no valid colorspace path.
         """
 
         try:
@@ -66,19 +69,27 @@ class InvalidColorspacePathError(CustomValueError):
 
 
 class UndefinedMatrixError(CustomValueError):
-    """Raised when an undefined matrix is passed."""
+    """
+    Raised when an undefined matrix is passed.
+    """
 
 
 class ReservedMatrixError(CustomPermissionError):
-    """Raised when a reserved matrix is requested."""
+    """
+    Raised when a reserved matrix is requested.
+    """
 
 
 class UnsupportedMatrixError(CustomValueError):
-    """Raised when an unsupported matrix is passed."""
+    """
+    Raised when an unsupported matrix is passed.
+    """
 
 
 class InvalidMatrixError(CustomValueError):
-    """Raised when an invalid matrix is passed."""
+    """
+    Raised when an invalid matrix is passed.
+    """
 
     def __init__(
         self,
@@ -95,19 +106,27 @@ class InvalidMatrixError(CustomValueError):
 
 
 class UndefinedTransferError(CustomValueError):
-    """Raised when an undefined transfer is passed."""
+    """
+    Raised when an undefined transfer is passed.
+    """
 
 
 class ReservedTransferError(CustomPermissionError):
-    """Raised when a reserved transfer is requested."""
+    """
+    Raised when a reserved transfer is requested.
+    """
 
 
 class UnsupportedTransferError(CustomValueError):
-    """Raised when an unsupported transfer is passed."""
+    """
+    Raised when an unsupported transfer is passed.
+    """
 
 
 class InvalidTransferError(CustomValueError):
-    """Raised when an invalid matrix is passed."""
+    """
+    Raised when an invalid matrix is passed.
+    """
 
     def __init__(
         self,
@@ -124,19 +143,27 @@ class InvalidTransferError(CustomValueError):
 
 
 class UndefinedPrimariesError(CustomValueError):
-    """Raised when an undefined primaries value is passed."""
+    """
+    Raised when an undefined primaries value is passed.
+    """
 
 
 class ReservedPrimariesError(CustomPermissionError):
-    """Raised when reserved primaries are requested."""
+    """
+    Raised when reserved primaries are requested.
+    """
 
 
 class UnsupportedPrimariesError(CustomValueError):
-    """Raised when a unsupported primaries value is passed."""
+    """
+    Raised when a unsupported primaries value is passed.
+    """
 
 
 class InvalidPrimariesError(CustomValueError):
-    """Raised when an invalid matrix is passed."""
+    """
+    Raised when an invalid matrix is passed.
+    """
 
     def __init__(
         self,
@@ -153,4 +180,6 @@ class InvalidPrimariesError(CustomValueError):
 
 
 class UnsupportedColorRangeError(CustomValueError):
-    """Raised when a unsupported color range value is passed."""
+    """
+    Raised when a unsupported color range value is passed.
+    """

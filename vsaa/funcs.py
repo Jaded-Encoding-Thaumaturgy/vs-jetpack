@@ -73,15 +73,17 @@ def clamp_aa(
     """
     Clamp a strong aa to a weaker one for the purpose of reducing the stronger's artifacts.
 
-    :param clip:                Clip to process.
-    :param strength:            Set threshold strength for over/underflow value for clamping.
-    :param mthr:                Binarize threshold for the mask, float.
-    :param mask:                Clip to use for custom mask or an EdgeDetect to use custom masker.
-    :param weak_aa:             AntiAliaser for the weaker aa. Default is NNEDI3.
-    :param strong_aa:           AntiAliaser for the stronger aa. Default is EEDI3.
-    :param ref:                 Reference clip for clamping.
+    Args:
+        clip: Clip to process.
+        strength: Set threshold strength for over/underflow value for clamping.
+        mthr: Binarize threshold for the mask, float.
+        mask: Clip to use for custom mask or an EdgeDetect to use custom masker.
+        weak_aa: AntiAliaser for the weaker aa. Default is NNEDI3.
+        strong_aa: AntiAliaser for the stronger aa. Default is EEDI3.
+        ref: Reference clip for clamping.
 
-    :return:                    Antialiased clip.
+    Returns:
+        Antialiased clip.
     """
     import warnings
 
@@ -161,48 +163,37 @@ def based_aa(
     Sharp supersamplers will yield better results, so long as they do not introduce too much ringing.
     For downscalers, you will want to use a neutral kernel.
 
-    :param clip:                  Clip to process.
-    :param rfactor:               Resize factor for supersampling. Values above 1.0 are recommended.
-                                  Lower values may be useful for particularly extremely aliased content.
-                                  Values closer to 1.0 will perform faster at the cost of precision.
-                                  This value must be greater than 0.0. Default: 2.0.
-    :param mask:                  Edge detection mask or function to generate it. Default: Prewitt.
-    :param mask_thr:              Threshold for edge detection mask.
-                                  Only used if an EdgeDetect class is passed to `mask`. Default: 60.
-    :param pscale:                Scale factor for the supersample-downscale process change.
-    :param downscaler:            Scaler used for downscaling after anti-aliasing. This should ideally be
-                                  a relatively sharp kernel that doesn't introduce too much haloing.
-                                  If None, downscaler will be set to Box if the scale factor is an integer
-                                  (after rounding), and Catrom otherwise.
-                                  If rfactor is below 1.0, the downscaler will be used before antialiasing instead,
-                                  and the supersampler will be used to scale the clip back to its original resolution.
-                                  Default: None.
-    :param supersampler:          Scaler used for supersampling before anti-aliasing. If False, no supersampling
-                                  is performed. If rfactor is below 1.0, the downscaler will be used before
-                                  antialiasing instead, and the supersampler will be used to scale the clip
-                                  back to its original resolution.
-                                  The supersampler should ideally be fairly sharp without
-                                  introducing too much ringing.
-                                  Default: ArtCNN (R8F64).
-                                  If True, both fields will be processed separately, which may improve
-                                  anti-aliasing strength at the cost of increased processing time and detail loss.
-                                  Default: False.
-    :param antialiaser:           Antialiaser used for anti-aliasing.
-                                  If None, EEDI3 will be selected with these default settings:
-                                  (alpha=0.125, beta=0.25, vthresh0=12, vthresh1=24, field=1).
-    :param prefilter:             Prefilter to apply before anti-aliasing.
-                                  Must be a VideoNode, a function that takes a VideoNode and returns a VideoNode,
-                                  or False. Default: False.
-    :param postfilter:            Postfilter to apply after anti-aliasing.
-                                  Must be a function that takes a VideoNode and returns a VideoNode, or None.
-                                  If None, applies a median-filtered bilateral smoother to clean halos
-                                  created during antialiasing. Default: None.
-    :param show_mask:             If True, returns the edge detection mask instead of the processed clip.
-                                  Default: False
+    Args:
+        clip: Clip to process.
+        rfactor: Resize factor for supersampling. Values above 1.0 are recommended. Lower values may be useful for
+            particularly extremely aliased content. Values closer to 1.0 will perform faster at the cost of precision.
+            This value must be greater than 0.0. Default: 2.0.
+        mask: Edge detection mask or function to generate it. Default: Prewitt.
+        mask_thr: Threshold for edge detection mask. Only used if an EdgeDetect class is passed to `mask`. Default: 60.
+        pscale: Scale factor for the supersample-downscale process change.
+        downscaler: Scaler used for downscaling after anti-aliasing. This should ideally be a relatively sharp kernel
+            that doesn't introduce too much haloing. If None, downscaler will be set to Box if the scale factor is an
+            integer (after rounding), and Catrom otherwise. If rfactor is below 1.0, the downscaler will be used before
+            antialiasing instead, and the supersampler will be used to scale the clip back to its original resolution.
+            Default: None.
+        supersampler: Scaler used for supersampling before anti-aliasing. If False, no supersampling is performed. If
+            rfactor is below 1.0, the downscaler will be used before antialiasing instead, and the supersampler will be
+            used to scale the clip back to its original resolution. The supersampler should ideally be fairly sharp
+            without introducing too much ringing. Default: ArtCNN (R8F64).
+        antialiaser: Antialiaser used for anti-aliasing. If None, EEDI3 will be selected with these default settings:
+            (alpha=0.125, beta=0.25, vthresh0=12, vthresh1=24, field=1).
+        prefilter: Prefilter to apply before anti-aliasing. Must be a VideoNode, a function that takes a VideoNode and
+            returns a VideoNode, or False. Default: False.
+        postfilter: Postfilter to apply after anti-aliasing. Must be a function that takes a VideoNode and returns a
+            VideoNode, or None. If None, applies a median-filtered bilateral smoother to clean halos created during
+            antialiasing. Default: None.
+        show_mask: If True, returns the edge detection mask instead of the processed clip. Default: False
 
-    :return:                      Anti-aliased clip or edge detection mask if show_mask is True.
+    Returns:
+        Anti-aliased clip or edge detection mask if show_mask is True.
 
-    :raises CustomValueError:     If rfactor is not above 0.0, or invalid prefilter/postfilter is passed.
+    Raises:
+        CustomValueError: If rfactor is not above 0.0, or invalid prefilter/postfilter is passed.
     """
 
     func = FunctionUtil(clip, based_aa, 0, (vs.YUV, vs.GRAY))

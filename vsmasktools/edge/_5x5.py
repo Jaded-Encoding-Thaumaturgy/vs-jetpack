@@ -1,3 +1,7 @@
+"""
+2D matrices.
+"""
+
 from __future__ import annotations
 
 from abc import ABC
@@ -37,7 +41,9 @@ class Matrix5x5(EdgeDetect, ABC): ...
 
 # Single matrix
 class ExLaplacian1(SingleMatrix, Matrix5x5):
-    """Extended Pierre-Simon de Laplace operator, 1st implementation."""
+    """
+    Extended Pierre-Simon de Laplace operator, 1st implementation.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [0, 0, -1, 0, 0, 0, 0, -1, 0, 0, -1, -1, 8, -1, -1, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0]
@@ -45,7 +51,9 @@ class ExLaplacian1(SingleMatrix, Matrix5x5):
 
 
 class ExLaplacian2(SingleMatrix, Matrix5x5):
-    """Extended Pierre-Simon de Laplace operator, 2nd implementation."""
+    """
+    Extended Pierre-Simon de Laplace operator, 2nd implementation.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [0, 1, -1, 1, 0, 1, 1, -4, 1, 1, -1, -4, 8, -4, -1, 1, 1, -4, 1, 1, 0, 1, -1, 1, 0]
@@ -53,7 +61,9 @@ class ExLaplacian2(SingleMatrix, Matrix5x5):
 
 
 class ExLaplacian3(SingleMatrix, Matrix5x5):
-    """Extended Pierre-Simon de Laplace operator, 3rd implementation."""
+    """
+    Extended Pierre-Simon de Laplace operator, 3rd implementation.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [-1, 1, -1, 1, -1, 1, 2, -4, 2, 1, -1, -4, 8, -4, -1, 1, 2, -4, 2, 1, -1, 1, -1, 1, -1]
@@ -61,7 +71,9 @@ class ExLaplacian3(SingleMatrix, Matrix5x5):
 
 
 class ExLaplacian4(SingleMatrix, Matrix5x5):
-    """Extended Pierre-Simon de Laplace operator, 4th implementation."""
+    """
+    Extended Pierre-Simon de Laplace operator, 4th implementation.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 24, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
@@ -69,7 +81,9 @@ class ExLaplacian4(SingleMatrix, Matrix5x5):
 
 
 class LoG(SingleMatrix, Matrix5x5):
-    """Laplacian of Gaussian operator."""
+    """
+    Laplacian of Gaussian operator.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [0, 0, -1, 0, 0, 0, -1, -2, -1, 0, -1, -2, 16, -2, -1, 0, -1, -2, -1, 0, 0, 0, -1, 0, 0]
@@ -78,7 +92,9 @@ class LoG(SingleMatrix, Matrix5x5):
 
 # Euclidean distance
 class ExPrewitt(RidgeDetect, EuclideanDistance, Matrix5x5):
-    """Extended Judith M. S. Prewitt operator."""
+    """
+    Extended Judith M. S. Prewitt operator.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [2, 1, 0, -1, -2, 2, 1, 0, -1, -2, 2, 1, 0, -1, -2, 2, 1, 0, -1, -2, 2, 1, 0, -1, -2],
@@ -87,7 +103,9 @@ class ExPrewitt(RidgeDetect, EuclideanDistance, Matrix5x5):
 
 
 class ExSobel(RidgeDetect, EuclideanDistance, Matrix5x5):
-    """Extended Sobel-Feldman operator."""
+    """
+    Extended Sobel-Feldman operator.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [2, 1, 0, -1, -2, 2, 1, 0, -1, -2, 4, 2, 0, -2, -4, 2, 1, 0, -1, -2, 2, 1, 0, -1, -2],
@@ -96,7 +114,9 @@ class ExSobel(RidgeDetect, EuclideanDistance, Matrix5x5):
 
 
 class FDoG(RidgeDetect, EuclideanDistance, Matrix5x5):
-    """Flow-based Difference of Gaussian"""
+    """
+    Flow-based Difference of Gaussian
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [1, 1, 0, -1, -1, 2, 2, 0, -2, -2, 3, 3, 0, -3, -3, 2, 2, 0, -2, -2, 1, 1, 0, -1, -1],
@@ -106,7 +126,9 @@ class FDoG(RidgeDetect, EuclideanDistance, Matrix5x5):
 
 
 class FDoGTCanny(Matrix5x5, EdgeDetect):
-    """Flow-based Difference of Gaussian TCanny Vapoursynth plugin."""
+    """
+    Flow-based Difference of Gaussian TCanny Vapoursynth plugin.
+    """
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         _scale_constant = 0.5 if clip.format.sample_type == vs.FLOAT else (1 - 1 / (7 / 3) * 0.9696)
@@ -115,7 +137,9 @@ class FDoGTCanny(Matrix5x5, EdgeDetect):
 
 
 class DoG(EuclideanDistance, Matrix5x5):
-    """Zero-cross (of the 2nd derivative) of a Difference of Gaussians"""
+    """
+    Zero-cross (of the 2nd derivative) of a Difference of Gaussians
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [0, 0, 5, 0, 0, 0, 5, 10, 5, 0, 5, 10, 20, 10, 5, 0, 5, 10, 5, 0, 0, 0, 5, 0, 0],
@@ -134,7 +158,9 @@ class DoG(EuclideanDistance, Matrix5x5):
 
 
 class Farid(RidgeDetect, EuclideanDistance, Matrix5x5):
-    """Farid & Simoncelli operator."""
+    """
+    Farid & Simoncelli operator.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [
@@ -202,7 +228,9 @@ class Farid(RidgeDetect, EuclideanDistance, Matrix5x5):
 
 # Max
 class ExKirsch(MagnitudeMatrix, Max):
-    """Extended Russell Kirsch compass operator. 5x5 matrices."""
+    """
+    Extended Russell Kirsch compass operator. 5x5 matrices.
+    """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
         [9, 9, 9, 9, 9, 9, 5, 5, 5, 9, -7, -3, 0, -3, -7, -7, -3, -3, -3, -7, -7, -7, -7, -7, -7],

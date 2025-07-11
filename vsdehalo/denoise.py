@@ -59,51 +59,66 @@ def smooth_dering(
     Applies deringing by using a smart smoother near edges (where ringing
     occurs) only. Formerly known as HQDeringmod.
 
-    :param clip:        Clip to process.
-    :param smooth:      Already smoothed clip, or a Prefilter, tuple for [luma, chroma] prefilter.
-    :param ringmask:    Custom ringing mask.
-    :param mrad:        Expanding iterations of edge mask, higher value means more aggressive processing.
-    :param msmooth:     Inflating iterations of edge mask, higher value means smoother edges of mask.
-    :param minp:        Inpanding iterations of prewitt edge mask, higher value means more aggressive processing.
-    :param mthr:        Threshold of prewitt edge mask, lower value means more aggressive processing
-                        but for strong ringing, lower value will treat some ringing as edge,
-                        which "protects" this ringing from being processed.
-    :param incedge:     Whether to include edge in ring mask, by default ring mask only include area near edges.
-    :param thr:         Threshold (8-bit scale) to limit filtering diff.
-                        Smaller thr will result in more pixels being taken from processed clip.
-                        Larger thr will result in less pixels being taken from input clip.
-                            PDiff: pixel value diff between processed clip and input clip
-                            ODiff: pixel value diff between output clip and input clip
-                            PDiff, thr and elast is used to calculate ODiff:
-                            ODiff = PDiff when [PDiff <= thr]
-                            ODiff gradually smooths from thr to 0 when [thr <= PDiff <= thr * elast]
-                            For elast>2.0, ODiff reaches maximum when [PDiff == thr * elast / 2]
-                            ODiff = 0 when [PDiff >= thr * elast]
-    :param elast:       Elasticity of the soft threshold.
-                        Larger "elast" will result in more pixels being blended from.
-    :param darkthr:     Threshold (8-bit scale) for darker area near edges, for filtering diff
-                        that brightening the image by default equals to thr/4.
-                        Set it lower if you think de-ringing destroys too much lines, etc.
-                        When darkthr is not equal to ``thr``, ``thr`` limits darkening,
-                        while ``darkthr`` limits brightening.
-                        This is useful to limit the overshoot/undershoot/blurring introduced in deringing.
-                        Examples:
-                            ``thr=0``,   ``darkthr=0``  : no limiting
-                            ``thr=255``, ``darkthr=255``: no limiting
-                            ``thr=8``,   ``darkthr=2``  : limit darkening with 8, brightening is limited to 2
-                            ``thr=8``,   ``darkthr=0``  : limit darkening with 8, brightening is limited to 0
-                            ``thr=255``, ``darkthr=0``  : limit darkening with 255, brightening is limited to 0
-                            For the last two examples, output will remain unchanged. (0/255: no limiting)
-    :param contra:      Whether to use contra-sharpening to resharp deringed clip:
-                            False: no contrasharpening
-                            True: auto radius for contrasharpening
-                            int 1-3: represents radius for contrasharpening
-                            float: represents level for contrasharpening_dehalo
-    :param drrep:       Use repair for details retention, recommended values are 13/12/1.
-    :param planes:      Planes to be processed.
-    :param show_mask:   Show the computed ringing mask.
+    Args:
+        clip: Clip to process.
 
-    :return:            Deringed clip.
+        smooth: Already smoothed clip, or a Prefilter, tuple for [luma, chroma] prefilter.
+
+        ringmask: Custom ringing mask.
+
+        mrad: Expanding iterations of edge mask, higher value means more aggressive processing.
+
+        msmooth: Inflating iterations of edge mask, higher value means smoother edges of mask.
+
+        minp: Inpanding iterations of prewitt edge mask, higher value means more aggressive processing.
+
+        mthr: Threshold of prewitt edge mask, lower value means more aggressive processing but for strong ringing, lower
+            value will treat some ringing as edge, which "protects" this ringing from being processed.
+
+        incedge: Whether to include edge in ring mask, by default ring mask only include area near edges.
+
+        thr: Threshold (8-bit scale) to limit filtering diff. Smaller thr will result in more pixels being taken from
+            processed clip. Larger thr will result in less pixels being taken from input clip.
+
+               - PDiff: pixel value diff between processed clip and input clip
+               - ODiff: pixel value diff between output clip and input clip
+
+            PDiff, thr and elast is used to calculate ODiff:
+            ODiff = PDiff when [PDiff <= thr]
+
+            ODiff gradually smooths from thr to 0 when [thr <= PDiff <= thr * elast].
+
+            For elast>2.0, ODiff reaches maximum when [PDiff == thr * elast / 2]
+
+            ODiff = 0 when [PDiff >= thr * elast]
+
+        elast: Elasticity of the soft threshold. Larger "elast" will result in more pixels being blended from.
+
+        darkthr: Threshold (8-bit scale) for darker area near edges, for filtering diff that brightening the image by
+            default equals to thr/4. Set it lower if you think de-ringing destroys too much lines, etc. When darkthr is
+            not equal to ``thr``, ``thr`` limits darkening, while ``darkthr`` limits brightening. This is useful to
+            limit the overshoot/undershoot/blurring introduced in deringing. Examples:
+
+               - ``thr=0``,   ``darkthr=0``  : no limiting
+               - ``thr=255``, ``darkthr=255``: no limiting
+               - ``thr=8``,   ``darkthr=2``  : limit darkening with 8, brightening is limited to 2
+               - ``thr=8``,   ``darkthr=0``  : limit darkening with 8, brightening is limited to 0
+               - ``thr=255``, ``darkthr=0``  : limit darkening with 255, brightening is limited to 0
+
+            For the last two examples, output will remain unchanged. (0/255: no limiting)
+
+        contra: Whether to use contra-sharpening to resharp deringed clip: False: no contrasharpening True: auto radius
+            for contrasharpening int 1-3: represents radius for contrasharpening float: represents level for
+            contrasharpening_dehalo
+
+        drrep: Use repair for details retention, recommended values are 13/12/1.
+
+        planes: Planes to be processed.
+
+        show_mask: Show the computed ringing mask.
+
+    Returns:
+        Deringed clip.
     """
     func = FunctionUtil(clip, smooth_dering, planes, (vs.GRAY, vs.YUV))
 
@@ -193,16 +208,18 @@ def vine_dehalo(
     """
     Dehalo via non-local errors filtering.
 
-    :param clip:            Clip to process.
-    :param strength:        Strength of nl_means filtering.
-    :param sharp:           Weight to blend supersampled clip.
-    :param sigma:           Gaussian sigma for filtering cutoff.
-    :param supersampler:    Scaler used for supersampling before dehaloing.
-    :param downscaler:      Scaler used for downscaling after supersampling.
-    :param planes:          Planes to be processed.
-    :param kwargs:          Additional kwargs to be passed to nl_means.
+    Args:
+        clip: Clip to process.
+        strength: Strength of nl_means filtering.
+        sharp: Weight to blend supersampled clip.
+        sigma: Gaussian sigma for filtering cutoff.
+        supersampler: Scaler used for supersampling before dehaloing.
+        downscaler: Scaler used for downscaling after supersampling.
+        planes: Planes to be processed.
+        **kwargs: Additional kwargs to be passed to nl_means.
 
-    :return:                Dehaloed clip.
+    Returns:
+        Dehaloed clip.
     """
     func = FunctionUtil(clip, vine_dehalo, planes)
 

@@ -55,18 +55,20 @@ def adg_mask(
     This function is primarily used to create masks for adaptive grain applications but can be used
     in other scenarios requiring luminance-aware masking.
 
-    :param clip:                The clip to process.
-    :param luma_scaling:        Controls the strength of the adaptive mask.
-                                Can be a single float or a sequence of floats.
-                                Default is 8.0. Negative values invert the mask behavior.
-    :param relative:            Enables relative computation based on pixel-to-average luminance ratios.
-                                Requires the akarin plugin. If True without akarin, an error is raised.
-    :param func:                Function returned for custom error handling.
-                                This should only be set by VS package developers.
-    :raises CustomRuntimeError: If the akarin plugin is not available and either `relative` is True
-                                or the clip is in fp16 format.
-    :return:                    A single mask or a list of masks (if `luma_scaling` is a sequence),
-                                corresponding to the input clip.
+    Args:
+        clip: The clip to process.
+        luma_scaling: Controls the strength of the adaptive mask. Can be a single float or a sequence of floats. Default
+            is 8.0. Negative values invert the mask behavior.
+        relative: Enables relative computation based on pixel-to-average luminance ratios. Requires the akarin plugin.
+            If True without akarin, an error is raised.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Raises:
+        CustomRuntimeError: If the akarin plugin is not available and either `relative` is True or the clip is in fp16
+            format.
+
+    Returns:
+        A single mask or a list of masks (if `luma_scaling` is a sequence), corresponding to the input clip.
     """
     func = func or adg_mask
 
@@ -127,15 +129,17 @@ def retinex(
 
     More information [here](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-Retinex).
 
-    :param clip:        Input video clip.
-    :param sigma:       List of Gaussian sigmas for MSR. Using 3 scales (e.g., [25, 80, 250]) balances speed and quality.
-    :param lower_thr:   Lower threshold percentile for output normalization (0-1, exclusive). Affects shadow contrast.
-    :param upper_thr:   Upper threshold percentile for output normalization (0-1, exclusive). Affects highlight compression.
-    :param fast:        Enables fast mode using downscaled approximation and simplifications. Default is True.
-    :param func:        Function returned for custom error handling.
-                        This should only be set by VS package developers.
-    :return:            Processed luma-enhanced clip.
-    """  # noqa: E501
+    Args:
+        clip: Input video clip.
+        sigma: List of Gaussian sigmas for MSR. Using 3 scales (e.g., [25, 80, 250]) balances speed and quality.
+        lower_thr: Lower threshold percentile for output normalization (0-1, exclusive). Affects shadow contrast.
+        upper_thr: Upper threshold percentile for output normalization (0-1, exclusive). Affects highlight compression.
+        fast: Enables fast mode using downscaled approximation and simplifications. Default is True.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Returns:
+        Processed luma-enhanced clip.
+    """
     func = func or retinex
 
     assert check_variable(clip, func)
