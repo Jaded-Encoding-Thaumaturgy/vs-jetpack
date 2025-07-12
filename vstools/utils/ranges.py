@@ -4,7 +4,7 @@ import contextlib
 from typing import Any, Callable, Generic, Literal, Protocol, Sequence, TypeGuard, TypeVar, Union, overload
 
 import vapoursynth as vs
-from jetpytools import CustomValueError, P, R, flatten, interleave_arr, ranges_product
+from jetpytools import CustomValueError, P, R, fallback, flatten, interleave_arr, ranges_product
 
 from ..functions import check_ref_clip
 from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, VideoNodeT
@@ -100,7 +100,7 @@ class ReplaceRanges(Generic[P, R]):
         clip_b: VideoNodeT,
         ranges: FrameRangeN | FrameRangesN,
         exclusive: bool | None = None,
-        mismatch: Literal[True] | bool = ...,
+        mismatch: bool = ...,
     ) -> VideoNodeT: ...
 
     @overload
@@ -146,11 +146,12 @@ class ReplaceRanges(Generic[P, R]):
         return self._func(*args, **kwargs)
 
 
+@ReplaceRanges
 def replace_ranges(
     clip_a: vs.VideoNode,
     clip_b: vs.VideoNode,
     ranges: FrameRangeN | FrameRangesN | _RangesCallBackT | None,
-    exclusive: bool = False,
+    exclusive: bool | None = None,
     mismatch: bool = False,
     *,
     prop_src: vs.VideoNode | Sequence[vs.VideoNode] | None = None,
@@ -205,7 +206,7 @@ def replace_ranges(
                             * Single None value in list: Last frame in clip_b
                             * None as first value of tuple: 0
                             * None as second value of tuple: Last frame in clip_b
-    :param exclusive:   Use exclusive ranges (Default: False).
+    :param exclusive:   Force the use of exclusive (Python-style) ranges.
     :param mismatch:    Accept format or resolution mismatch between clips.
     :param prop_src:    Source clip(s) to use for frame properties in the callback.
                         This is required if you're using a callback.
@@ -250,6 +251,8 @@ def replace_ranges(
             return vs.core.std.FrameEval(base_clip, lambda n: clip_b if callback(n) else clip_a, None, [clip_a, clip_b])
 
         raise CustomValueError("Callback must have signature ((n, f) | (n) | (f)) -> bool!", replace_ranges, callback)
+
+    exclusive = fallback(exclusive, replace_ranges.exclusive, False)
 
     b_ranges = normalize_ranges(clip_b, ranges, exclusive)
 

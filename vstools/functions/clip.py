@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from jetpytools import StrictRange
+
 from ..exceptions import FramesLengthError
-from ..types import FrameRange, VideoNodeT
-from .normalize import normalize_franges
+from ..types import VideoNodeT
 
 __all__ = [
     "shift_clip",
@@ -41,7 +42,7 @@ def shift_clip(clip: VideoNodeT, offset: int) -> VideoNodeT:
     return clip
 
 
-def shift_clip_multi(clip: VideoNodeT, offsets: FrameRange = (-1, 1)) -> list[VideoNodeT]:
+def shift_clip_multi(clip: VideoNodeT, offsets: StrictRange = (-1, 1)) -> list[VideoNodeT]:
     """
     Shift a clip forwards or backwards multiple times by a varying amount of frames.
 
@@ -57,13 +58,9 @@ def shift_clip_multi(clip: VideoNodeT, offsets: FrameRange = (-1, 1)) -> list[Vi
                 -3         -2         -1          0         +1         +2         +3
 
     :param clip:            Input clip.
-    :param offsets:         List of frame ranges for offsetting.
-                            A clip will be returned for every offset.
+    :param offsets:         Tuple of offsets representing an inclusive range. A clip will be returned for every offset.
                             Default: (-1, 1).
 
     :return:                A list of clips, the amount determined by the amount of offsets.
     """
-
-    ranges = normalize_franges(offsets)
-
-    return [shift_clip(clip, x) for x in ranges]
+    return [shift_clip(clip, x) for x in range(offsets[0], offsets[1] + 1)]

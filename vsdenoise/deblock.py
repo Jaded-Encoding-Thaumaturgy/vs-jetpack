@@ -95,9 +95,7 @@ class dpir(CustomStrEnum):  # noqa: N801
         else:
             base_strength = strength
 
-        exclusive_ranges = kwargs.pop("exclusive", False)
-
-        strength = strength_zones_mask(base_strength, zones, vs.GRAYH, clip.num_frames, exclusive=exclusive_ranges)
+        strength = strength_zones_mask(base_strength, zones, vs.GRAYH, clip.num_frames)
 
         if self.value == "deblock":
             dpired = DPIR.DrunetDeblock(strength, **kwargs).scale(clip)
@@ -113,7 +111,7 @@ class dpir(CustomStrEnum):  # noqa: N801
                 if s is None or (not isinstance(s, vs.VideoNode) and float(s) == 0):
                     no_dpir_zones.extend(normalize_ranges(clip, r))
 
-            dpired = replace_ranges(dpired, clip, no_dpir_zones, exclusive=exclusive_ranges)
+            dpired = replace_ranges(dpired, clip, no_dpir_zones)
 
         return dpired
 

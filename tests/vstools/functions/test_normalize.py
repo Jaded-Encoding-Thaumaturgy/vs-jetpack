@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from vstools import flatten, normalize_ranges, vs, invert_ranges
+from vstools import flatten, invert_ranges, normalize_ranges, vs
 
 
 class TestNormalize(TestCase):
@@ -27,7 +27,7 @@ class TestNormalize(TestCase):
 
     def test_invert_ranges_ranges(self) -> None:
         clip_a = vs.core.std.BlankClip(length=1000)
-        clip_b = vs.core.std.BlankClip(length=500)
+        # clip_b = vs.core.std.BlankClip(length=500)
 
         # exclusive=False
         self.assertEqual(invert_ranges(clip_a, None, (None, None)), [])

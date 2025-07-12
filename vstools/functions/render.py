@@ -17,11 +17,11 @@ from jetpytools import (
     SPath,
     SPathLike,
     T,
-    normalize_list_to_ranges,
 )
 
 from ..exceptions import InvalidColorFamilyError
 from ..types import VideoNodeT
+from .normalize import normalize_list_to_ranges
 from .progress import get_render_progress
 
 __all__ = ["AsyncRenderConf", "clip_async_render", "clip_data_gather", "find_prop", "find_prop_rfs", "prop_compare_cb"]

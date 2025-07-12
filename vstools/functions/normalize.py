@@ -3,22 +3,23 @@ from __future__ import annotations
 from typing import Any, Iterable, Iterator, Literal, Sequence, overload
 
 import vapoursynth as vs
-from jetpytools import FuncExceptT, T, norm_display_name, norm_func_name, normalize_list_to_ranges, to_arr
 from jetpytools import (
-    flatten as jetp_flatten,
+    FuncExceptT,
+    SoftRange,
+    StrictRange,
+    T,
+    fallback,
+    norm_display_name,
+    norm_func_name,
+    to_arr,
 )
-from jetpytools import (
-    invert_ranges as jetp_invert_ranges,
-)
-from jetpytools import (
-    normalize_range as normalize_franges,
-)
-from jetpytools import (
-    normalize_ranges as jetp_normalize_ranges,
-)
-from jetpytools import (
-    normalize_seq as jetp_normalize_seq,
-)
+from jetpytools import flatten as jetp_flatten
+from jetpytools import invert_ranges as jetp_invert_ranges
+from jetpytools import normalize_list_to_ranges as jetp_normalize_list_to_ranges
+from jetpytools import normalize_range as jetp_normalize_range
+from jetpytools import normalize_ranges as jetp_normalize_ranges
+from jetpytools import normalize_ranges_to_list as jetp_normalize_ranges_to_list
+from jetpytools import normalize_seq as jetp_normalize_seq
 
 from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, PlanesT, VideoNodeIterableT, VideoNodeT
 
@@ -34,6 +35,7 @@ __all__ = [
     "normalize_param_planes",
     "normalize_planes",
     "normalize_ranges",
+    "normalize_ranges_to_list",
     "normalize_seq",
     "to_arr",
 ]
@@ -168,8 +170,31 @@ def flatten_vnodes(*clips: VideoNodeIterableT[VideoNodeT], split_planes: bool = 
     return sum(map(split, nodes), list[ConstantFormatVideoNode]())
 
 
+def normalize_franges(ranges: SoftRange, /, exclusive: bool | None = None) -> Sequence[int]:
+    """
+    Normalize ranges represented by a tuple to an iterable of frame numbers.
+
+    :param ranges:      Ranges to normalize.
+    :param exclusive:   Whether to use exclusive (Python-style) ranges.
+                        Defaults to False.
+
+    :return:            List of positive frame ranges.
+    """
+    from ..utils import replace_ranges
+
+    return jetp_normalize_range(ranges, fallback(exclusive, replace_ranges.exclusive, False))
+
+
+def normalize_list_to_ranges(
+    flist: Iterable[int], min_length: int = 0, exclusive: bool | None = None
+) -> list[StrictRange]:
+    from ..utils import replace_ranges
+
+    return jetp_normalize_list_to_ranges(flist, min_length, fallback(exclusive, replace_ranges.exclusive, False))
+
+
 def normalize_ranges(
-    clip: vs.VideoNode, ranges: FrameRangeN | FrameRangesN, exclusive: bool = False
+    clip: vs.VideoNode, ranges: FrameRangeN | FrameRangesN, exclusive: bool | None = None
 ) -> list[tuple[int, int]]:
     """
     Normalize ranges to a list of positive ranges.
@@ -200,12 +225,19 @@ def normalize_ranges(
 
     :return:            List of positive frame ranges.
     """
+    from ..utils import replace_ranges
 
-    return jetp_normalize_ranges(ranges, clip.num_frames, exclusive)
+    return jetp_normalize_ranges(ranges, clip.num_frames, fallback(exclusive, replace_ranges.exclusive, False))
+
+
+def normalize_ranges_to_list(ranges: Iterable[SoftRange], exclusive: bool | None = None) -> list[int]:
+    from ..utils import replace_ranges
+
+    return jetp_normalize_ranges_to_list(ranges, fallback(exclusive, replace_ranges.exclusive, False))
 
 
 def invert_ranges(
-    clipa: vs.VideoNode, clipb: vs.VideoNode | None, ranges: FrameRangeN | FrameRangesN, exclusive: bool = False
+    clipa: vs.VideoNode, clipb: vs.VideoNode | None, ranges: FrameRangeN | FrameRangesN, exclusive: bool | None = None
 ) -> list[tuple[int, int]]:
     """
     Invert FrameRanges.
@@ -227,7 +259,11 @@ def invert_ranges(
 
     :return:                A list of inverted frame ranges.
     """
+    from ..utils import replace_ranges
 
     return jetp_invert_ranges(
-        ranges, clipa.num_frames, None if clipb is None else clipb.num_frames, exclusive
+        ranges,
+        clipa.num_frames,
+        None if clipb is None else clipb.num_frames,
+        fallback(exclusive, replace_ranges.exclusive, False),
     )

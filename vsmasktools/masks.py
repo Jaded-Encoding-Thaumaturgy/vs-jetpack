@@ -54,8 +54,6 @@ def strength_zones_mask(
     zones: Sequence[tuple[FrameRangeN | FrameRangesN, SupportsFloat | vs.VideoNode | None]] | None = None,
     format: int | VideoFormatT | HoldsVideoFormatT = vs.GRAYS,
     length: int | None = None,
-    *,
-    exclusive: bool = False,
 ) -> ConstantFormatVideoNode:
     """
     Creates a mask based on a threshold strength, with optional adjustments using defined zones.
@@ -65,7 +63,6 @@ def strength_zones_mask(
     :param zones:       Optional list of zones to define varying strength regions. Defaults to None.
     :param format:      Pixel format for the mask. Defaults to vs.GRAYS.
     :param length:      Total number of frames for the mask. If None, uses the length of the base clip.
-    :param exclusive:   Whether to use exclusive (Python-style) ranges for the zones. Defaults to False.
     :return:            A mask clip representing the defined strength zones.
     """
 
@@ -98,7 +95,6 @@ def strength_zones_mask(
         rng = normalize_ranges(base_clip, rng)
 
         for s, e in rng:
-            e = e + (not exclusive if s != e else 1) + (1 if e == base_clip.num_frames - 1 and exclusive else 0)
             indices[s:e] = [(i, n) for n in range(s, e)]
 
         if isinstance(strength, vs.VideoNode):
