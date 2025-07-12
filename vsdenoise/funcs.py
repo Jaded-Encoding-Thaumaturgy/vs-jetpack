@@ -4,8 +4,13 @@ This module contains general denoising functions built on top of base denoisers.
 
 from __future__ import annotations
 
-from typing import Any, Literal, overload
+from typing import Any, Literal, Sequence, overload
 
+from jetpytools import MISSING, CustomRuntimeError, FuncExceptT, MissingT
+
+from vsexprtools import norm_expr
+from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
+from vsscale import ArtCNN
 from vstools import (
     ConstantFormatVideoNode,
     KwargsNotNone,
@@ -13,7 +18,13 @@ from vstools import (
     VSFunctionNoArgs,
     check_ref_clip,
     check_variable,
+    check_variable_format,
     fallback,
+    get_color_family,
+    get_subsampling,
+    get_video_format,
+    join,
+    normalize_planes,
     normalize_seq,
     scale_delta,
     vs,
@@ -23,6 +34,7 @@ from .mvtools import MotionVectors, MVTools, MVToolsPreset
 from .prefilters import PrefilterLike
 
 __all__ = [
+    "ccd",
     "mc_clamp",
     "mc_degrain",
 ]
@@ -197,3 +209,91 @@ def mc_clamp(
         undershoot=scale_delta(undershoot, 8, flt),
         overshoot=scale_delta(overshoot, 8, flt),
     )
+
+
+def ccd(
+    clip: vs.VideoNode,
+    thr: float = 4,
+    tr: int = 0,
+    ref_points: Sequence[bool] = (True, True, False),
+    scale: float | None = None,
+    pscale: float = 0.0,
+    chroma_upscaler: ScalerLike = ArtCNN.R8F64_Chroma,
+    chroma_downscaler: KernelLike = Catrom,
+    planes: PlanesT | MissingT = MISSING,
+    func: FuncExceptT | None = None,
+) -> vs.VideoNode:
+    """
+    Camcorder Color Denoise is an original VirtualDub filter made by Sergey Stolyarevsky.
+
+    It's a chroma denoiser that works great on old sources such as VHSes and DVDs.
+
+    It works as a convolution of near pixels determined by ``ref_points``.
+    If the euclidean distance between the RGB values of the center pixel and a given pixel in the convolution
+    matrix is less than the threshold, then this pixel is considered in the average.
+
+    :param clip:                Source clip.
+    :param thr:                 Euclidean distance threshold for including pixel in the matrix.
+                                Higher values results in stronger denoising.
+                                Automatically scaled to all bit depths internally.
+    :param tr:                  Temporal radius of processing. Higher values result in more denoising.
+    :param ref_points:          Specifies whether to use the low, medium, or high reference points (or any combination),
+                                respectively, in the processing matrix.
+                                The default uses the low and medium, but excludes the high points.
+                                See [zsmooth.CCD](https://github.com/adworacz/zsmooth?tab=readme-ov-file#ccd)
+                                for more information.
+    :param scale:               Multiplier for the size of the matrix.
+                                scale=1 corresponds with a 25x25 matrix (just like the original CCD implementation
+                                by Sergey).
+                                scale=2 is a 50x50 matrix, and so on.
+    :param pscale:              Scale factor for the supersample-downscale process change.
+    :param chroma_upscaler:     Chroma upscaler to apply before processing if input clip is YUV.
+                                Default to ArtCNN.R8F64_Chroma.
+    :param chroma_downscaler:   Chroma downscaler to apply after processing if input clip is YUV.
+                                Default to Catrom.
+    :param planes:              Planes to process. Default is chroma planes is clip is YUV, else all planes.
+    :param func:                Function returned for custom error handling.
+                                This should only be set by VS package developers.
+
+    :return:                Denoised clip.
+    """
+    func = func or ccd
+
+    assert check_variable_format(clip, func)
+
+    if planes is MISSING:
+        planes = [1, 2] if clip.format.color_family == vs.YUV else None
+
+    planes = normalize_planes(clip, planes)
+
+    if get_subsampling(clip) not in ["444", None]:
+        full = Scaler.ensure_obj(chroma_upscaler, func).scale(clip, clip.width, clip.height)
+    else:
+        full = clip
+
+    full_format = get_video_format(full)
+
+    if (full_format.subsampling_w, full_format.subsampling_h) != (0, 0):
+        raise CustomRuntimeError("`chroma_upscaler` didn't upscale chroma planes.", func, repr(full_format))
+
+    if get_color_family(clip) != vs.RGB:
+        rgb = vs.core.resize.Point(full, format=full_format.replace(color_family=vs.RGB).id)
+    else:
+        rgb = full
+
+    processed = vs.core.zsmooth.CCD(rgb, thr, tr, ref_points, scale)
+
+    if clip.format.id != processed.format.id:
+        chroma_downscaler = Kernel.ensure_obj(chroma_downscaler, func)
+        out = chroma_downscaler.resample(processed, clip, clip)
+
+        if pscale != 1.0:
+            no_denoise = chroma_downscaler.resample(rgb, clip, clip)
+            out = norm_expr([clip, out, no_denoise], f"x z x - {pscale} * + y z - +", planes=planes, func=func)
+    else:
+        out = processed
+
+    if planes != normalize_planes(clip, None):
+        out = join({None: clip, tuple(planes): out})
+
+    return out
