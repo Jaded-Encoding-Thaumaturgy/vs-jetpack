@@ -575,14 +575,14 @@ wheels = [
 
 [[package]]
 name = "jetpytools"
-version = "1.4.0"
+version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5e/e2/72855e6f4d0b7a9bfa323797a488b50e528152eb75028c844d7ae055f23e/jetpytools-1.4.0.tar.gz", hash = "sha256:64e02e87bd30b175d43837a01cb6008b4249200cbe97d31d0885e23f3497d558", size = 25193, upload-time = "2025-05-05T23:45:03.248Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b1/8b/76ff1e61824a52a1b72e7363272f94f5d0cd340a20d2f6669fe9afd571b0/jetpytools-1.5.0.tar.gz", hash = "sha256:039a3cbc64648c41b91ad4f4a41ccf07f2d30fd3cbe073f7f80c037925f129f5", size = 26519, upload-time = "2025-07-12T22:51:33.349Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e2/59/e9b68db60c7b139b4dfe94c72ef28b64ed8227a08f8e93bfea1f1387d4b4/jetpytools-1.4.0-py3-none-any.whl", hash = "sha256:b035de6cb65129f435dbb2f2a00be971a5bf1210ae7eb40f08717357c77f9e19", size = 31391, upload-time = "2025-05-05T23:45:00.904Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/ee/608fc9341e24420e17db776ebf56dd75113748a989f3c930a34116bfab4e/jetpytools-1.5.0-py3-none-any.whl", hash = "sha256:ee740b665b50c5792388c62945b28c4bd2d9e190a6b5d554ff6a93410e443ad9", size = 32500, upload-time = "2025-07-12T22:51:31.986Z" },
 ]
 
 [[package]]
@@ -1995,7 +1995,7 @@ doc = [
 
 [package.metadata]
 requires-dist = [
-    { name = "jetpytools", specifier = "~=1.4.0" },
+    { name = "jetpytools", specifier = "~=1.5.0" },
     { name = "numpy", specifier = ">=2.0.0" },
     { name = "rich", specifier = ">=12.6.0" },
     { name = "scipy", specifier = ">=1.10.0" },
