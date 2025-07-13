@@ -67,8 +67,6 @@ def dehalo_alpha(
     highsens: IterArr[float] = 50.0,
     # Supersampling minmax params
     ss: IterArr[float] = 1.5,
-    supersampler: ScalerLike = Lanczos(3),
-    supersampler_ref: ScalerLike = Mitchell,
     # Limiting params
     darkstr: IterArr[float] = 0.0,
     brightstr: IterArr[float] = 1.0,
@@ -100,13 +98,6 @@ def dehalo_alpha(
         ss: Supersampling factor, to avoid creation of aliasing.
         planes: Planes to process.
         show_mask: Whether to show the computed halo mask.
-        downscaler: Scaler used to downscale the clip.
-        upscaler: Scaler used to upscale the downscaled clip.
-        supersampler: Scaler used to supersampler the rescaled clip to `ss` factor.
-        supersampler_ref: Reference scaler used to clamp the supersampled clip. Has to be blurrier.
-        pre_ss: Supersampling rate used before anything else.
-        pre_supersampler: Supersampler used for ``pre_ss``.
-        pre_downscaler: Downscaler used for undoing the upscaling done by ``pre_supersampler``.
         func: Function from where this function was called.
 
     Returns:
@@ -171,7 +162,7 @@ def dehalo_alpha(
 
         dehalo = dehalo.std.MaskedMerge(work_clip, mask, planes)
 
-        dehalo = _dehalo_supersample_minmax(work_clip, dehalo, ss_i, supersampler, supersampler_ref, planes, func)
+        dehalo = _dehalo_supersample_minmax(work_clip, dehalo, ss_i, planes=planes, func=func)
 
         work_clip = dehalo = _limit_dehalo(work_clip, dehalo, darkstr_i, brightstr_i, planes)
 
@@ -302,15 +293,6 @@ def fine_dehalo(
     edgemask: EdgeDetect = Robinson3(),
     planes: PlanesT = 0,
     show_mask: int | FineDehalo.Masks | bool = False,
-    mask_radius: RadiusT = 1,
-    downscaler: ScalerLike = Mitchell,
-    upscaler: ScalerLike = BSpline,
-    supersampler: ScalerLike = Lanczos(3),
-    supersampler_ref: ScalerLike = Mitchell,
-    pre_ss: float = 1.0,
-    pre_supersampler: ScalerLike = NNEDI3(noshift=(True, False)),
-    pre_downscaler: ScalerLike = Point,
-    mask_coords: Sequence[int] | None = None,
     func: FuncExceptT | None = None,
 ) -> vs.VideoNode:
     """
@@ -347,14 +329,6 @@ def fine_dehalo(
         edgemask: Internal mask used for detecting the edges, defaults to Robinson3()
         planes: Planes to process.
         show_mask: Whether to show the computed halo mask. 1-7 values to select intermediate masks.
-        mask_radius: Mask expanding radius with ``gradient``.
-        downscaler: Scaler used to downscale the clip.
-        upscaler: Scaler used to upscale the downscaled clip.
-        supersampler: Scaler used to supersampler the rescaled clip to `ss` factor.
-        supersampler_ref: Reference scaler used to clamp the supersampled clip. Has to be blurrier.
-        pre_ss: Supersampling rate used before anything else.
-        pre_supersampler: Supersampler used for ``pre_ss``.
-        pre_downscaler: Downscaler used for undoing the upscaling done by ``pre_supersampler``.
         func: Function from where this function was called.
 
     Returns:
@@ -451,8 +425,6 @@ def fine_dehalo(
         lowsens,
         highsens,
         ss,
-        supersampler,
-        supersampler_ref,
         darkstr,
         brightstr,
         planes,
@@ -647,11 +619,11 @@ def _dehalo_supersample_minmax(
     clip: vs.VideoNode,
     ref: vs.VideoNode,
     ss: list[float],
-    supersampler: ScalerLike,
-    supersampler_ref: ScalerLike,
-    planes: PlanesT,
-    func: FuncExceptT,
-) -> vs.VideoNode:
+    supersampler: ScalerLike = Lanczos(3),
+    supersampler_ref: ScalerLike = Mitchell,
+    planes: PlanesT = None,
+    func: FuncExceptT | None = None,
+) -> ConstantFormatVideoNode:
     supersampler = Scaler.ensure_obj(supersampler, func)
     supersampler_ref = Scaler.ensure_obj(supersampler_ref, func)
 
