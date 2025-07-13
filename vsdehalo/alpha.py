@@ -50,7 +50,6 @@ __all__ = ["dehalo_alpha", "fine_dehalo", "fine_dehalo2"]
 
 
 IterArr: TypeAlias = T | list[T] | tuple[T | list[T], ...]
-FloatIterArr: TypeAlias = IterArr[float]
 
 
 class VSFunctionPlanesArgs(VSFunctionKwArgs[vs.VideoNode, vs.VideoNode], Protocol):
@@ -60,19 +59,19 @@ class VSFunctionPlanesArgs(VSFunctionKwArgs[vs.VideoNode, vs.VideoNode], Protoco
 def dehalo_alpha(
     clip: vs.VideoNode,
     # Blur params
-    rx: FloatIterArr = 2.0,
-    ry: FloatIterArr | None = None,
+    rx: IterArr[float] = 2.0,
+    ry: IterArr[float] | None = None,
     blur_func: IterArr[VSFunctionPlanesArgs | None] = None,
     # Mask params
-    lowsens: FloatIterArr = 50.0,
-    highsens: FloatIterArr = 50.0,
+    lowsens: IterArr[float] = 50.0,
+    highsens: IterArr[float] = 50.0,
     # Supersampling minmax params
-    ss: FloatIterArr = 1.5,
+    ss: IterArr[float] = 1.5,
     supersampler: ScalerLike = Lanczos(3),
     supersampler_ref: ScalerLike = Mitchell,
     # Limiting params
-    darkstr: FloatIterArr = 0.0,
-    brightstr: FloatIterArr = 1.0,
+    darkstr: IterArr[float] = 0.0,
+    brightstr: IterArr[float] = 1.0,
     # Misc params
     planes: PlanesT | MissingT = MISSING,
     show_mask: bool = False,
@@ -286,17 +285,17 @@ class FineDehalo(Generic[P, R]):
 @FineDehalo
 def fine_dehalo(
     clip: vs.VideoNode,
-    rx: FloatIterArr = 2.0,
-    ry: FloatIterArr | None = None,
-    darkstr: FloatIterArr = 0.0,
-    brightstr: FloatIterArr = 1.0,
-    lowsens: FloatIterArr = 50.0,
-    highsens: FloatIterArr = 50.0,
+    rx: IterArr[float] = 2.0,
+    ry: IterArr[float] | None = None,
+    darkstr: IterArr[float] = 0.0,
+    brightstr: IterArr[float] = 1.0,
+    lowsens: IterArr[float] = 50.0,
+    highsens: IterArr[float] = 50.0,
     thmi: int = 80,
     thma: int = 128,
     thlimi: int = 50,
     thlima: int = 100,
-    ss: FloatIterArr = 1.5,
+    ss: IterArr[float] = 1.5,
     contra: int | float | bool = 0.0,
     exclude: bool = True,
     edgeproc: float = 0.0,
