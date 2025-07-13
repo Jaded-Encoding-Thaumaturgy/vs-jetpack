@@ -556,28 +556,48 @@ def fine_dehalo2(
     return join([dehaloed, *chroma], clip.format.color_family)
 
 
-def dehalo_alpha(
+def _dehalo_alpha_blur_func(
     clip: vs.VideoNode,
-    rx: FloatIterArr = 2.0,
-    ry: FloatIterArr | None = None,
-    darkstr: FloatIterArr = 0.0,
-    brightstr: FloatIterArr = 1.0,
-    lowsens: FloatIterArr = 50.0,
-    highsens: FloatIterArr = 50.0,
-    sigma_mask: float | bool = False,
-    ss: FloatIterArr = 1.5,
-    planes: PlanesT = 0,
-    show_mask: bool = False,
-    mask_radius: RadiusT = 1,
+    rx: float,
+    ry: float | None = None,
     downscaler: ScalerLike = Mitchell,
     upscaler: ScalerLike = BSpline,
+    func: FuncExceptT | None = None,
+) -> vs.VideoNode:
+    downscaler = Scaler.ensure_obj(downscaler, func)
+    upscaler = Scaler.ensure_obj(upscaler, func)
+
+    if ry is None:
+        ry = rx
+
+    return upscaler.scale(
+        downscaler.scale(clip, mod4(clip.width / rx), mod4(clip.height / ry)), clip.width, clip.height
+    )
+
+
+def dehalo_alpha(
+    clip: vs.VideoNode,
+    # Blur params
+    rx: FloatIterArr = 2.0,
+    ry: FloatIterArr | None = None,
+    blur_func: IterArr[VSFunctionPlanesArgs | None] = None,
+    # Mask params
+    lowsens: FloatIterArr = 50.0,
+    highsens: FloatIterArr = 50.0,
+    mask_radius: RadiusT = 1,
+    mask_coords: Sequence[int] | None = None,
+    # Supersampling minmax params
+    ss: FloatIterArr = 1.5,
     supersampler: ScalerLike = Lanczos(3),
     supersampler_ref: ScalerLike = Mitchell,
-    pre_ss: float = 1.0,
-    pre_supersampler: ScalerLike = NNEDI3(noshift=(True, False)),
-    pre_downscaler: ScalerLike = Point,
-    mask_coords: Sequence[int] | None = None,
+    # Limiting params
+    darkstr: FloatIterArr = 0.0,
+    brightstr: FloatIterArr = 1.0,
+    # Misc params
+    planes: PlanesT | MissingT = MISSING,
+    show_mask: bool = False,
     func: FuncExceptT | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Reduce halo artifacts by nuking everything around edges (and also the edges actually).
@@ -614,7 +634,6 @@ def dehalo_alpha(
     Returns:
         Dehaloed clip.
     """
-
     func = func or dehalo_alpha
 
     assert check_variable(clip, func)
@@ -622,44 +641,46 @@ def dehalo_alpha(
 
     InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
 
-    planes = normalize_planes(clip, planes)
-
-    downscaler = Scaler.ensure_obj(downscaler, func)
-    upscaler = Scaler.ensure_obj(upscaler, func)
-    pre_supersampler = Scaler.ensure_obj(pre_supersampler, func)
-    pre_downscaler = Scaler.ensure_obj(pre_downscaler, func)
-
     if ry is None:
         ry = rx
 
+    planes = [0] if planes == MISSING else normalize_planes(clip, planes)
+
     work_clip, *chroma = split(clip) if planes == [0] else (clip,)
 
-    if pre_ss > 1.0:
-        work_clip = pre_supersampler.scale(work_clip, mod4(work_clip.width * pre_ss), mod4(work_clip.height * pre_ss))
+    values, blur_funcs = _normalize_iter_arr_t(rx, ry, darkstr, brightstr, lowsens, highsens, ss, blur_func=blur_func)
 
-    def _rescale(clip: vs.VideoNode, rx: float, ry: float) -> vs.VideoNode:
-        return upscaler.scale(
-            downscaler.scale(clip, mod4(clip.width / rx), mod4(clip.height / ry)), clip.width, clip.height
-        )
+    for (rx_i, ry_i, darkstr_i, brightstr_i, lowsens_i, highsens_i, ss_i), blur_func_i in zip(values, blur_funcs):
+        assert work_clip.format
 
-    values = _dehalo_schizo_norm(rx, ry, darkstr, brightstr, lowsens, highsens, ss)
-
-    for rx_i, ry_i, darkstr_i, brightstr_i, lowsens_i, highsens_i, ss_i in values:
-        if not all(x >= 1 for x in (*ss_i, *rx_i, *ry_i)):
+        if any(x < 1 for x in (*ss_i, *rx_i, *ry_i)):
             raise CustomIndexError("ss, rx, and ry must all be bigger than 1.0!", func)
 
         if not all(0 <= x <= 1 for x in (*brightstr_i, *darkstr_i)):
-            raise CustomIndexError("brightstr, darkstr must be between 0.0 and 1.0!", func)
+            raise CustomIndexError("brightstr and darkstr must be between 0.0 and 1.0!", func)
 
         if not all(0 <= x <= 100 for x in (*lowsens_i, *highsens_i)):
             raise CustomIndexError("lowsens and highsens must be between 0 and 100!", func)
 
-        assert work_clip.format
-
-        if len(set(rx_i)) == len(set(ry_i)) == 1 or planes == [0] or work_clip.format.num_planes == 1:
-            dehalo = _rescale(work_clip, rx_i[0], ry_i[0])
+        if any(
+            [
+                len(set(rx_i)) == len(set(ry_i)) == len(set(blur_func_i)) == 1,
+                planes == [0],
+                work_clip.format.num_planes == 1,
+            ]
+        ):
+            dehalo = (
+                blur_func_i[0](work_clip, planes=planes)
+                if blur_func_i[0]
+                else _dehalo_alpha_blur_func(work_clip, rx_i[0], ry_i[0])
+            )
         else:
-            dehalo = join([_rescale(plane, rxp, ryp) for plane, rxp, ryp in zip(split(work_clip), rx_i, ry_i)])
+            dehalo = join(
+                [
+                    blur_func_p(p, planes=0) if blur_func_p else _dehalo_alpha_blur_func(p, rx_p, ry_p)
+                    for p, rx_p, ry_p, blur_func_p in zip(split(work_clip), rx_i, ry_i, blur_func_i)
+                ]
+            )
 
         mask = _dehalo_alpha_mask(
             work_clip, dehalo, lowsens_i, highsens_i, mask_radius, mask_coords, planes
