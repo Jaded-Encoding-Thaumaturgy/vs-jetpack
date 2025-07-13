@@ -242,7 +242,7 @@ def vine_dehalo(
 
     supersampled = supersampler.supersample(func.work_clip)
     supersampled = nl_means(supersampled, strength, tr=0, simr=0, **kwargs)
-    supersampled = downscaler.scale(supersampled, func.work_clip.width, func.work_clip.height)  # type: ignore[assignment]
+    supersampled = downscaler.scale(supersampled, func.work_clip.width, func.work_clip.height)
 
     smoothed = nl_means(func.work_clip, strength, tr=0, simr=0, **kwargs)
     smoothed = core.std.Merge(supersampled, smoothed, weight)

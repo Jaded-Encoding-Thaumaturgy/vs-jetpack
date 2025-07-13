@@ -660,6 +660,8 @@ def dehalo_alpha(
         if not all(0 <= x <= 100 for x in (*lowsens_i, *highsens_i)):
             raise CustomIndexError("lowsens and highsens must be between 0 and 100!", func)
 
+        assert work_clip.format
+
         if len(set(rx_i)) == len(set(ry_i)) == 1 or planes == [0] or work_clip.format.num_planes == 1:
             dehalo = _rescale(work_clip, rx_i[0], ry_i[0])
         else:
