@@ -31,6 +31,7 @@ from vstools import (
     VSFunctionKwArgs,
     check_progressive,
     check_variable,
+    core,
     cround,
     get_peak_value,
     get_y,
@@ -71,7 +72,6 @@ def dehalo_alpha(
     brightstr: IterArr[float] = 1.0,
     # Misc params
     planes: PlanesT | MissingT = MISSING,
-    show_mask: bool = False,
     func: FuncExceptT | None = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
@@ -96,7 +96,6 @@ def dehalo_alpha(
         highsens: Sensitivity setting for define how strong the dehalo has to be to get fully discarded.
         ss: Supersampling factor, to avoid creation of aliasing.
         planes: Planes to process.
-        show_mask: Whether to show the computed halo mask.
         func: Function from where this function was called.
 
     Returns:
@@ -117,6 +116,8 @@ def dehalo_alpha(
     work_clip, *chroma = split(clip) if planes == [0] else (clip,)
 
     values, blur_funcs = _normalize_iter_arr_t(rx, ry, darkstr, brightstr, lowsens, highsens, ss, blur_func=blur_func)
+
+    masks_to_prop = list[ConstantFormatVideoNode]()
 
     for (rx_i, ry_i, darkstr_i, brightstr_i, lowsens_i, highsens_i, ss_i), blur_func_i in zip(values, blur_funcs):
         if any(x < 1 for x in (*ss_i, *rx_i, *ry_i)):
@@ -154,8 +155,8 @@ def dehalo_alpha(
 
         mask = _dehalo_alpha_mask(work_clip, dehalo, lowsens_i, highsens_i, planes, func)
 
-        if show_mask:
-            return mask
+        if kwargs.get("attach_masks"):
+            masks_to_prop.append(core.std.SetFrameProps(mask, lowsens=lowsens_i, highsens=highsens_i))
 
         dehalo = dehalo.std.MaskedMerge(work_clip, mask, planes)
 
@@ -163,10 +164,12 @@ def dehalo_alpha(
 
         work_clip = dehalo = _limit_dehalo(work_clip, dehalo, darkstr_i, brightstr_i, planes, func)
 
-    if not chroma:
-        return dehalo
+    out = dehalo if not chroma else join([dehalo, *chroma])
 
-    return join([dehalo, *chroma], clip.format.color_family)
+    for i, mask in enumerate(masks_to_prop):
+        out = out.std.ClipToProp(mask, f"DehaloAlphaMask_{i}")
+
+    return out
 
 
 class FineDehalo(Generic[P, R]):
@@ -414,7 +417,6 @@ def fine_dehalo(
         darkstr,
         brightstr,
         planes,
-        False,
         func,
     )
 
