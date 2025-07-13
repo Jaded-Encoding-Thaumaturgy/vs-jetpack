@@ -22,12 +22,13 @@ def shift_clip(clip: VideoNodeT, offset: int) -> VideoNodeT:
     Both positive and negative integers are allowed.
     Positive values will shift a clip forward, negative will shift a clip backward.
 
-    :param clip:            Input clip.
-    :param offset:          Number of frames to offset the clip with. Negative values are allowed.
-                            Positive values will shift a clip forward,
-                            negative will shift a clip backward.
+    Args:
+        clip: Input clip.
+        offset: Number of frames to offset the clip with. Negative values are allowed. Positive values will shift a clip
+            forward, negative will shift a clip backward.
 
-    :return:                Clip that has been shifted forwards or backwards by *N* frames.
+    Returns:
+        Clip that has been shifted forwards or backwards by *N* frames.
     """
 
     if offset > clip.num_frames - 1:
@@ -51,16 +52,16 @@ def shift_clip_multi(clip: VideoNodeT, offsets: StrictRange = (-1, 1)) -> list[V
 
     Example:
 
-    .. code-block:: python
-
         >>> shift_clip_multi(clip, (-3, 3))
             [VideoNode, VideoNode, VideoNode, VideoNode, VideoNode, VideoNode, VideoNode]
                 -3         -2         -1          0         +1         +2         +3
 
-    :param clip:            Input clip.
-    :param offsets:         Tuple of offsets representing an inclusive range. A clip will be returned for every offset.
-                            Default: (-1, 1).
+    Args:
+        clip: Input clip.
+        offsets: Tuple of offsets representing an inclusive range.
+            A clip will be returned for every offset. Default: (-1, 1).
 
-    :return:                A list of clips, the amount determined by the amount of offsets.
+    Returns:
+        A list of clips, the amount determined by the amount of offsets.
     """
     return [shift_clip(clip, x) for x in range(offsets[0], offsets[1] + 1)]

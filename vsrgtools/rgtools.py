@@ -37,90 +37,146 @@ class Repair(Generic[P, R]):
         """
 
         NONE = 0
-        """No repair. The input plane is passed through unchanged."""
+        """
+        No repair. The input plane is passed through unchanged.
+        """
 
         MINMAX_SQUARE1 = 1
-        """Clamp using the 1st min/max from a 3x3 square in the reference clip."""
+        """
+        Clamp using the 1st min/max from a 3x3 square in the reference clip.
+        """
 
         MINMAX_SQUARE2 = 2
-        """Clamp using the 2nd min/max from a 3x3 square in the reference clip."""
+        """
+        Clamp using the 2nd min/max from a 3x3 square in the reference clip.
+        """
 
         MINMAX_SQUARE3 = 3
-        """Clamp using the 3rd min/max from a 3x3 square in the reference clip."""
+        """
+        Clamp using the 3rd min/max from a 3x3 square in the reference clip.
+        """
 
         MINMAX_SQUARE4 = 4
-        """Clamp using the 4th min/max from a 3x3 square in the reference clip."""
+        """
+        Clamp using the 4th min/max from a 3x3 square in the reference clip.
+        """
 
         LINE_CLIP_MIN = 5
-        """Line-sensitive clamping with minimal alteration."""
+        """
+        Line-sensitive clamping with minimal alteration.
+        """
 
         LINE_CLIP_LIGHT = 6
-        """Line-sensitive clamping with a light effect."""
+        """
+        Line-sensitive clamping with a light effect.
+        """
 
         LINE_CLIP_MEDIUM = 7
-        """Line-sensitive clamping with a moderate effect."""
+        """
+        Line-sensitive clamping with a moderate effect.
+        """
 
         LINE_CLIP_STRONG = 8
-        """Line-sensitive clamping with a strong effect."""
+        """
+        Line-sensitive clamping with a strong effect.
+        """
 
         LINE_CLIP_CLOSE = 9
-        """Line-sensitive clamp using the closest neighbors."""
+        """
+        Line-sensitive clamp using the closest neighbors.
+        """
 
         MINMAX_SQUARE_REF_CLOSE = 10
-        """Replace pixel with the closest value in the 3x3 reference square."""
+        """
+        Replace pixel with the closest value in the 3x3 reference square.
+        """
 
         MINMAX_SQUARE_REF1 = 11
-        """Same as mode 1, but clips with min/max of 1st rank and the center pixel of the reference clip."""
+        """
+        Same as mode 1, but clips with min/max of 1st rank and the center pixel of the reference clip.
+        """
 
         MINMAX_SQUARE_REF2 = 12
-        """Same as mode 2, but clips with min/max of 2nd rank and the center pixel of the reference clip."""
+        """
+        Same as mode 2, but clips with min/max of 2nd rank and the center pixel of the reference clip.
+        """
 
         MINMAX_SQUARE_REF3 = 13
-        """Same as mode 3, but clips with min/max of 3rd rank and the center pixel of the reference clip."""
+        """
+        Same as mode 3, but clips with min/max of 3rd rank and the center pixel of the reference clip.
+        """
 
         MINMAX_SQUARE_REF4 = 14
-        """Same as mode 4, but clips with min/max of 4th rank and the center pixel of the reference clip."""
+        """
+        Same as mode 4, but clips with min/max of 4th rank and the center pixel of the reference clip.
+        """
 
         CLIP_REF_RG5 = 15
-        """Use RemoveGrain mode 5's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 5's result to constrain the pixel.
+        """
 
         CLIP_REF_RG6 = 16
-        """Use RemoveGrain mode 6's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 6's result to constrain the pixel.
+        """
 
         CLIP_REF_RG17 = 17
-        """Use RemoveGrain mode 17's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 17's result to constrain the pixel.
+        """
 
         CLIP_REF_RG18 = 18
-        """Use RemoveGrain mode 18's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 18's result to constrain the pixel.
+        """
 
         CLIP_REF_RG19 = 19
-        """Use RemoveGrain mode 19's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 19's result to constrain the pixel.
+        """
 
         CLIP_REF_RG20 = 20
-        """Use RemoveGrain mode 20's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 20's result to constrain the pixel.
+        """
 
         CLIP_REF_RG21 = 21
-        """Use RemoveGrain mode 21's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 21's result to constrain the pixel.
+        """
 
         CLIP_REF_RG22 = 22
-        """Use RemoveGrain mode 22's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 22's result to constrain the pixel.
+        """
 
         CLIP_REF_RG23 = 23
-        """Use RemoveGrain mode 23's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 23's result to constrain the pixel.
+        """
 
         CLIP_REF_RG24 = 24
-        """Use RemoveGrain mode 24's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 24's result to constrain the pixel.
+        """
 
         # Mode 25 is not available
 
         CLIP_REF_RG26 = 26
-        """Use RemoveGrain mode 26's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 26's result to constrain the pixel.
+        """
 
         CLIP_REF_RG27 = 27
-        """Use RemoveGrain mode 27's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 27's result to constrain the pixel.
+        """
 
         CLIP_REF_RG28 = 28
-        """Use RemoveGrain mode 28's result to constrain the pixel."""
+        """
+        Use RemoveGrain mode 28's result to constrain the pixel.
+        """
 
         def __call__(
             self, clip: vs.VideoNode, repairclip: vs.VideoNode, planes: PlanesT = None
@@ -128,10 +184,13 @@ class Repair(Generic[P, R]):
             """
             Apply the selected repair mode to a `clip` using a `repairclip`.
 
-            :param clip:            Input clip to process (typically filtered).
-            :param repairclip:      Reference clip for bounds (often the original or a less-processed version).
-            :param planes:          Planes to process. Defaults to all.
-            :return:                Clip with repaired pixels, bounded by the reference.
+            Args:
+                clip: Input clip to process (typically filtered).
+                repairclip: Reference clip for bounds (often the original or a less-processed version).
+                planes: Planes to process. Defaults to all.
+
+            Returns:
+                Clip with repaired pixels, bounded by the reference.
             """
             return repair(clip, repairclip, self, planes)
 
@@ -151,7 +210,8 @@ def repair(
     the corrections within reasonable bounds derived from the reference (`repairclip`). Often used in detail
     restoration workflows.
 
-    - Modes 1-24 directly map to [zsmooth.Repair](https://github.com/adworacz/zsmooth?tab=readme-ov-file#repair) plugin modes.
+    - Modes 1-24 directly map to [zsmooth.Repair](https://github.com/adworacz/zsmooth?tab=readme-ov-file#repair)
+      plugin modes.
     - Modes 26+ fall back to expression-based implementations.
 
     Example:
@@ -164,13 +224,16 @@ def repair(
         repaired = repair.Mode.MINMAX_SQUARE_REF3(clip)
         ```
 
-    :param clip:          Input clip to process (typically filtered).
-    :param repairclip:    Reference clip for bounds (often the original or a less-processed version).
-    :param mode:          Repair mode(s) used to constrain pixels. Can be a single mode or a list per plane.
-                          See [Repair.Mode][vsrgtools.rgtools.Repair.Mode] for details.
-    :param planes:        Planes to process. Default to all.
-    :return:              Clip with repaired pixels, bounded by the reference.
-    """  # noqa: E501
+    Args:
+        clip: Input clip to process (typically filtered).
+        repairclip: Reference clip for bounds (often the original or a less-processed version).
+        mode: Repair mode(s) used to constrain pixels. Can be a single mode or a list per plane. See
+            [Repair.Mode][vsrgtools.rgtools.Repair.Mode] for details.
+        planes: Planes to process. Default to all.
+
+    Returns:
+        Clip with repaired pixels, bounded by the reference.
+    """
     assert check_variable(clip, repair)
     assert check_variable(repairclip, repair)
 
@@ -210,102 +273,165 @@ class RemoveGrain(Generic[P, R]):
         """
 
         NONE = 0
-        """The input plane is simply passed through."""
+        """
+        The input plane is simply passed through.
+        """
 
         MINMAX_AROUND1 = 1
-        """Clamp pixel to the min/max of its 3x3 neighborhood (excluding center)."""
+        """
+        Clamp pixel to the min/max of its 3x3 neighborhood (excluding center).
+        """
 
         MINMAX_AROUND2 = 2
-        """Clamp to the second lowest/highest in the neighborhood."""
+        """
+        Clamp to the second lowest/highest in the neighborhood.
+        """
 
         MINMAX_AROUND3 = 3
-        """Clamp to the third lowest/highest in the neighborhood."""
+        """
+        Clamp to the third lowest/highest in the neighborhood.
+        """
 
         MINMAX_MEDIAN = 4
-        """Deprecated. Similar to mode 1, but clamps to fourth-lowest/highest."""
+        """
+        Deprecated. Similar to mode 1, but clamps to fourth-lowest/highest.
+        """
 
         EDGE_CLIP_STRONG = 5
-        """Line-sensitive clipping that minimizes change to the center pixel."""
+        """
+        Line-sensitive clipping that minimizes change to the center pixel.
+        """
 
         EDGE_CLIP_MODERATE = 6
-        """Line-sensitive clipping with moderate sensitivity (change prioritized 2:1)."""
+        """
+        Line-sensitive clipping with moderate sensitivity (change prioritized 2:1).
+        """
 
         EDGE_CLIP_MEDIUM = 7
-        """Balanced version of mode 6 (change vs. range ratio 1:1)."""
+        """
+        Balanced version of mode 6 (change vs. range ratio 1:1).
+        """
 
         EDGE_CLIP_LIGHT = 8
-        """Light edge clipping (prioritizes the range between opposites)."""
+        """
+        Light edge clipping (prioritizes the range between opposites).
+        """
 
         LINE_CLIP_CLOSE = 9
-        """Clip using the line with closest neighbors. Useful for fixing 1-pixel gaps."""
+        """
+        Clip using the line with closest neighbors. Useful for fixing 1-pixel gaps.
+        """
 
         MIN_SHARP = 10
-        """Replaces pixel with its closest neighbor. A poor but sharp denoiser."""
+        """
+        Replaces pixel with its closest neighbor. A poor but sharp denoiser.
+        """
 
         BINOMIAL_BLUR = 11
-        """Deprecated. Use `BlurMatrix.BINOMIAL`. Applies weighted 3x3 blur."""
+        """
+        Deprecated. Use `BlurMatrix.BINOMIAL`. Applies weighted 3x3 blur.
+        """
 
         BOB_TOP_CLOSE = 13
-        """Interpolate top field using the closest neighboring pixels."""
+        """
+        Interpolate top field using the closest neighboring pixels.
+        """
 
         BOB_BOTTOM_CLOSE = 14
-        """Interpolate bottom field using the closest neighboring pixels."""
+        """
+        Interpolate bottom field using the closest neighboring pixels.
+        """
 
         BOB_TOP_INTER = 15
-        """Top field interpolation using a more complex formula than mode 13."""
+        """
+        Top field interpolation using a more complex formula than mode 13.
+        """
 
         BOB_BOTTOM_INTER = 16
-        """Bottom field interpolation using a more complex formula than mode 14."""
+        """
+        Bottom field interpolation using a more complex formula than mode 14.
+        """
 
         MINMAX_MEDIAN_OPP = 17
-        """Clip using min/max of opposing neighbor pairs."""
+        """
+        Clip using min/max of opposing neighbor pairs.
+        """
 
         LINE_CLIP_OPP = 18
-        """Line-sensitive clipping using opposite neighbors with minimal deviation."""
+        """
+        Line-sensitive clipping using opposite neighbors with minimal deviation.
+        """
 
         MEAN_NO_CENTER = 19
-        """Deprecated. Use `BlurMatrix.MEAN_NO_CENTER`. Mean of neighborhood (excluding center)."""
+        """
+        Deprecated. Use `BlurMatrix.MEAN_NO_CENTER`. Mean of neighborhood (excluding center).
+        """
 
         MEAN = 20
-        """Deprecated. Use `BlurMatrix.MEAN`. Arithmetic mean of 3x3 neighborhood."""
+        """
+        Deprecated. Use `BlurMatrix.MEAN`. Arithmetic mean of 3x3 neighborhood.
+        """
 
         BOX_BLUR_NO_CENTER = MEAN_NO_CENTER
-        """Alias for MEAN_NO_CENTER."""
+        """
+        Alias for MEAN_NO_CENTER.
+        """
 
         BOX_BLUR = MEAN
-        """Alias for MEAN."""
+        """
+        Alias for MEAN.
+        """
 
         OPP_CLIP_AVG = 21
-        """Clip to min/max of averages of 4 opposing pixel pairs."""
+        """
+        Clip to min/max of averages of 4 opposing pixel pairs.
+        """
 
         OPP_CLIP_AVG_FAST = 22
-        """Faster variant of mode 21 with simpler rounding."""
+        """
+        Faster variant of mode 21 with simpler rounding.
+        """
 
         EDGE_DEHALO = 23
-        """Very light dehaloing. Rarely useful."""
+        """
+        Very light dehaloing. Rarely useful.
+        """
 
         EDGE_DEHALO2 = 24
-        """More conservative version of mode 23."""
+        """
+        More conservative version of mode 23.
+        """
 
         MIN_SHARP2 = 25
-        """Minimal sharpening also known as "non destructive sharpen"."""
+        """
+        Minimal sharpening also known as "non destructive sharpen".
+        """
 
         SMART_RGC = 26
-        """Like mode 17, but preserves corners. Does not preserve thin lines."""
+        """
+        Like mode 17, but preserves corners. Does not preserve thin lines.
+        """
 
         SMART_RGCL = 27
-        """Uses 12 pixel pairs instead of 8. Similar to 26, but slightly stronger."""
+        """
+        Uses 12 pixel pairs instead of 8. Similar to 26, but slightly stronger.
+        """
 
         SMART_RGCL2 = 28
-        """Variant of 27 with different pairs. Usually visually similar."""
+        """
+        Variant of 27 with different pairs. Usually visually similar.
+        """
 
         def __call__(self, clip: vs.VideoNode, planes: PlanesT = None) -> ConstantFormatVideoNode:
             """
             Apply the selected remove grain mode to a `clip`.
 
-            :param clip:            Clip to process.
-            :param planes:          Planes to process. Defaults to all.
-            :return:                Processed (denoised) clip.
+            Args:
+                clip: Clip to process.
+                planes: Planes to process. Defaults to all.
+
+            Returns:
+                Processed (denoised) clip.
             """
             return remove_grain(clip, self, planes)
 
@@ -333,11 +459,14 @@ def remove_grain(
         denoised = remove_grain.Mode.EDGE_CLIP_STRONG(clip)
         ```
 
-    :param clip:    Clip to process.
-    :param mode:    Mode(s) to use. Can be a single mode or per-plane list.
-                    See [RemoveGrain.Mode][vsrgtools.rgtools.RemoveGrain.Mode] for details.
-    :param planes:  Planes to process. Default to all.
-    :return:        Processed (denoised) clip.
+    Args:
+        clip: Clip to process.
+        mode: Mode(s) to use. Can be a single mode or per-plane list. See
+            [RemoveGrain.Mode][vsrgtools.rgtools.RemoveGrain.Mode] for details.
+        planes: Planes to process. Default to all.
+
+    Returns:
+        Processed (denoised) clip.
     """
     assert check_variable(clip, remove_grain)
 
@@ -373,20 +502,29 @@ class Clense(Generic[P, R]):
         Clense modes refer to different ways of applying temporal median filtering over multiple frames.
 
         Each mode maps to a function provided
-        by the [zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#clense--forwardclense--backwardclense) plugin.
-        """  # noqa: E501
+        by the [zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#clense--forwardclense--backwardclense)
+        plugin.
+        """
 
         NONE = ""
-        """No clense filtering. Returns the original clip unchanged."""
+        """
+        No clense filtering. Returns the original clip unchanged.
+        """
 
         BACKWARD = "BackwardClense"
-        """Use the current and previous two frames for temporal median filtering."""
+        """
+        Use the current and previous two frames for temporal median filtering.
+        """
 
         FORWARD = "ForwardClense"
-        """Use the current and next two frames for temporal median filtering."""
+        """
+        Use the current and next two frames for temporal median filtering.
+        """
 
         BOTH = "Clense"
-        """Standard clense: median of previous, current, and next frame."""
+        """
+        Standard clense: median of previous, current, and next frame.
+        """
 
         def __call__(
             self,
@@ -397,14 +535,18 @@ class Clense(Generic[P, R]):
         ) -> ConstantFormatVideoNode:
             """
             Apply the selected clense mode to a clip using
-            the [zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#clense--forwardclense--backwardclense) plugin.
+            the [zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#clense--forwardclense--backwardclense)
+            plugin.
 
-            :param clip:             Source clip to process.
-            :param previous_clip:    Optional alternate clip to source previous frames. Defaults to `clip`.
-            :param next_clip:        Optional alternate clip to source next frames. Defaults to `clip`.
-            :param planes:           Planes to process. Defaults to all.
-            :return:                 Clensed clip with temporal median filtering.
-            """  # noqa: E501
+            Args:
+                clip: Source clip to process.
+                previous_clip: Optional alternate clip to source previous frames. Defaults to `clip`.
+                next_clip: Optional alternate clip to source next frames. Defaults to `clip`.
+                planes: Planes to process. Defaults to all.
+
+            Returns:
+                Clensed clip with temporal median filtering.
+            """
             return clense(clip, previous_clip, next_clip, self, planes)
 
 
@@ -429,12 +571,15 @@ def clense(
         clensed = clense.Mode.BOTH(clip, ...)
         ```
 
-    :param clip:             Source clip to process.
-    :param previous_clip:    Optional alternate clip to source previous frames. Defaults to `clip`.
-    :param next_clip:        Optional alternate clip to source next frames. Defaults to `clip`.
-    :param mode:             Mode of filtering. One of [Mode][vsrgtools.rgtools.Clense.Mode] or its string values.
-    :param planes:           Planes to process. Defaults to all.
-    :return:                 Clensed clip with temporal median filtering.
+    Args:
+        clip: Source clip to process.
+        previous_clip: Optional alternate clip to source previous frames. Defaults to `clip`.
+        next_clip: Optional alternate clip to source next frames. Defaults to `clip`.
+        mode: Mode of filtering. One of [Mode][vsrgtools.rgtools.Clense.Mode] or its string values.
+        planes: Planes to process. Defaults to all.
+
+    Returns:
+        Clensed clip with temporal median filtering.
     """
     assert check_variable(clip, clense)
 
@@ -467,21 +612,30 @@ class VerticalCleaner(Generic[P, R]):
         """
 
         NONE = 0
-        """The input plane is simply passed through."""
+        """
+        The input plane is simply passed through.
+        """
 
         MEDIAN = 1
-        """Applies a strict vertical median filter."""
+        """
+        Applies a strict vertical median filter.
+        """
 
         PRESERVING = 2
-        """Applies a detail-preserving vertical median filter (less aggressive)."""
+        """
+        Applies a detail-preserving vertical median filter (less aggressive).
+        """
 
         def __call__(self, clip: vs.VideoNode, planes: PlanesT = None) -> ConstantFormatVideoNode:
             """
             Applies the vertical cleaning mode to the given clip.
 
-            :param clip:        Source clip to process.
-            :param planes:      Planes to process. Defaults to all.
-            :return:            Filtered clip.
+            Args:
+                clip: Source clip to process.
+                planes: Planes to process. Defaults to all.
+
+            Returns:
+                Filtered clip.
             """
             return vertical_cleaner(clip, self, planes)
 
@@ -506,12 +660,18 @@ def vertical_cleaner(
         cleaned = vertical_cleaner.Mode.PRESERVING(clip)
         ```
 
-    :param clip:    Source clip to process.
-    :param mode:    Mode of vertical cleaning to apply. Can be:
-                      - A single enum/int (applied to all planes),
-                      - A sequence of enums/ints (one per plane).
-    :param planes:  Planes to process. Defaults to all.
-    :return:        Filtered clip.
+    Args:
+        clip: Source clip to process.
+        mode: Mode of vertical cleaning to apply.
+            Can be:
+
+               - A single enum/int (applied to all planes),
+               - A sequence of enums/ints (one per plane).
+
+        planes: Planes to process. Defaults to all.
+
+    Returns:
+        Filtered clip.
     """
     assert check_variable(clip, vertical_cleaner)
 

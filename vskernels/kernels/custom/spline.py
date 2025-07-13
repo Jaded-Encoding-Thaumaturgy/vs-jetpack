@@ -14,7 +14,9 @@ __all__ = ["Spline"]
 
 
 class Spline(CustomComplexTapsKernel):
-    """Spline resizer with an arbitrary number of taps."""
+    """
+    Spline resizer with an arbitrary number of taps.
+    """
 
     def __init__(self, taps: float = 2, **kwargs: Any) -> None:
         super().__init__(taps, **kwargs)

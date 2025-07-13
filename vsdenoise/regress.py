@@ -78,21 +78,24 @@ class Regression:
         """
 
         intercept: vs.VideoNode
-        """Component of :py:attr:`slope`, the intercept term."""
+        """Component of slope, the intercept term."""
 
         correlation: vs.VideoNode
         """The relationship between the error term and the regressors."""
 
     class BlurConf:
-        """Class for the blur (or averaging filter) used for regression."""
+        """
+        Class for the blur (or averaging filter) used for regression.
+        """
 
         def __init__(
             self, func: Callable[Concatenate[vs.VideoNode, P], vs.VideoNode], /, *args: P.args, **kwargs: P.kwargs
         ) -> None:
             """
-            :param func:        Function used for blurring.
-            :param args:        Positional arguments passed to the function.
-            :param kwargs:      Keyword arguments passed to the function.
+            Args:
+                func: Function used for blurring.
+                *args: Positional arguments passed to the function.
+                **kwargs: Keyword arguments passed to the function.
             """
 
             self.func = func
@@ -107,13 +110,15 @@ class Regression:
             **kwargs: P1.kwargs,
         ) -> Regression.BlurConf:
             """
-            Get a :py:attr:`BlurConf` from generic parameters.
+            Get a BlurConf from generic parameters.
 
-            :param func:        Function used for blurring or already existing config.
-            :param args:        Positional arguments passed to the function.
-            :param kwargs:      Keyword arguments passed to the function.
+            Args:
+                func: Function used for blurring or already existing config.
+                *args: Positional arguments passed to the function.
+                **kwargs: Keyword arguments passed to the function.
 
-            :return:            :py:attr:`BlurConf` object.
+            Returns:
+                BlurConf object.
             """
 
             if isinstance(func, Regression.BlurConf):
@@ -123,12 +128,14 @@ class Regression:
 
         def extend(self, *args: Any, **kwargs: Any) -> Regression.BlurConf:
             """
-            Extend the current config arguments and get a new :py:attr:`BlurConf` object.
+            Extend the current config arguments and get a new BlurConf object.
 
-            :param args:        Positional arguments passed to the function.
-            :param kwargs:      Keyword arguments passed to the function.
+            Args:
+                *args: Positional arguments passed to the function.
+                **kwargs: Keyword arguments passed to the function.
 
-            :return:            :py:attr:`BlurConf` object.
+            Returns:
+                BlurConf object.
             """
             if args or kwargs:
                 return Regression.BlurConf(  # pyright: ignore
@@ -140,12 +147,14 @@ class Regression:
             """
             Blur a clip with the current config.
 
-            :param clip:            Clip to be blurred.
-            :param chroma_only:     Try only processing chroma.
-            :param args:            Positional arguments passed to the function.
-            :param kwargs:          Keyword arguments passed to the function.
+            Args:
+                clip: Clip to be blurred.
+                chroma_only: Try only processing chroma.
+                *args: Positional arguments passed to the function.
+                **kwargs: Keyword arguments passed to the function.
 
-            :return:                Blurred clip.
+            Returns:
+                Blurred clip.
             """
 
             if not args:
@@ -193,12 +202,14 @@ class Regression:
             """
             Blur a clip with the current config.
 
-            :param clip:            Clip to be blurred.
-            :param chroma_only:     Try only processing chroma.
-            :param args:            Positional arguments passed to the function.
-            :param kwargs:          Keyword arguments passed to the function.
+            Args:
+                clip: Clip to be blurred.
+                chroma_only: Try only processing chroma.
+                *args: Positional arguments passed to the function.
+                **kwargs: Keyword arguments passed to the function.
 
-            :return:                Blurred clip.
+            Returns:
+                Blurred clip.
             """
 
             return self(clip, chroma_only, *args, **kwargs)
@@ -209,9 +220,11 @@ class Regression:
             """
             Get the base elements for a regression.
 
-            :param clip:    Clip or individual planes to be processed.
+            Args:
+                clip: Clip or individual planes to be processed.
 
-            :return:        Tuple containing the blurred clips, variations, and relation of the two.
+            Returns:
+                Tuple containing the blurred clips, variations, and relation of the two.
             """
 
             planes = clip if isinstance(clip, Sequence) else split(clip)
@@ -244,13 +257,15 @@ class Regression:
         **kwargs: P1.kwargs,
     ) -> Regression:
         """
-        Get a :py:attr:`Regression` from generic parameters.
+        Get a Regression from generic parameters.
 
-        :param func:        Function used for blurring or a preconfigured :py:attr:`Regression.BlurConf`.
-        :param args:        Positional arguments passed to the blurring function.
-        :param kwargs:      Keyword arguments passed to the blurring function.
+        Args:
+            func: Function used for blurring or a preconfigured BlurConf.
+            *args: Positional arguments passed to the blurring function.
+            **kwargs: Keyword arguments passed to the blurring function.
 
-        :return:            :py:attr:`Regression` object.
+        Returns:
+            Regression object.
         """
 
         return Regression(Regression.BlurConf.from_param(func, *args, **kwargs))
@@ -266,11 +281,13 @@ class Regression:
         """
         Perform a simple linear regression.
 
-        :param clip:        Clip or singular planes to be processed.
-        :param args:        Positional arguments passed to the blurring function.
-        :param kwargs:      Keyword arguments passed to the blurring function.
+        Args:
+            clip: Clip or singular planes to be processed.
+            *args: Positional arguments passed to the blurring function.
+            **kwargs: Keyword arguments passed to the blurring function.
 
-        :return:            List of a :py:attr:`Regression.Linear` object for each plane.
+        Returns:
+            List of a Regression.Linear object for each plane.
         """
 
         blur_conf = self.blur_conf.extend(*args, **kwargs)
@@ -319,12 +336,14 @@ class Regression:
         """
         Compute correlation of slopes of a simple regression.
 
-        :param clip:        Clip or individual planes to be processed.
-        :param avg:         Average (blur) the final result.
-        :param args:        Positional arguments passed to the blurring function.
-        :param kwargs:      Keyword arguments passed to the blurring function.
+        Args:
+            clip: Clip or individual planes to be processed.
+            avg: Average (blur) the final result.
+            *args: Positional arguments passed to the blurring function.
+            **kwargs: Keyword arguments passed to the blurring function.
 
-        :return:            List of clips representing the correlation of slopes.
+        Returns:
+            List of clips representing the correlation of slopes.
         """
 
         blur_conf = self.blur_conf.extend(*args, **kwargs)
@@ -362,7 +381,9 @@ class Regression:
 
 
 class ReconOutput(CustomIntEnum):
-    """Enum to decide what combination of luma-chroma to output in ``ChromaReconstruct``"""
+    """
+    Enum to decide what combination of luma-chroma to output in ``ChromaReconstruct``
+    """
 
     NATIVE = 0
     """
@@ -393,7 +414,9 @@ class ReconOutput(CustomIntEnum):
 
 @dataclass
 class ReconDiffModeConf:
-    """Internal structure."""
+    """
+    Internal structure.
+    """
 
     mode: ReconDiffMode
     diff_sigma: float
@@ -401,17 +424,27 @@ class ReconDiffModeConf:
 
 
 class ReconDiffMode(CustomStrEnum):
+    """Enum for configuring a reconstruction difference mode."""
+
     SIMPLE = "x y +"
-    """Simple demangled chroma + regressed diff merge. It is the most simple merge available."""
+    """
+    Simple demangled chroma + regressed diff merge. It is the most simple merge available.
+    """
 
     BOOSTX = "x z * y +"
-    """Demangled chroma * luma diff + regressed diff merge. Pay attention to overshoot."""
+    """
+    Demangled chroma * luma diff + regressed diff merge. Pay attention to overshoot.
+    """
 
     BOOSTY = "x y z * +"
-    """Demangled chroma + regressed diff * luma diff merge. Pay attention to overshoot."""
+    """
+    Demangled chroma + regressed diff * luma diff merge. Pay attention to overshoot.
+    """
 
     MEAN = f"{SIMPLE} x z * y z / + + 2 /"
-    """Simple mean of ``SIMPLE``, ``BOOSTX``, and ``BOOSTY``. Will give a dampened output."""
+    """
+    Simple mean of ``SIMPLE``, ``BOOSTX``, and ``BOOSTY``. Will give a dampened output.
+    """
 
     MEDIAN = f"{MEAN} AX! {BOOSTX} BX! {BOOSTY} CX! a BX@ - abs BD! a AX@ - abs BD@ < AX@ BD@ a CX@ - abs > BX@ CX@ ? ?"
     """
@@ -423,14 +456,17 @@ class ReconDiffMode(CustomStrEnum):
         """
         Configure the current mode. **It will not have any effect with ``SIMPLE``.
 
-        :param diff_sigma:  Gaussian blur sigma for the luma-mangled luma difference.
-        :param inter_scale: Scaling for using the luma-chroma difference intercept.
-                            - = 0.0   => Disable usage of intercept.
-                            - < 20.0  => Will amplify and overshoot/undershoot all bright/dark spots. Not reccomended.
-                            - < 50.0  => Will dampen haloing and normalize chroma to luma, removing eventual bleeding.
-                            - > 100.0 => Placebo effect.
+        Args:
+            diff_sigma: Gaussian blur sigma for the luma-mangled luma difference.
+            inter_scale: Scaling for using the luma-chroma difference intercept.
 
-        :return:            Configured mode.
+                   - ``= 0.0``   => Disable usage of intercept.
+                   - ``< 20.0``  => Will amplify and overshoot/undershoot all bright/dark spots. Not recommended.
+                   - ``< 50.0``  => Will dampen haloing and normalize chroma to luma, removing eventual bleeding.
+                   - ``> 100.0`` => Placebo effect.
+
+        Returns:
+            Configured mode.
         """
         return ReconDiffModeConf(self, diff_sigma, inter_scale)
 
@@ -562,17 +598,19 @@ class ChromaReconstruct(ABC):
         """
         Run the actual reconstructing implemented in this class.
 
-        :param clip:            Input clip. Must be YUV.
-        :param sigma:           Sigma for gaussian blur of weights, higher value is useful to dampen wrong directions.
-        :param radius:          Radius of the reconstruct window. Higher will be more stable but also less sharp
-                                and will adhere less to luma.
-        :param diff_mode:       The mode to apply the difference to apply, calculated with linear regression, to the
-                                mangled chroma. Check ``ReconDiffMode`` to know what each mode means.
-        :param out_mode:        The luma/chroma output combination.
-        :param include_edges:   Forcecully include all luma edges in the weighting.
-        :param lin_cutoff:      Cutoff, or weight, in the linear regression.
+        Args:
+            clip: Input clip. Must be YUV.
+            sigma: Sigma for gaussian blur of weights, higher value is useful to dampen wrong directions.
+            radius: Radius of the reconstruct window. Higher will be more stable but also less sharp and will adhere
+                less to luma.
+            diff_mode: The mode to apply the difference to apply, calculated with linear regression, to the mangled
+                chroma. Check ``ReconDiffMode`` to know what each mode means.
+            out_mode: The luma/chroma output combination.
+            include_edges: Forcecully include all luma edges in the weighting.
+            lin_cutoff: Cutoff, or weight, in the linear regression.
 
-        :return:                Clip with demangled chroma.
+        Returns:
+            Clip with demangled chroma.
         """
 
         y, y_base, y_m, y_dm, chroma_base, chroma_dm = self._get_bases(clip, include_edges, self.reconstruct)

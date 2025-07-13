@@ -209,10 +209,10 @@ class BaseScalerMeta(ABCMeta):
         """
         Makes a new BaseScalerMeta type class.
 
-        :param abstract:            If True, the class is treated as fully abstract
-                                    and added to the ``abstract_kernels`` list.
-        :param partial_abstract:    If True, the class is considered partially abstract
-                                    and added to the ``partial_abstract_kernels`` list.
+        Args:
+            abstract: If True, the class is treated as fully abstract and added to the ``abstract_kernels`` list.
+            partial_abstract: If True, the class is considered partially abstract and added to the
+                ``partial_abstract_kernels`` list.
         """
 
         obj = super().__new__(mcls, name, bases, namespace, **kwargs)
@@ -282,14 +282,18 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
     """
 
     class cached_property(functools.cached_property[T_co]):  # noqa: N801
-        """Read only version of functools.cached_property."""
+        """
+        Read only version of functools.cached_property.
+        """
 
         if TYPE_CHECKING:
 
             def __init__(self, func: Callable[Concatenate[_BaseScalerT, P], T_co]) -> None: ...
 
         def __set__(self, instance: None, value: Any) -> NoReturn:  # type: ignore[override]
-            """Raise an error when attempting to set a cached property."""
+            """
+            Raise an error when attempting to set a cached property.
+            """
             raise AttributeError("Can't set attribute")
 
     if not TYPE_CHECKING:
@@ -312,7 +316,8 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         self.kwargs = kwargs
 
@@ -320,7 +325,8 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         """
         Return the human-readable string representation of the scaler.
 
-        :return: Pretty-printed string with class name and arguments.
+        Returns:
+            Pretty-printed string with class name and arguments.
         """
         return self.pretty_string
 
@@ -333,10 +339,13 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         """
         Normalize width and height to fall back to the clip's dimensions if not provided.
 
-        :param clip:    Input video clip.
-        :param width:   Optional width value.
-        :param height:  Optional height value.
-        :return:        Tuple of resolved (width, height).
+        Args:
+            clip: Input video clip.
+            width: Optional width value.
+            height: Optional height value.
+
+        Returns:
+            Tuple of resolved (width, height).
         """
         return (fallback(width, clip.width), fallback(height, clip.height))
 
@@ -350,9 +359,12 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         """
         Resolve and return a scaler type from a given input (string, type, or instance).
 
-        :param scaler:          Scaler identifier (string, class, or instance).
-        :param func_except:     Function returned for custom error handling.
-        :return:                Resolved scaler type.
+        Args:
+            scaler: Scaler identifier (string, class, or instance).
+            func_except: Function returned for custom error handling.
+
+        Returns:
+            Resolved scaler type.
         """
         return _base_from_param(cls, scaler, cls._err_class, func_except)
 
@@ -366,9 +378,12 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         """
         Ensure that the input is a scaler instance, resolving it if necessary.
 
-        :param scaler:          Scaler identifier (string, class, or instance).
-        :param func_except:     Function returned for custom error handling.
-        :return:                Scaler instance.
+        Args:
+            scaler: Scaler identifier (string, class, or instance).
+            func_except: Function returned for custom error handling.
+
+        Returns:
+            Scaler instance.
         """
         return _base_ensure_obj(cls, scaler, func_except)
 
@@ -379,8 +394,11 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             """
             Return the effective kernel radius for the scaler.
 
-            :raises CustomNotImplementedError:  If no kernel radius is defined.
-            :return:                            Kernel radius.
+            Raises:
+                CustomNotImplementedError: If no kernel radius is defined.
+
+            Returns:
+                Kernel radius.
             """
             ...
 
@@ -388,8 +406,11 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         """
         Build a formatted string representation including class name and arguments.
 
-        :param attrs:   Additional attributes to include.
-        :return:        String representation of the object.
+        Args:
+            **attrs: Additional attributes to include.
+
+        Returns:
+            String representation of the object.
         """
         return (
             f"{self.__class__.__name__}" + "(" + ", ".join(f"{k}={v}" for k, v in (attrs | self.kwargs).items()) + ")"
@@ -400,7 +421,8 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         """
         Cached property returning a user-friendly string representation.
 
-        :return: Pretty-printed string with arguments.
+        Returns:
+            Pretty-printed string with arguments.
         """
         return self._pretty_string()
 
@@ -440,12 +462,15 @@ class Scaler(BaseScaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:        The source clip.
-        :param width:       Target width (defaults to clip width if None).
-        :param height:      Target height (defaults to clip height if None).
-        :param shift:       Subpixel shift (top, left) applied during scaling.
-        :param kwargs:      Additional arguments forwarded to the scale function.
-        :return:            The scaled clip.
+        Args:
+            clip: The source clip.
+            width: Target width (defaults to clip width if None).
+            height: Target height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) applied during scaling.
+            **kwargs: Additional arguments forwarded to the scale function.
+
+        Returns:
+            The scaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         check_correct_subsampling(clip, width, height)
@@ -458,12 +483,17 @@ class Scaler(BaseScaler):
         """
         Supersample a clip by a given scaling factor.
 
-        :param clip:                The source clip.
-        :param rfactor:             Scaling factor for supersampling.
-        :param shift:               Subpixel shift (top, left) applied during scaling.
-        :param kwargs:              Additional arguments forwarded to the scale function.
-        :raises CustomValueError:   If resulting resolution is non-positive.
-        :return:                    The supersampled clip.
+        Args:
+            clip: The source clip.
+            rfactor: Scaling factor for supersampling.
+            shift: Subpixel shift (top, left) applied during scaling.
+            **kwargs: Additional arguments forwarded to the scale function.
+
+        Raises:
+            CustomValueError: If resulting resolution is non-positive.
+
+        Returns:
+            The supersampled clip.
         """
         assert check_variable_resolution(clip, self.supersample)
 
@@ -485,11 +515,14 @@ class Scaler(BaseScaler):
         """
         Deprecated alias for `supersample`.
 
-        :param clip:    The source clip.
-        :param multi:   Supersampling factor.
-        :param shift:   Subpixel shift (top, left) applied during scaling.
-        :param kwargs:  Additional arguments forwarded to the scale function.
-        :return:        The supersampled clip.
+        Args:
+            clip: The source clip.
+            multi: Supersampling factor.
+            shift: Subpixel shift (top, left) applied during scaling.
+            **kwargs: Additional arguments forwarded to the scale function.
+
+        Returns:
+            The supersampled clip.
         """
         return self.supersample(clip, multi, shift, **kwargs)
 
@@ -504,12 +537,15 @@ class Scaler(BaseScaler):
         """
         Generate the keyword arguments used for scaling.
 
-        :param clip:    The source clip.
-        :param shift:   Subpixel shift (top, left).
-        :param width:   Target width.
-        :param height:  Target height.
-        :param kwargs:  Extra parameters to merge.
-        :return:        Final dictionary of keyword arguments for the scale function.
+        Args:
+            clip: The source clip.
+            shift: Subpixel shift (top, left).
+            width: Target width.
+            height: Target height.
+            **kwargs: Extra parameters to merge.
+
+        Returns:
+            Final dictionary of keyword arguments for the scale function.
         """
         return {"width": width, "height": height, "src_top": shift[0], "src_left": shift[1]} | self.kwargs | kwargs
 
@@ -546,11 +582,14 @@ class Descaler(BaseScaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:    The source clip.
-        :param width:   Target descaled width (defaults to clip width if None).
-        :param height:  Target descaled height (defaults to clip height if None).
-        :param shift:   Subpixel shift (top, left) applied during scaling.
-        :return:        The descaled clip.
+        Args:
+            clip: The source clip.
+            width: Target descaled width (defaults to clip width if None).
+            height: Target descaled height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) applied during scaling.
+
+        Returns:
+            The descaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         check_correct_subsampling(clip, width, height)
@@ -574,11 +613,14 @@ class Descaler(BaseScaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:    The source clip.
-        :param width:   Target scaled width (defaults to clip width if None).
-        :param height:  Target scaled height (defaults to clip height if None).
-        :param shift:   Subpixel shift (top, left) applied during scaling.
-        :return:        The scaled clip.
+        Args:
+            clip: The source clip.
+            width: Target scaled width (defaults to clip width if None).
+            height: Target scaled height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) applied during scaling.
+
+        Returns:
+            The scaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         check_correct_subsampling(clip, width, height)
@@ -598,12 +640,15 @@ class Descaler(BaseScaler):
         """
         Construct the argument dictionary used for descaling.
 
-        :param clip:    The source clip.
-        :param shift:   Subpixel shift (top, left).
-        :param width:   Target width for descaling.
-        :param height:  Target height for descaling.
-        :param kwargs:  Extra keyword arguments to merge.
-        :return:        Combined keyword argument dictionary.
+        Args:
+            clip: The source clip.
+            shift: Subpixel shift (top, left).
+            width: Target width for descaling.
+            height: Target height for descaling.
+            **kwargs: Extra keyword arguments to merge.
+
+        Returns:
+            Combined keyword argument dictionary.
         """
         return {"width": width, "height": height, "src_top": shift[0], "src_left": shift[1]} | self.kwargs | kwargs
 
@@ -618,12 +663,15 @@ class Descaler(BaseScaler):
         """
         Construct the argument dictionary used for upscaling.
 
-        :param clip:    The source clip.
-        :param shift:   Subpixel shift (top, left).
-        :param width:   Target width for upscaling.
-        :param height:  Target height for upscaling.
-        :param kwargs:  Extra keyword arguments to merge.
-        :return:        Combined keyword argument dictionary.
+        Args:
+            clip: The source clip.
+            shift: Subpixel shift (top, left).
+            width: Target width for upscaling.
+            height: Target height for upscaling.
+            **kwargs: Extra keyword arguments to merge.
+
+        Returns:
+            Combined keyword argument dictionary.
         """
         return {"width": width, "height": height, "src_top": shift[0], "src_left": shift[1]} | self.kwargs | kwargs
 
@@ -657,15 +705,19 @@ class Resampler(BaseScaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:        The source clip.
-        :param format:      The target video format, which can either be:
-                                - an integer format ID,
-                                - a `vs.PresetVideoFormat` or `vs.VideoFormat`,
-                                - or a source from which a valid `VideoFormat` can be extracted.
-        :param matrix:      An optional color transformation matrix to apply.
-        :param matrix_in:   An optional input matrix for color transformations.
-        :param kwargs:      Additional keyword arguments passed to the `resample_function`.
-        :return:            The resampled clip.
+        Args:
+            clip: The source clip.
+            format: The target video format, which can either be:
+
+                   - an integer format ID,
+                   - a `vs.PresetVideoFormat` or `vs.VideoFormat`,
+                   - or a source from which a valid `VideoFormat` can be extracted.
+            matrix: An optional color transformation matrix to apply.
+            matrix_in: An optional input matrix for color transformations.
+            **kwargs: Additional keyword arguments passed to the `resample_function`.
+
+        Returns:
+            The resampled clip.
         """
         return self.resample_function(
             clip, **_norm_props_enums(self.get_resample_args(clip, format, matrix, matrix_in, **kwargs))
@@ -682,15 +734,19 @@ class Resampler(BaseScaler):
         """
         Construct the argument dictionary used for resampling.
 
-        :param clip:        The source clip.
-        :param format:      The target video format, which can either be:
-                                - an integer format ID,
-                                - a `vs.PresetVideoFormat` or `vs.VideoFormat`,
-                                - or a source from which a valid `VideoFormat` can be extracted.
-        :param matrix:      The matrix for color transformation.
-        :param matrix_in:   The input matrix for color transformation.
-        :param kwargs:      Additional keyword arguments for resampling.
-        :return:            A dictionary containing the resampling arguments.
+        Args:
+            clip: The source clip.
+            format: The target video format, which can either be:
+
+                   - an integer format ID,
+                   - a `vs.PresetVideoFormat` or `vs.VideoFormat`,
+                   - or a source from which a valid `VideoFormat` can be extracted.
+            matrix: The matrix for color transformation.
+            matrix_in: The input matrix for color transformation.
+            **kwargs: Additional keyword arguments for resampling.
+
+        Returns:
+            A dictionary containing the resampling arguments.
         """
         return (
             {
@@ -726,12 +782,16 @@ class Kernel(Scaler, Descaler, Resampler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:                    The source clip.
-        :param shift:                   A (top, left) tuple values for shift.
-        :param kwargs:                  Additional arguments passed to the internal `scale` call.
+        Args:
+            clip: The source clip.
+            shift: A (top, left) tuple values for shift.
+            **kwargs: Additional arguments passed to the internal `scale` call.
 
-        :return:                        A new clip with the applied shift.
-        :raises VariableFormatError:    If the input clip has variable format.
+        Returns:
+            A new clip with the applied shift.
+
+        Raises:
+            VariableFormatError: If the input clip has variable format.
         """
 
     @overload
@@ -745,13 +805,17 @@ class Kernel(Scaler, Descaler, Resampler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:                    The source clip.
-        :param shift_top:               Vertical shift or list of Vertical shifts.
-        :param shift_left:              Horizontal shift or list of horizontal shifts.
-        :param kwargs:                  Additional arguments passed to the internal `scale` call.
+        Args:
+            clip: The source clip.
+            shift_top: Vertical shift or list of Vertical shifts.
+            shift_left: Horizontal shift or list of horizontal shifts.
+            **kwargs: Additional arguments passed to the internal `scale` call.
 
-        :return:                        A new clip with the applied shift.
-        :raises VariableFormatError:    If the input clip has variable format.
+        Returns:
+            A new clip with the applied shift.
+
+        Raises:
+            VariableFormatError: If the input clip has variable format.
         """
 
     def shift(
@@ -772,15 +836,19 @@ class Kernel(Scaler, Descaler, Resampler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:                    The source clip.
-        :param shifts_or_top:           Either a single vertical shift, a (top, left) tuple, or a list of vertical shifts.
-        :param shift_left:              Horizontal shift or list of horizontal shifts. Ignored if `shifts_or_top` is a tuple.
-        :param kwargs:                  Additional arguments passed to the internal `scale` call.
+        Args:
+            clip: The source clip.
+            shifts_or_top: Either a single vertical shift, a (top, left) tuple, or a list of vertical shifts.
+            shift_left: Horizontal shift or list of horizontal shifts. Ignored if `shifts_or_top` is a tuple.
+            **kwargs: Additional arguments passed to the internal `scale` call.
 
-        :return:                        A new clip with the applied shift.
-        :raises VariableFormatError:    If the input clip has variable format.
-        :raises CustomValueError:       If the input clip is GRAY but lists of shift has been passed.
-        """  # noqa: E501
+        Returns:
+            A new clip with the applied shift.
+
+        Raises:
+            VariableFormatError: If the input clip has variable format.
+            CustomValueError: If the input clip is GRAY but lists of shift has been passed.
+        """
         assert check_variable_format(clip, self.shift)
 
         n_planes = clip.format.num_planes
@@ -823,12 +891,15 @@ class Kernel(Scaler, Descaler, Resampler):
         """
         Resolve and return a kernel class from a string name, class type, or instance.
 
-        :param kernel:              Kernel identifier as a string, class type, or instance.
-                                    If None, defaults to the current class.
-        :param func_except:         Function returned for custom error handling.
+        Args:
+            kernel: Kernel identifier as a string, class type, or instance. If None, defaults to the current class.
+            func_except: Function returned for custom error handling.
 
-        :return:                    The resolved kernel class.
-        :raises UnknownKernelError: If the kernel could not be identified.
+        Returns:
+            The resolved kernel class.
+
+        Raises:
+            UnknownKernelError: If the kernel could not be identified.
         """
         return _base_from_param(cls, kernel, cls._err_class, func_except)
 
@@ -837,10 +908,12 @@ class Kernel(Scaler, Descaler, Resampler):
         """
         Ensure that the given kernel input is returned as a kernel instance.
 
-        :param kernel:              Kernel name, class, or instance. Defaults to current class if None.
-        :param func_except:         Function returned for custom error handling.
+        Args:
+            kernel: Kernel name, class, or instance. Defaults to current class if None.
+            func_except: Function returned for custom error handling.
 
-        :return:                    The resolved and instantiated kernel.
+        Returns:
+            The resolved and instantiated kernel.
         """
         return _base_ensure_obj(cls, kernel, func_except)
 
@@ -850,13 +923,15 @@ class Kernel(Scaler, Descaler, Resampler):
         """
         Generate a base set of parameters to pass for scaling, descaling, or resampling.
 
-        :param is_descale:  Whether this is for a descale operation.
-        :param clip:        The source clip.
-        :param width:       Target width.
-        :param height:      Target height.
-        :param kwargs:      Additional keyword arguments to include.
+        Args:
+            is_descale: Whether this is for a descale operation.
+            clip: The source clip.
+            width: Target width.
+            height: Target height.
+            **kwargs: Additional keyword arguments to include.
 
-        :return:            Dictionary of combined parameters.
+        Returns:
+            Dictionary of combined parameters.
         """
         return {"width": width, "height": height} | self.kwargs | kwargs
 
@@ -871,13 +946,15 @@ class Kernel(Scaler, Descaler, Resampler):
         """
         Generate and normalize argument dictionary for a scale operation.
 
-        :param clip:    The source clip.
-        :param shift:   Vertical and horizontal shift to apply.
-        :param width:   Target width.
-        :param height:  Target height.
-        :param kwargs:  Additional arguments to pass to the scale function.
+        Args:
+            clip: The source clip.
+            shift: Vertical and horizontal shift to apply.
+            width: Target width.
+            height: Target height.
+            **kwargs: Additional arguments to pass to the scale function.
 
-        :return:        Dictionary of keyword arguments for the scale function.
+        Returns:
+            Dictionary of keyword arguments for the scale function.
         """
         return {"src_top": shift[0], "src_left": shift[1]} | self.get_params_args(False, clip, width, height, **kwargs)
 
@@ -892,13 +969,15 @@ class Kernel(Scaler, Descaler, Resampler):
         """
         Generate and normalize argument dictionary for a descale operation.
 
-        :param clip:    The source clip.
-        :param shift:   Vertical and horizontal shift to apply.
-        :param width:   Target width.
-        :param height:  Target height.
-        :param kwargs:  Additional arguments to pass to the descale function.
+        Args:
+            clip: The source clip.
+            shift: Vertical and horizontal shift to apply.
+            width: Target width.
+            height: Target height.
+            **kwargs: Additional arguments to pass to the descale function.
 
-        :return:        Dictionary of keyword arguments for the descale function.
+        Returns:
+            Dictionary of keyword arguments for the descale function.
         """
         return {"src_top": shift[0], "src_left": shift[1]} | self.get_params_args(True, clip, width, height, **kwargs)
 
@@ -913,13 +992,15 @@ class Kernel(Scaler, Descaler, Resampler):
         """
         Generate and normalize argument dictionary for a rescale operation.
 
-        :param clip:    The source clip.
-        :param shift:   Vertical and horizontal shift to apply.
-        :param width:   Target width.
-        :param height:  Target height.
-        :param kwargs:  Additional arguments to pass to the rescale function.
+        Args:
+            clip: The source clip.
+            shift: Vertical and horizontal shift to apply.
+            width: Target width.
+            height: Target height.
+            **kwargs: Additional arguments to pass to the rescale function.
 
-        :return:        Dictionary of keyword arguments for the rescale function.
+        Returns:
+            Dictionary of keyword arguments for the rescale function.
         """
         return {"src_top": shift[0], "src_left": shift[1]} | self.get_params_args(True, clip, width, height, **kwargs)
 
@@ -934,16 +1015,19 @@ class Kernel(Scaler, Descaler, Resampler):
         """
         Generate and normalize argument dictionary for a resample operation.
 
-        :param clip:        The source clip.
-        :param format:      The target video format, which can either be:
-                                - an integer format ID,
-                                - a `vs.PresetVideoFormat` or `vs.VideoFormat`,
-                                - or a source from which a valid `VideoFormat` can be extracted.
-        :param matrix:      Target color matrix.
-        :param matrix_in:   Source color matrix.
-        :param kwargs:      Additional arguments to pass to the resample function.
+        Args:
+            clip: The source clip.
+            format: The target video format, which can either be:
 
-        :return:            Dictionary of keyword arguments for the resample function.
+                   - an integer format ID,
+                   - a `vs.PresetVideoFormat` or `vs.VideoFormat`,
+                   - or a source from which a valid `VideoFormat` can be extracted.
+            matrix: Target color matrix.
+            matrix_in: Source color matrix.
+            **kwargs: Additional arguments to pass to the resample function.
+
+        Returns:
+            Dictionary of keyword arguments for the resample function.
         """
         return {
             "format": get_video_format(format).id,
@@ -957,9 +1041,9 @@ ScalerLike = Union[str, type[Scaler], Scaler]
 Type alias for anything that can resolve to a Scaler.
 
 This includes:
-- A string identifier.
-- A class type subclassing `Scaler`.
-- An instance of a `Scaler`.
+ - A string identifier.
+ - A class type subclassing `Scaler`.
+ - An instance of a `Scaler`.
 """
 
 DescalerLike = Union[str, type[Descaler], Descaler]
@@ -967,9 +1051,9 @@ DescalerLike = Union[str, type[Descaler], Descaler]
 Type alias for anything that can resolve to a Descaler.
 
 This includes:
-- A string identifier.
-- A class type subclassing `Descaler`.
-- An instance of a `Descaler`.
+ - A string identifier.
+ - A class type subclassing `Descaler`.
+ - An instance of a `Descaler`.
 """
 
 ResamplerLike = Union[str, type[Resampler], Resampler]
@@ -977,9 +1061,9 @@ ResamplerLike = Union[str, type[Resampler], Resampler]
 Type alias for anything that can resolve to a Resampler.
 
 This includes:
-- A string identifier.
-- A class type subclassing `Resampler`.
-- An instance of a `Resampler`.
+ - A string identifier.
+ - A class type subclassing `Resampler`.
+ - An instance of a `Resampler`.
 """
 
 KernelLike = Union[str, type[Kernel], Kernel]
@@ -987,7 +1071,7 @@ KernelLike = Union[str, type[Kernel], Kernel]
 Type alias for anything that can resolve to a Kernel.
 
 This includes:
-- A string identifier.
-- A class type subclassing `Kernel`.
-- An instance of a `Kernel`.
+ - A string identifier.
+ - A class type subclassing `Kernel`.
+ - An instance of a `Kernel`.
 """

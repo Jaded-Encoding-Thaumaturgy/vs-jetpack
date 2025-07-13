@@ -25,11 +25,13 @@ def deblending_helper(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, lengt
     """
     Helper function to select a deblended clip pattern from a fieldmatched clip.
 
-    :param deblended:       Deblended clip.
-    :param fieldmatched:    Source after field matching, must have field=3 and possibly low cthresh.
-    :param length:          Length of the pattern.
+    Args:
+        deblended: Deblended clip.
+        fieldmatched: Source after field matching, must have field=3 and possibly low cthresh.
+        length: Length of the pattern.
 
-    :return: Deblended clip.
+    Returns:
+        Deblended clip.
     """
 
     assert check_variable(deblended, deblending_helper)
@@ -71,11 +73,13 @@ def deblend(
     """
     Automatically deblends if normal field matching leaves 2 blends every 5 frames. Adopted from jvsfunc.
 
-    :param clip:             Input source to fieldmatching.
-    :param fieldmatched:    Source after field matching, must have field=3 and possibly low cthresh.
-    :param decomber:        Optional post processing decomber after deblending and before pattern matching.
+    Args:
+        clip: Input source to fieldmatching.
+        fieldmatched: Source after field matching, must have field=3 and possibly low cthresh.
+        decomber: Optional post processing decomber after deblending and before pattern matching.
 
-    :return: Deblended clip.
+    Returns:
+        Deblended clip.
     """
 
     deblended = norm_expr(shift_clip_multi(clip, (-1, 2)), "z a 2 / - y x 2 / - +", func=deblend)
@@ -93,10 +97,12 @@ def deblend_bob(bobbed: vs.VideoNode, fieldmatched: vs.VideoNode | None = None) 
     """
     Stronger version of `deblend` that uses a bobbed clip to deblend. Adopted from jvsfunc.
 
-    :param bobbed:          Bobbed source.
-    :param fieldmatched:    Source after field matching, must have field=3 and possibly low cthresh.
+    Args:
+        bobbed: Bobbed source.
+        fieldmatched: Source after field matching, must have field=3 and possibly low cthresh.
 
-    :return: Deblended clip.
+    Returns:
+        Deblended clip.
     """
 
     assert check_variable(bobbed, deblend_bob)
@@ -116,10 +122,12 @@ def deblend_fix_kf(deblended: vs.VideoNode, fieldmatched: vs.VideoNode) -> Const
     """
     Should be used after deblend/_bob to fix scene changes. Adopted from jvsfunc.
 
-    :param deblended:       Deblended clip.
-    :param fieldmatched:    Fieldmatched clip used to debled, must have field=3 and possibly low cthresh.
+    Args:
+        deblended: Deblended clip.
+        fieldmatched: Fieldmatched clip used to debled, must have field=3 and possibly low cthresh.
 
-    :return: Deblended clip with fixed blended keyframes.
+    Returns:
+        Deblended clip with fixed blended keyframes.
     """
 
     assert check_variable(deblended, deblend_fix_kf)

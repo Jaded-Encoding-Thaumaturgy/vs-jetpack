@@ -33,9 +33,12 @@ class ZimgBobber(BaseScaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:        The source clip
-        :param tff:         Field order of the clip.
-        :return:            The bobbed clip.
+        Args:
+            clip: The source clip
+            tff: Field order of the clip.
+
+        Returns:
+            The bobbed clip.
         """
         clip_fieldbased = FieldBased.from_param_or_video(tff, clip, True, self.__class__)
 
@@ -53,10 +56,13 @@ class ZimgBobber(BaseScaler):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param clip:        The source clip
-        :param tff:         Field order of the clip.
-        :param double_rate: Wether to double the frame rate (True) of retain the original rate (False).
-        :return:            The bobbed clip.
+        Args:
+            clip: The source clip
+            tff: Field order of the clip.
+            double_rate: Wether to double the frame rate (True) of retain the original rate (False).
+
+        Returns:
+            The bobbed clip.
         """
         bobbed = self.bob(clip, tff=tff, **kwargs)
 
@@ -74,10 +80,13 @@ class ZimgBobber(BaseScaler):
         """
         Generate the keyword arguments used for bobbing.
 
-        :param clip:    The source clip.
-        :param shift:   Subpixel shift (top, left).
-        :param kwargs:  Extra parameters to merge.
-        :return:        Final dictionary of keyword arguments for the bob function.
+        Args:
+            clip: The source clip.
+            shift: Subpixel shift (top, left).
+            **kwargs: Extra parameters to merge.
+
+        Returns:
+            Final dictionary of keyword arguments for the bob function.
         """
         return (
             {"filter": self.__class__.__name__.lower(), "src_top": shift[0], "src_left": shift[1]}

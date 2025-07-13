@@ -30,7 +30,9 @@ def sinc(x: float) -> float:
 
 
 class CustomPoint(CustomComplexKernel, Point):
-    """Point resizer using the `CustomKernel` class."""
+    """
+    Point resizer using the `CustomKernel` class.
+    """
 
     _static_kernel_radius = 0
 
@@ -39,7 +41,9 @@ class CustomPoint(CustomComplexKernel, Point):
 
 
 class CustomBilinear(CustomComplexKernel, Bilinear):
-    """Bilinear resizer using the `CustomKernel` class."""
+    """
+    Bilinear resizer using the `CustomKernel` class.
+    """
 
     _static_kernel_radius = 1
 
@@ -48,7 +52,9 @@ class CustomBilinear(CustomComplexKernel, Bilinear):
 
 
 class CustomLanczos(CustomComplexTapsKernel, Lanczos):
-    """Lanczos resizer using the `CustomKernel` class."""
+    """
+    Lanczos resizer using the `CustomKernel` class.
+    """
 
     def __init__(self, taps: float = 3, **kwargs: Any) -> None:
         super().__init__(taps, **kwargs)
@@ -65,31 +71,43 @@ class CustomLanczos(CustomComplexTapsKernel, Lanczos):
 
 
 class Gaussian(CustomComplexTapsKernel):
-    """Gaussian resizer."""
+    """
+    Gaussian resizer.
+    """
 
     class Sigma(float):
-        """A class for Gaussian sigma scaling transformations."""
+        """
+        A class for Gaussian sigma scaling transformations.
+        """
 
         def from_fmtc(self, curve: float) -> float:
-            """Converts a curve value from fmtc to the Gaussian sigma."""
+            """
+            Converts a curve value from fmtc to the Gaussian sigma.
+            """
             if not curve:
                 return 0.0
             return sqrt(1.0 / (2.0 * (curve / 10.0) * log(2)))
 
         def to_fmtc(self, sigma: float) -> float:
-            """Converts a Gaussian sigma to fmtc's curve value."""
+            """
+            Converts a Gaussian sigma to fmtc's curve value.
+            """
             if not sigma:
                 return 0.0
             return 10 / (2 * log(2) * (sigma**2))
 
         def from_libplacebo(self, sigma: float) -> float:
-            """Converts a sigma value from libplacebo to the Gaussian sigma."""
+            """
+            Converts a sigma value from libplacebo to the Gaussian sigma.
+            """
             if not sigma:
                 return 0.0
             return sqrt(sigma / 4)
 
         def to_libplacebo(self, sigma: float) -> float:
-            """Converts a Gaussian sigma to libplacebo's sigma value."""
+            """
+            Converts a Gaussian sigma to libplacebo's sigma value.
+            """
             if not sigma:
                 return 0.0
             return 4 * (sigma**2)
@@ -98,9 +116,10 @@ class Gaussian(CustomComplexTapsKernel):
         """
         Initialize the kernel with a specific sigma and number of taps.
 
-        :param sigma:   The standard deviation (sigma) of the Gaussian function.
-                        It is the same as imagemagick's sigma scaling.
-        :param taps:    Determines the radius of the kernel.
+        Args:
+            sigma: The standard deviation (sigma) of the Gaussian function. It is the same as imagemagick's sigma
+                scaling.
+            taps: Determines the radius of the kernel.
         """
 
         self._sigma = sigma
@@ -116,7 +135,9 @@ class Gaussian(CustomComplexTapsKernel):
 
 
 class Box(CustomComplexKernel):
-    """Box resizer."""
+    """
+    Box resizer.
+    """
 
     _static_kernel_radius = 1
 
@@ -125,7 +146,9 @@ class Box(CustomComplexKernel):
 
 
 class BlackMan(CustomComplexTapsKernel):
-    """Blackman resizer."""
+    """
+    Blackman resizer.
+    """
 
     def __init__(self, taps: float = 4, **kwargs: Any) -> None:
         super().__init__(taps, **kwargs)
@@ -143,7 +166,9 @@ class BlackMan(CustomComplexTapsKernel):
 
 
 class BlackManMinLobe(BlackMan):
-    """Blackmanminlobe resizer."""
+    """
+    Blackmanminlobe resizer.
+    """
 
     def _win_coef(self, x: float) -> float:
         w_x = x * (pi / self.kernel_radius)
@@ -152,7 +177,9 @@ class BlackManMinLobe(BlackMan):
 
 
 class Sinc(CustomComplexTapsKernel):
-    """Sinc resizer."""
+    """
+    Sinc resizer.
+    """
 
     def __init__(self, taps: float = 4, **kwargs: Any) -> None:
         super().__init__(taps, **kwargs)
@@ -165,7 +192,9 @@ class Sinc(CustomComplexTapsKernel):
 
 
 class Hann(CustomComplexTapsKernel):
-    """Hann kernel."""
+    """
+    Hann kernel.
+    """
 
     def kernel(self, *, x: float) -> float:
         if x >= self.kernel_radius:
@@ -175,7 +204,9 @@ class Hann(CustomComplexTapsKernel):
 
 
 class Hamming(CustomComplexTapsKernel):
-    """Hamming kernel."""
+    """
+    Hamming kernel.
+    """
 
     def kernel(self, *, x: float) -> float:
         if x >= self.kernel_radius:
@@ -185,7 +216,9 @@ class Hamming(CustomComplexTapsKernel):
 
 
 class Welch(CustomComplexTapsKernel):
-    """Welch kernel."""
+    """
+    Welch kernel.
+    """
 
     def kernel(self, *, x: float) -> float:
         if abs(x) >= 1.0:
@@ -195,7 +228,9 @@ class Welch(CustomComplexTapsKernel):
 
 
 class Cosine(CustomComplexTapsKernel):
-    """Cosine kernel."""
+    """
+    Cosine kernel.
+    """
 
     def kernel(self, *, x: float) -> float:
         if x >= self.kernel_radius:
@@ -207,7 +242,9 @@ class Cosine(CustomComplexTapsKernel):
 
 
 class Bohman(CustomComplexTapsKernel):
-    """Bohman kernel."""
+    """
+    Bohman kernel.
+    """
 
     def kernel(self, *, x: float) -> float:
         if x >= self.kernel_radius:

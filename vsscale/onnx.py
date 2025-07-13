@@ -1,4 +1,6 @@
-"""This module implements scalers for ONNX models."""
+"""
+This module implements scalers for ONNX models.
+"""
 
 from abc import ABC
 from logging import warning
@@ -59,8 +61,11 @@ def autoselect_backend(**kwargs: Any) -> Backend:
     If the system has an NVIDIA GPU: TRT > CUDA (ORT) > Vulkan > OpenVINO GPU
     Else: DirectML (D3D12) > MIGraphX > Vulkan > CPU (ORT) > CPU OpenVINO
 
-    :param kwargs:        Additional arguments to pass to the backend.
-    :return:              The selected backend.
+    Args:
+        **kwargs: Additional arguments to pass to the backend.
+
+    Returns:
+        The selected backend.
     """
     import os
 
@@ -93,7 +98,9 @@ def autoselect_backend(**kwargs: Any) -> Backend:
 
 
 class BaseOnnxScaler(BaseGenericScaler, ABC):
-    """Abstract generic scaler class for an ONNX model."""
+    """
+    Abstract generic scaler class for an ONNX model.
+    """
 
     def __init__(
         self,
@@ -112,21 +119,20 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         """
         Initializes the scaler with the specified parameters.
 
-        :param model:           Path to the ONNX model file.
-        :param backend:         The backend to be used with the vs-mlrt framework.
-                                If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
-        :param tiles:           Whether to split the image into multiple tiles.
-                                This can help reduce VRAM usage, but note that the model's behavior may vary when they are used.
-        :param tilesize:        The size of each tile when splitting the image (if tiles are enabled).
-        :param overlap:         The size of overlap between tiles.
-        :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
-        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
-                                Defaults to Catrom.
-        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:         Kernel used for shifting operations. Defaults to kernel.
-        :param **kwargs:        Additional arguments to pass to the backend.
-                                See the vsmlrt backend's docstring for more details.
-        """  # noqa: E501
+        Args:
+            model: Path to the ONNX model file.
+            backend: The backend to be used with the vs-mlrt framework. If set to None, the most suitable backend will
+                be automatically selected, prioritizing fp16 support.
+            tiles: Whether to split the image into multiple tiles. This can help reduce VRAM usage, but note that the
+                model's behavior may vary when they are used.
+            tilesize: The size of each tile when splitting the image (if tiles are enabled).
+            overlap: The size of overlap between tiles.
+            max_instances: Maximum instances to spawn when scaling a variable resolution clip.
+            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            scaler: Scaler used for scaling operations. Defaults to kernel.
+            shifter: Kernel used for shifting operations. Defaults to kernel.
+            **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
+        """
         super().__init__(kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
 
         if model is not None:
@@ -165,16 +171,17 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         """
         Scale the given clip using the ONNX model.
 
-        :param clip:        The input clip to be scaled.
-        :param width:       The target width for scaling. If None, the width of the input clip will be used.
-        :param height:      The target height for scaling. If None, the height of the input clip will be used.
-        :param shift:       A tuple representing the shift values for the x and y axes.
-        :param **kwargs:    Additional arguments to be passed to the `preprocess_clip`, `postprocess_clip`,
-                            `inference`, and `_final_scale` methods.
-                            Use the prefix `preprocess_` or `postprocess_` to pass an argument to the respective method.
-                            Use the prefix `inference_` to pass an argument to the inference method.
+        Args:
+            clip: The input clip to be scaled.
+            width: The target width for scaling. If None, the width of the input clip will be used.
+            height: The target height for scaling. If None, the height of the input clip will be used.
+            shift: A tuple representing the shift values for the x and y axes.
+            **kwargs: Additional arguments to be passed to the `preprocess_clip`, `postprocess_clip`, `inference`, and
+                `_final_scale` methods. Use the prefix `preprocess_` or `postprocess_` to pass an argument to the
+                respective method. Use the prefix `inference_` to pass an argument to the inference method.
 
-        :return:            The scaled clip.
+        Returns:
+            The scaled clip.
         """
         from vsmlrt import Backend
 
@@ -227,7 +234,9 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         return self._finish_scale(scaled, clip, width, height, shift, **kwargs)
 
     def calc_tilesize(self, clip: vs.VideoNode, **kwargs: Any) -> tuple[tuple[int, int], tuple[int, int]]:
-        """Reimplementation of vsmlrt.calc_tilesize helper function"""
+        """
+        Reimplementation of vsmlrt.calc_tilesize helper function
+        """
 
         from vsmlrt import calc_tilesize
 
@@ -244,20 +253,26 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         return calc_tilesize(**kwargs)
 
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        """Performs preprocessing on the clip prior to inference."""
+        """
+        Performs preprocessing on the clip prior to inference.
+        """
 
         clip = depth(clip, self._pick_precision(16, 32), vs.FLOAT)
         return limiter(clip, func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        """Handles postprocessing of the model's output after inference."""
+        """
+        Handles postprocessing of the model's output after inference.
+        """
 
         return depth(
             clip, input_clip, dither_type=DitherType.ORDERED if 0 in {clip.width, clip.height} else DitherType.AUTO
         )
 
     def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        """Runs inference on the given video clip using the configured model and backend."""
+        """
+        Runs inference on the given video clip using the configured model and backend.
+        """
 
         from vsmlrt import inference
 
@@ -312,20 +327,19 @@ class BaseArtCNN(BaseOnnxScaler):
         """
         Initializes the scaler with the specified parameters.
 
-        :param backend:         The backend to be used with the vs-mlrt framework.
-                                If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
-        :param tiles:           Whether to split the image into multiple tiles.
-                                This can help reduce VRAM usage, but note that the model's behavior may vary when they are used.
-        :param tilesize:        The size of each tile when splitting the image (if tiles are enabled).
-        :param overlap:         The size of overlap between tiles.
-        :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
-        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
-                                Defaults to Catrom.
-        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:         Kernel used for shifting operations. Defaults to kernel.
-        :param **kwargs:        Additional arguments to pass to the backend.
-                                See the vsmlrt backend's docstring for more details.
-        """  # noqa: E501
+        Args:
+            backend: The backend to be used with the vs-mlrt framework. If set to None, the most suitable backend will
+                be automatically selected, prioritizing fp16 support.
+            tiles: Whether to split the image into multiple tiles. This can help reduce VRAM usage, but note that the
+                model's behavior may vary when they are used.
+            tilesize: The size of each tile when splitting the image (if tiles are enabled).
+            overlap: The size of overlap between tiles.
+            max_instances: Maximum instances to spawn when scaling a variable resolution clip.
+            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            scaler: Scaler used for scaling operations. Defaults to kernel.
+            shifter: Kernel used for shifting operations. Defaults to kernel.
+            **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
+        """
         super().__init__(
             None,
             backend,
@@ -647,22 +661,21 @@ class BaseWaifu2x(BaseOnnxScaler):
         """
         Initializes the scaler with the specified parameters.
 
-        :param scale:           Upscaling factor. 1 = no uspcaling, 2 = 2x, 4 = 4x.
-        :param noise:           Noise reduction level. -1 = none, 0 = low, 1 = medium, 2 = high, 3 = highest.
-        :param backend:         The backend to be used with the vs-mlrt framework.
-                                If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
-        :param tiles:           Whether to split the image into multiple tiles.
-                                This can help reduce VRAM usage, but note that the model's behavior may vary when they are used.
-        :param tilesize:        The size of each tile when splitting the image (if tiles are enabled).
-        :param overlap:         The size of overlap between tiles.
-        :param max_instances:   Maximum instances to spawn when scaling a variable resolution clip.
-        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
-                                Defaults to Catrom.
-        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:         Kernel used for shifting operations. Defaults to kernel.
-        :param **kwargs:        Additional arguments to pass to the backend.
-                                See the vsmlrt backend's docstring for more details.
-        """  # noqa: E501
+        Args:
+            scale: Upscaling factor. 1 = no uspcaling, 2 = 2x, 4 = 4x.
+            noise: Noise reduction level. -1 = none, 0 = low, 1 = medium, 2 = high, 3 = highest.
+            backend: The backend to be used with the vs-mlrt framework. If set to None, the most suitable backend will
+                be automatically selected, prioritizing fp16 support.
+            tiles: Whether to split the image into multiple tiles. This can help reduce VRAM usage, but note that the
+                model's behavior may vary when they are used.
+            tilesize: The size of each tile when splitting the image (if tiles are enabled).
+            overlap: The size of overlap between tiles.
+            max_instances: Maximum instances to spawn when scaling a variable resolution clip.
+            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            scaler: Scaler used for scaling operations. Defaults to kernel.
+            shifter: Kernel used for shifting operations. Defaults to kernel.
+            **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
+        """
         self.scale_w2x = scale
         self.noise = noise
         super().__init__(
@@ -727,25 +740,28 @@ class _Waifu2xCunet(BaseWaifu2xRGB):
             """
             Scale the given clip using the ONNX model.
 
-            :param clip:        The input clip to be scaled.
-            :param width:       The target width for scaling. If None, the width of the input clip will be used.
-            :param height:      The target height for scaling. If None, the height of the input clip will be used.
-            :param shift:       A tuple representing the shift values for the x and y axes.
-            :param **kwargs:    Additional arguments to be passed to the `preprocess_clip`, `postprocess_clip`,
-                                `inference`, and `_final_scale` methods.
-                                Use the prefix `preprocess_` or `postprocess_` to pass an argument to the respective method.
-                                Use the prefix `inference_` to pass an argument to the inference method.
+            Args:
+                clip: The input clip to be scaled.
+                width: The target width for scaling. If None, the width of the input clip will be used.
+                height: The target height for scaling. If None, the height of the input clip will be used.
+                shift: A tuple representing the shift values for the x and y axes.
+                **kwargs: Additional arguments to be passed to the `preprocess_clip`, `postprocess_clip`, `inference`,
+                    and `_final_scale` methods. Use the prefix `preprocess_` or `postprocess_` to pass an argument to
+                    the respective method. Use the prefix `inference_` to pass an argument to the inference method.
 
-                                Additional Notes for the Cunet model:
-                                - The model can cause artifacts around the image edges.
-                                To mitigate this, mirrored padding is applied to the image before inference.
-                                This behavior can be disabled by setting `inference_no_pad=True`.
-                                - A tint issue is also present but it is not constant. It leaves flat areas alone but tints detailed areas.
-                                Since most people will use Cunet to rescale details, the tint fix is enabled by default.
-                                This behavior can be disabled with `postprocess_no_tint_fix=True`
+                    Additional Notes for the Cunet model:
 
-            :return:            The scaled clip.
-            """  # noqa: E501
+                       - The model can cause artifacts around the image edges.
+                       To mitigate this, mirrored padding is applied to the image before inference.
+                       This behavior can be disabled by setting `inference_no_pad=True`.
+                       - A tint issue is also present but it is not constant. It leaves flat areas alone but tints
+                       detailed areas.
+                       Since most people will use Cunet to rescale details, the tint fix is enabled by default.
+                       This behavior can be disabled with `postprocess_no_tint_fix=True`
+
+            Returns:
+                The scaled clip.
+            """
             ...
 
     def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
@@ -967,22 +983,20 @@ class BaseDPIR(BaseOnnxScaler):
         """
         Initializes the scaler with the specified parameters.
 
-        :param strength:        Threshold (8-bit scale) strength for deblocking/denoising.
-                                If a VideoNode is used, it must be in GRAY8, GRAYH, or GRAYS format, with pixel values
-                                representing the 8-bit thresholds.
-        :param backend:         The backend to be used with the vs-mlrt framework.
-                                If set to None, the most suitable backend will be automatically selected, prioritizing fp16 support.
-        :param tiles:           Whether to split the image into multiple tiles.
-                                This can help reduce VRAM usage, but note that the model's behavior may vary when they are used.
-        :param tilesize:        The size of each tile when splitting the image (if tiles are enabled).
-        :param overlap:         The size of overlap between tiles.
-        :param kernel:          Base kernel to be used for certain scaling/shifting/resampling operations.
-                                Defaults to Catrom.
-        :param scaler:          Scaler used for scaling operations. Defaults to kernel.
-        :param shifter:         Kernel used for shifting operations. Defaults to kernel.
-        :param **kwargs:        Additional arguments to pass to the backend.
-                                See the vsmlrt backend's docstring for more details.
-        """  # noqa: E501
+        Args:
+            strength: Threshold (8-bit scale) strength for deblocking/denoising. If a VideoNode is used, it must be in
+                GRAY8, GRAYH, or GRAYS format, with pixel values representing the 8-bit thresholds.
+            backend: The backend to be used with the vs-mlrt framework. If set to None, the most suitable backend will
+                be automatically selected, prioritizing fp16 support.
+            tiles: Whether to split the image into multiple tiles. This can help reduce VRAM usage, but note that the
+                model's behavior may vary when they are used.
+            tilesize: The size of each tile when splitting the image (if tiles are enabled).
+            overlap: The size of overlap between tiles.
+            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            scaler: Scaler used for scaling operations. Defaults to kernel.
+            shifter: Kernel used for shifting operations. Defaults to kernel.
+            **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
+        """
         self.strength = strength
         self.multiple = 8
 
@@ -1060,16 +1074,22 @@ class BaseDPIR(BaseOnnxScaler):
 
 
 class DPIR(BaseDPIR):
-    """Deep Plug-and-Play Image Restoration"""
+    """
+    Deep Plug-and-Play Image Restoration
+    """
 
     _model = (2, 3)
 
     class DrunetDenoise(BaseDPIR):
-        """DPIR model for denoising."""
+        """
+        DPIR model for denoising.
+        """
 
         _model = (0, 1)
 
     class DrunetDeblock(BaseDPIR):
-        """DPIR model for deblocking."""
+        """
+        DPIR model for deblocking.
+        """
 
         _model = (2, 3)

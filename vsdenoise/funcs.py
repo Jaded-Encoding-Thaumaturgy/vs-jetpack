@@ -4,8 +4,13 @@ This module contains general denoising functions built on top of base denoisers.
 
 from __future__ import annotations
 
-from typing import Any, Literal, overload
+from typing import Any, Literal, Sequence, overload
 
+from jetpytools import MISSING, CustomRuntimeError, FuncExceptT, MissingT
+
+from vsexprtools import norm_expr
+from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
+from vsscale import ArtCNN
 from vstools import (
     ConstantFormatVideoNode,
     KwargsNotNone,
@@ -13,7 +18,13 @@ from vstools import (
     VSFunctionNoArgs,
     check_ref_clip,
     check_variable,
+    check_variable_format,
     fallback,
+    get_color_family,
+    get_subsampling,
+    get_video_format,
+    join,
+    normalize_planes,
     normalize_seq,
     scale_delta,
     vs,
@@ -23,6 +34,7 @@ from .mvtools import MotionVectors, MVTools, MVToolsPreset
 from .prefilters import PrefilterLike
 
 __all__ = [
+    "ccd",
     "mc_clamp",
     "mc_degrain",
 ]
@@ -111,35 +123,35 @@ def mc_degrain(
     Motion compensated blocks from previous and next frames are averaged with the current frame.
     The weighting factors for each block depend on their SAD from the current frame.
 
-    :param clip:              The clip to process.
-    :param vectors:           Motion vectors to use.
-    :param prefilter:         Filter or clip to use when performing motion vector search.
-    :param mfilter:           Filter or clip to use where degrain couldn't find a matching block.
-    :param preset:            MVTools preset defining base values for the MVTools object. Default is HQ_SAD.
-    :param tr:                The temporal radius.
-                              This determines how many frames are analyzed before/after the current frame.
-    :param blksize:           Size of a block.
-                              Larger blocks are less sensitive to noise, are faster, but also less accurate.
-    :param refine:            Number of times to recalculate motion vectors with halved block size.
-    :param thsad:             Defines the soft threshold of block sum absolute differences.
-                              Blocks with SAD above this threshold have zero weight for averaging (denoising).
-                              Blocks with low SAD have highest weight.
-                              The remaining weight is taken from pixels of source clip.
-    :param thsad2:            Define the SAD soft threshold for frames with the largest temporal distance.
-                              The actual SAD threshold for each reference frame is interpolated
-                              between thsad (nearest frames) and thsad2 (furthest frames).
-                              Only used with the FLOAT MVTools plugin.
-    :param thsad_recalc:      Only bad quality new vectors with a SAD above this will be re-estimated by search.
-                              thsad value is scaled to 8x8 block size.
-    :param limit:             Maximum allowed change in pixel values.
-    :param thscd:             Scene change detection thresholds:
-                               - First value: SAD threshold for considering a block changed between frames.
-                               - Second value: Percentage of changed blocks needed to trigger a scene change.
-    :param export_globals:    Whether to return the MVTools object.
-    :param planes:            Which planes to process. Default: None (all planes).
+    Args:
+        clip: The clip to process.
+        vectors: Motion vectors to use.
+        prefilter: Filter or clip to use when performing motion vector search.
+        mfilter: Filter or clip to use where degrain couldn't find a matching block.
+        preset: MVTools preset defining base values for the MVTools object. Default is HQ_SAD.
+        tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
+        blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+        refine: Number of times to recalculate motion vectors with halved block size.
+        thsad: Defines the soft threshold of block sum absolute differences. Blocks with SAD above this threshold have
+            zero weight for averaging (denoising). Blocks with low SAD have highest weight. The remaining weight is
+            taken from pixels of source clip.
+        thsad2: Define the SAD soft threshold for frames with the largest temporal distance. The actual SAD threshold
+            for each reference frame is interpolated between thsad (nearest frames) and thsad2 (furthest frames). Only
+            used with the FLOAT MVTools plugin.
+        thsad_recalc: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value is
+            scaled to 8x8 block size.
+        limit: Maximum allowed change in pixel values.
+        thscd: Scene change detection thresholds:
 
-    :return:                  Motion compensated and temporally filtered clip with reduced noise.
-                              If export_globals is true: A tuple containing the processed clip and the MVTools object.
+               - First value: SAD threshold for considering a block changed between frames.
+               - Second value: Percentage of changed blocks needed to trigger a scene change.
+
+        export_globals: Whether to return the MVTools object.
+        planes: Which planes to process. Default: None (all planes).
+
+    Returns:
+        Motion compensated and temporally filtered clip with reduced noise. If export_globals is true: A tuple
+        containing the processed clip and the MVTools object.
     """
 
     def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
@@ -197,3 +209,96 @@ def mc_clamp(
         undershoot=scale_delta(undershoot, 8, flt),
         overshoot=scale_delta(overshoot, 8, flt),
     )
+
+
+def ccd(
+    clip: vs.VideoNode,
+    thr: float = 4,
+    tr: int = 0,
+    ref_points: Sequence[bool] = (True, True, False),
+    scale: float | None = None,
+    pscale: float = 0.0,
+    chroma_upscaler: ScalerLike = ArtCNN.R8F64_Chroma,
+    chroma_downscaler: KernelLike = Catrom,
+    planes: PlanesT | MissingT = MISSING,
+    func: FuncExceptT | None = None,
+) -> vs.VideoNode:
+    """
+    Camcorder Color Denoise is an original VirtualDub filter made by Sergey Stolyarevsky.
+
+    It's a chroma denoiser that works great on old sources such as VHSes and DVDs.
+
+    It works as a convolution of near pixels determined by ``ref_points``.
+    If the euclidean distance between the RGB values of the center pixel and a given pixel in the convolution
+    matrix is less than the threshold, then this pixel is considered in the average.
+
+    Example usage:
+
+        ```py
+        denoised = ccd(clip, thr=6, tr=1, chroma_uspcaler=Bicubic(format=vs.RGB48))
+        ```
+
+    Args:
+        clip: Source clip.
+        thr: Euclidean distance threshold for including pixel in the matrix.
+            Higher values results in stronger denoising. Automatically scaled to all bit depths internally.
+        tr: Temporal radius of processing. Higher values result in more denoising. Defaults to 0.
+        ref_points: Specifies whether to use the low, medium, or high reference points (or any combination),
+            respectively, in the processing matrix. The default uses the low and medium, but excludes the high points.
+            See [zsmooth.CCD](https://github.com/adworacz/zsmooth?tab=readme-ov-file#ccd) for more information.
+        scale: Multiplier for the size of the matrix.
+            `scale=1` corresponds with a 25x25 matrix (just like the original CCD implementation by Sergey).
+            `scale=2` is a 50x50 matrix, and so on.
+        pscale: Scale factor for the source clip-denoised process change.
+        chroma_upscaler: Chroma upscaler to apply before processing if input clip is YUV.
+            Defaults to ArtCNN.R8F64_Chroma.
+        chroma_downscaler: Chroma downscaler to apply after processing if input clip is YUV. Defaults to Catrom.
+        planes: Planes to process. Default is chroma planes is clip is YUV, else all planes.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Raises:
+        CustomRuntimeError: If the `chroma_upscaler` didn't upscale the chroma planes.
+
+    Returns:
+        Denoised clip.
+    """
+    func = func or ccd
+
+    assert check_variable_format(clip, func)
+
+    if planes is MISSING:
+        planes = [1, 2] if clip.format.color_family == vs.YUV else None
+
+    planes = normalize_planes(clip, planes)
+
+    if get_subsampling(clip) not in ["444", None]:
+        full = Scaler.ensure_obj(chroma_upscaler, func).scale(clip, clip.width, clip.height)
+    else:
+        full = clip
+
+    full_format = get_video_format(full)
+
+    if (full_format.subsampling_w, full_format.subsampling_h) != (0, 0):
+        raise CustomRuntimeError("`chroma_upscaler` didn't upscale chroma planes.", func, repr(full_format))
+
+    if get_color_family(clip) != vs.RGB:
+        rgb = vs.core.resize.Point(full, format=full_format.replace(color_family=vs.RGB).id)
+    else:
+        rgb = full
+
+    processed = vs.core.zsmooth.CCD(rgb, thr, tr, ref_points, scale)
+
+    if clip.format.id != processed.format.id:
+        chroma_downscaler = Kernel.ensure_obj(chroma_downscaler, func)
+        out = chroma_downscaler.resample(processed, clip, clip)
+
+        if pscale != 1.0:
+            no_denoise = chroma_downscaler.resample(rgb, clip, clip)
+            out = norm_expr([clip, out, no_denoise], f"x z x - {pscale} * + y z - +", planes=planes, func=func)
+    else:
+        out = processed
+
+    if planes != normalize_planes(clip, None):
+        out = join({None: clip, tuple(planes): out})
+
+    return out

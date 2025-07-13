@@ -37,7 +37,9 @@ __all__ = ["BaseScalerSpecializer", "LinearLight", "NoScale", "resample_to"]
 
 
 class BaseScalerSpecializerMeta(BaseScalerMeta):
-    """Meta class for BaseScalerSpecializer to handle specialization logic."""
+    """
+    Meta class for BaseScalerSpecializer to handle specialization logic.
+    """
 
     __isspecialized__: bool
 
@@ -93,8 +95,11 @@ class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseSca
         """
         Specialize this class with a given scaler kernel.
 
-        :param base_scaler: A BaseScaler type used to specialize this class.
-        :return:            A new subclass using the provided kernel.
+        Args:
+            base_scaler: A BaseScaler type used to specialize this class.
+
+        Returns:
+            A new subclass using the provided kernel.
         """
         if isinstance(base_scaler, TypeVar):
             return GenericAlias(cls, (base_scaler,))
@@ -129,12 +134,15 @@ class NoScale(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
         """
         Return the input clip unscaled, validating that the dimensions are consistent.
 
-        :param clip:                The source clip.
-        :param width:               Optional width to validate against the clip's width.
-        :param height:              Optional height to validate against the clip's height.
-        :param shift:               Subpixel shift (top, left).
-        :param kwargs:              Additional arguments forwarded to the scale function.
-        :raises CustomValueError:   If `width` or `height` differ from the clip's dimensions.
+        Args:
+            clip: The source clip.
+            width: Optional width to validate against the clip's width.
+            height: Optional height to validate against the clip's height.
+            shift: Subpixel shift (top, left).
+            **kwargs: Additional arguments forwarded to the scale function.
+
+        Raises:
+            CustomValueError: If `width` or `height` differ from the clip's dimensions.
         """
         width, height = self._wh_norm(clip, width, height)
 
@@ -155,8 +163,11 @@ class NoScale(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
         """
         Create a specialized NoScale class using a specific scaler.
 
-        :param scaler:  A Scaler instance, type or string used as a base for specialization.
-        :return:        A dynamically created NoScale subclass based on the given scaler.
+        Args:
+            scaler: A Scaler instance, type or string used as a base for specialization.
+
+        Returns:
+            A dynamically created NoScale subclass based on the given scaler.
         """
         return NoScale[Scaler.from_param(scaler)]  # type: ignore[return-value,misc]
 
@@ -166,7 +177,9 @@ class LinearLightProcessing(cachedproperty.baseclass, vs_object):
     ll: LinearLight
 
     def get_linear(self) -> vs.VideoNode:
-        """Getter for `linear` cached property."""
+        """
+        Getter for `linear` cached property.
+        """
         wclip = self.ll._resampler.resample(
             self.ll._wclip,
             vs.RGBS if self.ll._wclip.format.color_family in (vs.YUV, vs.RGB) else vs.GRAYS,
@@ -189,7 +202,9 @@ class LinearLightProcessing(cachedproperty.baseclass, vs_object):
         return wclip
 
     def set_linear(self, processed: vs.VideoNode) -> None:
-        """Setter for `linear` cached property."""
+        """
+        Setter for `linear` cached property.
+        """
         if self.ll._exited:
             raise CustomRuntimeError(
                 "You can't set .linear after going out of the context manager!", func=self.__class__
@@ -197,7 +212,9 @@ class LinearLightProcessing(cachedproperty.baseclass, vs_object):
         self._linear = processed
 
     linear = cachedproperty[[Self], vs.VideoNode, Self, vs.VideoNode, ...](get_linear, set_linear)
-    """Cached property to use for linear light processing."""
+    """
+    Cached property to use for linear light processing.
+    """
 
     @cachedproperty
     def out(self) -> vs.VideoNode:
@@ -316,7 +333,9 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
             [Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]], Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
         ],
     ]:
-        """Decorator version of LinearLight."""
+        """
+        Decorator version of LinearLight.
+        """
 
         if func is None:
             return partial(cls.from_func, sigmoid=sigmoid, resampler=resampler, out_fmt=out_fmt)

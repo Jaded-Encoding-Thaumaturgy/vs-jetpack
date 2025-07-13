@@ -195,10 +195,13 @@ class DFTTest:
                 """
                 Interpolates sigma values at a given frequency location.
 
-                :param location:    The frequency location at which to interpolate sigma.
-                :param res:         The resolution of the interpolation (default is 20).
-                :param digits:      The precision of the frequency values (default is 3 decimal places).
-                :return:            The interpolated `SLocation` object.
+                Args:
+                    location: The frequency location at which to interpolate sigma.
+                    res: The resolution of the interpolation (default is 20).
+                    digits: The precision of the frequency values (default is 3 decimal places).
+
+                Returns:
+                    The interpolated `SLocation` object.
                 """
 
             @overload
@@ -208,10 +211,13 @@ class DFTTest:
                 """
                 Interpolates sigma values for a given location or returns `None` if no location is provided.
 
-                :param location:    The frequency location or `None` for no interpolation.
-                :param res:         The resolution of the interpolation (default is 20).
-                :param digits:      The precision of the frequency values (default is 3 decimal places).
-                :return:            The interpolated `SLocation` object or `None` if no location is provided.
+                Args:
+                    location: The frequency location or `None` for no interpolation.
+                    res: The resolution of the interpolation (default is 20).
+                    digits: The precision of the frequency values (default is 3 decimal places).
+
+                Returns:
+                    The interpolated `SLocation` object or `None` if no location is provided.
                 """
 
             @overload
@@ -228,12 +234,15 @@ class DFTTest:
                 """
                 Interpolates sigma values for horizontal, vertical, and temporal locations.
 
-                :param h_loc:   The horizontal frequency location.
-                :param v_loc:   The vertical frequency location.
-                :param t_loc:   The temporal frequency location.
-                :param res:     The resolution of the interpolation (default is 20).
-                :param digits:  The precision of the frequency values (default is 3 decimal places).
-                :return:        A `MultiDim` object containing the interpolated values.
+                Args:
+                    h_loc: The horizontal frequency location.
+                    v_loc: The vertical frequency location.
+                    t_loc: The temporal frequency location.
+                    res: The resolution of the interpolation (default is 20).
+                    digits: The precision of the frequency values (default is 3 decimal places).
+
+                Returns:
+                    A `MultiDim` object containing the interpolated values.
                 """
 
             def __call__(
@@ -243,10 +252,13 @@ class DFTTest:
                 Interpolates sigma values for given frequency locations. Can handle multiple locations for horizontal,
                 vertical, and temporal frequencies.
 
-                :param locations: The frequency locations for interpolation.
-                :param res: The resolution of the interpolation (default is 20).
-                :param digits: The precision of the frequency values (default is 3 decimal places).
-                :return: The interpolated `SLocation` object or a `MultiDim` object if multiple locations are provided.
+                Args:
+                    *locations: The frequency locations for interpolation.
+                    res: The resolution of the interpolation (default is 20).
+                    digits: The precision of the frequency values (default is 3 decimal places).
+
+                Returns:
+                    The interpolated `SLocation` object or a `MultiDim` object if multiple locations are provided.
                 """
                 if len(locations) == 1:
                     sloc = DFTTest.SLocation.from_param(locations[0])
@@ -291,12 +303,14 @@ class DFTTest:
                 }
                 ```
 
-            :param locations:           A sequence of tuples or a dictionary that specifies frequency and sigma pairs.
-            :param interpolate:         The interpolation method to be used for sigma values.
-                                        If `None`, no interpolation is done.
-            :param strict:              If `True`, raises an error if values are out of bounds.
-                                        If `False`, it will clamp values to the bounds.
-            :raises CustomValueError:   If `locations` has not an even number of items.
+            Args:
+                locations: A sequence of tuples or a dictionary that specifies frequency and sigma pairs.
+                interpolate: The interpolation method to be used for sigma values. If `None`, no interpolation is done.
+                strict: If `True`, raises an error if values are out of bounds.
+                    If `False`, it will clamp values to the bounds.
+
+            Raises:
+                CustomValueError: If `locations` has not an even number of items.
             """
             if isinstance(locations, Mapping):
                 frequencies, sigmas = list(locations.keys()), list(locations.values())
@@ -328,9 +342,14 @@ class DFTTest:
             """
             Get the sigma value associated with a given frequency.
 
-            :param key:         The frequency value to look up.
-            :return:            The sigma value corresponding to the given frequency.
-            :raises KeyError:   If the frequency is not found.
+            Args:
+                key: The frequency value to look up.
+
+            Returns:
+                The sigma value corresponding to the given frequency.
+
+            Raises:
+                KeyError: If the frequency is not found.
             """
             try:
                 return self.sigmas[self.frequencies.index(key)]
@@ -341,7 +360,8 @@ class DFTTest:
             """
             Return an iterator over the frequencies.
 
-            :return: An iterator yielding each frequency in order.
+            Returns:
+                An iterator yielding each frequency in order.
             """
             yield from self.frequencies
 
@@ -349,8 +369,11 @@ class DFTTest:
             """
             Return the number of frequency-sigma pairs.
 
-            :return:                The number of pairs.
-            :raises MismatchError:  If the number of frequencies and sigmas does not match.
+            Returns:
+                The number of pairs.
+
+            Raises:
+                MismatchError: If the number of frequencies and sigmas does not match.
             """
             if len(self.frequencies) == (length := len(self.sigmas)):
                 return length
@@ -365,7 +388,8 @@ class DFTTest:
             """
             Reverses the frequency-sigma pairs, inverting the frequency range and reversing the order of sigma values.
 
-            :return: A new `SLocation` instance with reversed frequency-sigma pairs.
+            Returns:
+                A new `SLocation` instance with reversed frequency-sigma pairs.
             """
             return self.__class__(dict(zip((1 - f for f in reversed(self.frequencies)), list(reversed(self.sigmas)))))
 
@@ -376,10 +400,13 @@ class DFTTest:
             """
             Checks and bounds the sigma values to the specified limits.
 
-            :param values:      The list of sigma values to check.
-            :param bounds:      The valid bounds for the sigma values.
-            :param strict:      If `True`, raises an error for out-of-bounds values, otherwise clamps them to bounds.
-            :return:            A list of sigma values that are within the specified bounds.
+            Args:
+                values: The list of sigma values to check.
+                bounds: The valid bounds for the sigma values.
+                strict: If `True`, raises an error for out-of-bounds values, otherwise clamps them to bounds.
+
+            Returns:
+                A list of sigma values that are within the specified bounds.
             """
             if not values:
                 raise CustomValueError('"values" can\'t be empty!', cls)
@@ -423,8 +450,11 @@ class DFTTest:
             Converts a frequency-sigma pair or a literal `False` to an `SLocation` instance.
             Returns `None` if no processing.
 
-            :param location:    A frequency-sigma pair, `False` for no processing, or `None`.
-            :return:            An `SLocation` instance or `None`.
+            Args:
+                location: A frequency-sigma pair, `False` for no processing, or `None`.
+
+            Returns:
+                An `SLocation` instance or `None`.
             """
             if isinstance(location, SupportsFloatOrIndex) and location is not False:
                 location = float(location)
@@ -444,10 +474,13 @@ class DFTTest:
             """
             Interpolates the sigma values across a specified resolution.
 
-            :param method:      The interpolation method to use.
-            :param res:         The resolution of the interpolation (default is 20).
-            :param digits:      The precision of the frequency values (default is 3 decimal places).
-            :return:            A new `SLocation` instance with interpolated sigma values.
+            Args:
+                method: The interpolation method to use.
+                res: The resolution of the interpolation (default is 20).
+                digits: The precision of the frequency values (default is 3 decimal places).
+
+            Returns:
+                A new `SLocation` instance with interpolated sigma values.
             """
             from scipy.interpolate import interp1d
 
@@ -465,7 +498,8 @@ class DFTTest:
             Returns a pre-defined `SLocation` instance that performs no processing
             (i.e., sigma is zero for all locations).
 
-            :return: A `SLocation` instance with no processing.
+            Returns:
+                A `SLocation` instance with no processing.
             """
             return cls({0: 0, 1: 0})
 
@@ -495,10 +529,13 @@ class DFTTest:
                     denoised = DFTTest(clip).denoise(sloc)
                     ```
 
-                :param horizontal:          The sigma values for horizontal frequency locations.
-                :param vertical:            The sigma values for vertical frequency locations.
-                :param temporal:            The sigma values for temporal frequency locations.
-                :raise CustomValueError:    If no dimension is specified.
+                Args:
+                    horizontal: The sigma values for horizontal frequency locations.
+                    vertical: The sigma values for vertical frequency locations.
+                    temporal: The sigma values for temporal frequency locations.
+
+                Raises:
+                    CustomValueError: If no dimension is specified.
                 """
                 if not (horizontal or vertical or temporal):
                     raise CustomValueError("You must specify at least one dimension!", self.__class__)
@@ -730,9 +767,12 @@ class DFTTest:
             """
             Configures the NVRTC (NVIDIA Runtime Compilation) backend for DFTTest.
 
-            :param device_id:       The index of the GPU device to use (default is 0, the first GPU).
-            :param num_streams:     The number of CUDA streams to use for parallel computation (default is 1).
-            :return:                The configured backend.
+            Args:
+                device_id: The index of the GPU device to use (default is 0, the first GPU).
+                num_streams: The number of CUDA streams to use for parallel computation (default is 1).
+
+            Returns:
+                The configured backend.
             """
 
         @overload
@@ -742,9 +782,12 @@ class DFTTest:
             """
             Configures the HIPRTC (HIP Runtime Compilation) backend for DFTTest.
 
-            :param device_id:       The index of the AMD GPU device to use (default is 0).
-            :param num_streams:     The number of HIP streams to use for computation (default is 1).
-            :return:                The configured backend.
+            Args:
+                device_id: The index of the AMD GPU device to use (default is 0).
+                num_streams: The number of HIP streams to use for computation (default is 1).
+
+            Returns:
+                The configured backend.
             """
 
         @overload
@@ -754,9 +797,12 @@ class DFTTest:
             """
             Configures the cuFFT (CUDA Fast Fourier Transform) backend for DFTTest.
 
-            :param device_id:       The index of the CUDA-enabled GPU device to use (default is 0).
-            :param in_place:        If True, computes the FFT in-place, modifying the input array (default is True).
-            :return:                The configured backend.
+            Args:
+                device_id: The index of the CUDA-enabled GPU device to use (default is 0).
+                in_place: If True, computes the FFT in-place, modifying the input array (default is True).
+
+            Returns:
+                The configured backend.
             """
 
         @overload
@@ -766,9 +812,12 @@ class DFTTest:
             """
             Configures the hipFFT (HIP Fast Fourier Transform) backend for DFTTest.
 
-            :param device_id:       The index of the AMD GPU device to use (default is 0).
-            :param in_place:        If True, computes the FFT in-place, modifying the input array (default is True).
-            :return:                The configured backend.
+            Args:
+                device_id: The index of the AMD GPU device to use (default is 0).
+                in_place: If True, computes the FFT in-place, modifying the input array (default is True).
+
+            Returns:
+                The configured backend.
             """
 
         @overload
@@ -776,8 +825,11 @@ class DFTTest:
             """
             Configures the CPU backend for DFTTest.
 
-            :param opt:             CPU optimization level (default is auto detect).
-            :return:                The configured backend.
+            Args:
+                opt: CPU optimization level (default is auto detect).
+
+            Returns:
+                The configured backend.
             """
 
         @overload
@@ -785,7 +837,8 @@ class DFTTest:
             """
             Configures the GCC backend for DFTTest.
 
-            :return:                The configured backend.
+            Returns:
+                The configured backend.
             """
 
         @overload
@@ -793,8 +846,11 @@ class DFTTest:
             """
             Configures the legacy DFTTest (OLD) backend.
 
-            :param opt:             CPU optimization level (default is auto detect).
-            :return:                The configured backend.
+            Args:
+                opt: CPU optimization level (default is auto detect).
+
+            Returns:
+                The configured backend.
             """
 
         def __call__(self, **kwargs: Any) -> DFTTest.Backend:
@@ -804,8 +860,11 @@ class DFTTest:
             Depending on the backend, the arguments may represent device IDs, streams,
             or other backend-specific settings.
 
-            :param kwargs:          Additional configuration parameters for the backend.
-            :return:                The configured backend with applied parameters.
+            Args:
+                **kwargs: Additional configuration parameters for the backend.
+
+            Returns:
+                The configured backend with applied parameters.
             """
             new_enum = _BackendBase(self.__class__.__name__, DFTTest.Backend.__members__)  # type: ignore
             member = getattr(new_enum, self.name)
@@ -822,11 +881,16 @@ class DFTTest:
                 """
                 Applies the DFTTest denoising filter using the plugin associated with the selected backend.
 
-                :param clip:                    Source clip.
-                :param *args:                   Positional arguments passed to the selected plugin.
-                :param **kwargs:                Keyword arguments passed to the selected plugin.
-                :raises CustomRuntimeError:     If the selected backend is not available or unsupported.
-                :return:                        Denoised clip.
+                Args:
+                    clip: Source clip.
+                    *args: Positional arguments passed to the selected plugin.
+                    **kwargs: Keyword arguments passed to the selected plugin.
+
+                Raises:
+                    CustomRuntimeError: If the selected backend is not available or unsupported.
+
+                Returns:
+                    Denoised clip.
                 """
                 ...
 
@@ -838,8 +902,11 @@ class DFTTest:
                 If the current instance is not DFTTest.Backend.AUTO, it returns itself.
                 Otherwise, it attempts to select the best available backend.
 
-                :raises CustomRuntimeError:     If no supported DFTTest implementation is available on the system.
-                :return:                        The resolved DFTTest.Backend to use for processing.
+                Raises:
+                    CustomRuntimeError: If no supported DFTTest implementation is available on the system.
+
+                Returns:
+                    The resolved DFTTest.Backend to use for processing.
                 """
                 ...
 
@@ -848,7 +915,8 @@ class DFTTest:
                 """
                 Returns the appropriate DFTTest plugin based on the current backend.
 
-                :return:        The corresponding DFTTest plugin for the resolved backend.
+                Returns:
+                    The corresponding DFTTest plugin for the resolved backend.
                 """
                 ...
 
@@ -869,10 +937,11 @@ class DFTTest:
             denoised_high_frequencies = dfttest.denoise([(0, 0), (0.5, 0), (0.75, 16), (1.0, 32)])
             ```
 
-        :param clip:        Source clip.
-        :param backend:     The backend to use processing.
-        :param sloc:        The frequency location for denoising.
-        :param kwargs:      Additional parameters to configure the denoising process.
+        Args:
+            clip: Source clip.
+            backend: The backend to use processing.
+            sloc: The frequency location for denoising.
+            **kwargs: Additional parameters to configure the denoising process.
         """
         self.clip = clip
 
@@ -928,9 +997,9 @@ class DFTTest:
         Denoises a clip using Discrete Fourier Transform (DFT).
 
         More informations:
-            - VapourSynth DFTTest plugin: https://github.com/HomeOfVapourSynthEvolution/VapourSynth-DFTTest/blob/master/README.md
-            - AviSynth DFTTest docs: http://avisynth.nl/index.php/Dfttest
-            - vs-dfttest2 docstring: https://github.com/AmusementClub/vs-dfttest2/blob/573bb36c53df93c46a38926c7c654569e3679732/dfttest2.py#L614-L764
+            - [VapourSynth DFTTest plugin](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-DFTTest/blob/master/README.md)
+            - [AviSynth DFTTest docs](http://avisynth.nl/index.php/Dfttest)
+            - [vs-dfttest2 docstring](https://github.com/AmusementClub/vs-dfttest2/blob/573bb36c53df93c46a38926c7c654569e3679732/dfttest2.py#L614-L764)
 
         Examples:
             Apply a constant sigma:
@@ -943,16 +1012,19 @@ class DFTTest:
             denoised = DFTTest().denoise(clip, {0: 0, 0.25: 4, 0.5: 8, 0.75: 16, 1.0: 32})
             ```
 
-        :param clip_or_sloc:  Either a video clip or frequency location.
-        :param sloc:          Frequency location (used if `clip_or_sloc` is a video clip).
-        :param tr:            Temporal radius for denoising (equivalent to `tbsize`).
-        :param ftype:         Filter type for denoising (see [FilterType][vsdenoise.fft.DFTTest.FilterType] enum).
-        :param swin:          Synthesis window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
-        :param twin:          Temporal window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
-        :param planes:        Planes to apply the denoising filter.
-        :param func:          Function returned for custom error handling.
-        :param kwargs:        Additional parameters for the denoising process.
-        :return:              The denoised video node.
+        Args:
+            clip_or_sloc: Either a video clip or frequency location.
+            sloc: Frequency location (used if `clip_or_sloc` is a video clip).
+            tr: Temporal radius for denoising (equivalent to `tbsize`).
+            ftype: Filter type for denoising (see [FilterType][vsdenoise.fft.DFTTest.FilterType] enum).
+            swin: Synthesis window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
+            twin: Temporal window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
+            planes: Planes to apply the denoising filter.
+            func: Function returned for custom error handling.
+            **kwargs: Additional parameters for the denoising process.
+
+        Returns:
+            The denoised video node.
         """
         func = func or self.denoise
 
@@ -987,10 +1059,13 @@ class DFTTest:
         """
         Extracts the frequency domain from the given clip by subtracting the denoised clip from the original.
 
-        :param clip:    The clip from which the frequency domain is to be extracted.
-        :param sloc:    The frequency location for the extraction process.
-        :param kwargs:  Additional parameters for the extraction process.
-        :return:        The clip with the extracted frequency domain.
+        Args:
+            clip: The clip from which the frequency domain is to be extracted.
+            sloc: The frequency location for the extraction process.
+            **kwargs: Additional parameters for the extraction process.
+
+        Returns:
+            The clip with the extracted frequency domain.
         """
         kwargs = {"func": self.extract_freq} | kwargs
         return clip.std.MakeDiff(self.denoise(clip, sloc, **kwargs))
@@ -1001,11 +1076,14 @@ class DFTTest:
         """
         Inserts the frequency domain from one clip into another by merging the frequency information.
 
-        :param low:     The low-frequency component clip.
-        :param high:    The high-frequency component clip.
-        :param sloc:    The frequency location for the merging process.
-        :param kwargs:  Additional parameters for the merging process.
-        :return:        The merged clip with the inserted frequency domain.
+        Args:
+            low: The low-frequency component clip.
+            high: The high-frequency component clip.
+            sloc: The frequency location for the merging process.
+            **kwargs: Additional parameters for the merging process.
+
+        Returns:
+            The merged clip with the inserted frequency domain.
         """
         return low.std.MergeDiff(self.extract_freq(high, sloc, **{"func": self.insert_freq} | kwargs))
 
@@ -1015,11 +1093,14 @@ class DFTTest:
         """
         Merges the low and high-frequency components by applying denoising to the low-frequency component.
 
-        :param low:     The low-frequency component clip.
-        :param high:    The high-frequency component clip.
-        :param sloc:    The frequency location for the merging process.
-        :param kwargs:  Additional parameters for the merging process.
-        :return:        The merged clip with the denoised low-frequency and high-frequency components.
+        Args:
+            low: The low-frequency component clip.
+            high: The high-frequency component clip.
+            sloc: The frequency location for the merging process.
+            **kwargs: Additional parameters for the merging process.
+
+        Returns:
+            The merged clip with the denoised low-frequency and high-frequency components.
         """
         return self.insert_freq(self.denoise(low, sloc, **kwargs), high, sloc, **{"func": self.merge_freq} | kwargs)
 
@@ -1064,17 +1145,17 @@ def fft3d(clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
     This filter processes frames using the Fast Fourier Transform (FFT) in the frequency domain.
     Unlike local filters, FFT3DFilter performs block-based, non-local processing.
 
-    Official documentation:
-    https://github.com/myrsloik/VapourSynth-FFT3DFilter/blob/master/doc/fft3dfilter.md
-
-    Possibly faster implementation:
-    https://github.com/AmusementClub/VapourSynth-FFT3DFilter/releases
+       - [Official documentation](https://github.com/myrsloik/VapourSynth-FFT3DFilter/blob/master/doc/fft3dfilter.md)
+       - [Possibly faster implementation](https://github.com/AmusementClub/VapourSynth-FFT3DFilter/releases)
 
     Note: Sigma values are internally scaled according to bit depth, unlike when using the plugin directly.
 
-    :param clip:        Input video clip.
-    :param **kwargs:    Additional parameters passed to the FFT3DFilter plugin.
-    :return:            A heavily degraded version of DFTTest, with added banding and color shifts.
+    Args:
+        clip: Input video clip.
+        **kwargs: Additional parameters passed to the FFT3DFilter plugin.
+
+    Returns:
+        A heavily degraded version of DFTTest, with added banding and color shifts.
     """
     kwargs |= {"interlaced": FieldBased.from_video(clip, False, fft3d).is_inter}
 

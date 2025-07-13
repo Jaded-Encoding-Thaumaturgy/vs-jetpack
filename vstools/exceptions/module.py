@@ -8,7 +8,9 @@ __all__ = ["CustomImportError", "DependencyNotFoundError", "OutdatedPluginError"
 
 
 class OutdatedPluginError(CustomImportError):
-    """Raised when a plugin is outdated and needs to be updated."""
+    """
+    Raised when a plugin is outdated and needs to be updated.
+    """
 
     def __init__(
         self,

@@ -37,26 +37,40 @@ __all__ = [
 
 
 EXPR_VARS = (alph := list(string.ascii_lowercase))[(idx := alph.index("x")) :] + alph[:idx]
-"""Variables to access clips in Expr."""
+"""
+Variables to access clips in Expr.
+"""
 
 
 class DitherType(CustomStrEnum):
-    """Enum for `zimg_dither_type_e` and fmtc `dmode`."""
+    """
+    Enum for `zimg_dither_type_e` and fmtc `dmode`.
+    """
 
     AUTO = "auto"
-    """Choose automatically."""
+    """
+    Choose automatically.
+    """
 
     NONE = "none"
-    """Round to nearest."""
+    """
+    Round to nearest.
+    """
 
     ORDERED = "ordered"
-    """Bayer patterned dither."""
+    """
+    Bayer patterned dither.
+    """
 
     RANDOM = "random"
-    """Pseudo-random noise of magnitude 0.5."""
+    """
+    Pseudo-random noise of magnitude 0.5.
+    """
 
     ERROR_DIFFUSION = "error_diffusion"
-    """Floyd-Steinberg error diffusion."""
+    """
+    Floyd-Steinberg error diffusion.
+    """
 
     ERROR_DIFFUSION_FMTC = "error_diffusion_fmtc"
     """
@@ -89,7 +103,9 @@ class DitherType(CustomStrEnum):
     """
 
     VOID = "void"
-    """A way to generate blue-noise dither and has a much better visual aspect than ordered dithering."""
+    """
+    A way to generate blue-noise dither and has a much better visual aspect than ordered dithering.
+    """
 
     QUASIRANDOM = "quasirandom"
     """
@@ -100,7 +116,9 @@ class DitherType(CustomStrEnum):
     def apply(
         self, clip: vs.VideoNode, fmt_out: vs.VideoFormat, range_in: ColorRange, range_out: ColorRange
     ) -> ConstantFormatVideoNode:
-        """Apply the given DitherType to a clip."""
+        """
+        Apply the given DitherType to a clip.
+        """
 
         from ..utils import get_video_format
 
@@ -134,7 +152,9 @@ class DitherType(CustomStrEnum):
 
     @property
     def is_fmtc(self) -> bool:
-        """Whether the DitherType is applied through fmtc."""
+        """
+        Whether the DitherType is applied through fmtc.
+        """
 
         return self in _dither_fmtc_types
 
@@ -163,12 +183,14 @@ class DitherType(CustomStrEnum):
         Dithering is theoretically needed when converting from an integer depth greater than 10 to half float,
         despite the higher bit depth, but zimg's internal resampler currently does not dither for float output.
 
-        :param in_fmt:              Input clip, frame or video format.
-        :param out_fmt:             Output clip, frame or video format.
-        :param in_range:            Input color range.
-        :param out_range:           Output color range.
+        Args:
+            in_fmt: Input clip, frame or video format.
+            out_fmt: Output clip, frame or video format.
+            in_range: Input color range.
+            out_range: Output color range.
 
-        :return:                    Whether the clip should be dithered.
+        Returns:
+            Whether the clip should be dithered.
         """
 
     @overload
@@ -198,14 +220,16 @@ class DitherType(CustomStrEnum):
         Dithering is theoretically needed when converting from an integer depth greater than 10 to half float,
         despite the higher bit depth, but zimg's internal resampler currently does not dither for float output.
 
-        :param in_bits:             Input bitdepth.
-        :param out_bits:            Output bitdepth.
-        :param in_sample_type:      Input sample type.
-        :param out_sample_type:     Output sample type.
-        :param in_range:            Input color range.
-        :param out_range:           Output color range.
+        Args:
+            in_bits: Input bitdepth.
+            out_bits: Output bitdepth.
+            in_sample_type: Input sample type.
+            out_sample_type: Output sample type.
+            in_range: Input color range.
+            out_range: Output color range.
 
-        :return:                    Whether the clip should be dithered.
+        Returns:
+            Whether the clip should be dithered.
         """
 
     @staticmethod
@@ -274,38 +298,36 @@ def depth(
     This uses exclusively internal plugins except for specific dither_types.
     To check whether your DitherType uses fmtc, use `DitherType.is_fmtc`.
 
-    .. code-block:: python
-
         >>> src_8 = vs.core.std.BlankClip(format=vs.YUV420P8)
         >>> src_10 = depth(src_8, 10)
         >>> src_10.format.name
         'YUV420P10'
-
-    .. code-block:: python
 
         >>> src2_10 = vs.core.std.BlankClip(format=vs.RGB30)
         >>> src2_8 = depth(src2_10, 8, dither_type=Dither.RANDOM)  # override default dither behavior
         >>> src2_8.format.name
         'RGB24'
 
-    :param clip:            Input clip.
-    :param bitdepth:        Desired bitdepth of the output clip.
-    :param sample_type:     Desired sample type of output clip. Allows overriding default float/integer behavior.
-                            Accepts ``vapoursynth.SampleType`` enums ``vapoursynth.INTEGER`` and ``vapoursynth.FLOAT``
-                            or their values, ``0`` and ``1`` respectively.
-    :param range_in:        Input pixel range (defaults to input `clip`'s range).
-    :param range_out:       Output pixel range (defaults to input `clip`'s range).
-    :param dither_type:     Dithering algorithm. Allows overriding default dithering behavior. See :py:class:`Dither`.
+    Args:
+        clip: Input clip.
+        bitdepth: Desired bitdepth of the output clip.
+        sample_type: Desired sample type of output clip. Allows overriding default float/integer behavior. Accepts
+            ``vapoursynth.SampleType`` enums ``vapoursynth.INTEGER`` and ``vapoursynth.FLOAT`` or their values, ``0``
+            and ``1`` respectively.
+        range_in: Input pixel range (defaults to input `clip`'s range).
+        range_out: Output pixel range (defaults to input `clip`'s range).
+        dither_type: Dithering algorithm. Allows overriding default dithering behavior.
+            See [Dither][vstools.DitherType].
 
-                            When integer output is desired but the conversion may produce fractional values,
-                            defaults to :attr:`Dither.VOID` if it is available via the fmtc VapourSynth plugin,
-                            or to Floyd-Steinberg :attr:`Dither.ERROR_DIFFUSION` for 8-bit output
-                            or :attr:`DitherType.ORDERED` for higher bit depths.
-                            In other cases, defaults to :attr:`Dither.NONE`, or round to nearest.
-                            See :py:func:`Dither.should_dither` for more information.
+            When integer output is desired but the conversion may produce fractional values,
+            defaults to DitherType.VOID if it is available via the fmtc VapourSynth plugin,
+            or to Floyd-Steinberg DitherType.ERROR_DIFFUSION for 8-bit output
+            or DitherType.ORDERED for higher bit depths.
+            In other cases, defaults to DitherType.NONE, or round to nearest.
+            See [DitherType.should_dither][vstools.DitherType.should_dither] for more information.
 
-    :return:                Converted clip with desired bit depth and sample type.
-                            ``ColorFamily`` will be same as input.
+    Returns:
+        Converted clip with desired bit depth and sample type. ``ColorFamily`` will be same as input.
     """
 
     from ..utils import get_video_format
@@ -348,9 +370,11 @@ def frame2clip(frame: vs.VideoFrame) -> ConstantFormatVideoNode:
     """
     Convert a VideoFrame to a VideoNode.
 
-    :param frame:       Input frame.
+    Args:
+        frame: Input frame.
 
-    :return:            1-frame long VideoNode of the input frame.
+    Returns:
+        1-frame long VideoNode of the input frame.
     """
 
     key = hash((frame.width, frame.height, frame.format.id))
@@ -371,11 +395,14 @@ def get_y(clip: vs.VideoNode, /) -> ConstantFormatVideoNode:
     """
     Extract the luma (Y) plane of the given clip.
 
-    :param clip:                Input clip.
+    Args:
+        clip: Input clip.
 
-    :return:                    Y plane of the input clip.
+    Returns:
+        Y plane of the input clip.
 
-    :raises CustomValueError:   Clip is not GRAY or YUV.
+    Raises:
+        CustomValueError: Clip is not GRAY or YUV.
     """
 
     InvalidColorFamilyError.check(clip, [vs.YUV, vs.GRAY], get_y)
@@ -387,11 +414,14 @@ def get_u(clip: vs.VideoNode, /) -> ConstantFormatVideoNode:
     """
     Extract the first chroma (U) plane of the given clip.
 
-    :param clip:                Input clip.
+    Args:
+        clip: Input clip.
 
-    :return:                    Y plane of the input clip.
+    Returns:
+        Y plane of the input clip.
 
-    :raises CustomValueError:   Clip is not YUV.
+    Raises:
+        CustomValueError: Clip is not YUV.
     """
 
     InvalidColorFamilyError.check(clip, vs.YUV, get_u)
@@ -403,11 +433,14 @@ def get_v(clip: vs.VideoNode, /) -> ConstantFormatVideoNode:
     """
     Extract the second chroma (V) plane of the given clip.
 
-    :param clip:                Input clip.
+    Args:
+        clip: Input clip.
 
-    :return:                    V plane of the input clip.
+    Returns:
+        V plane of the input clip.
 
-    :raises CustomValueError:   Clip is not YUV.
+    Raises:
+        CustomValueError: Clip is not YUV.
     """
 
     InvalidColorFamilyError.check(clip, vs.YUV, get_v)
@@ -419,11 +452,14 @@ def get_r(clip: vs.VideoNode, /) -> ConstantFormatVideoNode:
     """
     Extract the red plane of the given clip.
 
-    :param clip:                Input clip.
+    Args:
+        clip: Input clip.
 
-    :return:                    R plane of the input clip.
+    Returns:
+        R plane of the input clip.
 
-    :raises CustomValueError:   Clip is not RGB.
+    Raises:
+        CustomValueError: Clip is not RGB.
     """
 
     InvalidColorFamilyError.check(clip, vs.RGB, get_r)
@@ -435,11 +471,14 @@ def get_g(clip: vs.VideoNode, /) -> ConstantFormatVideoNode:
     """
     Extract the green plane of the given clip.
 
-    :param clip:                Input clip.
+    Args:
+        clip: Input clip.
 
-    :return:                    G plane of the input clip.
+    Returns:
+        G plane of the input clip.
 
-    :raises CustomValueError:   Clip is not RGB.
+    Raises:
+        CustomValueError: Clip is not RGB.
     """
 
     InvalidColorFamilyError.check(clip, vs.RGB, get_g)
@@ -451,11 +490,14 @@ def get_b(clip: vs.VideoNode, /) -> ConstantFormatVideoNode:
     """
     Extract the blue plane of the given clip.
 
-    :param clip:                Input clip.
+    Args:
+        clip: Input clip.
 
-    :return:                    B plane of the input clip.
+    Returns:
+        B plane of the input clip.
 
-    :raises CustomValueError:   Clip is not RGB.
+    Raises:
+        CustomValueError: Clip is not RGB.
     """
 
     InvalidColorFamilyError.check(clip, vs.RGB, get_b)
@@ -472,17 +514,18 @@ def insert_clip(
     The insert clip may NOT exceed the final frame of the input clip.
     This limitation can be circumvented by setting `strict=False`.
 
-    :param clip:                Input clip.
-    :param insert:              Clip to insert into the input clip.
-    :param start_frame:         Frame to start inserting from.
-    :param strict:              Throw an error if the inserted clip exceeds the final frame of the input clip.
-                                If False, truncate the inserted clip instead.
-                                Default: True.
+    Args:
+        clip: Input clip.
+        insert: Clip to insert into the input clip.
+        start_frame: Frame to start inserting from.
+        strict: Throw an error if the inserted clip exceeds the final frame of the input clip. If False, truncate the
+            inserted clip instead. Default: True.
 
-    :return:                    Clip with frames replaced by the insert clip.
+    Returns:
+        Clip with frames replaced by the insert clip.
 
-    :raises CustomValueError:   Insert clip is too long, ``strict=False``,
-                                and exceeds the final frame of the input clip.
+    Raises:
+        CustomValueError: Insert clip is too long, ``strict=False``, and exceeds the final frame of the input clip.
     """
 
     if start_frame == 0:
@@ -512,10 +555,12 @@ def join(luma: vs.VideoNode, chroma: vs.VideoNode, family: vs.ColorFamily | None
     """
     Join a list of planes together to form a single YUV clip.
 
-    :param luma:        Luma clip, GRAY or YUV.
-    :param chroma:      Chroma clip, must be YUV.
+    Args:
+        luma: Luma clip, GRAY or YUV.
+        chroma: Chroma clip, must be YUV.
 
-    :return:            YUV clip of combined planes.
+    Returns:
+        YUV clip of combined planes.
     """
 
 
@@ -526,11 +571,13 @@ def join(
     """
     Join a list of planes together to form a single YUV clip.
 
-    :param y:           Y plane.
-    :param u:           U plane.
-    :param v:           V plane.
+    Args:
+        y: Y plane.
+        u: U plane.
+        v: V plane.
 
-    :return:            YUV clip of combined planes.
+    Returns:
+        YUV clip of combined planes.
     """
 
 
@@ -541,12 +588,14 @@ def join(
     """
     Join a list of planes together to form a single YUV clip.
 
-    :param y:           Y plane.
-    :param u:           U plane.
-    :param v:           V plane.
-    :param alpha:       Alpha clip.
+    Args:
+        y: Y plane.
+        u: U plane.
+        v: V plane.
+        alpha: Alpha clip.
 
-    :return:            YUV clip of combined planes with an alpha clip attached.
+    Returns:
+        YUV clip of combined planes with an alpha clip attached.
     """
 
 
@@ -557,11 +606,13 @@ def join(
     """
     Join a list of planes together to form a single RGB clip.
 
-    :param r:           R plane.
-    :param g:           G plane.
-    :param b:           B plane.
+    Args:
+        r: R plane.
+        g: G plane.
+        b: B plane.
 
-    :return:            RGB clip of combined planes.
+    Returns:
+        RGB clip of combined planes.
     """
 
 
@@ -572,12 +623,14 @@ def join(
     """
     Join a list of planes together to form a single RGB clip.
 
-    :param r:           R plane.
-    :param g:           G plane.
-    :param b:           B plane.
-    :param alpha:       Alpha clip.
+    Args:
+        r: R plane.
+        g: G plane.
+        b: B plane.
+        alpha: Alpha clip.
 
-    :return:            RGB clip of combined planes with an alpha clip attached.
+    Returns:
+        RGB clip of combined planes with an alpha clip attached.
     """
 
 
@@ -586,11 +639,12 @@ def join(*planes: vs.VideoNode, family: vs.ColorFamily | None = None) -> Constan
     """
     Join a list of planes together to form a single clip.
 
-    :param planes:      Planes to combine.
-    :param family:      Output clip family.
-                        Default: first clip or detected from props if GRAY and len(planes) > 1.
+    Args:
+        *planes: Planes to combine.
+        family: Output clip family. Default: first clip or detected from props if GRAY and len(planes) > 1.
 
-    :return:            Clip of combined planes.
+    Returns:
+        Clip of combined planes.
     """
 
 
@@ -599,11 +653,12 @@ def join(planes: Iterable[vs.VideoNode], family: vs.ColorFamily | None = None) -
     """
     Join a list of planes together to form a single clip.
 
-    :param planes:      Planes to combine.
-    :param family:      Output clip family.
-                        Default: first clip or detected from props if GRAY and len(planes) > 1.
+    Args:
+        planes: Planes to combine.
+        family: Output clip family. Default: first clip or detected from props if GRAY and len(planes) > 1.
 
-    :return:            Clip of combined planes.
+    Returns:
+        Clip of combined planes.
     """
 
 
@@ -614,15 +669,26 @@ def join(
     """
     Join a map of planes together to form a single clip.
 
-    :param planes:      Planes to combine.
-    :param family:      Output clip family.
-                        Default: first clip or detected from props if GRAY and len(planes) > 1.
+    Args:
+        planes: Planes to combine.
+        family: Output clip family. Default: first clip or detected from props if GRAY and len(planes) > 1.
 
-    :return:            Clip of combined planes.
+    Returns:
+        Clip of combined planes.
     """
 
 
 def join(*_planes: Any, **kwargs: Any) -> vs.VideoNode:
+    """
+    Join a list of planes together to form a single clip.
+
+    Args:
+        _planes: Planes to combine.
+
+    Returns:
+        Combined planes.
+    """
+
     from ..functions import flatten_vnodes, to_arr
     from ..utils import get_color_family, get_video_format
 
@@ -700,10 +766,12 @@ def plane(clip: vs.VideoNode, index: int, /, strict: bool = True) -> ConstantFor
     """
     Extract a plane from the given clip.
 
-    :param clip:        Input clip.
-    :param index:       Index of the plane to extract.
+    Args:
+        clip: Input clip.
+        index: Index of the plane to extract.
 
-    :return:            Grayscale clip of the clip's plane.
+    Returns:
+        Grayscale clip of the clip's plane.
     """
 
     assert check_variable_format(clip, plane)
@@ -721,9 +789,11 @@ def split(clip: vs.VideoNode, /) -> list[ConstantFormatVideoNode]:
     """
     Split a clip into a list of individual planes.
 
-    :param clip:    Input clip.
+    Args:
+        clip: Input clip.
 
-    :return:        List of individual planes.
+    Returns:
+        List of individual planes.
     """
 
     assert check_variable_format(clip, split)
@@ -746,9 +816,11 @@ def stack_clips(
     """
     Stack clips in the following repeating order: hor->ver->hor->ver->...
 
-    :param clips:   Sequence of clips to stack recursively.
+    Args:
+        clips: Sequence of clips to stack recursively.
 
-    :return:        Stacked clips.
+    Returns:
+        Stacked clips.
     """
 
     return vs.core.std.StackHorizontal(
@@ -780,16 +852,18 @@ def limiter(
     Wraps `vs-zip <https://github.com/dnjulek/vapoursynth-zip>`.Limiter but only processes
     if clip format is not integer, a min/max val is specified or tv_range is True.
 
-    :param clip:        Clip to process.
-    :param min_val:     Lower bound. Defaults to the lowest allowed value for the input.
-                        Can be specified for each plane individually.
-    :param max_val:     Upper bound. Defaults to the highest allowed value for the input.
-                        Can be specified for each plane individually.
-    :param tv_range:    Changes min/max defaults values to LIMITED.
-    :param planes:      Planes to process.
-    :param func:        Function returned for custom error handling.
-                        This should only be set by VS package developers.
-    :return:            Clamped clip.
+    Args:
+        clip: Clip to process.
+        min_val: Lower bound. Defaults to the lowest allowed value for the input. Can be specified for each plane
+            individually.
+        max_val: Upper bound. Defaults to the highest allowed value for the input. Can be specified for each plane
+            individually.
+        tv_range: Changes min/max defaults values to LIMITED.
+        planes: Planes to process.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Returns:
+        Clamped clip.
     """
 
 
@@ -810,16 +884,18 @@ def limiter(
 
     This is the decorator implementation.
 
-    :param _func:       Function that returns a VideoNode to be processed.
-    :param min_val:     Lower bound. Defaults to the lowest allowed value for the input.
-                        Can be specified for each plane individually.
-    :param max_val:     Upper bound. Defaults to the highest allowed value for the input.
-                        Can be specified for each plane individually.
-    :param tv_range:    Changes min/max defaults values to LIMITED.
-    :param planes:      Planes to process.
-    :param func:        Function returned for custom error handling.
-                        This should only be set by VS package developers.
-    :return:            Decorated function.
+    Args:
+        _func: Function that returns a VideoNode to be processed.
+        min_val: Lower bound. Defaults to the lowest allowed value for the input. Can be specified for each plane
+            individually.
+        max_val: Upper bound. Defaults to the highest allowed value for the input. Can be specified for each plane
+            individually.
+        tv_range: Changes min/max defaults values to LIMITED.
+        planes: Planes to process.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Returns:
+        Decorated function.
     """
 
 
@@ -838,15 +914,17 @@ def limiter(
 
     This is the decorator implementation.
 
-    :param min_val:     Lower bound. Defaults to the lowest allowed value for the input.
-                        Can be specified for each plane individually.
-    :param max_val:     Upper bound. Defaults to the highest allowed value for the input.
-                        Can be specified for each plane individually.
-    :param tv_range:    Changes min/max defaults values to LIMITED.
-    :param planes:      Planes to process.
-    :param func:        Function returned for custom error handling.
-                        This should only be set by VS package developers.
-    :return:            Decorated function.
+    Args:
+        min_val: Lower bound. Defaults to the lowest allowed value for the input. Can be specified for each plane
+            individually.
+        max_val: Upper bound. Defaults to the highest allowed value for the input. Can be specified for each plane
+            individually.
+        tv_range: Changes min/max defaults values to LIMITED.
+        planes: Planes to process.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Returns:
+        Decorated function.
     """
 
 
@@ -868,16 +946,18 @@ def limiter(
     Wraps `vs-zip <https://github.com/dnjulek/vapoursynth-zip>`.Limiter but only processes
     if clip format is not integer, a min/max val is specified or tv_range is True.
 
-    :param clip_or_func:    Clip to process or function that returns a VideoNode to be processed.
-    :param min_val:         Lower bound. Defaults to the lowest allowed value for the input.
-                            Can be specified for each plane individually.
-    :param max_val:         Upper bound. Defaults to the highest allowed value for the input.
-                            Can be specified for each plane individually.
-    :param tv_range:        Changes min/max defaults values to LIMITED.
-    :param planes:          Planes to process.
-    :param func:            Function returned for custom error handling.
-                            This should only be set by VS package developers.
-    :return:                Clamped clip.
+    Args:
+        clip_or_func: Clip to process or function that returns a VideoNode to be processed.
+        min_val: Lower bound. Defaults to the lowest allowed value for the input. Can be specified for each plane
+            individually.
+        max_val: Upper bound. Defaults to the highest allowed value for the input. Can be specified for each plane
+            individually.
+        tv_range: Changes min/max defaults values to LIMITED.
+        planes: Planes to process.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Returns:
+        Clamped clip.
     """
     if callable(clip_or_func):
         _func = clip_or_func

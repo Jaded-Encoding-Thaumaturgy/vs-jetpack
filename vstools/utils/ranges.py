@@ -39,7 +39,7 @@ class _RangesCallBackNF(Protocol[_VideoFrameT_contra]):
     def __call__(self, n: int, f: _VideoFrameT_contra, /) -> bool: ...
 
 
-_RangesCallBackT = Union[
+_RangesCallBackLike = Union[
     _RangesCallBack,
     _RangesCallBackF[vs.VideoFrame],
     _RangesCallBackNF[vs.VideoFrame],
@@ -75,6 +75,7 @@ class ReplaceRanges(Generic[P, R]):
     exclusive: bool | None
     """
     Whether to use exclusive ranges globally (Default: None).
+
     If set to True, all calls of replace_ranges will use exclusive ranges.
     If set to False, all calls of replace_ranges will use inclusive ranges.
     """
@@ -192,27 +193,37 @@ def replace_ranges(
 
     Optional Dependencies:
 
-    - [vs-zip](https://github.com/dnjulek/vapoursynth-zip) (highly recommended!)
+        - [vs-zip](https://github.com/dnjulek/vapoursynth-zip) (highly recommended!)
 
-    :param clip_a:      Original clip.
-    :param clip_b:      Replacement clip.
-    :param ranges:      Ranges to replace clip_a (original clip) with clip_b (replacement clip).
-                        Integer values in the list indicate single frames,
-                        Tuple values indicate inclusive ranges.
-                        Callbacks must return true to replace a with b.
-                        Negative integer values will be wrapped around based on clip_b's length.
-                        None values are context dependent:
-                            * None provided as sole value to ranges: no-op
-                            * Single None value in list: Last frame in clip_b
-                            * None as first value of tuple: 0
-                            * None as second value of tuple: Last frame in clip_b
-    :param exclusive:   Force the use of exclusive (Python-style) ranges.
-    :param mismatch:    Accept format or resolution mismatch between clips.
-    :param prop_src:    Source clip(s) to use for frame properties in the callback.
-                        This is required if you're using a callback.
+    Args:
+        clip_a: Original clip.
+        clip_b: Replacement clip.
+        ranges:
+            Ranges to replace clip_a (original clip) with clip_b (replacement clip).
 
-    :return:            Clip with ranges from clip_a replaced with clip_b.
+            Integer values in the list indicate single frames, tuple values indicate inclusive ranges.
+            Callbacks must return true to replace a with b.
+            Negative integer values will be wrapped around based on clip_b's length.
+            None values are context dependent:
+
+                * None provided as sole value to ranges: no-op
+                * Single None value in list: Last frame in clip_b
+                * None as first value of tuple: 0
+                * None as second value of tuple: Last frame in clip_b
+
+        exclusive: Force the use of exclusive (Python-style) ranges.
+        mismatch: Accept format or resolution mismatch between clips.
+        prop_src: Source clip(s) to use for frame properties in the callback.
+            This is required if you're using a callback.
+
+    Raises:
+        CustomValueError: If ``prop_src`` isn't specified and a callback needs it.
+        CustomValueError: If a wrong callback signature is provided.
+
+    Returns:
+        Clip with ranges from clip_a replaced with clip_b.
     """
+
     from ..functions import invert_ranges, normalize_ranges
 
     if (ranges != 0 and not ranges) or clip_a is clip_b:

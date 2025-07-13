@@ -41,8 +41,11 @@ class CustomKernel(Kernel):
 
         This method must be implemented by subclasses to provide the actual kernel logic.
 
-        :param x:                           The input position.
-        :return:                            The evaluated kernel value at position `x`.
+        Args:
+            x: The input position.
+
+        Returns:
+            The evaluated kernel value at position `x`.
         """
 
     def scale_function(
@@ -123,8 +126,9 @@ class CustomComplexTapsKernel(CustomComplexKernel):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param taps:    Determines the radius of the kernel.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            taps: Determines the radius of the kernel.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         self.taps = taps
         super().__init__(**kwargs)
@@ -134,7 +138,8 @@ class CustomComplexTapsKernel(CustomComplexKernel):
         """
         Compute the effective kernel radius based on the number of taps.
 
-        :return: Radius as the ceiling of `taps`.
+        Returns:
+            Radius as the ceiling of `taps`.
         """
         return ceil(self.taps)
 

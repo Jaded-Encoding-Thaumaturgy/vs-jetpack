@@ -316,7 +316,9 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
     category=DeprecationWarning,
 )
 class MVToolsPresets:
-    """Presets for arguments passed to MVTools functions."""
+    """
+    Presets for arguments passed to MVTools functions.
+    """
 
     @classproperty
     @classmethod

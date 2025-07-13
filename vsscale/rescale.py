@@ -305,32 +305,32 @@ class Rescale(RescaleBase):
         """
         Initialize the rescaling process.
 
-        :param clip:                Clip to be rescaled.
-        :param height:              Height to be descaled to.
-                                    If passed as a float, a fractional descale is performed.
-        :param kernel:              Kernel used for descaling.
-        :param upscaler:            Scaler that supports doubling. Defaults to ``ArtCNN``.
-        :param downscaler:          Scaler used to downscale the upscaled clip back to input resolution.
-                                    Defaults to ``Hermite(linear=True)``.
-        :param width:               Width to be descaled to. If ``None``, it is automatically calculated from the height.
-        :param base_height:         Integer height to contain the clip within.
-                                    If ``None``, it is automatically calculated from the height.
-        :param base_width:          Integer width to contain the clip within.
-                                    If ``None``, it is automatically calculated from the width.
-        :param crop:                Cropping values to apply before descale.
-                                    The ratio ``descale_height / source_height`` is preserved even after descale.
-                                    The cropped area is restored when calling the ``upscale`` property.
-        :param shift:               Pixel shifts to apply during descale and upscale. Defaults to ``(0, 0)``.
-        :param field_based:         Whether the input is cross-converted or interlaced content.
-        :param border_handling:     Adjusts how the clip is padded internally during the scaling process.
-                                    Accepted values are:
+        Args:
+            clip: Clip to be rescaled.
+            height: Height to be descaled to. If passed as a float, a fractional descale is performed.
+            kernel: Kernel used for descaling.
+            upscaler: Scaler that supports doubling. Defaults to ``ArtCNN``.
+            downscaler: Scaler used to downscale the upscaled clip back to input resolution. Defaults to
+                ``Hermite(linear=True)``.
+            width: Width to be descaled to. If ``None``, it is automatically calculated from the height.
+            base_height: Integer height to contain the clip within. If ``None``, it is automatically calculated from the
+                height.
+            base_width: Integer width to contain the clip within. If ``None``, it is automatically calculated from the
+                width.
+            crop: Cropping values to apply before descale. The ratio ``descale_height / source_height`` is preserved
+                even after descale. The cropped area is restored when calling the ``upscale`` property.
+            shift: Pixel shifts to apply during descale and upscale. Defaults to ``(0, 0)``.
+            field_based: Whether the input is cross-converted or interlaced content.
+            border_handling: Adjusts how the clip is padded internally during the scaling process.
+                Accepted values are:
 
-                                       - ``0`` (MIRROR): Assume the image was resized with mirror padding.
-                                       - ``1`` (ZERO):   Assume the image was resized with zero padding.
-                                       - ``2`` (EXTEND): Assume the image was resized with extend padding, where the outermost row was extended infinitely far.
+                   - ``0`` (MIRROR): Assume the image was resized with mirror padding.
+                   - ``1`` (ZERO):   Assume the image was resized with zero padding.
+                   - ``2`` (EXTEND): Assume the image was resized with extend padding,
+                     where the outermost row was extended infinitely far.
 
-                                    Defaults to ``0``.
-        """  # noqa: E501
+                Defaults to ``0``.
+        """
         self._line_mask: ConstantFormatVideoNode | None = None
         self._credit_mask: ConstantFormatVideoNode | None = None
         self._ignore_mask: ConstantFormatVideoNode | None = None
@@ -489,9 +489,12 @@ class Rescale(RescaleBase):
         """
         Load a default Kirsch line mask in the class instance. Additionally, it is returned.
 
-        :param clip:    Reference clip, defaults to doubled clip if None.
-        :param scaler:  Scaled used for matching the source clip format, defaults to Bilinear
-        :return:        Generated mask.
+        Args:
+            clip: Reference clip, defaults to doubled clip if None.
+            scaler: Scaled used for matching the source clip format, defaults to Bilinear.
+
+        Returns:
+            Generated mask.
         """
         scaler = Scaler.ensure_obj(scaler)
         scale_kwargs = scaler.kwargs if clip else self.descale_args.kwargs(self.doubled) | scaler.kwargs
@@ -520,13 +523,16 @@ class Rescale(RescaleBase):
         """
         Load a credit mask by making a difference mask between src and rescaled clips
 
-        :param rescale:     Rescaled clip, defaults to rescaled instance clip
-        :param src:         Source clip, defaults to source instance clip
-        :param thr:         Threshold of the amplification expr, defaults to 0.216
-        :param expand:      Additional expand radius applied to the mask, defaults to 4
-        :param ranges:      If specified, ranges to apply the credit clip to
-        :param exclusive:   Use exclusive ranges (Default: False)
-        :return:            Generated mask
+        Args:
+            rescale: Rescaled clip, defaults to rescaled instance clip.
+            src: Source clip, defaults to source instance clip.
+            thr: Threshold of the amplification expr, defaults to 0.216.
+            expand: Additional expand radius applied to the mask, defaults to 4.
+            ranges: If specified, ranges to apply the credit clip to.
+            exclusive: Use exclusive ranges (Default: False).
+
+        Returns:
+            Generated mask.
         """
         if not src:
             src = self._clipy
