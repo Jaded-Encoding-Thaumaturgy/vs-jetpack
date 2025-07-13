@@ -460,10 +460,8 @@ def fine_dehalo2(
     """
     func = fine_dehalo2
 
-    assert clip.format
-
-    if clip.format.color_family not in {vs.YUV, vs.GRAY}:
-        raise ValueError("fine_dehalo2: format not supported")
+    assert check_variable(clip, func)
+    InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
 
     work_clip, *chroma = split(clip)
 
