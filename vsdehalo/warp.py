@@ -6,6 +6,7 @@ from typing import Sequence
 from vsexprtools import norm_expr
 from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, PrewittStd
 from vsrgtools import BlurMatrix, box_blur, min_blur, remove_grain, repair
+from vsrgtools.rgtools import Repair
 from vstools import (
     DitherType,
     InvalidColorFamilyError,
@@ -29,12 +30,27 @@ __all__ = ["YAHR", "edge_cleaner"]
 def edge_cleaner(
     clip: vs.VideoNode,
     strength: float = 10,
-    rmode: int = 17,
+    rmode: int | Repair.Mode = 17,
     hot: bool = False,
     smode: bool = False,
     planes: PlanesT = 0,
     edgemask: EdgeDetectT = PrewittStd,
 ) -> vs.VideoNode:
+    """
+    Cleans edges in a video clip by applying edge-aware processing.
+
+    Args:
+        clip: The input video clip to process.
+        strength: The strength of the edge cleaning. Default is 10.
+        rmode: Repair mode to use for edge refinement. Default is 17.
+        hot: If True, applies additional repair to hot edges. Default is False.
+        smode: If True, applies a stronger cleaning mode. Default is False.
+        planes: The planes to process. Default is 0 (luma only).
+        edgemask: The edge detection method to use. Default is PrewittStd.
+
+    Returns:
+        The processed video clip with cleaned edges.
+    """
     assert check_variable(clip, edge_cleaner)
 
     InvalidColorFamilyError.check(clip, (vs.YUV, vs.GRAY), edge_cleaner)
@@ -109,6 +125,19 @@ def edge_cleaner(
 def YAHR(  # noqa: N802
     clip: vs.VideoNode, blur: int = 2, depth: int | Sequence[int] = 32, expand: float = 5, planes: PlanesT = 0
 ) -> vs.VideoNode:
+    """
+    Applies YAHR (Yet Another Halo Remover) to reduce halos in a video clip.
+
+    Args:
+        clip: The input video clip to process.
+        blur: The blur strength for the warping process. Default is 2.
+        depth: The depth of the warping process. Default is 32.
+        expand: The expansion factor for edge detection. Default is 5.
+        planes: The planes to process. Default is 0 (luma only).
+
+    Returns:
+        The processed video clip with reduced halos.
+    """
     assert check_variable(clip, edge_cleaner)
 
     InvalidColorFamilyError.check(clip, (vs.YUV, vs.GRAY), YAHR)

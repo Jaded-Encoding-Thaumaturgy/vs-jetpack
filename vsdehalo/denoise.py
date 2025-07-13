@@ -56,13 +56,13 @@ def smooth_dering(
     show_mask: bool = False,
 ) -> vs.VideoNode:
     """
-    Applies deringing by using a smart smoother near edges (where ringing
-    occurs) only. Formerly known as HQDeringmod.
+    Applies deringing by using a smart smoother near edges (where ringing occurs) only.
+    Formerly known as HQDeringmod.
 
     Args:
         clip: Clip to process.
 
-        smooth: Already smoothed clip, or a Prefilter, tuple for [luma, chroma] prefilter.
+        smooth: Already smoothed clip, or a Prefilter.
 
         ringmask: Custom ringing mask.
 

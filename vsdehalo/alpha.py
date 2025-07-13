@@ -1,3 +1,7 @@
+"""
+This module implements functions based on the famous dehalo_alpha.
+"""
+
 from __future__ import annotations
 
 from typing import Any, Callable, Generic, Sequence
