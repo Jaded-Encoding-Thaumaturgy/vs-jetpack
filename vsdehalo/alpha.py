@@ -575,7 +575,7 @@ def fine_dehalo2(
 
 
 def _normalize_iter_arr_t(
-    *values: IterArr[T], blur_func: IterArr[VSFunctionPlanesArgs | None] | None
+    *values: IterArr[T], blur_func: IterArr[VSFunctionPlanesArgs | None]
 ) -> tuple[Iterator[tuple[list[T], ...]], Iterator[list[VSFunctionPlanesArgs | None]]]:
     max_len = max((len(x) if isinstance(x, tuple) else 1) for x in (*values, blur_func))
 
