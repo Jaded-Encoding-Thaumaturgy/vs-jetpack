@@ -136,7 +136,7 @@ class ReplaceRanges(Generic[P, R]):
         self,
         clip_a: vs.VideoNode,
         clip_b: vs.VideoNode,
-        ranges: FrameRangeN | FrameRangesN | _RangesCallBackT | None,
+        ranges: FrameRangeN | FrameRangesN | _RangesCallBackLike | None,
         exclusive: bool | None = None,
         mismatch: bool = False,
         *,
@@ -151,7 +151,7 @@ class ReplaceRanges(Generic[P, R]):
 def replace_ranges(
     clip_a: vs.VideoNode,
     clip_b: vs.VideoNode,
-    ranges: FrameRangeN | FrameRangesN | _RangesCallBackT | None,
+    ranges: FrameRangeN | FrameRangesN | _RangesCallBackLike | None,
     exclusive: bool | None = None,
     mismatch: bool = False,
     *,
