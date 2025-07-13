@@ -75,16 +75,14 @@ def _dehalo_alpha_mask(
     ref: vs.VideoNode,
     lowsens: list[float],
     highsens: list[float],
-    mask_radius: RadiusT,
-    mask_coords: Sequence[int] | None,
     planes: PlanesT,
 ) -> vs.VideoNode:
     peak = get_peak_value(clip)
 
     mask = norm_expr(
         [
-            Morpho.gradient(clip, mask_radius, planes=planes, coords=mask_coords),
-            Morpho.gradient(ref, mask_radius, planes=planes, coords=mask_coords),
+            Morpho.gradient(clip, planes=planes),
+            Morpho.gradient(ref, planes=planes),
         ],
         "x x y - x / 0 ? {lowsens} - x {peak} / 256 255 / + 512 255 / / {highsens} + * 0 max 1 min {peak} *",
         planes,
@@ -426,22 +424,16 @@ def fine_dehalo(
         work_clip,
         rx,
         ry,
-        darkstr,
-        brightstr,
+        None,
         lowsens,
         highsens,
         ss,
-        planes,
-        False,
-        mask_radius,
-        downscaler,
-        upscaler,
         supersampler,
         supersampler_ref,
-        pre_ss,
-        pre_supersampler,
-        pre_downscaler,
-        mask_coords,
+        darkstr,
+        brightstr,
+        planes,
+        False,
         func,
     )
 
@@ -584,8 +576,6 @@ def dehalo_alpha(
     # Mask params
     lowsens: FloatIterArr = 50.0,
     highsens: FloatIterArr = 50.0,
-    mask_radius: RadiusT = 1,
-    mask_coords: Sequence[int] | None = None,
     # Supersampling minmax params
     ss: FloatIterArr = 1.5,
     supersampler: ScalerLike = Lanczos(3),
@@ -621,7 +611,6 @@ def dehalo_alpha(
         ss: Supersampling factor, to avoid creation of aliasing.
         planes: Planes to process.
         show_mask: Whether to show the computed halo mask.
-        mask_radius: Mask expanding radius with ``gradient``.
         downscaler: Scaler used to downscale the clip.
         upscaler: Scaler used to upscale the downscaled clip.
         supersampler: Scaler used to supersampler the rescaled clip to `ss` factor.
@@ -662,6 +651,10 @@ def dehalo_alpha(
         if not all(0 <= x <= 100 for x in (*lowsens_i, *highsens_i)):
             raise CustomIndexError("lowsens and highsens must be between 0 and 100!", func)
 
+        # Process without splitting the planes
+        # if the radius are the same for all planes or the blur_func is the same
+        # or if luma only
+        # or clip format is GRAY
         if any(
             [
                 len(set(rx_i)) == len(set(ry_i)) == len(set(blur_func_i)) == 1,
@@ -682,9 +675,7 @@ def dehalo_alpha(
                 ]
             )
 
-        mask = _dehalo_alpha_mask(
-            work_clip, dehalo, lowsens_i, highsens_i, mask_radius, mask_coords, planes
-        )
+        mask = _dehalo_alpha_mask(work_clip, dehalo, lowsens_i, highsens_i, planes)
 
         if show_mask:
             return mask
