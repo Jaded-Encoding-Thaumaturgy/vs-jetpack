@@ -18,7 +18,9 @@ __all__ = ["ChromaLocation", "ChromaLocationT", "FieldBased", "FieldBasedT"]
 
 
 class ChromaLocation(_ChromaLocationMeta):  # type: ignore[misc]
-    """Chroma sample position in YUV formats."""
+    """
+    Chroma sample position in YUV formats.
+    """
 
     _value_: int
 
@@ -44,9 +46,11 @@ class ChromaLocation(_ChromaLocationMeta):  # type: ignore[misc]
         """
         Guess the chroma location based on the clip's resolution.
 
-        :param frame:       Input clip or frame.
+        Args:
+            frame: Input clip or frame.
 
-        :return:            ChromaLocation object.
+        Returns:
+            ChromaLocation object.
         """
 
         return ChromaLocation.LEFT
@@ -58,14 +62,16 @@ class ChromaLocation(_ChromaLocationMeta):  # type: ignore[misc]
         """
         Obtain the chroma location of a clip from the frame properties.
 
-        :param src:                             Input clip, frame, or props.
-        :param strict:                          Be strict about the properties.
-                                                The result may NOT be an unknown value.
+        Args:
+            src: Input clip, frame, or props.
+            strict: Be strict about the properties. The result may NOT be an unknown value.
 
-        :return:                                ChromaLocation object.
+        Returns:
+            ChromaLocation object.
 
-        :raises UndefinedChromaLocationError:   Chroma location is undefined.
-        :raises UndefinedChromaLocationError:   Chroma location can not be determined from the frame properties.
+        Raises:
+            UndefinedChromaLocationError: Chroma location is undefined.
+            UndefinedChromaLocationError: Chroma location can not be determined from the frame properties.
         """
 
         return _base_from_video(cls, src, UndefinedChromaLocationError, strict, func)
@@ -94,7 +100,9 @@ class ChromaLocation(_ChromaLocationMeta):  # type: ignore[misc]
 
 
 class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
-    """Whether the frame is composed of two independent fields (interlaced) and their order if so."""
+    """
+    Whether the frame is composed of two independent fields (interlaced) and their order if so.
+    """
 
     _value_: int
 
@@ -111,13 +119,19 @@ class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
         return None
 
     PROGRESSIVE = 0
-    """The frame is progressive."""
+    """
+    The frame is progressive.
+    """
 
     BFF = 1
-    """The frame is interlaced and the field order is bottom field first."""
+    """
+    The frame is interlaced and the field order is bottom field first.
+    """
 
     TFF = 2
-    """The frame is interlaced and the field order is top field first."""
+    """
+    The frame is interlaced and the field order is top field first.
+    """
 
     if not TYPE_CHECKING:
 
@@ -130,7 +144,9 @@ class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> FieldBased:
-        """Guess the Field order from the frame resolution."""
+        """
+        Guess the Field order from the frame resolution.
+        """
 
         return cls.PROGRESSIVE
 
@@ -141,21 +157,25 @@ class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
         """
         Obtain the Field order of a clip from the frame properties.
 
-        :param src:                             Input clip, frame, or props.
-        :param strict:                          Be strict about the properties.
-                                                Will ALWAYS error if the FieldBased is missing.
+        Args:
+            src: Input clip, frame, or props.
+            strict: Be strict about the properties. Will ALWAYS error if the FieldBased is missing.
 
-        :return:                                FieldBased object.
+        Returns:
+            FieldBased object.
 
-        :raises UndefinedFieldBasedError:       Field order is undefined.
-        :raises UndefinedFieldBasedError:       Field order can not be determined from the frame properties.
+        Raises:
+            UndefinedFieldBasedError: Field order is undefined.
+            UndefinedFieldBasedError: Field order can not be determined from the frame properties.
         """
 
         return _base_from_video(cls, src, UndefinedFieldBasedError, strict, func)
 
     @property
     def is_inter(self) -> bool:
-        """Check whether the value belongs to an interlaced value."""
+        """
+        Check whether the value belongs to an interlaced value.
+        """
 
         return self != FieldBased.PROGRESSIVE
 
@@ -164,7 +184,8 @@ class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
         """
         Check what field the enum signifies.
 
-        :raises UnsupportedFieldBasedError:      PROGRESSIVE value is passed.
+        Raises:
+            UnsupportedFieldBasedError: PROGRESSIVE value is passed.
         """
 
         if self == self.PROGRESSIVE:
@@ -176,7 +197,9 @@ class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
 
     @property
     def is_tff(self) -> bool:
-        """Check whether the value is Top-Field-First."""
+        """
+        Check whether the value is Top-Field-First.
+        """
 
         return self is self.TFF
 
@@ -185,7 +208,8 @@ class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
         """
         Get the inverted field order.
 
-        :raises UnsupportedFieldBasedError:      PROGRESSIVE value is passed.
+        Raises:
+            UnsupportedFieldBasedError: PROGRESSIVE value is passed.
         """
 
         if self == self.PROGRESSIVE:
@@ -204,7 +228,7 @@ class FieldBased(_FieldBasedMeta):  # type: ignore[misc]
 
 
 ChromaLocationT: TypeAlias = Union[int, vs.ChromaLocation, ChromaLocation]
-"""Type alias for values that can be used to initialize a :py:attr:`ChromaLocation`."""
+"""Type alias for values that can be used to initialize a [ChromaLocation][vstools.ChromaLocation]."""
 
 FieldBasedT: TypeAlias = Union[int, vs.FieldBased, FieldBased]
-"""Type alias for values that can be used to initialize a :py:attr:`FieldBased`."""
+"""Type alias for values that can be used to initialize a [FieldBased][vstools.FieldBased]."""

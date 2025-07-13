@@ -42,8 +42,6 @@ class FunctionUtil(cachedproperty.baseclass, list[int], vs_object):
 
     Examples:
 
-    .. code-block:: python
-
         >>> func = FunctionUtil(clip, planes=0, color_family=(vs.YUV, vs.GRAY), bitdepth=16)
         >>> wclip = func.work_clip
         >>> txt = wclip.text.Text("This clip has been processed!")
@@ -72,36 +70,28 @@ class FunctionUtil(cachedproperty.baseclass, list[int], vs_object):
         order: FieldBasedT | None = None,
     ) -> None:
         """
-        :param clip:            Clip to process.
-        :param func:            Function returned for custom error handling.
-                                This should only be set by VS package developers.
-        :param planes:          Planes that get processed in the function. Default: All planes.
-        :param color_family:    Accepted color families. If the input does not adhere to these,
-                                an exception will be raised.
-                                Default: All families.
-        :param bitdepth:        The bitdepth or range of bitdepths to work with. Can be an int, range, tuple, or set.
-                                Range or tuple indicates a range of allowed bitdepths,
-                                set indicates specific allowed bitdepths.
-                                If an int is provided, set the clip's bitdepth to that value.
+        Args:
+            clip: Clip to process.
+            func: Function returned for custom error handling. This should only be set by VS package developers.
+            planes: Planes that get processed in the function. Default: All planes.
+            color_family: Accepted color families. If the input does not adhere to these, an exception will be raised.
+                Default: All families.
+            bitdepth: The bitdepth or range of bitdepths to work with. Can be an int, range, tuple, or set. Range or
+                tuple indicates a range of allowed bitdepths, set indicates specific allowed bitdepths. If an int is
+                provided, set the clip's bitdepth to that value.
 
-                                If a range or set is provided and the work clip's bitdepth is not allowed,
-                                the work clip's bitdepth will be converted to the lowest bitdepth that is greater than
-                                or equal to the work clip's current bitdepth.
+                If a range or set is provided and the work clip's bitdepth is not allowed,
+                the work clip's bitdepth will be converted to the lowest bitdepth that is greater than
+                or equal to the work clip's current bitdepth.
 
-                                `return_clip` automatically restores the clip to the original bitdepth.
-                                If None, use the input clip's bitdepth. Default: None.
-        :param matrix:          Color Matrix to work in. Used for YUV <-> RGB conversions.
-                                Default: Get matrix from the input clip.
-        :param transfer:        Transfer to work in.
-                                Default: Get transfer from the input clip.
-        :param primaries:       Color primaries to work in.
-                                Default: Get primaries from the input clip.
-        :param range_in:        Color Range to work in.
-                                Default: Get the color range from the input clip.
-        :param chromaloc:       Chroma location to work in.
-                                Default: Get the chroma location from the input clip.
-        :param order:           Field order to work in.
-                                Default: Get the field order from the input clip.
+                `return_clip` automatically restores the clip to the original bitdepth.
+                If None, use the input clip's bitdepth. Default: None.
+            matrix: Color Matrix to work in. Used for YUV <-> RGB conversions. Default: Get matrix from the input clip.
+            transfer: Transfer to work in. Default: Get transfer from the input clip.
+            primaries: Color primaries to work in. Default: Get primaries from the input clip.
+            range_in: Color Range to work in. Default: Get the color range from the input clip.
+            chromaloc: Chroma location to work in. Default: Get the chroma location from the input clip.
+            order: Field order to work in. Default: Get the field order from the input clip.
         """
         from ..utils import get_color_family
 
@@ -141,7 +131,9 @@ class FunctionUtil(cachedproperty.baseclass, list[int], vs_object):
 
     @cachedproperty
     def norm_clip(self) -> ConstantFormatVideoNode:
-        """Get a "normalized" clip. This means color space and bitdepth are converted if necessary."""
+        """
+        Get a "normalized" clip. This means color space and bitdepth are converted if necessary.
+        """
 
         if isinstance(self.bitdepth, (range, set)) and self.clip.format.bits_per_sample not in self.bitdepth:
             from .. import get_depth
@@ -193,13 +185,17 @@ class FunctionUtil(cachedproperty.baseclass, list[int], vs_object):
 
     @cachedproperty
     def work_clip(self) -> ConstantFormatVideoNode:
-        """Get the "work clip" as specified from the input planes."""
+        """
+        Get the "work clip" as specified from the input planes.
+        """
 
         return plane(self.norm_clip, 0) if self.luma_only else self.norm_clip
 
     @cachedproperty
     def chroma_planes(self) -> list[vs.VideoNode]:
-        """Get a list of all chroma planes in the normalised clip."""
+        """
+        Get a list of all chroma planes in the normalised clip.
+        """
 
         if self != [0] or self.norm_clip.format.num_planes == 1:
             return []
@@ -208,79 +204,105 @@ class FunctionUtil(cachedproperty.baseclass, list[int], vs_object):
 
     @cachedproperty
     def matrix(self) -> Matrix:
-        """Get the clip's matrix."""
+        """
+        Get the clip's matrix.
+        """
 
         return Matrix.from_param_or_video(self._matrix, self.clip, True, self.func)
 
     @cachedproperty
     def transfer(self) -> Transfer:
-        """Get the clip's transfer."""
+        """
+        Get the clip's transfer.
+        """
 
         return Transfer.from_param_or_video(self._transfer, self.clip, True, self.func)
 
     @cachedproperty
     def primaries(self) -> Primaries:
-        """Get the clip's primaries."""
+        """
+        Get the clip's primaries.
+        """
 
         return Primaries.from_param_or_video(self._primaries, self.clip, True, self.func)
 
     @cachedproperty
     def color_range(self) -> ColorRange:
-        """Get the clip's color range."""
+        """
+        Get the clip's color range.
+        """
 
         return ColorRange.from_param_or_video(self._range_in, self.clip, True, self.func)
 
     @cachedproperty
     def chromaloc(self) -> ChromaLocation:
-        """Get the clip's chroma location."""
+        """
+        Get the clip's chroma location.
+        """
 
         return ChromaLocation.from_param_or_video(self._chromaloc, self.clip, True, self.func)
 
     @cachedproperty
     def order(self) -> FieldBased:
-        """Get the clip's field order."""
+        """
+        Get the clip's field order.
+        """
 
         return FieldBased.from_param_or_video(self._order, self.clip, True, self.func)
 
     @property
     def is_float(self) -> bool:
-        """Whether the clip is of a float sample type."""
+        """
+        Whether the clip is of a float sample type.
+        """
 
         return self.norm_clip.format.sample_type is vs.FLOAT
 
     @property
     def is_integer(self) -> bool:
-        """Whether the clip is of an integer sample type."""
+        """
+        Whether the clip is of an integer sample type.
+        """
 
         return self.norm_clip.format.sample_type is vs.INTEGER
 
     @property
     def is_hd(self) -> bool:
-        """Whether the clip is of an HD resolution (>= 1280x720)."""
+        """
+        Whether the clip is of an HD resolution (>= 1280x720).
+        """
 
         return self.norm_clip.width >= 1280 or self.norm_clip.height >= 720
 
     @property
     def luma(self) -> bool:
-        """Whether the luma gets processed."""
+        """
+        Whether the luma gets processed.
+        """
 
         return 0 in self
 
     @property
     def luma_only(self) -> bool:
-        """Whether luma is the only channel that gets processed."""
+        """
+        Whether luma is the only channel that gets processed.
+        """
 
         return self == [0]
 
     @property
     def chroma(self) -> bool:
-        """Whether any chroma planes get processed."""
+        """
+        Whether any chroma planes get processed.
+        """
 
         return 1 in self or 2 in self
 
     @property
     def chroma_only(self) -> bool:
-        """Whether only chroma planes get processed."""
+        """
+        Whether only chroma planes get processed.
+        """
 
         return self == [1, 2]
 
@@ -296,7 +318,9 @@ class FunctionUtil(cachedproperty.baseclass, list[int], vs_object):
         return list({*self} - {0})
 
     def normalize_planes(self, planes: PlanesT) -> list[int]:
-        """Normalize the given sequence of planes."""
+        """
+        Normalize the given sequence of planes.
+        """
 
         return normalize_planes(self.work_clip, planes)
 
@@ -311,9 +335,11 @@ class FunctionUtil(cachedproperty.baseclass, list[int], vs_object):
         Merge back the chroma if necessary and convert the processed clip back to the original clip's format.
         If `bitdepth != None`, the bitdepth will also be converted if necessary.
 
-        :param processed:       The clip with all the processing applied to it.
+        Args:
+            processed: The clip with all the processing applied to it.
 
-        :return:                Processed clip converted back to the original input clip's format.
+        Returns:
+            Processed clip converted back to the original input clip's format.
         """
 
         assert check_variable(processed, self.func)

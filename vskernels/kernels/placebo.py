@@ -14,6 +14,8 @@ __all__ = [
     "EwaHann",
     "EwaJinc",
     "EwaLanczos",
+    "EwaLanczos4Sharpest",
+    "EwaLanczosSharp",
     "EwaRobidoux",
     "EwaRobidouxSharp",
     "Placebo",
@@ -34,7 +36,7 @@ class Placebo(ComplexScaler, abstract=True):
 
     def __init__(
         self,
-        taps: float | None = None,
+        radius: float | None = None,
         b: float | None = None,
         c: float | None = None,
         clamp: float = 0.0,
@@ -50,21 +52,19 @@ class Placebo(ComplexScaler, abstract=True):
         unless explicitly overridden by the arguments provided at call time.
         Only arguments that match named parameters in this method are injected.
 
-        :param taps:        Overrides the filter kernel radius.
-                            Has no effect if the filter kernel is not resizeable.
-        :param b:           The 'b' parameter for bicubic interpolation.
-        :param c:           The 'c' parameter for bicubic interpolation.
-        :param clamp:       Represents an extra weighting/clamping coefficient for negative weights.
-                            A value of 0.0 represents no clamping.
-                            A value of 1.0 represents full clamping, i.e. all negative lobes will be removed.
-        :param blur:        Additional blur coefficient.
-                            This effectively stretches the kernel, without changing the effective radius
-                            of the filter radius.
-        :param taper:       Additional taper coefficient. This essentially flattens the function's center.
-        :param antiring:    Antiringing strength.
-        :param kwargs:      Keyword arguments that configure the internal scaling behavior.
+        Args:
+            radius: Overrides the filter kernel radius. Has no effect if the filter kernel is not resizeable.
+            b: The 'b' parameter for bicubic interpolation.
+            c: The 'c' parameter for bicubic interpolation.
+            clamp: Represents an extra weighting/clamping coefficient for negative weights. A value of 0.0 represents no
+                clamping. A value of 1.0 represents full clamping, i.e. all negative lobes will be removed.
+            blur: Additional blur coefficient. This effectively stretches the kernel, without changing the effective
+                radius of the filter radius.
+            taper: Additional taper coefficient. This essentially flattens the function's center.
+            antiring: Antiringing strength.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
-        self.taps = taps
+        self.radius = radius
         self.b = b
         self.c = c
         self.clamp = clamp
@@ -81,6 +81,8 @@ class Placebo(ComplexScaler, abstract=True):
         height: int | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
+        kwargs.pop("format", None)
+
         return (
             {
                 "sx": kwargs.pop("src_left", shift[1]),
@@ -88,7 +90,7 @@ class Placebo(ComplexScaler, abstract=True):
                 "width": width,
                 "height": height,
                 "filter": self._kernel,
-                "radius": self.taps,
+                "radius": self.radius,
                 "param1": self.b,
                 "param2": self.c,
                 "clamp": self.clamp,
@@ -103,8 +105,8 @@ class Placebo(ComplexScaler, abstract=True):
 
     @ComplexScaler.cached_property
     def kernel_radius(self) -> int:
-        if self.taps:
-            return ceil(self.taps)
+        if self.radius:
+            return ceil(self.radius)
 
         if self.b or self.c:
             b, c = fallback(self.b, 0), fallback(self.c, 0.5)
@@ -116,7 +118,9 @@ class Placebo(ComplexScaler, abstract=True):
 
 
 class EwaBicubic(Placebo):
-    """Ewa Bicubic resizer."""
+    """
+    Ewa Bicubic resizer.
+    """
 
     _kernel = "ewa_robidoux"
 
@@ -129,13 +133,12 @@ class EwaBicubic(Placebo):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param b:       The 'b' parameter for bicubic interpolation.
-        :param c:       The 'c' parameter for bicubic interpolation.
-        :param radius:  Overrides the filter kernel radius.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            b: The 'b' parameter for bicubic interpolation.
+            c: The 'c' parameter for bicubic interpolation.
+            radius: Overrides the filter kernel radius.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
-        radius = kwargs.pop("taps", radius)
-
         if radius is None:
             radius = 1 if (b, c) == (0, 0) else 2
 
@@ -143,87 +146,156 @@ class EwaBicubic(Placebo):
 
 
 class EwaLanczos(Placebo):
-    """Ewa Lanczos resizer."""
+    """
+    Ewa Lanczos resizer.
+    """
 
     _kernel = "ewa_lanczos"
 
-    def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+    def __init__(self, radius: float = 3.2383154841662362076499, **kwargs: Any) -> None:
         """
-        Initialize the kernel with a specific number of taps and optional keyword arguments.
+        Initialize the kernel with a specific radius and optional keyword arguments.
 
         These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param taps:    The number of taps used for Lanczos interpolation.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            radius: Overrides the filter kernel radius. Has no effect if the filter kernel is not resizeable.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
-        super().__init__(taps, None, None, **kwargs)
+        super().__init__(radius, None, None, **kwargs)
+
+
+class EwaLanczosSharp(Placebo):
+    """Ewa Lanczos resizer."""
+
+    _kernel = "ewa_lanczossharp"
+
+    def __init__(
+        self, radius: float = 3.2383154841662362076499, blur: float = 0.98125058372237073562493, **kwargs: Any
+    ) -> None:
+        """
+        Initialize the kernel with a specific radius and optional keyword arguments.
+
+        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        but only if the method explicitly accepts them as named parameters.
+        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        the one passed to `func` takes precedence.
+
+        Args:
+            radius: Overrides the filter kernel radius. Has no effect if the filter kernel is not resizeable.
+            blur: Additional blur coefficient. This effectively stretches the kernel,
+                without changing the effective radius of the filter radius.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
+        """
+        super().__init__(radius, None, None, blur=blur, **kwargs)
+
+
+class EwaLanczos4Sharpest(Placebo):
+    """Ewa Lanczos resizer."""
+
+    _kernel = "ewa_lanczos4sharpest"
+
+    def __init__(
+        self,
+        radius: float = 4.2410628637960698819573,
+        blur: float = 0.88451209326050047745788,
+        antiring: float = 0.8,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Initialize the kernel with a specific radius and optional keyword arguments.
+
+        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        but only if the method explicitly accepts them as named parameters.
+        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        the one passed to `func` takes precedence.
+
+        Args:
+            radius: Overrides the filter kernel radius. Has no effect if the filter kernel is not resizeable.
+            blur: Additional blur coefficient. This effectively stretches the kernel,
+                without changing the effective radius of the filter radius.
+            antiring: Antiringing strength.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
+        """
+        super().__init__(radius, None, None, blur=blur, antiring=antiring, **kwargs)
 
 
 class EwaJinc(Placebo):
-    """Ewa Jinc resizer."""
+    """
+    Ewa Jinc resizer.
+    """
 
     _kernel = "ewa_jinc"
 
-    def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+    def __init__(self, radius: float = 3.2383154841662362076499, **kwargs: Any) -> None:
         """
-        Initialize the kernel with a specific number of taps and optional keyword arguments.
+        Initialize the kernel with a specific radius and optional keyword arguments.
 
         These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param taps:    The number of taps used for Jinc interpolation.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            radius: Overrides the filter kernel radius. Has no effect if the filter kernel is not resizeable.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
-        super().__init__(taps, None, None, **kwargs)
+        super().__init__(radius, None, None, **kwargs)
 
 
 class EwaGinseng(Placebo):
-    """Ewa Ginseng resizer."""
+    """
+    Ewa Ginseng resizer.
+    """
 
     _kernel = "ewa_ginseng"
 
-    def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+    def __init__(self, radius: float = 3.2383154841662362076499, **kwargs: Any) -> None:
         """
-        Initialize the kernel with a specific number of taps and optional keyword arguments.
+        Initialize the kernel with a specific radius and optional keyword arguments.
 
         These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param taps:    The number of taps used for Ginseng interpolation.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            radius: Overrides the filter kernel radius. Has no effect if the filter kernel is not resizeable.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
-        super().__init__(taps, None, None, **kwargs)
+        super().__init__(radius, None, None, **kwargs)
 
 
 class EwaHann(Placebo):
-    """Ewa Hann resizer."""
+    """
+    Ewa Hann resizer.
+    """
 
     _kernel = "ewa_hann"
 
-    def __init__(self, taps: float = 3.2383154841662362076499, **kwargs: Any) -> None:
+    def __init__(self, radius: float = 3.2383154841662362076499, **kwargs: Any) -> None:
         """
-        Initialize the kernel with a specific number of taps and optional keyword arguments.
+        Initialize the kernel with a specific radius and optional keyword arguments.
 
         These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param taps:    The number of taps used for Hann interpolation.
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            radius: Overrides the filter kernel radius. Has no effect if the filter kernel is not resizeable.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
-        super().__init__(taps, None, None, **kwargs)
+        super().__init__(radius, None, None, **kwargs)
 
 
 class EwaRobidoux(Placebo):
-    """Ewa Robidoux resizer."""
+    """
+    Ewa Robidoux resizer.
+    """
 
     _kernel = "ewa_robidoux"
 
@@ -236,13 +308,16 @@ class EwaRobidoux(Placebo):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(None, None, None, **kwargs)
 
 
 class EwaRobidouxSharp(Placebo):
-    """Ewa Robidoux Sharp resizer."""
+    """
+    Ewa Robidoux Sharp resizer.
+    """
 
     _kernel = "ewa_robidouxsharp"
 
@@ -255,6 +330,7 @@ class EwaRobidouxSharp(Placebo):
         If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
         the one passed to `func` takes precedence.
 
-        :param kwargs:  Keyword arguments that configure the internal scaling behavior.
+        Args:
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         super().__init__(None, None, None, **kwargs)

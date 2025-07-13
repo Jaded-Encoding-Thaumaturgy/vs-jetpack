@@ -30,7 +30,9 @@ def _get_packet_storage() -> PackageStorage:
 
 
 class ScenePacketStats(TypedDict):
-    """A class representing the packet size statistics for a scene in a video."""
+    """
+    A class representing the packet size statistics for a scene in a video.
+    """
 
     PktSceneAvgSize: float
     """The average packet size for the scene."""
@@ -64,19 +66,17 @@ class VideoPackets(list[int]):
         the packet sizes to a trimmed clip. Positive values will trim the start of the list, and negative values
         will duplicate packets at the start of the list.
 
-        :param src_file:        The path to the source video file.
-        :param out_file:        The path to the output file where packet sizes will be saved.
-                                If None, output file will be placed alongside the source file.
-                                Default: None.
-        :param offset:          An optional integer offset to trim the packet sizes.
-                                This is useful for applying the packet sizes to a trimmed clip.
-                                Positive values will trim the start of the list, and negative values
-                                will duplicate packets at the start of the list.
-                                Default: 0.
-        :param func:            An optional function to use for error handling.
-                                This should only be set by package developers.
+        Args:
+            src_file: The path to the source video file.
+            out_file: The path to the output file where packet sizes will be saved. If None, output file will be placed
+                alongside the source file. Default: None.
+            offset: An optional integer offset to trim the packet sizes. This is useful for applying the packet sizes to
+                a trimmed clip. Positive values will trim the start of the list, and negative values will duplicate
+                packets at the start of the list. Default: 0.
+            func: An optional function to use for error handling. This should only be set by package developers.
 
-        :return:                A VideoPackets object containing the packet sizes.
+        Returns:
+            A VideoPackets object containing the packet sizes.
         """
 
         func = func or cls.from_video
@@ -151,11 +151,12 @@ class VideoPackets(list[int]):
         """
         Obtain packet sizes from a given file.
 
-        :param file:    The path to the file containing the packet sizes.
-        :param func:    An optional function to use for error handling.
-                        This should only be set by package developers.
+        Args:
+            file: The path to the file containing the packet sizes.
+            func: An optional function to use for error handling. This should only be set by package developers.
 
-        :return:        A VideoPackets object containing the packet sizes.
+        Returns:
+            A VideoPackets object containing the packet sizes.
         """
 
         if file is not None:
@@ -183,12 +184,11 @@ class VideoPackets(list[int]):
         """
         Obtain packet sizes from a given clip.
 
-        :param clip:        The clip to obtain packet sizes from.
-                            Must have the `IdxFilePath` frame property.
-        :param out_file:    The path to the output file where packet sizes will be saved.
-        :param src_file:    The path to the source video file.
-                            If None, the source file will be obtained from the clip.
-                            Default: None.
+        Args:
+            clip: The clip to obtain packet sizes from. Must have the `IdxFilePath` frame property.
+            out_file: The path to the output file where packet sizes will be saved.
+            src_file: The path to the source video file. If None, the source file will be obtained from the clip.
+                Default: None.
         """
 
         from ..utils import get_clip_filepath
@@ -209,9 +209,11 @@ class VideoPackets(list[int]):
         """
         Calculate scene-based packet size statistics by referencing Keyframes.
 
-        :param keyframes:   The keyframe list to get scene packet statistics for.
+        Args:
+            keyframes: The keyframe list to get scene packet statistics for.
 
-        :return:            A list of ScenePacketStats objects.
+        Returns:
+            A list of ScenePacketStats objects.
         """
 
         stats = list[ScenePacketStats]()
@@ -238,14 +240,14 @@ class VideoPackets(list[int]):
         """
         Apply packet size properties to a clip.
 
-        :param clip:        The clip to apply the packet size properties to.
-        :param keyframes:   The keyframe list to get scene packet statistics for.
-                            If None, the packet size properties will be applied to each frame.
-                            Default: None.
-        :param func:        An optional function to use for error handling.
-                            This should only be set by package developers.
+        Args:
+            clip: The clip to apply the packet size properties to.
+            keyframes: The keyframe list to get scene packet statistics for. If None, the packet size properties will be
+                applied to each frame. Default: None.
+            func: An optional function to use for error handling. This should only be set by package developers.
 
-        :return:            A clip with the packet size properties applied.
+        Returns:
+            A clip with the packet size properties applied.
         """
 
         func = func or self.apply_props

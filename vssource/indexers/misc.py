@@ -38,15 +38,21 @@ def _add_handler_func_bs() -> None:
 
 
 class BestSource(Indexer):
-    """BestSource indexer"""
+    """
+    BestSource indexer.
+    """
 
     _source_func = core.lazy.bs.VideoSource
 
     class CacheMode(CustomIntEnum):
-        """Cache mode"""
+        """
+        Cache mode.
+        """
 
         NEVER = 0
-        """Never read or write index to disk."""
+        """
+        Never read or write index to disk.
+        """
 
         CACHE_PATH = 1
         """
@@ -79,30 +85,40 @@ class BestSource(Indexer):
 
 
 class IMWRI(Indexer):
-    """ImageMagick Writer-Reader indexer"""
+    """
+    ImageMagick Writer-Reader indexer
+    """
 
     _source_func = core.lazy.imwri.Read
 
 
 class LSMAS(Indexer):
-    """L-SMASH-Works indexer"""
+    """
+    L-SMASH-Works indexer
+    """
 
     _source_func = core.lazy.lsmas.LWLibavSource
 
 
 class CarefulSource(Indexer):
-    """CarefulSource indexer"""
+    """
+    CarefulSource indexer
+    """
 
     _source_func = core.lazy.cs.ImageSource
 
 
 class FFMS2(Indexer):
-    """FFmpegSource2 indexer"""
+    """
+    FFmpegSource2 indexer
+    """
 
     _source_func = core.lazy.ffms2.Source
 
 
 class ZipSource(Indexer):
-    """vszip image reader indexer"""
+    """
+    vszip image reader indexer
+    """
 
     _source_func = core.lazy.vszip.ImageRead

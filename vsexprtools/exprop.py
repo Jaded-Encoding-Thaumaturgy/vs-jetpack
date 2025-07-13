@@ -255,11 +255,15 @@ class ExprOp(ExprOpBase, CustomEnum):
         planes: PlanesT = None,
         **expr_kwargs: Any,
     ) -> VideoNodeT:
-        """Call combine with this ExprOp."""
+        """
+        Call combine with this ExprOp.
+        """
 
     @overload
     def __call__(self, *pos_args: Any, **kwargs: Any) -> ExprOpBase:
-        """Format this ExprOp into an ExprOpBase str."""
+        """
+        Format this ExprOp into an ExprOpBase str.
+        """
 
     def __call__(self, *pos_args: Any, **kwargs: Any) -> vs.VideoNode | ExprOpBase:
         args = list(flatten(pos_args))

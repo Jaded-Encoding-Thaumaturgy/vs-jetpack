@@ -16,7 +16,9 @@ __all__ = [
 
 
 class Point(ZimgComplexKernel):
-    """Point resizer."""
+    """
+    Point resizer.
+    """
 
     scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Point
     resample_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Point
@@ -26,7 +28,9 @@ class Point(ZimgComplexKernel):
 
 
 class Bilinear(ZimgComplexKernel):
-    """Bilinear resizer."""
+    """
+    Bilinear resizer.
+    """
 
     scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Bilinear
     resample_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Bilinear
@@ -36,7 +40,9 @@ class Bilinear(ZimgComplexKernel):
 
 
 class Lanczos(ZimgComplexKernel):
-    """Lanczos resizer."""
+    """
+    Lanczos resizer.
+    """
 
     scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Lanczos
     resample_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Lanczos
@@ -47,8 +53,9 @@ class Lanczos(ZimgComplexKernel):
         """
         Initialize the kernel with a specific number of taps.
 
-        :param taps:    Determines the radius of the kernel.
-        :param kwargs:  Additional keyword arguments passed to the superclass.
+        Args:
+            taps: Determines the radius of the kernel.
+            **kwargs: Additional keyword arguments passed to the superclass.
         """
         self.taps = taps
         super().__init__(**kwargs)

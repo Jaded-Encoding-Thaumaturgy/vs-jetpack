@@ -62,14 +62,18 @@ def box_blur(
     """
     Applies a box blur to the input clip.
 
-    :param clip:                Source clip.
-    :param radius:              Blur radius (spatial or temporal) Can be a int or a list for per-plane control.
-                                Defaults to 1
-    :param passes:              Number of times the blur is applied. Defaults to 1
-    :param mode:                Convolution mode (horizontal, vertical, both, or temporal). Defaults to HV.
-    :param planes:              Planes to process. Defaults to all.
-    :raises CustomValueError:   If square convolution mode is specified, which is unsupported.
-    :return:                    Blurred clip.
+    Args:
+        clip: Source clip.
+        radius: Blur radius (spatial or temporal) Can be a int or a list for per-plane control. Defaults to 1
+        passes: Number of times the blur is applied. Defaults to 1
+        mode: Convolution mode (horizontal, vertical, both, or temporal). Defaults to HV.
+        planes: Planes to process. Defaults to all.
+
+    Raises:
+        CustomValueError: If square convolution mode is specified, which is unsupported.
+
+    Returns:
+        Blurred clip.
     """
     assert check_variable(clip, box_blur)
 
@@ -135,16 +139,20 @@ def gauss_blur(
     """
     Applies Gaussian blur to a clip, supporting spatial and temporal modes, and per-plane control.
 
-    :param clip:                Source clip.
-    :param sigma:               Standard deviation of the Gaussian kernel.
-                                Can be a float or a list for per-plane control.
-    :param taps:                Number of taps in the kernel. Automatically determined if not specified.
-    :param mode:                Convolution mode (horizontal, vertical, both, or temporal). Defaults to HV.
-    :param planes:              Planes to process. Defaults to all.
-    :param kwargs:              Additional arguments passed to the resizer or blur kernel.
-                                Specifying `_fast=True` enables fast approximation.
-    :raises CustomValueError:   If square convolution mode is specified, which is unsupported.
-    :return:                    Blurred clip.
+    Args:
+        clip: Source clip.
+        sigma: Standard deviation of the Gaussian kernel. Can be a float or a list for per-plane control.
+        taps: Number of taps in the kernel. Automatically determined if not specified.
+        mode: Convolution mode (horizontal, vertical, both, or temporal). Defaults to HV.
+        planes: Planes to process. Defaults to all.
+        **kwargs: Additional arguments passed to the resizer or blur kernel. Specifying `_fast=True` enables fast
+            approximation.
+
+    Raises:
+        CustomValueError: If square convolution mode is specified, which is unsupported.
+
+    Returns:
+        Blurred clip.
     """
     assert check_variable(clip, gauss_blur)
 
@@ -212,15 +220,18 @@ def min_blur(
 
     Original concept: http://avisynth.nl/index.php/MinBlur
 
-    :param clip:      Source clip.
-    :param radius:    Radius of blur to apply. Can be a single int or a list for per-plane control.
-    :param mode:      A tuple of two convolution modes:
-                         - First element: mode for binomial blur.
-                         - Second element: mode for median blur.
-                      Defaults to (HV, SQUARE).
-    :param planes:    Planes to process. Defaults to all.
-    :param kwargs:    Additional arguments passed to the binomial blur.
-    :return:          Clip with MinBlur applied.
+    Args:
+        clip: Source clip.
+        radius: Radius of blur to apply. Can be a single int or a list for per-plane control.
+        mode: A tuple of two convolution modes:
+               - First element: mode for binomial blur.
+               - Second element: mode for median blur.
+            Defaults to (HV, SQUARE).
+        planes: Planes to process. Defaults to all.
+        **kwargs: Additional arguments passed to the binomial blur.
+
+    Returns:
+        Clip with MinBlur applied.
     """
     assert check_variable(clip, min_blur)
 
@@ -259,15 +270,17 @@ def sbr(
     A helper function for high-pass filtering a blur difference, inspired by an AviSynth script by Didée.
     `https://forum.doom9.org/showthread.php?p=1584186#post1584186`
 
-    :param clip:        Source clip.
-    :param radius:      Specifies the size of the blur kernels if `blur` or `blur_diff` is a BlurMatrix enum.
-                        Default to 1.
-    :param mode:        Specifies the convolution mode. Defaults to horizontal + vertical.
-    :param blur:        Blur kernel to apply to the original clip. Defaults to binomial.
-    :param blur_diff:   Blur kernel to apply to the difference clip. Defaults to binomial.
-    :param planes:      Which planes to process. Defaults to all.
-    :param **kwargs:    Additional arguments passed to blur kernel call.
-    :return:            Sbr'd clip.
+    Args:
+        clip: Source clip.
+        radius: Specifies the size of the blur kernels if `blur` or `blur_diff` is a BlurMatrix enum. Default to 1.
+        mode: Specifies the convolution mode. Defaults to horizontal + vertical.
+        blur: Blur kernel to apply to the original clip. Defaults to binomial.
+        blur_diff: Blur kernel to apply to the difference clip. Defaults to binomial.
+        planes: Which planes to process. Defaults to all.
+        **kwargs: Additional arguments passed to blur kernel call.
+
+    Returns:
+        Sbr'd clip.
     """
     func = func or sbr
 
@@ -358,22 +371,24 @@ def median_blur(
     - In temporal mode, each pixel is replaced by the median across multiple frames.
     - In spatial modes, each pixel is replaced with the median of its 2D neighborhood.
 
-    :param clip:                Source clip.
-    :param radius:              Blur radius per plane (list) or uniform radius (int).
-                                Only int is allowed in temporal mode.
-    :param mode:                Convolution mode. Defaults to SQUARE.
-    :param planes:              Planes to process. Defaults to all.
-    :param smart:               Enable [Smart Median by zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#smart-median),
-                                thresholded based on a modified form of variance.
-    :param threshold:           The variance threshold when ``smart=True``.
-                                Pixels with a variance under the threshold are smoothed,
-                                and over the threshold are returned as is.
-    :param scalep:              Parameter scaling when ``smart=True``.
-                                If True, all threshold values will be automatically scaled from 8-bit range (0-255)
-                                to the corresponding range of the input clip's bit depth.
-    :raises CustomValueError:   If a list is passed for radius in temporal mode, which is unsupported,
-                                or if smart=True and mode != ConvMode.SQUARE.
-    :return:                    Median-blurred video clip.
+    Args:
+        clip: Source clip.
+        radius: Blur radius per plane (list) or uniform radius (int). Only int is allowed in temporal mode.
+        mode: Convolution mode. Defaults to SQUARE.
+        planes: Planes to process. Defaults to all.
+        smart: Enable [Smart Median by zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#smart-median),
+            thresholded based on a modified form of variance.
+        threshold: The variance threshold when ``smart=True``. Pixels with a variance under the threshold are smoothed,
+            and over the threshold are returned as is.
+        scalep: Parameter scaling when ``smart=True``. If True, all threshold values will be automatically scaled
+            from 8-bit range (0-255) to the corresponding range of the input clip's bit depth.
+
+    Raises:
+        CustomValueError: If a list is passed for radius in temporal mode, which is unsupported
+            or if smart=True and mode != ConvMode.SQUARE.
+
+    Returns:
+        Median-blurred video clip.
     """
     assert check_variable(clip, median_blur)
 
@@ -456,10 +471,13 @@ class Bilateral(Generic[P, R]):
             """
             Applies the bilateral filter using the plugin associated with the selected backend.
 
-            :param clip:                    Source clip.
-            :param *args:                   Positional arguments passed to the selected plugin.
-            :param **kwargs:                Keyword arguments passed to the selected plugin.
-            :return:                        Bilaterally filtered clip.
+            Args:
+                clip: Source clip.
+                *args: Positional arguments passed to the selected plugin.
+                **kwargs: Keyword arguments passed to the selected plugin.
+
+            Returns:
+                Bilaterally filtered clip.
             """
             return getattr(clip, self.value).Bilateral(*args, **kwargs)
 
@@ -490,15 +508,16 @@ def bilateral(
         - https://github.com/HomeOfVapourSynthEvolution/VapourSynth-Bilateral
         - https://github.com/WolframRhodium/VapourSynth-BilateralGPU
 
-    :param clip:        Source clip.
-    :param ref:         Optional reference clip for joint bilateral filtering.
-    :param sigmaS:      Spatial sigma (controls the extent of spatial smoothing).
-                        Can be a float or per-plane list.
-    :param sigmaR:      Range sigma (controls sensitivity to intensity differences).
-                        Can be a float or per-plane list.
-    :param backend:     Backend implementation to use.
-    :param kwargs:      Additional arguments forwarded to the backend-specific implementation.
-    :return:            Bilaterally filtered clip.
+    Args:
+        clip: Source clip.
+        ref: Optional reference clip for joint bilateral filtering.
+        sigmaS: Spatial sigma (controls the extent of spatial smoothing). Can be a float or per-plane list.
+        sigmaR: Range sigma (controls sensitivity to intensity differences). Can be a float or per-plane list.
+        backend: Backend implementation to use.
+        **kwargs: Additional arguments forwarded to the backend-specific implementation.
+
+    Returns:
+        Bilaterally filtered clip.
     """
     assert check_variable_format(clip, bilateral)
 
@@ -530,20 +549,20 @@ def flux_smooth(
 
     The first and last rows and the first and last columns are not processed by FluxSmoothST.
 
-    :param clip:                    Clip to process.
-    :param temporal_threshold:      Temporal neighbour pixels within this threshold from the current pixel
-                                    are included in the average. Can be specified as an array,
-                                    with values corresonding to each plane of the input clip.
-                                    A negative value (such as -1) indicates that the plane should not be processed
-                                    and will be copied from the input clip.
-    :param spatial_threshold:       Spatial neighbour pixels within this threshold from the current pixel
-                                    are included in the average. A negative value (such as -1) indicates that the plane
-                                    should not be processed and will be copied from the input clip.
-    :param planes:                  Which planes to process. Default to all.
-    :param scalep:                  Parameter scaling. If set to true, all threshold values
-                                    will be automatically scaled from 8-bit range (0-255) to the corresponding range
-                                    of the input clip's bit depth.
-    :return:                        Smoothed clip.
+    Args:
+        clip: Clip to process.
+        temporal_threshold: Temporal neighbour pixels within this threshold from the current pixel are included in the
+            average. Can be specified as an array, with values corresonding to each plane of the input clip. A negative
+            value (such as -1) indicates that the plane should not be processed and will be copied from the input clip.
+        spatial_threshold: Spatial neighbour pixels within this threshold from the current pixel are included in the
+            average. A negative value (such as -1) indicates that the plane should not be processed and will be copied
+            from the input clip.
+        planes: Which planes to process. Default to all.
+        scalep: Parameter scaling. If set to true, all threshold values will be automatically scaled from 8-bit range
+            (0-255) to the corresponding range of the input clip's bit depth.
+
+    Returns:
+        Smoothed clip.
     """
 
     assert check_variable_format(clip, flux_smooth)
@@ -570,13 +589,19 @@ class GuidedFilter(Generic[P, R]):
 
     class Mode(CustomIntEnum):
         ORIGINAL = 0
-        """Original Guided Filter"""
+        """
+        Original Guided Filter
+        """
 
         WEIGHTED = 1
-        """Weighted Guided Image Filter"""
+        """
+        Weighted Guided Image Filter
+        """
 
         GRADIENT = 2
-        """Gradient Domain Guided Image Filter"""
+        """
+        Gradient Domain Guided Image Filter
+        """
 
 
 # ruff: noqa: N806

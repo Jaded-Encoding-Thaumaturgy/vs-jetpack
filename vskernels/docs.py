@@ -21,7 +21,9 @@ __all__ = ["ExampleBicubicKernel"]
 
 
 class ExampleBicubicKernel(Kernel):
-    """Example Kernel class for documentation purposes."""
+    """
+    Example Kernel class for documentation purposes.
+    """
 
     def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Any) -> None:
         self.b = b
@@ -39,13 +41,14 @@ class ExampleBicubicKernel(Kernel):
         """
         Perform a regular scaling operation.
 
-        :param clip:        Input clip.
-        :param width:       Output width.
-        :param height:      Output height.
-        :param shift:       Shift clip during the operation.
-                            Expects a tuple of (src_top, src_left).
+        Args:
+            clip: Input clip.
+            width: Output width.
+            height: Output height.
+            shift: Shift clip during the operation. Expects a tuple of (src_top, src_left).
 
-        :return:            The scaled clip.
+        Returns:
+            The scaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         return core.resize2.Bicubic(
@@ -70,13 +73,14 @@ class ExampleBicubicKernel(Kernel):
         """
         Perform a regular descaling operation.
 
-        :param clip:        Input clip.
-        :param width:       Output width.
-        :param height:      Output height.
-        :param shift:       Shift clip during the operation.
-                            Expects a tuple of (src_top, src_left).
+        Args:
+            clip: Input clip.
+            width: Output width.
+            height: Output height.
+            shift: Shift clip during the operation. Expects a tuple of (src_top, src_left).
 
-        :return:            The descaled clip.
+        Returns:
+            The descaled clip.
         """
         width, height = self._wh_norm(clip, width, height)
         return depth(
@@ -104,12 +108,14 @@ class ExampleBicubicKernel(Kernel):
         """
         Perform a regular resampling operation.
 
-        :param clip:        Input clip
-        :param format:      Output format
-        :param matrix:      Output matrix. If `None`, will take the matrix from the input clip's frameprops.
-        :param matrix_in:   Input matrix. If `None`, will take the matrix from the input clip's frameprops.
+        Args:
+            clip: Input clip
+            format: Output format
+            matrix: Output matrix. If `None`, will take the matrix from the input clip's frameprops.
+            matrix_in: Input matrix. If `None`, will take the matrix from the input clip's frameprops.
 
-        :return:            Resampled clip.
+        Returns:
+            Resampled clip.
         """
         return core.resize2.Bicubic(
             clip,

@@ -27,10 +27,12 @@ def change_fps(clip: vs.VideoNode, fps: Fraction) -> vs.VideoNode:
     This is different from AssumeFPS as this will actively adjust
     the framerate of a clip, rather than simply set the framerate properties.
 
-    :param clip:        Input clip.
-    :param fps:         Framerate to convert the clip to. Must be a Fraction.
+    Args:
+        clip: Input clip.
+        fps: Framerate to convert the clip to. Must be a Fraction.
 
-    :return:            Clip with the framerate converted and frames adjusted as necessary.
+    Returns:
+        Clip with the framerate converted and frames adjusted as necessary.
     """
 
     src_num, src_den = clip.fps_num, clip.fps_den
@@ -58,15 +60,15 @@ def match_clip(
     """
     Try to match the formats, dimensions, etc. of a reference clip to match the original clip.
 
-    :param clip:            Original clip.
-    :param ref:             Reference clip.
-    :param dimensions:      Whether to adjust the dimensions of the reference clip to match the original clip.
-                            If True, uses resize.Bicubic to resize the image. Default: True.
-    :param vformat:         Whether to change the reference clip's format to match the original clip's.
-                            Default: True.
-    :param matrices:        Whether to adjust the Matrix, Transfer, and Primaries of the reference clip
-                            to match the original clip. Default: True.
-    :param length:          Whether to adjust the length of the reference clip to match the original clip.
+    Args:
+        clip: Original clip.
+        ref: Reference clip.
+        dimensions: Whether to adjust the dimensions of the reference clip to match the original clip. If True, uses
+            resize.Bicubic to resize the image. Default: True.
+        vformat: Whether to change the reference clip's format to match the original clip's. Default: True.
+        matrices: Whether to adjust the Matrix, Transfer, and Primaries of the reference clip to match the original
+            clip. Default: True.
+        length: Whether to adjust the length of the reference clip to match the original clip.
     """
     from ..enums import Matrix, Primaries, Transfer
     from ..functions import check_variable
@@ -90,13 +92,16 @@ def match_clip(
 
 
 class padder_ctx(AbstractContextManager["padder_ctx"]):  # noqa: N801
-    """Context manager for the padder class."""
+    """
+    Context manager for the padder class.
+    """
 
     def __init__(self, mod: int = 8, min: int = 0, align: Align = Align.MIDDLE_CENTER) -> None:
         """
-        :param mod:         The modulus used for calculations or constraints. Defaults to 8.
-        :param min:         The minimum value allowed or used as a base threshold. Defaults to 0.
-        :param align:       The alignment configuration. Defaults to Align.MIDDLE_CENTER.
+        Args:
+            mod: The modulus used for calculations or constraints. Defaults to 8.
+            min: The minimum value allowed or used as a base threshold. Defaults to 0.
+            align: The alignment configuration. Defaults to Align.MIDDLE_CENTER.
         """
         self.mod = mod
         self.min = min
@@ -109,9 +114,12 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):  # noqa: N801
         """
         Crop a clip with the padding values.
 
-        :param clip:        Input clip.
-        :param crop_scale:  Optional scale factor for the padding values. If None, no scaling is applied.
-        :return:            Cropped clip.
+        Args:
+            clip: Input clip.
+            crop_scale: Optional scale factor for the padding values. If None, no scaling is applied.
+
+        Returns:
+            Cropped clip.
         """
         (padding, sizes) = self.pad_ops.pop(0)
 
@@ -126,8 +134,11 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):  # noqa: N801
         """
         Pad a clip with reflect mode. This will reflect the clip on each side.
 
-        :param clip:        Input clip.
-        :return:            Padded clip with reflected borders.
+        Args:
+            clip: Input clip.
+
+        Returns:
+            Padded clip with reflected borders.
         """
         padding = padder.mod_padding(clip, self.mod, self.min, self.align)
         out = padder.MIRROR(clip, *padding)
@@ -138,8 +149,11 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):  # noqa: N801
         """
         Pad a clip with repeat mode. This will simply repeat the last row/column till the end.
 
-        :param clip:        Input clip.
-        :return:            Padded clip with repeated borders.
+        Args:
+            clip: Input clip.
+
+        Returns:
+            Padded clip with repeated borders.
         """
         padding = padder.mod_padding(clip, self.mod, self.min, self.align)
         out = padder.REPEAT(clip, *padding)
@@ -152,15 +166,15 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):  # noqa: N801
         """
         Pad a clip with a constant color.
 
-        :param clip:        Input clip.
-        :param color:       Constant color that should be added on the sides:
-                                * number: This will be treated as such and not converted or clamped.
-                                * False: Lowest value for this clip format and color range.
-                                * True: Highest value for this clip format and color range.
-                                * None: Neutral value for this clip format.
-                                * MISSING: Automatically set to False if RGB, else None.
+        Args:
+            clip: Input clip.
+            color: Constant color that should be added on the sides: * number: This will be treated as such and not
+                converted or clamped. * False: Lowest value for this clip format and color range. * True: Highest value
+                for this clip format and color range. * None: Neutral value for this clip format. * MISSING:
+                Automatically set to False if RGB, else None.
 
-        :return:            Padded clip with colored borders.
+        Returns:
+            Padded clip with colored borders.
         """
         padding = padder.mod_padding(clip, self.mod, self.min, self.align)
         out = padder.COLOR(clip, *padding, color)
@@ -177,7 +191,9 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):  # noqa: N801
 
 
 class padder:  # noqa: N801
-    """Pad out the pixels on the sides by the given amount of pixels."""
+    """
+    Pad out the pixels on the sides by the given amount of pixels.
+    """
 
     ctx = padder_ctx
 
@@ -216,13 +232,15 @@ class padder:  # noqa: N801
             >>> CBA|ABCDE
             ```
 
-        :param clip:        Input clip.
-        :param left:        Padding added to the left side of the clip.
-        :param right:       Padding added to the right side of the clip.
-        :param top:         Padding added to the top side of the clip.
-        :param bottom:      Padding added to the bottom side of the clip.
+        Args:
+            clip: Input clip.
+            left: Padding added to the left side of the clip.
+            right: Padding added to the right side of the clip.
+            top: Padding added to the top side of the clip.
+            bottom: Padding added to the bottom side of the clip.
 
-        :return:            Padded clip with reflected borders.
+        Returns:
+            Padded clip with reflected borders.
         """
 
         from ..utils import core
@@ -255,13 +273,15 @@ class padder:  # noqa: N801
             >>> AAA|ABCDE
             ```
 
-        :param clip:        Input clip.
-        :param left:        Padding added to the left side of the clip.
-        :param right:       Padding added to the right side of the clip.
-        :param top:         Padding added to the top side of the clip.
-        :param bottom:      Padding added to the bottom side of the clip.
+        Args:
+            clip: Input clip.
+            left: Padding added to the left side of the clip.
+            right: Padding added to the right side of the clip.
+            top: Padding added to the top side of the clip.
+            bottom: Padding added to the bottom side of the clip.
 
-        :return:            Padded clip with repeated borders.
+        Returns:
+            Padded clip with repeated borders.
         """
 
         *_, fmt, w_sub, h_sub = cls._base(clip, left, right, top, bottom)
@@ -325,19 +345,22 @@ class padder:  # noqa: N801
             >>> ZZZ|ABCDE
             ```
 
-        :param clip:        Input clip.
-        :param left:        Padding added to the left side of the clip.
-        :param right:       Padding added to the right side of the clip.
-        :param top:         Padding added to the top side of the clip.
-        :param bottom:      Padding added to the bottom side of the clip.
-        :param color:       Constant color that should be added on the sides:
-                                * number: This will be treated as such and not converted or clamped.
-                                * False: Lowest value for this clip format and color range.
-                                * True: Highest value for this clip format and color range.
-                                * None: Neutral value for this clip format.
-                                * MISSING: Automatically set to False if RGB, else None.
+        Args:
+            clip: Input clip.
+            left: Padding added to the left side of the clip.
+            right: Padding added to the right side of the clip.
+            top: Padding added to the top side of the clip.
+            bottom: Padding added to the bottom side of the clip.
+            color: Constant color that should be added on the sides:
 
-        :return:            Padded clip with colored borders.
+                   * number: This will be treated as such and not converted or clamped.
+                   * False: Lowest value for this clip format and color range.
+                   * True: Highest value for this clip format and color range.
+                   * None: Neutral value for this clip format.
+                   * MISSING: Automatically set to False if RGB, else None.
+
+        Returns:
+            Padded clip with colored borders.
         """
 
         from ..functions import normalize_seq
@@ -430,11 +453,13 @@ def pick_func_stype(
     """
     Pick the function matching the sample type of the clip's format.
 
-    :param clip:        Input clip.
-    :param func_int:    Function to run on integer clips.
-    :param func_float:  Function to run on float clips.
+    Args:
+        clip: Input clip.
+        func_int: Function to run on integer clips.
+        func_float: Function to run on float clips.
 
-    :return:            Function matching the sample type of your clip's format.
+    Returns:
+        Function matching the sample type of your clip's format.
     """
 
     assert check_variable_format(clip, pick_func_stype)
@@ -447,10 +472,11 @@ def set_output(node: vs.VideoNode, index: int = ..., /, *, alpha: vs.VideoNode |
     """
     Set output node with optional index, and if available, use vspreview set_output.
 
-    :param node:            Output node
-    :param index:           Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet
-    :param alpha:           Alpha planes node, defaults to None
-    :param **kwargs:        Additional arguments to be passed to `vspreview.set_output`.
+    Args:
+        node: Output node
+        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet
+        alpha: Alpha planes node, defaults to None
+        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
     """
 
 
@@ -461,10 +487,11 @@ def set_output(
     """
     Set output node with optional name, and if available, use vspreview set_output.
 
-    :param node:            Output node
-    :param name:            Node's name, defaults to variable name
-    :param alpha:           Alpha planes node, defaults to None
-    :param **kwargs:        Additional arguments to be passed to `vspreview.set_output`.
+    Args:
+        node: Output node
+        name: Node's name, defaults to variable name
+        alpha: Alpha planes node, defaults to None
+        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
     """
 
 
@@ -480,11 +507,12 @@ def set_output(
     """
     Set output node with optional index and name, and if available, use vspreview set_output.
 
-    :param node:            Output node
-    :param index:           Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet
-    :param name:            Node's name, defaults to variable name
-    :param alpha:           Alpha planes node, defaults to None
-    :param **kwargs:        Additional arguments to be passed to `vspreview.set_output`.
+    Args:
+        node: Output node.
+        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet.
+        name: Node's name, defaults to variable name
+        alpha: Alpha planes node, defaults to None.
+        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
     """
 
 
@@ -493,9 +521,10 @@ def set_output(node: vs.AudioNode, index: int = ..., /, **kwargs: Any) -> None:
     """
     Set output node with optional index, and if available, use vspreview set_output.
 
-    :param node:            Output node
-    :param index:           Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet
-    :param **kwargs:        Additional arguments to be passed to `vspreview.set_output`.
+    Args:
+        node: Output node.
+        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet.
+        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
     """
 
 
@@ -504,9 +533,10 @@ def set_output(node: vs.AudioNode, name: str | bool | None = ..., /, **kwargs: A
     """
     Set output node with optional name, and if available, use vspreview set_output.
 
-    :param node:            Output node
-    :param name:            Node's name, defaults to variable name
-    :param **kwargs:        Additional arguments to be passed to `vspreview.set_output`.
+    Args:
+        node: Output node.
+        name: Node's name, defaults to variable name
+        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
     """
 
 
@@ -515,10 +545,11 @@ def set_output(node: vs.AudioNode, index: int = ..., name: str | bool | None = .
     """
     Set output node with optional index and name, and if available, use vspreview set_output.
 
-    :param node:            Output node
-    :param index:           Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet
-    :param name:            Node's name, defaults to variable name
-    :param **kwargs:        Additional arguments to be passed to `vspreview.set_output`.
+    Args:
+        node: Output node.
+        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet.
+        name: Node's name, defaults to variable name.
+        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
     """
 
 
@@ -532,9 +563,10 @@ def set_output(
     """
     Set output node with optional index, and if available, use vspreview set_output.
 
-    :param node:            Output node
-    :param index:           Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet
-    :param **kwargs:        Additional arguments to be passed to `vspreview.set_output`.
+    Args:
+        node: Output node.
+        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet.
+        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
     """
 
 
@@ -548,9 +580,10 @@ def set_output(
     """
     Set output node with optional name, and if available, use vspreview set_output.
 
-    :param node:            Output node
-    :param name:            Node's name, defaults to variable name
-    :param **kwargs:        Additional arguments to be passed to `vspreview.set_output`.
+    Args:
+        node: Output node.
+        name: Node's name, defaults to variable name.
+        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
     """
 
 
@@ -565,10 +598,11 @@ def set_output(
     """
     Set output node with optional index and name, and if available, use vspreview set_output.
 
-    :param node:            Output node
-    :param index:           Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet
-    :param name:            Node's name, defaults to variable name
-    :param **kwargs:        Additional arguments to be passed to `vspreview.set_output`.
+    Args:
+        node: Output node.
+        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet
+        name: Node's name, defaults to variable name
+        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
     """
 
 
@@ -580,6 +614,16 @@ def set_output(
     alpha: vs.VideoNode | None = None,
     **kwargs: Any,
 ) -> None:
+    """
+    Set output node with optional index and name, and if available, use vspreview set_output.
+
+    Args:
+        node: Output node.
+        index_or_name: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet.
+        name: Node's name, defaults to variable name
+        alpha: Alpha planes node, defaults to None.
+        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
+    """
     from ..functions import flatten, to_arr
 
     if isinstance(index_or_name, (str, bool)):

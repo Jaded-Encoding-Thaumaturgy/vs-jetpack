@@ -35,7 +35,9 @@ __all__ = [
 
 @dataclass(kw_only=True)
 class Deinterlacer(vs_object, ABC):
-    """Abstract base class for deinterlacing operations."""
+    """
+    Abstract base class for deinterlacing operations.
+    """
 
     tff: bool = False
     """The field order."""
@@ -46,7 +48,9 @@ class Deinterlacer(vs_object, ABC):
     @property
     @abstractmethod
     def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
-        """Get the plugin function."""
+        """
+        Get the plugin function.
+        """
 
     @abstractmethod
     def _interpolate(
@@ -57,12 +61,15 @@ class Deinterlacer(vs_object, ABC):
 
         Subclasses should handle tff to field if needed and add the kwargs from `get_deint_args`
 
-        :param clip:        The input clip.
-        :param tff:         The field order of the input clip.
-        :param double_rate: Whether to double the FPS.
-        :param dh:          If True, doubles the height of the input by copying each line
-                            to every other line of the output, with the missing lines interpolated.
-        :return:            Interpolated clip.
+        Args:
+            clip: The input clip.
+            tff: The field order of the input clip.
+            double_rate: Whether to double the FPS.
+            dh: If True, doubles the height of the input by copying each line to every other line of the output, with
+                the missing lines interpolated.
+
+        Returns:
+            Interpolated clip.
         """
 
     @abstractmethod
@@ -70,8 +77,11 @@ class Deinterlacer(vs_object, ABC):
         """
         Retrieves arguments for deinterlacing processing.
 
-        :param kwargs:  Additional arguments.
-        :return:        Passed keyword arguments.
+        Args:
+            **kwargs: Additional arguments.
+
+        Returns:
+            Passed keyword arguments.
         """
         return kwargs
 
@@ -79,9 +89,12 @@ class Deinterlacer(vs_object, ABC):
         """
         Apply deinterlacing to the given clip.
 
-        :param clip:    The input clip.
-        :param kwargs:  Additional arguments passed to the plugin function.
-        :return:        Deinterlaced clip.
+        Args:
+            clip: The input clip.
+            **kwargs: Additional arguments passed to the plugin function.
+
+        Returns:
+            Deinterlaced clip.
         """
         return self._interpolate(clip, self.tff, self.double_rate, False, **kwargs)
 
@@ -89,14 +102,19 @@ class Deinterlacer(vs_object, ABC):
         """
         Apply bob deinterlacing to the given clip.
 
-        :param clip:    The input clip.
-        :param kwargs:  Additional arguments passed to the plugin function.
-        :return:        Deinterlaced clip.
+        Args:
+            clip: The input clip.
+            **kwargs: Additional arguments passed to the plugin function.
+
+        Returns:
+            Deinterlaced clip.
         """
         return self._interpolate(clip, self.tff, True, False, **kwargs)
 
     def copy(self, **kwargs: Any) -> Self:
-        """Returns a new Antialiaser class replacing specified fields with new values"""
+        """
+        Returns a new Antialiaser class replacing specified fields with new values
+        """
         return replace(self, **kwargs)
 
 
@@ -115,7 +133,9 @@ class SupportsBobDeinterlace(Protocol):
 
 @dataclass(kw_only=True)
 class AntiAliaser(Deinterlacer, ABC):
-    """Abstract base class for anti-aliasing operations."""
+    """
+    Abstract base class for anti-aliasing operations.
+    """
 
     transpose_first: bool = False
     """Transpose the clip before any operation."""
@@ -126,13 +146,19 @@ class AntiAliaser(Deinterlacer, ABC):
         """
 
         VERTICAL = auto()
-        """Apply anti-aliasing in the vertical direction."""
+        """
+        Apply anti-aliasing in the vertical direction.
+        """
 
         HORIZONTAL = auto()
-        """Apply anti-aliasing in the horizontal direction."""
+        """
+        Apply anti-aliasing in the horizontal direction.
+        """
 
         BOTH = VERTICAL | HORIZONTAL
-        """Apply anti-aliasing in both horizontal and vertical directions."""
+        """
+        Apply anti-aliasing in both horizontal and vertical directions.
+        """
 
     def antialias(
         self, clip: vs.VideoNode, direction: AADirection = AADirection.BOTH, **kwargs: Any
@@ -140,11 +166,13 @@ class AntiAliaser(Deinterlacer, ABC):
         """
         Apply anti-aliasing to the given clip.
 
-        :param clip:        The input clip.
-        :param direction:   Direction in which to apply anti-aliasing.
-                            Defaults to AADirection.BOTH.
-        :param kwargs:      Additional arguments passed to the plugin function.
-        :return:            Anti-aliased clip.
+        Args:
+            clip: The input clip.
+            direction: Direction in which to apply anti-aliasing. Defaults to AADirection.BOTH.
+            **kwargs: Additional arguments passed to the plugin function.
+
+        Returns:
+            Anti-aliased clip.
         """
         assert check_variable(clip, self.antialias)
 
@@ -167,15 +195,20 @@ class AntiAliaser(Deinterlacer, ABC):
         """
         Transpose the input clip by swapping its horizontal and vertical axes.
 
-        :param clip:    The input clip.
-        :return:        The transposed clip.
+        Args:
+            clip: The input clip.
+
+        Returns:
+            The transposed clip.
         """
         return clip.std.Transpose()
 
 
 @dataclass(kw_only=True)
 class SuperSampler(AntiAliaser, Scaler, ABC):
-    """Abstract base class for supersampling operations."""
+    """
+    Abstract base class for supersampling operations.
+    """
 
     scaler: ComplexScalerLike = Catrom
     """Scaler used for downscaling and shifting after supersampling."""
@@ -201,12 +234,15 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
 
         Note: Setting `tff=True` results in less chroma shift for non-centered chroma locations.
 
-        :param clip:        The source clip.
-        :param width:       Target width (defaults to clip width if None).
-        :param height:      Target height (defaults to clip height if None).
-        :param shift:       Subpixel shift (top, left) applied during scaling.
-        :param kwargs:      Additional arguments forwarded to the deinterlacing function.
-        :return:            The scaled clip.
+        Args:
+            clip: The source clip.
+            width: Target width (defaults to clip width if None).
+            height: Target height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) applied during scaling.
+            **kwargs: Additional arguments forwarded to the deinterlacing function.
+
+        Returns:
+            The scaled clip.
         """
         assert check_variable(clip, self.scale)
 
@@ -273,12 +309,17 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
 
             Note: Setting `tff=True` results in less chroma shift for non-centered chroma locations.
 
-            :param clip:                The source clip.
-            :param rfactor:             Scaling factor for supersampling.
-            :param shift:               Subpixel shift (top, left) applied during scaling.
-            :param kwargs:              Additional arguments forwarded to the scale function.
-            :raises CustomValueError:   If resulting resolution is non-positive.
-            :return:                    The supersampled clip.
+            Args:
+                clip: The source clip.
+                rfactor: Scaling factor for supersampling.
+                shift: Subpixel shift (top, left) applied during scaling.
+                **kwargs: Additional arguments forwarded to the scale function.
+
+            Raises:
+                CustomValueError: If resulting resolution is non-positive.
+
+            Returns:
+                The supersampled clip.
             """
             ...
 
@@ -392,7 +433,9 @@ class NNEDI3(SuperSampler):
 
 @dataclass
 class EEDI2(SuperSampler):
-    """Enhanced Edge Directed Interpolation (2nd gen.)"""
+    """
+    Enhanced Edge Directed Interpolation (2nd gen.)
+    """
 
     mthresh: int = 10
     """
@@ -503,7 +546,9 @@ class EEDI2(SuperSampler):
 
 @dataclass
 class EEDI3(SuperSampler):
-    """Enhanced Edge Directed Interpolation (3rd gen.)"""
+    """
+    Enhanced Edge Directed Interpolation (3rd gen.)
+    """
 
     alpha: float = 0.2
     """
@@ -696,7 +741,9 @@ class EEDI3(SuperSampler):
 
 @dataclass
 class SangNom(SuperSampler):
-    """SangNom single field deinterlacer using edge-directed interpolation"""
+    """
+    SangNom single field deinterlacer using edge-directed interpolation
+    """
 
     aa: int | Sequence[int] | None = None
     """
@@ -727,7 +774,9 @@ class SangNom(SuperSampler):
 
 @dataclass
 class BWDIF(Deinterlacer):
-    """Motion adaptive deinterlacing based on yadif with the use of w3fdif and cubic interpolation algorithms."""
+    """
+    Motion adaptive deinterlacing based on yadif with the use of w3fdif and cubic interpolation algorithms.
+    """
 
     edeint: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | None = None
     """

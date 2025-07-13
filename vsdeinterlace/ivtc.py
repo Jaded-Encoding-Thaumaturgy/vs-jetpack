@@ -34,11 +34,13 @@ def sivtc(
     This is essentially a stripped-down JIVTC offering JUST the basic fieldmatching and decimation part.
     As such, you may need to combine multiple instances if patterns change throughout the clip.
 
-    :param clip:        Clip to process.
-    :param pattern:     First frame of any clean-combed-combed-clean-clean sequence.
-    :param tff:         Top-Field-First.
+    Args:
+        clip: Clip to process.
+        pattern: First frame of any clean-combed-combed-clean-clean sequence.
+        tff: Top-Field-First.
 
-    :return:            IVTC'd clip.
+    Returns:
+        IVTC'd clip.
     """
 
     tff = FieldBased.from_param_or_video(tff, clip, True, sivtc).is_tff
@@ -64,14 +66,16 @@ def jivtc(
     This function should only be used when a normal ivtc or ivtc + bobber leaves chroma blend to every fourth frame.
     You can disable chroma_only to use it for luma as well, but it is not recommended.
 
-    :param clip:            Clip to process. Has to be 60i.
-    :param pattern:         First frame of any clean-combed-combed-clean-clean sequence.
-    :param tff:             Set top field first (True) or bottom field first (False).
-    :param chroma_only:     Decide whether luma too will be processed.
-    :param postprocess:     Function to run after second decimation. Should be either a bobber or a deblender.
-    :param postdecimate:    If the postprocess function doesn't decimate itself, put True.
+    Args:
+        clip: Clip to process. Has to be 60i.
+        pattern: First frame of any clean-combed-combed-clean-clean sequence.
+        tff: Set top field first (True) or bottom field first (False).
+        chroma_only: Decide whether luma too will be processed.
+        postprocess: Function to run after second decimation. Should be either a bobber or a deblender.
+        postdecimate: If the postprocess function doesn't decimate itself, put True.
 
-    :return:                Inverse Telecined clip.
+    Returns:
+        Inverse Telecined clip.
     """
 
     tff = FieldBased.from_param_or_video(tff, clip, True, jivtc).is_tff
@@ -117,18 +121,17 @@ def vfm(
         vfm(clip, postprocess=NNEDI3().deinterlace)
     ```
 
-    :param clip:            Input clip to field matching telecine on.
-    :param tff:             Field order of the input clip.
-                            If None, it will be automatically detected.
-    :param mode:            VFM matching mode. For more information, see :py:class:`VFMMode`.
-                            Default: VFMMode.TWO_WAY_MATCH_THIRD_COMBED.
-    :param postprocess:     Optional function or clip to process combed frames.
-                            If a function is passed, it should take a clip as input and return a clip as output.
-                            If a clip is passed, it will be used as the postprocessed clip.
-    :param kwargs:          Additional keyword arguments to pass to VFM.
-                            For a list of parameters, see the VIVTC documentation.
+    Args:
+        clip: Input clip to field matching telecine on.
+        tff: Field order of the input clip. If None, it will be automatically detected.
+        mode: VFM matching mode. For more information, see [VFMMode][vsdeinterlace.VFMMode]. Default:
+            VFMMode.TWO_WAY_MATCH_THIRD_COMBED.
+        postprocess: Optional function or clip to process combed frames. If a function is passed, it should take a clip
+            as input and return a clip as output. If a clip is passed, it will be used as the postprocessed clip.
+        **kwargs: Additional keyword arguments to pass to VFM. For a list of parameters, see the VIVTC documentation.
 
-    :return:                Field matched clip with progressive frames.
+    Returns:
+        Field matched clip with progressive frames.
     """
 
     func = FunctionUtil(clip, vfm, None, (vs.YUV, vs.GRAY), 8)
@@ -167,13 +170,15 @@ def vdecimate(clip: vs.VideoNode, weight: float = 0.0, **kwargs: Any) -> Constan
     This function uses VIVTC's VDecimate plugin to remove duplicate frames from telecined content.
     It's recommended to use the vfm function before running this.
 
-    :param clip:            Input clip to decimate.
-    :param weight:          Weight for frame blending. If > 0, blends duplicate frames before dropping one.
-                            Default: 0.0 (frames are dropped, not blended).
-    :param kwargs:          Additional keyword arguments to pass to VDecimate.
-                            For a list of parameters, see the VIVTC documentation.
+    Args:
+        clip: Input clip to decimate.
+        weight: Weight for frame blending. If > 0, blends duplicate frames before dropping one. Default: 0.0 (frames are
+            dropped, not blended).
+        **kwargs: Additional keyword arguments to pass to VDecimate. For a list of parameters, see the VIVTC
+            documentation.
 
-    :return:                Decimated clip with duplicate frames removed or blended.
+    Returns:
+        Decimated clip with duplicate frames removed or blended.
     """
 
     func = FunctionUtil(clip, vdecimate, None, (vs.YUV, vs.GRAY), (8, 16))

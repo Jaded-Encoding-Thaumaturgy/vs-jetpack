@@ -49,38 +49,37 @@ def decrease_size(
     A gradient mask is used internally to prevent "hard edges" from forming on the boundaries of the mask.
     Additionally, an edgemask is used to prevent clearly-defined detail from being blurred away.
 
-    :param clip:        Clip to process.
-    :param sigmaS:      Sigma of Gaussian function to calculate spatial weight.
-                        See the `vsrgtools.bilateral` documentation for more information.
-                        Default: 10.0.
-    :param sigmaR:      Sigma of Gaussian function to calculate range weight.
-                        See the `vsrgtools.bilateral` documentation for more information.
-                        Default: 0.009.
-    :param min_in:      Starting pixel value for the gradient mask. Must be a value between 0-255.
-                        Low values are not recommended, as this will start to blur a lot more detail.
-                        Default: 180.
-    :param max_in:      Ending pixel value for the gradient mask. Must be a value between 0-255.
-                        This value must be greater than `min_in`. Any pixel values above this will be fully masked.
-                        Default: 230.
-    :param mask:        Mask node for masking out details from the blur.
-    :param prefilter:   Prefilter the clip prior to masked blurring.
+    Args:
+        clip: Clip to process.
+        sigmaS: Sigma of Gaussian function to calculate spatial weight. See the `vsrgtools.bilateral` documentation for
+            more information. Default: 10.0.
+        sigmaR: Sigma of Gaussian function to calculate range weight. See the `vsrgtools.bilateral` documentation for
+            more information. Default: 0.009.
+        min_in: Starting pixel value for the gradient mask. Must be a value between 0-255. Low values are not
+            recommended, as this will start to blur a lot more detail. Default: 180.
+        max_in: Ending pixel value for the gradient mask. Must be a value between 0-255. This value must be greater than
+            `min_in`. Any pixel values above this will be fully masked. Default: 230.
+        mask: Mask node for masking out details from the blur.
+        prefilter: Prefilter the clip prior to masked blurring.
 
-                        If you pass a float, a gauss blur will be used with the value determining its sigma.
-                        If you pass a tuple of floats, a box blur will be used.
-                        The first value is the radii, and the second is the number of passes.
-                        If you pass `True`, it defaults to `box_blur(2, 4)`.
-                        Set `False` to disable.
+            If you pass a float, a gauss blur will be used with the value determining its sigma.
+            If you pass a tuple of floats, a box blur will be used.
+            The first value is the radii, and the second is the number of passes.
+            If you pass `True`, it defaults to `box_blur(2, 4)`.
+            Set `False` to disable.
 
-                        Default: True.
-    :param planes:      Planes to process. If None, all planes. Default: None.
-    :param show_mask:   Return the gradient mask clip. Default: False.
-    :param kwargs:      Additional keyword arguments to pass to bilateral.
+            Default: True.
+        planes: Planes to process. If None, all planes. Default: None.
+        show_mask: Return the gradient mask clip. Default: False.
+        **kwargs: Additional keyword arguments to pass to bilateral.
 
-    :return:            Clip with the brightest areas, as defined by the gradient mask, heavily blurred.
+    Returns:
+        Clip with the brightest areas, as defined by the gradient mask, heavily blurred.
 
-    :raises IndexError:                 `min_in` is greater than `max_in`.
-    :raises InvalidColorFamilyError:    Input clip is not a YUV clip.
-    :raises InvalidColorFamilyError:    A VideoNode is passed to `mask` and the clip is not a GRAY clip.
+    Raises:
+        IndexError: `min_in` is greater than `max_in`.
+        InvalidColorFamilyError: Input clip is not a YUV clip.
+        InvalidColorFamilyError: A VideoNode is passed to `mask` and the clip is not a GRAY clip.
     """
     assert check_variable(clip, decrease_size)
 

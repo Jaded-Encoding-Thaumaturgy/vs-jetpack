@@ -33,16 +33,18 @@ def check_ref_clip(
 
     If no ref clip can be found, this function will simply do nothing.
 
-    :param src:                                 Input clip.
-    :param ref:                                 Reference clip.
-                                                Default: None.
+    Args:
+        src: Input clip.
+        ref: Reference clip. Default: None.
 
-    :raises VariableFormatError:                The format of either clip is variable.
-    :raises VariableResolutionError:            The resolution of either clip is variable.
-    :raises FormatsRefClipMismatchError:        The formats of the two clips do not match.
-    :raises ResolutionsRefClipMismatchError:    The resolutions of the two clips do not match.
+    Raises:
+        VariableFormatError: The format of either clip is variable.
+        VariableResolutionError: The resolution of either clip is variable.
+        FormatsRefClipMismatchError: The formats of the two clips do not match.
+        ResolutionsRefClipMismatchError: The resolutions of the two clips do not match.
 
-    :return:        Ref clip.
+    Returns:
+        Ref clip.
     """
     func = func or check_ref_clip
 
@@ -75,7 +77,8 @@ def check_variable_format(
     """
     Check for variable format and return an error if found.
 
-    :raises VariableFormatError:    The clip is of a variable format.
+    Raises:
+        VariableFormatError: The clip is of a variable format.
     """
     clip = [clip] if isinstance(clip, vs.VideoNode) else clip
 
@@ -90,7 +93,8 @@ def check_variable_resolution(clip: VideoNodeT, func: FuncExceptT) -> TypeGuard[
     """
     Check for variable width or height and return an error if found.
 
-    :raises VariableResolutionError:    The clip has a variable resolution.
+    Raises:
+        VariableResolutionError: The clip has a variable resolution.
     """
 
     if 0 in (clip.width, clip.height):
@@ -103,8 +107,9 @@ def check_variable(clip: vs.VideoNode, func: FuncExceptT) -> TypeGuard[ConstantF
     """
     Check for variable format and a variable resolution and return an error if found.
 
-    :raises VariableFormatError:        The clip is of a variable format.
-    :raises VariableResolutionError:    The clip has a variable resolution.
+    Raises:
+        VariableFormatError: The clip is of a variable format.
+        VariableResolutionError: The clip has a variable resolution.
     """
 
     check_variable_format(clip, func)
@@ -119,13 +124,14 @@ def check_correct_subsampling(
     """
     Check if the subsampling is correct and return an error if it's not.
 
-    :param clip:                        Clip to check.
-    :param width:                       Output width.
-    :param height:                      Output height.
-    :param func:                        Function returned for custom error handling.
-                                        This should only be set by VS package developers.
+    Args:
+        clip: Clip to check.
+        width: Output width.
+        height: Output height.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
 
-    :raises InvalidSubsamplingError:    The clip has invalid subsampling.
+    Raises:
+        InvalidSubsamplingError: The clip has invalid subsampling.
     """
     from ..exceptions import InvalidSubsamplingError
 
@@ -145,11 +151,12 @@ def check_progressive(clip: VideoNodeT, func: FuncExceptT) -> TypeGuard[VideoNod
     """
     Check if the clip is progressive and return an error if it's not.
 
-    :param clip:                        Clip to check.
-    :param func:                        Function returned for custom error handling.
-                                        This should only be set by VS package developers.
+    Args:
+        clip: Clip to check.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
 
-    :raises UnsupportedFieldBasedError: The clip is interlaced.
+    Raises:
+        UnsupportedFieldBasedError: The clip is interlaced.
     """
 
     if FieldBased.from_video(clip, func=func).is_inter:

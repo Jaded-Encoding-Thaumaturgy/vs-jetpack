@@ -136,11 +136,11 @@ class IsoFileCore:
         """
         Gets a title.
 
-        :param title_nr:            Title index, 1-index based.
-        :param angle_nr:            Angle index, 1-index based.
-        :param rff_mode:            0 Apply rff soft telecine (default);
-                                    1 Calculate per frame durations based on rff;
-                                    2 Set average fps on global clip;
+        Args:
+            title_nr: Title index, 1-index based.
+            angle_nr: Angle index, 1-index based.
+            rff_mode: 0 Apply rff soft telecine (default); 1 Calculate per frame durations based on rff; 2 Set average
+                fps on global clip;
         """
         # TODO: assert angle_nr range
         disable_rff = rff_mode >= 1

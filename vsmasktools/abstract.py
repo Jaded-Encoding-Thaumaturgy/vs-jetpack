@@ -27,7 +27,9 @@ __all__ = ["BoundingBox", "DeferredMask", "GeneralMask"]
 
 
 class GeneralMask(ABC):
-    """Abstract GeneralMask interface"""
+    """
+    Abstract GeneralMask interface
+    """
 
     @abstractmethod
     def get_mask(self, clip: vs.VideoNode, /, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode: ...
@@ -69,7 +71,9 @@ class BoundingBox(GeneralMask):
 
 
 class DeferredMask(GeneralMask):
-    """Abstract DeferredMask interface"""
+    """
+    Abstract DeferredMask interface
+    """
 
     ranges: FrameRangesN
     bound: BoundingBox | None
@@ -85,13 +89,13 @@ class DeferredMask(GeneralMask):
         refframes: int | list[int | None] | None = None,
     ) -> None:
         """
-        :param ranges:          The frame ranges that the mask should be applied to.
-        :param bound:           An optional bounding box that defines the area of the frame
-                                where the mask will be applied.
-                                If None, the mask applies to the whole frame.
-        :param blur:            Whether to apply a box blur effect to the mask.
-        :param refframes:       A list of reference frames used in building the final mask for each specified range.
-                                Must have the same length as `ranges`.
+        Args:
+            ranges: The frame ranges that the mask should be applied to.
+            bound: An optional bounding box that defines the area of the frame where the mask will be applied. If None,
+                the mask applies to the whole frame.
+            blur: Whether to apply a box blur effect to the mask.
+            refframes: A list of reference frames used in building the final mask for each specified range. Must have
+                the same length as `ranges`.
         """
         self.ranges = ranges if isinstance(ranges, Sequence) else [(0, None)] if ranges is None else [ranges]
         self.blur = blur
@@ -110,10 +114,13 @@ class DeferredMask(GeneralMask):
         """
         Get the constructed mask
 
-        :param clip:        Source clip.
-        :param ref:         Reference clip.
-        :param **kwargs:    Keyword arguments passed to the internal `_mask` method.
-        :return:            Constructed mask
+        Args:
+            clip: Source clip.
+            ref: Reference clip.
+            **kwargs: Keyword arguments passed to the internal `_mask` method.
+
+        Returns:
+            Constructed mask
         """
         assert check_variable(clip, self.get_mask)
         assert check_variable(ref, self.get_mask)
