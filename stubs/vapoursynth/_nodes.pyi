@@ -11069,6 +11069,14 @@ class _Plugin_zsmooth_Core_Bound(Plugin):
     def BackwardClense(
         self, clip: VideoNode, planes: _SingleAndSequence[int] | None = None
     ) -> ConstantFormatVideoNode: ...
+    def CCD(
+        self,
+        clip: VideoNode,
+        threshold: float | None = None,
+        temporal_radius: int | None = None,
+        points: _SingleAndSequence[int] | None = None,
+        scale: float | None = None,
+    ) -> ConstantFormatVideoNode: ...
     def Clense(
         self,
         clip: VideoNode,
@@ -11119,8 +11127,23 @@ class _Plugin_zsmooth_Core_Bound(Plugin):
     def Repair(
         self, clip: VideoNode, repairclip: VideoNode, mode: _SingleAndSequence[int]
     ) -> ConstantFormatVideoNode: ...
+    def SmartMedian(
+        self,
+        clip: VideoNode,
+        radius: _SingleAndSequence[int] | None = None,
+        threshold: _SingleAndSequence[float] | None = None,
+        scalep: int | None = None,
+        planes: _SingleAndSequence[int] | None = None,
+    ) -> ConstantFormatVideoNode: ...
     def TemporalMedian(
         self, clip: VideoNode, radius: int | None = None, planes: _SingleAndSequence[int] | None = None
+    ) -> ConstantFormatVideoNode: ...
+    def TemporalRepair(
+        self,
+        clip: VideoNode,
+        repairclip: VideoNode,
+        mode: _SingleAndSequence[int] | None = None,
+        planes: _SingleAndSequence[int] | None = None,
     ) -> ConstantFormatVideoNode: ...
     def TemporalSoften(
         self,
@@ -11147,6 +11170,13 @@ class _Plugin_zsmooth_Core_Bound(Plugin):
 class _Plugin_zsmooth_VideoNode_Bound(Plugin):
     """This class implements the module definitions for the "zsmooth" VapourSynth plugin.\n\n*This class cannot be imported.*"""
     def BackwardClense(self, planes: _SingleAndSequence[int] | None = None) -> ConstantFormatVideoNode: ...
+    def CCD(
+        self,
+        threshold: float | None = None,
+        temporal_radius: int | None = None,
+        points: _SingleAndSequence[int] | None = None,
+        scale: float | None = None,
+    ) -> ConstantFormatVideoNode: ...
     def Clense(
         self,
         previous: VideoNode | None = None,
@@ -11183,8 +11213,21 @@ class _Plugin_zsmooth_VideoNode_Bound(Plugin):
     ) -> ConstantFormatVideoNode: ...
     def RemoveGrain(self, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
     def Repair(self, repairclip: VideoNode, mode: _SingleAndSequence[int]) -> ConstantFormatVideoNode: ...
+    def SmartMedian(
+        self,
+        radius: _SingleAndSequence[int] | None = None,
+        threshold: _SingleAndSequence[float] | None = None,
+        scalep: int | None = None,
+        planes: _SingleAndSequence[int] | None = None,
+    ) -> ConstantFormatVideoNode: ...
     def TemporalMedian(
         self, radius: int | None = None, planes: _SingleAndSequence[int] | None = None
+    ) -> ConstantFormatVideoNode: ...
+    def TemporalRepair(
+        self,
+        repairclip: VideoNode,
+        mode: _SingleAndSequence[int] | None = None,
+        planes: _SingleAndSequence[int] | None = None,
     ) -> ConstantFormatVideoNode: ...
     def TemporalSoften(
         self,

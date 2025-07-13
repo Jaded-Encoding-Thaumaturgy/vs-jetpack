@@ -328,18 +328,42 @@ def median_blur(
 
 @overload
 def median_blur(
+    clip: vs.VideoNode,
+    radius: int | Sequence[int] = 1,
+    mode: Literal[ConvMode.SQUARE] = ...,
+    planes: PlanesT = None,
+    smart: Literal[True] = ...,
+    threshold: float | Sequence[float] | None = None,
+    scalep: bool = True,
+) -> ConstantFormatVideoNode: ...
+
+
+@overload
+def median_blur(
     clip: vs.VideoNode, radius: int = 1, mode: Literal[ConvMode.TEMPORAL] = ..., planes: PlanesT = None
 ) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def median_blur(
-    clip: vs.VideoNode, radius: int | Sequence[int] = 1, mode: ConvMode = ConvMode.SQUARE, planes: PlanesT = None
+    clip: vs.VideoNode,
+    radius: int | Sequence[int] = 1,
+    mode: ConvMode = ConvMode.SQUARE,
+    planes: PlanesT = None,
+    smart: bool = False,
+    threshold: float | Sequence[float] | None = None,
+    scalep: bool = True,
 ) -> ConstantFormatVideoNode: ...
 
 
 def median_blur(
-    clip: vs.VideoNode, radius: int | Sequence[int] = 1, mode: ConvMode = ConvMode.SQUARE, planes: PlanesT = None
+    clip: vs.VideoNode,
+    radius: int | Sequence[int] = 1,
+    mode: ConvMode = ConvMode.SQUARE,
+    planes: PlanesT = None,
+    smart: bool = False,
+    threshold: float | Sequence[float] | None = None,
+    scalep: bool = True,
 ) -> ConstantFormatVideoNode:
     """
     Applies a median blur to the clip using spatial or temporal neighborhood.
@@ -352,9 +376,16 @@ def median_blur(
         radius: Blur radius per plane (list) or uniform radius (int). Only int is allowed in temporal mode.
         mode: Convolution mode. Defaults to SQUARE.
         planes: Planes to process. Defaults to all.
+        smart: Enable [Smart Median by zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#smart-median),
+            thresholded based on a modified form of variance.
+        threshold: The variance threshold when ``smart=True``. Pixels with a variance under the threshold are smoothed,
+            and over the threshold are returned as is.
+        scalep: Parameter scaling when ``smart=True``. If True, all threshold values will be automatically scaled
+            from 8-bit range (0-255) to the corresponding range of the input clip's bit depth.
 
     Raises:
-        CustomValueError: If a list is passed for radius in temporal mode, which is unsupported.
+        CustomValueError: If a list is passed for radius in temporal mode, which is unsupported
+            or if smart=True and mode != ConvMode.SQUARE.
 
     Returns:
         Median-blurred video clip.
@@ -368,6 +399,12 @@ def median_blur(
         raise CustomValueError("A list of radius isn't supported for ConvMode.TEMPORAL!", median_blur, radius)
 
     radius = normalize_seq(radius, clip.format.num_planes)
+
+    if smart:
+        if mode == ConvMode.SQUARE:
+            return core.zsmooth.SmartMedian(clip, radius, threshold, scalep, planes)
+
+        raise CustomValueError("When using SmartMedian, mode should be ConvMode.SQUARE!", median_blur, mode)
 
     if mode == ConvMode.SQUARE and max(radius) <= 3:
         return core.zsmooth.Median(clip, radius, planes)

@@ -7,7 +7,6 @@ from typing import (  # type: ignore[attr-defined]
     Callable,
     Iterable,
     Literal,
-    MutableMapping,
     Sequence,
     TypeVar,
     _UnionGenericAlias,  # pyright: ignore[reportAttributeAccessIssue]
@@ -169,59 +168,56 @@ def get_prop(
         FramePropError: ``key`` is not found in props.
         FramePropError: ``key`` is of the wrong type.
     """
-    props: MutableMapping[str, Any]
+    func = func or get_prop
 
     if isinstance(obj, vs.RawNode):
-        try:
-            props = _get_prop_cache[(obj, 0)]
-        except KeyError:
+        props = _get_prop_cache.get((obj, 0))
+
+        if props is None:
             with obj.get_frame(0) as f:
                 props = f.props.copy()
 
             _get_prop_cache[(obj, 0)] = props
+
     elif isinstance(obj, vs.RawFrame):
         props = obj.props
     else:
         props = obj
 
-    prop: Any = MISSING
+    resolved_key = key.prop_key if isinstance(key, type) and issubclass(key, PropEnum) else str(key)
 
     try:
-        key = key.prop_key if isinstance(key, type) and issubclass(key, PropEnum) else str(key)
-
-        prop = props[key]
-
-        norm_t = _normalize_types(t)
-
-        if not isinstance(prop, norm_t):
-            if all(issubclass(ty, str) for ty in norm_t) and isinstance(prop, bytes):
-                return prop.decode("utf-8")  # type: ignore[return-value]
-            raise TypeError
-
-        if cast is None:
-            return prop
-
-        return cast(prop)  # type: ignore
-    except BaseException as e:
+        prop = props[resolved_key]
+    except KeyError as e:
         if default is not MISSING:
             return default
 
-        func = func or get_prop
+        raise FramePropError(func, resolved_key, f'Key "{resolved_key}" not present in props!') from e
 
-        if isinstance(e, KeyError) or prop is MISSING:
-            e = FramePropError(func, str(key), "Key {key} not present in props!")
-        elif isinstance(e, TypeError):
-            e = FramePropError(
-                func,
-                str(key),
-                "Key {key} did not contain expected type: Expected {t} got {prop_t}!",
-                t=t,
-                prop_t=type(prop),
-            )
-        else:
-            e = FramePropError(func, str(key))
+    norm_t = _normalize_types(t)
 
-        raise e
+    if not isinstance(prop, norm_t):
+        if all(issubclass(ty, str) for ty in norm_t) and isinstance(prop, bytes):
+            return prop.decode("utf-8")  # type: ignore[return-value]
+
+        if default is not MISSING:
+            return default
+
+        raise FramePropError(
+            func,
+            resolved_key,
+            'Key "{key}" did not contain expected type: Expected "{t}" got "{prop_t}"!',
+            t=t,
+            prop_t=type(prop),
+        )
+
+    try:
+        return cast(prop) if cast else prop  # type: ignore
+    except Exception as e:
+        if default is not MISSING:
+            return default
+
+        raise FramePropError(func, resolved_key) from e
 
 
 @overload

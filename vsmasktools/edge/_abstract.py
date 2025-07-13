@@ -332,10 +332,7 @@ class MatrixEdgeDetect(EdgeDetect):
         return self.mode_types if self.mode_types else ["s"] * len(self._get_matrices())
 
     def _postprocess(self, clip: ConstantFormatVideoNode, input_bits: int | None = None) -> ConstantFormatVideoNode:
-        if (
-            vs.__version__.release_major < 72  # FIXME: we can hope it'll be fixed in R72
-            and (self.mode_types is None or self.mode_types[0] == "s")
-        ):
+        if self.mode_types is None or self.mode_types[0] == "s":
             cropped = vs.core.std.Crop(
                 clip, right=clip.format.subsampling_w * 2 if clip.format.subsampling_w != 0 else 2
             )
@@ -406,10 +403,7 @@ class RidgeDetect(MatrixEdgeDetect):
         return norm_expr(clips, "x 2 pow z 2 pow 4 * + x y * 2 * - y 2 pow + sqrt x y + + 0.5 *", func=self.__class__)
 
     def _preprocess(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
-        if (
-            vs.__version__.release_major < 72  # FIXME: we can hope it'll be fixed in R72
-            and (self.mode_types is None or self.mode_types[0] == "s")
-        ):
+        if self.mode_types is None or self.mode_types[0] == "s":
             clip = vs.core.resize.Point(clip, clip.width + 4, src_width=clip.width + 4)
 
         return super()._preprocess(depth(clip, 32))
@@ -417,10 +411,7 @@ class RidgeDetect(MatrixEdgeDetect):
     def _postprocess(self, clip: ConstantFormatVideoNode, input_bits: int | None = None) -> ConstantFormatVideoNode:
         clip = depth(clip, input_bits, dither_type=DitherType.NONE)
 
-        if (
-            vs.__version__.release_major < 72  # FIXME: we can hope it'll be fixed in R72
-            and (self.mode_types is None or self.mode_types[0] == "s")
-        ):
+        if self.mode_types is None or self.mode_types[0] == "s":
             return clip.std.Crop(right=4)
 
         return super()._postprocess(clip, input_bits)

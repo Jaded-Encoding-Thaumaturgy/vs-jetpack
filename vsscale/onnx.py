@@ -410,6 +410,30 @@ class BaseArtCNNChroma(BaseArtCNN):
 
         return super().preprocess_clip(clip, **kwargs)
 
+    def _finish_scale(
+        self,
+        clip: ConstantFormatVideoNode,
+        input_clip: ConstantFormatVideoNode,
+        width: int,
+        height: int,
+        shift: tuple[float, float] = (0, 0),
+        matrix: MatrixT | None = None,
+        copy_props: bool = False,
+    ) -> ConstantFormatVideoNode:
+        if (clip.width, clip.height) != (width, height):
+            clip = self.scaler.scale(clip, width, height)  # type: ignore[assignment]
+
+        if shift != (0, 0):
+            clip = self.shifter.shift(clip, shift)
+
+        if clip.format.id != input_clip.format.replace(subsampling_w=0, subsampling_h=0).id:
+            clip = self.kernel.resample(clip, input_clip, matrix)
+
+        if copy_props:
+            return vs.core.std.CopyFrameProps(clip, input_clip)
+
+        return clip
+
 
 class ArtCNN(BaseArtCNNLuma):
     """
