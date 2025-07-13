@@ -9,7 +9,7 @@ from typing import Any, Callable, Generic, Iterator, Protocol, TypeAlias
 from jetpytools import MISSING, MissingT, P, R, T
 
 from vsexprtools import ExprOp, combine, norm_expr
-from vskernels import Bilinear, BSpline, Lanczos, Mitchell, Scaler, ScalerLike
+from vskernels import BSpline, Lanczos, Mitchell, Scaler, ScalerLike
 from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, Robinson3, XxpandMode, grow_mask
 from vsrgtools import (
     BlurMatrixBase,
@@ -205,8 +205,6 @@ class FineDehalo(Generic[P, R]):
         exclude: bool = True,
         edgeproc: float = 0.0,
         edgemask: EdgeDetect = Robinson3(),
-        pre_ss: int = 1,
-        pre_supersampler: ScalerLike = Bilinear,
         show_mask: int | FineDehalo.Masks = 1,
         planes: PlanesT = 0,
         first_plane: bool = False,
@@ -228,8 +226,6 @@ class FineDehalo(Generic[P, R]):
             exclude: If True, add an addionnal step to exclude edges close to each other
             edgeproc: If > 0, it will add the edgemask to the processing, defaults to 0.0
             edgemask: Internal mask used for detecting the edges, defaults to Robinson3()
-            pre_ss: Supersampling rate used before anything else.
-            pre_supersampler: Supersampler used for ``pre_ss``.
             show_mask: Whether to show the computed halo mask. 1-7 values to select intermediate masks.
             planes: Planes to process.
             first_plane: Whether to mask chroma planes with luma mask.
@@ -240,15 +236,8 @@ class FineDehalo(Generic[P, R]):
         """
         func = func or self.mask
 
-        work_clip = get_y(clip)
-
-        if pre_ss > 1:
-            work_clip = Scaler.ensure_obj(pre_supersampler, func).scale(
-                work_clip, work_clip.width * pre_ss, work_clip.height * pre_ss, (-(0.5 / pre_ss), -(0.5 / pre_ss))
-            )
-
         dehalo_mask = fine_dehalo(
-            work_clip,
+            get_y(clip),
             rx,
             ry,
             thmi=thmi,
@@ -262,9 +251,6 @@ class FineDehalo(Generic[P, R]):
             show_mask=show_mask,
             func=func,
         )
-
-        if (dehalo_mask.width, dehalo_mask.height) != (clip.width, clip.height):
-            dehalo_mask = vs.core.resize.Point(dehalo_mask, clip.width, clip.height)
 
         if dehaloed:
             return clip.std.MaskedMerge(dehaloed, dehalo_mask, planes, first_plane)
