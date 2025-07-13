@@ -31,8 +31,16 @@ class TestNormalize(TestCase):
 
         # exclusive=False
         self.assertEqual(invert_ranges(clip_a, None, (None, None)), [])
-        self.assertEqual(invert_ranges(clip_a, None, (24, -24)), [(0, 23), (977, 999)])
+        self.assertEqual(invert_ranges(clip_a, None, (24, -24)), [(0, 23), (976, 999)])
         self.assertEqual(invert_ranges(clip_a, None, [100, 500]), [(0, 99), (101, 499), (501, 999)])
         self.assertEqual(invert_ranges(clip_a, None, [(24, 100), (80, 150)]), [(0, 23), (151, 999)])
 
         self.assertEqual(invert_ranges(clip_a, None, (-100, 950)), [(0, 899), (951, 999)])
+
+        # exclusive=True
+        self.assertEqual(invert_ranges(clip_a, None, (None, None), True), [])
+        self.assertEqual(invert_ranges(clip_a, None, (24, -24), True), [(0, 24), (976, 1000)])
+        self.assertEqual(invert_ranges(clip_a, None, [100, 500], True), [(0, 100), (101, 500), (501, 1000)])
+        self.assertEqual(invert_ranges(clip_a, None, [(24, 100), (80, 150)], True), [(0, 24), (150, 1000)])
+
+        self.assertEqual(invert_ranges(clip_a, None, (-100, 950), True), [(0, 900), (950, 1000)])
