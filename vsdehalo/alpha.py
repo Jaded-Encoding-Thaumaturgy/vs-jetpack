@@ -4,12 +4,11 @@ This module implements functions based on the famous dehalo_alpha.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, Sequence
+from typing import Any, Callable, Generic, Iterator, Protocol, Sequence, TypeAlias
 
-from jetpytools import P, R
+from jetpytools import MISSING, MissingT, P, R, T
 
 from vsaa import NNEDI3
-from vsdenoise import Prefilter
 from vsexprtools import ExprOp, combine, norm_expr
 from vskernels import Bilinear, BSpline, Lanczos, Mitchell, Point, Scaler, ScalerLike
 from vsmasktools import EdgeDetect, Morpho, RadiusT, Robinson3, XxpandMode, grow_mask
@@ -29,11 +28,9 @@ from vstools import (
     InvalidColorFamilyError,
     OneDimConvModeT,
     PlanesT,
+    VSFunctionKwArgs,
     check_progressive,
-    check_ref_clip,
     check_variable,
-    check_variable_format,
-    clamp,
     cround,
     fallback,
     get_peak_value,
@@ -52,7 +49,12 @@ from vstools import (
 __all__ = ["dehalo_alpha", "dehalo_merge", "dehalo_sigma", "fine_dehalo", "fine_dehalo2"]
 
 
-FloatIterArr = float | list[float] | tuple[float | list[float], ...]
+IterArr: TypeAlias = T | list[T] | tuple[T | list[T], ...]
+FloatIterArr: TypeAlias = IterArr[float]
+
+
+class VSFunctionPlanesArgs(VSFunctionKwArgs[vs.VideoNode, vs.VideoNode], Protocol):
+    def __call__(self, clip: vs.VideoNode, *, planes: PlanesT = ..., **kwargs: Any) -> vs.VideoNode: ...
 
 
 def _limit_dehalo(
@@ -95,18 +97,29 @@ def _dehalo_alpha_mask(
     return mask
 
 
-def _dehalo_schizo_norm(*values: FloatIterArr) -> list[tuple[list[float], ...]]:
-    iterations = max([(len(x) if isinstance(x, tuple) else 1) for x in values])
+def _normalize_iter_arr_t(
+    *values: IterArr[T], blur_func: IterArr[VSFunctionPlanesArgs | None] | None
+) -> tuple[Iterator[tuple[list[T], ...]], Iterator[list[VSFunctionPlanesArgs | None]]]:
+    max_len = max((len(x) if isinstance(x, tuple) else 1) for x in (*values, blur_func))
 
-    return zip(
-        *[  # type: ignore
-            tuple(normalize_seq(x) for x in y)
-            for y in [
-                (*x, *((x[-1],) * (len(x) - iterations))) if isinstance(x, tuple) else ((x,) * iterations)
-                for x in values
-            ]
-        ]
-    )
+    broadcasted: list[tuple[T | list[T] | VSFunctionPlanesArgs | list[VSFunctionPlanesArgs | None] | None, ...]] = [
+        val + (val[-1],) * (max_len - len(val)) if isinstance(val, tuple) else (val,) * max_len
+        for val in (*values, blur_func)
+    ]
+
+    normalized = list[list[list[T | VSFunctionPlanesArgs] | None]]()
+
+    for subgroup in broadcasted:
+        sublist = list[list[T | VSFunctionPlanesArgs | None]]()
+
+        for item in subgroup:
+            group = normalize_seq(item)
+
+            sublist.append(group)  # type: ignore[arg-type]
+
+        normalized.append(sublist)  # type: ignore[arg-type]
+
+    return (zip(*normalized[:-1]), iter(normalized[-1]))  # type: ignore[arg-type]
 
 
 def _dehalo_supersample_minmax(
