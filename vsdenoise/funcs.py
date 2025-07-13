@@ -232,30 +232,35 @@ def ccd(
     If the euclidean distance between the RGB values of the center pixel and a given pixel in the convolution
     matrix is less than the threshold, then this pixel is considered in the average.
 
-    :param clip:                Source clip.
-    :param thr:                 Euclidean distance threshold for including pixel in the matrix.
-                                Higher values results in stronger denoising.
-                                Automatically scaled to all bit depths internally.
-    :param tr:                  Temporal radius of processing. Higher values result in more denoising.
-    :param ref_points:          Specifies whether to use the low, medium, or high reference points (or any combination),
-                                respectively, in the processing matrix.
-                                The default uses the low and medium, but excludes the high points.
-                                See [zsmooth.CCD](https://github.com/adworacz/zsmooth?tab=readme-ov-file#ccd)
-                                for more information.
-    :param scale:               Multiplier for the size of the matrix.
-                                scale=1 corresponds with a 25x25 matrix (just like the original CCD implementation
-                                by Sergey).
-                                scale=2 is a 50x50 matrix, and so on.
-    :param pscale:              Scale factor for the supersample-downscale process change.
-    :param chroma_upscaler:     Chroma upscaler to apply before processing if input clip is YUV.
-                                Default to ArtCNN.R8F64_Chroma.
-    :param chroma_downscaler:   Chroma downscaler to apply after processing if input clip is YUV.
-                                Default to Catrom.
-    :param planes:              Planes to process. Default is chroma planes is clip is YUV, else all planes.
-    :param func:                Function returned for custom error handling.
-                                This should only be set by VS package developers.
+    Example usage:
 
-    :return:                Denoised clip.
+        ```py
+        denoised = ccd(clip, thr=6, tr=1, chroma_uspcaler=Bicubic(format=vs.RGB48))
+        ```
+
+    Args:
+        clip: Source clip.
+        thr: Euclidean distance threshold for including pixel in the matrix.
+            Higher values results in stronger denoising. Automatically scaled to all bit depths internally.
+        tr: Temporal radius of processing. Higher values result in more denoising. Defaults to 0.
+        ref_points: Specifies whether to use the low, medium, or high reference points (or any combination),
+            respectively, in the processing matrix. The default uses the low and medium, but excludes the high points.
+            See [zsmooth.CCD](https://github.com/adworacz/zsmooth?tab=readme-ov-file#ccd) for more information.
+        scale: Multiplier for the size of the matrix.
+            `scale=1` corresponds with a 25x25 matrix (just like the original CCD implementation by Sergey).
+            `scale=2` is a 50x50 matrix, and so on.
+        pscale: Scale factor for the source clip-denoised process change.
+        chroma_upscaler: Chroma upscaler to apply before processing if input clip is YUV.
+            Defaults to ArtCNN.R8F64_Chroma.
+        chroma_downscaler: Chroma downscaler to apply after processing if input clip is YUV. Defaults to Catrom.
+        planes: Planes to process. Default is chroma planes is clip is YUV, else all planes.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Raises:
+        CustomRuntimeError: If the `chroma_upscaler` didn't upscale the chroma planes.
+
+    Returns:
+        Denoised clip.
     """
     func = func or ccd
 
