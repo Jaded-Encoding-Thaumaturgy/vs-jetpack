@@ -4,14 +4,13 @@ This module implements functions based on the famous dehalo_alpha.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, Iterator, Protocol, Sequence, TypeAlias
+from typing import Any, Callable, Generic, Iterator, Protocol, TypeAlias
 
 from jetpytools import MISSING, MissingT, P, R, T
 
-from vsaa import NNEDI3
 from vsexprtools import ExprOp, combine, norm_expr
-from vskernels import Bilinear, BSpline, Lanczos, Mitchell, Point, Scaler, ScalerLike
-from vsmasktools import EdgeDetect, Morpho, RadiusT, Robinson3, XxpandMode, grow_mask
+from vskernels import Bilinear, BSpline, Lanczos, Mitchell, Scaler, ScalerLike
+from vsmasktools import EdgeDetect, Morpho, Robinson3, XxpandMode, grow_mask
 from vsrgtools import (
     BlurMatrixBase,
     box_blur,
@@ -20,6 +19,7 @@ from vsrgtools import (
     repair,
 )
 from vstools import (
+    ConstantFormatVideoNode,
     ConvMode,
     CustomIndexError,
     CustomIntEnum,
@@ -52,8 +52,8 @@ __all__ = ["dehalo_alpha", "fine_dehalo", "fine_dehalo2"]
 IterArr: TypeAlias = T | list[T] | tuple[T | list[T], ...]
 
 
-class VSFunctionPlanesArgs(VSFunctionKwArgs[vs.VideoNode, vs.VideoNode], Protocol):
-    def __call__(self, clip: vs.VideoNode, *, planes: PlanesT = ..., **kwargs: Any) -> vs.VideoNode: ...
+class VSFunctionPlanesArgs(VSFunctionKwArgs[vs.VideoNode, ConstantFormatVideoNode], Protocol):
+    def __call__(self, clip: vs.VideoNode, *, planes: PlanesT = ..., **kwargs: Any) -> ConstantFormatVideoNode: ...
 
 
 def dehalo_alpha(
@@ -120,8 +120,6 @@ def dehalo_alpha(
     values, blur_funcs = _normalize_iter_arr_t(rx, ry, darkstr, brightstr, lowsens, highsens, ss, blur_func=blur_func)
 
     for (rx_i, ry_i, darkstr_i, brightstr_i, lowsens_i, highsens_i, ss_i), blur_func_i in zip(values, blur_funcs):
-        assert work_clip.format
-
         if any(x < 1 for x in (*ss_i, *rx_i, *ry_i)):
             raise CustomIndexError("ss, rx, and ry must all be bigger than 1.0!", func)
 
@@ -155,7 +153,7 @@ def dehalo_alpha(
                 ]
             )
 
-        mask = _dehalo_alpha_mask(work_clip, dehalo, lowsens_i, highsens_i, planes)
+        mask = _dehalo_alpha_mask(work_clip, dehalo, lowsens_i, highsens_i, planes, func)
 
         if show_mask:
             return mask
@@ -164,7 +162,7 @@ def dehalo_alpha(
 
         dehalo = _dehalo_supersample_minmax(work_clip, dehalo, ss_i, planes=planes, func=func)
 
-        work_clip = dehalo = _limit_dehalo(work_clip, dehalo, darkstr_i, brightstr_i, planes)
+        work_clip = dehalo = _limit_dehalo(work_clip, dehalo, darkstr_i, brightstr_i, planes, func)
 
     if not chroma:
         return dehalo
@@ -241,6 +239,8 @@ class FineDehalo(Generic[P, R]):
         Returns:
             Mask or masked clip.
         """
+        func = func or self.mask
+
         work_clip = get_y(clip)
 
         if pre_ss > 1:
@@ -261,7 +261,7 @@ class FineDehalo(Generic[P, R]):
             edgemask=edgemask,
             planes=planes,
             show_mask=show_mask,
-            func=func or self.mask,
+            func=func,
         )
 
         if (dehalo_mask.width, dehalo_mask.height) != (clip.width, clip.height):
@@ -334,7 +334,7 @@ def fine_dehalo(
     Returns:
         Dehaloed clip.
     """
-    func = func or "fine_dehalo"
+    func = func or fine_dehalo
 
     assert check_variable(clip, func)
     assert check_progressive(clip, func)
@@ -572,62 +572,65 @@ def _normalize_iter_arr_t(
 
 
 def _dehalo_alpha_blur_func(
-    clip: vs.VideoNode,
+    clip: ConstantFormatVideoNode,
     rx: float,
     ry: float | None = None,
     downscaler: ScalerLike = Mitchell,
     upscaler: ScalerLike = BSpline,
     func: FuncExceptT | None = None,
-) -> vs.VideoNode:
+) -> ConstantFormatVideoNode:
     downscaler = Scaler.ensure_obj(downscaler, func)
     upscaler = Scaler.ensure_obj(upscaler, func)
 
     if ry is None:
         ry = rx
 
-    return upscaler.scale(
+    return upscaler.scale(  # type: ignore[return-value]
         downscaler.scale(clip, mod4(clip.width / rx), mod4(clip.height / ry)), clip.width, clip.height
     )
 
 
 def _dehalo_alpha_mask(
-    clip: vs.VideoNode,
-    ref: vs.VideoNode,
+    clip: ConstantFormatVideoNode,
+    ref: ConstantFormatVideoNode,
     lowsens: list[float],
     highsens: list[float],
     planes: PlanesT,
-) -> vs.VideoNode:
-    peak = get_peak_value(clip)
+    func: FuncExceptT | None = None,
+) -> ConstantFormatVideoNode:
+    func = func or _dehalo_alpha_mask
 
     mask = norm_expr(
         [
-            Morpho.gradient(clip, planes=planes),
-            Morpho.gradient(ref, planes=planes),
+            Morpho.gradient(clip, planes=planes, func=func),
+            Morpho.gradient(ref, planes=planes, func=func),
         ],
         "x x y - x / 0 ? {lowsens} - x {peak} / 256 255 / + 512 255 / / {highsens} + * 0 max 1 min {peak} *",
         planes,
-        peak=peak,
+        peak=get_peak_value(clip),
         lowsens=[lo / 255 for lo in lowsens],
         highsens=[hi / 100 for hi in highsens],
-        func=_dehalo_alpha_mask,
+        func=func,
     )
 
     return mask
 
 
 def _dehalo_supersample_minmax(
-    clip: vs.VideoNode,
-    ref: vs.VideoNode,
+    clip: ConstantFormatVideoNode,
+    ref: ConstantFormatVideoNode,
     ss: list[float],
     supersampler: ScalerLike = Lanczos(3),
     supersampler_ref: ScalerLike = Mitchell,
     planes: PlanesT = None,
     func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
+    func = func or _dehalo_supersample_minmax
+
     supersampler = Scaler.ensure_obj(supersampler, func)
     supersampler_ref = Scaler.ensure_obj(supersampler_ref, func)
 
-    def _supersample(work_clip: vs.VideoNode, dehalo: vs.VideoNode, ss: float) -> vs.VideoNode:
+    def _supersample(work_clip: vs.VideoNode, dehalo: vs.VideoNode, ss: float) -> ConstantFormatVideoNode:
         if ss <= 1.0:
             return repair(work_clip, dehalo, 1, planes)
 
@@ -640,12 +643,12 @@ def _dehalo_supersample_minmax(
             ],
             "x y min z max",
             planes,
-            func=_dehalo_supersample_minmax,
+            func=func,
         )
 
-        return supersampler.scale(ss_clip, work_clip.width, work_clip.height)
+        return supersampler.scale(ss_clip, work_clip.width, work_clip.height)  # type: ignore[return-value]
 
-    if len(set(ss)) == 1 or planes == [0] or clip.format.num_planes == 1:  # type: ignore
+    if len(set(ss)) == 1 or planes == [0] or clip.format.num_planes == 1:
         dehalo = _supersample(clip, ref, ss[0])
     else:
         dehalo = join([_supersample(wplane, dplane, ssp) for wplane, dplane, ssp in zip(split(clip), split(ref), ss)])
@@ -654,13 +657,20 @@ def _dehalo_supersample_minmax(
 
 
 def _limit_dehalo(
-    clip: vs.VideoNode, ref: vs.VideoNode, darkstr: float | list[float], brightstr: float | list[float], planes: PlanesT
-) -> vs.VideoNode:
+    clip: ConstantFormatVideoNode,
+    ref: ConstantFormatVideoNode,
+    darkstr: float | list[float],
+    brightstr: float | list[float],
+    planes: PlanesT = None,
+    func: FuncExceptT | None = None,
+) -> ConstantFormatVideoNode:
+    func = func or _limit_dehalo
+
     return norm_expr(
         [clip, ref],
         "x y < x x y - {darkstr} * - x x y - {brightstr} * - ?",
         planes,
         darkstr=darkstr,
         brightstr=brightstr,
-        func=_limit_dehalo,
+        func=func,
     )
