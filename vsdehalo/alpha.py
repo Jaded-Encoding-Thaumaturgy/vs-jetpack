@@ -12,15 +12,12 @@ from vsaa import NNEDI3
 from vsdenoise import Prefilter
 from vsexprtools import ExprOp, combine, norm_expr
 from vskernels import Bilinear, BSpline, Lanczos, Mitchell, Point, Scaler, ScalerLike
-from vsmasktools import EdgeDetect, Morpho, RadiusT, Robinson3, XxpandMode, grow_mask, retinex
+from vsmasktools import EdgeDetect, Morpho, RadiusT, Robinson3, XxpandMode, grow_mask
 from vsrgtools import (
     BlurMatrixBase,
     box_blur,
     contrasharpening,
     contrasharpening_dehalo,
-    gauss_blur,
-    limit_filter,
-    remove_grain,
     repair,
 )
 from vstools import (
@@ -29,9 +26,7 @@ from vstools import (
     CustomIntEnum,
     CustomValueError,
     FuncExceptT,
-    FunctionUtil,
     InvalidColorFamilyError,
-    KwargsT,
     OneDimConvModeT,
     PlanesT,
     check_progressive,
@@ -54,7 +49,7 @@ from vstools import (
     vs,
 )
 
-__all__ = ["dehalo_alpha", "dehalo_merge", "dehalo_sigma", "dehalomicron", "fine_dehalo", "fine_dehalo2"]
+__all__ = ["dehalo_alpha", "dehalo_merge", "dehalo_sigma", "fine_dehalo", "fine_dehalo2"]
 
 
 FloatIterArr = float | list[float] | tuple[float | list[float], ...]
@@ -757,86 +752,6 @@ def dehalo_sigma(
         return dehalo
 
     return join([dehalo, *chroma], clip.format.color_family)
-
-
-def dehalomicron(
-    clip: vs.VideoNode,
-    brz: float = 0.075,
-    sigma: float = 1.55,
-    sigma0: float = 1.15,
-    ss: float = 1.65,
-    pre_ss: bool = True,
-    dampen: float | list[float] | tuple[float | list[float], bool | None] = 0.65,
-    sigma_ref: float = 4.3333,
-    planes: PlanesT = 0,
-    fdehalo_kwargs: KwargsT | None = None,
-    **kwargs: Any,
-) -> vs.VideoNode:
-    func = FunctionUtil(clip, dehalomicron, planes, (vs.GRAY, vs.YUV))
-
-    assert check_progressive(clip, func.func)
-
-    fdehalo_kwargs = KwargsT(edgeproc=0.5, ss=1.5 if pre_ss else 2.0) | (fdehalo_kwargs or {})
-
-    y = get_y(func.work_clip)
-
-    y_mask = retinex(y)
-
-    dehalo_ref0 = dehalo_sigma(func.work_clip, sigma=sigma0, planes=planes)
-    dehalo_ref0mask = dehalo_sigma(y_mask, sigma=sigma0 + sigma0 * 0.09)
-
-    ymask_ref0 = gauss_blur(y_mask, sigma=sigma_ref)
-
-    dehalo_mask = norm_expr([dehalo_ref0mask, y_mask], "x y - abs 100 *", func=func.func)
-    dehalo_mask = remove_grain.Mode.BOX_BLUR_NO_CENTER(dehalo_mask)
-    dehalo_mask = remove_grain.Mode.MINMAX_MEDIAN_OPP(dehalo_mask)
-
-    dmask_expr = f"x {scale_mask(abs(brz), 32, y)} {'>' if brz < 0.0 else '>'} 0 x 2 * ?" if brz else "x 2 *"  # noqa: RUF034
-
-    dehalo_mask = norm_expr(dehalo_mask, dmask_expr, func=func.func)
-
-    fine_edge_mask = fine_dehalo.mask(norm_expr([y_mask, ymask_ref0], "y x -", func=func.func))
-    dehalo_mask = norm_expr(
-        [dehalo_mask, y_mask, ymask_ref0, fine_edge_mask], "y z + 2 / x < x and x abs a ?", func=func.func
-    )
-    dehalo_mask = remove_grain.Mode.EDGE_CLIP_STRONG(dehalo_mask)
-
-    actual_dehalo = dehalo_sigma(
-        func.work_clip,
-        pre_ss=1 + pre_ss,
-        sigma=sigma,
-        ss=ss - 0.5 * pre_ss,
-        planes=func.norm_planes,
-        func=func.func,
-        **kwargs,
-    )
-    dehalo_ref = fine_dehalo(func.work_clip, planes=func.norm_planes, func=func.func, **fdehalo_kwargs)  # type: ignore[arg-type]
-
-    dehalo_min = ExprOp.MIN(actual_dehalo, dehalo_ref, planes=func.norm_planes)
-
-    dehalo = limit_filter(actual_dehalo, func.work_clip, dehalo_ref, planes=func.norm_planes)
-    dehalo = dehalo.std.MaskedMerge(dehalo_min, dehalo_mask, func.norm_planes)
-
-    if isinstance(dampen, tuple):
-        dampen_amt, dampen_rev = dampen
-    else:
-        dampen_amt, dampen_rev = dampen, None
-
-    if dampen_rev is None:
-        dampen_rev = not pre_ss
-
-    dampen_amt = func.norm_seq(dampen_amt, 0)
-
-    if max(dampen_amt) > 0.0:
-        dehalo_ref0 = dehalo.std.Merge(dehalo_ref0, dampen_amt)
-
-    rep = repair.Mode.MINMAX_SQUARE_REF_CLOSE if pre_ss else repair.Mode.MINMAX_SQUARE_REF1
-
-    clips = (dehalo, dehalo_ref0)
-
-    dehalo = rep(*(reversed(clips) if dampen_rev else clips), func.norm_planes)  # type: ignore
-
-    return func.return_clip(dehalo)
 
 
 def dehalo_merge(
