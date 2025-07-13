@@ -10,7 +10,7 @@ from jetpytools import MISSING, MissingT, P, R, T
 
 from vsexprtools import ExprOp, combine, norm_expr
 from vskernels import Bilinear, BSpline, Lanczos, Mitchell, Scaler, ScalerLike
-from vsmasktools import EdgeDetect, Morpho, Robinson3, XxpandMode, grow_mask
+from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, Robinson3, XxpandMode, grow_mask
 from vsrgtools import (
     BlurMatrixBase,
     box_blur,
@@ -290,7 +290,7 @@ def fine_dehalo(
     contra: int | float | bool = 0.0,
     exclude: bool = True,
     edgeproc: float = 0.0,
-    edgemask: EdgeDetect = Robinson3(),
+    edgemask: EdgeDetectT = Robinson3,
     planes: PlanesT = 0,
     show_mask: int | FineDehalo.Masks | bool = False,
     func: FuncExceptT | None = None,
@@ -355,7 +355,7 @@ def fine_dehalo(
 
     # Main edges #
     # Basic edge detection, thresholding will be applied later.
-    edges = edgemask.edgemask(work_clip)
+    edges = EdgeDetect.ensure_obj(edgemask, func).edgemask(work_clip)
 
     # Keeps only the sharpest edges (line edges)
     strong = norm_expr(edges, f"x {thmif} - {thmaf - thmif} / {peak} *", planes, func=func)
