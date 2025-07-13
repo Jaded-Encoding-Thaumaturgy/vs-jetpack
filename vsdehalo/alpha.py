@@ -46,7 +46,7 @@ from vstools import (
     vs,
 )
 
-__all__ = ["dehalo_alpha", "dehalo_merge", "dehalo_sigma", "fine_dehalo", "fine_dehalo2"]
+__all__ = ["dehalo_alpha", "fine_dehalo", "fine_dehalo2"]
 
 
 IterArr: TypeAlias = T | list[T] | tuple[T | list[T], ...]
@@ -57,105 +57,129 @@ class VSFunctionPlanesArgs(VSFunctionKwArgs[vs.VideoNode, vs.VideoNode], Protoco
     def __call__(self, clip: vs.VideoNode, *, planes: PlanesT = ..., **kwargs: Any) -> vs.VideoNode: ...
 
 
-def _limit_dehalo(
-    clip: vs.VideoNode, ref: vs.VideoNode, darkstr: float | list[float], brightstr: float | list[float], planes: PlanesT
-) -> vs.VideoNode:
-    return norm_expr(
-        [clip, ref],
-        "x y < x x y - {darkstr} * - x x y - {brightstr} * - ?",
-        planes,
-        darkstr=darkstr,
-        brightstr=brightstr,
-        func=_limit_dehalo,
-    )
-
-
-def _dehalo_alpha_mask(
+def dehalo_alpha(
     clip: vs.VideoNode,
-    ref: vs.VideoNode,
-    lowsens: list[float],
-    highsens: list[float],
-    planes: PlanesT,
+    # Blur params
+    rx: FloatIterArr = 2.0,
+    ry: FloatIterArr | None = None,
+    blur_func: IterArr[VSFunctionPlanesArgs | None] = None,
+    # Mask params
+    lowsens: FloatIterArr = 50.0,
+    highsens: FloatIterArr = 50.0,
+    # Supersampling minmax params
+    ss: FloatIterArr = 1.5,
+    supersampler: ScalerLike = Lanczos(3),
+    supersampler_ref: ScalerLike = Mitchell,
+    # Limiting params
+    darkstr: FloatIterArr = 0.0,
+    brightstr: FloatIterArr = 1.0,
+    # Misc params
+    planes: PlanesT | MissingT = MISSING,
+    show_mask: bool = False,
+    func: FuncExceptT | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode:
-    peak = get_peak_value(clip)
+    """
+    Reduce halo artifacts by nuking everything around edges (and also the edges actually).
 
-    mask = norm_expr(
-        [
-            Morpho.gradient(clip, planes=planes),
-            Morpho.gradient(ref, planes=planes),
-        ],
-        "x x y - x / 0 ? {lowsens} - x {peak} / 256 255 / + 512 255 / / {highsens} + * 0 max 1 min {peak} *",
-        planes,
-        peak=peak,
-        lowsens=[lo / 255 for lo in lowsens],
-        highsens=[hi / 100 for hi in highsens],
-        func=_dehalo_alpha_mask,
-    )
+    ``rx``, ``ry``, ``darkstr``, ``brightstr``, ``lowsens``, ``highsens``, ``ss`` are all
+    configurable per plane and iteration. `tuple` means iteration, `list` plane.
 
-    return mask
+    `rx=(2.0, [2.0, 2.4], [2.2, 2.0, 2.1])` means three iterations.
+     * 1st => 2.0 for all planes
+     * 2nd => 2.0 for luma, 2.4 for chroma
+     * 3rd => 2.2 for luma, 2.0 for u, 2.1 for v
 
+    Args:
+        clip: Source clip.
+        rx: Horizontal radius for halo removal.
+        ry: Vertical radius for halo removal.
+        darkstr: Strength factor for dark halos.
+        brightstr: Strength factor for bright halos.
+        lowsens: Sensitivity setting for defining how weak the dehalo has to be to get fully accepted.
+        highsens: Sensitivity setting for define how strong the dehalo has to be to get fully discarded.
+        ss: Supersampling factor, to avoid creation of aliasing.
+        planes: Planes to process.
+        show_mask: Whether to show the computed halo mask.
+        downscaler: Scaler used to downscale the clip.
+        upscaler: Scaler used to upscale the downscaled clip.
+        supersampler: Scaler used to supersampler the rescaled clip to `ss` factor.
+        supersampler_ref: Reference scaler used to clamp the supersampled clip. Has to be blurrier.
+        pre_ss: Supersampling rate used before anything else.
+        pre_supersampler: Supersampler used for ``pre_ss``.
+        pre_downscaler: Downscaler used for undoing the upscaling done by ``pre_supersampler``.
+        func: Function from where this function was called.
 
-def _normalize_iter_arr_t(
-    *values: IterArr[T], blur_func: IterArr[VSFunctionPlanesArgs | None] | None
-) -> tuple[Iterator[tuple[list[T], ...]], Iterator[list[VSFunctionPlanesArgs | None]]]:
-    max_len = max((len(x) if isinstance(x, tuple) else 1) for x in (*values, blur_func))
+    Returns:
+        Dehaloed clip.
+    """
+    func = func or dehalo_alpha
 
-    broadcasted: list[tuple[T | list[T] | VSFunctionPlanesArgs | list[VSFunctionPlanesArgs | None] | None, ...]] = [
-        val + (val[-1],) * (max_len - len(val)) if isinstance(val, tuple) else (val,) * max_len
-        for val in (*values, blur_func)
-    ]
+    assert check_variable(clip, func)
+    assert check_progressive(clip, func)
 
-    normalized = list[list[list[T | VSFunctionPlanesArgs] | None]]()
+    InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
 
-    for subgroup in broadcasted:
-        sublist = list[list[T | VSFunctionPlanesArgs | None]]()
+    if ry is None:
+        ry = rx
 
-        for item in subgroup:
-            group = normalize_seq(item)
+    planes = [0] if planes == MISSING else normalize_planes(clip, planes)
 
-            sublist.append(group)  # type: ignore[arg-type]
+    work_clip, *chroma = split(clip) if planes == [0] else (clip,)
 
-        normalized.append(sublist)  # type: ignore[arg-type]
+    values, blur_funcs = _normalize_iter_arr_t(rx, ry, darkstr, brightstr, lowsens, highsens, ss, blur_func=blur_func)
 
-    return (zip(*normalized[:-1]), iter(normalized[-1]))  # type: ignore[arg-type]
+    for (rx_i, ry_i, darkstr_i, brightstr_i, lowsens_i, highsens_i, ss_i), blur_func_i in zip(values, blur_funcs):
+        assert work_clip.format
 
+        if any(x < 1 for x in (*ss_i, *rx_i, *ry_i)):
+            raise CustomIndexError("ss, rx, and ry must all be bigger than 1.0!", func)
 
-def _dehalo_supersample_minmax(
-    clip: vs.VideoNode,
-    ref: vs.VideoNode,
-    ss: list[float],
-    supersampler: ScalerLike,
-    supersampler_ref: ScalerLike,
-    planes: PlanesT,
-    func: FuncExceptT,
-) -> vs.VideoNode:
-    supersampler = Scaler.ensure_obj(supersampler, func)
-    supersampler_ref = Scaler.ensure_obj(supersampler_ref, func)
+        if not all(0 <= x <= 1 for x in (*brightstr_i, *darkstr_i)):
+            raise CustomIndexError("brightstr and darkstr must be between 0.0 and 1.0!", func)
 
-    def _supersample(work_clip: vs.VideoNode, dehalo: vs.VideoNode, ss: float) -> vs.VideoNode:
-        if ss <= 1.0:
-            return repair(work_clip, dehalo, 1, planes)
+        if not all(0 <= x <= 100 for x in (*lowsens_i, *highsens_i)):
+            raise CustomIndexError("lowsens and highsens must be between 0 and 100!", func)
 
-        w, h = mod4(work_clip.width * ss), mod4(work_clip.height * ss)
-        ss_clip = norm_expr(
+        # Process without splitting the planes
+        # if the radius are the same for all planes or the blur_func is the same
+        # or if luma only
+        # or clip format is GRAY
+        if any(
             [
-                supersampler.scale(work_clip, w, h),
-                supersampler_ref.scale(dehalo.std.Maximum(), w, h),
-                supersampler_ref.scale(dehalo.std.Minimum(), w, h),
-            ],
-            "x y min z max",
-            planes,
-            func=_dehalo_supersample_minmax,
-        )
+                len(set(rx_i)) == len(set(ry_i)) == len(set(blur_func_i)) == 1,
+                planes == [0],
+                work_clip.format.num_planes == 1,
+            ]
+        ):
+            dehalo = (
+                blur_func_i[0](work_clip, planes=planes)
+                if blur_func_i[0]
+                else _dehalo_alpha_blur_func(work_clip, rx_i[0], ry_i[0])
+            )
+        else:
+            dehalo = join(
+                [
+                    blur_func_p(p, planes=0) if blur_func_p else _dehalo_alpha_blur_func(p, rx_p, ry_p)
+                    for p, rx_p, ry_p, blur_func_p in zip(split(work_clip), rx_i, ry_i, blur_func_i)
+                ]
+            )
 
-        return supersampler.scale(ss_clip, work_clip.width, work_clip.height)
+        mask = _dehalo_alpha_mask(work_clip, dehalo, lowsens_i, highsens_i, planes)
 
-    if len(set(ss)) == 1 or planes == [0] or clip.format.num_planes == 1:  # type: ignore
-        dehalo = _supersample(clip, ref, ss[0])
-    else:
-        dehalo = join([_supersample(wplane, dplane, ssp) for wplane, dplane, ssp in zip(split(clip), split(ref), ss)])
+        if show_mask:
+            return mask
 
-    return dehalo
+        dehalo = dehalo.std.MaskedMerge(work_clip, mask, planes)
+
+        dehalo = _dehalo_supersample_minmax(work_clip, dehalo, ss_i, supersampler, supersampler_ref, planes, func)
+
+        work_clip = dehalo = _limit_dehalo(work_clip, dehalo, darkstr_i, brightstr_i, planes)
+
+    if not chroma:
+        return dehalo
+
+    return join([dehalo, *chroma], clip.format.color_family)
 
 
 class FineDehalo(Generic[P, R]):
@@ -548,6 +572,34 @@ def fine_dehalo2(
     return join([dehaloed, *chroma], clip.format.color_family)
 
 
+# HELPER FUNCTIONS BELOW #
+
+
+def _normalize_iter_arr_t(
+    *values: IterArr[T], blur_func: IterArr[VSFunctionPlanesArgs | None] | None
+) -> tuple[Iterator[tuple[list[T], ...]], Iterator[list[VSFunctionPlanesArgs | None]]]:
+    max_len = max((len(x) if isinstance(x, tuple) else 1) for x in (*values, blur_func))
+
+    broadcasted: list[tuple[T | list[T] | VSFunctionPlanesArgs | list[VSFunctionPlanesArgs | None] | None, ...]] = [
+        val + (val[-1],) * (max_len - len(val)) if isinstance(val, tuple) else (val,) * max_len
+        for val in (*values, blur_func)
+    ]
+
+    normalized = list[list[list[T | VSFunctionPlanesArgs] | None]]()
+
+    for subgroup in broadcasted:
+        sublist = list[list[T | VSFunctionPlanesArgs | None]]()
+
+        for item in subgroup:
+            group = normalize_seq(item)
+
+            sublist.append(group)  # type: ignore[arg-type]
+
+        normalized.append(sublist)  # type: ignore[arg-type]
+
+    return (zip(*normalized[:-1]), iter(normalized[-1]))  # type: ignore[arg-type]
+
+
 def _dehalo_alpha_blur_func(
     clip: vs.VideoNode,
     rx: float,
@@ -567,126 +619,77 @@ def _dehalo_alpha_blur_func(
     )
 
 
-def dehalo_alpha(
+def _dehalo_alpha_mask(
     clip: vs.VideoNode,
-    # Blur params
-    rx: FloatIterArr = 2.0,
-    ry: FloatIterArr | None = None,
-    blur_func: IterArr[VSFunctionPlanesArgs | None] = None,
-    # Mask params
-    lowsens: FloatIterArr = 50.0,
-    highsens: FloatIterArr = 50.0,
-    # Supersampling minmax params
-    ss: FloatIterArr = 1.5,
-    supersampler: ScalerLike = Lanczos(3),
-    supersampler_ref: ScalerLike = Mitchell,
-    # Limiting params
-    darkstr: FloatIterArr = 0.0,
-    brightstr: FloatIterArr = 1.0,
-    # Misc params
-    planes: PlanesT | MissingT = MISSING,
-    show_mask: bool = False,
-    func: FuncExceptT | None = None,
-    **kwargs: Any,
+    ref: vs.VideoNode,
+    lowsens: list[float],
+    highsens: list[float],
+    planes: PlanesT,
 ) -> vs.VideoNode:
-    """
-    Reduce halo artifacts by nuking everything around edges (and also the edges actually).
+    peak = get_peak_value(clip)
 
-    ``rx``, ``ry``, ``darkstr``, ``brightstr``, ``lowsens``, ``highsens``, ``ss`` are all
-    configurable per plane and iteration. `tuple` means iteration, `list` plane.
+    mask = norm_expr(
+        [
+            Morpho.gradient(clip, planes=planes),
+            Morpho.gradient(ref, planes=planes),
+        ],
+        "x x y - x / 0 ? {lowsens} - x {peak} / 256 255 / + 512 255 / / {highsens} + * 0 max 1 min {peak} *",
+        planes,
+        peak=peak,
+        lowsens=[lo / 255 for lo in lowsens],
+        highsens=[hi / 100 for hi in highsens],
+        func=_dehalo_alpha_mask,
+    )
 
-    `rx=(2.0, [2.0, 2.4], [2.2, 2.0, 2.1])` means three iterations.
-     * 1st => 2.0 for all planes
-     * 2nd => 2.0 for luma, 2.4 for chroma
-     * 3rd => 2.2 for luma, 2.0 for u, 2.1 for v
+    return mask
 
-    Args:
-        clip: Source clip.
-        rx: Horizontal radius for halo removal.
-        ry: Vertical radius for halo removal.
-        darkstr: Strength factor for dark halos.
-        brightstr: Strength factor for bright halos.
-        lowsens: Sensitivity setting for defining how weak the dehalo has to be to get fully accepted.
-        highsens: Sensitivity setting for define how strong the dehalo has to be to get fully discarded.
-        ss: Supersampling factor, to avoid creation of aliasing.
-        planes: Planes to process.
-        show_mask: Whether to show the computed halo mask.
-        downscaler: Scaler used to downscale the clip.
-        upscaler: Scaler used to upscale the downscaled clip.
-        supersampler: Scaler used to supersampler the rescaled clip to `ss` factor.
-        supersampler_ref: Reference scaler used to clamp the supersampled clip. Has to be blurrier.
-        pre_ss: Supersampling rate used before anything else.
-        pre_supersampler: Supersampler used for ``pre_ss``.
-        pre_downscaler: Downscaler used for undoing the upscaling done by ``pre_supersampler``.
-        func: Function from where this function was called.
 
-    Returns:
-        Dehaloed clip.
-    """
-    func = func or dehalo_alpha
+def _dehalo_supersample_minmax(
+    clip: vs.VideoNode,
+    ref: vs.VideoNode,
+    ss: list[float],
+    supersampler: ScalerLike,
+    supersampler_ref: ScalerLike,
+    planes: PlanesT,
+    func: FuncExceptT,
+) -> vs.VideoNode:
+    supersampler = Scaler.ensure_obj(supersampler, func)
+    supersampler_ref = Scaler.ensure_obj(supersampler_ref, func)
 
-    assert check_variable(clip, func)
-    assert check_progressive(clip, func)
+    def _supersample(work_clip: vs.VideoNode, dehalo: vs.VideoNode, ss: float) -> vs.VideoNode:
+        if ss <= 1.0:
+            return repair(work_clip, dehalo, 1, planes)
 
-    InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
-
-    if ry is None:
-        ry = rx
-
-    planes = [0] if planes == MISSING else normalize_planes(clip, planes)
-
-    work_clip, *chroma = split(clip) if planes == [0] else (clip,)
-
-    values, blur_funcs = _normalize_iter_arr_t(rx, ry, darkstr, brightstr, lowsens, highsens, ss, blur_func=blur_func)
-
-    for (rx_i, ry_i, darkstr_i, brightstr_i, lowsens_i, highsens_i, ss_i), blur_func_i in zip(values, blur_funcs):
-        assert work_clip.format
-
-        if any(x < 1 for x in (*ss_i, *rx_i, *ry_i)):
-            raise CustomIndexError("ss, rx, and ry must all be bigger than 1.0!", func)
-
-        if not all(0 <= x <= 1 for x in (*brightstr_i, *darkstr_i)):
-            raise CustomIndexError("brightstr and darkstr must be between 0.0 and 1.0!", func)
-
-        if not all(0 <= x <= 100 for x in (*lowsens_i, *highsens_i)):
-            raise CustomIndexError("lowsens and highsens must be between 0 and 100!", func)
-
-        # Process without splitting the planes
-        # if the radius are the same for all planes or the blur_func is the same
-        # or if luma only
-        # or clip format is GRAY
-        if any(
+        w, h = mod4(work_clip.width * ss), mod4(work_clip.height * ss)
+        ss_clip = norm_expr(
             [
-                len(set(rx_i)) == len(set(ry_i)) == len(set(blur_func_i)) == 1,
-                planes == [0],
-                work_clip.format.num_planes == 1,
-            ]
-        ):
-            dehalo = (
-                blur_func_i[0](work_clip, planes=planes)
-                if blur_func_i[0]
-                else _dehalo_alpha_blur_func(work_clip, rx_i[0], ry_i[0])
-            )
-        else:
-            dehalo = join(
-                [
-                    blur_func_p(p, planes=0) if blur_func_p else _dehalo_alpha_blur_func(p, rx_p, ry_p)
-                    for p, rx_p, ry_p, blur_func_p in zip(split(work_clip), rx_i, ry_i, blur_func_i)
-                ]
-            )
+                supersampler.scale(work_clip, w, h),
+                supersampler_ref.scale(dehalo.std.Maximum(), w, h),
+                supersampler_ref.scale(dehalo.std.Minimum(), w, h),
+            ],
+            "x y min z max",
+            planes,
+            func=_dehalo_supersample_minmax,
+        )
 
-        mask = _dehalo_alpha_mask(work_clip, dehalo, lowsens_i, highsens_i, planes)
+        return supersampler.scale(ss_clip, work_clip.width, work_clip.height)
 
-        if show_mask:
-            return mask
+    if len(set(ss)) == 1 or planes == [0] or clip.format.num_planes == 1:  # type: ignore
+        dehalo = _supersample(clip, ref, ss[0])
+    else:
+        dehalo = join([_supersample(wplane, dplane, ssp) for wplane, dplane, ssp in zip(split(clip), split(ref), ss)])
 
-        dehalo = dehalo.std.MaskedMerge(work_clip, mask, planes)
+    return dehalo
 
-        dehalo = _dehalo_supersample_minmax(work_clip, dehalo, ss_i, supersampler, supersampler_ref, planes, func)
 
-        work_clip = dehalo = _limit_dehalo(work_clip, dehalo, darkstr_i, brightstr_i, planes)
-
-    if not chroma:
-        return dehalo
-
-    return join([dehalo, *chroma], clip.format.color_family)
+def _limit_dehalo(
+    clip: vs.VideoNode, ref: vs.VideoNode, darkstr: float | list[float], brightstr: float | list[float], planes: PlanesT
+) -> vs.VideoNode:
+    return norm_expr(
+        [clip, ref],
+        "x y < x x y - {darkstr} * - x x y - {brightstr} * - ?",
+        planes,
+        darkstr=darkstr,
+        brightstr=brightstr,
+        func=_limit_dehalo,
+    )
