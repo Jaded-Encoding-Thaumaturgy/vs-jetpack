@@ -11,7 +11,6 @@ from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, PrewittTCanny, Robinson
 from vsrgtools import (
     BlurMatrix,
     BlurMatrixBase,
-    box_blur,
     contrasharpening,
     contrasharpening_dehalo,
 )
@@ -304,7 +303,7 @@ def fine_dehalo(
 
     # This mask is almost binary, which will produce distinct
     # discontinuities once applied. Then we have to smooth it.
-    shrink = box_blur(shrink, 1, 2, planes=planes)
+    shrink = BlurMatrix.MEAN()(shrink, planes, passes=2)
 
     # Final mask building #
 
@@ -324,7 +323,7 @@ def fine_dehalo(
     # Smooth again and amplify to grow the mask a bit, otherwise the halo
     # parts sticking to the edges could be missed.
     # Also clamp to legal ranges
-    mask = box_blur(mask, planes=planes)
+    mask = BlurMatrix.MEAN()(mask, planes)
 
     mask = norm_expr(mask, f"x 2 * {ExprOp.clamp(0, peak)}", planes, func=func)
 
