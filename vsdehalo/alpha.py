@@ -32,7 +32,6 @@ from vstools import (
     check_progressive,
     check_variable,
     cround,
-    fallback,
     get_peak_value,
     get_y,
     join,
@@ -349,7 +348,8 @@ def fine_dehalo(
     peak = get_peak_value(clip)
     planes = normalize_planes(clip, planes)
 
-    rx_i, ry_i = cround(to_arr(to_arr(rx)[0])[0]), cround(to_arr(to_arr(fallback(ry, rx))[0])[0])  # type: ignore
+    rx_i = cround(to_arr(to_arr(rx)[0])[0])
+    ry_i = cround(to_arr(to_arr(rx if ry is None else ry)[0])[0])
 
     work_clip, *chroma = split(clip) if planes == [0] else (clip,)
 
