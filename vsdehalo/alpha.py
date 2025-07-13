@@ -68,12 +68,11 @@ def _limit_dehalo(
     )
 
 
-def _dehalo_mask(
+def _dehalo_alpha_mask(
     clip: vs.VideoNode,
     ref: vs.VideoNode,
     lowsens: list[float],
     highsens: list[float],
-    sigma_mask: float | bool,
     mask_radius: RadiusT,
     mask_coords: Sequence[int] | None,
     planes: PlanesT,
@@ -90,17 +89,8 @@ def _dehalo_mask(
         peak=peak,
         lowsens=[lo / 255 for lo in lowsens],
         highsens=[hi / 100 for hi in highsens],
-        func=_dehalo_mask,
+        func=_dehalo_alpha_mask,
     )
-
-    if sigma_mask is not False:
-        if sigma_mask is True:
-            sigma_mask = 0.0
-
-        conv_values = [float((sig_mask := bool(sigma_mask)))] * 9
-        conv_values[4] = 1 / clamp(sigma_mask, 0, 1) if sig_mask else 1
-
-        mask = mask.std.Convolution(conv_values, planes=planes)
 
     return mask
 
@@ -271,7 +261,6 @@ def fine_dehalo(
     thma: int = 128,
     thlimi: int = 50,
     thlima: int = 100,
-    sigma_mask: float | bool = False,
     ss: FloatIterArr = 1.5,
     contra: int | float | bool = 0.0,
     exclude: bool = True,
@@ -316,7 +305,6 @@ def fine_dehalo(
         thma: Maximum threshold for sharp edges; keep only the sharpest edges (line edges).
         thlimi: Minimum limiting threshold; include more edges than previously ignored details.
         thlima: Maximum limiting threshold; include more edges than previously ignored details.
-        sigma_mask: Blurring strength for the mask.
         ss: Supersampling factor, to avoid creation of aliasing.
         contra: Contrasharpening. If True or int, will use [contrasharpening][vsdehalo.contrasharpening] otherwise uses
             [contrasharpening_fine_dehalo][vsdehalo.contrasharpening_fine_dehalo] with specified level.
@@ -429,7 +417,6 @@ def fine_dehalo(
         brightstr,
         lowsens,
         highsens,
-        sigma_mask,
         ss,
         planes,
         False,
@@ -598,7 +585,6 @@ def dehalo_alpha(
         brightstr: Strength factor for bright halos.
         lowsens: Sensitivity setting for defining how weak the dehalo has to be to get fully accepted.
         highsens: Sensitivity setting for define how strong the dehalo has to be to get fully discarded.
-        sigma_mask: Blurring strength for the mask.
         ss: Supersampling factor, to avoid creation of aliasing.
         planes: Planes to process.
         show_mask: Whether to show the computed halo mask.
@@ -662,7 +648,9 @@ def dehalo_alpha(
         else:
             dehalo = join([_rescale(plane, rxp, ryp) for plane, rxp, ryp in zip(split(work_clip), rx_i, ry_i)])
 
-        mask = _dehalo_mask(work_clip, dehalo, lowsens_i, highsens_i, sigma_mask, mask_radius, mask_coords, planes)
+        mask = _dehalo_alpha_mask(
+            work_clip, dehalo, lowsens_i, highsens_i, mask_radius, mask_coords, planes
+        )
 
         if show_mask:
             return mask
@@ -672,9 +660,6 @@ def dehalo_alpha(
         dehalo = _dehalo_supersample_minmax(work_clip, dehalo, ss_i, supersampler, supersampler_ref, planes, func)
 
         work_clip = dehalo = _limit_dehalo(work_clip, dehalo, darkstr_i, brightstr_i, planes)
-
-    if (dehalo.width, dehalo.height) != (clip.width, clip.height):
-        dehalo = pre_downscaler.scale(work_clip, clip.width, clip.height)
 
     if not chroma:
         return dehalo
