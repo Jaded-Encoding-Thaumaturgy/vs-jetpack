@@ -44,64 +44,58 @@ __all__ = ["base_dehalo_mask", "fine_dehalo", "fine_dehalo2"]
 
 
 def base_dehalo_mask(
-    src: vs.VideoNode,
+    clip: vs.VideoNode,
     expand: float = 0.5,
     iterations: int = 2,
     brz0: float = 0.31,
     brz1: float = 1.0,
     shift: int = 8,
-    pre_ss: bool = True,
     multi: float = 1.0,
 ) -> vs.VideoNode:
     """
     Based on `muvsfunc.YAHRmask`, stand-alone version with some tweaks. Adopted from jvsfunc.
 
     Args:
-        src: Input clip.
+        clip: Input clip.
         expand: Expansion of edge mask.
         iterations: Protects parallel lines and corners that are usually damaged by strong dehaloing.
         brz0: Adjusts the internal line thickness.
         brz1: Adjusts the internal line thickness.
         shift: 8-bit corrective shift value for fine-tuning expansion.
-        pre_ss: Perform the mask creation at 2x.
         multi: Final pixel value multiplier.
 
     Returns:
         Dehalo mask.
     """
 
-    assert check_progressive(src, base_dehalo_mask)
+    assert check_progressive(clip, base_dehalo_mask)
 
-    luma = get_y(src)
+    y = get_y(clip)
 
-    if pre_ss:
-        luma = NNEDI3().supersample(luma)
+    y = NNEDI3(noshift=True).supersample(y)
 
     exp_edges = norm_expr(
-        [luma, Morpho.maximum(luma, iterations=2)],
+        [y, Morpho.maximum(y, iterations=2)],
         "y x - {shift} - range_half *",
-        shift=scale_delta(shift, 8, luma),
+        shift=scale_delta(shift, 8, y),
         func=base_dehalo_mask,
     )
 
     edgemask = PrewittTCanny.edgemask(exp_edges, sigma=sqrt(expand * 2), mode=-1, multi=16)
 
-    halo_mask = Morpho.maximum(exp_edges, iterations=iterations)
-    halo_mask = Morpho.minimum(halo_mask, iterations=iterations)
+    halo_mask = Morpho.maximum(exp_edges, iterations=iterations, func=base_dehalo_mask)
+    halo_mask = Morpho.minimum(halo_mask, iterations=iterations, func=base_dehalo_mask)
     halo_mask = Morpho.binarize(halo_mask, brz0, 1.0, 0.0)
 
     if brz1 != 1.0:
-        halo_mask = Morpho.inflate(halo_mask, iterations=2)
+        halo_mask = Morpho.inflate(halo_mask, iterations=2, func=base_dehalo_mask)
         halo_mask = Morpho.binarize(halo_mask, brz1)
 
     mask = norm_expr(
         [edgemask, BlurMatrix.BINOMIAL()(halo_mask)], "x y min {multi} *", multi=multi, func=base_dehalo_mask
     )
 
-    if pre_ss:
-        return vs.core.resize.Point(mask, src.width, src.height)
-
-    return mask
+    return vs.core.resize.Point(mask, clip.width, clip.height)
 
 
 class FineDehalo(Generic[P, R]):
