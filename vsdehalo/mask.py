@@ -37,7 +37,7 @@ from vstools import (
     vs,
 )
 
-from .alpha import IterArr, _limit_dehalo, dehalo_alpha
+from .alpha import IterArr, VSFunctionPlanesArgs, _limit_dehalo, dehalo_alpha
 
 __all__ = ["base_dehalo_mask", "fine_dehalo", "fine_dehalo2"]
 
@@ -132,7 +132,7 @@ class FineDehalo(Generic[P, R]):
         thlima: int = 100,
         exclude: bool = True,
         edgeproc: float = 0.0,
-        edgemask: EdgeDetect = Robinson3(),
+        edgemask: EdgeDetectT = Robinson3,
         show_mask: int | FineDehalo.Masks = 1,
         planes: PlanesT = 0,
         first_plane: bool = False,
@@ -189,21 +189,29 @@ class FineDehalo(Generic[P, R]):
 @FineDehalo
 def fine_dehalo(
     clip: vs.VideoNode,
+    # Blur params + fine_dehalo mask
     rx: IterArr[float] = 2.0,
     ry: IterArr[float] | None = None,
-    darkstr: IterArr[float] = 0.0,
-    brightstr: IterArr[float] = 1.0,
+    blur_func: IterArr[VSFunctionPlanesArgs | None] = None,
+    # dehalo_alpha mask params
     lowsens: IterArr[float] = 50.0,
     highsens: IterArr[float] = 50.0,
+    # dehalo_alpha supersampling minmax params
+    ss: IterArr[float] = 1.5,
+    # dehalo_alpha limiting params
+    darkstr: IterArr[float] = 0.0,
+    brightstr: IterArr[float] = 1.0,
+    # fine_dehalo mask specific params
+    edgemask: EdgeDetectT = Robinson3,
     thmi: int = 80,
     thma: int = 128,
     thlimi: int = 50,
     thlima: int = 100,
-    ss: IterArr[float] = 1.5,
-    contra: int | float | bool = 0.0,
     exclude: bool = True,
     edgeproc: float = 0.0,
-    edgemask: EdgeDetectT = Robinson3,
+    # Final post processing
+    contra: int | float | bool = 0.0,
+    # Misc params
     planes: PlanesT = 0,
     show_mask: int | FineDehalo.Masks | bool = False,
     func: FuncExceptT | None = None,
@@ -335,7 +343,7 @@ def fine_dehalo(
         work_clip,
         rx,
         ry,
-        None,
+        blur_func,
         lowsens,
         highsens,
         ss,
