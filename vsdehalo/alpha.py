@@ -62,7 +62,7 @@ def dehalo_alpha(
     """
     Reduce halo artifacts by aggressively processing the edges and their surroundings.
 
-    The parameters `rx`, `ry`, `lowsens`, `highsens`, `ss`, `darkstr`, and `brightstr`
+    The parameters `rx`, `ry`, `lowsens`, `highsens`, `ss`, `darkstr`, `brightstr` and `blur_func`
     can be configured per plane and per iteration. You can specify:
 
         - A single value: applies to all iterations and all planes.

@@ -368,7 +368,7 @@ def fine_dehalo(
     Halo removal function based on `dehalo_alpha`, enhanced with additional masking and optional contra-sharpening
     to better preserve important line detail while effectively reducing halos.
 
-    The parameters `rx`, `ry`, `lowsens`, `highsens`, `ss`, `darkstr`, and `brightstr`
+    The parameters `rx`, `ry`, `lowsens`, `highsens`, `ss`, `darkstr`, `brightstr` and `blur_func`
     can be configured per plane and per iteration. You can specify:
 
         - A single value: applies to all iterations and all planes.
@@ -385,9 +385,14 @@ def fine_dehalo(
 
     Example usage:
         ```py
-        dehalo = fine_dehalo(clip, ...)
+        dehalo = fine_dehalo(clip, (3, 2), brightstr=(0.85, 0.25))
         # Getting the masks of the last fine_dehalo call:
         dehalo_mask = fine_dehalo.masks.MAIN
+
+        # dehalo_sigma with fine_dehalo masks
+        from vsrgtools import gauss_blur
+
+        dehalo = fine_dehalo(clip, blur_func=gauss_blur)
         ```
 
     Args:
