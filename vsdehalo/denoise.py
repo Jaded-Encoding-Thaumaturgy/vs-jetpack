@@ -6,9 +6,9 @@ from typing import Any, Sequence
 
 from vsaa import NNEDI3
 from vsdenoise import Prefilter, PrefilterLike, frequency_merge, nl_means
-from vsexprtools import ExprOp, ExprToken, norm_expr
+from vsexprtools import ExprOp, norm_expr
 from vskernels import Catrom, Scaler, ScalerLike
-from vsmasktools import Morpho, Prewitt
+from vsmasktools import Morpho, Robinson3
 from vsrgtools import (
     LimitFilterMode,
     contrasharpening,
@@ -166,9 +166,7 @@ def smooth_dering(
                     Morpho.inflate(fmask, planes=planes, func=func.func), ceil(minp / 2), planes=planes, func=func.func
                 )
 
-            ringmask = norm_expr(
-                [omask, imask], [f"{ExprToken.RangeMax} {ExprToken.RangeMax} y - / x *", ExprOp.clamp()], func=func.func
-            )
+            ringmask = norm_expr([omask, imask], ["x range_max y - * range_max /", ExprOp.clamp()], func=func.func)
 
     dering = func.work_clip.std.MaskedMerge(limitclp, ringmask, planes)
 
