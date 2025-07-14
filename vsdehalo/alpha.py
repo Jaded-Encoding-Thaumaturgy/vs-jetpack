@@ -4,7 +4,7 @@ This module implements functions based on the famous dehalo_alpha.
 
 from __future__ import annotations
 
-from typing import Any, Iterator, Protocol, TypeAlias
+from typing import Any, Iterator, TypeAlias
 
 from jetpytools import T
 
@@ -20,7 +20,6 @@ from vstools import (
     FuncExceptT,
     InvalidColorFamilyError,
     PlanesT,
-    VSFunctionKwArgs,
     check_progressive,
     check_variable,
     core,
@@ -32,15 +31,13 @@ from vstools import (
     split,
     vs,
 )
+from vstools import VSFunctionPlanesArgs as GenericVSFunctionPlanesArgs
 
 __all__ = ["dehalo_alpha"]
 
 
 IterArr: TypeAlias = T | list[T] | tuple[T | list[T], ...]
-
-
-class VSFunctionPlanesArgs(VSFunctionKwArgs[vs.VideoNode, ConstantFormatVideoNode], Protocol):
-    def __call__(self, clip: vs.VideoNode, *, planes: PlanesT = ..., **kwargs: Any) -> ConstantFormatVideoNode: ...
+VSFunctionPlanesArgs: TypeAlias = GenericVSFunctionPlanesArgs[vs.VideoNode, ConstantFormatVideoNode]
 
 
 def dehalo_alpha(
