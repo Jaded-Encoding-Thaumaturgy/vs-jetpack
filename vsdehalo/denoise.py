@@ -35,7 +35,7 @@ __all__ = ["smooth_dering", "vine_dehalo"]
 
 def smooth_dering(
     clip: vs.VideoNode,
-    smooth: vs.VideoNode | PrefilterLike = Prefilter.MINBLUR(radius=1),
+    smooth: vs.VideoNode | PrefilterLike | None = None,
     ringmask: vs.VideoNode | None = None,
     mrad: int = 1,
     msmooth: int = 1,
@@ -124,7 +124,8 @@ def smooth_dering(
 
     darkthr = fallback(darkthr, thr // 4)
 
-    rep_dr = [drrep if i in planes else 0 for i in range(work_clip.format.num_planes)]
+    if smooth is None:
+        smooth = Prefilter.MINBLUR(radius=2) if func.is_hd else Prefilter.MINBLUR(radius=1)
 
     if not isinstance(smooth, vs.VideoNode):
         smoothed = smooth(work_clip, planes)
