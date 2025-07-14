@@ -15,7 +15,6 @@ from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, PrewittTCanny, Robinson
 from vsrgtools import (
     BlurMatrix,
     BlurMatrixBase,
-    contrasharpening,
     contrasharpening_dehalo,
 )
 from vstools import (
@@ -358,7 +357,7 @@ def fine_dehalo(
     exclude: bool = True,
     edgeproc: float = 0.0,
     # Final post processing
-    contra: int | float | bool = 0.0,
+    contra: float = 0.0,
     # Misc params
     planes: PlanesT = 0,
     *,
@@ -408,9 +407,7 @@ def fine_dehalo(
         thlima: Maximum threshold for the inclusion of additional, less distinct edges.
         exclude: Whether to exclude edges that are too close together.
         edgeproc: If greater than 0, adds the edge mask into the final processing. Defaults to 0.0.
-        contra: Contra-sharpening amount.
-               - If `True` or `int`, uses [contrasharpening][vsdehalo.contrasharpening]
-               - if `float`, uses [contrasharpening_dehalo][vsdehalo.contrasharpening_dehalo] with specified level.
+        contra: Contra-sharpening level in [contrasharpening_dehalo][vsdehalo.contrasharpening_dehalo].
         planes: Planes to process.
         attach_masks: Stores the masks as frame properties in the output clip.
             The prop names are `FineDehaloMask` + the masking step.
@@ -445,10 +442,7 @@ def fine_dehalo(
     )
 
     if contra:
-        if isinstance(contra, float):
-            dehaloed = contrasharpening_dehalo(dehaloed, func_util.work_clip, contra, planes=planes)
-        else:
-            dehaloed = contrasharpening(dehaloed, func_util.work_clip, int(contra), planes=planes)
+        dehaloed = contrasharpening_dehalo(dehaloed, func_util.work_clip, contra, planes=planes)
 
     y_merge = func_util.work_clip.std.MaskedMerge(dehaloed, fine_dehalo.masks.MAIN, planes)
 

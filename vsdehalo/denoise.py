@@ -14,7 +14,6 @@ from vskernels import Catrom, Scaler, ScalerLike
 from vsmasktools import Morpho, Robinson3
 from vsrgtools import (
     LimitFilterMode,
-    contrasharpening,
     contrasharpening_dehalo,
     gauss_blur,
     limit_filter,
@@ -48,7 +47,7 @@ def smooth_dering(
     thr: int = 12,
     elast: float = 2.0,
     darkthr: int | None = None,
-    contra: int | float | bool = 1.2,
+    contra: float = 1.2,
     drrep: int = 13,
     planes: PlanesT = 0,
 ) -> vs.VideoNode:
@@ -129,10 +128,8 @@ def smooth_dering(
             For the last two examples, output will remain unchanged. (0/255: no limiting)
 
         contra: Whether to use contra-sharpening to resharp deringed clip:
-               - False: no contrasharpening
-               - True: auto radius for contrasharpening
-               - int 1-3: represents radius for contrasharpening
-               - float: represents level for contrasharpening_dehalo
+               - 0 means no contra
+               - float: represents level for [contrasharpening_dehalo][vsdehalo.contrasharpening_dehalo]
 
         drrep: Use repair for details retention, recommended values are 13/12/1.
 
@@ -160,12 +157,7 @@ def smooth_dering(
         smoothed = plane(smooth, 0) if func.luma_only else smooth
 
     if contra:
-        if isinstance(contra, int):
-            if contra is True:
-                contra = 2 if func.is_hd else 1
-            smoothed = contrasharpening(smoothed, func.work_clip, contra, mode=repair.Mode(13), planes=planes)
-        else:
-            smoothed = contrasharpening_dehalo(smoothed, func.work_clip, contra, planes=planes)
+        smoothed = contrasharpening_dehalo(smoothed, func.work_clip, contra, planes=planes)
 
     repclp = repair(func.work_clip, smoothed, drrep, planes)
 
