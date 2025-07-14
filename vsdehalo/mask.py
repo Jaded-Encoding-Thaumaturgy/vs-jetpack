@@ -314,6 +314,8 @@ def fine_dehalo(
     contra: int | float | bool = 0.0,
     # Misc params
     planes: PlanesT = 0,
+    *,
+    attach_masks: bool = False,
     func: FuncExceptT | None = None,
 ) -> vs.VideoNode:
     """
@@ -349,8 +351,9 @@ def fine_dehalo(
         edgeproc: If > 0, it will add the edgemask to the processing, defaults to 0.0
         edgemask: Internal mask used for detecting the edges, defaults to Robinson3()
         planes: Planes to process.
-        show_mask: Whether to show the computed halo mask. 1-7 values to select intermediate masks.
-        func: Function from where this function was called.
+        attach_masks: Stores the masks as frame properties in the output clip.
+            The prop names are `FineDehaloMask` + the masking step.
+        func: An optional function to use for error handling.
 
     Returns:
         Dehaloed clip.
@@ -395,10 +398,13 @@ def fine_dehalo(
 
     y_merge = work_clip.std.MaskedMerge(dehaloed, fine_dehalo.mask.MAIN, planes)
 
-    if chroma:
-        return join([y_merge, *chroma])
+    out = join([y_merge, *chroma]) if chroma else y_merge
 
-    return y_merge
+    if attach_masks:
+        for k, v in fine_dehalo.mask.items():
+            out = out.std.ClipToProp(v, "FineDehaloMask" + "".join(w.title() for w in k.split("_")))
+
+    return out
 
 
 def fine_dehalo2(
@@ -409,7 +415,8 @@ def fine_dehalo2(
     brightstr: float = 1.0,
     darkstr: float = 1.0,
     dark: bool | None = True,
-    show_mask: bool = False,
+    *,
+    attach_masks: bool = False,
 ) -> vs.VideoNode:
     """
     Halo removal function for 2nd order halos.
@@ -422,7 +429,8 @@ def fine_dehalo2(
         brightstr: Strength factor for bright halos.
         darkstr: Strength factor for dark halos.
         dark: Whether to filter for dark or bright haloing. None for disable merging with source clip.
-        show_mask: Whether to return the computed mask.
+        attach_masks: Stores the masks as frame properties in the output clip.
+            The prop names are `FineDehalo2MaskV` and `FineDehalo2MaskH`.
 
     Returns:
         Dehaloed clip.
@@ -460,14 +468,6 @@ def fine_dehalo2(
         mask_h = mask_h and limiter(mask_h, func=func)
         mask_v = mask_v and limiter(mask_v, func=func)
 
-    if show_mask:
-        if mask_h and mask_v:
-            return combine([mask_h, mask_v], ExprOp.MAX)
-
-        assert (ret_mask := mask_h or mask_v)  # noqa: RUF018
-
-        return ret_mask
-
     fix_weights = list(range(-1, -radius - 1, -1))
     fix_rweights = list(reversed(fix_weights))
     fix_zeros, fix_mweight = [0] * radius, 10 * (radius + 2)
@@ -490,7 +490,6 @@ def fine_dehalo2(
     if darkstr != brightstr != 1.0:
         dehaloed = _limit_dehalo(work_clip, dehaloed, darkstr, brightstr, 0)
 
-    if not chroma:
-        return dehaloed
+    out = dehaloed if not chroma else join([dehaloed, *chroma])
 
-    return join([dehaloed, *chroma], clip.format.color_family)
+    return out if not attach_masks else out.std.SetFrameProps(FineDehalo2MaskV=mask_v, FineDehalo2MaskH=mask_h)
