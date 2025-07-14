@@ -8,19 +8,13 @@ from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, PrewittStd
 from vsrgtools import BlurMatrix, box_blur, min_blur, remove_grain, repair
 from vsrgtools.rgtools import Repair
 from vstools import (
-    DitherType,
-    InvalidColorFamilyError,
+    FunctionUtil,
     PlanesT,
-    check_variable,
     cround,
-    depth_func,
     get_y,
-    join,
     limiter,
-    normalize_planes,
     padder,
     scale_mask,
-    split,
     vs,
 )
 
@@ -33,8 +27,8 @@ def edge_cleaner(
     rmode: int | Repair.Mode = 17,
     hot: bool = False,
     smode: bool = False,
-    planes: PlanesT = 0,
     edgemask: EdgeDetectT = PrewittStd,
+    planes: PlanesT = 0,
 ) -> vs.VideoNode:
     """
     Cleans edges in a video clip by applying edge-aware processing.
@@ -45,81 +39,60 @@ def edge_cleaner(
         rmode: Repair mode to use for edge refinement. Default is 17.
         hot: If True, applies additional repair to hot edges. Default is False.
         smode: If True, applies a stronger cleaning mode. Default is False.
-        planes: The planes to process. Default is 0 (luma only).
         edgemask: The edge detection method to use. Default is PrewittStd.
+        planes: The planes to process. Default is 0 (luma only).
 
     Returns:
         The processed video clip with cleaned edges.
     """
-    assert check_variable(clip, edge_cleaner)
-
-    InvalidColorFamilyError.check(clip, (vs.YUV, vs.GRAY), edge_cleaner)
+    func = FunctionUtil(clip, edge_cleaner, planes, (vs.YUV, vs.GRAY), (8, 16))
 
     edgemask = EdgeDetect.ensure_obj(edgemask, edge_cleaner)
-
-    planes = normalize_planes(clip, planes)
-
-    work_clip, *chroma = split(clip) if planes == [0] else (clip,)
-    assert work_clip.format
-
-    is_float = work_clip.format.sample_type == vs.FLOAT
 
     if smode:
         strength += 4
 
-    padded = padder.MIRROR(work_clip, 6, 6, 6, 6)
-
-    # warpsf is way too slow
-    if is_float:
-        padded = depth_func(padded, 16, vs.INTEGER, dither_type=DitherType.NONE)
-
+    padded = padder.MIRROR(func.work_clip, 6, 6, 6, 6)
     warped = padded.warp.AWarpSharp2(blur=1, depth=cround(strength / 2), planes=planes)
-
     warped = warped.std.Crop(6, 6, 6, 6)
 
-    if is_float:
-        warped = depth_func(
-            warped, work_clip.format.bits_per_sample, work_clip.format.sample_type, dither_type=DitherType.NONE
-        )
+    warped = repair(warped, func.work_clip, rmode, func.norm_planes)
 
-    warped = repair(warped, work_clip, [rmode if i in planes else 0 for i in range(work_clip.format.num_planes)])
-
-    y_mask = get_y(work_clip)
+    y_mask = get_y(func.work_clip)
 
     mask = norm_expr(
         edgemask.edgemask(y_mask),
         "x {sc4} < 0 x {sc32} > range_in_max x ? ?",
-        sc4=scale_mask(4, 8, work_clip),
-        sc32=scale_mask(32, 8, work_clip),
+        sc4=scale_mask(4, 8, func.work_clip),
+        sc32=scale_mask(32, 8, func.work_clip),
         func=edge_cleaner,
     )
     mask = box_blur(mask.std.InvertMask())
 
-    final = work_clip.std.MaskedMerge(warped, mask)
+    final = func.work_clip.std.MaskedMerge(warped, mask)
 
     if hot:
-        final = repair(final, work_clip, 2)
+        final = repair(final, func.work_clip, 2)
 
     if smode:
         clean = remove_grain(y_mask, 17)
 
         diff = y_mask.std.MakeDiff(clean)
 
-        mask = edgemask.edgemask(diff.std.Levels(scale_mask(40, 8, work_clip), scale_mask(168, 8, work_clip), 0.35))
+        mask = edgemask.edgemask(
+            diff.std.Levels(scale_mask(40, 8, func.work_clip), scale_mask(168, 8, func.work_clip), 0.35)
+        )
         mask = norm_expr(
             remove_grain(mask, 7),
             "x {sc4} < 0 x {sc16} > range_in_max x ? ?",
-            sc4=scale_mask(4, 8, work_clip),
-            sc16=scale_mask(16, 8, work_clip),
+            sc4=scale_mask(4, 8, func.work_clip),
+            sc16=scale_mask(16, 8, func.work_clip),
             func=edge_cleaner,
         )
 
-        final = final.std.MaskedMerge(work_clip, mask)
+        final = final.std.MaskedMerge(func.work_clip, mask)
 
-    if chroma:
-        return join([final, *chroma], clip.format.color_family)
-
-    return final
+    return func.return_clip(final)
 
 
 def YAHR(  # noqa: N802
@@ -138,56 +111,33 @@ def YAHR(  # noqa: N802
     Returns:
         The processed video clip with reduced halos.
     """
-    assert check_variable(clip, edge_cleaner)
+    func = FunctionUtil(clip, YAHR, planes, (vs.YUV, vs.GRAY), (8, 16))
 
-    InvalidColorFamilyError.check(clip, (vs.YUV, vs.GRAY), YAHR)
-
-    planes = normalize_planes(clip, planes)
-
-    work_clip, *chroma = split(clip) if planes == [0] else (clip,)
-    assert work_clip.format
-
-    is_float = work_clip.format.sample_type == vs.FLOAT
-
-    padded = padder.MIRROR(work_clip, 6, 6, 6, 6)
-
-    # warpsf is way too slow
-    if is_float:
-        padded = depth_func(padded, 16, vs.INTEGER, dither_type=DitherType.NONE)
-
-    warped = padded.warp.AWarpSharp2(blur=blur, depth=depth, planes=planes)
-
+    padded = padder.MIRROR(func.work_clip, 6, 6, 6, 6)
+    warped = padded.warp.AWarpSharp2(blur=blur, depth=depth, planes=func.norm_planes)
     warped = warped.std.Crop(6, 6, 6, 6)
 
-    if is_float:
-        warped = depth_func(
-            warped, work_clip.format.bits_per_sample, work_clip.format.sample_type, dither_type=DitherType.NONE
-        )
-
     blur_diff, blur_warped_diff = [
-        c.std.MakeDiff(BlurMatrix.BINOMIAL()(min_blur(c, 2, planes=planes), planes=planes), planes)
-        for c in (work_clip, warped)
+        c.std.MakeDiff(
+            BlurMatrix.BINOMIAL()(min_blur(c, 2, planes=func.norm_planes), planes=func.norm_planes), func.norm_planes
+        )
+        for c in (func.work_clip, warped)
     ]
 
-    rep_diff = repair(
-        blur_diff, blur_warped_diff, [13 if i in planes else 0 for i in range(work_clip.format.num_planes)]
-    )
+    rep_diff = repair(blur_diff, blur_warped_diff, 13, func.norm_planes)
 
-    yahr = work_clip.std.MakeDiff(blur_diff.std.MakeDiff(rep_diff, planes), planes)
+    yahr = func.work_clip.std.MakeDiff(blur_diff.std.MakeDiff(rep_diff, func.norm_planes), func.norm_planes)
 
-    y_mask = get_y(work_clip)
+    y_mask = get_y(func.work_clip)
 
     v_edge = norm_expr([y_mask, Morpho.maximum(y_mask, iterations=2)], "y x - 8 range_max * 255 / - 128 *", func=YAHR)
 
     mask1 = v_edge.tcanny.TCanny(sqrt(expand * 2), mode=-1)
 
-    mask2 = BlurMatrix.BINOMIAL()(v_edge, planes=planes).std.Invert()
+    mask2 = BlurMatrix.BINOMIAL()(v_edge).std.Invert()
 
     mask = limiter(norm_expr([mask1, mask2], "x 16 * y min", func=YAHR))
 
-    final = work_clip.std.MaskedMerge(yahr, mask, planes)
+    final = func.work_clip.std.MaskedMerge(yahr, mask, func.norm_planes)
 
-    if chroma:
-        return join([final, *chroma], clip.format.color_family)
-
-    return final
+    return func.return_clip(final)
