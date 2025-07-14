@@ -305,7 +305,7 @@ def _limit_dehalo(
 
     return norm_expr(
         [clip, ref],
-        "x y < x x y - {darkstr} * - x x y - {brightstr} * - ?",
+        "x y - D! x x y < D@ {darkstr} * D@ {brightstr} * ? -",
         planes,
         darkstr=darkstr,
         brightstr=brightstr,
