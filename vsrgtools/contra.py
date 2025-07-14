@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import partial
 from typing import Callable, Sequence
 
 from vsexprtools import norm_expr
@@ -13,7 +12,6 @@ from vstools import (
     check_variable,
     core,
     iterate,
-    normalize_param_planes,
     normalize_planes,
     vs,
 )
@@ -94,11 +92,9 @@ def contrasharpening_dehalo(
     assert check_variable(flt, contrasharpening_dehalo)
     check_ref_clip(src, flt, contrasharpening_dehalo)
 
-    rep_modes = normalize_param_planes(flt, repair.Mode.MINMAX_SQUARE1, planes, 0, contrasharpening_dehalo)
-
     blur = BlurMatrix.BINOMIAL()(flt, planes)
     blur2 = median_blur(blur, 2, planes=planes)
-    blur2 = iterate(blur2, partial(repair, repairclip=blur), 2, mode=rep_modes)
+    blur2 = iterate(blur2, lambda c: repair(c, blur, repair.Mode.MINMAX_SQUARE1, planes), 2)
 
     return norm_expr(
         [flt, src, blur, blur2],
