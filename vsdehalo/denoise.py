@@ -4,7 +4,6 @@ This modules implements dehaho functions based on spatial denoising operations.
 
 from __future__ import annotations
 
-from functools import partial
 from math import ceil, log
 from typing import Any, Sequence
 
@@ -236,7 +235,7 @@ def vine_dehalo(
     downscaler = Scaler.ensure_obj(downscaler, func.func)
 
     sharp = min(max(sharp, 0.0), 1.0)
-    simr = kwargs.pop("simr", None)
+    s = kwargs.pop("s", None)
 
     # Only God knows how these were derived.
     constants0 = 0.3926327792690057290863679493724 * sharp
@@ -247,18 +246,23 @@ def vine_dehalo(
     h_refine = [constants1 * (s / constants1) ** constants2 for s in strength]
 
     supersampled = supersampler.supersample(func.work_clip)
-    supersampled = nl_means(supersampled, strength, tr=0, simr=0, **kwargs)
+    supersampled = nl_means(supersampled, strength, tr=0, s=0, planes=planes, **kwargs)
     supersampled = downscaler.scale(supersampled, func.work_clip.width, func.work_clip.height)
 
-    smoothed = nl_means(func.work_clip, strength, tr=0, simr=0, **kwargs)
+    smoothed = nl_means(func.work_clip, strength, tr=0, s=0, planes=planes, **kwargs)
     smoothed = core.std.Merge(supersampled, smoothed, weight)
 
     highpassed = frequency_merge(
-        func.work_clip, smoothed, mode_low=func.work_clip, mode_high=smoothed, lowpass=partial(gauss_blur, sigma=sigma)
+        func.work_clip,
+        smoothed,
+        mode_low=func.work_clip,
+        mode_high=smoothed,
+        lowpass=lambda clip, **kwargs: gauss_blur(clip, sigma, **kwargs),
+        planes=planes,
     )
 
-    refined = func.work_clip.std.MakeDiff(highpassed)
-    refined = nl_means(refined, h_refine, tr=0, simr=simr, ref=highpassed, **kwargs)
-    refined = highpassed.std.MergeDiff(refined)
+    refined = func.work_clip.std.MakeDiff(highpassed, planes)
+    refined = nl_means(refined, h_refine, tr=0, s=s, ref=highpassed, planes=planes, **kwargs)
+    refined = highpassed.std.MergeDiff(refined, planes)
 
     return func.return_clip(refined)
