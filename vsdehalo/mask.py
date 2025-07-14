@@ -18,6 +18,7 @@ from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
     FuncExceptT,
+    FunctionUtil,
     InvalidColorFamilyError,
     OneDimConvModeT,
     PlanesT,
@@ -414,26 +415,19 @@ def fine_dehalo(
     Returns:
         Dehaloed clip.
     """
-    func = func or fine_dehalo
+    func_util = FunctionUtil(clip, func or fine_dehalo, planes, (vs.GRAY, vs.YUV))
 
-    assert check_variable(clip, func)
-    assert check_progressive(clip, func)
-
-    InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
+    assert check_progressive(clip, func_util.func)
 
     rx_i = cround(to_arr(to_arr(rx)[0])[0])
     ry_i = cround(to_arr(to_arr(rx if ry is None else ry)[0])[0])
 
-    planes = normalize_planes(clip, planes)
-
-    work_clip, *chroma = split(clip) if planes == [0] else (clip,)
-
     fine_dehalo.masks = fine_dehalo.Masks(
-        work_clip, rx_i, ry_i, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func
+        func_util.work_clip, rx_i, ry_i, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func
     )
 
     dehaloed = dehalo_alpha(
-        work_clip,
+        func_util.work_clip,
         rx,
         ry,
         blur_func,
@@ -448,13 +442,13 @@ def fine_dehalo(
 
     if contra:
         if isinstance(contra, float):
-            dehaloed = contrasharpening_dehalo(dehaloed, work_clip, contra, planes=planes)
+            dehaloed = contrasharpening_dehalo(dehaloed, func_util.work_clip, contra, planes=planes)
         else:
-            dehaloed = contrasharpening(dehaloed, work_clip, int(contra), planes=planes)
+            dehaloed = contrasharpening(dehaloed, func_util.work_clip, int(contra), planes=planes)
 
-    y_merge = work_clip.std.MaskedMerge(dehaloed, fine_dehalo.masks.MAIN, planes)
+    y_merge = func_util.work_clip.std.MaskedMerge(dehaloed, fine_dehalo.masks.MAIN, planes)
 
-    out = join([y_merge, *chroma]) if chroma else y_merge
+    out = func_util.return_clip(y_merge)
 
     if attach_masks:
         for k, v in fine_dehalo.masks.items():
