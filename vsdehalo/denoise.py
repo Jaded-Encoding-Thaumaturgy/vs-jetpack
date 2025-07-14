@@ -145,11 +145,11 @@ def smooth_dering(
     limitclp = limit_filter(repclp, func.work_clip, None, LimitFilterMode.CLAMPING, planes, thr, elast, darkthr)
 
     if ringmask is None:
-        prewittm = Prewitt.edgemask(work_clip, mthr)
+        edgemask = Robinson3.edgemask(func.work_clip, mthr, planes=planes)
 
-        fmask = median_blur(prewittm, planes=planes).hysteresis.Hysteresis(prewittm, planes)
+        fmask = median_blur(edgemask, planes=planes).hysteresis.Hysteresis(edgemask, planes)
 
-        omask = Morpho.expand(fmask, mrad, mrad, planes=planes) if mrad > 0 else fmask
+        omask = Morpho.expand(fmask, mrad, planes=planes) if mrad > 0 else fmask
 
         if msmooth > 0:
             omask = Morpho.inflate(omask, iterations=msmooth, planes=planes)
