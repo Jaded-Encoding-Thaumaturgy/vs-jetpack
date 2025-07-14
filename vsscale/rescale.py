@@ -90,7 +90,9 @@ class RescaleBase(vs_object):
                 _delattr("upscale")
             case _:
                 pass
-        delattr(self, name)
+
+        with contextlib.suppress(AttributeError):
+            super().__delattr__(name)
 
     @staticmethod
     def _apply_field_based(

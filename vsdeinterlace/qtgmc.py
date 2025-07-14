@@ -329,6 +329,9 @@ class QTempGaussMC(vs_object):
         self.tff = clip_fieldbased.is_tff
         self.double_rate = self.input_type != self.InputType.REPAIR
 
+        if self.clip.format.sample_type is vs.FLOAT:
+            raise CustomRuntimeError("FLOAT input is not supported!", self.__class__)
+
         if self.input_type == self.InputType.PROGRESSIVE and clip_fieldbased.is_inter:
             raise CustomRuntimeError(f"{self.input_type} incompatible with interlaced video!", self.__class__)
 
@@ -807,7 +810,18 @@ class QTempGaussMC(vs_object):
         def _floor_div_tuple(x: tuple[int, int]) -> tuple[int, int]:
             return x[0] // 2, x[1] // 2
 
-        tr = max(1, self.analyze_tr, self.denoise_tr, self.basic_tr, self.match_tr, self.final_tr)
+        tr = max(
+            1,
+            self.analyze_tr,
+            self.denoise_tr,
+            self.basic_tr,
+            self.match_tr,
+            self.limit_radius
+            if self.limit_mode in (self.SharpLimitMode.TEMPORAL_PRESMOOTH, self.SharpLimitMode.TEMPORAL_POSTSMOOTH)
+            else 0,
+            self.final_tr,
+        )
+
         blksize = self.analyze_blksize
         thsad_recalc = fallback(
             self.analyze_thsad_recalc,
@@ -1042,7 +1056,10 @@ class QTempGaussMC(vs_object):
                 elif self.limit_radius > 1:
                     clip = repair.Mode.MINMAX_SQUARE1(clip, repair.Mode.MINMAX_SQUARE_REF2(clip, self.bobbed))
 
-            if self.limit_mode in (self.SharpLimitMode.TEMPORAL_PRESMOOTH, self.SharpLimitMode.TEMPORAL_POSTSMOOTH):
+            if self.limit_radius and self.limit_mode in (
+                self.SharpLimitMode.TEMPORAL_PRESMOOTH,
+                self.SharpLimitMode.TEMPORAL_POSTSMOOTH,
+            ):
                 clip = mc_clamp(
                     clip,
                     self.bobbed,
@@ -1064,13 +1081,16 @@ class QTempGaussMC(vs_object):
         return clip
 
     def _apply_final(self) -> None:
-        smoothed = self.mv.degrain(
-            self.basic_output,
-            tr=self.final_tr,
-            thsad=self.final_thsad,
-            thscd=self.analyze_thscd,
-            **self.final_degrain_args,
-        )
+        if self.final_tr:
+            smoothed = self.mv.degrain(
+                self.basic_output,
+                tr=self.final_tr,
+                thsad=self.final_thsad,
+                thscd=self.analyze_thscd,
+                **self.final_degrain_args,
+            )
+        else:
+            smoothed = self.basic_output
         smoothed = self._mask_shimmer(smoothed, self.bobbed, **self.final_mask_shimmer_args)
 
         if self.limit_mode in (self.SharpLimitMode.SPATIAL_POSTSMOOTH, self.SharpLimitMode.TEMPORAL_POSTSMOOTH):

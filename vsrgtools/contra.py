@@ -11,7 +11,6 @@ from vstools import (
     check_ref_clip,
     check_variable,
     core,
-    iterate,
     normalize_planes,
     vs,
 )
@@ -94,7 +93,7 @@ def contrasharpening_dehalo(
 
     blur = BlurMatrix.BINOMIAL()(flt, planes)
     blur2 = median_blur(blur, 2, planes=planes)
-    blur2 = iterate(blur2, lambda c: repair(c, blur, repair.Mode.MINMAX_SQUARE1, planes), 2)
+    blur2 = repair(blur, repair(blur, blur2, repair.Mode.MINMAX_SQUARE1, planes), repair.Mode.MINMAX_SQUARE1, planes)
 
     return norm_expr(
         [flt, src, blur, blur2],

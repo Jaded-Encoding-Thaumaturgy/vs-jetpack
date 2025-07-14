@@ -224,11 +224,11 @@ def ccd(
     func: FuncExceptT | None = None,
 ) -> vs.VideoNode:
     """
-    Camcorder Color Denoise is an original VirtualDub filter made by Sergey Stolyarevsky.
+    Camcorder Color Denoise is a VirtualDub filter originally made by Sergey Stolyarevsky.
 
-    It's a chroma denoiser that works great on old sources such as VHSes and DVDs.
+    It's a chroma denoiser that works great on old sources such as VHS and DVD.
 
-    It works as a convolution of near pixels determined by ``ref_points``.
+    It works as a convolution of nearby pixels determined by ``ref_points``.
     If the euclidean distance between the RGB values of the center pixel and a given pixel in the convolution
     matrix is less than the threshold, then this pixel is considered in the average.
 
