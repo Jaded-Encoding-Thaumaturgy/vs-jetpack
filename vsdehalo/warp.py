@@ -139,9 +139,9 @@ def YAHR(  # noqa: N802
 
     mask1 = v_edge.tcanny.TCanny(sqrt(expand * 2), mode=-1)
 
-    mask2 = BlurMatrix.BINOMIAL()(v_edge).std.Invert()
+    mask2 = BlurMatrix.BINOMIAL()(v_edge)
 
-    mask = limiter(norm_expr([mask1, mask2], "x 16 * y min", func=YAHR))
+    mask = limiter(norm_expr([mask1, mask2], "x 16 * range_max y - min", func=YAHR))
 
     final = func.work_clip.std.MaskedMerge(yahr, mask, func.norm_planes)
 
