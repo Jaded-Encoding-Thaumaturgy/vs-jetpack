@@ -1,3 +1,7 @@
+"""
+This modules implements dehaho functions based on spatial denoising operations.
+"""
+
 from __future__ import annotations
 
 from functools import partial
@@ -53,6 +57,30 @@ def smooth_dering(
     Applies deringing by using a smart smoother near edges (where ringing occurs) only.
     Formerly known as HQDeringmod.
 
+    Example usage:
+        ```py
+        from vsdenoise import Prefilter
+
+        dering = smooth_dering(clip, Prefilter.BILATERAL, ...)
+        ```
+
+        - Bringing back the DFTTest smoothed clip from havsfunc
+
+        ```py
+        is_hd = clip.width >= 1280 or clip.height >= 720
+        sigma = 128
+        sigma2 = sigma / 16
+        smoothed = DFTTest().denoise(
+            clip,
+            [0.0, sigma2, 0.05, sigma, 0.5, sigma, 0.75, sigma2, 1.0, 0.0],
+            sbsize=8 if is_hd else 6,
+            sosize=6 if is_hd else 4,
+            tbsize=1,
+        )
+
+        dering = smooth_dering(clip, smoothed, ...)
+        ```
+
     Args:
         clip: Clip to process.
 
@@ -64,9 +92,9 @@ def smooth_dering(
 
         msmooth: Inflating iterations of edge mask, higher value means smoother edges of mask.
 
-        minp: Inpanding iterations of prewitt edge mask, higher value means more aggressive processing.
+        minp: Inpanding iterations of the edge mask, higher value means more aggressive processing.
 
-        mthr: Threshold of prewitt edge mask, lower value means more aggressive processing but for strong ringing, lower
+        mthr: Threshold of the edge mask, lower value means more aggressive processing but for strong ringing, lower
             value will treat some ringing as edge, which "protects" this ringing from being processed.
 
         incedge: Whether to include edge in ring mask, by default ring mask only include area near edges.
@@ -101,15 +129,15 @@ def smooth_dering(
 
             For the last two examples, output will remain unchanged. (0/255: no limiting)
 
-        contra: Whether to use contra-sharpening to resharp deringed clip: False: no contrasharpening True: auto radius
-            for contrasharpening int 1-3: represents radius for contrasharpening float: represents level for
-            contrasharpening_dehalo
+        contra: Whether to use contra-sharpening to resharp deringed clip:
+               - False: no contrasharpening
+               - True: auto radius for contrasharpening
+               - int 1-3: represents radius for contrasharpening
+               - float: represents level for contrasharpening_dehalo
 
         drrep: Use repair for details retention, recommended values are 13/12/1.
 
         planes: Planes to be processed.
-
-        show_mask: Show the computed ringing mask.
 
     Returns:
         Deringed clip.
