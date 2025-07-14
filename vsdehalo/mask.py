@@ -11,7 +11,7 @@ from jetpytools import P, R
 
 from vsaa import NNEDI3
 from vsexprtools import ExprOp, combine, norm_expr
-from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, PrewittTCanny, Robinson3, XxpandMode, grow_mask
+from vsmasktools import Coordinates, EdgeDetect, EdgeDetectT, Morpho, PrewittTCanny, Robinson3, XxpandMode, grow_mask
 from vsrgtools import (
     BlurMatrix,
     BlurMatrixBase,
@@ -508,9 +508,9 @@ def fine_dehalo2(
         mask_v = norm_expr(mask_v, ["x 3 *", ExprOp.clamp()], func=func)
 
     if mask_h:
-        mask_h = grow_mask(mask_h, mask_radius, coord=[0, 1, 0, 0, 0, 0, 1, 0], multiply=1.8, func=func)
+        mask_h = grow_mask(mask_h, mask_radius, coord=Coordinates.VERTICAL, multiply=1.8, func=func)
     if mask_v:
-        mask_v = grow_mask(mask_v, mask_radius, coord=[0, 0, 0, 1, 1, 0, 0, 0], multiply=1.8, func=func)
+        mask_v = grow_mask(mask_v, mask_radius, coord=Coordinates.HORIZONTAL, multiply=1.8, func=func)
 
     if clip.format.sample_type == vs.FLOAT:
         mask_h = mask_h and limiter(mask_h, func=func)
