@@ -48,7 +48,6 @@ def smooth_dering(
     contra: int | float | bool = 1.2,
     drrep: int = 13,
     planes: PlanesT = 0,
-    show_mask: bool = False,
 ) -> vs.VideoNode:
     """
     Applies deringing by using a smart smoother near edges (where ringing occurs) only.
@@ -127,7 +126,7 @@ def smooth_dering(
         smooth = Prefilter.MINBLUR(radius=2) if func.is_hd else Prefilter.MINBLUR(radius=1)
 
     if not isinstance(smooth, vs.VideoNode):
-        smoothed = smooth(work_clip, planes)
+        smoothed = smooth(func.work_clip, planes)
     else:
         check_ref_clip(clip, smooth)
 
@@ -141,9 +140,9 @@ def smooth_dering(
         else:
             smoothed = contrasharpening_dehalo(smoothed, func.work_clip, contra, planes=planes)
 
-    repclp = repair(work_clip, smoothed, drrep) if set(rep_dr) != {0} else work_clip
+    repclp = repair(func.work_clip, smoothed, drrep, planes)
 
-    limitclp = limit_filter(repclp, work_clip, None, LimitFilterMode.CLAMPING, planes, thr, elast, darkthr)
+    limitclp = limit_filter(repclp, func.work_clip, None, LimitFilterMode.CLAMPING, planes, thr, elast, darkthr)
 
     if ringmask is None:
         prewittm = Prewitt.edgemask(work_clip, mthr)
@@ -161,18 +160,17 @@ def smooth_dering(
             if minp <= 0:
                 imask = fmask
             elif minp % 2 == 0:
-                imask = Morpho.inpand(fmask, minp // 2, planes=planes)
+                imask = Morpho.inpand(fmask, minp // 2, planes=planes, func=func.func)
             else:
-                imask = Morpho.inpand(Morpho.inflate(fmask, planes=planes), ceil(minp / 2), planes=planes)
+                imask = Morpho.inpand(
+                    Morpho.inflate(fmask, planes=planes, func=func.func), ceil(minp / 2), planes=planes, func=func.func
+                )
 
             ringmask = norm_expr(
                 [omask, imask], [f"{ExprToken.RangeMax} {ExprToken.RangeMax} y - / x *", ExprOp.clamp()], func=func.func
             )
 
-    dering = work_clip.std.MaskedMerge(limitclp, ringmask, planes)
-
-    if show_mask:
-        return ringmask
+    dering = func.work_clip.std.MaskedMerge(limitclp, ringmask, planes)
 
     return func.return_clip(dering)
 
