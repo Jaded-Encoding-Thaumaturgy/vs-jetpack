@@ -72,9 +72,9 @@ def edge_cleaner(
         sc32=scale_mask(32, 8, func.work_clip),
         func=edge_cleaner,
     )
-    mask = box_blur(mask.std.InvertMask())
+    mask = box_blur(mask)
 
-    final = func.work_clip.std.MaskedMerge(warped, mask)
+    final = warped.std.MaskedMerge(func.work_clip, mask)
 
     if hot:
         final = repair(final, func.work_clip, 2)
