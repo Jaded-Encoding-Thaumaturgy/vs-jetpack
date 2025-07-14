@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any, Iterator, Protocol, TypeAlias
 
-from jetpytools import MISSING, MissingT, T
+from jetpytools import T
 
 from vsexprtools import norm_expr
 from vskernels import BSpline, Lanczos, Mitchell, Scaler, ScalerLike
@@ -58,7 +58,7 @@ def dehalo_alpha(
     darkstr: IterArr[float] = 0.0,
     brightstr: IterArr[float] = 1.0,
     # Misc params
-    planes: PlanesT | MissingT = MISSING,
+    planes: PlanesT = 0,
     func: FuncExceptT | None = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
@@ -88,7 +88,7 @@ def dehalo_alpha(
         ss: Supersampling factor to reduce aliasing artifacts.
         darkstr: Strength factor for suppressing dark halos.
         brightstr: Strength factor for suppressing bright halos.
-        planes: Planes to process.
+        planes: Planes to process. Default to 0.
         func: An optional function to use for error handling.
         **kwargs: Additional debug options.
             - `attach_masks=True`: Stores generated masks as frame properties in the output clip.
@@ -112,7 +112,7 @@ def dehalo_alpha(
     if ry is None:
         ry = rx
 
-    planes = [0] if planes == MISSING else normalize_planes(clip, planes)
+    planes = normalize_planes(clip, planes)
 
     work_clip, *chroma = split(clip) if planes == [0] else (clip,)
 
