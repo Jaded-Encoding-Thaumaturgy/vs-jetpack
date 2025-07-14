@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from functools import partial
 from math import ceil, log
-from typing import Any, Sequence, cast
+from typing import Any, Sequence
 
 from vsaa import NNEDI3
 from vsdenoise import Prefilter, PrefilterLike, frequency_merge, nl_means
 from vsexprtools import ExprOp, ExprToken, norm_expr
-from vskernels import Catrom, Point, Scaler, ScalerLike
+from vskernels import Catrom, Scaler, ScalerLike
 from vsmasktools import Morpho, Prewitt
 from vsrgtools import (
     LimitFilterMode,
@@ -19,14 +19,12 @@ from vsrgtools import (
     repair,
 )
 from vstools import (
-    ConstantFormatVideoNode,
     FunctionUtil,
     PlanesT,
     check_progressive,
     check_ref_clip,
     core,
     fallback,
-    mod4,
     plane,
     to_arr,
     vs,
@@ -49,9 +47,6 @@ def smooth_dering(
     darkthr: int | None = None,
     contra: int | float | bool = 1.2,
     drrep: int = 13,
-    pre_ss: float = 1.0,
-    pre_supersampler: ScalerLike = NNEDI3(noshift=(True, False)),
-    pre_downscaler: ScalerLike = Point,
     planes: PlanesT = 0,
     show_mask: bool = False,
 ) -> vs.VideoNode:
@@ -127,15 +122,6 @@ def smooth_dering(
     planes = func.norm_planes
     work_clip = func.work_clip
 
-    pre_supersampler = Scaler.ensure_obj(pre_supersampler, smooth_dering)
-    pre_downscaler = Scaler.ensure_obj(pre_downscaler, smooth_dering)
-
-    if pre_ss > 1.0:
-        work_clip = cast(
-            ConstantFormatVideoNode,
-            pre_supersampler.scale(work_clip, mod4(work_clip.width * pre_ss), mod4(work_clip.height * pre_ss)),
-        )
-
     darkthr = fallback(darkthr, thr // 4)
 
     rep_dr = [drrep if i in planes else 0 for i in range(work_clip.format.num_planes)]
@@ -146,9 +132,6 @@ def smooth_dering(
         check_ref_clip(clip, smooth)
 
         smoothed = plane(smooth, 0) if func.luma_only else smooth
-
-        if pre_ss > 1.0:
-            smoothed = pre_supersampler.scale(smoothed, work_clip.width, work_clip.height)
 
     if contra:
         if isinstance(contra, int):
@@ -188,9 +171,6 @@ def smooth_dering(
 
     if show_mask:
         return ringmask
-
-    if (dering.width, dering.height) != (clip.width, clip.height):
-        dering = pre_downscaler.scale(work_clip, clip.width, clip.height)
 
     return func.return_clip(dering)
 
