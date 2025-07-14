@@ -120,7 +120,6 @@ def smooth_dering(
     assert check_progressive(clip, func.func)
 
     planes = func.norm_planes
-    work_clip = func.work_clip
 
     darkthr = fallback(darkthr, thr // 4)
 
@@ -136,9 +135,11 @@ def smooth_dering(
 
     if contra:
         if isinstance(contra, int):
-            smoothed = contrasharpening(smoothed, work_clip, contra, mode=repair.Mode(13), planes=planes)
+            if contra is True:
+                contra = 2 if func.is_hd else 1
+            smoothed = contrasharpening(smoothed, func.work_clip, contra, mode=repair.Mode(13), planes=planes)
         else:
-            smoothed = contrasharpening_dehalo(smoothed, work_clip, contra, planes=planes)
+            smoothed = contrasharpening_dehalo(smoothed, func.work_clip, contra, planes=planes)
 
     repclp = repair(work_clip, smoothed, drrep) if set(rep_dr) != {0} else work_clip
 
