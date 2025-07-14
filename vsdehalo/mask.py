@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import sqrt
-from typing import Callable, Generic
+from typing import Callable, Generic, Iterator, Mapping
 
 from jetpytools import P, R
 
@@ -15,9 +15,8 @@ from vsrgtools import (
     contrasharpening_dehalo,
 )
 from vstools import (
+    ConstantFormatVideoNode,
     ConvMode,
-    CustomIntEnum,
-    CustomValueError,
     FuncExceptT,
     InvalidColorFamilyError,
     OneDimConvModeT,
@@ -35,6 +34,7 @@ from vstools import (
     split,
     to_arr,
     vs,
+    vs_object,
 )
 
 from .alpha import IterArr, VSFunctionPlanesArgs, _limit_dehalo, dehalo_alpha
@@ -105,85 +105,186 @@ class FineDehalo(Generic[P, R]):
     It is not meant to be used directly.
     """
 
+    mask: Mask
+
     def __init__(self, fine_dehalo: Callable[P, R]) -> None:
         self._func = fine_dehalo
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
 
-    class Masks(CustomIntEnum):
-        MAIN = 1
-        EDGES = 3
-        SHARP_EDGES = 4
-        LARGE_EDGES = 6
-        IGNORE_DETAILS = 5
-        SHRINK = 2
-        SHRINK_EDGES_EXCL = 7
+    class Mask(Mapping[str, ConstantFormatVideoNode], vs_object):
+        _names = ("EDGES", "SHARP_EDGES", "LARGE_EDGES", "IGNORE_DETAILS", "SHRINK", "SHRINK_EDGES_EXCL", "MAIN")
 
-    def mask(
-        self,
-        clip: vs.VideoNode,
-        dehaloed: vs.VideoNode | None = None,
-        rx: int = 1,
-        ry: int | None = None,
-        thmi: int = 50,
-        thma: int = 100,
-        thlimi: int = 50,
-        thlima: int = 100,
-        exclude: bool = True,
-        edgeproc: float = 0.0,
-        edgemask: EdgeDetectT = Robinson3,
-        show_mask: int | FineDehalo.Masks = 1,
-        planes: PlanesT = 0,
-        first_plane: bool = False,
-        func: FuncExceptT | None = None,
-    ) -> vs.VideoNode:
-        """
-        The fine_dehalo mask.
+        def __init__(
+            self,
+            clip: vs.VideoNode,
+            # fine_dehalo mask specific params
+            rx: int = 2,
+            ry: int | None = None,
+            edgemask: EdgeDetectT = Robinson3,
+            thmi: int = 80,
+            thma: int = 128,
+            thlimi: int = 50,
+            thlima: int = 100,
+            exclude: bool = True,
+            edgeproc: float = 0.0,
+            # Misc params
+            planes: PlanesT = 0,
+            func: FuncExceptT | None = None,
+        ) -> None:
+            """
+            The fine_dehalo mask.
 
-        Args:
-            clip: Source clip.
-            dehaloed: Optional dehaloed clip to mask. If this is specified, instead of returning the mask, the function
-                will return the maskedmerged clip to this.
-            rx: Horizontal radius for halo removal.
-            ry: Vertical radius for halo removal.
-            thmi: Minimum threshold for sharp edges; keep only the sharpest edges (line edges).
-            thma: Maximum threshold for sharp edges; keep only the sharpest edges (line edges).
-            thlimi: Minimum limiting threshold; include more edges than previously ignored details.
-            thlima: Maximum limiting threshold; include more edges than previously ignored details.
-            exclude: If True, add an addionnal step to exclude edges close to each other
-            edgeproc: If > 0, it will add the edgemask to the processing, defaults to 0.0
-            edgemask: Internal mask used for detecting the edges, defaults to Robinson3()
-            show_mask: Whether to show the computed halo mask. 1-7 values to select intermediate masks.
-            planes: Planes to process.
-            first_plane: Whether to mask chroma planes with luma mask.
-            func: Function from where this function was called.
+            Args:
+                clip: Source clip.
+                dehaloed: Optional dehaloed clip to mask. If this is specified, instead of returning the mask, the function
+                    will return the maskedmerged clip to this.
+                rx: Horizontal radius for halo removal.
+                ry: Vertical radius for halo removal.
+                thmi: Minimum threshold for sharp edges; keep only the sharpest edges (line edges).
+                thma: Maximum threshold for sharp edges; keep only the sharpest edges (line edges).
+                thlimi: Minimum limiting threshold; include more edges than previously ignored details.
+                thlima: Maximum limiting threshold; include more edges than previously ignored details.
+                exclude: If True, add an addionnal step to exclude edges close to each other
+                edgeproc: If > 0, it will add the edgemask to the processing, defaults to 0.0
+                edgemask: Internal mask used for detecting the edges, defaults to Robinson3()
+                show_mask: Whether to show the computed halo mask. 1-7 values to select intermediate masks.
+                planes: Planes to process.
+                first_plane: Whether to mask chroma planes with luma mask.
+                func: Function from where this function was called.
 
-        Returns:
-            Mask or masked clip.
-        """
-        func = func or self.mask
+            Returns:
+                Mask or masked clip.
+            """
 
-        dehalo_mask = fine_dehalo(
-            get_y(clip),
-            rx,
-            ry,
-            thmi=thmi,
-            thma=thma,
-            thlimi=thlimi,
-            thlima=thlima,
-            exclude=exclude,
-            edgeproc=edgeproc,
-            edgemask=edgemask,
-            planes=planes,
-            show_mask=show_mask,
-            func=func,
-        )
+            func = func or self.__class__
 
-        if dehaloed:
-            return clip.std.MaskedMerge(dehaloed, dehalo_mask, planes, first_plane)
+            InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
 
-        return dehalo_mask
+            work_clip = get_y(clip) if planes == [0] else clip
+            thmif, thmaf, thlimif, thlimaf = [scale_mask(x, 8, clip) for x in [thmi, thma, thlimi, thlima]]
+            planes = normalize_planes(clip, planes)
+            peak = get_peak_value(clip)
+
+            # Main edges #
+            # Basic edge detection, thresholding will be applied later.
+            edges = EdgeDetect.ensure_obj(edgemask, func).edgemask(work_clip)
+
+            # Keeps only the sharpest edges (line edges)
+            strong = norm_expr(edges, f"x {thmif} - {thmaf - thmif} / {peak} *", planes, func=func)
+
+            # Extends them to include the potential halos
+            large = Morpho.expand(strong, rx, ry, planes=planes, func=func)
+
+            # Exclusion zones #
+            # When two edges are close from each other (both edges of a single
+            # line or multiple parallel color bands), the halo removal
+            # oversmoothes them or makes seriously bleed the bands, producing
+            # annoying artifacts. Therefore we have to produce a mask to exclude
+            # these zones from the halo removal.
+
+            # Includes more edges than previously, but ignores simple details
+            light = norm_expr(edges, f"x {thlimif} - {thlimaf - thlimif} / {peak} *", planes, func=func)
+
+            # To build the exclusion zone, we make grow the edge mask, then shrink
+            # it to its original shape. During the growing stage, close adjacent
+            # edge masks will join and merge, forming a solid area, which will
+            # remain solid even after the shrinking stage.
+            # Mask growing
+            shrink = Morpho.expand(light, rx, ry, XxpandMode.ELLIPSE, planes=planes, func=func)
+
+            # At this point, because the mask was made of a shades of grey, we may
+            # end up with large areas of dark grey after shrinking. To avoid this,
+            # we amplify and saturate the mask here (actually we could even
+            # binarize it).
+            shrink = norm_expr(shrink, "x 4 *", planes, func=func)
+            shrink = Morpho.inpand(shrink, rx, ry, XxpandMode.ELLIPSE, planes=planes, func=func)
+
+            # This mask is almost binary, which will produce distinct
+            # discontinuities once applied. Then we have to smooth it.
+            shrink = BlurMatrix.MEAN()(shrink, planes, passes=2)
+
+            # Final mask building #
+
+            # Previous mask may be a bit weak on the pure edge side, so we ensure
+            # that the main edges are really excluded. We do not want them to be
+            # smoothed by the halo removal.
+            shr_med = combine([strong, shrink], ExprOp.MAX, planes=planes) if exclude else strong
+
+            # Subtracts masks and amplifies the difference to be sure we get 255
+            # on the areas to be processed.
+            mask = norm_expr([large, shr_med], "x y - 2 *", planes, func=func)
+
+            # If edge processing is required, adds the edgemask
+            if edgeproc > 0:
+                mask = norm_expr([mask, strong], f"x y {edgeproc} 0.66 * * +", planes, func=func)
+
+            # Smooth again and amplify to grow the mask a bit, otherwise the halo
+            # parts sticking to the edges could be missed.
+            # Also clamp to legal ranges
+            mask = BlurMatrix.MEAN()(mask, planes)
+
+            mask = norm_expr(mask, f"x 2 * {ExprOp.clamp(0, peak)}", planes, func=func)
+
+            self._edges = edges
+            self._strong = strong
+            self._large = large
+            self._light = light
+            self._shrink = shrink
+            self._shr_med = shr_med
+            self._main = mask
+
+        def __getitem__(self, index: str) -> ConstantFormatVideoNode:
+            index = index.upper()
+
+            if index in self._names:
+                return getattr(self, index)
+
+            raise KeyError
+
+        def __iter__(self) -> Iterator[str]:
+            yield from self._names
+
+        def __len__(self) -> int:
+            return len(self._names)
+
+        @property
+        def EDGES(self) -> ConstantFormatVideoNode:  # noqa: N802
+            return self._edges
+
+        @property
+        def SHARP_EDGES(self) -> ConstantFormatVideoNode:  # noqa: N802
+            return self._strong
+
+        @property
+        def LARGE_EDGES(self) -> ConstantFormatVideoNode:  # noqa: N802
+            return self._large
+
+        @property
+        def IGNORE_DETAILS(self) -> ConstantFormatVideoNode:  # noqa: N802
+            return self._light
+
+        @property
+        def SHRINK(self) -> ConstantFormatVideoNode:  # noqa: N802
+            return self._shrink
+
+        @property
+        def SHRINK_EDGES_EXCL(self) -> ConstantFormatVideoNode:  # noqa: N802
+            return self._shr_med
+
+        @property
+        def MAIN(self) -> ConstantFormatVideoNode:  # noqa: N802
+            return self._main
+
+        def __vs_del__(self, core_id: int) -> None:
+            del self._edges
+            del self._strong
+            del self._large
+            del self._light
+            del self._shrink
+            del self._shr_med
+            del self._main
 
 
 @FineDehalo
@@ -213,7 +314,6 @@ def fine_dehalo(
     contra: int | float | bool = 0.0,
     # Misc params
     planes: PlanesT = 0,
-    show_mask: int | FineDehalo.Masks | bool = False,
     func: FuncExceptT | None = None,
 ) -> vs.VideoNode:
     """
@@ -262,82 +362,16 @@ def fine_dehalo(
 
     InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
 
-    if show_mask is not False and not (0 < int(show_mask) <= 7):
-        raise CustomValueError("valid values for show_mask are 1-7!", func)
-
-    thmif, thmaf, thlimif, thlimaf = [scale_mask(x, 8, clip) for x in [thmi, thma, thlimi, thlima]]
-
-    peak = get_peak_value(clip)
-    planes = normalize_planes(clip, planes)
-
     rx_i = cround(to_arr(to_arr(rx)[0])[0])
     ry_i = cround(to_arr(to_arr(rx if ry is None else ry)[0])[0])
 
+    planes = normalize_planes(clip, planes)
+
     work_clip, *chroma = split(clip) if planes == [0] else (clip,)
 
-    # Main edges #
-    # Basic edge detection, thresholding will be applied later.
-    edges = EdgeDetect.ensure_obj(edgemask, func).edgemask(work_clip)
-
-    # Keeps only the sharpest edges (line edges)
-    strong = norm_expr(edges, f"x {thmif} - {thmaf - thmif} / {peak} *", planes, func=func)
-
-    # Extends them to include the potential halos
-    large = Morpho.expand(strong, rx_i, ry_i, planes=planes, func=func)
-
-    # Exclusion zones #
-    # When two edges are close from each other (both edges of a single
-    # line or multiple parallel color bands), the halo removal
-    # oversmoothes them or makes seriously bleed the bands, producing
-    # annoying artifacts. Therefore we have to produce a mask to exclude
-    # these zones from the halo removal.
-
-    # Includes more edges than previously, but ignores simple details
-    light = norm_expr(edges, f"x {thlimif} - {thlimaf - thlimif} / {peak} *", planes, func=func)
-
-    # To build the exclusion zone, we make grow the edge mask, then shrink
-    # it to its original shape. During the growing stage, close adjacent
-    # edge masks will join and merge, forming a solid area, which will
-    # remain solid even after the shrinking stage.
-    # Mask growing
-    shrink = Morpho.expand(light, rx_i, ry_i, XxpandMode.ELLIPSE, planes=planes, func=func)
-
-    # At this point, because the mask was made of a shades of grey, we may
-    # end up with large areas of dark grey after shrinking. To avoid this,
-    # we amplify and saturate the mask here (actually we could even
-    # binarize it).
-    shrink = norm_expr(shrink, "x 4 *", planes, func=func)
-    shrink = Morpho.inpand(shrink, rx_i, rx_i, XxpandMode.ELLIPSE, planes=planes, func=func)
-
-    # This mask is almost binary, which will produce distinct
-    # discontinuities once applied. Then we have to smooth it.
-    shrink = BlurMatrix.MEAN()(shrink, planes, passes=2)
-
-    # Final mask building #
-
-    # Previous mask may be a bit weak on the pure edge side, so we ensure
-    # that the main edges are really excluded. We do not want them to be
-    # smoothed by the halo removal.
-    shr_med = combine([strong, shrink], ExprOp.MAX, planes=planes) if exclude else strong
-
-    # Subtracts masks and amplifies the difference to be sure we get 255
-    # on the areas to be processed.
-    mask = norm_expr([large, shr_med], "x y - 2 *", planes, func=func)
-
-    # If edge processing is required, adds the edgemask
-    if edgeproc > 0:
-        mask = norm_expr([mask, strong], f"x y {edgeproc} 0.66 * * +", planes, func=func)
-
-    # Smooth again and amplify to grow the mask a bit, otherwise the halo
-    # parts sticking to the edges could be missed.
-    # Also clamp to legal ranges
-    mask = BlurMatrix.MEAN()(mask, planes)
-
-    mask = norm_expr(mask, f"x 2 * {ExprOp.clamp(0, peak)}", planes, func=func)
-
-    # Masking #
-    if show_mask:
-        return [mask, shrink, edges, strong, light, large, shr_med][int(show_mask) - 1]
+    fine_dehalo.mask = fine_dehalo.Mask(
+        work_clip, rx_i, ry_i, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func
+    )
 
     dehaloed = dehalo_alpha(
         work_clip,
@@ -359,10 +393,10 @@ def fine_dehalo(
         else:
             dehaloed = contrasharpening(dehaloed, work_clip, int(contra), planes=planes)
 
-    y_merge = work_clip.std.MaskedMerge(dehaloed, mask, planes)
+    y_merge = work_clip.std.MaskedMerge(dehaloed, fine_dehalo.mask.MAIN, planes)
 
     if chroma:
-        return join([y_merge, *chroma], clip.format.color_family)
+        return join([y_merge, *chroma])
 
     return y_merge
 
