@@ -84,7 +84,9 @@ def dehalo_alpha(
         ry: Vertical radius for halo removal. Defaults to `rx` if not set.
         blur_func: Optional custom blurring function to use in place of the default implementation.
         lowsens: Lower sensitivity threshold — dehalo is fully applied below this value.
+            Setting both `lowsens` and `highsens` to `-1` disables mask-based processing entirely.
         highsens: Upper sensitivity threshold — dehalo is completely skipped above this value.
+            Setting both `lowsens` and `highsens` to `-1` disables mask-based processing entirely.
         ss: Supersampling factor to reduce aliasing artifacts.
         darkstr: Strength factor for suppressing dark halos.
         brightstr: Strength factor for suppressing bright halos.
@@ -127,9 +129,6 @@ def dehalo_alpha(
         if not all(0 <= x <= 1 for x in (*brightstr_i, *darkstr_i)):
             raise CustomIndexError("brightstr and darkstr must be between 0.0 and 1.0!", func)
 
-        if not all(0 <= x <= 100 for x in (*lowsens_i, *highsens_i)):
-            raise CustomIndexError("lowsens and highsens must be between 0 and 100!", func)
-
         # Process without splitting the planes
         # if the radius are the same for all planes or the blur_func is the same
         # or if luma only
@@ -154,12 +153,17 @@ def dehalo_alpha(
                 ]
             )
 
-        mask = _dehalo_alpha_mask(work_clip, dehalo, lowsens_i, highsens_i, planes, func)
+        if all(0 <= x <= 100 for x in (*lowsens_i, *highsens_i)):
+            mask = _dehalo_alpha_mask(work_clip, dehalo, lowsens_i, highsens_i, planes, func)
+        elif lowsens_i.count(-1) == len(lowsens_i) and highsens_i.count(-1) == len(highsens_i):
+            mask = None
+        else:
+            raise CustomIndexError("lowsens and highsens must be between 0 and 100!", func)
 
-        if kwargs.get("attach_masks"):
+        if kwargs.get("attach_masks") and mask:
             masks_to_prop.append(core.std.SetFrameProps(mask, lowsens=lowsens_i, highsens=highsens_i))
 
-        dehalo = dehalo.std.MaskedMerge(work_clip, mask, planes)
+        dehalo = dehalo.std.MaskedMerge(work_clip, mask, planes) if mask else dehalo
 
         dehalo = _dehalo_supersample_minmax(work_clip, dehalo, ss_i, planes=planes, func=func)
 
