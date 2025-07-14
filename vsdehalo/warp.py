@@ -1,3 +1,8 @@
+"""
+This module implements dehaloing functions using warping-based techniques
+as the core processing method.
+"""
+
 from __future__ import annotations
 
 from math import sqrt

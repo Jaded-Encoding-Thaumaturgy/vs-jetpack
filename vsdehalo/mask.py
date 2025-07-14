@@ -1,3 +1,7 @@
+"""
+This module implements dehalo functions with complex masking abilities.
+"""
+
 from __future__ import annotations
 
 from math import sqrt
