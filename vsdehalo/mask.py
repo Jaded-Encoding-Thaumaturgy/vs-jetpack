@@ -105,7 +105,7 @@ class FineDehalo(Generic[P, R]):
     It is not meant to be used directly.
     """
 
-    mask: Mask
+    masks: Masks
     """
     The generated masks.
     """
@@ -116,7 +116,46 @@ class FineDehalo(Generic[P, R]):
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
 
-    class Mask(Mapping[str, ConstantFormatVideoNode], vs_object):
+    def mask(
+        self,
+        clip: vs.VideoNode,
+        # fine_dehalo mask specific params
+        rx: int = 2,
+        ry: int | None = None,
+        edgemask: EdgeDetectT = Robinson3,
+        thmi: int = 80,
+        thma: int = 128,
+        thlimi: int = 50,
+        thlima: int = 100,
+        exclude: bool = True,
+        edgeproc: float = 0.0,
+        # Misc params
+        planes: PlanesT = 0,
+        func: FuncExceptT | None = None,
+    ) -> ConstantFormatVideoNode:
+        """
+        The fine_dehalo mask.
+
+        Args:
+            clip: Source clip.
+            rx: Horizontal radius for halo removal.
+            ry: Vertical radius for halo removal. Defaults to `rx` if not set.
+            edgemask: Edge detection object to use. Defaults to `Robinson3`.
+            thmi: Minimum threshold for sharp edge selection; isolates only the strongest (line-like) edges.
+            thma: Maximum threshold for sharp edge selection; filters out weaker edges.
+            thlimi: Minimum threshold for including edges that were previously ignored.
+            thlima: Maximum threshold for the inclusion of additional, less distinct edges.
+            exclude: Whether to exclude edges that are too close together.
+            edgeproc: If greater than 0, adds the edge mask into the final processing. Defaults to 0.0.
+            planes: Planes to process.
+            func: An optional function to use for error handling.
+
+        Returns:
+            Mask clip.
+        """
+        return self.Masks(clip, rx, ry, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func).MAIN
+
+    class Masks(Mapping[str, ConstantFormatVideoNode], vs_object):
         """
         Class for creating and storing intermediate masks used in the `fine_dehalo` function.
 
@@ -344,7 +383,7 @@ def fine_dehalo(
         ```py
         dehalo = fine_dehalo(clip, ...)
         # Getting the masks of the last fine_dehalo call:
-        dehalo_mask = fine_dehalo.mask.MAIN
+        dehalo_mask = fine_dehalo.masks.MAIN
         ```
 
     Args:
@@ -389,7 +428,7 @@ def fine_dehalo(
 
     work_clip, *chroma = split(clip) if planes == [0] else (clip,)
 
-    fine_dehalo.mask = fine_dehalo.Mask(
+    fine_dehalo.masks = fine_dehalo.Masks(
         work_clip, rx_i, ry_i, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func
     )
 
@@ -413,12 +452,12 @@ def fine_dehalo(
         else:
             dehaloed = contrasharpening(dehaloed, work_clip, int(contra), planes=planes)
 
-    y_merge = work_clip.std.MaskedMerge(dehaloed, fine_dehalo.mask.MAIN, planes)
+    y_merge = work_clip.std.MaskedMerge(dehaloed, fine_dehalo.masks.MAIN, planes)
 
     out = join([y_merge, *chroma]) if chroma else y_merge
 
     if attach_masks:
-        for k, v in fine_dehalo.mask.items():
+        for k, v in fine_dehalo.masks.items():
             out = out.std.ClipToProp(v, "FineDehaloMask" + "".join(w.title() for w in k.split("_")))
 
     return out
