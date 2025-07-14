@@ -106,6 +106,9 @@ class FineDehalo(Generic[P, R]):
     """
 
     mask: Mask
+    """
+    The generated masks.
+    """
 
     def __init__(self, fine_dehalo: Callable[P, R]) -> None:
         self._func = fine_dehalo
@@ -114,6 +117,13 @@ class FineDehalo(Generic[P, R]):
         return self._func(*args, **kwargs)
 
     class Mask(Mapping[str, ConstantFormatVideoNode], vs_object):
+        """
+        Class for creating and storing intermediate masks used in the `fine_dehalo` function.
+
+        Each step of the masking pipeline is stored with a descriptive key, allowing for
+        debugging or further processing.
+        """
+
         _names = ("EDGES", "SHARP_EDGES", "LARGE_EDGES", "IGNORE_DETAILS", "SHRINK", "SHRINK_EDGES_EXCL", "MAIN")
 
         def __init__(
@@ -134,28 +144,21 @@ class FineDehalo(Generic[P, R]):
             func: FuncExceptT | None = None,
         ) -> None:
             """
-            The fine_dehalo mask.
+            Initialize the mask generation process.
 
             Args:
                 clip: Source clip.
-                dehaloed: Optional dehaloed clip to mask. If this is specified, instead of returning the mask, the function
-                    will return the maskedmerged clip to this.
                 rx: Horizontal radius for halo removal.
-                ry: Vertical radius for halo removal.
-                thmi: Minimum threshold for sharp edges; keep only the sharpest edges (line edges).
-                thma: Maximum threshold for sharp edges; keep only the sharpest edges (line edges).
-                thlimi: Minimum limiting threshold; include more edges than previously ignored details.
-                thlima: Maximum limiting threshold; include more edges than previously ignored details.
-                exclude: If True, add an addionnal step to exclude edges close to each other
-                edgeproc: If > 0, it will add the edgemask to the processing, defaults to 0.0
-                edgemask: Internal mask used for detecting the edges, defaults to Robinson3()
-                show_mask: Whether to show the computed halo mask. 1-7 values to select intermediate masks.
+                ry: Vertical radius for halo removal. Defaults to `rx` if not set.
+                edgemask: Edge detection object to use. Defaults to `Robinson3`.
+                thmi: Minimum threshold for sharp edge selection; isolates only the strongest (line-like) edges.
+                thma: Maximum threshold for sharp edge selection; filters out weaker edges.
+                thlimi: Minimum threshold for including edges that were previously ignored.
+                thlima: Maximum threshold for the inclusion of additional, less distinct edges.
+                exclude: Whether to exclude edges that are too close together.
+                edgeproc: If greater than 0, adds the edge mask into the final processing. Defaults to 0.0.
                 planes: Planes to process.
-                first_plane: Whether to mask chroma planes with luma mask.
-                func: Function from where this function was called.
-
-            Returns:
-                Mask or masked clip.
+                func: An optional function to use for error handling.
             """
 
             func = func or self.__class__
@@ -319,37 +322,51 @@ def fine_dehalo(
     func: FuncExceptT | None = None,
 ) -> vs.VideoNode:
     """
-    Halo removal script that uses ``dehalo_alpha`` with a few masks and optional contra-sharpening
-    to try removing halos without nuking important details like line edges.
+    Halo removal function based on `dehalo_alpha`, enhanced with additional masking and optional contra-sharpening
+    to better preserve important line detail while effectively reducing halos.
 
-    **For ``rx``, ``ry``, only the first value will be used for calculating the mask.**
+    The parameters `rx`, `ry`, `lowsens`, `highsens`, `ss`, `darkstr`, and `brightstr`
+    can be configured per plane and per iteration. You can specify:
 
-    ``rx``, ``ry``, ``darkstr``, ``brightstr``, ``lowsens``, ``highsens``, ``ss`` are all
-    configurable per plane and iteration. `tuple` means iteration, `list` plane.
+        - A single value: applies to all iterations and all planes.
+        - A tuple of values: interpreted as iteration-wise.
+        - A list inside the tuple: interpreted as per-plane for a specific iteration.
 
-    `rx=(2.0, [2.0, 2.4], [2.2, 2.0, 2.1])` means three iterations.
-    * 1st => 2.0 for all planes
-    * 2nd => 2.0 for luma, 2.4 for chroma
-    * 3rd => 2.2 for luma, 2.0 for u, 2.1 for v
+    For example:
+        `rx=(2.0, [2.0, 2.4], [2.2, 2.0, 2.1])` implies 3 iterations:
+            - 1st: 2.0 for all planes
+            - 2nd: 2.0 for luma, 2.4 for both chroma planes
+            - 3rd: 2.2 for luma, 2.0 for U, 2.1 for V
+
+    **Note:** Only the first value of `rx` and `ry` is used for mask generation.
+
+    Example usage:
+        ```py
+        dehalo = fine_dehalo(clip, ...)
+        # Getting the masks of the last fine_dehalo call:
+        dehalo_mask = fine_dehalo.mask.MAIN
+        ```
 
     Args:
         clip: Source clip.
         rx: Horizontal radius for halo removal.
-        ry: Vertical radius for halo removal.
-        darkstr: Strength factor for dark halos.
-        brightstr: Strength factor for bright halos.
-        lowsens: Sensitivity setting for how weak the dehalo has to be to get fully accepted.
-        highsens: Sensitivity setting for how strong the dehalo has to be to get fully discarded.
-        thmi: Minimum threshold for sharp edges; keep only the sharpest edges (line edges).
-        thma: Maximum threshold for sharp edges; keep only the sharpest edges (line edges).
-        thlimi: Minimum limiting threshold; include more edges than previously ignored details.
-        thlima: Maximum limiting threshold; include more edges than previously ignored details.
-        ss: Supersampling factor, to avoid creation of aliasing.
-        contra: Contrasharpening. If True or int, will use [contrasharpening][vsdehalo.contrasharpening] otherwise uses
-            [contrasharpening_fine_dehalo][vsdehalo.contrasharpening_fine_dehalo] with specified level.
-        exclude: If True, add an addionnal step to exclude edges close to each other
-        edgeproc: If > 0, it will add the edgemask to the processing, defaults to 0.0
-        edgemask: Internal mask used for detecting the edges, defaults to Robinson3()
+        ry: Vertical radius for halo removal. Defaults to `rx` if not set.
+        blur_func: Optional custom blurring function to use in place of the default `dehalo_alpha` implementation.
+        lowsens: Lower sensitivity threshold — dehalo is fully applied below this value.
+        highsens: Upper sensitivity threshold — dehalo is completely skipped above this value.
+        ss: Supersampling factor to reduce aliasing artifacts.
+        darkstr: Strength factor for suppressing dark halos.
+        brightstr: Strength factor for suppressing bright halos.
+        edgemask: Edge detection object to use. Defaults to `Robinson3`.
+        thmi: Minimum threshold for sharp edge selection; isolates only the strongest (line-like) edges.
+        thma: Maximum threshold for sharp edge selection; filters out weaker edges.
+        thlimi: Minimum threshold for including edges that were previously ignored.
+        thlima: Maximum threshold for the inclusion of additional, less distinct edges.
+        exclude: Whether to exclude edges that are too close together.
+        edgeproc: If greater than 0, adds the edge mask into the final processing. Defaults to 0.0.
+        contra: Contra-sharpening amount.
+               - If `True` or `int`, uses [contrasharpening][vsdehalo.contrasharpening]
+               - if `float`, uses [contrasharpening_dehalo][vsdehalo.contrasharpening_dehalo] with specified level.
         planes: Planes to process.
         attach_masks: Stores the masks as frame properties in the output clip.
             The prop names are `FineDehaloMask` + the masking step.

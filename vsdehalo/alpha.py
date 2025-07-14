@@ -63,27 +63,41 @@ def dehalo_alpha(
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
-    Reduce halo artifacts by nuking everything around edges (and also the edges actually).
+    Reduce halo artifacts by aggressively processing the edges and their surroundings.
 
-    ``rx``, ``ry``, ``darkstr``, ``brightstr``, ``lowsens``, ``highsens``, ``ss`` are all
-    configurable per plane and iteration. `tuple` means iteration, `list` plane.
+    The parameters `rx`, `ry`, `lowsens`, `highsens`, `ss`, `darkstr`, and `brightstr`
+    can be configured per plane and per iteration. You can specify:
 
-    `rx=(2.0, [2.0, 2.4], [2.2, 2.0, 2.1])` means three iterations.
-     * 1st => 2.0 for all planes
-     * 2nd => 2.0 for luma, 2.4 for chroma
-     * 3rd => 2.2 for luma, 2.0 for u, 2.1 for v
+        - A single value: applies to all iterations and all planes.
+        - A tuple of values: interpreted as iteration-wise.
+        - A list inside the tuple: interpreted as per-plane for a specific iteration.
+
+    For example:
+        `rx=(2.0, [2.0, 2.4], [2.2, 2.0, 2.1])` implies 3 iterations:
+            - 1st: 2.0 for all planes
+            - 2nd: 2.0 for luma, 2.4 for both chroma planes
+            - 3rd: 2.2 for luma, 2.0 for U, 2.1 for V
 
     Args:
         clip: Source clip.
         rx: Horizontal radius for halo removal.
-        ry: Vertical radius for halo removal.
-        darkstr: Strength factor for dark halos.
-        brightstr: Strength factor for bright halos.
-        lowsens: Sensitivity setting for defining how weak the dehalo has to be to get fully accepted.
-        highsens: Sensitivity setting for define how strong the dehalo has to be to get fully discarded.
-        ss: Supersampling factor, to avoid creation of aliasing.
+        ry: Vertical radius for halo removal. Defaults to `rx` if not set.
+        blur_func: Optional custom blurring function to use in place of the default implementation.
+        lowsens: Lower sensitivity threshold — dehalo is fully applied below this value.
+        highsens: Upper sensitivity threshold — dehalo is completely skipped above this value.
+        ss: Supersampling factor to reduce aliasing artifacts.
+        darkstr: Strength factor for suppressing dark halos.
+        brightstr: Strength factor for suppressing bright halos.
         planes: Planes to process.
-        func: Function from where this function was called.
+        func: An optional function to use for error handling.
+        **kwargs: Additional debug options.
+            - `attach_masks=True`: Stores generated masks as frame properties in the output clip.
+              The prop name is `DehaloAlphaMask_{i}`, where `i` is the iteration index.
+
+    Raises:
+        CustomIndexError: If `ss`, `rx` or `ry` are lower than 1.0.
+        CustomIndexError: If `brightstr` or `darkstr` are not between 0.0 and 1.0 (inclusive).
+        CustomIndexError: If `lowsens` or `highsens` are not beween 0 and 100 (inclusive).
 
     Returns:
         Dehaloed clip.
@@ -195,6 +209,9 @@ def _dehalo_alpha_blur_func(
     upscaler: ScalerLike = BSpline,
     func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
+    """
+    Default gaussian approximation used in the original dehalo_alpha implementation.
+    """
     downscaler = Scaler.ensure_obj(downscaler, func)
     upscaler = Scaler.ensure_obj(upscaler, func)
 
