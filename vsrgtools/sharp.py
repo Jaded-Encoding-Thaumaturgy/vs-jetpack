@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Literal, Sequence
+from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 from scipy import interpolate
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear
-from vsmasktools import EdgeDetect, EdgeDetectT, Sobel
+
+if TYPE_CHECKING:
+    from vsmasktools import EdgeDetectT
+else:
+    EdgeDetectT = Any
+
 from vstools import (
     ChromaLocation,
     ConstantFormatVideoNode,
@@ -52,13 +57,15 @@ def unsharpen(
 
 def awarpsharp(
     clip: vs.VideoNode,
-    mask: EdgeDetectT | vs.VideoNode = Sobel,
+    mask: EdgeDetectT | vs.VideoNode | None = None,
     thresh: int | float = 128,
     blur: GenericVSFunction[vs.VideoNode] | Literal[False] = partial(box_blur, radius=2, passes=3),
     depth: int | Sequence[int] | None = None,
     chroma: bool = False,
     planes: PlanesT = None,
 ) -> ConstantFormatVideoNode:
+    from vsmasktools import EdgeDetect, Sobel
+
     func = FunctionUtil(clip, awarpsharp, planes)
 
     thresh = scale_mask(thresh, 8, func.work_clip)
@@ -66,7 +73,9 @@ def awarpsharp(
     mask_planes = planes if chroma else 0
 
     if not isinstance(mask, vs.VideoNode):
-        mask = EdgeDetect.ensure_obj(mask, awarpsharp).edgemask(func.work_clip, clamp=(0, thresh), planes=mask_planes)
+        mask = EdgeDetect.ensure_obj(mask if mask else Sobel, awarpsharp).edgemask(
+            func.work_clip, clamp=(0, thresh), planes=mask_planes
+        )
 
     if blur:
         mask = blur(mask, planes=mask_planes)
