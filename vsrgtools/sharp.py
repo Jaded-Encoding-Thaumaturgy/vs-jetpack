@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from functools import partial
+from typing import Literal, Sequence
 
 from scipy import interpolate
 
 from vsexprtools import norm_expr
+from vskernels import Bilinear
+from vsmasktools import EdgeDetect, EdgeDetectT, Sobel
 from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
@@ -14,6 +17,11 @@ from vstools import (
     VSFunctionNoArgs,
     check_ref_clip,
     check_variable,
+    core,
+    get_y,
+    join,
+    pick_func_stype,
+    scale_mask,
     vs,
 )
 
@@ -21,7 +29,7 @@ from .blur import box_blur, gauss_blur, median_blur
 from .enum import BlurMatrix
 from .rgtools import repair
 
-__all__ = ["fine_sharp", "soothe", "unsharpen"]
+__all__ = ["awarpsharp", "fine_sharp", "soothe", "unsharpen"]
 
 
 def unsharpen(
@@ -39,6 +47,39 @@ def unsharpen(
     check_ref_clip(clip, blur, unsharpen)
 
     return norm_expr([clip, blur], f"x y - {strength} * x +", planes, func=unsharpen)
+
+
+def awarpsharp(
+    clip: vs.VideoNode,
+    mask: EdgeDetectT | vs.VideoNode = Sobel,
+    thresh: int | float = 128,
+    blur: GenericVSFunction[vs.VideoNode] | Literal[False] = partial(box_blur, radius=2, passes=3),
+    depth: int | Sequence[int] | None = None,
+    chroma: bool = False,
+    planes: PlanesT = None,
+) -> ConstantFormatVideoNode:
+    func = FunctionUtil(clip, awarpsharp, planes)
+
+    thresh = scale_mask(thresh, 8, func.work_clip)
+    chroma = True if func.work_clip.format.color_family is vs.RGB else chroma
+    mask_planes = planes if chroma else 0
+
+    if not isinstance(mask, vs.VideoNode):
+        mask = EdgeDetect.ensure_obj(mask, awarpsharp).edgemask(func.work_clip, clamp=(0, thresh), planes=mask_planes)
+
+    if blur:
+        mask = blur(mask, planes=mask_planes)
+
+    if not chroma:
+        mask = get_y(mask)
+        mask = join(mask, mask, mask)
+        mask = Bilinear().resample(mask, func.work_clip.format.id)
+
+    warp = pick_func_stype(func.work_clip, core.lazy.warp.AWarp, core.lazy.warpsf.AWarp)(
+        func.work_clip, mask, depth, 1, planes
+    )
+
+    return func.return_clip(warp)
 
 
 def fine_sharp(
