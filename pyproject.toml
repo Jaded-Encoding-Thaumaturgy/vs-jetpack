@@ -36,12 +36,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mypy>=1.16.0",
+    "mypy>=1.17.0",
     "packaging>=24.0",
     "pycodestyle>=2.11.1",
     "pytest>=8.3.4, <9.0.0",
     "pytest-cov>=6.0.0, <7.0.0",
-    "ruff>=0.12.1",
+    "ruff>=0.12.3",
     "scipy-stubs>=1.15.2.1",
     "twine>=6.1.0",
     "types-psutil>=7.0.0.20250218",
@@ -112,6 +112,7 @@ pythonpath = "."
 [tool.mypy]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
 
+exclude = ["scripts/"]
 # Flags changed by --strict
 warn_return_any = false
 extra_checks = false

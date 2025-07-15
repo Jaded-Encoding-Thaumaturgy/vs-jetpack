@@ -196,7 +196,7 @@ class F3kdb(Debander):
         y, cb, cr = normalize_seq(fallback(self.thr, thr), 3)
         gry, grc = normalize_seq(fallback(self.grain, grain), 2)
 
-        sample_mode = fallback(self.sample_mode, sample_mode)  # type: ignore
+        sample_mode = fallback(self.sample_mode, sample_mode)
 
         random_ref, random_grain = normalize_seq(random, 2)
 
@@ -221,16 +221,16 @@ class F3kdb(Debander):
             y2, cb2, cr2 = func.norm_seq(sample_mode.thr_mid, 0)
             sample_mode = sample_mode.sample_mode
 
-        blur_first = fallback(self.blur_first or blur_first, max(y, cb, cr) < 2048)  # type: ignore
+        blur_first = fallback(self.blur_first or blur_first, max(y, cb, cr) < 2048)
 
         debanded = core.neo_f3kdb.Deband(
             func.work_clip,
             radius,
-            y,  # type: ignore
-            cb,  # type: ignore
-            cr,  # type: ignore
-            gry * 255 * 0.8,  # type: ignore
-            grc * 255 * 0.8,  # type: ignore
+            y,
+            cb,
+            cr,
+            round(gry * 255 * 0.8),
+            round(grc * 255 * 0.8),
             sample_mode.value,
             self.seed or seed,
             blur_first,

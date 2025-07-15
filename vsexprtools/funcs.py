@@ -34,13 +34,13 @@ __all__ = ["combine", "expr_func", "norm_expr"]
 
 
 def expr_func(
-    clips: VideoNodeT | Sequence[VideoNodeT],
+    clips: vs.VideoNode | Sequence[vs.VideoNode],
     expr: str | Sequence[str],
     format: HoldsVideoFormatT | VideoFormatT | None = None,
     opt: bool | None = None,
     boundary: bool = True,
     func: FuncExceptT | None = None,
-) -> VideoNodeT:
+) -> ConstantFormatVideoNode:
     func = func or expr_func
 
     clips = list(clips) if isinstance(clips, Sequence) else [clips]
@@ -75,7 +75,7 @@ def expr_func(
         raise CustomValueError("You can run only one var res clip!")
 
     try:
-        return cast(VideoNodeT, func_impl(clips))
+        return func_impl(clips)
     except Exception:
         raise CustomRuntimeError(
             "There was an error when evaluating the expression:\n"
@@ -123,7 +123,7 @@ def combine(
 
 
 def norm_expr(
-    clips: VideoNodeIterableT[VideoNodeT],
+    clips: VideoNodeIterableT[vs.VideoNode],
     expr: str | StrArr | ExprList | tuple[str | StrArr | ExprList, ...] | TupleExprList,
     planes: PlanesT = None,
     format: HoldsVideoFormatT | VideoFormatT | None = None,
@@ -132,7 +132,7 @@ def norm_expr(
     func: FuncExceptT | None = None,
     split_planes: bool = False,
     **kwargs: Iterable[SupportsString] | SupportsString,
-) -> VideoNodeT:
+) -> ConstantFormatVideoNode:
     """
     Evaluates an expression per pixel.
 
@@ -168,12 +168,12 @@ def norm_expr(
             if len(expr) < 1:
                 raise CustomRuntimeError("When passing a TupleExprList you need at least one expr in it!", func, expr)
 
-            nclips: Sequence[VideoNodeT] | VideoNodeT = clips
+            nclips = clips
 
             for e in expr:
                 nclips = norm_expr(nclips, e, planes, format, opt, boundary, func, split_planes, **kwargs)
 
-            return cast(VideoNodeT, nclips)
+            return cast(ConstantFormatVideoNode, nclips)
         else:
             nexpr = tuple([to_arr(x) for x in expr])
     else:

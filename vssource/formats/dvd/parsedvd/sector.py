@@ -16,8 +16,8 @@ class SectorReadHelper:
     file: SPath | None = None
 
     def __init__(self, ifo: bytes | SPathLike | BufferedReader) -> None:
-        if isinstance(ifo, bytes):
-            ifo = BufferedReader(BytesIO(ifo))  # type: ignore
+        if isinstance(ifo, (bytes, bytearray, memoryview)):
+            ifo = BufferedReader(BytesIO(ifo))
 
         if not isinstance(ifo, BufferedReader):
             self.file = SPath(ifo)

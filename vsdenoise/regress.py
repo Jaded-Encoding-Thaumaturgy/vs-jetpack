@@ -138,8 +138,10 @@ class Regression:
                 BlurConf object.
             """
             if args or kwargs:
-                return Regression.BlurConf(  # pyright: ignore
-                    self.func, *(args or self.args), **(self.kwargs | kwargs)
+                return Regression.BlurConf(
+                    self.func,
+                    *(args or self.args),
+                    **(self.kwargs | kwargs),  # type: ignore[arg-type]
                 )
             return self
 
@@ -177,7 +179,7 @@ class Regression:
                             return outc
 
                 with contextlib.suppress(Exception):
-                    out = self.func(clip, *args, **ckwargs)
+                    out = self.func(clip, *args, **ckwargs)  # type: ignore[arg-type]
 
             if not out:
                 key = complex_hash.hash(args, kwargs)
@@ -189,7 +191,7 @@ class Regression:
                         if inc == clip:
                             return outc
 
-                out = self.func(clip, *args, **kwargs)
+                out = self.func(clip, *args, **kwargs)  # type: ignore[arg-type]
 
             if key not in _cached_blurs:
                 _cached_blurs[key] = []
@@ -216,7 +218,7 @@ class Regression:
 
         def get_bases(
             self, clip: vs.VideoNode | Sequence[vs.VideoNode]
-        ) -> tuple[list[vs.VideoNode], list[vs.VideoNode], list[vs.VideoNode]]:
+        ) -> tuple[Sequence[vs.VideoNode], Sequence[vs.VideoNode], Sequence[vs.VideoNode]]:
             """
             Get the base elements for a regression.
 
@@ -332,7 +334,7 @@ class Regression:
         avg: bool = False,
         *args: Any,
         **kwargs: Any,
-    ) -> list[vs.VideoNode]:
+    ) -> Sequence[vs.VideoNode]:
         """
         Compute correlation of slopes of a simple regression.
 

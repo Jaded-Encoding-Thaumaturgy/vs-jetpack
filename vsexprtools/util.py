@@ -205,11 +205,7 @@ class _ExprVars(Iterable[str]):
             akarin = None
 
         if isinstance(idx_slice, slice):
-            return list(
-                ExprVars(  # type: ignore
-                    idx_slice.start or 0, fallback(idx_slice.stop, MISSING), fallback(idx_slice.step, 1)
-                )
-            )
+            return list(ExprVars(idx_slice.start or 0, fallback(idx_slice.stop, MISSING), fallback(idx_slice.step, 1)))
         elif isinstance(idx_slice, SupportsIndex):
             return ExprVars.get_var(idx_slice.__index__(), akarin)
 
