@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Protocol, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Protocol, TypeAlias, TypeVar, Union
 
 import vapoursynth as vs
 from jetpytools import MISSING, DataType, FuncExceptT, MissingT, PassthroughC, SingleOrSeq, StrArr, StrArrOpt
@@ -36,12 +36,7 @@ VideoNodeT = TypeVar("VideoNodeT", bound=vs.VideoNode)
 VideoNodeT_contra = TypeVar("VideoNodeT_contra", bound=vs.VideoNode, contravariant=True)
 VideoNodeT_co = TypeVar("VideoNodeT_co", bound=vs.VideoNode, covariant=True)
 
-VideoNodeIterableT = Union[
-    VideoNodeT,
-    Iterable[VideoNodeT | Iterable[VideoNodeT]],
-    Iterable[VideoNodeT | Iterable[VideoNodeT | Iterable[VideoNodeT]]],
-]
-
+VideoNodeIterableT: TypeAlias = Union[VideoNodeT, Iterable["VideoNodeIterableT[VideoNodeT]"]]
 
 _VSMapValue = Union[
     SingleOrSeq[int],

@@ -130,7 +130,7 @@ class ExprToken(ExprTokenBase, CustomEnum):
 class ExprList(StrList):
     def __call__(
         self,
-        *clips: VideoNodeIterableT[VideoNodeT],
+        *clips: VideoNodeIterableT[vs.VideoNode],
         planes: PlanesT = None,
         format: HoldsVideoFormatT | VideoFormatT | None = None,
         opt: bool | None = None,
@@ -138,7 +138,7 @@ class ExprList(StrList):
         func: FuncExceptT | None = None,
         split_planes: bool = False,
         **kwargs: Any,
-    ) -> VideoNodeT:
+    ) -> ConstantFormatVideoNode:
         from .funcs import norm_expr
 
         return norm_expr(flatten_vnodes(*clips), self, planes, format, opt, boundary, func, split_planes, **kwargs)
@@ -147,7 +147,7 @@ class ExprList(StrList):
 class TupleExprList(tuple[ExprList, ...]):
     def __call__(
         self,
-        *clips: VideoNodeIterableT[VideoNodeT],
+        *clips: VideoNodeIterableT[vs.VideoNode],
         planes: PlanesT = None,
         format: HoldsVideoFormatT | VideoFormatT | None = None,
         opt: bool | None = None,
@@ -155,8 +155,8 @@ class TupleExprList(tuple[ExprList, ...]):
         func: FuncExceptT | None = None,
         split_planes: bool = False,
         **kwargs: Any,
-    ) -> VideoNodeT:
-        clip: Sequence[VideoNodeT] | VideoNodeT = flatten_vnodes(*clips)
+    ) -> ConstantFormatVideoNode:
+        clip = flatten_vnodes(*clips)
 
         for exprlist in self:
             clip = exprlist(
@@ -170,7 +170,7 @@ class TupleExprList(tuple[ExprList, ...]):
                 **kwargs,
             )
 
-        return clip[0] if isinstance(clip, Sequence) else clip
+        return clip[0] if isinstance(clip, Sequence) else clip  # type: ignore[return-value]
 
     def __str__(self) -> str:
         return str(tuple(str(e) for e in self))

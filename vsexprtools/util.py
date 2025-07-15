@@ -206,7 +206,7 @@ class _ExprVars(Iterable[str]):
 
         if isinstance(idx_slice, slice):
             return list(
-                ExprVars(  # type: ignore
+                ExprVars(
                     idx_slice.start or 0, fallback(idx_slice.stop, MISSING), fallback(idx_slice.step, 1)
                 )
             )

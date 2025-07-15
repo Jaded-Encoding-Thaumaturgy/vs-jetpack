@@ -648,16 +648,17 @@ class AddNoiseBase:
         dynamic: bool | None = None,
         **kwargs: Any,
     ) -> vs.VideoNode:
-        return Grainer(self._noise_type)(  # type: ignore[call-overload, misc]
+        scaler = (
+            GrainFactoryBicubic(self.sharp + 50)
+            if isinstance(self.sharp, (float, int))
+            else ScalerTwoPasses[Scaler.from_param(self.sharp)]  # type: ignore[misc]
+        )
+        return Grainer(self._noise_type)(  # type: ignore[misc]
             clip,
             fallback(strength, self.strength),
             not fallback(dynamic, self.dynamic),
             self.size,
-            (
-                GrainFactoryBicubic(self.sharp + 50)
-                if isinstance(self.sharp, (float, int))
-                else ScalerTwoPasses[Scaler.from_param(self.sharp)]  # type: ignore[misc]
-            ),
+            scaler,  # type: ignore[arg-type]
             self.temporal_average,
             self.postprocess,
             self.fade_limits,

@@ -170,9 +170,8 @@ class BlurMatrixBase(list[_Nb]):
             expr_conv = ExprOp.convolution(
                 ExprVars(len(self)), self, bias, fallback(divisor, True), saturate, self.mode, **conv_kwargs
             )
-            return iterate(
-                clip, lambda x: expr_conv(shift_clip_multi(x, (-r, r)), planes=planes, **expr_kwargs), passes
-            ).std.CopyFrameProps(clip)
+            out = iterate(clip, lambda x: expr_conv(shift_clip_multi(x, (-r, r)), planes=planes, **expr_kwargs), passes)
+            return core.std.CopyFrameProps(out, clip)
 
         expr = ExprList()
 
@@ -238,9 +237,9 @@ class BlurMatrixBase(list[_Nb]):
         if conv_kwargs.get("clamp", False):
             expr.append(ExprOp.clamp(ExprToken.RangeMin, ExprToken.RangeMax))
 
-        return iterate(
-            clip, lambda x: expr(shift_clip_multi(x, (-r, r)), planes=planes, **expr_kwargs), passes
-        ).std.CopyFrameProps(clip)
+        out = iterate(clip, lambda x: expr(shift_clip_multi(x, (-r, r)), planes=planes, **expr_kwargs), passes)
+
+        return core.std.CopyFrameProps(out, clip)
 
     def outer(self) -> Self:
         """
