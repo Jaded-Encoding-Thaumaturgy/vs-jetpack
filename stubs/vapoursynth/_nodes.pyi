@@ -1742,19 +1742,6 @@ class _Plugin_dgdecodenv_Core_Bound(Plugin):
 
 # end implementation
 
-# implementation: dpid
-
-class _Plugin_dpid_Core_Bound(Plugin):
-    """This class implements the module definitions for the "dpid" VapourSynth plugin.\n\n*This class cannot be imported.*"""
-    def Dpid(self, *args: _VapourSynthMapValue, **kwargs: _VapourSynthMapValue) -> ConstantFormatVideoNode: ...
-    def DpidRaw(self, *args: _VapourSynthMapValue, **kwargs: _VapourSynthMapValue) -> ConstantFormatVideoNode: ...
-
-class _Plugin_dpid_VideoNode_Bound(Plugin):
-    """This class implements the module definitions for the "dpid" VapourSynth plugin.\n\n*This class cannot be imported.*"""
-    def Dpid(self, *args: _VapourSynthMapValue, **kwargs: _VapourSynthMapValue) -> ConstantFormatVideoNode: ...
-    def DpidRaw(self, *args: _VapourSynthMapValue, **kwargs: _VapourSynthMapValue) -> ConstantFormatVideoNode: ...
-
-# end implementation
 
 # implementation: dvdsrc2
 
@@ -2606,42 +2593,6 @@ class _Plugin_manipmv_VideoNode_Bound(Plugin):
 
 # end implementation
 
-# implementation: misc
-
-class _Plugin_misc_Core_Bound(Plugin):
-    """This class implements the module definitions for the "misc" VapourSynth plugin.
-
-    *This class cannot be imported.*"""
-    def AverageFrames(
-        self,
-        clips: _SingleAndSequence[VideoNode],
-        weights: _SingleAndSequence[float],
-        scale: float | None = None,
-        scenechange: int | None = None,
-        planes: _SingleAndSequence[int] | None = None,
-    ) -> ConstantFormatVideoNode: ...
-    def Hysteresis(
-        self, clipa: VideoNode, clipb: VideoNode, planes: _SingleAndSequence[int] | None = None
-    ) -> ConstantFormatVideoNode: ...
-    def SCDetect(self, clip: VideoNode, threshold: float | None = None) -> ConstantFormatVideoNode: ...
-
-class _Plugin_misc_VideoNode_Bound(Plugin):
-    """This class implements the module definitions for the "misc" VapourSynth plugin.
-
-    *This class cannot be imported.*"""
-    def AverageFrames(
-        self,
-        weights: _SingleAndSequence[float],
-        scale: float | None = None,
-        scenechange: int | None = None,
-        planes: _SingleAndSequence[int] | None = None,
-    ) -> ConstantFormatVideoNode: ...
-    def Hysteresis(
-        self, clipb: VideoNode, planes: _SingleAndSequence[int] | None = None
-    ) -> ConstantFormatVideoNode: ...
-    def SCDetect(self, threshold: float | None = None) -> ConstantFormatVideoNode: ...
-
-# end implementation
 
 # implementation: mv
 
@@ -11416,11 +11367,6 @@ class VideoNode(RawNode):
     def dfttest2_nvrtc(self) -> _Plugin_dfttest2_nvrtc_VideoNode_Bound:
         """DFTTest2 (NVRTC)"""
     # end instance
-    # instance_bound_VideoNode: dpid
-    @property
-    def dpid(self) -> _Plugin_dpid_VideoNode_Bound:
-        """Rapid, Detail-Preserving Image Downscaling"""
-    # end instance
     # instance_bound_VideoNode: eedi2
     @property
     def eedi2(self) -> _Plugin_eedi2_VideoNode_Bound:
@@ -11465,11 +11411,6 @@ class VideoNode(RawNode):
     @property
     def manipmv(self) -> _Plugin_manipmv_VideoNode_Bound:
         """Manipulate Motion Vectors"""
-    # end instance
-    # instance_bound_VideoNode: misc
-    @property
-    def misc(self) -> _Plugin_misc_VideoNode_Bound:
-        """Miscellaneous filters"""
     # end instance
     # instance_bound_VideoNode: mv
     @property
@@ -11767,11 +11708,6 @@ class Core:
     def dgdecodenv(self) -> _Plugin_dgdecodenv_Core_Bound:
         """DGDecodeNV for VapourSynth"""
     # end instance
-    # instance_bound_Core: dpid
-    @property
-    def dpid(self) -> _Plugin_dpid_Core_Bound:
-        """Rapid, Detail-Preserving Image Downscaling"""
-    # end instance
     # instance_bound_Core: dvdsrc2
     @property
     def dvdsrc2(self) -> _Plugin_dvdsrc2_Core_Bound:
@@ -11831,11 +11767,6 @@ class Core:
     @property
     def manipmv(self) -> _Plugin_manipmv_Core_Bound:
         """Manipulate Motion Vectors"""
-    # end instance
-    # instance_bound_Core: misc
-    @property
-    def misc(self) -> _Plugin_misc_Core_Bound:
-        """Miscellaneous filters"""
     # end instance
     # instance_bound_Core: mv
     @property

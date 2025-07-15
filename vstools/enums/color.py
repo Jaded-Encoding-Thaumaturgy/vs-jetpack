@@ -442,9 +442,7 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
     """
     HLG = STD_B67
 
-    """
-    Transfer characteristics from libplacebo
-    """
+    # Transfer characteristics from libplacebo
 
     GAMMA18 = 104
     """
@@ -837,9 +835,7 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
     """
     EBU3213 = JEDEC_P22
 
-    """
-    Primary characteristics from libplacebo
-    """
+    # Primary characteristics from libplacebo
 
     APPLE = 107
     """
