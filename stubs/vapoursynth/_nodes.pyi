@@ -1742,7 +1742,6 @@ class _Plugin_dgdecodenv_Core_Bound(Plugin):
 
 # end implementation
 
-
 # implementation: dvdsrc2
 
 class _Plugin_dvdsrc2_Core_Bound(Plugin):
@@ -2592,7 +2591,6 @@ class _Plugin_manipmv_VideoNode_Bound(Plugin):
     def ShowVect(self, vectors: VideoNode, useSceneChangeProps: int | None = None) -> ConstantFormatVideoNode: ...
 
 # end implementation
-
 
 # implementation: mv
 

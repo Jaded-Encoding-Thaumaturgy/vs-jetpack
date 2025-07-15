@@ -139,7 +139,9 @@ class Regression:
             """
             if args or kwargs:
                 return Regression.BlurConf(
-                    self.func, *(args or self.args), **(self.kwargs | kwargs)  # type: ignore[arg-type]
+                    self.func,
+                    *(args or self.args),
+                    **(self.kwargs | kwargs),  # type: ignore[arg-type]
                 )
             return self
 
