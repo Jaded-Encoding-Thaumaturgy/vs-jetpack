@@ -9,6 +9,7 @@ from vsexprtools import norm_expr
 from vskernels import Bilinear
 from vsmasktools import EdgeDetect, EdgeDetectT, Sobel
 from vstools import (
+    ChromaLocation,
     ConstantFormatVideoNode,
     ConvMode,
     FunctionUtil,
@@ -71,9 +72,11 @@ def awarpsharp(
         mask = blur(mask, planes=mask_planes)
 
     if not chroma:
+        loc = ChromaLocation.from_video(func.work_clip)
+
         mask = get_y(mask)
         mask = join(mask, mask, mask)
-        mask = Bilinear().resample(mask, func.work_clip.format.id)
+        mask = Bilinear().resample(mask, func.work_clip.format.id, chromaloc=loc)
 
     warp = pick_func_stype(func.work_clip, core.lazy.warp.AWarp, core.lazy.warpsf.AWarp)(
         func.work_clip, mask, depth, 1, planes
