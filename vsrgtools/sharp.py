@@ -71,13 +71,14 @@ def awarpsharp(
         clip: Clip to process. Must be either the same size as mask, or four times the size of mask in each dimension.
             The latter can be useful if better subpixel interpolation is desired. If clip is upscaled to four times the
             original size, it must be top-left aligned.
-        mask: Edge mask. 
+        mask: Edge mask.
         thresh: No pixel in the edge mask will have a value greater than thresh. Decrease for weaker sharpening.
         blur: Controls the blur filter used on the edge mask.
         depth: Controls how far to warp. Negative values warp in the other direction, i.e. will blur the image instead
             of sharpening.
         chroma: Controls the chroma handling method. False will use the edge mask from the luma to warp the chroma.
-            True will create an edge mask from each chroma channel and use those to warp each chroma channel individually.
+            True will create an edge mask from each chroma channel and use those to warp each chroma channel
+            individually.
         planes: Planes to process. Defaults to all.
 
     Returns:
