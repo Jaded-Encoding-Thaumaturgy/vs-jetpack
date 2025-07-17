@@ -10,7 +10,7 @@ from typing import Sequence
 
 from vsexprtools import norm_expr
 from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, PrewittStd
-from vsrgtools import BlurMatrix, awarpsharp, box_blur, min_blur, remove_grain, repair
+from vsrgtools import BlurMatrix, awarpsharp, box_blur, gauss_blur, min_blur, remove_grain, repair
 from vsrgtools.rgtools import Repair
 from vstools import (
     PlanesT,
@@ -122,11 +122,11 @@ def YAHR(  # noqa: N802
 
     v_edge = norm_expr([y_mask, Morpho.maximum(y_mask, iterations=2)], "y x - 8 range_max * 255 / - 128 *", func=YAHR)
 
-    mask1 = v_edge.tcanny.TCanny(sqrt(expand * 2), mode=-1)
-
-    mask2 = BlurMatrix.BINOMIAL()(v_edge)
-
-    mask = limiter(norm_expr([mask1, mask2], "x 16 * range_max y - min", func=YAHR))
+    mask = limiter(
+        norm_expr(
+            [gauss_blur(v_edge, sqrt(expand * 2)), BlurMatrix.BINOMIAL()(v_edge)], "x 16 * range_max y - min", func=YAHR
+        )
+    )
 
     final = clip.std.MaskedMerge(yahr, mask, planes)
 
