@@ -4,6 +4,8 @@ from functools import partial
 from os import PathLike
 from typing import Any, Callable, Iterable, Literal, overload
 
+from jetpytools import norm_display_name
+
 from vstools import (
     ChromaLocationT,
     ColorRangeT,
@@ -25,7 +27,7 @@ from vstools import (
     vs,
 )
 
-from .indexers import IMWRI, LSMAS, BestSource, D2VWitch, DGIndex, DGIndexNV, Indexer
+from .indexers import IMWRI, LSMAS, BestSource, D2VWitch, Indexer
 
 __all__ = ["parse_video_filepath", "source"]
 
@@ -69,7 +71,6 @@ def source(
     color_range: ColorRangeT | None = None,
     field_based: FieldBasedT | None = None,
     ref: vs.VideoNode | None = None,
-    film_thr: float = 99.0,
     name: str | Literal[False] = False,
     **kwargs: Any,
 ) -> vs.VideoNode: ...
@@ -86,7 +87,6 @@ def source(
     color_range: ColorRangeT | None = None,
     field_based: FieldBasedT | None = None,
     ref: vs.VideoNode | None = None,
-    film_thr: float = 99.0,
     name: str | Literal[False] = False,
     **kwargs: Any,
 ) -> Callable[[str], vs.VideoNode]: ...
@@ -104,7 +104,6 @@ def source(
     color_range: ColorRangeT | None = None,
     field_based: FieldBasedT | None = None,
     ref: vs.VideoNode | None = None,
-    film_thr: float = 99.0,
     name: str | Literal[False] = False,
     **kwargs: Any,
 ) -> Callable[[str], vs.VideoNode]: ...
@@ -121,10 +120,37 @@ def source(
     color_range: ColorRangeT | None = None,
     field_based: FieldBasedT | None = None,
     ref: vs.VideoNode | None = None,
-    film_thr: float = 99.0,
     name: str | Literal[False] = False,
     **kwargs: Any,
 ) -> vs.VideoNode | Callable[[str], vs.VideoNode]:
+    """
+    Automatically selects and uses an appropriate indexer to load a video or image file into VapourSynth.
+
+    If `filepath` is not provided, a partially-applied version of this function is returned,
+    allowing delayed path specification.
+
+    Args:
+        filepath: The path to the video file or image sequence. Can be a string path or an iterable of paths.
+            If set to `None`, returns a callable that takes the file path later.
+        bits: See [initialize_clip][vstools.initialize_clip] documentation.
+        matrix: See [initialize_clip][vstools.initialize_clip] documentation.
+        transfer: See [initialize_clip][vstools.initialize_clip] documentation.
+        primaries: See [initialize_clip][vstools.initialize_clip] documentation.
+        chroma_location: See [initialize_clip][vstools.initialize_clip] documentation.
+        color_range: See [initialize_clip][vstools.initialize_clip] documentation.
+        field_based: See [initialize_clip][vstools.initialize_clip] documentation.
+        ref: An optional reference clip to match format, resolution, and frame count.
+        name: A custom name to tag the clip with, stored in the `Name` frame prop.
+        **kwargs: Additional keyword arguments forwarded to the selected source indexer.
+
+    Raises:
+        CustomRuntimeError: If no available indexer could open the provided file.
+
+    Returns:
+        If `filepath` is provided, returns a `VideoNode` representing the loaded clip.
+        If `filepath` is `None`, returns a callable that accepts a file path and returns the corresponding clip.
+
+    """
     if filepath is None:
         return partial(
             source,
@@ -136,100 +162,51 @@ def source(
             color_range=color_range,
             field_based=field_based,
             ref=ref,
-            film_thr=film_thr,
             name=name,
             **kwargs,
         )
 
-    clip = None
-    film_thr = float(min(100, film_thr))
-
     filepath, file = parse_video_filepath(filepath)
-
-    props = dict[str, Any]()
-
     to_skip = to_arr(kwargs.get("_to_skip", []))
+    clip = None
 
     if file.ext is IndexingType.LWI:
-        clip = LSMAS.source_func(filepath, **kwargs)
+        indexer = LSMAS
+        clip = indexer.source_func(filepath, **kwargs)
     elif file.file_type is FileType.IMAGE:
-        clip = IMWRI.source_func(filepath, **kwargs)
-    else:
-        try:
-            if DGIndexNV in to_skip:
-                raise RuntimeError
-            else:
-                from pymediainfo import MediaInfo
-
-                tracks = MediaInfo.parse(filepath, parse_speed=0.25).video_tracks
-                if tracks:
-                    trackmeta = tracks[0].to_data()
-
-                    video_format = trackmeta.get("format")
-
-                    if video_format is not None:
-                        video_fmt = str(video_format).strip().lower()
-
-                        if video_fmt == "ffv1":
-                            raise RuntimeError
-
-                        bitdepth = trackmeta.get("bit_depth")
-
-                        if bitdepth is not None and video_fmt == "avc" and int(bitdepth) > 8:
-                            raise RuntimeError
-
-            indexer, filepath_dgi = DGIndexNV(), SPath(filepath)
-
-            if filepath_dgi.suffix != ".dgi":
-                filepath_dgi = next(iter(indexer.index([filepath_dgi], False, False)))
-
-            idx_info = indexer.get_info(filepath_dgi, 0).footer
-
-            props |= {"DgiFieldOp": 0, "DgiOrder": idx_info.order, "DgiFilm": idx_info.film}
-
-            indexer_kwargs = dict[str, Any]()
-            if idx_info.film >= film_thr:
-                indexer_kwargs |= {"fieldop": 1}
-                props |= {"DgiFieldOp": 1, "_FieldBased": 0}
-
-            clip = indexer.source_func(filepath_dgi, **indexer_kwargs)
-        except (RuntimeError, AttributeError, FileNotFoundError):
-            indexers = list[type[Indexer]]([LSMAS, D2VWitch, DGIndex])
-
-            try:
-                from vspreview import is_preview
-
-                best_last = is_preview()
-            except BaseException:
-                best_last = False
-
-            if best_last:
-                indexers.append(BestSource)
-            else:
-                indexers.insert(0, BestSource)
-
-            for indexerr in indexers:
-                if indexerr in to_skip:
-                    continue
-
-                try:
-                    clip = indexerr.source(filepath, bits=bits)
-                    break
-                except Exception as e:
-                    if "bgr0 is not supported" in str(e):
-                        try:
-                            clip = indexerr.source(filepath, format="rgb24", bits=bits)
-                            break
-                        except Exception:
-                            ...
+        indexer = IMWRI
+        clip = indexer.source_func(filepath, **kwargs)
 
     if clip is None:
-        raise CustomRuntimeError(f'None of the indexers you have installed work on this file! "{filepath}"')
+        try:
+            from vspreview import is_preview
+        except (ImportError, ModuleNotFoundError):
+            best_last = False
+        else:
+            best_last = is_preview()
 
-    props |= {"IdxFilePath": str(filepath)}
+        indexers = [i for i in list[type[Indexer]]([LSMAS, D2VWitch]) if i not in to_skip]
+
+        if best_last:
+            indexers.append(BestSource)
+        else:
+            indexers.insert(0, BestSource)
+
+        for indexer in indexers:
+            try:
+                clip = indexer.source(filepath, bits=bits)
+                break
+            except Exception as e:
+                if "bgr0 is not supported" in str(e):
+                    clip = indexer.source(filepath, format="rgb24", bits=bits)
+                    break
+        else:
+            raise CustomRuntimeError(f'None of the indexers you have installed work on this file! "{filepath}"')
+
+    props = {"IdxFilePath": str(filepath), "Idx": norm_display_name(indexer)}
 
     if name:
-        props |= {"Name": name}
+        props["Name"] = name
 
     clip = clip.std.SetFrameProps(**props)
 

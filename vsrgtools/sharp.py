@@ -1,11 +1,20 @@
 from __future__ import annotations
 
 from functools import partial
+from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 from scipy import interpolate
 
 from vsexprtools import norm_expr
+from vskernels import Bilinear
+
+if TYPE_CHECKING:
+    from vsmasktools import EdgeDetectT
+else:
+    EdgeDetectT = Any
+
 from vstools import (
+    ChromaLocation,
     ConstantFormatVideoNode,
     ConvMode,
     FunctionUtil,
@@ -14,6 +23,11 @@ from vstools import (
     VSFunctionNoArgs,
     check_ref_clip,
     check_variable,
+    core,
+    get_y,
+    join,
+    pick_func_stype,
+    scale_mask,
     vs,
 )
 
@@ -21,7 +35,7 @@ from .blur import box_blur, gauss_blur, median_blur
 from .enum import BlurMatrix
 from .rgtools import repair
 
-__all__ = ["fine_sharp", "soothe", "unsharpen"]
+__all__ = ["awarpsharp", "fine_sharp", "soothe", "unsharpen"]
 
 
 def unsharpen(
@@ -39,6 +53,65 @@ def unsharpen(
     check_ref_clip(clip, blur, unsharpen)
 
     return norm_expr([clip, blur], f"x y - {strength} * x +", planes, func=unsharpen)
+
+
+def awarpsharp(
+    clip: vs.VideoNode,
+    mask: EdgeDetectT | vs.VideoNode | None = None,
+    thresh: int | float = 128,
+    blur: GenericVSFunction[vs.VideoNode] | Literal[False] = partial(box_blur, radius=2, passes=3),
+    depth: int | Sequence[int] | None = None,
+    chroma: bool = False,
+    planes: PlanesT = None,
+) -> ConstantFormatVideoNode:
+    """
+    Sharpens edges by warping them.
+
+    Args:
+        clip: Clip to process. Must be either the same size as mask, or four times the size of mask in each dimension.
+            The latter can be useful if better subpixel interpolation is desired. If clip is upscaled to four times the
+            original size, it must be top-left aligned.
+        mask: Edge mask.
+        thresh: No pixel in the edge mask will have a value greater than thresh. Decrease for weaker sharpening.
+        blur: Controls the blur filter used on the edge mask.
+        depth: Controls how far to warp. Negative values warp in the other direction, i.e. will blur the image instead
+            of sharpening.
+        chroma: Controls the chroma handling method. False will use the edge mask from the luma to warp the chroma.
+            True will create an edge mask from each chroma channel and use those to warp each chroma channel
+            individually.
+        planes: Planes to process. Defaults to all.
+
+    Returns:
+        Warp-sharpened clip.
+    """
+    from vsmasktools import EdgeDetect, Sobel
+
+    func = FunctionUtil(clip, awarpsharp, planes)
+
+    thresh = scale_mask(thresh, 8, func.work_clip)
+    chroma = True if func.work_clip.format.color_family is vs.RGB else chroma
+    mask_planes = planes if chroma else 0
+
+    if not isinstance(mask, vs.VideoNode):
+        mask = EdgeDetect.ensure_obj(mask if mask else Sobel, awarpsharp).edgemask(
+            func.work_clip, clamp=(0, thresh), planes=mask_planes
+        )
+
+    if blur:
+        mask = blur(mask, planes=mask_planes)
+
+    if not chroma:
+        loc = ChromaLocation.from_video(func.work_clip)
+
+        mask = get_y(mask)
+        mask = join(mask, mask, mask)
+        mask = Bilinear().resample(mask, func.work_clip.format.id, chromaloc=loc)
+
+    warp = pick_func_stype(func.work_clip, core.lazy.warp.AWarp, core.lazy.warpsf.AWarp)(
+        func.work_clip, mask, depth, 1, planes
+    )
+
+    return func.return_clip(warp)
 
 
 def fine_sharp(

@@ -16,6 +16,7 @@ from ..functions import Keyframes, check_variable_format, clip_data_gather
 from ..types import ConstantFormatVideoNode, VideoNodeT
 from ..utils.cache import SceneBasedDynamicCache
 from .info import get_video_format
+from .props import get_props
 
 __all__ = ["SceneAverageStats", "change_fps", "match_clip", "padder", "padder_ctx", "pick_func_stype", "set_output"]
 
@@ -70,23 +71,27 @@ def match_clip(
             clip. Default: True.
         length: Whether to adjust the length of the reference clip to match the original clip.
     """
-    from ..enums import Matrix, Primaries, Transfer
+    from ..enums import Matrix
     from ..functions import check_variable
 
     assert check_variable(clip, match_clip)
     assert check_variable(ref, match_clip)
 
-    clip = clip * ref.num_frames if length else clip
+    if length:
+        if clip.num_frames < ref.num_frames:
+            clip = vs.core.std.Splice([clip, clip[-1] * (ref.num_frames - clip.num_frames)])
+        else:
+            clip = clip[: ref.num_frames]
+
     clip = clip.resize.Bicubic(ref.width, ref.height) if dimensions else clip
 
     if vformat:
         clip = clip.resize.Bicubic(format=ref.format.id, matrix=Matrix.from_video(ref))
 
     if matrices:
-        with ref.get_frame(0) as ref_frame:
-            clip = clip.std.SetFrameProps(
-                _Matrix=Matrix(ref_frame), _Transfer=Transfer(ref_frame), _Primaries=Primaries(ref_frame)
-            )
+        clip = clip.std.SetFrameProps(
+            **get_props(ref, ["_Matrix", "_Transfer", "_Primaries"], int, default=2, func=match_clip)
+        )
 
     return clip.std.AssumeFPS(fpsnum=ref.fps.numerator, fpsden=ref.fps.denominator)
 

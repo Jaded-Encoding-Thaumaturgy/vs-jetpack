@@ -37,13 +37,13 @@ for example using [vsrepo](https://github.com/vapoursynth/vsrepo).
 | **Essential**                          | **Source filters**                     | **Optional**                          |
 |----------------------------------------|----------------------------------------|---------------------------------------|
 | [akarin](https://github.com/AkarinVS/vapoursynth-plugin) [^1] | [bestsource](https://github.com/vapoursynth/bestsource) | [eedi2](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI2) / [eedi2cuda](https://github.com/hooke007/VapourSynth-EEDI2CUDA) |
-| [resize2](https://github.com/Jaded-Encoding-Thaumaturgy/vapoursynth-resize2) [^1] | [dgdecnv](https://www.rationalqm.us/dgdecnv/dgdecnv.html) [^2] | [eedi3](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI3) |
-| [vszip](https://github.com/dnjulek/vapoursynth-zip) | [d2vsource](https://github.com/dwbuiten/d2vsource) | [znedi3](https://github.com/sekrit-twc/znedi3) / [sneedif](https://github.com/Jaded-Encoding-Thaumaturgy/vapoursynth-SNEEDIF) |
-| [fmtconv](https://gitlab.com/EleonoreMizo/fmtconv/) | [dvdsrc2](https://github.com/jsaowji/dvdsrc2) | [sangnom](https://github.com/dubhater/vapoursynth-sangnom) |
-|                                        | [ffms2](https://github.com/FFMS/ffms2) | [neo_f3kdb](https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb) |
-|                                        | [lsmas](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works) | [chickendream](https://gitlab.com/EleonoreMizo/chickendream/) / [fgrain_cuda](https://github.com/AmusementClub/vs-fgrain-cuda) |
-|                                        | [imwri](https://github.com/vapoursynth/vs-imwri) | [vs-noise](https://github.com/wwww-wwww/vs-noise) |
-|                                        | [carefulsource](https://github.com/wwww-wwww/carefulsource) | [vivtc](https://github.com/vapoursynth/vivtc) |
+| [resize2](https://github.com/Jaded-Encoding-Thaumaturgy/vapoursynth-resize2) [^1] | [d2vsource](https://github.com/dwbuiten/d2vsource) | [eedi3](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI3) |
+| [vszip](https://github.com/dnjulek/vapoursynth-zip) | [dvdsrc2](https://github.com/jsaowji/dvdsrc2) | [znedi3](https://github.com/sekrit-twc/znedi3) / [sneedif](https://github.com/Jaded-Encoding-Thaumaturgy/vapoursynth-SNEEDIF) |
+| [fmtconv](https://gitlab.com/EleonoreMizo/fmtconv/) | [ffms2](https://github.com/FFMS/ffms2) | [sangnom](https://github.com/dubhater/vapoursynth-sangnom) |
+|                                        | [lsmas](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works) | [neo_f3kdb](https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb) |
+|                                        | [imwri](https://github.com/vapoursynth/vs-imwri) | [chickendream](https://gitlab.com/EleonoreMizo/chickendream/) / [fgrain_cuda](https://github.com/AmusementClub/vs-fgrain-cuda) |
+|                                        | [carefulsource](https://github.com/wwww-wwww/carefulsource) | [vs-noise](https://github.com/wwww-wwww/vs-noise) |
+|                                        |                                        | [vivtc](https://github.com/vapoursynth/vivtc) |
 |                                        |                                        | [wnnm](https://github.com/WolframRhodium/VapourSynth-WNNM) |
 |                                        |                                        | [bm3d](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D) / [bm3dcuda](https://github.com/WolframRhodium/VapourSynth-BM3DCUDA) |
 |                                        |                                        | [dctfilter](https://github.com/AmusementClub/VapourSynth-DCTFilter) |
@@ -66,4 +66,3 @@ for example using [vsrepo](https://github.com/vapoursynth/vsrepo).
 |                                        |                                        | [bilateralgpu](https://github.com/WolframRhodium/VapourSynth-BilateralGPU) |
 
 [^1]: Can be considered mandatory
-[^2]: Deprecated

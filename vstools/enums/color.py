@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, NamedTuple, TypeAlias, Union
+from typing import Any, TypeAlias, Union
 
 import vapoursynth as vs
-from jetpytools import FuncExceptT, classproperty
+from jetpytools import FuncExceptT
 
 from ..exceptions import (
     ReservedMatrixError,
@@ -24,7 +24,6 @@ __all__ = [
     "ColorRange",
     "ColorRangeT",
     "Matrix",
-    "MatrixCoefficients",
     "MatrixT",
     "Primaries",
     "PrimariesT",
@@ -1020,93 +1019,6 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
         return _primaries_name_map.get(self, super().string)
 
 
-class MatrixCoefficients(NamedTuple):
-    """
-    Class representing Linear <-> Gamma conversion matrix coefficients.
-    """
-
-    k0: float
-    """Coefficient representing the offset of the linear value relative to the gamma value."""
-
-    phi: float
-    """Coefficient representing the slope of the linear value relative to the gamma value."""
-
-    alpha: float
-    """Coefficient representing the non-linearity of the gamma curve."""
-
-    gamma: float
-    """Coefficient representing the exponent of the gamma curve."""
-
-    @classproperty
-    @classmethod
-    def SRGB(cls) -> MatrixCoefficients:  # noqa: N802
-        """
-        Matrix Coefficients for SRGB.
-        """
-
-        return MatrixCoefficients(0.04045, 12.92, 0.055, 2.4)
-
-    @classproperty
-    @classmethod
-    def BT709(cls) -> MatrixCoefficients:  # noqa: N802
-        """
-        Matrix Coefficients for BT709.
-        """
-
-        return MatrixCoefficients(0.08145, 4.5, 0.0993, 2.22222)
-
-    @classproperty
-    @classmethod
-    def SMPTE240M(cls) -> MatrixCoefficients:  # noqa: N802
-        """
-        Matrix Coefficients for SMPTE240M.
-        """
-
-        return MatrixCoefficients(0.0912, 4.0, 0.1115, 2.22222)
-
-    @classproperty
-    @classmethod
-    def BT2020(cls) -> MatrixCoefficients:  # noqa: N802
-        """
-        Matrix Coefficients for BT2020.
-        """
-
-        return MatrixCoefficients(0.08145, 4.5, 0.0993, 2.22222)
-
-    @classmethod
-    def from_matrix(cls, matrix: Matrix) -> MatrixCoefficients:
-        """
-        Matrix Coefficients from a Matrix object's value.
-        """
-
-        if matrix not in _matrix_matrixcoeff_map:
-            raise UnsupportedMatrixError(f"{matrix} is not supported!", cls.from_matrix)
-
-        return _matrix_matrixcoeff_map[matrix]
-
-    @classmethod
-    def from_transfer(cls, transfer: Transfer) -> MatrixCoefficients:
-        """
-        Matrix Coefficients from a Transfer object's value.
-        """
-
-        if transfer not in _transfer_matrixcoeff_map:
-            raise UnsupportedTransferError(f"{transfer} is not supported!", cls.from_transfer)
-
-        return _transfer_matrixcoeff_map[transfer]
-
-    @classmethod
-    def from_primaries(cls, primaries: Primaries) -> MatrixCoefficients:
-        """
-        Matrix Coefficients from a Primaries object's value.
-        """
-
-        if primaries not in _primaries_matrixcoeff_map:
-            raise UnsupportedPrimariesError(f"{primaries} is not supported!", cls.from_primaries)
-
-        return _primaries_matrixcoeff_map[primaries]
-
-
 class ColorRange(_ColorRangeMeta):  # type: ignore[misc]
     """
     Pixel Range ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Equations E-10 through E-20.
@@ -1235,33 +1147,6 @@ _primaries_transfer_map: dict[Primaries, Transfer] = {}
 _matrix_primaries_map: dict[Matrix, Primaries] = {}
 
 _transfer_primaries_map: dict[Transfer, Primaries] = {}
-
-_matrix_matrixcoeff_map = {
-    Matrix.RGB: MatrixCoefficients.SRGB,
-    Matrix.BT709: MatrixCoefficients.BT709,
-    Matrix.BT470BG: MatrixCoefficients.BT709,
-    Matrix.SMPTE240M: MatrixCoefficients.SMPTE240M,
-    Matrix.BT2020CL: MatrixCoefficients.BT2020,
-    Matrix.BT2020NCL: MatrixCoefficients.BT2020,
-}
-
-_transfer_matrixcoeff_map = {
-    Transfer.SRGB: MatrixCoefficients.SRGB,
-    Transfer.BT709: MatrixCoefficients.BT709,
-    Transfer.BT601: MatrixCoefficients.BT709,
-    Transfer.BT470BG: MatrixCoefficients.BT709,
-    Transfer.SMPTE240M: MatrixCoefficients.SMPTE240M,
-    Transfer.BT2020_10: MatrixCoefficients.BT2020,
-    Transfer.BT2020_12: MatrixCoefficients.BT2020,
-}
-
-_primaries_matrixcoeff_map = {
-    Primaries.BT709: MatrixCoefficients.BT709,
-    Primaries.SMPTE170M: MatrixCoefficients.BT709,
-    Primaries.BT470BG: MatrixCoefficients.BT709,
-    Primaries.SMPTE240M: MatrixCoefficients.SMPTE240M,
-    Primaries.BT2020: MatrixCoefficients.BT2020,
-}
 
 _transfer_placebo_map = {
     Transfer.UNKNOWN: 0,
