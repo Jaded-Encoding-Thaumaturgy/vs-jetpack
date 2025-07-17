@@ -4,10 +4,8 @@ from itertools import cycle
 from math import isqrt, pi
 from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, SupportsIndex, overload
 
-from jetpytools import CustomRuntimeError
+from jetpytools import CustomRuntimeError, CustomStrEnum, SupportsString
 from typing_extensions import Self
-
-from jetpytools import SupportsString
 
 from vstools import (
     ColorRange,
@@ -182,15 +180,59 @@ class TupleExprList(tuple[ExprList, ...]):
         return str(tuple(str(e) for e in self))
 
 
-class ExprOpBase(str):
-    value: str
+class ExprOpBase(CustomStrEnum):
     n_op: int
 
     def __new__(cls, value: str, n_op: int) -> Self:
-        self = super().__new__(cls, value)
+        self = str.__new__(cls, value)
+        self._value_ = value
         self.n_op = n_op
 
         return self
+
+    @overload
+    def __call__(
+        self,
+        *clips: VideoNodeIterableT[VideoNodeT],
+        suffix: StrArrOpt = None,
+        prefix: StrArrOpt = None,
+        expr_suffix: StrArrOpt = None,
+        expr_prefix: StrArrOpt = None,
+        planes: PlanesT = None,
+        **expr_kwargs: Any,
+    ) -> VideoNodeT:
+        """
+        Call combine with this ExprOp.
+        """
+
+    @overload
+    def __call__(self, *pos_args: Any, **kwargs: Any) -> str:
+        """
+        Format this ExprOp into an str.
+        """
+
+    def __call__(self, *pos_args: Any, **kwargs: Any) -> vs.VideoNode | str:
+        args = list(flatten(pos_args))
+
+        if args and isinstance(args[0], vs.VideoNode):
+            return self.combine(*args, **kwargs)
+
+        while True:
+            try:
+                return self.format(*args, **kwargs)
+            except KeyError as key:
+                if not args:
+                    raise
+                kwargs[key.args[0]] = args.pop(0)
+
+    def __next__(self) -> Self:
+        return self
+
+    def __iter__(self) -> Iterator[Self]:
+        return cycle([self])
+
+    def __mul__(self, n: int) -> list[Self]:  # type: ignore[override]
+        return [self] * n
 
     def combine(
         self,
@@ -207,7 +249,7 @@ class ExprOpBase(str):
         return combine(clips, self, suffix, prefix, expr_suffix, expr_prefix, planes, **expr_kwargs)
 
 
-class ExprOp(ExprOpBase, CustomEnum):
+class ExprOp(ExprOpBase):
     # 0 Argument (akarin)
     N = "N", 0
     X = "X", 0
@@ -265,146 +307,6 @@ class ExprOp(ExprOpBase, CustomEnum):
     # Special Operators
     REL_PIX = "{char:s}[{x:d},{y:d}]", 3
     ABS_PIX = "{x:d} {y:d} {char:s}[]", 3
-
-    # Not Implemented in akarin or std
-    PI = str(pi), 0
-    SGN = "dup 0 > swap 0 < -", 1
-    NEG = "-1 *", 1
-    TAN = "dup sin swap cos /", 1
-
-    @overload
-    def __call__(
-        self,
-        *clips: VideoNodeIterableT[VideoNodeT],
-        suffix: StrArrOpt = None,
-        prefix: StrArrOpt = None,
-        expr_suffix: StrArrOpt = None,
-        expr_prefix: StrArrOpt = None,
-        planes: PlanesT = None,
-        **expr_kwargs: Any,
-    ) -> VideoNodeT:
-        """
-        Call combine with this ExprOp.
-        """
-
-    @overload
-    def __call__(self, *pos_args: Any, **kwargs: Any) -> ExprOpBase:
-        """
-        Format this ExprOp into an ExprOpBase str.
-        """
-
-    def __call__(self, *pos_args: Any, **kwargs: Any) -> vs.VideoNode | ExprOpBase:
-        args = list(flatten(pos_args))
-
-        if isinstance(args[0], vs.VideoNode):
-            return self.combine(*args, **kwargs)
-
-        while True:
-            try:
-                return ExprOpBase(self.format(*args, **kwargs), 3)
-            except KeyError as key:
-                try:
-                    kwargs.update({str(key)[1:-1]: args.pop(0)})
-                except IndexError:
-                    raise key
-
-    def __str__(self) -> str:
-        return self.value
-
-    def __next__(self) -> ExprOp:
-        return self
-
-    def __iter__(self) -> Iterator[ExprOp]:
-        return cycle([self])
-
-    def __mul__(self, n: int) -> list[ExprOp]:  # type: ignore[override]
-        return [self] * n
-
-    @classmethod
-    def atan(cls, c: SupportsString = "", n: int = 5) -> ExprList:
-        # Using domain reduction when |x| > 1
-        expr = ExprList(
-            [
-                ExprList([c, ExprOp.DUP, "atanvar!", ExprOp.ABS, 1, ExprOp.GT]),
-                ExprList(
-                    [
-                        "atanvar@",
-                        ExprOp.SGN,
-                        ExprOp.PI,
-                        ExprOp.MUL,
-                        2,
-                        ExprOp.DIV,
-                        1,
-                        "atanvar@",
-                        ExprOp.DIV,
-                        cls.atanf("", n),
-                        ExprOp.SUB,
-                    ]
-                ),
-                ExprList([cls.atanf("atanvar@", n)]),
-                ExprOp.TERN,
-            ]
-        )
-
-        return expr
-
-    @classmethod
-    def atanf(cls, c: SupportsString = "", n: int = 5) -> ExprList:
-        # Approximation using Taylor series
-        n = max(2, n)
-
-        expr = ExprList([c, ExprOp.DUP, "atanfvar!"])
-
-        for i in range(1, n):
-            expr.append("atanfvar@", 2 * i + 1, ExprOp.POW, 2 * i + 1, ExprOp.DIV, ExprOp.SUB if i % 2 else ExprOp.ADD)
-
-        return expr
-
-    @classmethod
-    def atan2(cls, y: SupportsString = "", x: SupportsString = "", n: int = 5) -> ExprList:
-        expr = ExprList(
-            [
-                y,
-                x,
-                "atan2xvar!",
-                "atan2yvar!",
-                ExprList(["atan2xvar@", 0, ExprOp.EQ]),  # if x = 0
-                ExprList([ExprOp.PI, 2, ExprOp.DIV, "atan2yvar@", ExprOp.SGN, ExprOp.MUL]),
-                ExprList(
-                    [
-                        # if x != 0
-                        cls.atan(ExprList(["atan2yvar@", "atan2xvar@", ExprOp.DIV]).to_str(), n),  # atan(y/x)
-                        ExprList(["atan2xvar@", 0, ExprOp.GT]),  # if x > 0
-                        0,
-                        ExprList(
-                            [
-                                ExprList(["atan2yvar@", 0, ExprOp.GTE]),  # if y >= 0
-                                ExprOp.PI,
-                                "-" + ExprOp.PI,  # if y < 0
-                                ExprOp.TERN,
-                            ]
-                        ),
-                        ExprOp.TERN,
-                        ExprOp.ADD,  # Add atan(y/x) + (-)pi
-                    ]
-                ),
-                ExprOp.TERN,
-            ]
-        )
-        return expr
-
-    @classmethod
-    def asin(cls, c: SupportsString = "", n: int = 5) -> ExprList:
-        return cls.atan(
-            ExprList(
-                [c, ExprOp.DUP, ExprOp.DUP, ExprOp.MUL, 1, ExprOp.SWAP, ExprOp.SUB, ExprOp.SQRT, ExprOp.DIV]
-            ).to_str(),
-            n,
-        )
-
-    @classmethod
-    def acos(cls, c: SupportsString = "", n: int = 5) -> ExprList:
-        return ExprList([c, "acosvar!", cls.PI, 2, ExprOp.DIV, cls.asin("acosvar@", n), ExprOp.SUB])
 
     @classmethod
     def clamp(
@@ -563,3 +465,97 @@ class ExprOp(ExprOpBase, CustomEnum):
         expr.append(cls.MAX * expr.mlength)
 
         return expr
+
+
+class ExprOpExtra(ExprOpBase):
+    # Not Implemented in akarin or std
+    PI = str(pi), 0
+    SGN = "dup 0 > swap 0 < -", 1
+    NEG = "-1 *", 1
+    TAN = "dup sin swap cos /", 1
+
+    @classmethod
+    def atan(cls, c: SupportsString = "", n: int = 5) -> ExprList:
+        # Using domain reduction when |x| > 1
+        expr = ExprList(
+            [
+                ExprList([c, ExprOp.DUP, "atanvar!", ExprOp.ABS, 1, ExprOp.GT]),
+                ExprList(
+                    [
+                        "atanvar@",
+                        ExprOpExtra.SGN,
+                        ExprOpExtra.PI,
+                        ExprOp.MUL,
+                        2,
+                        ExprOp.DIV,
+                        1,
+                        "atanvar@",
+                        ExprOp.DIV,
+                        cls.atanf("", n),
+                        ExprOp.SUB,
+                    ]
+                ),
+                ExprList([cls.atanf("atanvar@", n)]),
+                ExprOp.TERN,
+            ]
+        )
+
+        return expr
+
+    @classmethod
+    def atanf(cls, c: SupportsString = "", n: int = 5) -> ExprList:
+        # Approximation using Taylor series
+        n = max(2, n)
+
+        expr = ExprList([c, ExprOp.DUP, "atanfvar!"])
+
+        for i in range(1, n):
+            expr.append("atanfvar@", 2 * i + 1, ExprOp.POW, 2 * i + 1, ExprOp.DIV, ExprOp.SUB if i % 2 else ExprOp.ADD)
+
+        return expr
+
+    @classmethod
+    def atan2(cls, y: SupportsString = "", x: SupportsString = "", n: int = 5) -> ExprList:
+        expr = ExprList(
+            [
+                y,
+                x,
+                "atan2xvar!",
+                "atan2yvar!",
+                ExprList(["atan2xvar@", 0, ExprOp.EQ]),  # if x = 0
+                ExprList([ExprOpExtra.PI, 2, ExprOp.DIV, "atan2yvar@", ExprOpExtra.SGN, ExprOp.MUL]),
+                ExprList(
+                    [
+                        # if x != 0
+                        cls.atan(ExprList(["atan2yvar@", "atan2xvar@", ExprOp.DIV]).to_str(), n),  # atan(y/x)
+                        ExprList(["atan2xvar@", 0, ExprOp.GT]),  # if x > 0
+                        0,
+                        ExprList(
+                            [
+                                ExprList(["atan2yvar@", 0, ExprOp.GTE]),  # if y >= 0
+                                ExprOpExtra.PI,
+                                "-" + ExprOpExtra.PI,  # if y < 0
+                                ExprOp.TERN,
+                            ]
+                        ),
+                        ExprOp.TERN,
+                        ExprOp.ADD,  # Add atan(y/x) + (-)pi
+                    ]
+                ),
+                ExprOp.TERN,
+            ]
+        )
+        return expr
+
+    @classmethod
+    def asin(cls, c: SupportsString = "", n: int = 5) -> ExprList:
+        return cls.atan(
+            ExprList(
+                [c, ExprOp.DUP, ExprOp.DUP, ExprOp.MUL, 1, ExprOp.SWAP, ExprOp.SUB, ExprOp.SQRT, ExprOp.DIV]
+            ).to_str(),
+            n,
+        )
+
+    @classmethod
+    def acos(cls, c: SupportsString = "", n: int = 5) -> ExprList:
+        return ExprList([c, "acosvar!", cls.PI, 2, ExprOp.DIV, cls.asin("acosvar@", n), ExprOp.SUB])
