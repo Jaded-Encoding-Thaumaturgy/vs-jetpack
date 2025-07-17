@@ -195,7 +195,7 @@ def _normalize_iter_arr_t(
         for item in subgroup:
             group = normalize_seq(item)
 
-            sublist.append(group)  # type: ignore[arg-type]
+            sublist.append(group)
 
         normalized.append(sublist)  # type: ignore[arg-type]
 
