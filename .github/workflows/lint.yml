@@ -56,7 +56,7 @@ jobs:
           uv run ruff format --check --diff
 
       - name: Running mypy
-        run: uv run mypy vstools vssource vskernels vsexprtools vsrgtools vsmasktools vsscale vsaa vsdenoise vsdeband vsdeinterlace
+        run: uv run mypy .
 
       - name: Post webhook for failure
         if: failure()
