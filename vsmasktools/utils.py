@@ -22,7 +22,6 @@ from vstools import (
     depth,
     flatten_vnodes,
     get_lowest_values,
-    get_peak_values,
     insert_clip,
     normalize_ranges,
     plane,
@@ -154,53 +153,37 @@ def squaremask(
     if offset_x + width > clip.width or offset_y + height > clip.height:
         raise CustomValueError("mask exceeds clip size!", func)
 
-    if complexpr_available:
-        base_clip = vs.core.std.BlankClip(
-            clip, None, None, mask_format.id, 1, color=get_lowest_values(mask_format, ColorRange.FULL), keep=True
-        )
-        exprs = [
-            _get_region_expr(
-                base_clip,
-                offset_x,
-                clip.width - width - offset_x,
-                offset_y,
-                clip.height - height - offset_y,
-                "range_max x" if invert else "x range_max",
-            )
-        ]
-
-        if mask_format.num_planes > 1:
-            for i in range(1, mask_format.num_planes):
-                p = plane(base_clip, i)
-                ratio_x = p.width / base_clip.width
-                ratio_y = p.height / base_clip.height
-                exprs.append(
-                    _get_region_expr(
-                        p,
-                        int(offset_x * ratio_x),
-                        int((clip.width - width - offset_x) * ratio_x),
-                        int(offset_y * ratio_y),
-                        int((clip.height - height - offset_y) * ratio_y),
-                        "range_max x" if invert else "x range_max",
-                    )
-                )
-
-        mask = norm_expr(base_clip, tuple(exprs), func=func)
-    else:
-        base_clip = core.std.BlankClip(
-            clip, width, height, mask_format.id, 1, color=get_peak_values(mask_format, ColorRange.FULL), keep=True
-        )
-
-        mask = core.std.AddBorders(
+    base_clip = vs.core.std.BlankClip(
+        clip, None, None, mask_format.id, 1, color=get_lowest_values(mask_format, ColorRange.FULL), keep=True
+    )
+    exprs = [
+        _get_region_expr(
             base_clip,
             offset_x,
             clip.width - width - offset_x,
             offset_y,
             clip.height - height - offset_y,
-            [0] * mask_format.num_planes,
+            "range_max x" if invert else "x range_max",
         )
-        if invert:
-            mask = core.std.Invert(mask)
+    ]
+
+    if mask_format.num_planes > 1:
+        for i in range(1, mask_format.num_planes):
+            p = plane(base_clip, i)
+            ratio_x = p.width / base_clip.width
+            ratio_y = p.height / base_clip.height
+            exprs.append(
+                _get_region_expr(
+                    p,
+                    int(offset_x * ratio_x),
+                    int((clip.width - width - offset_x) * ratio_x),
+                    int(offset_y * ratio_y),
+                    int((clip.height - height - offset_y) * ratio_y),
+                    "range_max x" if invert else "x range_max",
+                )
+            )
+
+    mask = norm_expr(base_clip, tuple(exprs), func=func)
 
     if clip.num_frames == 1:
         return mask
