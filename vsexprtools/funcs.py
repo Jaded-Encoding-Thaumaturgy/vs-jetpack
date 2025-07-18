@@ -38,6 +38,29 @@ def expr_func(
     boundary: bool = True,
     func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
+    """
+    Calls `akarin.Expr` plugin.
+
+    For a higher-level function, see [norm_expr][vsexprtools.norm_expr]
+
+    Args:
+        clips: Input clip(s). Supports constant format clips, or one variable resolution clip.
+        expr: Expression to be evaluated.
+        format: Output format, defaults to the first clip format.
+        opt: Forces integer evaluation as much as possible.
+        boundary: Specifies the default boundary condition for relative pixel accesses:
+
+               - True (default): Mirrored edges.
+               - False: Clamped edges.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Raises:
+        CustomRuntimeError: If `akarin` plugin is not found.
+        vapoursynth.Error: If the expression could not be evaluated.
+
+    Returns:
+        Evaluated clip.
+    """
     func = func or expr_func
 
     clips = to_arr(clips)
@@ -110,23 +133,25 @@ def norm_expr(
     **kwargs: Iterable[SupportsString] | SupportsString,
 ) -> ConstantFormatVideoNode:
     """
-    Evaluates an expression per pixel.
+    Evaluate a per-pixel expression on input clip(s), normalize it based on the specified planes,
+    and format tokens and placeholders using provided keyword arguments.
 
     Args:
-        clips: Input clip(s).
+        clips: Input clip(s). Supports constant format clips, or one variable resolution clip.
         expr: Expression to be evaluated.
 
                - A single str will be processed for all planes.
                - A list will be concatenated to form a single expr for all planes.
                - A tuple of these types will allow specification of different expr for each planes.
-               - A TupleExprList will make a norm_expr call for each expression within this tuple.
+               - A TupleExprList will make a `norm_expr` call for each expression within this tuple.
         planes: Plane to process, defaults to all.
         format: Output format, defaults to the first clip format.
         opt: Forces integer evaluation as much as possible.
         boundary: Specifies the default boundary condition for relative pixel accesses:
 
-               - False means clamped
-               - True means mirrored
+               - True (default): Mirrored edges.
+               - False: Clamped edges.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
         split_planes: Splits the VideoNodes into their individual planes.
         **kwargs: Additional keywords arguments to be passed to the expression function. These arguments are key-value
             pairs, where the keys are placeholders that will be replaced in the expression string. Iterable values
