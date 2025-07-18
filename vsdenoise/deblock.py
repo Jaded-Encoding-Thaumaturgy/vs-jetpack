@@ -149,21 +149,22 @@ def dpir_mask(
 
 def deblock_qed(
     clip: vs.VideoNode,
-    quant: tuple[int, int] = (24, 26),
-    alpha: tuple[int, int] = (1, 1),
-    beta: tuple[int, int] = (2, 2),
+    quant: tuple[int | None, int | None] = (24, 26),
+    alpha: tuple[int | None, int | None] = (1, 1),
+    beta: tuple[int | None, int | None] = (2, 2),
     chroma_mode: int = 0,
     planes: PlanesT = None,
 ) -> ConstantFormatVideoNode:
     """
-    A postprocessed Deblock: Uses full frequencies of Deblock's changes on block borders,
-    but DCT-lowpassed changes on block interiours.
+    A post-processed deblock. Uses full frequencies of Deblock's changes on block borders, but DCT-lowpassed changes on
+    block interiors. Designed to provide 8x8 deblocking sensitive to the amount of blocking in the source, compared to
+    other deblockers which apply a uniform deblocking across every frame.
 
     Args:
         clip: Clip to process.
-        quant: Strength of the deblocking. Tuple for (edge, inner) values.
-        alpha: Partially a sensitivity and strength modifier. Tuple for (edge, inner) values.
-        beta: Sensitivity to detect blocking. Tuple for (edge, inner) values.
+        quant: Strength of the deblocking. Tuple for (border, interior) values.
+        alpha: Both a sensitivity and strength modifier. Tuple for (border, interior) values.
+        beta: Sensitivity to detect blocking. Tuple for (border, interior) values.
         chroma_mode: Chroma deblocking behaviour.
 
                - 0 = Use proposed method for chroma deblocking.
@@ -184,7 +185,7 @@ def deblock_qed(
         clip.deblock.Deblock(quant[1], alpha[1], beta[1], planes),
     )
 
-    mask = norm_expr(clip[0], "Y 8 % 7 % X 8 % 7 % and 0 range_max ?", planes_pp)
+    mask = norm_expr(clip[0], "Y 8 % 7 % X 8 % 7 % and 0 255 ?", planes_pp, clip.format.replace(bits_per_sample=8))
     strong_diff = norm_expr([clip, strong, mask], "z x y - 1.01 * neutral + neutral ?", planes_pp)
     strong_pp = strong_diff.dctf.DCTFilter([1, 1, 0, 0, 0, 0, 0, 0], planes_pp)
     deblocked = norm_expr([clip, normal, strong_pp, mask], "a y x z neutral - - ?", planes_pp)
