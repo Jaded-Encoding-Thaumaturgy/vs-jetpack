@@ -30,7 +30,7 @@ from vstools import (
     vs,
 )
 
-from .util import ExprVarRangeT, ExprVars, ExprVarsT, complexpr_available
+from .util import ExprVarRangeT, ExprVars, ExprVarsT
 
 __all__ = ["ExprList", "ExprOp", "ExprToken", "TupleExprList"]
 
@@ -300,10 +300,7 @@ class ExprOp(ExprOpBase, CustomEnum):
     def clamp(
         cls, min: float | ExprToken = ExprToken.RangeMin, max: float | ExprToken = ExprToken.RangeMax, c: str = ""
     ) -> ExprList:
-        if complexpr_available:
-            return ExprList([c, min, max, ExprOp.CLAMP])
-
-        return ExprList([c, min, ExprOp.MAX, max, ExprOp.MIN])
+        return ExprList([c, min, max, ExprOp.CLAMP])
 
     @classmethod
     def matrix(
