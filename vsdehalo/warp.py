@@ -108,11 +108,9 @@ def YAHR(  # noqa: N802
     ]
 
     rep_diff = repair(blur_diff, blur_warped_diff, 13, planes)
-
-    yahr = clip.std.MakeDiff(blur_diff.std.MakeDiff(rep_diff, planes), planes)
+    yahr = norm_expr([clip, blur_diff, rep_diff], "x y z - -", planes)
 
     y_mask = get_y(clip)
-
     v_edge = norm_expr([y_mask, Morpho.maximum(y_mask, iterations=2)], "y x - 8 range_max * 255 / - 128 *", func=YAHR)
 
     mask = limiter(
@@ -121,6 +119,4 @@ def YAHR(  # noqa: N802
         )
     )
 
-    final = clip.std.MaskedMerge(yahr, mask, planes)
-
-    return final
+    return clip.std.MaskedMerge(yahr, mask, planes)
