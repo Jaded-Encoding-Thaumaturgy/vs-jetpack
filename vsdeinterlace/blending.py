@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
-from vsexprtools import complexpr_available, expr_func, norm_expr
+from vsexprtools import norm_expr
 from vstools import (
     ConstantFormatVideoNode,
     VSFunctionNoArgs,
@@ -45,23 +45,15 @@ def deblending_helper(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, lengt
 
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
 
-    if complexpr_available:
-        index_src = expr_func(prop_srcs, f"x._Combed N {length} % 1 + y._Combed {length} 0 ? + 0 ?", vs.GRAY8)
+    index_src = norm_expr(
+        prop_srcs,
+        "x._Combed N {length} % 1 + y._Combed {length} 0 ? + 0 ?",
+        format=vs.GRAY8,
+        func=deblending_helper,
+        length=length,
+    )
 
-        return core.std.FrameEval(fieldmatched, lambda n, f: inters[f[0][0, 0]], index_src)
-
-    def _deblend_eval(n: int, f: list[vs.VideoFrame]) -> vs.VideoNode:
-        idx = 0
-
-        if f[0].props._Combed == 1:
-            idx += (n % length) + 1
-
-            if f[1].props._Combed == 1:
-                idx += length
-
-        return inters[idx]
-
-    return core.std.FrameEval(fieldmatched, _deblend_eval, prop_srcs)
+    return core.std.FrameEval(fieldmatched, lambda n, f: inters[f[0][0, 0]], index_src)
 
 
 def deblend(
@@ -135,21 +127,8 @@ def deblend_fix_kf(deblended: vs.VideoNode, fieldmatched: vs.VideoNode) -> Const
     shifted_clips = shift_clip_multi(deblended)
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
 
-    if complexpr_available:
-        index_src = expr_func(prop_srcs, "x._Combed x.VFMSceneChange and y.VFMSceneChange 2 0 ? 1 ?", vs.GRAY8)
+    index_src = norm_expr(
+        prop_srcs, "x._Combed x.VFMSceneChange and y.VFMSceneChange 2 0 ? 1 ?", format=vs.GRAY8, func=deblend_fix_kf
+    )
 
-        return core.std.FrameEval(deblended, lambda n, f: shifted_clips[f[0][0, 0]], index_src)
-
-    def _keyframe_fix(n: int, f: list[vs.VideoFrame]) -> vs.VideoNode:
-        keyfm = cast(tuple[int, int], (f[0].props.VFMSceneChange, f[1].props.VFMSceneChange))
-
-        idx = 1
-        if f[0].props._Combed == 1:
-            if keyfm == (1, 0):
-                idx = 0
-            elif keyfm == (1, 1):
-                idx = 2
-
-        return shifted_clips[idx]
-
-    return core.std.FrameEval(deblended, _keyframe_fix, prop_srcs)
+    return core.std.FrameEval(deblended, lambda n, f: shifted_clips[f[0][0, 0]], index_src)
