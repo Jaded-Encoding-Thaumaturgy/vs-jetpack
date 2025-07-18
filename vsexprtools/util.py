@@ -34,6 +34,7 @@ __all__ = [  # noqa: RUF022
     "ExprVars",
     "ExprVarsT",
     "ExprVarRangeT",
+    "extra_op_tokenize_expr",
     "bitdepth_aware_tokenize_expr",
     # VS helpers
     "norm_expr_planes",
@@ -238,17 +239,27 @@ ExprVarsT: TypeAlias = _ExprVars
 ExprVarRangeT: TypeAlias = ExprVarsT | HoldsVideoFormatT | VideoFormatT | SupportsIndex
 
 
+def extra_op_tokenize_expr(expr: str) -> str:
+    # Workaround for the not implemented op
+    from .exprop import ExprOp
+
+    for extra_op in ExprOp._extra_op_names_:
+        expr = re.sub(rf"\b{extra_op.lower()}\b", getattr(ExprOp, extra_op).convert_extra(), expr)
+
+    return expr
+
+
 def bitdepth_aware_tokenize_expr(
     clips: Sequence[vs.VideoNode], expr: str, chroma: bool, func: FuncExceptT | None = None
 ) -> str:
-    from .exprop import ExprOp, ExprToken
+    from .exprop import ExprToken
 
     func = func or bitdepth_aware_tokenize_expr
 
     if not expr or len(expr) < 4:
         return expr
 
-    replaces = list[tuple[str, Callable[[vs.VideoNode, bool, ColorRange], float | str]]]()
+    replaces = list[tuple[str, Callable[[vs.VideoNode, bool, ColorRange], float]]]()
 
     for token in sorted(ExprToken, key=lambda x: len(x), reverse=True):
         if token.value in expr:
@@ -256,14 +267,6 @@ def bitdepth_aware_tokenize_expr(
 
         if token.name in expr:
             replaces.append((f"{token.__class__.__name__}.{token.name}", token.get_value))
-
-    # Workaround for the not implemented op
-    for extra_op in ExprOp._extra_op_names_:
-        op_lower = extra_op.lower()
-        if re.search(rf"\b{op_lower}\b", expr):
-            result = getattr(ExprOp, extra_op).convert_extra()
-
-            replaces.append((op_lower, lambda *args: result))
 
     if not replaces:
         return expr
