@@ -419,70 +419,28 @@ def rekt_partial(
 
     check_ref_clip(cropped, filtered, rekt_partial._func)
 
-    if complexpr_available:
-        filtered = core.std.AddBorders(filtered, left, right, top, bottom)
+    filtered = core.std.AddBorders(filtered, left, right, top, bottom)
 
-        ratio_w, ratio_h = 1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h
+    ratio_w, ratio_h = 1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h
 
-        vals = list(
-            filter(
-                None,
-                [
-                    ("X {left} >= " if left else None),
-                    ("X {right} < " if right else None),
-                    ("Y {top} >= " if top else None),
-                    ("Y {bottom} < " if bottom else None),
-                ],
-            )
+    vals = list(
+        filter(
+            None,
+            [
+                ("X {left} >= " if left else None),
+                ("X {right} < " if right else None),
+                ("Y {top} >= " if top else None),
+                ("Y {bottom} < " if bottom else None),
+            ],
         )
+    )
 
-        return norm_expr(
-            [clip, filtered],
-            [*vals, ["and"] * (len(vals) - 1), "y x ?"],
-            left=[left, left / ratio_w],
-            right=[clip.width - right, (clip.width - right) / ratio_w],
-            top=[top, top / ratio_h],
-            bottom=[clip.height - bottom, (clip.height - bottom) / ratio_h],
-            func=rekt_partial._func,
-        )
-
-    if not (top or bottom) and (right or left):
-        return core.std.StackHorizontal(
-            list(
-                filter(
-                    None,
-                    [
-                        clip.std.CropAbs(left, clip.height) if left else None,
-                        filtered,
-                        clip.std.CropAbs(right, clip.height, x=clip.width - right) if right else None,
-                    ],
-                )
-            )
-        )
-
-    if (top or bottom) and (right or left):
-        filtered = core.std.StackHorizontal(
-            list(
-                filter(
-                    None,
-                    [
-                        clip.std.CropAbs(left, filtered.height, y=top) if left else None,
-                        filtered,
-                        clip.std.CropAbs(right, filtered.height, x=clip.width - right, y=top) if right else None,
-                    ],
-                )
-            )
-        )
-
-    return core.std.StackVertical(
-        list(
-            filter(
-                None,
-                [
-                    clip.std.CropAbs(clip.width, top) if top else None,
-                    filtered,
-                    clip.std.CropAbs(clip.width, bottom, y=clip.height - bottom) if bottom else None,
-                ],
-            )
-        )
+    return norm_expr(
+        [clip, filtered],
+        [*vals, ["and"] * (len(vals) - 1), "y x ?"],
+        left=[left, left / ratio_w],
+        right=[clip.width - right, (clip.width - right) / ratio_w],
+        top=[top, top / ratio_h],
+        bottom=[clip.height - bottom, (clip.height - bottom) / ratio_h],
+        func=rekt_partial._func,
     )
