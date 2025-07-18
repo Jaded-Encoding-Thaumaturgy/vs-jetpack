@@ -12,7 +12,6 @@ from vstools import (
     ColorRange,
     CustomIndexError,
     CustomNotImplementedError,
-    CustomRuntimeError,
     FuncExceptT,
     HoldsVideoFormatT,
     MissingT,
@@ -116,8 +115,6 @@ class _ExprVars(Iterable[str]):
         elif self.stop <= self.start:
             raise CustomIndexError('"stop" must be bigger than "start"!')
 
-        self.akarin = self._check_akarin(self.stop, akarin)
-
         self.curr = self.start
 
     @overload
@@ -161,33 +158,13 @@ class _ExprVars(Iterable[str]):
         return self.stop - self.start
 
     @classmethod
-    def _check_akarin(cls, stop: SupportsIndex, akarin: bool | None = None) -> bool:
-        stop = stop.__index__()
-
-        if akarin is None:
-            akarin = stop > 26
-
-        if akarin and not complexpr_available:
-            raise cls._get_akarin_err(
-                "You are trying to get more than 26 variables or srcX vars, you need akarin plugin!"
-            )
-
-        return akarin
-
-    @classmethod
     def get_var(cls, value: SupportsIndex, akarin: bool | None = None) -> str:
         value = value.__index__()
 
         if value < 0:
             raise CustomIndexError('"value" should be bigger than 0!')
 
-        akarin = cls._check_akarin(value + 1, akarin)
-
-        return f"src{value}" if akarin else EXPR_VARS[value]
-
-    @classmethod
-    def _get_akarin_err(cls, message: str = "You need the akarin plugin to run this function!") -> CustomRuntimeError:
-        return CustomRuntimeError(f"{message}\nDownload it from https://github.com/AkarinVS/vapoursynth-plugin")
+        return f"src{value}" if value >= 26 else EXPR_VARS[value]
 
     @overload
     def __class_getitem__(cls, index: SupportsIndex | tuple[SupportsIndex, bool], /) -> str: ...
