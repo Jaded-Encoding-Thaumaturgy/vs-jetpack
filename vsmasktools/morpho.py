@@ -4,7 +4,7 @@ from itertools import zip_longest
 from math import sqrt
 from typing import Any, Literal, Sequence, cast
 
-from vsexprtools import ExprList, ExprOp, TupleExprList, complexpr_available, norm_expr
+from vsexprtools import ExprList, ExprOp, TupleExprList, norm_expr
 from vsrgtools import BlurMatrix
 from vstools import (
     ConstantFormatVideoNode,
@@ -749,10 +749,14 @@ class Morpho:
         else:
             conv_mode = ConvMode.SQUARE
 
-        if not complexpr_available:
-            if radius > 1:
-                raise CustomValueError("If akarin plugin is not available, you must have radius=1", func, radius)
-
+        if radius > 1:
+            mm_func = norm_expr
+            kwargs.update(
+                expr=self._morpho_xx_imum(clip, (radius, conv_mode), thr, coords, multiply, False, op=op, func=func),
+                planes=planes,
+                func=func,
+            )
+        else:
             if not coords:
                 match conv_mode:
                     case ConvMode.VERTICAL:
@@ -771,11 +775,6 @@ class Morpho:
 
             if multiply is not None:
                 mm_func = self._multiply_mm_func(mm_func, multiply)
-        else:
-            mm_func = norm_expr
-            kwargs.update(
-                expr=self._morpho_xx_imum(clip, (radius, conv_mode), thr, coords, multiply, False, op=op, func=func)
-            )
 
         return iterate(clip, mm_func, iterations, **kwargs)  # type: ignore[return-value]
 
@@ -792,8 +791,6 @@ class Morpho:
         func: FuncExceptT,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
-        assert check_variable_format(clip, func)
-
         sh = fallback(sh, sw)
 
         function = self.maximum if op is ExprOp.MAX else self.minimum
@@ -810,7 +807,7 @@ class Morpho:
 
             clip = function(clip, thr, 1, coords, planes=planes, func=func, **kwargs)
 
-        return clip
+        return clip  # type: ignore[return-value]
 
     def _xxflate(
         self,
@@ -833,19 +830,7 @@ class Morpho:
 
         Func = GenericVSFunction[ConstantFormatVideoNode]  # noqa: N806
 
-        if not complexpr_available:
-            if radius > 1 or conv_mode != ConvMode.SQUARE:
-                raise CustomValueError(
-                    "If akarin plugin is not available, you must have radius=1 and ConvMode.SQUARE",
-                    func,
-                    (radius, conv_mode),
-                )
-
-            if coords:
-                raise CustomValueError(
-                    "If akarin plugin is not available, you can't have custom coordinates", func, coords
-                )
-
+        if radius == 1 and conv_mode == ConvMode.SQUARE and not coords:
             xxflate_func: Func = core.lazy.std.Inflate if inflate else core.lazy.std.Deflate
             kwargs.update(planes=planes)
 
@@ -871,11 +856,11 @@ class Morpho:
                 if multiply is not None:
                     e.append(multiply, ExprOp.MUL)
 
-            kwargs.update(expr=expr)
+            kwargs.update(expr=expr, planes=planes, func=func)
 
             xxflate_func = cast(Func, norm_expr)
 
-        return iterate(clip, xxflate_func, iterations, **kwargs)
+        return iterate(clip, xxflate_func, iterations, **kwargs)  # pyright: ignore[reportReturnType]
 
     def _multiply_mm_func(
         self, func: GenericVSFunction[ConstantFormatVideoNode], multiply: float
