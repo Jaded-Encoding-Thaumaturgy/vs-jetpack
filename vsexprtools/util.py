@@ -263,7 +263,7 @@ def bitdepth_aware_tokenize_expr(
     clips = list(clips)
     ranges = [ColorRange.from_video(c, func=func) for c in clips]
 
-    mapped_clips = list(reversed(list(zip(["", *EXPR_VARS], clips[:1] + clips, ranges[:1] + ranges))))
+    mapped_clips = reversed(list(zip(["", *EXPR_VARS], clips[:1] + clips, ranges[:1] + ranges)))
 
     for mkey, function in replaces:
         if mkey in expr:
@@ -294,5 +294,5 @@ def norm_expr_planes(
 
     return [
         exp.format(**({"plane_idx": i} | {key: value[i] for key, value in string_args})) if i in planes else ""
-        for i, exp in enumerate(expr_array, 0)
+        for i, exp in enumerate(expr_array)
     ]

@@ -35,11 +35,7 @@ from .util import ExprVarRangeT, ExprVars, ExprVarsT, complexpr_available
 __all__ = ["ExprList", "ExprOp", "ExprToken", "TupleExprList"]
 
 
-class ExprTokenBase(str):
-    value: str
-
-
-class ExprToken(ExprTokenBase, CustomEnum):
+class ExprToken(CustomStrEnum):
     LumaMin = "ymin"
     ChromaMin = "cmin"
     LumaMax = "ymax"
@@ -124,8 +120,8 @@ class ExprToken(ExprTokenBase, CustomEnum):
 
         raise CustomValueError("You are using an unsupported ExprToken!", self.get_value, self)
 
-    def __getitem__(self, i: SupportsIndex) -> ExprToken:  # type: ignore
-        return ExprTokenBase(f"{self.value}_{ExprVars[i]}")  # type: ignore
+    def __getitem__(self, i: int) -> str:  # type: ignore[override]
+        return f"{self._value_}_{ExprVars[i]}"
 
 
 class ExprList(StrList):
@@ -189,6 +185,8 @@ class ExprOpBase(CustomStrEnum):
         self.n_op = n_op
 
         return self
+
+    __str__ = str.__str__
 
     @overload
     def __call__(
