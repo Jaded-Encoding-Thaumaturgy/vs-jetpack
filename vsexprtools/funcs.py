@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from functools import partial
 from math import ceil
-from typing import Any, Iterable, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Sequence
 
 from vstools import (
     ConstantFormatVideoNode,
     CustomRuntimeError,
-    CustomValueError,
     FuncExceptT,
     HoldsVideoFormatT,
     PlanesT,
@@ -18,7 +16,6 @@ from vstools import (
     SupportsString,
     VideoFormatT,
     VideoNodeIterableT,
-    VideoNodeT,
     check_variable_format,
     core,
     flatten_vnodes,
@@ -28,7 +25,7 @@ from vstools import (
 )
 
 from .exprop import ExprList, ExprOp, ExprOpBase, TupleExprList
-from .util import ExprVars, bitdepth_aware_tokenize_expr, complexpr_available, extra_op_tokenize_expr, norm_expr_planes
+from .util import ExprVars, bitdepth_aware_tokenize_expr, norm_expr_planes
 
 __all__ = ["combine", "expr_func", "norm_expr"]
 
@@ -43,46 +40,25 @@ def expr_func(
 ) -> ConstantFormatVideoNode:
     func = func or expr_func
 
-    clips = list(clips) if isinstance(clips, Sequence) else [clips]
-    over_clips = len(clips) > 26
+    clips = to_arr(clips)
 
-    if not complexpr_available:
-        if over_clips:
-            raise ExprVars._get_akarin_err("This function only works with akarin plugin!")(func=func)
-    elif over_clips and b"src26" not in vs.core.akarin.Version()["expr_features"]:
-        raise ExprVars._get_akarin_err("You need at least v0.96 of akarin plugin!")(func=func)
+    if TYPE_CHECKING:
+        assert check_variable_format(clips, func)
 
-    fmt = None if format is None else get_video_format(format).id
-
-    got_var_res = False
-
-    for clip in clips:
-        check_variable_format(clip, func)
-        got_var_res = got_var_res or (0 in (clip.width, clip.height))
-
-    if complexpr_available and opt is None:
-        opt = all(clip.format.sample_type == vs.INTEGER for clip in clips if clip.format)
-
-    if complexpr_available:
-        func_impl = partial(core.akarin.Expr, expr=expr, format=fmt, opt=opt, boundary=boundary)
-    else:
-        func_impl = partial(core.std.Expr, expr=expr, format=fmt)
-
-    if got_var_res:
-        if len(clips) == 1:
-            return ProcessVariableResClip[VideoNodeT].from_func(clips[0], func_impl, None, clips[0].format)  # type: ignore
-
-        raise CustomValueError("You can run only one var res clip!")
+    fmt = get_video_format(format).id if format is not None else None
+    opt = all(clip.format.sample_type == vs.INTEGER for clip in clips) if opt is None else opt
 
     try:
-        return func_impl(clips)
-    except Exception:
-        raise CustomRuntimeError(
-            "There was an error when evaluating the expression:\n"
-            + ("" if complexpr_available else "You might need akarin-plugin, and are missing it."),
-            func,
-            f"\n{expr}\n",
-        )
+        return core.akarin.Expr(clips, expr, fmt, opt, boundary)
+    except AttributeError as e:
+        raise CustomRuntimeError(e)
+    except vs.Error as e:
+        if len(clips) == 1 and 0 in (clips[0].width, clips[0].height):
+            return ProcessVariableResClip[ConstantFormatVideoNode].from_func(
+                clips[0], lambda clip: core.akarin.Expr(clip, expr, fmt, opt, boundary)
+            )
+
+        raise e
 
 
 def _combine_norm__ix(ffix: StrArrOpt, n_clips: int) -> list[SupportsString]:
