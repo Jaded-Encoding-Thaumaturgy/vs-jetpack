@@ -12,21 +12,14 @@ from vsexprtools import norm_expr
 from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, PrewittStd
 from vsrgtools import BlurMatrix, awarpsharp, box_blur, gauss_blur, min_blur, remove_grain, repair
 from vsrgtools.rgtools import Repair
-from vstools import (
-    PlanesT,
-    cround,
-    get_y,
-    limiter,
-    scale_mask,
-    vs,
-)
+from vstools import PlanesT, get_y, limiter, scale_mask, vs
 
 __all__ = ["YAHR", "edge_cleaner"]
 
 
 def edge_cleaner(
     clip: vs.VideoNode,
-    strength: float = 10,
+    strength: int = 5,
     rmode: int | Repair.Mode = 17,
     hot: bool = False,
     smode: bool = False,
@@ -38,7 +31,7 @@ def edge_cleaner(
 
     Args:
         clip: The input video clip to process.
-        strength: The strength of the edge cleaning. Default is 10.
+        strength: The strength of the edge cleaning. Default is 5.
         rmode: Repair mode to use for edge refinement. Default is 17.
         hot: If True, applies additional repair to hot edges. Default is False.
         smode: If True, applies a stronger cleaning mode. Default is False.
@@ -53,7 +46,7 @@ def edge_cleaner(
     if smode:
         strength += 4
 
-    warped = awarpsharp(clip, blur=2, depth=cround(strength / 2), planes=planes)
+    warped = awarpsharp(clip, blur=2, depth=strength, planes=planes)
     warped = repair(warped, clip, rmode, planes)
 
     y_mask = get_y(clip)
