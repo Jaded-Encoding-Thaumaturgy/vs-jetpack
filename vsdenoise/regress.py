@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, ClassVar, Concatenate, Sequence
 
 from vsaa import EEDI3, NNEDI3, SangNom
-from vsexprtools import ExprOp, complexpr_available, norm_expr
+from vsexprtools import ExprOp, norm_expr
 from vskernels import Catrom, Kernel, KernelLike, Point, Scaler, ScalerLike
 from vsrgtools import box_blur, gauss_blur, limit_filter
 from vsscale import ScalingArgs
@@ -367,7 +367,7 @@ class Regression:
                 f"x y z * - XYS! XYS@ a {self.eps} + / XYS@ dup * a b * {self.eps} + / sqrt {weight_str} *",
                 func=self.__class__.sloped_corr,
             )
-            if complexpr_available
+            if True  # complexpr_available
             else norm_expr(
                 [norm_expr([Exys_y, blur_x, Ex_y], "x y z * -"), var_x, var_y],
                 f"x y {self.eps} + / x dup * y z * {self.eps} + / sqrt {weight_str} *",
