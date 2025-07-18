@@ -241,14 +241,14 @@ ExprVarRangeT: TypeAlias = ExprVarsT | HoldsVideoFormatT | VideoFormatT | Suppor
 def bitdepth_aware_tokenize_expr(
     clips: Sequence[vs.VideoNode], expr: str, chroma: bool, func: FuncExceptT | None = None
 ) -> str:
-    from .exprop import ExprToken
+    from .exprop import ExprOp, ExprToken
 
     func = func or bitdepth_aware_tokenize_expr
 
     if not expr or len(expr) < 4:
         return expr
 
-    replaces = list[tuple[str, Callable[[vs.VideoNode, bool, ColorRange], float]]]()
+    replaces = list[tuple[str, Callable[[vs.VideoNode, bool, ColorRange], float | str]]]()
 
     for token in sorted(ExprToken, key=lambda x: len(x), reverse=True):
         if token.value in expr:
@@ -256,6 +256,14 @@ def bitdepth_aware_tokenize_expr(
 
         if token.name in expr:
             replaces.append((f"{token.__class__.__name__}.{token.name}", token.get_value))
+
+    # Workaround for the not implemented op
+    for extra_op in ExprOp._extra_op_names_:
+        op_lower = extra_op.lower()
+        if re.search(rf"\b{op_lower}\b", expr):
+            result = getattr(ExprOp, extra_op).convert_extra()
+
+            replaces.append((op_lower, lambda *args: result))
 
     if not replaces:
         return expr
@@ -270,9 +278,9 @@ def bitdepth_aware_tokenize_expr(
             for key, clip, crange in [
                 (f"{mkey}_{k}" if k else f"{mkey}", clip, crange) for k, clip, crange in mapped_clips
             ]:
-                expr = re.sub(rf"\b{key}\b", str(function(clip, chroma, crange) * 1.0), expr)
+                expr = re.sub(rf"\b{key}\b", str(function(clip, chroma, crange)), expr)
 
-        if mkey in expr:
+        if re.search(rf"\b{mkey}\b", expr):
             raise CustomIndexError("Parsing error or not enough clips passed!", func, reason=expr)
 
     return expr

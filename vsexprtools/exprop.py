@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from enum import EnumMeta
+from functools import cache
 from itertools import cycle
 from math import isqrt, pi
-from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, SupportsIndex, overload
+from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, overload
 
 from jetpytools import CustomRuntimeError, CustomStrEnum, SupportsString
 from typing_extensions import Self
@@ -11,7 +13,6 @@ from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
     ConvMode,
-    CustomEnum,
     CustomIndexError,
     CustomValueError,
     FuncExceptT,
@@ -247,7 +248,13 @@ class ExprOpBase(CustomStrEnum):
         return combine(clips, self, suffix, prefix, expr_suffix, expr_prefix, planes, **expr_kwargs)
 
 
-class ExprOp(ExprOpBase):
+class ExprOpExtraMeta(EnumMeta):
+    @property
+    def _extra_op_names_(cls) -> tuple[str, ...]:
+        return ("PI", "SGN", "NEG", "TAN", "ATAN", "ATAN2", "ASIN", "ACOS")
+
+
+class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     # 0 Argument (akarin)
     N = "N", 0
     X = "X", 0
@@ -306,14 +313,52 @@ class ExprOp(ExprOpBase):
     REL_PIX = "{char:s}[{x:d},{y:d}]", 3
     ABS_PIX = "{x:d} {y:d} {char:s}[]", 3
 
+    # Not Implemented in akarin or std
+    PI = "pi", 0
+    SGN = "sgn", 1
+    NEG = "neg", 1
+    TAN = "tan", 1
+    ATAN = "atan", 1
+    ATAN2 = "atan2", 2
+    ASIN = "asin", 1
+    ACOS = "acos", 1
+
+    @cache
+    def is_extra(self) -> bool:
+        return self.name in ExprOp._extra_op_names_
+
+    def convert_extra(self) -> str:
+        if not self.is_extra():
+            raise ValueError
+
+        match self:
+            case ExprOp.PI:
+                return str(pi)
+            case ExprOp.SGN:
+                return "dup 0 > swap 0 < -"
+            case ExprOp.NEG:
+                return "-1 *"
+            case ExprOp.TAN:
+                return "dup sin swap cos /"
+            case ExprOp.ATAN:
+                return self.atan().to_str()
+            case ExprOp.ATAN2:
+                return self.atan2().to_str()
+            case ExprOp.ASIN:
+                return self.asin().to_str()
+            case ExprOp.ACOS:
+                return self.acos().to_str()
+            case _:
+                raise NotImplementedError
+
     @classmethod
     def clamp(
         cls, min: float | ExprToken = ExprToken.RangeMin, max: float | ExprToken = ExprToken.RangeMax, c: str = ""
     ) -> ExprList:
         if complexpr_available:
-            return ExprList([c, min, max, ExprOp.CLAMP])
+            return ExprList([c, min, max, cls.CLAMP])
 
-        return ExprList([c, min, ExprOp.MAX, max, ExprOp.MIN])
+        return ExprList([c, min, cls.MAX, max, cls.MIN])
 
     @classmethod
     def matrix(
@@ -390,7 +435,7 @@ class ExprOp(ExprOpBase):
             [
                 ExprList(
                     [
-                        rel_pix if weight == 1 else [rel_pix, weight, ExprOp.MUL]
+                        rel_pix if weight == 1 else [rel_pix, weight, cls.MUL]
                         for rel_pix, weight in zip(rel_px, convolution)
                         if weight != 0
                     ]
@@ -400,29 +445,29 @@ class ExprOp(ExprOpBase):
         )
 
         for out in output:
-            out.extend(ExprOp.ADD * out.mlength)
+            out.extend(cls.ADD * out.mlength)
 
             if premultiply is not None:
-                out.append(premultiply, ExprOp.MUL)
+                out.append(premultiply, cls.MUL)
 
             if divisor is not False:
                 if divisor is True:
                     divisor = sum(map(float, convolution))
 
                 if divisor not in {0, 1}:
-                    out.append(divisor, ExprOp.DIV)
+                    out.append(divisor, cls.DIV)
 
             if bias is not None:
-                out.append(bias, ExprOp.ADD)
+                out.append(bias, cls.ADD)
 
             if not saturate:
-                out.append(ExprOp.ABS)
+                out.append(cls.ABS)
 
             if multiply is not None:
-                out.append(multiply, ExprOp.MUL)
+                out.append(multiply, cls.MUL)
 
             if clamp:
-                out.append(ExprOp.clamp(ExprToken.RangeMin, ExprToken.RangeMax))
+                out.append(cls.clamp(ExprToken.RangeMin, ExprToken.RangeMax))
 
         return output
 
@@ -464,37 +509,29 @@ class ExprOp(ExprOpBase):
 
         return expr
 
-
-class ExprOpExtra(ExprOpBase):
-    # Not Implemented in akarin or std
-    PI = str(pi), 0
-    SGN = "dup 0 > swap 0 < -", 1
-    NEG = "-1 *", 1
-    TAN = "dup sin swap cos /", 1
-
     @classmethod
     def atan(cls, c: SupportsString = "", n: int = 5) -> ExprList:
         # Using domain reduction when |x| > 1
         expr = ExprList(
             [
-                ExprList([c, ExprOp.DUP, "atanvar!", ExprOp.ABS, 1, ExprOp.GT]),
+                ExprList([c, cls.DUP, "__atanvar!", cls.ABS, 1, cls.GT]),
                 ExprList(
                     [
-                        "atanvar@",
-                        ExprOpExtra.SGN,
-                        ExprOpExtra.PI,
-                        ExprOp.MUL,
+                        "__atanvar@",
+                        cls.SGN.convert_extra(),
+                        cls.PI.convert_extra(),
+                        cls.MUL,
                         2,
-                        ExprOp.DIV,
+                        cls.DIV,
                         1,
-                        "atanvar@",
-                        ExprOp.DIV,
+                        "__atanvar@",
+                        cls.DIV,
                         cls.atanf("", n),
-                        ExprOp.SUB,
+                        cls.SUB,
                     ]
                 ),
-                ExprList([cls.atanf("atanvar@", n)]),
-                ExprOp.TERN,
+                ExprList([cls.atanf("__atanvar@", n)]),
+                cls.TERN,
             ]
         )
 
@@ -505,10 +542,10 @@ class ExprOpExtra(ExprOpBase):
         # Approximation using Taylor series
         n = max(2, n)
 
-        expr = ExprList([c, ExprOp.DUP, "atanfvar!"])
+        expr = ExprList([c, cls.DUP, "__atanfvar!"])
 
         for i in range(1, n):
-            expr.append("atanfvar@", 2 * i + 1, ExprOp.POW, 2 * i + 1, ExprOp.DIV, ExprOp.SUB if i % 2 else ExprOp.ADD)
+            expr.append("__atanfvar@", 2 * i + 1, cls.POW, 2 * i + 1, cls.DIV, cls.SUB if i % 2 else cls.ADD)
 
         return expr
 
@@ -518,42 +555,37 @@ class ExprOpExtra(ExprOpBase):
             [
                 y,
                 x,
-                "atan2xvar!",
-                "atan2yvar!",
-                ExprList(["atan2xvar@", 0, ExprOp.EQ]),  # if x = 0
-                ExprList([ExprOpExtra.PI, 2, ExprOp.DIV, "atan2yvar@", ExprOpExtra.SGN, ExprOp.MUL]),
+                "__atan2xvar!",
+                "__atan2yvar!",
+                ExprList(["__atan2xvar@", 0, cls.EQ]),  # if x = 0
+                ExprList([cls.PI.convert_extra(), 2, cls.DIV, "__atan2yvar@", cls.SGN.convert_extra(), cls.MUL]),
                 ExprList(
                     [
                         # if x != 0
-                        cls.atan(ExprList(["atan2yvar@", "atan2xvar@", ExprOp.DIV]).to_str(), n),  # atan(y/x)
-                        ExprList(["atan2xvar@", 0, ExprOp.GT]),  # if x > 0
+                        cls.atan(ExprList(["__atan2yvar@", "__atan2xvar@", cls.DIV]).to_str(), n),  # atan(y/x)
+                        ExprList(["__atan2xvar@", 0, cls.GT]),  # if x > 0
                         0,
                         ExprList(
                             [
-                                ExprList(["atan2yvar@", 0, ExprOp.GTE]),  # if y >= 0
-                                ExprOpExtra.PI,
-                                "-" + ExprOpExtra.PI,  # if y < 0
-                                ExprOp.TERN,
+                                ExprList(["__atan2yvar@", 0, cls.GTE]),  # if y >= 0
+                                cls.PI.convert_extra(),
+                                "-" + cls.PI.convert_extra(),  # if y < 0
+                                cls.TERN,
                             ]
                         ),
-                        ExprOp.TERN,
-                        ExprOp.ADD,  # Add atan(y/x) + (-)pi
+                        cls.TERN,
+                        cls.ADD,  # Add atan(y/x) + (-)pi
                     ]
                 ),
-                ExprOp.TERN,
+                cls.TERN,
             ]
         )
         return expr
 
     @classmethod
     def asin(cls, c: SupportsString = "", n: int = 5) -> ExprList:
-        return cls.atan(
-            ExprList(
-                [c, ExprOp.DUP, ExprOp.DUP, ExprOp.MUL, 1, ExprOp.SWAP, ExprOp.SUB, ExprOp.SQRT, ExprOp.DIV]
-            ).to_str(),
-            n,
-        )
+        return cls.atan(ExprList([c, cls.DUP, cls.DUP, cls.MUL, 1, cls.SWAP, cls.SUB, cls.SQRT, cls.DIV]).to_str(), n)
 
     @classmethod
     def acos(cls, c: SupportsString = "", n: int = 5) -> ExprList:
-        return ExprList([c, "acosvar!", cls.PI, 2, ExprOp.DIV, cls.asin("acosvar@", n), ExprOp.SUB])
+        return ExprList([c, "__acosvar!", cls.PI.convert_extra(), 2, cls.DIV, cls.asin("__acosvar@", n), cls.SUB])
