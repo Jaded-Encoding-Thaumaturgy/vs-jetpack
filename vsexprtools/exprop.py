@@ -327,6 +327,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     def is_extra(self) -> bool:
         return self.name in ExprOp._extra_op_names_
 
+    @cache
     def convert_extra(self) -> str:
         if not self.is_extra():
             raise ValueError
