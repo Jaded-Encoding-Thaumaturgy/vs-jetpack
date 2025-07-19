@@ -4,11 +4,10 @@ import contextlib
 from functools import cached_property, wraps
 from typing import Any, Callable, Sequence, TypeVar
 
-from vsexprtools import norm_expr
+from vsexprtools import ExprToken, norm_expr
 from vskernels import Bilinear, BorderHandling, Hermite, Kernel, KernelLike, Scaler, ScalerLike
 from vskernels.types import LeftShift, TopShift
-from vsmasktools import KirschTCanny, based_diff_mask
-from vsmasktools.utils import _get_region_expr
+from vsmasktools import KirschTCanny, based_diff_mask, region_rel_mask
 from vsrgtools import BlurMatrix
 from vstools import (
     ColorRange,
@@ -26,7 +25,6 @@ from vstools import (
     get_peak_value,
     get_y,
     join,
-    limiter,
     normalize_ranges,
     replace_ranges,
     scale_mask,
@@ -398,10 +396,12 @@ class Rescale(RescaleBase):
 
         if self._crop > (0, 0, 0, 0):
             pre_y = get_y(self._pre)
-            black = pre_y.std.BlankClip(keep=True)
-            mask = norm_expr(
-                black,
-                _get_region_expr(black, *self._crop, replace=f"{get_peak_value(black, False, ColorRange.FULL)} x"),
+
+            mask = region_rel_mask(
+                pre_y.std.BlankClip(length=1, keep=True),
+                *self._crop,
+                replace_in=ExprToken.RangeMax,
+                replace_out=0,
                 func=self.__class__,
             )
 
@@ -417,10 +417,13 @@ class Rescale(RescaleBase):
         )
 
         if self._border_handling:
-            px = (self._kernel.kernel_radius,) * 4
-            lm = norm_expr(
+            lm = region_rel_mask(
                 lm,
-                _get_region_expr(lm, *px, replace=f"{get_peak_value(lm, False, ColorRange.FULL)} x"),
+                self._kernel.kernel_radius,
+                self._kernel.kernel_radius,
+                self._kernel.kernel_radius,
+                self._kernel.kernel_radius,
+                replace_out=ExprToken.RangeMax,
                 func=self.__class__,
             )
 
@@ -431,10 +434,8 @@ class Rescale(RescaleBase):
     @line_mask.setter
     def line_mask(self, mask: vs.VideoNode | None) -> None:
         if mask is not None:
-            self._line_mask = limiter(
-                depth(
-                    mask, self._clipy, dither_type=DitherType.NONE, range_in=ColorRange.FULL, range_out=ColorRange.FULL
-                )
+            self._line_mask = depth(
+                mask, self._clipy, dither_type=DitherType.NONE, range_in=ColorRange.FULL, range_out=ColorRange.FULL
             )
         else:
             self._line_mask = None
@@ -456,10 +457,8 @@ class Rescale(RescaleBase):
     @credit_mask.setter
     def credit_mask(self, mask: vs.VideoNode | None) -> None:
         if mask is not None:
-            self._credit_mask = limiter(
-                depth(
-                    mask, self._clipy, dither_type=DitherType.NONE, range_in=ColorRange.FULL, range_out=ColorRange.FULL
-                )
+            self._credit_mask = depth(
+                mask, self._clipy, dither_type=DitherType.NONE, range_in=ColorRange.FULL, range_out=ColorRange.FULL
             )
         else:
             self._credit_mask = None
