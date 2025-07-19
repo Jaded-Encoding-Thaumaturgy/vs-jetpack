@@ -18,7 +18,6 @@ from vstools import (
     PlanesT,
     VideoFormatT,
     classproperty,
-    core,
     fallback,
     get_video_format,
     normalize_planes,
@@ -26,44 +25,15 @@ from vstools import (
     vs,
 )
 
-__all__ = [  # noqa: RUF022
-    # VS variables
-    "complexpr_available",
-    # Expr helpers
+__all__ = [
+    "ExprVarRangeT",
     "ExprVars",
     "ExprVarsT",
     "ExprVarRangeT",
     "extra_op_tokenize_expr",
     "bitdepth_aware_tokenize_expr",
-    # VS helpers
     "norm_expr_planes",
 ]
-
-
-class _complexpr_available:  # noqa: N801
-    @property
-    def fp16(self) -> bool:
-        from .funcs import expr_func
-
-        if not hasattr(self, "_fp16_available"):
-            try:
-                expr_func(core.std.BlankClip(format=vs.GRAYH), "x dup *")
-                self._fp16_available = True
-            except Exception:
-                self._fp16_available = False
-
-        return self._fp16_available
-
-    def __bool__(self) -> bool:
-        try:
-            return bool(core.akarin.Expr)
-        except AttributeError:
-            ...
-
-        return False
-
-
-complexpr_available = _complexpr_available()
 
 
 class _ExprVars(Iterable[str]):
