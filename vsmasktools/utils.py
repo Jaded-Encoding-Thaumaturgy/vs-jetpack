@@ -335,6 +335,29 @@ def normalize_mask(
     func: FuncExceptT | None = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
+    """
+    Normalize any mask type to match the format and range of the input clip.
+
+    Args:
+        mask: The mask to normalize. Can be:
+
+               - A `VideoNode` representing a precomputed mask.
+               - A callable that takes `(clip, ref)` and returns a `VideoNode`.
+               - An `EdgeDetect` or `RidgeDetect` instance or type.
+               - A `GeneralMask` instance.
+        clip: The clip to which the output mask will be normalized.
+        ref: A reference clip required by certain mask functions or classes.
+        ridge: If `True` and `mask` is a `RidgeDetect` instance, generate a ridge mask instead of an edge mask.
+            Defaults to `False`.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+        **kwargs: Additional keyword arguments passed to the edge/ridge detection methods.
+
+    Raises:
+        CustomValueError: If `mask` is a callable that requires a reference and `ref` is not provided.
+
+    Returns:
+        A mask with the same format as `clip`.
+    """
     func = func or normalize_mask
 
     if isinstance(mask, (str, type)):
