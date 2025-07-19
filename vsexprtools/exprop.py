@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+from enum import EnumMeta
+from functools import cache
 from itertools import cycle
-from math import isqrt
-from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, SupportsIndex, overload
+from math import isqrt, pi
+from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, overload
 
-from jetpytools import CustomRuntimeError
+from jetpytools import CustomRuntimeError, CustomStrEnum, SupportsString
 from typing_extensions import Self
 
 from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
     ConvMode,
-    CustomEnum,
     CustomIndexError,
     CustomValueError,
     FuncExceptT,
@@ -35,11 +36,7 @@ from .util import ExprVarRangeT, ExprVars, ExprVarsT, complexpr_available
 __all__ = ["ExprList", "ExprOp", "ExprToken", "TupleExprList"]
 
 
-class ExprTokenBase(str):
-    value: str
-
-
-class ExprToken(ExprTokenBase, CustomEnum):
+class ExprToken(CustomStrEnum):
     LumaMin = "ymin"
     ChromaMin = "cmin"
     LumaMax = "ymax"
@@ -124,8 +121,8 @@ class ExprToken(ExprTokenBase, CustomEnum):
 
         raise CustomValueError("You are using an unsupported ExprToken!", self.get_value, self)
 
-    def __getitem__(self, i: SupportsIndex) -> ExprToken:  # type: ignore
-        return ExprTokenBase(f"{self.value}_{ExprVars[i]}")  # type: ignore
+    def __getitem__(self, i: int) -> str:  # type: ignore[override]
+        return f"{self._value_}_{ExprVars[i]}"
 
 
 class ExprList(StrList):
@@ -180,73 +177,17 @@ class TupleExprList(tuple[ExprList, ...]):
         return str(tuple(str(e) for e in self))
 
 
-class ExprOpBase(str):
-    value: str
+class ExprOpBase(CustomStrEnum):
     n_op: int
 
     def __new__(cls, value: str, n_op: int) -> Self:
-        self = super().__new__(cls, value)
+        self = str.__new__(cls, value)
+        self._value_ = value
         self.n_op = n_op
 
         return self
 
-    def combine(
-        self,
-        *clips: vs.VideoNode | Iterable[vs.VideoNode | Iterable[vs.VideoNode]],
-        suffix: StrArrOpt = None,
-        prefix: StrArrOpt = None,
-        expr_suffix: StrArrOpt = None,
-        expr_prefix: StrArrOpt = None,
-        planes: PlanesT = None,
-        **expr_kwargs: Any,
-    ) -> ConstantFormatVideoNode:
-        from .funcs import combine
-
-        return combine(clips, self, suffix, prefix, expr_suffix, expr_prefix, planes, **expr_kwargs)
-
-
-class ExprOp(ExprOpBase, CustomEnum):
-    # 1 Argument
-    EXP = "exp", 1
-    LOG = "log", 1
-    SQRT = "sqrt", 1
-    SIN = "sin", 1
-    COS = "cos", 1
-    ABS = "abs", 1
-    NOT = "not", 1
-    DUP = "dup", 1
-    DUPN = "dupN", 1
-    TRUNC = "trunc", 1
-    ROUND = "round", 1
-    FLOOR = "floor", 1
-
-    # 2 Arguments
-    MAX = "max", 2
-    MIN = "min", 2
-    ADD = "+", 2
-    SUB = "-", 2
-    MUL = "*", 2
-    DIV = "/", 2
-    POW = "pow", 2
-    GT = ">", 2
-    LT = "<", 2
-    EQ = "=", 2
-    GTE = ">=", 2
-    LTE = "<=", 2
-    AND = "and", 2
-    OR = "or", 2
-    XOR = "xor", 2
-    SWAP = "swap", 2
-    SWAPN = "swapN", 2
-    MOD = "%", 2
-
-    # 3 Arguments
-    TERN = "?", 3
-    CLAMP = "clamp", 3
-
-    # Special Operators
-    REL_PIX = "{char:s}[{x:d},{y:d}]", 3
-    ABS_PIX = "{x:d} {y:d} {char:s}[]", 3
+    __str__ = str.__str__
 
     @overload
     def __call__(
@@ -264,46 +205,161 @@ class ExprOp(ExprOpBase, CustomEnum):
         """
 
     @overload
-    def __call__(self, *pos_args: Any, **kwargs: Any) -> ExprOpBase:
+    def __call__(self, *pos_args: Any, **kwargs: Any) -> str:
         """
-        Format this ExprOp into an ExprOpBase str.
+        Format this ExprOp into an str.
         """
 
-    def __call__(self, *pos_args: Any, **kwargs: Any) -> vs.VideoNode | ExprOpBase:
+    def __call__(self, *pos_args: Any, **kwargs: Any) -> vs.VideoNode | str:
         args = list(flatten(pos_args))
 
-        if isinstance(args[0], vs.VideoNode):
+        if args and isinstance(args[0], vs.VideoNode):
             return self.combine(*args, **kwargs)
 
         while True:
             try:
-                return ExprOpBase(self.format(*args, **kwargs), 3)
+                return self.format(*args, **kwargs)
             except KeyError as key:
-                try:
-                    kwargs.update({str(key)[1:-1]: args.pop(0)})
-                except IndexError:
-                    raise key
+                if not args:
+                    raise
+                kwargs[key.args[0]] = args.pop(0)
 
-    def __str__(self) -> str:
-        return self.value
-
-    def __next__(self) -> ExprOp:
+    def __next__(self) -> Self:
         return self
 
-    def __iter__(self) -> Iterator[ExprOp]:
+    def __iter__(self) -> Iterator[Self]:
         return cycle([self])
 
-    def __mul__(self, n: int) -> list[ExprOp]:  # type: ignore[override]
+    def __mul__(self, n: int) -> list[Self]:  # type: ignore[override]
         return [self] * n
+
+    def combine(
+        self,
+        *clips: vs.VideoNode | Iterable[vs.VideoNode | Iterable[vs.VideoNode]],
+        suffix: StrArrOpt = None,
+        prefix: StrArrOpt = None,
+        expr_suffix: StrArrOpt = None,
+        expr_prefix: StrArrOpt = None,
+        planes: PlanesT = None,
+        **expr_kwargs: Any,
+    ) -> ConstantFormatVideoNode:
+        from .funcs import combine
+
+        return combine(clips, self, suffix, prefix, expr_suffix, expr_prefix, planes, **expr_kwargs)
+
+
+class ExprOpExtraMeta(EnumMeta):
+    @property
+    def _extra_op_names_(cls) -> tuple[str, ...]:
+        return ("PI", "SGN", "NEG", "TAN", "ATAN", "ATAN2", "ASIN", "ACOS")
+
+
+class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
+    # 0 Argument (akarin)
+    N = "N", 0
+    X = "X", 0
+    Y = "Y", 0
+    WIDTH = "width", 0
+    HEIGHT = "height", 0
+
+    # 1 Argument (std)
+    EXP = "exp", 1
+    LOG = "log", 1
+    SQRT = "sqrt", 1
+    SIN = "sin", 1
+    COS = "cos", 1
+    ABS = "abs", 1
+    NOT = "not", 1
+    DUP = "dup", 1
+    DUPN = "dup{N:d}", 1
+    # 1 Argument (akarin)
+    TRUNC = "trunc", 1
+    ROUND = "round", 1
+    FLOOR = "floor", 1
+    DROP = "drop", 1
+    DROPN = "drop{N:d}", 1
+    SORT = "sort", 1
+    SORTN = "sort{N:d}", 1
+    VAR_STORE = "{name:s}!", 1
+    VAR_PUSH = "{name:s}@", 1
+
+    # 2 Arguments (std)
+    MAX = "max", 2
+    MIN = "min", 2
+    ADD = "+", 2
+    SUB = "-", 2
+    MUL = "*", 2
+    DIV = "/", 2
+    POW = "pow", 2
+    GT = ">", 2
+    LT = "<", 2
+    EQ = "=", 2
+    GTE = ">=", 2
+    LTE = "<=", 2
+    AND = "and", 2
+    OR = "or", 2
+    XOR = "xor", 2
+    SWAP = "swap", 2
+    SWAPN = "swap{N:d}", 2
+    # 2 Argument (akarin)
+    MOD = "%", 2
+
+    # 3 Arguments (std)
+    TERN = "?", 3
+    # 3 Argument (akarin)
+    CLAMP = "clamp", 3
+
+    # Special Operators
+    REL_PIX = "{char:s}[{x:d},{y:d}]", 3
+    ABS_PIX = "{x:d} {y:d} {char:s}[]", 3
+
+    # Not Implemented in akarin or std
+    PI = "pi", 0
+    SGN = "sgn", 1
+    NEG = "neg", 1
+    TAN = "tan", 1
+    ATAN = "atan", 1
+    ATAN2 = "atan2", 2
+    ASIN = "asin", 1
+    ACOS = "acos", 1
+
+    @cache
+    def is_extra(self) -> bool:
+        return self.name in ExprOp._extra_op_names_
+
+    @cache
+    def convert_extra(self) -> str:
+        if not self.is_extra():
+            raise ValueError
+
+        match self:
+            case ExprOp.PI:
+                return str(pi)
+            case ExprOp.SGN:
+                return "dup 0 > swap 0 < -"
+            case ExprOp.NEG:
+                return "-1 *"
+            case ExprOp.TAN:
+                return "dup sin swap cos /"
+            case ExprOp.ATAN:
+                return self.atan().to_str()
+            case ExprOp.ATAN2:
+                return self.atan2().to_str()
+            case ExprOp.ASIN:
+                return self.asin().to_str()
+            case ExprOp.ACOS:
+                return self.acos().to_str()
+            case _:
+                raise NotImplementedError
 
     @classmethod
     def clamp(
         cls, min: float | ExprToken = ExprToken.RangeMin, max: float | ExprToken = ExprToken.RangeMax, c: str = ""
     ) -> ExprList:
         if complexpr_available:
-            return ExprList([c, min, max, ExprOp.CLAMP])
+            return ExprList([c, min, max, cls.CLAMP])
 
-        return ExprList([c, min, ExprOp.MAX, max, ExprOp.MIN])
+        return ExprList([c, min, cls.MAX, max, cls.MIN])
 
     @classmethod
     def matrix(
@@ -380,7 +436,7 @@ class ExprOp(ExprOpBase, CustomEnum):
             [
                 ExprList(
                     [
-                        rel_pix if weight == 1 else [rel_pix, weight, ExprOp.MUL]
+                        rel_pix if weight == 1 else [rel_pix, weight, cls.MUL]
                         for rel_pix, weight in zip(rel_px, convolution)
                         if weight != 0
                     ]
@@ -390,29 +446,29 @@ class ExprOp(ExprOpBase, CustomEnum):
         )
 
         for out in output:
-            out.extend(ExprOp.ADD * out.mlength)
+            out.extend(cls.ADD * out.mlength)
 
             if premultiply is not None:
-                out.append(premultiply, ExprOp.MUL)
+                out.append(premultiply, cls.MUL)
 
             if divisor is not False:
                 if divisor is True:
                     divisor = sum(map(float, convolution))
 
                 if divisor not in {0, 1}:
-                    out.append(divisor, ExprOp.DIV)
+                    out.append(divisor, cls.DIV)
 
             if bias is not None:
-                out.append(bias, ExprOp.ADD)
+                out.append(bias, cls.ADD)
 
             if not saturate:
-                out.append(ExprOp.ABS)
+                out.append(cls.ABS)
 
             if multiply is not None:
-                out.append(multiply, ExprOp.MUL)
+                out.append(multiply, cls.MUL)
 
             if clamp:
-                out.append(ExprOp.clamp(ExprToken.RangeMin, ExprToken.RangeMax))
+                out.append(cls.clamp(ExprToken.RangeMin, ExprToken.RangeMax))
 
         return output
 
@@ -453,3 +509,84 @@ class ExprOp(ExprOpBase, CustomEnum):
         expr.append(cls.MAX * expr.mlength)
 
         return expr
+
+    @classmethod
+    def atan(cls, c: SupportsString = "", n: int = 5) -> ExprList:
+        # Using domain reduction when |x| > 1
+        expr = ExprList(
+            [
+                ExprList([c, cls.DUP, "__atanvar!", cls.ABS, 1, cls.GT]),
+                ExprList(
+                    [
+                        "__atanvar@",
+                        cls.SGN.convert_extra(),
+                        cls.PI.convert_extra(),
+                        cls.MUL,
+                        2,
+                        cls.DIV,
+                        1,
+                        "__atanvar@",
+                        cls.DIV,
+                        cls.atanf("", n),
+                        cls.SUB,
+                    ]
+                ),
+                ExprList([cls.atanf("__atanvar@", n)]),
+                cls.TERN,
+            ]
+        )
+
+        return expr
+
+    @classmethod
+    def atanf(cls, c: SupportsString = "", n: int = 5) -> ExprList:
+        # Approximation using Taylor series
+        n = max(2, n)
+
+        expr = ExprList([c, cls.DUP, "__atanfvar!"])
+
+        for i in range(1, n):
+            expr.append("__atanfvar@", 2 * i + 1, cls.POW, 2 * i + 1, cls.DIV, cls.SUB if i % 2 else cls.ADD)
+
+        return expr
+
+    @classmethod
+    def atan2(cls, y: SupportsString = "", x: SupportsString = "", n: int = 5) -> ExprList:
+        expr = ExprList(
+            [
+                y,
+                x,
+                "__atan2xvar!",
+                "__atan2yvar!",
+                ExprList(["__atan2xvar@", 0, cls.EQ]),  # if x = 0
+                ExprList([cls.PI.convert_extra(), 2, cls.DIV, "__atan2yvar@", cls.SGN.convert_extra(), cls.MUL]),
+                ExprList(
+                    [
+                        # if x != 0
+                        cls.atan(ExprList(["__atan2yvar@", "__atan2xvar@", cls.DIV]).to_str(), n),  # atan(y/x)
+                        ExprList(["__atan2xvar@", 0, cls.GT]),  # if x > 0
+                        0,
+                        ExprList(
+                            [
+                                ExprList(["__atan2yvar@", 0, cls.GTE]),  # if y >= 0
+                                cls.PI.convert_extra(),
+                                "-" + cls.PI.convert_extra(),  # if y < 0
+                                cls.TERN,
+                            ]
+                        ),
+                        cls.TERN,
+                        cls.ADD,  # Add atan(y/x) + (-)pi
+                    ]
+                ),
+                cls.TERN,
+            ]
+        )
+        return expr
+
+    @classmethod
+    def asin(cls, c: SupportsString = "", n: int = 5) -> ExprList:
+        return cls.atan(ExprList([c, cls.DUP, cls.DUP, cls.MUL, 1, cls.SWAP, cls.SUB, cls.SQRT, cls.DIV]).to_str(), n)
+
+    @classmethod
+    def acos(cls, c: SupportsString = "", n: int = 5) -> ExprList:
+        return ExprList([c, "__acosvar!", cls.PI.convert_extra(), 2, cls.DIV, cls.asin("__acosvar@", n), cls.SUB])

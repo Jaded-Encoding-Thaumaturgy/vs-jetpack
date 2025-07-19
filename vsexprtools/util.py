@@ -34,6 +34,7 @@ __all__ = [  # noqa: RUF022
     "ExprVars",
     "ExprVarsT",
     "ExprVarRangeT",
+    "extra_op_tokenize_expr",
     "bitdepth_aware_tokenize_expr",
     # VS helpers
     "norm_expr_planes",
@@ -238,6 +239,16 @@ ExprVarsT: TypeAlias = _ExprVars
 ExprVarRangeT: TypeAlias = ExprVarsT | HoldsVideoFormatT | VideoFormatT | SupportsIndex
 
 
+def extra_op_tokenize_expr(expr: str) -> str:
+    # Workaround for the not implemented op
+    from .exprop import ExprOp
+
+    for extra_op in ExprOp._extra_op_names_:
+        expr = re.sub(rf"\b{extra_op.lower()}\b", getattr(ExprOp, extra_op).convert_extra(), expr)
+
+    return expr
+
+
 def bitdepth_aware_tokenize_expr(
     clips: Sequence[vs.VideoNode], expr: str, chroma: bool, func: FuncExceptT | None = None
 ) -> str:
@@ -263,16 +274,16 @@ def bitdepth_aware_tokenize_expr(
     clips = list(clips)
     ranges = [ColorRange.from_video(c, func=func) for c in clips]
 
-    mapped_clips = list(reversed(list(zip(["", *EXPR_VARS], clips[:1] + clips, ranges[:1] + ranges))))
+    mapped_clips = reversed(list(zip(["", *EXPR_VARS], clips[:1] + clips, ranges[:1] + ranges)))
 
     for mkey, function in replaces:
         if mkey in expr:
             for key, clip, crange in [
                 (f"{mkey}_{k}" if k else f"{mkey}", clip, crange) for k, clip, crange in mapped_clips
             ]:
-                expr = re.sub(rf"\b{key}\b", str(function(clip, chroma, crange) * 1.0), expr)
+                expr = re.sub(rf"\b{key}\b", str(function(clip, chroma, crange)), expr)
 
-        if mkey in expr:
+        if re.search(rf"\b{mkey}\b", expr):
             raise CustomIndexError("Parsing error or not enough clips passed!", func, reason=expr)
 
     return expr
@@ -294,5 +305,5 @@ def norm_expr_planes(
 
     return [
         exp.format(**({"plane_idx": i} | {key: value[i] for key, value in string_args})) if i in planes else ""
-        for i, exp in enumerate(expr_array, 0)
+        for i, exp in enumerate(expr_array)
     ]

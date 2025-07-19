@@ -28,7 +28,7 @@ from vstools import (
 )
 
 from .exprop import ExprList, ExprOp, ExprOpBase, TupleExprList
-from .util import ExprVars, bitdepth_aware_tokenize_expr, complexpr_available, norm_expr_planes
+from .util import ExprVars, bitdepth_aware_tokenize_expr, complexpr_available, extra_op_tokenize_expr, norm_expr_planes
 
 __all__ = ["combine", "expr_func", "norm_expr"]
 
@@ -188,4 +188,6 @@ def norm_expr(
         bitdepth_aware_tokenize_expr(clips, e, bool(is_chroma)) for is_chroma, e in enumerate(normalized_expr)
     ]
 
-    return expr_func(clips, tokenized_expr, format, opt, boundary, func)
+    extra_op_expr = [extra_op_tokenize_expr(e) for e in tokenized_expr]
+
+    return expr_func(clips, extra_op_expr, format, opt, boundary, func)
