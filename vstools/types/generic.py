@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, Protocol, TypeAlias, 
 import vapoursynth as vs
 from jetpytools import MISSING, DataType, FuncExceptT, MissingT, PassthroughC, SingleOrSeq, StrArr, StrArrOpt
 
+from .builtins import PlanesT
+
 __all__ = [
     "F_VD",
     "MISSING",
@@ -24,6 +26,7 @@ __all__ = [
     "VSFunctionArgs",
     "VSFunctionKwArgs",
     "VSFunctionNoArgs",
+    "VSFunctionPlanesArgs",
     "VSMapValue",
     "VSMapValueCallback",
     "VideoFormatT",
@@ -109,6 +112,11 @@ VSFunction = Union[
 """
 Function that takes a VideoNode as its first argument and returns a VideoNode.
 """
+
+
+class VSFunctionPlanesArgs(VSFunctionKwArgs[VideoNodeT_contra, VideoNodeT_co], Protocol):
+    def __call__(self, clip: VideoNodeT_contra, *, planes: PlanesT = ..., **kwargs: Any) -> VideoNodeT_co: ...
+
 
 GenericVSFunction = Callable[..., VideoNodeT]
 
