@@ -11,12 +11,17 @@ from jetpytools import P, R
 
 from vsaa import NNEDI3
 from vsexprtools import ExprOp, combine, norm_expr
-from vsmasktools import Coordinates, EdgeDetect, EdgeDetectT, Morpho, PrewittTCanny, Robinson3, XxpandMode, grow_mask
-from vsrgtools import (
-    BlurMatrix,
-    BlurMatrixBase,
-    contrasharpening_dehalo,
+from vsmasktools import (
+    Coordinates,
+    GenericMaskT,
+    Morpho,
+    PrewittTCanny,
+    Robinson3,
+    XxpandMode,
+    grow_mask,
+    normalize_mask,
 )
+from vsrgtools import BlurMatrix, BlurMatrixBase, contrasharpening_dehalo
 from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
@@ -126,7 +131,7 @@ class FineDehalo(Generic[P, R]):
         # fine_dehalo mask specific params
         rx: int = 2,
         ry: int | None = None,
-        edgemask: EdgeDetectT = Robinson3,
+        edgemask: GenericMaskT = Robinson3,
         thmi: int = 80,
         thma: int = 128,
         thlimi: int = 50,
@@ -175,7 +180,7 @@ class FineDehalo(Generic[P, R]):
             # fine_dehalo mask specific params
             rx: int = 2,
             ry: int | None = None,
-            edgemask: EdgeDetectT = Robinson3,
+            edgemask: GenericMaskT = Robinson3,
             thmi: int = 80,
             thma: int = 128,
             thlimi: int = 50,
@@ -215,7 +220,7 @@ class FineDehalo(Generic[P, R]):
 
             # Main edges #
             # Basic edge detection, thresholding will be applied later.
-            edges = EdgeDetect.ensure_obj(edgemask, func).edgemask(work_clip)
+            edges = normalize_mask(edgemask, work_clip, work_clip, func=func)
 
             # Keeps only the sharpest edges (line edges)
             strong = norm_expr(edges, f"x {thmif} - {thmaf - thmif} / {peak} *", planes, func=func)
@@ -349,7 +354,7 @@ def fine_dehalo(
     darkstr: IterArr[float] = 0.0,
     brightstr: IterArr[float] = 1.0,
     # fine_dehalo mask specific params
-    edgemask: EdgeDetectT = Robinson3,
+    edgemask: GenericMaskT = Robinson3,
     thmi: int = 80,
     thma: int = 128,
     thlimi: int = 50,
