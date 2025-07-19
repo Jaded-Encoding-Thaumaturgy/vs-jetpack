@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from vsexprtools import ExprVars, complexpr_available, norm_expr
+from vsexprtools import ExprVars, norm_expr
 from vstools import (
     ConstantFormatVideoNode,
     CustomIndexError,
@@ -162,10 +162,8 @@ def _limit_filter_expr(
     elif mode in {LimitFilterMode.SIMPLE2_MIN, LimitFilterMode.SIMPLE2_MAX}:
         return f"y x - abs z x - abs {mode.op} y z ?"
     elif mode in {LimitFilterMode.DIFF_MIN, LimitFilterMode.DIFF_MAX}:
-        if complexpr_available:
-            return f"y x - A! y z - B! A@ B@ xor y A@ abs B@ abs {mode.op} x z ? ?"
-
-        return f"y x - y z - xor y y x - abs y z - abs {mode.op} x z ? ?"
+        # TODO: old expr f"y x - y z - xor y y x - abs y z - abs {mode.op} x z ? ?"
+        return f"y x - A! y z - B! A@ B@ xor y A@ abs B@ abs {mode.op} x z ? ?"
 
     ref = ExprVars[1 + got_ref]
 
@@ -174,7 +172,8 @@ def _limit_filter_expr(
     dif = "x y -"
     dif_abs = f" x {ref} - abs"
 
-    if complexpr_available:
+    # TODO: complexpr_available
+    if True:
         header = f"{dif} DIF! {dif_abs} DIFABS!"
         dif, dif_abs = "DIF@", "DIFABS@"
 
