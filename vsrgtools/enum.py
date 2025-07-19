@@ -79,19 +79,14 @@ class BlurMatrixBase(list[_Nb]):
         ```
     """
 
-    def __init__(
-        self,
-        __iterable: Iterable[_Nb],
-        /,
-        mode: ConvMode = ConvMode.SQUARE,
-    ) -> None:
+    def __init__(self, iterable: Iterable[_Nb], /, mode: ConvMode = ConvMode.SQUARE) -> None:
         """
         Args:
-            __iterable: Iterable of kernel coefficients.
+            iterable: Iterable of kernel coefficients.
             mode: Convolution mode to use. Default is SQUARE.
         """
         self.mode = mode
-        super().__init__(__iterable)
+        super().__init__(iterable)
 
     def __call__(
         self,
@@ -336,13 +331,13 @@ class BlurMatrix(CustomEnum):
                 matrix = [1 for _ in range(((2 * taps + 1) ** (2 if mode == ConvMode.SQUARE else 1)) - 1)]
                 matrix.insert(len(matrix) // 2, 0)
 
-                return BlurMatrixBase[int](matrix, mode)
+                return self.custom(matrix, mode)
 
             case BlurMatrix.MEAN:
                 taps = fallback(taps, 1)
                 mode = kwargs.pop("mode", ConvMode.SQUARE)
 
-                kernel = BlurMatrixBase[int]([1 for _ in range((2 * taps + 1))], mode)
+                kernel = self.custom((1 for _ in range((2 * taps + 1))), mode)
 
             case BlurMatrix.BINOMIAL:
                 taps = fallback(taps, 1)
@@ -357,7 +352,7 @@ class BlurMatrix(CustomEnum):
                     matrix.append(c)
                     c = c * (n - i) // i
 
-                kernel = BlurMatrixBase(matrix[:-1] + matrix[::-1], mode)
+                kernel = self.custom(matrix[:-1] + matrix[::-1], mode)
 
             case BlurMatrix.GAUSS:
                 taps = fallback(taps, 1)
@@ -384,7 +379,7 @@ class BlurMatrix(CustomEnum):
                 else:
                     mat = [scale_value]
 
-                kernel = BlurMatrixBase(mat, mode)
+                kernel = self.custom(mat, mode)
 
             case _:
                 raise CustomNotImplementedError("Unsupported blur matrix enum!", self, self)
@@ -427,3 +422,17 @@ class BlurMatrix(CustomEnum):
             taps = ceil(abs(sigma) * 8 + 1) // 2
 
         return taps
+
+    @classmethod
+    def custom(cls, values: Iterable[_Nb], mode: ConvMode = ConvMode.SQUARE) -> BlurMatrixBase[_Nb]:
+        """
+        Create a custom BlurMatrixBase kernel with explicit values and mode.
+
+        Args:
+            values: The kernel coefficients.
+            mode: Convolution mode to use.
+
+        Returns:
+            A BlurMatrixBase instance.
+        """
+        return BlurMatrixBase(values, mode=mode)

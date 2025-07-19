@@ -33,7 +33,7 @@ from vstools import (
     vs,
 )
 
-from .enum import BlurMatrix, BlurMatrixBase
+from .enum import BlurMatrix
 from .freqs import MeanMode
 from .rgtools import vertical_cleaner
 from .util import normalize_radius
@@ -289,7 +289,7 @@ def sbr(
 
     def _apply_blur(clip: ConstantFormatVideoNode, blur: _SbrBlurT | vs.VideoNode) -> ConstantFormatVideoNode:
         if isinstance(blur, Sequence):
-            return BlurMatrixBase(blur, mode=mode)(clip, planes, **kwargs)
+            return BlurMatrix.custom(blur, mode)(clip, planes, **kwargs)
 
         if isinstance(blur, BlurMatrix):
             return blur(taps=radius, mode=mode)(clip, planes, **kwargs)

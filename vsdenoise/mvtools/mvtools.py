@@ -484,7 +484,8 @@ class MVTools(vs_object):
 
         vectors = fallback(vectors, self.vectors)
 
-        assert vectors.has_vectors
+        if not vectors.has_vectors:
+            raise CustomRuntimeError("No motion vectors exist!", self.recalculate)
 
         blksize, blksizev = normalize_seq(blksize, 2)
         overlap, overlapv = normalize_seq(overlap, 2)
@@ -1440,7 +1441,8 @@ class MVTools(vs_object):
 
         vectors = fallback(vectors, self.vectors)
 
-        assert vectors.has_vectors
+        if not vectors.has_vectors:
+            raise CustomRuntimeError("No motion vectors exist!", self.get_vector)
 
         if delta > vectors.tr:
             raise CustomRuntimeError(
@@ -1507,7 +1509,8 @@ class MVTools(vs_object):
         vectors = fallback(vectors, self.vectors)
         tr = fallback(tr, vectors.tr)
 
-        assert vectors.has_vectors
+        if not vectors.has_vectors:
+            raise CustomRuntimeError("No motion vectors exist!", self.get_vectors)
 
         if tr > vectors.tr:
             raise CustomRuntimeError(

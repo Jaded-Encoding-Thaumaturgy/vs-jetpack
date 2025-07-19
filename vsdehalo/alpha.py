@@ -11,9 +11,7 @@ from jetpytools import T
 from vsexprtools import norm_expr
 from vskernels import BSpline, Lanczos, Mitchell, Scaler, ScalerLike
 from vsmasktools import Morpho
-from vsrgtools import (
-    repair,
-)
+from vsrgtools import repair
 from vstools import (
     ConstantFormatVideoNode,
     CustomIndexError,

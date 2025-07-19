@@ -4,6 +4,7 @@ from itertools import cycle
 from math import isqrt
 from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, SupportsIndex, overload
 
+from jetpytools import CustomRuntimeError
 from typing_extensions import Self
 
 from vstools import (
@@ -141,7 +142,7 @@ class ExprList(StrList):
     ) -> ConstantFormatVideoNode:
         from .funcs import norm_expr
 
-        return norm_expr(flatten_vnodes(*clips), self, planes, format, opt, boundary, func, split_planes, **kwargs)
+        return norm_expr(clips, self, planes, format, opt, boundary, func, split_planes, **kwargs)
 
 
 class TupleExprList(tuple[ExprList, ...]):
@@ -156,6 +157,9 @@ class TupleExprList(tuple[ExprList, ...]):
         split_planes: bool = False,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
+        if len(self) < 1:
+            raise CustomRuntimeError("You need at least one ExprList.", func, self)
+
         clip = flatten_vnodes(*clips)
 
         for exprlist in self:

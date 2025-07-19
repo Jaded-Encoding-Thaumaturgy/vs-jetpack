@@ -9,7 +9,7 @@ from vskernels import Bilinear, BorderHandling, Hermite, Kernel, KernelLike, Sca
 from vskernels.types import LeftShift, TopShift
 from vsmasktools import KirschTCanny, based_diff_mask
 from vsmasktools.utils import _get_region_expr
-from vsrgtools import BlurMatrixBase
+from vsrgtools import BlurMatrix
 from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
@@ -577,7 +577,7 @@ class Rescale(RescaleBase):
                 else:
                     weights, thr = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], 0.24
 
-                credit_mask = BlurMatrixBase(weights, mode=ConvMode.T)(credit_mask, scenechange=True).std.Binarize(
+                credit_mask = BlurMatrix.custom(weights, ConvMode.T)(credit_mask, scenechange=True).std.Binarize(
                     scale_mask(thr, 32, credit_mask)
                 )
 

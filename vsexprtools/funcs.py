@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import partial
 from math import ceil
-from typing import Any, Iterable, Sequence, cast
+from typing import Any, Iterable, Sequence
 
 from vstools import (
     ConstantFormatVideoNode,
@@ -149,8 +149,8 @@ def norm_expr(
         opt: Forces integer evaluation as much as possible.
         boundary: Specifies the default boundary condition for relative pixel accesses:
 
-               - 0 means clamped
-               - 1 means mirrored
+               - False means clamped
+               - True means mirrored
         split_planes: Splits the VideoNodes into their individual planes.
         **kwargs: Additional keywords arguments to be passed to the expression function. These arguments are key-value
             pairs, where the keys are placeholders that will be replaced in the expression string. Iterable values
@@ -159,25 +159,26 @@ def norm_expr(
     Returns:
         Evaluated clip.
     """
-    clips = flatten_vnodes(clips, split_planes=split_planes)
-
     if isinstance(expr, str):
         nexpr = ([expr],)
     elif isinstance(expr, tuple):
         if isinstance(expr, TupleExprList):
-            if len(expr) < 1:
-                raise CustomRuntimeError("When passing a TupleExprList you need at least one expr in it!", func, expr)
-
-            nclips = clips
-
-            for e in expr:
-                nclips = norm_expr(nclips, e, planes, format, opt, boundary, func, split_planes, **kwargs)
-
-            return cast(ConstantFormatVideoNode, nclips)
+            return expr(
+                clips,
+                planes=planes,
+                format=format,
+                opt=opt,
+                boundary=boundary,
+                func=func,
+                split_planes=split_planes,
+                **kwargs,
+            )
         else:
             nexpr = tuple([to_arr(x) for x in expr])
     else:
         nexpr = (to_arr(expr),)
+
+    clips = flatten_vnodes(clips, split_planes=split_planes)
 
     normalized_exprs = [StrList(plane_expr).to_str() for plane_expr in nexpr]
 
