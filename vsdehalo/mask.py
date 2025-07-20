@@ -400,7 +400,7 @@ def fine_dehalo(
         # dehalo_sigma with fine_dehalo masks
         from vsdenoise import Prefilter
 
-        dehalo = fine_dehalo(clip, blur_func=Prefilter.GAUSS)
+        dehalo = fine_dehalo(clip, blur_func=Prefilter.GAUSS(sigma=1.9))
         ```
 
     Args:
