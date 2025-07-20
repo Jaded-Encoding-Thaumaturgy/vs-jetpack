@@ -522,6 +522,8 @@ def fine_dehalo(
     out = func_util.return_clip(y_merge)
 
     if attach_masks:
+        out = out.std.CopyFrameProps(dehaloed)
+
         for k, v in fine_dehalo.masks.items():
             out = out.std.ClipToProp(v, "FineDehaloMask" + "".join(w.title() for w in k.split("_")))
 
