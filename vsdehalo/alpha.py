@@ -4,7 +4,7 @@ This module implements functions based on the famous dehalo_alpha.
 
 from __future__ import annotations
 
-from typing import Any, Iterator, TypeAlias
+from typing import Iterator, TypeAlias
 
 from jetpytools import T
 
@@ -54,8 +54,9 @@ def dehalo_alpha(
     brightstr: IterArr[float] = 1.0,
     # Misc params
     planes: PlanesT = 0,
+    *,
+    attach_masks: bool = False,
     func: FuncExceptT | None = None,
-    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Reduce halo artifacts by aggressively processing the edges and their surroundings.
@@ -86,10 +87,9 @@ def dehalo_alpha(
         darkstr: Strength factor for suppressing dark halos.
         brightstr: Strength factor for suppressing bright halos.
         planes: Planes to process. Default to 0.
+        attach_masks: Stores generated masks as frame properties in the output clip.
+            The prop name is `DehaloAlphaMask_{i}`, where `i` is the iteration index.
         func: An optional function to use for error handling.
-        **kwargs: Additional debug options.
-            - `attach_masks=True`: Stores generated masks as frame properties in the output clip.
-              The prop name is `DehaloAlphaMask_{i}`, where `i` is the iteration index.
 
     Raises:
         CustomIndexError: If `ss`, `rx` or `ry` are lower than 1.0.
@@ -155,7 +155,7 @@ def dehalo_alpha(
         else:
             raise CustomIndexError("lowsens and highsens must be between 0 and 100!", func)
 
-        if kwargs.get("attach_masks") and mask:
+        if attach_masks and mask:
             masks_to_prop.append(core.std.SetFrameProps(mask, lowsens=lowsens_i, highsens=highsens_i))
 
         dehalo = dehalo.std.MaskedMerge(work_clip, mask, planes) if mask else dehalo

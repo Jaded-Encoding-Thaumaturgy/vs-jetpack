@@ -471,7 +471,7 @@ def fine_dehalo(
     ry_i = cround(to_arr(to_arr(rx if ry is None else ry)[0])[0])
 
     fine_dehalo.masks = fine_dehalo.Masks(
-        func_util.work_clip, rx_i, ry_i, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func
+        func_util.work_clip, rx_i, ry_i, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func_util.func
     )
 
     dehaloed = dehalo_alpha(
@@ -485,7 +485,8 @@ def fine_dehalo(
         darkstr,
         brightstr,
         planes,
-        func,
+        attach_masks=attach_masks,
+        func=func_util.func,
     )
 
     if contra:
