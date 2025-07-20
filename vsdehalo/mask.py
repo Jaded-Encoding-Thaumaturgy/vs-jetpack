@@ -5,7 +5,7 @@ This module implements dehalo functions with complex masking abilities.
 from __future__ import annotations
 
 from math import sqrt
-from typing import Callable, Generic, Iterator, Mapping
+from typing import Any, Callable, Generic, Iterator, Mapping
 
 from jetpytools import P, R
 
@@ -22,6 +22,7 @@ from vsmasktools import (
     normalize_mask,
 )
 from vsrgtools import BlurMatrix, BlurMatrixBase, contrasharpening_dehalo
+from vsscale import pre_ss as pre_supersampling
 from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
@@ -364,6 +365,7 @@ def fine_dehalo(
     # Final post processing
     contra: float = 0.0,
     # Misc params
+    pre_ss: bool | dict[str, Any] = False,
     planes: PlanesT = 0,
     *,
     attach_masks: bool = False,
@@ -418,6 +420,8 @@ def fine_dehalo(
         exclude: Whether to exclude edges that are too close together.
         edgeproc: If greater than 0, adds the edge mask into the final processing. Defaults to 0.0.
         contra: Contra-sharpening level in [contrasharpening_dehalo][vsdehalo.contrasharpening_dehalo].
+        pre_ss: If `True`, supersamples the clip with NNEDI3, applies dehalo processing,
+            and then downscales back with Point.
         planes: Planes to process.
         attach_masks: Stores the masks as frame properties in the output clip.
             The prop names are `FineDehaloMask` + the masking step.
@@ -429,6 +433,39 @@ def fine_dehalo(
     func_util = FunctionUtil(clip, func or fine_dehalo, planes, (vs.GRAY, vs.YUV))
 
     assert check_progressive(clip, func_util.func)
+
+    if pre_ss:
+        pre_kwargs: dict[str, Any] = {"supersampler": NNEDI3(noshift=(True, False))}
+        pre_ss = pre_kwargs if pre_ss is True else pre_kwargs | pre_ss
+
+        return pre_supersampling(
+            clip,
+            lambda clip: fine_dehalo(
+                clip,
+                rx,
+                ry,
+                blur_func,
+                lowsens,
+                highsens,
+                ss,
+                darkstr,
+                brightstr,
+                edgemask,
+                thmi,
+                thma,
+                thlimi,
+                thlima,
+                exclude,
+                edgeproc,
+                contra,
+                False,
+                planes,
+                attach_masks=attach_masks,
+                func=func_util.func,
+            ),
+            **pre_ss,
+            func=func_util.func,
+        )
 
     rx_i = cround(to_arr(to_arr(rx)[0])[0])
     ry_i = cround(to_arr(to_arr(rx if ry is None else ry)[0])[0])
