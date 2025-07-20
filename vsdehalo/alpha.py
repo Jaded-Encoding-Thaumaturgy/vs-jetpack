@@ -35,7 +35,7 @@ __all__ = ["dehalo_alpha"]
 
 
 IterArr: TypeAlias = T | list[T] | tuple[T | list[T], ...]
-VSFunctionPlanesArgs: TypeAlias = GenericVSFunctionPlanesArgs[vs.VideoNode, ConstantFormatVideoNode]
+VSFunctionPlanesArgs: TypeAlias = GenericVSFunctionPlanesArgs[vs.VideoNode, vs.VideoNode]
 
 
 def dehalo_alpha(
@@ -223,8 +223,8 @@ def _dehalo_alpha_blur_func(
 
 
 def _dehalo_alpha_mask(
-    clip: ConstantFormatVideoNode,
-    ref: ConstantFormatVideoNode,
+    clip: vs.VideoNode,
+    ref: vs.VideoNode,
     lowsens: list[float],
     highsens: list[float],
     planes: PlanesT,
@@ -250,7 +250,7 @@ def _dehalo_alpha_mask(
 
 def _dehalo_supersample_minmax(
     clip: ConstantFormatVideoNode,
-    ref: ConstantFormatVideoNode,
+    ref: vs.VideoNode,
     ss: list[float],
     supersampler: ScalerLike = Lanczos(3),
     supersampler_ref: ScalerLike = Mitchell,
