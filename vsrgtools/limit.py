@@ -165,7 +165,7 @@ def _limit_filter_expr(
         # TODO: old expr f"y x - y z - xor y y x - abs y z - abs {mode.op} x z ? ?"
         return f"y x - A! y z - B! A@ B@ xor y A@ abs B@ abs {mode.op} x z ? ?"
 
-    ref = ExprVars[1 + got_ref]
+    ref = ExprVars.get_var(1 + got_ref)
 
     header = ""
 

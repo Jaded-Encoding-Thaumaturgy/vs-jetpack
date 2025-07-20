@@ -4,7 +4,7 @@ from enum import EnumMeta
 from functools import cache
 from itertools import cycle
 from math import isqrt, pi
-from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, overload
+from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, SupportsIndex, overload
 
 from jetpytools import CustomRuntimeError, CustomStrEnum, SupportsString
 from typing_extensions import Self
@@ -31,7 +31,7 @@ from vstools import (
     vs,
 )
 
-from .util import ExprVarRangeT, ExprVars, ExprVarsT
+from .util import ExprVars
 
 __all__ = ["ExprList", "ExprOp", "ExprToken", "TupleExprList"]
 
@@ -122,7 +122,7 @@ class ExprToken(CustomStrEnum):
         raise CustomValueError("You are using an unsupported ExprToken!", self.get_value, self)
 
     def __getitem__(self, i: int) -> str:  # type: ignore[override]
-        return f"{self._value_}_{ExprVars[i]}"
+        return f"{self._value_}_{ExprVars.get_var(i)}"
 
 
 class ExprList(StrList):
@@ -360,7 +360,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
 
     @classmethod
     def matrix(
-        cls, var: str | ExprVarsT, radius: int, mode: ConvMode, exclude: Iterable[tuple[int, int]] | None = None
+        cls, var: str | ExprVars, radius: int, mode: ConvMode, exclude: Iterable[tuple[int, int]] | None = None
     ) -> TupleExprList:
         exclude = list(exclude) if exclude else []
 
@@ -403,7 +403,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     @classmethod
     def convolution(
         cls,
-        var: str | ExprVarsT,
+        var: str | ExprVars,
         matrix: Iterable[SupportsFloat] | Iterable[Iterable[SupportsFloat]],
         bias: float | None = None,
         divisor: float | bool = True,
@@ -471,10 +471,11 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
 
     @staticmethod
     def _parse_planes(
-        planesa: ExprVarRangeT, planesb: ExprVarRangeT | None, func: FuncExceptT
-    ) -> tuple[ExprVarsT, ExprVarsT]:
+        planesa: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex,
+        planesb: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex | None,
+        func: FuncExceptT,
+    ) -> tuple[ExprVars, ExprVars]:
         planesa = ExprVars(planesa)
-
         planesb = ExprVars(planesa.stop, planesa.stop + len(planesa)) if planesb is None else ExprVars(planesb)
 
         if len(planesa) != len(planesb):
@@ -483,7 +484,11 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         return planesa, planesb
 
     @classmethod
-    def rmse(cls, planesa: ExprVarRangeT, planesb: ExprVarRangeT | None = None) -> ExprList:
+    def rmse(
+        cls,
+        planesa: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex,
+        planesb: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex | None = None,
+    ) -> ExprList:
         planesa, planesb = cls._parse_planes(planesa, planesb, cls.rmse)
 
         expr = ExprList()
@@ -496,7 +501,11 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         return expr
 
     @classmethod
-    def mae(cls, planesa: ExprVarRangeT, planesb: ExprVarRangeT | None = None) -> ExprList:
+    def mae(
+        cls,
+        planesa: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex,
+        planesb: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex | None = None,
+    ) -> ExprList:
         planesa, planesb = cls._parse_planes(planesa, planesb, cls.rmse)
         expr = ExprList()
 
