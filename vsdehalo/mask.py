@@ -370,6 +370,7 @@ def fine_dehalo(
     *,
     attach_masks: bool = False,
     func: FuncExceptT | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Halo removal function based on `dehalo_alpha`, enhanced with additional masking and optional contra-sharpening
@@ -426,6 +427,7 @@ def fine_dehalo(
         attach_masks: Stores the masks as frame properties in the output clip.
             The prop names are `FineDehaloMask` + the masking step.
         func: An optional function to use for error handling.
+        **kwargs: Additionnal advanced parameters.
 
     Returns:
         Dehaloed clip.
@@ -462,6 +464,7 @@ def fine_dehalo(
                 planes,
                 attach_masks=attach_masks,
                 func=func_util.func,
+                **kwargs,
             ),
             **pre_ss,
             func=func_util.func,
@@ -487,6 +490,7 @@ def fine_dehalo(
         planes,
         attach_masks=attach_masks,
         func=func_util.func,
+        **kwargs,
     )
 
     if contra:

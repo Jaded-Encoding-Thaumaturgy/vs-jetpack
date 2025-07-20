@@ -4,9 +4,9 @@ This module implements functions based on the famous dehalo_alpha.
 
 from __future__ import annotations
 
-from typing import Iterator, TypeAlias
+from typing import Any, Iterator, Sequence, TypeAlias
 
-from jetpytools import T
+from jetpytools import T, to_arr
 
 from vsexprtools import norm_expr
 from vskernels import BSpline, Lanczos, Mitchell, Scaler, ScalerLike
@@ -57,6 +57,7 @@ def dehalo_alpha(
     *,
     attach_masks: bool = False,
     func: FuncExceptT | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Reduce halo artifacts by aggressively processing the edges and their surroundings.
@@ -90,6 +91,7 @@ def dehalo_alpha(
         attach_masks: Stores generated masks as frame properties in the output clip.
             The prop name is `DehaloAlphaMask_{i}`, where `i` is the iteration index.
         func: An optional function to use for error handling.
+        **kwargs: Additionnal advanced parameters.
 
     Raises:
         CustomIndexError: If `ss`, `rx` or `ry` are lower than 1.0.
@@ -114,10 +116,21 @@ def dehalo_alpha(
     work_clip, *chroma = split(clip) if planes == [0] else (clip,)
 
     values, blur_funcs = _normalize_iter_arr_t(rx, ry, darkstr, brightstr, lowsens, highsens, ss, blur_func=blur_func)
+    values_kwargs, _ = _normalize_iter_arr_t(
+        kwargs.get("downscaler", Mitchell),
+        kwargs.get("upscaler", BSpline),
+        kwargs.get("supersampler", Lanczos),
+        kwargs.get("supersampler_ref", Mitchell),
+        blur_func=None,
+    )
 
     masks_to_prop = list[ConstantFormatVideoNode]()
 
-    for (rx_i, ry_i, darkstr_i, brightstr_i, lowsens_i, highsens_i, ss_i), blur_func_i in zip(values, blur_funcs):
+    for (
+        (rx_i, ry_i, darkstr_i, brightstr_i, lowsens_i, highsens_i, ss_i),
+        blur_func_i,
+        (downs_i, ups_i, sser_i, sser_ref_i),
+    ) in zip(values, blur_funcs, values_kwargs):
         if any(x < 1 for x in (*ss_i, *rx_i, *ry_i)):
             raise CustomIndexError("ss, rx, and ry must all be bigger than 1.0!", func)
 
@@ -128,23 +141,30 @@ def dehalo_alpha(
         # if the radius are the same for all planes or the blur_func is the same
         # or if luma only
         # or clip format is GRAY
-        if any(
-            [
-                len(set(rx_i)) == len(set(ry_i)) == len(set(blur_func_i)) == 1,
-                planes == [0],
-                work_clip.format.num_planes == 1,
-            ]
+        if (
+            any(
+                [
+                    len(set(rx_i)) == len(set(ry_i)) == len(set(blur_func_i)) == 1,
+                    planes == [0],
+                    work_clip.format.num_planes == 1,
+                ]
+            )
+            and len(set(downs_i)) == len(set(ups_i)) == 1
         ):
             dehalo = (
                 blur_func_i[0](work_clip, planes=planes)
                 if blur_func_i[0]
-                else _dehalo_alpha_blur_func(work_clip, rx_i[0], ry_i[0])
+                else _dehalo_alpha_blur_func(work_clip, rx_i[0], ry_i[0], downs_i[0], ups_i[0], func)
             )
         else:
             dehalo = join(
                 [
-                    blur_func_p(p, planes=0) if blur_func_p else _dehalo_alpha_blur_func(p, rx_p, ry_p)
-                    for p, rx_p, ry_p, blur_func_p in zip(split(work_clip), rx_i, ry_i, blur_func_i)
+                    blur_func_p(p, planes=0)
+                    if blur_func_p
+                    else _dehalo_alpha_blur_func(p, rx_p, ry_p, downs_p, ups_p, func)
+                    for p, rx_p, ry_p, blur_func_p, downs_p, ups_p in zip(
+                        split(work_clip), rx_i, ry_i, blur_func_i, downs_i, ups_i
+                    )
                 ]
             )
 
@@ -160,7 +180,7 @@ def dehalo_alpha(
 
         dehalo = dehalo.std.MaskedMerge(work_clip, mask, planes) if mask else dehalo
 
-        dehalo = _dehalo_supersample_minmax(work_clip, dehalo, ss_i, planes=planes, func=func)
+        dehalo = _dehalo_supersample_minmax(work_clip, dehalo, ss_i, sser_i, sser_ref_i, planes, func)
 
         work_clip = dehalo = _limit_dehalo(work_clip, dehalo, darkstr_i, brightstr_i, planes, func)
 
@@ -251,18 +271,25 @@ def _dehalo_alpha_mask(
 def _dehalo_supersample_minmax(
     clip: ConstantFormatVideoNode,
     ref: vs.VideoNode,
-    ss: list[float],
-    supersampler: ScalerLike = Lanczos(3),
-    supersampler_ref: ScalerLike = Mitchell,
+    ss: Sequence[float],
+    supersampler: ScalerLike | Sequence[ScalerLike] = Lanczos,
+    supersampler_ref: ScalerLike | Sequence[ScalerLike] = Mitchell,
     planes: PlanesT = None,
     func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
     func = func or _dehalo_supersample_minmax
 
-    supersampler = Scaler.ensure_obj(supersampler, func)
-    supersampler_ref = Scaler.ensure_obj(supersampler_ref, func)
+    supersampler_obj = [Scaler.ensure_obj(scaler, func) for scaler in to_arr(supersampler)]  # type: ignore[arg-type]
+    supersampler_ref_obj = [Scaler.ensure_obj(scaler, func) for scaler in to_arr(supersampler_ref)]  # type: ignore[arg-type]
 
-    def _supersample(work_clip: vs.VideoNode, dehalo: vs.VideoNode, ss: float) -> ConstantFormatVideoNode:
+    def _supersample(
+        work_clip: vs.VideoNode,
+        dehalo: vs.VideoNode,
+        ss: float,
+        supersampler: Scaler,
+        supersampler_ref: Scaler,
+        planes: PlanesT,
+    ) -> ConstantFormatVideoNode:
         if ss <= 1.0:
             return repair(work_clip, dehalo, 1, planes)
 
@@ -280,12 +307,21 @@ def _dehalo_supersample_minmax(
 
         return supersampler.scale(ss_clip, work_clip.width, work_clip.height)  # type: ignore[return-value]
 
-    if len(set(ss)) == 1 or planes == [0] or clip.format.num_planes == 1:
-        dehalo = _supersample(clip, ref, ss[0])
-    else:
-        dehalo = join([_supersample(wplane, dplane, ssp) for wplane, dplane, ssp in zip(split(clip), split(ref), ss)])
+    if (
+        (len(set(ss)) == 1 or planes == [0] or clip.format.num_planes == 1)
+        and len(set(supersampler_obj)) == 1
+        and len(set(supersampler_ref_obj)) == 1
+    ):
+        return _supersample(clip, ref, ss[0], supersampler_obj[0], supersampler_ref_obj[0], planes)
 
-    return dehalo
+    return join(
+        [
+            _supersample(wplane, dplane, ssp, sss_p, sssref_p, 0)
+            for wplane, dplane, ssp, sss_p, sssref_p in zip(
+                split(clip), split(ref), ss, supersampler_obj, supersampler_ref_obj
+            )
+        ]
+    )
 
 
 def _limit_dehalo(
