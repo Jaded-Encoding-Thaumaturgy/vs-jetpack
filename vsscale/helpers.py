@@ -9,7 +9,7 @@ from typing import Any, Callable, NamedTuple, Self, TypeAlias, overload
 from jetpytools import FuncExceptT, mod_x
 
 from vskernels import Bilinear, Point, Scaler, ScalerLike
-from vstools import FunctionUtil, KwargsT, PlanesT, Resolution, VSFunctionPlanesArgs, get_w, mod2, vs
+from vstools import FunctionUtil, KwargsT, Resolution, VSFunctionNoArgs, get_w, mod2, vs
 
 __all__ = ["CropAbs", "CropRel", "ScalingArgs", "pre_ss", "scale_var_clip"]
 
@@ -279,12 +279,11 @@ class ScalingArgs:
 
 def pre_ss(
     clip: vs.VideoNode,
-    function: VSFunctionPlanesArgs[vs.VideoNode, vs.VideoNode],
+    function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
     rfactor: float = 2.0,
     supersampler: ScalerLike = Bilinear,
     downscaler: ScalerLike = Point,
     mod: int = 4,
-    planes: PlanesT = None,
     func: FuncExceptT | None = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
@@ -297,8 +296,8 @@ def pre_ss(
         from vsdehalo import fine_dehalo
         from vsaa import NNEDI3
 
-        # Point downscale will undo the intrinsic shift of NNEDI3.
-        processed = pre_ss(clip, lambda clip: fine_dehalo(clip, ...), supersampler=NNEDI3(noshift=True), planes=0)
+        # Point downscale will undo the intrinsic shift of NNEDI3 on the luma plane.
+        processed = pre_ss(clip, lambda clip: fine_dehalo(clip, ...), supersampler=NNEDI3(noshift=(True, False)))
         ```
 
     Args:
@@ -309,7 +308,6 @@ def pre_ss(
             Defaults to `Bilinear`.
         downscaler: Downscaler used for undoing the upscaling done by the supersampler. Defaults to `Point`.
         mod: Ensures the supersampled resolution is a multiple of this value. Defaults to 4.
-        planes: Planes to process. Defaults to all.
         func: An optional function to use for error handling.
         **kwargs: Additional keyword arguments passed to the provided `function`.
 
@@ -317,15 +315,15 @@ def pre_ss(
         A clip with the given function applied at higher resolution, then downscaled back.
     """
     if rfactor == 1.0:
-        return function(clip, planes=planes, **kwargs)
+        return function(clip, **kwargs)
 
-    func_util = FunctionUtil(clip, func or pre_ss, planes)
+    func_util = FunctionUtil(clip, func or pre_ss)
 
     ss = Scaler.ensure_obj(supersampler, func_util.func).scale(
         clip, mod_x(func_util.work_clip.width * rfactor, mod), mod_x(func_util.work_clip.height * rfactor, mod)
     )
 
-    processed = function(ss, planes=planes, **kwargs)
+    processed = function(ss, **kwargs)
 
     down = Scaler.ensure_obj(downscaler, func_util.func).scale(processed, clip.width, clip.height)
 
