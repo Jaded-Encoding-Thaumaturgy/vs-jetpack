@@ -437,8 +437,29 @@ def fine_dehalo(
     assert check_progressive(clip, func_util.func)
 
     if pre_ss:
-        pre_kwargs: dict[str, Any] = {"supersampler": NNEDI3(noshift=(True, False))}
-        pre_ss = pre_kwargs if pre_ss is True else pre_kwargs | pre_ss
+        pre_kwargs: dict[str, Any]
+
+        if isinstance(pre_ss, dict):
+            pre_kwargs = pre_ss
+        else:
+            if pre_ss is True:
+                pre_kwargs = {"supersampler": NNEDI3(noshift=(True, False))}
+            else:
+                # TODO: Remove that
+                import warnings  # type: ignore[unreachable]
+
+                from vskernels import Point
+
+                warnings.warn(
+                    'fine_dehalo: "pre_ss" must be either a boolean or a dict for the keywords argument '
+                    "of `vsscale.pre_ss`.",
+                    DeprecationWarning,
+                )
+                pre_kwargs = {
+                    "rfactor": pre_ss,
+                    "supersampler": kwargs.pop("pre_supersampler", NNEDI3(noshift=(True, False))),
+                    "downscaler": kwargs.pop("pre_downscaler", Point),
+                }
 
         return pre_supersampling(
             clip,
@@ -466,7 +487,7 @@ def fine_dehalo(
                 func=func_util.func,
                 **kwargs,
             ),
-            **pre_ss,
+            **pre_kwargs,
             func=func_util.func,
         )
 
