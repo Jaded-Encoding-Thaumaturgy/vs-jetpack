@@ -397,7 +397,7 @@ def fine_dehalo(
         dehalo_mask = fine_dehalo.masks.MAIN
 
         # dehalo_sigma with fine_dehalo masks
-        from vsrgtools import gauss_blur
+        from vsdenoise import Prefilter
 
         dehalo = fine_dehalo(clip, blur_func=Prefilter.GAUSS)
         ```
