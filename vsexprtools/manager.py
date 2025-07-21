@@ -1,3 +1,8 @@
+"""
+This module provides a Pythonic interface for building and evaluating complex VapourSynth expressions
+using standard Python syntax.
+"""
+
 from __future__ import annotations
 
 from contextlib import AbstractContextManager
@@ -229,6 +234,13 @@ class inline_expr(AbstractContextManager[InlineExpr]):  # noqa: N801
     _final_expr_node: ComputedVar
 
     def __init__(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> None:
+        """
+        Initializes the class.
+
+        Args:
+            clips: A single clip or a sequence of clip objects to be used in the expression.
+                These will be accessible within the context as `ClipVar` objects.
+        """
         self._in_context = False
 
         self._clips = list(clips) if isinstance(clips, Sequence) else [clips]
@@ -266,14 +278,36 @@ class inline_expr(AbstractContextManager[InlineExpr]):  # noqa: N801
 
     @property
     def out(self) -> ComputedVar:
+        """
+        The final expression node representing the result of the expression.
+
+        This is the computed expression that will be translated into a VapourSynth
+        expression string. It must be assigned inside the context using `ie.out = ...`.
+        """
         return self._final_expr_node
 
     @out.setter
     def out(self, out_var: ExprVar) -> None:
+        """
+        Set the final output of the expression.
+
+        Converts the given `ExprVar` to a `ComputedVar` and stores it as the final expression.
+        """
         self._final_expr_node = ExprOperators.as_var(out_var)
 
     @property
     def clip(self) -> vs.VideoNode:
+        """
+        The output VapourSynth clip generated from the final expression.
+
+        Raises:
+            ValueError: If accessed inside the context manager.
+            ValueError: If `out` was not assigned before exiting the context.
+            ValueError: If an error occurred during evaluation.
+
+        Returns:
+            The resulting clip after evaluating the expression.
+        """
         if self._in_context:
             raise ValueError("You can only get the output clip out of the context manager!")
 
