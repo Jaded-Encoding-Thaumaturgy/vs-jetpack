@@ -28,63 +28,64 @@ class inline_expr(AbstractContextManager[InlineExpr]):  # noqa: N801
     This class allows you to write complex VapourSynth expressions using standard Python
     operators and syntax, abstracting away the underlying RPN (Reverse Polish Notation) string.
 
-    - https://www.vapoursynth.com/doc/functions/video/expr.html
-    - https://github.com/AkarinVS/vapoursynth-plugin/wiki/Expr
+    - <https://www.vapoursynth.com/doc/functions/video/expr.html>
+    - <https://github.com/AkarinVS/vapoursynth-plugin/wiki/Expr>
 
     The context manager is initialized with one or more VapourSynth clips and yields a
     tuple containing clip variables, operators, and the context manager instance itself.
 
-    Parameters:
-        clips: A single `vs.VideoNode` or a sequence of `vs.VideoNode` objects to be used in the expression.
-               These will be accessible within the context as `ClipVar` objects.
-
     Yields:
-        A tuple `(clips, op, ie)`:
-        - `clips` (list[`ClipVar`]): A list of `ClipVar` objects, one for each input clip.
-          These objects overload standard Python operators (`+`, `-`, `*`, `/`, `**`, `==`, `<`, `>` etc.)
-          to build the expression. They also have helpful properties:
-            - `.peak`, `.neutral`, `.lowest`: Bitdepth-aware values.
-            - `.width`, `.height`, `.depth`: Clip properties.
-            - `[x, y]`: Relative pixel access (e.g., `clip[1, 0]` for the pixel to the right).
-            - `props`: Access to frame properties (e.g. `clip.props.PlaneStatsMax`).
+        InlineExpr (InlineExpr): A tuple `(clips, op, ie)`:
 
-        - `op` (`ExprOperators`): An object providing access to all `Expr` operators
-          such as `op.CLAMP(value, min, max)`, `op.SQRT(value)`, `op.TERN(condition, if_true, if_false)`, etc.
+               - `clips` is a a list of [ClipVar][vsexprtools.ClipVar] objects, one for each input clip.
+                These objects overload standard Python operators (`+`, `-`, `*`, `/`, `**`, `==`, `<`, `>` etc.)
+                to build the expression. They also have helpful properties:
+                   - `.peak`, `.neutral`, `.lowest`: Bitdepth-aware values.
+                   - `.width`, `.height`, `.depth`: Clip properties.
+                   - `[x, y]`: Relative pixel access (e.g., `clip[1, 0]` for the pixel to the right).
+                   - `props`: Access to frame properties (e.g. `clip.props.PlaneStatsMax`).
+               - `op` is an object providing access to all `Expr` operators
+                such as `op.CLAMP(value, min, max)`, `op.SQRT(value)`, `op.TERN(condition, if_true, if_false)`, etc.
+               - `ie` is the context manager instance itself. You must assign the final `ComputedVar`
+                (the result of your expression) to `ie.out`.
 
-        - `ie` (`inline_expr`): The context manager instance itself. You must assign the
-          final `ComputedVar` (the result of your expression) to `ie.out`.
-
-          You can print(ie.out) to see computed expression string.
+                You can use `print(ie.out)` to see computed expression string.
 
     Usage:
-        with inline_expr(clips) as (clips, op, ie):
-            # ... build your expression here ...
-            ie.out = ...
+    ```py
+    with inline_expr(clips) as (clips, op, ie):
+        # ... build your expression here ...
+        ie.out = ...
 
-        # The final, processed clip is available after the context block.
-        result_clip = ie.clip
+    # The final, processed clip is available after the context block.
+    result_clip = ie.clip
+    ```
 
-    Example (simple): Averaging two clips
+    - Example (simple): Averaging two clips
+        ```py
         from vsexprtools import inline_expr
         from vstools import core, vs
 
         clip_a = core.std.BlankClip(format=vs.YUV420P8, color=[255, 0, 0])
         clip_b = core.std.BlankClip(format=vs.YUV420P8, color=[0, 255, 0])
 
-        with inline_expr([clip_a, clip_b]) as (clips, op, ie):  # noqa: F841
+        with inline_expr([clip_a, clip_b]) as (clips, op, ie):
             # clips[0] is clip_a, clips[1] is clip_b
             average = (clips[0] + clips[1]) / 2
             ie.out = average
 
         result = ie.clip
+        ```
 
-    Example (simple): Averaging 20 random clips
+    - Example (simple): Averaging 20 random clips
+        ```py
         from vsexprtools import inline_expr
         from vstools import core, vs
         import random
 
+
         def spawn_random(amount: int) -> list[vs.VideoNode]:
-            clips = []
+            clips = list[vs.VideoNode]()
 
             for _ in range(amount):
                 r = random.randint(0, 255)
@@ -94,36 +95,36 @@ class inline_expr(AbstractContextManager[InlineExpr]):  # noqa: N801
 
             return clips
 
-        clips = spawn_random(20)
 
-        with inline_expr(clips=clips) as (clips, op, ie):  # noqa: F841
+        with inline_expr(spawn_random(20)) as (clips, op, ie):
             sum_clips = clips[0]
 
             for i in range(1, len(clips)):
                 sum_clips = sum_clips + clips[i]
 
             average = sum_clips / len(clips)
-            ie.out = average # -> "x y + z + a + b + c + d + e + f + g + h + i + j + k + l + m + n + o + p + q + 20 /"
+            ie.out = average  # -> "x y + z + a + b + c + d + e + f + g + h + i + j + k + l + m + n + o + p + q + 20 /"
 
         result = ie.clip
+        ```
 
-    # Example (complex): Unsharp mask implemented in inline_expr
-    # Extended with configurable anti-ringing and anti-aliasing, and frequency-based limiting.
-
+    - Example (complex): Unsharp mask implemented in inline_expr.
+      Extended with configurable anti-ringing and anti-aliasing, and frequency-based limiting.
+        ```py
         @dataclass
         class LowFreqSettings:
             freq_limit: float = 0.1
             freq_ratio_scale: float = 5.0
             max_reduction: float = 0.95
 
-        def unsharp_limited(
-                clip: vs.VideoNode,
-                strength: float = 1.5,
-                limit: float = 0.3,
-                low_freq: LowFreqSettings = LowFreqSettings(freq_limit=0.1)
-            ) -> vs.VideoNode:
 
-            with inline_expr([clip]) as (clips, op, ie):
+        def unsharp_limited(
+            clip: vs.VideoNode,
+            strength: float = 1.5,
+            limit: float = 0.3,
+            low_freq: LowFreqSettings = LowFreqSettings(freq_limit=0.1),
+        ) -> vs.VideoNode:
+            with inline_expr(clip) as (clips, op, ie):
                 x = clips[0]
 
                 # Calculate blur for sharpening base
@@ -138,21 +139,23 @@ class inline_expr(AbstractContextManager[InlineExpr]):  # noqa: N801
                 if low_freq.freq_limit > 0:
                     # Calculate high-frequency component by comparing local variance to a larger area
                     wider_blur = (
-                        blur +
-                        x[-2, -2] + x[-2, 0] + x[-2, 2] +
-                        x[0, -2] + x[0, 2] +
-                        x[2, -2] + x[2, 0] + x[2, 2]
-                        ) / 9
+                        blur + x[-2, -2] + x[-2, 0] + x[-2, 2] + x[0, -2] + x[0, 2] + x[2, -2] + x[2, 0] + x[2, 2]
+                    ) / 9
                     high_freq_indicator = op.ABS(blur - wider_blur)
 
-                    # Calculate texture complexity (higher in detailed areas, lower in flat areas)
+                    # Calculate texture complexity (higher in detailed areas,
+                    # lower in flat areas)
                     texture_complexity = op.MAX(op.ABS(x - blur), op.ABS(blur - wider_blur))
 
-                    # Reduce sharpening in areas with high frequency content but low texture complexity
+                    # Reduce sharpening in areas with high frequency content
+                    # but low texture complexity
                     freq_ratio = op.MAX(high_freq_indicator / (texture_complexity + 0.01), 0)
-                    low_freq_factor = 1.0 - op.MIN(freq_ratio * low_freq.freq_ratio_scale * low_freq.freq_limit, low_freq.max_reduction)
+                    low_freq_factor = 1.0 - op.MIN(
+                        freq_ratio * low_freq.freq_ratio_scale * low_freq.freq_limit, low_freq.max_reduction
+                    )
 
-                    # Apply additional limiting for high-frequency content to effective_sharp_diff
+                    # Apply additional limiting for high-frequency content
+                    # to effective_sharp_diff
                     effective_sharp_diff = effective_sharp_diff * low_freq_factor
 
                 # Get horizontal neighbors from the original clip
@@ -181,12 +184,21 @@ class inline_expr(AbstractContextManager[InlineExpr]):  # noqa: N801
                 # Only calculate adaptive limiting if limit > 0
                 if limit > 0:
                     # Calculate local variance to detect edges (high variance = potential aliasing)
-                    variance = (n1 - x)**2 + (n2 - x)**2 + (n3 - x)**2 + (n4 - x)**2 + (n5 - x)**2 + (n6 - x)**2 + (n7 - x)**2 + (n8 - x)**2
+                    variance = (
+                        (n1 - x) ** 2
+                        + (n2 - x) ** 2
+                        + (n3 - x) ** 2
+                        + (n4 - x) ** 2
+                        + (n5 - x) ** 2
+                        + (n6 - x) ** 2
+                        + (n7 - x) ** 2
+                        + (n8 - x) ** 2
+                    )
                     variance = variance / 8
 
                     # Calculate edge detection using Sobel-like operators
-                    h_edge = op.ABS(n1 + 2*n2 + n3 - n6 - 2*n7 - n8)
-                    v_edge = op.ABS(n1 + 2*n4 + n6 - n3 - 2*n5 - n8)
+                    h_edge = op.ABS(n1 + 2 * n2 + n3 - n6 - 2 * n7 - n8)
+                    v_edge = op.ABS(n1 + 2 * n4 + n6 - n3 - 2 * n5 - n8)
                     edge_strength = op.SQRT(h_edge**2 + v_edge**2)
 
                     # Adaptive sharpening strength based on edge detection and variance
@@ -208,7 +220,9 @@ class inline_expr(AbstractContextManager[InlineExpr]):  # noqa: N801
                 ie.out = final_output
 
             return ie.clip
-        """
+        ```
+    """
+
     _clips: list[vs.VideoNode]
     _in_context: bool
     _final_clip: vs.VideoNode | None
