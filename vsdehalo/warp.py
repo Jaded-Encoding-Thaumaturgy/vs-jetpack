@@ -87,7 +87,7 @@ def YAHR(  # noqa: N802
     clip: vs.VideoNode,
     blur: int = 3,
     depth: int | Sequence[int] = 32,
-    expand: float | Literal[False] = 5,
+    expand: int | Literal[False] = 5,
     planes: PlanesT = 0,
 ) -> vs.VideoNode:
     """
