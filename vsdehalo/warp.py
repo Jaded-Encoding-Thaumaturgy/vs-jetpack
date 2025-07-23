@@ -5,12 +5,11 @@ as the core processing method.
 
 from __future__ import annotations
 
-from math import sqrt
-from typing import Sequence
+from typing import Literal, Sequence
 
 from vsexprtools import norm_expr
 from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, PrewittStd
-from vsrgtools import BlurMatrix, awarpsharp, box_blur, gauss_blur, min_blur, remove_grain, repair
+from vsrgtools import BlurMatrix, awarpsharp, box_blur, min_blur, remove_grain, repair
 from vsrgtools.rgtools import Repair
 from vstools import PlanesT, get_y, limiter, scale_mask, vs
 
@@ -85,7 +84,11 @@ def edge_cleaner(
 
 
 def YAHR(  # noqa: N802
-    clip: vs.VideoNode, blur: int = 3, depth: int | Sequence[int] = 32, expand: float = 5, planes: PlanesT = 0
+    clip: vs.VideoNode,
+    blur: int = 3,
+    depth: int | Sequence[int] = 32,
+    expand: float | Literal[False] = 5,
+    planes: PlanesT = 0,
 ) -> vs.VideoNode:
     """
     Applies YAHR (Yet Another Halo Remover) to reduce halos in a video clip.
@@ -94,7 +97,7 @@ def YAHR(  # noqa: N802
         clip: The input video clip to process.
         blur: The blur strength for the warping process. Default is 3.
         depth: The depth of the warping process. Default is 32.
-        expand: The expansion factor for edge detection. Default is 5.
+        expand: The expansion factor for edge detection. Set to False to disable masking. Default is 5.
         planes: The planes to process. Default is 0 (luma only).
 
     Returns:
@@ -110,13 +113,24 @@ def YAHR(  # noqa: N802
     rep_diff = repair(blur_diff, blur_warped_diff, 13, planes)
     yahr = norm_expr([clip, blur_diff, rep_diff], "x y z - -", planes)
 
-    y_mask = get_y(clip)
-    v_edge = norm_expr([y_mask, Morpho.maximum(y_mask, iterations=2)], "y x - 8 range_max * 255 / - 128 *", func=YAHR)
-
-    mask = limiter(
-        norm_expr(
-            [gauss_blur(v_edge, sqrt(expand * 2)), BlurMatrix.BINOMIAL()(v_edge)], "x 16 * range_max y - min", func=YAHR
+    if expand is not False:
+        v_edge = norm_expr(
+            [clip, Morpho.maximum(clip, iterations=2, planes=planes)],
+            "y x - 8 range_max * 255 / - 128 *",
+            planes=planes,
+            func=YAHR,
         )
-    )
 
-    return clip.std.MaskedMerge(yahr, mask, planes)
+        mask = norm_expr(
+            [
+                BlurMatrix.BINOMIAL(radius=expand * 2)(v_edge, planes=planes),
+                BlurMatrix.BINOMIAL()(v_edge, planes=planes),
+            ],
+            "x 16 * range_max y - min",
+            planes,
+            func=YAHR,
+        )
+
+        yahr = clip.std.MaskedMerge(yahr, limiter(mask, planes=planes), planes)
+
+    return yahr
