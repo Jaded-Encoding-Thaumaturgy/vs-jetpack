@@ -32,10 +32,10 @@ from vstools import (
     vs,
 )
 
-__all__ = ["smooth_dering", "vine_dehalo"]
+__all__ = ["hq_dering", "smooth_dering", "vine_dehalo"]
 
 
-def smooth_dering(
+def hq_dering(
     clip: vs.VideoNode,
     smooth: vs.VideoNode | PrefilterLike | None = None,
     ringmask: vs.VideoNode | None = None,
@@ -138,7 +138,7 @@ def smooth_dering(
     Returns:
         Deringed clip.
     """
-    func = FunctionUtil(clip, smooth_dering, planes, (vs.GRAY, vs.YUV))
+    func = FunctionUtil(clip, hq_dering, planes, (vs.GRAY, vs.YUV))
 
     assert check_progressive(clip, func.func)
 
@@ -190,6 +190,9 @@ def smooth_dering(
     dering = func.work_clip.std.MaskedMerge(limitclp, ringmask, planes)
 
     return func.return_clip(dering)
+
+
+smooth_dering = hq_dering
 
 
 def vine_dehalo(
