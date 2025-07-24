@@ -17,7 +17,6 @@ from vstools import (
     VSFunctionKwArgs,
     check_variable,
     core,
-    limiter,
     scale_delta,
     vs,
 )
@@ -184,7 +183,7 @@ class FixInterlacedFades(CustomIntEnum):
             expr_clips.append(color)
             clipb, prop_name, expr_color = color, "Diff", "y"
         else:
-            fields = norm_expr(limiter(fields), "x {color} - abs", planes, color=color, func=self.__class__)
+            fields = norm_expr(fields, "x 0 1 clip {color} - abs", planes, color=color, func=self.__class__)
             clipb, prop_name, expr_color = None, "Average", color
 
         for i in func.norm_planes:
