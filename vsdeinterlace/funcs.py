@@ -15,6 +15,7 @@ from vstools import (
     FunctionUtil,
     PlanesT,
     VSFunctionKwArgs,
+    check_ref_clip,
     check_variable,
     core,
     scale_delta,
@@ -166,8 +167,8 @@ class FixInterlacedFades(CustomIntEnum):
 
         Args:
             clip: Clip to process.
-            color: Fade source/target color (floating-point plane averages). Accepts a single float or a sequence of
-                floats to control the color per plane.
+            color: Fade source/target color (floating-point plane averages or a single-frame clip matching the format of
+                `clip`). Accepts a single float or a sequence of floats to control the color per plane.
 
         Returns:
             Clip with fades to/from `color` accurately deinterlaced. Frames that don't contain such fades may be
@@ -176,10 +177,13 @@ class FixInterlacedFades(CustomIntEnum):
 
         func = FunctionUtil(clip, self.__class__, planes, vs.YUV, 32)
 
-        expr_clips = []
+        expr_clips = list[ConstantFormatVideoNode]()
         fields = func.work_clip.std.SeparateFields(tff=True)
 
         if isinstance(color, vs.VideoNode):
+            assert check_variable(color, self.__class__)
+            check_ref_clip(color, func.work_clip)
+
             expr_clips.append(color)
             clipb, prop_name, expr_color = color, "Diff", "y"
         else:
