@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Sequence
+
 from vsexprtools import norm_expr
 from vstools import PlanesT, fallback, vs
 
@@ -10,9 +12,9 @@ def limit_filter(
     flt: vs.VideoNode,
     src: vs.VideoNode,
     ref: vs.VideoNode | None = None,
-    dark_thr: float | list[float] = 1.0,
-    bright_thr: float | list[float] = 1.0,
-    elast: float | list[float] = 2.0,
+    dark_thr: float | Sequence[float] = 1.0,
+    bright_thr: float | Sequence[float] = 1.0,
+    elast: float | Sequence[float] = 2.0,
     planes: PlanesT = None,
 ) -> vs.VideoNode:
     ref = fallback(ref, src)
