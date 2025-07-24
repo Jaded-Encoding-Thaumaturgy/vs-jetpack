@@ -10,7 +10,6 @@ from vsexprtools import ExprOp, ExprToken, norm_expr
 from vskernels import Catrom, Point, Scaler, ScalerLike
 from vsmasktools import Morpho, Prewitt
 from vsrgtools import (
-    LimitFilterMode,
     contrasharpening,
     contrasharpening_dehalo,
     gauss_blur,
@@ -158,7 +157,7 @@ def smooth_dering(
 
     repclp = repair(work_clip, smoothed, drrep) if set(rep_dr) != {0} else work_clip
 
-    limitclp = limit_filter(repclp, work_clip, None, LimitFilterMode.CLAMPING, planes, thr, elast, darkthr)
+    limitclp = limit_filter(repclp, work_clip, None, darkthr, thr, elast, planes)
 
     if ringmask is None:
         prewittm = Prewitt.edgemask(work_clip, mthr)

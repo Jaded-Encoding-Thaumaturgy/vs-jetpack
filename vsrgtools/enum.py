@@ -11,7 +11,6 @@ from vsexprtools import ExprList, ExprOp, ExprToken, ExprVars
 from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
-    CustomIntEnum,
     CustomValueError,
     KwargsT,
     PlanesT,
@@ -23,40 +22,7 @@ from vstools import (
     vs,
 )
 
-__all__ = ["BlurMatrix", "BlurMatrixBase", "LimitFilterMode"]
-
-
-class LimitFilterModeMeta:
-    force_expr = True
-
-
-class LimitFilterMode(LimitFilterModeMeta, CustomIntEnum):
-    """
-    Two sources, one filtered
-    """
-
-    SIMPLE_MIN = auto()
-    SIMPLE_MAX = auto()
-    """
-    One source, two filtered
-    """
-    SIMPLE2_MIN = auto()
-    SIMPLE2_MAX = auto()
-    DIFF_MIN = auto()
-    DIFF_MAX = auto()
-    """
-    One/Two sources, one filtered
-    """
-    CLAMPING = auto()
-
-    @property
-    def op(self) -> str:
-        return "<" if "MIN" in self._name_ else ">"
-
-    def __call__(self, force_expr: bool = True) -> Self:
-        self.force_expr = force_expr
-
-        return self
+__all__ = ["BlurMatrix", "BlurMatrixBase"]
 
 
 _Nb = TypeVar("_Nb", bound=float | int)

@@ -812,7 +812,7 @@ class PAWorksChromaRecon(MissingFieldsChromaRecon):
 
         y_base = self._kernel.shift(y_base, self.src_top, self.src_left)
 
-        return limit_filter(a, y_base, a, thr=1, elast=4.5, bright_thr=10)
+        return limit_filter(a, y_base, a, dark_thr=1, bright_thr=10, elast=4.5)
 
     @inject_self.init_kwargs
     def reconstruct(

@@ -544,10 +544,8 @@ def mdb_bilateral(
     clip: vs.VideoNode,
     radius: int = 16,
     thr: float = 260,
-    lthr: int | tuple[int, int] = (153, 0),
-    elast: float = 3.0,
-    bright_thr: int | None = None,
     debander: _DebanderFunc[Any] = f3k_deband,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Multi stage debanding, bilateral-esque filter.
@@ -584,7 +582,7 @@ def mdb_bilateral(
     db2 = debander(db1, rad2, thr, 0)
     db3 = debander(db2, rad3, thr, 0)
 
-    limit = limit_filter(db3, db2, clip, thr=lthr, elast=elast, bright_thr=bright_thr)
+    limit = limit_filter(db3, db2, clip, **kwargs)
 
     return depth(limit, bits)
 
@@ -601,9 +599,6 @@ def pfdeband(
     clip: vs.VideoNode,
     radius: int = 16,
     thr: float | Sequence[float] = 96,
-    lthr: float | tuple[float, float] = 0.5,
-    elast: float = 1.5,
-    bright_thr: int | None = None,
     prefilter: PrefilterLike | _SupportPlanesParam = gauss_blur,
     debander: _DebanderFunc[Any] = f3k_deband,
     planes: PlanesT = None,
@@ -628,12 +623,12 @@ def pfdeband(
     """
     clip, bits = expect_bits(clip, 16)
 
-    blur = prefilter(clip, planes=planes, **kwargs)
+    blur = prefilter(clip, planes=planes)
     diff = clip.std.MakeDiff(blur, planes=planes)
 
     deband = debander(blur, radius, thr, planes=planes)
 
     merge = deband.std.MergeDiff(diff, planes=planes)
-    limit = limit_filter(merge, clip, thr=lthr, elast=elast, bright_thr=bright_thr)
+    limit = limit_filter(merge, clip, planes=planes, **kwargs)
 
     return depth(limit, bits)
