@@ -182,7 +182,7 @@ class FixInterlacedFades(CustomIntEnum):
 
         if isinstance(color, vs.VideoNode):
             assert check_variable(color, self.__class__)
-            check_ref_clip(color, func.work_clip)
+            check_ref_clip(color, func.work_clip, self.__class__)
 
             expr_clips.append(color)
             clipb, prop_name, expr_color = color, "Diff", "y"
