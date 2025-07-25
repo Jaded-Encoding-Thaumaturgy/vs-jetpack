@@ -101,7 +101,21 @@ include = [
 exclude = ["docs", "scripts", "site", "stubs", "tests"]
 
 [tool.hatch.build.targets.sdist]
-exclude = ["docs", "scripts", "site", "stubs", "tests"]
+include = [
+    "/vsaa",
+    "/vsdeband",
+    "/vsdehalo",
+    "/vsdeinterlace",
+    "/vsdenoise",
+    "/vsexprtools",
+    "/vskernels",
+    "/vsmasktools",
+    "/vsrgtools",
+    "/vsscale",
+    "/vssource",
+    "/vstools",
+    "_metadata.py",
+]
 
 [tool.hatch.version]
 path = "_metadata.py"
