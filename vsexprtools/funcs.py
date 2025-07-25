@@ -1,24 +1,19 @@
 from __future__ import annotations
 
-from functools import partial
 from math import ceil
-from typing import Any, Iterable, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Sequence, TypeAlias, Union
 
 from vstools import (
     ConstantFormatVideoNode,
     CustomRuntimeError,
-    CustomValueError,
     FuncExceptT,
     HoldsVideoFormatT,
     PlanesT,
     ProcessVariableResClip,
-    StrArr,
-    StrArrOpt,
     StrList,
     SupportsString,
     VideoFormatT,
     VideoNodeIterableT,
-    VideoNodeT,
     check_variable_format,
     core,
     flatten_vnodes,
@@ -27,8 +22,8 @@ from vstools import (
     vs,
 )
 
-from .exprop import ExprList, ExprOp, ExprOpBase, TupleExprList
-from .util import ExprVars, bitdepth_aware_tokenize_expr, complexpr_available, norm_expr_planes
+from .exprop import ExprOp, ExprOpBase, TupleExprList
+from .util import ExprVars, bitdepth_aware_tokenize_expr, extra_op_tokenize_expr, norm_expr_planes
 
 __all__ = ["combine", "expr_func", "norm_expr"]
 
@@ -41,73 +36,90 @@ def expr_func(
     boundary: bool = True,
     func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
+    """
+    Calls `akarin.Expr` plugin.
+
+    For a higher-level function, see [norm_expr][vsexprtools.norm_expr]
+
+    Args:
+        clips: Input clip(s). Supports constant format clips, or one variable resolution clip.
+        expr: Expression to be evaluated.
+        format: Output format, defaults to the first clip format.
+        opt: Forces integer evaluation as much as possible.
+        boundary: Specifies the default boundary condition for relative pixel accesses:
+
+               - True (default): Mirrored edges.
+               - False: Clamped edges.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Raises:
+        CustomRuntimeError: If `akarin` plugin is not found.
+        vapoursynth.Error: If the expression could not be evaluated.
+
+    Returns:
+        Evaluated clip.
+    """
     func = func or expr_func
 
-    clips = list(clips) if isinstance(clips, Sequence) else [clips]
-    over_clips = len(clips) > 26
+    clips = to_arr(clips)
 
-    if not complexpr_available:
-        if over_clips:
-            raise ExprVars._get_akarin_err("This function only works with akarin plugin!")(func=func)
-    elif over_clips and b"src26" not in vs.core.akarin.Version()["expr_features"]:
-        raise ExprVars._get_akarin_err("You need at least v0.96 of akarin plugin!")(func=func)
+    if TYPE_CHECKING:
+        assert check_variable_format(clips, func)
 
-    fmt = None if format is None else get_video_format(format).id
-
-    got_var_res = False
-
-    for clip in clips:
-        check_variable_format(clip, func)
-        got_var_res = got_var_res or (0 in (clip.width, clip.height))
-
-    if complexpr_available and opt is None:
-        opt = all(clip.format.sample_type == vs.INTEGER for clip in clips if clip.format)
-
-    if complexpr_available:
-        func_impl = partial(core.akarin.Expr, expr=expr, format=fmt, opt=opt, boundary=boundary)
-    else:
-        func_impl = partial(core.std.Expr, expr=expr, format=fmt)
-
-    if got_var_res:
-        if len(clips) == 1:
-            return ProcessVariableResClip[VideoNodeT].from_func(clips[0], func_impl, None, clips[0].format)  # type: ignore
-
-        raise CustomValueError("You can run only one var res clip!")
+    fmt = get_video_format(format).id if format is not None else None
+    opt = all(clip.format.sample_type == vs.INTEGER for clip in clips) if opt is None else opt
 
     try:
-        return func_impl(clips)
-    except Exception:
-        raise CustomRuntimeError(
-            "There was an error when evaluating the expression:\n"
-            + ("" if complexpr_available else "You might need akarin-plugin, and are missing it."),
-            func,
-            f"\n{expr}\n",
-        )
+        return core.akarin.Expr(clips, expr, fmt, opt, boundary)
+    except AttributeError as e:
+        raise CustomRuntimeError(e)
+    except vs.Error as e:
+        if len(clips) == 1 and 0 in (clips[0].width, clips[0].height):
+            return ProcessVariableResClip[ConstantFormatVideoNode].from_func(
+                clips[0], lambda clip: core.akarin.Expr(clip, expr, fmt, opt, boundary)
+            )
+
+        raise e
 
 
-def _combine_norm__ix(ffix: StrArrOpt, n_clips: int) -> list[SupportsString]:
+def _combine_norm__ix(ffix: SupportsString | Iterable[SupportsString] | None, n_clips: int) -> list[SupportsString]:
     if ffix is None:
         return [""] * n_clips
 
-    ffix = [ffix] if isinstance(ffix, (str, tuple)) else list(ffix)  # type: ignore
+    ffix = to_arr(ffix)
 
-    return ffix * max(1, ceil(n_clips / len(ffix)))  # type: ignore
+    return ffix * max(1, ceil(n_clips / len(ffix)))
 
 
 def combine(
     clips: VideoNodeIterableT[vs.VideoNode],
     operator: ExprOpBase = ExprOp.MAX,
-    suffix: StrArrOpt = None,
-    prefix: StrArrOpt = None,
-    expr_suffix: StrArrOpt = None,
-    expr_prefix: StrArrOpt = None,
+    suffix: SupportsString | Iterable[SupportsString] | None = None,
+    prefix: SupportsString | Iterable[SupportsString] | None = None,
+    expr_suffix: SupportsString | Iterable[SupportsString] | None = None,
+    expr_prefix: SupportsString | Iterable[SupportsString] | None = None,
     planes: PlanesT = None,
     split_planes: bool = False,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
-    clips = flatten_vnodes(clips, split_planes=split_planes)
+    """
+    Combines multiple video clips using a specified expression operator.
 
-    assert check_variable_format(clips, combine)
+    Args:
+        clips: Input clip(s).
+        operator: An ExprOpBase enum used to join the clips.
+        suffix: Optional suffix string(s) to append to each input variable in the expression.
+        prefix: Optional prefix string(s) to prepend to each input variable in the expression.
+        expr_suffix: Optional expression to append after the combined input expression.
+        expr_prefix: Optional expression to prepend before the combined input expression.
+        planes: Which planes to process. Defaults to all.
+        split_planes: If True, treats each plane of input clips as separate inputs.
+        **kwargs: Additional keyword arguments forwarded to [norm_expr][vsexprtools.norm_expr].
+
+    Returns:
+        A clip representing the combined result of applying the expression.
+    """
+    clips = flatten_vnodes(clips, split_planes=split_planes)
 
     n_clips = len(clips)
 
@@ -122,36 +134,52 @@ def combine(
     return norm_expr(clips, [expr_prefix, args, operators, expr_suffix], planes, **kwargs)
 
 
+ExprLike: TypeAlias = Union[SupportsString | None, Iterable["ExprLike"]]
+"""
+A recursive type representing a valid expression input.
+
+Acceptable forms include:
+- A single string (or string-like object): Used as the same expression for all planes.
+- A list of expressions: Concatenated into a single expression for all planes.
+- A tuple of expressions: Interpreted as separate expressions for each plane.
+- A TupleExprList: will make a [norm_expr][vsexprtools.norm_expr] call for each expression within this tuple.
+"""
+
+
 def norm_expr(
     clips: VideoNodeIterableT[vs.VideoNode],
-    expr: str | StrArr | ExprList | tuple[str | StrArr | ExprList, ...] | TupleExprList,
+    expr: ExprLike,
     planes: PlanesT = None,
     format: HoldsVideoFormatT | VideoFormatT | None = None,
     opt: bool | None = None,
     boundary: bool = True,
     func: FuncExceptT | None = None,
     split_planes: bool = False,
+    debug: bool = False,
     **kwargs: Iterable[SupportsString] | SupportsString,
 ) -> ConstantFormatVideoNode:
     """
-    Evaluates an expression per pixel.
+    Evaluate a per-pixel expression on input clip(s), normalize it based on the specified planes,
+    and format tokens and placeholders using provided keyword arguments.
 
     Args:
-        clips: Input clip(s).
+        clips: Input clip(s). Supports constant format clips, or one variable resolution clip.
         expr: Expression to be evaluated.
 
                - A single str will be processed for all planes.
                - A list will be concatenated to form a single expr for all planes.
                - A tuple of these types will allow specification of different expr for each planes.
-               - A TupleExprList will make a norm_expr call for each expression within this tuple.
+               - A TupleExprList will make a `norm_expr` call for each expression within this tuple.
         planes: Plane to process, defaults to all.
         format: Output format, defaults to the first clip format.
         opt: Forces integer evaluation as much as possible.
         boundary: Specifies the default boundary condition for relative pixel accesses:
 
-               - False means clamped
-               - True means mirrored
+               - True (default): Mirrored edges.
+               - False: Clamped edges.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
         split_planes: Splits the VideoNodes into their individual planes.
+        debug: Print out the normalized expr.
         **kwargs: Additional keywords arguments to be passed to the expression function. These arguments are key-value
             pairs, where the keys are placeholders that will be replaced in the expression string. Iterable values
             (except str and bytes types) will be associated with the corresponding plane.
@@ -188,4 +216,9 @@ def norm_expr(
         bitdepth_aware_tokenize_expr(clips, e, bool(is_chroma)) for is_chroma, e in enumerate(normalized_expr)
     ]
 
-    return expr_func(clips, tokenized_expr, format, opt, boundary, func)
+    extra_op_expr = [extra_op_tokenize_expr(e) for e in tokenized_expr]
+
+    if debug:
+        print(extra_op_expr)
+
+    return expr_func(clips, extra_op_expr, format, opt, boundary, func)

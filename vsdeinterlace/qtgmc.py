@@ -1,6 +1,6 @@
 from functools import partial
 from math import factorial
-from typing import Literal, MutableMapping, Protocol, cast
+from typing import Any, Iterable, Literal, MutableMapping, Protocol, cast
 
 from jetpytools import CustomIntEnum
 from numpy import linalg, zeros
@@ -729,7 +729,7 @@ class QTempGaussMC(vs_object):
         return clip
 
     def _binomial_degrain(self, clip: vs.VideoNode, tr: int) -> ConstantFormatVideoNode:
-        def _get_weights(n: int) -> list[int]:
+        def _get_weights(n: int) -> Iterable[Any]:
             k, rhs = 1, list[int]()
             mat = zeros((n + 1, n + 1))
 
@@ -740,7 +740,7 @@ class QTempGaussMC(vs_object):
 
             mat[n, 0] = 1
 
-            return list(linalg.solve(mat, rhs))
+            return linalg.solve(mat, rhs)
 
         assert check_variable(clip, self._binomial_degrain)
 
@@ -763,7 +763,7 @@ class QTempGaussMC(vs_object):
             )
             vectors.clear()
 
-        return core.std.AverageFrames([clip, *degrained], _get_weights(tr))
+        return BlurMatrix.custom(_get_weights(tr), ConvMode.TEMPORAL)([clip, *degrained], func=self._binomial_degrain)
 
     def _apply_prefilter(self) -> None:
         self.draft = Catrom(tff=self.tff).bob(self.clip) if self.input_type == self.InputType.INTERLACE else self.clip

@@ -286,7 +286,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         return (
             fp16
             if (isinstance(self.backend, _SupportsFP16) and self.backend.fp16)
-            and not isinstance(self.backend, (Backend.OV_CPU, Backend.OV_GPU, Backend.OV_NPU))
+            and not isinstance(self.backend, (Backend.OV_CPU, Backend.OV_GPU, Backend.OV_NPU, Backend.NCNN_VK))
             else fp32
         )
 

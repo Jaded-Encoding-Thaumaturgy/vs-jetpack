@@ -13,7 +13,6 @@ from vsexprtools import ExprOp, norm_expr
 from vskernels import Catrom, Scaler, ScalerLike
 from vsmasktools import Morpho, Robinson3
 from vsrgtools import (
-    LimitFilterMode,
     contrasharpening_dehalo,
     gauss_blur,
     limit_filter,
@@ -161,7 +160,7 @@ def hq_dering(
 
     repclp = repair(func.work_clip, smoothed, drrep, planes)
 
-    limitclp = limit_filter(repclp, func.work_clip, None, LimitFilterMode.CLAMPING, planes, thr, elast, darkthr)
+    limitclp = limit_filter(repclp, func.work_clip, None, darkthr, thr, elast, planes)
 
     if ringmask is None:
         edgemask = Robinson3.edgemask(func.work_clip, mthr, planes=planes)

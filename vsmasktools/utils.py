@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from functools import cached_property
 from typing import Any, Callable, Concatenate, Generic, Iterable, overload
 
-from jetpytools import P0, R
+from jetpytools import P0, R, SupportsString
 
-from vsexprtools import ExprOp, complexpr_available, norm_expr
+from vsexprtools import ExprOp, norm_expr
 from vskernels import Bilinear, Kernel, KernelLike
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
@@ -15,6 +16,7 @@ from vstools import (
     FrameRangesN,
     FuncExceptT,
     P,
+    PlanesT,
     check_ref_clip,
     check_variable,
     check_variable_format,
@@ -22,10 +24,9 @@ from vstools import (
     depth,
     flatten_vnodes,
     get_lowest_values,
-    get_peak_values,
+    get_plane_sizes,
     insert_clip,
     normalize_ranges,
-    plane,
     replace_ranges,
     split,
     vs,
@@ -61,57 +62,141 @@ def max_planes(
     return ExprOp.MAX.combine(split(resizer.scale(clip, width, height, format=fmt)) for clip in clips)
 
 
-def _get_region_expr(
-    clip: vs.VideoNode | vs.VideoFrame,
+class RegionMask(Generic[P, R]):
+    """
+    Class decorator that wraps [region_rel_mask][vsmasktools.region_rel_mask]
+    and [region_abs_mask][vsmasktools.region_abs_mask] function and extends their functionality.
+
+    It is not meant to be used directly.
+    """
+
+    def __init__(self, func: Callable[P, R]) -> None:
+        self._func = func
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        return self._func(*args, **kwargs)
+
+    @cached_property
+    def expr(self) -> str:
+        """
+        Get the internal expr used for regioning.
+
+        Returns:
+            Expression.
+        """
+        return "X {left} < X {right} > or Y {top} < Y {bottom} > or or {replace_out} {replace_in} ?"
+
+
+@RegionMask
+def region_rel_mask(
+    clip: vs.VideoNode,
     left: int = 0,
     right: int = 0,
     top: int = 0,
     bottom: int = 0,
-    replace: str | int = 0,
-    rel: bool = False,
-) -> str:
-    right, bottom = right + 1, bottom + 1
-
-    if isinstance(replace, int):
-        replace = f"{replace} x"
-
-    if rel:
-        return f"X {left} < X {right} > or Y {top} < Y {bottom} > or or {replace} ?"
-
-    return f"X {left} < X {clip.width - right} > or Y {top} < Y {clip.height - bottom} > or or {replace} ?"
-
-
-def region_rel_mask(
-    clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0
+    replace_in: SupportsString | None = None,
+    replace_out: SupportsString | None = None,
+    planes: PlanesT = None,
+    func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
-    assert check_variable_format(clip, region_rel_mask)
+    """
+    Generates a mask that defines a rectangular region within the clip, replacing pixels inside or outside the region,
+    using relative coordinates.
 
-    if complexpr_available:
-        return norm_expr(clip, _get_region_expr(clip, left, right, top, bottom, 0), func=region_rel_mask)
+    Args:
+        clip: Input clip.
+        left: Specifies how many pixels to crop from the left side. Defaults to 0.
+        right: Specifies how many pixels to crop from the right side. Defaults to 0.
+        top: Specifies how many pixels to crop from the top side. Defaults to 0.
+        bottom: Specifies how many pixels to crop from the bottom side. Defaults to 0.
+        replace_in: Pixel value or expression to fill inside the region.
+            Defaults to using the original pixel values.
+        replace_out: Pixel value or expression to fill outside the region.
+            Defaults to the lowest possible values per plane.
+        planes: Which planes to process. Defaults to all.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
 
-    cropped = vs.core.std.Crop(clip, left, right, top, bottom)
+    Returns:
+        A new clip with the specified rectangular region masked in or out.
+    """
+    func = func or region_rel_mask
 
-    return vs.core.std.AddBorders(cropped, left, right, top, bottom)
+    assert check_variable_format(clip, func)
+
+    if replace_in is None:
+        replace_in = "x"
+    if replace_out is None:
+        replace_out = get_lowest_values(clip, ColorRange.FULL)
+
+    lefts, rights, tops, bottoms = list[int](), list[int](), list[int](), list[int]()
+
+    for i in range(clip.format.num_planes):
+        w, h = get_plane_sizes(clip, i)
+        scale_w = clip.width / w
+        scale_h = clip.height / h
+
+        lefts.append(int(left / scale_w))
+        rights.append(int(w - (right / scale_w) - 1))
+        tops.append(int(top / scale_h))
+        bottoms.append(int(h - (bottom / scale_h) - 1))
+
+    return norm_expr(
+        clip,
+        region_rel_mask.expr,
+        planes,
+        func=func,
+        left=lefts,
+        right=rights,
+        top=tops,
+        bottom=bottoms,
+        replace_in=replace_in,
+        replace_out=replace_out,
+    )
 
 
+@RegionMask
 def region_abs_mask(
-    clip: vs.VideoNode, width: int, height: int, left: int = 0, top: int = 0
+    clip: vs.VideoNode,
+    width: int,
+    height: int,
+    left: int = 0,
+    top: int = 0,
+    replace_in: SupportsString | None = None,
+    replace_out: SupportsString | None = None,
+    planes: PlanesT = None,
+    func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
-    assert check_variable_format(clip, region_rel_mask)
+    """
+    Generates a mask that defines a rectangular region within the clip, replacing pixels inside or outside the region,
+    using absolute coordinates.
 
-    def _crop(w: int, h: int) -> ConstantFormatVideoNode:
-        cropped = vs.core.std.CropAbs(clip, width, height, left, top)
-        return vs.core.std.AddBorders(cropped, left, w - width - left, top, h - height - top)
+    Args:
+        clip: Input clip.
+        width: The width of the region.
+        height: The height of the region.
+        left: Specifies how many pixels to crop from the left side. Defaults to 0.
+        top: Specifies how many pixels to crop from the top side. Defaults to 0.
+        replace_in: Pixel value or expression to fill inside the region.
+            Defaults to using the original pixel values.
+        replace_out: Pixel value or expression to fill outside the region.
+            Defaults to the lowest possible values per plane.
+        planes: Which planes to process. Defaults to all.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
 
-    if 0 in {clip.width, clip.height}:
-        if complexpr_available:
-            return norm_expr(
-                clip, _get_region_expr(clip, left, left + width, top, top + height, 0, True), func=region_rel_mask
-            )
-
-        return vs.core.std.FrameEval(clip, lambda f, n: _crop(f.width, f.height), clip)
-
-    return region_rel_mask(clip, left, clip.width - width - left, top, clip.height - height - top)
+    Returns:
+        A new clip with the specified rectangular region masked in or out.
+    """
+    return region_rel_mask(
+        clip,
+        left,
+        clip.width - width - left,
+        top,
+        clip.height - height - top,
+        replace_in,
+        replace_out,
+        planes,
+        func or region_abs_mask,
+    )
 
 
 def squaremask(
@@ -122,6 +207,7 @@ def squaremask(
     offset_y: int,
     invert: bool = False,
     force_gray: bool = True,
+    planes: PlanesT = None,
     func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:
     """
@@ -137,8 +223,8 @@ def squaremask(
         offset_y: The location of the square, offset from the top of the frame.
         invert: Invert the mask. This means everything *but* the defined square will be masked. Default: False.
         force_gray: Whether to force using GRAY format or clip format.
-        func: Function returned for custom error handling. This should only be set by VS package developers. Default:
-            [squaremask][vsmasktools.squaremask].
+        planes: Which planes to process.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Returns:
         A mask in the shape of a square.
@@ -154,53 +240,12 @@ def squaremask(
     if offset_x + width > clip.width or offset_y + height > clip.height:
         raise CustomValueError("mask exceeds clip size!", func)
 
-    if complexpr_available:
-        base_clip = vs.core.std.BlankClip(
-            clip, None, None, mask_format.id, 1, color=get_lowest_values(mask_format, ColorRange.FULL), keep=True
-        )
-        exprs = [
-            _get_region_expr(
-                base_clip,
-                offset_x,
-                clip.width - width - offset_x,
-                offset_y,
-                clip.height - height - offset_y,
-                "range_max x" if invert else "x range_max",
-            )
-        ]
+    base_clip = vs.core.std.BlankClip(
+        clip, None, None, mask_format.id, 1, color=get_lowest_values(mask_format, ColorRange.FULL), keep=True
+    )
 
-        if mask_format.num_planes > 1:
-            for i in range(1, mask_format.num_planes):
-                p = plane(base_clip, i)
-                ratio_x = p.width / base_clip.width
-                ratio_y = p.height / base_clip.height
-                exprs.append(
-                    _get_region_expr(
-                        p,
-                        int(offset_x * ratio_x),
-                        int((clip.width - width - offset_x) * ratio_x),
-                        int(offset_y * ratio_y),
-                        int((clip.height - height - offset_y) * ratio_y),
-                        "range_max x" if invert else "x range_max",
-                    )
-                )
-
-        mask = norm_expr(base_clip, tuple(exprs), func=func)
-    else:
-        base_clip = core.std.BlankClip(
-            clip, width, height, mask_format.id, 1, color=get_peak_values(mask_format, ColorRange.FULL), keep=True
-        )
-
-        mask = core.std.AddBorders(
-            base_clip,
-            offset_x,
-            clip.width - width - offset_x,
-            offset_y,
-            clip.height - height - offset_y,
-            [0] * mask_format.num_planes,
-        )
-        if invert:
-            mask = core.std.Invert(mask)
+    replaces = ("range_max", "x") if not invert else ("x", "range_max")
+    mask = region_abs_mask(base_clip, width, height, offset_x, offset_y, *replaces, planes, func)
 
     if clip.num_frames == 1:
         return mask
@@ -469,70 +514,28 @@ def rekt_partial(
 
     check_ref_clip(cropped, filtered, rekt_partial._func)
 
-    if complexpr_available:
-        filtered = core.std.AddBorders(filtered, left, right, top, bottom)
+    filtered = core.std.AddBorders(filtered, left, right, top, bottom)
 
-        ratio_w, ratio_h = 1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h
+    ratio_w, ratio_h = 1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h
 
-        vals = list(
-            filter(
-                None,
-                [
-                    ("X {left} >= " if left else None),
-                    ("X {right} < " if right else None),
-                    ("Y {top} >= " if top else None),
-                    ("Y {bottom} < " if bottom else None),
-                ],
-            )
+    vals = list(
+        filter(
+            None,
+            [
+                ("X {left} >= " if left else None),
+                ("X {right} < " if right else None),
+                ("Y {top} >= " if top else None),
+                ("Y {bottom} < " if bottom else None),
+            ],
         )
+    )
 
-        return norm_expr(
-            [clip, filtered],
-            [*vals, ["and"] * (len(vals) - 1), "y x ?"],
-            left=[left, left / ratio_w],
-            right=[clip.width - right, (clip.width - right) / ratio_w],
-            top=[top, top / ratio_h],
-            bottom=[clip.height - bottom, (clip.height - bottom) / ratio_h],
-            func=rekt_partial._func,
-        )
-
-    if not (top or bottom) and (right or left):
-        return core.std.StackHorizontal(
-            list(
-                filter(
-                    None,
-                    [
-                        clip.std.CropAbs(left, clip.height) if left else None,
-                        filtered,
-                        clip.std.CropAbs(right, clip.height, x=clip.width - right) if right else None,
-                    ],
-                )
-            )
-        )
-
-    if (top or bottom) and (right or left):
-        filtered = core.std.StackHorizontal(
-            list(
-                filter(
-                    None,
-                    [
-                        clip.std.CropAbs(left, filtered.height, y=top) if left else None,
-                        filtered,
-                        clip.std.CropAbs(right, filtered.height, x=clip.width - right, y=top) if right else None,
-                    ],
-                )
-            )
-        )
-
-    return core.std.StackVertical(
-        list(
-            filter(
-                None,
-                [
-                    clip.std.CropAbs(clip.width, top) if top else None,
-                    filtered,
-                    clip.std.CropAbs(clip.width, bottom, y=clip.height - bottom) if bottom else None,
-                ],
-            )
-        )
+    return norm_expr(
+        [clip, filtered],
+        [*vals, ["and"] * (len(vals) - 1), "y x ?"],
+        left=[left, left / ratio_w],
+        right=[clip.width - right, (clip.width - right) / ratio_w],
+        top=[top, top / ratio_h],
+        bottom=[clip.height - bottom, (clip.height - bottom) / ratio_h],
+        func=rekt_partial._func,
     )

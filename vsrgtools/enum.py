@@ -4,18 +4,17 @@ from enum import auto
 from math import ceil, exp, pi, sqrt
 from typing import Any, Iterable, Literal, TypeVar, overload
 
-from jetpytools import CustomEnum, CustomNotImplementedError
+from jetpytools import CustomEnum, CustomNotImplementedError, FuncExceptT, to_arr
 from typing_extensions import Self
 
 from vsexprtools import ExprList, ExprOp, ExprToken, ExprVars
 from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
-    CustomIntEnum,
     CustomValueError,
     KwargsT,
     PlanesT,
-    check_variable,
+    check_variable_format,
     core,
     fallback,
     iterate,
@@ -23,40 +22,7 @@ from vstools import (
     vs,
 )
 
-__all__ = ["BlurMatrix", "BlurMatrixBase", "LimitFilterMode"]
-
-
-class LimitFilterModeMeta:
-    force_expr = True
-
-
-class LimitFilterMode(LimitFilterModeMeta, CustomIntEnum):
-    """
-    Two sources, one filtered
-    """
-
-    SIMPLE_MIN = auto()
-    SIMPLE_MAX = auto()
-    """
-    One source, two filtered
-    """
-    SIMPLE2_MIN = auto()
-    SIMPLE2_MAX = auto()
-    DIFF_MIN = auto()
-    DIFF_MAX = auto()
-    """
-    One/Two sources, one filtered
-    """
-    CLAMPING = auto()
-
-    @property
-    def op(self) -> str:
-        return "<" if "MIN" in self._name_ else ">"
-
-    def __call__(self, force_expr: bool = True) -> Self:
-        self.force_expr = force_expr
-
-        return self
+__all__ = ["BlurMatrix", "BlurMatrixBase"]
 
 
 _Nb = TypeVar("_Nb", bound=float | int)
@@ -90,12 +56,13 @@ class BlurMatrixBase(list[_Nb]):
 
     def __call__(
         self,
-        clip: vs.VideoNode,
+        clip: vs.VideoNode | Iterable[vs.VideoNode],
         planes: PlanesT = None,
         bias: float | None = None,
         divisor: float | None = None,
         saturate: bool = True,
         passes: int = 1,
+        func: FuncExceptT | None = None,
         expr_kwargs: KwargsT | None = None,
         **conv_kwargs: Any,
     ) -> ConstantFormatVideoNode:
@@ -112,48 +79,78 @@ class BlurMatrixBase(list[_Nb]):
             divisor: Divides the result of the convolution (before adding bias). Defaults to sum of kernel values.
             saturate: If True, negative values are clamped to zero. If False, absolute values are returned.
             passes: Number of convolution passes to apply.
+            func: Function returned for custom error handling. This should only be set by VS package developers.
             expr_kwargs: Extra kwargs passed to ExprOp.convolution when used.
             **conv_kwargs: Any other args passed to the underlying VapourSynth function.
 
         Returns:
             Processed (blurred) video clip.
         """
-        assert check_variable(clip, self)
+        clip = to_arr(clip)
+
+        func = func or self
+
+        assert check_variable_format(clip, func)
 
         if len(self) <= 1:
-            return clip
+            return clip[0]
 
-        expr_kwargs = expr_kwargs or KwargsT()
+        expr_kwargs = expr_kwargs or {}
 
-        fp16 = clip.format.sample_type == vs.FLOAT and clip.format.bits_per_sample == 16
+        fp16 = clip[0].format.sample_type == vs.FLOAT and clip[0].format.bits_per_sample == 16
 
+        # Spatial mode
         if self.mode.is_spatial:
-            # std.Convolution is limited to 25 numbers
-            # SQUARE mode is not optimized
-            # std.Convolution doesn't support float 16
-            if len(self) <= 25 and self.mode != ConvMode.SQUARE and not fp16:
-                return iterate(clip, core.std.Convolution, passes, self, bias, divisor, planes, saturate, self.mode)
+            if len(clip) > 1:
+                raise CustomValueError("You can't pass multiple clips when using a spatial mode.", func)
+
+            if all(
+                [
+                    not fp16,
+                    len(self) <= 25,
+                    all(-1023 <= x <= 1023 for x in self),
+                    self.mode != ConvMode.SQUARE,  # std.Convolution is slower than akarin.Expr for square convolutions
+                ]
+            ):
+                return iterate(clip[0], core.std.Convolution, passes, self, bias, divisor, planes, saturate, self.mode)
 
             return iterate(
-                clip,
-                ExprOp.convolution("x", self, bias, fallback(divisor, True), saturate, self.mode, **conv_kwargs),
+                clip[0],
+                ExprOp.convolution("x", self, bias, fallback(divisor, True), saturate, self.mode, **expr_kwargs),
                 passes,
                 planes=planes,
-                **expr_kwargs,
+                **conv_kwargs,
             )
 
-        if all(
+        # Temporal mode
+        use_std = all(
             [
                 not fp16,
                 len(self) <= 31,
+                all(-1023 <= x <= 1023 for x in self),
                 not bias,
                 saturate,
-                (len(conv_kwargs) == 0 or (len(conv_kwargs) == 1 and "scenechange" in conv_kwargs)),
             ]
-        ):
-            return iterate(clip, core.std.AverageFrames, passes, self, divisor, planes=planes, **conv_kwargs)
+        )
 
-        return self._averageframes_akarin(clip, planes, bias, divisor, saturate, passes, expr_kwargs, **conv_kwargs)
+        if len(clip) > 1:
+            if passes != 1:
+                raise CustomValueError(
+                    "`passes` are not supported when passing multiple clips in temporal mode", func, passes
+                )
+
+            if use_std:
+                return core.std.AverageFrames(clip, self, divisor, planes=planes)
+
+            return ExprOp.convolution(
+                ExprVars(len(clip)), self, bias, fallback(divisor, True), saturate, self.mode, **expr_kwargs
+            )(clip, planes=planes, **conv_kwargs)
+
+        # std.AverageFrames doesn't support premultiply, multiply and clamp from ExprOp.convolution
+        if use_std and conv_kwargs.keys() <= {"scenechange"}:
+            return iterate(clip[0], core.std.AverageFrames, passes, self, divisor, planes=planes, **conv_kwargs)
+
+        return self._averageframes_akarin(clip[0], planes, bias, divisor, saturate, passes, expr_kwargs, **conv_kwargs)
 
     def _averageframes_akarin(self, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
         clip, planes, bias, divisor, saturate, passes, expr_kwargs = args

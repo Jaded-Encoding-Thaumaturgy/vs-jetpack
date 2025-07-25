@@ -902,48 +902,6 @@ class MVTools(vs_object):
 
         return output
 
-    @overload
-    def flow_interpolate(
-        self,
-        clip: vs.VideoNode | None = None,
-        super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None,
-        time: float | None = None,
-        ml: float | None = None,
-        blend: bool | None = None,
-        thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: Literal[True] = ...,
-        multi: int | None = None,
-    ) -> ConstantFormatVideoNode: ...
-
-    @overload
-    def flow_interpolate(
-        self,
-        clip: vs.VideoNode | None = None,
-        super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None,
-        time: float | None = None,
-        ml: float | None = None,
-        blend: bool | None = None,
-        thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: Literal[False] = ...,
-        multi: int | None = None,
-    ) -> list[ConstantFormatVideoNode]: ...
-
-    @overload
-    def flow_interpolate(
-        self,
-        clip: vs.VideoNode | None = None,
-        super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None,
-        time: float | None = None,
-        ml: float | None = None,
-        blend: bool | None = None,
-        thscd: int | tuple[int | None, int | float | None] | None = None,
-        interleave: bool = ...,
-        multi: int | None = None,
-    ) -> ConstantFormatVideoNode | list[ConstantFormatVideoNode]: ...
-
     def flow_interpolate(
         self,
         clip: vs.VideoNode | None = None,
@@ -954,8 +912,7 @@ class MVTools(vs_object):
         blend: bool | None = None,
         thscd: int | tuple[int | None, int | float | None] | None = None,
         interleave: bool = True,
-        multi: int | None = None,
-    ) -> ConstantFormatVideoNode | list[ConstantFormatVideoNode]:
+    ) -> ConstantFormatVideoNode:
         """
         Motion interpolation function that creates an intermediate frame between two frames.
 
@@ -979,7 +936,6 @@ class MVTools(vs_object):
                    - First value: SAD threshold for considering a block changed between frames.
                    - Second value: Percentage of changed blocks needed to trigger a scene change.
             interleave: Whether to interleave the interpolated frames with the source clip.
-            multi: Framerate multiplier.
 
         Returns:
             List of the motion interpolated frames if interleave=False else a motion interpolated clip.
@@ -999,29 +955,10 @@ class MVTools(vs_object):
             time=time, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
         )
 
-        interpolated = list[ConstantFormatVideoNode]()
-
-        if multi:
-            if multi < 2:
-                raise CustomRuntimeError(
-                    "Invalid framerate multiplier specified!", self.flow_interpolate, f"{multi} < 2"
-                )
-
-            flow_interpolate_args.pop("time", None)
-
-            for pos in range(1, multi):
-                time = pos * 100 / multi
-
-                interpolated.append(
-                    self.mvtools.FlowInter(clip, super_clip, vect_b, vect_f, time=time, **flow_interpolate_args)
-                )
-        else:
-            interpolated.append(self.mvtools.FlowInter(clip, super_clip, vect_b, vect_f, **flow_interpolate_args))
+        interpolated = self.mvtools.FlowInter(clip, super_clip, vect_b, vect_f, **flow_interpolate_args)
 
         if interleave:
-            interpolated.insert(0, clip)
-
-            return core.std.Interleave(interpolated)
+            interpolated = core.std.Interleave([clip, interpolated])
 
         return interpolated
 

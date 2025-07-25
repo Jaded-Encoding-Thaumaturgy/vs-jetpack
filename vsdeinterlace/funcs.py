@@ -15,9 +15,9 @@ from vstools import (
     FunctionUtil,
     PlanesT,
     VSFunctionKwArgs,
+    check_ref_clip,
     check_variable,
     core,
-    limiter,
     scale_delta,
     vs,
 )
@@ -132,7 +132,8 @@ class InterpolateOverlay(CustomEnum):
 
             mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
-        comp = mv.flow_interpolate(multi=4)
+        comp = mv.flow_fps(fps=clip.fps * 4)
+        comp += comp[-1] * 3
         fixed = core.std.SelectEvery(comp, 40, sorted(offsets))
 
         return (fixed, mv) if export_globals else fixed
@@ -150,7 +151,7 @@ class FixInterlacedFades(CustomIntEnum):
     """
 
     def __call__(
-        self, clip: vs.VideoNode, color: float | Sequence[float] = 0.0, planes: PlanesT = None
+        self, clip: vs.VideoNode, color: float | Sequence[float] | vs.VideoNode = 0.0, planes: PlanesT = None
     ) -> ConstantFormatVideoNode:
         """
         Give a mathematically perfect solution to decombing fades made *after* telecine
@@ -166,8 +167,8 @@ class FixInterlacedFades(CustomIntEnum):
 
         Args:
             clip: Clip to process.
-            color: Fade source/target color (floating-point plane averages). Accepts a single float or a sequence of
-                floats to control the color per plane.
+            color: Fade source/target color (floating-point plane averages or a single-frame clip matching the format of
+                `clip`). Accepts a single float or a sequence of floats to control the color per plane.
 
         Returns:
             Clip with fades to/from `color` accurately deinterlaced. Frames that don't contain such fades may be
@@ -176,16 +177,27 @@ class FixInterlacedFades(CustomIntEnum):
 
         func = FunctionUtil(clip, self.__class__, planes, vs.YUV, 32)
 
-        fields = limiter(func.work_clip).std.SeparateFields(tff=True)
+        expr_clips = list[ConstantFormatVideoNode]()
+        fields = func.work_clip.std.SeparateFields(tff=True)
 
-        fields = norm_expr(fields, "x {color} - abs", planes, color=color, func=self.__class__)
+        if isinstance(color, vs.VideoNode):
+            assert check_variable(color, self.__class__)
+            check_ref_clip(color, func.work_clip, self.__class__)
+
+            expr_clips.append(color)
+            clipb, prop_name, expr_color = color.std.SeparateFields(tff=True), "Diff", "y"
+        else:
+            fields = norm_expr(fields, "x 0 1 clip {color} - abs", planes, color=color, func=self.__class__)
+            clipb, prop_name, expr_color = None, "Average", color
+
         for i in func.norm_planes:
-            fields = fields.std.PlaneStats(None, i, f"P{i}")
+            fields = fields.std.PlaneStats(clipb, i, f"P{i}")
 
         props_clip = core.akarin.PropExpr(
             [func.work_clip, fields[::2], fields[1::2]],
-            lambda: {f"f{f}Avg{i}": f"{c}.P{i}Average" for f, c in zip("tb", "yz") for i in func.norm_planes},
+            lambda: {f"f{f}Avg{i}": f"{c}.P{i}{prop_name}" for f, c in zip("tb", "yz") for i in func.norm_planes},
         )
+        expr_clips.insert(0, props_clip)
 
         expr = (
             "Y 2 % x.fbAvg{i} x.ftAvg{i} ? AVG! "
@@ -193,11 +205,11 @@ class FixInterlacedFades(CustomIntEnum):
         )
 
         fix = norm_expr(
-            props_clip,
+            expr_clips,
             expr,
             planes,
             i=func.norm_planes,
-            color=color,
+            color=expr_color,
             expr_mode="+ 2 /" if self == self.AVERAGE else "min",
             func=self.__class__,
         )

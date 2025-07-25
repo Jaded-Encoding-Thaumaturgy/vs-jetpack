@@ -2,240 +2,247 @@ from __future__ import annotations
 
 import re
 from itertools import count
-from typing import Callable, Iterable, Iterator, Sequence, SupportsIndex, TypeAlias, overload
+from typing import Any, Callable, Iterable, Iterator, Sequence, SupportsIndex, overload
 
-from jetpytools import SupportsString
+from jetpytools import CustomTypeError, SupportsString
+from typing_extensions import Self
 
 from vstools import (
     EXPR_VARS,
     MISSING,
     ColorRange,
     CustomIndexError,
-    CustomNotImplementedError,
-    CustomRuntimeError,
     FuncExceptT,
     HoldsVideoFormatT,
     MissingT,
     PlanesT,
     VideoFormatT,
     classproperty,
-    core,
-    fallback,
     get_video_format,
     normalize_planes,
     normalize_seq,
     vs,
 )
 
-__all__ = [  # noqa: RUF022
-    # VS variables
-    "complexpr_available",
-    # Expr helpers
+__all__ = [
     "ExprVars",
-    "ExprVarsT",
-    "ExprVarRangeT",
     "bitdepth_aware_tokenize_expr",
-    # VS helpers
+    "extra_op_tokenize_expr",
     "norm_expr_planes",
 ]
 
 
-class _complexpr_available:  # noqa: N801
-    @property
-    def fp16(self) -> bool:
-        from .funcs import expr_func
+class ExprVars(Iterable[str]):
+    """
+    A helper class for generating variable names used in RPN expressions.
+    """
 
-        if not hasattr(self, "_fp16_available"):
-            try:
-                expr_func(core.std.BlankClip(format=vs.GRAYH), "x dup *")
-                self._fp16_available = True
-            except Exception:
-                self._fp16_available = False
-
-        return self._fp16_available
-
-    def __bool__(self) -> bool:
-        try:
-            return bool(core.akarin.Expr)
-        except AttributeError:
-            ...
-
-        return False
-
-
-complexpr_available = _complexpr_available()
-
-
-class _ExprVars(Iterable[str]):
     start: int
+    """Starting index for variable generation (inclusive)."""
     stop: int
+    """Ending index for variable generation (exclusive)."""
     step: int
+    """Step size for iteration."""
     curr: int
-    akarin: bool
-
-    @overload
-    def __init__(self, stop: SupportsIndex | ExprVarRangeT, /, *, akarin: bool | None = None) -> None: ...
+    """Current index in iteration."""
+    expr_src: bool
+    """If True, variables are named as `src0`, `src1`, etc. Otherwise, "x", "y", "z", "a" and so on."""
 
     @overload
     def __init__(
-        self, start: SupportsIndex, stop: SupportsIndex, step: SupportsIndex = 1, /, *, akarin: bool | None = None
+        self, stop: SupportsIndex | Self | HoldsVideoFormatT | VideoFormatT, /, *, expr_src: bool = False
     ) -> None: ...
+
+    @overload
+    def __init__(
+        self, start: SupportsIndex, stop: SupportsIndex, step: SupportsIndex = 1, /, *, expr_src: bool = False
+    ) -> None: ...
+
+    @overload
+    def __init__(self, /, *args: Any, **kwargs: Any) -> None: ...
 
     def __init__(
         self,
-        start_stop: SupportsIndex | ExprVarRangeT,
+        start_stop: SupportsIndex | Self | HoldsVideoFormatT | VideoFormatT,
         stop: SupportsIndex | MissingT = MISSING,
         step: SupportsIndex = 1,
         /,
         *,
-        akarin: bool | None = None,
+        expr_src: bool = False,
     ) -> None:
-        if isinstance(start_stop, ExprVarsT):
+        """
+        Initialize an ExprVars instance.
+
+        Args:
+            start_stop: A start index or an object from which to infer the number of variables (e.g., video format).
+            stop: Stop index (exclusive). Required only if `start_stop` is a numeric start value.
+            step: Step size for iteration.
+            expr_src: Whether to use `srcX` naming or use alphabetic variables.
+
+        Raises:
+            CustomIndexError: If `start` is negative or `stop` is not greater than `start`.
+            CustomTypeError: If invalid types are provided.
+        """
+        if isinstance(start_stop, ExprVars):
             self.start = start_stop.start
             self.stop = start_stop.stop
             self.step = start_stop.step
             self.curr = start_stop.curr
-            self.akarin = start_stop.akarin
+            self.expr_src = start_stop.expr_src
             return
 
         if stop is MISSING:
             self.start = 0
-            if isinstance(start_stop, HoldsVideoFormatT | VideoFormatT):
-                self.stop = get_video_format(start_stop).num_planes
-            else:
-                self.stop = start_stop.__index__()
+            self.stop = (
+                get_video_format(start_stop).num_planes
+                if isinstance(start_stop, HoldsVideoFormatT | VideoFormatT)
+                else start_stop.__index__()
+            )
         else:
-            self.start = 0 if start_stop is None else start_stop.__index__()  # type: ignore
-            self.stop = 255 if stop is None else stop.__index__()
+            if isinstance(start_stop, HoldsVideoFormatT | VideoFormatT):
+                raise CustomTypeError("start cannot be a video format when stop is provided.", self, start_stop)
+            self.start = start_stop.__index__()
+            self.stop = stop.__index__()
 
-        self.step = 1 if step is None else step.__index__()
+        self.step = step.__index__()
 
         if self.start < 0:
-            raise CustomIndexError('"start" must be bigger or equal than 0!')
-        elif self.stop <= self.start:
-            raise CustomIndexError('"stop" must be bigger than "start"!')
+            raise CustomIndexError('"start" must be greater than or equal to 0.', self, self.start)
 
-        self.akarin = self._check_akarin(self.stop, akarin)
+        if self.stop <= self.start:
+            raise CustomIndexError('"stop" must be greater than "start".', self, (self.start, self.stop))
 
+        self.expr_src = expr_src
         self.curr = self.start
 
     @overload
-    def __call__(self, stop: SupportsIndex | ExprVarRangeT, /, *, akarin: bool | None = None) -> _ExprVars: ...
+    def __call__(
+        self, stop: SupportsIndex | Self | HoldsVideoFormatT | VideoFormatT, /, *, expr_src: bool = False
+    ) -> Self: ...
 
     @overload
     def __call__(
-        self, start: SupportsIndex, stop: SupportsIndex, step: SupportsIndex = 1, /, *, akarin: bool | None = None
-    ) -> _ExprVars: ...
+        self, start: SupportsIndex, stop: SupportsIndex, step: SupportsIndex = 1, /, *, expr_src: bool = False
+    ) -> Self: ...
 
     def __call__(
         self,
-        start_stop: SupportsIndex | ExprVarRangeT,
+        start_stop: SupportsIndex | Self | HoldsVideoFormatT | VideoFormatT,
         stop: SupportsIndex | MissingT = MISSING,
         step: SupportsIndex = 1,
         /,
         *,
-        akarin: bool | None = None,
-    ) -> _ExprVars:
-        return ExprVars(start_stop, stop, step, akarin=akarin)  # type: ignore
+        expr_src: bool = False,
+    ) -> Self:
+        """
+        Allows an ExprVars instance to be called like a function to create a new instance with new parameters.
+
+        Args:
+            start_stop: A start index or an object from which to infer the number of variables (e.g., video format).
+            stop: Stop index (exclusive). Required only if `start_stop` is a numeric start value.
+            step: Step size for iteration.
+            expr_src: Whether to use `srcX` naming or use alphabetic variables.
+
+        Returns:
+            A new instance with the specified parameters.
+        """
+
+        return self.__class__(start_stop, stop, step, expr_src=expr_src)
 
     def __iter__(self) -> Iterator[str]:
+        """
+        Returns an iterator over the variable names.
+
+        Returns:
+            Iterator yielding variable names (e.g., 'x', 'y', ..., or 'src0', 'src1', ...).
+        """
+
         indices = range(self.start, self.stop, self.step)
 
-        if self.akarin:
-            return (f"src{x}" for x in indices)
-
-        return (EXPR_VARS[x] for x in indices)
+        if self.expr_src:
+            yield from (f"src{x}" for x in indices)
+        else:
+            yield from (EXPR_VARS[x] for x in indices)
 
     def __next__(self) -> str:
+        """
+        Returns the next variable name in the sequence.
+
+        Returns:
+            The next variable name.
+
+        Raises:
+            StopIteration: When the end of the range is reached.
+        """
         if self.curr >= self.stop:
             raise StopIteration
 
-        var = f"src{self.curr}" if self.akarin else EXPR_VARS[self.curr]
+        var = f"src{self.curr}" if self.expr_src else EXPR_VARS[self.curr]
 
         self.curr += self.step
 
         return var
 
     def __len__(self) -> int:
+        """
+        Returns the number of variable names that will be generated.
+
+        Returns:
+            The number of elements in the iterable.
+        """
         return self.stop - self.start
 
     @classmethod
-    def _check_akarin(cls, stop: SupportsIndex, akarin: bool | None = None) -> bool:
-        stop = stop.__index__()
+    def get_var(cls, value: SupportsIndex) -> str:
+        """
+        Get a variable name for a specific index.
 
-        if akarin is None:
-            akarin = stop > 26
+        Args:
+            value: Index to convert to variable name.
 
-        if akarin and not complexpr_available:
-            raise cls._get_akarin_err(
-                "You are trying to get more than 26 variables or srcX vars, you need akarin plugin!"
-            )
+        Returns:
+            The variable name.
 
-        return akarin
-
-    @classmethod
-    def get_var(cls, value: SupportsIndex, akarin: bool | None = None) -> str:
+        Raises:
+            CustomIndexError: If the index is negative.
+        """
         value = value.__index__()
 
         if value < 0:
             raise CustomIndexError('"value" should be bigger than 0!')
 
-        akarin = cls._check_akarin(value + 1, akarin)
-
-        return f"src{value}" if akarin else EXPR_VARS[value]
-
-    @classmethod
-    def _get_akarin_err(cls, message: str = "You need the akarin plugin to run this function!") -> CustomRuntimeError:
-        return CustomRuntimeError(f"{message}\nDownload it from https://github.com/AkarinVS/vapoursynth-plugin")
-
-    @overload
-    def __class_getitem__(cls, index: SupportsIndex | tuple[SupportsIndex, bool], /) -> str: ...
-
-    @overload
-    def __class_getitem__(cls, slice: slice | tuple[slice, bool], /) -> list[str]: ...
-
-    def __class_getitem__(
-        cls,
-        idx_slice: SupportsIndex | slice | tuple[SupportsIndex | slice, bool],
-        /,
-    ) -> str | list[str]:
-        if isinstance(idx_slice, tuple):
-            idx_slice, akarin = idx_slice
-        else:
-            akarin = None
-
-        if isinstance(idx_slice, slice):
-            return list(ExprVars(idx_slice.start or 0, fallback(idx_slice.stop, MISSING), fallback(idx_slice.step, 1)))
-        elif isinstance(idx_slice, SupportsIndex):
-            return ExprVars.get_var(idx_slice.__index__(), akarin)
-
-        raise CustomNotImplementedError
-
-    @overload
-    def __getitem__(self, index: SupportsIndex | tuple[SupportsIndex, bool], /) -> str: ...
-
-    @overload
-    def __getitem__(self, slice: slice | tuple[slice, bool], /) -> list[str]: ...
-
-    def __getitem__(  # type: ignore
-        self,
-        idx_slice: SupportsIndex | slice | tuple[SupportsIndex | slice, bool],
-        /,
-    ) -> str | list[str]: ...
+        return f"src{value}" if value >= 26 else EXPR_VARS[value]
 
     def __str__(self) -> str:
+        """
+        Returns the string representation of the variable sequence.
+
+        Returns:
+            Space-separated variable names.
+        """
         return " ".join(iter(self))
 
     @classproperty
     @classmethod
     def cycle(cls) -> Iterator[str]:
+        """
+        An infinite generator of variable names, looping through `EXPR_VARS` then continuing with `srcX` style.
+
+        Returns:
+            An infinite iterator of variable names.
+        """
         for x in count():
             yield cls.get_var(x)
 
 
-ExprVars: _ExprVars = _ExprVars  # type: ignore
-ExprVarsT: TypeAlias = _ExprVars
-ExprVarRangeT: TypeAlias = ExprVarsT | HoldsVideoFormatT | VideoFormatT | SupportsIndex
+def extra_op_tokenize_expr(expr: str) -> str:
+    # Workaround for the not implemented op
+    from .exprop import ExprOp
+
+    for extra_op in ExprOp._extra_op_names_:
+        expr = re.sub(rf"\b{extra_op.lower()}\b", getattr(ExprOp, extra_op).convert_extra(), expr)
+
+    return expr
 
 
 def bitdepth_aware_tokenize_expr(
@@ -270,9 +277,9 @@ def bitdepth_aware_tokenize_expr(
             for key, clip, crange in [
                 (f"{mkey}_{k}" if k else f"{mkey}", clip, crange) for k, clip, crange in mapped_clips
             ]:
-                expr = re.sub(rf"\b{key}\b", str(function(clip, chroma, crange) * 1.0), expr)
+                expr = re.sub(rf"\b{key}\b", str(function(clip, chroma, crange)), expr)
 
-        if mkey in expr:
+        if re.search(rf"\b{mkey}\b", expr):
             raise CustomIndexError("Parsing error or not enough clips passed!", func, reason=expr)
 
     return expr
@@ -294,5 +301,5 @@ def norm_expr_planes(
 
     return [
         exp.format(**({"plane_idx": i} | {key: value[i] for key, value in string_args})) if i in planes else ""
-        for i, exp in enumerate(expr_array, 0)
+        for i, exp in enumerate(expr_array)
     ]

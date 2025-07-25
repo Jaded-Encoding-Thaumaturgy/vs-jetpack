@@ -8,7 +8,7 @@ import math
 from functools import cache
 from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Sequence, TypeAlias, Union, overload
 
-from jetpytools import KwargsNotNone, MismatchError, classproperty
+from jetpytools import KwargsNotNone, MismatchError, classproperty, fallback
 from typing_extensions import Self, deprecated
 from vapoursynth import Plugin
 
@@ -925,6 +925,7 @@ class DFTTest:
         clip: vs.VideoNode | None = None,
         backend: Backend = Backend.AUTO,
         sloc: SLocationT | SLocation.MultiDim | None = None,
+        tr: int | None = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -941,6 +942,8 @@ class DFTTest:
             clip: Source clip.
             backend: The backend to use processing.
             sloc: The frequency location for denoising.
+            tr: Temporal radius for denoising (`tr` * 2 + 1 == `tbsize`).
+                Note: Unlike the default plugin implementation, the default value here is tr=0 (i.e. `tbsize=1`).
             **kwargs: Additional parameters to configure the denoising process.
         """
         self.clip = clip
@@ -948,6 +951,7 @@ class DFTTest:
         self.backend = backend
 
         self.default_slocation = sloc
+        self.default_tr = tr
         self.default_args = kwargs
 
     @overload
@@ -956,7 +960,7 @@ class DFTTest:
         clip: vs.VideoNode,
         sloc: SLocationT | SLocation.MultiDim | None = None,
         /,
-        tr: int = 0,
+        tr: int | None = None,
         ftype: int = FilterType.WIENER,
         swin: int | SynthesisType | None = None,
         twin: int | SynthesisType | None = None,
@@ -971,7 +975,7 @@ class DFTTest:
         sloc: SLocationT | SLocation.MultiDim,
         /,
         *,
-        tr: int = 0,
+        tr: int | None = None,
         ftype: int = FilterType.WIENER,
         swin: int | SynthesisType | None = None,
         twin: int | SynthesisType | None = None,
@@ -985,7 +989,7 @@ class DFTTest:
         clip_or_sloc: vs.VideoNode | SLocationT | SLocation.MultiDim,
         sloc: SLocationT | SLocation.MultiDim | None = None,
         /,
-        tr: int = 0,
+        tr: int | None = None,
         ftype: int = FilterType.WIENER,
         swin: int | SynthesisType | None = None,
         twin: int | SynthesisType | None = None,
@@ -1015,7 +1019,8 @@ class DFTTest:
         Args:
             clip_or_sloc: Either a video clip or frequency location.
             sloc: Frequency location (used if `clip_or_sloc` is a video clip).
-            tr: Temporal radius for denoising (equivalent to `tbsize`).
+            tr: Temporal radius for denoising (`tr` * 2 + 1 == `tbsize`).
+                Note: Unlike the default plugin implementation, the default value here is tr=0 (i.e. `tbsize=1`).
             ftype: Filter type for denoising (see [FilterType][vsdenoise.fft.DFTTest.FilterType] enum).
             swin: Synthesis window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
             twin: Temporal window size (can use [SynthesisType][vsdenoise.fft.DFTTest.SynthesisType] enum).
@@ -1042,7 +1047,9 @@ class DFTTest:
 
         assert check_progressive(nclip, func)
 
-        ckwargs = dict[str, Any](tbsize=tr * 2 + 1, ftype=ftype, swin=swin, twin=twin, planes=planes)
+        ckwargs = dict[str, Any](
+            tbsize=fallback(tr, self.default_tr, 0) * 2 + 1, ftype=ftype, swin=swin, twin=twin, planes=planes
+        )
 
         if isinstance(nsloc, DFTTest.SLocation.MultiDim):
             ckwargs.update(ssx=nsloc.horizontal, ssy=nsloc.vertical, sst=nsloc.temporal)

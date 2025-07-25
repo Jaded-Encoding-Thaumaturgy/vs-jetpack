@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from typing import Sequence, overload
 
-from vsexprtools import ExprOp, ExprVars, complexpr_available, norm_expr
+from vsexprtools import ExprOp, ExprVars, norm_expr
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
-    CustomRuntimeError,
     DitherType,
     FuncExceptT,
     StrList,
@@ -59,13 +58,8 @@ def adg_mask(
         clip: The clip to process.
         luma_scaling: Controls the strength of the adaptive mask. Can be a single float or a sequence of floats. Default
             is 8.0. Negative values invert the mask behavior.
-        relative: Enables relative computation based on pixel-to-average luminance ratios. Requires the akarin plugin.
-            If True without akarin, an error is raised.
+        relative: Enables relative computation based on pixel-to-average luminance ratios.
         func: Function returned for custom error handling. This should only be set by VS package developers.
-
-    Raises:
-        CustomRuntimeError: If the akarin plugin is not available and either `relative` is True or the clip is in fp16
-            format.
 
     Returns:
         A single mask or a list of masks (if `luma_scaling` is a sequence), corresponding to the input clip.
@@ -74,15 +68,11 @@ def adg_mask(
 
     assert check_variable(clip, func)
 
-    use_complex = (complexpr_available and clip.format.bits_per_sample > 16) or relative
+    luma = plane(clip, 0)
 
-    luma, prop = plane(clip, 0), "P" if use_complex else None
-    y, y_inv = luma.std.PlaneStats(prop=prop), luma.std.Invert().std.PlaneStats(prop=prop)
+    if clip.format.bits_per_sample > 16 or relative:
+        y, y_inv = luma.std.PlaneStats(prop="P"), luma.std.Invert().std.PlaneStats(prop="P")
 
-    if not use_complex and relative:
-        raise CustomRuntimeError("You don't have akarin plugin, you can't use this function!", func, "relative=True")
-
-    if use_complex:
         peak = get_peak_value(y)
 
         is_integer = y.format.sample_type == vs.INTEGER
@@ -103,6 +93,7 @@ def adg_mask(
                 func=func,
             )
     else:
+        y, y_inv = luma.std.PlaneStats(), luma.std.Invert().std.PlaneStats()
 
         def _adgfunc(luma: ConstantFormatVideoNode, ls: float) -> ConstantFormatVideoNode:
             return luma.adg.Mask(ls)
