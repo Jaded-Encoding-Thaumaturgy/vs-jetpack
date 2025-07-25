@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import auto
 from typing import Any, Callable, ClassVar, Iterable, Literal, Protocol, Sequence, TypeAlias, TypeVar, overload
 
 from jetpytools import MISSING, CustomEnum, FuncExceptT, MissingT, fallback, inject_self
 from typing_extensions import deprecated
 
-from vsexprtools import norm_expr
+from vsexprtools import inline_expr, norm_expr
 from vskernels import BaseScalerSpecializer, BicubicAuto, Lanczos, LeftShift, Scaler, ScalerLike, TopShift
 from vsmasktools import adg_mask
-from vsrgtools import BlurMatrix
+from vsrgtools import BlurMatrix, remove_grain
 from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
@@ -19,7 +20,9 @@ from vstools import (
     check_variable,
     core,
     get_lowest_values,
+    get_neutral_value,
     get_neutral_values,
+    get_peak_value,
     get_peak_values,
     get_u,
     get_v,
@@ -27,6 +30,7 @@ from vstools import (
     normalize_param_planes,
     normalize_seq,
     scale_delta,
+    scale_value,
     split,
     to_arr,
     vs,
@@ -40,6 +44,8 @@ __all__ = [
     "Grainer",
     "LanczosTwoPasses",
     "ScalerTwoPasses",
+    "film_grain_plus",
+    "grain_factory",
 ]
 
 
@@ -705,3 +711,176 @@ class AddNoise(AddNoiseBase):
     )
     class POISSON(AddNoiseBase):
         _noise_type = 4
+
+
+@dataclass
+class GrainConfig:
+    strength: float
+    sharpness: int
+    size: float
+    grainer: Grainer
+    bump: float = 0.0
+    blur: bool = True
+
+
+@dataclass
+class Multiplier:
+    dark: float
+    mid: float
+    bright: float
+
+
+def _create_grain_layer(
+    clip: vs.VideoNode,
+    props: GrainConfig,
+    seed: int,
+    prop_identfier: int | None = None,
+) -> vs.VideoNode:
+    blank = clip.std.BlankClip(keep=True, color=get_neutral_values(clip))
+
+    grain_clip = props.grainer(
+        blank,
+        strength=(props.strength, props.strength),
+        static=False,
+        scale=props.size,
+        scaler=GrainFactoryBicubic(props.sharpness),
+        seed=seed,
+        neutral_out=True,
+    )
+
+    if props.bump > 0:
+        grain_clip = grain_clip.akarin.Expr(f"x[-1,1] x - {props.bump} * x +")
+
+    prop_name = f"grainfactory3_grainlayer{prop_identfier}"
+    grain_clip = grain_clip.std.SetFrameProps(
+        **{
+            prop_name: [
+                float(props.strength),
+                float(props.sharpness),
+                float(props.size),
+                float(grain_clip.width),
+                float(grain_clip.height),
+            ]
+        }
+    )
+
+    return grain_clip
+
+def grain_factory(
+    clip: vs.VideoNode,
+    dark_grain: GrainConfig = GrainConfig(strength=7.0, sharpness=60, size=1.5, grainer=Grainer.GAUSS),
+    mid_grain: GrainConfig = GrainConfig(strength=5.0, sharpness=66, size=1.2, grainer=Grainer.GAUSS),
+    bright_grain: GrainConfig = GrainConfig(strength=3.0, sharpness=80, size=0.9, grainer=Grainer.GAUSS),
+    seed: int = 17,
+    th1: int = 24,
+    th2: int = 56,
+    th3: int = 128,
+    th4: int = 160,
+    blur: bool = True
+) -> vs.VideoNode:
+
+    neutral: float = get_neutral_value(clip)
+    peak: float = get_peak_value(clip)
+    
+    th1, th2, th3, th4 = [scale_value(
+        x,
+        8, 
+        clip.format.bits_per_sample, # type: ignore
+        vs.ColorRange.RANGE_FULL)
+        for x in [th1, th2, th3, th4]]
+
+    grain1 = _create_grain_layer(clip, dark_grain, seed, 1)
+    grain2 = _create_grain_layer(clip, mid_grain, seed, 2)
+    grain3 = _create_grain_layer(clip, bright_grain, seed, 3)
+
+    with inline_expr([clip, grain1, grain2, grain3]) as (clips, op, ie):
+        x, grain1, grain2, grain3 = clips
+
+        ramp1 = (peak / (th2 - th1)) * (x - th1)
+        m1 = op.IF(x < th1, 0, op.IF(x > th2, peak, ramp1))
+
+        ramp2 = (peak / (th4 - th3)) * (x - th3)
+        m2 = op.IF(x < th3, 0, op.IF(x > th4, peak, ramp2))
+
+        fm = grain1 + ((grain2 - grain1) * m1 + peak / 2) / peak
+        blended = fm + ((grain3 - fm) * m2 + peak / 2) / peak
+        ie.out = x - blended + neutral
+
+    result = ie.clip
+
+    if blur:
+        diff = core.std.MakeDiff(clip, result)
+        soft = remove_grain(diff, 12)
+        result = core.std.MergeDiff(clip, soft)
+
+    return result
+
+
+
+def film_grain_plus(
+    clip: vs.VideoNode,
+    dark_grain_strength: float = 7.0,
+    mid_grain_strength: float = 5.0,
+    bright_grain_strength: float = 3.0,
+    grain_size: float = 1.2,
+    grain_sharpness: int = 66,
+    bump: float = 0.0,
+    grainer: Grainer = Grainer.GAUSS,
+    seed: int = 17
+) -> vs.VideoNode:
+    """
+    Missing features in order of priority
+    - Different merge curves for gamma, linear, logaritmic
+    - Presets
+    - Temporal blur
+    - Path to white for grain strength
+    - Subsampling specific blur
+    - Resolution dependant grain
+    - Reducing grain strength on skin
+    - Emulsion emulation
+    """
+    neutral: float = get_neutral_value(clip)
+
+    th1, th2, th3, th4 = [scale_value(
+        x,
+        8, 
+        clip.format.bits_per_sample, # type: ignore
+        vs.ColorRange.RANGE_FULL)
+        for x in [45, 85, 140, 200]]
+
+    base_strength = max(dark_grain_strength, mid_grain_strength, bright_grain_strength)
+
+    base_gcfg = GrainConfig(
+        strength=base_strength * 10,
+        sharpness=grain_sharpness,
+        size=grain_size,
+        grainer=grainer,
+        blur=True,
+        bump=bump
+    )
+
+    grain_layer = _create_grain_layer(clip, base_gcfg, seed)
+    grain_layer = remove_grain(grain_layer, 12)
+
+    mult = Multiplier(
+        dark=(dark_grain_strength / base_strength) * 1.0,
+        mid=(mid_grain_strength / base_strength) * 1.0,
+        bright=(bright_grain_strength / base_strength) * 1.0
+    )
+
+    with inline_expr([clip, grain_layer]) as (clips, op, ie):
+        x, grain = clips
+
+        strength_ramp1 = (x - th1) / (th2 - th1) * (mult.mid - mult.dark) + mult.dark
+        strength_ramp2 = (x - th3) / (th4 - th3) * (mult.bright - mult.mid) + mult.mid
+
+        mult_ramp = op.IF(x < th1, mult.dark,
+                     op.IF(x < th2, strength_ramp1,
+                     op.IF(x < th3, mult.mid,
+                     op.IF(x < th4, strength_ramp2,
+                                   mult.bright))))
+
+        applied_grain = (grain - neutral) * mult_ramp
+        ie.out = x + applied_grain
+
+    return ie.clip
