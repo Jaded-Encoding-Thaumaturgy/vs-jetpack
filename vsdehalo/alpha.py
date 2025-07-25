@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any, Iterator, Sequence, TypeAlias, TypeGuard
 
-from jetpytools import T, mod_x, to_arr
+from jetpytools import T, mod_x
 
 from vsdenoise import Prefilter
 from vsexprtools import norm_expr
@@ -142,8 +142,8 @@ def dehalo_alpha(
                 "x 0 = x y - dup x / ? range_max * {lowsens} - x range_size + range_size 2 * / {highsens} + *",
                 planes,
                 func=util.func,
-                lowsens=[scale_delta(x, 8, clip) for x in to_arr(lowsens_i)],
-                highsens=[x / 100 for x in to_arr(highsens_i)],
+                lowsens=(scale_delta(x, 8, clip) for x in lowsens_i),
+                highsens=(x / 100 for x in highsens_i),
             )
             if attach_masks:
                 masks_to_prop.append(core.std.SetFrameProps(mask, lowsens=lowsens_i, highsens=highsens_i))
