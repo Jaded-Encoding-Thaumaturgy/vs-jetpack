@@ -95,8 +95,6 @@ def dehalo_alpha(
 
     Raises:
         CustomIndexError: If `lowsens` or `highsens` are not beween 0 and 100 (inclusive).
-        CustomIndexError: If `ss` is lower than 1.0.
-        CustomIndexError: If `brightstr` or `darkstr` are not between 0.0 and 1.0 (inclusive).
 
     Returns:
         Dehaloed clip.
@@ -163,8 +161,6 @@ def dehalo_alpha(
         # Clamping with supersampling clips to reduce aliasing
         if ss_i == 1:
             dehalo = repair.Mode.MINMAX_SQUARE1(work_clip, dehalo, planes)
-        elif ss_i < 1:
-            raise CustomIndexError("ss must be greater than 1.0!", func)
         else:
             ss_width = mod_x(work_clip.width * ss_i, 2**work_clip.format.subsampling_w)
             ss_height = mod_x(work_clip.height * ss_i, 2**work_clip.format.subsampling_h)
@@ -180,9 +176,6 @@ def dehalo_alpha(
             )
 
         # Limiting the dehalo clip to control the bright and dark halos
-        if not all(0 <= x <= 1 for x in (*brightstr_i, *darkstr_i)):
-            raise CustomIndexError("brightstr and darkstr must be between 0.0 and 1.0!", func)
-
         work_clip = dehalo = norm_expr(
             [work_clip, dehalo],
             "x y - D! x x y < D@ {darkstr} * D@ {brightstr} * ? -",
