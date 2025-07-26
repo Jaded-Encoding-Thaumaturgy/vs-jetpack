@@ -146,18 +146,16 @@ def dehalo_omega(
                 lowsens=(scale_delta(x, 8, clip) for x in lowsens_i),
                 highsens=(x / 100 for x in highsens_i),
             )
+
             if attach_masks:
                 masks_to_prop.append(core.std.SetFrameProps(mask, lowsens=lowsens_i, highsens=highsens_i))
+
+            dehalo = core.std.MaskedMerge(dehalo, work_clip, limiter(mask, planes=planes, func=util.func), planes)
+
         elif lowsens_i.count(-1) == len(lowsens_i) and highsens_i.count(-1) == len(highsens_i):
-            mask = None
+            pass
         else:
             raise CustomIndexError("lowsens and highsens must be between 0 and 100!", func)
-
-        dehalo = (
-            core.std.MaskedMerge(dehalo, work_clip, limiter(mask, planes=planes, func=util.func), planes)
-            if mask
-            else dehalo
-        )
 
         # Clamping with supersampling clips to reduce aliasing
         if ss_i == 1:
