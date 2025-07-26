@@ -131,7 +131,7 @@ def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: PlanesT, **
 
 class AbstractPrefilter:
     def __call__(
-        self, clip: vs.VideoNode, /, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
+        self, clip: vs.VideoNode, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
     ) -> vs.VideoNode | PrefilterPartial:
         raise NotImplementedError
 
@@ -188,7 +188,6 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.FLUXSMOOTHST],
         clip: vs.VideoNode,
-        /,
         planes: PlanesT = None,
         full_range: bool | float = False,
         *,
@@ -215,7 +214,6 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.DFTTEST],
         clip: vs.VideoNode,
-        /,
         planes: PlanesT = None,
         full_range: bool | float = False,
         *,
@@ -244,7 +242,6 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.NLMEANS],
         clip: vs.VideoNode,
-        /,
         planes: PlanesT = None,
         full_range: bool | float = False,
         *,
@@ -272,7 +269,6 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.BM3D],
         clip: vs.VideoNode,
-        /,
         planes: PlanesT = None,
         full_range: bool | float = False,
         *,
@@ -299,7 +295,6 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.BILATERAL],
         clip: vs.VideoNode,
-        /,
         planes: PlanesT = None,
         full_range: bool | float = False,
         *,
@@ -328,7 +323,6 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.FLUXSMOOTHST],
-        /,
         *,
         planes: PlanesT = None,
         full_range: bool | float = False,
@@ -353,7 +347,6 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.DFTTEST],
-        /,
         *,
         planes: PlanesT = None,
         full_range: bool | float = False,
@@ -380,7 +373,6 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.NLMEANS],
-        /,
         *,
         planes: PlanesT = None,
         full_range: bool | float = False,
@@ -406,7 +398,6 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.BM3D],
-        /,
         *,
         planes: PlanesT = None,
         full_range: bool | float = False,
@@ -431,7 +422,6 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.BILATERAL],
-        /,
         *,
         planes: PlanesT = None,
         full_range: bool | float = False,
@@ -457,18 +447,17 @@ class Prefilter(AbstractPrefilter, CustomEnum):
 
     @overload
     def __call__(
-        self, clip: vs.VideoNode, /, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
+        self, clip: vs.VideoNode, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
     ) -> vs.VideoNode: ...
 
     @overload
     def __call__(
-        self, /, *, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
+        self, *, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
     ) -> PrefilterPartial: ...
 
     def __call__(
         self,
         clip: vs.VideoNode | MissingT = MISSING,
-        /,
         planes: PlanesT = None,
         full_range: bool | float = False,
         **kwargs: Any,
@@ -522,7 +511,6 @@ class PrefilterPartial(AbstractPrefilter):
     def __call__(
         self,
         clip: vs.VideoNode,
-        /,
         planes: PlanesT | MissingT = MISSING,
         full_range: bool | float | MissingT = MISSING,
         **kwargs: Any,
@@ -565,7 +553,7 @@ class MultiPrefilter(AbstractPrefilter):
         self.prefilters = prefilters
 
     def __call__(
-        self, clip: vs.VideoNode, /, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
+        self, clip: vs.VideoNode, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
     ) -> vs.VideoNode:
         """
         Apply a sequence of prefilters to the given clip.
