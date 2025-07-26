@@ -10,7 +10,9 @@ from typing import Any, Callable, Generic, Iterator, Mapping
 from jetpytools import P, R
 
 from vsaa import NNEDI3
+from vsdenoise import Prefilter
 from vsexprtools import ExprOp, combine, norm_expr
+from vskernels import Point
 from vsmasktools import (
     Coordinates,
     GenericMaskT,
@@ -33,7 +35,6 @@ from vstools import (
     PlanesT,
     check_progressive,
     check_variable,
-    cround,
     get_peak_value,
     get_y,
     join,
@@ -42,12 +43,11 @@ from vstools import (
     scale_delta,
     scale_mask,
     split,
-    to_arr,
     vs,
     vs_object,
 )
 
-from .alpha import IterArr, VSFunctionPlanesArgs, _limit_dehalo, dehalo_alpha
+from .alpha import IterArr, VSFunctionPlanesArgs, dehalo_omega
 
 __all__ = ["base_dehalo_mask", "fine_dehalo", "fine_dehalo2"]
 
@@ -342,19 +342,18 @@ class FineDehalo(Generic[P, R]):
 @FineDehalo
 def fine_dehalo(
     clip: vs.VideoNode,
-    # Blur params + fine_dehalo mask
-    rx: IterArr[float] = 2.0,
-    ry: IterArr[float] | None = None,
-    blur_func: IterArr[VSFunctionPlanesArgs | None] = None,
-    # dehalo_alpha mask params
+    # dehalo_omega params
+    blur: IterArr[float]
+    | VSFunctionPlanesArgs
+    | tuple[float | list[float] | VSFunctionPlanesArgs, ...] = Prefilter.GAUSS(sigma=1.4),
     lowsens: IterArr[float] = 50.0,
     highsens: IterArr[float] = 50.0,
-    # dehalo_alpha supersampling minmax params
-    ss: IterArr[float] = 1.5,
-    # dehalo_alpha limiting params
+    ss: float | tuple[float, ...] = 1.5,
     darkstr: IterArr[float] = 0.0,
     brightstr: IterArr[float] = 1.0,
     # fine_dehalo mask specific params
+    rx: int = 2,
+    ry: int | None = None,
     edgemask: GenericMaskT = Robinson3,
     thmi: int = 80,
     thma: int = 128,
@@ -365,18 +364,17 @@ def fine_dehalo(
     # Final post processing
     contra: float = 0.0,
     # Misc params
-    pre_ss: bool | dict[str, Any] = False,
+    pre_ss: float | dict[str, Any] = 1.0,
     planes: PlanesT = 0,
-    *,
     attach_masks: bool = False,
     func: FuncExceptT | None = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
-    Halo removal function based on `dehalo_alpha`, enhanced with additional masking and optional contra-sharpening
+    Halo removal function based on `dehalo_omega`, enhanced with additional masking and optional contra-sharpening
     to better preserve important line detail while effectively reducing halos.
 
-    The parameters `rx`, `ry`, `lowsens`, `highsens`, `ss`, `darkstr`, `brightstr` and `blur_func`
+    The parameter `ss` can be configured per iteration while `blur`, `lowsens`, `highsens`, `darkstr` and `brightstr`
     can be configured per plane and per iteration. You can specify:
 
         - A single value: applies to all iterations and all planes.
@@ -384,12 +382,10 @@ def fine_dehalo(
         - A list inside the tuple: interpreted as per-plane for a specific iteration.
 
     For example:
-        `rx=(2.0, [2.0, 2.4], [2.2, 2.0, 2.1])` implies 3 iterations:
-            - 1st: 2.0 for all planes
-            - 2nd: 2.0 for luma, 2.4 for both chroma planes
-            - 3rd: 2.2 for luma, 2.0 for U, 2.1 for V
-
-    **Note:** Only the first value of `rx` and `ry` is used for mask generation.
+        `blur=(1.4, [1.4, 1.65], [1.5, 1.4, 1.45])` implies 3 iterations:
+            - 1st: 1.4 for all planes
+            - 2nd: 1.4 for luma, 1.65 for both chroma planes
+            - 3rd: 1.5 for luma, 1.4 for U, 1.45 for V
 
     Example usage:
         ```py
@@ -407,7 +403,8 @@ def fine_dehalo(
         clip: Source clip.
         rx: Horizontal radius for halo removal.
         ry: Vertical radius for halo removal. Defaults to `rx` if not set.
-        blur_func: Optional custom blurring function to use in place of the default `dehalo_alpha` implementation.
+        blur: Standard deviation of the Gaussian kernel if float or custom blurring function
+            to use in place of the default implementation.
         lowsens: Lower sensitivity threshold — dehalo is fully applied below this value.
         highsens: Upper sensitivity threshold — dehalo is completely skipped above this value.
         ss: Supersampling factor to reduce aliasing artifacts.
@@ -421,8 +418,8 @@ def fine_dehalo(
         exclude: Whether to exclude edges that are too close together.
         edgeproc: If greater than 0, adds the edge mask into the final processing. Defaults to 0.0.
         contra: Contra-sharpening level in [contrasharpening_dehalo][vsdehalo.contrasharpening_dehalo].
-        pre_ss: If `True`, supersamples the clip with NNEDI3, applies dehalo processing,
-            and then downscales back with Point.
+        pre_ss: Scaling factor for supersampling before processing.
+            If > 1.0, supersamples the clip with NNEDI3, applies dehalo processing, and then downscales back with Point.
         planes: Planes to process.
         attach_masks: Stores the masks as frame properties in the output clip.
             The prop names are `FineDehaloMask` + the masking step.
@@ -442,37 +439,24 @@ def fine_dehalo(
         if isinstance(pre_ss, dict):
             pre_kwargs = pre_ss
         else:
-            if pre_ss is True:
-                pre_kwargs = {"supersampler": NNEDI3(noshift=(True, False))}
-            else:
-                # TODO: Remove that
-                import warnings  # type: ignore[unreachable]
-
-                from vskernels import Point
-
-                warnings.warn(
-                    'fine_dehalo: "pre_ss" must be either a boolean or a dict for the keywords argument '
-                    "of `vsscale.pre_ss`.",
-                    DeprecationWarning,
-                )
-                pre_kwargs = {
-                    "rfactor": pre_ss,
-                    "supersampler": kwargs.pop("pre_supersampler", NNEDI3(noshift=(True, False))),
-                    "downscaler": kwargs.pop("pre_downscaler", Point),
-                }
+            pre_kwargs = {
+                "rfactor": pre_ss,
+                "supersampler": kwargs.pop("pre_supersampler", NNEDI3(noshift=(True, False))),
+                "downscaler": kwargs.pop("pre_downscaler", Point()),
+            }
 
         return pre_supersampling(
             clip,
             lambda clip: fine_dehalo(
                 clip,
-                rx,
-                ry,
-                blur_func,
+                blur,
                 lowsens,
                 highsens,
                 ss,
                 darkstr,
                 brightstr,
+                rx,
+                ry,
                 edgemask,
                 thmi,
                 thma,
@@ -481,8 +465,7 @@ def fine_dehalo(
                 exclude,
                 edgeproc,
                 contra,
-                False,
-                planes,
+                planes=planes,
                 attach_masks=attach_masks,
                 func=func_util.func,
                 **kwargs,
@@ -491,27 +474,12 @@ def fine_dehalo(
             func=func_util.func,
         )
 
-    rx_i = cround(to_arr(to_arr(rx)[0])[0])
-    ry_i = cround(to_arr(to_arr(rx if ry is None else ry)[0])[0])
-
     fine_dehalo.masks = fine_dehalo.Masks(
-        func_util.work_clip, rx_i, ry_i, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func_util.func
+        func_util.work_clip, rx, ry, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func_util.func
     )
 
-    dehaloed = dehalo_alpha(
-        func_util.work_clip,
-        rx,
-        ry,
-        blur_func,
-        lowsens,
-        highsens,
-        ss,
-        darkstr,
-        brightstr,
-        planes,
-        attach_masks=attach_masks,
-        func=func_util.func,
-        **kwargs,
+    dehaloed = dehalo_omega(
+        func_util.work_clip, blur, lowsens, highsens, ss, darkstr, brightstr, planes, attach_masks, func, **kwargs
     )
 
     if contra:
