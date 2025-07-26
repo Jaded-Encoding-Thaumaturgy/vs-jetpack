@@ -579,7 +579,13 @@ def fine_dehalo2(
         dehaloed = combine([work_clip, dehaloed], ExprOp.MAX if dark else ExprOp.MIN)
 
     if darkstr != brightstr != 1.0:
-        dehaloed = _limit_dehalo(work_clip, dehaloed, darkstr, brightstr, 0)
+        dehaloed = norm_expr(
+            [work_clip, dehaloed],
+            "x y - D! x x y < D@ {darkstr} * D@ {brightstr} * ? -",
+            func=func,
+            darkstr=darkstr,
+            brightstr=brightstr,
+        )
 
     out = dehaloed if not chroma else join([dehaloed, *chroma])
 
