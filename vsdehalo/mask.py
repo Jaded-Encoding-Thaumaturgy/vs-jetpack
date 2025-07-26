@@ -389,20 +389,13 @@ def fine_dehalo(
 
     Example usage:
         ```py
-        dehalo = fine_dehalo(clip, (3, 2), brightstr=(0.85, 0.25))
+        dehalo = fine_dehalo(clip, (2.0, 1.4), brightstr=(0.85, 0.25))
         # Getting the masks of the last fine_dehalo call:
         dehalo_mask = fine_dehalo.masks.MAIN
-
-        # dehalo_sigma with fine_dehalo masks
-        from vsdenoise import Prefilter
-
-        dehalo = fine_dehalo(clip, blur_func=Prefilter.GAUSS(sigma=1.9))
         ```
 
     Args:
         clip: Source clip.
-        rx: Horizontal radius for halo removal.
-        ry: Vertical radius for halo removal. Defaults to `rx` if not set.
         blur: Standard deviation of the Gaussian kernel if float or custom blurring function
             to use in place of the default implementation.
         lowsens: Lower sensitivity threshold — dehalo is fully applied below this value.
@@ -410,6 +403,8 @@ def fine_dehalo(
         ss: Supersampling factor to reduce aliasing artifacts.
         darkstr: Strength factor for suppressing dark halos.
         brightstr: Strength factor for suppressing bright halos.
+        rx: Horizontal radius for halo removal.
+        ry: Vertical radius for halo removal. Defaults to `rx` if not set.
         edgemask: Edge detection object to use. Defaults to `Robinson3`.
         thmi: Minimum threshold for sharp edge selection; isolates only the strongest (line-like) edges.
         thma: Maximum threshold for sharp edge selection; filters out weaker edges.
