@@ -5,9 +5,9 @@ This module implements functions based on the famous dehalo_alpha.
 from __future__ import annotations
 
 from typing import Any, Iterator, Sequence, TypeAlias, TypeGuard
-from warnings import deprecated
 
 from jetpytools import T, mod_x
+from typing_extensions import deprecated
 
 from vsaa import NNEDI3
 from vsdenoise import Prefilter
@@ -195,6 +195,12 @@ def dehalo_omega(
 class AlphaBlur:
     """
     A Gaussian blur approximation inspired by Dehalo_Alpha.
+
+    The blur radius roughly corresponds to a Gaussian sigma as follows:
+        - Radius 1.5 ≈ sigma 1.0
+        - Radius 2.0 ≈ sigma 1.4
+        - Radius 3.0 ≈ sigma 2.0
+        - Radius 4.0 ≈ sigma 2.75
     """
 
     __slots__ = ("downscaler", "func", "rx", "ry", "upscaler")
@@ -209,12 +215,6 @@ class AlphaBlur:
         """
         Initializes an AlphaBlur instance.
 
-        The blur radius roughly corresponds to a Gaussian sigma as follows:
-            - Radius 1.5 ≈ sigma 1.0
-            - Radius 2.0 ≈ sigma 1.4
-            - Radius 3.0 ≈ sigma 2.0
-            - Radius 4.0 ≈ sigma 2.75
-
         Args:
             rx: Horizontal radius for halo removal.
             ry: Vertical radius for halo removal. Defaults to `rx` if not set.
@@ -224,7 +224,6 @@ class AlphaBlur:
                - downscaler: Custom downscaler Scaler object.
                - upscaler: Custom upscaler Scaler object.
         """
-
         self.rx = rx
         self.ry = self.rx if ry is None else ry
         self.func = func or self
@@ -365,7 +364,7 @@ def dehalo_alpha(
     )
 
 
-@deprecated("dehalo_sigma is deprecated, use dehalo_sigma instead.", category=DeprecationWarning)
+@deprecated("dehalo_sigma is deprecated, use dehalo_omega instead.", category=DeprecationWarning)
 def dehalo_sigma(
     clip: vs.VideoNode,
     brightstr: IterArr[float] = 1.0,
@@ -387,7 +386,7 @@ def dehalo_sigma(
     func: FuncExceptT | None = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
-    """dehalo_sigma is deprecated, use dehalo_sigma instead."""
+    """dehalo_sigma is deprecated, use dehalo_omega instead."""
 
     func = func or dehalo_sigma
 

@@ -303,7 +303,7 @@ def pre_ss(
     Args:
         clip: Source clip.
         function: A function to apply on the supersampled clip. Must accept a `planes` argument.
-        rfactor: Scaler used to upscale the clip before processing. Defaults to 2.
+        rfactor: Scaling factor for supersampling. Defaults to 2.
         supersampler: Scaler used to downscale the processed clip back to its original resolution.
             Defaults to `Bilinear`.
         downscaler: Downscaler used for undoing the upscaling done by the supersampler. Defaults to `Point`.
