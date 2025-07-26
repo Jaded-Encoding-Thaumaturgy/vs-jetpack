@@ -424,7 +424,7 @@ def fine_dehalo(
     Returns:
         Dehaloed clip.
     """
-    func_util = FunctionUtil(clip, func or fine_dehalo, planes, (vs.GRAY, vs.YUV))
+    func_util = FunctionUtil(clip, func or fine_dehalo, planes)
 
     assert check_progressive(clip, func_util.func)
 

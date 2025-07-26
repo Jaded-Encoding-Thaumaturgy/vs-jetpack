@@ -101,7 +101,7 @@ def dehalo_omega(
     Returns:
         Dehaloed clip.
     """
-    util = FunctionUtil(clip, func or dehalo_omega, planes, (vs.GRAY, vs.YUV))
+    util = FunctionUtil(clip, func or dehalo_omega, planes)
 
     assert check_progressive(clip, util.func)
 
