@@ -5,14 +5,17 @@ This module implements functions based on the famous dehalo_alpha.
 from __future__ import annotations
 
 from typing import Any, Iterator, Sequence, TypeAlias, TypeGuard
+from warnings import deprecated
 
 from jetpytools import T, mod_x
 
+from vsaa import NNEDI3
 from vsdenoise import Prefilter
 from vsexprtools import norm_expr
-from vskernels import BSpline, Lanczos, Mitchell, Scaler
+from vskernels import BSpline, Lanczos, Mitchell, Point, Scaler, ScalerLike
 from vsmasktools import Morpho
 from vsrgtools import MeanMode, gauss_blur, repair
+from vsscale import pre_ss as pre_supersampling
 from vstools import (
     ConstantFormatVideoNode,
     CustomIndexError,
@@ -32,14 +35,14 @@ from vstools import (
 )
 from vstools import VSFunctionPlanesArgs as GenericVSFunctionPlanesArgs
 
-__all__ = ["AlphaBlur", "dehalo_alpha"]
+__all__ = ["AlphaBlur", "dehalo_alpha", "dehalo_omega", "dehalo_sigma"]
 
 
 IterArr: TypeAlias = T | list[T] | tuple[T | list[T], ...]
 VSFunctionPlanesArgs: TypeAlias = GenericVSFunctionPlanesArgs[vs.VideoNode, vs.VideoNode]
 
 
-def dehalo_alpha(
+def dehalo_omega(
     clip: vs.VideoNode,
     # Blur param
     blur: IterArr[float]
@@ -55,7 +58,6 @@ def dehalo_alpha(
     brightstr: IterArr[float] = 1.0,
     # Misc params
     planes: PlanesT = 0,
-    *,
     attach_masks: bool = False,
     func: FuncExceptT | None = None,
     **kwargs: Any,
@@ -99,8 +101,7 @@ def dehalo_alpha(
     Returns:
         Dehaloed clip.
     """
-
-    util = FunctionUtil(clip, func or dehalo_alpha, planes, (vs.GRAY, vs.YUV))
+    util = FunctionUtil(clip, func or dehalo_omega, planes, (vs.GRAY, vs.YUV))
 
     assert check_progressive(clip, util.func)
 
@@ -283,6 +284,152 @@ class AlphaBlur:
             clip.width,
             clip.height,
         )
+
+
+@deprecated("dehalo_alpha is deprecated, use dehalo_omega instead.", category=DeprecationWarning)
+def dehalo_alpha(
+    clip: vs.VideoNode,
+    rx: IterArr[float] = 2.0,
+    ry: IterArr[float] | None = None,
+    darkstr: IterArr[float] = 0.0,
+    brightstr: IterArr[float] = 1.0,
+    lowsens: IterArr[float] = 50.0,
+    highsens: IterArr[float] = 50.0,
+    sigma_mask: None = None,
+    ss: float | tuple[float, ...] = 1.5,
+    planes: PlanesT = 0,
+    show_mask: None = None,
+    mask_radius: None = None,
+    downscaler: ScalerLike = Mitchell,
+    upscaler: ScalerLike = BSpline,
+    supersampler: ScalerLike = Lanczos(3),
+    supersampler_ref: ScalerLike = Mitchell,
+    pre_ss: float = 1.0,
+    pre_supersampler: ScalerLike = NNEDI3(noshift=(True, False)),
+    pre_downscaler: ScalerLike = Point,
+    mask_coords: None = None,
+    func: FuncExceptT | None = None,
+    **kwargs: Any,
+) -> vs.VideoNode:
+    """
+    dehalo_alpha is deprecated, use dehalo_omega instead.
+    """
+    func = func or dehalo_alpha
+
+    if pre_ss > 1:
+        return pre_supersampling(
+            clip,
+            lambda clip: dehalo_alpha(
+                clip,
+                rx,
+                ry,
+                darkstr,
+                brightstr,
+                lowsens,
+                highsens,
+                None,
+                ss,
+                planes,
+                None,
+                None,
+                downscaler,
+                upscaler,
+                supersampler,
+                supersampler_ref,
+                func=func,
+                **kwargs,
+            ),
+            pre_ss,
+            pre_supersampler,
+            pre_downscaler,
+            func=func,
+        )
+
+    if ry is None:
+        ry = rx
+
+    return dehalo_omega(
+        clip,
+        tuple(
+            AlphaBlur(rx_i, ry_i, func, downscaler=downscaler, upscaler=upscaler)
+            for rx_i, ry_i in _normalize_iter_arr_t(rx, ry)
+        ),
+        lowsens,
+        highsens,
+        ss,
+        darkstr,
+        brightstr,
+        planes,
+        func=func,
+        supersampler=supersampler,
+        supersampler_ref=supersampler_ref,
+        **kwargs,
+    )
+
+
+@deprecated("dehalo_sigma is deprecated, use dehalo_sigma instead.", category=DeprecationWarning)
+def dehalo_sigma(
+    clip: vs.VideoNode,
+    brightstr: IterArr[float] = 1.0,
+    darkstr: IterArr[float] = 0.0,
+    lowsens: IterArr[float] = 50.0,
+    highsens: IterArr[float] = 50.0,
+    ss: float | tuple[float, ...] = 1.5,
+    blur_func: Prefilter = Prefilter.GAUSS,
+    planes: PlanesT = 0,
+    supersampler: ScalerLike = Lanczos(3),
+    supersampler_ref: ScalerLike = Mitchell,
+    pre_ss: float = 1.0,
+    pre_supersampler: ScalerLike = NNEDI3(noshift=(True, False)),
+    pre_downscaler: ScalerLike = Point,
+    mask_radius: None = None,
+    sigma_mask: None = None,
+    mask_coords: None = None,
+    show_mask: None = None,
+    func: FuncExceptT | None = None,
+    **kwargs: Any,
+) -> vs.VideoNode:
+    """dehalo_sigma is deprecated, use dehalo_sigma instead."""
+
+    func = func or dehalo_sigma
+
+    if pre_ss > 1:
+        return pre_supersampling(
+            clip,
+            lambda clip: dehalo_sigma(
+                clip,
+                brightstr,
+                darkstr,
+                lowsens,
+                highsens,
+                ss,
+                blur_func,
+                planes,
+                supersampler,
+                supersampler_ref,
+                func=func,
+                **kwargs,
+            ),
+            pre_ss,
+            pre_supersampler,
+            pre_downscaler,
+            func=func,
+        )
+
+    return dehalo_omega(
+        clip,
+        blur_func,
+        lowsens,
+        highsens,
+        ss,
+        darkstr,
+        brightstr,
+        planes,
+        func=func,
+        supersampler=supersampler,
+        supersampler_ref=supersampler_ref,
+        **kwargs,
+    )
 
 
 # HELPER FUNCTIONS BELOW #
