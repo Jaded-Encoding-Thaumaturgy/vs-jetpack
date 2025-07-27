@@ -5,7 +5,7 @@ from enum import auto
 from vsexprtools import ExprOp, ExprVars, combine, norm_expr
 from vstools import (
     ConstantFormatVideoNode,
-    CustomIntEnum,
+    CustomEnum,
     CustomNotImplementedError,
     FuncExceptT,
     PlanesT,
@@ -19,7 +19,7 @@ from vstools import (
 __all__ = ["MeanMode"]
 
 
-class MeanMode(CustomIntEnum):
+class MeanMode(CustomEnum):
     ARITHMETIC = auto()
 
     MEDIAN = auto()
@@ -90,4 +90,5 @@ class MeanMode(CustomIntEnum):
                     func=func,
                 )
 
-        raise CustomNotImplementedError
+            case _:
+                raise CustomNotImplementedError
