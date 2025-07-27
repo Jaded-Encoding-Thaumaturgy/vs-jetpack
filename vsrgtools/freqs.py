@@ -92,8 +92,8 @@ class MeanMode(CustomIntEnum):
                 return combine(
                     clips,
                     ExprOp.ADD,
-                    f"{p} {ExprOp.POW}",
-                    expr_suffix=(n_clips, ExprOp.DIV, 1 / p, ExprOp.POW),
+                    f"neutral - {p} {ExprOp.POW}",
+                    expr_suffix=(n_clips, ExprOp.DIV, 1 / p, ExprOp.POW, "neutral +"),
                     planes=planes,
                     func=func,
                 )
@@ -101,12 +101,13 @@ class MeanMode(CustomIntEnum):
             case MeanMode.LEHMER:
                 p = kwargs.get("p", 2)
                 all_clips = ExprVars(n_clips)
+                counts = range(n_clips)
 
-                expr = StrList()
+                expr = StrList([[f"{clip} neutral - D{i}!" for i, clip in zip(counts, all_clips)]])
                 for x in range(2):
-                    expr.extend([[f"{clip} {p - x} {ExprOp.POW}" for clip in all_clips], ExprOp.ADD * (n_clips - 1)])
+                    expr.extend([[f"D{i}@ {p - x} pow" for i in counts], ExprOp.ADD * (n_clips - 1)])
 
-                return norm_expr(clips, f"{expr} {ExprOp.DIV}", planes, func=func)
+                return norm_expr(clips, f"{expr} {ExprOp.DIV} neutral +", planes, func=func)
 
             case MeanMode.HARMONIC | MeanMode.GEOMETRIC | MeanMode.RMS | MeanMode.CUBIC:
                 return MeanMode.POWER(clips, p=self.value, planes=planes, func=func)
