@@ -73,6 +73,7 @@ class MeanMode(CustomIntEnum):
         assert check_variable_format(clips, func)
 
         n_clips = len(clips)
+        all_clips = ExprVars(n_clips)
 
         if n_clips < 2:
             return next(iter(clips))
@@ -91,7 +92,6 @@ class MeanMode(CustomIntEnum):
 
             case MeanMode.LEHMER:
                 p = kwargs.get("p", 2)
-                all_clips = ExprVars(n_clips)
                 counts = range(n_clips)
 
                 expr = StrList([[f"{clip} neutral - D{i}!" for i, clip in zip(counts, all_clips)]])
@@ -116,7 +116,6 @@ class MeanMode(CustomIntEnum):
                 return ExprOp.MAX(clips, planes=planes, func=func)
 
             case MeanMode.MEDIAN:
-                all_clips = ExprVars(n_clips)
                 n_op = (n_clips - 1) // 2
 
                 mean = "" if n_clips % 2 else "+ 2 /"
