@@ -20,6 +20,8 @@ from typing import (
     overload,
 )
 
+from jetpytools import Singleton
+
 from vstools import R, SupportsFloatOrIndex, SupportsRichComparison, SupportsTrunc, T
 
 from ..exprop import ExprOp
@@ -169,7 +171,9 @@ class TernaryPixelAccessOperator(Generic[T], TernaryBaseOperator):
         return self.rpn_name.format(char=str(self.char), x=int(self.x), y=int(self.y))  # type: ignore[call-overload]
 
 
-class ExprOperators:
+class ExprOperators(Singleton):
+    __slots__ = ()
+
     # 1 Argument
     EXP = UnaryMathOperator(ExprOp.EXP, math.exp)
     """Exponential function (e^x)."""
