@@ -44,16 +44,7 @@ class MeanMode(CustomIntEnum):
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Literal[MeanMode.POWER],
-        *_clips: VideoNodeIterableT[vs.VideoNode],
-        p: float = ...,
-        planes: PlanesT = None,
-        func: FuncExceptT | None = None,
-    ) -> ConstantFormatVideoNode: ...
-
-    @overload
-    def __call__(  # type: ignore[misc]
-        self: Literal[MeanMode.LEHMER],
+        self: Literal[MeanMode.POWER, MeanMode.LEHMER],
         *_clips: VideoNodeIterableT[vs.VideoNode],
         p: float = ...,
         planes: PlanesT = None,
@@ -92,8 +83,8 @@ class MeanMode(CustomIntEnum):
                 return combine(
                     clips,
                     ExprOp.ADD,
-                    f"neutral - {p} {ExprOp.POW}",
-                    expr_suffix=(n_clips, ExprOp.DIV, 1 / p, ExprOp.POW, "neutral +"),
+                    f"neutral - {p} pow",
+                    expr_suffix=f"{n_clips} / {1 / p} pow neutral +",
                     planes=planes,
                     func=func,
                 )
@@ -107,7 +98,7 @@ class MeanMode(CustomIntEnum):
                 for x in range(2):
                     expr.extend([[f"D{i}@ {p - x} pow" for i in counts], ExprOp.ADD * (n_clips - 1)])
 
-                return norm_expr(clips, f"{expr} {ExprOp.DIV} neutral +", planes, func=func)
+                return norm_expr(clips, f"{expr} / neutral +", planes, func=func)
 
             case MeanMode.HARMONIC | MeanMode.GEOMETRIC | MeanMode.RMS | MeanMode.CUBIC:
                 return MeanMode.POWER(clips, p=self.value, planes=planes, func=func)
@@ -116,7 +107,7 @@ class MeanMode(CustomIntEnum):
                 return MeanMode.LEHMER(clips, p=2, planes=planes, func=func)
 
             case MeanMode.ARITHMETIC:
-                return combine(clips, ExprOp.ADD, expr_suffix=(n_clips, ExprOp.DIV), planes=planes, func=func)
+                return combine(clips, ExprOp.ADD, expr_suffix=f"{n_clips} /", planes=planes, func=func)
 
             case MeanMode.MINIMUM:
                 return ExprOp.MIN(clips, planes=planes, func=func)
