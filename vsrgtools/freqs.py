@@ -22,6 +22,8 @@ __all__ = ["MeanMode"]
 class MeanMode(CustomIntEnum):
     POWER = auto()
 
+    LEHMER = auto()
+
     HARMONIC = -1
 
     GEOMETRIC = 0
@@ -40,13 +42,20 @@ class MeanMode(CustomIntEnum):
 
     MEDIAN = auto()
 
-    LEHMER = auto()
-
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[MeanMode.POWER],
         *_clips: VideoNodeIterableT[vs.VideoNode],
-        p: int = ...,
+        p: float = ...,
+        planes: PlanesT = None,
+        func: FuncExceptT | None = None,
+    ) -> ConstantFormatVideoNode: ...
+
+    @overload
+    def __call__(  # type: ignore[misc]
+        self: Literal[MeanMode.LEHMER],
+        *_clips: VideoNodeIterableT[vs.VideoNode],
+        p: float = ...,
         planes: PlanesT = None,
         func: FuncExceptT | None = None,
     ) -> ConstantFormatVideoNode: ...
@@ -89,8 +98,21 @@ class MeanMode(CustomIntEnum):
                     func=func,
                 )
 
+            case MeanMode.LEHMER:
+                p = kwargs.get("p", 2)
+                all_clips = ExprVars(n_clips)
+
+                expr = StrList()
+                for x in range(2):
+                    expr.extend([[f"{clip} {p - x} {ExprOp.POW}" for clip in all_clips], ExprOp.ADD * (n_clips - 1)])
+
+                return norm_expr(clips, f"{expr} {ExprOp.DIV}", planes, func=func)
+
             case MeanMode.HARMONIC | MeanMode.GEOMETRIC | MeanMode.RMS | MeanMode.CUBIC:
                 return MeanMode.POWER(clips, p=self.value, planes=planes, func=func)
+
+            case MeanMode.CONTRAHARMONIC:
+                return MeanMode.LEHMER(clips, p=self.value, planes=planes, func=func)
 
             case MeanMode.ARITHMETIC:
                 return combine(clips, ExprOp.ADD, expr_suffix=(n_clips, ExprOp.DIV), planes=planes, func=func)
@@ -110,22 +132,3 @@ class MeanMode(CustomIntEnum):
                 return norm_expr(
                     clips, f"{all_clips} sort{n_clips} drop{n_op} {mean} swap{n_op} drop{n_op}", planes, func=func
                 )
-
-            case MeanMode.CONTRAHARMONIC:
-                all_clips = ExprVars(n_clips)
-
-                expr = StrList()
-                for x in range(2):
-                    expr.extend([[f"{clip} {2 - x} {ExprOp.POW}" for clip in all_clips], ExprOp.ADD * (n_clips - 1)])
-
-                return norm_expr(clips, f"{expr} {ExprOp.DIV}", planes, func=func)
-
-            case MeanMode.LEHMER:
-                p = 2
-                all_clips = ExprVars(n_clips)
-
-                expr = StrList()
-                for x in range(2):
-                    expr.extend([[f"{clip} {p - x} {ExprOp.POW}" for clip in all_clips], ExprOp.ADD * (n_clips - 1)])
-
-                return norm_expr(clips, f"{expr} {ExprOp.DIV}", planes, func=func)
