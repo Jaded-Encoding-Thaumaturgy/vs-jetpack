@@ -103,17 +103,13 @@ class MeanMode(CustomIntEnum):
             return norm_expr(clips, expr_string, planes=planes, func=func)
 
         if self == MeanMode.MEDIAN:
-            all_clips = str(ExprVars(1, n_clips))
+            all_clips = str(ExprVars(0, n_clips))
+            n_ops = n_op // 2
 
-            n_ops = n_clips - 2
-
-            yzmin, yzmax = [all_clips + f" {op}" * n_ops for op in (ExprOp.MIN, ExprOp.MAX)]
+            mean = "" if n_clips % 2 else "+ 2 /"
 
             return norm_expr(
-                clips,
-                f"{yzmin} YZMIN! {yzmax} YZMAX! x YZMIN@ min x = YZMIN@ x YZMAX@ max x = YZMAX@ x ? ?",
-                planes,
-                func=func,
+                clips, f"{all_clips} sort{n_clips} drop{n_ops} {mean} swap{n_ops} drop{n_ops}", planes, func=func
             )
 
         raise CustomNotImplementedError
