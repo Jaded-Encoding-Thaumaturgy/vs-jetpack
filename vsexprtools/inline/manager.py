@@ -36,7 +36,7 @@ def inline_expr(
     - <https://github.com/AkarinVS/vapoursynth-plugin/wiki/Expr>
 
     The context manager is initialized with one or more VapourSynth clips and yields a
-    InlineExprWrapper object containing clip variables and operators.
+    [InlineExprWrapper][vsexprtools.inline.manager.InlineExprWrapper] object containing clip variables and operators.
 
     Usage:
     ```py
@@ -56,7 +56,7 @@ def inline_expr(
         clip_a = core.std.BlankClip(format=vs.YUV420P8, color=[255, 0, 0])
         clip_b = core.std.BlankClip(format=vs.YUV420P8, color=[0, 255, 0])
 
-        with inline_expr([clip_a, clip_b]) as :
+        with inline_expr([clip_a, clip_b]) as ie:
             # ie.clips[0] is clip_a, ie.clips[1] is clip_b
             average = (ie.clips[0] + ie.clips[1]) / 2
             ie.out = average
@@ -95,7 +95,7 @@ def inline_expr(
         result = ie.clip
         ```
 
-    - Example (complex): Unsharp mask implemented in inline_expr.
+    - Example (complex): Unsharp mask implemented in [inline_expr][vsexprtools.inline_expr].
       Extended with configurable anti-ringing and anti-aliasing, and frequency-based limiting.
         ```py
         @dataclass
@@ -216,21 +216,24 @@ def inline_expr(
     Yields:
         InlineExprWrapper object containing clip variables and operators.
 
-           - `InlineExprWrapper.clips` is a sequence of [ClipVar][vsexprtools.variables.ClipVar] objects,
-            one for each input clip.
+            - The [clips][vsexprtools.inline.manager.InlineExprWrapper.clips] attribute is a sequence
+              of [ClipVar][vsexprtools.inline.variables.ClipVar] objects, one for each input clip.
+              These objects overload standard Python operators (`+`, `-`, `*`, `/`, `**`, `==`, `<`, `>` etc.)
+              to build the expression. They also have helpful properties:
 
-           These objects overload standard Python operators (`+`, `-`, `*`, `/`, `**`, `==`, `<`, `>` etc.)
-           to build the expression. They also have helpful properties:
+                 * `.peak`, `.neutral`, `.lowest`: Bitdepth-aware values.
+                 * `.width`, `.height`, `.depth`: Clip properties.
+                 * `[x, y]`: Relative pixel access (e.g., `clip[1, 0]` for the pixel to the right).
+                 * `props`: Access to frame properties (e.g. `clip.props.PlaneStatsMax`).
 
-               - `.peak`, `.neutral`, `.lowest`: Bitdepth-aware values.
-               - `.width`, `.height`, `.depth`: Clip properties.
-               - `[x, y]`: Relative pixel access (e.g., `clip[1, 0]` for the pixel to the right).
-               - `props`: Access to frame properties (e.g. `clip.props.PlaneStatsMax`).
-           - `InlineExprWrapper.op` is an object providing access to all `Expr` operators
-           such as `op.CLAMP(value, min, max)`, `op.SQRT(value)`, `op.TERN(condition, if_true, if_false)`, etc.
+            - The [op][vsexprtools.inline.manager.InlineExprWrapper.op] attribute is an object providing access
+              to all `Expr` operators such as `op.CLAMP(value, min, max)`, `op.SQRT(value)`,
+              `op.TERN(condition, if_true, if_false)`, etc.
 
-        You must assign the final `ComputedVar` (the result of your expression) to `ie.out`.
-        Additionnaly, you can use `print(ie.out)` to see the computed expression string.
+            You must assign the final [ComputedVar][vsexprtools.inline.variables.ComputedVar]
+            (the result of your expression) to `ie.out`.
+
+            Additionnaly, you can use `print(ie.out)` to see the computed expression string.
     """
     from .polyfills import disable_poly, enable_poly
 
@@ -254,7 +257,9 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapp
     and serves as the interface through which you build expressions using overloaded Python operators
     and expressive constructs.
 
-    It provides access to input clips as `ClipVar` instances, expression operators, and the final output clip.
+    It provides access to input clips as [ClipVar][vsexprtools.inline.variables.ClipVar] instances,
+    expression operators, and the final output clip.
+
     All expressions are constructed in a high-level, readable Python syntax that is internally translated to
     VapourSynth-compatible expression strings.
 
@@ -270,40 +275,29 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapp
     Note:
         The `InlineExprWrapper` also behaves like a tuple containing:
 
-            1. The clip variables (`clips`)
-            2. Expression operator functions (`op`)
-            3. The wrapper itself (`self`)
+        - The clip variables (`clips`).
+        - Expression operator functions (`op`).
+        - The wrapper itself (`self`).
 
         This allows unpacking like:
             `clips, op, self = ie`
     """
 
     op = ExprOperators()
-    """ExprOperators object providing access to all `Expr` operators"""
+    """
+    [ExprOperators][vsexprtools.inline.operators.ExprOperators] object providing access to all `Expr` operators.
+    """
 
     def __new__(cls, clips: Sequence[vs.VideoNode], format: HoldsVideoFormatT | VideoFormatT | None = None) -> Self:
-        """
-        Creates a new InlineExprWrapper object.
-
-        Args:
-            clips: Input clip(s).
-            format: format: Output format, defaults to the first clip format.
-
-        Returns:
-            InlineExprWrapper object.
-        """
         return super().__new__(cls)
 
     def __init__(self, clips: Sequence[vs.VideoNode], format: HoldsVideoFormatT | VideoFormatT | None = None) -> None:
         """
-        Initializes a new InlineExprWrapper instance.
+        Initializes a new [InlineExprWrapper][vsexprtools.inline.manager.InlineExprWrapper] instance.
 
         Args:
             clips: Input clip(s).
-            format: format: Output format, defaults to the first clip format.
-
-        Returns:
-            InlineExprWrapper instance.
+            format: Output format, defaults to the first clip format.
         """
         self._nodes = clips
         self._format = get_video_format(format if format is not None else clips[0])
@@ -336,18 +330,20 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapp
     @cached_property
     def clips(self) -> Sequence[ClipVar]:
         """
-        Sequence of [ClipVar][vsexprtools.variables.ClipVar] objects, one for each input clip.
+        Sequence of [ClipVar][vsexprtools.inline.variables.ClipVar] objects, one for each input clip.
 
         These objects overload standard Python operators (`+`, `-`, `*`, `/`, `**`, `==`, `<`, `>` etc.)
         to build the expression. They also have helpful properties:
 
-            - `.peak`, `.neutral`, `.lowest`: Bitdepth-aware values.
-            - `.width`, `.height`, `.depth`: Clip properties.
-            - `[x, y]`: Relative pixel access (e.g., `clip[1, 0]` for the pixel to the right).
-            - `props`: Access to frame properties (e.g. `clip.props.PlaneStatsMax`).
+        - `.peak`, `.neutral`, `.lowest`: Bitdepth-aware values.
+        - `.width`, `.height`, `.depth`: Clip properties.
+        - `[x, y]`: Relative pixel access (e.g., `clip[1, 0]` for the pixel to the right).
+        - `props`: Access to frame properties (e.g. `clip.props.PlaneStatsMax`).
+
+        See [ClipVar][vsexprtools.inline.variables.ClipVar] for all the possible properties.
 
         Returns:
-            Sequence of [ClipVar][vsexprtools.variables.ClipVar] objects.
+            Sequence of [ClipVar][vsexprtools.inline.variables.ClipVar] objects.
         """
         return tuple(ClipVar(char, clip) for char, clip in zip(ExprVars.cycle(), self._nodes))
 
@@ -366,7 +362,8 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapp
         """
         Set the final output of the expression.
 
-        Converts the given `ExprVar` to a `ComputedVar` and stores it as the final expression.
+        Converts the given [ExprVar][vsexprtools.inline.variables.ExprVar]
+        to a [ComputedVar][vsexprtools.inline.variables.ComputedVar] and stores it as the final expression.
         """
         self._final_expr_node = ExprOperators.as_var(out_var)
 
