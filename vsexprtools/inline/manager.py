@@ -11,10 +11,10 @@ from typing import NamedTuple, Sequence
 
 from vstools import vs
 
-from .funcs import expr_func
+from ..funcs import expr_func
+from ..util import ExprVars
 from .operators import ExprOperators
 from .polyfills import disable_poly, enable_poly
-from .util import ExprVars
 from .variables import ClipVar, ComputedVar, ExprVar
 
 __all__ = ["InlineExpr", "inline_expr"]
