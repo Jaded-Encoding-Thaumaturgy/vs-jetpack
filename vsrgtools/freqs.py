@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from itertools import count
+from enum import auto
 
 from vsexprtools import ExprOp, ExprVars, combine, norm_expr
 from vstools import (
@@ -20,25 +20,22 @@ __all__ = ["MeanMode"]
 
 
 class MeanMode(CustomIntEnum):
-    MINIMUM = -2
-    HARMONIC = -1
-    GEOMETRIC = 0
+    ARITHMETIC = auto()
 
-    ARITHMETIC = 1
+    MEDIAN = auto()
 
-    RMS = 2
-    CUBIC = 3
-    MAXIMUM = 4
+    MINIMUM = auto()
 
-    LEHMER = 10
+    MAXIMUM = auto()
 
-    MINIMUM_ABS = 20
-    MAXIMUM_ABS = 21
-
-    MEDIAN = 30
+    LEHMER = auto()
 
     def __call__(
-        self, *_clips: VideoNodeIterableT[vs.VideoNode], planes: PlanesT = None, func: FuncExceptT | None = None
+        self,
+        *_clips: VideoNodeIterableT[vs.VideoNode],
+        q: int = 3,
+        planes: PlanesT = None,
+        func: FuncExceptT | None = None,
     ) -> ConstantFormatVideoNode:
         func = func or self.__class__
 
@@ -52,64 +49,33 @@ class MeanMode(CustomIntEnum):
         if n_clips < 2:
             return next(iter(clips))
 
-        if self == MeanMode.MINIMUM:
-            return ExprOp.MIN(clips, planes=planes, func=func)
+        match self:
+            case MeanMode.ARITHMETIC:
+                return combine(clips, ExprOp.ADD, expr_suffix=(n_clips, ExprOp.DIV), planes=planes, func=func)
 
-        if self == MeanMode.MAXIMUM:
-            return ExprOp.MAX(clips, planes=planes, func=func)
+            case MeanMode.MEDIAN:
+                all_clips = ExprVars(n_clips)
+                n_ops = n_op // 2
 
-        if self == MeanMode.GEOMETRIC:
-            return combine(clips, ExprOp.MUL, None, None, [1 / n_clips, ExprOp.POW], planes=planes, func=func)
+                mean = "" if n_clips % 2 else "+ 2 /"
 
-        if self == MeanMode.LEHMER:
-            counts = range(n_clips)
-            clip_vars = ExprVars(n_clips)
+                return norm_expr(
+                    clips, f"{all_clips} sort{n_clips} drop{n_ops} {mean} swap{n_ops} drop{n_ops}", planes, func=func
+                )
 
-            expr = StrList([[f"{clip} neutral - D{i}!" for i, clip in zip(counts, clip_vars)]])
+            case MeanMode.MINIMUM:
+                return ExprOp.MIN(clips, planes=planes, func=func)
 
-            for y in range(2):
-                expr.extend([[f"D{i}@ {3 - y} pow" for i in counts], ExprOp.ADD * n_op, f"P{y + 1}!"])
+            case MeanMode.MAXIMUM:
+                return ExprOp.MAX(clips, planes=planes, func=func)
 
-            expr.append("P2@ P1@ P2@ / 0 ? neutral +")
+            case MeanMode.LEHMER:
+                all_clips = ExprVars(n_clips)
 
-            return norm_expr(clips, expr, planes=planes, func=func)
+                expr = StrList()
+                for p in range(2):
+                    expr.extend([[f"{clip} {q - p} {ExprOp.POW}" for clip in all_clips], ExprOp.ADD * (n_clips - 1)])
 
-        if self in {MeanMode.RMS, MeanMode.ARITHMETIC, MeanMode.CUBIC, MeanMode.HARMONIC}:
-            return combine(
-                clips,
-                ExprOp.ADD,
-                f"{self.value} {ExprOp.POW}",
-                None,
-                [n_clips, ExprOp.DIV, 1 / self, ExprOp.POW],
-                planes=planes,
-                func=func,
-            )
-
-        if self in {MeanMode.MINIMUM_ABS, MeanMode.MAXIMUM_ABS}:
-            operator = ExprOp.MIN if self is MeanMode.MINIMUM_ABS else ExprOp.MAX
-
-            expr_string = ""
-            for src in ExprVars(n_clips):
-                expr_string += f"{src} neutral - abs {src.upper()}D! "
-
-            for i, src, srcn in zip(count(), ExprVars(n_clips), ExprVars(1, n_clips)):
-                expr_string += f"{src.upper()}D@ {srcn.upper()}D@ {operator} {src} "
-
-                if i == n_clips - 2:
-                    expr_string += f"{srcn} "
-
-            expr_string += "? " * n_op
-
-            return norm_expr(clips, expr_string, planes=planes, func=func)
-
-        if self == MeanMode.MEDIAN:
-            all_clips = str(ExprVars(0, n_clips))
-            n_ops = n_op // 2
-
-            mean = "" if n_clips % 2 else "+ 2 /"
-
-            return norm_expr(
-                clips, f"{all_clips} sort{n_clips} drop{n_ops} {mean} swap{n_ops} drop{n_ops}", planes, func=func
-            )
+                return norm_expr(clips, f"{expr} /")
 
         raise CustomNotImplementedError
