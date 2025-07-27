@@ -30,6 +30,8 @@ class MeanMode(CustomIntEnum):
 
     LEHMER = auto()
 
+    RMS = auto()
+
     def __call__(
         self,
         *_clips: VideoNodeIterableT[vs.VideoNode],
@@ -74,8 +76,18 @@ class MeanMode(CustomIntEnum):
 
                 expr = StrList()
                 for p in range(2):
-                    expr.extend([[f"{clip} {q - p} {ExprOp.POW}" for clip in all_clips], ExprOp.ADD * (n_clips - 1)])
+                    expr.extend([[f"{clip} {q - p} {ExprOp.POW}" for clip in all_clips], ExprOp.ADD * n_op])
 
-                return norm_expr(clips, f"{expr} /")
+                return norm_expr(clips, f"{expr} /", planes, func=func)
+
+            case MeanMode.RMS:
+                return combine(
+                    clips,
+                    ExprOp.ADD,
+                    f"2 {ExprOp.POW}",
+                    expr_suffix=(n_clips, ExprOp.DIV, ExprOp.SQRT),
+                    planes=planes,
+                    func=func,
+                )
 
         raise CustomNotImplementedError
