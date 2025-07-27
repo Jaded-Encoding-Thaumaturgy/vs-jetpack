@@ -22,7 +22,7 @@ from typing import (
 
 from vstools import R, SupportsFloatOrIndex, SupportsRichComparison, SupportsTrunc, T
 
-from .exprop import ExprOp
+from ..exprop import ExprOp
 
 if TYPE_CHECKING:
     from .variables import ComputedVar, ExprOtherT, ExprVar
