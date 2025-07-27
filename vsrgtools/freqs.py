@@ -112,7 +112,7 @@ class MeanMode(CustomIntEnum):
                 return MeanMode.POWER(clips, p=self.value, planes=planes, func=func)
 
             case MeanMode.CONTRAHARMONIC:
-                return MeanMode.LEHMER(clips, p=self.value, planes=planes, func=func)
+                return MeanMode.LEHMER(clips, p=2, planes=planes, func=func)
 
             case MeanMode.ARITHMETIC:
                 return combine(clips, ExprOp.ADD, expr_suffix=(n_clips, ExprOp.DIV), planes=planes, func=func)
