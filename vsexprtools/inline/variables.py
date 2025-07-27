@@ -3,12 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import wraps
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Iterable,
     Iterator,
-    Literal,
     NoReturn,
     SupportsIndex,
     TypeAlias,
@@ -32,17 +30,11 @@ from vstools import (
 
 from .operators import BaseOperator, ExprOperators
 
-if TYPE_CHECKING:
-    from .manager import inline_expr
-
-
 __all__ = ["ClipPropsVar", "ClipVar", "ComplexVar", "ComputedVar", "ExprOtherT", "ExprVar", "LiteralVar", "resolverT"]
 
 
 class ExprVar(int):
-    parent_expr: inline_expr | None
-
-    def __new__(cls, x: ByteData, __parent_expr: inline_expr | None = None, /, *args: Any, **kwargs: Any) -> Self:
+    def __new__(cls, x: ByteData, /, *args: Any, **kwargs: Any) -> Self:
         return super().__new__(cls, 0)
 
     def __add__(self, other: ExprOtherT) -> ComputedVar:
@@ -193,15 +185,6 @@ class ExprVar(int):
     def to_str(self, **kwargs: Any) -> str:
         return str(self)
 
-    def assert_in_context(self) -> Literal[True]:
-        if not self.parent_expr:
-            return True
-
-        if not self.parent_expr._in_context:
-            raise ValueError("You can only access this variable in context!")
-
-        return True
-
     def as_var(self) -> ComputedVar:
         if isinstance(self, ComputedVar):
             return self
@@ -209,8 +192,6 @@ class ExprVar(int):
 
 
 class LiteralVar(ExprVar):
-    parent_expr: None
-
     def __init__(self, value: int | float | str):
         self.value = value
 
@@ -224,9 +205,6 @@ ExprOtherT: TypeAlias = ExprVar | LiteralVar | int | float
 class ComputedVar(ExprVar):
     def __init__(self, operations: Iterable[BaseOperator | ExprVar]) -> None:
         self.operations = list(operations)
-        self.parent_expr = next(
-            (x.parent_expr if isinstance(x, (ComputedVar, ClipVar)) else None for x in self.operations), None
-        )
 
     def to_str(self, **kwargs: Any) -> str:
         return " ".join([x.to_str(**kwargs) for x in self.operations])
@@ -281,12 +259,9 @@ class ClipPropsVar:
 
 
 class ClipVar(ExprVar):
-    parent_expr: inline_expr
-
-    def __init__(self, char: str, clip: vs.VideoNode, parent_expr: inline_expr) -> None:
+    def __init__(self, char: str, clip: vs.VideoNode) -> None:
         self.char = char
         self.clip = clip
-        self.parent_expr = parent_expr
         self.props = ClipPropsVar(self)
 
     def __str__(self) -> str:
