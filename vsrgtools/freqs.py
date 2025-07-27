@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import auto
+from typing import Any, Literal, overload
 
 from vsexprtools import ExprOp, ExprVars, combine, norm_expr
 from vstools import (
@@ -19,6 +20,8 @@ __all__ = ["MeanMode"]
 
 
 class MeanMode(CustomIntEnum):
+    POWER = auto()
+
     HARMONIC = -1
 
     GEOMETRIC = 0
@@ -37,12 +40,31 @@ class MeanMode(CustomIntEnum):
 
     MEDIAN = auto()
 
-    POWER = auto()
-
     LEHMER = auto()
 
+    @overload
+    def __call__(  # type: ignore[misc]
+        self: Literal[MeanMode.POWER],
+        *_clips: VideoNodeIterableT[vs.VideoNode],
+        p: int = ...,
+        planes: PlanesT = None,
+        func: FuncExceptT | None = None,
+    ) -> ConstantFormatVideoNode: ...
+
+    @overload
     def __call__(
-        self, *_clips: VideoNodeIterableT[vs.VideoNode], planes: PlanesT = None, func: FuncExceptT | None = None
+        self,
+        *_clips: VideoNodeIterableT[vs.VideoNode],
+        planes: PlanesT = None,
+        func: FuncExceptT | None = None,
+    ) -> ConstantFormatVideoNode: ...
+
+    def __call__(
+        self,
+        *_clips: VideoNodeIterableT[vs.VideoNode],
+        planes: PlanesT = None,
+        func: FuncExceptT | None = None,
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         func = func or self.__class__
 
@@ -56,6 +78,20 @@ class MeanMode(CustomIntEnum):
             return next(iter(clips))
 
         match self:
+            case MeanMode.POWER:
+                p = kwargs.get("p", -1)
+                return combine(
+                    clips,
+                    ExprOp.ADD,
+                    f"{p} {ExprOp.POW}",
+                    expr_suffix=(n_clips, ExprOp.DIV, 1 / p, ExprOp.POW),
+                    planes=planes,
+                    func=func,
+                )
+
+            case MeanMode.HARMONIC | MeanMode.GEOMETRIC | MeanMode.RMS | MeanMode.CUBIC:
+                return MeanMode.POWER(clips, p=self.value, planes=planes, func=func)
+
             case MeanMode.ARITHMETIC:
                 return combine(clips, ExprOp.ADD, expr_suffix=(n_clips, ExprOp.DIV), planes=planes, func=func)
 
@@ -75,16 +111,6 @@ class MeanMode(CustomIntEnum):
                     clips, f"{all_clips} sort{n_clips} drop{n_op} {mean} swap{n_op} drop{n_op}", planes, func=func
                 )
 
-            case MeanMode.HARMONIC | MeanMode.GEOMETRIC | MeanMode.RMS | MeanMode.CUBIC:
-                return combine(
-                    clips,
-                    ExprOp.ADD,
-                    f"{self.value} {ExprOp.POW}",
-                    expr_suffix=(n_clips, ExprOp.DIV, 1 / self.value, ExprOp.POW),
-                    planes=planes,
-                    func=func,
-                )
-
             case MeanMode.CONTRAHARMONIC:
                 all_clips = ExprVars(n_clips)
 
@@ -93,17 +119,6 @@ class MeanMode(CustomIntEnum):
                     expr.extend([[f"{clip} {2 - x} {ExprOp.POW}" for clip in all_clips], ExprOp.ADD * (n_clips - 1)])
 
                 return norm_expr(clips, f"{expr} {ExprOp.DIV}", planes, func=func)
-
-            case MeanMode.POWER:
-                p = -1
-                return combine(
-                    clips,
-                    ExprOp.ADD,
-                    f"{p} {ExprOp.POW}",
-                    expr_suffix=(n_clips, ExprOp.DIV, 1 / p, ExprOp.POW),
-                    planes=planes,
-                    func=func,
-                )
 
             case MeanMode.LEHMER:
                 p = 2
