@@ -28,6 +28,7 @@ def inline_expr(
     format: HoldsVideoFormatT | VideoFormatT | None = None,
     *,
     enable_polyfills: bool = False,
+    **kwargs: Any,
 ) -> Iterator[InlineExprWrapper]:
     """
     A context manager for building and evaluating VapourSynth expressions in a Pythonic way.
@@ -216,6 +217,7 @@ def inline_expr(
         clips: Input clip(s).
         format: format: Output format, defaults to the first clip format.
         enable_polyfills: Enable monkey-patching built-in methods. Maybe more than that, nobody knows.
+        **kwargs: Additional keyword arguments passed to [expr_func][vsexprtools.expr_func].
 
     Yields:
         InlineExprWrapper object containing clip variables and operators.
@@ -329,9 +331,9 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapp
     def __next__(self) -> Any:
         return next(self._iter)
 
-    def _compute_expr(self) -> None:
+    def _compute_expr(self, **kwargs: Any) -> None:
         self._final_clip = expr_func(
-            self._nodes, [self._final_expr_node.to_str(plane=p) for p in range(self._format.num_planes)]
+            self._nodes, [self._final_expr_node.to_str(plane=p) for p in range(self._format.num_planes)], **kwargs
         )
 
     @cached_property
