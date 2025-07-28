@@ -11,7 +11,7 @@ from vsaa import NNEDI3
 from vsdenoise import Prefilter, PrefilterLike, frequency_merge, nl_means
 from vsexprtools import ExprOp, norm_expr
 from vskernels import Catrom, Scaler, ScalerLike
-from vsmasktools import Morpho, Robinson3
+from vsmasktools import Morpho, PrewittStd
 from vsrgtools import (
     contrasharpening_dehalo,
     gauss_blur,
@@ -25,8 +25,6 @@ from vstools import (
     check_progressive,
     check_ref_clip,
     core,
-    fallback,
-    plane,
     to_arr,
     vs,
 )
@@ -36,19 +34,17 @@ __all__ = ["hq_dering", "smooth_dering", "vine_dehalo"]
 
 def hq_dering(
     clip: vs.VideoNode,
-    smooth: vs.VideoNode | PrefilterLike | None = None,
+    smooth: vs.VideoNode | PrefilterLike = Prefilter.MINBLUR,
     ringmask: vs.VideoNode | None = None,
     mrad: int = 1,
     msmooth: int = 1,
     minp: int = 1,
     mthr: float = 0.24,
     incedge: bool = False,
-    thr: int = 12,
-    elast: float = 2.0,
-    darkthr: int | None = None,
     contra: float = 1.2,
     drrep: int = 13,
     planes: PlanesT = 0,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Applies deringing by using a smart smoother near edges (where ringing occurs) only.
@@ -96,36 +92,6 @@ def hq_dering(
 
         incedge: Whether to include edge in ring mask, by default ring mask only include area near edges.
 
-        thr: Threshold (8-bit scale) to limit filtering diff. Smaller thr will result in more pixels being taken from
-            processed clip. Larger thr will result in less pixels being taken from input clip.
-
-               - PDiff: pixel value diff between processed clip and input clip
-               - ODiff: pixel value diff between output clip and input clip
-
-            PDiff, thr and elast is used to calculate ODiff:
-            ODiff = PDiff when [PDiff <= thr]
-
-            ODiff gradually smooths from thr to 0 when [thr <= PDiff <= thr * elast].
-
-            For elast>2.0, ODiff reaches maximum when [PDiff == thr * elast / 2]
-
-            ODiff = 0 when [PDiff >= thr * elast]
-
-        elast: Elasticity of the soft threshold. Larger "elast" will result in more pixels being blended from.
-
-        darkthr: Threshold (8-bit scale) for darker area near edges, for filtering diff that brightening the image by
-            default equals to thr/4. Set it lower if you think de-ringing destroys too much lines, etc. When darkthr is
-            not equal to ``thr``, ``thr`` limits darkening, while ``darkthr`` limits brightening. This is useful to
-            limit the overshoot/undershoot/blurring introduced in deringing. Examples:
-
-               - ``thr=0``,   ``darkthr=0``  : no limiting
-               - ``thr=255``, ``darkthr=255``: no limiting
-               - ``thr=8``,   ``darkthr=2``  : limit darkening with 8, brightening is limited to 2
-               - ``thr=8``,   ``darkthr=0``  : limit darkening with 8, brightening is limited to 0
-               - ``thr=255``, ``darkthr=0``  : limit darkening with 255, brightening is limited to 0
-
-            For the last two examples, output will remain unchanged. (0/255: no limiting)
-
         contra: Whether to use contra-sharpening to resharp deringed clip:
                - 0 means no contra
                - float: represents level for [contrasharpening_dehalo][vsdehalo.contrasharpening_dehalo]
@@ -137,56 +103,45 @@ def hq_dering(
     Returns:
         Deringed clip.
     """
-    func = FunctionUtil(clip, hq_dering, planes, (vs.GRAY, vs.YUV))
-
-    assert check_progressive(clip, func.func)
-
-    planes = func.norm_planes
-
-    darkthr = fallback(darkthr, thr // 4)
-
-    if smooth is None:
-        smooth = Prefilter.MINBLUR(radius=2) if func.is_hd else Prefilter.MINBLUR(radius=1)
+    func = FunctionUtil(clip, hq_dering, planes)
 
     if not isinstance(smooth, vs.VideoNode):
         smoothed = smooth(func.work_clip, planes)
     else:
         check_ref_clip(clip, smooth)
 
-        smoothed = plane(smooth, 0) if func.luma_only else smooth
+        smoothed = smooth
 
     if contra:
         smoothed = contrasharpening_dehalo(smoothed, func.work_clip, contra, planes=planes)
 
-    repclp = repair(func.work_clip, smoothed, drrep, planes)
-
-    limitclp = limit_filter(repclp, func.work_clip, None, darkthr, thr, elast, planes)
+    repaired = repair(func.work_clip, smoothed, drrep, planes)
+    limited = limit_filter(repaired, func.work_clip, None, planes=planes, **kwargs)
 
     if ringmask is None:
-        edgemask = Robinson3.edgemask(func.work_clip, mthr, planes=planes)
-
+        edgemask = PrewittStd.edgemask(func.work_clip, mthr, planes=planes)
         fmask = median_blur(edgemask, planes=planes).hysteresis.Hysteresis(edgemask, planes)
 
-        omask = Morpho.expand(fmask, mrad, planes=planes) if mrad > 0 else fmask
-
-        if msmooth > 0:
-            omask = Morpho.inflate(omask, iterations=msmooth, planes=planes)
+        omask = Morpho.expand(fmask, mrad, planes=planes)
+        omask = Morpho.inflate(omask, msmooth, planes=planes)
 
         if incedge:
             ringmask = omask
         else:
-            if minp <= 0:
+            if not minp:
                 imask = fmask
-            elif minp % 2 == 0:
+            elif not minp % 2:
                 imask = Morpho.inpand(fmask, minp // 2, planes=planes, func=func.func)
             else:
                 imask = Morpho.inpand(
                     Morpho.inflate(fmask, planes=planes, func=func.func), ceil(minp / 2), planes=planes, func=func.func
                 )
 
-            ringmask = norm_expr([omask, imask], ["x range_max y - * range_max /", ExprOp.clamp()], func=func.func)
+            ringmask = norm_expr(
+                [omask, imask], ["x range_max y - * range_max /", ExprOp.clamp()], planes, func=func.func
+            )
 
-    dering = func.work_clip.std.MaskedMerge(limitclp, ringmask, planes)
+    dering = func.work_clip.std.MaskedMerge(limited, ringmask, planes)
 
     return func.return_clip(dering)
 
