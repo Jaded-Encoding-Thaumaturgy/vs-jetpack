@@ -9,7 +9,7 @@ from typing import Any, Sequence
 
 from vsaa import NNEDI3
 from vsdenoise import Prefilter, PrefilterLike, frequency_merge, nl_means
-from vsexprtools import ExprOp, norm_expr
+from vsexprtools import norm_expr
 from vskernels import Catrom, Scaler, ScalerLike
 from vsmasktools import Morpho, PrewittStd
 from vsrgtools import (
@@ -138,7 +138,7 @@ def hq_dering(
                 )
 
             ringmask = norm_expr(
-                [omask, imask], ["x range_max y - * range_max /", ExprOp.clamp()], planes, func=func.func
+                [omask, imask], "x range_max y - * range_max / 0 range_max clip", planes, func=func.func
             )
 
     dering = func.work_clip.std.MaskedMerge(limited, ringmask, planes)

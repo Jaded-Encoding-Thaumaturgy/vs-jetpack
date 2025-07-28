@@ -11,7 +11,7 @@ from jetpytools import P, R
 
 from vsaa import NNEDI3
 from vsdenoise import Prefilter
-from vsexprtools import ExprOp, combine, norm_expr
+from vsexprtools import ExprOp, norm_expr
 from vskernels import Point
 from vsmasktools import (
     Coordinates,
@@ -23,7 +23,7 @@ from vsmasktools import (
     grow_mask,
     normalize_mask,
 )
-from vsrgtools import BlurMatrix, BlurMatrixBase, contrasharpening_dehalo
+from vsrgtools import BlurMatrix, BlurMatrixBase, box_blur, contrasharpening_dehalo
 from vsscale import pre_ss as pre_supersampling
 from vstools import (
     ConstantFormatVideoNode,
@@ -35,7 +35,6 @@ from vstools import (
     PlanesT,
     check_progressive,
     check_variable,
-    get_peak_value,
     get_y,
     join,
     limiter,
@@ -217,14 +216,13 @@ class FineDehalo(Generic[P, R]):
             work_clip = get_y(clip) if planes == [0] else clip
             thmif, thmaf, thlimif, thlimaf = [scale_mask(x, 8, clip) for x in [thmi, thma, thlimi, thlima]]
             planes = normalize_planes(clip, planes)
-            peak = get_peak_value(clip)
 
             # Main edges #
             # Basic edge detection, thresholding will be applied later.
             edges = normalize_mask(edgemask, work_clip, work_clip, func=func)
 
             # Keeps only the sharpest edges (line edges)
-            strong = norm_expr(edges, f"x {thmif} - {thmaf - thmif} / {peak} *", planes, func=func)
+            strong = norm_expr(edges, f"x {thmif} - {thmaf - thmif} / range_max *", planes, func=func)
 
             # Extends them to include the potential halos
             large = Morpho.expand(strong, rx, ry, planes=planes, func=func)
@@ -237,7 +235,7 @@ class FineDehalo(Generic[P, R]):
             # these zones from the halo removal.
 
             # Includes more edges than previously, but ignores simple details
-            light = norm_expr(edges, f"x {thlimif} - {thlimaf - thlimif} / {peak} *", planes, func=func)
+            light = norm_expr(edges, f"x {thlimif} - {thlimaf - thlimif} / range_max *", planes, func=func)
 
             # To build the exclusion zone, we make grow the edge mask, then shrink
             # it to its original shape. During the growing stage, close adjacent
@@ -255,14 +253,14 @@ class FineDehalo(Generic[P, R]):
 
             # This mask is almost binary, which will produce distinct
             # discontinuities once applied. Then we have to smooth it.
-            shrink = BlurMatrix.MEAN()(shrink, planes, passes=2)
+            shrink = box_blur(shrink, passes=2, planes=planes)
 
             # Final mask building #
 
             # Previous mask may be a bit weak on the pure edge side, so we ensure
             # that the main edges are really excluded. We do not want them to be
             # smoothed by the halo removal.
-            shr_med = combine([strong, shrink], ExprOp.MAX, planes=planes) if exclude else strong
+            shr_med = norm_expr([strong, shrink], "x y max", planes) if exclude else strong
 
             # Subtracts masks and amplifies the difference to be sure we get 255
             # on the areas to be processed.
@@ -275,9 +273,7 @@ class FineDehalo(Generic[P, R]):
             # Smooth again and amplify to grow the mask a bit, otherwise the halo
             # parts sticking to the edges could be missed.
             # Also clamp to legal ranges
-            mask = BlurMatrix.MEAN()(mask, planes)
-
-            mask = norm_expr(mask, f"x 2 * {ExprOp.clamp(0, peak)}", planes, func=func)
+            mask = norm_expr(box_blur(mask, planes=planes), "x 2 * 0 range_max clip", planes, func=func)
 
             self._edges = edges
             self._strong = strong
@@ -524,7 +520,6 @@ def fine_dehalo2(
     func = fine_dehalo2
 
     assert check_variable(clip, func)
-    InvalidColorFamilyError.check(clip, (vs.GRAY, vs.YUV), func)
 
     work_clip, *chroma = split(clip)
 
@@ -537,13 +532,13 @@ def fine_dehalo2(
         mask_v = BlurMatrixBase([1, 0, -1, 2, 0, -2, 1, 0, -1], ConvMode.H)(work_clip, divisor=4, saturate=False)
 
     if mask_h and mask_v:
-        mask_h2 = norm_expr([mask_h, mask_v], ["x 3 * y -", ExprOp.clamp()], func=func)
-        mask_v2 = norm_expr([mask_v, mask_h], ["x 3 * y -", ExprOp.clamp()], func=func)
+        mask_h2 = norm_expr([mask_h, mask_v], "x 3 * y -", func=func)
+        mask_v2 = norm_expr([mask_v, mask_h], "x 3 * y -", func=func)
         mask_h, mask_v = mask_h2, mask_v2
     elif mask_h:
-        mask_h = norm_expr(mask_h, ["x 3 *", ExprOp.clamp()], func=func)
+        mask_h = norm_expr(mask_h, "x 3 *", func=func)
     elif mask_v:
-        mask_v = norm_expr(mask_v, ["x 3 *", ExprOp.clamp()], func=func)
+        mask_v = norm_expr(mask_v, "x 3 *", func=func)
 
     if mask_h:
         mask_h = grow_mask(mask_h, mask_radius, coord=Coordinates.VERTICAL, multiply=1.8, func=func)
@@ -571,7 +566,7 @@ def fine_dehalo2(
             dehaloed = dehaloed.std.MaskedMerge(fix, mask)
 
     if dark is not None:
-        dehaloed = combine([work_clip, dehaloed], ExprOp.MAX if dark else ExprOp.MIN)
+        dehaloed = norm_expr([work_clip, dehaloed], f"x y {'max' if dark else 'min'}")
 
     if darkstr != brightstr != 1.0:
         dehaloed = norm_expr(
