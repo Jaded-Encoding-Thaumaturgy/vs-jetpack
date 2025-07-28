@@ -88,6 +88,7 @@ def YAHR(  # noqa: N802
     blur: int = 3,
     depth: int | Sequence[int] = 32,
     expand: int | Literal[False] = 5,
+    shift: int = 8,
     planes: PlanesT = 0,
 ) -> vs.VideoNode:
     """
@@ -98,6 +99,7 @@ def YAHR(  # noqa: N802
         blur: The blur strength for the warping process. Default is 3.
         depth: The depth of the warping process. Default is 32.
         expand: The expansion factor for edge detection. Set to False to disable masking. Default is 5.
+        shift: Corrective shift for fine-tuning mask iterations.
         planes: The planes to process. Default is 0 (luma only).
 
     Returns:
@@ -116,7 +118,8 @@ def YAHR(  # noqa: N802
     if expand is not False:
         v_edge = norm_expr(
             [clip, Morpho.maximum(clip, iterations=2, planes=planes)],
-            "y x - 8 range_max * 255 / - 128 *",
+            "y x - {shift} range_max * 255 / - 128 *",
+            shift=shift,
             planes=planes,
             func=YAHR,
         )
