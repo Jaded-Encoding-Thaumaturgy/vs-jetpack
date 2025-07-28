@@ -8,14 +8,13 @@ from typing import (
     Any,
     Callable,
     Generic,
-    Sequence,
+    NoReturn,
     SupportsAbs,
     SupportsIndex,
     SupportsRound,
-    overload,
 )
 
-from jetpytools import CustomValueError, R, Singleton, SupportsFloatOrIndex, SupportsRichComparison, SupportsTrunc, T
+from jetpytools import R, Singleton, SupportsFloatOrIndex, SupportsRichComparison, SupportsTrunc, T
 
 from ..exprop import ExprOp
 
@@ -48,28 +47,13 @@ class BaseOperator:
     rpn_name: ExprOp
     """The RPN name of the operator."""
 
-    def to_str(self, **kwargs: Any) -> str:
-        """
-        Returns the string representation of the operator.
-
-        Args:
-            **kwargs: Additional keywords arguments.
-
-        Returns:
-            The string representation of the operator.
-        """
-        return str(self)
-
-    def __str__(self) -> str:
-        """Returns the RPN name of the operator as a string."""
-        return self.rpn_name
+    def __str__(self) -> NoReturn:
+        raise NotImplementedError
 
     def __call__(self, *args: Any) -> ComputedVar:
         from .variables import ComputedVar, ExprVar, LiteralVar
 
-        return ComputedVar(
-            arg if isinstance(arg, (ExprVar, BaseOperator)) else LiteralVar(arg) for arg in (*args, self)
-        )
+        return ComputedVar(arg if isinstance(arg, ExprVar) else LiteralVar(arg) for arg in (*args, self.rpn_name))
 
 
 class UnaryBaseOperator(BaseOperator):
@@ -163,27 +147,10 @@ class TernaryPixelAccessOperator(TernaryBaseOperator):
     Ternary operator for pixel-level access in a 2D space.
     """
 
-    char: str
-    x: int
-    y: int
-
     def __call__(self, char: str, x: int, y: int) -> ComputedVar:
         from .variables import ComputedVar
 
-        self.set_vars(char, x, y)
-
-        return ComputedVar([self])
-
-    def set_vars(self, char: str, x: int, y: int) -> None:
-        self.char = char
-        self.x = x
-        self.y = y
-
-    def __str__(self) -> str:
-        if not hasattr(self, "char"):
-            raise CustomValueError("You have to call set_vars!", self)
-
-        return self.rpn_name.format(char=self.char, x=self.x, y=self.y)
+        return ComputedVar(self.rpn_name.format(char=char, x=x, y=y))
 
 
 class ExprOperators(Singleton):
@@ -307,28 +274,17 @@ class ExprOperators(Singleton):
 
     # Helper Functions
 
-    @overload
     @classmethod
-    def as_var(cls, x: ExprVarLike) -> ComputedVar: ...
-
-    @overload
-    @classmethod
-    def as_var(cls, x: Sequence[ExprVarLike]) -> list[ComputedVar]: ...
-
-    @classmethod
-    def as_var(cls, x: ExprVarLike | Sequence[ExprVarLike]) -> ComputedVar | list[ComputedVar]:
+    def as_var(cls, x: ExprVarLike) -> ComputedVar:
         """
-        Converts an expression variable or a sequence of variables to ComputedVar(s).
+        Converts an expression variable to a ComputedVar.
 
         Args:
-            x: A single ExprVarLike or a sequence of ExprVarLike items.
+            x: A single ExprVarLike.
 
         Returns:
-            A ComputedVar if input is a single item, or a list of ComputedVar if input is a sequence.
+            A ComputedVar.
         """
-        from .variables import ComputedVar, LiteralVar
+        from .variables import ComputedVar
 
-        if isinstance(x, Sequence):
-            return ComputedVar(LiteralVar(var) for var in x)
-
-        return ComputedVar([LiteralVar(x)])
+        return ComputedVar(x)
