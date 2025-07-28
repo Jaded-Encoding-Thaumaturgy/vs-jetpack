@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from functools import cached_property
-from typing import Any, Iterator, Sequence, SupportsIndex, overload
+from typing import Any, Iterator, Sequence, SupportsIndex, cast, overload
 
 from jetpytools import CustomValueError, to_arr
 from typing_extensions import Self
@@ -255,7 +255,7 @@ def inline_expr(
         if enable_polyfills:
             disable_poly()
 
-    ie._compute_expr()
+    ie._compute_expr(**kwargs)
 
 
 class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapper"], vs_object):
@@ -297,7 +297,7 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapp
     [ExprOperators][vsexprtools.inline.operators.ExprOperators] object providing access to all `Expr` operators.
     """
 
-    def __new__(cls, clips: Sequence[vs.VideoNode], format: HoldsVideoFormatT | VideoFormatT | None = None) -> Self:
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         return super().__new__(cls)
 
     def __init__(self, clips: Sequence[vs.VideoNode], format: HoldsVideoFormatT | VideoFormatT | None = None) -> None:
@@ -311,25 +311,21 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapp
         self._nodes = clips
         self._format = get_video_format(format if format is not None else clips[0])
         self._final_expr_node = self.clips[0].as_var()
-        self._inner = (self.clips, self.op, self)
-        self._iter = iter(self._inner)
+        self._inner = (self.clips, self.op, cast(Self, self))
         self._final_clip: vs.VideoNode | None = None
 
     @overload
-    def __getitem__(self, i: SupportsIndex, /) -> Sequence[ClipVar] | ExprOperators | InlineExprWrapper: ...
+    def __getitem__(self, i: SupportsIndex, /) -> Sequence[ClipVar] | ExprOperators | Self: ...
     @overload
-    def __getitem__(
-        self, i: slice[Any, Any, Any], /
-    ) -> tuple[Sequence[ClipVar] | ExprOperators | InlineExprWrapper]: ...
-
+    def __getitem__(self, i: slice[Any, Any, Any], /) -> tuple[Sequence[ClipVar] | ExprOperators | Self]: ...
     def __getitem__(self, i: SupportsIndex | slice[Any, Any, Any]) -> Any:
         return self._inner[i]
 
-    def __iter__(self) -> Iterator[Sequence[ClipVar] | ExprOperators | InlineExprWrapper]:
-        return self._iter
+    def __iter__(self) -> Iterator[Sequence[ClipVar] | ExprOperators | Self]:
+        yield from self._inner
 
     def __next__(self) -> Any:
-        return next(self._iter)
+        return next(self)
 
     def _compute_expr(self, **kwargs: Any) -> None:
         self._final_clip = expr_func(

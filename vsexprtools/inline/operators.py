@@ -274,8 +274,8 @@ class ExprOperators(Singleton):
 
     # Helper Functions
 
-    @classmethod
-    def as_var(cls, x: ExprVarLike) -> ComputedVar:
+    @staticmethod
+    def as_var(x: ExprVarLike) -> ComputedVar:
         """
         Converts an expression variable to a ComputedVar.
 
