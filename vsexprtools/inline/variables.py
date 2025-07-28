@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Iterable, NoReturn, Protocol, SupportsIndex, TypeAlias
+
+from jetpytools import to_arr
 
 from vstools import (
     ColorRangeT,
@@ -14,12 +17,12 @@ from vstools import (
     vs,
 )
 
-from .operators import BaseOperator, ExprOperators
+from .operators import ExprOperators
 
 __all__ = ["ClipPropsVar", "ClipVar", "ComplexVar", "ComputedVar", "ExprVar", "ExprVarLike", "LiteralVar"]
 
 
-class ExprVar:
+class ExprVar(ABC):
     """Base interface for variables used in RPN expression"""
 
     def __add__(self, other: ExprVarLike) -> ComputedVar:
@@ -113,7 +116,7 @@ class ExprVar:
         return ExprOperators.TRUNC(self)
 
     def __float__(self) -> ComputedVar:
-        return ComputedVar([self])
+        return ComputedVar(self)
 
     def __abs__(self) -> ComputedVar:
         return ExprOperators.ABS(self)
@@ -175,6 +178,9 @@ class ExprVar:
         """
         return str(self)
 
+    @abstractmethod
+    def __str__(self) -> str: ...
+
     def as_var(self) -> ComputedVar:
         """
         Converts the expression variable to a ComputedVar.
@@ -182,13 +188,17 @@ class ExprVar:
         Returns:
             A ComputedVar.
         """
-        return ComputedVar([self])
+        return ComputedVar(self)
+
+
+ExprVarLike: TypeAlias = int | float | str | ExprVar
+"""Type alias representing any expression-compatible variable or literal."""
 
 
 class LiteralVar(ExprVar):
     """Literal value wrapper for use in RPN expressions."""
 
-    def __init__(self, value: int | float | str | ExprVar):
+    def __init__(self, value: ExprVarLike):
         """
         Initializes a new LiteralVar.
 
@@ -201,21 +211,17 @@ class LiteralVar(ExprVar):
         return str(self.value)
 
 
-ExprVarLike: TypeAlias = ExprVar | LiteralVar | int | float
-"""Type alias representing any expression-compatible variable or literal."""
-
-
 class ComputedVar(ExprVar):
     """Represents a fully built RPN expression as a sequence of operations."""
 
-    def __init__(self, operations: Iterable[BaseOperator | ExprVar | LiteralVar]) -> None:
+    def __init__(self, operations: ExprVarLike | Iterable[ExprVarLike]) -> None:
         """
         Initializes a new ComputedVar.
 
         Args:
             operations: An iterable of operators and/or expression variables that define the computation.
         """
-        self.operations = tuple(operations)
+        self.operations = tuple(LiteralVar(x) for x in to_arr(operations))  # type: ignore[arg-type]
 
     def to_str(self, **kwargs: Any) -> str:
         """
@@ -281,7 +287,7 @@ class ClipPropsVar:
     def __getattribute__(self, name: str) -> ComputedVar:
         """Accesses a computed property using dot notation from the clip symbol."""
 
-        return ComputedVar([LiteralVar(f"{super().__getattribute__('clip_var').char}.{name}")])
+        return ComputedVar(f"{super().__getattribute__('clip_var').char}.{name}")
 
 
 class ClipVar(ExprVar):
