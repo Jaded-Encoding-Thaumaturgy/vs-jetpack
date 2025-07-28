@@ -2,32 +2,25 @@ from __future__ import annotations
 
 import math
 import operator as op
-from copy import copy
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Generic,
-    Iterable,
     Sequence,
     SupportsAbs,
     SupportsIndex,
     SupportsRound,
-    TypeAlias,
-    Union,
-    cast,
     overload,
 )
 
-from jetpytools import Singleton
-
-from vstools import R, SupportsFloatOrIndex, SupportsRichComparison, SupportsTrunc, T
+from jetpytools import CustomValueError, R, Singleton, SupportsFloatOrIndex, SupportsRichComparison, SupportsTrunc, T
 
 from ..exprop import ExprOp
 
 if TYPE_CHECKING:
-    from .variables import ComputedVar, ExprOtherT, ExprVar
+    from .variables import ComputedVar, ExprVarLike
 
 __all__ = [
     "BaseOperator",
@@ -47,131 +40,157 @@ __all__ = [
     "UnaryOperator",
 ]
 
-SuppRC: TypeAlias = SupportsRichComparison
-
-
-def _norm_lit(arg: str | ExprOtherT | BaseOperator) -> ExprVar | BaseOperator:
-    from .variables import ExprVar, LiteralVar
-
-    if isinstance(arg, (ExprVar, BaseOperator)):
-        return arg
-
-    return LiteralVar(arg)
-
-
-def _normalize_args(*args: str | ExprOtherT | BaseOperator) -> Iterable[ExprVar | BaseOperator]:
-    for arg in args:
-        yield _norm_lit(arg)
-
 
 @dataclass
 class BaseOperator:
+    """Base class for all operators used in RPN (Reverse Polish Notation) expressions."""
+
     rpn_name: ExprOp
+    """The RPN name of the operator."""
 
     def to_str(self, **kwargs: Any) -> str:
+        """
+        Returns the string representation of the operator.
+
+        Args:
+            **kwargs: Additional keywords arguments.
+
+        Returns:
+            The string representation of the operator.
+        """
         return str(self)
 
     def __str__(self) -> str:
+        """Returns the RPN name of the operator as a string."""
         return self.rpn_name
+
+    def __call__(self, *args: Any) -> ComputedVar:
+        from .variables import ComputedVar, ExprVar, LiteralVar
+
+        return ComputedVar(
+            arg if isinstance(arg, (ExprVar, BaseOperator)) else LiteralVar(arg) for arg in (*args, self)
+        )
 
 
 class UnaryBaseOperator(BaseOperator):
-    def __call__(self, x: ExprOtherT) -> ComputedVar:
-        from .variables import ComputedVar
-
-        return ComputedVar(_normalize_args(x, self))  # pyright: ignore[reportArgumentType]
+    """Base class for all unary (single-operand) operators."""
 
 
 class BinaryBaseOperator(BaseOperator):
-    def __call__(self, x: ExprOtherT, y: ExprOtherT) -> ComputedVar:
-        from .variables import ComputedVar
-
-        return ComputedVar(_normalize_args(x, y, self))  # pyright: ignore[reportArgumentType]
+    """Base class for all binary (two-operand) operators."""
 
 
 class TernaryBaseOperator(BaseOperator):
-    def __call__(self, x: ExprOtherT, y: ExprOtherT, z: ExprOtherT) -> ComputedVar:
-        from .variables import ComputedVar
-
-        return ComputedVar(_normalize_args(x, y, z, self))  # pyright: ignore[reportArgumentType]
+    """Base class for all ternary (three-operand) operators."""
 
 
 @dataclass
 class UnaryOperator(Generic[T], UnaryBaseOperator):
+    """Unary operator with a single input and output of the same type."""
+
     function: Callable[[T], T]
 
 
 @dataclass
 class UnaryMathOperator(Generic[T, R], UnaryBaseOperator):
+    """Unary math operator that transforms a value of type T to a result of type R."""
+
     function: Callable[[T], R]
 
 
 @dataclass
 class UnaryBoolOperator(UnaryBaseOperator):
+    """Unary operator that returns a boolean value."""
+
     function: Callable[[object], bool]
 
 
 @dataclass
 class BinaryOperator(Generic[T, R], BinaryBaseOperator):
+    """Binary operator with two inputs of types T and R, returning T or R."""
+
     function: Callable[[T, R], T | R]
 
 
 @dataclass
 class BinaryMathOperator(Generic[T, R], BinaryBaseOperator):
+    """Binary math operator combining two T values into an R result."""
+
     function: Callable[[T, T], R]
 
 
 @dataclass
 class BinaryBoolOperator(BinaryBaseOperator):
+    """Binary operator returning a boolean based on two input values."""
+
     function: Callable[[Any, Any], bool]
 
 
 @dataclass
 class TernaryOperator(Generic[T, R], TernaryBaseOperator):
+    """Ternary operator accepting a condition and two values of types T and R."""
+
     function: Callable[[bool, T, R], T | R]
 
 
 @dataclass
-class TernaryIfOperator(TernaryOperator["ExprOtherT", "ExprOtherT"]):
-    def __call__(self, cond: ExprOtherT, if_true: ExprOtherT, if_false: ExprOtherT) -> ComputedVar:
-        return super().__call__(cond, if_true, if_false)
+class TernaryIfOperator(TernaryOperator["ExprVarLike", "ExprVarLike"]):
+    """Implements a ternary if-else operator (cond ? if_true : if_false)."""
+
+    if TYPE_CHECKING:
+
+        def __call__(self, cond: ExprVarLike, if_true: ExprVarLike, if_false: ExprVarLike, /) -> ComputedVar: ...
 
 
 @dataclass
 class TernaryCompOperator(TernaryBaseOperator):
-    function: Callable[[SuppRC, SuppRC, SuppRC], SuppRC]
+    """Ternary comparison operator used for value constraints or selection logic."""
+
+    function: Callable[[SupportsRichComparison, SupportsRichComparison, SupportsRichComparison], SupportsRichComparison]
 
 
 @dataclass
 class TernaryClampOperator(TernaryCompOperator):
-    def __call__(self, x: ExprOtherT, min: ExprOtherT, max: ExprOtherT) -> ComputedVar:
-        return super().__call__(x, min, max)
+    """Clamps a value between a minimum and maximum using rich comparisons."""
+
+    if TYPE_CHECKING:
+
+        def __call__(self, x: ExprVarLike, min: ExprVarLike, max: ExprVarLike, /) -> ComputedVar: ...
 
 
-class TernaryPixelAccessOperator(Generic[T], TernaryBaseOperator):
+class TernaryPixelAccessOperator(TernaryBaseOperator):
+    """
+    Ternary operator for pixel-level access in a 2D space.
+    """
+
     char: str
-    x: T
-    y: T
+    x: int
+    y: int
 
-    def __call__(self, char: str, x: T, y: T) -> ComputedVar:  # type: ignore
+    def __call__(self, char: str, x: int, y: int) -> ComputedVar:
         from .variables import ComputedVar
 
         self.set_vars(char, x, y)
-        return ComputedVar([copy(self)])  # pyright: ignore[reportArgumentType]
 
-    def set_vars(self, char: str, x: T, y: T) -> None:
+        return ComputedVar([self])
+
+    def set_vars(self, char: str, x: int, y: int) -> None:
         self.char = char
         self.x = x
         self.y = y
 
     def __str__(self) -> str:
         if not hasattr(self, "char"):
-            raise ValueError("TernaryPixelAccessOperator: You have to call set_vars!")
+            raise CustomValueError("You have to call set_vars!", self)
 
-        return self.rpn_name.format(char=str(self.char), x=int(self.x), y=int(self.y))  # type: ignore[call-overload]
+        return self.rpn_name.format(char=self.char, x=self.x, y=self.y)
 
 
 class ExprOperators(Singleton):
+    """
+    A singleton class that defines the expression operators used in [inline_expr][vsexprtools.inline_expr].
+    """
+
     __slots__ = ()
 
     # 1 Argument
@@ -214,10 +233,10 @@ class ExprOperators(Singleton):
     # DROP / DROPN / SORTN / VAR_STORE / VAR_PUSH ??
 
     # 2 Arguments
-    MAX = BinaryMathOperator[SuppRC, SuppRC](ExprOp.MAX, max)
+    MAX = BinaryMathOperator[SupportsRichComparison, SupportsRichComparison](ExprOp.MAX, max)
     """Calculates the maximum of x and y."""
 
-    MIN = BinaryMathOperator[SuppRC, SuppRC](ExprOp.MIN, min)
+    MIN = BinaryMathOperator[SupportsRichComparison, SupportsRichComparison](ExprOp.MIN, min)
     """Calculates the minimum of x and y."""
 
     ADD = BinaryOperator(ExprOp.ADD, op.add)
@@ -269,10 +288,10 @@ class ExprOperators(Singleton):
     """Performs x % y."""
 
     # 3 Arguments
-    TERN = TernaryIfOperator(ExprOp.TERN, lambda x, y, z: (x if z else y))
+    TERN = TernaryIfOperator(ExprOp.TERN, lambda cond, if_true, if_false: (if_true if cond else if_false))
     """Ternary operator (if cond then if_true else if_false)."""
 
-    CLAMP = TernaryClampOperator(ExprOp.CLAMP, lambda x, y, z: max(y, min(x, z)))
+    CLAMP = TernaryClampOperator(ExprOp.CLAMP, lambda v, mini, maxi: max(mini, min(v, maxi)))
     """Clamps a value between a min and a max."""
 
     # Aliases
@@ -280,28 +299,36 @@ class ExprOperators(Singleton):
     """Ternary operator (if cond then if_true else if_false)."""
 
     # Special Operators
-    REL_PIX = TernaryPixelAccessOperator[int](ExprOp.REL_PIX)
+    REL_PIX = TernaryPixelAccessOperator(ExprOp.REL_PIX)
     """Relative pixel access."""
 
-    ABS_PIX = TernaryPixelAccessOperator[Union[int, "ExprVar"]](ExprOp.ABS_PIX)
+    ABS_PIX = TernaryPixelAccessOperator(ExprOp.ABS_PIX)
     """Absolute pixel access."""
 
     # Helper Functions
 
     @overload
     @classmethod
-    def as_var(cls, arg0: ExprOtherT) -> ComputedVar:
-        pass
+    def as_var(cls, x: ExprVarLike) -> ComputedVar: ...
 
     @overload
     @classmethod
-    def as_var(cls, arg0: Sequence[ExprOtherT]) -> list[ComputedVar]:
-        pass
+    def as_var(cls, x: Sequence[ExprVarLike]) -> list[ComputedVar]: ...
 
     @classmethod
-    def as_var(cls, arg0: ExprOtherT | Sequence[ExprOtherT]) -> ComputedVar | list[ComputedVar]:
-        from .variables import ComputedVar
+    def as_var(cls, x: ExprVarLike | Sequence[ExprVarLike]) -> ComputedVar | list[ComputedVar]:
+        """
+        Converts an expression variable or a sequence of variables to ComputedVar(s).
 
-        if isinstance(arg0, Sequence):
-            return cast(list[ComputedVar], list(arg0))
-        return cast(ComputedVar, arg0)
+        Args:
+            x: A single ExprVarLike or a sequence of ExprVarLike items.
+
+        Returns:
+            A ComputedVar if input is a single item, or a list of ComputedVar if input is a sequence.
+        """
+        from .variables import ComputedVar, LiteralVar
+
+        if isinstance(x, Sequence):
+            return ComputedVar(LiteralVar(var) for var in x)
+
+        return ComputedVar([LiteralVar(x)])

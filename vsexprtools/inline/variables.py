@@ -1,23 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import wraps
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    Iterator,
-    NoReturn,
-    SupportsIndex,
-    TypeAlias,
-    cast,
-    overload,
-)
-
-from typing_extensions import Self
+from typing import Any, Iterable, NoReturn, Protocol, SupportsIndex, TypeAlias
 
 from vstools import (
-    ByteData,
     ColorRangeT,
     get_depth,
     get_lowest_value,
@@ -30,64 +16,65 @@ from vstools import (
 
 from .operators import BaseOperator, ExprOperators
 
-__all__ = ["ClipPropsVar", "ClipVar", "ComplexVar", "ComputedVar", "ExprOtherT", "ExprVar", "LiteralVar", "resolverT"]
+__all__ = ["ClipPropsVar", "ClipVar", "ComplexVar", "ComputedVar", "ExprVar", "ExprVarLike", "LiteralVar"]
 
 
-class ExprVar(int):
-    def __new__(cls, x: ByteData, /, *args: Any, **kwargs: Any) -> Self:
-        return super().__new__(cls, 0)
+class ExprVar:
+    """Base interface for variables used in RPN expression"""
 
-    def __add__(self, other: ExprOtherT) -> ComputedVar:
+    def __add__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.ADD(self, other)
 
-    def __iadd__(self, other: ExprOtherT) -> ComputedVar:  # noqa: PYI034
+    def __iadd__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
         return ExprOperators.ADD(self, other)
 
-    def __radd__(self, other: ExprOtherT) -> ComputedVar:
+    def __radd__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.ADD(other, self)
 
-    def __sub__(self, other: ExprOtherT) -> ComputedVar:
+    def __sub__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.SUB(self, other)
 
-    def __isub__(self, other: ExprOtherT) -> ComputedVar:  # noqa: PYI034
+    def __isub__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
         return ExprOperators.SUB(self, other)
 
-    def __rsub__(self, other: ExprOtherT) -> ComputedVar:
+    def __rsub__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.SUB(other, self)
 
-    def __mul__(self, other: ExprOtherT) -> ComputedVar:
+    def __mul__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.MUL(self, other)
 
-    def __imul__(self, other: ExprOtherT) -> ComputedVar:  # noqa: PYI034
+    def __imul__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
         return ExprOperators.MUL(self, other)
 
-    def __rmul__(self, other: ExprOtherT) -> ComputedVar:
+    def __rmul__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.MUL(other, self)
 
-    def __truediv__(self, other: ExprOtherT) -> ComputedVar:
+    def __truediv__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.DIV(self, other)
 
-    def __rtruediv__(self, other: ExprOtherT) -> ComputedVar:  # type: ignore
+    def __rtruediv__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.DIV(other, self)
 
-    def __itruediv__(self, other: ExprOtherT) -> ComputedVar:  # noqa: PYI034
+    def __itruediv__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
         return ExprOperators.DIV(self, other)
 
-    def __floordiv__(self, other: ExprOtherT) -> ComputedVar:
+    def __floordiv__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.FLOOR(ExprOperators.DIV(self, other))
 
-    def __ifloordiv__(self, other: ExprOtherT) -> ComputedVar:  # noqa: PYI034
+    def __ifloordiv__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
         return ExprOperators.FLOOR(ExprOperators.DIV(self, other))
 
-    def __rfloordiv__(self, other: ExprOtherT) -> ComputedVar:
+    def __rfloordiv__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.FLOOR(ExprOperators.DIV(other, self))
 
-    def __pow__(self, other: ExprOtherT, module: int | None = None) -> ComputedVar:  # type: ignore
+    def __pow__(self, other: ExprVarLike, module: int | None = None) -> ComputedVar:
         if module is not None:
             raise NotImplementedError
         return ExprOperators.POW(self, other)
 
-    def __rpow__(self, other: ExprOtherT) -> ComputedVar:  # type: ignore
+    def __rpow__(self, other: ExprVarLike, module: int | None = None) -> ComputedVar:
+        if module is not None:
+            raise NotImplementedError
         return ExprOperators.POW(other, self)
 
     def __exp__(self) -> ComputedVar:
@@ -131,120 +118,155 @@ class ExprVar(int):
     def __abs__(self) -> ComputedVar:
         return ExprOperators.ABS(self)
 
-    def __mod__(self, other: ExprOtherT) -> ComputedVar:
+    def __mod__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.MOD(self, other)
 
-    def __rmod__(self, other: ExprOtherT) -> ComputedVar:
+    def __rmod__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.MOD(other, self)
 
-    def __divmod__(self, _: ExprOtherT) -> NoReturn:
+    def __divmod__(self, _: ExprVarLike) -> NoReturn:
         raise NotImplementedError
 
-    def __rdivmod__(self, _: ExprOtherT) -> NoReturn:
+    def __rdivmod__(self, _: ExprVarLike) -> NoReturn:
         raise NotImplementedError
 
-    def __lt__(self, other: ExprOtherT) -> ComputedVar:  # type: ignore
+    def __lt__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.LT(self, other)
 
-    def __lte__(self, other: ExprOtherT) -> ComputedVar:
+    def __lte__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.LTE(self, other)
 
-    def __gt__(self, other: ExprOtherT) -> ComputedVar:  # type: ignore
+    def __gt__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.GT(self, other)
 
-    def __gte__(self, other: ExprOtherT) -> ComputedVar:
+    def __gte__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.GTE(self, other)
 
     def __bool__(self) -> bool:
         raise NotImplementedError
 
-    def __and__(self, other: ExprOtherT) -> ComputedVar:
+    def __and__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.AND(self, other)
 
-    def __rand__(self, other: ExprOtherT) -> ComputedVar:
+    def __rand__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.AND(self, other)
 
-    def __or__(self, other: ExprOtherT) -> ComputedVar:
+    def __or__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.OR(self, other)
 
-    def __ror__(self, other: ExprOtherT) -> ComputedVar:
+    def __ror__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.OR(other, self)
 
-    def __xor__(self, other: ExprOtherT) -> ComputedVar:
+    def __xor__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.XOR(self, other)
 
-    def __rxor__(self, other: ExprOtherT) -> ComputedVar:
+    def __rxor__(self, other: ExprVarLike) -> ComputedVar:
         return ExprOperators.XOR(self, other)
-
-    def __iter__(self) -> Iterator[ComputedVar]:
-        return iter([self])  # type: ignore
-
-    def __getitem__(self, item: Any) -> NoReturn:
-        raise RuntimeError("You can only access offsetted pixels on constant clips variables")
 
     def to_str(self, **kwargs: Any) -> str:
+        """
+        Returns the string representation of the expression variable.
+
+        Args:
+            **kwargs: Additional keywords arguments.
+
+        Returns:
+            The string representation of the expression variable.
+        """
         return str(self)
 
     def as_var(self) -> ComputedVar:
-        if isinstance(self, ComputedVar):
-            return self
+        """
+        Converts the expression variable to a ComputedVar.
+
+        Returns:
+            A ComputedVar.
+        """
         return ComputedVar([self])
 
 
 class LiteralVar(ExprVar):
-    def __init__(self, value: int | float | str):
+    """Literal value wrapper for use in RPN expressions."""
+
+    def __init__(self, value: int | float | str | ExprVar):
+        """
+        Initializes a new LiteralVar.
+
+        Args:
+            value: An integer, float, string, or ExprVar to wrap.
+        """
         self.value = value
 
     def __str__(self) -> str:
         return str(self.value)
 
 
-ExprOtherT: TypeAlias = ExprVar | LiteralVar | int | float
+ExprVarLike: TypeAlias = ExprVar | LiteralVar | int | float
+"""Type alias representing any expression-compatible variable or literal."""
 
 
 class ComputedVar(ExprVar):
-    def __init__(self, operations: Iterable[BaseOperator | ExprVar]) -> None:
-        self.operations = list(operations)
+    """Represents a fully built RPN expression as a sequence of operations."""
+
+    def __init__(self, operations: Iterable[BaseOperator | ExprVar | LiteralVar]) -> None:
+        """
+        Initializes a new ComputedVar.
+
+        Args:
+            operations: An iterable of operators and/or expression variables that define the computation.
+        """
+        self.operations = tuple(operations)
 
     def to_str(self, **kwargs: Any) -> str:
-        return " ".join([x.to_str(**kwargs) for x in self.operations])
+        """
+        Returns a string representation of the expression in RPN format.
+
+        Args:
+            **kwargs: Additional keywords arguments.
+
+        Returns:
+            String representation of the expression in RPN format.
+        """
+        return " ".join(x.to_str(**kwargs) for x in self.operations)
 
     def __str__(self) -> str:
-        return " ".join([str(x) for x in self.operations])
+        return " ".join(str(x) for x in self.operations)
 
 
-resolverT: TypeAlias = Callable[..., LiteralVar]  # noqa
+class Resolver(Protocol):
+    """Protocol for deferred resolution of expression values."""
+
+    def __call__(self, *, plane: int = ..., **kwargs: Any) -> int | float | str | ExprVar: ...
 
 
 @dataclass
 class ComplexVar(LiteralVar):
+    """
+    A literal variable that resolves dynamically using a custom function.
+    """
+
     value: int | float | str
-    resolve: resolverT
+    """The symbolic value used in the RPN expression."""
+    resolve: Resolver
+    """A callable used to compute the actual value during evaluation."""
 
-    def to_str(self, **kwargs: Any) -> str:
-        return str(self.resolve(**kwargs))
+    def to_str(self, *, plane: int = 0, **kwargs: Any) -> str:
+        """
+        Returns C
 
-    @overload
-    @staticmethod
-    def resolver() -> Callable[[Callable[..., Any]], resolverT]: ...
+        Args:
+            plane: Plane index.
+            **kwargs: Additional keywords arguments.
 
-    @overload
-    @staticmethod
-    def resolver(function: Callable[..., Any] | None = None) -> resolverT: ...
-
-    @staticmethod
-    def resolver(function: Callable[..., Any] | None = None) -> Callable[[Callable[..., Any]], resolverT] | resolverT:
-        if function is None:
-            return cast(Callable[[Callable[..., Any]], resolverT], ComplexVar.resolver)
-
-        @wraps(function)
-        def _wrapper(*args: Any, **kwargs: Any) -> Any:
-            return LiteralVar(function(*args, **kwargs))
-
-        return cast(resolverT, _wrapper)
+        Returns:
+            The resolved string value, optionally using a specified plane.
+        """
+        return str(self.resolve(plane=plane, **kwargs))
 
 
 class ClipPropsVar:
+    """Helper class exposing common frame properties of a ClipVar."""
+
     # Some commonly used props
     PlaneStatsMin: ComputedVar
     PlaneStatsMax: ComputedVar
@@ -253,12 +275,29 @@ class ClipPropsVar:
     def __init__(self, clip_var: ClipVar) -> None:
         self.clip_var = clip_var
 
+    def __getitem__(self, key: str) -> ComputedVar:
+        return getattr(self, key)
+
     def __getattribute__(self, name: str) -> ComputedVar:
-        clip_var: ClipVar = object.__getattribute__(self, "clip_var")
-        return ComputedVar([LiteralVar(f"{clip_var.char}.{name}")])
+        """Accesses a computed property using dot notation from the clip symbol."""
+
+        return ComputedVar([LiteralVar(f"{super().__getattribute__('clip_var').char}.{name}")])
 
 
 class ClipVar(ExprVar):
+    """
+    Expression variable that wraps a VideoNode and provides symbolic and numeric access.
+    """
+
+    char: str
+    """A short symbolic name representing this clip in the RPN expression."""
+
+    clip: vs.VideoNode
+    """The actual VapourSynth VideoNode."""
+
+    props: ClipPropsVar
+    """A helper to access frame properties."""
+
     def __init__(self, char: str, clip: vs.VideoNode) -> None:
         self.char = char
         self.clip = clip
@@ -268,76 +307,77 @@ class ClipVar(ExprVar):
         return self.char
 
     # Pixel Access
-    _IdxType: TypeAlias = int | ExprVar
-
-    def __getitem__(self, index: _IdxType | tuple[_IdxType, _IdxType] | slice) -> ComputedVar:  # type: ignore
-        if isinstance(index, tuple):
-            x, y = index
-            if isinstance(x, ExprVar) or isinstance(y, ExprVar):
-                return ExprOperators.ABS_PIX(self.char, x, y)
-            else:
-                return ExprOperators.REL_PIX(self.char, x, y)
-        elif isinstance(index, slice):
-            print(index.start, index.stop, index.step)  # TODO
-        else:
-            print(str(index))  # TODO
-
-        return ComputedVar([self])
+    def __getitem__(self, index: tuple[int, int]) -> ComputedVar:
+        """Access a pixel at a specific coordinate using relative addressing."""
+        return ExprOperators.REL_PIX(self.char, *index)
 
     # Helper properties
     @property
     def peak(self) -> LiteralVar:
+        """Returns the peak value for the clip's bit depth."""
         return LiteralVar(get_peak_value(self.clip))
 
     @property
     def peak_chroma(self) -> LiteralVar:
+        """Returns the peak chroma value for the clip's bit depth."""
         return LiteralVar(get_peak_value(self.clip, True))
 
     @property
     def neutral(self) -> LiteralVar:
+        """Returns the neutral value for the clip."""
         return LiteralVar(get_neutral_value(self.clip))
 
     @property
     def neutral_chroma(self) -> LiteralVar:
+        """Returns the neutral chroma value."""
         return LiteralVar(get_neutral_value(self.clip))
 
     @property
     def lowest(self) -> LiteralVar:
+        """Returns the lowest possible pixel value"""
         return LiteralVar(get_lowest_value(self.clip))
 
     @property
     def lowest_chroma(self) -> LiteralVar:
+        """Returns the lowest chroma value."""
         return LiteralVar(get_lowest_value(self.clip, True))
 
     @property
     def width(self) -> LiteralVar:
+        """Returns a symbolic 'width' identifier."""
         return LiteralVar("width")
 
     @property
     def width_luma(self) -> LiteralVar:
+        """Returns the actual width of the luma plane."""
         return LiteralVar(self.clip.width)
 
     @property
     def width_chroma(self) -> LiteralVar:
+        """Returns the width of the chroma plane."""
         return LiteralVar(get_plane_sizes(self.clip, 1)[0])
 
     @property
     def height(self) -> LiteralVar:
+        """Returns a symbolic 'height' identifier."""
         return LiteralVar("height")
 
     @property
     def height_luma(self) -> LiteralVar:
+        """Returns the actual height of the luma plane."""
         return LiteralVar(self.clip.height)
 
     @property
     def height_chroma(self) -> LiteralVar:
+        """Returns the height of the chroma plane."""
         return LiteralVar(get_plane_sizes(self.clip, 1)[1])
 
     @property
     def depth(self) -> LiteralVar:
+        """Returns the bit depth of the clip."""
         return LiteralVar(get_depth(self.clip))
 
-    # Helper functions
+    # Helper function for scaled values
     def scale(
         self,
         value: float,
@@ -347,7 +387,10 @@ class ClipVar(ExprVar):
         scale_offsets: bool = True,
         family: vs.ColorFamily | None = None,
     ) -> ComplexVar:
-        @ComplexVar.resolver
+        """
+        Returns a scaled version of the given value based on the clip's format.
+        """
+
         def _resolve(plane: int = 0, **kwargs: Any) -> Any:
             return scale_value(
                 value, input_depth, get_depth(self.clip), range_in, range_out, scale_offsets, plane in {1, 2}, family
