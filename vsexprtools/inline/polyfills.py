@@ -192,7 +192,7 @@ PyTypeObject._fields_ = [
 ]
 
 
-PyTypeObject_as_types_dict = {
+PyTypeObject_as_types_dict: dict[str, type[ctypes.Structure]] = {
     "tp_as_async": PyAsyncMethods,
     "tp_as_number": PyNumberMethods,
     "tp_as_sequence": PySequenceMethods,
@@ -252,7 +252,7 @@ override_dict["__str__"] = ("tp_str", "tp_str")
 _to_patch = False
 
 
-def curse(klass: Any, attr: Any, func: Any) -> None:
+def _curse(klass: Any, attr: Any, func: Any) -> None:
     assert callable(func)
 
     @wraps(func)
@@ -301,7 +301,7 @@ def curse(klass: Any, attr: Any, func: Any) -> None:
         setattr(tyobj, impl_method, cfunc)
 
 
-def reverse(klass: Any, attr: Any) -> None:
+def _reverse(klass: Any, attr: Any) -> None:
     tp_as_name, impl_method = override_dict[attr]
     tyobj = PyTypeObject.from_address(id(klass))
     tp_as_ptr = getattr(tyobj, tp_as_name)
@@ -359,24 +359,30 @@ substitutions = {"builtins": _builtins, "math": _math}
 
 
 def enable_poly() -> None:
+    """
+    Internal function to enable builtin methods override.
+    """
     global _to_patch
 
     for k, v in substitutions.items():
         eval(k).__dict__.update(**{k: v[1] for k, v in v.items()})
 
     for obtype, dunder in builtin_methods:
-        curse(obtype, dunder, getattr(ExprVar, dunder))
+        _curse(obtype, dunder, getattr(ExprVar, dunder))
 
     _to_patch = False
 
 
 def disable_poly() -> None:
+    """
+    Internal function to disable builtin methods override.
+    """
     global _to_patch
 
     for k, v in substitutions.items():
         eval(k).__dict__.update(**{k: v[0] for k, v in v.items()})
 
     for (obtype, dunder), dunfunc in builtin_methods.items():
-        curse(obtype, dunder, dunfunc)
+        _curse(obtype, dunder, dunfunc)
 
     _to_patch = True
