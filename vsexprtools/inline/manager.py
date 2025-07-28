@@ -24,7 +24,10 @@ __all__ = ["inline_expr"]
 
 @contextmanager
 def inline_expr(
-    clips: vs.VideoNode | Sequence[vs.VideoNode], format: HoldsVideoFormatT | VideoFormatT | None = None
+    clips: vs.VideoNode | Sequence[vs.VideoNode],
+    format: HoldsVideoFormatT | VideoFormatT | None = None,
+    *,
+    enable_polyfills: bool = False,
 ) -> Iterator[InlineExprWrapper]:
     """
     A context manager for building and evaluating VapourSynth expressions in a Pythonic way.
@@ -212,6 +215,7 @@ def inline_expr(
     Args:
         clips: Input clip(s).
         format: format: Output format, defaults to the first clip format.
+        enable_polyfills: Enable monkey-patching built-in methods. Maybe more than that, nobody knows.
 
     Yields:
         InlineExprWrapper object containing clip variables and operators.
@@ -235,16 +239,19 @@ def inline_expr(
 
             Additionnaly, you can use `print(ie.out)` to see the computed expression string.
     """
-    from .polyfills import disable_poly, enable_poly
-
     clips = to_arr(clips)
-    ie = InlineExprWrapper(clips)
+    ie = InlineExprWrapper(clips, format)
 
     try:
-        enable_poly()
+        if enable_polyfills:
+            from .polyfills import disable_poly, enable_poly
+
+            enable_poly()
+
         yield ie
     finally:
-        disable_poly()
+        if enable_polyfills:
+            disable_poly()
 
     ie._compute_expr()
 
