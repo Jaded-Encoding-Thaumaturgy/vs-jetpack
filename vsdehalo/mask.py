@@ -4,7 +4,6 @@ This module implements dehalo functions with complex masking abilities.
 
 from __future__ import annotations
 
-from math import sqrt
 from typing import Any, Callable, Generic, Iterator, Mapping
 
 from jetpytools import P, R
@@ -17,13 +16,12 @@ from vsmasktools import (
     Coordinates,
     GenericMaskT,
     Morpho,
-    PrewittTCanny,
     Robinson3,
     XxpandMode,
     grow_mask,
     normalize_mask,
 )
-from vsrgtools import BlurMatrix, BlurMatrixBase, box_blur, contrasharpening_dehalo
+from vsrgtools import BlurMatrixBase, box_blur, contrasharpening_dehalo
 from vsscale import pre_ss as pre_supersampling
 from vstools import (
     ConstantFormatVideoNode,
@@ -39,7 +37,6 @@ from vstools import (
     join,
     limiter,
     normalize_planes,
-    scale_delta,
     scale_mask,
     split,
     vs,
@@ -48,62 +45,7 @@ from vstools import (
 
 from .alpha import IterArr, VSFunctionPlanesArgs, dehalo_alpha
 
-__all__ = ["base_dehalo_mask", "fine_dehalo", "fine_dehalo2"]
-
-
-def base_dehalo_mask(
-    clip: vs.VideoNode,
-    expand: float = 0.5,
-    iterations: int = 2,
-    brz0: float = 0.31,
-    brz1: float = 1.0,
-    shift: int = 8,
-    multi: float = 1.0,
-) -> vs.VideoNode:
-    """
-    Based on `muvsfunc.YAHRmask`, stand-alone version with some tweaks. Adopted from jvsfunc.
-
-    Args:
-        clip: Input clip.
-        expand: Expansion of edge mask.
-        iterations: Protects parallel lines and corners that are usually damaged by strong dehaloing.
-        brz0: Adjusts the internal line thickness.
-        brz1: Adjusts the internal line thickness.
-        shift: 8-bit corrective shift value for fine-tuning expansion.
-        multi: Final pixel value multiplier.
-
-    Returns:
-        Dehalo mask.
-    """
-
-    assert check_progressive(clip, base_dehalo_mask)
-
-    y = get_y(clip)
-
-    y = NNEDI3(noshift=True).supersample(y)
-
-    exp_edges = norm_expr(
-        [y, Morpho.maximum(y, iterations=2)],
-        "y x - {shift} - range_half *",
-        shift=scale_delta(shift, 8, y),
-        func=base_dehalo_mask,
-    )
-
-    edgemask = PrewittTCanny.edgemask(exp_edges, sigma=sqrt(expand * 2), mode=-1, multi=16)
-
-    halo_mask = Morpho.maximum(exp_edges, iterations=iterations, func=base_dehalo_mask)
-    halo_mask = Morpho.minimum(halo_mask, iterations=iterations, func=base_dehalo_mask)
-    halo_mask = Morpho.binarize(halo_mask, brz0, 1.0, 0.0)
-
-    if brz1 != 1.0:
-        halo_mask = Morpho.inflate(halo_mask, iterations=2, func=base_dehalo_mask)
-        halo_mask = Morpho.binarize(halo_mask, brz1)
-
-    mask = norm_expr(
-        [edgemask, BlurMatrix.BINOMIAL()(halo_mask)], "x y min {multi} *", multi=multi, func=base_dehalo_mask
-    )
-
-    return vs.core.resize.Point(mask, clip.width, clip.height)
+__all__ = ["fine_dehalo", "fine_dehalo2"]
 
 
 class FineDehalo(Generic[P, R]):
