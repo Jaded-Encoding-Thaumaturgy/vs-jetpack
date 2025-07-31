@@ -3,8 +3,6 @@ from __future__ import annotations
 from math import comb
 from typing import Any
 
-import numpy as np
-
 from ...abstract import CustomComplexTapsKernel
 from .helpers import poly3
 
@@ -22,7 +20,9 @@ class Spline(CustomComplexTapsKernel):
         super().__init__(taps, **kwargs)
         self._coefs = self._splineKernelCoeff()
 
-    def _naturalCubicSpline(self, values: list[int]) -> list[np.float64]:
+    def _naturalCubicSpline(self, values: list[int]) -> list[Any]:
+        import numpy as np
+
         n = len(values) - 1
 
         rhs = values[:-1] + values[1:] + [0] * (2 * n)
@@ -54,7 +54,9 @@ class Spline(CustomComplexTapsKernel):
 
         return list(np.linalg.solve(np.array(eqns), np.array(rhs)))
 
-    def _splineKernelCoeff(self) -> list[np.float64]:
+    def _splineKernelCoeff(self) -> list[Any]:
+        import numpy as np
+
         taps = self.kernel_radius
 
         coeffs = list[np.float64]()

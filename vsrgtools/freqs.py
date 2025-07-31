@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from itertools import count
+from enum import auto
+from typing import Any, Literal, overload
 
 from vsexprtools import ExprOp, ExprVars, combine, norm_expr
 from vstools import (
     ConstantFormatVideoNode,
     CustomIntEnum,
-    CustomNotImplementedError,
     FuncExceptT,
     PlanesT,
     StrList,
@@ -20,25 +20,51 @@ __all__ = ["MeanMode"]
 
 
 class MeanMode(CustomIntEnum):
-    MINIMUM = -2
+    POWER = auto()
+
+    LEHMER = auto()
+
     HARMONIC = -1
+
     GEOMETRIC = 0
 
     ARITHMETIC = 1
 
     RMS = 2
+
     CUBIC = 3
-    MAXIMUM = 4
 
-    LEHMER = 10
+    MINIMUM = auto()
 
-    MINIMUM_ABS = 20
-    MAXIMUM_ABS = 21
+    MAXIMUM = auto()
 
-    MEDIAN = 30
+    CONTRAHARMONIC = auto()
+
+    MEDIAN = auto()
+
+    @overload
+    def __call__(  # type: ignore[misc]
+        self: Literal[MeanMode.POWER, MeanMode.LEHMER],
+        *_clips: VideoNodeIterableT[vs.VideoNode],
+        p: float = ...,
+        planes: PlanesT = None,
+        func: FuncExceptT | None = None,
+    ) -> ConstantFormatVideoNode: ...
+
+    @overload
+    def __call__(
+        self,
+        *_clips: VideoNodeIterableT[vs.VideoNode],
+        planes: PlanesT = None,
+        func: FuncExceptT | None = None,
+    ) -> ConstantFormatVideoNode: ...
 
     def __call__(
-        self, *_clips: VideoNodeIterableT[vs.VideoNode], planes: PlanesT = None, func: FuncExceptT | None = None
+        self,
+        *_clips: VideoNodeIterableT[vs.VideoNode],
+        planes: PlanesT = None,
+        func: FuncExceptT | None = None,
+        **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         func = func or self.__class__
 
@@ -47,73 +73,53 @@ class MeanMode(CustomIntEnum):
         assert check_variable_format(clips, func)
 
         n_clips = len(clips)
-        n_op = n_clips - 1
+        all_clips = ExprVars(n_clips)
 
         if n_clips < 2:
             return next(iter(clips))
 
-        if self == MeanMode.MINIMUM:
-            return ExprOp.MIN(clips, planes=planes, func=func)
+        match self:
+            case MeanMode.POWER:
+                p = kwargs.get("p", -1)
+                return combine(
+                    clips,
+                    ExprOp.ADD,
+                    f"neutral - {p} pow",
+                    expr_suffix=f"{n_clips} / {1 / p} pow neutral +",
+                    planes=planes,
+                    func=func,
+                )
 
-        if self == MeanMode.MAXIMUM:
-            return ExprOp.MAX(clips, planes=planes, func=func)
+            case MeanMode.LEHMER:
+                p = kwargs.get("p", 2)
+                counts = range(n_clips)
 
-        if self == MeanMode.GEOMETRIC:
-            return combine(clips, ExprOp.MUL, None, None, [1 / n_clips, ExprOp.POW], planes=planes, func=func)
+                expr = StrList([[f"{clip} neutral - D{i}!" for i, clip in zip(counts, all_clips)]])
+                for x in range(2):
+                    expr.extend([[f"D{i}@ {p - x} pow" for i in counts], ExprOp.ADD * (n_clips - 1)])
 
-        if self == MeanMode.LEHMER:
-            counts = range(n_clips)
-            clip_vars = ExprVars(n_clips)
+                return norm_expr(clips, f"{expr} / neutral +", planes, func=func)
 
-            expr = StrList([[f"{clip} neutral - D{i}!" for i, clip in zip(counts, clip_vars)]])
+            case MeanMode.HARMONIC | MeanMode.GEOMETRIC | MeanMode.RMS | MeanMode.CUBIC:
+                return MeanMode.POWER(clips, p=self.value, planes=planes, func=func)
 
-            for y in range(2):
-                expr.extend([[f"D{i}@ {3 - y} pow" for i in counts], ExprOp.ADD * n_op, f"P{y + 1}!"])
+            case MeanMode.CONTRAHARMONIC:
+                return MeanMode.LEHMER(clips, p=2, planes=planes, func=func)
 
-            expr.append("P2@ P1@ P2@ / 0 ? neutral +")
+            case MeanMode.ARITHMETIC:
+                return combine(clips, ExprOp.ADD, expr_suffix=f"{n_clips} /", planes=planes, func=func)
 
-            return norm_expr(clips, expr, planes=planes, func=func)
+            case MeanMode.MINIMUM:
+                return ExprOp.MIN(clips, planes=planes, func=func)
 
-        if self in {MeanMode.RMS, MeanMode.ARITHMETIC, MeanMode.CUBIC, MeanMode.HARMONIC}:
-            return combine(
-                clips,
-                ExprOp.ADD,
-                f"{self.value} {ExprOp.POW}",
-                None,
-                [n_clips, ExprOp.DIV, 1 / self, ExprOp.POW],
-                planes=planes,
-                func=func,
-            )
+            case MeanMode.MAXIMUM:
+                return ExprOp.MAX(clips, planes=planes, func=func)
 
-        if self in {MeanMode.MINIMUM_ABS, MeanMode.MAXIMUM_ABS}:
-            operator = ExprOp.MIN if self is MeanMode.MINIMUM_ABS else ExprOp.MAX
+            case MeanMode.MEDIAN:
+                n_op = (n_clips - 1) // 2
 
-            expr_string = ""
-            for src in ExprVars(n_clips):
-                expr_string += f"{src} neutral - abs {src.upper()}D! "
+                mean = "" if n_clips % 2 else "+ 2 /"
 
-            for i, src, srcn in zip(count(), ExprVars(n_clips), ExprVars(1, n_clips)):
-                expr_string += f"{src.upper()}D@ {srcn.upper()}D@ {operator} {src} "
-
-                if i == n_clips - 2:
-                    expr_string += f"{srcn} "
-
-            expr_string += "? " * n_op
-
-            return norm_expr(clips, expr_string, planes=planes, func=func)
-
-        if self == MeanMode.MEDIAN:
-            all_clips = str(ExprVars(1, n_clips))
-
-            n_ops = n_clips - 2
-
-            yzmin, yzmax = [all_clips + f" {op}" * n_ops for op in (ExprOp.MIN, ExprOp.MAX)]
-
-            return norm_expr(
-                clips,
-                f"{yzmin} YZMIN! {yzmax} YZMAX! x YZMIN@ min x = YZMIN@ x YZMAX@ max x = YZMAX@ x ? ?",
-                planes,
-                func=func,
-            )
-
-        raise CustomNotImplementedError
+                return norm_expr(
+                    clips, f"{all_clips} sort{n_clips} drop{n_op} {mean} swap{n_op} drop{n_op}", planes, func=func
+                )

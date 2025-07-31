@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, Sequence
-
-from scipy import interpolate
+from typing import TYPE_CHECKING, Literal, Sequence
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear
 
 if TYPE_CHECKING:
     from vsmasktools import EdgeDetectT
-else:
-    EdgeDetectT = Any
 
 from vstools import (
     ChromaLocation,
@@ -132,6 +128,7 @@ def fine_sharp(
     planes: PlanesT = 0,
 ) -> ConstantFormatVideoNode:
     from numpy import asarray
+    from scipy import interpolate
 
     func = FunctionUtil(clip, fine_sharp, planes)
 

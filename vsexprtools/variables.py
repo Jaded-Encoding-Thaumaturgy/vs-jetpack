@@ -34,8 +34,6 @@ from .operators import BaseOperator, ExprOperators
 
 if TYPE_CHECKING:
     from .manager import inline_expr
-else:
-    inline_expr: None
 
 
 __all__ = ["ClipPropsVar", "ClipVar", "ComplexVar", "ComputedVar", "ExprOtherT", "ExprVar", "LiteralVar", "resolverT"]

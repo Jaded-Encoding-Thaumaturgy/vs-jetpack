@@ -6,14 +6,30 @@ from __future__ import annotations
 
 import math
 from abc import ABC
-from typing import Any, ClassVar, NoReturn, Sequence
+from typing import Any, ClassVar, Sequence
 
 from vsexprtools import ExprOp, norm_expr
-from vstools import ColorRange, ConstantFormatVideoNode, KwargsT, depth, get_depth, join, split, vs
+from vstools import (
+    ConstantFormatVideoNode,
+    KwargsT,
+    get_depth,
+    join,
+    split,
+    vs,
+)
 
 from ..morpho import Morpho
 from ..types import XxpandMode
-from ._abstract import EdgeDetect, EuclideanDistance, MagnitudeMatrix, MatrixEdgeDetect, Max, RidgeDetect, SingleMatrix
+from ._abstract import (
+    EdgeDetect,
+    EuclideanDistance,
+    MagnitudeMatrix,
+    MatrixEdgeDetect,
+    Max,
+    NormalizeProcessor,
+    RidgeDetect,
+    SingleMatrix,
+)
 
 # ruff: noqa: RUF022
 
@@ -251,7 +267,7 @@ class KroonTCanny(Matrix3x3, EdgeDetect):
         return clip.tcanny.TCanny(op=4, **(KwargsT(sigma=0, mode=1, scale=_scale_constant) | kwargs))
 
 
-class FreyChen(MatrixEdgeDetect):
+class FreyChen(NormalizeProcessor, MatrixEdgeDetect):
     """
     Chen Frei operator. 3x3 matrices properly implemented.
     """
@@ -270,19 +286,10 @@ class FreyChen(MatrixEdgeDetect):
     ]
     divisors: ClassVar[Sequence[float] | None] = [2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2, 2, 6, 6, 3]
 
-    def _preprocess(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
-        return depth(clip, 32)
-
-    def _postprocess(self, clip: ConstantFormatVideoNode, input_bits: int | None = None) -> ConstantFormatVideoNode:
-        return depth(clip, input_bits, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
-
-    def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode:
+    def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode], **kwargs: Any) -> ConstantFormatVideoNode:
         M = "x dup * y dup * + z dup * + a dup * +"  # noqa: N806
         S = f"b dup * c dup * + d dup * + e dup * + f dup * + {M} +"  # noqa: N806
-        return norm_expr(clips, f"{M} {S} / sqrt", func=self.__class__)
-
-    def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode]) -> NoReturn:
-        raise NotImplementedError
+        return norm_expr(clips, f"{M} {S} / sqrt", kwargs.get("planes"), func=self.__class__)
 
 
 class FreyChenG41(RidgeDetect, EuclideanDistance, Matrix3x3):
@@ -295,42 +302,54 @@ class FreyChenG41(RidgeDetect, EuclideanDistance, Matrix3x3):
 
 
 # Max
-class Robinson3(Max, Matrix3x3):
+class Robinson3(MagnitudeMatrix, Max, Matrix3x3):
     """
     Robinson compass operator level 3.
     """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
-        [1, 1, 1, 0, 0, 0, -1, -1, -1],
-        [1, 1, 0, 1, 0, -1, 0, -1, -1],
-        [1, 0, -1, 1, 0, -1, 1, 0, -1],
-        [0, -1, -1, 1, 0, -1, 1, 1, 0],
+        [1, 1, 1, 0, 0, 0, -1, -1, -1],  # N
+        [1, 1, 0, 1, 0, -1, 0, -1, -1],  # NW
+        [1, 0, -1, 1, 0, -1, 1, 0, -1],  # W
+        [0, -1, -1, 1, 0, -1, 1, 1, 0],  # SW
+        [],
+        [],
+        [],
+        [],
     ]
 
 
-class Robinson5(Max, Matrix3x3):
+class Robinson5(MagnitudeMatrix, Max, Matrix3x3):
     """
     Robinson compass operator level 5.
     """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
-        [1, 2, 1, 0, 0, 0, -1, -2, -1],
-        [2, 1, 0, 1, 0, -1, 0, -1, -2],
-        [1, 0, -1, 2, 0, -2, 1, 0, -1],
-        [0, -1, -2, 1, 0, -1, 2, 1, 0],
+        [1, 2, 1, 0, 0, 0, -1, -2, -1],  # N
+        [2, 1, 0, 1, 0, -1, 0, -1, -2],  # NW
+        [1, 0, -1, 2, 0, -2, 1, 0, -1],  # W
+        [0, -1, -2, 1, 0, -1, 2, 1, 0],  # SW
+        [],
+        [],
+        [],
+        [],
     ]
 
 
-class TheToof(Max, Matrix3x3):
+class TheToof(MagnitudeMatrix, Max, Matrix3x3):
     """
     TheToof compass operator from SharpAAMCmod.
     """
 
     matrices: ClassVar[Sequence[Sequence[float]]] = [
-        [5, 10, 5, 0, 0, 0, -5, -10, -5],
-        [10, 5, 0, 5, 0, -5, 0, -5, -10],
-        [5, 0, -5, 10, 0, -10, 5, 0, -5],
-        [0, -5, -10, 5, 0, -5, 10, 5, 0],
+        [5, 10, 5, 0, 0, 0, -5, -10, -5],  # N
+        [10, 5, 0, 5, 0, -5, 0, -5, -10],  # NW
+        [5, 0, -5, 10, 0, -10, 5, 0, -5],  # W
+        [0, -5, -10, 5, 0, -5, 10, 5, 0],  # SW
+        [],
+        [],
+        [],
+        [],
     ]
     divisors: ClassVar[Sequence[float] | None] = [4] * 4
 
@@ -381,6 +400,8 @@ class MinMax(EdgeDetect):
                 ExprOp.SUB.combine(
                     Morpho.expand(p, rad, rad, XxpandMode.ELLIPSE, **kwargs),
                     Morpho.inpand(p, rad, rad, XxpandMode.ELLIPSE, **kwargs),
+                    planes=kwargs.get("planes"),
+                    func=self.__class__,
                 )
                 if rad > 0
                 else p

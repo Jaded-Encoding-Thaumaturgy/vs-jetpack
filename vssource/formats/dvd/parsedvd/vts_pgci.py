@@ -1,7 +1,5 @@
-from __future__ import annotations
-
-import os
 from dataclasses import dataclass
+from os import SEEK_SET
 
 from .sector import SectorReadHelper
 from .timespan import TimeSpan
@@ -83,7 +81,7 @@ class VTSPgci:
 
             pgc_base = posn + offset
 
-            reader.ifo.seek(pgc_base, os.SEEK_SET)
+            reader.ifo.seek(pgc_base, SEEK_SET)
 
             _, num_programs, num_cells = reader._unpack_byte(2, 1, 1)
             reader._unpack_byte(4, 4)
@@ -106,16 +104,16 @@ class VTSPgci:
 
             _, offset_program, offset_playback, offset_position = reader._unpack_byte(2, 2, 2, 2)
 
-            reader.ifo.seek(pgc_base + offset_program, os.SEEK_SET)
+            reader.ifo.seek(pgc_base + offset_program, SEEK_SET)
 
             program_map = list(reader._unpack_byte(1, repeat=num_programs))
 
-            reader.ifo.seek(pgc_base + offset_position, os.SEEK_SET)
+            reader.ifo.seek(pgc_base + offset_position, SEEK_SET)
 
             cell_position_bytes = [reader._unpack_byte(2, 1, 1) for _ in range(num_cells)]
             cell_position = [CellPosition(cell_nr=a[2], vob_id_nr=a[0]) for a in cell_position_bytes]
 
-            reader.ifo.seek(pgc_base + offset_playback, os.SEEK_SET)
+            reader.ifo.seek(pgc_base + offset_playback, SEEK_SET)
 
             cell_playback_bytes = [reader._unpack_byte(1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 4, 4) for _ in range(num_cells)]
 
@@ -135,7 +133,7 @@ class VTSPgci:
                 for a in cell_playback_bytes
             ]
 
-            reader.ifo.seek(bk, os.SEEK_SET)
+            reader.ifo.seek(bk, SEEK_SET)
 
             self.pgcs.append(
                 PGC(

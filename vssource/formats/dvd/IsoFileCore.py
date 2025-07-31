@@ -1,14 +1,12 @@
 # noqa: N999
 
-from __future__ import annotations
-
-import datetime
 import json
-import os
 import warnings
 from abc import abstractmethod
+from datetime import timedelta
 from fractions import Fraction
 from itertools import count
+from pathlib import Path
 from tempfile import gettempdir
 from typing import Sequence, cast
 
@@ -402,10 +400,10 @@ class IsoFileCore:
                         to_print += "\n"
                     crnt = 0
                     lastv = v[0]
-                sta = str(datetime.timedelta(seconds=crnt))
-                sta_g = str(datetime.timedelta(seconds=crnt_glbl))
-                end = str(datetime.timedelta(seconds=crnt + seconds[i]))
-                dur = str(datetime.timedelta(seconds=seconds[i]))
+                sta = str(timedelta(seconds=crnt))
+                sta_g = str(timedelta(seconds=crnt_glbl))
+                end = str(timedelta(seconds=crnt + seconds[i]))
+                dur = str(timedelta(seconds=seconds[i]))
 
                 to_print += f"  {i + 1:02} {v} start={sta_g} local={sta} end={end} duration={dur}\n"
                 crnt += seconds[i]
@@ -496,7 +494,7 @@ class IsoFileCore:
                 )
 
                 for k, v in [("a", ja), ("b", jb)]:
-                    with open(os.path.join(self.output_folder, f"{k}.json"), "wt") as file:
+                    with Path(self.output_folder).joinpath(f"{k}.json").open("wt") as file:
                         file.write(v)
         else:
             debug_print("We don't have dvdsrc and can't double check the json output with libdvdread.")

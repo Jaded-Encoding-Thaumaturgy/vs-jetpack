@@ -22,7 +22,6 @@ from jetpytools import (
 from ..exceptions import InvalidColorFamilyError
 from ..types import VideoNodeT
 from .normalize import normalize_list_to_ranges
-from .progress import get_render_progress
 
 __all__ = ["AsyncRenderConf", "clip_async_render", "clip_data_gather", "find_prop", "find_prop_rfs", "prop_compare_cb"]
 
@@ -251,6 +250,8 @@ def clip_async_render(
         if progress is None:
             deque(clip_it, 0)
         elif isinstance(progress, str):
+            from .progress import get_render_progress
+
             with get_render_progress(progress, clip.num_frames) as pr:
                 if callback:
                     pr_update = pr.update
@@ -285,6 +286,8 @@ def clip_async_render(
         if progress is None:
             rend_clip.output(outfile, y4m, None, prefetch, backlog)
         elif isinstance(progress, str):
+            from .progress import get_render_progress
+
             with get_render_progress(progress, clip.num_frames) as pr:
                 rend_clip.output(outfile, y4m, pr.update, prefetch, backlog)
         else:

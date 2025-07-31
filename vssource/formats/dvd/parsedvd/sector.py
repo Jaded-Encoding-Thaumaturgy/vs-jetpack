@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-import os
 from io import BufferedReader, BytesIO
-from pprint import pformat
+from os import SEEK_SET
 from struct import unpack
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
-from vstools import SPath, SPathLike
+from jetpytools import SPath
+
+if TYPE_CHECKING:
+    from jetpytools import SPathLike
 
 __all__ = ["SectorReadHelper"]
 
@@ -30,14 +32,14 @@ class SectorReadHelper:
             self.ifo.close()
 
     def _goto_sector_ptr(self, pos: int) -> None:
-        self.ifo.seek(pos, os.SEEK_SET)
+        self.ifo.seek(pos, SEEK_SET)
 
         (ptr,) = self._unpack_byte(4)
 
-        self.ifo.seek(ptr * 2048, os.SEEK_SET)
+        self.ifo.seek(ptr * 2048, SEEK_SET)
 
     def _seek_unpack_byte(self, addr: int, *n: int) -> tuple[int, ...]:
-        self.ifo.seek(addr, os.SEEK_SET)
+        self.ifo.seek(addr, SEEK_SET)
         return self._unpack_byte(*n)
 
     def _unpack_byte(self, *n: int, repeat: int = 1) -> tuple[int, ...]:
@@ -54,4 +56,6 @@ class SectorReadHelper:
         return unpack(stra, buf)
 
     def __repr__(self) -> str:
+        from pprint import pformat
+
         return pformat(vars(self), sort_dicts=False)

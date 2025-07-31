@@ -9,10 +9,17 @@ from typing import Any, ClassVar, Sequence
 
 from jetpytools import KwargsT
 
-from vsexprtools import norm_expr
-from vstools import ColorRange, ConstantFormatVideoNode, depth, vs
+from vstools import ConstantFormatVideoNode, vs
 
-from ._abstract import EdgeDetect, EuclideanDistance, MagnitudeMatrix, Max, RidgeDetect, SingleMatrix
+from ._abstract import (
+    EdgeDetect,
+    EuclideanDistance,
+    MagnitudeMatrix,
+    Max,
+    NormalizeProcessor,
+    RidgeDetect,
+    SingleMatrix,
+)
 
 # ruff: noqa: RUF022
 
@@ -29,7 +36,6 @@ __all__ = [
     "ExSobel",
     "FDoG",
     "FDoGTCanny",
-    "DoG",
     "Farid",
     # Max
     "ExKirsch",
@@ -136,28 +142,7 @@ class FDoGTCanny(Matrix5x5, EdgeDetect):
         return clip.tcanny.TCanny(op=6, **(KwargsT(sigma=0, mode=1, scale=_scale_constant) | kwargs))
 
 
-class DoG(EuclideanDistance, Matrix5x5):
-    """
-    Zero-cross (of the 2nd derivative) of a Difference of Gaussians
-    """
-
-    matrices: ClassVar[Sequence[Sequence[float]]] = [
-        [0, 0, 5, 0, 0, 0, 5, 10, 5, 0, 5, 10, 20, 10, 5, 0, 5, 10, 5, 0, 0, 0, 5, 0, 0],
-        [0, 25, 0, 25, 50, 25, 0, 25, 0],
-    ]
-    divisors: ClassVar[Sequence[float] | None] = [4, 6]
-
-    def _preprocess(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
-        return depth(clip, 32)
-
-    def _postprocess(self, clip: ConstantFormatVideoNode, input_bits: int | None = None) -> ConstantFormatVideoNode:
-        return depth(clip, input_bits, range_out=ColorRange.FULL, range_in=ColorRange.FULL)
-
-    def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode]) -> ConstantFormatVideoNode:
-        return norm_expr(clips, "x y -", func=self.__class__)
-
-
-class Farid(RidgeDetect, EuclideanDistance, Matrix5x5):
+class Farid(NormalizeProcessor, RidgeDetect, EuclideanDistance, Matrix5x5):
     """
     Farid & Simoncelli operator.
     """
@@ -192,38 +177,32 @@ class Farid(RidgeDetect, EuclideanDistance, Matrix5x5):
         ],
         [
             0.004127602875174862,
-            0.027308149775363867,
-            0.04673225765917656,
-            0.027308149775363867,
-            0.004127602875174862,
-            0.010419993699470744,
-            0.06893849946536831,
-            0.11797400212587895,
-            0.06893849946536831,
             0.010419993699470744,
             0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            -0.010419993699470744,
-            -0.06893849946536831,
-            -0.11797400212587895,
-            -0.06893849946536831,
             -0.010419993699470744,
             -0.004127602875174862,
+            0.027308149775363867,
+            0.06893849946536831,
+            0.0,
+            -0.06893849946536831,
             -0.027308149775363867,
+            0.04673225765917656,
+            0.11797400212587895,
+            0.0,
+            -0.11797400212587895,
             -0.04673225765917656,
+            0.027308149775363867,
+            0.06893849946536831,
+            0.0,
+            -0.06893849946536831,
             -0.027308149775363867,
+            0.004127602875174862,
+            0.010419993699470744,
+            0.0,
+            -0.010419993699470744,
             -0.004127602875174862,
         ],
     ]
-
-    def _preprocess(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
-        return depth(clip, 32)
-
-    def _postprocess(self, clip: ConstantFormatVideoNode, input_bits: int | None = None) -> ConstantFormatVideoNode:
-        return depth(clip, input_bits, range_out=ColorRange.FULL, range_in=ColorRange.FULL)
 
 
 # Max

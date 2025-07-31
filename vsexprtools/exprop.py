@@ -3,8 +3,8 @@ from __future__ import annotations
 from enum import EnumMeta
 from functools import cache
 from itertools import cycle
-from math import isqrt, pi
-from typing import Any, Iterable, Iterator, Sequence, SupportsFloat, SupportsIndex, overload
+from math import isqrt
+from typing import Any, Iterable, Iterator, Literal, Sequence, SupportsFloat, SupportsIndex, overload
 
 from jetpytools import CustomRuntimeError, CustomStrEnum, SupportsString
 from typing_extensions import Self
@@ -428,7 +428,7 @@ class ExprOpBase(CustomStrEnum):
 class ExprOpExtraMeta(EnumMeta):
     @property
     def _extra_op_names_(cls) -> tuple[str, ...]:
-        return ("PI", "SGN", "NEG", "TAN", "ATAN", "ASIN", "ACOS")
+        return ("SGN", "NEG", "TAN", "ATAN", "ASIN", "ACOS", "CEIL")
 
 
 class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
@@ -456,6 +456,9 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
 
     HEIGHT = "height", 0
     """Frame height."""
+
+    PI = "pi", 0
+    """Mathematical constant π (pi)."""
 
     # 1 Argument (std)
     EXP = "exp", 1
@@ -582,9 +585,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     """Get value of absolute pixel at coordinates ({x},{y}) on clip `{char}`."""
 
     # Not Implemented in akarin or std
-    PI = "pi", 0
-    """Mathematical constant π (pi)."""
-
     SGN = "sgn", 1
     """Sign function: -1, 0, or 1 depending on value."""
 
@@ -603,6 +603,9 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     ACOS = "acos", 1
     """Arccosine (inverse cosine)."""
 
+    CEIL = "ceil", 1
+    """Round up to nearest integer."""
+
     @cache
     def is_extra(self) -> bool:
         """
@@ -616,8 +619,9 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         """
         return self.name in ExprOp._extra_op_names_
 
-    @cache
-    def convert_extra(self) -> str:
+    def convert_extra(  # type: ignore[misc]
+        self: Literal[ExprOp.SGN, ExprOp.NEG, ExprOp.TAN, ExprOp.ATAN, ExprOp.ASIN, ExprOp.ACOS, ExprOp.CEIL],  # pyright: ignore[reportGeneralTypeIssues]
+    ) -> str:
         """
         Converts an 'extra' operator into a valid `akarin.Expr` expression string.
 
@@ -632,8 +636,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
             raise CustomValueError
 
         match self:
-            case ExprOp.PI:
-                return str(pi)
             case ExprOp.SGN:
                 return "dup 0 > swap 0 < -"
             case ExprOp.NEG:
@@ -646,6 +648,8 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
                 return self.asin().to_str()
             case ExprOp.ACOS:
                 return self.acos().to_str()
+            case ExprOp.CEIL:
+                return "-1 * floor -1 *"
             case _:
                 raise NotImplementedError
 
@@ -901,7 +905,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
                     [
                         "__atanvar@",
                         cls.SGN.convert_extra(),
-                        cls.PI.convert_extra(),
+                        cls.PI,
                         cls.MUL,
                         2,
                         cls.DIV,
@@ -971,4 +975,4 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         Returns:
             An `ExprList` representing the acos(x) expression.
         """
-        return ExprList([c, "__acosvar!", cls.PI.convert_extra(), 2, cls.DIV, cls.asin("__acosvar@", n), cls.SUB])
+        return ExprList([c, "__acosvar!", cls.PI, 2, cls.DIV, cls.asin("__acosvar@", n), cls.SUB])

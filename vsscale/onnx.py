@@ -2,6 +2,8 @@
 This module implements scalers for ONNX models.
 """
 
+from __future__ import annotations
+
 from abc import ABC
 from logging import warning
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, SupportsFloat, TypeAlias, TypeVar, runtime_checkable
@@ -35,8 +37,6 @@ from vstools import (
 
 if TYPE_CHECKING:
     from vsmlrt import backendT as Backend
-else:
-    Backend = Any
 
 from .generic import BaseGenericScaler
 

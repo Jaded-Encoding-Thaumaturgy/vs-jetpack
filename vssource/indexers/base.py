@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import os
-import shutil
-import subprocess
-import tempfile
 from abc import ABC, abstractmethod
 from hashlib import md5
 from os import name as os_name
+from shutil import which
+from subprocess import Popen
+from tempfile import gettempdir
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Iterable, Literal, Protocol, Sequence
 
 from vstools import (
@@ -34,9 +33,6 @@ from ..dataclasses import IndexFileType
 
 if TYPE_CHECKING:
     from ..formats.dvd.parsedvd import IFOX, IFO0Title
-
-
-PackageStorage(package_name="vssource")
 
 
 __all__ = ["DVDExtIndexer", "DVDIndexer", "ExternalIndexer", "Indexer", "VSSourceFunc"]
@@ -178,14 +174,14 @@ class ExternalIndexer(Indexer):
         raise NotImplementedError
 
     def _get_bin_path(self) -> SPath:
-        if not (bin_path := shutil.which(str(self.bin_path))):
+        if not (bin_path := which(str(self.bin_path))):
             raise FileNotFoundError(f"Indexer: `{self.bin_path}` was not found{' in PATH' if os_name == 'nt' else ''}!")
         return SPath(bin_path)
 
     def _run_index(self, files: list[SPath], output: SPath, cmd_args: Sequence[str]) -> None:
         output.mkdirp()
 
-        proc = subprocess.Popen(
+        proc = Popen(
             list(map(str, (*self.get_cmd(files, output), *cmd_args, *self._default_args))),
             text=True,
             encoding="utf-8",
@@ -217,7 +213,7 @@ class ExternalIndexer(Indexer):
             return SPath(file).get_folder() if file else self.get_out_folder(False)
 
         if not output_folder:
-            return SPath(tempfile.gettempdir())
+            return SPath(gettempdir())
 
         return SPath(output_folder)
 
@@ -281,7 +277,7 @@ class ExternalIndexer(Indexer):
 
     def get_video_idx_path(self, folder: SPath, file_hash: str, video_name: SPathLike) -> SPath:
         vid_name = SPath(video_name).stem
-        current_indxer = os.path.basename(self._bin_path)
+        current_indxer = SPath(self._bin_path).name
         filename = "_".join([file_hash, vid_name, current_indxer])
 
         return self.get_idx_file_path(PackageStorage(folder).get_file(filename))

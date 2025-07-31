@@ -127,8 +127,6 @@ if TYPE_CHECKING:
         BM3D: _VSFunction
         BM3Dv2: _VSFunction
         VAggregate: _VSFunction
-else:
-    _Plugin = Any
 
 
 def _clean_keywords(kwargs: dict[str, Any], function: _VSFunction) -> dict[str, Any]:

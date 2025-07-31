@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import atexit
 import json
-import os
-import subprocess
+from atexit import register as atexit_register
+from os import environ
 from os import name as os_name
+from subprocess import PIPE, Popen, run
 from typing import Any
 
 from vstools import SPath
@@ -18,13 +18,13 @@ __all__ = ["IsoFile"]
 
 class _WinIsoFile(IsoFileCore):
     def _run_disc_util(self, iso_path: SPath, util: str) -> SPath | None:
-        pbjson, err = subprocess.Popen(
+        pbjson, err = Popen(
             [
-                SPath(os.environ["WINDIR"]) / "System32" / "WindowsPowerShell" / "v1.0" / "PowerShell.exe",
+                SPath(environ["WINDIR"]) / "System32" / "WindowsPowerShell" / "v1.0" / "PowerShell.exe",
                 rf'{util}-DiskImage -ImagePath "{iso_path!s}" | Get-Volume | ConvertTo-Json',
             ],
             text=True,
-            stdout=subprocess.PIPE,
+            stdout=PIPE,
             shell=True,
             encoding="utf-8",
         ).communicate()
@@ -44,7 +44,7 @@ class _WinIsoFile(IsoFileCore):
 
     def _mount(self) -> SPath | None:
         if mount := self._run_disc_util(self.iso_path, "Mount"):
-            atexit.register(self._unmount)
+            atexit_register(self._unmount)
         return mount
 
     def _unmount(self) -> SPath | None:
@@ -56,7 +56,7 @@ class _LinuxIsoFile(IsoFileCore):
     cur_mount: SPath | None = None
 
     def _subprun(self, *args: Any) -> str:
-        return subprocess.run(list(map(str, args)), capture_output=True, universal_newlines=True).stdout
+        return run(list(map(str, args)), capture_output=True, universal_newlines=True).stdout
 
     def _get_mounted_disc(self) -> SPath | None:
         if not (loop_path := self._subprun("losetup", "-j", self.iso_path).strip().split(":")[0]):
@@ -95,7 +95,7 @@ class _LinuxIsoFile(IsoFileCore):
 
         self.cur_mount = SPath(mount_splits[-1])
 
-        atexit.register(self._unmount)
+        atexit_register(self._unmount)
 
         return self.cur_mount
 

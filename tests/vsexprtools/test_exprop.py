@@ -84,13 +84,6 @@ clip_int8 = core.std.BlankClip(None, 10, 10, vs.YUV420P8, length=10, color=[128,
 clip_fp32 = core.std.BlankClip(None, 10, 10, vs.YUV420PS, length=10, color=[0.5, 0.25, 0.25], keep=True)
 
 
-def test_expr_op_str_pi() -> None:
-    clip = expr_func(clip_fp32, str(ExprOp.PI))
-
-    for f in clip.frames(close=True):
-        assert f[0][0, 0] == pytest.approx(math.pi)
-
-
 @pytest.mark.parametrize(
     ["clip", "expected"],
     [
@@ -179,6 +172,13 @@ def test_expr_op_str_acos(input_clip: vs.VideoNode) -> None:
 
     for f, f_in in zip(clip.frames(close=True), input_clip.frames(close=True)):
         assert f[0][0, 0] == pytest.approx(math.acos(f_in[0][0, 0]))
+
+
+def test_expr_op_str_ceil(input_clip: vs.VideoNode = clip_fp32) -> None:
+    clip = expr_func(input_clip, f"x {ExprOp.CEIL.convert_extra()}")
+
+    for f, f_in in zip(clip.frames(close=True), input_clip.frames(close=True)):
+        assert f[0][0, 0] == math.ceil(f_in[0][0, 0])
 
 
 def test_expr_op_clamp() -> None:

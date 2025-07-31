@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 from typing import TYPE_CHECKING
 
 from jetpytools import CustomRuntimeError, SPath, SPathLike, get_script_path
@@ -13,8 +12,10 @@ class PackageStorage:
 
     def __init__(self, cwd: SPathLike | None = None, *, mode: int = 0o777, package_name: str | None = None) -> None:
         if not package_name:
-            frame = inspect.stack()[1]
-            module = inspect.getmodule(frame[0])
+            from inspect import getmodule, stack
+
+            frame = stack()[1]
+            module = getmodule(frame[0])
 
             if module:
                 package_name = module.__name__
@@ -28,27 +29,12 @@ class PackageStorage:
         package_name = package_name.strip(".").split(".")[0]
 
         if not cwd:
-            cwd = SPath(get_script_path())
+            cwd = get_script_path()
         elif not isinstance(cwd, SPath):
-            cwd = SPath(str(cwd))
-
-        cwd = cwd.get_folder()
-        base_folder = cwd / self.BASE_FOLDER
-
-        for old_names in (".vsstg", ".vsiew"):
-            old_base_folder = cwd / ".vsstg"
-
-            if old_base_folder.exists():
-                old_base_folder.move_dir(base_folder)
-
-        old_folder = cwd / f".{package_name}"
-        new_folder = base_folder / package_name
-
-        if old_folder.exists():
-            old_folder.move_dir(new_folder)
+            cwd = SPath(cwd)
 
         self.mode = mode
-        self.folder = new_folder
+        self.folder = cwd / self.BASE_FOLDER / package_name
 
     def ensure_folder(self) -> None:
         self.folder.mkdir(self.mode, True, True)

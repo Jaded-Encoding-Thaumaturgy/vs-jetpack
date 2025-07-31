@@ -159,10 +159,11 @@ class ExprVars(Iterable[str]):
 
         indices = range(self.start, self.stop, self.step)
 
-        if self.expr_src:
-            yield from (f"src{x}" for x in indices)
-        else:
-            yield from (EXPR_VARS[x] for x in indices)
+        for x in indices:
+            if self.expr_src or x > 25:
+                yield f"src{x}"
+            else:
+                yield EXPR_VARS[x]
 
     def __next__(self) -> str:
         """
@@ -177,7 +178,7 @@ class ExprVars(Iterable[str]):
         if self.curr >= self.stop:
             raise StopIteration
 
-        var = f"src{self.curr}" if self.expr_src else EXPR_VARS[self.curr]
+        var = f"src{self.curr}" if self.expr_src or self.curr > 25 else EXPR_VARS[self.curr]
 
         self.curr += self.step
 
@@ -211,7 +212,7 @@ class ExprVars(Iterable[str]):
         if value < 0:
             raise CustomIndexError('"value" should be bigger than 0!')
 
-        return f"src{value}" if value >= 26 else EXPR_VARS[value]
+        return f"src{value}" if value > 25 else EXPR_VARS[value]
 
     def __str__(self) -> str:
         """
@@ -240,7 +241,8 @@ def extra_op_tokenize_expr(expr: str) -> str:
     from .exprop import ExprOp
 
     for extra_op in ExprOp._extra_op_names_:
-        expr = re.sub(rf"\b{extra_op.lower()}\b", getattr(ExprOp, extra_op).convert_extra(), expr)
+        if extra_op.lower() in expr:
+            expr = re.sub(rf"\b{extra_op.lower()}\b", getattr(ExprOp, extra_op).convert_extra(), expr)
 
     return expr
 

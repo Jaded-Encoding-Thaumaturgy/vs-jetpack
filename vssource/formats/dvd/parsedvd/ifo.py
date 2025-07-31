@@ -1,7 +1,5 @@
-from __future__ import annotations
-
-import os
 from dataclasses import asdict, dataclass
+from os import SEEK_SET
 from typing import Any
 
 from .c_adt import CADT
@@ -27,7 +25,7 @@ class IFO0:
     tt_srpt: list[IFO0Title]
 
     def __init__(self, reader: SectorReadHelper):
-        reader.ifo.seek(0x3E, os.SEEK_SET)
+        reader.ifo.seek(0x3E, SEEK_SET)
         (self.num_vts,) = reader._unpack_byte(2)
 
         # tt_srpt

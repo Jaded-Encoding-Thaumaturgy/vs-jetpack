@@ -3,7 +3,6 @@ from math import factorial
 from typing import Any, Iterable, Literal, MutableMapping, Protocol, cast
 
 from jetpytools import CustomIntEnum
-from numpy import linalg, zeros
 from typing_extensions import Self
 
 from vsaa import NNEDI3, Deinterlacer
@@ -25,10 +24,11 @@ from vsrgtools import BlurMatrix, gauss_blur, median_blur, remove_grain, repair,
 from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
-    CustomRuntimeError,
     FieldBased,
     FieldBasedT,
     KwargsT,
+    UnsupportedFieldBasedError,
+    UnsupportedVideoFormatError,
     VSFunctionKwArgs,
     check_variable,
     core,
@@ -330,13 +330,15 @@ class QTempGaussMC(vs_object):
         self.double_rate = self.input_type != self.InputType.REPAIR
 
         if self.clip.format.sample_type is vs.FLOAT:
-            raise CustomRuntimeError("FLOAT input is not supported!", self.__class__)
+            raise UnsupportedVideoFormatError(
+                "FLOAT input is not supported!", self.__class__, self.clip.format.sample_type
+            )
 
         if self.input_type == self.InputType.PROGRESSIVE and clip_fieldbased.is_inter:
-            raise CustomRuntimeError(f"{self.input_type} incompatible with interlaced video!", self.__class__)
+            raise UnsupportedFieldBasedError(f"{self.input_type} incompatible with interlaced video!", self.__class__)
 
         if self.input_type in (self.InputType.INTERLACE, self.InputType.REPAIR) and not clip_fieldbased.is_inter:
-            raise CustomRuntimeError(f"{self.input_type} incompatible with progressive video!", self.__class__)
+            raise UnsupportedFieldBasedError(f"{self.input_type} incompatible with progressive video!", self.__class__)
 
     def prefilter(
         self,
@@ -729,6 +731,8 @@ class QTempGaussMC(vs_object):
         return clip
 
     def _binomial_degrain(self, clip: vs.VideoNode, tr: int) -> ConstantFormatVideoNode:
+        from numpy import linalg, zeros
+
         def _get_weights(n: int) -> Iterable[Any]:
             k, rhs = 1, list[int]()
             mat = zeros((n + 1, n + 1))
