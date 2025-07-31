@@ -46,7 +46,7 @@ from vstools import (
     vs_object,
 )
 
-from .alpha import IterArr, VSFunctionPlanesArgs, dehalo_omega
+from .alpha import IterArr, VSFunctionPlanesArgs, dehalo_alpha
 
 __all__ = ["base_dehalo_mask", "fine_dehalo", "fine_dehalo2"]
 
@@ -338,7 +338,7 @@ class FineDehalo(Generic[P, R]):
 @FineDehalo
 def fine_dehalo(
     clip: vs.VideoNode,
-    # dehalo_omega params
+    # dehalo_alpha params
     blur: IterArr[float]
     | VSFunctionPlanesArgs
     | tuple[float | list[float] | VSFunctionPlanesArgs, ...] = Prefilter.GAUSS(sigma=1.4),
@@ -367,7 +367,7 @@ def fine_dehalo(
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
-    Halo removal function based on `dehalo_omega`, enhanced with additional masking and optional contra-sharpening
+    Halo removal function based on `dehalo_alpha`, enhanced with additional masking and optional contra-sharpening
     to better preserve important line detail while effectively reducing halos.
 
     The parameter `ss` can be configured per iteration while `blur`, `lowsens`, `highsens`, `darkstr` and `brightstr`
@@ -469,7 +469,7 @@ def fine_dehalo(
         func_util.work_clip, rx, ry, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func_util.func
     )
 
-    dehaloed = dehalo_omega(
+    dehaloed = dehalo_alpha(
         func_util.work_clip, blur, lowsens, highsens, ss, darkstr, brightstr, planes, attach_masks, func, **kwargs
     )
 
