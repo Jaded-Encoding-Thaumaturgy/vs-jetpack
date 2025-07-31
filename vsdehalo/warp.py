@@ -11,7 +11,7 @@ from vsexprtools import norm_expr
 from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, PrewittStd
 from vsrgtools import BlurMatrix, awarpsharp, box_blur, min_blur, remove_grain, repair
 from vsrgtools.rgtools import Repair
-from vstools import PlanesT, limiter, scale_delta, scale_value, vs
+from vstools import PlanesT, limiter, scale_mask, scale_value, vs
 
 __all__ = ["YAHR", "edge_cleaner"]
 
@@ -41,8 +41,8 @@ def edge_cleaner(
         The processed video clip with cleaned edges.
     """
     edgemask = EdgeDetect.ensure_obj(edgemask, edge_cleaner)
+    lthr = scale_mask(4, 8, clip)
     expr = "x {thr} > range_max x ?"
-    lthr = scale_delta(4, 8, clip)
 
     if smode:
         strength += 4
@@ -51,7 +51,7 @@ def edge_cleaner(
     warped = repair(warped, clip, rmode, planes)
 
     mask = edgemask.edgemask(clip, lthr, planes=planes)
-    mask = norm_expr(mask, expr, planes, thr=scale_delta(32, 8, clip), func=edge_cleaner)
+    mask = norm_expr(mask, expr, planes, thr=scale_mask(32, 8, clip), func=edge_cleaner)
     mask = box_blur(mask, planes=planes)
 
     final = warped.std.MaskedMerge(clip, mask, planes)
@@ -66,7 +66,7 @@ def edge_cleaner(
         mask = edgemask.edgemask(
             diff.std.Levels(scale_value(40, 8, clip), scale_value(168, 8, clip), 0.35), lthr, planes=planes
         )
-        mask = norm_expr(remove_grain(mask, 7, planes), expr, planes, thr=scale_delta(16, 8, clip), func=edge_cleaner)
+        mask = norm_expr(remove_grain(mask, 7, planes), expr, planes, thr=scale_mask(16, 8, clip), func=edge_cleaner)
 
         final = final.std.MaskedMerge(clip, mask, planes)
 
