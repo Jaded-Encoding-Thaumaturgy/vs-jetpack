@@ -6,16 +6,7 @@ from typing import Any, Iterable, NoReturn, Protocol, SupportsIndex, TypeAlias
 
 from jetpytools import to_arr
 
-from vstools import (
-    ColorRangeT,
-    get_depth,
-    get_lowest_value,
-    get_neutral_value,
-    get_peak_value,
-    get_plane_sizes,
-    scale_value,
-    vs,
-)
+from vstools import get_depth, get_lowest_value, get_neutral_value, get_peak_value, get_plane_sizes, vs
 
 from .operators import op
 
@@ -397,24 +388,3 @@ class ClipVar(ExprVar):
     def depth(self) -> LiteralVar:
         """Returns the bit depth of the clip."""
         return LiteralVar(get_depth(self.node))
-
-    # Helper function for scaled values
-    def scale(
-        self,
-        value: float,
-        input_depth: int = 8,
-        range_in: ColorRangeT | None = None,
-        range_out: ColorRangeT | None = None,
-        scale_offsets: bool = True,
-        family: vs.ColorFamily | None = None,
-    ) -> ComplexVar:
-        """
-        Returns a scaled version of the given value based on the clip's format.
-        """
-
-        def _resolve(plane: int = 0, **kwargs: Any) -> Any:
-            return scale_value(
-                value, input_depth, get_depth(self.clip), range_in, range_out, scale_offsets, plane in {1, 2}, family
-            )
-
-        return ComplexVar(f"{self.char}.scale({value})", _resolve)
