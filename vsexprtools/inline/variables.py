@@ -310,9 +310,9 @@ class ClipVar(ExprVar):
     props: ClipPropsVar
     """A helper to access frame properties."""
 
-    def __init__(self, char: str, clip: vs.VideoNode) -> None:
+    def __init__(self, char: str, node: vs.VideoNode) -> None:
         self.char = char
-        self.clip = clip
+        self.node = node
         self.props = ClipPropsVar(self)
 
     def __str__(self) -> str:
@@ -327,32 +327,32 @@ class ClipVar(ExprVar):
     @property
     def peak(self) -> LiteralVar:
         """Returns the peak value for the clip's bit depth."""
-        return LiteralVar(get_peak_value(self.clip))
+        return LiteralVar(get_peak_value(self.node))
 
     @property
     def peak_chroma(self) -> LiteralVar:
         """Returns the peak chroma value for the clip's bit depth."""
-        return LiteralVar(get_peak_value(self.clip, True))
+        return LiteralVar(get_peak_value(self.node, True))
 
     @property
     def neutral(self) -> LiteralVar:
         """Returns the neutral value for the clip."""
-        return LiteralVar(get_neutral_value(self.clip))
+        return LiteralVar(get_neutral_value(self.node))
 
     @property
     def neutral_chroma(self) -> LiteralVar:
         """Returns the neutral chroma value."""
-        return LiteralVar(get_neutral_value(self.clip))
+        return LiteralVar(get_neutral_value(self.node))
 
     @property
     def lowest(self) -> LiteralVar:
         """Returns the lowest possible pixel value"""
-        return LiteralVar(get_lowest_value(self.clip))
+        return LiteralVar(get_lowest_value(self.node))
 
     @property
     def lowest_chroma(self) -> LiteralVar:
         """Returns the lowest chroma value."""
-        return LiteralVar(get_lowest_value(self.clip, True))
+        return LiteralVar(get_lowest_value(self.node, True))
 
     @property
     def width(self) -> LiteralVar:
@@ -362,12 +362,12 @@ class ClipVar(ExprVar):
     @property
     def width_luma(self) -> LiteralVar:
         """Returns the actual width of the luma plane."""
-        return LiteralVar(self.clip.width)
+        return LiteralVar(self.node.width)
 
     @property
     def width_chroma(self) -> LiteralVar:
         """Returns the width of the chroma plane."""
-        return LiteralVar(get_plane_sizes(self.clip, 1)[0])
+        return LiteralVar(get_plane_sizes(self.node, 1)[0])
 
     @property
     def height(self) -> LiteralVar:
@@ -377,17 +377,17 @@ class ClipVar(ExprVar):
     @property
     def height_luma(self) -> LiteralVar:
         """Returns the actual height of the luma plane."""
-        return LiteralVar(self.clip.height)
+        return LiteralVar(self.node.height)
 
     @property
     def height_chroma(self) -> LiteralVar:
         """Returns the height of the chroma plane."""
-        return LiteralVar(get_plane_sizes(self.clip, 1)[1])
+        return LiteralVar(get_plane_sizes(self.node, 1)[1])
 
     @property
     def depth(self) -> LiteralVar:
         """Returns the bit depth of the clip."""
-        return LiteralVar(get_depth(self.clip))
+        return LiteralVar(get_depth(self.node))
 
     # Helper function for scaled values
     def scale(
