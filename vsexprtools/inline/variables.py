@@ -181,6 +181,12 @@ class ExprVar(ABC):
     @abstractmethod
     def __str__(self) -> str: ...
 
+    def __hash__(self) -> int:
+        return hash(self)
+
+    def __eq__(self, value: object) -> bool:
+        return str(self) == str(value)
+
     def as_var(self) -> ComputedVar:
         """
         Converts the expression variable to a ComputedVar.
