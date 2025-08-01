@@ -17,7 +17,7 @@ from vstools import HoldsVideoFormatT, VideoFormatT, get_video_format, vs, vs_ob
 from ..funcs import expr_func
 from ..util import ExprVars
 from .operators import Operators
-from .variables import ClipVar, ComputedVar, ExprVar
+from .variables import ClipVar, ComputedVar, ExprVarLike
 
 __all__ = ["inline_expr"]
 
@@ -363,7 +363,7 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
         return self._final_expr_node
 
     @out.setter
-    def out(self, out_var: ExprVar) -> None:
+    def out(self, out_var: ExprVarLike) -> None:
         """
         Set the final output of the expression.
 
