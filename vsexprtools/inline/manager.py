@@ -16,7 +16,7 @@ from vstools import HoldsVideoFormatT, VideoFormatT, get_video_format, vs, vs_ob
 
 from ..funcs import expr_func
 from ..util import ExprVars
-from .operators import ExprOperators
+from .operators import Operators
 from .variables import ClipVar, ComputedVar, ExprVar
 
 __all__ = ["inline_expr"]
@@ -132,16 +132,16 @@ def inline_expr(
                     wider_blur = (
                         blur + x[-2, -2] + x[-2, 0] + x[-2, 2] + x[0, -2] + x[0, 2] + x[2, -2] + x[2, 0] + x[2, 2]
                     ) / 9
-                    high_freq_indicator = ie.op.ABS(blur - wider_blur)
+                    high_freq_indicator = ie.op.abs(blur - wider_blur)
 
                     # Calculate texture complexity (higher in detailed areas,
                     # lower in flat areas)
-                    texture_complexity = ie.op.MAX(ie.op.ABS(x - blur), ie.op.ABS(blur - wider_blur))
+                    texture_complexity = ie.op.max(ie.op.abs(x - blur), ie.op.abs(blur - wider_blur))
 
                     # Reduce sharpening in areas with high frequency content
                     # but low texture complexity
-                    freq_ratio = ie.op.MAX(high_freq_indicator / (texture_complexity + 0.01), 0)
-                    low_freq_factor = 1.0 - ie.op.MIN(
+                    freq_ratio = ie.op.max(high_freq_indicator / (texture_complexity + 0.01), 0)
+                    low_freq_factor = 1.0 - ie.op.min(
                         freq_ratio * low_freq.freq_ratio_scale * low_freq.freq_limit, low_freq.max_reduction
                     )
 
@@ -155,22 +155,22 @@ def inline_expr(
                 n6, n7, n8 = x[1, -1], x[1, 0], x[1, 1]
 
                 # Calculate minimum through pairwise comparisons
-                min1 = ie.op.MIN(n1, n2)
-                min2 = ie.op.MIN(min1, n3)
-                min3 = ie.op.MIN(min2, n4)
-                min4 = ie.op.MIN(min3, n5)
-                min5 = ie.op.MIN(min4, n6)
-                min6 = ie.op.MIN(min5, n7)
-                local_min = ie.op.as_var(ie.op.MIN(min6, n8))
+                min1 = ie.op.min(n1, n2)
+                min2 = ie.op.min(min1, n3)
+                min3 = ie.op.min(min2, n4)
+                min4 = ie.op.min(min3, n5)
+                min5 = ie.op.min(min4, n6)
+                min6 = ie.op.min(min5, n7)
+                local_min = ie.op.as_var(ie.op.min(min6, n8))
 
                 # Calculate maximum through pairwise comparisons
-                max1 = ie.op.MAX(n1, n2)
-                max2 = ie.op.MAX(max1, n3)
-                max3 = ie.op.MAX(max2, n4)
-                max4 = ie.op.MAX(max3, n5)
-                max5 = ie.op.MAX(max4, n6)
-                max6 = ie.op.MAX(max5, n7)
-                local_max = ie.op.as_var(ie.op.MAX(max6, n8))
+                max1 = ie.op.max(n1, n2)
+                max2 = ie.op.max(max1, n3)
+                max3 = ie.op.max(max2, n4)
+                max4 = ie.op.max(max3, n5)
+                max5 = ie.op.max(max4, n6)
+                max6 = ie.op.max(max5, n7)
+                local_max = ie.op.as_var(ie.op.max(max6, n8))
 
                 # Only calculate adaptive limiting if limit > 0
                 if limit > 0:
@@ -253,12 +253,12 @@ def inline_expr(
         yield ie
     finally:
         if enable_polyfills:
-            disable_poly()
+            disable_poly()  # pyright: ignore[reportPossiblyUnboundVariable]
 
     ie._compute_expr(**kwargs)
 
 
-class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapper"], vs_object):
+class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"], vs_object):
     """
     A wrapper class for constructing and evaluating VapourSynth expressions inline using Python syntax.
 
@@ -292,9 +292,9 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapp
             `clips, op, self = ie`
     """
 
-    op = ExprOperators()
+    op = Operators()
     """
-    [ExprOperators][vsexprtools.inline.operators.ExprOperators] object providing access to all `Expr` operators.
+    [Operators][vsexprtools.inline.operators.Operators] object providing access to all `Expr` operators.
     """
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Self:
@@ -315,13 +315,13 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapp
         self._final_clip: vs.VideoNode | None = None
 
     @overload
-    def __getitem__(self, i: SupportsIndex, /) -> Sequence[ClipVar] | ExprOperators | Self: ...
+    def __getitem__(self, i: SupportsIndex, /) -> Sequence[ClipVar] | Operators | Self: ...
     @overload
-    def __getitem__(self, i: slice[Any, Any, Any], /) -> tuple[Sequence[ClipVar] | ExprOperators | Self]: ...
+    def __getitem__(self, i: slice[Any, Any, Any], /) -> tuple[Sequence[ClipVar] | Operators | Self]: ...
     def __getitem__(self, i: SupportsIndex | slice[Any, Any, Any]) -> Any:
         return self._inner[i]
 
-    def __iter__(self) -> Iterator[Sequence[ClipVar] | ExprOperators | Self]:
+    def __iter__(self) -> Iterator[Sequence[ClipVar] | Operators | Self]:
         yield from self._inner
 
     def __next__(self) -> Any:
@@ -370,7 +370,7 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], ExprOperators, "InlineExprWrapp
         Converts the given [ExprVar][vsexprtools.inline.variables.ExprVar]
         to a [ComputedVar][vsexprtools.inline.variables.ComputedVar] and stores it as the final expression.
         """
-        self._final_expr_node = ExprOperators.as_var(out_var)
+        self._final_expr_node = Operators.as_var(out_var)
 
     @property
     def clip(self) -> vs.VideoNode:

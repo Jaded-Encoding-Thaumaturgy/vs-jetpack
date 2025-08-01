@@ -17,7 +17,7 @@ from vstools import (
     vs,
 )
 
-from .operators import ExprOperators
+from .operators import op
 
 __all__ = ["ClipPropsVar", "ClipVar", "ComplexVar", "ComputedVar", "ExprVar", "ExprVarLike", "LiteralVar"]
 
@@ -26,106 +26,106 @@ class ExprVar(ABC):
     """Base interface for variables used in RPN expression"""
 
     def __add__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.ADD(self, other)
+        return op.add(self, other)
 
     def __iadd__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
-        return ExprOperators.ADD(self, other)
+        return op.add(self, other)
 
     def __radd__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.ADD(other, self)
+        return op.add(other, self)
 
     def __sub__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.SUB(self, other)
+        return op.sub(self, other)
 
     def __isub__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
-        return ExprOperators.SUB(self, other)
+        return op.sub(self, other)
 
     def __rsub__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.SUB(other, self)
+        return op.sub(other, self)
 
     def __mul__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.MUL(self, other)
+        return op.mul(self, other)
 
     def __imul__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
-        return ExprOperators.MUL(self, other)
+        return op.mul(self, other)
 
     def __rmul__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.MUL(other, self)
+        return op.mul(other, self)
 
     def __truediv__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.DIV(self, other)
+        return op.div(self, other)
 
     def __rtruediv__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.DIV(other, self)
+        return op.div(other, self)
 
     def __itruediv__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
-        return ExprOperators.DIV(self, other)
+        return op.div(self, other)
 
     def __floordiv__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.FLOOR(ExprOperators.DIV(self, other))
+        return op.floor(op.div(self, other))
 
     def __ifloordiv__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
-        return ExprOperators.FLOOR(ExprOperators.DIV(self, other))
+        return op.floor(op.div(self, other))
 
     def __rfloordiv__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.FLOOR(ExprOperators.DIV(other, self))
+        return op.floor(op.div(other, self))
 
     def __pow__(self, other: ExprVarLike, module: int | None = None) -> ComputedVar:
         if module is not None:
             raise NotImplementedError
-        return ExprOperators.POW(self, other)
+        return op.pow(self, other)
 
     def __rpow__(self, other: ExprVarLike, module: int | None = None) -> ComputedVar:
         if module is not None:
             raise NotImplementedError
-        return ExprOperators.POW(other, self)
+        return op.pow(other, self)
 
     def __exp__(self) -> ComputedVar:
-        return ExprOperators.EXP(self)
+        return op.exp(self)
 
     def __log__(self) -> ComputedVar:
-        return ExprOperators.LOG(self)
+        return op.log(self)
 
     def __sqrt__(self) -> ComputedVar:
-        return ExprOperators.SQRT(self)
+        return op.sqrt(self)
 
     def __round__(self, ndigits: SupportsIndex | None = None) -> ComputedVar:
         if ndigits is not None:
             raise NotImplementedError
-        return ExprOperators.ROUND(self)
+        return op.round(self)
 
     def __trunc__(self) -> ComputedVar:
-        return ExprOperators.TRUNC(self)
+        return op.trunc(self)
 
     def __ceil__(self) -> ComputedVar:
-        return ExprOperators.FLOOR(ExprOperators.ADD(self, 0.5))
+        return op.floor(op.add(self, 0.5))
 
     def __floor__(self) -> ComputedVar:
-        return ExprOperators.FLOOR(self)
+        return op.floor(self)
 
     def __neg__(self) -> ComputedVar:
-        return ExprOperators.MUL(ExprOperators.ABS(self), -1)
+        return op.mul(op.abs(self), -1)
 
     def __pos__(self) -> ComputedVar:
-        return ExprOperators.ABS(self)
+        return op.abs(self)
 
     def __invert__(self) -> NoReturn:
         raise NotImplementedError
 
     def __int__(self) -> ComputedVar:
-        return ExprOperators.TRUNC(self)
+        return op.trunc(self)
 
     def __float__(self) -> ComputedVar:
         return ComputedVar(self)
 
     def __abs__(self) -> ComputedVar:
-        return ExprOperators.ABS(self)
+        return op.abs(self)
 
     def __mod__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.MOD(self, other)
+        return op.mod(self, other)
 
     def __rmod__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.MOD(other, self)
+        return op.mod(other, self)
 
     def __divmod__(self, _: ExprVarLike) -> NoReturn:
         raise NotImplementedError
@@ -134,37 +134,37 @@ class ExprVar(ABC):
         raise NotImplementedError
 
     def __lt__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.LT(self, other)
+        return op.lt(self, other)
 
     def __lte__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.LTE(self, other)
+        return op.lte(self, other)
 
     def __gt__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.GT(self, other)
+        return op.gt(self, other)
 
     def __gte__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.GTE(self, other)
+        return op.gte(self, other)
 
     def __bool__(self) -> bool:
         raise NotImplementedError
 
     def __and__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.AND(self, other)
+        return op.and_(self, other)
 
     def __rand__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.AND(self, other)
+        return op.and_(self, other)
 
     def __or__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.OR(self, other)
+        return op.or_(self, other)
 
     def __ror__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.OR(other, self)
+        return op.or_(other, self)
 
     def __xor__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.XOR(self, other)
+        return op.xor(self, other)
 
     def __rxor__(self, other: ExprVarLike) -> ComputedVar:
-        return ExprOperators.XOR(self, other)
+        return op.xor(self, other)
 
     def to_str(self, **kwargs: Any) -> str:
         """
@@ -315,7 +315,7 @@ class ClipVar(ExprVar):
     # Pixel Access
     def __getitem__(self, index: tuple[int, int]) -> ComputedVar:
         """Access a pixel at a specific coordinate using relative addressing."""
-        return ExprOperators.REL_PIX(self.char, *index)
+        return op.rel_pix(self.char, *index)
 
     # Helper properties
     @property
