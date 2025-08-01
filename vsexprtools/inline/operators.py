@@ -155,7 +155,11 @@ class Operators(Singleton):
         return self
 
     def matrix(
-        self, char: str, radius: int, mode: OnePassConvModeT, exclude: Iterable[tuple[int, int]] | None = None
+        self,
+        char: SupportsString | Collection[SupportsString],
+        radius: int,
+        mode: Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.TEMPORAL],
+        exclude: Iterable[tuple[int, int]] | None = None,
     ) -> list[LiteralVar]:
         """
         Convenience method wrapping [ExprOp.matrix][vsexprtools.ExprOp.matrix].
