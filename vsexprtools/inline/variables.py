@@ -221,7 +221,7 @@ class ComputedVar(ExprVar):
         Args:
             operations: An iterable of operators and/or expression variables that define the computation.
         """
-        self.operations = tuple(LiteralVar(x) for x in to_arr(operations))  # type: ignore[arg-type]
+        self.operations = tuple(LiteralVar(x) if not isinstance(x, ExprVar) else x for x in to_arr(operations))  # type: ignore[arg-type]
 
     def to_str(self, **kwargs: Any) -> str:
         """
