@@ -5,10 +5,12 @@ from typing import TYPE_CHECKING, Iterable
 from jetpytools import Singleton
 from typing_extensions import Self
 
+from vstools import OnePassConvModeT
+
 from ..exprop import ExprOp
 
 if TYPE_CHECKING:
-    from .variables import ComputedVar, ExprVarLike
+    from .variables import ComputedVar, ExprVarLike, LiteralVar
 
 __all__ = ["Operators"]
 
@@ -151,6 +153,28 @@ class Operators(Singleton):
     # Helper Functions
     def __call__(self) -> Self:
         return self
+
+    def matrix(
+        self, char: str, radius: int, mode: OnePassConvModeT, exclude: Iterable[tuple[int, int]] | None = None
+    ) -> list[LiteralVar]:
+        """
+        Convenience method wrapping [ExprOp.matrix][vsexprtools.ExprOp.matrix].
+
+        Args:
+            char: The variable representing the central pixel(s).
+            radius: The radius of the kernel in pixels (e.g., 1 for 3x3).
+            mode: The convolution mode. `HV` is not supported.
+            exclude: Optional set of (x, y) coordinates to exclude from the matrix.
+
+        Returns:
+            A list of [LiteralVar][vsexprtools.inline.variables.LiteralVar] instances
+            representing the matrix of expressions.
+        """
+        from .variables import LiteralVar
+
+        matrix, *_ = ExprOp.matrix(char, radius, mode, exclude)
+
+        return [LiteralVar(str(m)) for m in matrix]
 
     @staticmethod
     def as_var(x: ExprVarLike | Iterable[ExprVarLike]) -> ComputedVar:
