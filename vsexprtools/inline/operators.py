@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Collection, Iterable, Literal
 
-from jetpytools import Singleton
+from jetpytools import Singleton, SupportsString
 from typing_extensions import Self
 
-from vstools import OnePassConvModeT
+from vstools import ConvMode, OnePassConvModeT, flatten
 
 from ..exprop import ExprOp
 
@@ -179,6 +179,42 @@ class Operators(Singleton):
         matrix, *_ = ExprOp.matrix(char, radius, mode, exclude)
 
         return [LiteralVar(str(m)) for m in matrix]
+
+    def convolution(
+        self,
+        var: SupportsString | Collection[SupportsString],
+        matrix: Iterable[ExprVarLike] | Iterable[Iterable[ExprVarLike]],
+        bias: ExprVarLike | None = None,
+        divisor: ExprVarLike | bool = True,
+        saturate: bool = True,
+        mode: OnePassConvModeT = ConvMode.SQUARE,
+        premultiply: ExprVarLike | None = None,
+        multiply: ExprVarLike | None = None,
+        clamp: bool = False,
+    ) -> ComputedVar:
+        """
+        Convenience method wrapping [ExprOp.convolution][vsexprtools.ExprOp.convolution].
+
+        Args:
+            var: The variable used as the central value
+                or elements proportional to the radius if mode is `Literal[ConvMode.TEMPORAL]`.
+            matrix: A flat or 2D iterable representing the convolution weights.
+            bias: A constant value to add to the result after convolution (default: None).
+            divisor: If True, normalizes by the sum of weights; if False, skips division;
+                Otherwise, divides by this value.
+            saturate: If False, applies `abs()` to avoid negatives.
+            mode: The convolution shape.
+            premultiply: Optional scalar to multiply the result before normalization.
+            multiply: Optional scalar to multiply the result at the end.
+            clamp: If True, clamps the final result to [RangeMin, RangeMax].
+
+        Returns:
+            A `ComputedVar` representing the expression-based convolution.
+        """
+        convo, *_ = ExprOp.convolution(
+            var, flatten(matrix), bias, divisor, saturate, mode, premultiply, multiply, clamp
+        )
+        return self.as_var(convo.to_str())
 
     @staticmethod
     def as_var(x: ExprVarLike | Iterable[ExprVarLike]) -> ComputedVar:
