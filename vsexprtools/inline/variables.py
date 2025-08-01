@@ -26,12 +26,18 @@ class ExprVar(ABC):
     """Base interface for variables used in RPN expression"""
 
     def __add__(self, other: ExprVarLike) -> ComputedVar:
+        if other == 0:
+            return self.as_var()
         return op.add(self, other)
 
     def __iadd__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
+        if other == 0:
+            return self.as_var()
         return op.add(self, other)
 
     def __radd__(self, other: ExprVarLike) -> ComputedVar:
+        if other == 0:
+            return self.as_var()
         return op.add(other, self)
 
     def __sub__(self, other: ExprVarLike) -> ComputedVar:
