@@ -187,6 +187,9 @@ class ExprVar(ABC):
     def __eq__(self, value: object) -> bool:
         return str(self) == str(value)
 
+    def __format__(self, format_spec: str) -> str:
+        return f"{self.__str__():{format_spec}}"
+
     def as_var(self) -> ComputedVar:
         """
         Converts the expression variable to a ComputedVar.
