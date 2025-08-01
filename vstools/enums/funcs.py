@@ -4,7 +4,17 @@ from typing import Literal, TypeAlias
 
 from jetpytools import CustomIntEnum, CustomStrEnum
 
-__all__ = ["Align", "BaseAlign", "ConvMode", "OneDimConvModeT", "SpatialConvModeT", "TempConvModeT", "TwoDimConvModeT"]
+__all__ = [
+    "Align",
+    "BaseAlign",
+    "ConvMode",
+    "OneDimConvModeT",
+    "OnePassConvModeT",
+    "SpatialConvModeT",
+    "TempConvModeT",
+    "TwoDimConvModeT",
+    "TwoPassesConvModeT",
+]
 
 
 class ConvMode(CustomStrEnum):
@@ -73,6 +83,12 @@ class ConvMode(CustomStrEnum):
     def is_temporal(self) -> bool:
         return self in ["t"]
 
+
+OnePassConvModeT: TypeAlias = Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.TEMPORAL]
+"""Type alias for one pass convolution mode"""
+
+TwoPassesConvModeT: TypeAlias = Literal[ConvMode.HV]
+"""Type alias for two passes convolution mode"""
 
 OneDimConvModeT: TypeAlias = Literal[ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.HV]
 """Type alias for one dimension convolution mode"""
