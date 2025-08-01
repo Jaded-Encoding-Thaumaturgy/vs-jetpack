@@ -4,9 +4,9 @@ from enum import EnumMeta
 from functools import cache
 from itertools import cycle
 from math import inf, isqrt
-from typing import Any, Iterable, Iterator, Literal, Sequence, SupportsFloat, SupportsIndex, cast, overload
+from typing import Any, Collection, Iterable, Iterator, Literal, Sequence, SupportsIndex, cast, overload
 
-from jetpytools import CustomRuntimeError, CustomStrEnum, SupportsString
+from jetpytools import CustomRuntimeError, CustomStrEnum, SupportsString, SupportsSumNoDefaultT
 from typing_extensions import Self
 
 from vstools import (
@@ -732,13 +732,18 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
 
     @classmethod
     def matrix(
-        cls, var: str | ExprVars, radius: int, mode: ConvMode, exclude: Iterable[tuple[int, int]] | None = None
+        cls,
+        var: SupportsString | Collection[SupportsString],
+        radius: int,
+        mode: ConvMode,
+        exclude: Iterable[tuple[int, int]] | None = None,
     ) -> TupleExprList:
         """
         Generate a matrix expression layout for convolution-like operations.
 
         Args:
-            var: The variable or `ExprVars` representing the central pixel(s).
+            var: The variable representing the central pixel
+                or elements proportional to the radius if mode is `Literal[ConvMode.TEMPORAL]`.
             radius: The radius of the kernel in pixels (e.g., 1 for 3x3).
             mode: The convolution mode.
             exclude: Optional set of (x, y) coordinates to exclude from the matrix.
@@ -767,6 +772,8 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
                     ]
                 )
             case ConvMode.TEMPORAL:
+                assert isinstance(var, Collection)
+
                 if len(var) != radius * 2 + 1:
                     raise CustomValueError(
                         "`var` must have a number of elements proportional to the radius", cls.matrix, var
@@ -775,6 +782,8 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
                 return TupleExprList([ExprList(v for v in var)])
             case _:
                 raise NotImplementedError
+
+        assert isinstance(var, SupportsString)
 
         return TupleExprList(
             [
@@ -791,25 +800,26 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     @classmethod
     def convolution(
         cls,
-        var: str | ExprVars,
-        matrix: Iterable[SupportsFloat] | Iterable[Iterable[SupportsFloat]],
-        bias: float | None = None,
-        divisor: float | bool = True,
+        var: SupportsString | Collection[SupportsString],
+        matrix: Iterable[SupportsSumNoDefaultT] | Iterable[Iterable[SupportsSumNoDefaultT]],
+        bias: SupportsString | None = None,
+        divisor: SupportsString | bool = True,
         saturate: bool = True,
-        mode: ConvMode = ConvMode.HV,
-        premultiply: float | int | None = None,
-        multiply: float | int | None = None,
+        mode: ConvMode = ConvMode.SQUARE,
+        premultiply: SupportsString | None = None,
+        multiply: SupportsString | None = None,
         clamp: bool = False,
     ) -> TupleExprList:
         """
         Builds an expression that performs a weighted convolution-like operation.
 
         Args:
-            var: The expression variable or `ExprVars` used as the central value(s).
+            var: The variable used as the central value
+                or elements proportional to the radius if mode is `Literal[ConvMode.TEMPORAL]`.
             matrix: A flat or 2D iterable representing the convolution weights.
             bias: A constant value to add to the result after convolution (default: None).
-            divisor: If True, normalizes by the sum of weights; if float, divides by this value;
-                if False, skips division.
+            divisor: If True, normalizes by the sum of weights; if False, skips division;
+                Otherwise, divides by this value.
             saturate: If False, applies `abs()` to avoid negatives.
             mode: The convolution shape.
             premultiply: Optional scalar to multiply the result before normalization.
@@ -822,7 +832,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         Raises:
             CustomValueError: If matrix length is invalid or doesn't match the mode.
         """
-        convolution = list[float](flatten(matrix))
+        convolution = list[SupportsSumNoDefaultT](flatten(matrix))
 
         if not (conv_len := len(convolution)) % 2:
             raise CustomValueError("Convolution length must be odd!", cls.convolution, matrix)
@@ -858,11 +868,10 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
                 out.append(premultiply, cls.MUL)
 
             if divisor is not False:
-                if divisor is True:
-                    divisor = sum(map(float, convolution))
+                div = sum(convolution) if divisor is True else divisor
 
-                if divisor not in {0, 1}:
-                    out.append(divisor, cls.DIV)
+                if div not in {0, 1}:
+                    out.append(str(div), cls.DIV)
 
             if bias is not None:
                 out.append(bias, cls.ADD)
