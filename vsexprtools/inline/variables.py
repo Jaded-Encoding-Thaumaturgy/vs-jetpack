@@ -298,7 +298,7 @@ class ClipVar(ExprVar):
     char: str
     """A short symbolic name representing this clip in the RPN expression."""
 
-    clip: vs.VideoNode
+    node: vs.VideoNode
     """The actual VapourSynth VideoNode."""
 
     props: ClipPropsVar
