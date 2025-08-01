@@ -88,13 +88,8 @@ def inline_expr(
 
 
         with inline_expr(spawn_random(20)) as ie:
-            sum_clips = ie.clips[0]
-
-            for i in range(1, len(ie.clips)):
-                sum_clips = sum_clips + ie.clips[i]
-
-            average = sum_clips / len(ie.clips)
-            ie.out = average  # -> "x y + z + a + b + c + d + e + f + g + h + i + j + k + l + m + n + o + p + q + 20 /"
+            ie.out = sum(ie.clips) / len(ie.clips)
+            # -> "0 x + y + z + a + b + c + d + e + f + g + h + i + j + k + l + m + n + o + p + q + 20 /"
 
         result = ie.clip
         ```
@@ -102,6 +97,15 @@ def inline_expr(
     - Example (complex): Unsharp mask implemented in [inline_expr][vsexprtools.inline_expr].
       Extended with configurable anti-ringing and anti-aliasing, and frequency-based limiting.
         ```py
+        import functools
+        import itertools
+        from dataclasses import dataclass
+
+        from vsexprtools import inline_expr
+        from vsmasktools import Sobel
+        from vstools import ConvMode, vs
+
+
         @dataclass
         class LowFreqSettings:
             freq_limit: float = 0.1
@@ -119,8 +123,7 @@ def inline_expr(
                 x = ie.clips[0]
 
                 # Calculate blur for sharpening base
-                blur = x[-1, -1] + x[-1, 0] + x[-1, 1] + x[0, -1] + x[0, 0] + x[0, 1] + x[1, -1] + x[1, 0] + x[1, 1]
-                blur = blur / 9
+                blur = ie.op.convolution(x, [1] * 9)
 
                 # Calculate sharpening amount
                 sharp_diff = (x - blur) * strength
@@ -129,14 +132,15 @@ def inline_expr(
                 # Apply low-frequency only processing if parameter > 0
                 if low_freq.freq_limit > 0:
                     # Calculate high-frequency component by comparing local variance to a larger area
-                    wider_blur = (
-                        blur + x[-2, -2] + x[-2, 0] + x[-2, 2] + x[0, -2] + x[0, 2] + x[2, -2] + x[2, 0] + x[2, 2]
-                    ) / 9
-                    high_freq_indicator = ie.op.abs(blur - wider_blur)
+                    wider_blur = sum(
+                        (x[i, j] for i, j in itertools.product([-2, 0, 2], repeat=2) if (i, j) != (0, 0)), blur
+                    )
+                    wider_blur = ie.op.as_var(wider_blur) / 9
+                    high_freq_indicator = abs(blur - wider_blur)
 
                     # Calculate texture complexity (higher in detailed areas,
                     # lower in flat areas)
-                    texture_complexity = ie.op.max(ie.op.abs(x - blur), ie.op.abs(blur - wider_blur))
+                    texture_complexity = ie.op.max(abs(x - blur), abs(blur - wider_blur))
 
                     # Reduce sharpening in areas with high frequency content
                     # but low texture complexity
@@ -150,59 +154,36 @@ def inline_expr(
                     effective_sharp_diff = effective_sharp_diff * low_freq_factor
 
                 # Get horizontal neighbors from the original clip
-                n1, n2, n3 = x[-1, -1], x[-1, 0], x[-1, 1]
-                n4, n5 = x[0, -1], x[0, 1]
-                n6, n7, n8 = x[1, -1], x[1, 0], x[1, 1]
+                neighbors = [ie.op.as_var(x) for x in ie.op.matrix(x, 1, ConvMode.SQUARE, [(0, 0)])]
 
-                # Calculate minimum through pairwise comparisons
-                min1 = ie.op.min(n1, n2)
-                min2 = ie.op.min(min1, n3)
-                min3 = ie.op.min(min2, n4)
-                min4 = ie.op.min(min3, n5)
-                min5 = ie.op.min(min4, n6)
-                min6 = ie.op.min(min5, n7)
-                local_min = ie.op.as_var(ie.op.min(min6, n8))
+                # Calculate minimum
+                local_min = functools.reduce(ie.op.min, neighbors)
 
-                # Calculate maximum through pairwise comparisons
-                max1 = ie.op.max(n1, n2)
-                max2 = ie.op.max(max1, n3)
-                max3 = ie.op.max(max2, n4)
-                max4 = ie.op.max(max3, n5)
-                max5 = ie.op.max(max4, n6)
-                max6 = ie.op.max(max5, n7)
-                local_max = ie.op.as_var(ie.op.max(max6, n8))
+                # Calculate maximum
+                local_max = functools.reduce(ie.op.max, neighbors)
 
                 # Only calculate adaptive limiting if limit > 0
                 if limit > 0:
                     # Calculate local variance to detect edges (high variance = potential aliasing)
-                    variance = (
-                        (n1 - x) ** 2
-                        + (n2 - x) ** 2
-                        + (n3 - x) ** 2
-                        + (n4 - x) ** 2
-                        + (n5 - x) ** 2
-                        + (n6 - x) ** 2
-                        + (n7 - x) ** 2
-                        + (n8 - x) ** 2
-                    )
-                    variance = variance / 8
+                    variance = sum(((n - x) ** 2 for n in neighbors)) / 8
 
                     # Calculate edge detection using Sobel-like operators
-                    h_edge = ie.op.ABS(n1 + 2 * n2 + n3 - n6 - 2 * n7 - n8)
-                    v_edge = ie.op.ABS(n1 + 2 * n4 + n6 - n3 - 2 * n5 - n8)
-                    edge_strength = ie.op.SQRT(h_edge**2 + v_edge**2)
+                    h_conv, v_conv = Sobel.matrices
+                    h_edge = ie.op.convolution(x, h_conv, divisor=False, saturate=False)
+                    v_edge = ie.op.convolution(x, v_conv, divisor=False, saturate=False)
+                    edge_strength = ie.op.sqrt(h_edge**2 + v_edge**2)
 
                     # Adaptive sharpening strength based on edge detection and variance
                     # Reduce sharpening in high-variance areas to prevent aliasing
-                    edge_factor = 1.0 - ie.op.MIN(edge_strength * 0.01, limit)
-                    var_factor = 1.0 - ie.op.MIN(variance * 0.005, limit)
+                    edge_factor = 1.0 - ie.op.min(edge_strength * 0.01, limit)
+                    var_factor = 1.0 - ie.op.min(variance * 0.005, limit)
                     adaptive_strength = edge_factor * var_factor
 
                     # Apply adaptive sharpening to the effective_sharp_diff
                     effective_sharp_diff = effective_sharp_diff * adaptive_strength
 
                     # Clamp the sharp_diff to the local min and max to prevent ringing
-                    final_output = ie.op.CLAMP(x + effective_sharp_diff, local_min, local_max)
+                    final_output = ie.op.clamp(x + effective_sharp_diff, local_min, local_max)
                 else:
                     # If limit is 0 or less, use the effective_sharp_diff (which might be basic or low-freq adjusted)
                     final_output = x + effective_sharp_diff
