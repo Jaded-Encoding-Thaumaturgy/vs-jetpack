@@ -233,3 +233,4 @@ class Operators(Singleton):
 
 
 op = Operators()
+"""The Operators singleton instance"""
