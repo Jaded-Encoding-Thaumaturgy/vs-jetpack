@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Iterable, NoReturn, Protocol, SupportsIndex, TypeAlias
 
-from jetpytools import to_arr
+from jetpytools import CustomRuntimeError, to_arr
+from typing_extensions import Self
 
 from vstools import get_depth, get_lowest_value, get_neutral_value, get_peak_value, get_plane_sizes, vs
 
@@ -218,7 +219,9 @@ class LiteralVar(ExprVar):
 
 
 class ComputedVar(ExprVar):
-    """Represents a fully built RPN expression as a sequence of operations."""
+    """
+    Represents a fully built RPN expression as a sequence of operations with per-plane operations support.
+    """
 
     def __init__(self, operations: ExprVarLike | Iterable[ExprVarLike]) -> None:
         """
@@ -227,22 +230,179 @@ class ComputedVar(ExprVar):
         Args:
             operations: An iterable of operators and/or expression variables that define the computation.
         """
-        self.operations = tuple(LiteralVar(x) if not isinstance(x, ExprVar) else x for x in to_arr(operations))  # type: ignore[arg-type]
+        self._operations_per_plane: list[list[ExprVar]] = [
+            [LiteralVar(x) if not isinstance(x, ExprVar) else x for x in to_arr(operations)]  # type: ignore[arg-type]
+        ] * 3
 
-    def to_str(self, **kwargs: Any) -> str:
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the expression in RPN format for the first plane.
+
+        Raises:
+            CustomRuntimeError: If expressions differ between planes.
+        """
+        self._check_expr_per_planes()
+
+        return " ".join(str(x) for x in self._operations_per_plane[0])
+
+    def __getitem__(self, index: SupportsIndex) -> Self:
+        """
+        Returns a ComputedVar for a specific plane.
+
+        Args:
+            index: Plane index (0 for Y/R, 1 for U/G, 2 for V/B).
+
+        Returns:
+            A ComputedVar corresponding to the selected plane.
+        """
+        return self.__class__(self._operations_per_plane[index])
+
+    def __setitem__(self, index: SupportsIndex, value: ExprVarLike) -> None:
+        """
+        Sets the expression for a specific plane.
+
+        Args:
+            index: Plane index.
+            value: Expression to assign to the plane.
+        """
+        self._operations_per_plane[index] = ComputedVar(value)._operations_per_plane[index]
+
+    def __delitem__(self, index: SupportsIndex) -> None:
+        """Deletes the expression for a specific plane by resetting it to a single variable."""
+        self._operations_per_plane[index] = [op.as_var()]
+
+    @property
+    def y(self) -> Self:
+        """Returns the Y (luma) plane expression."""
+        return self[0]
+
+    @y.setter
+    def y(self, value: ExprVarLike) -> None:
+        """Sets the Y (luma) plane expression."""
+        self[0] = value
+
+    @y.deleter
+    def y(self) -> None:
+        """Deletes the Y (luma) plane expression."""
+        del self[0]
+
+    @property
+    def u(self) -> Self:
+        """Returns the U (chroma) plane expression."""
+        return self[1]
+
+    @u.setter
+    def u(self, value: ExprVarLike) -> None:
+        """Sets the U (chroma) plane expression."""
+        self[1] = value
+
+    @u.deleter
+    def u(self) -> None:
+        """Deletes the U (chroma) plane expression."""
+        del self[1]
+
+    @property
+    def v(self) -> Self:
+        """Returns the V (chroma) plane expression."""
+        return self[2]
+
+    @v.setter
+    def v(self, value: ExprVarLike) -> None:
+        """Sets the V (chroma) plane expression."""
+        self[2] = value
+
+    @v.deleter
+    def v(self) -> None:
+        """Deletes the V (chroma) plane expression."""
+        del self[2]
+
+    @property
+    def r(self) -> Self:
+        """Returns the R (red) plane expression."""
+        return self[0]
+
+    @r.setter
+    def r(self, value: ExprVarLike) -> None:
+        """Sets the R (red) plane expression."""
+        self[0] = value
+
+    @r.deleter
+    def r(self) -> None:
+        """Deletes the R (red) plane expression."""
+        del self[0]
+
+    @property
+    def g(self) -> Self:
+        """Returns the G (green) plane expression."""
+        return self[1]
+
+    @g.setter
+    def g(self, value: ExprVarLike) -> None:
+        """Sets the G (green) plane expression."""
+        self[1] = value
+
+    @g.deleter
+    def g(self) -> None:
+        """Deletes the G (green) plane expression."""
+        del self[1]
+
+    @property
+    def b(self) -> Self:
+        """Returns the B (blue) plane expression."""
+        return self[2]
+
+    @b.setter
+    def b(self, value: ExprVarLike) -> None:
+        """Sets the B (blue) plane expression."""
+        self[2] = value
+
+    @b.deleter
+    def b(self) -> None:
+        """Deletes the B (blue) plane expression."""
+        del self[2]
+
+    def _has_expr_per_planes(self) -> bool:
+        return len({tuple(str(op) for op in opp) for opp in self._operations_per_plane}) > 1
+
+    def _check_expr_per_planes(self) -> None:
+        if self._has_expr_per_planes():
+            raise CustomRuntimeError(
+                "Cannot generate a unified string representation: the operations differ between planes. "
+                "Use `to_str(plane=...)` or `to_str_per_plane()` instead"
+            )
+
+    def to_str_per_plane(self, num_planes: int = 3) -> list[str]:
+        """
+        Returns string representations of the expression in RPN format for each plane.
+
+        Args:
+            num_planes: Optional number of planes to include (defaults to 3).
+
+        Returns:
+            A list of strings, one for each plane.
+        """
+        return [p.to_str(plane=i) for x, i in zip(self._operations_per_plane, range(num_planes)) for p in x]
+
+    def to_str(self, *, plane: int | None = None, **kwargs: Any) -> str:
         """
         Returns a string representation of the expression in RPN format.
 
         Args:
-            **kwargs: Additional keywords arguments.
+            plane: Optional plane index to select which expression to stringify. If not specified,
+                all planes must have identical expressions.
+            **kwargs: Additional keyword arguments passed to each expression's to_str method.
 
         Returns:
             String representation of the expression in RPN format.
-        """
-        return " ".join(x.to_str(**kwargs) for x in self.operations)
 
-    def __str__(self) -> str:
-        return " ".join(str(x) for x in self.operations)
+        Raises:
+            CustomRuntimeError: If plane is None and expressions differ across planes.
+        """
+        if plane is None:
+            self._check_expr_per_planes()
+            plane = 0
+
+        return " ".join(x.to_str(plane=plane, **kwargs) for x in self._operations_per_plane[plane])
 
 
 class Resolver(Protocol):
