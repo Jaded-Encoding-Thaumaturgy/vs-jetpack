@@ -310,7 +310,7 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
 
     def _compute_expr(self, **kwargs: Any) -> None:
         self._final_clip = expr_func(
-            self._nodes, [self._final_expr_node.to_str(plane=p) for p in range(self._format.num_planes)], **kwargs
+            self._nodes, self._final_expr_node.to_str_per_plane(self._format.num_planes), **kwargs
         )
 
     @cached_property
