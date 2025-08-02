@@ -39,9 +39,25 @@ class Operators(Singleton):
         """Sine (radians) of x."""
         return self.as_var([x, ExprOp.SIN])
 
+    def asin(self, x: ExprVarLike) -> ComputedVar:
+        """Arcsine (inverse sine) of x."""
+        return self.as_var([x, ExprOp.ASIN])
+
     def cos(self, x: ExprVarLike) -> ComputedVar:
         """Cosine (radians) of x."""
         return self.as_var([x, ExprOp.COS])
+
+    def acos(self, x: ExprVarLike) -> ComputedVar:
+        """Arccosine (inverse cosine) of x."""
+        return self.as_var([x, ExprOp.ACOS])
+
+    def tan(self, x: ExprVarLike) -> ComputedVar:
+        """Tangent (radians) of x."""
+        return self.as_var([x, ExprOp.TAN])
+
+    def atan(self, x: ExprVarLike) -> ComputedVar:
+        """Arctangent of x"""
+        return self.as_var([x, ExprOp.ATAN])
 
     def abs(self, x: ExprVarLike) -> ComputedVar:
         """Absolute value of x."""
@@ -63,7 +79,21 @@ class Operators(Singleton):
         """Round down x to nearest integer."""
         return self.as_var([x, ExprOp.FLOOR])
 
-    # DROP / DROPN / SORTN / VAR_STORE / VAR_PUSH ??
+    def ceil(self, x: ExprVarLike) -> ComputedVar:
+        """Round up x to nearest integer."""
+        return self.as_var([x, ExprOp.CEIL])
+
+    def bitnot(self, x: ExprVarLike) -> ComputedVar:
+        """Performs a bitwise NOT."""
+        return self.as_var([x, ExprOp.BITNOT])
+
+    def sgn(self, x: ExprVarLike) -> ComputedVar:
+        """Sign function (-1, 0, or 1) of x."""
+        return self.as_var([x, ExprOp.SGN])
+
+    def neg(self, x: ExprVarLike) -> ComputedVar:
+        """Negation (multiply by -1) of x."""
+        return self.as_var([x, ExprOp.NEG])
 
     # 2 Arguments
     def max(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
@@ -94,14 +124,6 @@ class Operators(Singleton):
         """Performs x to the power of y (x ** y)."""
         return self.as_var([x, y, ExprOp.POW])
 
-    def mod(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
-        """Performs x % y."""
-        return self.as_var([x, y, ExprOp.MOD])
-
-    def xor(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
-        """Performs a logical XOR."""
-        return self.as_var([x, y, ExprOp.XOR])
-
     def gt(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
         """Performs x > y."""
         return self.as_var([x, y, ExprOp.GT])
@@ -130,6 +152,26 @@ class Operators(Singleton):
         """Performs a logical OR."""
         return self.as_var([x, y, ExprOp.OR])
 
+    def xor(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
+        """Performs a logical XOR."""
+        return self.as_var([x, y, ExprOp.XOR])
+
+    def mod(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
+        """Performs x % y."""
+        return self.as_var([x, y, ExprOp.MOD])
+
+    def bitand(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
+        """Performs a bitwise AND."""
+        return self.as_var([x, y, ExprOp.BITAND])
+
+    def bitor(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
+        """Performs a bitwise OR."""
+        return self.as_var([x, y, ExprOp.BITOR])
+
+    def bitxor(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
+        """Performs a bitwise XOR."""
+        return self.as_var([x, y, ExprOp.BITXOR])
+
     # 3 Arguments
     def tern(self, cond: ExprVarLike, if_true: ExprVarLike, if_false: ExprVarLike) -> ComputedVar:
         """Ternary operator (if cond then if_true else if_false)."""
@@ -141,19 +183,28 @@ class Operators(Singleton):
         """Clamps a value between a min and a max."""
         return self.as_var([x, min, max, ExprOp.CLAMP])
 
+    def lerp(self, x: ExprVarLike, y: ExprVarLike, t: ExprVarLike) -> ComputedVar:
+        """Performs a linear interpolation of t between x and y."""
+        return self.as_var([x, y, t, ExprOp.LERP])
+
+    # inf
+    def polyval(self, x: ExprVarLike, *coeffs: ExprVarLike) -> ComputedVar:
+        """Evaluates a polynomial at x using Horner's method."""
+        return self.as_var(ExprOp.polyval(x, *coeffs).to_str())
+
     # Special Operators
-    def rel_pix(self, char: str, x: int, y: int) -> ComputedVar:
+    def rel_pix(self, char: SupportsString, x: int, y: int) -> ComputedVar:
         """Relative pixel access."""
         return self.as_var(ExprOp.REL_PIX.format(char=char, x=x, y=y))
 
-    def abs_pix(self, char: str, x: int, y: int) -> ComputedVar:
+    def abs_pix(self, char: SupportsString, x: int, y: int) -> ComputedVar:
         """Absolute pixel access."""
         return self.as_var(ExprOp.ABS_PIX.format(char=char, x=x, y=y))
 
-    # Helper Functions
     def __call__(self) -> Self:
         return self
 
+    # Helper Functions
     def matrix(
         self,
         char: SupportsString | Collection[SupportsString],
