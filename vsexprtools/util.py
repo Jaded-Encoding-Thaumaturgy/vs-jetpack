@@ -21,7 +21,6 @@ from vstools import (
     MissingT,
     PlanesT,
     VideoFormatT,
-    classproperty,
     get_video_format,
     normalize_planes,
     normalize_seq,
@@ -227,7 +226,6 @@ class ExprVars(Iterable[str]):
         """
         return " ".join(iter(self))
 
-    @classproperty
     @classmethod
     def cycle(cls) -> Iterator[str]:
         """
