@@ -6,11 +6,11 @@ from typing import Any, Iterable, NoReturn, SupportsIndex, TypeAlias
 from jetpytools import CustomRuntimeError, to_arr
 from typing_extensions import Self
 
-from vstools import get_depth, get_lowest_value, get_neutral_value, get_peak_value, get_plane_sizes, vs
+from vstools import vs
 
 from .operators import op
 
-__all__ = ["ClipPropsVar", "ClipVar", "ComputedVar", "ExprVar", "ExprVarLike", "LiteralVar"]
+__all__ = ["ClipVar", "ComputedVar", "ExprVar", "ExprVarLike", "LiteralVar"]
 
 
 class ExprVar(ABC):
@@ -404,26 +404,6 @@ class ComputedVar(ExprVar):
         return " ".join(x.to_str(plane=plane, **kwargs) for x in self._operations_per_plane[plane])
 
 
-class ClipPropsVar:
-    """Helper class exposing common frame properties of a ClipVar."""
-
-    # Some commonly used props
-    PlaneStatsMin: ComputedVar
-    PlaneStatsMax: ComputedVar
-    PlaneStatsAverage: ComputedVar
-
-    def __init__(self, clip_var: ClipVar) -> None:
-        self.clip_var = clip_var
-
-    def __getitem__(self, key: str) -> ComputedVar:
-        return getattr(self, key)
-
-    def __getattribute__(self, name: str) -> ComputedVar:
-        """Accesses a computed property using dot notation from the clip symbol."""
-
-        return ComputedVar(f"{super().__getattribute__('clip_var').char}.{name}")
-
-
 class ClipVar(ExprVar):
     """
     Expression variable that wraps a VideoNode and provides symbolic and numeric access.
@@ -435,84 +415,29 @@ class ClipVar(ExprVar):
     node: vs.VideoNode
     """The actual VapourSynth VideoNode."""
 
-    props: ClipPropsVar
-    """A helper to access frame properties."""
+    # Some commonly used props
+    PlaneStatsMin: ComputedVar
+    PlaneStatsMax: ComputedVar
+    PlaneStatsAverage: ComputedVar
 
     def __init__(self, char: str, node: vs.VideoNode) -> None:
+        """
+        Initializes a new ClipVar instance.
+
+        Args:
+            char: A short symbolic name representing this clip in the RPN expression.
+            node: The actual VapourSynth VideoNode.
+        """
         self.char = char
         self.node = node
-        self.props = ClipPropsVar(self)
 
     def __str__(self) -> str:
         return self.char
 
-    # Pixel Access
-    def __getitem__(self, index: tuple[int, int]) -> ComputedVar:
-        """Access a pixel at a specific coordinate using relative addressing."""
+    def __getitem__(self, index: tuple[int, int] | str) -> ComputedVar:
+        if isinstance(index, str):
+            return getattr(self, index)
         return op.rel_pix(self.char, *index)
 
-    # Helper properties
-    @property
-    def peak(self) -> LiteralVar:
-        """Returns the peak value for the clip's bit depth."""
-        return LiteralVar(get_peak_value(self.node))
-
-    @property
-    def peak_chroma(self) -> LiteralVar:
-        """Returns the peak chroma value for the clip's bit depth."""
-        return LiteralVar(get_peak_value(self.node, True))
-
-    @property
-    def neutral(self) -> LiteralVar:
-        """Returns the neutral value for the clip."""
-        return LiteralVar(get_neutral_value(self.node))
-
-    @property
-    def neutral_chroma(self) -> LiteralVar:
-        """Returns the neutral chroma value."""
-        return LiteralVar(get_neutral_value(self.node))
-
-    @property
-    def lowest(self) -> LiteralVar:
-        """Returns the lowest possible pixel value"""
-        return LiteralVar(get_lowest_value(self.node))
-
-    @property
-    def lowest_chroma(self) -> LiteralVar:
-        """Returns the lowest chroma value."""
-        return LiteralVar(get_lowest_value(self.node, True))
-
-    @property
-    def width(self) -> LiteralVar:
-        """Returns a symbolic 'width' identifier."""
-        return LiteralVar("width")
-
-    @property
-    def width_luma(self) -> LiteralVar:
-        """Returns the actual width of the luma plane."""
-        return LiteralVar(self.node.width)
-
-    @property
-    def width_chroma(self) -> LiteralVar:
-        """Returns the width of the chroma plane."""
-        return LiteralVar(get_plane_sizes(self.node, 1)[0])
-
-    @property
-    def height(self) -> LiteralVar:
-        """Returns a symbolic 'height' identifier."""
-        return LiteralVar("height")
-
-    @property
-    def height_luma(self) -> LiteralVar:
-        """Returns the actual height of the luma plane."""
-        return LiteralVar(self.node.height)
-
-    @property
-    def height_chroma(self) -> LiteralVar:
-        """Returns the height of the chroma plane."""
-        return LiteralVar(get_plane_sizes(self.node, 1)[1])
-
-    @property
-    def depth(self) -> LiteralVar:
-        """Returns the bit depth of the clip."""
-        return LiteralVar(get_depth(self.node))
+    def __getattr__(self, name: str) -> ComputedVar:
+        return ComputedVar(f"{self.char}.{name}")

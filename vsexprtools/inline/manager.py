@@ -206,12 +206,9 @@ def inline_expr(
             - The [clips][vsexprtools.inline.manager.InlineExprWrapper.clips] attribute is a sequence
               of [ClipVar][vsexprtools.inline.variables.ClipVar] objects, one for each input clip.
               These objects overload standard Python operators (`+`, `-`, `*`, `/`, `**`, `==`, `<`, `>` etc.)
-              to build the expression. They also have helpful properties:
-
-                 * `.peak`, `.neutral`, `.lowest`: Bitdepth-aware values.
-                 * `.width`, `.height`, `.depth`: Clip properties.
-                 * `[x, y]`: Relative pixel access (e.g., `clip[1, 0]` for the pixel to the right).
-                 * `props`: Access to frame properties (e.g. `clip.props.PlaneStatsMax`).
+              to build the expression. They also provide relative pixel access through the `__getitem__` dunder method
+              (e.g., `x[1, 0]` for the pixel to the right) and arbitrary access to frame properties
+              (e.g. `x.PlaneStatsMax` or `x["PlaneStatsMax"]`).
 
             - The [op][vsexprtools.inline.manager.InlineExprWrapper.op] attribute is an object providing access
               to all `Expr` operators such as `op.CLAMP(value, min, max)`, `op.SQRT(value)`,
@@ -324,14 +321,10 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
         Sequence of [ClipVar][vsexprtools.inline.variables.ClipVar] objects, one for each input clip.
 
         These objects overload standard Python operators (`+`, `-`, `*`, `/`, `**`, `==`, `<`, `>` etc.)
-        to build the expression. They also have helpful properties:
-
-        - `.peak`, `.neutral`, `.lowest`: Bitdepth-aware values.
-        - `.width`, `.height`, `.depth`: Clip properties.
-        - `[x, y]`: Relative pixel access (e.g., `clip[1, 0]` for the pixel to the right).
-        - `props`: Access to frame properties (e.g. `clip.props.PlaneStatsMax`).
-
-        See [ClipVar][vsexprtools.inline.variables.ClipVar] for all the possible properties.
+        to build the expression.
+        They also provide relative pixel access through the `__getitem__` dunder method
+        (e.g., `x[1, 0]` for the pixel to the right)
+        and arbitrary access to frame properties (e.g. `x.PlaneStatsMax` or `x["PlaneStatsMax"]`).
 
         Returns:
             Sequence of [ClipVar][vsexprtools.inline.variables.ClipVar] objects.
