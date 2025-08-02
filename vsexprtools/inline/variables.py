@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Iterable, NoReturn, Protocol, SupportsIndex, TypeAlias
+from typing import Any, Iterable, NoReturn, SupportsIndex, TypeAlias
 
 from jetpytools import CustomRuntimeError, to_arr
 from typing_extensions import Self
@@ -11,7 +10,7 @@ from vstools import get_depth, get_lowest_value, get_neutral_value, get_peak_val
 
 from .operators import op
 
-__all__ = ["ClipPropsVar", "ClipVar", "ComplexVar", "ComputedVar", "ExprVar", "ExprVarLike", "LiteralVar"]
+__all__ = ["ClipPropsVar", "ClipVar", "ComputedVar", "ExprVar", "ExprVarLike", "LiteralVar"]
 
 
 class ExprVar(ABC):
@@ -403,37 +402,6 @@ class ComputedVar(ExprVar):
             plane = 0
 
         return " ".join(x.to_str(plane=plane, **kwargs) for x in self._operations_per_plane[plane])
-
-
-class Resolver(Protocol):
-    """Protocol for deferred resolution of expression values."""
-
-    def __call__(self, *, plane: int = ..., **kwargs: Any) -> int | float | str | ExprVar: ...
-
-
-@dataclass
-class ComplexVar(LiteralVar):
-    """
-    A literal variable that resolves dynamically using a custom function.
-    """
-
-    value: int | float | str
-    """The symbolic value used in the RPN expression."""
-    resolve: Resolver
-    """A callable used to compute the actual value during evaluation."""
-
-    def to_str(self, *, plane: int = 0, **kwargs: Any) -> str:
-        """
-        Returns C
-
-        Args:
-            plane: Plane index.
-            **kwargs: Additional keywords arguments.
-
-        Returns:
-            The resolved string value, optionally using a specified plane.
-        """
-        return str(self.resolve(plane=plane, **kwargs))
 
 
 class ClipPropsVar:
