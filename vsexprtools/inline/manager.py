@@ -14,7 +14,7 @@ from typing_extensions import Self
 
 from vstools import HoldsVideoFormatT, VideoFormatT, get_video_format, vs, vs_object
 
-from ..funcs import expr_func
+from ..funcs import norm_expr
 from ..util import ExprVars
 from .operators import Operators
 from .variables import ClipVar, ComputedVar, ExprVarLike
@@ -198,7 +198,7 @@ def inline_expr(
         clips: Input clip(s).
         format: format: Output format, defaults to the first clip format.
         enable_polyfills: Enable monkey-patching built-in methods. Maybe more than that, nobody knows.
-        **kwargs: Additional keyword arguments passed to [expr_func][vsexprtools.expr_func].
+        **kwargs: Additional keyword arguments passed to [norm_expr][vsexprtools.norm_expr].
 
     Yields:
         InlineExprWrapper object containing clip variables and operators.
@@ -235,6 +235,8 @@ def inline_expr(
     finally:
         if enable_polyfills:
             disable_poly()  # pyright: ignore[reportPossiblyUnboundVariable]
+
+    kwargs.setdefault("func", inline_expr)
 
     ie._compute_expr(**kwargs)
 
@@ -309,8 +311,11 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
         return next(self)
 
     def _compute_expr(self, **kwargs: Any) -> None:
-        self._final_clip = expr_func(
-            self._nodes, self._final_expr_node.to_str_per_plane(self._format.num_planes), **kwargs
+        self._final_clip = norm_expr(
+            self._nodes,
+            tuple(self._final_expr_node.to_str_per_plane(self._format.num_planes)),
+            format=self._format,
+            **kwargs,
         )
 
     @cached_property
