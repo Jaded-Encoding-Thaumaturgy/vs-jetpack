@@ -61,8 +61,8 @@ def inline_expr(
         clip_b = core.std.BlankClip(format=vs.YUV420P8, color=[0, 255, 0])
 
         with inline_expr([clip_a, clip_b]) as ie:
-            # ie.clips[0] is clip_a, ie.clips[1] is clip_b
-            average = (ie.clips[0] + ie.clips[1]) / 2
+            # ie.vars[0] is clip_a, ie.vars[1] is clip_b
+            average = (ie.vars[0] + ie.vars[1]) / 2
             ie.out = average
 
         result = ie.clip
@@ -88,7 +88,7 @@ def inline_expr(
 
 
         with inline_expr(spawn_random(20)) as ie:
-            ie.out = sum(ie.clips) / len(ie.clips)
+            ie.out = sum(ie.vars) / len(ie.vars)
             # -> "0 x + y + z + a + b + c + d + e + f + g + h + i + j + k + l + m + n + o + p + q + 20 /"
 
         result = ie.clip
@@ -120,7 +120,7 @@ def inline_expr(
             low_freq: LowFreqSettings = LowFreqSettings(freq_limit=0.1),
         ) -> vs.VideoNode:
             with inline_expr(clip) as ie:
-                x = ie.clips[0]
+                x = ie.vars[0]
 
                 # Calculate blur for sharpening base
                 blur = ie.op.convolution(x, [1] * 9)
@@ -203,7 +203,7 @@ def inline_expr(
     Yields:
         InlineExprWrapper object containing clip variables and operators.
 
-            - The [clips][vsexprtools.inline.manager.InlineExprWrapper.clips] attribute is a sequence
+            - The [vars][vsexprtools.inline.manager.InlineExprWrapper.vars] attribute is a sequence
               of [ClipVar][vsexprtools.inline.variables.ClipVar] objects, one for each input clip.
               These objects overload standard Python operators (`+`, `-`, `*`, `/`, `**`, `==`, `<`, `>` etc.)
               to build the expression. They also provide relative pixel access through the `__getitem__` dunder method
@@ -290,8 +290,8 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
         """
         self._nodes = clips
         self._format = get_video_format(format if format is not None else clips[0])
-        self._final_expr_node = self.clips[0].as_var()
-        self._inner = (self.clips, self.op, cast(Self, self))
+        self._final_expr_node = self.op.as_var("")
+        self._inner = (self.vars, self.op, cast(Self, self))
         self._final_clip: vs.VideoNode | None = None
 
     @overload
@@ -316,7 +316,7 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
         )
 
     @cached_property
-    def clips(self) -> Sequence[ClipVar]:
+    def vars(self) -> Sequence[ClipVar]:
         """
         Sequence of [ClipVar][vsexprtools.inline.variables.ClipVar] objects, one for each input clip.
 
