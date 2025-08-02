@@ -451,6 +451,15 @@ class ClipVar(ExprVar, vs_object):
         return self.char
 
     def __getitem__(self, index: tuple[int, int] | str) -> ComputedVar:
+        """
+        Returns a ComputedVar for a relative pixel access or for a frame property.
+
+        Args:
+            index: Tuple of relative pixel coordinates or the name of the frame property.
+
+        Returns:
+            A ComputedVar representing the relative pixel coordinates or the frame property.
+        """
         if isinstance(index, str):
             return getattr(self, index)
         return op.rel_pix(self.char, *index)
