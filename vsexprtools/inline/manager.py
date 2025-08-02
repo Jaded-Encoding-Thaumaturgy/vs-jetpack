@@ -6,7 +6,7 @@ using standard Python syntax.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from functools import cached_property
+from functools import cache
 from typing import Any, Iterator, Sequence, SupportsIndex, cast, overload
 
 from jetpytools import CustomValueError, to_arr
@@ -315,7 +315,8 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
             **kwargs,
         )
 
-    @cached_property
+    @property
+    @cache
     def vars(self) -> Sequence[ClipVar]:
         """
         Sequence of [ClipVar][vsexprtools.inline.variables.ClipVar] objects, one for each input clip.
