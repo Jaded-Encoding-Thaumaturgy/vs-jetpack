@@ -211,8 +211,8 @@ def inline_expr(
               (e.g. `x.PlaneStatsMax` or `x["PlaneStatsMax"]`).
 
             - The [op][vsexprtools.inline.manager.InlineExprWrapper.op] attribute is an object providing access
-              to all `Expr` operators such as `op.CLAMP(value, min, max)`, `op.SQRT(value)`,
-              `op.TERN(condition, if_true, if_false)`, etc.
+              to all `Expr` operators such as `op.clamp(value, min, max)`, `op.sqrt(value)`,
+              `op.tern(condition, if_true, if_false)`, etc.
 
             You must assign the final [ComputedVar][vsexprtools.inline.variables.ComputedVar]
             (the result of your expression) to `ie.out`.
