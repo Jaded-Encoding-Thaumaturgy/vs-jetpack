@@ -6,7 +6,7 @@ from typing import Any, Iterable, NoReturn, SupportsIndex, TypeAlias
 from jetpytools import CustomRuntimeError, to_arr
 from typing_extensions import Self
 
-from vstools import vs
+from vstools import vs, vs_object
 
 from .operators import op
 
@@ -404,7 +404,7 @@ class ComputedVar(ExprVar):
         return " ".join(x.to_str(plane=plane, **kwargs) for x in self._operations_per_plane[plane])
 
 
-class ClipVar(ExprVar):
+class ClipVar(ExprVar, vs_object):
     """
     Expression variable that wraps a VideoNode and provides symbolic and numeric access.
     """
@@ -441,3 +441,6 @@ class ClipVar(ExprVar):
 
     def __getattr__(self, name: str) -> ComputedVar:
         return ComputedVar(f"{self.char}.{name}")
+
+    def __vs_del__(self, core_id: int) -> None:
+        del self.node
