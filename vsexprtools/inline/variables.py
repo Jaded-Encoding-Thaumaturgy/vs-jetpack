@@ -316,6 +316,22 @@ class ComputedVar(ExprVar):
         del self[2]
 
     @property
+    def uv(self) -> tuple[Self, Self]:
+        """Returns the U and V (chroma) planes expression."""
+        return self[1], self[2]
+
+    @uv.setter
+    def uv(self, value: ExprVarLike) -> None:
+        """Sets the U and V (chroma) planes expression."""
+        self[1], self[2] = value, value
+
+    @uv.deleter
+    def uv(self) -> None:
+        """Deletes the U and V (chroma) planes expression."""
+        del self[1]
+        del self[2]
+
+    @property
     def r(self) -> Self:
         """Returns the R (red) plane expression."""
         return self[0]
