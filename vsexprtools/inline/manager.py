@@ -255,7 +255,7 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
     Usage:
     ```py
     with inline_expr([clip_a, clip_b]) as ie:
-        avg = (ie.clips[0] + ie.clips[1]) / 2
+        avg = (ie.vars[0] + ie.vars[1]) / 2
         ie.out = avg
 
     result = ie.clip
@@ -264,12 +264,15 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
     Note:
         The `InlineExprWrapper` also behaves like a tuple containing:
 
-        - The clip variables (`clips`).
+        - The clip variables (`vars`).
         - Expression operator functions (`op`).
-        - The wrapper itself (`self`).
+        - The wrapper itself (`ie`).
 
         This allows unpacking like:
-            `clips, op, self = ie`
+        ```py
+        with inline_expr([clip_a, clip_b]) as (vars, op, ie):
+            ...
+        ```
     """
 
     op = Operators()
