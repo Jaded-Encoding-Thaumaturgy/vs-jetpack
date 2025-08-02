@@ -55,7 +55,7 @@ def awarpsharp(
     clip: vs.VideoNode,
     mask: EdgeDetectT | vs.VideoNode | None = None,
     thresh: int | float = 128,
-    blur: GenericVSFunction[vs.VideoNode] | Literal[False] = partial(box_blur, radius=2, passes=3),
+    blur: int | GenericVSFunction[vs.VideoNode] | Literal[False] = 3,
     depth: int | Sequence[int] | None = None,
     chroma: bool = False,
     planes: PlanesT = None,
@@ -69,7 +69,10 @@ def awarpsharp(
             original size, it must be top-left aligned.
         mask: Edge mask.
         thresh: No pixel in the edge mask will have a value greater than thresh. Decrease for weaker sharpening.
-        blur: Controls the blur filter used on the edge mask.
+        blur: Specifies the blur applied to the edge mask.
+               - If an `int`, it sets the number of passes for the default `box_blur` filter.
+               - If a callable, a custom blur function will be used instead.
+               - If `False`, no blur will be applied.
         depth: Controls how far to warp. Negative values warp in the other direction, i.e. will blur the image instead
             of sharpening.
         chroma: Controls the chroma handling method. False will use the edge mask from the luma to warp the chroma.
@@ -93,7 +96,10 @@ def awarpsharp(
             func.work_clip, clamp=(0, thresh), planes=mask_planes
         )
 
-    if blur:
+    if isinstance(blur, int):
+        if blur:
+            blur = partial(box_blur, radius=2, passes=blur, planes=planes)
+    else:
         mask = blur(mask, planes=mask_planes)
 
     if not chroma:

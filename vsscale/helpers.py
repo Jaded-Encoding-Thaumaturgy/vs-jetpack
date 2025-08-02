@@ -6,10 +6,12 @@ from math import ceil, floor
 from types import NoneType
 from typing import Any, Callable, NamedTuple, Self, TypeAlias, overload
 
-from vskernels import Scaler
-from vstools import KwargsT, Resolution, get_w, mod2, vs
+from jetpytools import FuncExceptT, mod_x
 
-__all__ = ["CropAbs", "CropRel", "ScalingArgs", "scale_var_clip"]
+from vskernels import Bilinear, Point, Scaler, ScalerLike
+from vstools import FunctionUtil, KwargsT, Resolution, VSFunctionNoArgs, get_w, mod2, vs
+
+__all__ = ["CropAbs", "CropRel", "ScalingArgs", "pre_ss", "scale_var_clip"]
 
 
 def scale_var_clip(
@@ -273,3 +275,56 @@ class ScalingArgs:
             cropped_src_left,
             mode,
         )
+
+
+def pre_ss(
+    clip: vs.VideoNode,
+    function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+    rfactor: float = 2.0,
+    supersampler: ScalerLike = Bilinear,
+    downscaler: ScalerLike = Point,
+    mod: int = 4,
+    func: FuncExceptT | None = None,
+    **kwargs: Any,
+) -> vs.VideoNode:
+    """
+    Supersamples the input clip, applies a given function to the higher-resolution version,
+    and then downscales it back to the original resolution.
+
+    Example usage:
+        ```py
+        from vsdehalo import fine_dehalo
+        from vsaa import NNEDI3
+
+        # Point downscale will undo the intrinsic shift of NNEDI3 on the luma plane.
+        processed = pre_ss(clip, lambda clip: fine_dehalo(clip, ...), supersampler=NNEDI3(noshift=(True, False)))
+        ```
+
+    Args:
+        clip: Source clip.
+        function: A function to apply on the supersampled clip. Must accept a `planes` argument.
+        rfactor: Scaling factor for supersampling. Defaults to 2.
+        supersampler: Scaler used to downscale the processed clip back to its original resolution.
+            Defaults to `Bilinear`.
+        downscaler: Downscaler used for undoing the upscaling done by the supersampler. Defaults to `Point`.
+        mod: Ensures the supersampled resolution is a multiple of this value. Defaults to 4.
+        func: An optional function to use for error handling.
+        **kwargs: Additional keyword arguments passed to the provided `function`.
+
+    Returns:
+        A clip with the given function applied at higher resolution, then downscaled back.
+    """
+    if rfactor == 1.0:
+        return function(clip, **kwargs)
+
+    func_util = FunctionUtil(clip, func or pre_ss)
+
+    ss = Scaler.ensure_obj(supersampler, func_util.func).scale(
+        clip, mod_x(func_util.work_clip.width * rfactor, mod), mod_x(func_util.work_clip.height * rfactor, mod)
+    )
+
+    processed = function(ss, **kwargs)
+
+    down = Scaler.ensure_obj(downscaler, func_util.func).scale(processed, clip.width, clip.height)
+
+    return func_util.return_clip(down)

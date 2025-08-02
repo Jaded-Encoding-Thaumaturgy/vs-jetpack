@@ -327,36 +327,86 @@ def freeze_replace_squaremask(
 
 
 @overload
-def normalize_mask(mask: vs.VideoNode, clip: vs.VideoNode) -> ConstantFormatVideoNode: ...
-
-
-@overload
 def normalize_mask(
-    mask: Callable[[vs.VideoNode, vs.VideoNode], vs.VideoNode], clip: vs.VideoNode, ref: vs.VideoNode
+    mask: vs.VideoNode, clip: vs.VideoNode, *, func: FuncExceptT | None = None
 ) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def normalize_mask(
-    mask: EdgeDetectT | RidgeDetectT, clip: vs.VideoNode, *, ridge: bool = ..., **kwargs: Any
+    mask: Callable[[vs.VideoNode, vs.VideoNode], vs.VideoNode],
+    clip: vs.VideoNode,
+    ref: vs.VideoNode,
+    *,
+    func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode: ...
 
 
 @overload
-def normalize_mask(mask: GeneralMask, clip: vs.VideoNode, ref: vs.VideoNode) -> ConstantFormatVideoNode: ...
+def normalize_mask(
+    mask: EdgeDetectT | RidgeDetectT,
+    clip: vs.VideoNode,
+    *,
+    ridge: bool = ...,
+    func: FuncExceptT | None = None,
+    **kwargs: Any,
+) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def normalize_mask(
-    mask: GenericMaskT, clip: vs.VideoNode, ref: vs.VideoNode | None = ..., *, ridge: bool = ..., **kwargs: Any
+    mask: GeneralMask, clip: vs.VideoNode, ref: vs.VideoNode, *, func: FuncExceptT | None = None
+) -> ConstantFormatVideoNode: ...
+
+
+@overload
+def normalize_mask(
+    mask: GenericMaskT,
+    clip: vs.VideoNode,
+    ref: vs.VideoNode | None = ...,
+    *,
+    ridge: bool = ...,
+    func: FuncExceptT | None = None,
+    **kwargs: Any,
 ) -> ConstantFormatVideoNode: ...
 
 
 def normalize_mask(
-    mask: GenericMaskT, clip: vs.VideoNode, ref: vs.VideoNode | None = None, *, ridge: bool = False, **kwargs: Any
+    mask: GenericMaskT,
+    clip: vs.VideoNode,
+    ref: vs.VideoNode | None = None,
+    *,
+    ridge: bool = False,
+    func: FuncExceptT | None = None,
+    **kwargs: Any,
 ) -> ConstantFormatVideoNode:
+    """
+    Normalize any mask type to match the format and range of the input clip.
+
+    Args:
+        mask: The mask to normalize. Can be:
+
+               - A `VideoNode` representing a precomputed mask.
+               - A callable that takes `(clip, ref)` and returns a `VideoNode`.
+               - An `EdgeDetect` or `RidgeDetect` instance or type.
+               - A `GeneralMask` instance.
+        clip: The clip to which the output mask will be normalized.
+        ref: A reference clip required by certain mask functions or classes.
+        ridge: If `True` and `mask` is a `RidgeDetect` instance, generate a ridge mask instead of an edge mask.
+            Defaults to `False`.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+        **kwargs: Additional keyword arguments passed to the edge/ridge detection methods.
+
+    Raises:
+        CustomValueError: If `mask` is a callable that requires a reference and `ref` is not provided.
+
+    Returns:
+        A mask with the same format as `clip`.
+    """
+    func = func or normalize_mask
+
     if isinstance(mask, (str, type)):
-        return normalize_mask(EdgeDetect.ensure_obj(mask, normalize_mask), clip, ref, ridge=ridge, **kwargs)
+        return normalize_mask(EdgeDetect.ensure_obj(mask, func), clip, ref, ridge=ridge, func=func, **kwargs)
 
     if isinstance(mask, EdgeDetect):
         if ridge and isinstance(mask, RidgeDetect):
@@ -367,7 +417,7 @@ def normalize_mask(
         cmask = mask.get_mask(clip, ref)
     elif callable(mask):
         if ref is None:
-            raise CustomValueError("This mask function requires a ref to be specified!")
+            raise CustomValueError("This mask function requires a ref to be specified!", func)
 
         cmask = mask(clip, ref)
     else:
