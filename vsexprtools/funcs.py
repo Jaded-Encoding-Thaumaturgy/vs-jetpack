@@ -78,7 +78,7 @@ def expr_func(
                 clips[0], lambda clip: core.akarin.Expr(clip, expr, fmt, opt, boundary)
             )
 
-        raise e
+        raise CustomRuntimeError(e, func, expr) from e
 
 
 def _combine_norm__ix(ffix: SupportsString | Iterable[SupportsString] | None, n_clips: int) -> list[SupportsString]:
