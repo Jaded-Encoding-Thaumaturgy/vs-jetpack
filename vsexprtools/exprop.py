@@ -436,6 +436,7 @@ class ExprOpExtraMeta(EnumMeta):
             "ASIN",
             "ACOS",
             "CEIL",
+            "MMG",
             "LERP",
             "POLYVAL",
         )
@@ -628,6 +629,9 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     CEIL = "ceil", 1
     """Round up to nearest integer."""
 
+    MMG = "mmg", 3
+    """MaskedMerge implementation from std lib."""
+
     # Implemented in akarin v0.96g but closed source and only available on Windows.
     LERP = "lerp", 3
     """Linear interpolation of a value between two border values."""
@@ -656,6 +660,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
             ExprOp.ASIN,
             ExprOp.ACOS,
             ExprOp.CEIL,
+            ExprOp.MMG,
             ExprOp.LERP,
             ExprOp.POLYVAL,
         ],  # pyright: ignore[reportGeneralTypeIssues]
@@ -692,6 +697,8 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
                 return self.acos().to_str()
             case ExprOp.CEIL:
                 return "-1 * floor -1 *"
+            case ExprOp.MMG:
+                return self.masked_merge().to_str()
             case ExprOp.LERP:
                 if bytes(self, "utf-8") in _get_akarin_expr_version()["expr_features"]:
                     return str(self)
@@ -1025,6 +1032,21 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
             An `ExprList` representing the acos(x) expression.
         """
         return ExprList([c, "__acosvar!", cls.PI, 2, cls.DIV, cls.asin("__acosvar@", n), cls.SUB])
+
+    @classmethod
+    def masked_merge(cls, c_a: SupportsString = "", c_b: SupportsString = "", mask: SupportsString = "") -> ExprList:
+        """
+        Build a masked merge expression from two inputs and a mask.
+
+        Args:
+            c_a: The first input expression variable.
+            c_b: The second input expression variable.
+            mask: The mask expression that determines how `c_a` and `c_b` are combined.
+
+        Returns:
+            An `ExprList` representing the MaskedMerge expression.
+        """
+        return ExprList([c_a, c_b, [mask, ExprToken.RangeMax, ExprToken.RangeMin, cls.SUB, cls.DIV], cls.LERP])
 
     @classmethod
     def polyval(cls, c: SupportsString, *coeffs: SupportsString) -> ExprList:

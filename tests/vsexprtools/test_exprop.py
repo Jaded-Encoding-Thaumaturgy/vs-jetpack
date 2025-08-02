@@ -185,6 +185,30 @@ def test_expr_op_str_ceil(input_clip: vs.VideoNode = clip_fp32) -> None:
 
 
 @pytest.mark.parametrize(
+    ["clip_a", "clip_b", "mask"],
+    [
+        (
+            clip_fp32.std.BlankClip(color=[0.7451596557797295, -0.0897083306063644, -0.04091666168431174]),
+            clip_fp32.std.BlankClip(color=[0.07807297537748636, -0.1883522041103517, 0.4003913983861609]),
+            clip_fp32.std.BlankClip(color=[0.7994040706646394, 0.41575462854726997, 0.2803351038958446]),
+        ),
+        (
+            clip_int8.std.BlankClip(color=[146, 52, 213]),
+            clip_int8.std.BlankClip(color=[73, 125, 111]),
+            clip_int8.std.BlankClip(color=[17, 213, 77]),
+        ),
+    ],
+)
+def test_expr_op_str_mmg(clip_a: vs.VideoNode, clip_b: vs.VideoNode, mask: vs.VideoNode) -> None:
+    expr = norm_expr([clip_a, clip_b, mask], f"x y z {ExprOp.MMG.convert_extra()}")
+    std = core.std.MaskedMerge(clip_a, clip_b, mask)
+
+    for f_expr, f_std in zip(expr.frames(close=True), std.frames(close=True)):
+        for i in range(f_expr.format.num_planes):
+            assert f_expr[i][0, 0] == pytest.approx(f_std[i][0, 0], 1e-7)
+
+
+@pytest.mark.parametrize(
     ["clip_a", "clip_b", "t"],
     [
         (
