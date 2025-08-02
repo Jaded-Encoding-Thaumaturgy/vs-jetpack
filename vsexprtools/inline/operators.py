@@ -217,7 +217,7 @@ class Operators(Singleton):
         return self.as_var(convo.to_str())
 
     @staticmethod
-    def as_var(x: ExprVarLike | Iterable[ExprVarLike]) -> ComputedVar:
+    def as_var(x: ExprVarLike | Iterable[ExprVarLike] = "") -> ComputedVar:
         """
         Converts an expression variable to a ComputedVar.
 
