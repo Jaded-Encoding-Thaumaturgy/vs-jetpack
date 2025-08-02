@@ -95,13 +95,13 @@ class ExprVar(ABC):
         return op.trunc(self)
 
     def __ceil__(self) -> ComputedVar:
-        return op.floor(op.add(self, 0.5))
+        return op.ceil(self)
 
     def __floor__(self) -> ComputedVar:
         return op.floor(self)
 
     def __neg__(self) -> ComputedVar:
-        return op.mul(op.abs(self), -1)
+        return op.neg(self)
 
     def __pos__(self) -> ComputedVar:
         return op.abs(self)
@@ -146,22 +146,22 @@ class ExprVar(ABC):
         raise NotImplementedError
 
     def __and__(self, other: ExprVarLike) -> ComputedVar:
-        return op.and_(self, other)
+        return op.bitand(self, other)
 
     def __rand__(self, other: ExprVarLike) -> ComputedVar:
-        return op.and_(self, other)
+        return op.bitand(self, other)
 
     def __or__(self, other: ExprVarLike) -> ComputedVar:
-        return op.or_(self, other)
+        return op.bitor(self, other)
 
     def __ror__(self, other: ExprVarLike) -> ComputedVar:
-        return op.or_(other, self)
+        return op.bitor(self, other)
 
     def __xor__(self, other: ExprVarLike) -> ComputedVar:
-        return op.xor(self, other)
+        return op.bitxor(self, other)
 
     def __rxor__(self, other: ExprVarLike) -> ComputedVar:
-        return op.xor(self, other)
+        return op.bitxor(self, other)
 
     def to_str(self, **kwargs: Any) -> str:
         """
