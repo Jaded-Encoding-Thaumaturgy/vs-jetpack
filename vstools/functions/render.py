@@ -255,6 +255,8 @@ def clip_async_render(
         if progress is None:
             deque(clip_it, 0)
         elif isinstance(progress, str):
+            from .progress import get_render_progress
+
             with get_render_progress(progress, clip.num_frames * progress_multiplier) as pr:
                 if callback:
                     pr_update = pr.update
@@ -290,6 +292,8 @@ def clip_async_render(
         if progress is None:
             rend_clip.output(outfile, y4m, None, prefetch, backlog)
         elif isinstance(progress, str):
+            from .progress import get_render_progress
+
             with get_render_progress(progress, clip.num_frames) as pr:
                 rend_clip.output(outfile, y4m, pr.update, prefetch, backlog)
         else:
@@ -300,8 +304,7 @@ def clip_async_render(
             return [result[i] for i in range(clip.num_frames)]
         except KeyError:
             raise CustomRuntimeError(
-                'There was an error with the rendering and one frame request was rejected!',
-                clip_async_render
+                "There was an error with the rendering and one frame request was rejected!", clip_async_render
             )
 
     return None
