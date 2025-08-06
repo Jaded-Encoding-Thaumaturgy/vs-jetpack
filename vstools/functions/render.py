@@ -81,6 +81,7 @@ def clip_async_render(
     backlog: int = -1,
     y4m: bool | None = None,
     async_requests: int | bool | AsyncRenderConf = False,
+    progress_multiplier: int = 1
 ) -> list[T] | None:
     """
     Iterate over an entire clip and optionally write results to a file.
@@ -113,6 +114,8 @@ def clip_async_render(
         y4m: Whether to add YUV4MPEG2 headers to the rendered output. If None, automatically determine. Default: None.
         async_requests: Whether to render frames non-consecutively. If int, determines the number of requests. Default:
             False.
+        progress_multiplier: Multiplier for progress updates. Useful notably when processing clips with SelectEvery
+            but want progress to reflect original frame count. Default: 1.
     """
 
     from .funcs import fallback
@@ -152,7 +155,8 @@ def clip_async_render(
                         def _cb(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
                             n += shift
                             result[n] = callback(n, f)
-                            pr_update()
+                            for i in range(progress_multiplier):
+                                pr_update()
                             return f
                     else:
 
@@ -173,7 +177,8 @@ def clip_async_render(
 
                         def _cb(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
                             result[n] = callback(n, f)
-                            pr_update()
+                            for i in range(progress_multiplier):
+                                pr_update()
                             return f
                     else:
 
@@ -250,15 +255,14 @@ def clip_async_render(
         if progress is None:
             deque(clip_it, 0)
         elif isinstance(progress, str):
-            from .progress import get_render_progress
-
-            with get_render_progress(progress, clip.num_frames) as pr:
+            with get_render_progress(progress, clip.num_frames * progress_multiplier) as pr:
                 if callback:
                     pr_update = pr.update
                     deque(clip_it, 0)
                 else:
                     for _ in clip_it:
-                        pr.update()
+                        for i in range(progress_multiplier):
+                            pr.update()
         else:
             if callback:
                 pr_update_custom = progress
@@ -286,9 +290,7 @@ def clip_async_render(
         if progress is None:
             rend_clip.output(outfile, y4m, None, prefetch, backlog)
         elif isinstance(progress, str):
-            from .progress import get_render_progress
-
-            with get_render_progress(progress, clip.num_frames) as pr:
+            with get_render_progress(progress, clip.num_frames * progress_multiplier) as pr:
                 rend_clip.output(outfile, y4m, pr.update, prefetch, backlog)
         else:
             rend_clip.output(outfile, y4m, progress, prefetch, backlog)
@@ -298,7 +300,8 @@ def clip_async_render(
             return [result[i] for i in range(clip.num_frames)]
         except KeyError:
             raise CustomRuntimeError(
-                "There was an error with the rendering and one frame request was rejected!", clip_async_render
+                'There was an error with the rendering and one frame request was rejected!',
+                clip_async_render
             )
 
     return None
