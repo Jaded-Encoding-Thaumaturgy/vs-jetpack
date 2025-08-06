@@ -290,7 +290,7 @@ def clip_async_render(
         if progress is None:
             rend_clip.output(outfile, y4m, None, prefetch, backlog)
         elif isinstance(progress, str):
-            with get_render_progress(progress, clip.num_frames * progress_multiplier) as pr:
+            with get_render_progress(progress, clip.num_frames) as pr:
                 rend_clip.output(outfile, y4m, pr.update, prefetch, backlog)
         else:
             rend_clip.output(outfile, y4m, progress, prefetch, backlog)
