@@ -892,12 +892,12 @@ class Tokens(Singleton):
         ChromaRangeInMax: Final[Token] = cast(Token, ...)
         """Like `ChromaRangeMax`, but adapts to input `range_in`."""
 
-    @staticmethod
     @cache
-    def _get_token(name: str) -> Token:
+    def _get_token(self, name: str) -> Token:
         return Token(ExprToken[name])
 
     if not TYPE_CHECKING:
+        __isabstractmethod__ = False
 
         def __getattr__(self, name: str) -> Token:
             return self._get_token(name)
