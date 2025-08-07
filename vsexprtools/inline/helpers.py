@@ -15,7 +15,7 @@ from typing import (
     cast,
 )
 
-from jetpytools import CustomRuntimeError, Singleton, SupportsString, to_arr
+from jetpytools import Singleton, SupportsString, to_arr
 from typing_extensions import Self
 
 from vstools import ConvMode, OnePassConvModeT, flatten, vs, vs_object
@@ -509,9 +509,7 @@ class ComputedVar(ExprVar):
         Raises:
             CustomRuntimeError: If expressions differ between planes.
         """
-        self._check_expr_per_planes()
-
-        return " ".join(str(x) for x in self._operations_per_plane[0])
+        return self.to_str()
 
     def __getitem__(self, index: SupportsIndex) -> Self:
         """
@@ -645,16 +643,6 @@ class ComputedVar(ExprVar):
         """Deletes the B (blue) plane expression."""
         del self[2]
 
-    def _has_expr_per_planes(self) -> bool:
-        return len({tuple(str(op) for op in opp) for opp in self._operations_per_plane}) > 1
-
-    def _check_expr_per_planes(self) -> None:
-        if self._has_expr_per_planes():
-            raise CustomRuntimeError(
-                "Cannot generate a unified string representation: the operations differ between planes. "
-                "Use `to_str(plane=...)` or `to_str_per_plane()` instead"
-            )
-
     def to_str_per_plane(self, num_planes: int = 3) -> list[str]:
         """
         Returns string representations of the expression in RPN format for each plane.
@@ -667,26 +655,19 @@ class ComputedVar(ExprVar):
         """
         return [p.to_str(plane=i) for x, i in zip(self._operations_per_plane, range(num_planes)) for p in x]
 
-    def to_str(self, *, plane: int | None = None, **kwargs: Any) -> str:
+    def to_str(self, *, plane: int = 0, **kwargs: Any) -> str:
         """
-        Returns a string representation of the expression in RPN format.
+        Returns a string representation of the expression in RPN format for the selected plane.
 
         Args:
-            plane: Optional plane index to select which expression to stringify. If not specified,
-                all planes must have identical expressions.
+            plane: Optional plane index to select which expression to stringify.
             **kwargs: Additional keyword arguments passed to each expression's to_str method.
 
         Returns:
-            String representation of the expression in RPN format.
-
-        Raises:
-            CustomRuntimeError: If plane is None and expressions differ across planes.
+            String representation of the expression in RPN format for the selected plane.
         """
-        if plane is None:
-            self._check_expr_per_planes()
-            plane = 0
 
-        return " ".join(x.to_str(plane=plane, **kwargs) for x in self._operations_per_plane[plane])
+        return " ".join(x.to_str(**kwargs) for x in self._operations_per_plane[plane])
 
 
 class ClipVarProps:
