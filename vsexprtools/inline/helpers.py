@@ -188,6 +188,7 @@ class Operators(Singleton):
         return ComputedVar([cond, if_true, if_false, ExprOp.TERN])
 
     if_ = tern
+    """Alias for [tern][vsexprtools.inline.helpers.Operators.tern]."""
 
     def clamp(self, x: ExprVarLike, min: ExprVarLike, max: ExprVarLike) -> ComputedVar:
         """Clamps a value between a min and a max."""
@@ -212,6 +213,12 @@ class Operators(Singleton):
         return ComputedVar(ExprOp.ABS_PIX.format(char=char, x=x, y=y))
 
     def __call__(self) -> Self:
+        """
+        Returns itself.
+
+        Returns:
+            Returns itself.
+        """
         return self
 
     # Helper Functions
@@ -232,7 +239,7 @@ class Operators(Singleton):
             exclude: Optional set of (x, y) coordinates to exclude from the matrix.
 
         Returns:
-            A list of [LiteralVar][vsexprtools.inline.variables.LiteralVar] instances
+            A list of [LiteralVar][vsexprtools.inline.helpers.LiteralVar] instances
             representing the matrix of expressions.
         """
         matrix, *_ = ExprOp.matrix(char, radius, mode, exclude)
@@ -904,3 +911,4 @@ class Tokens(Singleton):
 
 
 tokens = Tokens()
+"""The Tokens singleton instance"""

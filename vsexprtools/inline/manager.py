@@ -16,7 +16,7 @@ from vstools import HoldsVideoFormatT, VideoFormatT, get_video_format, vs, vs_ob
 
 from ..funcs import norm_expr
 from ..util import ExprVars
-from .helpers import ClipVar, ComputedVar, ExprVarLike, Operators
+from .helpers import ClipVar, ComputedVar, ExprVarLike, Operators, Tokens
 
 __all__ = ["inline_expr"]
 
@@ -88,9 +88,61 @@ def inline_expr(
 
         with inline_expr(spawn_random(20)) as ie:
             ie.out = sum(ie.vars) / len(ie.vars)
-            # -> "0 x + y + z + a + b + c + d + e + f + g + h + i + j + k + l + m + n + o + p + q + 20 /"
+            # -> "x y + z + a + b + c + d + e + f + g + h + i + j + k + l + m + n + o + p + q + 20 /"
 
         result = ie.clip
+        ```
+
+    - Example (advanced): [prefilter_to_full_range][vsdenoise.prefilter_to_full_range] implemented with `inline_expr`
+        ```py
+        from vsexprtools import inline_expr
+        from vstools import ColorRange, vs
+
+
+        def pf_full(clip: vs.VideoNode, slope: float = 2.0, smooth: float = 0.0625) -> vs.VideoNode:
+            with inline_expr(clip) as ie:
+                x, *_ = ie.vars
+
+                # Normalize luma to 0-1 range
+                norm_luma = (x - x.LumaRangeInMin) * (ie.as_var(1) / (x.LumaRangeInMax - x.LumaRangeInMin))
+                # Ensure normalized luma stays within bounds
+                norm_luma = ie.op.clamp(norm_luma, 0, 1)
+
+                # Curve factor controls non-linearity based on slope and smoothing
+                curve_strength = (slope - 1) * smooth  # Slope increases contrast in darker regions
+
+                # Compute a non-linear boost that emphasizes dark details without crushing blacks
+                nonlinear_boost = curve_strength * ((1 + smooth) - (ie.op.sin(smooth) / (norm_luma + smooth)))
+
+                # Combine the non-linear boost with the normalized luma
+                # Boosts shadows while preserving highlights
+                weight_mul = nonlinear_boost + norm_luma * (1 - curve_strength)
+
+                # Scale the final result back to the output range
+                weight_mul *= x.RangeMax
+
+                # Assign the processed luma to the Y plane
+                ie.out.y = weight_mul
+
+                # Round only if the format is integer
+                if clip.format.sample_type is vs.INTEGER:
+                    ie.out.y = ie.op.round(ie.out.y)
+
+                if ColorRange.from_video(clip).is_full or clip.format.sample_type is vs.FLOAT:
+                    ie.out.uv = x
+                else:
+                    # Scale chroma values from limited to full range:
+                    #  - Subtract neutral chroma (e.g., 128) to center around zero
+                    #  - Scale based on the input chroma range (e.g., 240 - 16)
+                    #  - Add half of full range to re-center in full output range
+                    chroma_mult = x.RangeMax / (x.ChromaRangeInMax - x.ChromaRangeInMin)
+                    chroma_boosted = (x - x.Neutral) * chroma_mult + x.RangeHalf
+
+                    # Apply the adjusted chroma values to U and V planes
+                    ie.out.uv = ie.op.round(chroma_boosted)
+
+            # Final output is flagged as full-range video
+            return ColorRange.FULL.apply(ie.clip)
         ```
 
     - Example (complex): Unsharp mask implemented in [inline_expr][vsexprtools.inline_expr].
@@ -131,10 +183,8 @@ def inline_expr(
                 # Apply low-frequency only processing if parameter > 0
                 if low_freq.freq_limit > 0:
                     # Calculate high-frequency component by comparing local variance to a larger area
-                    wider_blur = sum(
-                        (x[i, j] for i, j in itertools.product([-2, 0, 2], repeat=2) if (i, j) != (0, 0)), blur
-                    )
-                    wider_blur = ie.op.as_var(wider_blur) / 9
+                    wider_blur = sum(x[i, j] for i, j in itertools.product([-2, 0, 2], repeat=2) if (i, j) != (0, 0))
+                    wider_blur = ie.as_var(wider_blur) / 9
                     high_freq_indicator = abs(blur - wider_blur)
 
                     # Calculate texture complexity (higher in detailed areas,
@@ -153,7 +203,7 @@ def inline_expr(
                     effective_sharp_diff = effective_sharp_diff * low_freq_factor
 
                 # Get horizontal neighbors from the original clip
-                neighbors = [ie.op.as_var(x) for x in ie.op.matrix(x, 1, ConvMode.SQUARE, [(0, 0)])]
+                neighbors = [ie.as_var(x) for x in ie.op.matrix(x, 1, ConvMode.SQUARE, [(0, 0)])]
 
                 # Calculate minimum
                 local_min = functools.reduce(ie.op.min, neighbors)
@@ -203,20 +253,24 @@ def inline_expr(
         InlineExprWrapper object containing clip variables and operators.
 
             - The [vars][vsexprtools.inline.manager.InlineExprWrapper.vars] attribute is a sequence
-              of [ClipVar][vsexprtools.inline.variables.ClipVar] objects, one for each input clip.
+              of [ClipVar][vsexprtools.inline.helpers.ClipVar] objects, one for each input clip.
               These objects overload standard Python operators (`+`, `-`, `*`, `/`, `**`, `==`, `<`, `>` etc.)
-              to build the expression. They also provide relative pixel access through the `__getitem__` dunder method
-              (e.g., `x[1, 0]` for the pixel to the right) and arbitrary access to frame properties
-              (e.g. `x.PlaneStatsMax` or `x["PlaneStatsMax"]`).
+              to build the expression.
+              They also provide relative pixel access through the `__getitem__` dunder method
+              (e.g., `x[1, 0]` for the pixel to the right),
+              arbitrary access to frame properties (e.g. `x.props.PlaneStatsMax` or `x.props["PlaneStatsMax"]`)
+              and bit-depth aware constants access (e.g., `x.RangeMax` or `x.Neutral`).
+
 
             - The [op][vsexprtools.inline.manager.InlineExprWrapper.op] attribute is an object providing access
               to all `Expr` operators such as `op.clamp(value, min, max)`, `op.sqrt(value)`,
               `op.tern(condition, if_true, if_false)`, etc.
 
-            You must assign the final [ComputedVar][vsexprtools.inline.variables.ComputedVar]
+            You must assign the final [ComputedVar][vsexprtools.inline.helpers.ComputedVar]
             (the result of your expression) to `ie.out`.
 
-            Additionnaly, you can use `print(ie.out)` to see the computed expression string.
+            Additionnaly, you can use `print(ie.out)` to see the computed expression string
+            or `print(ie.out.to_str_per_plane())` or `print(ie.out.to_str(plane=...))` to see the expression per plane.
     """
     clips = to_arr(clips)
     ie = InlineExprWrapper(clips, format)
@@ -245,7 +299,7 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
     and serves as the interface through which you build expressions using overloaded Python operators
     and expressive constructs.
 
-    It provides access to input clips as [ClipVar][vsexprtools.inline.variables.ClipVar] instances,
+    It provides access to input clips as [ClipVar][vsexprtools.inline.helpers.ClipVar] instances,
     expression operators, and the final output clip.
 
     All expressions are constructed in a high-level, readable Python syntax that is internally translated to
@@ -276,7 +330,12 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
 
     op = Operators()
     """
-    [Operators][vsexprtools.inline.operators.Operators] object providing access to all `Expr` operators.
+    [Operators][vsexprtools.inline.helpers.Operators] object providing access to all `Expr` operators.
+    """
+
+    tk = Tokens()
+    """
+    [Tokens][vsexprtools.inline.helpers.Tokens] object providing access to all `Expr` tokens.
     """
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Self:
@@ -334,16 +393,17 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
     @cache
     def vars(self) -> Sequence[ClipVar]:
         """
-        Sequence of [ClipVar][vsexprtools.inline.variables.ClipVar] objects, one for each input clip.
+        Sequence of [ClipVar][vsexprtools.inline.helpers.ClipVar] objects, one for each input clip.
 
         These objects overload standard Python operators (`+`, `-`, `*`, `/`, `**`, `==`, `<`, `>` etc.)
         to build the expression.
         They also provide relative pixel access through the `__getitem__` dunder method
-        (e.g., `x[1, 0]` for the pixel to the right)
-        and arbitrary access to frame properties (e.g. `x.PlaneStatsMax` or `x["PlaneStatsMax"]`).
+        (e.g., `x[1, 0]` for the pixel to the right),
+        arbitrary access to frame properties (e.g. `x.props.PlaneStatsMax` or `x.props["PlaneStatsMax"]`)
+        and bit-depth aware constants access (e.g., `x.RangeMax` or `x.Neutral`).
 
         Returns:
-            Sequence of [ClipVar][vsexprtools.inline.variables.ClipVar] objects.
+            Sequence of [ClipVar][vsexprtools.inline.helpers.ClipVar] objects.
         """
         return tuple(ClipVar(char, clip) for char, clip in zip(ExprVars.cycle(), self._nodes))
 
@@ -362,8 +422,8 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
         """
         Set the final output of the expression.
 
-        Converts the given [ExprVar][vsexprtools.inline.variables.ExprVar]
-        to a [ComputedVar][vsexprtools.inline.variables.ComputedVar] and stores it as the final expression.
+        Converts the given [ExprVar][vsexprtools.inline.helpers.ExprVar]
+        to a [ComputedVar][vsexprtools.inline.helpers.ComputedVar] and stores it as the final expression.
         """
         self._final_expr_node = self.as_var(out_var)
 
