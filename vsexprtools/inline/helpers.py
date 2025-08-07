@@ -691,16 +691,63 @@ class ClipVar(ExprVar, vs_object):
     Expression variable that wraps a VideoNode and provides symbolic and numeric access.
     """
 
-    char: str
-    """A short symbolic name representing this clip in the RPN expression."""
+    if TYPE_CHECKING:
+        LumaMin: Final[ComputedVar] = cast(ComputedVar, ...)
+        """The minimum luma value in limited range."""
 
-    node: vs.VideoNode
-    """The actual VapourSynth VideoNode."""
+        ChromaMin: Final[ComputedVar] = cast(ComputedVar, ...)
+        """The minimum chroma value in limited range."""
 
-    # Some commonly used props
-    PlaneStatsMin: ComputedVar
-    PlaneStatsMax: ComputedVar
-    PlaneStatsAverage: ComputedVar
+        LumaMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """The maximum luma value in limited range."""
+
+        ChromaMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """The maximum chroma value in limited range."""
+
+        Neutral: Final[ComputedVar] = cast(ComputedVar, ...)
+        """The neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
+
+        RangeHalf: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Half of the full range (e.g. 128.0 for 8-bit full range)."""
+
+        RangeSize: Final[ComputedVar] = cast(ComputedVar, ...)
+        """The size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
+
+        RangeMin: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Minimum value in full range (chroma-aware)."""
+
+        LumaRangeMin: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Minimum luma value based on input clip's color range."""
+
+        ChromaRangeMin: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Minimum chroma value based on input clip's color range."""
+
+        RangeMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Maximum value in full range (chroma-aware)."""
+
+        LumaRangeMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Maximum luma value based on input clip's color range."""
+
+        ChromaRangeMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Maximum chroma value based on input clip's color range."""
+
+        RangeInMin: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Like `RangeMin`, but adapts to input `range_in` parameter."""
+
+        LumaRangeInMin: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Like `LumaRangeMin`, but adapts to input `range_in`."""
+
+        ChromaRangeInMin: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Like `ChromaRangeMin`, but adapts to input `range_in`."""
+
+        RangeInMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Like `RangeMax`, but adapts to input `range_in`."""
+
+        LumaRangeInMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Like `LumaRangeMax`, but adapts to input `range_in`."""
+
+        ChromaRangeInMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Like `ChromaRangeMax`, but adapts to input `range_in`."""
 
     def __init__(self, char: str, node: vs.VideoNode) -> None:
         """
@@ -716,22 +763,119 @@ class ClipVar(ExprVar, vs_object):
     def __str__(self) -> str:
         return self.char
 
-    def __getitem__(self, index: tuple[int, int] | str) -> ComputedVar:
+    def __getitem__(self, index: tuple[int, int]) -> ComputedVar:
         """
-        Returns a ComputedVar for a relative pixel access or for a frame property.
+        Returns a ComputedVar for a relative pixel access.
 
         Args:
-            index: Tuple of relative pixel coordinates or the name of the frame property.
+            index: Tuple of relative pixel coordinates.
 
         Returns:
-            A ComputedVar representing the relative pixel coordinates or the frame property.
+            A ComputedVar representing the relative pixel coordinates.
         """
-        if isinstance(index, str):
-            return getattr(self, index)
         return op.rel_pix(self.char, *index)
 
     def __getattr__(self, name: str) -> ComputedVar:
         return ComputedVar(f"{self.char}.{name}")
 
     def __vs_del__(self, core_id: int) -> None:
-        del self.node
+class Token(LiteralVar):
+    """An expression token wrapping [ExprToken][vsexprtools.ExprToken]."""
+
+    def __init__(self, expr_token: ExprToken) -> None:
+        """
+        Initializes a new Token instance.
+
+        Args:
+            expr_token: Token to wrapped.
+        """
+        super().__init__(expr_token.value)
+
+    def __call__(self, var: ClipVar) -> ComputedVar:
+        """
+        Returns a version of the token specific to a clip variable.
+
+        Args:
+            var: The ClipVar to use.
+
+        Returns:
+            A ComputedVar with a var suffix for use in inline expressions.
+        """
+        return ComputedVar(f"{self.value}_{var.char}")
+
+
+class Tokens(Singleton):
+    """
+    A singleton class that defines the expression tokens used in [inline_expr][vsexprtools.inline_expr].
+    """
+
+    if TYPE_CHECKING:
+        LumaMin: Final[Token] = cast(Token, ...)
+        """The minimum luma value in limited range."""
+
+        ChromaMin: Final[Token] = cast(Token, ...)
+        """The minimum chroma value in limited range."""
+
+        LumaMax: Final[Token] = cast(Token, ...)
+        """The maximum luma value in limited range."""
+
+        ChromaMax: Final[Token] = cast(Token, ...)
+        """The maximum chroma value in limited range."""
+
+        Neutral: Final[Token] = cast(Token, ...)
+        """The neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
+
+        RangeHalf: Final[Token] = cast(Token, ...)
+        """Half of the full range (e.g. 128.0 for 8-bit full range)."""
+
+        RangeSize: Final[Token] = cast(Token, ...)
+        """The size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
+
+        RangeMin: Final[Token] = cast(Token, ...)
+        """Minimum value in full range (chroma-aware)."""
+
+        LumaRangeMin: Final[Token] = cast(Token, ...)
+        """Minimum luma value based on input clip's color range."""
+
+        ChromaRangeMin: Final[Token] = cast(Token, ...)
+        """Minimum chroma value based on input clip's color range."""
+
+        RangeMax: Final[Token] = cast(Token, ...)
+        """Maximum value in full range (chroma-aware)."""
+
+        LumaRangeMax: Final[Token] = cast(Token, ...)
+        """Maximum luma value based on input clip's color range."""
+
+        ChromaRangeMax: Final[Token] = cast(Token, ...)
+        """Maximum chroma value based on input clip's color range."""
+
+        RangeInMin: Final[Token] = cast(Token, ...)
+        """Like `RangeMin`, but adapts to input `range_in` parameter."""
+
+        LumaRangeInMin: Final[Token] = cast(Token, ...)
+        """Like `LumaRangeMin`, but adapts to input `range_in`."""
+
+        ChromaRangeInMin: Final[Token] = cast(Token, ...)
+        """Like `ChromaRangeMin`, but adapts to input `range_in`."""
+
+        RangeInMax: Final[Token] = cast(Token, ...)
+        """Like `RangeMax`, but adapts to input `range_in`."""
+
+        LumaRangeInMax: Final[Token] = cast(Token, ...)
+        """Like `LumaRangeMax`, but adapts to input `range_in`."""
+
+        ChromaRangeInMax: Final[Token] = cast(Token, ...)
+        """Like `ChromaRangeMax`, but adapts to input `range_in`."""
+
+    @staticmethod
+    @cache
+    def _get_token(name: str) -> Token:
+        return Token(ExprToken[name])
+
+    if not TYPE_CHECKING:
+
+        def __getattr__(self, name: str) -> Token:
+            return self._get_token(name)
+
+
+tokens = Tokens()
