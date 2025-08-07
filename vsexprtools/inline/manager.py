@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from functools import cache
-from typing import Any, Iterator, Sequence, SupportsIndex, cast, overload
+from typing import Any, Iterable, Iterator, Sequence, SupportsIndex, cast, overload
 
 from jetpytools import CustomValueError, to_arr
 from typing_extensions import Self
@@ -16,8 +16,7 @@ from vstools import HoldsVideoFormatT, VideoFormatT, get_video_format, vs, vs_ob
 
 from ..funcs import norm_expr
 from ..util import ExprVars
-from .operators import Operators
-from .variables import ClipVar, ComputedVar, ExprVarLike
+from .helpers import ClipVar, ComputedVar, ExprVarLike, Operators
 
 __all__ = ["inline_expr"]
 
@@ -293,7 +292,7 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
         """
         self._nodes = clips
         self._format = get_video_format(format if format is not None else clips[0])
-        self._final_expr_node = self.op.as_var("")
+        self._final_expr_node = self.as_var("")
         self._inner = (self.vars, self.op, cast(Self, self))
         self._final_clip: vs.VideoNode | None = None
 
@@ -317,6 +316,19 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
             format=self._format,
             **kwargs,
         )
+
+    @staticmethod
+    def as_var(x: ExprVarLike | Iterable[ExprVarLike] = "") -> ComputedVar:
+        """
+        Converts an expression variable to a ComputedVar.
+
+        Args:
+            x: A single ExprVarLike or an Iterable of ExprVarLike.
+
+        Returns:
+            A ComputedVar.
+        """
+        return ComputedVar(x)
 
     @property
     @cache
@@ -353,7 +365,7 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
         Converts the given [ExprVar][vsexprtools.inline.variables.ExprVar]
         to a [ComputedVar][vsexprtools.inline.variables.ComputedVar] and stores it as the final expression.
         """
-        self._final_expr_node = Operators.as_var(out_var)
+        self._final_expr_node = self.as_var(out_var)
 
     @property
     def clip(self) -> vs.VideoNode:

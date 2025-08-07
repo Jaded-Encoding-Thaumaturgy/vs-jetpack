@@ -6,8 +6,7 @@ from typing import Any
 
 from vstools import copy_func
 
-from .operators import Operators
-from .variables import ExprVar
+from .helpers import ExprVar, op
 
 __all__ = ["disable_poly", "enable_poly"]
 
@@ -348,11 +347,11 @@ def _poly(op: Any, k: Any) -> Any:
 
 
 _builtins = {
-    "min": (copy_func(builtins.min), _poly(Operators.min, "builtins")),
-    "max": (copy_func(builtins.max), _poly(Operators.max, "builtins")),
+    "min": (copy_func(builtins.min), _poly(op.min, "builtins")),
+    "max": (copy_func(builtins.max), _poly(op.max, "builtins")),
 }
 
-_math = {"log": (copy_func(math.log), _poly(Operators.log, "math"))}
+_math = {"log": (copy_func(math.log), _poly(op.log, "math"))}
 
 
 substitutions = {"builtins": _builtins, "math": _math}
