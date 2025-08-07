@@ -285,17 +285,17 @@ class ExprVar(ABC):
 
     def __add__(self, other: ExprVarLike) -> ComputedVar:
         if other == 0:
-            return ComputedVar("")
+            return self.as_var()
         return op.add(self, other)
 
     def __iadd__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
         if other == 0:
-            return ComputedVar("")
+            return self.as_var()
         return op.add(self, other)
 
     def __radd__(self, other: ExprVarLike) -> ComputedVar:
         if other == 0:
-            return ComputedVar("")
+            return self.as_var()
         return op.add(other, self)
 
     def __sub__(self, other: ExprVarLike) -> ComputedVar:
@@ -461,6 +461,8 @@ class ExprVar(ABC):
         Returns:
             A ComputedVar.
         """
+        if isinstance(self, ComputedVar):
+            return self
         return ComputedVar(self)
 
 
