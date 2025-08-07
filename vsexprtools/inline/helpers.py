@@ -5,13 +5,14 @@ from functools import cache
 from typing import (
     TYPE_CHECKING,
     Any,
-    ClassVar,
     Collection,
+    Final,
     Iterable,
     Literal,
     NoReturn,
     SupportsIndex,
     TypeAlias,
+    cast,
 )
 
 from jetpytools import CustomRuntimeError, Singleton, SupportsString, to_arr
@@ -686,6 +687,26 @@ class ComputedVar(ExprVar):
         return " ".join(x.to_str(plane=plane, **kwargs) for x in self._operations_per_plane[plane])
 
 
+class ClipVarProps:
+    """Helper class exposing common frame properties of a ClipVar."""
+
+    # Some commonly used props
+    PlaneStatsMin: ComputedVar
+    PlaneStatsMax: ComputedVar
+    PlaneStatsAverage: ComputedVar
+
+    def __init__(self, var: ClipVar) -> None:
+        self._var = var
+
+    def __getitem__(self, key: str) -> ComputedVar:
+        """Accesses a frame property using [] notation from the clip symbol."""
+        return self.__getattr__(key)
+
+    def __getattr__(self, name: str) -> ComputedVar:
+        """Accesses a frame property using dot notation from the clip symbol."""
+        return ComputedVar(f"{self._var.char}.{name}")
+
+
 class ClipVar(ExprVar, vs_object):
     """
     Expression variable that wraps a VideoNode and provides symbolic and numeric access.
@@ -757,8 +778,8 @@ class ClipVar(ExprVar, vs_object):
             char: A short symbolic name representing this clip in the RPN expression.
             node: The actual VapourSynth VideoNode.
         """
-        self.char = char
-        self.node = node
+        self._char = char
+        self._node = node
 
     def __str__(self) -> str:
         return self.char
@@ -775,10 +796,31 @@ class ClipVar(ExprVar, vs_object):
         """
         return op.rel_pix(self.char, *index)
 
-    def __getattr__(self, name: str) -> ComputedVar:
-        return ComputedVar(f"{self.char}.{name}")
+    @property
+    @cache
+    def props(self) -> ClipVarProps:
+        """A helper to access frame properties."""
+        return ClipVarProps(self)
+
+    @property
+    def char(self) -> str:
+        """A short symbolic name representing this clip in the RPN expression."""
+        return self._char
+
+    @property
+    def node(self) -> vs.VideoNode:
+        """The actual VapourSynth VideoNode."""
+        return self._node
+
+    if not TYPE_CHECKING:
+
+        def __getattr__(self, name: str) -> ComputedVar:
+            return getattr(tokens, name)(self)
 
     def __vs_del__(self, core_id: int) -> None:
+        del self._node
+
+
 class Token(LiteralVar):
     """An expression token wrapping [ExprToken][vsexprtools.ExprToken]."""
 
