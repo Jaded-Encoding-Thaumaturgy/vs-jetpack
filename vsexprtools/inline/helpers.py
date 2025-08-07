@@ -22,7 +22,7 @@ from vstools import ConvMode, OnePassConvModeT, flatten, vs, vs_object
 
 from ..exprop import ExprOp, ExprToken
 
-__all__ = ["ClipVar", "ComputedVar", "ExprVar", "ExprVarLike", "LiteralVar", "Operators"]
+__all__ = ["ClipVar", "ComputedVar", "ExprVar", "ExprVarLike", "LiteralVar", "Operators", "Tokens"]
 
 
 class Operators(Singleton):
