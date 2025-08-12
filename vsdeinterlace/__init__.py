@@ -1,3 +1,7 @@
+"""
+VapourSynth deinterlacing and interlaced/telecined content helper functions.
+"""
+
 from .blending import *
 from .enums import *
 from .funcs import *

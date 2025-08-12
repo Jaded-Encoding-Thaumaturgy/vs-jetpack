@@ -1,3 +1,7 @@
+"""
+Wrappers for scaling and descaling functions.
+"""
+
 from .generic import *
 from .helpers import *
 from .mask import *

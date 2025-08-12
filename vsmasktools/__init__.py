@@ -1,3 +1,8 @@
+"""
+vs-masktools aims to provide tools and functions to manage, create, and
+manipulate masks in VapourSynth.
+"""
+
 from .abstract import *
 from .details import *
 from .diff import *

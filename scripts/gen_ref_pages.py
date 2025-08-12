@@ -42,11 +42,13 @@ MODULES = [
 ]
 
 # Excluded submodules.
-EXCLUDE = [
+EXCLUDE = frozenset({
     # Cannot be found.
+    "vspreview.plugins.builtins.frame_props",
     "vspreview.plugins.builtins.frame_props.category",
     "vspreview.plugins.builtins.frame_props.exclude",
     "vspreview.plugins.builtins.frame_props.lut",
+    "vspreview.plugins.builtins.slowpics_comp",
     "vspreview.plugins.builtins.slowpics_comp.main",
     "vspreview.plugins.builtins.slowpics_comp.settings",
     "vspreview.plugins.builtins.slowpics_comp.utils",
@@ -54,13 +56,13 @@ EXCLUDE = [
 
     # Cannot be found.
     "vstransitions.libs.movis",
-]
+})
 
 # Explicitly included submodules that would otherwise not have been processed.
-INCLUDE = [
+INCLUDE = frozenset({
     # Submodules are `_` prefixed, so include the overarching module.
     "vsmasktools.edge",
-]
+})
 
 nav = mkdocs_gen_files.Nav()  # type: ignore[no-untyped-call]
 
@@ -87,20 +89,35 @@ for module in MODULES:
 
             ident = ".".join(parts)
 
-            if len(parts) == 1:
-                fd.write(f'---\ntitle: {ident}\n---\n\n<span class="doc-section-title">Submodules:</span>\n\n')  # noqa: E501
-                fd.writelines(
-                    f"- [{sm.name}]({sm.name if not sm.ispkg else f'{sm.name}/index'}.md)\n"  # noqa: E501
-                    for sm in iter_modules(module.__path__)
-                    if not sm.name.startswith("_")
-                )
-            elif full_doc_path.name == "index.md" and ident not in INCLUDE:
-                # TODO: figure out what to do with `__init__.py`'s. They're only
-                # reexporting items from submodules so it becomes cluttered and
-                # duplicated content on the site.
-                fd.write(f"---\ntitle: {ident}\n---\n\n{ident}")
+            if ident in EXCLUDE:
+                continue
+
+            # An `__init__.py`.
+            if full_doc_path.name == "index.md":
+                fd.writelines((
+                    "---\n",
+                    f"title: {ident}\n",
+                    "---\n\n",
+                    f"::: {ident}\n",
+                    "    options:\n",
+                    f"       members: {ident in INCLUDE}\n"
+                ))
+
+                # Top-level module (e.g. `vsaa`, `vsdeband`, etc.)
+                if len(parts) == 1:
+                    fd.write('<span class="doc-section-title">Submodules:</span>\n\n')
+                    fd.writelines(
+                        f"- [{sm.name}]({sm.name if not sm.ispkg else f'{sm.name}/index'}.md)\n"  # noqa: E501
+                        for sm in iter_modules(module.__path__)
+                        if not sm.name.startswith("_")
+                    )
             else:
-                fd.write(f"---\ntitle: {ident}\n---\n\n::: {ident}")
+                fd.writelines((
+                    "---\n",
+                    f"title: {ident}\n",
+                    "---\n\n",
+                    f"::: {ident}\n",
+                ))
 
         mkdocs_gen_files.set_edit_path(full_doc_path, path)
 

@@ -1,3 +1,7 @@
+"""
+A collection of wrappers and functions for debanding.
+"""
+
 from .abstract import *
 from .debanders import *
 from .f3kdb import *

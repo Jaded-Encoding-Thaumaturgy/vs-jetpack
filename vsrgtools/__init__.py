@@ -1,3 +1,7 @@
+"""
+Collection of various smoothing, limiting, and sharpening functions.
+"""
+
 from .blur import *
 from .contra import *
 from .enum import *
