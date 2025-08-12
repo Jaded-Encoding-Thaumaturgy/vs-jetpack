@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import builtins
 import gc
 import weakref
 from ctypes import Structure
@@ -9,7 +8,6 @@ from logging import NOTSET as LOGLEVEL_NOTSET
 from logging import Handler, LogRecord
 from math import ceil
 from multiprocessing import cpu_count
-from types import UnionType
 from typing import TYPE_CHECKING, Any, Callable, Iterable, NoReturn
 from weakref import ReferenceType
 
@@ -379,7 +377,6 @@ from .vs_enums import (
     YUV444PH,
     YUV444PS,
     PresetVideoFormat,
-    VSPresetVideoFormat,
 )
 
 __all__ = [
@@ -929,23 +926,6 @@ class proxy_utils:  # noqa: N801
         return plugin.__dict__["plugin_ref"]
 
 
-def vstools_isinstance(
-    obj: object, class_or_tuple: type | UnionType | tuple[type | UnionType | tuple[Any, ...], ...], /
-) -> bool:
-    if class_or_tuple in (_CoreProxy, Core) and builtins_isinstance(obj, CoreProxy):
-        return True
-
-    if class_or_tuple is VSPresetVideoFormat and builtins_isinstance(obj, PresetVideoFormat):
-        return True
-
-    return builtins_isinstance(obj, class_or_tuple)
-
-
-if builtins.isinstance is not vstools_isinstance:
-    builtins_isinstance = builtins.isinstance
-    builtins.isinstance = vstools_isinstance
-
-
 def _get_core(self: VSCoreProxy) -> Core | None:
     core_ref: ReferenceType[Core] | None = object.__getattribute__(self, "_core")
     own_core: bool = object.__getattribute__(self, "_own_core")
@@ -1003,7 +983,7 @@ def _find_ref(start_data: Any, to_return: type | tuple[type, ...], it: int = 3) 
             if isinstance(obj, dict) and "__name__" in obj:
                 continue
 
-            if isinstance(obj, (Core, _CoreProxy, _FastManager)):
+            if isinstance(obj, (Core, _CoreProxy, CoreProxy, _FastManager)):
                 continue
 
             for obj_obj in gc.get_referents(obj):
@@ -1045,7 +1025,7 @@ class EnvironmentProxy(EnvironmentProxyBase):
 
     @property
     def has_core(self) -> bool:
-        return any(isinstance(ref, Core) for ref in gc.get_referents(self.data))
+        return any(isinstance(ref, (Core, CoreProxy)) for ref in gc.get_referents(self.data))
 
 
 _curr_env_proxy = EnvironmentProxy()

@@ -51,6 +51,7 @@ def get_video_format(
 
     Args:
         value: The format source. This can be:
+
                - A bidepth format if `value < 32`
                - A unique format ID
                - A VideoFormat-like object
@@ -62,20 +63,14 @@ def get_video_format(
     Returns:
         A VideoFormat object derived from the input.
     """
-
-    from ..utils.vs_enums import VSPresetVideoFormat
-
     if sample_type is not None:
         sample_type = vs.SampleType(sample_type)
 
     if isinstance(value, vs.VideoFormat):
         return value
 
-    if isinstance(value, VSPresetVideoFormat):
-        return vs.core.get_video_format(value)
-
     if isinstance(value, int):
-        if value > 32:
+        if value > 32 or value == 0:
             return vs.core.get_video_format(value)
 
         if sample_type is None:
