@@ -20,10 +20,6 @@ __all__ = ["MeanMode"]
 
 
 class MeanMode(CustomIntEnum):
-    POWER = auto()
-
-    LEHMER = auto()
-
     HARMONIC = -1
 
     GEOMETRIC = 0
@@ -33,6 +29,10 @@ class MeanMode(CustomIntEnum):
     RMS = 2
 
     CUBIC = 3
+
+    POWER = auto()
+
+    LEHMER = auto()
 
     MINIMUM = auto()
 
