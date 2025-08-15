@@ -1,13 +1,24 @@
 from __future__ import annotations
 
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass
 from functools import partial, wraps
 from math import exp
 from types import GenericAlias
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Generic, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Concatenate,
+    Generic,
+    TypeVar,
+    TypeVarTuple,
+    Union,
+    overload,
+)
 
-from jetpytools import P
+from jetpytools import P, classproperty
 from typing_extensions import Self, TypeIs
 
 from vsexprtools import norm_expr
@@ -51,6 +62,7 @@ from .kernels import Catrom, Point
 from .types import Center, LeftShift, Slope, TopShift
 
 __all__ = [
+    "BaseMixedScaler",
     "BaseScalerSpecializer",
     "LinearLight",
     "NoScale",
@@ -207,6 +219,90 @@ class NoScale(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
             A dynamically created NoScale subclass based on the given scaler.
         """
         return NoScale[Scaler.from_param(scaler)]  # type: ignore[return-value,misc]
+
+
+_BaseScalerTs = TypeVarTuple("_BaseScalerTs")
+
+
+class BaseMixedScalerMeta(BaseScalerSpecializerMeta, Generic[*_BaseScalerTs]):
+    """
+    Meta class for BaseMixedScaler to handle mixed scaling logic.
+    """
+
+    __others__: tuple[*_BaseScalerTs]
+
+    def __new__(
+        mcls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        *others: *_BaseScalerTs,
+        specializer: type[BaseScaler] | None = None,
+        **kwargs: Any,
+    ) -> BaseMixedScalerMeta[*_BaseScalerTs]:
+        obj = super().__new__(mcls, name, bases, namespace, specializer=specializer, **kwargs)
+
+        if others:
+            obj.__others__ = others
+        else:
+            for t in namespace["__orig_bases__"]:
+                if (os := getattr(t, "__others__", ())) or (
+                    isinstance(t, GenericAlias) and (os := getattr(t.__origin__, "__others__", ()))
+                ):
+                    obj.__others__ = os
+                    break
+            else:
+                obj.__others__ = ()  # type: ignore[assignment]
+
+        return obj
+
+
+class BaseMixedScaler(
+    BaseScalerSpecializer[_BaseScalerT],
+    Generic[_BaseScalerT, *_BaseScalerTs],
+    metaclass=BaseMixedScalerMeta,
+    abstract=True,
+):
+    """
+    An abstract base class to provide mixed or chained scaling for Scaler-like classes.
+    """
+
+    @classproperty
+    @classmethod
+    def _others(cls) -> tuple[*_BaseScalerTs]:
+        # Workaround as we can't specify the bound values of a TypeVarTuple yet
+        return tuple(o() for o in cls.__others__)  # type:ignore[operator]
+
+    def __class_getitem__(cls, scalers: Any) -> GenericAlias:
+        """
+        Specialize this class with a given scaler kernel.
+
+        Args:
+            base_scaler: A BaseScaler type(s) used to specialize this class.
+
+        Returns:
+            A new subclass using the provided kernel.
+        """
+        if isinstance(scalers, tuple):
+            specializer, *others = scalers
+        else:
+            specializer = scalers
+            others = []
+
+        if isinstance(specializer, TypeVar):
+            cls.__others__ = tuple(others) or cls.__others__
+            return GenericAlias(cls, (specializer, *cls.__others__))
+
+        mixed_spe = BaseMixedScalerMeta(
+            cls.__name__,
+            (cls,),
+            cls.__dict__.copy(),
+            *tuple(others),
+            specializer=specializer,
+            partial_abstract=True,
+        )
+
+        return GenericAlias(mixed_spe, (specializer, *others))
 
 
 @dataclass
