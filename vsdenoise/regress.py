@@ -9,9 +9,10 @@ from typing import Any, Callable, ClassVar, Concatenate, Sequence
 from vsaa import EEDI3, NNEDI3, SangNom
 from vsexprtools import ExprOp, norm_expr
 from vskernels import Catrom, Kernel, KernelLike, Point, Scaler, ScalerLike
-from vsrgtools import box_blur, gauss_blur, limit_filter
+from vsrgtools import box_blur, gauss_blur
 from vsscale import ScalingArgs
 from vstools import (
+    core,
     P1,
     CustomIntEnum,
     CustomOverflowError,
@@ -800,7 +801,7 @@ class PAWorksChromaRecon(MissingFieldsChromaRecon):
         return y_m
 
     def demangle_chroma(self, mangled: vs.VideoNode, y_base: vs.VideoNode) -> vs.VideoNode:
-        demangled = vs.core.resize.Point(mangled, y_base.width // 2, mangled.height)
+        demangled = core.resize.Point(mangled, y_base.width // 2, mangled.height)
 
         demangled = self._dm_wscaler.scale(demangled, mangled.width, y_base.height, (self.src_top, 0))
         demangled = self._dm_hscaler.scale(demangled, y_base.width, y_base.height, (0, self.src_left))
@@ -812,7 +813,7 @@ class PAWorksChromaRecon(MissingFieldsChromaRecon):
 
         y_base = self._kernel.shift(y_base, self.src_top, self.src_left)
 
-        return limit_filter(a, y_base, a, dark_thr=1, bright_thr=10, elast=4.5)
+        return core.vszip.LimitFilter(a, y_base, a, dark_thr=1, bright_thr=10, elast=4.5)
 
     @inject_self.init_kwargs
     def reconstruct(
