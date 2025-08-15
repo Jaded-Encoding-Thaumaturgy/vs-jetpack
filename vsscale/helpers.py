@@ -9,7 +9,7 @@ from typing import Any, Callable, NamedTuple, TypeAlias, overload
 from jetpytools import FuncExceptT, mod_x
 from typing_extensions import Self
 
-from vskernels import Bilinear, Point, Scaler, ScalerLike
+from vskernels import Point, Scaler, ScalerLike, is_scaler_like
 from vstools import FunctionUtil, KwargsT, PlanesT, Resolution, VSFunctionNoArgs, get_w, mod2, vs
 
 __all__ = ["CropAbs", "CropRel", "ScalingArgs", "pre_ss", "scale_var_clip"]
@@ -282,8 +282,8 @@ def pre_ss(
     clip: vs.VideoNode,
     function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
     rfactor: float = 2.0,
-    supersampler: ScalerLike = Bilinear,
-    downscaler: ScalerLike = Point,
+    supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] = Point,
+    downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] = Point,
     mod: int = 4,
     planes: PlanesT = None,
     func: FuncExceptT | None = None,
@@ -293,21 +293,11 @@ def pre_ss(
     Supersamples the input clip, applies a given function to the higher-resolution version,
     and then downscales it back to the original resolution.
 
-    Example usage:
-        ```py
-        from vsdehalo import fine_dehalo
-        from vsaa import NNEDI3
-
-        # Point downscale will undo the intrinsic shift of NNEDI3 on the luma plane.
-        processed = pre_ss(clip, lambda clip: fine_dehalo(clip, ...), supersampler=NNEDI3(noshift=(True, False)))
-        ```
-
     Args:
         clip: Source clip.
-        function: A function to apply on the supersampled clip. Must accept a `planes` argument.
+        function: A function to apply on the supersampled clip.
         rfactor: Scaling factor for supersampling. Defaults to 2.
-        supersampler: Scaler used to downscale the processed clip back to its original resolution.
-            Defaults to `Bilinear`.
+        supersampler: Scaler used to upscale the input clip. Defaults to `Point`.
         downscaler: Downscaler used for undoing the upscaling done by the supersampler. Defaults to `Point`.
         mod: Ensures the supersampled resolution is a multiple of this value. Defaults to 4.
         planes: Which planes to process.
@@ -322,12 +312,18 @@ def pre_ss(
 
     func_util = FunctionUtil(clip, func or pre_ss, planes)
 
-    ss = Scaler.ensure_obj(supersampler, func_util.func).scale(
-        clip, mod_x(func_util.work_clip.width * rfactor, mod), mod_x(func_util.work_clip.height * rfactor, mod)
+    args = clip, mod_x(func_util.work_clip.width * rfactor, mod), mod_x(func_util.work_clip.height * rfactor, mod)
+    ss = (
+        Scaler.ensure_obj(supersampler, func_util.func).scale(*args)
+        if is_scaler_like(supersampler)
+        else supersampler(*args)
     )
 
     processed = function(ss, **kwargs)
 
-    down = Scaler.ensure_obj(downscaler, func_util.func).scale(processed, clip.width, clip.height)
+    args = processed, clip.width, clip.height
+    down = (
+        Scaler.ensure_obj(downscaler, func_util.func).scale(*args) if is_scaler_like(downscaler) else downscaler(*args)
+    )
 
     return func_util.return_clip(down)
