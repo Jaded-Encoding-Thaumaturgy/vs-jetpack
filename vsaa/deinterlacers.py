@@ -288,6 +288,8 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
         if not self.transpose_first:
             nshift.reverse()
 
+        self._ss_shifts = nshift
+
         if self.noshift:
             noshift = normalize_seq(self.noshift, clip.format.num_planes)
 
