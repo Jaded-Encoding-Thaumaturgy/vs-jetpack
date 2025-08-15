@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import partial, wraps
 from math import exp
 from types import GenericAlias
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Generic, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Generic, TypeIs, TypeVar, Union, overload
 
 from jetpytools import P
 from typing_extensions import Self
@@ -28,12 +28,42 @@ from vstools import (
     vs_object,
 )
 
-from .abstract import Resampler, ResamplerLike, Scaler, ScalerLike
+from .abstract import (
+    ComplexDescaler,
+    ComplexDescalerLike,
+    ComplexKernel,
+    ComplexKernelLike,
+    ComplexScaler,
+    ComplexScalerLike,
+    CustomComplexKernel,
+    CustomComplexKernelLike,
+    Descaler,
+    DescalerLike,
+    Kernel,
+    KernelLike,
+    Resampler,
+    ResamplerLike,
+    Scaler,
+    ScalerLike,
+)
 from .abstract.base import BaseScaler, BaseScalerMeta, _BaseScalerT
 from .kernels import Catrom, Point
 from .types import Center, LeftShift, Slope, TopShift
 
-__all__ = ["BaseScalerSpecializer", "LinearLight", "NoScale", "resample_to"]
+__all__ = [
+    "BaseScalerSpecializer",
+    "LinearLight",
+    "NoScale",
+    "is_complex_descaler_like",
+    "is_complex_kernel_like",
+    "is_complex_scaler_like",
+    "is_custom_complex_kernel_like",
+    "is_descaler_like",
+    "is_kernel_like",
+    "is_resampler_like",
+    "is_scaler_like",
+    "resample_to",
+]
 
 
 class BaseScalerSpecializerMeta(BaseScalerMeta):
@@ -409,3 +439,47 @@ def resample_to(
         return Point().resample(clip, out_fmt, matrix)
 
     return resampler().resample(clip, out_fmt, matrix)
+
+
+def _is_base_scaler_like(obj: Any, base_scaler: type[BaseScaler]) -> bool:
+    return isinstance(obj, (str, base_scaler)) or (isinstance(obj, BaseScalerMeta) and base_scaler in obj.mro())
+
+
+def is_scaler_like(obj: Any) -> TypeIs[ScalerLike]:
+    """Returns true if obj is a ScalerLike"""
+    return _is_base_scaler_like(obj, Scaler)
+
+
+def is_descaler_like(obj: Any) -> TypeIs[DescalerLike]:
+    """Returns true if obj is a DescalerLike"""
+    return _is_base_scaler_like(obj, Descaler)
+
+
+def is_resampler_like(obj: Any) -> TypeIs[ResamplerLike]:
+    """Returns true if obj is a ResamplerLike"""
+    return _is_base_scaler_like(obj, Resampler)
+
+
+def is_kernel_like(obj: Any) -> TypeIs[KernelLike]:
+    """Returns true if obj is a KernelLike"""
+    return _is_base_scaler_like(obj, Kernel)
+
+
+def is_complex_scaler_like(obj: Any) -> TypeIs[ComplexScalerLike]:
+    """Returns true if obj is a ComplexScalerLike"""
+    return _is_base_scaler_like(obj, ComplexScaler)
+
+
+def is_complex_descaler_like(obj: Any) -> TypeIs[ComplexDescalerLike]:
+    """Returns true if obj is a ComplexDescalerLike"""
+    return _is_base_scaler_like(obj, ComplexDescaler)
+
+
+def is_complex_kernel_like(obj: Any) -> TypeIs[ComplexKernelLike]:
+    """Returns true if obj is a ComplexKernelLike"""
+    return _is_base_scaler_like(obj, ComplexKernel)
+
+
+def is_custom_complex_kernel_like(obj: Any) -> TypeIs[CustomComplexKernelLike]:
+    """Returns true if obj is a CustomComplexKernelLike"""
+    return _is_base_scaler_like(obj, CustomComplexKernel)
