@@ -11,7 +11,7 @@ __all__ = ["limit_filter"]
 
 
 @deprecated(
-    "limit_filter is deprecated and will be removed in a future version. vszip.LimitFilter instead.",
+    "limit_filter is deprecated and will be removed in a future version. Use vszip.LimitFilter instead.",
     category=DeprecationWarning,
 )
 def limit_filter(
