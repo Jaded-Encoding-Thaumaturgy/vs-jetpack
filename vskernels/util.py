@@ -122,7 +122,7 @@ class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseSca
     def __init__(self, **kwargs: Any) -> None:
         super().__init__()
 
-        for k in kwargs:
+        for k in kwargs.copy():
             if hasattr(self, k):
                 setattr(self, k, kwargs.pop(k))
 
