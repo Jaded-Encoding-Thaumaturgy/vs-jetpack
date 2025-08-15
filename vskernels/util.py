@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from functools import partial, wraps
 from math import exp
 from types import GenericAlias
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Generic, TypeIs, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Generic, TypeVar, Union, overload
 
 from jetpytools import P
-from typing_extensions import Self
+from typing_extensions import Self, TypeIs
 
 from vsexprtools import norm_expr
 from vstools import (
