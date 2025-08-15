@@ -246,7 +246,8 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
         """
         assert check_variable(clip, self.scale)
 
-        dest_dimensions = list(self._wh_norm(clip, width, height))
+        dims = self._wh_norm(clip, width, height)
+        dest_dimensions = list(dims)
         sy, sx = shift
 
         cloc = list(ChromaLocation.from_video(clip).get_offsets(clip))
@@ -292,6 +293,9 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
 
         if self.noshift:
             noshift = normalize_seq(self.noshift, clip.format.num_planes)
+
+            if all(noshift) and dims == (clip.width, clip.height):
+                return clip
 
             for ns in nshift:
                 for i in range(len(ns)):
