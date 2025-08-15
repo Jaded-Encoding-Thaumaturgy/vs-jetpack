@@ -71,10 +71,10 @@ class BaseScalerSpecializerMeta(BaseScalerMeta):
     Meta class for BaseScalerSpecializer to handle specialization logic.
     """
 
-    __isspecialized__: bool
+    __specializer__: type[BaseScaler] | None
 
-    def __new__(  # noqa: PYI034
-        mcls,
+    def __new__(  # noqa: PYI019
+        mcls: type[_BaseScalerSpecializerMetaT],
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
@@ -82,19 +82,26 @@ class BaseScalerSpecializerMeta(BaseScalerMeta):
         *,
         specializer: type[BaseScaler] | None = None,
         **kwargs: Any,
-    ) -> BaseScalerSpecializerMeta:
+    ) -> _BaseScalerSpecializerMetaT:
         if specializer is not None:
             name = f"{name}[{specializer.__name__}]"
             bases = (specializer, *bases)
             namespace["__orig_bases__"] = (specializer, *namespace["__orig_bases__"])
 
-            del namespace["kernel_radius"]
-            del namespace["_default_scaler"]
+            with suppress(KeyError):
+                del namespace["kernel_radius"]
 
         obj = super().__new__(mcls, name, bases, namespace, **kwargs)
-        obj.__isspecialized__ = bool(specializer)
+        obj.__specializer__ = specializer
 
         return obj
+
+    @property
+    def __isspecialized__(self) -> bool:
+        return bool(self.__specializer__)
+
+
+_BaseScalerSpecializerMetaT = TypeVar("_BaseScalerSpecializerMetaT", bound=BaseScalerSpecializerMeta)
 
 
 class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseScalerSpecializerMeta, abstract=True):
