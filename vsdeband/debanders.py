@@ -7,7 +7,7 @@ from jetpytools import CustomValueError, P, R, to_arr
 
 from vsdenoise import PrefilterLike
 from vsexprtools import norm_expr
-from vsrgtools import gauss_blur, limit_filter
+from vsrgtools import gauss_blur
 from vstools import (
     ConstantFormatVideoNode,
     CustomIntEnum,
@@ -590,7 +590,7 @@ def mdb_bilateral(
     db2 = debander(db1, rad2, thr, 0, planes)
     db3 = debander(db2, rad3, thr, 0, planes)
 
-    limit = limit_filter(db3, clip, db1, dark_thr, bright_thr, elast, planes)
+    limit = core.vszip.LimitFilter(db3, clip, db1, dark_thr, bright_thr, elast, planes)
 
     return depth(limit, bits)
 
@@ -641,7 +641,7 @@ def pfdeband(
 
     blur = prefilter(clip, planes=planes)
     smooth = debander(blur, radius, thr, planes=planes)
-    limit = limit_filter(smooth, blur, ref, dark_thr, bright_thr, elast, planes)
+    limit = core.vszip.LimitFilter(smooth, blur, ref, dark_thr, bright_thr, elast, planes)
     merge = norm_expr([clip, blur, limit], "z x y - +", planes, func=pfdeband)
 
     return depth(merge, bits)

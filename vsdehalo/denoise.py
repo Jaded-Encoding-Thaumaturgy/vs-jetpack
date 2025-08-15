@@ -17,7 +17,6 @@ from vsmasktools import Morpho, PrewittStd
 from vsrgtools import (
     contrasharpening_dehalo,
     gauss_blur,
-    limit_filter,
     median_blur,
     repair,
 )
@@ -125,12 +124,12 @@ def hq_dering(
 
     repaired = repair(func.work_clip, smoothed, drrep, planes)
 
-    limited = limit_filter(
+    limited = core.vszip.LimitFilter(
         repaired,
         func.work_clip,
         ref,
         dark_thr,
-        fallback(bright_thr, [t / 4 for t in to_arr(dark_thr)]),  # type: ignore[arg-type]
+        fallback(bright_thr, [t / 4 for t in to_arr(dark_thr)]),
         elast,
         planes,
     )

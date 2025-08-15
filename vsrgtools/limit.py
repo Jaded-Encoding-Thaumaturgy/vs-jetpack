@@ -2,12 +2,18 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from typing_extensions import deprecated
+
 from vsexprtools import norm_expr
 from vstools import PlanesT, fallback, scale_delta, to_arr, vs
 
 __all__ = ["limit_filter"]
 
 
+@deprecated(
+    "limit_filter is deprecated and will be removed in a future version. vszip.LimitFilter instead.",
+    category=DeprecationWarning,
+)
 def limit_filter(
     flt: vs.VideoNode,
     src: vs.VideoNode,
@@ -32,6 +38,7 @@ def limit_filter(
     Returns:
         Limited clip.
     """
+
     return norm_expr(
         [flt, src, fallback(ref, src)],
         "x z - dup {bright_thr} {dark_thr} ? THR1! abs DIFF! THR1@ {elast} * THR2! "
