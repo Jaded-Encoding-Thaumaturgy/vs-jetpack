@@ -83,8 +83,8 @@ class MeanMode(CustomIntEnum):
                 p = kwargs.get("p", -1)
                 return ExprOp.ADD(
                     clips,
-                    suffix=f"range_min - {p} pow",
-                    expr_suffix=f"{n_clips} / {1 / p} pow range_min +",
+                    suffix=f"{p} pow",
+                    expr_suffix=f"{n_clips} / {1 / p} pow",
                     planes=planes,
                     func=func,
                 )
@@ -93,11 +93,11 @@ class MeanMode(CustomIntEnum):
                 p = kwargs.get("p", 2)
                 counts = range(n_clips)
 
-                expr = StrList([[f"{clip} range_min - D{i}!" for i, clip in zip(counts, all_clips)]])
+                expr = StrList([[f"{clip} neutral - D{i}!" for i, clip in zip(counts, all_clips)]])
                 for x in range(2):
-                    expr.extend([[f"D{i}@ {p - x} pow" for i in counts], ExprOp.ADD * (n_clips - 1)])
+                    expr.extend([[f"D{i}@ {p - x} pow" for i in counts], ExprOp.ADD * (n_clips - 1), f"P{x}!"])
 
-                return norm_expr(clips, f"{expr} / range_min +", planes, func=func)
+                return norm_expr(clips, f"{expr} P1@ 0 = 0 P0@ P1@ / ? neutral +", planes, func=func)
 
             case MeanMode.HARMONIC | MeanMode.GEOMETRIC | MeanMode.RMS | MeanMode.CUBIC:
                 return MeanMode.POWER(clips, p=self.value, planes=planes, func=func)
