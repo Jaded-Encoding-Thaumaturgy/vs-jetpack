@@ -6,7 +6,7 @@ from typing import Any, Literal, overload
 from vsexprtools import ExprOp, ExprVars, norm_expr
 from vstools import (
     ConstantFormatVideoNode,
-    CustomIntEnum,
+    CustomEnum,
     FuncExceptT,
     PlanesT,
     StrList,
@@ -19,18 +19,14 @@ from vstools import (
 __all__ = ["MeanMode"]
 
 
-class MeanMode(CustomIntEnum):
-    HARMONIC = -1
+class MeanMode(CustomEnum):
+    HARMONIC = 0
 
-    GEOMETRIC = 0
+    GEOMETRIC = 0.5
 
     ARITHMETIC = 1
 
-    RMS = 2
-
-    CUBIC = 3
-
-    POWER = auto()
+    CONTRAHARMONIC = 2
 
     LEHMER = auto()
 
@@ -38,13 +34,11 @@ class MeanMode(CustomIntEnum):
 
     MAXIMUM = auto()
 
-    CONTRAHARMONIC = auto()
-
     MEDIAN = auto()
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Literal[MeanMode.POWER, MeanMode.LEHMER],
+        self: Literal[MeanMode.LEHMER],
         *_clips: VideoNodeIterableT[vs.VideoNode],
         p: float = ...,
         planes: PlanesT = None,
@@ -79,18 +73,8 @@ class MeanMode(CustomIntEnum):
             return next(iter(clips))
 
         match self:
-            case MeanMode.POWER:
-                p = kwargs.get("p", -1)
-                return ExprOp.ADD(
-                    clips,
-                    suffix=f"{p} pow",
-                    expr_suffix=f"{n_clips} / {1 / p} pow",
-                    planes=planes,
-                    func=func,
-                )
-
             case MeanMode.LEHMER:
-                p = kwargs.get("p", 2)
+                p = kwargs.get("p", 3)
                 counts = range(n_clips)
 
                 expr = StrList([[f"{clip} neutral - D{i}!" for i, clip in zip(counts, all_clips)]])
@@ -99,11 +83,8 @@ class MeanMode(CustomIntEnum):
 
                 return norm_expr(clips, f"{expr} P1@ 0 = 0 P0@ P1@ / ? neutral +", planes, func=func)
 
-            case MeanMode.HARMONIC | MeanMode.GEOMETRIC | MeanMode.RMS | MeanMode.CUBIC:
-                return MeanMode.POWER(clips, p=self.value, planes=planes, func=func)
-
-            case MeanMode.CONTRAHARMONIC:
-                return MeanMode.LEHMER(clips, p=2, planes=planes, func=func)
+            case MeanMode.HARMONIC | MeanMode.GEOMETRIC | MeanMode.CONTRAHARMONIC:
+                return MeanMode.LEHMER(clips, p=self.value, planes=planes, func=func)
 
             case MeanMode.ARITHMETIC:
                 return ExprOp.ADD(clips, expr_suffix=f"{n_clips} /", planes=planes, func=func)
