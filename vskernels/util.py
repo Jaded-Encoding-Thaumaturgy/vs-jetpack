@@ -13,13 +13,12 @@ from typing import (
     Concatenate,
     Generic,
     TypeVar,
-    TypeVarTuple,
     Union,
     overload,
 )
 
 from jetpytools import P, classproperty
-from typing_extensions import Self, TypeIs
+from typing_extensions import Self, TypeIs, TypeVarTuple, Unpack
 
 from vsexprtools import norm_expr
 from vstools import (
@@ -224,22 +223,22 @@ class NoScale(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
 _BaseScalerTs = TypeVarTuple("_BaseScalerTs")
 
 
-class BaseMixedScalerMeta(BaseScalerSpecializerMeta, Generic[*_BaseScalerTs]):
+class BaseMixedScalerMeta(BaseScalerSpecializerMeta, Generic[Unpack[_BaseScalerTs]]):
     """
     Meta class for BaseMixedScaler to handle mixed scaling logic.
     """
 
-    __others__: tuple[*_BaseScalerTs]
+    __others__: tuple[Unpack[_BaseScalerTs]]
 
     def __new__(
         mcls,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
-        *others: *_BaseScalerTs,
+        *others: Unpack[_BaseScalerTs],
         specializer: type[BaseScaler] | None = None,
         **kwargs: Any,
-    ) -> BaseMixedScalerMeta[*_BaseScalerTs]:
+    ) -> BaseMixedScalerMeta[Unpack[_BaseScalerTs]]:
         obj = super().__new__(mcls, name, bases, namespace, specializer=specializer, **kwargs)
 
         if others:
@@ -259,7 +258,7 @@ class BaseMixedScalerMeta(BaseScalerSpecializerMeta, Generic[*_BaseScalerTs]):
 
 class BaseMixedScaler(
     BaseScalerSpecializer[_BaseScalerT],
-    Generic[_BaseScalerT, *_BaseScalerTs],
+    Generic[_BaseScalerT, Unpack[_BaseScalerTs]],
     metaclass=BaseMixedScalerMeta,
     abstract=True,
 ):
@@ -269,7 +268,7 @@ class BaseMixedScaler(
 
     @classproperty
     @classmethod
-    def _others(cls) -> tuple[*_BaseScalerTs]:
+    def _others(cls) -> tuple[Unpack[_BaseScalerTs]]:
         # Workaround as we can't specify the bound values of a TypeVarTuple yet
         return tuple(o() for o in cls.__others__)  # type:ignore[operator]
 
