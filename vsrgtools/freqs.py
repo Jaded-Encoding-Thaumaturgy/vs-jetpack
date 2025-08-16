@@ -36,7 +36,7 @@ class MeanMode(CustomEnum):
     CONTRAHARMONIC = 2
     """Contraharmonic mean, implemented as a Lehmer mean withs p=2"""
 
-    LEHMER = auto()
+    LEHMER = 3
     """
     Lehmer mean, configurable with parameter `p`.
 
@@ -117,7 +117,7 @@ class MeanMode(CustomEnum):
 
         match self:
             case MeanMode.LEHMER:
-                p = kwargs.get("p", 3)
+                p = kwargs.get("p", self.value)
                 counts = range(n_clips)
 
                 expr = StrList([[f"{clip} neutral - D{i}!" for i, clip in zip(counts, all_clips)]])
