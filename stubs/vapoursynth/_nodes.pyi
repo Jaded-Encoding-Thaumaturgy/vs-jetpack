@@ -10658,13 +10658,26 @@ class _Plugin_vszip_Core_Bound(Plugin):
     def CombMaskMT(
         self, clip: VideoNode, thY1: int | None = None, thY2: int | None = None
     ) -> ConstantFormatVideoNode: ...
-    def ImageRead(self, path: _SingleAndSequence[_DataType]) -> ConstantFormatVideoNode: ...
+    def ImageRead(
+        self, path: _SingleAndSequence[_DataType], validate: int | None = None
+    ) -> ConstantFormatVideoNode: ...
     def Limiter(
         self,
         clip: VideoNode,
         min: _SingleAndSequence[float] | None = None,
         max: _SingleAndSequence[float] | None = None,
         tv_range: int | None = None,
+        mask: int | None = None,
+        planes: _SingleAndSequence[int] | None = None,
+    ) -> ConstantFormatVideoNode: ...
+    def LimitFilter(
+        self,
+        flt: VideoNode,
+        src: VideoNode,
+        ref: VideoNode | None = None,
+        dark_thr: _SingleAndSequence[float] | None = None,
+        bright_thr: _SingleAndSequence[float] | None = None,
+        elast: _SingleAndSequence[float] | None = None,
         planes: _SingleAndSequence[int] | None = None,
     ) -> ConstantFormatVideoNode: ...
     def Metrics(
@@ -10695,7 +10708,11 @@ class _Plugin_vszip_Core_Bound(Plugin):
         frames: _SingleAndSequence[int],
         mismatch: int | None = None,
         planes: _SingleAndSequence[int] | None = None,
-    ) -> VideoNode: ...
+    ) -> ConstantFormatVideoNode: ...
+    def SSIMULACRA2(self, reference: VideoNode, distorted: VideoNode) -> ConstantFormatVideoNode: ...
+    def XPSNR(
+        self, reference: VideoNode, distorted: VideoNode, temporal: int | None = None, verbose: int | None = None
+    ) -> ConstantFormatVideoNode: ...
 
 class _Plugin_vszip_VideoNode_Bound(Plugin):
     """This class implements the module definitions for the "vszip" VapourSynth plugin.\n\n*This class cannot be imported.*"""
@@ -10730,6 +10747,16 @@ class _Plugin_vszip_VideoNode_Bound(Plugin):
         min: _SingleAndSequence[float] | None = None,
         max: _SingleAndSequence[float] | None = None,
         tv_range: int | None = None,
+        mask: int | None = None,
+        planes: _SingleAndSequence[int] | None = None,
+    ) -> ConstantFormatVideoNode: ...
+    def LimitFilter(
+        self,
+        src: VideoNode,
+        ref: VideoNode | None = None,
+        dark_thr: _SingleAndSequence[float] | None = None,
+        bright_thr: _SingleAndSequence[float] | None = None,
+        elast: _SingleAndSequence[float] | None = None,
         planes: _SingleAndSequence[int] | None = None,
     ) -> ConstantFormatVideoNode: ...
     def Metrics(self, distorted: VideoNode, mode: int | None = None) -> ConstantFormatVideoNode: ...
@@ -10755,7 +10782,11 @@ class _Plugin_vszip_VideoNode_Bound(Plugin):
         frames: _SingleAndSequence[int],
         mismatch: int | None = None,
         planes: _SingleAndSequence[int] | None = None,
-    ) -> VideoNode: ...
+    ) -> ConstantFormatVideoNode: ...
+    def SSIMULACRA2(self, distorted: VideoNode) -> ConstantFormatVideoNode: ...
+    def XPSNR(
+        self, distorted: VideoNode, temporal: int | None = None, verbose: int | None = None
+    ) -> ConstantFormatVideoNode: ...
 
 # end implementation
 
