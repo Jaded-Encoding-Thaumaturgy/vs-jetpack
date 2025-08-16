@@ -8,10 +8,9 @@ from typing import Any, Callable, Generic, Iterator, Mapping
 
 from jetpytools import CustomIndexError, P, R
 
-from vsaa import NNEDI3
+from vsaa import NNEDI3, SuperSamplerProcess
 from vsdenoise import Prefilter
 from vsexprtools import ExprOp, norm_expr
-from vskernels import Point
 from vsmasktools import (
     Coordinates,
     GenericMaskT,
@@ -369,37 +368,33 @@ def fine_dehalo(
         if pre_ss % 2 != 0:
             raise CustomIndexError("`pre_ss` has to be a multiple of 2.", func_util.func, pre_ss)
 
-        nnedi3 = NNEDI3(tff=any(p in func_util.norm_planes for p in [1, 2]), noshift=True)
-        ss_clip = nnedi3.supersample(clip, pre_ss)
-        dehaloed = fine_dehalo(
-            ss_clip,
-            blur,
-            lowsens,
-            highsens,
-            ss,
-            darkstr,
-            brightstr,
-            rx,
-            ry,
-            edgemask,
-            thmi,
-            thma,
-            thlimi,
-            thlima,
-            exclude,
-            edgeproc,
-            contra,
-            planes=planes,
-            attach_masks=attach_masks,
-            func=func_util.func,
-            **kwargs,
-        )
-        return Point().scale(
-            dehaloed,
-            clip.width,
-            clip.height,
-            tuple([round(s - 1e-6) for s in dim_shifts] for dim_shifts in reversed(nnedi3._ss_shifts)),  # type: ignore[arg-type]
-        )
+        return SuperSamplerProcess[NNEDI3](
+            lambda clip: fine_dehalo(
+                clip,
+                blur,
+                lowsens,
+                highsens,
+                ss,
+                darkstr,
+                brightstr,
+                rx,
+                ry,
+                edgemask,
+                thmi,
+                thma,
+                thlimi,
+                thlima,
+                exclude,
+                edgeproc,
+                contra,
+                planes=planes,
+                attach_masks=attach_masks,
+                func=func_util.func,
+                **kwargs,
+            ),
+            noshift=True,
+            tff=any(p in func_util.norm_planes for p in [1, 2]),
+        ).supersample(clip, pre_ss)
 
     fine_dehalo.masks = fine_dehalo.Masks(
         func_util.work_clip, rx, ry, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func_util.func

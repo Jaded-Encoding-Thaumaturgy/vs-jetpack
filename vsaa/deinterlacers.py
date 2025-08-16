@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
-from typing import TYPE_CHECKING, Any, Protocol, Sequence, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, Sequence, TypeVar, runtime_checkable
 
 from jetpytools import MISSING
 from typing_extensions import Self
 
-from vskernels import Catrom, ComplexScaler, ComplexScalerLike, LeftShift, Scaler, TopShift
+from vskernels import BaseMixedScaler, Catrom, ComplexScaler, ComplexScalerLike, LeftShift, Point, Scaler, TopShift
 from vstools import (
     ChromaLocation,
     ConstantFormatVideoNode,
@@ -29,6 +29,7 @@ __all__ = [
     "Deinterlacer",
     "SangNom",
     "SuperSampler",
+    "SuperSamplerProcess",
     "SupportsBobDeinterlace",
 ]
 
@@ -812,3 +813,65 @@ class BWDIF(Deinterlacer):
 
     def __vs_del__(self, core_id: int) -> None:
         self.edeint = None
+
+
+if TYPE_CHECKING:
+    # Let's assume the specialized SuperSampler isn't be abstract
+    class _ConcreteSuperSampler(SuperSampler):
+        @property
+        def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]: ...
+        def _interpolate(
+            self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any
+        ) -> ConstantFormatVideoNode: ...
+        def get_deint_args(self, **kwargs: Any) -> dict[str, Any]: ...
+else:
+    _ConcreteSuperSampler = SuperSampler
+
+_SuperSamplerT = TypeVar("_SuperSamplerT", bound=SuperSampler)
+
+
+class SuperSamplerProcess(BaseMixedScaler[_SuperSamplerT, Point], _ConcreteSuperSampler, partial_abstract=True):
+    """
+    A utility SuperSampler class that applies a given function to a supersampled clip,
+    then downsamples it back using Point.
+
+    If used without a specified scaler, it defaults to inheriting from `NNEDI3`.
+    """
+
+    _default_scaler = NNEDI3
+
+    def __init__(
+        self,
+        function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+        noshift: bool | Sequence[bool] = True,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Initialize the SuperSamplerProcess.
+
+        Args:
+            function: A function to apply on the supersampled clip.
+            **kwargs: Additional arguments to the specialized SuperSampler.
+        """
+        super().__init__(noshift=noshift, **kwargs)
+
+        self.function = function
+
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode:
+        ss_clip = super().scale(clip, width, height, shift, **kwargs)
+
+        processed = self.function(ss_clip)
+
+        return self._others[0].scale(
+            processed,
+            clip.width,
+            clip.height,
+            tuple([round(s - 1e-6) for s in dim_shifts] for dim_shifts in reversed(self._ss_shifts)),  # type: ignore[return-value, arg-type]
+        )
