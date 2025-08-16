@@ -337,6 +337,8 @@ def pre_ss(
     Returns:
         A clip with the given function applied at higher resolution, then downscaled back.
     """
+    from vsaa import SuperSamplerProcess
+
     if rfactor == 1.0:
         return (
             function_or_ssp.function(clip)
