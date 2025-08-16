@@ -20,30 +20,58 @@ __all__ = ["MeanMode"]
 
 
 class MeanMode(CustomEnum):
+    """
+    Enum of different mean for combining clips.
+    """
+
     HARMONIC = 0
+    """Harmonic mean, implemented as a Lehmer mean with p=0."""
 
     GEOMETRIC = 0.5
+    """Geometric mean, implemented as a Lehmer mean with p=0.5."""
 
     ARITHMETIC = 1
+    """Arithmetic mean."""
 
     CONTRAHARMONIC = 2
+    """Contraharmonic mean, implemented as a Lehmer mean withs p=2"""
 
     LEHMER = auto()
+    """
+    Lehmer mean, configurable with parameter `p`.
+
+    Note: An odd number for `p` is preferred as it will avoid negative inputs.
+    """
 
     MINIMUM = auto()
+    """Minimum value across all clips"""
 
     MAXIMUM = auto()
+    """Maximum value across all clips"""
 
     MEDIAN = auto()
+    """Median value across all clips"""
 
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[MeanMode.LEHMER],
         *_clips: VideoNodeIterableT[vs.VideoNode],
-        p: float = ...,
+        p: float = 3,
         planes: PlanesT = None,
         func: FuncExceptT | None = None,
-    ) -> ConstantFormatVideoNode: ...
+    ) -> ConstantFormatVideoNode:
+        """
+        Combine clips using the Lehmer mean with a configurable exponent.
+
+        Args:
+            *_clips: Input clips to combine.
+            p: Exponent for the Lehmer mean calculation.
+            planes: Which planes to process.
+            func: An optional function to use for error handling.
+
+        Returns:
+            A new clip containing the combined frames.
+        """
 
     @overload
     def __call__(
@@ -60,6 +88,21 @@ class MeanMode(CustomEnum):
         func: FuncExceptT | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
+        """
+        Applies the selected mean to one or more video clips.
+
+        Args:
+            *_clips: Input clips to combine.
+            planes: Which planes to process.
+           func: An optional function to use for error handling.
+            **kwargs: Additional keyword arguments for certain modes.
+
+                   - p (float): Exponent for `LEHMER` mode. Defaults to 3.
+
+        Returns:
+            A new clip containing the combined frames.
+        """
+
         func = func or self.__class__
 
         clips = flatten_vnodes(_clips)
