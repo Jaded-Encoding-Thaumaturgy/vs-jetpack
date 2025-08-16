@@ -4,13 +4,17 @@ from dataclasses import dataclass
 from functools import partial
 from math import ceil, floor
 from types import NoneType
-from typing import Any, Callable, NamedTuple, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, TypeAlias, overload
 
 from jetpytools import FuncExceptT, mod_x
 from typing_extensions import Self
 
-from vskernels import Bilinear, Point, Scaler, ScalerLike
+from vskernels import Point, Scaler, ScalerLike, is_scaler_like
 from vstools import FunctionUtil, KwargsT, PlanesT, Resolution, VSFunctionNoArgs, get_w, mod2, vs
+
+if TYPE_CHECKING:
+    from vsaa import SuperSamplerProcess
+    from vsaa.deinterlacers import _SuperSamplerT
 
 __all__ = ["CropAbs", "CropRel", "ScalingArgs", "pre_ss", "scale_var_clip"]
 
@@ -278,56 +282,90 @@ class ScalingArgs:
         )
 
 
+@overload
 def pre_ss(
     clip: vs.VideoNode,
     function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+    /,
     rfactor: float = 2.0,
-    supersampler: ScalerLike = Bilinear,
-    downscaler: ScalerLike = Point,
+    supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] = Point,
+    downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] = Point,
     mod: int = 4,
     planes: PlanesT = None,
     func: FuncExceptT | None = None,
-    **kwargs: Any,
+) -> vs.VideoNode: ...
+
+
+@overload
+def pre_ss(
+    clip: vs.VideoNode,
+    ssp: SuperSamplerProcess[_SuperSamplerT],
+    /,
+    rfactor: float = 2.0,
+    *,
+    mod: int = 4,
+    planes: PlanesT = None,
+    func: FuncExceptT | None = None,
+) -> vs.VideoNode: ...
+
+
+def pre_ss(
+    clip: vs.VideoNode,
+    function_or_ssp: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | SuperSamplerProcess[_SuperSamplerT],
+    /,
+    rfactor: float = 2.0,
+    supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] = Point,
+    downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] = Point,
+    mod: int = 4,
+    planes: PlanesT = None,
+    func: FuncExceptT | None = None,
 ) -> vs.VideoNode:
     """
     Supersamples the input clip, applies a given function to the higher-resolution version,
     and then downscales it back to the original resolution.
 
-    Example usage:
-        ```py
-        from vsdehalo import fine_dehalo
-        from vsaa import NNEDI3
-
-        # Point downscale will undo the intrinsic shift of NNEDI3 on the luma plane.
-        processed = pre_ss(clip, lambda clip: fine_dehalo(clip, ...), supersampler=NNEDI3(noshift=(True, False)))
-        ```
-
     Args:
         clip: Source clip.
-        function: A function to apply on the supersampled clip. Must accept a `planes` argument.
+        function_or_ssp: A function to apply on the supersampled clip or a SuperSamplerProcess object.
         rfactor: Scaling factor for supersampling. Defaults to 2.
-        supersampler: Scaler used to downscale the processed clip back to its original resolution.
-            Defaults to `Bilinear`.
+        supersampler: Scaler used to upscale the input clip. Defaults to `Point`.
         downscaler: Downscaler used for undoing the upscaling done by the supersampler. Defaults to `Point`.
         mod: Ensures the supersampled resolution is a multiple of this value. Defaults to 4.
         planes: Which planes to process.
         func: An optional function to use for error handling.
-        **kwargs: Additional keyword arguments passed to the provided `function`.
 
     Returns:
         A clip with the given function applied at higher resolution, then downscaled back.
     """
+    from vsaa import SuperSamplerProcess
+
     if rfactor == 1.0:
-        return function(clip, **kwargs)
+        return (
+            function_or_ssp.function(clip)
+            if isinstance(function_or_ssp, SuperSamplerProcess)
+            else function_or_ssp(clip)
+        )
 
     func_util = FunctionUtil(clip, func or pre_ss, planes)
 
-    ss = Scaler.ensure_obj(supersampler, func_util.func).scale(
-        clip, mod_x(func_util.work_clip.width * rfactor, mod), mod_x(func_util.work_clip.height * rfactor, mod)
+    args = clip, mod_x(func_util.work_clip.width * rfactor, mod), mod_x(func_util.work_clip.height * rfactor, mod)
+
+    if isinstance(function_or_ssp, SuperSamplerProcess):
+        return function_or_ssp.scale(*args)
+
+    function = function_or_ssp
+
+    ss = (
+        Scaler.ensure_obj(supersampler, func_util.func).scale(*args)
+        if is_scaler_like(supersampler)
+        else supersampler(*args)
     )
 
-    processed = function(ss, **kwargs)
+    processed = function(ss)
 
-    down = Scaler.ensure_obj(downscaler, func_util.func).scale(processed, clip.width, clip.height)
+    args = processed, clip.width, clip.height
+    down = (
+        Scaler.ensure_obj(downscaler, func_util.func).scale(*args) if is_scaler_like(downscaler) else downscaler(*args)
+    )
 
     return func_util.return_clip(down)

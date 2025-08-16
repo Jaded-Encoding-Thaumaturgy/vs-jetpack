@@ -1,14 +1,24 @@
 from __future__ import annotations
 
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass
 from functools import partial, wraps
 from math import exp
 from types import GenericAlias
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Generic, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Concatenate,
+    Generic,
+    TypeVar,
+    Union,
+    overload,
+)
 
-from jetpytools import P
-from typing_extensions import Self
+from jetpytools import P, classproperty
+from typing_extensions import Self, TypeIs, TypeVarTuple, Unpack
 
 from vsexprtools import norm_expr
 from vstools import (
@@ -28,12 +38,43 @@ from vstools import (
     vs_object,
 )
 
-from .abstract import Resampler, ResamplerLike, Scaler, ScalerLike
+from .abstract import (
+    ComplexDescaler,
+    ComplexDescalerLike,
+    ComplexKernel,
+    ComplexKernelLike,
+    ComplexScaler,
+    ComplexScalerLike,
+    CustomComplexKernel,
+    CustomComplexKernelLike,
+    Descaler,
+    DescalerLike,
+    Kernel,
+    KernelLike,
+    Resampler,
+    ResamplerLike,
+    Scaler,
+    ScalerLike,
+)
 from .abstract.base import BaseScaler, BaseScalerMeta, _BaseScalerT
 from .kernels import Catrom, Point
 from .types import Center, LeftShift, Slope, TopShift
 
-__all__ = ["BaseScalerSpecializer", "LinearLight", "NoScale", "resample_to"]
+__all__ = [
+    "BaseMixedScaler",
+    "BaseScalerSpecializer",
+    "LinearLight",
+    "NoScale",
+    "is_complex_descaler_like",
+    "is_complex_kernel_like",
+    "is_complex_scaler_like",
+    "is_custom_complex_kernel_like",
+    "is_descaler_like",
+    "is_kernel_like",
+    "is_resampler_like",
+    "is_scaler_like",
+    "resample_to",
+]
 
 
 class BaseScalerSpecializerMeta(BaseScalerMeta):
@@ -41,10 +82,10 @@ class BaseScalerSpecializerMeta(BaseScalerMeta):
     Meta class for BaseScalerSpecializer to handle specialization logic.
     """
 
-    __isspecialized__: bool
+    __specializer__: type[BaseScaler] | None
 
-    def __new__(  # noqa: PYI034
-        mcls,
+    def __new__(  # noqa: PYI019
+        mcls: type[_BaseScalerSpecializerMetaT],
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
@@ -52,19 +93,26 @@ class BaseScalerSpecializerMeta(BaseScalerMeta):
         *,
         specializer: type[BaseScaler] | None = None,
         **kwargs: Any,
-    ) -> BaseScalerSpecializerMeta:
+    ) -> _BaseScalerSpecializerMetaT:
         if specializer is not None:
             name = f"{name}[{specializer.__name__}]"
             bases = (specializer, *bases)
             namespace["__orig_bases__"] = (specializer, *namespace["__orig_bases__"])
 
-            del namespace["kernel_radius"]
-            del namespace["_default_scaler"]
+            with suppress(KeyError):
+                del namespace["kernel_radius"]
 
         obj = super().__new__(mcls, name, bases, namespace, **kwargs)
-        obj.__isspecialized__ = bool(specializer)
+        obj.__specializer__ = specializer
 
         return obj
+
+    @property
+    def __isspecialized__(self) -> bool:
+        return bool(self.__specializer__)
+
+
+_BaseScalerSpecializerMetaT = TypeVar("_BaseScalerSpecializerMetaT", bound=BaseScalerSpecializerMeta)
 
 
 class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseScalerSpecializerMeta, abstract=True):
@@ -85,7 +133,7 @@ class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseSca
     def __init__(self, **kwargs: Any) -> None:
         super().__init__()
 
-        for k in kwargs:
+        for k in kwargs.copy():
             if hasattr(self, k):
                 setattr(self, k, kwargs.pop(k))
 
@@ -170,6 +218,90 @@ class NoScale(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
             A dynamically created NoScale subclass based on the given scaler.
         """
         return NoScale[Scaler.from_param(scaler)]  # type: ignore[return-value,misc]
+
+
+_BaseScalerTs = TypeVarTuple("_BaseScalerTs")
+
+
+class BaseMixedScalerMeta(BaseScalerSpecializerMeta, Generic[Unpack[_BaseScalerTs]]):
+    """
+    Meta class for BaseMixedScaler to handle mixed scaling logic.
+    """
+
+    __others__: tuple[Unpack[_BaseScalerTs]]
+
+    def __new__(
+        mcls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        *others: Unpack[_BaseScalerTs],
+        specializer: type[BaseScaler] | None = None,
+        **kwargs: Any,
+    ) -> BaseMixedScalerMeta[Unpack[_BaseScalerTs]]:
+        obj = super().__new__(mcls, name, bases, namespace, specializer=specializer, **kwargs)
+
+        if others:
+            obj.__others__ = others
+        else:
+            for t in namespace["__orig_bases__"]:
+                if (os := getattr(t, "__others__", ())) or (
+                    isinstance(t, GenericAlias) and (os := getattr(t.__origin__, "__others__", ()))
+                ):
+                    obj.__others__ = os
+                    break
+            else:
+                obj.__others__ = ()  # type: ignore[assignment]
+
+        return obj
+
+
+class BaseMixedScaler(
+    BaseScalerSpecializer[_BaseScalerT],
+    Generic[_BaseScalerT, Unpack[_BaseScalerTs]],
+    metaclass=BaseMixedScalerMeta,
+    abstract=True,
+):
+    """
+    An abstract base class to provide mixed or chained scaling for Scaler-like classes.
+    """
+
+    @classproperty
+    @classmethod
+    def _others(cls) -> tuple[Unpack[_BaseScalerTs]]:
+        # Workaround as we can't specify the bound values of a TypeVarTuple yet
+        return tuple(o() for o in cls.__others__)  # type:ignore[operator]
+
+    def __class_getitem__(cls, scalers: Any) -> GenericAlias:
+        """
+        Specialize this class with a given scaler kernel.
+
+        Args:
+            base_scaler: A BaseScaler type(s) used to specialize this class.
+
+        Returns:
+            A new subclass using the provided kernel.
+        """
+        if isinstance(scalers, tuple):
+            specializer, *others = scalers
+        else:
+            specializer = scalers
+            others = []
+
+        if isinstance(specializer, TypeVar):
+            cls.__others__ = tuple(others) or cls.__others__
+            return GenericAlias(cls, (specializer, *cls.__others__))
+
+        mixed_spe = BaseMixedScalerMeta(
+            cls.__name__,
+            (cls,),
+            cls.__dict__.copy(),
+            *tuple(others),
+            specializer=specializer,
+            partial_abstract=True,
+        )
+
+        return GenericAlias(mixed_spe, (specializer, *others))
 
 
 @dataclass
@@ -409,3 +541,47 @@ def resample_to(
         return Point().resample(clip, out_fmt, matrix)
 
     return resampler().resample(clip, out_fmt, matrix)
+
+
+def _is_base_scaler_like(obj: Any, base_scaler: type[BaseScaler]) -> bool:
+    return isinstance(obj, (str, base_scaler)) or (isinstance(obj, BaseScalerMeta) and base_scaler in obj.mro())
+
+
+def is_scaler_like(obj: Any) -> TypeIs[ScalerLike]:
+    """Returns true if obj is a ScalerLike"""
+    return _is_base_scaler_like(obj, Scaler)
+
+
+def is_descaler_like(obj: Any) -> TypeIs[DescalerLike]:
+    """Returns true if obj is a DescalerLike"""
+    return _is_base_scaler_like(obj, Descaler)
+
+
+def is_resampler_like(obj: Any) -> TypeIs[ResamplerLike]:
+    """Returns true if obj is a ResamplerLike"""
+    return _is_base_scaler_like(obj, Resampler)
+
+
+def is_kernel_like(obj: Any) -> TypeIs[KernelLike]:
+    """Returns true if obj is a KernelLike"""
+    return _is_base_scaler_like(obj, Kernel)
+
+
+def is_complex_scaler_like(obj: Any) -> TypeIs[ComplexScalerLike]:
+    """Returns true if obj is a ComplexScalerLike"""
+    return _is_base_scaler_like(obj, ComplexScaler)
+
+
+def is_complex_descaler_like(obj: Any) -> TypeIs[ComplexDescalerLike]:
+    """Returns true if obj is a ComplexDescalerLike"""
+    return _is_base_scaler_like(obj, ComplexDescaler)
+
+
+def is_complex_kernel_like(obj: Any) -> TypeIs[ComplexKernelLike]:
+    """Returns true if obj is a ComplexKernelLike"""
+    return _is_base_scaler_like(obj, ComplexKernel)
+
+
+def is_custom_complex_kernel_like(obj: Any) -> TypeIs[CustomComplexKernelLike]:
+    """Returns true if obj is a CustomComplexKernelLike"""
+    return _is_base_scaler_like(obj, CustomComplexKernel)

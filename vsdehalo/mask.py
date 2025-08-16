@@ -6,12 +6,11 @@ from __future__ import annotations
 
 from typing import Any, Callable, Generic, Iterator, Mapping
 
-from jetpytools import P, R
+from jetpytools import CustomIndexError, P, R
 
-from vsaa import NNEDI3
+from vsaa import NNEDI3, SuperSamplerProcess
 from vsdenoise import Prefilter
 from vsexprtools import ExprOp, norm_expr
-from vskernels import Point
 from vsmasktools import (
     Coordinates,
     GenericMaskT,
@@ -22,7 +21,6 @@ from vsmasktools import (
     normalize_mask,
 )
 from vsrgtools import BlurMatrixBase, box_blur, contrasharpening_dehalo
-from vsscale import pre_ss as pre_supersampling
 from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
@@ -302,7 +300,7 @@ def fine_dehalo(
     # Final post processing
     contra: float = 0.0,
     # Misc params
-    pre_ss: int | dict[str, Any] = 1,
+    pre_ss: int = 1,
     planes: PlanesT = 0,
     attach_masks: bool = False,
     func: FuncExceptT | None = None,
@@ -352,7 +350,7 @@ def fine_dehalo(
         edgeproc: If greater than 0, adds the edge mask into the final processing. Defaults to 0.0.
         contra: Contra-sharpening level in [contrasharpening_dehalo][vsdehalo.contra.contrasharpening_dehalo].
         pre_ss: Scaling factor for supersampling before processing.
-            If > 1.0, supersamples the clip with NNEDI3, applies dehalo processing, and then downscales back with Point.
+            If > 1, supersamples the clip with NNEDI3, applies dehalo processing, and then downscales back with Point.
         planes: Planes to process.
         attach_masks: Stores the masks as frame properties in the output clip.
             The prop names are `FineDehaloMask` + the masking step.
@@ -366,19 +364,11 @@ def fine_dehalo(
 
     assert check_progressive(clip, func_util.func)
 
-    if isinstance(pre_ss, dict) or pre_ss > 1:
-        pre_kwargs = (
-            pre_ss
-            if isinstance(pre_ss, dict)
-            else {
-                "rfactor": pre_ss,
-                "supersampler": kwargs.pop("pre_supersampler", NNEDI3(noshift=(True, False))),
-                "downscaler": kwargs.pop("pre_downscaler", Point()),
-            }
-        )
+    if pre_ss > 1:
+        if pre_ss % 2 != 0:
+            raise CustomIndexError("`pre_ss` has to be a multiple of 2.", func_util.func, pre_ss)
 
-        return pre_supersampling(
-            clip,
+        return SuperSamplerProcess[NNEDI3](
             lambda clip: fine_dehalo(
                 clip,
                 blur,
@@ -402,10 +392,9 @@ def fine_dehalo(
                 func=func_util.func,
                 **kwargs,
             ),
-            **pre_kwargs,
-            planes=planes,
-            func=func_util.func,
-        )
+            noshift=True,
+            tff=any(p in func_util.norm_planes for p in [1, 2]),
+        ).supersample(clip, pre_ss)
 
     fine_dehalo.masks = fine_dehalo.Masks(
         func_util.work_clip, rx, ry, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func_util.func
