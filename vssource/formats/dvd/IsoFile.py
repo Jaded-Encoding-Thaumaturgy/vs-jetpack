@@ -334,15 +334,15 @@ def dvdsrc_parse_vts(
 
         vts_indices.extend([start_index, end_index])
 
-        rawnode = core.dvdsrc2.FullVts(str(iso_path), vts=title.title_set_nr, ranges=vts_indices)
-        staff = dvdsrc_extract_data(rawnode)
+    rawnode = core.dvdsrc2.FullVts(str(iso_path), vts=title.title_set_nr, ranges=vts_indices)
+    staff = dvdsrc_extract_data(rawnode)
 
-        if not disable_rff:
-            rnode = apply_rff_video(rawnode, staff.rff, staff.tff, staff.prog, staff.progseq)
-            _vobids = apply_rff_array(staff.vobids, staff.rff, staff.tff, staff.progseq)
-        else:
-            rnode = rawnode
-            _vobids = staff.vobids
+    if not disable_rff:
+        rnode = apply_rff_video(rawnode, staff.rff, staff.tff, staff.prog, staff.progseq)
+        _vobids = apply_rff_array(staff.vobids, staff.rff, staff.tff, staff.progseq)
+    else:
+        rnode = rawnode
+        _vobids = staff.vobids
 
     return rnode, staff.rff, _vobids, vts_indices  # pyright: ignore[reportPossiblyUnboundVariable]
 
