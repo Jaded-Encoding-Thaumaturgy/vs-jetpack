@@ -843,6 +843,7 @@ class SuperSamplerProcess(BaseMixedScaler[_SuperSamplerT, Point], _ConcreteSuper
     def __init__(
         self,
         function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+        *,
         noshift: bool | Sequence[bool] = True,
         **kwargs: Any,
     ) -> None:
@@ -851,6 +852,11 @@ class SuperSamplerProcess(BaseMixedScaler[_SuperSamplerT, Point], _ConcreteSuper
 
         Args:
             function: A function to apply on the supersampled clip.
+            noshift: Disables sub-pixel shifting after supersampling.
+
+                   - `bool`: Applies to both luma and chroma.
+                   - `Sequence[bool]`: First for luma, second for chroma.
+
             **kwargs: Additional arguments to the specialized SuperSampler.
         """
         super().__init__(noshift=noshift, **kwargs)
