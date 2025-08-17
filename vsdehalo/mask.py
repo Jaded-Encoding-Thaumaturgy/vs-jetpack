@@ -21,6 +21,7 @@ from vsmasktools import (
     normalize_mask,
 )
 from vsrgtools import BlurMatrixBase, box_blur, contrasharpening_dehalo
+from vsscale import pre_ss as pre_supersample
 from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
@@ -368,33 +369,39 @@ def fine_dehalo(
         if pre_ss & (pre_ss - 1) != 0:
             raise CustomIndexError("`pre_ss` has to be a power of 2.", func_util.func, pre_ss)
 
-        return SuperSamplerProcess[NNEDI3](
-            function=lambda clip: fine_dehalo(
-                clip,
-                blur,
-                lowsens,
-                highsens,
-                ss,
-                darkstr,
-                brightstr,
-                rx,
-                ry,
-                edgemask,
-                thmi,
-                thma,
-                thlimi,
-                thlima,
-                exclude,
-                edgeproc,
-                contra,
-                planes=planes,
-                attach_masks=attach_masks,
-                func=func_util.func,
-                **kwargs,
+        return pre_supersample(
+            clip,
+            sp=SuperSamplerProcess[NNEDI3](
+                function=lambda clip: fine_dehalo(
+                    clip,
+                    blur,
+                    lowsens,
+                    highsens,
+                    ss,
+                    darkstr,
+                    brightstr,
+                    rx,
+                    ry,
+                    edgemask,
+                    thmi,
+                    thma,
+                    thlimi,
+                    thlima,
+                    exclude,
+                    edgeproc,
+                    contra,
+                    planes=planes,
+                    attach_masks=attach_masks,
+                    func=func_util.func,
+                    **kwargs,
+                ),
+                tff=any(p in func_util.norm_planes for p in [1, 2]),
             ),
-            noshift=True,
-            tff=any(p in func_util.norm_planes for p in [1, 2]),
-        ).supersample(clip, pre_ss)
+            rfactor=pre_ss,
+            mod=1,
+            planes=planes,
+            func=func_util.func,
+        )
 
     fine_dehalo.masks = fine_dehalo.Masks(
         func_util.work_clip, rx, ry, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func_util.func
