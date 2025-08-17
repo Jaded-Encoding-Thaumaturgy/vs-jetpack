@@ -987,7 +987,7 @@ def limiter(
         min_val = normalize_seq(min_val or get_lowest_values(clip, clip), clip.format.num_planes)
         max_val = normalize_seq(max_val or get_peak_values(clip, clip), clip.format.num_planes)
 
-    return clip.vszip.Limiter(min_val, max_val, tv_range, planes)
+    return clip.vszip.Limiter(min_val, max_val, tv_range, None, planes)
 
 
 def sc_detect(clip: vs.VideoNode, threshold: float = 0.1) -> ConstantFormatVideoNode:

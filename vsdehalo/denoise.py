@@ -126,7 +126,7 @@ def hq_dering(
         func.work_clip,
         ref,
         dark_thr,
-        fallback(bright_thr, [t / 4 for t in to_arr(dark_thr)]),
+        fallback(bright_thr, [t / 4 for t in to_arr(dark_thr)]),  # type: ignore
         elast,
         planes,
     )
