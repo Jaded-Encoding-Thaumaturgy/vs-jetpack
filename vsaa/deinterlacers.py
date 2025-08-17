@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
-from typing import TYPE_CHECKING, Any, Protocol, Sequence, TypeVar, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, Sequence, runtime_checkable
 
 from jetpytools import MISSING
-from typing_extensions import Self
+from typing_extensions import Self, TypeVar
 
 from vskernels import Catrom, ComplexScaler, ComplexScalerLike, LeftShift, MixedScalerProcess, Point, Scaler, TopShift
 from vstools import (
@@ -827,10 +827,12 @@ if TYPE_CHECKING:
 else:
     _ConcreteSuperSampler = SuperSampler
 
-_SuperSamplerT = TypeVar("_SuperSamplerT", bound=SuperSampler)
+_SuperSamplerWithNNEDI3DefaultT = TypeVar("_SuperSamplerWithNNEDI3DefaultT", bound=SuperSampler, default=NNEDI3)
 
 
-class SuperSamplerProcess(MixedScalerProcess[_SuperSamplerT, Point], _ConcreteSuperSampler, partial_abstract=True):
+class SuperSamplerProcess(
+    MixedScalerProcess[_SuperSamplerWithNNEDI3DefaultT, Point], _ConcreteSuperSampler, partial_abstract=True
+):
     """
     A utility SuperSampler class that applies a given function to a supersampled clip,
     then downsamples it back using Point.

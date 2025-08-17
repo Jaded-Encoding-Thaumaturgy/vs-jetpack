@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal
 
 from jetpytools import CustomValueError, normalize_seq
+from typing_extensions import TypeVar
 
 from vsexprtools import ExprOp, combine, norm_expr
 from vskernels import (
@@ -163,10 +164,12 @@ class ClampScaler(GenericScaler):
         return self.base_scaler.kernel_radius
 
 
-_ComplexScalerT = TypeVar("_ComplexScalerT", bound=ComplexScaler)
+_ComplexScalerWithLanczosDefaultT = TypeVar("_ComplexScalerWithLanczosDefaultT", bound=ComplexScaler, default=Lanczos)
 
 
-class ComplexSuperSamplerProcess(MixedScalerProcess[_ComplexScalerT, Point], ComplexScaler, partial_abstract=True):
+class ComplexSuperSamplerProcess(
+    MixedScalerProcess[_ComplexScalerWithLanczosDefaultT, Point], ComplexScaler, partial_abstract=True
+):
     """
     A utility ComplexScaler class that applies a given function to a supersampled clip,
     then downsamples it back using Point.
