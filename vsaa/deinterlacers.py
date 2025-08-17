@@ -842,13 +842,20 @@ class SuperSamplerProcess(MixedScalerProcess[_SuperSamplerT, Point], _ConcreteSu
 
     def __init__(
         self,
-        function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
         *,
+        function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
         noshift: bool | Sequence[bool] = True,
         **kwargs: Any,
     ) -> None:
         """
         Initialize the SuperSamplerProcess.
+
+        Example:
+        ```py
+        processed = SuperSamplerProcess[NNEDI3](function=lambda clip: cool_function(clip, ...)).supersample(
+            src, rfactor=2
+        )
+        ```
 
         Args:
             function: A function to apply on the supersampled clip.
