@@ -365,11 +365,11 @@ def fine_dehalo(
     assert check_progressive(clip, func_util.func)
 
     if pre_ss > 1:
-        if pre_ss % 2 != 0:
-            raise CustomIndexError("`pre_ss` has to be a multiple of 2.", func_util.func, pre_ss)
+        if pre_ss & (pre_ss - 1) != 0:
+            raise CustomIndexError("`pre_ss` has to be a power of 2.", func_util.func, pre_ss)
 
         return SuperSamplerProcess[NNEDI3](
-            lambda clip: fine_dehalo(
+            function=lambda clip: fine_dehalo(
                 clip,
                 blur,
                 lowsens,
