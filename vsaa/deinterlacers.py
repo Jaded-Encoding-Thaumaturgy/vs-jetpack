@@ -850,6 +850,10 @@ class SuperSamplerProcess(MixedScalerProcess[_SuperSamplerT, Point], _ConcreteSu
         """
         Initialize the SuperSamplerProcess.
 
+        Note:
+            Chroma planes will not align properly during processing.
+            Avoid using this class if accurate chroma placement relative to luma is required.
+
         Example:
         ```py
         processed = SuperSamplerProcess[NNEDI3](function=lambda clip: cool_function(clip, ...)).supersample(

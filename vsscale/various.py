@@ -181,6 +181,11 @@ class ComplexSuperSamplerProcess(MixedScalerProcess[_ComplexScalerT, Point], Com
         src, rfactor=2
     )
     ```
+
+    Note:
+        Depending on the source chroma location and subsampling, chroma planes may
+        not align properly during processing. Avoid using this class if accurate
+        chroma placement relative to luma is required.
     """
 
     _default_scaler = Lanczos
