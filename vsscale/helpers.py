@@ -343,13 +343,40 @@ def pre_ss(  # pyright: ignore[reportInconsistentOverload]
     [SuperSamplerProcess][vsaa.deinterlacers.SuperSamplerProcess] and
     [ComplexSuperSamplerProcess][vsscale.various.ComplexSuperSamplerProcess].
 
+    - Examples:
+        ```
+        out = pre_ss(clip, lambda clip: cool_function(clip, ...), planes=0)
+        ```
+
+        - Passing NNEDI3 as a supersampler:
+        ```
+        from vsaa import SuperSamplerProcess
+
+        out = pre_ss(clip, lambda clip: cool_function(clip, ...), SuperSamplerProcess)
+        ```
+        - This works too:
+        ```
+        from vsaa import SuperSamplerProcess
+
+        out = pre_ss(clip, sp=SuperSamplerProcess(function=lambda clip: cool_function(clip, ...)))
+        ```
+
+        - Specifying `supersampler` and `downscaler`:
+        ```
+        from vskernels import Point
+
+        out = pre_ss(clip, lambda clip: cool_function(clip, ...), supersampler=Point, downscaler=Point, planes=0)
+        ```
+
     Args:
         clip: Source clip.
         function: A function to apply on the supersampled clip.
-        ssp: A `MixedScalerProcess` object.
+        ssp: A `MixedScalerProcess` instance or class.
+            Default is `ComplexSuperSamplerProcess[Lanczos]`.
+            It upscales with Lanczos and downscales with Point.
         rfactor: Scaling factor for supersampling. Defaults to 2.
-        supersampler: Scaler used to upscale the input clip.
-        downscaler: Downscaler used for undoing the upscaling done by the supersampler.
+        supersampler: Scaler used to upscale the input clip if ssp is not specified.
+        downscaler: Downscaler used for undoing the upscaling done by the supersampler if ssp is not specified.
         mod: Ensures the supersampled resolution is a multiple of this value. Defaults to 4.
         planes: Which planes to process.
         func: An optional function to use for error handling.
