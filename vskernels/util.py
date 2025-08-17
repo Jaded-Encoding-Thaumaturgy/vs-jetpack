@@ -126,7 +126,7 @@ class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseSca
 
         def __new__(cls, *args: Any, **kwargs: Any) -> Self:
             if not cls.__isspecialized__:
-                return cls.__class_getitem__(cls._default_scaler)()
+                return cls.__class_getitem__(cls._default_scaler)(*args, **kwargs)
 
             return super().__new__(cls, *args, **kwargs)
 
