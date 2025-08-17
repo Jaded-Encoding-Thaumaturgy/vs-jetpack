@@ -9,7 +9,7 @@ from typing import Any, Callable, NamedTuple, TypeAlias, overload
 from jetpytools import FuncExceptT, mod_x
 from typing_extensions import Self, Unpack
 
-from vskernels import MixedScalerProcess, Point, Scaler, ScalerLike, is_scaler_like
+from vskernels import MixedScalerProcess, Scaler, ScalerLike, is_scaler_like
 from vskernels.util import _BaseScalerTs, _ScalerT
 from vstools import FunctionUtil, KwargsT, PlanesT, Resolution, VSFunctionNoArgs, get_w, mod2, vs
 
@@ -282,11 +282,10 @@ class ScalingArgs:
 @overload
 def pre_ss(
     clip: vs.VideoNode,
-    function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+    ssp: MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]],
     /,
+    *,
     rfactor: float = 2.0,
-    supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] = Point,
-    downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] = Point,
     mod: int = 4,
     planes: PlanesT = None,
     func: FuncExceptT | None = None,
@@ -296,10 +295,11 @@ def pre_ss(
 @overload
 def pre_ss(
     clip: vs.VideoNode,
-    ssp: MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]],
+    function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
     /,
+    supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
+    downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
     rfactor: float = 2.0,
-    *,
     mod: int = 4,
     planes: PlanesT = None,
     func: FuncExceptT | None = None,
@@ -310,9 +310,9 @@ def pre_ss(
     clip: vs.VideoNode,
     function_or_ssp: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]],
     /,
+    supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] | None = None,
+    downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] | None = None,
     rfactor: float = 2.0,
-    supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] = Point,
-    downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] = Point,
     mod: int = 4,
     planes: PlanesT = None,
     func: FuncExceptT | None = None,
@@ -321,12 +321,16 @@ def pre_ss(
     Supersamples the input clip, applies a given function to the higher-resolution version,
     and then downscales it back to the original resolution.
 
+    This function generalizes the behavior of
+    [SuperSamplerProcess][vsaa.deinterlacers.SuperSamplerProcess] and
+    [ComplexSuperSamplerProcess][vsscale.various.ComplexSuperSamplerProcess].
+
     Args:
         clip: Source clip.
-        function_or_ssp: A function to apply on the supersampled clip or a MixedScalerProcess object.
+        function_or_ssp: A function to apply on the supersampled clip or a `MixedScalerProcess` object.
         rfactor: Scaling factor for supersampling. Defaults to 2.
-        supersampler: Scaler used to upscale the input clip. Defaults to `Point`.
-        downscaler: Downscaler used for undoing the upscaling done by the supersampler. Defaults to `Point`.
+        supersampler: Scaler used to upscale the input clip.
+        downscaler: Downscaler used for undoing the upscaling done by the supersampler.
         mod: Ensures the supersampled resolution is a multiple of this value. Defaults to 4.
         planes: Which planes to process.
         func: An optional function to use for error handling.
@@ -346,6 +350,8 @@ def pre_ss(
 
     if isinstance(function_or_ssp, MixedScalerProcess):
         return function_or_ssp.scale(*args)
+
+    assert supersampler and downscaler
 
     function = function_or_ssp
 
