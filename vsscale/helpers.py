@@ -6,12 +6,14 @@ from math import ceil, floor
 from types import NoneType
 from typing import Any, Callable, NamedTuple, TypeAlias, overload
 
-from jetpytools import FuncExceptT, mod_x
+from jetpytools import CustomTypeError, FuncExceptT, mod_x
 from typing_extensions import Self, Unpack
 
-from vskernels import MixedScalerProcess, Scaler, ScalerLike, is_scaler_like
+from vskernels import Lanczos, MixedScalerProcess, Scaler, ScalerLike, is_scaler_like
 from vskernels.util import _BaseScalerTs, _ScalerT
 from vstools import FunctionUtil, KwargsT, PlanesT, Resolution, VSFunctionNoArgs, get_w, mod2, vs
+
+from .various import ComplexSuperSamplerProcess
 
 __all__ = ["CropAbs", "CropRel", "ScalingArgs", "pre_ss", "scale_var_clip"]
 
@@ -282,7 +284,8 @@ class ScalingArgs:
 @overload
 def pre_ss(
     clip: vs.VideoNode,
-    ssp: MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]],
+    function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+    sp: type[MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]]] = ComplexSuperSamplerProcess[Lanczos],  # type: ignore[assignment]
     /,
     *,
     rfactor: float = 2.0,
@@ -295,8 +298,22 @@ def pre_ss(
 @overload
 def pre_ss(
     clip: vs.VideoNode,
+    /,
+    *,
+    sp: MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]],
+    rfactor: float = 2.0,
+    mod: int = 4,
+    planes: PlanesT = None,
+    func: FuncExceptT | None = None,
+) -> vs.VideoNode: ...
+
+
+@overload
+def pre_ss(
+    clip: vs.VideoNode,
     function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
     /,
+    *,
     supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
     downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
     rfactor: float = 2.0,
@@ -306,10 +323,11 @@ def pre_ss(
 ) -> vs.VideoNode: ...
 
 
-def pre_ss(
+def pre_ss(  # pyright: ignore[reportInconsistentOverload]
     clip: vs.VideoNode,
-    function_or_ssp: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]],
-    /,
+    function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    sp: type[MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]]]
+    | MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]] = ComplexSuperSamplerProcess[Lanczos],  # type: ignore[assignment]
     supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] | None = None,
     downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] | None = None,
     rfactor: float = 2.0,
@@ -327,7 +345,8 @@ def pre_ss(
 
     Args:
         clip: Source clip.
-        function_or_ssp: A function to apply on the supersampled clip or a `MixedScalerProcess` object.
+        function: A function to apply on the supersampled clip.
+        ssp: A `MixedScalerProcess` object.
         rfactor: Scaling factor for supersampling. Defaults to 2.
         supersampler: Scaler used to upscale the input clip.
         downscaler: Downscaler used for undoing the upscaling done by the supersampler.
@@ -338,34 +357,36 @@ def pre_ss(
     Returns:
         A clip with the given function applied at higher resolution, then downscaled back.
     """
-
-    if rfactor == 1.0:
-        return (
-            function_or_ssp.function(clip) if isinstance(function_or_ssp, MixedScalerProcess) else function_or_ssp(clip)
-        )
-
     func_util = FunctionUtil(clip, func or pre_ss, planes)
 
-    args = clip, mod_x(func_util.work_clip.width * rfactor, mod), mod_x(func_util.work_clip.height * rfactor, mod)
-
-    if isinstance(function_or_ssp, MixedScalerProcess):
-        return function_or_ssp.scale(*args)
-
-    assert supersampler and downscaler
-
-    function = function_or_ssp
-
-    ss = (
-        Scaler.ensure_obj(supersampler, func_util.func).scale(*args)
-        if is_scaler_like(supersampler)
-        else supersampler(*args)
+    args = (
+        func_util.work_clip,
+        mod_x(func_util.work_clip.width * rfactor, mod),
+        mod_x(func_util.work_clip.height * rfactor, mod),
     )
 
-    processed = function(ss)
+    if isinstance(sp, MixedScalerProcess):
+        return func_util.return_clip(sp.scale(*args))
 
-    args = processed, clip.width, clip.height
-    down = (
-        Scaler.ensure_obj(downscaler, func_util.func).scale(*args) if is_scaler_like(downscaler) else downscaler(*args)
-    )
+    if supersampler and downscaler and function:
+        ss = (
+            Scaler.ensure_obj(supersampler, func_util.func).scale(*args)
+            if is_scaler_like(supersampler)
+            else supersampler(*args)
+        )
 
-    return func_util.return_clip(down)
+        processed = function(ss)
+
+        args = processed, clip.width, clip.height
+        down = (
+            Scaler.ensure_obj(downscaler, func_util.func).scale(*args)
+            if is_scaler_like(downscaler)
+            else downscaler(*args)
+        )
+
+        return func_util.return_clip(down)
+
+    if function:
+        return pre_ss(clip, sp=sp(function=function), rfactor=rfactor, mod=mod, planes=planes, func=func)
+
+    raise CustomTypeError
