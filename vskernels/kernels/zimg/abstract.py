@@ -103,16 +103,6 @@ class ZimgComplexKernel(ComplexKernel, ZimgBobber):
     resampling, and linear light/aspect ratio handling—with the bobbing capabilities of `ZimgBobber`.
     """
 
-    _implemented_funcs: ClassVar[tuple[str, ...]] = (
-        "scale",
-        "descale",
-        "rescale",
-        "resample",
-        "shift",
-        "bob",
-        "deinterlace",
-    )
-
 
 ZimgComplexKernelLike = Union[str, type[ZimgComplexKernel], ZimgComplexKernel]
 """
