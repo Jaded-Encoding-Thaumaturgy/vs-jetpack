@@ -30,6 +30,7 @@ from vstools import (
     MatrixT,
     Transfer,
     VideoFormatT,
+    VSFunctionNoArgs,
     cachedproperty,
     check_variable_format,
     depth,
@@ -64,6 +65,7 @@ __all__ = [
     "BaseMixedScaler",
     "BaseScalerSpecializer",
     "LinearLight",
+    "MixedScalerProcess",
     "NoScale",
     "is_complex_descaler_like",
     "is_complex_kernel_like",
@@ -270,7 +272,7 @@ class BaseMixedScaler(
     @classmethod
     def _others(cls) -> tuple[Unpack[_BaseScalerTs]]:
         # Workaround as we can't specify the bound values of a TypeVarTuple yet
-        return tuple(o() for o in cls.__others__)  # type:ignore[operator]
+        return tuple(o() for o in cls.__others__)  # type: ignore[operator]
 
     def __class_getitem__(cls, scalers: Any) -> GenericAlias:
         """
@@ -302,6 +304,24 @@ class BaseMixedScaler(
         )
 
         return GenericAlias(mixed_spe, (specializer, *others))
+
+
+class MixedScalerProcess(BaseMixedScaler[_ScalerT, Unpack[_BaseScalerTs]], Scaler, abstract=True):
+    """
+    An abstract class for chained scaling with an additional processing step.
+    """
+
+    def __init__(self, *, function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode], **kwargs: Any) -> None:
+        """
+        Initialize the MixedScalerProcess.
+
+        Args:
+            function: A function to apply on the scaling pipeline.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
+        """
+        super().__init__(**kwargs)
+
+        self.function = function
 
 
 @dataclass

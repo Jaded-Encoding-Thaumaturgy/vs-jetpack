@@ -4,17 +4,14 @@ from dataclasses import dataclass
 from functools import partial
 from math import ceil, floor
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, TypeAlias, overload
+from typing import Any, Callable, NamedTuple, TypeAlias, overload
 
 from jetpytools import FuncExceptT, mod_x
-from typing_extensions import Self
+from typing_extensions import Self, Unpack
 
-from vskernels import Point, Scaler, ScalerLike, is_scaler_like
+from vskernels import MixedScalerProcess, Point, Scaler, ScalerLike, is_scaler_like
+from vskernels.util import _BaseScalerTs, _ScalerT
 from vstools import FunctionUtil, KwargsT, PlanesT, Resolution, VSFunctionNoArgs, get_w, mod2, vs
-
-if TYPE_CHECKING:
-    from vsaa import SuperSamplerProcess
-    from vsaa.deinterlacers import _SuperSamplerT
 
 __all__ = ["CropAbs", "CropRel", "ScalingArgs", "pre_ss", "scale_var_clip"]
 
@@ -299,7 +296,7 @@ def pre_ss(
 @overload
 def pre_ss(
     clip: vs.VideoNode,
-    ssp: SuperSamplerProcess[_SuperSamplerT],
+    ssp: MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]],
     /,
     rfactor: float = 2.0,
     *,
@@ -311,7 +308,7 @@ def pre_ss(
 
 def pre_ss(
     clip: vs.VideoNode,
-    function_or_ssp: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | SuperSamplerProcess[_SuperSamplerT],
+    function_or_ssp: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]],
     /,
     rfactor: float = 2.0,
     supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] = Point,
@@ -326,7 +323,7 @@ def pre_ss(
 
     Args:
         clip: Source clip.
-        function_or_ssp: A function to apply on the supersampled clip or a SuperSamplerProcess object.
+        function_or_ssp: A function to apply on the supersampled clip or a MixedScalerProcess object.
         rfactor: Scaling factor for supersampling. Defaults to 2.
         supersampler: Scaler used to upscale the input clip. Defaults to `Point`.
         downscaler: Downscaler used for undoing the upscaling done by the supersampler. Defaults to `Point`.
@@ -337,20 +334,17 @@ def pre_ss(
     Returns:
         A clip with the given function applied at higher resolution, then downscaled back.
     """
-    from vsaa import SuperSamplerProcess
 
     if rfactor == 1.0:
         return (
-            function_or_ssp.function(clip)
-            if isinstance(function_or_ssp, SuperSamplerProcess)
-            else function_or_ssp(clip)
+            function_or_ssp.function(clip) if isinstance(function_or_ssp, MixedScalerProcess) else function_or_ssp(clip)
         )
 
     func_util = FunctionUtil(clip, func or pre_ss, planes)
 
     args = clip, mod_x(func_util.work_clip.width * rfactor, mod), mod_x(func_util.work_clip.height * rfactor, mod)
 
-    if isinstance(function_or_ssp, SuperSamplerProcess):
+    if isinstance(function_or_ssp, MixedScalerProcess):
         return function_or_ssp.scale(*args)
 
     function = function_or_ssp

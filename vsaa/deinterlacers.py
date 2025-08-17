@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Protocol, Sequence, TypeVar, runtime_chec
 from jetpytools import MISSING
 from typing_extensions import Self
 
-from vskernels import BaseMixedScaler, Catrom, ComplexScaler, ComplexScalerLike, LeftShift, Point, Scaler, TopShift
+from vskernels import Catrom, ComplexScaler, ComplexScalerLike, LeftShift, MixedScalerProcess, Point, Scaler, TopShift
 from vstools import (
     ChromaLocation,
     ConstantFormatVideoNode,
@@ -816,7 +816,7 @@ class BWDIF(Deinterlacer):
 
 
 if TYPE_CHECKING:
-    # Let's assume the specialized SuperSampler isn't be abstract
+    # Let's assume the specialized SuperSampler isn't abstract
     class _ConcreteSuperSampler(SuperSampler):
         @property
         def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]: ...
@@ -830,7 +830,7 @@ else:
 _SuperSamplerT = TypeVar("_SuperSamplerT", bound=SuperSampler)
 
 
-class SuperSamplerProcess(BaseMixedScaler[_SuperSamplerT, Point], _ConcreteSuperSampler, partial_abstract=True):
+class SuperSamplerProcess(MixedScalerProcess[_SuperSamplerT, Point], _ConcreteSuperSampler, partial_abstract=True):
     """
     A utility SuperSampler class that applies a given function to a supersampled clip,
     then downsamples it back using Point.
@@ -859,9 +859,7 @@ class SuperSamplerProcess(BaseMixedScaler[_SuperSamplerT, Point], _ConcreteSuper
 
             **kwargs: Additional arguments to the specialized SuperSampler.
         """
-        super().__init__(noshift=noshift, **kwargs)
-
-        self.function = function
+        super().__init__(function=function, noshift=noshift, **kwargs)
 
     def scale(
         self,
