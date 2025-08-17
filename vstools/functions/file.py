@@ -43,7 +43,7 @@ class PackageStorage:
         filename = SPath(filename)
 
         if ext:
-            filename = filename.with_suffix(SPath(ext).suffix)
+            filename = filename.with_suffix(SPath(ext).suffix or str(ext))
 
         self.ensure_folder()
 
