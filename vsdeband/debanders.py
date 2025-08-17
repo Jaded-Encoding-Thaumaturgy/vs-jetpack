@@ -569,12 +569,9 @@ def mdb_bilateral(
         radius: Banding detection range.
         thr: Banding detection thr(s) for planes.
         debander: Specifies what debander callable to use.
-        dark_thr: [limit_filter][vsrgtools.limit_filter] parameter.
-            Threshold (8-bit scale) to limit dark filtering diff.
-        bright_thr: [limit_filter][vsrgtools.limit_filter] parameter.
-            Threshold (8-bit scale) to limit bright filtering diff.
-        elast: [limit_filter][vsrgtools.limit_filter] parameter.
-            Elasticity of the soft threshold.
+        dark_thr: LimitFilter parameter. Threshold (8-bit scale) to limit dark filtering diff.
+        bright_thr: LimitFilter parameter. Threshold (8-bit scale) to limit bright filtering diff.
+        elast: LimitFilter parameter. Elasticity of the soft threshold.
         planes: Which planes to process.
 
     Returns:
@@ -625,14 +622,10 @@ def pfdeband(
         prefilter: Prefilter used to blur the clip before debanding.
         debander: Specifies what debander callable to use.
         planes: Planes to process
-        ref: [limit_filter][vsrgtools.limit_filter] parameter.
-            Reference clip, to compute the weight to be applied on filtering diff.
-        dark_thr: [limit_filter][vsrgtools.limit_filter] parameter.
-            Threshold (8-bit scale) to limit dark filtering diff.
-        bright_thr: [limit_filter][vsrgtools.limit_filter] parameter.
-            Threshold (8-bit scale) to limit bright filtering diff.
-        elast: [limit_filter][vsrgtools.limit_filter] parameter.
-            Elasticity of the soft threshold.
+        ref: LimitFilter parameter. Reference clip, to compute the weight to be applied on filtering diff.
+        dark_thr: LimitFilter parameter. Threshold (8-bit scale) to limit dark filtering diff.
+        bright_thr: LimitFilter parameter. Threshold (8-bit scale) to limit bright filtering diff.
+        elast: LimitFilter parameter. Elasticity of the soft threshold.
 
     Returns:
         Debanded clip.
