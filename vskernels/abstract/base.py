@@ -446,7 +446,7 @@ class Scaler(BaseScaler):
     scale_function: Callable[..., vs.VideoNode]
     """Scale function called internally when performing scaling operations."""
 
-    _implemented_funcs: ClassVar[tuple[str, ...]] = ("scale",)
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ("scale", "supersample", "multi")
 
     def scale(
         self,
@@ -484,6 +484,10 @@ class Scaler(BaseScaler):
         """
         Supersample a clip by a given scaling factor.
 
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
         Args:
             clip: The source clip.
             rfactor: Scaling factor for supersampling.
@@ -515,6 +519,10 @@ class Scaler(BaseScaler):
     ) -> VideoNodeT:
         """
         Deprecated alias for `supersample`.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
 
         Args:
             clip: The source clip.
