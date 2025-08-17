@@ -1,22 +1,37 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
+
+from jetpytools import CustomValueError, normalize_seq
 
 from vsexprtools import ExprOp, combine, norm_expr
-from vskernels import Catrom, KernelLike, Scaler, ScalerLike
+from vskernels import (
+    Catrom,
+    ComplexScaler,
+    KernelLike,
+    Lanczos,
+    LeftShift,
+    MixedScalerProcess,
+    Point,
+    Scaler,
+    ScalerLike,
+    TopShift,
+)
 from vsmasktools import ringing_mask
 from vsrgtools.rgtools import Repair
 from vstools import (
+    ChromaLocation,
     ConstantFormatVideoNode,
     CustomOverflowError,
     check_ref_clip,
+    check_variable,
     scale_delta,
     vs,
 )
 
 from .generic import GenericScaler
 
-__all__ = ["ClampScaler"]
+__all__ = ["ClampScaler", "ComplexSuperSamplerProcess"]
 
 
 class ClampScaler(GenericScaler):
@@ -146,3 +161,80 @@ class ClampScaler(GenericScaler):
         if not isinstance(self.reference, vs.VideoNode):
             return max(self.reference.kernel_radius, self.base_scaler.kernel_radius)
         return self.base_scaler.kernel_radius
+
+
+_ComplexScalerT = TypeVar("_ComplexScalerT", bound=ComplexScaler)
+
+
+class ComplexSuperSamplerProcess(MixedScalerProcess[_ComplexScalerT, Point], ComplexScaler, partial_abstract=True):
+    """
+    A utility ComplexScaler class that applies a given function to a supersampled clip,
+    then downsamples it back using Point.
+
+    If used without a specified scaler, it defaults to inheriting from `Lanczos`.
+
+    Example:
+    ```py
+    from vskernels import Lanczos
+
+    processed = ComplexSuperSamplerProcess[Lanczos](function=lambda clip: cool_function(clip, ...)).supersample(
+        src, rfactor=2
+    )
+    ```
+    """
+
+    _default_scaler = Lanczos
+
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[TopShift | list[TopShift], LeftShift | list[LeftShift]] = (0, 0),
+        **kwargs: Any,
+    ) -> vs.VideoNode | ConstantFormatVideoNode:
+        assert check_variable(clip, self.scale)
+
+        width, height = self._wh_norm(clip, width, height)
+        rfactor_w, rfactor_h = (width / clip.width), (height / clip.height)
+
+        if any(not rf.is_integer() for rf in (rfactor_w, rfactor_h)):
+            raise CustomValueError(
+                "The supersampling factor must yield an integer result.", self.__class__, (rfactor_w, rfactor_h)
+            )
+
+        shift_top, shift_left = shift
+
+        point = self._others[0]
+
+        if isinstance(shift_top, (int, float)) and isinstance(shift_left, (int, float)):
+            upscaled = super().scale(
+                ChromaLocation.TOP_LEFT.apply(clip),
+                width,
+                height,
+                (shift_top + 0.5 - 0.5 / rfactor_h, shift_left + 0.5 - 0.5 / rfactor_w),
+                **kwargs,
+            )
+
+            processed = self.function(upscaled)
+
+            downscaled = point.scale(processed, clip.width, clip.height, (0.5 - 0.5 * rfactor_h, 0.5 - 0.5 * rfactor_w))
+        else:
+            shift_top = normalize_seq(shift_top, clip.format.num_planes)
+            shift_left = normalize_seq(shift_left, clip.format.num_planes)
+
+            upscaled = super().scale(
+                ChromaLocation.CENTER.apply(clip),
+                width,
+                height,
+                ([x + 0.5 - 0.5 / rfactor_h for x in shift_top], [x + 0.5 - 0.5 / rfactor_w for x in shift_left]),
+                **kwargs,
+            )
+
+            processed = self.function(upscaled)
+
+            downscaled = point.scale(
+                processed, clip.width, clip.height, ([0.5 - 0.5 * rfactor_h] * 3, [0.5 - 0.5 * rfactor_w] * 3)
+            )
+
+        return ChromaLocation.from_video(clip).apply(downscaled)
