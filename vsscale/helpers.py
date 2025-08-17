@@ -285,10 +285,9 @@ class ScalingArgs:
 def pre_ss(
     clip: vs.VideoNode,
     function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
-    sp: type[MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]]] = ComplexSuperSamplerProcess[Lanczos],  # type: ignore[assignment]
-    /,
-    *,
     rfactor: float = 2.0,
+    sp: type[MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]]] = ComplexSuperSamplerProcess[Lanczos],  # type: ignore[assignment]
+    *,
     mod: int = 4,
     planes: PlanesT = None,
     func: FuncExceptT | None = None,
@@ -298,10 +297,9 @@ def pre_ss(
 @overload
 def pre_ss(
     clip: vs.VideoNode,
-    /,
     *,
-    sp: MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]],
     rfactor: float = 2.0,
+    sp: MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]],
     mod: int = 4,
     planes: PlanesT = None,
     func: FuncExceptT | None = None,
@@ -312,11 +310,10 @@ def pre_ss(
 def pre_ss(
     clip: vs.VideoNode,
     function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
-    /,
+    rfactor: float = 2.0,
     *,
     supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
     downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
-    rfactor: float = 2.0,
     mod: int = 4,
     planes: PlanesT = None,
     func: FuncExceptT | None = None,
@@ -326,11 +323,11 @@ def pre_ss(
 def pre_ss(  # pyright: ignore[reportInconsistentOverload]
     clip: vs.VideoNode,
     function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    rfactor: float = 2.0,
     sp: type[MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]]]
     | MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]] = ComplexSuperSamplerProcess[Lanczos],  # type: ignore[assignment]
     supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] | None = None,
     downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] | None = None,
-    rfactor: float = 2.0,
     mod: int = 4,
     planes: PlanesT = None,
     func: FuncExceptT | None = None,
@@ -371,12 +368,12 @@ def pre_ss(  # pyright: ignore[reportInconsistentOverload]
     Args:
         clip: Source clip.
         function: A function to apply on the supersampled clip.
-        ssp: A `MixedScalerProcess` instance or class.
+        rfactor: Scaling factor for supersampling. Defaults to 2.
+        sp: A `MixedScalerProcess` instance or class.
             Default is `ComplexSuperSamplerProcess[Lanczos]`.
             It upscales with Lanczos and downscales with Point.
-        rfactor: Scaling factor for supersampling. Defaults to 2.
-        supersampler: Scaler used to upscale the input clip if ssp is not specified.
-        downscaler: Downscaler used for undoing the upscaling done by the supersampler if ssp is not specified.
+        supersampler: Scaler used to upscale the input clip if `sp` is not specified.
+        downscaler: Downscaler used for undoing the upscaling done by the supersampler if `sp` is not specified.
         mod: Ensures the supersampled resolution is a multiple of this value. Defaults to 4.
         planes: Which planes to process.
         func: An optional function to use for error handling.
