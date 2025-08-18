@@ -42,16 +42,16 @@ class ExprToken(CustomStrEnum):
     """
 
     PlaneMin = "plane_min"
-    """The minimum value in the clip's range (chroma-aware)."""
+    """Minimum value in the clip's range (chroma-aware)."""
 
     PlaneMax = "plane_max"
-    """The maximum value in the clip's range (chroma-aware)."""
+    """Maximum value in the clip's range (chroma-aware)."""
 
     MaskMax = "mask_max"
     """Maximum value in mask clips."""
 
     Neutral = "neutral"
-    """The neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
+    """Neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
 
     RangeMin = "range_min"
     """Minimum value in full range (chroma-aware)."""
@@ -63,9 +63,9 @@ class ExprToken(CustomStrEnum):
     """Half of the full range (e.g. 127.5 for 8-bit full range)."""
 
     RangeSize = "range_size"
-    """The size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
+    """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
-    def get_value(self, clip: vs.VideoNode, chroma: bool = False, range_in: ColorRange | None = None) -> float:
+    def get_value(self, clip: vs.VideoNode, range_in: ColorRange | None = None, chroma: bool = False) -> float:
         """
         Resolves the numeric value represented by this token based on the input clip and range.
 

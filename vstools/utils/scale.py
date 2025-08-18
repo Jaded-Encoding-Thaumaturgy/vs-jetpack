@@ -28,7 +28,6 @@ def scale_value(
     range_out: ColorRangeT | None = None,
     scale_offsets: bool = True,
     chroma: bool = False,
-    mask: bool = False,
     family: vs.ColorFamily | None = None,
 ) -> int | float:
     """
@@ -43,7 +42,6 @@ def scale_value(
         scale_offsets: Whether or not to apply & map YUV zero-point offsets. Set to True when converting absolute color
             values. Set to False when converting color deltas. Only relevant if integer formats are involved.
         chroma: Whether or not to treat values as chroma values instead of luma.
-        mask: Whether or not to treat values as mask values.
         family: Which color family to assume for calculations.
 
     Returns:
@@ -81,10 +79,10 @@ def scale_value(
     if vs.RGB in (in_fmt.color_family, out_fmt.color_family, family):
         chroma = False
 
-    input_peak = get_peak_value(in_fmt, range_in, chroma, mask, family)
-    input_lowest = get_lowest_value(in_fmt, range_in, chroma, mask, family)
-    output_peak = get_peak_value(out_fmt, range_in, chroma, mask, family)
-    output_lowest = get_lowest_value(out_fmt, range_in, chroma, mask, family)
+    input_peak = get_peak_value(in_fmt, range_in, chroma, family)
+    input_lowest = get_lowest_value(in_fmt, range_in, chroma, family)
+    output_peak = get_peak_value(out_fmt, range_in, chroma, family)
+    output_lowest = get_lowest_value(out_fmt, range_in, chroma, family)
 
     if scale_offsets and in_fmt.sample_type is vs.INTEGER:
         if chroma:
@@ -124,7 +122,7 @@ def scale_mask(
         Scaled value.
     """
 
-    return scale_value(value, input_depth, output_depth, ColorRange.FULL, ColorRange.FULL, mask=True)
+    return scale_value(value, input_depth, output_depth, ColorRange.FULL, ColorRange.FULL)
 
 
 def scale_delta(
@@ -167,7 +165,6 @@ def get_lowest_value(
     clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
     range_in: ColorRangeT | None = None,
     chroma: bool = False,
-    mask: bool = False,
     family: vs.ColorFamily | None = None,
 ) -> float:
     """
@@ -177,7 +174,6 @@ def get_lowest_value(
         clip_or_depth: Input bit depth, or clip, frame, format from where to get it.
         range_in: Whether to get limited or full range lowest value.
         chroma: Whether to get luma (default) or chroma plane value.
-        mask: Whether to get the value for a mask clip.
         family: Which color family to assume for calculations.
 
     Returns:
@@ -186,7 +182,7 @@ def get_lowest_value(
 
     fmt = get_video_format(clip_or_depth)
 
-    if is_rgb := vs.RGB in (fmt.color_family, family) or mask:
+    if is_rgb := vs.RGB in (fmt.color_family, family):
         chroma = False
 
     if fmt.sample_type is vs.FLOAT:
@@ -216,10 +212,12 @@ def get_lowest_values(
     Get the lowest values of all planes of a specified format.
     """
 
+    range_in = ColorRange.FULL if mask else range_in
+
     return normalize_seq(
         [
-            get_lowest_value(clip_or_depth, range_in, False, mask, family),
-            get_lowest_value(clip_or_depth, range_in, True, mask, family),
+            get_lowest_value(clip_or_depth, range_in, False, family),
+            get_lowest_value(clip_or_depth, range_in, not mask, family),
         ],
         get_video_format(clip_or_depth).num_planes,
     )
@@ -258,7 +256,6 @@ def get_peak_value(
     clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
     range_in: ColorRangeT | None = None,
     chroma: bool = False,
-    mask: bool = False,
     family: vs.ColorFamily | None = None,
 ) -> float:
     """
@@ -268,7 +265,6 @@ def get_peak_value(
         clip_or_depth: Input bit depth, or clip, frame, format from where to get it.
         range_in: Whether to get limited or full range peak value.
         chroma: Whether to get luma (default) or chroma plane value.
-        mask: Whether to get the value for a mask clip.
         family: Which color family to assume for calculations.
 
     Returns:
@@ -277,7 +273,7 @@ def get_peak_value(
 
     fmt = get_video_format(clip_or_depth)
 
-    if is_rgb := vs.RGB in (fmt.color_family, family) or mask:
+    if is_rgb := vs.RGB in (fmt.color_family, family):
         chroma = False
 
     if fmt.sample_type is vs.FLOAT:
@@ -307,10 +303,12 @@ def get_peak_values(
     Get the peak values of all planes of a specified format.
     """
 
+    range_in = ColorRange.FULL if mask else range_in
+
     return normalize_seq(
         [
-            get_peak_value(clip_or_depth, range_in, False, mask, family),
-            get_peak_value(clip_or_depth, range_in, True, mask, family),
+            get_peak_value(clip_or_depth, range_in, False, family),
+            get_peak_value(clip_or_depth, range_in, not mask, family),
         ],
         get_video_format(clip_or_depth).num_planes,
     )
