@@ -81,8 +81,8 @@ def scale_value(
 
     input_peak = get_peak_value(in_fmt, range_in, chroma, family)
     input_lowest = get_lowest_value(in_fmt, range_in, chroma, family)
-    output_peak = get_peak_value(out_fmt, range_in, chroma, family)
-    output_lowest = get_lowest_value(out_fmt, range_in, chroma, family)
+    output_peak = get_peak_value(out_fmt, range_out, chroma, family)
+    output_lowest = get_lowest_value(out_fmt, range_out, chroma, family)
 
     if scale_offsets and in_fmt.sample_type is vs.INTEGER:
         if chroma:
@@ -99,7 +99,7 @@ def scale_value(
             out_value += 16 << (out_fmt.bits_per_sample - 8)
 
     if out_fmt.sample_type is vs.INTEGER:
-        out_value = max(min(round(out_value), get_peak_value(out_fmt, range_in=ColorRange.FULL)), 0)
+        out_value = max(min(round(out_value), get_peak_value(out_fmt, ColorRange.FULL)), 0)
 
     return out_value
 
