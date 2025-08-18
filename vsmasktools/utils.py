@@ -243,7 +243,7 @@ def squaremask(
         clip, None, None, mask_format.id, 1, color=get_lowest_values(mask_format, ColorRange.FULL), keep=True
     )
 
-    replaces = ("range_max", "x") if not invert else ("x", "range_max")
+    replaces = ("mask_max", "x") if not invert else ("x", "mask_max")
     mask = region_abs_mask(base_clip, width, height, offset_x, offset_y, *replaces, planes, func)
 
     if clip.num_frames == 1:

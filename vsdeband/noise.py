@@ -556,9 +556,9 @@ def _protect_neutral_chroma(
     match clip.format.color_family:
         case vs.YUV:
             if not blend:
-                expr = "x neutral = y neutral = and range_max 0 ?"
+                expr = "x neutral = y neutral = and mask_max 0 ?"
             else:
-                expr = "x neutral - abs {blend} / 1 min 1 swap - y neutral - abs {blend} / 1 min 1 swap - * range_max *"
+                expr = "x neutral - abs {blend} / 1 min 1 swap - y neutral - abs {blend} / 1 min 1 swap - * mask_max *"
 
             mask = norm_expr([get_u(clip), get_v(clip)], expr, func=func, blend=blend)
 
@@ -567,7 +567,7 @@ def _protect_neutral_chroma(
             )
         case vs.RGB:
             return core.std.MaskedMerge(
-                grained, base_clip, norm_expr(split(clip), "x y = x z = and range_max *", func=func)
+                grained, base_clip, norm_expr(split(clip), "x y = x z = and mask_max *", func=func)
             )
         case _:
             raise UnsupportedColorFamilyError("Can't use `protect_neutral_chroma=True` when input clip is GRAY", func)

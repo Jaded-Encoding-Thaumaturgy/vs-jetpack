@@ -42,7 +42,7 @@ def edge_cleaner(
     """
     edgemask = EdgeDetect.ensure_obj(edgemask, edge_cleaner)
     lthr = scale_mask(4, 8, 32)
-    expr = "x {thr} > range_max x ?"
+    expr = "x {thr} > mask_max x ?"
 
     if smode:
         strength += 4
@@ -108,7 +108,7 @@ def YAHR(  # noqa: N802
     if expand is not False:
         v_edge = norm_expr(
             [clip, Morpho.maximum(clip, iterations=2, planes=planes)],
-            "y x - {shift} range_max * 255 / - 128 *",
+            "y x - {shift} mask_max * 255 / - 128 *",
             shift=shift,
             planes=planes,
             func=YAHR,
@@ -119,7 +119,7 @@ def YAHR(  # noqa: N802
                 BlurMatrix.BINOMIAL(radius=expand * 2)(v_edge, planes=planes),
                 BlurMatrix.BINOMIAL()(v_edge, planes=planes),
             ],
-            "x 16 * range_max y - min",
+            "x 16 * mask_max y - min",
             planes,
             func=YAHR,
         )

@@ -150,9 +150,7 @@ def hq_dering(
                     Morpho.inflate(fmask, planes=planes, func=func.func), ceil(minp / 2), planes=planes, func=func.func
                 )
 
-            ringmask = norm_expr(
-                [omask, imask], "x range_max y - * range_max / 0 range_max clip", planes, func=func.func
-            )
+            ringmask = norm_expr([omask, imask], "x mask_max y - * mask_max / 0 mask_max clip", planes, func=func.func)
 
     dering = func.work_clip.std.MaskedMerge(limited, ringmask, planes)
 

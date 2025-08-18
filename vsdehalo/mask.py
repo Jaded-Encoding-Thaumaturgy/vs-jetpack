@@ -163,7 +163,7 @@ class FineDehalo(Generic[P, R]):
             edges = normalize_mask(edgemask, work_clip, work_clip, func=func)
 
             # Keeps only the sharpest edges (line edges)
-            strong = norm_expr(edges, f"x {thmif} - {thmaf - thmif} / range_max *", planes, func=func)
+            strong = norm_expr(edges, f"x {thmif} - {thmaf - thmif} / mask_max *", planes, func=func)
 
             # Extends them to include the potential halos
             large = Morpho.expand(strong, rx, ry, planes=planes, func=func)
@@ -176,7 +176,7 @@ class FineDehalo(Generic[P, R]):
             # these zones from the halo removal.
 
             # Includes more edges than previously, but ignores simple details
-            light = norm_expr(edges, f"x {thlimif} - {thlimaf - thlimif} / range_max *", planes, func=func)
+            light = norm_expr(edges, f"x {thlimif} - {thlimaf - thlimif} / mask_max *", planes, func=func)
 
             # To build the exclusion zone, we make grow the edge mask, then shrink
             # it to its original shape. During the growing stage, close adjacent
@@ -214,7 +214,7 @@ class FineDehalo(Generic[P, R]):
             # Smooth again and amplify to grow the mask a bit, otherwise the halo
             # parts sticking to the edges could be missed.
             # Also clamp to legal ranges
-            mask = norm_expr(box_blur(mask, planes=planes), "x 2 * 0 range_max clip", planes, func=func)
+            mask = norm_expr(box_blur(mask, planes=planes), "x 2 * 0 mask_max clip", planes, func=func)
 
             self._edges = edges
             self._strong = strong
