@@ -104,7 +104,7 @@ def inline_expr(
                 x, *_ = ie.vars
 
                 # Normalize luma to 0-1 range
-                norm_luma = (x - x.LumaRangeInMin) * (ie.as_var(1) / (x.LumaRangeInMax - x.LumaRangeInMin))
+                norm_luma = (x - x.PlaneMin) * (ie.as_var(1) / (x.PlaneMax - x.PlaneMin))
                 # Ensure normalized luma stays within bounds
                 norm_luma = ie.op.clamp(norm_luma, 0, 1)
 
@@ -135,7 +135,7 @@ def inline_expr(
                     #  - Subtract neutral chroma (e.g., 128) to center around zero
                     #  - Scale based on the input chroma range (e.g., 240 - 16)
                     #  - Add half of full range to re-center in full output range
-                    chroma_mult = x.RangeMax / (x.ChromaRangeInMax - x.ChromaRangeInMin)
+                    chroma_mult = x.RangeMax / (x.PlaneMax - x.PlaneMin)
                     chroma_boosted = (x - x.Neutral) * chroma_mult + x.RangeHalf
 
                     # Apply the adjusted chroma values to U and V planes

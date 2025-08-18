@@ -704,62 +704,29 @@ class ClipVar(ExprVar, vs_object):
     """
 
     if TYPE_CHECKING:
-        LumaMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The minimum luma value in limited range."""
+        PlaneMin: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Minimum value in the clip's range (chroma-aware)."""
 
-        ChromaMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The minimum chroma value in limited range."""
+        PlaneMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Maximum value in the clip's range (chroma-aware)."""
 
-        LumaMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The maximum luma value in limited range."""
-
-        ChromaMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The maximum chroma value in limited range."""
+        MaskMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Maximum value in mask clips."""
 
         Neutral: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
-
-        RangeHalf: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Half of the full range (e.g. 128.0 for 8-bit full range)."""
-
-        RangeSize: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
+        """Neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
 
         RangeMin: Final[ComputedVar] = cast(ComputedVar, ...)
         """Minimum value in full range (chroma-aware)."""
 
-        LumaRangeMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Minimum luma value based on input clip's color range."""
-
-        ChromaRangeMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Minimum chroma value based on input clip's color range."""
-
         RangeMax: Final[ComputedVar] = cast(ComputedVar, ...)
         """Maximum value in full range (chroma-aware)."""
 
-        LumaRangeMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Maximum luma value based on input clip's color range."""
+        RangeHalf: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Half of the full range (e.g. 127.5 for 8-bit)."""
 
-        ChromaRangeMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Maximum chroma value based on input clip's color range."""
-
-        RangeInMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `RangeMin`, but adapts to input `range_in` parameter."""
-
-        LumaRangeInMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `LumaRangeMin`, but adapts to input `range_in`."""
-
-        ChromaRangeInMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `ChromaRangeMin`, but adapts to input `range_in`."""
-
-        RangeInMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `RangeMax`, but adapts to input `range_in`."""
-
-        LumaRangeInMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `LumaRangeMax`, but adapts to input `range_in`."""
-
-        ChromaRangeInMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `ChromaRangeMax`, but adapts to input `range_in`."""
+        RangeSize: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
     def __init__(self, char: str, node: vs.VideoNode) -> None:
         """
@@ -850,62 +817,29 @@ class Tokens(metaclass=SingletonMeta):
     __slots__ = ()
 
     if TYPE_CHECKING:
-        LumaMin: Final[Token] = cast(Token, ...)
-        """The minimum luma value in limited range."""
+        PlaneMin: Final[Token] = cast(Token, ...)
+        """Minimum value in the clip's range (chroma-aware)."""
 
-        ChromaMin: Final[Token] = cast(Token, ...)
-        """The minimum chroma value in limited range."""
+        PlaneMax: Final[Token] = cast(Token, ...)
+        """Maximum value in the clip's range (chroma-aware)."""
 
-        LumaMax: Final[Token] = cast(Token, ...)
-        """The maximum luma value in limited range."""
-
-        ChromaMax: Final[Token] = cast(Token, ...)
-        """The maximum chroma value in limited range."""
+        MaskMax: Final[Token] = cast(Token, ...)
+        """Maximum value in mask clips."""
 
         Neutral: Final[Token] = cast(Token, ...)
-        """The neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
-
-        RangeHalf: Final[Token] = cast(Token, ...)
-        """Half of the full range (e.g. 128.0 for 8-bit full range)."""
-
-        RangeSize: Final[Token] = cast(Token, ...)
-        """The size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
+        """Neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
 
         RangeMin: Final[Token] = cast(Token, ...)
         """Minimum value in full range (chroma-aware)."""
 
-        LumaRangeMin: Final[Token] = cast(Token, ...)
-        """Minimum luma value based on input clip's color range."""
-
-        ChromaRangeMin: Final[Token] = cast(Token, ...)
-        """Minimum chroma value based on input clip's color range."""
-
         RangeMax: Final[Token] = cast(Token, ...)
         """Maximum value in full range (chroma-aware)."""
 
-        LumaRangeMax: Final[Token] = cast(Token, ...)
-        """Maximum luma value based on input clip's color range."""
+        RangeHalf: Final[Token] = cast(Token, ...)
+        """Half of the full range (e.g. 127.5 for 8-bit)."""
 
-        ChromaRangeMax: Final[Token] = cast(Token, ...)
-        """Maximum chroma value based on input clip's color range."""
-
-        RangeInMin: Final[Token] = cast(Token, ...)
-        """Like `RangeMin`, but adapts to input `range_in` parameter."""
-
-        LumaRangeInMin: Final[Token] = cast(Token, ...)
-        """Like `LumaRangeMin`, but adapts to input `range_in`."""
-
-        ChromaRangeInMin: Final[Token] = cast(Token, ...)
-        """Like `ChromaRangeMin`, but adapts to input `range_in`."""
-
-        RangeInMax: Final[Token] = cast(Token, ...)
-        """Like `RangeMax`, but adapts to input `range_in`."""
-
-        LumaRangeInMax: Final[Token] = cast(Token, ...)
-        """Like `LumaRangeMax`, but adapts to input `range_in`."""
-
-        ChromaRangeInMax: Final[Token] = cast(Token, ...)
-        """Like `ChromaRangeMax`, but adapts to input `range_in`."""
+        RangeSize: Final[Token] = cast(Token, ...)
+        """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
     @cache
     def _get_token(self, name: str) -> Token:

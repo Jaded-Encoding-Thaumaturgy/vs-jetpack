@@ -60,7 +60,7 @@ def test_inline_expr_advanced(format: int) -> None:
         with inline_expr(clip) as ie:
             x, *_ = ie.vars
 
-            norm_luma = (x - x.LumaRangeInMin) * (ie.as_var(1) / (x.LumaRangeInMax - x.LumaRangeInMin))
+            norm_luma = (x - x.PlaneMin) * (ie.as_var(1) / (x.PlaneMax - x.PlaneMin))
             norm_luma = ie.op.clamp(norm_luma, 0, 1)
 
             curve_strength = (slope - 1) * smooth
@@ -78,7 +78,7 @@ def test_inline_expr_advanced(format: int) -> None:
             if ColorRange.from_video(clip).is_full or clip.format.sample_type is vs.FLOAT:
                 ie.out.uv = x
             else:
-                chroma_mult = x.RangeMax / (x.ChromaRangeInMax - x.ChromaRangeInMin)
+                chroma_mult = x.RangeMax / (x.PlaneMax - x.PlaneMin)
                 chroma_boosted = (x - x.Neutral) * chroma_mult + x.RangeHalf
 
                 ie.out.uv = ie.op.round(chroma_boosted)
