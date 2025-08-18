@@ -79,7 +79,7 @@ def test_inline_expr_advanced(format: int) -> None:
                 ie.out.uv = x
             else:
                 chroma_mult = x.RangeMax / (x.PlaneMax - x.PlaneMin)
-                chroma_boosted = (x - x.Neutral) * chroma_mult + x.RangeHalf
+                chroma_boosted = (x - x.Neutral) * chroma_mult + x.RangeMid
 
                 ie.out.uv = ie.op.round(chroma_boosted)
 

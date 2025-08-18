@@ -136,7 +136,7 @@ def inline_expr(
                     #  - Scale based on the input chroma range (e.g., 240 - 16)
                     #  - Add half of full range to re-center in full output range
                     chroma_mult = x.RangeMax / (x.PlaneMax - x.PlaneMin)
-                    chroma_boosted = (x - x.Neutral) * chroma_mult + x.RangeHalf
+                    chroma_boosted = (x - x.Neutral) * chroma_mult + x.RangeMid
 
                     # Apply the adjusted chroma values to U and V planes
                     ie.out.uv = ie.op.round(chroma_boosted)
