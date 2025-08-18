@@ -99,9 +99,9 @@ class ExprToken(CustomStrEnum):
                 return get_peak_value(clip, ColorRange.FULL, chroma)
 
             case ExprToken.RangeHalf:
-                peakval = get_peak_value(clip, ColorRange.FULL, chroma)
                 lowestval = get_lowest_value(clip, ColorRange.FULL, chroma)
-                return (peakval + lowestval) / 2
+                peakval = get_peak_value(clip, ColorRange.FULL, chroma)
+                return (lowestval + peakval) / 2
 
             case ExprToken.RangeSize:
                 val = get_peak_value(clip, ColorRange.FULL)
