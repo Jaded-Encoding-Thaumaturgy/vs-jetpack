@@ -8,6 +8,8 @@ from vstools import vs, vs_object
 
 from .util import ExprVars
 
+__all__ = ["CustomExprError"]
+
 
 def _color_tag(string: str, tag_start: str, tag_end: str = "\033[0m") -> str:
     import sys
