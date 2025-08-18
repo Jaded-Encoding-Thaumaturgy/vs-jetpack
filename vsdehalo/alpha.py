@@ -147,7 +147,9 @@ def dehalo_alpha(
             if attach_masks:
                 masks_to_prop.append(core.std.SetFrameProps(mask, lowsens=lowsens_i, highsens=highsens_i))
 
-            dehalo = core.std.MaskedMerge(dehalo, work_clip, limiter(mask, planes=planes, func=util.func), planes)
+            dehalo = core.std.MaskedMerge(
+                dehalo, work_clip, limiter(mask, mask=True, planes=planes, func=util.func), planes
+            )
 
         elif lowsens_i.count(-1) == len(lowsens_i) and highsens_i.count(-1) == len(highsens_i):
             pass

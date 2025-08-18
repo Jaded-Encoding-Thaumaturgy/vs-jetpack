@@ -124,6 +124,6 @@ def YAHR(  # noqa: N802
             func=YAHR,
         )
 
-        yahr = clip.std.MaskedMerge(yahr, limiter(mask, planes=planes), planes)
+        yahr = clip.std.MaskedMerge(yahr, limiter(mask, mask=True, planes=planes), planes)
 
     return yahr

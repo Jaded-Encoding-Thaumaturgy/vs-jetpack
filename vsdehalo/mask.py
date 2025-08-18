@@ -483,8 +483,8 @@ def fine_dehalo2(
     if mask_v:
         mask_v = grow_mask(mask_v, mask_radius, coord=Coordinates.HORIZONTAL, multiply=1.8, func=func)
 
-    mask_h = mask_h and limiter(mask_h, func=func)
-    mask_v = mask_v and limiter(mask_v, func=func)
+    mask_h = mask_h and limiter(mask_h, mask=True, func=func)
+    mask_v = mask_v and limiter(mask_v, mask=True, func=func)
 
     fix_weights = list(range(-1, -radius - 1, -1))
     fix_rweights = list(reversed(fix_weights))

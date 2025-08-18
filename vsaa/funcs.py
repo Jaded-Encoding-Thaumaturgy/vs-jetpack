@@ -205,7 +205,7 @@ def based_aa(
         mask = mask.std.BinarizeMask(scale_mask(mask_thr, 8, func.work_clip))
 
         mask = box_blur(mask.std.Maximum())
-        mask = limiter(mask, func=based_aa)
+        mask = limiter(mask, mask=True, func=based_aa)
 
         if show_mask:
             return mask
