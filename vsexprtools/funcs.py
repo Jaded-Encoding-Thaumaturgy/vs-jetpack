@@ -42,6 +42,9 @@ def expr_func(
 
     For a higher-level function, see [norm_expr][vsexprtools.norm_expr]
 
+    Web app to dissect expressions:
+        - <https://jaded-encoding-thaumaturgy.github.io/expr101/>
+
     Args:
         clips: Input clip(s). Supports constant format clips, or one variable resolution clip.
         expr: Expression to be evaluated.
@@ -191,6 +194,9 @@ def norm_expr(
     """
     Evaluate a per-pixel expression on input clip(s), normalize it based on the specified planes,
     and format tokens and placeholders using provided keyword arguments.
+
+    Web app to dissect expressions:
+        - <https://jaded-encoding-thaumaturgy.github.io/expr101/>
 
     Args:
         clips: Input clip(s). Supports constant format clips, or one variable resolution clip.
