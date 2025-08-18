@@ -22,6 +22,7 @@ from vstools import (
     vs,
 )
 
+from .error import CustomExprError
 from .exprop import ExprList, ExprOp, ExprOpBase, TupleExprList
 from .util import ExprVars, bitdepth_aware_tokenize_expr, norm_expr_planes
 
@@ -54,7 +55,7 @@ def expr_func(
 
     Raises:
         CustomRuntimeError: If `akarin` plugin is not found.
-        vapoursynth.Error: If the expression could not be evaluated.
+        CustomExprError: If the expression could not be evaluated.
 
     Returns:
         Evaluated clip.
@@ -78,7 +79,7 @@ def expr_func(
                 clips[0], lambda clip: core.akarin.Expr(clip, expr, fmt, opt, boundary)
             )
 
-        raise CustomRuntimeError(e, func, expr) from e
+        raise CustomExprError(e, func, clips, expr, fmt, opt, boundary) from e
 
 
 def _combine_norm__ix(ffix: SupportsString | Iterable[SupportsString] | None, n_clips: int) -> list[SupportsString]:
