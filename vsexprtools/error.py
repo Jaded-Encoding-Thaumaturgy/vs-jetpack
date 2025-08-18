@@ -4,7 +4,7 @@ from typing import Any, Sequence
 from jetpytools import CustomRuntimeError, FuncExceptT, SupportsString, norm_func_name, to_arr
 from jetpytools.exceptions.base import CustomErrorMeta
 
-from vstools import vs, vs_object
+from vstools import get_video_format, vs, vs_object
 
 from .util import ExprVars
 
@@ -59,7 +59,8 @@ class CustomExprError(CustomRuntimeError, vs_object, metaclass=CustomExprErrorMe
 
         args_infos = [
             _color_tag("Flags:", "\033[0;33m"),
-            _color_tag("    Format:", "\033[1;37m") + f" {self.fmt}",
+            _color_tag("    Format:", "\033[1;37m")
+            + f" {get_video_format(self.fmt) if self.fmt is not None else None!r}",
             _color_tag("    Integer evaluation:", "\033[1;37m") + f" {self.opt}",
             _color_tag("    Boundary type:", "\033[1;37m") + f" {('Clamped edges', 'Mirrored edges')[self.boundary]}",
         ]
