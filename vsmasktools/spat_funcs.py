@@ -13,7 +13,6 @@ from vstools import (
     check_variable,
     depth,
     fallback,
-    get_lowest_value,
     get_peak_value,
     get_sample_type,
     get_y,
@@ -167,11 +166,9 @@ def retinex(
     expr_balance = "x x.psmMin - x.psmMax x.psmMin - /"
 
     if not is_float:
-        expr_balance = f"{expr_balance} {{ymax}} {{ymin}} - * {{ymin}} + round {{ymin}} {{ymax}} clamp"
+        expr_balance = f"{expr_balance} plane_max plane_min - * plane_min + round plane_min plane_max clamp"
 
-    return norm_expr(
-        msr_stats, expr_balance, None, y, ymin=get_lowest_value(y, False), ymax=get_peak_value(y, False), func=func
-    )
+    return norm_expr(msr_stats, expr_balance, None, y)
 
 
 def flat_mask(src: vs.VideoNode, radius: int = 5, thr: float = 0.011, gauss: bool = False) -> ConstantFormatVideoNode:

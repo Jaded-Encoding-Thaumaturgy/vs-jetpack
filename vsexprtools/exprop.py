@@ -112,7 +112,7 @@ class ExprToken(CustomStrEnum):
         Returns a version of the token specific to a clip index.
 
         This allows referencing the token in expressions targeting multiple clips
-        (e.g., `ExprToken.LumaMax[2]` results in `'ymax_z'` suffix for clip index 2).
+        (e.g., `ExprToken.PlaneMax[2]` results in `'plane_max_z'` suffix for clip index 2).
 
         Args:
             i: An integer index representing the input clip number.

@@ -192,7 +192,7 @@ def based_diff_mask(
         list[tuple[Count, RemoveGrain.Mode]],
         VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode],
     ] = 2,
-    ampl: str | type[EdgeDetect] | EdgeDetect = "x yrange_max / 2 4 pow * {thr} < 0 1 ? yrange_max *",
+    ampl: str | type[EdgeDetect] | EdgeDetect = "x mask_max / 2 4 pow * {thr} < 0 1 ? mask_max *",
     expand: int = 4,
     func: FuncExceptT | None = None,
 ) -> ConstantFormatVideoNode:

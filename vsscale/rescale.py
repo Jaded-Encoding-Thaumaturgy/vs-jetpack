@@ -390,7 +390,7 @@ class Rescale(RescaleBase):
     def _generate_upscale(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
         upscale = super()._generate_upscale(clip)
 
-        merged_mask = norm_expr([self.line_mask, self.credit_mask], "x y - 0 yrange_max clamp", func=self.__class__)
+        merged_mask = norm_expr([self.line_mask, self.credit_mask], "x y - 0 mask_max clamp", func=self.__class__)
 
         upscale = core.std.CopyFrameProps(core.std.MaskedMerge(self._clipy, upscale, merged_mask), upscale)
 
@@ -413,7 +413,7 @@ class Rescale(RescaleBase):
     def line_mask(self) -> ConstantFormatVideoNode:
         """Gets the lineart mask to be applied on the upscaled clip."""
         lm = self._line_mask or core.std.BlankClip(
-            self._clipy, color=get_peak_value(self._clipy, False, ColorRange.FULL), keep=True
+            self._clipy, color=get_peak_value(self._clipy, ColorRange.FULL, False), keep=True
         )
 
         if self._border_handling:

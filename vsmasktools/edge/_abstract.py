@@ -250,7 +250,7 @@ class EdgeDetect(ABC):
             mask = norm_expr(mask, f"x {hthr} > {ExprToken.RangeMax} x ?", planes, func=self.__class__)
 
         if clamp is True:
-            clamp = (get_lowest_value(mask, range_in=ColorRange.FULL), get_peak_value(mask, range_in=ColorRange.FULL))
+            clamp = (get_lowest_value(mask, ColorRange.FULL), get_peak_value(mask, ColorRange.FULL))
 
         if isinstance(clamp, list):
             mask = limiter(mask, *zip(*clamp), planes=planes, func=self.__class__)
