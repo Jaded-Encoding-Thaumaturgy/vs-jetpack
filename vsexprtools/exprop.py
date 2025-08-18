@@ -60,7 +60,7 @@ class ExprToken(CustomStrEnum):
     """Maximum value in full range (chroma-aware)."""
 
     RangeHalf = "range_half"
-    """Half of the full range (e.g. 127.5 for 8-bit full range)."""
+    """Half of the full range (e.g. 127.5 for 8-bit)."""
 
     RangeSize = "range_size"
     """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""

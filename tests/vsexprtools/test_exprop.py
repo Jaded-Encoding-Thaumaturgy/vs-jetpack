@@ -16,7 +16,7 @@ clip_yuv_limited = ColorRange.LIMITED.apply(core.std.BlankClip(width=2, height=2
     ["token", "range_in", "expected"],
     [
         (ExprToken.Neutral, None, 128),
-        (ExprToken.RangeHalf, None, 128),
+        (ExprToken.RangeHalf, None, 127.5),
         (ExprToken.RangeSize, None, 256),
     ],
 )
