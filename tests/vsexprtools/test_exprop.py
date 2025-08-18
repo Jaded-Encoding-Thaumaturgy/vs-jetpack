@@ -15,33 +15,13 @@ clip_yuv_limited = ColorRange.LIMITED.apply(core.std.BlankClip(width=2, height=2
 @pytest.mark.parametrize(
     ["token", "range_in", "expected"],
     [
-        (ExprToken.LumaMin, None, 16),
-        (ExprToken.ChromaMin, None, 16),
-        (ExprToken.LumaMax, None, 235),
-        (ExprToken.ChromaMax, None, 240),
         (ExprToken.Neutral, None, 128),
         (ExprToken.RangeHalf, None, 128),
         (ExprToken.RangeSize, None, 256),
-        (ExprToken.LumaRangeMin, None, 16),
-        (ExprToken.ChromaRangeMin, None, 16),
-        (ExprToken.LumaRangeMax, None, 235),
-        (ExprToken.ChromaRangeMax, None, 240),
-        (ExprToken.LumaRangeInMin, None, 16),
-        (ExprToken.LumaRangeInMin, ColorRange.LIMITED, 16),
-        (ExprToken.LumaRangeInMin, ColorRange.FULL, 0),
-        (ExprToken.ChromaRangeInMin, None, 16),
-        (ExprToken.ChromaRangeInMin, ColorRange.LIMITED, 16),
-        (ExprToken.ChromaRangeInMin, ColorRange.FULL, 0),
-        (ExprToken.LumaRangeInMax, None, 235),
-        (ExprToken.LumaRangeInMax, ColorRange.LIMITED, 235),
-        (ExprToken.LumaRangeInMax, ColorRange.FULL, 255),
-        (ExprToken.ChromaRangeInMax, None, 240),
-        (ExprToken.ChromaRangeInMax, ColorRange.LIMITED, 240),
-        (ExprToken.ChromaRangeInMax, ColorRange.FULL, 255),
     ],
 )
 def test_expr_token_get_value_limited(token: ExprToken, range_in: ColorRange | None, expected: float) -> None:
-    assert token.get_value(clip_yuv_limited, None, range_in) == expected
+    assert token.get_value(clip_yuv_limited, range_in) == expected
 
 
 @pytest.mark.parametrize(
@@ -53,28 +33,16 @@ def test_expr_token_get_value_limited(token: ExprToken, range_in: ColorRange | N
         (ExprToken.RangeMax, None, None, 255),
         (ExprToken.RangeMax, False, None, 255),
         (ExprToken.RangeMax, True, None, 255),
-        (ExprToken.RangeInMin, None, None, 16),
-        (ExprToken.RangeInMin, False, None, 16),
-        (ExprToken.RangeInMin, True, None, 16),
-        (ExprToken.RangeInMin, None, ColorRange.FULL, 0),
-        (ExprToken.RangeInMin, False, ColorRange.FULL, 0),
-        (ExprToken.RangeInMin, True, ColorRange.FULL, 0),
-        (ExprToken.RangeInMax, None, None, 235),
-        (ExprToken.RangeInMax, False, None, 235),
-        (ExprToken.RangeInMax, True, None, 240),
-        (ExprToken.RangeInMax, None, ColorRange.FULL, 255),
-        (ExprToken.RangeInMax, False, ColorRange.FULL, 255),
-        (ExprToken.RangeInMax, True, ColorRange.FULL, 255),
     ],
 )
 def test_expr_token_get_value_limited_with_chroma(
-    token: ExprToken, chroma: bool, range_in: ColorRange | None, expected: float
+    token: ExprToken, range_in: ColorRange | None, chroma: bool, expected: float
 ) -> None:
-    assert token.get_value(clip_yuv_limited, chroma, range_in) == expected
+    assert token.get_value(clip_yuv_limited, range_in, chroma) == expected
 
 
 def test_expr_token_getitem() -> None:
-    assert ExprToken.LumaMax[2] == "ymax_z"
+    assert ExprToken.PlaneMax[2] == "plane_max_z"
 
 
 def test_expr_list() -> None: ...
