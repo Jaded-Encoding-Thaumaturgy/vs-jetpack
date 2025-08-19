@@ -205,8 +205,8 @@ def get_lowest_value(
 def get_lowest_values(
     clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
     range_in: ColorRangeT | None = None,
-    mask: bool = False,
     family: vs.ColorFamily | None = None,
+    mask: bool = False,
 ) -> list[float]:
     """
     Get the lowest values of all planes of a specified format.
@@ -296,8 +296,8 @@ def get_peak_value(
 def get_peak_values(
     clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
     range_in: ColorRangeT | None = None,
-    mask: bool = False,
     family: vs.ColorFamily | None = None,
+    mask: bool = False,
 ) -> list[float]:
     """
     Get the peak values of all planes of a specified format.
