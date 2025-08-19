@@ -137,6 +137,7 @@ class ExprToken(CustomStrEnum, metaclass=_ExprTokenMeta):
     ChromaRangeInMin = "crange_in_min"
     ChromaRangeInMax = "crange_in_max"
 
+    @cache
     def get_value(self, clip: vs.VideoNode, chroma: bool = False, range_in: ColorRange | None = None) -> float:
         """
         Resolves the numeric value represented by this token based on the input clip and range.
@@ -248,6 +249,17 @@ class ExprToken(CustomStrEnum, metaclass=_ExprTokenMeta):
             raise CustomIndexError("Only an index up to 25 is supported", self, i)
 
         return f"{self._value_}_{ExprVars.get_var(i)}"
+
+
+def _cache_clear_expr_token(core_id: int) -> None:
+    def cache_clear() -> None:
+        for token in ExprToken:
+            token.get_value.cache_clear()
+
+    vs.core.register_on_destroy(cache_clear)
+
+
+vs.register_on_creation(_cache_clear_expr_token)
 
 
 class ExprList(StrList):
