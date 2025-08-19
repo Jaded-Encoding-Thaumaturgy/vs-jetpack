@@ -300,7 +300,9 @@ def test_expr_op_str_polyval(input_clip: vs.VideoNode, coeffs: Sequence[float], 
 
             if expr.format.sample_type == vs.INTEGER:
                 clamped = clamp(
-                    expected, get_lowest_value(input_clip, ColorRange.FULL), get_peak_value(input_clip, ColorRange.FULL)
+                    expected,
+                    get_lowest_value(input_clip, range_in=ColorRange.FULL),
+                    get_peak_value(input_clip, range_in=ColorRange.FULL),
                 )
                 assert f_expr[i][0, 0] == round(clamped)
             else:

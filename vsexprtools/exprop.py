@@ -65,7 +65,7 @@ class ExprToken(CustomStrEnum):
     RangeSize = "range_size"
     """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
-    def get_value(self, clip: vs.VideoNode, range_in: ColorRange | None = None, chroma: bool = False) -> float:
+    def get_value(self, clip: vs.VideoNode, chroma: bool = False, range_in: ColorRange | None = None) -> float:
         """
         Resolves the numeric value represented by this token based on the input clip and range.
 
@@ -79,33 +79,35 @@ class ExprToken(CustomStrEnum):
         """
         assert check_variable(clip, self.get_value)
 
-        match self:
-            case ExprToken.PlaneMin:
-                return get_lowest_value(clip, range_in, chroma)
+        if self is ExprToken.PlaneMin:
+            return get_lowest_value(clip, chroma, range_in)
 
-            case ExprToken.PlaneMax:
-                return get_peak_value(clip, range_in, chroma)
+        if self is ExprToken.PlaneMax:
+            return get_peak_value(clip, chroma, range_in)
 
-            case ExprToken.MaskMax:
-                return get_peak_value(clip, ColorRange.FULL)
+        if self is ExprToken.MaskMax:
+            return get_peak_value(clip, range_in=ColorRange.FULL)
 
-            case ExprToken.Neutral:
-                return get_neutral_value(clip)
+        if self is ExprToken.Neutral:
+            return get_neutral_value(clip)
 
-            case ExprToken.RangeMin:
-                return get_lowest_value(clip, ColorRange.FULL, chroma)
+        if self is ExprToken.RangeMin:
+            return get_lowest_value(clip, chroma, ColorRange.FULL)
 
-            case ExprToken.RangeMax:
-                return get_peak_value(clip, ColorRange.FULL, chroma)
+        if self is ExprToken.RangeMax:
+            return get_peak_value(clip, chroma, ColorRange.FULL)
 
-            case ExprToken.RangeMid:
-                lowestval = get_lowest_value(clip, ColorRange.FULL, chroma)
-                peakval = get_peak_value(clip, ColorRange.FULL, chroma)
-                return (lowestval + peakval) / 2
+        if self is ExprToken.RangeMid:
+            lowestval = get_lowest_value(clip, chroma, ColorRange.FULL)
+            peakval = get_peak_value(clip, chroma, ColorRange.FULL)
+            return (lowestval + peakval) / 2
 
-            case ExprToken.RangeSize:
-                val = get_peak_value(clip, ColorRange.FULL)
-                return val if clip.format.sample_type == vs.FLOAT else val + 1
+        if self is ExprToken.RangeSize:
+            val = get_peak_value(clip, range_in=ColorRange.FULL)
+            return val if clip.format.sample_type == vs.FLOAT else val + 1
+
+
+        raise NotImplementedError
 
     def __getitem__(self, i: int) -> str:  # type: ignore[override]
         """

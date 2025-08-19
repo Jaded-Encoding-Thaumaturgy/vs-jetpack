@@ -413,7 +413,7 @@ class Rescale(RescaleBase):
     def line_mask(self) -> ConstantFormatVideoNode:
         """Gets the lineart mask to be applied on the upscaled clip."""
         lm = self._line_mask or core.std.BlankClip(
-            self._clipy, color=get_peak_value(self._clipy, ColorRange.FULL, False), keep=True
+            self._clipy, color=get_peak_value(self._clipy, False, ColorRange.FULL), keep=True
         )
 
         if self._border_handling:

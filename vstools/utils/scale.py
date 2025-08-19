@@ -79,10 +79,10 @@ def scale_value(
     if vs.RGB in (in_fmt.color_family, out_fmt.color_family, family):
         chroma = False
 
-    input_peak = get_peak_value(in_fmt, range_in, chroma, family)
-    input_lowest = get_lowest_value(in_fmt, range_in, chroma, family)
-    output_peak = get_peak_value(out_fmt, range_out, chroma, family)
-    output_lowest = get_lowest_value(out_fmt, range_out, chroma, family)
+    input_peak = get_peak_value(in_fmt, chroma, range_in, family)
+    input_lowest = get_lowest_value(in_fmt, chroma, range_in, family)
+    output_peak = get_peak_value(out_fmt, chroma, range_out, family)
+    output_lowest = get_lowest_value(out_fmt, chroma, range_out, family)
 
     if scale_offsets and in_fmt.sample_type is vs.INTEGER:
         if chroma:
@@ -99,7 +99,7 @@ def scale_value(
             out_value += 16 << (out_fmt.bits_per_sample - 8)
 
     if out_fmt.sample_type is vs.INTEGER:
-        out_value = max(min(round(out_value), get_peak_value(out_fmt, ColorRange.FULL)), 0)
+        out_value = max(min(round(out_value), get_peak_value(out_fmt, range_in=ColorRange.FULL)), 0)
 
     return out_value
 
@@ -163,8 +163,8 @@ def scale_delta(
 
 def get_lowest_value(
     clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
-    range_in: ColorRangeT | None = None,
     chroma: bool = False,
+    range_in: ColorRangeT | None = None,
     family: vs.ColorFamily | None = None,
 ) -> float:
     """
@@ -172,8 +172,8 @@ def get_lowest_value(
 
     Args:
         clip_or_depth: Input bit depth, or clip, frame, format from where to get it.
-        range_in: Whether to get limited or full range lowest value.
         chroma: Whether to get luma (default) or chroma plane value.
+        range_in: Whether to get limited or full range lowest value.
         family: Which color family to assume for calculations.
 
     Returns:
@@ -216,8 +216,8 @@ def get_lowest_values(
 
     return normalize_seq(
         [
-            get_lowest_value(clip_or_depth, range_in, False, family),
-            get_lowest_value(clip_or_depth, range_in, not mask, family),
+            get_lowest_value(clip_or_depth, False, range_in, family),
+            get_lowest_value(clip_or_depth, not mask, range_in, family),
         ],
         get_video_format(clip_or_depth).num_planes,
     )
@@ -254,8 +254,8 @@ def get_neutral_values(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) ->
 
 def get_peak_value(
     clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
-    range_in: ColorRangeT | None = None,
     chroma: bool = False,
+    range_in: ColorRangeT | None = None,
     family: vs.ColorFamily | None = None,
 ) -> float:
     """
@@ -263,8 +263,8 @@ def get_peak_value(
 
     Args:
         clip_or_depth: Input bit depth, or clip, frame, format from where to get it.
-        range_in: Whether to get limited or full range peak value.
         chroma: Whether to get luma (default) or chroma plane value.
+        range_in: Whether to get limited or full range peak value.
         family: Which color family to assume for calculations.
 
     Returns:
@@ -307,8 +307,8 @@ def get_peak_values(
 
     return normalize_seq(
         [
-            get_peak_value(clip_or_depth, range_in, False, family),
-            get_peak_value(clip_or_depth, range_in, not mask, family),
+            get_peak_value(clip_or_depth, False, range_in, family),
+            get_peak_value(clip_or_depth, not mask, range_in, family),
         ],
         get_video_format(clip_or_depth).num_planes,
     )
