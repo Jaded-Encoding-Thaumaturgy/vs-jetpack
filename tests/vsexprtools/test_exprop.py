@@ -29,16 +29,16 @@ def test_expr_token_get_value_limited(token: ExprToken, range_in: ColorRange | N
 
 
 @pytest.mark.parametrize(
-    ["token", "range_in", "chroma", "expected"],
+    ["token", "chroma", "range_in", "expected"],
     [
-        (ExprToken.PlaneMax, None, False, 235),
-        (ExprToken.PlaneMax, None, True, 240),
+        (ExprToken.PlaneMax, False, None, 235),
+        (ExprToken.PlaneMax, True, None, 240),
     ],
 )
 def test_expr_token_get_value_limited_with_chroma(
-    token: ExprToken, range_in: ColorRange | None, chroma: bool, expected: float
+    token: ExprToken, chroma: bool, range_in: ColorRange | None, expected: float
 ) -> None:
-    assert token.get_value(clip_yuv_limited, range_in, chroma) == expected
+    assert token.get_value(clip_yuv_limited, chroma, range_in) == expected
 
 
 def test_expr_token_getitem() -> None:
