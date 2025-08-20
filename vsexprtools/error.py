@@ -13,8 +13,6 @@ __all__ = ["CustomExprError"]
 
 
 def _color_tag(string: str, tag_start: str, tag_end: str = "\033[0m") -> str:
-    import sys
-
     if sys.stdout and sys.stdout.isatty():
         return f"{tag_start}{string}{tag_end}"
     return string
