@@ -597,10 +597,10 @@ def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: floa
 
     curve = (slope - 1) * smooth
     luma_expr = (
-        "x plane_min - 1 plane_max plane_min - / * 0 1 clip LUMA! "
-        "{k} 1 {c} + {c} sin LUMA@ {c} + / - * LUMA@ 1 {k} - * + range_max * "
+        "x plane_min - plane_max plane_min - / 0 1 clip LUMA! "
+        "{k} 1 {c} + dup {c} * LUMA@ {c} + / - * LUMA@ 1 {k} - * + range_max * "
     )
-    chroma_expr = "x neutral - range_max plane_max plane_min - / * range_mid + round"
+    chroma_expr = "x neutral - plane_max plane_min - / 0.5 + range_max * round"
 
     if clip.format.sample_type is vs.INTEGER:
         luma_expr += "round"
