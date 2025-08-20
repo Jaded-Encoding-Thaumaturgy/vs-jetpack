@@ -307,7 +307,7 @@ def inline_expr(
     error = CustomInlineExprError(catcher.error)
     error.add_stack_infos(vars_in_context, ie)
 
-    raise error
+    raise error.with_traceback(catcher.tb)
 
 
 class InlineExprWrapper(vs_object):
