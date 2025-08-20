@@ -722,9 +722,6 @@ class ClipVar(ExprVar, vs_object):
         RangeMax: Final[ComputedVar] = cast(ComputedVar, ...)
         """Maximum value in full range (chroma-aware)."""
 
-        RangeMid: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Middle point of the full range (e.g. 127.5 for 8-bit)."""
-
         RangeSize: Final[ComputedVar] = cast(ComputedVar, ...)
         """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
@@ -834,9 +831,6 @@ class Tokens(metaclass=SingletonMeta):
 
         RangeMax: Final[Token] = cast(Token, ...)
         """Maximum value in full range (chroma-aware)."""
-
-        RangeMid: Final[Token] = cast(Token, ...)
-        """Middle point of the full range (e.g. 127.5 for 8-bit)."""
 
         RangeSize: Final[Token] = cast(Token, ...)
         """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""

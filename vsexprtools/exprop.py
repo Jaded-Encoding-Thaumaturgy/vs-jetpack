@@ -110,12 +110,10 @@ class ExprToken(CustomStrEnum, metaclass=_ExprTokenMeta):
     RangeMax = "range_max"
     """Maximum value in full range (chroma-aware)."""
 
-    RangeMid = "range_mid"
-    """Middle point of the full range (e.g. 127.5 for 8-bit)."""
-
     RangeSize = "range_size"
     """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
+    # Deprecated
     LumaMin = "ymin"
     ChromaMin = "cmin"
     LumaMax = "ymax"
@@ -169,11 +167,6 @@ class ExprToken(CustomStrEnum, metaclass=_ExprTokenMeta):
 
         if self is ExprToken.RangeMax:
             return get_peak_value(clip, chroma, ColorRange.FULL)
-
-        if self is ExprToken.RangeMid:
-            lowestval = get_lowest_value(clip, chroma, ColorRange.FULL)
-            peakval = get_peak_value(clip, chroma, ColorRange.FULL)
-            return (lowestval + peakval) / 2
 
         if self is ExprToken.RangeSize:
             val = get_peak_value(clip, range_in=ColorRange.FULL)
