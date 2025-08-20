@@ -65,14 +65,19 @@ class CustomExprError(CustomRuntimeError, vs_object, metaclass=CustomExprErrorMe
             _color_tag("    Boundary type:", "\033[1;37m") + f" {('Clamped edges', 'Mirrored edges')[self.boundary]}",
         ]
 
-        return (
-            f"{func_header}{self.message!s}\n\n"
+        out = (
+            f"{func_header}\n    {self.message!s}\n\n"
             + "\n".join(clips_info)
             + "\n\n"
             + "\n".join(expr_infos)
             + "\n\n"
             + "\n".join(args_infos)
         )
+
+        if hasattr(self, "__notes__"):
+            out += "\n" + "\n".join(self.__notes__)
+
+        return out
 
     def __vs_del__(self, core_id: int) -> None:
         self.clips.clear()
