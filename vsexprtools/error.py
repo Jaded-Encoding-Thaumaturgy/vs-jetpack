@@ -1,3 +1,4 @@
+import sys
 from abc import ABCMeta
 from typing import Any, Sequence
 
@@ -74,7 +75,7 @@ class CustomExprError(CustomRuntimeError, vs_object, metaclass=CustomExprErrorMe
             + "\n".join(args_infos)
         )
 
-        if hasattr(self, "__notes__"):
+        if sys.version_info < (3, 13) and hasattr(self, "__notes__"):
             out += "\n" + "\n".join(self.__notes__)
 
         return out
