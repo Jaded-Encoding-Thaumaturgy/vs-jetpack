@@ -10,6 +10,8 @@ from ..error import _color_tag
 if TYPE_CHECKING:
     from .manager import InlineExprWrapper
 
+__all__ = ["CustomInlineExprError"]
+
 
 class CustomInlineExprError(CustomRuntimeError):
     """Thrown when a InlineExpr error occurs."""
