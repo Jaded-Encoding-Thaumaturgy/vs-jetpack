@@ -25,15 +25,20 @@ class CustomInlineExprError(CustomRuntimeError):
         from .helpers import ComputedVar
         from .manager import InlineExprWrapper
 
-        self.add_note("\n")
-        self.add_note(_color_tag("InlineExpr stack infos:", "\033[0;33m"))
+        self.add_note(_color_tag("\nInlineExpr stack infos:", "\033[0;33m"))
+
+        def _format_var_per_plane(v: ComputedVar) -> str:
+            return ("\n    " + (" " * (len(k) + 2))).join(v.to_str_per_plane(ie._format.num_planes))
 
         for k, v in sorted(expr_vars.items()):
-            if isinstance(v, InlineExprWrapper):
+            if k.startswith("_"):
                 continue
 
-            if isinstance(v, ComputedVar):
-                v = ("\n    " + (" " * (len(k) + 2))).join(v.to_str_per_plane(ie._format.num_planes))
+            if isinstance(v, InlineExprWrapper):
+                k = f"{k}.out"
+                v = _format_var_per_plane(v.out)
+            elif isinstance(v, ComputedVar):
+                v = _format_var_per_plane(v)
             elif v is not None:
                 with suppress(TypeError):
                     v = str([str(x) for x in iter(v)])
