@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from functools import cache
+from inspect import currentframe
+from types import FrameType
 from typing import Any, Iterable, Iterator, Sequence, SupportsIndex, cast, overload
 
 from jetpytools import CustomValueError, to_arr
@@ -14,8 +16,10 @@ from typing_extensions import Self
 
 from vstools import HoldsVideoFormatT, VideoFormatT, get_video_format, vs, vs_object
 
+from ..error import CustomExprError
 from ..funcs import norm_expr
 from ..util import ExprVars
+from .error import CustomInlineExprError
 from .helpers import ClipVar, ComputedVar, ExprVarLike, Operators, Tokens
 
 __all__ = ["inline_expr"]
@@ -274,21 +278,36 @@ def inline_expr(
     """
     clips = to_arr(clips)
     ie = InlineExprWrapper(clips, format)
+    kwargs.setdefault("func", inline_expr)
+
+    locals_before = _capture_locals(currentframe(), 2)
 
     try:
         if enable_polyfills:
-            from .polyfills import disable_poly, enable_poly
+            from .polyfills import enable_poly
 
             enable_poly()
 
         yield ie
     finally:
         if enable_polyfills:
-            disable_poly()  # pyright: ignore[reportPossiblyUnboundVariable]
+            from .polyfills import disable_poly
 
-    kwargs.setdefault("func", inline_expr)
+            disable_poly()
 
-    ie._compute_expr(**kwargs)
+    with CustomExprError.catch() as catcher:
+        ie._compute_expr(**kwargs)
+
+    if not catcher.error:
+        return None
+
+    locals_after = _capture_locals(currentframe(), 2)
+    vars_in_context = {k: locals_after.get(k) for k in locals_after - locals_before.keys()}
+
+    error = CustomInlineExprError(catcher.error)
+    error.add_stack_infos(vars_in_context, ie)
+
+    raise error
 
 
 class InlineExprWrapper(vs_object):
@@ -433,3 +452,24 @@ class InlineExprWrapper(vs_object):
         del self._final_clip
         del self._nodes
         del self._format
+
+
+def _capture_locals(frame: FrameType | None, level: int = 0) -> dict[str, Any]:
+    """Snapshot locals from a given frame depth, with no frame leaks."""
+    assert frame
+
+    f = frame
+    frames = list[FrameType]()
+    try:
+        while level > 0:
+            f = f.f_back
+            assert f
+            frames.append(f)
+            level -= 1
+
+        return f.f_locals.copy()
+    finally:
+        for fr in frames:
+            del fr
+        del f
+        del frame
