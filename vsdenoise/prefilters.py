@@ -15,6 +15,7 @@ from vstools import (
     MISSING,
     ColorRange,
     ConstantFormatVideoNode,
+    CustomValueError,
     InvalidColorFamilyError,
     MissingT,
     PlanesT,
@@ -592,6 +593,9 @@ def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: floa
     assert check_variable_format(clip, prefilter_to_full_range)
 
     InvalidColorFamilyError.check(clip, (vs.YUV, vs.GRAY), prefilter_to_full_range)
+
+    if smooth < 0 or not 0 <= slope <= (1 + 2 * smooth) / smooth:
+        raise CustomValueError("Curve parameters out of range", prefilter_to_full_range, (slope, smooth))
 
     clip_range = ColorRange.from_video(clip)
 
