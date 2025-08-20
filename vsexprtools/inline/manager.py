@@ -104,7 +104,7 @@ def inline_expr(
                 x, *_ = ie.vars
 
                 # Normalize luma to 0-1 range
-                norm_luma = (x - x.PlaneMin) * (ie.as_var(1) / (x.PlaneMax - x.PlaneMin))
+                norm_luma = (x - x.PlaneMin) / (x.PlaneMax - x.PlaneMin)
                 # Ensure normalized luma stays within bounds
                 norm_luma = ie.op.clamp(norm_luma, 0, 1)
 
@@ -112,7 +112,7 @@ def inline_expr(
                 curve_strength = (slope - 1) * smooth  # Slope increases contrast in darker regions
 
                 # Compute a non-linear boost that emphasizes dark details without crushing blacks
-                nonlinear_boost = curve_strength * ((1 + smooth) - (ie.op.sin(smooth) / (norm_luma + smooth)))
+                nonlinear_boost = curve_strength * ((1 + smooth) - ((1 + smooth) * smooth / (norm_luma + smooth)))
 
                 # Combine the non-linear boost with the normalized luma
                 # Boosts shadows while preserving highlights
@@ -124,10 +124,6 @@ def inline_expr(
                 # Assign the processed luma to the Y plane
                 ie.out.y = weight_mul
 
-                # Round only if the format is integer
-                if clip.format.sample_type is vs.INTEGER:
-                    ie.out.y = ie.op.round(ie.out.y)
-
                 if ColorRange.from_video(clip).is_full or clip.format.sample_type is vs.FLOAT:
                     ie.out.uv = x
                 else:
@@ -135,11 +131,10 @@ def inline_expr(
                     #  - Subtract neutral chroma (e.g., 128) to center around zero
                     #  - Scale based on the input chroma range (e.g., 240 - 16)
                     #  - Add half of full range to re-center in full output range
-                    chroma_mult = x.RangeMax / (x.PlaneMax - x.PlaneMin)
-                    chroma_boosted = (x - x.Neutral) * chroma_mult + x.RangeMid
+                    chroma_expanded = ((x - x.Neutral) / (x.PlaneMax - x.PlaneMin) + 0.5) * x.RangeMax
 
                     # Apply the adjusted chroma values to U and V planes
-                    ie.out.uv = ie.op.round(chroma_boosted)
+                    ie.out.uv = ie.op.round(chroma_expanded)
 
             # Final output is flagged as full-range video
             return ColorRange.FULL.apply(ie.clip)

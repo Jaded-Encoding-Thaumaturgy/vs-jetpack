@@ -177,7 +177,7 @@ class ExprToken(CustomStrEnum, metaclass=_ExprTokenMeta):
 
         if self is ExprToken.RangeSize:
             val = get_peak_value(clip, range_in=ColorRange.FULL)
-            return val if clip.format.sample_type == vs.FLOAT else val + 1
+            return val if clip.format.sample_type is vs.FLOAT else val + 1
 
         # TODO: remove this
         warnings.warn(
