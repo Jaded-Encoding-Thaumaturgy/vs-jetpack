@@ -59,18 +59,13 @@ __all__ = [
 ]
 
 
-class _BaseCMaskCar(vs_object):
-    clips: list[vs.VideoNode]
-
-    def __vs_del__(self, core_id: int) -> None:
-        self.clips.clear()
-
-
 @dataclass
-class CustomMaskFromClipsAndRanges(GeneralMask, _BaseCMaskCar):
+class CustomMaskFromClipsAndRanges(GeneralMask, vs_object):
     """
     Abstract CustomMaskFromClipsAndRanges interface
     """
+
+    clips: list[vs.VideoNode] = field(init=False)
 
     processing: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = field(
         default=core.lazy.std.BinarizeMask, kw_only=True
@@ -112,6 +107,9 @@ class CustomMaskFromClipsAndRanges(GeneralMask, _BaseCMaskCar):
 
     @abstractmethod
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]: ...
+
+    def __vs_del__(self, core_id: int) -> None:
+        self.clips.clear()
 
 
 @dataclass

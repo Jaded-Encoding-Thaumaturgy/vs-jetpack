@@ -551,11 +551,9 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         self._exited = True
 
     def __vs_del__(self, core_id: int) -> None:
-        if not TYPE_CHECKING:
-            self.clip = None
-            self.out_fmt = None
-            self._fmt = None
-            self._wclip = None
+        for name in ("clip", "out_fmt", "_fmt", "_wclip"):
+            with suppress(AttributeError):
+                delattr(self, name)
 
 
 def resample_to(

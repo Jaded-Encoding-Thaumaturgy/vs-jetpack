@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import contextlib
+from abc import ABC
+from contextlib import suppress
 from functools import cached_property, wraps
 from typing import Any, Callable, Sequence, TypeVar
 
@@ -44,7 +45,7 @@ __all__ = [
 _RescaleT = TypeVar("_RescaleT", bound="RescaleBase")
 
 
-class RescaleBase(vs_object):
+class RescaleBase(vs_object, ABC):
     """Base class for Rescale wrapper"""
 
     descale_args: ScalingArgs
@@ -81,7 +82,7 @@ class RescaleBase(vs_object):
 
     def __delattr__(self, name: str) -> None:
         def _delattr(attr: str) -> None:
-            with contextlib.suppress(AttributeError):
+            with suppress(AttributeError):
                 delattr(self, attr)
 
         match name:
@@ -93,7 +94,7 @@ class RescaleBase(vs_object):
             case _:
                 pass
 
-        with contextlib.suppress(AttributeError):
+        with suppress(AttributeError):
             super().__delattr__(name)
 
     @staticmethod

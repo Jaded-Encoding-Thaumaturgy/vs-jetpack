@@ -372,4 +372,4 @@ class FunctionUtil(cachedproperty.baseclass, list[int], vs_object):
         return [x if i in self else null for i, x in enumerate(normalize_seq(seq, self.num_planes))]
 
     def __vs_del__(self, core_id: int) -> None:
-        self.__dict__[cachedproperty.cache_key].clear()
+        del self.clip, self.func, self.allowed_cfamilies

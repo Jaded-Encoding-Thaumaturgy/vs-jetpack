@@ -5,6 +5,7 @@ This module defines the base abstract interfaces for general scaling operations.
 from __future__ import annotations
 
 from abc import ABC, ABCMeta
+from contextlib import suppress
 from functools import cache, wraps
 from functools import cached_property as functools_cached_property
 from inspect import Signature
@@ -308,9 +309,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             Create a new instance of the scaler, validating kernel radius if applicable.
             """
             if _check_kernel_radius(cls):
-                obj = super().__new__(cls)
-                obj.kwargs = {}
-                return obj
+                return super().__new__(cls)
 
     def __init__(self, **kwargs: Any) -> None:
         """
@@ -445,7 +444,8 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         return frozenset(func for klass in cls.mro() for func in getattr(klass, "_implemented_funcs", ()))
 
     def __vs_del__(self, core_id: int) -> None:
-        self.kwargs.clear()
+        with suppress(AttributeError):
+            self.kwargs.clear()
 
 
 _BaseScalerT = TypeVar("_BaseScalerT", bound=BaseScaler)

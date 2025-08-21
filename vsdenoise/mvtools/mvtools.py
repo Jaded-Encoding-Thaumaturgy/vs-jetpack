@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fractions import Fraction
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Literal, MutableMapping, Union, overload
+from typing import Any, Literal, MutableMapping, Union, overload
 
 from vstools import (
     ColorRange,
@@ -398,7 +398,7 @@ class MVTools(vs_object):
         )
 
         if self.vectors.has_vectors:
-            self.vectors.clear()
+            self.vectors = MotionVectors()
 
         self.vectors.tr = tr
 
@@ -1386,7 +1386,7 @@ class MVTools(vs_object):
         if self.mvtools is MVToolsPlugin.FLOAT:
             return vectors.mv_multi[(delta - 1) * 2 + direction - 1 :: vectors.tr * 2]
 
-        return vectors.motion_vectors[direction][delta]
+        return vectors[direction][delta]
 
     @overload
     def get_vectors(
@@ -1470,13 +1470,9 @@ class MVTools(vs_object):
         return (vectors_backward, vectors_forward)
 
     def __vs_del__(self, core_id: int) -> None:
-        if not TYPE_CHECKING:
-            self.clip = None
+        for k, v in self.__dict__.items():
+            if isinstance(v, vs.VideoNode):
+                delattr(self, k)
 
-        for v in self.__dict__.values():
-            if not isinstance(v, MutableMapping):
-                continue
-
-            for k2, v2 in v.items():
-                if isinstance(v2, vs.VideoNode):
-                    v[k2] = None
+            if isinstance(v, MutableMapping):
+                v.clear()
