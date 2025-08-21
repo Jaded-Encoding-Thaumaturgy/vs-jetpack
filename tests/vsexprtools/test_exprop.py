@@ -24,7 +24,7 @@ clip_yuv_limited = ColorRange.LIMITED.apply(core.std.BlankClip(width=2, height=2
     ],
 )
 def test_expr_token_get_value_limited(token: ExprToken, range_in: ColorRange | None, expected: float) -> None:
-    assert token.get_value(clip_yuv_limited, range_in) == expected
+    assert token.get_value(clip_yuv_limited, None, range_in) == expected
 
 
 @pytest.mark.parametrize(
