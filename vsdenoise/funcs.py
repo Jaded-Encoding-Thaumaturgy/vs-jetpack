@@ -8,7 +8,7 @@ from typing import Any, Literal, Sequence, overload
 
 from jetpytools import MISSING, CustomRuntimeError, FuncExceptT, MissingT
 
-from vsexprtools import norm_expr
+from vsexprtools import ExprOp, ExprVars, combine_expr, norm_expr
 from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
 from vsscale import ArtCNN
 from vstools import (
@@ -17,7 +17,6 @@ from vstools import (
     PlanesT,
     VSFunctionNoArgs,
     check_ref_clip,
-    check_variable,
     check_variable_format,
     fallback,
     get_color_family,
@@ -187,11 +186,6 @@ def mc_clamp(
     clamp: int | float | tuple[int | float, int | float] = 0,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
-    from vsexprtools import norm_expr
-    from vsrgtools import MeanMode
-
-    assert check_variable(flt, mc_clamp)
-    assert check_variable(src, mc_clamp)
     check_ref_clip(src, flt, mc_clamp)
 
     ref = fallback(ref, src)
@@ -199,15 +193,17 @@ def mc_clamp(
     undershoot, overshoot = normalize_seq(clamp, 2)
 
     backward_comp, forward_comp = mv_obj.compensate(ref, interleave=False, **kwargs)
+    comp_clips = [ref, *backward_comp, *forward_comp]
 
-    comp_min = MeanMode.MINIMUM([ref, *backward_comp, *forward_comp])
-    comp_max = MeanMode.MAXIMUM([ref, *backward_comp, *forward_comp])
+    evars = ExprVars(1, len(comp_clips) + 1, expr_src=True)
 
     return norm_expr(
-        [flt, comp_min, comp_max],
-        "x y {undershoot} - z {overshoot} + clip",
+        [flt, *comp_clips],
+        "src0 {comp_min} {undershoot} - {comp_max} {overshoot} + clamp",
         undershoot=scale_delta(undershoot, 8, flt),
         overshoot=scale_delta(overshoot, 8, flt),
+        comp_min=combine_expr(evars, ExprOp.MIN).to_str(),
+        comp_max=combine_expr(evars, ExprOp.MAX).to_str(),
     )
 
 
