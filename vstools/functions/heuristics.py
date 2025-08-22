@@ -4,8 +4,7 @@ from typing import Any, Literal, cast, overload
 
 import vapoursynth as vs
 from jetpytools import KwargsT
-
-from vstools import PropEnum
+from typing_extensions import deprecated
 
 from ..enums import ChromaLocation, ColorRange, Matrix, Primaries, Transfer
 from ..enums.base import PropEnumT
@@ -98,6 +97,7 @@ def video_heuristics(
     return out_props
 
 
+@deprecated("This function is deprecated and will be removed in a future version.", category=DeprecationWarning)
 def video_resample_heuristics(clip: vs.VideoNode, kwargs: KwargsT | None = None, **fmt_kwargs: Any) -> KwargsT:
     """
     Get a kwargs object for a video's heuristics to pass to the resize plugin or Kernel.resample.
