@@ -25,7 +25,7 @@ from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
     FieldBased,
-    FieldBasedT,
+    FieldBasedLike,
     KwargsT,
     UnsupportedFieldBasedError,
     UnsupportedVideoFormatError,
@@ -311,7 +311,7 @@ class QTempGaussMC(vs_object):
         self,
         clip: vs.VideoNode,
         input_type: InputType = InputType.INTERLACE,
-        tff: FieldBasedT | bool | None = None,
+        tff: FieldBasedLike | bool | None = None,
     ) -> None:
         """
         Args:

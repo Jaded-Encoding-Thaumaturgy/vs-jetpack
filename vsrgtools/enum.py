@@ -4,7 +4,7 @@ from enum import auto
 from math import ceil, exp, pi, sqrt
 from typing import Any, Iterable, Literal, TypeVar, overload
 
-from jetpytools import CustomEnum, CustomNotImplementedError, FuncExceptT, to_arr
+from jetpytools import CustomEnum, CustomNotImplementedError, FuncExcept, to_arr
 from typing_extensions import Self
 
 from vsexprtools import ExprList, ExprOp, ExprToken, ExprVars
@@ -13,7 +13,7 @@ from vstools import (
     ConvMode,
     CustomValueError,
     KwargsT,
-    PlanesT,
+    Planes,
     check_variable_format,
     core,
     fallback,
@@ -57,12 +57,12 @@ class BlurMatrixBase(list[_Nb]):
     def __call__(
         self,
         clip: vs.VideoNode | Iterable[vs.VideoNode],
-        planes: PlanesT = None,
+        planes: Planes = None,
         bias: float | None = None,
         divisor: float | None = None,
         saturate: bool = True,
         passes: int = 1,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         expr_kwargs: KwargsT | None = None,
         **conv_kwargs: Any,
     ) -> ConstantFormatVideoNode:

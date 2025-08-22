@@ -4,7 +4,7 @@ from functools import partial, reduce
 from math import sqrt
 from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, Sequence, Union, overload
 
-from jetpytools import CustomIntEnum, CustomStrEnum, FuncExceptT, P, R, cround
+from jetpytools import CustomIntEnum, CustomStrEnum, FuncExcept, P, R, cround
 
 from vsexprtools import ExprOp, norm_expr
 from vskernels import Bilinear, Gaussian, Point, Scaler, ScalerLike
@@ -14,10 +14,10 @@ from vstools import (
     ConvMode,
     CustomValueError,
     KwargsT,
-    OneDimConvModeT,
-    PlanesT,
-    SpatialConvModeT,
-    TempConvModeT,
+    OneDimConvMode,
+    Planes,
+    SpatialConvMode,
+    TempConvMode,
     VSFunctionNoArgs,
     check_ref_clip,
     check_variable,
@@ -55,8 +55,8 @@ def box_blur(
     clip: vs.VideoNode,
     radius: int | Sequence[int] = 1,
     passes: int = 1,
-    mode: OneDimConvModeT | TempConvModeT = ConvMode.HV,
-    planes: PlanesT = None,
+    mode: OneDimConvMode | TempConvMode = ConvMode.HV,
+    planes: Planes = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
@@ -100,7 +100,7 @@ def box_blur(
     return clip.vszip.BoxBlur(*box_args)
 
 
-def side_box_blur(clip: vs.VideoNode, radius: int = 1, planes: PlanesT = None) -> ConstantFormatVideoNode:
+def side_box_blur(clip: vs.VideoNode, radius: int = 1, planes: Planes = None) -> ConstantFormatVideoNode:
     assert check_variable_format(clip, side_box_blur)
 
     half_kernel = [(1 if i <= 0 else 0) for i in range(-radius, radius + 1)]
@@ -132,8 +132,8 @@ def gauss_blur(
     clip: vs.VideoNode,
     sigma: float | Sequence[float] = 0.5,
     taps: int | None = None,
-    mode: OneDimConvModeT | TempConvModeT = ConvMode.HV,
-    planes: PlanesT = None,
+    mode: OneDimConvMode | TempConvMode = ConvMode.HV,
+    planes: Planes = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
@@ -208,7 +208,7 @@ def min_blur(
     clip: vs.VideoNode,
     radius: int | Sequence[int] = 1,
     mode: tuple[ConvMode, ConvMode] = (ConvMode.HV, ConvMode.SQUARE),
-    planes: PlanesT = None,
+    planes: Planes = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
@@ -261,9 +261,9 @@ def sbr(
     mode: ConvMode = ConvMode.HV,
     blur: _SbrBlurT | vs.VideoNode = BlurMatrix.BINOMIAL,
     blur_diff: _SbrBlurT = BlurMatrix.BINOMIAL,
-    planes: PlanesT = None,
+    planes: Planes = None,
     *,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
@@ -321,8 +321,8 @@ def sbr(
 def median_blur(
     clip: vs.VideoNode,
     radius: int | Sequence[int] = 1,
-    mode: SpatialConvModeT = ConvMode.SQUARE,
-    planes: PlanesT = None,
+    mode: SpatialConvMode = ConvMode.SQUARE,
+    planes: Planes = None,
 ) -> ConstantFormatVideoNode: ...
 
 
@@ -331,7 +331,7 @@ def median_blur(
     clip: vs.VideoNode,
     radius: int | Sequence[int] = 1,
     mode: Literal[ConvMode.SQUARE] = ...,
-    planes: PlanesT = None,
+    planes: Planes = None,
     smart: Literal[True] = ...,
     threshold: float | Sequence[float] | None = None,
     scalep: bool = True,
@@ -340,7 +340,7 @@ def median_blur(
 
 @overload
 def median_blur(
-    clip: vs.VideoNode, radius: int = 1, mode: Literal[ConvMode.TEMPORAL] = ..., planes: PlanesT = None
+    clip: vs.VideoNode, radius: int = 1, mode: Literal[ConvMode.TEMPORAL] = ..., planes: Planes = None
 ) -> ConstantFormatVideoNode: ...
 
 
@@ -349,7 +349,7 @@ def median_blur(
     clip: vs.VideoNode,
     radius: int | Sequence[int] = 1,
     mode: ConvMode = ConvMode.SQUARE,
-    planes: PlanesT = None,
+    planes: Planes = None,
     smart: bool = False,
     threshold: float | Sequence[float] | None = None,
     scalep: bool = True,
@@ -360,7 +360,7 @@ def median_blur(
     clip: vs.VideoNode,
     radius: int | Sequence[int] = 1,
     mode: ConvMode = ConvMode.SQUARE,
-    planes: PlanesT = None,
+    planes: Planes = None,
     smart: bool = False,
     threshold: float | Sequence[float] | None = None,
     scalep: bool = True,
@@ -533,7 +533,7 @@ def flux_smooth(
     clip: vs.VideoNode,
     temporal_threshold: float | Sequence[float] = 7.0,
     spatial_threshold: float | Sequence[float] | None = None,
-    planes: PlanesT = None,
+    planes: Planes = None,
     scalep: bool = True,
 ) -> ConstantFormatVideoNode:
     """
@@ -615,7 +615,7 @@ def guided_filter(
     thr: float | Sequence[float] = 1 / 3,
     mode: GuidedFilter.Mode = GuidedFilter.Mode.GRADIENT,
     use_gauss: bool = False,
-    planes: PlanesT = None,
+    planes: Planes = None,
     down_ratio: int = 0,
     downscaler: ScalerLike = Point,
     upscaler: ScalerLike = Bilinear,

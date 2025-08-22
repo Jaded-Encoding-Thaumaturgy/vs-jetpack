@@ -3,26 +3,26 @@ from __future__ import annotations
 from typing import Iterable, Sequence
 
 import vapoursynth as vs
-from jetpytools import FuncExceptT, T, cachedproperty, fallback, iterate, kwargs_fallback, normalize_seq, to_arr
+from jetpytools import FuncExcept, T, cachedproperty, fallback, iterate, kwargs_fallback, normalize_seq, to_arr
 
 from vstools.exceptions.color import InvalidColorspacePathError
 
 from ..enums import (
     ChromaLocation,
-    ChromaLocationT,
+    ChromaLocationLike,
     ColorRange,
-    ColorRangeT,
+    ColorRangeLike,
     FieldBased,
-    FieldBasedT,
+    FieldBasedLike,
     Matrix,
-    MatrixT,
+    MatrixLike,
     Primaries,
-    PrimariesT,
+    PrimariesLike,
     Transfer,
-    TransferT,
+    TransferLike,
 )
 from ..exceptions import UndefinedMatrixError
-from ..types import ConstantFormatVideoNode, HoldsVideoFormatT, PlanesT, VideoFormatT, vs_object
+from ..types import ConstantFormatVideoNode, HoldsVideoFormat, Planes, VideoFormatLike, vs_object
 from .check import check_variable
 from .normalize import normalize_planes
 from .utils import depth, join, plane
@@ -53,21 +53,21 @@ class FunctionUtil(list[int], vs_object):
     def __init__(
         self,
         clip: vs.VideoNode,
-        func: FuncExceptT,
-        planes: PlanesT = None,
-        color_family: VideoFormatT
-        | HoldsVideoFormatT
+        func: FuncExcept,
+        planes: Planes = None,
+        color_family: VideoFormatLike
+        | HoldsVideoFormat
         | vs.ColorFamily
-        | Iterable[VideoFormatT | HoldsVideoFormatT | vs.ColorFamily]
+        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.ColorFamily]
         | None = None,
         bitdepth: int | range | tuple[int, int] | set[int] | None = None,
         *,
-        matrix: MatrixT | None = None,
-        transfer: TransferT | None = None,
-        primaries: PrimariesT | None = None,
-        range_in: ColorRangeT | None = None,
-        chromaloc: ChromaLocationT | None = None,
-        order: FieldBasedT | None = None,
+        matrix: MatrixLike | None = None,
+        transfer: TransferLike | None = None,
+        primaries: PrimariesLike | None = None,
+        range_in: ColorRangeLike | None = None,
+        chromaloc: ChromaLocationLike | None = None,
+        order: FieldBasedLike | None = None,
     ) -> None:
         """
         Args:
@@ -317,17 +317,17 @@ class FunctionUtil(list[int], vs_object):
 
         return list({*self} - {0})
 
-    def normalize_planes(self, planes: PlanesT) -> list[int]:
+    def normalize_planes(self, planes: Planes) -> list[int]:
         """
         Normalize the given sequence of planes.
         """
 
         return normalize_planes(self.work_clip, planes)
 
-    def with_planes(self, planes: PlanesT) -> list[int]:
+    def with_planes(self, planes: Planes) -> list[int]:
         return self.normalize_planes(sorted(set(self + self.normalize_planes(planes))))
 
-    def without_planes(self, planes: PlanesT) -> list[int]:
+    def without_planes(self, planes: Planes) -> list[int]:
         return self.normalize_planes(sorted(set(self) - {*self.normalize_planes(planes)}))
 
     def return_clip(self, processed: vs.VideoNode) -> ConstantFormatVideoNode:

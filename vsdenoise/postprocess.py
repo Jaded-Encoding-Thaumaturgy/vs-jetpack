@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from vsexprtools import ExprOp, ExprToken, norm_expr
-from vsmasktools import EdgeDetect, EdgeDetectT, FDoGTCanny, range_mask
+from vsmasktools import EdgeDetect, EdgeDetectLike, FDoGTCanny, range_mask
 from vsrgtools import bilateral, box_blur, gauss_blur
 from vstools import (
     CustomIndexError,
     InvalidColorFamilyError,
-    PlanesT,
+    Planes,
     check_ref_clip,
     check_variable,
     flatten_vnodes,
@@ -31,9 +31,9 @@ def decrease_size(
     min_in: int = 180,
     max_in: int = 230,
     gamma: float = 1.0,
-    mask: vs.VideoNode | tuple[float, float] | tuple[float, float, EdgeDetectT] = (0.0496, 0.125, FDoGTCanny),
+    mask: vs.VideoNode | tuple[float, float] | tuple[float, float, EdgeDetectLike] = (0.0496, 0.125, FDoGTCanny),
     prefilter: bool | tuple[int, int] | float = True,
-    planes: PlanesT = None,
+    planes: Planes = None,
     show_mask: bool = False,
     **kwargs: Any,
 ) -> vs.VideoNode:

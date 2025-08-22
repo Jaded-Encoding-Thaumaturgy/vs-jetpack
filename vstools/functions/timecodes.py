@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, ClassVar, Iterable, Literal, NamedTuple, TypeVar, overload
 
 import vapoursynth as vs
-from jetpytools import CustomValueError, FilePathType, FuncExceptT, LinearRangeLut, Sentinel, SPath, inject_self
+from jetpytools import CustomValueError, FilePathType, FuncExcept, LinearRangeLut, Sentinel, SPath, inject_self
 from typing_extensions import Self
 
 from ..enums import Matrix, SceneChangeMode
@@ -197,7 +197,7 @@ class Timecodes(list[FrameDur]):
 
     @overload
     @classmethod
-    def from_file(cls, file: FilePathType, ref: vs.VideoNode, /, *, func: FuncExceptT | None = None) -> Self:
+    def from_file(cls, file: FilePathType, ref: vs.VideoNode, /, *, func: FuncExcept | None = None) -> Self:
         """
         Read the timecodes from a given file.
 
@@ -210,7 +210,7 @@ class Timecodes(list[FrameDur]):
     @overload
     @classmethod
     def from_file(
-        cls, file: FilePathType, length: int, den: int | None = None, /, func: FuncExceptT | None = None
+        cls, file: FilePathType, length: int, den: int | None = None, /, func: FuncExcept | None = None
     ) -> Self:
         """
         Read the timecodes from a given file.
@@ -229,7 +229,7 @@ class Timecodes(list[FrameDur]):
         ref_or_length: int | vs.VideoNode,
         den: int | None = None,
         /,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
     ) -> Self:
         func = func or cls.from_file
 
@@ -287,7 +287,7 @@ class Timecodes(list[FrameDur]):
 
         return cls(FrameDur(i, f.numerator, f.denominator) for i, f in enumerate(norm_timecodes))
 
-    def assume_vfr(self, clip: VideoNodeT, func: FuncExceptT | None = None) -> VideoNodeT:
+    def assume_vfr(self, clip: VideoNodeT, func: FuncExcept | None = None) -> VideoNodeT:
         """
         Force the given clip to be assumed to be vfr by other applications.
 
@@ -316,7 +316,7 @@ class Timecodes(list[FrameDur]):
 
         return assumed_clip
 
-    def to_file(self, out: FilePathType, format: int = V2, func: FuncExceptT | None = None) -> None:
+    def to_file(self, out: FilePathType, format: int = V2, func: FuncExcept | None = None) -> None:
         """
         Write timecodes to a file.
 
@@ -500,7 +500,7 @@ class Keyframes(list[int]):
         self,
         out: FilePathType,
         format: int = V1,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         header: bool = True,
         force: bool = False,
     ) -> None:
@@ -598,7 +598,7 @@ class LWIndex:
 
     @classmethod
     def from_file(
-        cls, file: FilePathType, ref_or_length: int | vs.VideoNode | None = None, *, func: FuncExceptT | None = None
+        cls, file: FilePathType, ref_or_length: int | vs.VideoNode | None = None, *, func: FuncExcept | None = None
     ) -> LWIndex:
         func = func or cls.from_file
 

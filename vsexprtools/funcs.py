@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, Any, Iterable, Sequence, SupportsIndex, TypeAl
 from vstools import (
     ConstantFormatVideoNode,
     CustomRuntimeError,
-    FuncExceptT,
-    HoldsVideoFormatT,
-    PlanesT,
+    FuncExcept,
+    HoldsVideoFormat,
+    Planes,
     ProcessVariableResClip,
     StrList,
     SupportsString,
-    VideoFormatT,
+    VideoFormatLike,
     VideoNodeIterableT,
     check_variable_format,
     core,
@@ -32,10 +32,10 @@ __all__ = ["combine", "combine_expr", "expr_func", "norm_expr"]
 def expr_func(
     clips: vs.VideoNode | Sequence[vs.VideoNode],
     expr: str | Sequence[str],
-    format: HoldsVideoFormatT | VideoFormatT | None = None,
+    format: HoldsVideoFormat | VideoFormatLike | None = None,
     opt: bool = False,
     boundary: bool = True,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Calls `akarin.Expr` plugin.
@@ -95,7 +95,7 @@ def _combine_norm__ix(ffix: SupportsString | Iterable[SupportsString] | None, n_
 
 
 def combine_expr(
-    n: SupportsIndex | ExprVars | HoldsVideoFormatT | VideoFormatT,
+    n: SupportsIndex | ExprVars | HoldsVideoFormat | VideoFormatLike,
     operator: ExprOpBase = ExprOp.MAX,
     suffix: SupportsString | Iterable[SupportsString] | None = None,
     prefix: SupportsString | Iterable[SupportsString] | None = None,
@@ -139,7 +139,7 @@ def combine(
     prefix: SupportsString | Iterable[SupportsString] | None = None,
     expr_suffix: SupportsString | Iterable[SupportsString] | None = None,
     expr_prefix: SupportsString | Iterable[SupportsString] | None = None,
-    planes: PlanesT = None,
+    planes: Planes = None,
     split_planes: bool = False,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
@@ -182,11 +182,11 @@ Acceptable forms include:
 def norm_expr(
     clips: VideoNodeIterableT[vs.VideoNode],
     expr: ExprLike,
-    planes: PlanesT = None,
-    format: HoldsVideoFormatT | VideoFormatT | None = None,
+    planes: Planes = None,
+    format: HoldsVideoFormat | VideoFormatLike | None = None,
     opt: bool = False,
     boundary: bool = True,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     split_planes: bool = False,
     debug: bool = False,
     **kwargs: Iterable[SupportsString] | SupportsString,

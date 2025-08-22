@@ -13,7 +13,7 @@ from vstools import (
     ConvMode,
     FormatsMismatchError,
     FunctionUtil,
-    PlanesT,
+    Planes,
     VSFunctionKwArgs,
     check_ref_clip,
     check_variable,
@@ -151,7 +151,7 @@ class FixInterlacedFades(CustomIntEnum):
     """
 
     def __call__(
-        self, clip: vs.VideoNode, color: float | Sequence[float] | vs.VideoNode = 0.0, planes: PlanesT = None
+        self, clip: vs.VideoNode, color: float | Sequence[float] | vs.VideoNode = 0.0, planes: Planes = None
     ) -> ConstantFormatVideoNode:
         """
         Give a mathematically perfect solution to decombing fades made *after* telecine
@@ -227,7 +227,7 @@ def vinverse(
     amnt: int | float | None = None,
     scl: float = 0.25,
     thr: int | float = 0,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> ConstantFormatVideoNode:
     """
     A simple but effective script to remove residual combing. Based on an AviSynth script by Didée.

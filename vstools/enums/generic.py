@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeAlias, Union, overload
+from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 import vapoursynth as vs
-from jetpytools import FuncExceptT
+from jetpytools import FuncExcept
 from typing_extensions import Self
 
 from ..exceptions import (
@@ -12,10 +12,10 @@ from ..exceptions import (
     UnsupportedChromaLocationError,
     UnsupportedFieldBasedError,
 )
-from ..types import HoldsVideoFormatT, VideoFormatT, VideoNodeT
+from ..types import HoldsVideoFormat, VideoFormatLike, VideoNodeT
 from .base import PropEnum, _base_from_video
 
-__all__ = ["ChromaLocation", "ChromaLocationT", "FieldBased", "FieldBasedT"]
+__all__ = ["ChromaLocation", "ChromaLocationLike", "FieldBased", "FieldBasedLike"]
 
 
 class ChromaLocation(PropEnum):
@@ -46,15 +46,15 @@ class ChromaLocation(PropEnum):
 
         @overload
         @classmethod
-        def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
+        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
 
         @overload
         @classmethod
-        def from_param(cls, value: ChromaLocationT, func_except: FuncExceptT | None = None) -> Self: ...
+        def from_param(cls, value: ChromaLocationLike, func_except: FuncExcept | None = None) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(cls, value: ChromaLocationT | None, func_except: FuncExceptT | None = None) -> Self | None: ...
+        def from_param(cls, value: ChromaLocationLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
@@ -73,10 +73,10 @@ class ChromaLocation(PropEnum):
         @classmethod
         def from_param_or_video(
             cls,
-            value: ChromaLocationT | None,
+            value: ChromaLocation | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
             strict: bool = False,
-            func_except: FuncExceptT | None = None,
+            func_except: FuncExcept | None = None,
         ) -> ChromaLocation: ...
 
     @classmethod
@@ -95,7 +95,7 @@ class ChromaLocation(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
     ) -> ChromaLocation:
         """
         Obtain the chroma location of a clip from the frame properties.
@@ -114,7 +114,7 @@ class ChromaLocation(PropEnum):
 
         return _base_from_video(cls, src, UndefinedChromaLocationError, strict, func)
 
-    def get_offsets(self, src: int | VideoFormatT | HoldsVideoFormatT) -> tuple[float, float]:
+    def get_offsets(self, src: int | VideoFormatLike | HoldsVideoFormat) -> tuple[float, float]:
         """
         Get (left,top) shift for chroma relative to luma.
 
@@ -173,18 +173,18 @@ class FieldBased(PropEnum):
 
     @overload
     @classmethod
-    def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
+    def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
 
     @overload
     @classmethod
-    def from_param(cls, value: FieldBasedT | bool, func_except: FuncExceptT | None = None) -> Self: ...
+    def from_param(cls, value: FieldBasedLike | bool, func_except: FuncExcept | None = None) -> Self: ...
 
     @overload
     @classmethod
-    def from_param(cls, value: FieldBasedT | bool | None, func_except: FuncExceptT | None = None) -> Self | None: ...
+    def from_param(cls, value: FieldBasedLike | bool | None, func_except: FuncExcept | None = None) -> Self | None: ...
 
     @classmethod
-    def from_param(cls, value: FieldBasedT | bool | None, func_except: FuncExceptT | None = None) -> Self | None:
+    def from_param(cls, value: FieldBasedLike | bool | None, func_except: FuncExcept | None = None) -> Self | None:
         """
         Determine the type of field through a parameter.
 
@@ -206,15 +206,15 @@ class FieldBased(PropEnum):
         @classmethod
         def from_param_or_video(
             cls,
-            value: FieldBasedT | bool | None,
+            value: FieldBasedLike | bool | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
             strict: bool = False,
-            func_except: FuncExceptT | None = None,
+            func_except: FuncExcept | None = None,
         ) -> FieldBased: ...
 
     @classmethod
     def ensure_presence(
-        cls, clip: VideoNodeT, tff: FieldBasedT | bool | None, func: FuncExceptT | None = None
+        cls, clip: VideoNodeT, tff: FieldBasedLike | bool | None, func: FuncExcept | None = None
     ) -> VideoNodeT:
         field_based = cls.from_param_or_video(tff, clip, True, func)
 
@@ -230,7 +230,7 @@ class FieldBased(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
     ) -> FieldBased:
         """
         Obtain the Field order of a clip from the frame properties.
@@ -305,8 +305,14 @@ class FieldBased(PropEnum):
         return super().pretty_string
 
 
-ChromaLocationT: TypeAlias = Union[int, vs.ChromaLocation, ChromaLocation]
+ChromaLocationLike: TypeAlias = int | vs.ChromaLocation | ChromaLocation
 """Type alias for values that can be used to initialize a [ChromaLocation][vstools.ChromaLocation]."""
 
-FieldBasedT: TypeAlias = Union[int, vs.FieldBased, FieldBased]
+FieldBasedLike: TypeAlias = int | vs.FieldBased | FieldBased
 """Type alias for values that can be used to initialize a [FieldBased][vstools.FieldBased]."""
+
+ChromaLocationT = ChromaLocationLike
+"""Deprecated alias of ChromaLocationLike"""
+
+FieldBasedT = FieldBasedLike
+"""Deprecated alias of FieldBasedT = FieldBasedLike"""

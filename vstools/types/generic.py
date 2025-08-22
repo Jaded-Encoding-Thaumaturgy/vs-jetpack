@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Protocol, TypeAlias, TypeVar, Union
 
 import vapoursynth as vs
-from jetpytools import MISSING, DataType, FuncExceptT, MissingT, PassthroughC, SingleOrSeq, StrArr, StrArrOpt
+from jetpytools import MISSING, DataType, FuncExcept, MissingT, PassthroughC, SingleOrSeq, StrArr, StrArrOpt
 
-from .builtins import PlanesT
+from .builtins import Planes
 
 __all__ = [
     "F_VD",
@@ -13,10 +13,13 @@ __all__ = [
     "BoundVSMapValue",
     "ConstantFormatVideoNode",
     "DataType",
-    "FuncExceptT",
+    "FuncExcept",
+    "FuncExcept",
     "GenericVSFunction",
-    "HoldsPropValueT",
-    "HoldsVideoFormatT",
+    "HoldsPropValue",
+    "HoldsPropValueT",  # Deprecated alias
+    "HoldsVideoFormat",
+    "HoldsVideoFormatT",  # Deprecated alias
     "MissingT",
     "PassthroughC",
     "StrArr",
@@ -29,11 +32,14 @@ __all__ = [
     "VSFunctionPlanesArgs",
     "VSMapValue",
     "VSMapValueCallback",
-    "VideoFormatT",
+    "VideoFormatLike",
+    "VideoFormatT",  # Deprecated alias
     "VideoNodeIterableT",
     "VideoNodeT",
 ]
 
+
+FuncExcept = FuncExcept
 
 VideoNodeT = TypeVar("VideoNodeT", bound=vs.VideoNode)
 VideoNodeT_contra = TypeVar("VideoNodeT_contra", bound=vs.VideoNode, contravariant=True)
@@ -65,19 +71,34 @@ VSMapValueCallback = Callable[..., VSMapValue]
 Callback that can be held in a VSMap. It can only return values representable in a VSMap.
 """
 
-VideoFormatT = vs.PresetVideoFormat | vs.VideoFormat
+VideoFormatLike = vs.PresetVideoFormat | vs.VideoFormat
 """
 Types representing a clear VideoFormat.
 """
 
-HoldsVideoFormatT = vs.VideoNode | vs.VideoFrame | vs.VideoFormat
+HoldsVideoFormat = vs.VideoNode | vs.VideoFrame | vs.VideoFormat
 """
 Types from which a clear VideoFormat can be retrieved.
 """
 
-HoldsPropValueT = vs.FrameProps | vs.VideoFrame | vs.AudioFrame | vs.VideoNode | vs.AudioNode
+HoldsPropValue = vs.FrameProps | vs.VideoFrame | vs.AudioFrame | vs.VideoNode | vs.AudioNode
 """
 Types that can hold a vs.FrameProps.
+"""
+
+VideoFormatT = VideoFormatLike
+"""
+Deprecated alias of VideoFormatLike.
+"""
+
+HoldsVideoFormatT = HoldsVideoFormat
+"""
+Deprecated alias of HoldsVideoFormat.
+"""
+
+HoldsPropValueT = HoldsPropValue
+"""
+Deprecated alias of HoldsPropValue.
 """
 
 
@@ -112,7 +133,7 @@ Function that takes a VideoNode as its first argument and returns a VideoNode.
 
 
 class VSFunctionPlanesArgs(VSFunctionKwArgs[VideoNodeT_contra, VideoNodeT_co], Protocol):
-    def __call__(self, clip: VideoNodeT_contra, *, planes: PlanesT = ..., **kwargs: Any) -> VideoNodeT_co: ...
+    def __call__(self, clip: VideoNodeT_contra, *, planes: Planes = ..., **kwargs: Any) -> VideoNodeT_co: ...
 
 
 GenericVSFunction = Callable[..., VideoNodeT]

@@ -17,7 +17,7 @@ from vstools import (
     CustomIntEnum,
     CustomOverflowError,
     CustomStrEnum,
-    FuncExceptT,
+    FuncExcept,
     InvalidColorFamilyError,
     InvalidSubsamplingError,
     P,
@@ -406,7 +406,7 @@ class ReconOutput(CustomIntEnum):
     """
 
     @classmethod
-    def from_param(cls, value: int | ReconOutput | bool | None, func_except: FuncExceptT | None = None) -> ReconOutput:
+    def from_param(cls, value: int | ReconOutput | bool | None, func_except: FuncExcept | None = None) -> ReconOutput:
         if isinstance(value, bool):
             value = 1 + int(value)
         elif value is None:
@@ -546,7 +546,7 @@ class ChromaReconstruct(ABC):
         return 0.5 * c_width / y_width
 
     def _get_bases(
-        self, clip: vs.VideoNode, include_edges: bool, func: FuncExceptT
+        self, clip: vs.VideoNode, include_edges: bool, func: FuncExcept
     ) -> tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, Sequence[vs.VideoNode], Sequence[vs.VideoNode]]:
         InvalidColorFamilyError.check(clip, vs.YUV, func)
 

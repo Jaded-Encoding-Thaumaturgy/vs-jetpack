@@ -4,7 +4,7 @@ from typing import Any, Iterable, Iterator, MutableMapping, TypedDict, overload
 
 from typing_extensions import Self, deprecated
 
-from vstools import T1, T2, KwargsT, PlanesT, SupportsKeysAndGetItem, VSFunctionNoArgs, classproperty, vs, vs_object
+from vstools import T1, T2, KwargsT, Planes, SupportsKeysAndGetItem, VSFunctionNoArgs, classproperty, vs, vs_object
 
 from ..prefilters import prefilter_to_full_range
 from .enums import FlowMode, MaskMode, MotionMode, PenaltyMode, RFilterMode, SADMode, SearchMode, SharpMode, SmoothMode
@@ -157,7 +157,7 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
     tr: int
     pel: int
     pad: int | tuple[int | None, int | None]
-    planes: PlanesT
+    planes: Planes
     super_args: SuperArgs | KwargsT
     analyze_args: AnalyzeArgs | KwargsT
     recalculate_args: RecalculateArgs | KwargsT
@@ -178,7 +178,7 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
         tr: int | None = None,
         pel: int | None = None,
         pad: int | tuple[int | None, int | None] | None = None,
-        planes: PlanesT | None = None,
+        planes: Planes | None = None,
         super_args: SuperArgs | KwargsT | None = None,
         analyze_args: AnalyzeArgs | KwargsT | None = None,
         recalculate_args: RecalculateArgs | KwargsT | None = None,

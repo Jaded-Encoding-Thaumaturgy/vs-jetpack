@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import auto
 from typing import Any, Callable, ClassVar, Iterable, Literal, Protocol, Sequence, TypeAlias, TypeVar, overload
 
-from jetpytools import MISSING, CustomEnum, FuncExceptT, MissingT, fallback, inject_self
+from jetpytools import MISSING, CustomEnum, FuncExcept, MissingT, fallback, inject_self
 from typing_extensions import deprecated
 
 from vsexprtools import norm_expr
@@ -14,7 +14,7 @@ from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
     ConvMode,
-    PlanesT,
+    Planes,
     UnsupportedColorFamilyError,
     check_variable,
     core,
@@ -64,7 +64,7 @@ class _GrainerFunc(Protocol):
     """
 
     def __call__(
-        self, clip: vs.VideoNode, strength: Sequence[float], planes: PlanesT, **kwargs: Any
+        self, clip: vs.VideoNode, strength: Sequence[float], planes: Planes, **kwargs: Any
     ) -> vs.VideoNode: ...
 
 
@@ -443,7 +443,7 @@ def _apply_grainer(
     post_process: Callable[..., vs.VideoNode] | Iterable[Callable[..., vs.VideoNode]] | None,
     protect_neutral_chroma: bool | None,
     luma_scaling: float | None,
-    func: FuncExceptT,
+    func: FuncExcept,
     **kwargs: Any,
 ) -> vs.VideoNode:
     # Normalize params
@@ -530,7 +530,7 @@ def _protect_pixel_range(
     low: list[float],
     high: list[float],
     blend: float = 0.0,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> vs.VideoNode:
     if not blend:
         expr = "y neutral - abs A! x A@ - {lo} < x A@ + {hi} > or neutral y ?"
@@ -551,7 +551,7 @@ def _protect_neutral_chroma(
     grained: vs.VideoNode,
     base_clip: vs.VideoNode,
     blend: float = 0.0,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> vs.VideoNode:
     match clip.format.color_family:
         case vs.YUV:

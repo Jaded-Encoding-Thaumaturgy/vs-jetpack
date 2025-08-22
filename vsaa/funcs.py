@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from vsexprtools import norm_expr
 from vskernels import Box, Catrom, NoScale, Scaler, ScalerLike, is_noscale_like
-from vsmasktools import EdgeDetect, EdgeDetectT, Prewitt
+from vsmasktools import EdgeDetect, EdgeDetectLike, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
 from vsscale import ArtCNN
 from vstools import (
@@ -14,7 +14,7 @@ from vstools import (
     CustomValueError,
     FormatsMismatchError,
     FunctionUtil,
-    PlanesT,
+    Planes,
     VSFunctionNoArgs,
     check_variable_format,
     fallback,
@@ -38,7 +38,7 @@ def pre_aa(
     antialiaser: AntiAliaser = NNEDI3(),
     transpose_first: bool = False,
     direction: AntiAliaser.AADirection = AntiAliaser.AADirection.BOTH,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> vs.VideoNode:
     func = FunctionUtil(clip, pre_aa, planes)
 
@@ -63,11 +63,11 @@ def clamp_aa(
     clip: vs.VideoNode,
     strength: float = 1.0,
     mthr: float = 0.25,
-    mask: vs.VideoNode | EdgeDetectT | Literal[False] = False,
+    mask: vs.VideoNode | EdgeDetectLike | Literal[False] = False,
     weak_aa: vs.VideoNode | AntiAliaser | None = None,
     strong_aa: vs.VideoNode | AntiAliaser | None = None,
     ref: vs.VideoNode | None = None,
-    planes: PlanesT = 0,
+    planes: Planes = 0,
 ) -> ConstantFormatVideoNode:
     """
     Clamp a strong aa to a weaker one for the purpose of reducing the stronger's artifacts.
@@ -141,7 +141,7 @@ def clamp_aa(
 def based_aa(
     clip: vs.VideoNode,
     rfactor: float = 2.0,
-    mask: vs.VideoNode | EdgeDetectT | Literal[False] = Prewitt,
+    mask: vs.VideoNode | EdgeDetectLike | Literal[False] = Prewitt,
     mask_thr: int = 60,
     pscale: float = 0.0,
     downscaler: ScalerLike | None = None,

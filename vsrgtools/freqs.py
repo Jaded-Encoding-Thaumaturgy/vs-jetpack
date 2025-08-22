@@ -7,8 +7,8 @@ from vsexprtools import ExprOp, ExprVars, norm_expr
 from vstools import (
     ConstantFormatVideoNode,
     CustomEnum,
-    FuncExceptT,
-    PlanesT,
+    FuncExcept,
+    Planes,
     StrList,
     VideoNodeIterableT,
     check_variable_format,
@@ -57,8 +57,8 @@ class MeanMode(CustomEnum):
         self: Literal[MeanMode.LEHMER],
         *_clips: VideoNodeIterableT[vs.VideoNode],
         p: float = 3,
-        planes: PlanesT = None,
-        func: FuncExceptT | None = None,
+        planes: Planes = None,
+        func: FuncExcept | None = None,
     ) -> ConstantFormatVideoNode:
         """
         Combine clips using the Lehmer mean with a configurable exponent.
@@ -77,15 +77,15 @@ class MeanMode(CustomEnum):
     def __call__(
         self,
         *_clips: VideoNodeIterableT[vs.VideoNode],
-        planes: PlanesT = None,
-        func: FuncExceptT | None = None,
+        planes: Planes = None,
+        func: FuncExcept | None = None,
     ) -> ConstantFormatVideoNode: ...
 
     def __call__(
         self,
         *_clips: VideoNodeIterableT[vs.VideoNode],
-        planes: PlanesT = None,
-        func: FuncExceptT | None = None,
+        planes: Planes = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """

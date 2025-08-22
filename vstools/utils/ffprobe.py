@@ -7,7 +7,7 @@ from shutil import which
 from subprocess import PIPE, run
 from typing import Any, Literal, overload
 
-from jetpytools import CustomIndexError, CustomRuntimeError, FuncExceptT, check_perms, inject_self
+from jetpytools import CustomIndexError, CustomRuntimeError, FuncExcept, check_perms, inject_self
 
 from .mime import FileType
 
@@ -127,7 +127,7 @@ class FFProbeAudioStream(FFProbeStream):
 class FFProbe:
     json_decoder: JSONDecoder
 
-    def __init__(self, *, func: FuncExceptT | None = None, bin_path: str | Path = "ffprobe") -> None:
+    def __init__(self, *, func: FuncExcept | None = None, bin_path: str | Path = "ffprobe") -> None:
         self.bin_path = Path(bin_path)
 
         if not which(str(self.bin_path)):
@@ -144,7 +144,7 @@ class FFProbe:
         file_type: FileType | None = FileType.VIDEO,
         *,
         index: int = 0,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
     ) -> FFProbeStream | None: ...
 
     @overload
@@ -154,7 +154,7 @@ class FFProbe:
         file_type: FileType | None = FileType.VIDEO,
         *,
         index: None = None,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
     ) -> list[FFProbeStream] | None: ...
 
     def _get_stream(
@@ -163,7 +163,7 @@ class FFProbe:
         file_type: FileType | None = FileType.VIDEO,
         *,
         index: int | None = 0,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
     ) -> FFProbeStream | list[FFProbeStream] | None:
         check_perms(filename, "r", func=func)
 
@@ -216,12 +216,12 @@ class FFProbe:
 
     @inject_self
     def get_stream(
-        self, filename: str | Path, file_type: FileType | None, *, index: int = 0, func: FuncExceptT | None = None
+        self, filename: str | Path, file_type: FileType | None, *, index: int = 0, func: FuncExcept | None = None
     ) -> FFProbeStream | None:
         return self._get_stream(filename, file_type, index=index, func=func or self.get_stream)
 
     @inject_self
     def get_streams(
-        self, filename: str | Path, file_type: FileType | None, *, func: FuncExceptT | None = None
+        self, filename: str | Path, file_type: FileType | None, *, func: FuncExcept | None = None
     ) -> list[FFProbeStream] | None:
         return self._get_stream(filename, file_type, index=None, func=self.get_streams if func is None else func)

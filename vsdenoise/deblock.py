@@ -7,7 +7,7 @@ from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomStrE
 from vsaa import BWDIF, NNEDI3, Deinterlacer
 from vsexprtools import norm_expr
 from vskernels import Box, Point
-from vsmasktools import FDoG, GenericMaskT, Morpho, adg_mask, normalize_mask, strength_zones_mask
+from vsmasktools import FDoG, MaskLike, Morpho, adg_mask, normalize_mask, strength_zones_mask
 from vsrgtools import MeanMode, gauss_blur, repair
 from vsscale import DPIR
 from vstools import (
@@ -16,7 +16,7 @@ from vstools import (
     FrameRangeN,
     FrameRangesN,
     InvalidColorFamilyError,
-    PlanesT,
+    Planes,
     check_progressive,
     check_variable,
     check_variable_format,
@@ -54,7 +54,7 @@ class dpir(CustomStrEnum):  # noqa: N801
         clip: vs.VideoNode,
         strength: _StrengthT | Sequence[_StrengthT] = 10,
         zones: Sequence[tuple[FrameRangeN | FrameRangesN, _StrengthT]] | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -150,7 +150,7 @@ def dpir_mask(
     high: float = 10,
     lines: float | None = None,
     luma_scaling: float = 12,
-    linemask: GenericMaskT | bool = True,
+    linemask: MaskLike | bool = True,
     relative: bool = False,
 ) -> vs.VideoNode:
     y = depth(get_y(clip), 32)
@@ -182,7 +182,7 @@ def deblock_qed(
     alpha: tuple[int | None, int | None] = (1, 1),
     beta: tuple[int | None, int | None] = (2, 2),
     chroma_mode: int = 0,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> ConstantFormatVideoNode:
     """
     A post-processed deblock. Uses full frequencies of Deblock's changes on block borders, but DCT-lowpassed changes on

@@ -14,12 +14,12 @@ from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
     ConvMode,
-    FuncExceptT,
-    HoldsVideoFormatT,
+    FuncExcept,
+    HoldsVideoFormat,
     KwargsT,
-    PlanesT,
+    Planes,
     T,
-    VideoFormatT,
+    VideoFormatLike,
     check_variable,
     depth,
     get_lowest_value,
@@ -38,6 +38,7 @@ from ..exceptions import UnknownEdgeDetectError, UnknownRidgeDetectError, _Unkno
 
 __all__ = [
     "EdgeDetect",
+    "EdgeDetectLike",
     "EdgeDetectT",
     "EuclideanDistance",
     "MagDirection",
@@ -45,6 +46,7 @@ __all__ = [
     "MatrixEdgeDetect",
     "Max",
     "RidgeDetect",
+    "RidgeDetectLike",
     "RidgeDetectT",
     "SingleMatrix",
     "get_all_edge_detects",
@@ -89,7 +91,7 @@ def _base_from_param(
     cls: type[EdgeDetectTypeVar],
     value: str | type[EdgeDetectTypeVar] | EdgeDetectTypeVar | None,
     exception_cls: type[_UnknownMaskDetectError],
-    func_except: FuncExceptT | None = None,
+    func_except: FuncExcept | None = None,
 ) -> type[EdgeDetectTypeVar]:
     # If value is an instance returns the class
     if isinstance(value, cls):
@@ -117,7 +119,7 @@ def _base_from_param(
 def _base_ensure_obj(
     cls: type[EdgeDetectTypeVar],
     value: str | type[EdgeDetectTypeVar] | EdgeDetectTypeVar | None,
-    func_except: FuncExceptT | None = None,
+    func_except: FuncExcept | None = None,
 ) -> EdgeDetectTypeVar:
     if isinstance(value, cls):
         return value
@@ -149,7 +151,7 @@ class EdgeDetect(ABC):
         hthr: float | None = None,
         multi: float = 1.0,
         clamp: bool | tuple[float, float] | list[tuple[float, float]] = False,
-        planes: PlanesT = None,
+        planes: Planes = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -179,7 +181,7 @@ class EdgeDetect(ABC):
 
     @classmethod
     def depth_scale(
-        cls, clip: vs.VideoNode, bitdepth: VideoFormatT | HoldsVideoFormatT | int
+        cls, clip: vs.VideoNode, bitdepth: VideoFormatLike | HoldsVideoFormat | int
     ) -> ConstantFormatVideoNode:
         assert check_variable(clip, cls)
 
@@ -196,14 +198,12 @@ class EdgeDetect(ABC):
 
     @classmethod
     def from_param(
-        cls, value: type[Self] | Self | str | None = None, /, func_except: FuncExceptT | None = None
+        cls, value: type[Self] | Self | str | None = None, /, func_except: FuncExcept | None = None
     ) -> type[Self]:
         return _base_from_param(cls, value, cls._err_class, func_except)
 
     @classmethod
-    def ensure_obj(
-        cls, value: type[Self] | Self | str | None = None, /, func_except: FuncExceptT | None = None
-    ) -> Self:
+    def ensure_obj(cls, value: type[Self] | Self | str | None = None, /, func_except: FuncExcept | None = None) -> Self:
         return _base_ensure_obj(cls, value, func_except)
 
     def _finalize_mask(
@@ -213,7 +213,7 @@ class EdgeDetect(ABC):
         hthr: float | None,
         multi: float,
         clamp: bool | tuple[float, float] | list[tuple[float, float]],
-        planes: PlanesT,
+        planes: Planes,
     ) -> ConstantFormatVideoNode:
         peak = get_peak_value(mask)
 
@@ -260,7 +260,7 @@ class EdgeDetect(ABC):
         return ColorRange.FULL.apply(clip)
 
     def _postprocess(
-        self, clip: ConstantFormatVideoNode, input_bits: HoldsVideoFormatT | VideoFormatT | int
+        self, clip: ConstantFormatVideoNode, input_bits: HoldsVideoFormat | VideoFormatLike | int
     ) -> ConstantFormatVideoNode:
         return clip
 
@@ -297,7 +297,7 @@ class NormalizeProcessor(MatrixEdgeDetect):
         return super()._preprocess(depth(clip, 32))
 
     def _postprocess(
-        self, clip: ConstantFormatVideoNode, input_bits: HoldsVideoFormatT | VideoFormatT | int
+        self, clip: ConstantFormatVideoNode, input_bits: HoldsVideoFormat | VideoFormatLike | int
     ) -> ConstantFormatVideoNode:
         return super()._postprocess(self.depth_scale(clip, input_bits), input_bits)
 
@@ -338,7 +338,7 @@ class RidgeDetect(MatrixEdgeDetect):
         hthr: float | None = None,
         multi: float = 1.0,
         clamp: bool | tuple[float, float] | list[tuple[float, float]] = False,
-        planes: PlanesT = None,
+        planes: Planes = None,
         **kwargs: Any,
     ) -> vs.VideoNode:
         """
@@ -399,13 +399,36 @@ class RidgeDetect(MatrixEdgeDetect):
         return depth(super()._preprocess(clip), 32)
 
     def _postprocess_ridge(
-        self, clip: ConstantFormatVideoNode, input_bits: HoldsVideoFormatT | VideoFormatT | int
+        self, clip: ConstantFormatVideoNode, input_bits: HoldsVideoFormat | VideoFormatLike | int
     ) -> ConstantFormatVideoNode:
         return self.depth_scale(super()._postprocess(clip, input_bits), input_bits)
 
 
-EdgeDetectT: TypeAlias = type[EdgeDetect] | EdgeDetect | str
-RidgeDetectT: TypeAlias = type[RidgeDetect] | RidgeDetect | str
+EdgeDetectLike: TypeAlias = type[EdgeDetect] | EdgeDetect | str
+"""
+Type alias for anything that can resolve to a EdgeDetect.
+
+This includes:
+ - A string identifier.
+ - A class type subclassing `EdgeDetect`.
+ - An instance of a `EdgeDetect`.
+"""
+
+RidgeDetectLike: TypeAlias = type[RidgeDetect] | RidgeDetect | str
+"""
+Type alias for anything that can resolve to a RidgeDetect.
+
+This includes:
+ - A string identifier.
+ - A class type subclassing `RidgeDetect`.
+ - An instance of a `RidgeDetect`.
+"""
+
+EdgeDetectT = EdgeDetectLike
+"""Deprecated alias of EdgeDetectLike."""
+
+RidgeDetectT = RidgeDetectLike
+"""Deprecated alias of RidgeDetectLike."""
 
 EdgeDetectTypeVar = TypeVar("EdgeDetectTypeVar", bound=EdgeDetect)
 RidgeDetectTypeVar = TypeVar("RidgeDetectTypeVar", bound=RidgeDetect)
@@ -417,7 +440,7 @@ def get_all_edge_detects(
     hthr: float | None = None,
     multi: float = 1.0,
     clamp: bool | tuple[float, float] | list[tuple[float, float]] = False,
-    planes: PlanesT = None,
+    planes: Planes = None,
     **kwargs: Any,
 ) -> list[ConstantFormatVideoNode]:
     """
@@ -463,7 +486,7 @@ def get_all_ridge_detect(
     hthr: float | None = None,
     multi: float = 1.0,
     clamp: bool | tuple[float, float] | list[tuple[float, float]] = False,
-    planes: PlanesT = None,
+    planes: Planes = None,
     **kwargs: Any,
 ) -> list[ConstantFormatVideoNode]:
     """

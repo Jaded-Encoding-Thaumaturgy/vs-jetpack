@@ -6,12 +6,12 @@ from math import ceil, floor
 from types import NoneType
 from typing import Any, Callable, NamedTuple, TypeAlias, overload
 
-from jetpytools import CustomTypeError, FuncExceptT, mod_x
+from jetpytools import CustomTypeError, FuncExcept, mod_x
 from typing_extensions import Self, Unpack
 
 from vskernels import Lanczos, MixedScalerProcess, Scaler, ScalerLike, is_scaler_like
 from vskernels.util import _BaseScalerTs, _ScalerT
-from vstools import FunctionUtil, KwargsT, PlanesT, Resolution, VSFunctionNoArgs, get_w, mod2, vs
+from vstools import FunctionUtil, KwargsT, Planes, Resolution, VSFunctionNoArgs, get_w, mod2, vs
 
 from .various import ComplexSuperSamplerProcess
 
@@ -289,8 +289,8 @@ def pre_ss(
     sp: type[MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]]] = ComplexSuperSamplerProcess[Lanczos],  # type: ignore[assignment]
     *,
     mod: int = 4,
-    planes: PlanesT = None,
-    func: FuncExceptT | None = None,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
 ) -> vs.VideoNode: ...
 
 
@@ -301,8 +301,8 @@ def pre_ss(
     rfactor: float = 2.0,
     sp: MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]],
     mod: int = 4,
-    planes: PlanesT = None,
-    func: FuncExceptT | None = None,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
 ) -> vs.VideoNode: ...
 
 
@@ -315,8 +315,8 @@ def pre_ss(
     supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
     downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
     mod: int = 4,
-    planes: PlanesT = None,
-    func: FuncExceptT | None = None,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
 ) -> vs.VideoNode: ...
 
 
@@ -329,8 +329,8 @@ def pre_ss(  # pyright: ignore[reportInconsistentOverload]
     supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] | None = None,
     downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] | None = None,
     mod: int = 4,
-    planes: PlanesT = None,
-    func: FuncExceptT | None = None,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
 ) -> vs.VideoNode:
     """
     Supersamples the input clip, applies a given function to the higher-resolution version,

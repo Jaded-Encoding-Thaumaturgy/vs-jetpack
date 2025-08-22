@@ -19,7 +19,7 @@ from jetpytools import SupportsString, to_arr
 from jetpytools.types.utils import SingletonMeta
 from typing_extensions import Self
 
-from vstools import ConvMode, OnePassConvModeT, flatten, vs, vs_object
+from vstools import ConvMode, OnePassConvMode, flatten, vs, vs_object
 
 from ..exprop import ExprOp, ExprToken
 
@@ -254,7 +254,7 @@ class Operators(metaclass=SingletonMeta):
         bias: ExprVarLike | None = None,
         divisor: ExprVarLike | bool = True,
         saturate: bool = True,
-        mode: OnePassConvModeT = ConvMode.SQUARE,
+        mode: OnePassConvMode = ConvMode.SQUARE,
         premultiply: ExprVarLike | None = None,
         multiply: ExprVarLike | None = None,
         clamp: bool = False,

@@ -18,7 +18,7 @@ from vstools import (
     ConvMode,
     DitherType,
     FieldBased,
-    FieldBasedT,
+    FieldBasedLike,
     FrameRangeN,
     FrameRangesN,
     VideoNodeT,
@@ -62,7 +62,7 @@ class RescaleBase(vs_object, ABC):
         kernel: KernelLike,
         upscaler: ScalerLike = ArtCNN,
         downscaler: ScalerLike = Hermite(linear=True),
-        field_based: FieldBasedT | bool | None = None,
+        field_based: FieldBasedLike | bool | None = None,
         border_handling: int | BorderHandling = BorderHandling.MIRROR,
         **kwargs: Any,
     ) -> None:
@@ -302,7 +302,7 @@ class Rescale(RescaleBase):
         base_width: int | None = None,
         crop: tuple[LeftCrop, RightCrop, TopCrop, BottomCrop] = CropRel(),
         shift: tuple[TopShift, LeftShift] = (0, 0),
-        field_based: FieldBasedT | bool | None = None,
+        field_based: FieldBasedLike | bool | None = None,
         border_handling: int | BorderHandling = BorderHandling.MIRROR,
         **kwargs: Any,
     ) -> None:

@@ -1,7 +1,7 @@
 import sys
 from typing import Any, Sequence
 
-from jetpytools import CustomRuntimeError, FuncExceptT, SupportsString, norm_func_name, to_arr
+from jetpytools import CustomRuntimeError, FuncExcept, SupportsString, norm_func_name, to_arr
 
 from vstools import get_video_format, vs, vs_object
 
@@ -22,7 +22,7 @@ class CustomExprError(CustomRuntimeError, vs_object):
     def __init__(
         self,
         message: SupportsString,
-        func: FuncExceptT,
+        func: FuncExcept,
         clips: vs.VideoNode | Sequence[vs.VideoNode],
         expr: str | Sequence[str],
         fmt: int | None,

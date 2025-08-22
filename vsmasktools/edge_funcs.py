@@ -26,7 +26,7 @@ from .details import multi_detail_mask
 from .edge import FDoGTCanny, Kirsch, MagDirection, Prewitt, PrewittTCanny
 from .morpho import Morpho
 from .spat_funcs import retinex
-from .types import Coordinates, GenericMaskT
+from .types import Coordinates, MaskLike
 from .utils import normalize_mask
 
 __all__ = ["dre_edgemask", "limited_linemask", "luma_credit_mask", "luma_mask", "ringing_mask", "tcanny_retinex"]
@@ -40,7 +40,7 @@ def ringing_mask(
     thma: float = 0.5,
     thlimi: float = 0.195,
     thlima: float = 0.392,
-    credit_mask: GenericMaskT = Prewitt,
+    credit_mask: MaskLike = Prewitt,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     assert check_variable(clip, ringing_mask)
@@ -84,7 +84,7 @@ def luma_mask(clip: vs.VideoNode, thr_lo: float, thr_hi: float, invert: bool = T
 
 
 def luma_credit_mask(
-    clip: vs.VideoNode, thr: float = 0.9, edgemask: GenericMaskT = FDoGTCanny, draft: bool = False, **kwargs: Any
+    clip: vs.VideoNode, thr: float = 0.9, edgemask: MaskLike = FDoGTCanny, draft: bool = False, **kwargs: Any
 ) -> ConstantFormatVideoNode:
     y = plane(clip, 0)
 
@@ -115,7 +115,7 @@ def limited_linemask(
     clip: vs.VideoNode,
     sigmas: list[float] = [0.000125, 0.0025, 0.0055],
     detail_sigmas: list[float] = [0.011, 0.013],
-    edgemasks: Sequence[GenericMaskT] = [Kirsch],
+    edgemasks: Sequence[MaskLike] = [Kirsch],
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     clip_y = plane(clip, 0)

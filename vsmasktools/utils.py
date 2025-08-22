@@ -13,8 +13,8 @@ from vstools import (
     CustomValueError,
     FrameRangeN,
     FrameRangesN,
-    FuncExceptT,
-    PlanesT,
+    FuncExcept,
+    Planes,
     check_ref_clip,
     check_variable,
     check_variable_format,
@@ -31,8 +31,8 @@ from vstools import (
 )
 
 from .abstract import GeneralMask
-from .edge import EdgeDetect, EdgeDetectT, RidgeDetect, RidgeDetectT
-from .types import GenericMaskT
+from .edge import EdgeDetect, EdgeDetectLike, RidgeDetect, RidgeDetectLike
+from .types import MaskLike
 
 __all__ = [
     "freeze_replace_squaremask",
@@ -94,8 +94,8 @@ def region_rel_mask(
     bottom: int = 0,
     replace_in: SupportsString | None = None,
     replace_out: SupportsString | None = None,
-    planes: PlanesT = None,
-    func: FuncExceptT | None = None,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Generates a mask that defines a rectangular region within the clip, replacing pixels inside or outside the region,
@@ -161,8 +161,8 @@ def region_abs_mask(
     top: int = 0,
     replace_in: SupportsString | None = None,
     replace_out: SupportsString | None = None,
-    planes: PlanesT = None,
-    func: FuncExceptT | None = None,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Generates a mask that defines a rectangular region within the clip, replacing pixels inside or outside the region,
@@ -205,8 +205,8 @@ def squaremask(
     offset_y: int,
     invert: bool = False,
     force_gray: bool = True,
-    planes: PlanesT = None,
-    func: FuncExceptT | None = None,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Create a square used for simple masking.
@@ -258,7 +258,7 @@ def replace_squaremask(
     ranges: FrameRangeN | FrameRangesN | None = None,
     blur_sigma: int | float | None = None,
     invert: bool = False,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     show_mask: bool = False,
 ) -> ConstantFormatVideoNode:
     """
@@ -326,7 +326,7 @@ def freeze_replace_squaremask(
 
 @overload
 def normalize_mask(
-    mask: vs.VideoNode, clip: vs.VideoNode, *, func: FuncExceptT | None = None
+    mask: vs.VideoNode, clip: vs.VideoNode, *, func: FuncExcept | None = None
 ) -> ConstantFormatVideoNode: ...
 
 
@@ -336,46 +336,46 @@ def normalize_mask(
     clip: vs.VideoNode,
     ref: vs.VideoNode,
     *,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def normalize_mask(
-    mask: EdgeDetectT | RidgeDetectT,
+    mask: EdgeDetectLike | RidgeDetectLike,
     clip: vs.VideoNode,
     *,
     ridge: bool = ...,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def normalize_mask(
-    mask: GeneralMask, clip: vs.VideoNode, ref: vs.VideoNode, *, func: FuncExceptT | None = None
+    mask: GeneralMask, clip: vs.VideoNode, ref: vs.VideoNode, *, func: FuncExcept | None = None
 ) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def normalize_mask(
-    mask: GenericMaskT,
+    mask: MaskLike,
     clip: vs.VideoNode,
     ref: vs.VideoNode | None = ...,
     *,
     ridge: bool = ...,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode: ...
 
 
 def normalize_mask(
-    mask: GenericMaskT,
+    mask: MaskLike,
     clip: vs.VideoNode,
     ref: vs.VideoNode | None = None,
     *,
     ridge: bool = False,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """

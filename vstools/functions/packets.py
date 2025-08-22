@@ -11,7 +11,7 @@ from tempfile import NamedTemporaryFile
 from typing import Any, TypedDict
 
 import vapoursynth as vs
-from jetpytools import CustomValueError, DependencyNotFoundError, FileWasNotFoundError, FuncExceptT, SPath, SPathLike
+from jetpytools import CustomValueError, DependencyNotFoundError, FileWasNotFoundError, FuncExcept, SPath, SPathLike
 from typing_extensions import Self
 
 from ..types import VideoNodeT
@@ -54,7 +54,7 @@ class VideoPackets(list[int]):
 
     @classmethod
     def from_video(
-        cls, src_file: SPathLike, out_file: SPathLike | None = None, offset: int = 0, *, func: FuncExceptT | None = None
+        cls, src_file: SPathLike, out_file: SPathLike | None = None, offset: int = 0, *, func: FuncExcept | None = None
     ) -> Self:
         """
         Obtain packet sizes from a video file.
@@ -147,7 +147,7 @@ class VideoPackets(list[int]):
         return cls(pkt_sizes)
 
     @classmethod
-    def from_file(cls, file: SPathLike, *, func: FuncExceptT | None = None) -> Self:
+    def from_file(cls, file: SPathLike, *, func: FuncExcept | None = None) -> Self:
         """
         Obtain packet sizes from a given file.
 
@@ -178,7 +178,7 @@ class VideoPackets(list[int]):
         src_file: SPathLike | None = None,
         offset: int = 0,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
     ) -> Self:
         """
         Obtain packet sizes from a given clip.
@@ -227,7 +227,7 @@ class VideoPackets(list[int]):
         return stats
 
     def apply_props(
-        self, clip: VideoNodeT, keyframes: Keyframes | None = None, *, func: FuncExceptT | None = None
+        self, clip: VideoNodeT, keyframes: Keyframes | None = None, *, func: FuncExcept | None = None
     ) -> VideoNodeT:
         """
         Apply packet size properties to a clip.

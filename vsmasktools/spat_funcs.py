@@ -8,7 +8,7 @@ from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
     DitherType,
-    FuncExceptT,
+    FuncExcept,
     StrList,
     check_variable,
     depth,
@@ -31,13 +31,13 @@ __all__ = ["adg_mask", "flat_mask", "retinex", "texture_mask"]
 
 @overload
 def adg_mask(
-    clip: vs.VideoNode, luma_scaling: float = 8.0, relative: bool = False, func: FuncExceptT | None = None
+    clip: vs.VideoNode, luma_scaling: float = 8.0, relative: bool = False, func: FuncExcept | None = None
 ) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def adg_mask(
-    clip: vs.VideoNode, luma_scaling: Sequence[float] = ..., relative: bool = False, func: FuncExceptT | None = None
+    clip: vs.VideoNode, luma_scaling: Sequence[float] = ..., relative: bool = False, func: FuncExcept | None = None
 ) -> list[ConstantFormatVideoNode]: ...
 
 
@@ -45,7 +45,7 @@ def adg_mask(
     clip: vs.VideoNode,
     luma_scaling: float | Sequence[float] = 8.0,
     relative: bool = False,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode | list[ConstantFormatVideoNode]:
     """
     Generates an adaptive grain mask based on each frame's average luma and pixel value.
@@ -112,7 +112,7 @@ def retinex(
     lower_thr: float = 0.001,
     upper_thr: float = 0.001,
     fast: bool = True,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Multi-Scale Retinex (MSR) implementation for dynamic range and contrast enhancement.

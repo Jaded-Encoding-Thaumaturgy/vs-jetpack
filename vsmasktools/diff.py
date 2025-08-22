@@ -11,7 +11,7 @@ from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
     CustomValueError,
-    FuncExceptT,
+    FuncExcept,
     KwargsT,
     VSFunctionNoArgs,
     check_variable,
@@ -23,7 +23,7 @@ from vstools import (
     vs,
 )
 
-from .edge import EdgeDetect, EdgeDetectT, ExLaplacian4
+from .edge import EdgeDetect, EdgeDetectLike, ExLaplacian4
 from .morpho import Morpho
 from .types import XxpandMode
 
@@ -36,7 +36,7 @@ def diff_rescale(
     kernel: KernelLike = Catrom,
     thr: float = 0.216,
     expand: int = 2,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     return based_diff_mask(clip, height, kernel, thr, expand=2 + expand, func=func)
 
@@ -49,9 +49,9 @@ def diff_creditless(
     expand: int = 2,
     *,
     prefilter: bool | int = False,
-    edgemask: EdgeDetectT = ExLaplacian4,
+    edgemask: EdgeDetectLike = ExLaplacian4,
     ep_clip: vs.VideoNode | None = None,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     mask = based_diff_mask(
@@ -80,7 +80,7 @@ def diff_creditless_oped(
     opend: int | None = None,
     edstart: int | None = None,
     edend: int | None = None,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     func = func or diff_creditless_oped
@@ -155,7 +155,7 @@ def based_diff_mask(
     ] = 2,
     ampl: str | type[EdgeDetect] | EdgeDetect = ...,
     expand: int = 4,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode: ...
 
 
@@ -175,7 +175,7 @@ def based_diff_mask(
     ] = 2,
     ampl: str | type[EdgeDetect] | EdgeDetect = ...,
     expand: int = 4,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode: ...
 
 
@@ -194,7 +194,7 @@ def based_diff_mask(
     ] = 2,
     ampl: str | type[EdgeDetect] | EdgeDetect = "x mask_max / 2 4 pow * {thr} < 0 1 ? mask_max *",
     expand: int = 4,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Make a difference mask between a clean source and a reference clip with additionnal pre and post processing

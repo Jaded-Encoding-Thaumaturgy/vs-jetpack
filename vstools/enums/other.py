@@ -7,7 +7,7 @@ import vapoursynth as vs
 from jetpytools import Coordinate, CustomIntEnum, CustomStrEnum, Position, Sentinel, SentinelT, Size
 from typing_extensions import Self
 
-from ..types import ConstantFormatVideoNode, HoldsPropValueT, VideoNodeT
+from ..types import ConstantFormatVideoNode, HoldsPropValue, VideoNodeT
 
 __all__ = ["Coordinate", "Dar", "Direction", "Position", "Region", "Resolution", "Sar", "SceneChangeMode", "Size"]
 
@@ -152,7 +152,7 @@ class Sar(_Xar):
     """
 
     @classmethod
-    def from_clip(cls, clip: HoldsPropValueT) -> Self:
+    def from_clip(cls, clip: HoldsPropValue) -> Self:
         """
         Get the SAR from the clip's frame properties.
 

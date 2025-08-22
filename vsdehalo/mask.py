@@ -13,7 +13,7 @@ from vsdenoise import Prefilter
 from vsexprtools import ExprOp, norm_expr
 from vsmasktools import (
     Coordinates,
-    GenericMaskT,
+    MaskLike,
     Morpho,
     Robinson3,
     XxpandMode,
@@ -25,11 +25,11 @@ from vsscale import pre_ss as pre_supersample
 from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
-    FuncExceptT,
+    FuncExcept,
     FunctionUtil,
     InvalidColorFamilyError,
-    OneDimConvModeT,
-    PlanesT,
+    OneDimConvMode,
+    Planes,
     check_progressive,
     check_variable,
     get_y,
@@ -72,7 +72,7 @@ class FineDehalo(Generic[P, R]):
         # fine_dehalo mask specific params
         rx: int = 2,
         ry: int | None = None,
-        edgemask: GenericMaskT = Robinson3,
+        edgemask: MaskLike = Robinson3,
         thmi: int = 80,
         thma: int = 128,
         thlimi: int = 50,
@@ -80,8 +80,8 @@ class FineDehalo(Generic[P, R]):
         exclude: bool = True,
         edgeproc: float = 0.0,
         # Misc params
-        planes: PlanesT = 0,
-        func: FuncExceptT | None = None,
+        planes: Planes = 0,
+        func: FuncExcept | None = None,
     ) -> ConstantFormatVideoNode:
         """
         The fine_dehalo mask.
@@ -121,7 +121,7 @@ class FineDehalo(Generic[P, R]):
             # fine_dehalo mask specific params
             rx: int = 2,
             ry: int | None = None,
-            edgemask: GenericMaskT = Robinson3,
+            edgemask: MaskLike = Robinson3,
             thmi: int = 80,
             thma: int = 128,
             thlimi: int = 50,
@@ -129,8 +129,8 @@ class FineDehalo(Generic[P, R]):
             exclude: bool = True,
             edgeproc: float = 0.0,
             # Misc params
-            planes: PlanesT = 0,
-            func: FuncExceptT | None = None,
+            planes: Planes = 0,
+            func: FuncExcept | None = None,
         ) -> None:
             """
             Initialize the mask generation process.
@@ -291,7 +291,7 @@ def fine_dehalo(
     # fine_dehalo mask specific params
     rx: int = 2,
     ry: int | None = None,
-    edgemask: GenericMaskT = Robinson3,
+    edgemask: MaskLike = Robinson3,
     thmi: int = 80,
     thma: int = 128,
     thlimi: int = 50,
@@ -302,9 +302,9 @@ def fine_dehalo(
     contra: float = 0.0,
     # Misc params
     pre_ss: int = 1,
-    planes: PlanesT = 0,
+    planes: Planes = 0,
     attach_masks: bool = False,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
@@ -429,7 +429,7 @@ def fine_dehalo(
 
 def fine_dehalo2(
     clip: vs.VideoNode,
-    mode: OneDimConvModeT = ConvMode.HV,
+    mode: OneDimConvMode = ConvMode.HV,
     radius: int = 2,
     mask_radius: int = 2,
     brightstr: float = 1.0,

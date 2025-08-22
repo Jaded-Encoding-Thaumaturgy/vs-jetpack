@@ -5,7 +5,7 @@ from typing import Any, overload
 from jetpytools import CustomRuntimeError
 
 from vsrgtools import MeanMode
-from vstools import CustomValueError, FormatsMismatchError, PlanesT, VSFunctionKwArgs, VSFunctionNoArgs, vs
+from vstools import CustomValueError, FormatsMismatchError, Planes, VSFunctionKwArgs, VSFunctionNoArgs, vs
 
 __all__ = [
     "frequency_merge",
@@ -21,7 +21,7 @@ def frequency_merge(
     mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER,
     mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
     lowpass: None = None,
-    planes: PlanesT = None,
+    planes: Planes = None,
     **kwargs: Any,
 ) -> vs.VideoNode: ...
 
@@ -32,7 +32,7 @@ def frequency_merge(
     mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER,
     mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
     lowpass: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode],
-    planes: PlanesT = None,
+    planes: Planes = None,
     **kwargs: Any,
 ) -> vs.VideoNode: ...
 
@@ -45,7 +45,7 @@ def frequency_merge(
     mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER,
     mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
     lowpass: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None = None,
-    planes: PlanesT = None,
+    planes: Planes = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """

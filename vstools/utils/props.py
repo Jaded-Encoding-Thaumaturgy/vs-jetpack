@@ -19,7 +19,7 @@ import vapoursynth as vs
 from jetpytools import (
     MISSING,
     FileWasNotFoundError,
-    FuncExceptT,
+    FuncExcept,
     MissingT,
     SPath,
     SPathLike,
@@ -29,7 +29,7 @@ from jetpytools import (
 
 from ..enums import PropEnum
 from ..exceptions import FramePropError
-from ..types import ConstantFormatVideoNode, HoldsPropValueT
+from ..types import ConstantFormatVideoNode, HoldsPropValue
 from .cache import NodesPropsCache
 
 __all__ = ["get_clip_filepath", "get_prop", "get_props", "merge_clip_props"]
@@ -82,94 +82,94 @@ def _normalize_types(types: type[T] | Iterable[type[T]]) -> tuple[type[T], ...]:
 # One type signature
 @overload
 def get_prop(
-    obj: HoldsPropValueT,
+    obj: HoldsPropValue,
     key: str | type[PropEnum],
     t: type[_PropValueT],
     *,
     default: DT = ...,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> _PropValueT | DT: ...
 
 
 # Tuple of two types signature
 @overload
 def get_prop(
-    obj: HoldsPropValueT,
+    obj: HoldsPropValue,
     key: str | type[PropEnum],
     t: tuple[type[_PropValueT], type[_PropValueT0]],
     *,
     default: DT = ...,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> _PropValueT | _PropValueT0 | DT: ...
 
 
 # Tuple of three types signature
 @overload
 def get_prop(
-    obj: HoldsPropValueT,
+    obj: HoldsPropValue,
     key: str | type[PropEnum],
     t: tuple[type[_PropValueT], type[_PropValueT0], type[_PropValueT1]],
     *,
     default: DT = ...,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> _PropValueT | _PropValueT0 | _PropValueT1 | DT: ...
 
 
 # Tuple of four types or more signature
 @overload
 def get_prop(
-    obj: HoldsPropValueT,
+    obj: HoldsPropValue,
     key: str | type[PropEnum],
     t: tuple[type[_PropValueT], ...],
     *,
     default: DT = ...,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> Any | DT: ...
 
 
 # Signature when cast is specified
 @overload
 def get_prop(
-    obj: HoldsPropValueT,
+    obj: HoldsPropValue,
     key: str | type[PropEnum],
     t: type[_PropValueT] | tuple[type[_PropValue], ...],
     cast: Callable[[_PropValueT], CT],
     default: DT = ...,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> CT | DT: ...
 
 
 # Signature for callable
 @overload
 def get_prop(
-    obj: HoldsPropValueT,
+    obj: HoldsPropValue,
     key: str | type[PropEnum],
     t: Literal["Callable"],
     *,
     default: DT = ...,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> Callable[..., Any] | DT: ...
 
 
 # Generic signature
 @overload
 def get_prop(
-    obj: HoldsPropValueT,
+    obj: HoldsPropValue,
     key: str | type[PropEnum],
     t: type[Any] | tuple[type[Any], ...] | Literal["Callable"],
     cast: Callable[[Any], CT] = ...,
     default: DT = ...,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> Any | CT | DT: ...
 
 
 def get_prop(
-    obj: HoldsPropValueT,
+    obj: HoldsPropValue,
     key: str | type[PropEnum],
     t: type[Any] | tuple[type[Any], ...] | Literal["Callable"],
     cast: Callable[[Any], CT] | MissingT = MISSING,
     default: DT | MissingT = MISSING,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> Any | CT | DT:
     """
     Get FrameProp ``prop`` from frame ``frame`` with expected type ``t``.
@@ -287,7 +287,7 @@ def merge_clip_props(*clips: vs.VideoNode, main_idx: int = 0) -> vs.VideoNode:
     return clips[0].std.ModifyFrame(clips, _merge_props)
 
 
-def get_clip_filepath(clip: vs.VideoNode, fallback: SPathLike | None = None, func: FuncExceptT | None = None) -> SPath:
+def get_clip_filepath(clip: vs.VideoNode, fallback: SPathLike | None = None, func: FuncExcept | None = None) -> SPath:
     """
     Helper function to get the file path from a clip.
 
@@ -318,33 +318,33 @@ def get_clip_filepath(clip: vs.VideoNode, fallback: SPathLike | None = None, fun
 
 @overload
 def get_props(
-    obj: HoldsPropValueT,
+    obj: HoldsPropValue,
     keys: Iterable[str | type[PropEnum]],
     t: type[_PropValueT],
     cast: Callable[[_PropValueT], CT] = ...,  # pyright: ignore[reportInvalidTypeVarUse]
     default: DT = ...,  # pyright: ignore[reportInvalidTypeVarUse]
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> dict[str, _PropValueT | CT | DT]: ...
 
 
 @overload
 def get_props(
-    obj: HoldsPropValueT,
+    obj: HoldsPropValue,
     keys: Iterable[str | type[PropEnum]],
     t: tuple[type[Any], ...],
     cast: Callable[[Any], CT] = ...,  # pyright: ignore[reportInvalidTypeVarUse]
     default: DT = ...,  # pyright: ignore[reportInvalidTypeVarUse]
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> dict[str, Any | DT | CT]: ...
 
 
 def get_props(
-    obj: HoldsPropValueT,
+    obj: HoldsPropValue,
     keys: Iterable[str | type[PropEnum]],
     t: type[Any] | tuple[type[Any], ...],
     cast: Callable[[Any], CT] | MissingT = MISSING,
     default: Any | MissingT = MISSING,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> dict[str, Any]:
     """
     Get multiple frame properties from a clip.

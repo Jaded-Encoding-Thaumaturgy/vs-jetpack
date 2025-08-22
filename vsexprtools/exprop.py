@@ -17,11 +17,11 @@ from vstools import (
     ConvMode,
     CustomIndexError,
     CustomValueError,
-    FuncExceptT,
-    HoldsVideoFormatT,
-    PlanesT,
+    FuncExcept,
+    HoldsVideoFormat,
+    Planes,
     StrList,
-    VideoFormatT,
+    VideoFormatLike,
     VideoNodeIterableT,
     VideoNodeT,
     check_variable,
@@ -263,11 +263,11 @@ class ExprList(StrList):
     def __call__(
         self,
         *clips: VideoNodeIterableT[vs.VideoNode],
-        planes: PlanesT = None,
-        format: HoldsVideoFormatT | VideoFormatT | None = None,
+        planes: Planes = None,
+        format: HoldsVideoFormat | VideoFormatLike | None = None,
         opt: bool = False,
         boundary: bool = True,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         split_planes: bool = False,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
@@ -303,11 +303,11 @@ class TupleExprList(tuple[ExprList, ...]):
     def __call__(
         self,
         *clips: VideoNodeIterableT[vs.VideoNode],
-        planes: PlanesT = None,
-        format: HoldsVideoFormatT | VideoFormatT | None = None,
+        planes: Planes = None,
+        format: HoldsVideoFormat | VideoFormatLike | None = None,
         opt: bool = False,
         boundary: bool = True,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         split_planes: bool = False,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
@@ -383,7 +383,7 @@ class ExprOpBase(CustomStrEnum):
         prefix: SupportsString | Iterable[SupportsString] | None = None,
         expr_suffix: SupportsString | Iterable[SupportsString] | None = None,
         expr_prefix: SupportsString | Iterable[SupportsString] | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         **kwargs: Any,
     ) -> VideoNodeT:
         """
@@ -458,7 +458,7 @@ class ExprOpBase(CustomStrEnum):
         prefix: SupportsString | Iterable[SupportsString] | None = None,
         expr_suffix: SupportsString | Iterable[SupportsString] | None = None,
         expr_prefix: SupportsString | Iterable[SupportsString] | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -946,9 +946,9 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
 
     @staticmethod
     def _parse_planes(
-        planesa: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex,
-        planesb: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex | None,
-        func: FuncExceptT,
+        planesa: ExprVars | HoldsVideoFormat | VideoFormatLike | SupportsIndex,
+        planesb: ExprVars | HoldsVideoFormat | VideoFormatLike | SupportsIndex | None,
+        func: FuncExcept,
     ) -> tuple[ExprVars, ExprVars]:
         planesa = ExprVars(planesa)
         planesb = ExprVars(planesa.stop, planesa.stop + len(planesa)) if planesb is None else ExprVars(planesb)
@@ -961,8 +961,8 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     @classmethod
     def rmse(
         cls,
-        planesa: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex,
-        planesb: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex | None = None,
+        planesa: ExprVars | HoldsVideoFormat | VideoFormatLike | SupportsIndex,
+        planesb: ExprVars | HoldsVideoFormat | VideoFormatLike | SupportsIndex | None = None,
     ) -> ExprList:
         """
         Build an expression to compute the Root Mean Squared Error (RMSE) between two plane sets.
@@ -988,8 +988,8 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     @classmethod
     def mae(
         cls,
-        planesa: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex,
-        planesb: ExprVars | HoldsVideoFormatT | VideoFormatT | SupportsIndex | None = None,
+        planesa: ExprVars | HoldsVideoFormat | VideoFormatLike | SupportsIndex,
+        planesb: ExprVars | HoldsVideoFormat | VideoFormatLike | SupportsIndex | None = None,
     ) -> ExprList:
         """
         Build an expression to compute the Mean Absolute Error (MAE) between two plane sets.

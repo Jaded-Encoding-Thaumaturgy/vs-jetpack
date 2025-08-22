@@ -8,10 +8,10 @@ from __future__ import annotations
 from typing import Literal, Sequence
 
 from vsexprtools import norm_expr
-from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, PrewittStd
+from vsmasktools import EdgeDetect, EdgeDetectLike, Morpho, PrewittStd
 from vsrgtools import BlurMatrix, awarpsharp, box_blur, min_blur, remove_grain, repair
 from vsrgtools.rgtools import Repair
-from vstools import PlanesT, limiter, scale_mask, scale_value, vs
+from vstools import Planes, limiter, scale_mask, scale_value, vs
 
 __all__ = ["YAHR", "edge_cleaner"]
 
@@ -22,8 +22,8 @@ def edge_cleaner(
     rmode: int | Repair.Mode = 17,
     hot: bool = False,
     smode: bool = False,
-    edgemask: EdgeDetectT = PrewittStd,
-    planes: PlanesT = 0,
+    edgemask: EdgeDetectLike = PrewittStd,
+    planes: Planes = 0,
 ) -> vs.VideoNode:
     """
     Cleans edges in a video clip by applying edge-aware processing.
@@ -79,7 +79,7 @@ def YAHR(  # noqa: N802
     depth: int | Sequence[int] = 32,
     expand: int | Literal[False] = 5,
     shift: int = 8,
-    planes: PlanesT = 0,
+    planes: Planes = 0,
 ) -> vs.VideoNode:
     """
     Applies YAHR (Yet Another Halo Remover) to reduce halos in a video clip.

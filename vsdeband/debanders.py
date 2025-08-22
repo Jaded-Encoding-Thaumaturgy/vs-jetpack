@@ -12,7 +12,7 @@ from vstools import (
     ConstantFormatVideoNode,
     CustomIntEnum,
     InvalidColorFamilyError,
-    PlanesT,
+    Planes,
     check_variable,
     core,
     depth,
@@ -367,7 +367,7 @@ def f3k_deband(
     radius: int = 16,
     thr: int | Sequence[int] = 96,
     grain: float | Sequence[float] = 0.0,
-    planes: PlanesT = None,
+    planes: Planes = None,
     *,
     sample_mode: F3KDeband.SampleMode = F3KDeband.SampleMode.SQUARE,
     dynamic_grain: bool = False,
@@ -453,7 +453,7 @@ def placebo_deband(
     radius: float = 16.0,
     thr: float | Sequence[float] = 3.0,
     grain: float | Sequence[float] = 0.0,
-    planes: PlanesT = None,
+    planes: Planes = None,
     *,
     iterations: int = 4,
     **kwargs: Any,
@@ -537,7 +537,7 @@ class _DebanderFunc(Protocol[_Nb]):
         radius: int = ...,
         thr: _Nb | Sequence[_Nb] = ...,
         grain: float | Sequence[float] = ...,
-        planes: PlanesT = ...,
+        planes: Planes = ...,
     ) -> vs.VideoNode: ...
 
 
@@ -549,7 +549,7 @@ def mdb_bilateral(
     dark_thr: float | Sequence[float] = 0.6,
     bright_thr: float | Sequence[float] = 0.6,
     elast: float | Sequence[float] = 3.0,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> vs.VideoNode:
     """
     Multi stage debanding, bilateral-esque filter.
@@ -597,7 +597,7 @@ class _SupportPlanesParam(Protocol):
     Protocol for functions that support planes parameter.
     """
 
-    def __call__(self, clip: vs.VideoNode, *, planes: PlanesT = ..., **kwargs: Any) -> vs.VideoNode: ...
+    def __call__(self, clip: vs.VideoNode, *, planes: Planes = ..., **kwargs: Any) -> vs.VideoNode: ...
 
 
 def pfdeband(
@@ -610,7 +610,7 @@ def pfdeband(
     dark_thr: float | Sequence[float] = 0.3,
     bright_thr: float | Sequence[float] = 0.3,
     elast: float | Sequence[float] = 2.5,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> vs.VideoNode:
     """
     Prefilter and deband a clip.

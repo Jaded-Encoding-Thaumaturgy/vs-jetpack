@@ -7,7 +7,7 @@ from vsexprtools import norm_expr
 from vskernels import Bilinear
 
 if TYPE_CHECKING:
-    from vsmasktools import EdgeDetectT
+    from vsmasktools import EdgeDetectLike
 
 from vstools import (
     ChromaLocation,
@@ -15,7 +15,7 @@ from vstools import (
     ConvMode,
     FunctionUtil,
     GenericVSFunction,
-    PlanesT,
+    Planes,
     VSFunctionNoArgs,
     check_ref_clip,
     check_variable,
@@ -38,7 +38,7 @@ def unsharpen(
     clip: vs.VideoNode,
     strength: float = 1.0,
     blur: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = partial(gauss_blur, sigma=1.5),
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> ConstantFormatVideoNode:
     assert check_variable(clip, unsharpen)
 
@@ -53,12 +53,12 @@ def unsharpen(
 
 def awarpsharp(
     clip: vs.VideoNode,
-    mask: EdgeDetectT | vs.VideoNode | None = None,
+    mask: EdgeDetectLike | vs.VideoNode | None = None,
     thresh: int | float = 128,
     blur: int | GenericVSFunction[vs.VideoNode] | Literal[False] = 3,
     depth: int | Sequence[int] | None = None,
     chroma: bool = False,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> ConstantFormatVideoNode:
     """
     Sharpens edges by warping them.
@@ -125,7 +125,7 @@ def fine_sharp(
     lstr: float = 1.49,
     pstr: float = 1.272,
     ldmp: float | None = None,
-    planes: PlanesT = 0,
+    planes: Planes = 0,
 ) -> ConstantFormatVideoNode:
     from numpy import asarray
     from scipy import interpolate
@@ -195,7 +195,7 @@ def soothe(
     spatial_radius: int = 1,
     temporal_radius: int = 1,
     scenechange: bool = False,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> ConstantFormatVideoNode:
     sharp_diff = src.std.MakeDiff(flt, planes)
 

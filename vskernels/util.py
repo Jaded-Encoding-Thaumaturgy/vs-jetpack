@@ -24,11 +24,11 @@ from vstools import (
     ConstantFormatVideoNode,
     CustomRuntimeError,
     CustomValueError,
-    HoldsVideoFormatT,
+    HoldsVideoFormat,
     Matrix,
-    MatrixT,
+    MatrixLike,
     Transfer,
-    VideoFormatT,
+    VideoFormatLike,
     VSFunctionNoArgs,
     cachedproperty,
     check_variable_format,
@@ -445,7 +445,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
     resampler: ResamplerLike = Catrom
     """Resampler for converting to linear format and converting back to input clip format."""
 
-    out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
+    out_fmt: int | VideoFormatLike | HoldsVideoFormat | None = None
     """Optional output format."""
 
     @overload
@@ -456,7 +456,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         /,
         sigmoid: bool | tuple[Slope, Center] = False,
         resampler: ResamplerLike = Catrom,
-        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None,
+        out_fmt: int | VideoFormatLike | HoldsVideoFormat | None = None,
     ) -> Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]:
         """
         Example:
@@ -475,7 +475,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         *,
         sigmoid: bool | tuple[Slope, Center] = False,
         resampler: ResamplerLike = Catrom,
-        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None,
+        out_fmt: int | VideoFormatLike | HoldsVideoFormat | None = None,
     ) -> Callable[
         [Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]], Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
     ]:
@@ -495,7 +495,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         /,
         sigmoid: bool | tuple[Slope, Center] = False,
         resampler: ResamplerLike = Catrom,
-        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None,
+        out_fmt: int | VideoFormatLike | HoldsVideoFormat | None = None,
     ) -> Union[
         Callable[Concatenate[vs.VideoNode, P], vs.VideoNode],
         Callable[
@@ -557,8 +557,8 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
 
 def resample_to(
     clip: vs.VideoNode,
-    out_fmt: int | VideoFormatT | HoldsVideoFormatT,
-    matrix: MatrixT | None = None,
+    out_fmt: int | VideoFormatLike | HoldsVideoFormat,
+    matrix: MatrixLike | None = None,
     resampler: ResamplerLike = Catrom,
 ) -> vs.VideoNode:
     out_fmt = get_video_format(out_fmt)

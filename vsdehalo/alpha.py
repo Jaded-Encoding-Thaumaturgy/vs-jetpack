@@ -16,9 +16,9 @@ from vsrgtools import MeanMode, gauss_blur, repair
 from vstools import (
     ConstantFormatVideoNode,
     CustomIndexError,
-    FuncExceptT,
+    FuncExcept,
     FunctionUtil,
-    PlanesT,
+    Planes,
     check_progressive,
     check_variable_format,
     core,
@@ -54,9 +54,9 @@ def dehalo_alpha(
     darkstr: IterArr[float] = 0.0,
     brightstr: IterArr[float] = 1.0,
     # Misc params
-    planes: PlanesT = 0,
+    planes: Planes = 0,
     attach_masks: bool = False,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
@@ -208,7 +208,7 @@ class AlphaBlur:
         self,
         rx: float | Sequence[float] = 2.0,
         ry: float | Sequence[float] | None = None,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -229,7 +229,7 @@ class AlphaBlur:
         self.downscaler = Scaler.ensure_obj(kwargs.get("downscaler", Mitchell()), self.func)
         self.upscaler = Scaler.ensure_obj(kwargs.get("upscaler", BSpline()), self.func)
 
-    def __call__(self, clip: vs.VideoNode, planes: PlanesT = None, **kwargs: Any) -> Any:
+    def __call__(self, clip: vs.VideoNode, planes: Planes = None, **kwargs: Any) -> Any:
         """
         Applies the Gaussian blur approximation to the input clip.
 

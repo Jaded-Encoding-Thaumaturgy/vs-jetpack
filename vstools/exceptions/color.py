@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import vapoursynth as vs
-from jetpytools import CustomPermissionError, CustomValueError, FuncExceptT, SupportsString
+from jetpytools import CustomPermissionError, CustomValueError, FuncExcept, SupportsString
 
 __all__ = [
     "InvalidColorspacePathError",
@@ -31,7 +31,7 @@ class InvalidColorspacePathError(CustomValueError):
     Raised when there is no path between two colorspaces.
     """
 
-    def __init__(self, func: FuncExceptT, message: SupportsString | None = None, **kwargs: Any) -> None:
+    def __init__(self, func: FuncExcept, message: SupportsString | None = None, **kwargs: Any) -> None:
         def_msg = "Unable to convert between colorspaces! "
         def_msg += "Please provide more colorspace information (e.g., matrix, transfer, primaries)."
 
@@ -44,7 +44,7 @@ class InvalidColorspacePathError(CustomValueError):
         super().__init__(message or def_msg, func, **kwargs)
 
     @staticmethod
-    def check(func: FuncExceptT, to_check: vs.VideoNode) -> None:
+    def check(func: FuncExcept, to_check: vs.VideoNode) -> None:
         """
         Check if there's a valid colorspace path for the given clip.
 
@@ -93,7 +93,7 @@ class InvalidMatrixError(CustomValueError):
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         matrix: int = 2,
         message: SupportsString = "You can't set a matrix of {matrix}!",
         **kwargs: Any,
@@ -130,7 +130,7 @@ class InvalidTransferError(CustomValueError):
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         transfer: int = 2,
         message: SupportsString = "You can't set a transfer of {transfer}!",
         **kwargs: Any,
@@ -167,7 +167,7 @@ class InvalidPrimariesError(CustomValueError):
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         primaries: int = 2,
         message: SupportsString = "You can't set primaries of {primaries}!",
         **kwargs: Any,

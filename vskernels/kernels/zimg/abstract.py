@@ -1,6 +1,6 @@
 from typing import Any, Callable, ClassVar, Union
 
-from vstools import ConstantFormatVideoNode, FieldBased, FieldBasedT, check_variable, core, vs
+from vstools import ConstantFormatVideoNode, FieldBased, FieldBasedLike, check_variable, core, vs
 
 from ...abstract import ComplexKernel
 from ...abstract.base import BaseScaler
@@ -24,7 +24,7 @@ class ZimgBobber(BaseScaler):
     _implemented_funcs: ClassVar[tuple[str, ...]] = ("bob", "deinterlace")
 
     def bob(
-        self, clip: vs.VideoNode, *, tff: FieldBasedT | bool | None = None, **kwargs: Any
+        self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
         Apply bob deinterlacing to a given clip using the selected resizer.
@@ -47,7 +47,7 @@ class ZimgBobber(BaseScaler):
         return self.bob_function(clip, **self.get_bob_args(clip, tff=clip_fieldbased.is_tff, **kwargs))
 
     def deinterlace(
-        self, clip: vs.VideoNode, *, tff: FieldBasedT | bool | None = None, double_rate: bool = True, **kwargs: Any
+        self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, double_rate: bool = True, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
         Apply deinterlacing to a given clip using the selected resizer.

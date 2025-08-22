@@ -18,7 +18,7 @@ from vstools import (
     CustomValueError,
     InvalidColorFamilyError,
     MissingT,
-    PlanesT,
+    Planes,
     check_variable,
     check_variable_format,
     get_peak_value,
@@ -29,7 +29,7 @@ from vstools import (
     vs,
 )
 
-from .fft import DFTTest, SLocationT
+from .fft import DFTTest, SLocationLike
 
 __all__ = [
     "MultiPrefilter",
@@ -40,7 +40,7 @@ __all__ = [
 ]
 
 
-def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: PlanesT, **kwargs: Any) -> vs.VideoNode:
+def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: Planes, **kwargs: Any) -> vs.VideoNode:
     """
     Internal function for applying a prefilter to a clip.
     """
@@ -132,7 +132,7 @@ def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: PlanesT, **
 
 class AbstractPrefilter:
     def __call__(
-        self, clip: vs.VideoNode, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
+        self, clip: vs.VideoNode, planes: Planes = None, full_range: bool | float = False, **kwargs: Any
     ) -> vs.VideoNode | PrefilterPartial:
         raise NotImplementedError
 
@@ -189,7 +189,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.FLUXSMOOTHST],
         clip: vs.VideoNode,
-        planes: PlanesT = None,
+        planes: Planes = None,
         full_range: bool | float = False,
         *,
         temp_thr: float | Sequence[float] = 2.0,
@@ -215,10 +215,10 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.DFTTEST],
         clip: vs.VideoNode,
-        planes: PlanesT = None,
+        planes: Planes = None,
         full_range: bool | float = False,
         *,
-        sloc: SLocationT | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},
+        sloc: SLocationLike | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},
         pref_mask: vs.VideoNode | Literal[False] | tuple[int, int] = (16, 75),
         **kwargs: Any,
     ) -> vs.VideoNode:
@@ -243,7 +243,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.NLMEANS],
         clip: vs.VideoNode,
-        planes: PlanesT = None,
+        planes: Planes = None,
         full_range: bool | float = False,
         *,
         h: float | Sequence[float] = 7.0,
@@ -270,7 +270,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.BM3D],
         clip: vs.VideoNode,
-        planes: PlanesT = None,
+        planes: Planes = None,
         full_range: bool | float = False,
         *,
         sigma: float | Sequence[float] = 10,
@@ -296,7 +296,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.BILATERAL],
         clip: vs.VideoNode,
-        planes: PlanesT = None,
+        planes: Planes = None,
         full_range: bool | float = False,
         *,
         sigmaS: float | list[float] | tuple[float | list[float], ...] = 3.0,  # noqa: N803
@@ -325,7 +325,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.FLUXSMOOTHST],
         *,
-        planes: PlanesT = None,
+        planes: Planes = None,
         full_range: bool | float = False,
         temp_thr: float | Sequence[float] = 2.0,
         spat_thr: float | Sequence[float] | None = 2.0,
@@ -349,9 +349,9 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.DFTTEST],
         *,
-        planes: PlanesT = None,
+        planes: Planes = None,
         full_range: bool | float = False,
-        sloc: SLocationT | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},
+        sloc: SLocationLike | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},
         pref_mask: vs.VideoNode | Literal[False] | tuple[int, int] = (16, 75),
         **kwargs: Any,
     ) -> PrefilterPartial:
@@ -375,7 +375,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.NLMEANS],
         *,
-        planes: PlanesT = None,
+        planes: Planes = None,
         full_range: bool | float = False,
         h: float | Sequence[float] = 7.0,
         s: int | Sequence[int] = 2,
@@ -400,7 +400,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.BM3D],
         *,
-        planes: PlanesT = None,
+        planes: Planes = None,
         full_range: bool | float = False,
         sigma: float | Sequence[float] = 10,
         radius: int | Sequence[int | None] | None = 1,
@@ -424,7 +424,7 @@ class Prefilter(AbstractPrefilter, CustomEnum):
     def __call__(  # type: ignore[misc]
         self: Literal[Prefilter.BILATERAL],
         *,
-        planes: PlanesT = None,
+        planes: Planes = None,
         full_range: bool | float = False,
         sigmaS: float | list[float] | tuple[float | list[float], ...] = 3.0,  # noqa: N803
         sigmaR: float | list[float] | tuple[float | list[float], ...] = 0.02,  # noqa: N803
@@ -448,18 +448,18 @@ class Prefilter(AbstractPrefilter, CustomEnum):
 
     @overload
     def __call__(
-        self, clip: vs.VideoNode, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
+        self, clip: vs.VideoNode, planes: Planes = None, full_range: bool | float = False, **kwargs: Any
     ) -> vs.VideoNode: ...
 
     @overload
     def __call__(
-        self, *, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
+        self, *, planes: Planes = None, full_range: bool | float = False, **kwargs: Any
     ) -> PrefilterPartial: ...
 
     def __call__(
         self,
         clip: vs.VideoNode | MissingT = MISSING,
-        planes: PlanesT = None,
+        planes: Planes = None,
         full_range: bool | float = False,
         **kwargs: Any,
     ) -> vs.VideoNode | PrefilterPartial:
@@ -494,7 +494,7 @@ class PrefilterPartial(AbstractPrefilter):
     A partially-applied prefilter wrapper.
     """
 
-    def __init__(self, prefilter: Prefilter, planes: PlanesT, full_range: bool | float, **kwargs: Any) -> None:
+    def __init__(self, prefilter: Prefilter, planes: Planes, full_range: bool | float, **kwargs: Any) -> None:
         """
         Stores a prefilter function, allowing it to be reused with different clips.
 
@@ -512,7 +512,7 @@ class PrefilterPartial(AbstractPrefilter):
     def __call__(
         self,
         clip: vs.VideoNode,
-        planes: PlanesT | MissingT = MISSING,
+        planes: Planes | MissingT = MISSING,
         full_range: bool | float | MissingT = MISSING,
         **kwargs: Any,
     ) -> vs.VideoNode:
@@ -554,7 +554,7 @@ class MultiPrefilter(AbstractPrefilter):
         self.prefilters = prefilters
 
     def __call__(
-        self, clip: vs.VideoNode, planes: PlanesT = None, full_range: bool | float = False, **kwargs: Any
+        self, clip: vs.VideoNode, planes: Planes = None, full_range: bool | float = False, **kwargs: Any
     ) -> vs.VideoNode:
         """
         Apply a sequence of prefilters to the given clip.

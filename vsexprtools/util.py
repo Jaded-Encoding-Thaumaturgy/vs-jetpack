@@ -16,11 +16,11 @@ from vstools import (
     MISSING,
     ColorRange,
     CustomIndexError,
-    FuncExceptT,
-    HoldsVideoFormatT,
+    FuncExcept,
+    HoldsVideoFormat,
     MissingT,
-    PlanesT,
-    VideoFormatT,
+    Planes,
+    VideoFormatLike,
     get_video_format,
     normalize_planes,
     normalize_seq,
@@ -53,7 +53,7 @@ class ExprVars(Iterable[str]):
 
     @overload
     def __init__(
-        self, stop: SupportsIndex | Self | HoldsVideoFormatT | VideoFormatT, /, *, expr_src: bool = False
+        self, stop: SupportsIndex | Self | HoldsVideoFormat | VideoFormatLike, /, *, expr_src: bool = False
     ) -> None: ...
 
     @overload
@@ -66,7 +66,7 @@ class ExprVars(Iterable[str]):
 
     def __init__(
         self,
-        start_stop: SupportsIndex | Self | HoldsVideoFormatT | VideoFormatT,
+        start_stop: SupportsIndex | Self | HoldsVideoFormat | VideoFormatLike,
         stop: SupportsIndex | MissingT = MISSING,
         step: SupportsIndex = 1,
         /,
@@ -98,11 +98,11 @@ class ExprVars(Iterable[str]):
             self.start = 0
             self.stop = (
                 get_video_format(start_stop).num_planes
-                if isinstance(start_stop, HoldsVideoFormatT | VideoFormatT)
+                if isinstance(start_stop, HoldsVideoFormat | VideoFormatLike)
                 else start_stop.__index__()
             )
         else:
-            if isinstance(start_stop, HoldsVideoFormatT | VideoFormatT):
+            if isinstance(start_stop, HoldsVideoFormat | VideoFormatLike):
                 raise CustomTypeError("start cannot be a video format when stop is provided.", self, start_stop)
             self.start = start_stop.__index__()
             self.stop = stop.__index__()
@@ -120,7 +120,7 @@ class ExprVars(Iterable[str]):
 
     @overload
     def __call__(
-        self, stop: SupportsIndex | Self | HoldsVideoFormatT | VideoFormatT, /, *, expr_src: bool = False
+        self, stop: SupportsIndex | Self | HoldsVideoFormat | VideoFormatLike, /, *, expr_src: bool = False
     ) -> Self: ...
 
     @overload
@@ -130,7 +130,7 @@ class ExprVars(Iterable[str]):
 
     def __call__(
         self,
-        start_stop: SupportsIndex | Self | HoldsVideoFormatT | VideoFormatT,
+        start_stop: SupportsIndex | Self | HoldsVideoFormat | VideoFormatLike,
         stop: SupportsIndex | MissingT = MISSING,
         step: SupportsIndex = 1,
         /,
@@ -257,7 +257,7 @@ def extra_op_tokenize_expr(expr: str) -> str:
 
 
 def bitdepth_aware_tokenize_expr(
-    clips: Sequence[vs.VideoNode], expr: str, chroma: bool, func: FuncExceptT | None = None
+    clips: Sequence[vs.VideoNode], expr: str, chroma: bool, func: FuncExcept | None = None
 ) -> str:
     from .exprop import ExprToken
 
@@ -301,7 +301,7 @@ def bitdepth_aware_tokenize_expr(
 def norm_expr_planes(
     clip: vs.VideoNode,
     expr: str | list[str],
-    planes: PlanesT = None,
+    planes: Planes = None,
     **kwargs: Iterable[SupportsString] | SupportsString,
 ) -> list[str]:
     assert clip.format

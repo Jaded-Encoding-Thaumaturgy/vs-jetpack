@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Protocol
 
 from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
-from vstools import ConstantFormatVideoNode, MatrixT, check_variable, plane, vs
+from vstools import ConstantFormatVideoNode, MatrixLike, check_variable, plane, vs
 
 __all__ = [
     "BaseGenericScaler",
@@ -84,7 +84,7 @@ class BaseGenericScaler(Scaler, ABC):
         width: int,
         height: int,
         shift: tuple[float, float] = (0, 0),
-        matrix: MatrixT | None = None,
+        matrix: MatrixLike | None = None,
         copy_props: bool = False,
     ) -> ConstantFormatVideoNode:
         if input_clip.format.num_planes == 1:

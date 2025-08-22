@@ -12,7 +12,7 @@ from jetpytools import CustomRuntimeError, CustomStrEnum, P, R
 from vstools import (
     ConstantFormatVideoNode,
     CustomIntEnum,
-    PlanesT,
+    Planes,
     check_variable,
     core,
     join,
@@ -174,7 +174,7 @@ def nl_means(
     backend: NLMeans.Backend = NLMeans.Backend.AUTO,
     ref: vs.VideoNode | None = None,
     wmode: NLMeans.WeightMode = NLMeans.WeightMode.WELSCH,
-    planes: PlanesT = None,
+    planes: Planes = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """

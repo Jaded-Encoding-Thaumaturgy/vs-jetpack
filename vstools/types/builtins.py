@@ -70,6 +70,7 @@ __all__ = [
     "KwargsT",
     "Nb",
     "P",
+    "Planes",
     "PlanesT",
     "R",
     "R_contra",
@@ -96,7 +97,8 @@ __all__ = [
 ]
 
 
-PlanesT: TypeAlias = int | Sequence[int] | None
+Planes: TypeAlias = int | Sequence[int] | None
+PlanesT = Planes
 
 FrameRange: TypeAlias = SoftRange
 FrameRangeN: TypeAlias = SoftRangeN

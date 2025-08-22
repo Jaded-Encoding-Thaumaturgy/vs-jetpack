@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeAlias, Union, overload
+from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 import vapoursynth as vs
-from jetpytools import FuncExceptT
+from jetpytools import FuncExcept
 from typing_extensions import Self
 
 from ..exceptions import (
@@ -18,19 +18,23 @@ from ..exceptions import (
     UnsupportedPrimariesError,
     UnsupportedTransferError,
 )
-from ..types import HoldsPropValueT, KwargsT
+from ..types import HoldsPropValue
 from .base import PropEnum, _base_from_video
 
 __all__ = [
     "ColorRange",
-    "ColorRangeT",
+    "ColorRangeLike",
+    "ColorRangeT",  # Deprecated alias
     "Matrix",
-    "MatrixT",
+    "MatrixLike",
+    "MatrixT",  # Deprecated alias
     "Primaries",
-    "PrimariesT",
+    "PrimariesLike",
+    "PrimariesT",  # Deprecated alias
     "PropEnum",
     "Transfer",
-    "TransferT",
+    "TransferLike",
+    "TransferT",  # Deprecated alias
 ]
 
 
@@ -201,15 +205,15 @@ class Matrix(PropEnum):
 
         @overload
         @classmethod
-        def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
+        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
 
         @overload
         @classmethod
-        def from_param(cls, value: MatrixT, func_except: FuncExceptT | None = None) -> Self: ...
+        def from_param(cls, value: MatrixLike, func_except: FuncExcept | None = None) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(cls, value: MatrixT | None, func_except: FuncExceptT | None = None) -> Self | None: ...
+        def from_param(cls, value: MatrixLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
@@ -227,10 +231,10 @@ class Matrix(PropEnum):
         @classmethod
         def from_param_or_video(
             cls,
-            value: MatrixT | None,
+            value: MatrixLike | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
             strict: bool = False,
-            func_except: FuncExceptT | None = None,
+            func_except: FuncExcept | None = None,
         ) -> Matrix: ...
 
     @classmethod
@@ -270,7 +274,7 @@ class Matrix(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
     ) -> Matrix:
         """
         Obtain the matrix of a clip from the frame properties.
@@ -527,15 +531,15 @@ class Transfer(PropEnum):
 
         @overload
         @classmethod
-        def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
+        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
 
         @overload
         @classmethod
-        def from_param(cls, value: TransferT, func_except: FuncExceptT | None = None) -> Self: ...
+        def from_param(cls, value: TransferLike, func_except: FuncExcept | None = None) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(cls, value: TransferT | None, func_except: FuncExceptT | None = None) -> Self | None: ...
+        def from_param(cls, value: TransferLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
@@ -554,10 +558,10 @@ class Transfer(PropEnum):
         @classmethod
         def from_param_or_video(
             cls,
-            value: TransferT | None,
+            value: TransferLike | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
             strict: bool = False,
-            func_except: FuncExceptT | None = None,
+            func_except: FuncExcept | None = None,
         ) -> Transfer: ...
 
     @classmethod
@@ -594,7 +598,7 @@ class Transfer(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
     ) -> Transfer:
         """
         Obtain the transfer of a clip from the frame properties.
@@ -951,15 +955,15 @@ class Primaries(PropEnum):
 
         @overload
         @classmethod
-        def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
+        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
 
         @overload
         @classmethod
-        def from_param(cls, value: PrimariesT, func_except: FuncExceptT | None = None) -> Self: ...
+        def from_param(cls, value: PrimariesLike, func_except: FuncExcept | None = None) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(cls, value: PrimariesT | None, func_except: FuncExceptT | None = None) -> Self | None: ...
+        def from_param(cls, value: PrimariesLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
@@ -978,10 +982,10 @@ class Primaries(PropEnum):
         @classmethod
         def from_param_or_video(
             cls,
-            value: PrimariesT | None,
+            value: PrimariesLike | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
             strict: bool = False,
-            func_except: FuncExceptT | None = None,
+            func_except: FuncExcept | None = None,
         ) -> Primaries: ...
 
     @classmethod
@@ -1021,7 +1025,7 @@ class Primaries(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
     ) -> Primaries:
         """
         Obtain the primaries of a clip from the frame properties.
@@ -1172,15 +1176,15 @@ class ColorRange(PropEnum):
 
         @overload
         @classmethod
-        def from_param(cls, value: None, func_except: FuncExceptT | None = None) -> None: ...
+        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
 
         @overload
         @classmethod
-        def from_param(cls, value: ColorRangeT, func_except: FuncExceptT | None = None) -> Self: ...
+        def from_param(cls, value: ColorRangeLike, func_except: FuncExcept | None = None) -> Self: ...
 
         @overload
         @classmethod
-        def from_param(cls, value: ColorRangeT | None, func_except: FuncExceptT | None = None) -> Self | None: ...
+        def from_param(cls, value: ColorRangeLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
 
         @classmethod
         def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
@@ -1199,10 +1203,10 @@ class ColorRange(PropEnum):
         @classmethod
         def from_param_or_video(
             cls,
-            value: ColorRangeT | None,
+            value: ColorRangeLike | None,
             src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
             strict: bool = False,
-            func_except: FuncExceptT | None = None,
+            func_except: FuncExcept | None = None,
         ) -> ColorRange: ...
 
     @classmethod
@@ -1222,7 +1226,7 @@ class ColorRange(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
     ) -> ColorRange:
         """
         Obtain the color range of a clip from the frame properties.
@@ -1437,20 +1441,32 @@ _primaries_pretty_name_map = {
 }
 
 
-MatrixT: TypeAlias = Union[int, vs.MatrixCoefficients, Matrix, HoldsPropValueT]
+MatrixLike: TypeAlias = int | vs.MatrixCoefficients | Matrix | HoldsPropValue
 """Type alias for values that can be used to initialize a [Matrix][vstools.Matrix]."""
 
-TransferT: TypeAlias = Union[int, vs.TransferCharacteristics, Transfer, HoldsPropValueT]
+TransferLike: TypeAlias = int | vs.TransferCharacteristics | Transfer | HoldsPropValue
 """Type alias for values that can be used to initialize a [Transfer][vstools.Transfer]."""
 
-PrimariesT: TypeAlias = Union[int, vs.ColorPrimaries, Primaries, HoldsPropValueT]
+PrimariesLike: TypeAlias = int | vs.ColorPrimaries | Primaries | HoldsPropValue
 """Type alias for values that can be used to initialize a [Primaries][vstools.Primaries]."""
 
-ColorRangeT: TypeAlias = Union[int, vs.ColorRange, ColorRange, HoldsPropValueT]
+ColorRangeLike: TypeAlias = int | vs.ColorRange | ColorRange | HoldsPropValue
 """Type alias for values that can be used to initialize a [ColorRange][vstools.ColorRange]."""
 
+MatrixT = MatrixLike
+"""Deprecated alias of MatrixLike"""
 
-def _norm_props_enums(kwargs: KwargsT) -> KwargsT:
+TransferT = TransferLike
+"""Deprecated alias of TransferLike"""
+
+PrimariesT = PrimariesLike
+"""Deprecated alias of PrimariesLike"""
+
+ColorRangeT = ColorRangeLike
+"""Deprecated alias of ColorRangeLike"""
+
+
+def _norm_props_enums(kwargs: dict[str, Any]) -> dict[str, Any]:
     return {
         key: (
             (value.value_zimg if hasattr(value, "value_zimg") else int(value))  # pyright: ignore[reportAttributeAccessIssue]

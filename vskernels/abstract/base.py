@@ -33,11 +33,11 @@ from vstools import (
     CustomNotImplementedError,
     CustomRuntimeError,
     CustomValueError,
-    FuncExceptT,
-    HoldsVideoFormatT,
+    FuncExcept,
+    HoldsVideoFormat,
     Matrix,
-    MatrixT,
-    VideoFormatT,
+    MatrixLike,
+    VideoFormatLike,
     VideoNodeT,
     check_correct_subsampling,
     check_variable_format,
@@ -119,7 +119,7 @@ def _base_from_param(
     cls: type[_BaseScalerT],
     value: str | type[_BaseScalerT] | _BaseScalerT | None,
     exception_cls: type[_UnknownBaseScalerError],
-    func_except: FuncExceptT | None,
+    func_except: FuncExcept | None,
 ) -> type[_BaseScalerT]:
     # If value is an instance returns the class
     if isinstance(value, cls):
@@ -149,7 +149,7 @@ def _base_from_param(
 
 
 def _base_ensure_obj(
-    cls: type[_BaseScalerT], value: str | type[_BaseScalerT] | _BaseScalerT | None, func_except: FuncExceptT | None
+    cls: type[_BaseScalerT], value: str | type[_BaseScalerT] | _BaseScalerT | None, func_except: FuncExcept | None
 ) -> _BaseScalerT:
     if isinstance(value, cls):
         return value
@@ -356,7 +356,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         cls,
         scaler: str | type[Self] | Self | None = None,
         /,
-        func_except: FuncExceptT | None = None,
+        func_except: FuncExcept | None = None,
     ) -> type[Self]:
         """
         Resolve and return a scaler type from a given input (string, type, or instance).
@@ -375,7 +375,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         cls,
         scaler: str | type[Self] | Self | None = None,
         /,
-        func_except: FuncExceptT | None = None,
+        func_except: FuncExcept | None = None,
     ) -> Self:
         """
         Ensure that the input is a scaler instance, resolving it if necessary.
@@ -717,9 +717,9 @@ class Resampler(BaseScaler):
     def resample(
         self,
         clip: vs.VideoNode,
-        format: int | VideoFormatT | HoldsVideoFormatT,
-        matrix: MatrixT | None = None,
-        matrix_in: MatrixT | None = None,
+        format: int | VideoFormatLike | HoldsVideoFormat,
+        matrix: MatrixLike | None = None,
+        matrix_in: MatrixLike | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -750,9 +750,9 @@ class Resampler(BaseScaler):
     def get_resample_args(
         self,
         clip: vs.VideoNode,
-        format: int | VideoFormatT | HoldsVideoFormatT,
-        matrix: MatrixT | None,
-        matrix_in: MatrixT | None,
+        format: int | VideoFormatLike | HoldsVideoFormat,
+        matrix: MatrixLike | None,
+        matrix_in: MatrixLike | None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """
@@ -1000,9 +1000,9 @@ class Kernel(Scaler, Descaler, Resampler):
     def get_resample_args(
         self,
         clip: vs.VideoNode,
-        format: int | VideoFormatT | HoldsVideoFormatT,
-        matrix: MatrixT | None,
-        matrix_in: MatrixT | None,
+        format: int | VideoFormatLike | HoldsVideoFormat,
+        matrix: MatrixLike | None,
+        matrix_in: MatrixLike | None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """

@@ -41,7 +41,7 @@ from vstools import (
 from .abstract import BoundingBox, DeferredMask, GeneralMask
 from .edge import SobelStd
 from .morpho import Morpho
-from .types import GenericMaskT, XxpandMode
+from .types import MaskLike, XxpandMode
 from .utils import max_planes, normalize_mask
 
 __all__ = [
@@ -224,7 +224,7 @@ class HardsubSignFades(HardsubMask):
 
     highpass: float
     expand: int
-    edgemask: GenericMaskT
+    edgemask: MaskLike
     expand_mode: XxpandMode
 
     def __init__(
@@ -233,7 +233,7 @@ class HardsubSignFades(HardsubMask):
         bound: BoundingBox | None = None,
         highpass: float = 0.0763,
         expand: int = 8,
-        edgemask: GenericMaskT = SobelStd,
+        edgemask: MaskLike = SobelStd,
         expand_mode: XxpandMode = XxpandMode.RECTANGLE,
         *,
         blur: bool = False,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Sequence, TypeGuard, overload
 
 import vapoursynth as vs
-from jetpytools import FuncExceptT
+from jetpytools import FuncExcept
 
 from ..enums import FieldBased
 from ..exceptions import (
@@ -26,7 +26,7 @@ __all__ = [
 
 
 def check_ref_clip(
-    src: vs.VideoNode, ref: vs.VideoNode | None, func: FuncExceptT | None = None
+    src: vs.VideoNode, ref: vs.VideoNode | None, func: FuncExcept | None = None
 ) -> ConstantFormatVideoNode:
     """
     Function for ensuring the ref clip's format matches that of the input clip.
@@ -62,17 +62,17 @@ def check_ref_clip(
 
 
 @overload
-def check_variable_format(clip: vs.VideoNode, func: FuncExceptT) -> TypeGuard[ConstantFormatVideoNode]: ...
+def check_variable_format(clip: vs.VideoNode, func: FuncExcept) -> TypeGuard[ConstantFormatVideoNode]: ...
 
 
 @overload
 def check_variable_format(
-    clip: Sequence[vs.VideoNode], func: FuncExceptT
+    clip: Sequence[vs.VideoNode], func: FuncExcept
 ) -> TypeGuard[Sequence[ConstantFormatVideoNode]]: ...
 
 
 def check_variable_format(
-    clip: vs.VideoNode | Sequence[vs.VideoNode], func: FuncExceptT
+    clip: vs.VideoNode | Sequence[vs.VideoNode], func: FuncExcept
 ) -> TypeGuard[ConstantFormatVideoNode] | TypeGuard[Sequence[ConstantFormatVideoNode]]:
     """
     Check for variable format and return an error if found.
@@ -89,7 +89,7 @@ def check_variable_format(
     return True
 
 
-def check_variable_resolution(clip: VideoNodeT, func: FuncExceptT) -> TypeGuard[VideoNodeT]:
+def check_variable_resolution(clip: VideoNodeT, func: FuncExcept) -> TypeGuard[VideoNodeT]:
     """
     Check for variable width or height and return an error if found.
 
@@ -103,7 +103,7 @@ def check_variable_resolution(clip: VideoNodeT, func: FuncExceptT) -> TypeGuard[
     return True
 
 
-def check_variable(clip: vs.VideoNode, func: FuncExceptT) -> TypeGuard[ConstantFormatVideoNode]:
+def check_variable(clip: vs.VideoNode, func: FuncExcept) -> TypeGuard[ConstantFormatVideoNode]:
     """
     Check for variable format and a variable resolution and return an error if found.
 
@@ -119,7 +119,7 @@ def check_variable(clip: vs.VideoNode, func: FuncExceptT) -> TypeGuard[ConstantF
 
 
 def check_correct_subsampling(
-    clip: vs.VideoNode, width: int | None = None, height: int | None = None, func: FuncExceptT | None = None
+    clip: vs.VideoNode, width: int | None = None, height: int | None = None, func: FuncExcept | None = None
 ) -> None:
     """
     Check if the subsampling is correct and return an error if it's not.
@@ -147,7 +147,7 @@ def check_correct_subsampling(
         )
 
 
-def check_progressive(clip: VideoNodeT, func: FuncExceptT) -> TypeGuard[VideoNodeT]:
+def check_progressive(clip: VideoNodeT, func: FuncExcept) -> TypeGuard[VideoNodeT]:
     """
     Check if the clip is progressive and return an error if it's not.
 

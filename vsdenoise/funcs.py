@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any, Literal, Sequence, overload
 
-from jetpytools import MISSING, CustomRuntimeError, FuncExceptT, MissingT
+from jetpytools import MISSING, CustomRuntimeError, FuncExcept, MissingT
 
 from vsexprtools import ExprOp, ExprVars, combine_expr, norm_expr
 from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
@@ -14,7 +14,7 @@ from vsscale import ArtCNN
 from vstools import (
     ConstantFormatVideoNode,
     KwargsNotNone,
-    PlanesT,
+    Planes,
     VSFunctionNoArgs,
     check_ref_clip,
     check_variable_format,
@@ -55,7 +55,7 @@ def mc_degrain(
     limit: int | tuple[int | None, int | None] | None = None,
     thscd: int | tuple[int | None, int | None] | None = None,
     export_globals: Literal[False] = ...,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> vs.VideoNode: ...
 
 
@@ -75,7 +75,7 @@ def mc_degrain(
     limit: int | tuple[int | None, int | None] | None = None,
     thscd: int | tuple[int | None, int | None] | None = None,
     export_globals: Literal[True] = ...,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> tuple[vs.VideoNode, MVTools]: ...
 
 
@@ -95,7 +95,7 @@ def mc_degrain(
     limit: int | tuple[int | None, int | None] | None = None,
     thscd: int | tuple[int | None, int | None] | None = None,
     export_globals: bool = ...,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]: ...
 
 
@@ -114,7 +114,7 @@ def mc_degrain(
     limit: int | tuple[int | None, int | None] | None = None,
     thscd: int | tuple[int | None, int | None] | None = None,
     export_globals: bool = False,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]:
     """
     Perform temporal denoising using motion compensation.
@@ -216,8 +216,8 @@ def ccd(
     pscale: float = 0.0,
     chroma_upscaler: ScalerLike = ArtCNN.R8F64_Chroma,
     chroma_downscaler: KernelLike = Catrom,
-    planes: PlanesT | MissingT = MISSING,
-    func: FuncExceptT | None = None,
+    planes: Planes | MissingT = MISSING,
+    func: FuncExcept | None = None,
 ) -> vs.VideoNode:
     """
     Camcorder Color Denoise is a VirtualDub filter originally made by Sergey Stolyarevsky.

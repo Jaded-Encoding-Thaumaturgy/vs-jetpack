@@ -5,25 +5,25 @@ from abc import abstractmethod
 from functools import partial, wraps
 from typing import Any, Callable, Literal, Union, overload
 
-from jetpytools import CustomValueError, FuncExceptT, KwargsT, P, T
+from jetpytools import CustomValueError, FuncExcept, KwargsT, P, T
 
 from ..enums import (
     ChromaLocation,
-    ChromaLocationT,
+    ChromaLocationLike,
     ColorRange,
-    ColorRangeT,
+    ColorRangeLike,
     FieldBased,
-    FieldBasedT,
+    FieldBasedLike,
     Matrix,
-    MatrixT,
+    MatrixLike,
     Primaries,
-    PrimariesT,
+    PrimariesLike,
     PropEnum,
     Transfer,
-    TransferT,
+    TransferLike,
 )
 from ..functions import DitherType, check_variable_format, depth
-from ..types import ConstantFormatVideoNode, HoldsVideoFormatT, VideoFormatT, VideoNodeT
+from ..types import ConstantFormatVideoNode, HoldsVideoFormat, VideoFormatLike, VideoNodeT
 from . import vs_proxy as vs
 from .cache import DynamicClipsCache
 from .info import get_depth
@@ -42,11 +42,11 @@ __all__ = [
 
 def finalize_clip(
     clip: vs.VideoNode,
-    bits: VideoFormatT | HoldsVideoFormatT | int | None = 10,
+    bits: VideoFormatLike | HoldsVideoFormat | int | None = 10,
     clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     *,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Finalize a clip for output to the encoder.
@@ -82,7 +82,7 @@ def finalize_output(
     bits: int | None = 10,
     clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> Callable[P, ConstantFormatVideoNode]: ...
 
 
@@ -92,7 +92,7 @@ def finalize_output(
     bits: int | None = 10,
     clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, ConstantFormatVideoNode]]: ...
 
 
@@ -103,7 +103,7 @@ def finalize_output(
     bits: int | None = 10,
     clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> Union[Callable[P, vs.VideoNode], Callable[[Callable[P, vs.VideoNode]], Callable[P, ConstantFormatVideoNode]]]:
     """
     Decorator implementation of [finalize_clip][vstools.finalize_clip].
@@ -122,16 +122,16 @@ def finalize_output(
 def initialize_clip(
     clip: vs.VideoNode,
     bits: int | None = None,
-    matrix: MatrixT | None = None,
-    transfer: TransferT | None = None,
-    primaries: PrimariesT | None = None,
-    chroma_location: ChromaLocationT | None = None,
-    color_range: ColorRangeT | None = None,
-    field_based: FieldBasedT | None = None,
+    matrix: MatrixLike | None = None,
+    transfer: TransferLike | None = None,
+    primaries: PrimariesLike | None = None,
+    chroma_location: ChromaLocationLike | None = None,
+    color_range: ColorRangeLike | None = None,
+    field_based: FieldBasedLike | None = None,
     strict: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     *,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Initialize a clip with default props.
@@ -209,15 +209,15 @@ def initialize_input(
     /,
     *,
     bits: int | None = 16,
-    matrix: MatrixT | None = None,
-    transfer: TransferT | None = None,
-    primaries: PrimariesT | None = None,
-    chroma_location: ChromaLocationT | None = None,
-    color_range: ColorRangeT | None = None,
-    field_based: FieldBasedT | None = None,
+    matrix: MatrixLike | None = None,
+    transfer: TransferLike | None = None,
+    primaries: PrimariesLike | None = None,
+    chroma_location: ChromaLocationLike | None = None,
+    color_range: ColorRangeLike | None = None,
+    field_based: FieldBasedLike | None = None,
     strict: bool = False,
     dither_type: DitherType = DitherType.AUTO,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> Callable[P, VideoNodeT]: ...
 
 
@@ -225,14 +225,14 @@ def initialize_input(
 def initialize_input(
     *,
     bits: int | None = 16,
-    matrix: MatrixT | None = None,
-    transfer: TransferT | None = None,
-    primaries: PrimariesT | None = None,
-    chroma_location: ChromaLocationT | None = None,
-    color_range: ColorRangeT | None = None,
-    field_based: FieldBasedT | None = None,
+    matrix: MatrixLike | None = None,
+    transfer: TransferLike | None = None,
+    primaries: PrimariesLike | None = None,
+    chroma_location: ChromaLocationLike | None = None,
+    color_range: ColorRangeLike | None = None,
+    field_based: FieldBasedLike | None = None,
     dither_type: DitherType = DitherType.AUTO,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> Callable[[Callable[P, VideoNodeT]], Callable[P, VideoNodeT]]: ...
 
 
@@ -241,15 +241,15 @@ def initialize_input(
     /,
     *,
     bits: int | None = 16,
-    matrix: MatrixT | None = None,
-    transfer: TransferT | None = None,
-    primaries: PrimariesT | None = None,
-    chroma_location: ChromaLocationT | None = None,
-    color_range: ColorRangeT | None = None,
-    field_based: FieldBasedT | None = None,
+    matrix: MatrixLike | None = None,
+    transfer: TransferLike | None = None,
+    primaries: PrimariesLike | None = None,
+    chroma_location: ChromaLocationLike | None = None,
+    color_range: ColorRangeLike | None = None,
+    field_based: FieldBasedLike | None = None,
     strict: bool = False,
     dither_type: DitherType = DitherType.AUTO,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> Union[Callable[P, VideoNodeT], Callable[[Callable[P, VideoNodeT]], Callable[P, VideoNodeT]]]:
     """
     Decorator implementation of [initialize_clip][vstools.initialize_clip]

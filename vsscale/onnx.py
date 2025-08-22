@@ -21,7 +21,7 @@ from vstools import (
     CustomValueError,
     DitherType,
     Matrix,
-    MatrixT,
+    MatrixLike,
     ProcessVariableResClip,
     SPath,
     SPathLike,
@@ -450,7 +450,7 @@ class BaseArtCNNLuma(BaseArtCNN):
         width: int,
         height: int,
         shift: tuple[float, float] = (0, 0),
-        matrix: MatrixT | None = None,
+        matrix: MatrixLike | None = None,
         copy_props: bool = False,
     ) -> ConstantFormatVideoNode:
         # Changes compared to BaseGenericScaler are:
@@ -535,7 +535,7 @@ class BaseArtCNNChroma(BaseArtCNN):
         width: int,
         height: int,
         shift: tuple[float, float] = (0, 0),
-        matrix: MatrixT | None = None,
+        matrix: MatrixLike | None = None,
         copy_props: bool = False,
     ) -> ConstantFormatVideoNode:
         if (clip.width, clip.height) != (width, height):

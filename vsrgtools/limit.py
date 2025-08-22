@@ -5,7 +5,7 @@ from typing import Sequence
 from typing_extensions import deprecated
 
 from vsexprtools import norm_expr
-from vstools import PlanesT, fallback, scale_delta, to_arr, vs
+from vstools import Planes, fallback, scale_delta, to_arr, vs
 
 __all__ = ["limit_filter"]
 
@@ -21,7 +21,7 @@ def limit_filter(
     dark_thr: float | Sequence[float] = 1.0,
     bright_thr: float | Sequence[float] = 1.0,
     elast: float | Sequence[float] = 2.0,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> vs.VideoNode:
     """
     Performs a soft-limiting between two clips to limit the difference of filtering while avoiding artifacts.

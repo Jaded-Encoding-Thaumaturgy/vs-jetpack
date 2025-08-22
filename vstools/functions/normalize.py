@@ -4,7 +4,7 @@ from typing import Any, Iterable, Iterator, Literal, Sequence, overload
 
 import vapoursynth as vs
 from jetpytools import (
-    FuncExceptT,
+    FuncExcept,
     SoftRange,
     StrictRange,
     T,
@@ -21,7 +21,7 @@ from jetpytools import normalize_ranges as jetp_normalize_ranges
 from jetpytools import normalize_ranges_to_list as jetp_normalize_ranges_to_list
 from jetpytools import normalize_seq as jetp_normalize_seq
 
-from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, PlanesT, VideoNodeIterableT, VideoNodeT
+from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, Planes, VideoNodeIterableT, VideoNodeT
 
 __all__ = [
     "flatten",
@@ -57,7 +57,7 @@ def normalize_seq(val: T | Sequence[T], length: int = 3) -> list[T]:
     return jetp_normalize_seq(val, length)
 
 
-def normalize_planes(clip: vs.VideoNode, planes: PlanesT = None) -> list[int]:
+def normalize_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:
     """
     Normalize a sequence of planes.
 
@@ -76,7 +76,7 @@ def normalize_planes(clip: vs.VideoNode, planes: PlanesT = None) -> list[int]:
     return sorted(set(planes).intersection(range(clip.format.num_planes)))
 
 
-def invert_planes(clip: vs.VideoNode, planes: PlanesT = None) -> list[int]:
+def invert_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:
     """
     Invert a sequence of planes.
 
@@ -91,7 +91,7 @@ def invert_planes(clip: vs.VideoNode, planes: PlanesT = None) -> list[int]:
 
 
 def normalize_param_planes(
-    clip: vs.VideoNode, param: T | Sequence[T], planes: PlanesT, null: T, func: FuncExceptT | None = None
+    clip: vs.VideoNode, param: T | Sequence[T], planes: Planes, null: T, func: FuncExcept | None = None
 ) -> list[T]:
     """
     Normalize a value or sequence to a list mapped to the clip's planes.

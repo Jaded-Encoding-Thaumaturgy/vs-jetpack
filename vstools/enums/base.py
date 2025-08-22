@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Iterable, TypeVar
 
 import vapoursynth as vs
-from jetpytools import CustomEnum, CustomError, CustomIntEnum, CustomStrEnum, FuncExceptT, classproperty
+from jetpytools import CustomEnum, CustomError, CustomIntEnum, CustomStrEnum, FuncExcept, classproperty
 from typing_extensions import Self
 
 from ..types import VideoNodeT
@@ -55,7 +55,7 @@ class PropEnum(CustomIntEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
     ) -> Self:
         """
         Get an enum member from the frame properties or optionally fall back to resolution when strict=False.
@@ -69,7 +69,7 @@ class PropEnum(CustomIntEnum):
         value: Any,
         src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
         strict: bool = False,
-        func_except: FuncExceptT | None = None,
+        func_except: FuncExcept | None = None,
     ) -> Self:
         """
         Get the enum member from a value that can be casted to this prop value
@@ -92,7 +92,7 @@ class PropEnum(CustomIntEnum):
 
     @classmethod
     def ensure_presence(
-        cls, clip: VideoNodeT, value: int | Self | None, /, func: FuncExceptT | None = None
+        cls, clip: VideoNodeT, value: int | Self | None, /, func: FuncExcept | None = None
     ) -> VideoNodeT:
         """
         Ensure the presence of the property in the VideoNode.
@@ -111,7 +111,7 @@ class PropEnum(CustomIntEnum):
 
     @staticmethod
     def ensure_presences(
-        clip: VideoNodeT, prop_enums: Iterable[type[PropEnum] | PropEnum], func: FuncExceptT | None = None
+        clip: VideoNodeT, prop_enums: Iterable[type[PropEnum] | PropEnum], func: FuncExcept | None = None
     ) -> VideoNodeT:
         """
         Ensure the presence of multiple PropEnums at once.
@@ -161,7 +161,7 @@ def _base_from_video(
     src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
     exception: type[CustomError],
     strict: bool,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> PropEnumT:
     from ..utils import get_prop
 

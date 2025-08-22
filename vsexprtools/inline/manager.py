@@ -14,7 +14,7 @@ from typing import Any, Iterable, Iterator, Sequence, SupportsIndex, cast, overl
 from jetpytools import CustomValueError, to_arr
 from typing_extensions import Self
 
-from vstools import HoldsVideoFormatT, VideoFormatT, get_video_format, vs, vs_object
+from vstools import HoldsVideoFormat, VideoFormatLike, get_video_format, vs, vs_object
 
 from ..error import CustomExprError
 from ..funcs import norm_expr
@@ -28,7 +28,7 @@ __all__ = ["inline_expr"]
 @contextmanager
 def inline_expr(
     clips: vs.VideoNode | Sequence[vs.VideoNode],
-    format: HoldsVideoFormatT | VideoFormatT | None = None,
+    format: HoldsVideoFormat | VideoFormatLike | None = None,
     *,
     enable_polyfills: bool = False,
     **kwargs: Any,
@@ -339,7 +339,7 @@ class InlineExprWrapper(vs_object):
     [Tokens][vsexprtools.inline.helpers.Tokens] object providing access to all `Expr` tokens.
     """
 
-    def __init__(self, clips: Sequence[vs.VideoNode], format: HoldsVideoFormatT | VideoFormatT | None = None) -> None:
+    def __init__(self, clips: Sequence[vs.VideoNode], format: HoldsVideoFormat | VideoFormatLike | None = None) -> None:
         """
         Initializes a new [InlineExprWrapper][vsexprtools.inline.manager.InlineExprWrapper] instance.
 
