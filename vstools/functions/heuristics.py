@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Literal, cast, overload
+from typing import Any, Literal, overload
 
 import vapoursynth as vs
 from jetpytools import KwargsT
 from typing_extensions import deprecated
 
-from ..enums import ChromaLocation, ColorRange, Matrix, Primaries, Transfer
-from ..enums.base import PropEnumT
+from ..enums import ChromaLocation, ColorRange, Matrix, Primaries, PropEnum, Transfer
 
 __all__ = ["video_heuristics", "video_resample_heuristics"]
 
 
 @overload
-def video_heuristics(
+def video_heuristics(  # pyright: ignore[reportOverlappingOverload]
     clip: vs.VideoNode,
     props: vs.FrameProps | bool | None = None,
     prop_in: bool = True,
@@ -35,66 +34,58 @@ def video_heuristics(
     clip: vs.VideoNode, props: vs.FrameProps | bool | None = None, prop_in: bool = True, assumed_return: bool = False
 ) -> dict[str, PropEnum] | tuple[dict[str, PropEnum], list[str]]:
     """
-    Determine the video heuristics from the frame properties.
+    Determine video heuristics from frame properties.
 
     Args:
-        clip: Input clip.
-        props: FrameProps object. If true, it will grab props info from the clip. If None/False, obtains from just from
-            input clip. Default: None.
-        prop_in: Return the dict with keys in the form of `{prop_name}_in` parameter. For example, `matrix_in` instead
-            of `matrix`. For more information, please refer to the `Resize docs
-            <https://www.vapoursynth.com/doc/functions/video/resize.html>`_. Default: True.
+        clip: The input clip.
+        props: Source properties used to retrieve values.
+            If True, uses the frame properties from the clip.
+            Otherwise, values are inferred from the clip's resolution.
+        prop_in: If True, returns a dict with keys in the form `{prop_name}_in` (e.g., `matrix_in`
+            instead of `matrix`).
+            For more details, see the [Resize docs](https://www.vapoursynth.com/doc/functions/video/resize.html).
 
     Returns:
-        A dict containing all the video heuristics that could be determined, optionally using key names derived from the
-        resize plugin.
+        A dict containing all determinable video heuristics, optionally using key names derived
+        from the resize plugin.
     """
+    from ..utils import get_prop
 
     assumed_props = list[str]()
-    props_dict: vs.FrameProps | None
-    heuristics = dict[str, PropEnum]()
 
-    if props is True:
-        with clip.get_frame(0) as frame:
-            props_dict = cast(vs.FrameProps, frame.props.copy())
-    else:
-        props_dict = props or None
+    prop_enums: dict[str, type[PropEnum]] = {
+        "matrix": Matrix,
+        "primaries": Primaries,
+        "transfer": Transfer,
+        "range": ColorRange,
+        "chromaloc": ChromaLocation,
+    }
 
-    def try_or_fallback(prop_type: type[PropEnumT]) -> PropEnumT:
-        try:
-            assert props_dict
-            if prop_type.prop_key in props_dict:
-                return prop_type.from_video(props_dict, True)
-        except Exception:
-            assumed_props.append(prop_type.prop_key)
+    def _get_props(obj: vs.VideoNode | vs.FrameProps, key: type[PropEnum]) -> PropEnum:
+        p = get_prop(obj, key, int, cast=key, default=None, func=video_heuristics)
 
-        return prop_type.from_video(clip)
+        if p is not None and not p.is_unknown(p):
+            return p
 
-    if props:
-        heuristics |= {
-            "matrix": try_or_fallback(Matrix),
-            "primaries": try_or_fallback(Primaries),
-            "transfer": try_or_fallback(Transfer),
-            "range": try_or_fallback(ColorRange),
-            "chromaloc": try_or_fallback(ChromaLocation),
-        }
-    else:
-        heuristics |= {
-            "matrix": Matrix.from_res(clip),
-            "primaries": Primaries.from_res(clip),
-            "transfer": Transfer.from_res(clip),
-            "range": ColorRange.from_res(clip),
-            "chromaloc": ChromaLocation.from_res(clip),
-        }
+        assumed_props.append(key.prop_key)
 
+        return key.from_video(obj, strict=False, func=video_heuristics)
+
+    if props is False or props is None:
+        heuristics = {k: t.from_res(clip) for k, t in prop_enums.items()}
         assumed_props.extend(v.prop_key for v in heuristics.values())
+    elif props is True:
+        heuristics = {k: _get_props(clip, t) for k, t in prop_enums.items()}
+    else:
+        heuristics = {k: _get_props(props, t) for k, t in prop_enums.items()}
 
-    out_props = {f"{k}_in" if prop_in else k: v for k, v in heuristics.items()}
+    if prop_in:
+        heuristics = {f"{k}_in": v for k, v in heuristics.items()}
 
     if assumed_return:
-        return out_props, assumed_props
+        return heuristics, assumed_props
 
-    return out_props
+    return heuristics
 
 
 @deprecated("This function is deprecated and will be removed in a future version.", category=DeprecationWarning)
