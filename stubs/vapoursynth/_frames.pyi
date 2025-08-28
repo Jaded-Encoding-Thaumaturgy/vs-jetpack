@@ -1,10 +1,11 @@
 from ctypes import c_void_p
 from types import MappingProxyType, TracebackType
-from typing import Iterator, Literal, MutableMapping, Self
+from typing import Any, Callable, Iterator, Literal, MutableMapping, Self, TypeAlias
 
 from ._enums import SampleType
 from ._formats import ChannelLayout, VideoFormat
 from ._functions import FramePtr
+from ._nodes import RawNode
 from ._typings import _VapourSynthMapValue
 
 __all__ = [
@@ -84,19 +85,36 @@ class AudioFrame(RawFrame):
     def channels(self) -> ChannelLayout: ...
     def __getitem__(self, index: int) -> audio_view: ...
 
-class FrameProps(MutableMapping[str, _VapourSynthMapValue]):
-    def setdefault(self, key: str, default: _VapourSynthMapValue = 0) -> _VapourSynthMapValue: ...
-    def copy(self) -> MutableMapping[str, _VapourSynthMapValue]: ...
+_PropValue: TypeAlias = (
+    int
+    | float
+    | str
+    | bytes
+    | RawFrame
+    | RawNode
+    | Callable[..., Any]
+    | list[int]
+    | list[float]
+    | list[str]
+    | list[bytes]
+    | list[RawFrame]
+    | list[RawNode]
+    | list[Callable[..., Any]]
+)
+
+class FrameProps(MutableMapping[str, _PropValue]):
+    def setdefault(self, key: str, default: _VapourSynthMapValue = 0) -> _PropValue: ...
+    def copy(self) -> MutableMapping[str, _PropValue]: ...
 
     # Since we're inheriting from the MutableMapping abstract class,
     # we *have* to specify that we have indeed created these methods.
     # If we don't, mypy will complain that we're working with abstract methods.
 
     def __setattr__(self, name: str, value: _VapourSynthMapValue) -> None: ...
-    def __getattr__(self, name: str) -> _VapourSynthMapValue: ...
+    def __getattr__(self, name: str) -> _PropValue: ...
     def __delattr__(self, name: str) -> None: ...
     def __setitem__(self, name: str, value: _VapourSynthMapValue) -> None: ...
-    def __getitem__(self, name: str) -> _VapourSynthMapValue: ...
+    def __getitem__(self, name: str) -> _PropValue: ...
     def __delitem__(self, name: str) -> None: ...
     def __iter__(self) -> Iterator[str]: ...
     def __len__(self) -> int: ...

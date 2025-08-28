@@ -4,10 +4,10 @@ from typing import Any
 
 from vstools import (
     ConstantFormatVideoNode,
-    HoldsVideoFormatT,
+    HoldsVideoFormat,
     Matrix,
-    MatrixT,
-    VideoFormatT,
+    MatrixLike,
+    VideoFormatLike,
     core,
     depth,
     get_video_format,
@@ -100,9 +100,9 @@ class ExampleBicubicKernel(Kernel):
     def resample(
         self,
         clip: vs.VideoNode,
-        format: int | VideoFormatT | HoldsVideoFormatT,
-        matrix: MatrixT | None = None,
-        matrix_in: MatrixT | None = None,
+        format: int | VideoFormatLike | HoldsVideoFormat,
+        matrix: MatrixLike | None = None,
+        matrix_in: MatrixLike | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """

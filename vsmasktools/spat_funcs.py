@@ -8,12 +8,11 @@ from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
     DitherType,
-    FuncExceptT,
+    FuncExcept,
     StrList,
     check_variable,
     depth,
     fallback,
-    get_lowest_value,
     get_peak_value,
     get_sample_type,
     get_y,
@@ -32,13 +31,13 @@ __all__ = ["adg_mask", "flat_mask", "retinex", "texture_mask"]
 
 @overload
 def adg_mask(
-    clip: vs.VideoNode, luma_scaling: float = 8.0, relative: bool = False, func: FuncExceptT | None = None
+    clip: vs.VideoNode, luma_scaling: float = 8.0, relative: bool = False, func: FuncExcept | None = None
 ) -> ConstantFormatVideoNode: ...
 
 
 @overload
 def adg_mask(
-    clip: vs.VideoNode, luma_scaling: Sequence[float] = ..., relative: bool = False, func: FuncExceptT | None = None
+    clip: vs.VideoNode, luma_scaling: Sequence[float] = ..., relative: bool = False, func: FuncExcept | None = None
 ) -> list[ConstantFormatVideoNode]: ...
 
 
@@ -46,7 +45,7 @@ def adg_mask(
     clip: vs.VideoNode,
     luma_scaling: float | Sequence[float] = 8.0,
     relative: bool = False,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode | list[ConstantFormatVideoNode]:
     """
     Generates an adaptive grain mask based on each frame's average luma and pixel value.
@@ -113,7 +112,7 @@ def retinex(
     lower_thr: float = 0.001,
     upper_thr: float = 0.001,
     fast: bool = True,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Multi-Scale Retinex (MSR) implementation for dynamic range and contrast enhancement.
@@ -167,11 +166,9 @@ def retinex(
     expr_balance = "x x.psmMin - x.psmMax x.psmMin - /"
 
     if not is_float:
-        expr_balance = f"{expr_balance} {{ymax}} {{ymin}} - * {{ymin}} + round {{ymin}} {{ymax}} clamp"
+        expr_balance = f"{expr_balance} plane_max plane_min - * plane_min + round plane_min plane_max clamp"
 
-    return norm_expr(
-        msr_stats, expr_balance, None, y, ymin=get_lowest_value(y, False), ymax=get_peak_value(y, False), func=func
-    )
+    return norm_expr(msr_stats, expr_balance, None, y)
 
 
 def flat_mask(src: vs.VideoNode, radius: int = 5, thr: float = 0.011, gauss: bool = False) -> ConstantFormatVideoNode:

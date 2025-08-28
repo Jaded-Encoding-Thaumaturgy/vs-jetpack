@@ -16,9 +16,9 @@ from vsrgtools import MeanMode, gauss_blur, repair
 from vstools import (
     ConstantFormatVideoNode,
     CustomIndexError,
-    FuncExceptT,
+    FuncExcept,
     FunctionUtil,
-    PlanesT,
+    Planes,
     check_progressive,
     check_variable_format,
     core,
@@ -54,9 +54,9 @@ def dehalo_alpha(
     darkstr: IterArr[float] = 0.0,
     brightstr: IterArr[float] = 1.0,
     # Misc params
-    planes: PlanesT = 0,
+    planes: Planes = 0,
     attach_masks: bool = False,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
@@ -137,7 +137,7 @@ def dehalo_alpha(
         if all(0 <= x <= 100 for x in (*lowsens_i, *highsens_i)):
             mask = norm_expr(
                 [Morpho.gradient(work_clip, planes=planes), Morpho.gradient(dehalo, planes=planes)],
-                "x 0 = x y - dup x / ? range_max * {lowsens} - x range_size + range_size 2 * / {highsens} + *",
+                "x 0 = x y - dup x / ? mask_max * {lowsens} - x range_size + range_size 2 * / {highsens} + *",
                 planes,
                 func=util.func,
                 lowsens=(scale_delta(x, 8, clip) for x in lowsens_i),
@@ -147,7 +147,9 @@ def dehalo_alpha(
             if attach_masks:
                 masks_to_prop.append(core.std.SetFrameProps(mask, lowsens=lowsens_i, highsens=highsens_i))
 
-            dehalo = core.std.MaskedMerge(dehalo, work_clip, limiter(mask, planes=planes, func=util.func), planes)
+            dehalo = core.std.MaskedMerge(
+                dehalo, work_clip, limiter(mask, mask=True, planes=planes, func=util.func), planes
+            )
 
         elif lowsens_i.count(-1) == len(lowsens_i) and highsens_i.count(-1) == len(highsens_i):
             pass
@@ -206,7 +208,7 @@ class AlphaBlur:
         self,
         rx: float | Sequence[float] = 2.0,
         ry: float | Sequence[float] | None = None,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -227,7 +229,7 @@ class AlphaBlur:
         self.downscaler = Scaler.ensure_obj(kwargs.get("downscaler", Mitchell()), self.func)
         self.upscaler = Scaler.ensure_obj(kwargs.get("upscaler", BSpline()), self.func)
 
-    def __call__(self, clip: vs.VideoNode, planes: PlanesT = None, **kwargs: Any) -> Any:
+    def __call__(self, clip: vs.VideoNode, planes: Planes = None, **kwargs: Any) -> Any:
         """
         Applies the Gaussian blur approximation to the input clip.
 

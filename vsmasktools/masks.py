@@ -8,8 +8,8 @@ from vstools import (
     DitherType,
     FrameRangeN,
     FrameRangesN,
-    HoldsVideoFormatT,
-    VideoFormatT,
+    HoldsVideoFormat,
+    VideoFormatLike,
     check_ref_clip,
     check_variable,
     check_variable_format,
@@ -53,7 +53,7 @@ def range_mask(clip: vs.VideoNode, rad: int = 2, radc: int = 0) -> ConstantForma
 def strength_zones_mask(
     base: SupportsFloat | vs.VideoNode | None = None,
     zones: Sequence[tuple[FrameRangeN | FrameRangesN, SupportsFloat | vs.VideoNode | None]] | None = None,
-    format: int | VideoFormatT | HoldsVideoFormatT = vs.GRAYS,
+    format: int | VideoFormatLike | HoldsVideoFormat = vs.GRAYS,
     length: int | None = None,
 ) -> ConstantFormatVideoNode:
     """

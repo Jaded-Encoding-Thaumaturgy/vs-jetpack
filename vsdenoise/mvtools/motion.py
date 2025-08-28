@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from collections import defaultdict
+from contextlib import suppress
+from typing import Any
+
+from typing_extensions import deprecated
 
 from vstools import ConstantFormatVideoNode, check_variable_format, vs, vs_object
 
@@ -11,13 +15,12 @@ __all__ = [
 ]
 
 
-class MotionVectors(vs_object):
+class MotionVectors(defaultdict[MVDirection, dict[int, ConstantFormatVideoNode]], vs_object):
     """
     Class for storing and managing motion vectors for a video clip.
-    """
 
-    motion_vectors: dict[MVDirection, dict[int, ConstantFormatVideoNode]]
-    """Dictionary containing both backward and forward motion vectors."""
+    Contains both backward and forward motion vectors.
+    """
 
     mv_multi: ConstantFormatVideoNode
     """Multi-vector clip."""
@@ -32,29 +35,42 @@ class MotionVectors(vs_object):
     """Whether motion vectors have been scaled."""
 
     def __init__(self) -> None:
-        self._init_vects()
+        super().__init__(None, {w: {} for w in MVDirection})
         self.tr = 0
-        self.analysis_data = dict[str, Any]()
+        self.analysis_data = {}
         self.scaled = False
 
-    def _init_vects(self) -> None:
-        self.motion_vectors = {w: {} for w in MVDirection}
+    @property
+    @deprecated(
+        "The `motion_vectors` attribute is deprecated. Use the MotionVectors instance instead.", category=SyntaxWarning
+    )
+    def motion_vectors(self) -> dict[MVDirection, dict[int, ConstantFormatVideoNode]]:
+        """Dictionary containing both backward and forward motion vectors."""
+        return self
+
+    @motion_vectors.setter
+    @deprecated(
+        "The `motion_vectors` attribute is deprecated. Use the MotionVectors instance instead.", category=SyntaxWarning
+    )
+    def motion_vectors(self, value: dict[MVDirection, dict[int, ConstantFormatVideoNode]]) -> None:
+        self.update(value)
 
     def clear(self) -> None:
         """
-        Clear all stored motion vectors and reset the instance.
+        Clear all stored motion vectors.
         """
 
-        for v in self.motion_vectors.values():
+        for v in self.values():
             v.clear()
 
-        self.motion_vectors.clear()
-        if hasattr(self, "mv_multi"):
+        super().clear()
+
+        with suppress(AttributeError):
             del self.mv_multi
+
         self.tr = 0
         self.analysis_data.clear()
         self.scaled = False
-        self._init_vects()
 
     @property
     def has_vectors(self) -> bool:
@@ -62,10 +78,7 @@ class MotionVectors(vs_object):
         Check if motion vectors are available.
         """
 
-        return bool(
-            (self.motion_vectors[MVDirection.BACKWARD] and self.motion_vectors[MVDirection.FORWARD])
-            or hasattr(self, "mv_multi")
-        )
+        return bool((self[MVDirection.BACKWARD] and self[MVDirection.FORWARD]) or hasattr(self, "mv_multi"))
 
     def set_vector(self, vector: vs.VideoNode, direction: MVDirection, delta: int) -> None:
         """
@@ -78,13 +91,7 @@ class MotionVectors(vs_object):
         """
         assert check_variable_format(vector, self.set_vector)
 
-        self.motion_vectors[direction][delta] = vector
+        self[direction][delta] = vector
 
     def __vs_del__(self, core_id: int) -> None:
-        for v in self.motion_vectors.values():
-            for k in v:
-                if not TYPE_CHECKING:
-                    v[k] = None
-
-        if not TYPE_CHECKING:
-            self.mv_multi = None
+        self.clear()

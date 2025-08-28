@@ -8,7 +8,7 @@ from jetpytools import KwargsT
 from vstools import PropEnum
 
 from ..enums import ChromaLocation, ColorRange, Matrix, Primaries, Transfer
-from ..enums.stubs import PropEnumT
+from ..enums.base import PropEnumT
 
 __all__ = ["video_heuristics", "video_resample_heuristics"]
 

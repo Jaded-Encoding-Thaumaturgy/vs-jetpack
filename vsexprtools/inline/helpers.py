@@ -15,17 +15,18 @@ from typing import (
     cast,
 )
 
-from jetpytools import Singleton, SupportsString, to_arr
+from jetpytools import SupportsString, to_arr
+from jetpytools.types.utils import SingletonMeta
 from typing_extensions import Self
 
-from vstools import ConvMode, OnePassConvModeT, flatten, vs, vs_object
+from vstools import ConvMode, OnePassConvMode, flatten, vs, vs_object
 
 from ..exprop import ExprOp, ExprToken
 
 __all__ = ["ClipVar", "ComputedVar", "ExprVar", "ExprVarLike", "LiteralVar", "Operators", "Tokens"]
 
 
-class Operators(Singleton):
+class Operators(metaclass=SingletonMeta):
     """
     A singleton class that defines the expression operators used in [inline_expr][vsexprtools.inline_expr].
     """
@@ -228,6 +229,7 @@ class Operators(Singleton):
         radius: int,
         mode: Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.TEMPORAL],
         exclude: Iterable[tuple[int, int]] | None = None,
+        include: Iterable[tuple[int, int]] | None = None,
     ) -> list[LiteralVar]:
         """
         Convenience method wrapping [ExprOp.matrix][vsexprtools.ExprOp.matrix].
@@ -237,12 +239,13 @@ class Operators(Singleton):
             radius: The radius of the kernel in pixels (e.g., 1 for 3x3).
             mode: The convolution mode. `HV` is not supported.
             exclude: Optional set of (x, y) coordinates to exclude from the matrix.
+            include: Optional set of (x, y) coordinates to include in the matrix.
 
         Returns:
             A list of [LiteralVar][vsexprtools.inline.helpers.LiteralVar] instances
             representing the matrix of expressions.
         """
-        matrix, *_ = ExprOp.matrix(char, radius, mode, exclude)
+        matrix, *_ = ExprOp.matrix(char, radius, mode, exclude, include)
 
         return [LiteralVar(str(m)) for m in matrix]
 
@@ -253,7 +256,7 @@ class Operators(Singleton):
         bias: ExprVarLike | None = None,
         divisor: ExprVarLike | bool = True,
         saturate: bool = True,
-        mode: OnePassConvModeT = ConvMode.SQUARE,
+        mode: OnePassConvMode = ConvMode.SQUARE,
         premultiply: ExprVarLike | None = None,
         multiply: ExprVarLike | None = None,
         clamp: bool = False,
@@ -660,7 +663,7 @@ class ComputedVar(ExprVar):
         Returns:
             A list of strings, one for each plane.
         """
-        return [p.to_str(plane=i) for x, i in zip(self._operations_per_plane, range(num_planes)) for p in x]
+        return [" ".join(p.to_str(plane=i) for p in x) for x, i in zip(self._operations_per_plane, range(num_planes))]
 
     def to_str(self, *, plane: int = 0, **kwargs: Any) -> str:
         """
@@ -703,62 +706,26 @@ class ClipVar(ExprVar, vs_object):
     """
 
     if TYPE_CHECKING:
-        LumaMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The minimum luma value in limited range."""
+        PlaneMin: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Minimum value in the clip's range (chroma-aware)."""
 
-        ChromaMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The minimum chroma value in limited range."""
+        PlaneMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Maximum value in the clip's range (chroma-aware)."""
 
-        LumaMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The maximum luma value in limited range."""
-
-        ChromaMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The maximum chroma value in limited range."""
+        MaskMax: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Maximum value in mask clips."""
 
         Neutral: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
-
-        RangeHalf: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Half of the full range (e.g. 128.0 for 8-bit full range)."""
-
-        RangeSize: Final[ComputedVar] = cast(ComputedVar, ...)
-        """The size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
+        """Neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
 
         RangeMin: Final[ComputedVar] = cast(ComputedVar, ...)
         """Minimum value in full range (chroma-aware)."""
 
-        LumaRangeMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Minimum luma value based on input clip's color range."""
-
-        ChromaRangeMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Minimum chroma value based on input clip's color range."""
-
         RangeMax: Final[ComputedVar] = cast(ComputedVar, ...)
         """Maximum value in full range (chroma-aware)."""
 
-        LumaRangeMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Maximum luma value based on input clip's color range."""
-
-        ChromaRangeMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Maximum chroma value based on input clip's color range."""
-
-        RangeInMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `RangeMin`, but adapts to input `range_in` parameter."""
-
-        LumaRangeInMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `LumaRangeMin`, but adapts to input `range_in`."""
-
-        ChromaRangeInMin: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `ChromaRangeMin`, but adapts to input `range_in`."""
-
-        RangeInMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `RangeMax`, but adapts to input `range_in`."""
-
-        LumaRangeInMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `LumaRangeMax`, but adapts to input `range_in`."""
-
-        ChromaRangeInMax: Final[ComputedVar] = cast(ComputedVar, ...)
-        """Like `ChromaRangeMax`, but adapts to input `range_in`."""
+        RangeSize: Final[ComputedVar] = cast(ComputedVar, ...)
+        """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
     def __init__(self, char: str, node: vs.VideoNode) -> None:
         """
@@ -805,7 +772,12 @@ class ClipVar(ExprVar, vs_object):
     if not TYPE_CHECKING:
 
         def __getattr__(self, name: str) -> ComputedVar:
-            return getattr(tokens, name)(self)
+            try:
+                return getattr(tokens, name)(self)
+            except AttributeError:
+                raise AttributeError(
+                    f"'{self.__class__.__name__}' object has no attribute '{name}'", name=name, obj=self
+                )
 
     def __vs_del__(self, core_id: int) -> None:
         del self._node
@@ -836,68 +808,34 @@ class Token(LiteralVar):
         return ComputedVar(f"{self.value}_{var.char}")
 
 
-class Tokens(Singleton):
+class Tokens(metaclass=SingletonMeta):
     """
     A singleton class that defines the expression tokens used in [inline_expr][vsexprtools.inline_expr].
     """
 
+    __slots__ = ()
+
     if TYPE_CHECKING:
-        LumaMin: Final[Token] = cast(Token, ...)
-        """The minimum luma value in limited range."""
+        PlaneMin: Final[Token] = cast(Token, ...)
+        """Minimum value in the clip's range (chroma-aware)."""
 
-        ChromaMin: Final[Token] = cast(Token, ...)
-        """The minimum chroma value in limited range."""
+        PlaneMax: Final[Token] = cast(Token, ...)
+        """Maximum value in the clip's range (chroma-aware)."""
 
-        LumaMax: Final[Token] = cast(Token, ...)
-        """The maximum luma value in limited range."""
-
-        ChromaMax: Final[Token] = cast(Token, ...)
-        """The maximum chroma value in limited range."""
+        MaskMax: Final[Token] = cast(Token, ...)
+        """Maximum value in mask clips."""
 
         Neutral: Final[Token] = cast(Token, ...)
-        """The neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
-
-        RangeHalf: Final[Token] = cast(Token, ...)
-        """Half of the full range (e.g. 128.0 for 8-bit full range)."""
-
-        RangeSize: Final[Token] = cast(Token, ...)
-        """The size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
+        """Neutral value (e.g. 128 for 8-bit limited, 0 for float)."""
 
         RangeMin: Final[Token] = cast(Token, ...)
         """Minimum value in full range (chroma-aware)."""
 
-        LumaRangeMin: Final[Token] = cast(Token, ...)
-        """Minimum luma value based on input clip's color range."""
-
-        ChromaRangeMin: Final[Token] = cast(Token, ...)
-        """Minimum chroma value based on input clip's color range."""
-
         RangeMax: Final[Token] = cast(Token, ...)
         """Maximum value in full range (chroma-aware)."""
 
-        LumaRangeMax: Final[Token] = cast(Token, ...)
-        """Maximum luma value based on input clip's color range."""
-
-        ChromaRangeMax: Final[Token] = cast(Token, ...)
-        """Maximum chroma value based on input clip's color range."""
-
-        RangeInMin: Final[Token] = cast(Token, ...)
-        """Like `RangeMin`, but adapts to input `range_in` parameter."""
-
-        LumaRangeInMin: Final[Token] = cast(Token, ...)
-        """Like `LumaRangeMin`, but adapts to input `range_in`."""
-
-        ChromaRangeInMin: Final[Token] = cast(Token, ...)
-        """Like `ChromaRangeMin`, but adapts to input `range_in`."""
-
-        RangeInMax: Final[Token] = cast(Token, ...)
-        """Like `RangeMax`, but adapts to input `range_in`."""
-
-        LumaRangeInMax: Final[Token] = cast(Token, ...)
-        """Like `LumaRangeMax`, but adapts to input `range_in`."""
-
-        ChromaRangeInMax: Final[Token] = cast(Token, ...)
-        """Like `ChromaRangeMax`, but adapts to input `range_in`."""
+        RangeSize: Final[Token] = cast(Token, ...)
+        """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
     @cache
     def _get_token(self, name: str) -> Token:
@@ -907,7 +845,12 @@ class Tokens(Singleton):
         __isabstractmethod__ = False
 
         def __getattr__(self, name: str) -> Token:
-            return self._get_token(name)
+            try:
+                return self._get_token(name)
+            except KeyError:
+                raise AttributeError(
+                    f"'{self.__class__.__name__}' object has no attribute '{name}'", name=name, obj=self
+                )
 
 
 tokens = Tokens()

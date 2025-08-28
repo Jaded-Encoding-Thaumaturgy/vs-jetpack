@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC, ABCMeta
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable
 
@@ -34,7 +33,7 @@ __all__ = [
 ]
 
 
-class vs_object(ABC, metaclass=ABCMeta):  # noqa: N801
+class vs_object:  # noqa: N801
     """
     Special object that follows the lifecycle of the VapourSynth environment/core.
 
@@ -66,8 +65,6 @@ class vs_object(ABC, metaclass=ABCMeta):  # noqa: N801
             register_on_creation(self.__vsdel_register)
 
         return self
-
-    def __post_init__(self) -> None: ...
 
     if TYPE_CHECKING:
 

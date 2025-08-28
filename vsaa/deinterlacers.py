@@ -4,9 +4,9 @@ from enum import IntFlag, auto
 from typing import TYPE_CHECKING, Any, Protocol, Sequence, runtime_checkable
 
 from jetpytools import MISSING
-from typing_extensions import Self
+from typing_extensions import Self, TypeVar
 
-from vskernels import Catrom, ComplexScaler, ComplexScalerLike, LeftShift, Scaler, TopShift
+from vskernels import Catrom, ComplexScaler, ComplexScalerLike, LeftShift, MixedScalerProcess, Point, Scaler, TopShift
 from vstools import (
     ChromaLocation,
     ConstantFormatVideoNode,
@@ -29,6 +29,7 @@ __all__ = [
     "Deinterlacer",
     "SangNom",
     "SuperSampler",
+    "SuperSamplerProcess",
     "SupportsBobDeinterlace",
 ]
 
@@ -246,7 +247,8 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
         """
         assert check_variable(clip, self.scale)
 
-        dest_dimensions = list(self._wh_norm(clip, width, height))
+        dims = self._wh_norm(clip, width, height)
+        dest_dimensions = list(dims)
         sy, sx = shift
 
         cloc = list(ChromaLocation.from_video(clip).get_offsets(clip))
@@ -288,8 +290,13 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
         if not self.transpose_first:
             nshift.reverse()
 
+        self._ss_shifts = nshift
+
         if self.noshift:
             noshift = normalize_seq(self.noshift, clip.format.num_planes)
+
+            if all(noshift) and dims == (clip.width, clip.height):
+                return clip
 
             for ns in nshift:
                 for i in range(len(ns)):
@@ -418,7 +425,7 @@ class NNEDI3(SuperSampler):
             "pscrn": self.pscrn,
         } | kwargs
 
-    @Scaler.cached_property
+    @Scaler.cachedproperty
     def kernel_radius(self) -> int:
         match self.nsize:
             case 0 | 4:
@@ -539,7 +546,7 @@ class EEDI2(SuperSampler):
             "pp": self.pp,
         } | kwargs
 
-    @Scaler.cached_property
+    @Scaler.cachedproperty
     def kernel_radius(self) -> int:
         return self.maxd
 
@@ -730,7 +737,7 @@ class EEDI3(SuperSampler):
 
         return eedi3_kwargs | kwargs
 
-    @Scaler.cached_property
+    @Scaler.cachedproperty
     def kernel_radius(self) -> int:
         return self.mdis
 
@@ -806,3 +813,82 @@ class BWDIF(Deinterlacer):
 
     def __vs_del__(self, core_id: int) -> None:
         self.edeint = None
+
+
+if TYPE_CHECKING:
+    # Let's assume the specialized SuperSampler isn't abstract
+    class _ConcreteSuperSampler(SuperSampler):
+        @property
+        def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]: ...
+        def _interpolate(
+            self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any
+        ) -> ConstantFormatVideoNode: ...
+        def get_deint_args(self, **kwargs: Any) -> dict[str, Any]: ...
+else:
+    _ConcreteSuperSampler = SuperSampler
+
+_SuperSamplerWithNNEDI3DefaultT = TypeVar("_SuperSamplerWithNNEDI3DefaultT", bound=SuperSampler, default=NNEDI3)
+
+
+class SuperSamplerProcess(
+    MixedScalerProcess[_SuperSamplerWithNNEDI3DefaultT, Point], _ConcreteSuperSampler, partial_abstract=True
+):
+    """
+    A utility SuperSampler class that applies a given function to a supersampled clip,
+    then downsamples it back using Point.
+
+    If used without a specified scaler, it defaults to inheriting from `NNEDI3`.
+    """
+
+    _default_scaler = NNEDI3
+
+    def __init__(
+        self,
+        *,
+        function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+        noshift: bool | Sequence[bool] = True,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Initialize the SuperSamplerProcess.
+
+        Note:
+            Chroma planes will not align properly during processing.
+            Avoid using this class if accurate chroma placement relative to luma is required.
+
+        Example:
+        ```py
+        processed = SuperSamplerProcess[NNEDI3](function=lambda clip: cool_function(clip, ...)).supersample(
+            src, rfactor=2
+        )
+        ```
+
+        Args:
+            function: A function to apply on the supersampled clip.
+            noshift: Disables sub-pixel shifting after supersampling.
+
+                   - `bool`: Applies to both luma and chroma.
+                   - `Sequence[bool]`: First for luma, second for chroma.
+
+            **kwargs: Additional arguments to the specialized SuperSampler.
+        """
+        super().__init__(function=function, noshift=noshift, **kwargs)
+
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode:
+        ss_clip = super().scale(clip, width, height, shift, **kwargs)
+
+        processed = self.function(ss_clip)
+
+        return self._others[0].scale(
+            processed,
+            clip.width,
+            clip.height,
+            tuple([round(s - 1e-6) for s in dim_shifts] for dim_shifts in reversed(self._ss_shifts)),  # type: ignore[return-value, arg-type]
+        )

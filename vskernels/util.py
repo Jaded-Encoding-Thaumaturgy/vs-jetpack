@@ -1,25 +1,35 @@
 from __future__ import annotations
 
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass
-from functools import partial, wraps
+from functools import cache, partial, wraps
 from math import exp
 from types import GenericAlias
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Generic, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Concatenate,
+    Generic,
+    Union,
+    overload,
+)
 
-from jetpytools import P
-from typing_extensions import Self
+from jetpytools import P, classproperty
+from typing_extensions import Self, TypeIs, TypeVar, TypeVarTuple, Unpack
 
 from vsexprtools import norm_expr
 from vstools import (
     ConstantFormatVideoNode,
     CustomRuntimeError,
     CustomValueError,
-    HoldsVideoFormatT,
+    HoldsVideoFormat,
     Matrix,
-    MatrixT,
+    MatrixLike,
     Transfer,
-    VideoFormatT,
+    VideoFormatLike,
+    VSFunctionNoArgs,
     cachedproperty,
     check_variable_format,
     depth,
@@ -28,12 +38,52 @@ from vstools import (
     vs_object,
 )
 
-from .abstract import Resampler, ResamplerLike, Scaler, ScalerLike
+from .abstract import (
+    ComplexDescaler,
+    ComplexDescalerLike,
+    ComplexKernel,
+    ComplexKernelLike,
+    ComplexScaler,
+    ComplexScalerLike,
+    CustomComplexKernel,
+    CustomComplexKernelLike,
+    Descaler,
+    DescalerLike,
+    Kernel,
+    KernelLike,
+    Resampler,
+    ResamplerLike,
+    Scaler,
+    ScalerLike,
+)
 from .abstract.base import BaseScaler, BaseScalerMeta, _BaseScalerT
 from .kernels import Catrom, Point
 from .types import Center, LeftShift, Slope, TopShift
 
-__all__ = ["BaseScalerSpecializer", "LinearLight", "NoScale", "resample_to"]
+__all__ = [
+    "BaseMixedScaler",
+    "BaseScalerSpecializer",
+    "LinearLight",
+    "MixedScalerProcess",
+    "NoScale",
+    "NoScaleLike",
+    "is_complex_descaler_like",
+    "is_complex_kernel_like",
+    "is_complex_scaler_like",
+    "is_custom_complex_kernel_like",
+    "is_descaler_like",
+    "is_kernel_like",
+    "is_noscale_like",
+    "is_resampler_like",
+    "is_scaler_like",
+    "resample_to",
+]
+
+
+@cache
+def _add_specializer_in_str(cls: BaseScalerSpecializerMeta) -> None:
+    if cls.__specializer__:
+        cls.__name__ += f"[{cls.__specializer__.__name__}]"
 
 
 class BaseScalerSpecializerMeta(BaseScalerMeta):
@@ -41,10 +91,10 @@ class BaseScalerSpecializerMeta(BaseScalerMeta):
     Meta class for BaseScalerSpecializer to handle specialization logic.
     """
 
-    __isspecialized__: bool
+    __specializer__: type[BaseScaler] | None
 
-    def __new__(  # noqa: PYI034
-        mcls,
+    def __new__(  # noqa: PYI019
+        mcls: type[_BaseScalerSpecializerMetaT],
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
@@ -52,19 +102,28 @@ class BaseScalerSpecializerMeta(BaseScalerMeta):
         *,
         specializer: type[BaseScaler] | None = None,
         **kwargs: Any,
-    ) -> BaseScalerSpecializerMeta:
+    ) -> _BaseScalerSpecializerMetaT:
         if specializer is not None:
-            name = f"{name}[{specializer.__name__}]"
             bases = (specializer, *bases)
             namespace["__orig_bases__"] = (specializer, *namespace["__orig_bases__"])
 
-            del namespace["kernel_radius"]
-            del namespace["_default_scaler"]
+            with suppress(KeyError):
+                del namespace["kernel_radius"]
 
         obj = super().__new__(mcls, name, bases, namespace, **kwargs)
-        obj.__isspecialized__ = bool(specializer)
+        obj.__specializer__ = specializer
 
         return obj
+
+    @property
+    def __isspecialized__(self) -> bool:
+        return bool(self.__specializer__)
+
+
+_BaseScalerTs = TypeVarTuple("_BaseScalerTs")
+_BaseScalerSpecializerMetaT = TypeVar("_BaseScalerSpecializerMetaT", bound=BaseScalerSpecializerMeta)
+_ScalerT = TypeVar("_ScalerT", bound=Scaler)
+_ScalerWithCatromDefaultT = TypeVar("_ScalerWithCatromDefaultT", bound=Scaler, default=Catrom)
 
 
 class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseScalerSpecializerMeta, abstract=True):
@@ -78,18 +137,22 @@ class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseSca
 
         def __new__(cls, *args: Any, **kwargs: Any) -> Self:
             if not cls.__isspecialized__:
-                return cls.__class_getitem__(cls._default_scaler)()
+                return cls.__class_getitem__(cls._default_scaler)(*args, **kwargs)
 
             return super().__new__(cls, *args, **kwargs)
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__()
 
-        for k in kwargs:
+        for k in kwargs.copy():
             if hasattr(self, k):
                 setattr(self, k, kwargs.pop(k))
 
         self.kwargs = kwargs
+
+    def __str__(self) -> str:
+        _add_specializer_in_str(self.__class__)
+        return super().__str__()
 
     def __class_getitem__(cls, base_scaler: Any) -> GenericAlias:
         """
@@ -111,10 +174,7 @@ class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseSca
         return GenericAlias(specialized_scaler, (base_scaler,))
 
 
-_ScalerT = TypeVar("_ScalerT", bound=Scaler)
-
-
-class NoScale(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
+class NoScale(BaseScalerSpecializer[_ScalerWithCatromDefaultT], Scaler, partial_abstract=True):
     """
     A utility scaler class that performs no scaling on the input clip.
 
@@ -172,8 +232,118 @@ class NoScale(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
         return NoScale[Scaler.from_param(scaler)]  # type: ignore[return-value,misc]
 
 
+NoScaleLike = str | type[NoScale[_ScalerT]] | NoScale[_ScalerT]
+"""
+Type alias for anything that can resolve to a NoScale scaler.
+
+This includes:
+ - A string identifier.
+ - A class type subclassing `NoScale`.
+ - An instance of `NoScale`.
+"""
+
+
+class BaseMixedScalerMeta(BaseScalerSpecializerMeta, Generic[Unpack[_BaseScalerTs]]):
+    """
+    Meta class for BaseMixedScaler to handle mixed scaling logic.
+    """
+
+    __others__: tuple[Unpack[_BaseScalerTs]]
+
+    def __new__(
+        mcls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        *others: Unpack[_BaseScalerTs],
+        specializer: type[BaseScaler] | None = None,
+        **kwargs: Any,
+    ) -> BaseMixedScalerMeta[Unpack[_BaseScalerTs]]:
+        obj = super().__new__(mcls, name, bases, namespace, specializer=specializer, **kwargs)
+
+        if others:
+            obj.__others__ = others
+        else:
+            for t in namespace["__orig_bases__"]:
+                if (os := getattr(t, "__others__", ())) or (
+                    isinstance(t, GenericAlias) and (os := getattr(t.__origin__, "__others__", ()))
+                ):
+                    obj.__others__ = os
+                    break
+            else:
+                obj.__others__ = ()  # type: ignore[assignment]
+
+        return obj
+
+
+class BaseMixedScaler(
+    BaseScalerSpecializer[_BaseScalerT],
+    Generic[_BaseScalerT, Unpack[_BaseScalerTs]],
+    metaclass=BaseMixedScalerMeta,
+    abstract=True,
+):
+    """
+    An abstract base class to provide mixed or chained scaling for Scaler-like classes.
+    """
+
+    @classproperty
+    @classmethod
+    def _others(cls) -> tuple[Unpack[_BaseScalerTs]]:
+        # Workaround as we can't specify the bound values of a TypeVarTuple yet
+        return tuple(o() for o in cls.__others__)  # type: ignore[operator]
+
+    def __class_getitem__(cls, scalers: Any) -> GenericAlias:
+        """
+        Specialize this class with a given scaler kernel.
+
+        Args:
+            base_scaler: A BaseScaler type(s) used to specialize this class.
+
+        Returns:
+            A new subclass using the provided kernel.
+        """
+        if isinstance(scalers, tuple):
+            specializer, *others = scalers
+        else:
+            specializer = scalers
+            others = []
+
+        if isinstance(specializer, TypeVar):
+            cls.__others__ = tuple(others) or cls.__others__
+            return GenericAlias(cls, (specializer, *cls.__others__))
+
+        mixed_spe = BaseMixedScalerMeta(
+            cls.__name__,
+            (cls,),
+            cls.__dict__.copy(),
+            *tuple(others),
+            specializer=specializer,
+            partial_abstract=True,
+        )
+
+        return GenericAlias(mixed_spe, (specializer, *others))
+
+
+class MixedScalerProcess(BaseMixedScaler[_ScalerT, Unpack[_BaseScalerTs]], Scaler, abstract=True):
+    """
+    An abstract class for chained scaling with an additional processing step.
+    """
+
+    def __init__(self, *, function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode], **kwargs: Any) -> None:
+        """
+        Initialize the MixedScalerProcess.
+
+        Args:
+            function: A function to apply on the scaling pipeline.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
+        """
+        super().__init__(**kwargs)
+
+        self.function = function
+
+
 @dataclass
-class LinearLightProcessing(cachedproperty.baseclass, vs_object):
+class LinearLightProcessing(vs_object):
     ll: LinearLight
 
     def get_linear(self) -> vs.VideoNode:
@@ -211,7 +381,7 @@ class LinearLightProcessing(cachedproperty.baseclass, vs_object):
             )
         self._linear = processed
 
-    linear = cachedproperty[[Self], vs.VideoNode, Self, vs.VideoNode, ...](get_linear, set_linear)
+    linear = cachedproperty[vs.VideoNode](get_linear, set_linear)
     """
     Cached property to use for linear light processing.
     """
@@ -245,8 +415,7 @@ class LinearLightProcessing(cachedproperty.baseclass, vs_object):
 
     def __vs_del__(self, core_id: int) -> None:
         del self._linear
-        del self.__dict__[cachedproperty.cache_key]["get_linear"]
-        del self.__dict__[cachedproperty.cache_key]["out"]
+        cachedproperty.clear_cache(self)
 
 
 @dataclass
@@ -276,7 +445,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
     resampler: ResamplerLike = Catrom
     """Resampler for converting to linear format and converting back to input clip format."""
 
-    out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None
+    out_fmt: int | VideoFormatLike | HoldsVideoFormat | None = None
     """Optional output format."""
 
     @overload
@@ -287,7 +456,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         /,
         sigmoid: bool | tuple[Slope, Center] = False,
         resampler: ResamplerLike = Catrom,
-        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None,
+        out_fmt: int | VideoFormatLike | HoldsVideoFormat | None = None,
     ) -> Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]:
         """
         Example:
@@ -306,7 +475,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         *,
         sigmoid: bool | tuple[Slope, Center] = False,
         resampler: ResamplerLike = Catrom,
-        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None,
+        out_fmt: int | VideoFormatLike | HoldsVideoFormat | None = None,
     ) -> Callable[
         [Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]], Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
     ]:
@@ -326,7 +495,7 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         /,
         sigmoid: bool | tuple[Slope, Center] = False,
         resampler: ResamplerLike = Catrom,
-        out_fmt: int | VideoFormatT | HoldsVideoFormatT | None = None,
+        out_fmt: int | VideoFormatLike | HoldsVideoFormat | None = None,
     ) -> Union[
         Callable[Concatenate[vs.VideoNode, P], vs.VideoNode],
         Callable[
@@ -381,17 +550,15 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         self._exited = True
 
     def __vs_del__(self, core_id: int) -> None:
-        if not TYPE_CHECKING:
-            self.clip = None
-            self.out_fmt = None
-            self._fmt = None
-            self._wclip = None
+        for name in ("clip", "out_fmt", "_fmt", "_wclip"):
+            with suppress(AttributeError):
+                delattr(self, name)
 
 
 def resample_to(
     clip: vs.VideoNode,
-    out_fmt: int | VideoFormatT | HoldsVideoFormatT,
-    matrix: MatrixT | None = None,
+    out_fmt: int | VideoFormatLike | HoldsVideoFormat,
+    matrix: MatrixLike | None = None,
     resampler: ResamplerLike = Catrom,
 ) -> vs.VideoNode:
     out_fmt = get_video_format(out_fmt)
@@ -409,3 +576,63 @@ def resample_to(
         return Point().resample(clip, out_fmt, matrix)
 
     return resampler().resample(clip, out_fmt, matrix)
+
+
+def _is_base_scaler_like(obj: Any, base_scaler: type[BaseScaler]) -> bool:
+    if isinstance(obj, base_scaler) or (isinstance(obj, BaseScalerMeta) and issubclass(obj, base_scaler)):
+        return True
+
+    if isinstance(obj, str):
+        try:
+            base_scaler.from_param(obj)
+        except base_scaler._err_class:
+            return False
+        else:
+            return True
+
+    return False
+
+
+def is_scaler_like(obj: Any) -> TypeIs[ScalerLike]:
+    """Returns true if obj is a ScalerLike"""
+    return _is_base_scaler_like(obj, Scaler)
+
+
+def is_descaler_like(obj: Any) -> TypeIs[DescalerLike]:
+    """Returns true if obj is a DescalerLike"""
+    return _is_base_scaler_like(obj, Descaler)
+
+
+def is_resampler_like(obj: Any) -> TypeIs[ResamplerLike]:
+    """Returns true if obj is a ResamplerLike"""
+    return _is_base_scaler_like(obj, Resampler)
+
+
+def is_kernel_like(obj: Any) -> TypeIs[KernelLike]:
+    """Returns true if obj is a KernelLike"""
+    return _is_base_scaler_like(obj, Kernel)
+
+
+def is_complex_scaler_like(obj: Any) -> TypeIs[ComplexScalerLike]:
+    """Returns true if obj is a ComplexScalerLike"""
+    return _is_base_scaler_like(obj, ComplexScaler)
+
+
+def is_complex_descaler_like(obj: Any) -> TypeIs[ComplexDescalerLike]:
+    """Returns true if obj is a ComplexDescalerLike"""
+    return _is_base_scaler_like(obj, ComplexDescaler)
+
+
+def is_complex_kernel_like(obj: Any) -> TypeIs[ComplexKernelLike]:
+    """Returns true if obj is a ComplexKernelLike"""
+    return _is_base_scaler_like(obj, ComplexKernel)
+
+
+def is_custom_complex_kernel_like(obj: Any) -> TypeIs[CustomComplexKernelLike]:
+    """Returns true if obj is a CustomComplexKernelLike"""
+    return _is_base_scaler_like(obj, CustomComplexKernel)
+
+
+def is_noscale_like(obj: Any) -> TypeIs[NoScaleLike[Scaler]]:
+    """Returns true if obj is a NoScaleLike"""
+    return _is_base_scaler_like(obj, NoScale)

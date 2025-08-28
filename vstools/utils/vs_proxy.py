@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, NoReturn
 from weakref import ReferenceType
 
 import vapoursynth as vs
+from jetpytools import CustomValueError
 from vapoursynth import (
     AUDIO,
     BACK_CENTER,
@@ -1123,26 +1124,42 @@ class VSCoreProxy(CoreProxyBase):
         self,
         threads: int | float | range | tuple[int, int] | list[int] | None = None,
         max_cache: int | None = None,
-        reserve: int | Iterable[int] = 2,
+        reserve: Iterable[int] = [],
     ) -> None:
+        """
+        Configure CPU core affinity and cache settings for VapourSynth.
+
+        This function selects which CPU cores the current process is allowed to run on,
+        and configures the number of worker threads used by VapourSynth. It also allows
+        tuning of the frame buffer cache.
+
+        Args:
+            threads: Defines how many and which CPU cores to use.
+
+                Accepted formats:
+                   - ``None``: Use all available CPU cores.
+                   - ``int``: Use cores ``0`` through ``threads - 1``.
+                   - ``float``: A fraction of available cores (e.g., ``0.5`` = half the cores).
+                   - ``range``: Use the specified range of cores.
+                   - ``tuple[int, int]``: Equivalent to ``range(start, stop)``.
+                   - ``list[int]``: Explicit list of core indices.
+
+            max_cache: Maximum VapourSynth frame buffer cache size, in megabytes.
+                If ``None``, the default setting is preserved.
+
+        Raises:
+            CustomValueError: If ``threads`` is lower than or equal to 0.
+        """
         from psutil import Process
-
-        """
-        Set core affinity.
-
-        :param threads:     How many and which threads to use for VapourSynth.
-        :param max_cache:   Maximum cache used for frame data in VapourSynth.
-        :param reserve:     Reserve n amount of or the specified threads.
-
-        :raises DependencyNotFoundError:    Psutil was not found.
-        """
 
         if threads is None:
             threads = cpu_count()
 
         if isinstance(threads, float):
-            if threads >= 0.0 or threads >= 1.0:
-                threads = 1.0
+            if threads <= 0:
+                raise CustomValueError(
+                    "When passing a float, `threads` should be greater than 0.", self.set_affinity, threads
+                )
 
             threads = ceil(cpu_count() * threads)
 
@@ -1151,13 +1168,7 @@ class VSCoreProxy(CoreProxyBase):
         elif isinstance(threads, tuple):
             threads = range(*threads)
 
-        threads = list(set(threads))
-
-        if isinstance(reserve, int):
-            if reserve > len(threads):
-                threads = threads[:-reserve]
-        else:
-            threads = [t for t in threads if t not in reserve]
+        threads = list(set(threads) - set(reserve))
 
         self.core.num_threads = len(threads)
 
@@ -1195,7 +1206,7 @@ if TYPE_CHECKING:
 
         def _on_log_message(self, level: MessageType, msg: str) -> None: ...
 
-        def on_policy_registered(self, api: "EnvironmentPolicyAPI") -> None: ...
+        def on_policy_registered(self, api: EnvironmentPolicyAPI) -> None: ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
         def on_policy_cleared(self) -> None: ...
 
@@ -1208,7 +1219,7 @@ if TYPE_CHECKING:
     class VSScriptEnvironmentPolicy(EnvironmentPolicy):
         def __init__(self) -> NoReturn: ...
 
-        def on_policy_registered(self, policy_api: "EnvironmentPolicyAPI") -> None: ...
+        def on_policy_registered(self, policy_api: EnvironmentPolicyAPI) -> None: ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
         def on_policy_cleared(self) -> None: ...
 

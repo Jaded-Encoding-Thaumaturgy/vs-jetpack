@@ -5,8 +5,8 @@ This module defines the base abstract interfaces for general scaling operations.
 from __future__ import annotations
 
 from abc import ABC, ABCMeta
+from contextlib import suppress
 from functools import cache, wraps
-from functools import cached_property as functools_cached_property
 from inspect import Signature
 from math import ceil
 from types import NoneType
@@ -20,12 +20,12 @@ from typing import (
     NoReturn,
     TypeVar,
     Union,
-    cast,
     get_origin,
     overload,
 )
 
-from jetpytools import P, R, T_co
+from jetpytools import P, R, R_co, classproperty
+from jetpytools import cachedproperty as jetpytools_cachedproperty
 from typing_extensions import Self, deprecated
 
 from vstools import (
@@ -33,11 +33,11 @@ from vstools import (
     CustomNotImplementedError,
     CustomRuntimeError,
     CustomValueError,
-    FuncExceptT,
-    HoldsVideoFormatT,
+    FuncExcept,
+    HoldsVideoFormat,
     Matrix,
-    MatrixT,
-    VideoFormatT,
+    MatrixLike,
+    VideoFormatLike,
     VideoNodeT,
     check_correct_subsampling,
     check_variable_format,
@@ -117,39 +117,44 @@ def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Calla
 
 def _base_from_param(
     cls: type[_BaseScalerT],
-    value: str | type[BaseScaler] | BaseScaler | None,
+    value: str | type[_BaseScalerT] | _BaseScalerT | None,
     exception_cls: type[_UnknownBaseScalerError],
-    func_except: FuncExceptT | None,
+    func_except: FuncExcept | None,
 ) -> type[_BaseScalerT]:
-    if isinstance(value, str):
-        all_scalers = {s.__name__.lower(): s for s in get_subclasses(BaseScaler)}
-
-        try:
-            return cast(type[_BaseScalerT], all_scalers[value.lower().strip()])
-        except KeyError:
-            raise exception_cls(func_except or cls.from_param, value)
-
-    if isinstance(value, type) or isinstance(get_origin(value), type):
-        return cast(type[_BaseScalerT], value)
-
+    # If value is an instance returns the class
     if isinstance(value, cls):
         return value.__class__
 
-    return cls
+    # If value is a type and a subclass of the caller returns the value itself
+    if isinstance(value, BaseScalerMeta) and issubclass(value, cls):
+        return value
+
+    # The value could be a GenericAlias
+    if origin := get_origin(value):
+        return _base_from_param(cls, origin, exception_cls, func_except)
+
+    # Search for the subclasses of the caller and the caller itself
+    if isinstance(value, str):
+        all_scalers = {s.__name__.lower(): s for s in [*get_subclasses(cls), cls]}
+
+        try:
+            return all_scalers[value.lower().strip()]
+        except KeyError:
+            raise exception_cls(func_except or cls.from_param, value)
+
+    if value is None:
+        return cls
+
+    raise exception_cls(func_except or cls.from_param, str(value))
 
 
 def _base_ensure_obj(
-    cls: type[_BaseScalerT],
-    value: str | type[BaseScaler] | BaseScaler | None,
-    func_except: FuncExceptT | None,
+    cls: type[_BaseScalerT], value: str | type[_BaseScalerT] | _BaseScalerT | None, func_except: FuncExcept | None
 ) -> _BaseScalerT:
-    if value is None:
-        return cls()
-
     if isinstance(value, cls):
         return value
 
-    return cls.from_param(value, func_except)()  # type: ignore[arg-type]
+    return cls.from_param(value, func_except)()
 
 
 @cache
@@ -196,20 +201,22 @@ class BaseScalerMeta(ABCMeta):
       still allowed to be instantiated. It is added to ``partial_abstract_kernels``.
     """
 
-    class cached_property(functools_cached_property[T_co]):  # noqa: N801
+    class cachedproperty(jetpytools_cachedproperty[R_co]):  # noqa: N801
         """
-        Read only version of functools.cached_property.
+        Read only version of jetpytools.cachedproperty.
         """
 
         if TYPE_CHECKING:
 
-            def __init__(self, func: Callable[Concatenate[_BaseScalerT, P], T_co]) -> None: ...
+            def __init__(self, func: Callable[Concatenate[_BaseScalerT, P], R_co]) -> None: ...
 
-        def __set__(self, instance: None, value: Any) -> NoReturn:  # type: ignore[override]
+        def __set__(self, instance: None, value: Any) -> NoReturn:
             """
             Raise an error when attempting to set a cached property.
             """
             raise AttributeError("Can't set attribute")
+
+    cached_property = cachedproperty
 
     def __new__(
         mcls: type[_BaseScalerMetaT],
@@ -233,7 +240,7 @@ class BaseScalerMeta(ABCMeta):
 
         obj = super().__new__(mcls, name, bases, namespace, **kwargs)
 
-        # Decorate the `_implemented_funcs` with `_add_init_kwargs` to add the init kwargs to the funcs.
+        # Decorate the `implemented_funcs` with `_add_init_kwargs` to add the init kwargs to the funcs.
         for impl_func_name in getattr(obj, "_implemented_funcs"):
             func = getattr(obj, impl_func_name)
 
@@ -259,18 +266,14 @@ class BaseScalerMeta(ABCMeta):
         return obj
 
 
-@BaseScalerMeta.cached_property
+@BaseScalerMeta.cachedproperty
 def _partial_abstract_kernel_radius(self: BaseScaler) -> int:
     raise CustomNotImplementedError("kernel_radius is not implemented!", self.__class__)
 
 
-@BaseScalerMeta.cached_property
+@BaseScalerMeta.cachedproperty
 def _static_kernel_radius_property(self: BaseScaler) -> int:
     return ceil(self._static_kernel_radius)
-
-
-_partial_abstract_kernel_radius.attrname = "kernel_radius"
-_static_kernel_radius_property.attrname = "kernel_radius"
 
 
 _BaseScalerMetaT = TypeVar("_BaseScalerMetaT", bound=BaseScalerMeta)
@@ -292,7 +295,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
 
     _implemented_funcs: ClassVar[tuple[str, ...]] = ()
     """
-    Tuple of function names that are implemented.
+    Tuple of function names that are implemented in the current class.
 
     These functions determine which keyword arguments will be extracted from the __init__ method.
     """
@@ -304,17 +307,15 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             Create a new instance of the scaler, validating kernel radius if applicable.
             """
             if _check_kernel_radius(cls):
-                obj = super().__new__(cls)
-                obj.kwargs = {}
-                return obj
+                return super().__new__(cls)
 
     def __init__(self, **kwargs: Any) -> None:
         """
         Initialize the scaler with optional keyword arguments.
 
-        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        These keyword arguments are automatically forwarded to the `implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
-        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        If the same keyword is passed to both `__init__` and one of the `implemented_funcs`,
         the one passed to `func` takes precedence.
 
         Args:
@@ -355,7 +356,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         cls,
         scaler: str | type[Self] | Self | None = None,
         /,
-        func_except: FuncExceptT | None = None,
+        func_except: FuncExcept | None = None,
     ) -> type[Self]:
         """
         Resolve and return a scaler type from a given input (string, type, or instance).
@@ -374,7 +375,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         cls,
         scaler: str | type[Self] | Self | None = None,
         /,
-        func_except: FuncExceptT | None = None,
+        func_except: FuncExcept | None = None,
     ) -> Self:
         """
         Ensure that the input is a scaler instance, resolving it if necessary.
@@ -390,7 +391,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
 
     if TYPE_CHECKING:
 
-        @BaseScalerMeta.cached_property
+        @BaseScalerMeta.cachedproperty
         def kernel_radius(self) -> int:
             """
             Return the effective kernel radius for the scaler.
@@ -417,7 +418,7 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
             f"{self.__class__.__name__}" + "(" + ", ".join(f"{k}={v}" for k, v in (attrs | self.kwargs).items()) + ")"
         )
 
-    @BaseScalerMeta.cached_property
+    @BaseScalerMeta.cachedproperty
     def pretty_string(self) -> str:
         """
         Cached property returning a user-friendly string representation.
@@ -427,8 +428,22 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
         """
         return self._pretty_string()
 
+    @classproperty
+    @classmethod
+    def implemented_funcs(cls) -> frozenset[str]:
+        """
+        Returns a set of function names that are implemented in the current class and the parent classes.
+
+        These functions determine which keyword arguments will be extracted from the __init__ method.
+
+        Returns:
+            Frozen set of function names.
+        """
+        return frozenset(func for klass in cls.mro() for func in getattr(klass, "_implemented_funcs", ()))
+
     def __vs_del__(self, core_id: int) -> None:
-        self.kwargs.clear()
+        with suppress(AttributeError):
+            self.kwargs.clear()
 
 
 _BaseScalerT = TypeVar("_BaseScalerT", bound=BaseScaler)
@@ -446,7 +461,7 @@ class Scaler(BaseScaler):
     scale_function: Callable[..., vs.VideoNode]
     """Scale function called internally when performing scaling operations."""
 
-    _implemented_funcs: ClassVar[tuple[str, ...]] = ("scale",)
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ("scale", "supersample", "multi")
 
     def scale(
         self,
@@ -484,6 +499,10 @@ class Scaler(BaseScaler):
         """
         Supersample a clip by a given scaling factor.
 
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
         Args:
             clip: The source clip.
             rfactor: Scaling factor for supersampling.
@@ -515,6 +534,10 @@ class Scaler(BaseScaler):
     ) -> VideoNodeT:
         """
         Deprecated alias for `supersample`.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
 
         Args:
             clip: The source clip.
@@ -694,9 +717,9 @@ class Resampler(BaseScaler):
     def resample(
         self,
         clip: vs.VideoNode,
-        format: int | VideoFormatT | HoldsVideoFormatT,
-        matrix: MatrixT | None = None,
-        matrix_in: MatrixT | None = None,
+        format: int | VideoFormatLike | HoldsVideoFormat,
+        matrix: MatrixLike | None = None,
+        matrix_in: MatrixLike | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -727,9 +750,9 @@ class Resampler(BaseScaler):
     def get_resample_args(
         self,
         clip: vs.VideoNode,
-        format: int | VideoFormatT | HoldsVideoFormatT,
-        matrix: MatrixT | None,
-        matrix_in: MatrixT | None,
+        format: int | VideoFormatLike | HoldsVideoFormat,
+        matrix: MatrixLike | None,
+        matrix_in: MatrixLike | None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """
@@ -772,7 +795,7 @@ class Kernel(Scaler, Descaler, Resampler):
 
     _err_class: ClassVar[type[_UnknownBaseScalerError]] = UnknownKernelError
 
-    _implemented_funcs: ClassVar[tuple[str, ...]] = ("scale", "descale", "rescale", "resample", "shift")
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ("shift",)
 
     @overload
     def shift(self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift], /, **kwargs: Any) -> ConstantFormatVideoNode:
@@ -870,14 +893,6 @@ class Kernel(Scaler, Descaler, Resampler):
         shifts_left = normalize_seq(shift_left, n_planes)
 
         if n_planes == 1:
-            if len(set(shifts_top)) > 1 or len(set(shifts_left)) > 1:
-                raise CustomValueError(
-                    "Inconsistent shift values detected for a single plane. "
-                    "All shift values must be identical when passing a GRAY clip.",
-                    self.shift,
-                    (shifts_top, shifts_left),
-                )
-
             return _shift(clip, (shifts_top[0], shifts_left[0]))
 
         shifted_planes = [
@@ -885,7 +900,7 @@ class Kernel(Scaler, Descaler, Resampler):
             for plane, top, left in zip(split(clip), shifts_top, shifts_left)
         ]
 
-        return core.std.ShufflePlanes(shifted_planes, [0, 0, 0], clip.format.color_family)
+        return core.std.ShufflePlanes(shifted_planes, [0, 0, 0], clip.format.color_family, clip)
 
     def get_params_args(
         self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any
@@ -977,9 +992,9 @@ class Kernel(Scaler, Descaler, Resampler):
     def get_resample_args(
         self,
         clip: vs.VideoNode,
-        format: int | VideoFormatT | HoldsVideoFormatT,
-        matrix: MatrixT | None,
-        matrix_in: MatrixT | None,
+        format: int | VideoFormatLike | HoldsVideoFormat,
+        matrix: MatrixLike | None,
+        matrix_in: MatrixLike | None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """

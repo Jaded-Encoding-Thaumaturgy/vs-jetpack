@@ -7,7 +7,7 @@ from typing_extensions import deprecated
 from vstools import (
     ConstantFormatVideoNode,
     GenericVSFunction,
-    PlanesT,
+    Planes,
     check_variable_format,
     join,
     normalize_planes,
@@ -24,7 +24,7 @@ __all__ = ["norm_rmode_planes", "normalize_radius"]
     "Use `vstools.normalize_param_planes` instead",
     category=DeprecationWarning,
 )
-def norm_rmode_planes(clip: vs.VideoNode, mode: int | Sequence[int], planes: PlanesT = None) -> list[int]:
+def norm_rmode_planes(clip: vs.VideoNode, mode: int | Sequence[int], planes: Planes = None) -> list[int]:
     from vstools import normalize_param_planes
 
     return normalize_param_planes(clip, mode, planes, 0)
@@ -34,7 +34,7 @@ def normalize_radius(
     clip: vs.VideoNode,
     func: GenericVSFunction[ConstantFormatVideoNode],
     radius: Sequence[float | int] | dict[str, Sequence[float | int]],
-    planes: PlanesT,
+    planes: Planes,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     assert check_variable_format(clip, normalize_radius)

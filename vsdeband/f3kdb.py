@@ -8,9 +8,9 @@ from typing_extensions import Self, deprecated
 from vstools import (
     CustomIntEnum,
     CustomRuntimeError,
-    FuncExceptT,
+    FuncExcept,
     FunctionUtil,
-    PlanesT,
+    Planes,
     core,
     fallback,
     inject_self,
@@ -164,8 +164,8 @@ class F3kdb(Debander):
         blur_first: bool | None = None,
         seed: int | None = None,
         random: RandomAlgoT | tuple[RandomAlgoT, RandomAlgoT] = RandomAlgo.UNIFORM,
-        planes: PlanesT = None,
-        _func: FuncExceptT | None = None,
+        planes: Planes = None,
+        _func: FuncExcept | None = None,
     ) -> vs.VideoNode:
         """
         Args:

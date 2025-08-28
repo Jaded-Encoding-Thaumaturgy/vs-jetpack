@@ -3,8 +3,8 @@ from __future__ import annotations
 import vapoursynth as vs
 from jetpytools import normalize_seq
 
-from ..enums import ColorRange, ColorRangeT
-from ..types import HoldsVideoFormatT, VideoFormatT
+from ..enums import ColorRange, ColorRangeLike
+from ..types import HoldsVideoFormat, VideoFormatLike
 from .info import get_depth, get_video_format
 
 __all__ = [
@@ -22,10 +22,10 @@ __all__ = [
 
 def scale_value(
     value: int | float,
-    input_depth: int | VideoFormatT | HoldsVideoFormatT,
-    output_depth: int | VideoFormatT | HoldsVideoFormatT,
-    range_in: ColorRangeT | None = None,
-    range_out: ColorRangeT | None = None,
+    input_depth: int | VideoFormatLike | HoldsVideoFormat,
+    output_depth: int | VideoFormatLike | HoldsVideoFormat,
+    range_in: ColorRangeLike | None = None,
+    range_out: ColorRangeLike | None = None,
     scale_offsets: bool = True,
     chroma: bool = False,
     family: vs.ColorFamily | None = None,
@@ -106,8 +106,8 @@ def scale_value(
 
 def scale_mask(
     value: int | float,
-    input_depth: int | VideoFormatT | HoldsVideoFormatT,
-    output_depth: int | VideoFormatT | HoldsVideoFormatT,
+    input_depth: int | VideoFormatLike | HoldsVideoFormat,
+    output_depth: int | VideoFormatLike | HoldsVideoFormat,
 ) -> int | float:
     """
     Converts the value to the specified bit depth, or bit depth of the clip/format specified.
@@ -127,10 +127,10 @@ def scale_mask(
 
 def scale_delta(
     value: int | float,
-    input_depth: int | VideoFormatT | HoldsVideoFormatT,
-    output_depth: int | VideoFormatT | HoldsVideoFormatT,
-    range_in: ColorRangeT | None = None,
-    range_out: ColorRangeT | None = None,
+    input_depth: int | VideoFormatLike | HoldsVideoFormat,
+    output_depth: int | VideoFormatLike | HoldsVideoFormat,
+    range_in: ColorRangeLike | None = None,
+    range_out: ColorRangeLike | None = None,
 ) -> int | float:
     """
     Converts the value to the specified bit depth, or bit depth of the clip/format specified.
@@ -162,9 +162,9 @@ def scale_delta(
 
 
 def get_lowest_value(
-    clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
+    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
     chroma: bool = False,
-    range_in: ColorRangeT | None = None,
+    range_in: ColorRangeLike | None = None,
     family: vs.ColorFamily | None = None,
 ) -> float:
     """
@@ -203,24 +203,27 @@ def get_lowest_value(
 
 
 def get_lowest_values(
-    clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
-    range_in: ColorRangeT | None = None,
+    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
+    range_in: ColorRangeLike | None = None,
     family: vs.ColorFamily | None = None,
+    mask: bool = False,
 ) -> list[float]:
     """
     Get the lowest values of all planes of a specified format.
     """
 
+    range_in = ColorRange.FULL if mask else range_in
+
     return normalize_seq(
         [
             get_lowest_value(clip_or_depth, False, range_in, family),
-            get_lowest_value(clip_or_depth, True, range_in, family),
+            get_lowest_value(clip_or_depth, not mask, range_in, family),
         ],
         get_video_format(clip_or_depth).num_planes,
     )
 
 
-def get_neutral_value(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) -> float:
+def get_neutral_value(clip_or_depth: int | VideoFormatLike | HoldsVideoFormat) -> float:
     """
     Returns the neutral point value (e.g. as used by std.MakeDiff) for the specified bit depth,
     or bit depth of the clip/format specified.
@@ -240,7 +243,7 @@ def get_neutral_value(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) -> 
     return 1 << (get_depth(fmt) - 1)
 
 
-def get_neutral_values(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) -> list[float]:
+def get_neutral_values(clip_or_depth: int | VideoFormatLike | HoldsVideoFormat) -> list[float]:
     """
     Get the neutral values of all planes of a specified format.
     """
@@ -250,9 +253,9 @@ def get_neutral_values(clip_or_depth: int | VideoFormatT | HoldsVideoFormatT) ->
 
 
 def get_peak_value(
-    clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
+    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
     chroma: bool = False,
-    range_in: ColorRangeT | None = None,
+    range_in: ColorRangeLike | None = None,
     family: vs.ColorFamily | None = None,
 ) -> float:
     """
@@ -291,15 +294,21 @@ def get_peak_value(
 
 
 def get_peak_values(
-    clip_or_depth: int | VideoFormatT | HoldsVideoFormatT,
-    range_in: ColorRangeT | None = None,
+    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
+    range_in: ColorRangeLike | None = None,
     family: vs.ColorFamily | None = None,
+    mask: bool = False,
 ) -> list[float]:
     """
     Get the peak values of all planes of a specified format.
     """
 
+    range_in = ColorRange.FULL if mask else range_in
+
     return normalize_seq(
-        [get_peak_value(clip_or_depth, False, range_in, family), get_peak_value(clip_or_depth, True, range_in, family)],
+        [
+            get_peak_value(clip_or_depth, False, range_in, family),
+            get_peak_value(clip_or_depth, not mask, range_in, family),
+        ],
         get_video_format(clip_or_depth).num_planes,
     )

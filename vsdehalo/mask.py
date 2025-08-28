@@ -6,15 +6,14 @@ from __future__ import annotations
 
 from typing import Any, Callable, Generic, Iterator, Mapping
 
-from jetpytools import P, R
+from jetpytools import CustomIndexError, P, R
 
-from vsaa import NNEDI3
+from vsaa import NNEDI3, SuperSamplerProcess
 from vsdenoise import Prefilter
 from vsexprtools import ExprOp, norm_expr
-from vskernels import Point
 from vsmasktools import (
     Coordinates,
-    GenericMaskT,
+    MaskLike,
     Morpho,
     Robinson3,
     XxpandMode,
@@ -22,15 +21,15 @@ from vsmasktools import (
     normalize_mask,
 )
 from vsrgtools import BlurMatrixBase, box_blur, contrasharpening_dehalo
-from vsscale import pre_ss as pre_supersampling
+from vsscale import pre_ss as pre_supersample
 from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
-    FuncExceptT,
+    FuncExcept,
     FunctionUtil,
     InvalidColorFamilyError,
-    OneDimConvModeT,
-    PlanesT,
+    OneDimConvMode,
+    Planes,
     check_progressive,
     check_variable,
     get_y,
@@ -73,7 +72,7 @@ class FineDehalo(Generic[P, R]):
         # fine_dehalo mask specific params
         rx: int = 2,
         ry: int | None = None,
-        edgemask: GenericMaskT = Robinson3,
+        edgemask: MaskLike = Robinson3,
         thmi: int = 80,
         thma: int = 128,
         thlimi: int = 50,
@@ -81,8 +80,8 @@ class FineDehalo(Generic[P, R]):
         exclude: bool = True,
         edgeproc: float = 0.0,
         # Misc params
-        planes: PlanesT = 0,
-        func: FuncExceptT | None = None,
+        planes: Planes = 0,
+        func: FuncExcept | None = None,
     ) -> ConstantFormatVideoNode:
         """
         The fine_dehalo mask.
@@ -122,7 +121,7 @@ class FineDehalo(Generic[P, R]):
             # fine_dehalo mask specific params
             rx: int = 2,
             ry: int | None = None,
-            edgemask: GenericMaskT = Robinson3,
+            edgemask: MaskLike = Robinson3,
             thmi: int = 80,
             thma: int = 128,
             thlimi: int = 50,
@@ -130,8 +129,8 @@ class FineDehalo(Generic[P, R]):
             exclude: bool = True,
             edgeproc: float = 0.0,
             # Misc params
-            planes: PlanesT = 0,
-            func: FuncExceptT | None = None,
+            planes: Planes = 0,
+            func: FuncExcept | None = None,
         ) -> None:
             """
             Initialize the mask generation process.
@@ -164,7 +163,7 @@ class FineDehalo(Generic[P, R]):
             edges = normalize_mask(edgemask, work_clip, work_clip, func=func)
 
             # Keeps only the sharpest edges (line edges)
-            strong = norm_expr(edges, f"x {thmif} - {thmaf - thmif} / range_max *", planes, func=func)
+            strong = norm_expr(edges, f"x {thmif} - {thmaf - thmif} / mask_max *", planes, func=func)
 
             # Extends them to include the potential halos
             large = Morpho.expand(strong, rx, ry, planes=planes, func=func)
@@ -177,7 +176,7 @@ class FineDehalo(Generic[P, R]):
             # these zones from the halo removal.
 
             # Includes more edges than previously, but ignores simple details
-            light = norm_expr(edges, f"x {thlimif} - {thlimaf - thlimif} / range_max *", planes, func=func)
+            light = norm_expr(edges, f"x {thlimif} - {thlimaf - thlimif} / mask_max *", planes, func=func)
 
             # To build the exclusion zone, we make grow the edge mask, then shrink
             # it to its original shape. During the growing stage, close adjacent
@@ -215,7 +214,7 @@ class FineDehalo(Generic[P, R]):
             # Smooth again and amplify to grow the mask a bit, otherwise the halo
             # parts sticking to the edges could be missed.
             # Also clamp to legal ranges
-            mask = norm_expr(box_blur(mask, planes=planes), "x 2 * 0 range_max clip", planes, func=func)
+            mask = norm_expr(box_blur(mask, planes=planes), "x 2 * 0 mask_max clip", planes, func=func)
 
             self._edges = edges
             self._strong = strong
@@ -292,7 +291,7 @@ def fine_dehalo(
     # fine_dehalo mask specific params
     rx: int = 2,
     ry: int | None = None,
-    edgemask: GenericMaskT = Robinson3,
+    edgemask: MaskLike = Robinson3,
     thmi: int = 80,
     thma: int = 128,
     thlimi: int = 50,
@@ -302,10 +301,10 @@ def fine_dehalo(
     # Final post processing
     contra: float = 0.0,
     # Misc params
-    pre_ss: int | dict[str, Any] = 1,
-    planes: PlanesT = 0,
+    pre_ss: int = 1,
+    planes: Planes = 0,
     attach_masks: bool = False,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
@@ -352,7 +351,7 @@ def fine_dehalo(
         edgeproc: If greater than 0, adds the edge mask into the final processing. Defaults to 0.0.
         contra: Contra-sharpening level in [contrasharpening_dehalo][vsdehalo.contra.contrasharpening_dehalo].
         pre_ss: Scaling factor for supersampling before processing.
-            If > 1.0, supersamples the clip with NNEDI3, applies dehalo processing, and then downscales back with Point.
+            If > 1, supersamples the clip with NNEDI3, applies dehalo processing, and then downscales back with Point.
         planes: Planes to process.
         attach_masks: Stores the masks as frame properties in the output clip.
             The prop names are `FineDehaloMask` + the masking step.
@@ -366,43 +365,40 @@ def fine_dehalo(
 
     assert check_progressive(clip, func_util.func)
 
-    if isinstance(pre_ss, dict) or pre_ss > 1:
-        pre_kwargs = (
-            pre_ss
-            if isinstance(pre_ss, dict)
-            else {
-                "rfactor": pre_ss,
-                "supersampler": kwargs.pop("pre_supersampler", NNEDI3(noshift=(True, False))),
-                "downscaler": kwargs.pop("pre_downscaler", Point()),
-            }
-        )
+    if pre_ss > 1:
+        if pre_ss & (pre_ss - 1) != 0:
+            raise CustomIndexError("`pre_ss` has to be a power of 2.", func_util.func, pre_ss)
 
-        return pre_supersampling(
+        return pre_supersample(
             clip,
-            lambda clip: fine_dehalo(
-                clip,
-                blur,
-                lowsens,
-                highsens,
-                ss,
-                darkstr,
-                brightstr,
-                rx,
-                ry,
-                edgemask,
-                thmi,
-                thma,
-                thlimi,
-                thlima,
-                exclude,
-                edgeproc,
-                contra,
-                planes=planes,
-                attach_masks=attach_masks,
-                func=func_util.func,
-                **kwargs,
+            sp=SuperSamplerProcess[NNEDI3](
+                function=lambda clip: fine_dehalo(
+                    clip,
+                    blur,
+                    lowsens,
+                    highsens,
+                    ss,
+                    darkstr,
+                    brightstr,
+                    rx,
+                    ry,
+                    edgemask,
+                    thmi,
+                    thma,
+                    thlimi,
+                    thlima,
+                    exclude,
+                    edgeproc,
+                    contra,
+                    planes=planes,
+                    attach_masks=attach_masks,
+                    func=func_util.func,
+                    **kwargs,
+                ),
+                tff=any(p in func_util.norm_planes for p in [1, 2]),
             ),
-            **pre_kwargs,
+            rfactor=pre_ss,
+            mod=1,
             planes=planes,
             func=func_util.func,
         )
@@ -433,7 +429,7 @@ def fine_dehalo(
 
 def fine_dehalo2(
     clip: vs.VideoNode,
-    mode: OneDimConvModeT = ConvMode.HV,
+    mode: OneDimConvMode = ConvMode.HV,
     radius: int = 2,
     mask_radius: int = 2,
     brightstr: float = 1.0,
@@ -487,8 +483,8 @@ def fine_dehalo2(
     if mask_v:
         mask_v = grow_mask(mask_v, mask_radius, coord=Coordinates.HORIZONTAL, multiply=1.8, func=func)
 
-    mask_h = mask_h and limiter(mask_h, func=func)
-    mask_v = mask_v and limiter(mask_v, func=func)
+    mask_h = mask_h and limiter(mask_h, mask=True, func=func)
+    mask_v = mask_v and limiter(mask_v, mask=True, func=func)
 
     fix_weights = list(range(-1, -radius - 1, -1))
     fix_rweights = list(reversed(fix_weights))

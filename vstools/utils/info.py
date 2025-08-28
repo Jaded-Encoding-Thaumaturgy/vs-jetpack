@@ -11,7 +11,7 @@ from vstools import ConstantFormatVideoNode
 from ..enums.other import Dar, Sar
 from ..exceptions import UnsupportedSubsamplingError
 from ..functions import check_variable_format, depth
-from ..types import HoldsVideoFormatT, VideoFormatT
+from ..types import HoldsVideoFormat, VideoFormatLike
 
 __all__ = [
     "expect_bits",
@@ -44,7 +44,7 @@ def get_var_infos(frame: vs.VideoNode | vs.VideoFrame) -> tuple[vs.VideoFormat, 
 
 
 def get_video_format(
-    value: int | VideoFormatT | HoldsVideoFormatT, /, *, sample_type: int | vs.SampleType | None = None
+    value: int | VideoFormatLike | HoldsVideoFormat, /, *, sample_type: int | vs.SampleType | None = None
 ) -> vs.VideoFormat:
     """
     Retrieve a VapourSynth VideoFormat object from various input types.
@@ -87,7 +87,7 @@ def get_video_format(
     return value.format
 
 
-def get_depth(clip: VideoFormatT | HoldsVideoFormatT, /) -> int:
+def get_depth(clip: VideoFormatLike | HoldsVideoFormat, /) -> int:
     """
     Get the bitdepth of a given clip or value.
     """
@@ -95,7 +95,7 @@ def get_depth(clip: VideoFormatT | HoldsVideoFormatT, /) -> int:
     return get_video_format(clip).bits_per_sample
 
 
-def get_sample_type(clip: VideoFormatT | HoldsVideoFormatT | vs.SampleType, /) -> vs.SampleType:
+def get_sample_type(clip: VideoFormatLike | HoldsVideoFormat | vs.SampleType, /) -> vs.SampleType:
     """
     Get the sample type of a given clip.
     """
@@ -106,7 +106,7 @@ def get_sample_type(clip: VideoFormatT | HoldsVideoFormatT | vs.SampleType, /) -
     return get_video_format(clip).sample_type
 
 
-def get_color_family(clip: VideoFormatT | HoldsVideoFormatT | vs.ColorFamily, /) -> vs.ColorFamily:
+def get_color_family(clip: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily, /) -> vs.ColorFamily:
     """
     Get the color family of a given clip.
     """
@@ -184,7 +184,7 @@ def get_resolutions(clip: vs.VideoNode | vs.VideoFrame) -> tuple[tuple[int, int,
     return tuple((plane, *get_plane_sizes(clip, plane)) for plane in range(clip.format.num_planes))
 
 
-def get_subsampling(clip: VideoFormatT | HoldsVideoFormatT, /) -> str | None:
+def get_subsampling(clip: VideoFormatLike | HoldsVideoFormat, /) -> str | None:
     """
     Get the subsampling of a clip as a human-readable name.
 

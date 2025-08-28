@@ -7,7 +7,7 @@ from vsexprtools import norm_expr
 from vskernels import Bilinear
 
 if TYPE_CHECKING:
-    from vsmasktools import EdgeDetectT
+    from vsmasktools import EdgeDetectLike
 
 from vstools import (
     ChromaLocation,
@@ -15,7 +15,7 @@ from vstools import (
     ConvMode,
     FunctionUtil,
     GenericVSFunction,
-    PlanesT,
+    Planes,
     VSFunctionNoArgs,
     check_ref_clip,
     check_variable,
@@ -23,6 +23,7 @@ from vstools import (
     get_y,
     join,
     pick_func_stype,
+    scale_delta,
     scale_mask,
     vs,
 )
@@ -38,7 +39,7 @@ def unsharpen(
     clip: vs.VideoNode,
     strength: float = 1.0,
     blur: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = partial(gauss_blur, sigma=1.5),
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> ConstantFormatVideoNode:
     assert check_variable(clip, unsharpen)
 
@@ -53,12 +54,12 @@ def unsharpen(
 
 def awarpsharp(
     clip: vs.VideoNode,
-    mask: EdgeDetectT | vs.VideoNode | None = None,
+    mask: EdgeDetectLike | vs.VideoNode | None = None,
     thresh: int | float = 128,
     blur: int | GenericVSFunction[vs.VideoNode] | Literal[False] = 3,
     depth: int | Sequence[int] | None = None,
     chroma: bool = False,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> ConstantFormatVideoNode:
     """
     Sharpens edges by warping them.
@@ -118,21 +119,22 @@ def awarpsharp(
 
 def fine_sharp(
     clip: vs.VideoNode,
-    mode: int = 1,
+    mode: int = 0,
     sstr: float = 2.0,
     cstr: float | None = None,
     xstr: float = 0.19,
     lstr: float = 1.49,
     pstr: float = 1.272,
     ldmp: float | None = None,
-    planes: PlanesT = 0,
+    hdmp: float = 0.01,
+    planes: Planes = 0,
 ) -> ConstantFormatVideoNode:
-    from numpy import asarray
-    from scipy import interpolate
-
     func = FunctionUtil(clip, fine_sharp, planes)
 
     if cstr is None:
+        from numpy import asarray
+        from scipy import interpolate
+
         cs = interpolate.CubicSpline(
             (0, 0.5, 1.0, 2.0, 2.5, 3.0, 3.5, 4.0, 8.0, 255.0), (0, 0.1, 0.6, 0.9, 1.0, 1.09, 1.15, 1.19, 1.249, 1.5)
         )
@@ -141,48 +143,35 @@ def fine_sharp(
     if ldmp is None:
         ldmp = sstr + 0.1
 
-    blur_kernel = BlurMatrix.BINOMIAL()
-    blur_kernel2: GenericVSFunction[ConstantFormatVideoNode] = blur_kernel
-
-    if mode < 0:
-        cstr **= 0.8
-        blur_kernel2 = box_blur
-
-    mode = abs(mode)
-
+    if mode == 0:
+        blurred = median_blur(BlurMatrix.BINOMIAL()(func.work_clip, planes), planes=planes)
     if mode == 1:
-        blurred = median_blur(blur_kernel(func.work_clip))
-    elif mode > 1:
-        blurred = blur_kernel(median_blur(func.work_clip))
-    if mode == 3:
-        blurred = median_blur(blurred)
-
-    diff = norm_expr(
-        [func.work_clip, blurred],
-        "range_size 256 / SCL! x y - SCL@ / D! D@ abs DA! D@ 2 pow DP! "
-        "DA@ {lstr} / 1 {pstr} / pow {sstr} * "
-        "DA@ D@ DA@ / D@ ? * DP@ DP@ {ldmp} + / * SCL@ * neutral +",
-        lstr=lstr,
-        pstr=pstr,
-        sstr=sstr,
-        ldmp=ldmp,
-        func=func.func,
-    )
+        blurred = BlurMatrix.BINOMIAL()(median_blur(func.work_clip, planes=planes), planes)
 
     sharp = func.work_clip
 
     if sstr:
-        sharp = sharp.std.MergeDiff(diff)
+        sharp = norm_expr(
+            [func.work_clip, blurred],
+            "x y = x dup x y - range_size 256 / / dup dup dup abs {lstr} / {pstr} pow "
+            "swap3 abs {hdmp} + / swap dup * dup {ldmp} + / * * {sstr} * + ?",
+            planes,
+            lstr=lstr,
+            pstr=1 / pstr,
+            sstr=scale_delta(sstr, 8, clip),
+            ldmp=ldmp,
+            hdmp=hdmp,
+            func=func.func,
+        )
 
     if cstr:
-        diff = norm_expr(diff, "x neutral - {cstr} * neutral +", cstr=cstr, func=func.func)
-        diff = blur_kernel2(diff)
-        sharp = sharp.std.MakeDiff(diff)
+        diff = norm_expr([func.work_clip, sharp], "x y - {cstr} * neutral +", planes, cstr=cstr, func=func.func)
+        sharp = sharp.std.MergeDiff(BlurMatrix.BINOMIAL()(diff, planes))
 
     if xstr:
-        xysharp = norm_expr([sharp, box_blur(sharp)], "x x y - 9.9 * +", func=func.func)
-        rpsharp = repair(xysharp, sharp, 12)
-        sharp = rpsharp.std.Merge(sharp, weight=[1 - xstr])
+        xysharp = norm_expr([sharp, box_blur(sharp, planes=planes)], "x x y - 9.9 * +", planes, func=func.func)
+        rpsharp = repair(xysharp, sharp, 12, planes)
+        sharp = sharp.std.Merge(rpsharp, func.norm_seq(xstr, 0))
 
     return func.return_clip(sharp)
 
@@ -195,7 +184,7 @@ def soothe(
     spatial_radius: int = 1,
     temporal_radius: int = 1,
     scenechange: bool = False,
-    planes: PlanesT = None,
+    planes: Planes = None,
 ) -> ConstantFormatVideoNode:
     sharp_diff = src.std.MakeDiff(flt, planes)
 

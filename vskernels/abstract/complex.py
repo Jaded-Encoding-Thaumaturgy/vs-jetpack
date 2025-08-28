@@ -8,14 +8,14 @@ import sys
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, Union, overload
 
-from jetpytools import CustomIndexError, CustomNotImplementedError, CustomValueError, FuncExceptT, fallback
+from jetpytools import CustomIndexError, CustomNotImplementedError, CustomValueError, FuncExcept, fallback
 
 from vstools import (
     ChromaLocation,
     ConstantFormatVideoNode,
     Dar,
     FieldBased,
-    FieldBasedT,
+    FieldBasedLike,
     KwargsT,
     Resolution,
     Sar,
@@ -65,7 +65,7 @@ def _check_dynamic_keeparscaler_params(
     dar: Any,
     dar_in: Any,
     keep_ar: Any,
-    func: FuncExceptT,
+    func: FuncExcept,
 ) -> bool:
     exceptions = list[CustomNotImplementedError]()
 
@@ -101,17 +101,17 @@ def _check_dynamic_keeparscaler_params(
 
 @overload
 def _descale_shift_norm(
-    shift: ShiftT, assume_progressive: Literal[True], func: FuncExceptT | None = None
+    shift: ShiftT, assume_progressive: Literal[True], func: FuncExcept | None = None
 ) -> tuple[TopShift, LeftShift]: ...
 
 
 @overload
 def _descale_shift_norm(
-    shift: ShiftT, assume_progressive: Literal[False], func: FuncExceptT | None = None
+    shift: ShiftT, assume_progressive: Literal[False], func: FuncExcept | None = None
 ) -> tuple[tuple[TopFieldTopShift, BotFieldTopShift], tuple[TopFieldLeftShift, BotFieldLeftShift]]: ...
 
 
-def _descale_shift_norm(shift: ShiftT, assume_progressive: bool = True, func: FuncExceptT | None = None) -> Any:
+def _descale_shift_norm(shift: ShiftT, assume_progressive: bool = True, func: FuncExcept | None = None) -> Any:
     if assume_progressive:
         if any(isinstance(sh, tuple) for sh in shift):
             raise CustomValueError("You can't descale per-field when the input is progressive!", func, shift)
@@ -128,7 +128,7 @@ def _linearize(
     linear: bool | None,
     sigmoid: bool | tuple[Slope, Center],
     op_partial: partial[VideoNodeT],
-    func: FuncExceptT,
+    func: FuncExcept,
     **kwargs: Any,
 ) -> VideoNodeT:
     if linear is False and sigmoid is not False:
@@ -599,14 +599,6 @@ class ComplexScaler(KeepArScaler, LinearScaler):
         shift_left = normalize_seq(shift_left, n_planes)
 
         if n_planes == 1:
-            if len(set(shift_top)) > 1 or len(set(shift_left)) > 1:
-                raise CustomValueError(
-                    "Inconsistent shift values detected for a single plane. "
-                    "All shift values must be identical when passing a GRAY clip.",
-                    self.scale,
-                    (shift_top, shift_left),
-                )
-
             return super().scale(clip, width, height, (shift_top[0], shift_left[0]), **kwargs)
 
         width, height = self._wh_norm(clip, width, height)
@@ -689,7 +681,7 @@ class ComplexDescaler(LinearDescaler):
         # ComplexDescaler adds border_handling, sample_grid_model, field_based,  ignore_mask and blur
         border_handling: int | BorderHandling = BorderHandling.MIRROR,
         sample_grid_model: int | SampleGridModel = SampleGridModel.MATCH_EDGES,
-        field_based: FieldBasedT | None = None,
+        field_based: FieldBasedLike | None = None,
         ignore_mask: vs.VideoNode | None = None,
         blur: float | None = None,
         **kwargs: Any,
@@ -791,7 +783,7 @@ class ComplexDescaler(LinearDescaler):
         # ComplexDescaler adds border_handling, sample_grid_model, field_based, ignore_mask and blur
         border_handling: int | BorderHandling = BorderHandling.MIRROR,
         sample_grid_model: int | SampleGridModel = SampleGridModel.MATCH_EDGES,
-        field_based: FieldBasedT | None = None,
+        field_based: FieldBasedLike | None = None,
         ignore_mask: vs.VideoNode | None = None,
         blur: float | None = None,
         **kwargs: Any,

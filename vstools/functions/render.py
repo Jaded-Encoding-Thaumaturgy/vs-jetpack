@@ -59,19 +59,6 @@ def clip_async_render(
 ) -> list[T]: ...
 
 
-@overload
-def clip_async_render(
-    clip: vs.VideoNode,
-    outfile: BinaryIO | SPathLike | None = None,
-    progress: str | Callable[[int, int], None] | None = None,
-    callback: Callable[[int, vs.VideoFrame], T] | None = ...,
-    prefetch: int = 0,
-    backlog: int = -1,
-    y4m: bool | None = None,
-    async_requests: int | bool | AsyncRenderConf = False,
-) -> list[T] | None: ...
-
-
 def clip_async_render(
     clip: vs.VideoNode,
     outfile: BinaryIO | SPathLike | None = None,

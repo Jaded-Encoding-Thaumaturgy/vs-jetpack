@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from dataclasses import dataclass
 from itertools import count
-from typing import TYPE_CHECKING, Callable, Iterator, Sequence, SupportsIndex, overload
+from typing import TYPE_CHECKING, Callable, Sequence, SupportsIndex, overload
 
 from vstools import CustomValueError, T, get_prop, set_output, to_arr, vs, vs_object
 
@@ -63,17 +63,17 @@ class SplitTitle:
         return "\n".join(to_print)
 
 
-class TitleAudios(vs_object, list[vs.AudioNode]):
+class TitleAudios(Sequence[vs.AudioNode], vs_object):
     def __init__(self, title: Title) -> None:
         self.title = title
 
         self.cache = dict[int, vs.AudioNode | None](dict.fromkeys(range(len(self.title._audios))))
 
     @overload
-    def __getitem__(self, idx: SupportsIndex, /) -> vs.AudioNode: ...
+    def __getitem__(self, key: SupportsIndex) -> vs.AudioNode: ...
 
     @overload
-    def __getitem__(self, slicidx: slice, /) -> list[vs.AudioNode]: ...
+    def __getitem__(self, key: slice) -> list[vs.AudioNode]: ...
 
     def __getitem__(self, key: SupportsIndex | slice) -> vs.AudioNode | list[vs.AudioNode]:
         if isinstance(key, slice):
@@ -115,14 +115,8 @@ class TitleAudios(vs_object, list[vs.AudioNode]):
     def __len__(self) -> int:
         return len(self.cache)
 
-    def __iter__(self) -> Iterator[vs.AudioNode]:
-        return (self[i] for i in range(len(self)))
-
     def __vs_del__(self, core_id: int) -> None:
         self.cache.clear()
-
-    if not TYPE_CHECKING:
-        __delitem__ = __setitem__ = None
 
 
 @dataclass

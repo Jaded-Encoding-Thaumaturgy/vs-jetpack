@@ -5,7 +5,7 @@ from typing import Any
 from vstools import (
     ConstantFormatVideoNode,
     FieldBased,
-    FieldBasedT,
+    FieldBasedLike,
     FunctionUtil,
     InvalidFramerateError,
     VSFunctionKwArgs,
@@ -25,7 +25,7 @@ __all__ = ["jivtc", "sivtc", "vdecimate", "vfm"]
 def sivtc(
     clip: vs.VideoNode,
     pattern: int = 0,
-    tff: FieldBasedT | bool | None = None,
+    tff: FieldBasedLike | bool | None = None,
     ivtc_cycle: IVTCycles = IVTCycles.CYCLE_10,
 ) -> ConstantFormatVideoNode:
     """
@@ -54,7 +54,7 @@ def sivtc(
 def jivtc(
     clip: vs.VideoNode,
     pattern: int,
-    tff: FieldBasedT | bool | None = None,
+    tff: FieldBasedLike | bool | None = None,
     chroma_only: bool = True,
     postprocess: VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = deblend,
     postdecimate: IVTCycles | None = IVTCycles.CYCLE_05,
@@ -100,7 +100,7 @@ def jivtc(
 
 def vfm(
     clip: vs.VideoNode,
-    tff: FieldBasedT | bool | None = None,
+    tff: FieldBasedLike | bool | None = None,
     mode: VFMMode = VFMMode.TWO_WAY_MATCH_THIRD_COMBED,
     postprocess: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
     **kwargs: Any,

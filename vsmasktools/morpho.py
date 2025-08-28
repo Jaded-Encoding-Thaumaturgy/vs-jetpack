@@ -10,10 +10,10 @@ from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
     CustomValueError,
-    FuncExceptT,
+    FuncExcept,
     GenericVSFunction,
-    PlanesT,
-    SpatialConvModeT,
+    Planes,
+    SpatialConvMode,
     check_variable_format,
     copy_signature,
     core,
@@ -31,13 +31,13 @@ from .types import Coordinates, XxpandMode
 
 __all__ = ["Morpho", "RadiusLike", "grow_mask"]
 
-RadiusLike = int | tuple[int, SpatialConvModeT]
+RadiusLike = int | tuple[int, SpatialConvMode]
 """
 Type alias for specifying a convolution radius.
 
 This can be one of the following:
  - An `int`: Interpreted as a square convolution with size `(2 * radius + 1) x (2 * radius + 1)`.
- - A `tuple[int, SpatialConvModeT]`: A pair specifying the radius and the convolution mode.
+ - A `tuple[int, SpatialConvMode]`: A pair specifying the radius and the convolution mode.
 """
 
 
@@ -56,9 +56,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -86,9 +86,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -117,9 +117,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -156,9 +156,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -195,9 +195,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -239,9 +239,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -282,9 +282,9 @@ class Morpho:
         sh: int | None = None,
         mode: XxpandMode = XxpandMode.RECTANGLE,
         thr: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -312,9 +312,9 @@ class Morpho:
         sh: int | None = None,
         mode: XxpandMode = XxpandMode.RECTANGLE,
         thr: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -343,9 +343,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -380,9 +380,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -417,9 +417,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -475,9 +475,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -519,9 +519,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -563,9 +563,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -617,9 +617,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT | None = None,
+        func: FuncExcept | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -669,7 +669,7 @@ class Morpho:
         midthr: float | Sequence[float] | None = None,
         lowval: float | Sequence[float] | None = None,
         highval: float | Sequence[float] | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
     ) -> ConstantFormatVideoNode:
         """
         Turns every pixel in the image into either `lowval`, if it's below `midthr`, or `highval` otherwise.
@@ -697,7 +697,7 @@ class Morpho:
         midthr: float | Sequence[float] | None = None,
         lowval: float | Sequence[float] | None = None,
         highval: float | Sequence[float] | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
     ) -> ConstantFormatVideoNode:
         """
         Turns every pixel in the mask clip into either `lowval` if it's below `midthr`, or `highval` otherwise.
@@ -731,7 +731,7 @@ class Morpho:
         clamp: bool,
         *,
         op: Literal[ExprOp.MIN, ExprOp.MAX],
-        func: FuncExceptT,
+        func: FuncExcept,
     ) -> TupleExprList:
         if coords:
             _, expr = cls._get_matrix_from_coords(coords, func)
@@ -766,9 +766,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT,
+        func: FuncExcept,
         mm_func: GenericVSFunction[ConstantFormatVideoNode],
         op: Literal[ExprOp.MIN, ExprOp.MAX],
         **kwargs: Any,
@@ -814,10 +814,10 @@ class Morpho:
         sh: int | None = None,
         mode: XxpandMode = XxpandMode.RECTANGLE,
         thr: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
         op: Literal[ExprOp.MIN, ExprOp.MAX],
-        func: FuncExceptT,
+        func: FuncExcept,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         sh = fallback(sh, sw)
@@ -846,9 +846,9 @@ class Morpho:
         iterations: int = 1,
         coords: Sequence[int] | None = None,
         multiply: float | None = None,
-        planes: PlanesT = None,
+        planes: Planes = None,
         *,
-        func: FuncExceptT,
+        func: FuncExcept,
         inflate: bool,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
@@ -900,7 +900,7 @@ class Morpho:
         return mm_func
 
     @staticmethod
-    def _get_matrix_from_coords(coords: Sequence[int], func: FuncExceptT) -> tuple[int, TupleExprList]:
+    def _get_matrix_from_coords(coords: Sequence[int], func: FuncExcept) -> tuple[int, TupleExprList]:
         lc = len(coords)
 
         if lc < 8:
@@ -931,9 +931,9 @@ def grow_mask(
     iterations: int = 1,
     coords: Sequence[int] | None = None,
     multiply: float | None = None,
-    planes: PlanesT = None,
+    planes: Planes = None,
     *,
-    func: FuncExceptT | None = None,
+    func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     func = func or grow_mask

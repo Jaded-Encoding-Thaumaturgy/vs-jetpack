@@ -8,12 +8,12 @@ __all__ = [
     "Align",
     "BaseAlign",
     "ConvMode",
-    "OneDimConvModeT",
-    "OnePassConvModeT",
-    "SpatialConvModeT",
-    "TempConvModeT",
-    "TwoDimConvModeT",
-    "TwoPassesConvModeT",
+    "OneDimConvMode",
+    "OnePassConvMode",
+    "SpatialConvMode",
+    "TempConvMode",
+    "TwoDimConvMode",
+    "TwoPassesConvMode",
 ]
 
 
@@ -84,23 +84,41 @@ class ConvMode(CustomStrEnum):
         return self in ["t"]
 
 
-OnePassConvModeT: TypeAlias = Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.TEMPORAL]
+OnePassConvMode: TypeAlias = Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.TEMPORAL]
 """Type alias for one pass convolution mode"""
 
-TwoPassesConvModeT: TypeAlias = Literal[ConvMode.HV]
+TwoPassesConvMode: TypeAlias = Literal[ConvMode.HV]
 """Type alias for two passes convolution mode"""
 
-OneDimConvModeT: TypeAlias = Literal[ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.HV]
+OneDimConvMode: TypeAlias = Literal[ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.HV]
 """Type alias for one dimension convolution mode"""
 
-TwoDimConvModeT: TypeAlias = Literal[ConvMode.SQUARE]
+TwoDimConvMode: TypeAlias = Literal[ConvMode.SQUARE]
 """Type alias for two dimensions convolution mode"""
 
-SpatialConvModeT: TypeAlias = Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.HV]
+SpatialConvMode: TypeAlias = Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.HV]
 """Type alias for spatial convolution mode only"""
 
-TempConvModeT: TypeAlias = Literal[ConvMode.TEMPORAL]
+TempConvMode: TypeAlias = Literal[ConvMode.TEMPORAL]
 """Type alias for temporal convolution mode only"""
+
+OnePassConvModeT = OnePassConvMode
+"""Deprecated alias of OnePassConvMode"""
+
+TwoPassesConvModeT = TwoPassesConvMode
+"""Deprecated alias of TwoPassesConvMode"""
+
+OneDimConvModeT = OneDimConvMode
+"""Deprecated alias of OneDimConvMode"""
+
+TwoDimConvModeT = TwoDimConvMode
+"""Deprecated alias of TwoDimConvMode"""
+
+SpatialConvModeT = SpatialConvMode
+"""Deprecated alias of SpatialConvMode"""
+
+TempConvModeT = TempConvMode
+"""Deprecated alias of TempConvMode"""
 
 
 class BaseAlign(CustomIntEnum):

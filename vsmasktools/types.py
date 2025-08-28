@@ -5,9 +5,9 @@ from typing import Callable, Union
 from vstools import CustomEnum, vs
 
 from .abstract import GeneralMask
-from .edge._abstract import EdgeDetectT, RidgeDetectT
+from .edge._abstract import EdgeDetectLike, RidgeDetectLike
 
-__all__ = ["Coordinates", "GenericMaskT", "XxpandMode"]
+__all__ = ["Coordinates", "GenericMaskT", "MaskLike", "XxpandMode"]
 
 
 class XxpandMode(CustomEnum):
@@ -50,6 +50,15 @@ class Coordinates(tuple[int, ...], CustomEnum):
         return cls.RECTANGLE
 
 
-GenericMaskT = Union[
-    vs.VideoNode, Callable[[vs.VideoNode, vs.VideoNode], vs.VideoNode], EdgeDetectT, RidgeDetectT, GeneralMask, str
+MaskLike = Union[
+    vs.VideoNode,
+    Callable[[vs.VideoNode, vs.VideoNode], vs.VideoNode],
+    EdgeDetectLike,
+    RidgeDetectLike,
+    GeneralMask,
+    str,
 ]
+"""Type alias for anything that can resolve to a mask."""
+
+GenericMaskT = MaskLike
+"""Deprecated alias of MaskLike"""

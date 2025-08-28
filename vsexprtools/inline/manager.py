@@ -7,15 +7,19 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from functools import cache
+from inspect import currentframe
+from types import FrameType
 from typing import Any, Iterable, Iterator, Sequence, SupportsIndex, cast, overload
 
 from jetpytools import CustomValueError, to_arr
 from typing_extensions import Self
 
-from vstools import HoldsVideoFormatT, VideoFormatT, get_video_format, vs, vs_object
+from vstools import HoldsVideoFormat, VideoFormatLike, get_video_format, vs, vs_object
 
+from ..error import CustomExprError
 from ..funcs import norm_expr
 from ..util import ExprVars
+from .error import CustomInlineExprError
 from .helpers import ClipVar, ComputedVar, ExprVarLike, Operators, Tokens
 
 __all__ = ["inline_expr"]
@@ -24,7 +28,7 @@ __all__ = ["inline_expr"]
 @contextmanager
 def inline_expr(
     clips: vs.VideoNode | Sequence[vs.VideoNode],
-    format: HoldsVideoFormatT | VideoFormatT | None = None,
+    format: HoldsVideoFormat | VideoFormatLike | None = None,
     *,
     enable_polyfills: bool = False,
     **kwargs: Any,
@@ -104,7 +108,7 @@ def inline_expr(
                 x, *_ = ie.vars
 
                 # Normalize luma to 0-1 range
-                norm_luma = (x - x.LumaRangeInMin) * (ie.as_var(1) / (x.LumaRangeInMax - x.LumaRangeInMin))
+                norm_luma = (x - x.PlaneMin) / (x.PlaneMax - x.PlaneMin)
                 # Ensure normalized luma stays within bounds
                 norm_luma = ie.op.clamp(norm_luma, 0, 1)
 
@@ -112,7 +116,7 @@ def inline_expr(
                 curve_strength = (slope - 1) * smooth  # Slope increases contrast in darker regions
 
                 # Compute a non-linear boost that emphasizes dark details without crushing blacks
-                nonlinear_boost = curve_strength * ((1 + smooth) - (ie.op.sin(smooth) / (norm_luma + smooth)))
+                nonlinear_boost = curve_strength * ((1 + smooth) - ((1 + smooth) * smooth / (norm_luma + smooth)))
 
                 # Combine the non-linear boost with the normalized luma
                 # Boosts shadows while preserving highlights
@@ -124,10 +128,6 @@ def inline_expr(
                 # Assign the processed luma to the Y plane
                 ie.out.y = weight_mul
 
-                # Round only if the format is integer
-                if clip.format.sample_type is vs.INTEGER:
-                    ie.out.y = ie.op.round(ie.out.y)
-
                 if ColorRange.from_video(clip).is_full or clip.format.sample_type is vs.FLOAT:
                     ie.out.uv = x
                 else:
@@ -135,11 +135,10 @@ def inline_expr(
                     #  - Subtract neutral chroma (e.g., 128) to center around zero
                     #  - Scale based on the input chroma range (e.g., 240 - 16)
                     #  - Add half of full range to re-center in full output range
-                    chroma_mult = x.RangeMax / (x.ChromaRangeInMax - x.ChromaRangeInMin)
-                    chroma_boosted = (x - x.Neutral) * chroma_mult + x.RangeHalf
+                    chroma_expanded = ((x - x.Neutral) / (x.PlaneMax - x.PlaneMin) + 0.5) * x.RangeMax
 
                     # Apply the adjusted chroma values to U and V planes
-                    ie.out.uv = ie.op.round(chroma_boosted)
+                    ie.out.uv = ie.op.round(chroma_expanded)
 
             # Final output is flagged as full-range video
             return ColorRange.FULL.apply(ie.clip)
@@ -274,24 +273,39 @@ def inline_expr(
     """
     clips = to_arr(clips)
     ie = InlineExprWrapper(clips, format)
+    kwargs.setdefault("func", inline_expr)
+
+    locals_before = _capture_locals(currentframe(), 2)
 
     try:
         if enable_polyfills:
-            from .polyfills import disable_poly, enable_poly
+            from .polyfills import enable_poly
 
             enable_poly()
 
         yield ie
     finally:
         if enable_polyfills:
-            disable_poly()  # pyright: ignore[reportPossiblyUnboundVariable]
+            from .polyfills import disable_poly
 
-    kwargs.setdefault("func", inline_expr)
+            disable_poly()
 
-    ie._compute_expr(**kwargs)
+    with CustomExprError.catch() as catcher:
+        ie._compute_expr(**kwargs)
+
+    if not catcher.error:
+        return None
+
+    locals_after = _capture_locals(currentframe(), 2)
+    vars_in_context = {k: locals_after.get(k) for k in locals_after - locals_before.keys()}
+
+    error = CustomInlineExprError(catcher.error)
+    error.add_stack_infos(vars_in_context, ie)
+
+    raise error.with_traceback(catcher.tb)
 
 
-class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"], vs_object):
+class InlineExprWrapper(vs_object):
     """
     A wrapper class for constructing and evaluating VapourSynth expressions inline using Python syntax.
 
@@ -313,19 +327,6 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
 
     result = ie.clip
     ```
-
-    Note:
-        The `InlineExprWrapper` also behaves like a tuple containing:
-
-        - The clip variables (`vars`).
-        - Expression operator functions (`op`).
-        - The wrapper itself (`ie`).
-
-        This allows unpacking like:
-        ```py
-        with inline_expr([clip_a, clip_b]) as (vars, op, ie):
-            ...
-        ```
     """
 
     op = Operators()
@@ -338,10 +339,7 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
     [Tokens][vsexprtools.inline.helpers.Tokens] object providing access to all `Expr` tokens.
     """
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
-        return super().__new__(cls)
-
-    def __init__(self, clips: Sequence[vs.VideoNode], format: HoldsVideoFormatT | VideoFormatT | None = None) -> None:
+    def __init__(self, clips: Sequence[vs.VideoNode], format: HoldsVideoFormat | VideoFormatLike | None = None) -> None:
         """
         Initializes a new [InlineExprWrapper][vsexprtools.inline.manager.InlineExprWrapper] instance.
 
@@ -356,13 +354,13 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
         self._final_clip: vs.VideoNode | None = None
 
     @overload
-    def __getitem__(self, i: SupportsIndex, /) -> Sequence[ClipVar] | Operators | Self: ...
+    def __getitem__(self, i: SupportsIndex, /) -> Any: ...
     @overload
-    def __getitem__(self, i: slice[Any, Any, Any], /) -> tuple[Sequence[ClipVar] | Operators | Self]: ...
+    def __getitem__(self, i: slice[Any, Any, Any], /) -> tuple[Any, ...]: ...
     def __getitem__(self, i: SupportsIndex | slice[Any, Any, Any]) -> Any:
         return self._inner[i]
 
-    def __iter__(self) -> Iterator[Sequence[ClipVar] | Operators | Self]:
+    def __iter__(self) -> Iterator[Any]:
         yield from self._inner
 
     def __next__(self) -> Any:
@@ -449,3 +447,24 @@ class InlineExprWrapper(tuple[Sequence[ClipVar], Operators, "InlineExprWrapper"]
         del self._final_clip
         del self._nodes
         del self._format
+
+
+def _capture_locals(frame: FrameType | None, level: int = 0) -> dict[str, Any]:
+    """Snapshot locals from a given frame depth, with no frame leaks."""
+    assert frame
+
+    f = frame
+    frames = list[FrameType]()
+    try:
+        while level > 0:
+            f = f.f_back
+            assert f
+            frames.append(f)
+            level -= 1
+
+        return f.f_locals.copy()
+    finally:
+        for fr in frames:
+            del fr
+        del f
+        del frame

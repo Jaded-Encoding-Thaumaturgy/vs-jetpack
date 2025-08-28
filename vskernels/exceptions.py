@@ -4,7 +4,7 @@ from typing import Any, ClassVar
 
 from jetpytools import fallback
 
-from vstools import CustomValueError, FuncExceptT
+from vstools import CustomValueError, FuncExcept
 
 __all__ = ["UnknownDescalerError", "UnknownKernelError", "UnknownResamplerError", "UnknownScalerError"]
 
@@ -17,7 +17,7 @@ class _UnknownBaseScalerError(CustomValueError):
     _placeholder: ClassVar[str]
     _message: ClassVar[str]
 
-    def __init__(self, func: FuncExceptT, name: str, message: str | None = None, **kwargs: Any) -> None:
+    def __init__(self, func: FuncExcept, name: str, message: str | None = None, **kwargs: Any) -> None:
         """
         Instantiate a new exception with pretty printing and more.
 

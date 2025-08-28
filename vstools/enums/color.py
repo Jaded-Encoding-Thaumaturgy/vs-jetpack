@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 import vapoursynth as vs
-from jetpytools import FuncExceptT
+from jetpytools import FuncExcept
+from typing_extensions import Self
 
 from ..exceptions import (
     ReservedMatrixError,
@@ -17,23 +18,27 @@ from ..exceptions import (
     UnsupportedPrimariesError,
     UnsupportedTransferError,
 )
-from ..types import HoldsPropValueT, KwargsT
-from .stubs import PropEnum, _base_from_video, _ColorRangeMeta, _MatrixMeta, _PrimariesMeta, _TransferMeta
+from ..types import HoldsPropValue
+from .base import PropEnum, _base_from_video
 
 __all__ = [
     "ColorRange",
-    "ColorRangeT",
+    "ColorRangeLike",
+    "ColorRangeT",  # Deprecated alias
     "Matrix",
-    "MatrixT",
+    "MatrixLike",
+    "MatrixT",  # Deprecated alias
     "Primaries",
-    "PrimariesT",
+    "PrimariesLike",
+    "PrimariesT",  # Deprecated alias
     "PropEnum",
     "Transfer",
-    "TransferT",
+    "TransferLike",
+    "TransferT",  # Deprecated alias
 ]
 
 
-class Matrix(_MatrixMeta):  # type: ignore[misc]
+class Matrix(PropEnum):
     """
     Matrix coefficients ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.5).
     """
@@ -41,7 +46,7 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
     _value_: int
 
     @classmethod
-    def _missing_(cls: type[Matrix], value: Any) -> Matrix | None:
+    def _missing_(cls, value: Any) -> Matrix | None:
         value = super()._missing_(value)
 
         if value is None:
@@ -196,6 +201,42 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
     See ITU-T H.265 Equations E-65 to E-67 for `transfer_characteristics` value 18 (HLG)
     """
 
+    if TYPE_CHECKING:
+
+        @overload
+        @classmethod
+        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
+
+        @overload
+        @classmethod
+        def from_param(cls, value: MatrixLike, func_except: FuncExcept | None = None) -> Self: ...
+
+        @overload
+        @classmethod
+        def from_param(cls, value: MatrixLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
+
+        @classmethod
+        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
+            """
+            Determine the Matrix through a parameter.
+
+            Args:
+                value: Value or Matrix object.
+                func_except: Function returned for custom error handling.
+
+            Returns:
+                Matrix object or None.
+            """
+
+        @classmethod
+        def from_param_or_video(
+            cls,
+            value: MatrixLike | None,
+            src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+            strict: bool = False,
+            func_except: FuncExcept | None = None,
+        ) -> Matrix: ...
+
     @classmethod
     def is_unknown(cls, value: int | Matrix) -> bool:
         """
@@ -233,7 +274,7 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
     ) -> Matrix:
         """
         Obtain the matrix of a clip from the frame properties.
@@ -309,7 +350,7 @@ class Matrix(_MatrixMeta):  # type: ignore[misc]
         return _matrix_name_map.get(self, super().string)
 
 
-class Transfer(_TransferMeta):  # type: ignore[misc]
+class Transfer(PropEnum):
     """
     Transfer characteristics ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.4).
     """
@@ -317,7 +358,7 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
     _value_: int
 
     @classmethod
-    def _missing_(cls: type[Transfer], value: Any) -> Transfer | None:
+    def _missing_(cls, value: Any) -> Transfer | None:
         value = super()._missing_(value)
 
         if value is None:
@@ -486,6 +527,43 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
     Sony S-Log2
     """
 
+    if TYPE_CHECKING:
+
+        @overload
+        @classmethod
+        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
+
+        @overload
+        @classmethod
+        def from_param(cls, value: TransferLike, func_except: FuncExcept | None = None) -> Self: ...
+
+        @overload
+        @classmethod
+        def from_param(cls, value: TransferLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
+
+        @classmethod
+        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
+            """
+            Determine the Transfer through a parameter.
+
+            Args:
+                value: Value or Transfer object.
+                func_except: Function returned for custom error handling. This should only be set by VS package
+                    developers.
+
+            Returns:
+                Transfer object or None.
+            """
+
+        @classmethod
+        def from_param_or_video(
+            cls,
+            value: TransferLike | None,
+            src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+            strict: bool = False,
+            func_except: FuncExcept | None = None,
+        ) -> Transfer: ...
+
     @classmethod
     def is_unknown(cls, value: int | Transfer) -> bool:
         """
@@ -520,7 +598,7 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
     ) -> Transfer:
         """
         Obtain the transfer of a clip from the frame properties.
@@ -629,7 +707,7 @@ class Transfer(_TransferMeta):  # type: ignore[misc]
         return _transfer_name_map.get(self, super().string)
 
 
-class Primaries(_PrimariesMeta):  # type: ignore[misc]
+class Primaries(PropEnum):
     """
     Color primaries ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.3).
     """
@@ -637,7 +715,7 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
     _value_: int
 
     @classmethod
-    def _missing_(cls: type[Primaries], value: Any) -> Primaries | None:
+    def _missing_(cls, value: Any) -> Primaries | None:
         value = super()._missing_(value)
 
         if value is None:
@@ -873,6 +951,43 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
     ACES Primaries #1
     """
 
+    if TYPE_CHECKING:
+
+        @overload
+        @classmethod
+        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
+
+        @overload
+        @classmethod
+        def from_param(cls, value: PrimariesLike, func_except: FuncExcept | None = None) -> Self: ...
+
+        @overload
+        @classmethod
+        def from_param(cls, value: PrimariesLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
+
+        @classmethod
+        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
+            """
+            Determine the Primaries through a parameter.
+
+            Args:
+                value: Value or Primaries object.
+                func_except: Function returned for custom error handling. This should only be set by VS package
+                    developers.
+
+            Returns:
+                Primaries object or None.
+            """
+
+        @classmethod
+        def from_param_or_video(
+            cls,
+            value: PrimariesLike | None,
+            src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+            strict: bool = False,
+            func_except: FuncExcept | None = None,
+        ) -> Primaries: ...
+
     @classmethod
     def is_unknown(cls, value: int | Primaries) -> bool:
         """
@@ -910,7 +1025,7 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
     ) -> Primaries:
         """
         Obtain the primaries of a clip from the frame properties.
@@ -1019,7 +1134,7 @@ class Primaries(_PrimariesMeta):  # type: ignore[misc]
         return _primaries_name_map.get(self, super().string)
 
 
-class ColorRange(_ColorRangeMeta):  # type: ignore[misc]
+class ColorRange(PropEnum):
     """
     Pixel Range ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Equations E-10 through E-20.
     """
@@ -1027,7 +1142,7 @@ class ColorRange(_ColorRangeMeta):  # type: ignore[misc]
     _value_: int
 
     @classmethod
-    def _missing_(cls: type[ColorRange], value: Any) -> ColorRange | None:
+    def _missing_(cls, value: Any) -> ColorRange | None:
         value = super()._missing_(value)
 
         if value is None:
@@ -1057,6 +1172,43 @@ class ColorRange(_ColorRangeMeta):  # type: ignore[misc]
     """
     PC = FULL
 
+    if TYPE_CHECKING:
+
+        @overload
+        @classmethod
+        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
+
+        @overload
+        @classmethod
+        def from_param(cls, value: ColorRangeLike, func_except: FuncExcept | None = None) -> Self: ...
+
+        @overload
+        @classmethod
+        def from_param(cls, value: ColorRangeLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
+
+        @classmethod
+        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
+            """
+            Determine the ColorRange through a parameter.
+
+            Args:
+                value: Value or ColorRange object.
+                func_except: Function returned for custom error handling. This should only be set by VS package
+                    developers.
+
+            Returns:
+                ColorRange object or None.
+            """
+
+        @classmethod
+        def from_param_or_video(
+            cls,
+            value: ColorRangeLike | None,
+            src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+            strict: bool = False,
+            func_except: FuncExcept | None = None,
+        ) -> ColorRange: ...
+
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> ColorRange:
         """
@@ -1074,7 +1226,7 @@ class ColorRange(_ColorRangeMeta):  # type: ignore[misc]
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExceptT | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
     ) -> ColorRange:
         """
         Obtain the color range of a clip from the frame properties.
@@ -1289,20 +1441,32 @@ _primaries_pretty_name_map = {
 }
 
 
-MatrixT: TypeAlias = Union[int, vs.MatrixCoefficients, Matrix, HoldsPropValueT]
+MatrixLike: TypeAlias = int | vs.MatrixCoefficients | Matrix | HoldsPropValue
 """Type alias for values that can be used to initialize a [Matrix][vstools.Matrix]."""
 
-TransferT: TypeAlias = Union[int, vs.TransferCharacteristics, Transfer, HoldsPropValueT]
+TransferLike: TypeAlias = int | vs.TransferCharacteristics | Transfer | HoldsPropValue
 """Type alias for values that can be used to initialize a [Transfer][vstools.Transfer]."""
 
-PrimariesT: TypeAlias = Union[int, vs.ColorPrimaries, Primaries, HoldsPropValueT]
+PrimariesLike: TypeAlias = int | vs.ColorPrimaries | Primaries | HoldsPropValue
 """Type alias for values that can be used to initialize a [Primaries][vstools.Primaries]."""
 
-ColorRangeT: TypeAlias = Union[int, vs.ColorRange, ColorRange, HoldsPropValueT]
+ColorRangeLike: TypeAlias = int | vs.ColorRange | ColorRange | HoldsPropValue
 """Type alias for values that can be used to initialize a [ColorRange][vstools.ColorRange]."""
 
+MatrixT = MatrixLike
+"""Deprecated alias of MatrixLike"""
 
-def _norm_props_enums(kwargs: KwargsT) -> KwargsT:
+TransferT = TransferLike
+"""Deprecated alias of TransferLike"""
+
+PrimariesT = PrimariesLike
+"""Deprecated alias of PrimariesLike"""
+
+ColorRangeT = ColorRangeLike
+"""Deprecated alias of ColorRangeLike"""
+
+
+def _norm_props_enums(kwargs: dict[str, Any]) -> dict[str, Any]:
     return {
         key: (
             (value.value_zimg if hasattr(value, "value_zimg") else int(value))  # pyright: ignore[reportAttributeAccessIssue]

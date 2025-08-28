@@ -60,28 +60,24 @@ def test_inline_expr_advanced(format: int) -> None:
         with inline_expr(clip) as ie:
             x, *_ = ie.vars
 
-            norm_luma = (x - x.LumaRangeInMin) * (ie.as_var(1) / (x.LumaRangeInMax - x.LumaRangeInMin))
+            norm_luma = (x - x.PlaneMin) / (x.PlaneMax - x.PlaneMin)
             norm_luma = ie.op.clamp(norm_luma, 0, 1)
 
             curve_strength = (slope - 1) * smooth
 
-            nonlinear_boost = curve_strength * ((1 + smooth) - (ie.op.sin(smooth) / (norm_luma + smooth)))
+            nonlinear_boost = curve_strength * ((1 + smooth) - ((1 + smooth) * smooth / (norm_luma + smooth)))
 
             weight_mul = nonlinear_boost + norm_luma * (1 - curve_strength)
             weight_mul *= x.RangeMax
 
             ie.out.y = weight_mul
 
-            if clip.format.sample_type is vs.INTEGER:
-                ie.out.y = ie.op.round(ie.out.y)
-
             if ColorRange.from_video(clip).is_full or clip.format.sample_type is vs.FLOAT:
                 ie.out.uv = x
             else:
-                chroma_mult = x.RangeMax / (x.ChromaRangeInMax - x.ChromaRangeInMin)
-                chroma_boosted = (x - x.Neutral) * chroma_mult + x.RangeHalf
+                chroma_expanded = ((x - x.Neutral) / (x.PlaneMax - x.PlaneMin) + 0.5) * x.RangeMax
 
-                ie.out.uv = ie.op.round(chroma_boosted)
+                ie.out.uv = ie.op.round(chroma_expanded)
 
         return ColorRange.FULL.apply(ie.clip)
 

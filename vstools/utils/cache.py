@@ -10,7 +10,7 @@ from ..types import VideoNodeT, vs_object
 from . import vs_proxy as vs
 
 if TYPE_CHECKING:
-    from vapoursynth._typings import _VapourSynthMapValue
+    from vapoursynth._frames import _PropValue
 
 
 __all__ = [
@@ -128,7 +128,7 @@ class SceneBasedDynamicCache(DynamicClipsCache[int, vs.VideoNode]):
         return cls(clip, keyframes, *args, **kwargs).get_eval()
 
 
-class NodesPropsCache(vs_object, dict[tuple[NodeT, int], MutableMapping[str, "_VapourSynthMapValue"]]):
+class NodesPropsCache(vs_object, dict[tuple[NodeT, int], MutableMapping[str, "_PropValue"]]):
     def __delitem__(self, key: tuple[NodeT, int]) -> None:
         if key not in self:
             return

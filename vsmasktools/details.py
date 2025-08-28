@@ -8,7 +8,7 @@ from vstools import ConstantFormatVideoNode, check_variable, get_y, limiter, pla
 from .edge import Kirsch, MinMax, Prewitt, PrewittTCanny
 from .masks import range_mask
 from .morpho import Morpho
-from .types import GenericMaskT
+from .types import MaskLike
 from .utils import normalize_mask
 
 __all__ = [
@@ -25,7 +25,7 @@ def detail_mask(
     brz_mm: float,
     brz_ed: float,
     minmax: MinMax = MinMax(rady=3, radc=2),
-    edge: GenericMaskT = Kirsch,
+    edge: MaskLike = Kirsch,
 ) -> ConstantFormatVideoNode:
     assert check_variable(clip, detail_mask)
 
@@ -47,7 +47,7 @@ def detail_mask_neo(
     sigma: float = 1.0,
     detail_brz: float = 0.05,
     lines_brz: float = 0.08,
-    edgemask: GenericMaskT = Prewitt,
+    edgemask: MaskLike = Prewitt,
     rg_mode: RemoveGrain.Mode = remove_grain.Mode.MINMAX_MEDIAN_OPP,
 ) -> ConstantFormatVideoNode:
     assert check_variable(clip, detail_mask_neo)

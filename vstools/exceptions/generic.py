@@ -8,13 +8,13 @@ from jetpytools import (
     CustomKeyError,
     CustomOverflowError,
     CustomValueError,
-    FuncExceptT,
+    FuncExcept,
     MismatchError,
     MismatchRefError,
     SupportsString,
 )
 
-from ..types import HoldsVideoFormatT, VideoFormatT
+from ..types import HoldsVideoFormat, VideoFormatLike
 
 if TYPE_CHECKING:
     from ..enums import Resolution
@@ -51,7 +51,7 @@ __all__ = [
 class FramesLengthError(CustomOverflowError):
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         var_name: str,
         message: SupportsString = '"{var_name}" can\'t be greater than the clip length!',
         **kwargs: Any,
@@ -71,7 +71,7 @@ class VariableFormatError(CustomValueError):
     """
 
     def __init__(
-        self, func: FuncExceptT, message: SupportsString = "Variable-format clips not supported!", **kwargs: Any
+        self, func: FuncExcept, message: SupportsString = "Variable-format clips not supported!", **kwargs: Any
     ) -> None:
         super().__init__(message, func, **kwargs)
 
@@ -82,7 +82,7 @@ class VariableResolutionError(CustomValueError):
     """
 
     def __init__(
-        self, func: FuncExceptT, message: SupportsString = "Variable-resolution clips not supported!", **kwargs: Any
+        self, func: FuncExcept, message: SupportsString = "Variable-resolution clips not supported!", **kwargs: Any
     ) -> None:
         super().__init__(message, func, **kwargs)
 
@@ -100,8 +100,8 @@ class InvalidVideoFormatError(CustomValueError):
 
     def __init__(
         self,
-        func: FuncExceptT,
-        format: VideoFormatT | HoldsVideoFormatT,
+        func: FuncExcept,
+        format: VideoFormatLike | HoldsVideoFormat,
         message: SupportsString = "The format {format.name} is not supported!",
         **kwargs: Any,
     ) -> None:
@@ -123,12 +123,12 @@ class InvalidColorFamilyError(CustomValueError):
 
     def __init__(
         self,
-        func: FuncExceptT | None,
-        wrong: VideoFormatT | HoldsVideoFormatT | vs.ColorFamily,
-        correct: VideoFormatT
-        | HoldsVideoFormatT
+        func: FuncExcept | None,
+        wrong: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily,
+        correct: VideoFormatLike
+        | HoldsVideoFormat
         | vs.ColorFamily
-        | Iterable[VideoFormatT | HoldsVideoFormatT | vs.ColorFamily] = vs.YUV,
+        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.ColorFamily] = vs.YUV,
         message: SupportsString = "Input clip must be of {correct} color family, not {wrong}!",
         **kwargs: Any,
     ) -> None:
@@ -147,12 +147,12 @@ class InvalidColorFamilyError(CustomValueError):
 
     @staticmethod
     def check(
-        to_check: VideoFormatT | HoldsVideoFormatT | vs.ColorFamily,
-        correct: VideoFormatT
-        | HoldsVideoFormatT
+        to_check: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily,
+        correct: VideoFormatLike
+        | HoldsVideoFormat
         | vs.ColorFamily
-        | Iterable[VideoFormatT | HoldsVideoFormatT | vs.ColorFamily],
-        func: FuncExceptT | None = None,
+        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.ColorFamily],
+        func: FuncExcept | None = None,
         message: SupportsString | None = None,
         **kwargs: Any,
     ) -> None:
@@ -196,8 +196,8 @@ class InvalidSubsamplingError(CustomValueError):
 
     def __init__(
         self,
-        func: FuncExceptT,
-        subsampling: str | VideoFormatT | HoldsVideoFormatT,
+        func: FuncExcept,
+        subsampling: str | VideoFormatLike | HoldsVideoFormat,
         message: SupportsString = "The subsampling {subsampling} is not supported!",
         **kwargs: Any,
     ) -> None:
@@ -214,15 +214,15 @@ class FormatsMismatchError(MismatchError):
     """
 
     @classmethod
-    def _item_to_name(cls, item: VideoFormatT | HoldsVideoFormatT) -> str:
+    def _item_to_name(cls, item: VideoFormatLike | HoldsVideoFormat) -> str:
         from ..utils import get_video_format
 
         return get_video_format(item).name
 
     def __init__(
         self,
-        func: FuncExceptT,
-        formats: Iterable[VideoFormatT | HoldsVideoFormatT],
+        func: FuncExcept,
+        formats: Iterable[VideoFormatLike | HoldsVideoFormat],
         message: SupportsString = "All specified formats must be equal!",
         **kwargs: Any,
     ) -> None:
@@ -231,7 +231,7 @@ class FormatsMismatchError(MismatchError):
     if TYPE_CHECKING:
 
         @classmethod
-        def check(cls, func: FuncExceptT, /, *formats: VideoFormatT | HoldsVideoFormatT, **kwargs: Any) -> None: ...
+        def check(cls, func: FuncExcept, /, *formats: VideoFormatLike | HoldsVideoFormat, **kwargs: Any) -> None: ...
 
 
 class FormatsRefClipMismatchError(MismatchRefError, FormatsMismatchError):
@@ -241,9 +241,9 @@ class FormatsRefClipMismatchError(MismatchRefError, FormatsMismatchError):
 
     def __init__(
         self,
-        func: FuncExceptT,
-        clip: VideoFormatT | HoldsVideoFormatT,
-        ref: VideoFormatT | HoldsVideoFormatT,
+        func: FuncExcept,
+        clip: VideoFormatLike | HoldsVideoFormat,
+        ref: VideoFormatLike | HoldsVideoFormat,
         message: SupportsString = "The format of ref and main clip must be equal!",
         **kwargs: Any,
     ) -> None:
@@ -254,9 +254,9 @@ class FormatsRefClipMismatchError(MismatchRefError, FormatsMismatchError):
         @classmethod
         def check(  # type: ignore[override]
             cls,
-            func: FuncExceptT,
-            clip: VideoFormatT | HoldsVideoFormatT,
-            ref: VideoFormatT | HoldsVideoFormatT,
+            func: FuncExcept,
+            clip: VideoFormatLike | HoldsVideoFormat,
+            ref: VideoFormatLike | HoldsVideoFormat,
             /,
             **kwargs: Any,
         ) -> None: ...
@@ -275,7 +275,7 @@ class ResolutionsMismatchError(MismatchError):
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         resolutions: Iterable[Resolution | vs.VideoNode],
         message: SupportsString = "All the resolutions must be equal!",
         **kwargs: Any,
@@ -285,7 +285,7 @@ class ResolutionsMismatchError(MismatchError):
     if TYPE_CHECKING:
 
         @classmethod
-        def check(cls, func: FuncExceptT, /, *resolutions: Resolution | vs.VideoNode, **kwargs: Any) -> None: ...
+        def check(cls, func: FuncExcept, /, *resolutions: Resolution | vs.VideoNode, **kwargs: Any) -> None: ...
 
 
 class ResolutionsRefClipMismatchError(MismatchRefError, ResolutionsMismatchError):
@@ -295,7 +295,7 @@ class ResolutionsRefClipMismatchError(MismatchRefError, ResolutionsMismatchError
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         clip: Resolution | vs.VideoNode,
         ref: Resolution | vs.VideoNode,
         message: SupportsString = "The resolution of ref and main clip must be equal!",
@@ -307,7 +307,7 @@ class ResolutionsRefClipMismatchError(MismatchRefError, ResolutionsMismatchError
 
         @classmethod
         def check(  # type: ignore[override]
-            cls, func: FuncExceptT, clip: Resolution | vs.VideoNode, ref: Resolution | vs.VideoNode, /, **kwargs: Any
+            cls, func: FuncExcept, clip: Resolution | vs.VideoNode, ref: Resolution | vs.VideoNode, /, **kwargs: Any
         ) -> None: ...
 
 
@@ -322,7 +322,7 @@ class LengthMismatchError(MismatchError):
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         lengths: Iterable[int | Sized],
         message: SupportsString = "All the lengths must be equal!",
         **kwargs: Any,
@@ -332,7 +332,7 @@ class LengthMismatchError(MismatchError):
     if TYPE_CHECKING:
 
         @classmethod
-        def check(cls, func: FuncExceptT, /, *lengths: int | Sized, **kwargs: Any) -> None: ...
+        def check(cls, func: FuncExcept, /, *lengths: int | Sized, **kwargs: Any) -> None: ...
 
 
 class LengthRefClipMismatchError(MismatchRefError, LengthMismatchError):
@@ -342,7 +342,7 @@ class LengthRefClipMismatchError(MismatchRefError, LengthMismatchError):
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         clip: int | vs.RawNode,
         ref: int | vs.RawNode,
         message: SupportsString = "The main clip and ref clip length must be equal!",
@@ -354,7 +354,7 @@ class LengthRefClipMismatchError(MismatchRefError, LengthMismatchError):
 
         @classmethod
         def check(  # type: ignore[override]
-            cls, func: FuncExceptT, clip: int | vs.RawNode, ref: int | vs.RawNode, /, **kwargs: Any
+            cls, func: FuncExcept, clip: int | vs.RawNode, ref: int | vs.RawNode, /, **kwargs: Any
         ) -> None: ...
 
 
@@ -371,7 +371,7 @@ class FramerateMismatchError(MismatchError):
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         framerates: Iterable[vs.VideoNode | Fraction | tuple[int, int] | float],
         message: SupportsString = "All the framerates must be equal!",
         **kwargs: Any,
@@ -382,7 +382,7 @@ class FramerateMismatchError(MismatchError):
 
         @classmethod
         def check(
-            cls, func: FuncExceptT, /, *framerates: vs.VideoNode | Fraction | tuple[int, int] | float, **kwargs: Any
+            cls, func: FuncExcept, /, *framerates: vs.VideoNode | Fraction | tuple[int, int] | float, **kwargs: Any
         ) -> None: ...
 
 
@@ -393,7 +393,7 @@ class FramerateRefClipMismatchError(MismatchRefError, FramerateMismatchError):
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         clip: vs.VideoNode | Fraction | tuple[int, int] | float,
         ref: vs.VideoNode | Fraction | tuple[int, int] | float,
         message: SupportsString = "The framerate of the ref and main clip must be equal!",
@@ -406,7 +406,7 @@ class FramerateRefClipMismatchError(MismatchRefError, FramerateMismatchError):
         @classmethod
         def check(  # type: ignore[override]
             cls,
-            func: FuncExceptT,
+            func: FuncExcept,
             clip: vs.VideoNode | Fraction | tuple[int, int] | float,
             ref: vs.VideoNode | Fraction | tuple[int, int] | float,
             /,
@@ -421,7 +421,7 @@ class FramePropError(CustomKeyError):
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         key: str,
         message: SupportsString = 'Error while trying to get frame prop "{key}"!',
         **kwargs: Any,
@@ -435,7 +435,7 @@ class TopFieldFirstError(CustomValueError):
     """
 
     def __init__(
-        self, func: FuncExceptT, message: SupportsString = "You must set `tff` for this clip!", **kwargs: Any
+        self, func: FuncExcept, message: SupportsString = "You must set `tff` for this clip!", **kwargs: Any
     ) -> None:
         super().__init__(message, func, **kwargs)
 
@@ -447,7 +447,7 @@ class InvalidFramerateError(CustomValueError):
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         clip: vs.VideoNode | Fraction,
         message: SupportsString = "{fps} clips are not allowed!",
         **kwargs: Any,
@@ -456,7 +456,7 @@ class InvalidFramerateError(CustomValueError):
 
     @staticmethod
     def check(
-        func: FuncExceptT,
+        func: FuncExcept,
         to_check: vs.VideoNode | Fraction | tuple[int, int] | float,
         correct: vs.VideoNode
         | Fraction
@@ -507,7 +507,7 @@ class InvalidTimecodeVersionError(CustomValueError):
 
     def __init__(
         self,
-        func: FuncExceptT,
+        func: FuncExcept,
         version: int,
         message: SupportsString = "{version} is not a valid timecodes version!",
         **kwargs: Any,
@@ -516,7 +516,7 @@ class InvalidTimecodeVersionError(CustomValueError):
 
     @staticmethod
     def check(
-        func: FuncExceptT,
+        func: FuncExcept,
         to_check: int,
         correct: int | Iterable[int] = [1, 2],
         message: SupportsString = "Timecodes version be in {correct}, not {wrong}!",

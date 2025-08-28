@@ -25,7 +25,7 @@ from vstools import (
     ConstantFormatVideoNode,
     ConvMode,
     FieldBased,
-    FieldBasedT,
+    FieldBasedLike,
     KwargsT,
     UnsupportedFieldBasedError,
     UnsupportedVideoFormatError,
@@ -311,7 +311,7 @@ class QTempGaussMC(vs_object):
         self,
         clip: vs.VideoNode,
         input_type: InputType = InputType.INTERLACE,
-        tff: FieldBasedT | bool | None = None,
+        tff: FieldBasedLike | bool | None = None,
     ) -> None:
         """
         Args:
@@ -1068,7 +1068,7 @@ class QTempGaussMC(vs_object):
                     clip,
                     self.bobbed,
                     self.mv,
-                    clamp=self.limit_clamp,
+                    self.limit_clamp,
                     tr=self.limit_radius,
                     thscd=self.analyze_thscd,
                     **self.limit_comp_args,
@@ -1151,11 +1151,9 @@ class QTempGaussMC(vs_object):
         return self.motion_blur_output
 
     def __vs_del__(self, core_id: int) -> None:
-        for k, v in self.__dict__.items():
-            if isinstance(v, MutableMapping):
-                for k2, v2 in v.items():
-                    if isinstance(v2, vs.VideoNode):
-                        v[k2] = None
-
+        for k, v in self.__dict__.copy().items():
             if isinstance(v, vs.VideoNode):
-                setattr(self, k, None)
+                delattr(self, k)
+
+            if isinstance(v, MutableMapping):
+                v.clear()

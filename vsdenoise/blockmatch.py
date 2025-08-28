@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from functools import cache, cached_property
+from functools import cache
 from inspect import signature
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Callable, Generic, Sequence, cast
@@ -10,9 +10,9 @@ from jetpytools import (
     CustomRuntimeError,
     CustomStrEnum,
     CustomValueError,
-    KwargsT,
     P,
     R,
+    cachedproperty,
     fallback,
     interleave_arr,
     normalize_seq,
@@ -23,7 +23,7 @@ from vskernels import Point
 from vstools import (
     ConstantFormatVideoNode,
     FunctionUtil,
-    PlanesT,
+    Planes,
     UnsupportedVideoFormatError,
     check_progressive,
     check_ref_clip,
@@ -47,7 +47,7 @@ def wnnm(
     ref: vs.VideoNode | None = None,
     merge_factor: float = 0.1,
     self_refine: bool = False,
-    planes: PlanesT = None,
+    planes: Planes = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
@@ -92,7 +92,7 @@ def wnnm(
         ref = get_y(ref) if func.luma_only else ref
 
     denoised = cast(ConstantFormatVideoNode, None)
-    dkwargs = KwargsT(radius=tr, rclip=ref) | kwargs
+    dkwargs = dict[str, Any](radius=tr, rclip=ref) | kwargs
 
     for i in range(refine + 1):
         if i == 0:
@@ -275,7 +275,7 @@ class BM3D(Generic[P, R]):
         A profile tailored for handling very noisy content.
         """
 
-        @cached_property
+        @cachedproperty
         def config(self) -> MappingProxyType[str, MappingProxyType[str, MappingProxyType[str, Any]]]:
             """
             Retrieves the configuration for each BM3D profile.
@@ -530,7 +530,7 @@ def bm3d(
     backend: BM3D.Backend = BM3D.Backend.AUTO,
     basic_args: dict[str, Any] | None = None,
     final_args: dict[str, Any] | None = None,
-    planes: PlanesT = None,
+    planes: Planes = None,
     **kwargs: Any,
 ) -> ConstantFormatVideoNode:
     """
@@ -599,8 +599,8 @@ def bm3d(
     nsigma = normalize_param_planes(clip, sigma, planes, 0, func)
 
     backend = backend.resolve()
-    nbasic_args = fallback(basic_args, KwargsT())
-    nfinal_args = fallback(final_args, KwargsT())
+    nbasic_args = fallback(basic_args, {})
+    nfinal_args = fallback(final_args, {})
 
     matrix_rgb2opp = kwargs.pop("matrix_rgb2opp", BM3D.matrix_rgb2opp)
     matrix_opp2rgb = kwargs.pop("matrix_rgb2opp", BM3D.matrix_opp2rgb)

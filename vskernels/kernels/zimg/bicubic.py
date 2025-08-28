@@ -67,7 +67,7 @@ class Bicubic(ZimgComplexKernel):
             clip, shift, filter="bicubic", filter_param_a=self.b, filter_param_b=self.c, **kwargs
         )
 
-    @ZimgComplexKernel.cached_property
+    @ZimgComplexKernel.cachedproperty
     def kernel_radius(self) -> int:
         if (self.b, self.c) == (0, 0):
             return 1

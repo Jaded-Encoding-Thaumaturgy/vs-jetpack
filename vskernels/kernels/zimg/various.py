@@ -76,7 +76,7 @@ class Lanczos(ZimgComplexKernel):
     ) -> dict[str, Any]:
         return super().get_bob_args(clip, shift, filter_param_a=self.kernel_radius, **kwargs)
 
-    @ZimgComplexKernel.cached_property
+    @ZimgComplexKernel.cachedproperty
     def kernel_radius(self) -> int:
         return ceil(self.taps)
 

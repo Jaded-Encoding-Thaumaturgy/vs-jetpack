@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import string
 from functools import partial, wraps
 from typing import Any, Callable, Iterable, Literal, Mapping, Sequence, Union, overload
 from weakref import WeakValueDictionary
 
 import vapoursynth as vs
-from jetpytools import CustomIndexError, CustomStrEnum, CustomValueError, FuncExceptT, P, normalize_seq
+from jetpytools import CustomIndexError, CustomStrEnum, CustomValueError, FuncExcept, P, normalize_seq
 
-from ..enums import ColorRange, ColorRangeT, Matrix
+from ..enums import ColorRange, ColorRangeLike, Matrix
 from ..exceptions import ClipLengthError, InvalidColorFamilyError
-from ..types import ConstantFormatVideoNode, HoldsVideoFormatT, PlanesT, VideoFormatT
+from ..types import ConstantFormatVideoNode, HoldsVideoFormat, Planes, VideoFormatLike
 from .check import check_variable_format
 from .clip import shift_clip
 
@@ -36,7 +35,34 @@ __all__ = [
 ]
 
 
-EXPR_VARS = (alph := list(string.ascii_lowercase))[(idx := alph.index("x")) :] + alph[:idx]
+EXPR_VARS = [
+    "x",
+    "y",
+    "z",
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "j",
+    "k",
+    "l",
+    "m",
+    "n",
+    "o",
+    "p",
+    "q",
+    "r",
+    "s",
+    "t",
+    "u",
+    "v",
+    "w",
+]
 """
 Variables to access clips in Expr.
 """
@@ -161,11 +187,11 @@ class DitherType(CustomStrEnum):
     @overload
     @staticmethod
     def should_dither(
-        in_fmt: VideoFormatT | HoldsVideoFormatT,
-        out_fmt: VideoFormatT | HoldsVideoFormatT,
+        in_fmt: VideoFormatLike | HoldsVideoFormat,
+        out_fmt: VideoFormatLike | HoldsVideoFormat,
         /,
-        in_range: ColorRangeT | None = None,
-        out_range: ColorRangeT | None = None,
+        in_range: ColorRangeLike | None = None,
+        out_range: ColorRangeLike | None = None,
     ) -> bool:
         """
         Automatically determines whether dithering is needed for a given depth/range/sample type conversion.
@@ -199,8 +225,8 @@ class DitherType(CustomStrEnum):
         in_bits: int,
         out_bits: int,
         /,
-        in_range: ColorRangeT | None = None,
-        out_range: ColorRangeT | None = None,
+        in_range: ColorRangeLike | None = None,
+        out_range: ColorRangeLike | None = None,
         in_sample_type: vs.SampleType | None = None,
         out_sample_type: vs.SampleType | None = None,
     ) -> bool:
@@ -234,11 +260,11 @@ class DitherType(CustomStrEnum):
 
     @staticmethod
     def should_dither(
-        in_bits_or_fmt: int | VideoFormatT | HoldsVideoFormatT,
-        out_bits_or_fmt: int | VideoFormatT | HoldsVideoFormatT,
+        in_bits_or_fmt: int | VideoFormatLike | HoldsVideoFormat,
+        out_bits_or_fmt: int | VideoFormatLike | HoldsVideoFormat,
         /,
-        in_range: ColorRangeT | None = None,
-        out_range: ColorRangeT | None = None,
+        in_range: ColorRangeLike | None = None,
+        out_range: ColorRangeLike | None = None,
         in_sample_type: vs.SampleType | None = None,
         out_sample_type: vs.SampleType | None = None,
     ) -> bool:
@@ -284,12 +310,12 @@ _dither_fmtc_types: dict[DitherType, int] = {
 
 def depth(
     clip: vs.VideoNode,
-    bitdepth: VideoFormatT | HoldsVideoFormatT | int | None = None,
+    bitdepth: VideoFormatLike | HoldsVideoFormat | int | None = None,
     /,
     sample_type: int | vs.SampleType | None = None,
     *,
-    range_in: ColorRangeT | None = None,
-    range_out: ColorRangeT | None = None,
+    range_in: ColorRangeLike | None = None,
+    range_out: ColorRangeLike | None = None,
     dither_type: str | DitherType = DitherType.AUTO,
 ) -> ConstantFormatVideoNode:
     """
@@ -663,9 +689,7 @@ def join(planes: Iterable[vs.VideoNode], family: vs.ColorFamily | None = None) -
 
 
 @overload
-def join(
-    planes: Mapping[PlanesT, vs.VideoNode | None], family: vs.ColorFamily | None = None
-) -> ConstantFormatVideoNode:
+def join(planes: Mapping[Planes, vs.VideoNode | None], family: vs.ColorFamily | None = None) -> ConstantFormatVideoNode:
     """
     Join a map of planes together to form a single clip.
 
@@ -845,8 +869,9 @@ def limiter(
     max_val: float | Sequence[float] | None = None,
     *,
     tv_range: bool = False,
-    planes: PlanesT = None,
-    func: FuncExceptT | None = None,
+    mask: bool = False,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     """
     Wraps `vs-zip <https://github.com/dnjulek/vapoursynth-zip>`.Limiter but only processes
@@ -859,6 +884,7 @@ def limiter(
         max_val: Upper bound. Defaults to the highest allowed value for the input. Can be specified for each plane
             individually.
         tv_range: Changes min/max defaults values to LIMITED.
+        mask: Float chroma range from -0.5/0.5 to 0.0/1.0.
         planes: Planes to process.
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
@@ -875,8 +901,9 @@ def limiter(
     max_val: float | Sequence[float] | None = None,
     *,
     tv_range: bool = False,
-    planes: PlanesT = None,
-    func: FuncExceptT | None = None,
+    mask: bool = False,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
 ) -> Callable[P, ConstantFormatVideoNode]:
     """
     Wraps `vs-zip <https://github.com/dnjulek/vapoursynth-zip>`.Limiter but only processes
@@ -891,6 +918,7 @@ def limiter(
         max_val: Upper bound. Defaults to the highest allowed value for the input. Can be specified for each plane
             individually.
         tv_range: Changes min/max defaults values to LIMITED.
+        mask: Float chroma range from -0.5/0.5 to 0.0/1.0.
         planes: Planes to process.
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
@@ -905,8 +933,9 @@ def limiter(
     min_val: float | Sequence[float] | None = None,
     max_val: float | Sequence[float] | None = None,
     tv_range: bool = False,
-    planes: PlanesT = None,
-    func: FuncExceptT | None = None,
+    mask: bool = False,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
 ) -> Callable[[Callable[P, ConstantFormatVideoNode]], Callable[P, ConstantFormatVideoNode]]:
     """
     Wraps `vs-zip <https://github.com/dnjulek/vapoursynth-zip>`.Limiter but only processes
@@ -920,6 +949,7 @@ def limiter(
         max_val: Upper bound. Defaults to the highest allowed value for the input. Can be specified for each plane
             individually.
         tv_range: Changes min/max defaults values to LIMITED.
+        mask: Float chroma range from -0.5/0.5 to 0.0/1.0.
         planes: Planes to process.
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
@@ -935,8 +965,9 @@ def limiter(
     max_val: float | Sequence[float] | None = None,
     *,
     tv_range: bool = False,
-    planes: PlanesT = None,
-    func: FuncExceptT | None = None,
+    mask: bool = False,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
 ) -> Union[
     ConstantFormatVideoNode,
     Callable[P, ConstantFormatVideoNode],
@@ -953,6 +984,7 @@ def limiter(
         max_val: Upper bound. Defaults to the highest allowed value for the input. Can be specified for each plane
             individually.
         tv_range: Changes min/max defaults values to LIMITED.
+        mask: Float chroma range from -0.5/0.5 to 0.0/1.0.
         planes: Planes to process.
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
@@ -965,7 +997,13 @@ def limiter(
         @wraps(_func)
         def _wrapper(*args: P.args, **kwargs: P.kwargs) -> ConstantFormatVideoNode:
             return limiter(
-                _func(*args, **kwargs), min_val, max_val, tv_range=tv_range, planes=planes, func=func or _func
+                _func(*args, **kwargs),
+                min_val,
+                max_val,
+                tv_range=tv_range,
+                mask=mask,
+                planes=planes,
+                func=func or _func,
             )
 
         return _wrapper
@@ -987,7 +1025,7 @@ def limiter(
         min_val = normalize_seq(min_val or get_lowest_values(clip, clip), clip.format.num_planes)
         max_val = normalize_seq(max_val or get_peak_values(clip, clip), clip.format.num_planes)
 
-    return clip.vszip.Limiter(min_val, max_val, tv_range, None, planes)
+    return clip.vszip.Limiter(min_val, max_val, tv_range, mask, planes)
 
 
 def sc_detect(clip: vs.VideoNode, threshold: float = 0.1) -> ConstantFormatVideoNode:

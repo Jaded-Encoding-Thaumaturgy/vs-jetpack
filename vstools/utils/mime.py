@@ -13,7 +13,7 @@ from jetpytools import (
     CustomStrEnum,
     CustomValueError,
     FilePathType,
-    FuncExceptT,
+    FuncExcept,
     complex_hash,
     inject_self,
 )
@@ -291,7 +291,7 @@ class FileType(FileTypeBase):
 
     @inject_self.with_args(AUTO)
     def parse(
-        self, path: FilePathType, *, func: FuncExceptT | None = None, force_ffprobe: bool | None = None
+        self, path: FilePathType, *, func: FuncExcept | None = None, force_ffprobe: bool | None = None
     ) -> ParsedFile:
         """
         Parse infos from a file. If the FileType is different than AUTO, this function will throw if the file

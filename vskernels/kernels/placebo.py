@@ -103,7 +103,7 @@ class Placebo(ComplexScaler, abstract=True):
             | {"linearize": False, "sigmoidize": False}
         )
 
-    @ComplexScaler.cached_property
+    @ComplexScaler.cachedproperty
     def kernel_radius(self) -> int:
         if self.radius:
             return ceil(self.radius)
@@ -128,9 +128,9 @@ class EwaBicubic(Placebo):
         """
         Initialize the scaler with specific 'b' and 'c' parameters and optional arguments.
 
-        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        These keyword arguments are automatically forwarded to the `implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
-        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        If the same keyword is passed to both `__init__` and one of the `implemented_funcs`,
         the one passed to `func` takes precedence.
 
         Args:
@@ -156,9 +156,9 @@ class EwaLanczos(Placebo):
         """
         Initialize the kernel with a specific radius and optional keyword arguments.
 
-        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        These keyword arguments are automatically forwarded to the `implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
-        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        If the same keyword is passed to both `__init__` and one of the `implemented_funcs`,
         the one passed to `func` takes precedence.
 
         Args:
@@ -179,9 +179,9 @@ class EwaLanczosSharp(Placebo):
         """
         Initialize the kernel with a specific radius and optional keyword arguments.
 
-        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        These keyword arguments are automatically forwarded to the `implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
-        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        If the same keyword is passed to both `__init__` and one of the `implemented_funcs`,
         the one passed to `func` takes precedence.
 
         Args:
@@ -208,9 +208,9 @@ class EwaLanczos4Sharpest(Placebo):
         """
         Initialize the kernel with a specific radius and optional keyword arguments.
 
-        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        These keyword arguments are automatically forwarded to the `implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
-        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        If the same keyword is passed to both `__init__` and one of the `implemented_funcs`,
         the one passed to `func` takes precedence.
 
         Args:
@@ -234,9 +234,9 @@ class EwaJinc(Placebo):
         """
         Initialize the kernel with a specific radius and optional keyword arguments.
 
-        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        These keyword arguments are automatically forwarded to the `implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
-        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        If the same keyword is passed to both `__init__` and one of the `implemented_funcs`,
         the one passed to `func` takes precedence.
 
         Args:
@@ -257,9 +257,9 @@ class EwaGinseng(Placebo):
         """
         Initialize the kernel with a specific radius and optional keyword arguments.
 
-        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        These keyword arguments are automatically forwarded to the `implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
-        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        If the same keyword is passed to both `__init__` and one of the `implemented_funcs`,
         the one passed to `func` takes precedence.
 
         Args:
@@ -280,9 +280,9 @@ class EwaHann(Placebo):
         """
         Initialize the kernel with a specific radius and optional keyword arguments.
 
-        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        These keyword arguments are automatically forwarded to the `implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
-        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        If the same keyword is passed to both `__init__` and one of the `implemented_funcs`,
         the one passed to `func` takes precedence.
 
         Args:
@@ -303,9 +303,9 @@ class EwaRobidoux(Placebo):
         """
         Initialize the kernel with optional keyword arguments.
 
-        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        These keyword arguments are automatically forwarded to the `implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
-        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        If the same keyword is passed to both `__init__` and one of the `implemented_funcs`,
         the one passed to `func` takes precedence.
 
         Args:
@@ -325,9 +325,9 @@ class EwaRobidouxSharp(Placebo):
         """
         Initialize the kernel with optional keyword arguments.
 
-        These keyword arguments are automatically forwarded to the `_implemented_funcs` methods
+        These keyword arguments are automatically forwarded to the `implemented_funcs` methods
         but only if the method explicitly accepts them as named parameters.
-        If the same keyword is passed to both `__init__` and one of the `_implemented_funcs`,
+        If the same keyword is passed to both `__init__` and one of the `implemented_funcs`,
         the one passed to `func` takes precedence.
 
         Args:

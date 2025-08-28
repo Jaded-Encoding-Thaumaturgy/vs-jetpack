@@ -1,40 +1,41 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
-from vstools import CustomValueError, FuncExceptT
+from jetpytools import fallback
 
-__all__ = [
-    "UnknownEdgeDetectError",
-    "UnknownRidgeDetectError",
-]
+from vstools import CustomValueError, FuncExcept
 
 
-class UnknownEdgeDetectError(CustomValueError):
+class _UnknownMaskDetectError(CustomValueError):
+    _placeholder: ClassVar[str]
+    _message: ClassVar[str]
+
+    def __init__(self, func: FuncExcept, name: str, message: str | None = None, **kwargs: Any) -> None:
+        """
+        Instantiate a new exception with pretty printing and more.
+
+        Args:
+            func: Function this exception was raised from.
+            name: EdgeDetect kind.
+            message: Message of the error.
+        """
+        super().__init__(fallback(message, self._message), func, **{self._placeholder: name}, **kwargs)
+
+
+class UnknownEdgeDetectError(_UnknownMaskDetectError):
     """
     Raised when an unknown edge detect is passed.
     """
 
-    def __init__(
-        self,
-        func: FuncExceptT,
-        edge_detect: str,
-        message: str = 'Unknown concrete edge detector "{edge_detect}"!',
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(message, func, edge_detect=edge_detect, **kwargs)
+    _placeholder = "edge_detect"
+    _message = 'Unknown concrete edge detector "{edge_detect}"!'
 
 
-class UnknownRidgeDetectError(CustomValueError):
+class UnknownRidgeDetectError(_UnknownMaskDetectError):
     """
     Raised when an unknown ridge detect is passed.
     """
 
-    def __init__(
-        self,
-        func: FuncExceptT,
-        ridge_detect: str,
-        message: str = 'Unknown concrete ridge detector "{ridge_detect}"!',
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(message, func, ridge_detect=ridge_detect, **kwargs)
+    _placeholder = "ridge_detect"
+    _message = 'Unknown concrete ridge detector "{ridge_detect}"!'

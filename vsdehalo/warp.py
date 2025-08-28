@@ -8,10 +8,10 @@ from __future__ import annotations
 from typing import Literal, Sequence
 
 from vsexprtools import norm_expr
-from vsmasktools import EdgeDetect, EdgeDetectT, Morpho, PrewittStd
+from vsmasktools import EdgeDetect, EdgeDetectLike, Morpho, PrewittStd
 from vsrgtools import BlurMatrix, awarpsharp, box_blur, min_blur, remove_grain, repair
 from vsrgtools.rgtools import Repair
-from vstools import PlanesT, limiter, scale_mask, scale_value, vs
+from vstools import Planes, limiter, scale_mask, scale_value, vs
 
 __all__ = ["YAHR", "edge_cleaner"]
 
@@ -22,8 +22,8 @@ def edge_cleaner(
     rmode: int | Repair.Mode = 17,
     hot: bool = False,
     smode: bool = False,
-    edgemask: EdgeDetectT = PrewittStd,
-    planes: PlanesT = 0,
+    edgemask: EdgeDetectLike = PrewittStd,
+    planes: Planes = 0,
 ) -> vs.VideoNode:
     """
     Cleans edges in a video clip by applying edge-aware processing.
@@ -42,7 +42,7 @@ def edge_cleaner(
     """
     edgemask = EdgeDetect.ensure_obj(edgemask, edge_cleaner)
     lthr = scale_mask(4, 8, 32)
-    expr = "x {thr} > range_max x ?"
+    expr = "x {thr} > mask_max x ?"
 
     if smode:
         strength += 4
@@ -79,7 +79,7 @@ def YAHR(  # noqa: N802
     depth: int | Sequence[int] = 32,
     expand: int | Literal[False] = 5,
     shift: int = 8,
-    planes: PlanesT = 0,
+    planes: Planes = 0,
 ) -> vs.VideoNode:
     """
     Applies YAHR (Yet Another Halo Remover) to reduce halos in a video clip.
@@ -108,7 +108,7 @@ def YAHR(  # noqa: N802
     if expand is not False:
         v_edge = norm_expr(
             [clip, Morpho.maximum(clip, iterations=2, planes=planes)],
-            "y x - {shift} range_max * 255 / - 128 *",
+            "y x - {shift} mask_max * 255 / - 128 *",
             shift=shift,
             planes=planes,
             func=YAHR,
@@ -119,11 +119,11 @@ def YAHR(  # noqa: N802
                 BlurMatrix.BINOMIAL(radius=expand * 2)(v_edge, planes=planes),
                 BlurMatrix.BINOMIAL()(v_edge, planes=planes),
             ],
-            "x 16 * range_max y - min",
+            "x 16 * mask_max y - min",
             planes,
             func=YAHR,
         )
 
-        yahr = clip.std.MaskedMerge(yahr, limiter(mask, planes=planes), planes)
+        yahr = clip.std.MaskedMerge(yahr, limiter(mask, mask=True, planes=planes), planes)
 
     return yahr

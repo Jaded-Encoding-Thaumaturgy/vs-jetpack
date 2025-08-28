@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-import contextlib
-from functools import cached_property, wraps
+from abc import ABC
+from contextlib import suppress
+from functools import wraps
 from typing import Any, Callable, Sequence, TypeVar
+
+from jetpytools import cachedproperty
 
 from vsexprtools import ExprToken, norm_expr
 from vskernels import Bilinear, BorderHandling, Hermite, Kernel, KernelLike, Scaler, ScalerLike
@@ -15,7 +18,7 @@ from vstools import (
     ConvMode,
     DitherType,
     FieldBased,
-    FieldBasedT,
+    FieldBasedLike,
     FrameRangeN,
     FrameRangesN,
     VideoNodeT,
@@ -44,7 +47,7 @@ __all__ = [
 _RescaleT = TypeVar("_RescaleT", bound="RescaleBase")
 
 
-class RescaleBase(vs_object):
+class RescaleBase(vs_object, ABC):
     """Base class for Rescale wrapper"""
 
     descale_args: ScalingArgs
@@ -59,7 +62,7 @@ class RescaleBase(vs_object):
         kernel: KernelLike,
         upscaler: ScalerLike = ArtCNN,
         downscaler: ScalerLike = Hermite(linear=True),
-        field_based: FieldBasedT | bool | None = None,
+        field_based: FieldBasedLike | bool | None = None,
         border_handling: int | BorderHandling = BorderHandling.MIRROR,
         **kwargs: Any,
     ) -> None:
@@ -81,7 +84,7 @@ class RescaleBase(vs_object):
 
     def __delattr__(self, name: str) -> None:
         def _delattr(attr: str) -> None:
-            with contextlib.suppress(AttributeError):
+            with suppress(AttributeError):
                 delattr(self, attr)
 
         match name:
@@ -93,7 +96,7 @@ class RescaleBase(vs_object):
             case _:
                 pass
 
-        with contextlib.suppress(AttributeError):
+        with suppress(AttributeError):
             super().__delattr__(name)
 
     @staticmethod
@@ -164,28 +167,28 @@ class RescaleBase(vs_object):
             clip, self._clipy.width, self._clipy.height, **self.descale_args.kwargs(clip)
         )
 
-    @cached_property
+    @cachedproperty
     def descale(self) -> ConstantFormatVideoNode:
         """
         Gets the descaled clip.
         """
         return self._generate_descale(self._clipy)
 
-    @cached_property
+    @cachedproperty
     def rescale(self) -> ConstantFormatVideoNode:
         """
         Gets the rescaled clip.
         """
         return self._generate_rescale(self.descale)
 
-    @cached_property
+    @cachedproperty
     def doubled(self) -> ConstantFormatVideoNode:
         """
         Gets the doubled clip.
         """
         return self._generate_doubled(self.descale)
 
-    @cached_property
+    @cachedproperty
     def upscale(self) -> ConstantFormatVideoNode:
         """
         Returns the upscaled clip
@@ -197,10 +200,7 @@ class RescaleBase(vs_object):
     def __vs_del__(self, core_id: int) -> None:
         del self._clipy
         del self._chroma
-        del self.descale
-        del self.rescale
-        del self.doubled
-        del self.upscale
+        cachedproperty.clear_cache(self)
 
 
 class Rescale(RescaleBase):
@@ -302,7 +302,7 @@ class Rescale(RescaleBase):
         base_width: int | None = None,
         crop: tuple[LeftCrop, RightCrop, TopCrop, BottomCrop] = CropRel(),
         shift: tuple[TopShift, LeftShift] = (0, 0),
-        field_based: FieldBasedT | bool | None = None,
+        field_based: FieldBasedLike | bool | None = None,
         border_handling: int | BorderHandling = BorderHandling.MIRROR,
         **kwargs: Any,
     ) -> None:
@@ -390,7 +390,7 @@ class Rescale(RescaleBase):
     def _generate_upscale(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
         upscale = super()._generate_upscale(clip)
 
-        merged_mask = norm_expr([self.line_mask, self.credit_mask], "x y - 0 yrange_max clamp", func=self.__class__)
+        merged_mask = norm_expr([self.line_mask, self.credit_mask], "x y - 0 mask_max clamp", func=self.__class__)
 
         upscale = core.std.CopyFrameProps(core.std.MaskedMerge(self._clipy, upscale, merged_mask), upscale)
 

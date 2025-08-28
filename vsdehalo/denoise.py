@@ -22,7 +22,7 @@ from vsrgtools import (
 )
 from vstools import (
     FunctionUtil,
-    PlanesT,
+    Planes,
     check_progressive,
     check_ref_clip,
     core,
@@ -48,7 +48,7 @@ def hq_dering(
     dark_thr: float | Sequence[float] = 12,
     bright_thr: float | Sequence[float] | None = None,
     elast: float | Sequence[float] = 2,
-    planes: PlanesT = 0,
+    planes: Planes = 0,
 ) -> vs.VideoNode:
     """
     Applies deringing by using a smart smoother near edges (where ringing occurs) only.
@@ -150,9 +150,7 @@ def hq_dering(
                     Morpho.inflate(fmask, planes=planes, func=func.func), ceil(minp / 2), planes=planes, func=func.func
                 )
 
-            ringmask = norm_expr(
-                [omask, imask], "x range_max y - * range_max / 0 range_max clip", planes, func=func.func
-            )
+            ringmask = norm_expr([omask, imask], "x mask_max y - * mask_max / 0 mask_max clip", planes, func=func.func)
 
     dering = func.work_clip.std.MaskedMerge(limited, ringmask, planes)
 
@@ -169,7 +167,7 @@ def vine_dehalo(
     sigma: float | list[float] = 1.0,
     supersampler: ScalerLike = NNEDI3,
     downscaler: ScalerLike = Catrom,
-    planes: PlanesT = 0,
+    planes: Planes = 0,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """

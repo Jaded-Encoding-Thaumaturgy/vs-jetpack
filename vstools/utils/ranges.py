@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import contextlib
+from contextlib import suppress
 from typing import Any, Callable, Generic, Literal, Protocol, Sequence, TypeGuard, TypeVar, Union, overload
 
 import vapoursynth as vs
 from jetpytools import CustomValueError, P, R, fallback, flatten, interleave_arr, ranges_product
 
 from ..functions import check_ref_clip
-from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, VideoNodeT
+from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, Planes, VideoNodeT
 
 __all__ = [
     "interleave_arr",
@@ -51,7 +51,7 @@ _RangesCallBackLike = Union[
 def _is_cb_nf(
     cb: Callable[..., bool], params: set[str]
 ) -> TypeGuard[_RangesCallBackNF[vs.VideoFrame] | _RangesCallBackNF[Sequence[vs.VideoFrame]]]:
-    return bool("f" in params and "n" in params)
+    return "f" in params and "n" in params
 
 
 def _is_cb_f(
@@ -92,6 +92,7 @@ class ReplaceRanges(Generic[P, R]):
         ranges: FrameRangeN | FrameRangesN,
         exclusive: bool | None = None,
         mismatch: Literal[False] = ...,
+        planes: Planes = None,
     ) -> ConstantFormatVideoNode: ...
 
     @overload
@@ -102,6 +103,7 @@ class ReplaceRanges(Generic[P, R]):
         ranges: FrameRangeN | FrameRangesN,
         exclusive: bool | None = None,
         mismatch: bool = ...,
+        planes: Planes = None,
     ) -> VideoNodeT: ...
 
     @overload
@@ -139,6 +141,7 @@ class ReplaceRanges(Generic[P, R]):
         ranges: FrameRangeN | FrameRangesN | _RangesCallBackLike | None,
         exclusive: bool | None = None,
         mismatch: bool = False,
+        planes: Planes = None,
         *,
         prop_src: vs.VideoNode | Sequence[vs.VideoNode] | None = None,
     ) -> vs.VideoNode: ...
@@ -154,6 +157,7 @@ def replace_ranges(
     ranges: FrameRangeN | FrameRangesN | _RangesCallBackLike | None,
     exclusive: bool | None = None,
     mismatch: bool = False,
+    planes: Planes = None,
     *,
     prop_src: vs.VideoNode | Sequence[vs.VideoNode] | None = None,
 ) -> vs.VideoNode:
@@ -182,7 +186,7 @@ def replace_ranges(
         replace_ranges(black, white, [(200, -1)])
         ```
 
-    A callback function can be used to replace frames based on frame properties.
+    A callback function can be used to replace frames based on frame properties or frame numbers.
     The function must return a boolean value.
 
     Example of using a callback function:
@@ -213,12 +217,14 @@ def replace_ranges(
 
         exclusive: Force the use of exclusive (Python-style) ranges.
         mismatch: Accept format or resolution mismatch between clips.
+        planes: Which planes to process. Only available when `vs-zip` is installed.
         prop_src: Source clip(s) to use for frame properties in the callback.
             This is required if you're using a callback.
 
     Raises:
         CustomValueError: If ``prop_src`` isn't specified and a callback needs it.
         CustomValueError: If a wrong callback signature is provided.
+        CustomValueError: If ``planes`` is specified and `vs-zip` is not installed..
 
     Returns:
         Clip with ranges from clip_a replaced with clip_b.
@@ -230,7 +236,7 @@ def replace_ranges(
         return clip_a
 
     if not mismatch:
-        check_ref_clip(clip_a, clip_b)
+        check_ref_clip(clip_a, clip_b, replace_ranges)
 
     if callable(ranges):
         from inspect import Signature
@@ -267,9 +273,14 @@ def replace_ranges(
 
     b_ranges = normalize_ranges(clip_b, ranges, exclusive)
 
-    with contextlib.suppress(AttributeError):
+    with suppress(AttributeError):
         return vs.core.vszip.RFS(
-            clip_a, clip_b, [y for (s, e) in b_ranges for y in range(s, e + (not exclusive))], mismatch=mismatch
+            clip_a, clip_b, [y for (s, e) in b_ranges for y in range(s, e + (not exclusive))], mismatch, planes
+        )
+
+    if planes is not None:
+        raise CustomValueError(
+            "The `planes` argument is only available when vszip is installed.", replace_ranges, planes
         )
 
     a_ranges = invert_ranges(clip_a, clip_b, b_ranges, exclusive)

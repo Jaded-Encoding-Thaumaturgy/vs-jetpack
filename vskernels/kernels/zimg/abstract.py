@@ -1,6 +1,6 @@
 from typing import Any, Callable, ClassVar, Union
 
-from vstools import ConstantFormatVideoNode, FieldBased, FieldBasedT, check_variable, core, vs
+from vstools import ConstantFormatVideoNode, FieldBased, FieldBasedLike, check_variable, core, vs
 
 from ...abstract import ComplexKernel
 from ...abstract.base import BaseScaler
@@ -24,7 +24,7 @@ class ZimgBobber(BaseScaler):
     _implemented_funcs: ClassVar[tuple[str, ...]] = ("bob", "deinterlace")
 
     def bob(
-        self, clip: vs.VideoNode, *, tff: FieldBasedT | bool | None = None, **kwargs: Any
+        self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
         Apply bob deinterlacing to a given clip using the selected resizer.
@@ -47,7 +47,7 @@ class ZimgBobber(BaseScaler):
         return self.bob_function(clip, **self.get_bob_args(clip, tff=clip_fieldbased.is_tff, **kwargs))
 
     def deinterlace(
-        self, clip: vs.VideoNode, *, tff: FieldBasedT | bool | None = None, double_rate: bool = True, **kwargs: Any
+        self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, double_rate: bool = True, **kwargs: Any
     ) -> ConstantFormatVideoNode:
         """
         Apply deinterlacing to a given clip using the selected resizer.
@@ -59,7 +59,7 @@ class ZimgBobber(BaseScaler):
         Args:
             clip: The source clip
             tff: Field order of the clip.
-            double_rate: Wether to double the frame rate (True) of retain the original rate (False).
+            double_rate: Whether to double the frame rate (True) or retain the original rate (False).
 
         Returns:
             The bobbed clip.
@@ -102,16 +102,6 @@ class ZimgComplexKernel(ComplexKernel, ZimgBobber):
     This class integrates the full functionality of `ComplexKernel`—including scaling, descaling,
     resampling, and linear light/aspect ratio handling—with the bobbing capabilities of `ZimgBobber`.
     """
-
-    _implemented_funcs: ClassVar[tuple[str, ...]] = (
-        "scale",
-        "descale",
-        "rescale",
-        "resample",
-        "shift",
-        "bob",
-        "deinterlace",
-    )
 
 
 ZimgComplexKernelLike = Union[str, type[ZimgComplexKernel], ZimgComplexKernel]

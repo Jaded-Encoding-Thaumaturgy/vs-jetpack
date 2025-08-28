@@ -7,7 +7,7 @@ from vstools import (
     ConstantFormatVideoNode,
     CustomValueError,
     GenericVSFunction,
-    PlanesT,
+    Planes,
     check_ref_clip,
     check_variable,
     core,
@@ -28,7 +28,7 @@ def contrasharpening(
     radius: int = 1,
     sharp: vs.VideoNode | GenericVSFunction[vs.VideoNode] | None = None,
     mode: int | Repair.Mode = repair.Mode.MINMAX_SQUARE3,
-    planes: PlanesT = 0,
+    planes: Planes = 0,
 ) -> ConstantFormatVideoNode:
     """
     contra-sharpening: sharpen the denoised clip, but don't add more to any pixel than what was previously removed.
@@ -76,7 +76,7 @@ def contrasharpening(
 
 
 def contrasharpening_dehalo(
-    flt: vs.VideoNode, src: vs.VideoNode, level: float = 1.4, alpha: float = 2.49, planes: PlanesT = 0
+    flt: vs.VideoNode, src: vs.VideoNode, level: float = 1.4, alpha: float = 2.49, planes: Planes = 0
 ) -> ConstantFormatVideoNode:
     """
     Contrasharpening for dehalo.
@@ -111,7 +111,7 @@ def contrasharpening_median(
     flt: vs.VideoNode,
     src: vs.VideoNode,
     mode: int | Sequence[int] | RemoveGrain.Mode | Callable[..., ConstantFormatVideoNode] = box_blur,
-    planes: PlanesT = 0,
+    planes: Planes = 0,
 ) -> ConstantFormatVideoNode:
     """
     Contrasharpening median.

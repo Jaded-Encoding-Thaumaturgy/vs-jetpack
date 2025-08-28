@@ -41,7 +41,7 @@ from vstools import (
 from .abstract import BoundingBox, DeferredMask, GeneralMask
 from .edge import SobelStd
 from .morpho import Morpho
-from .types import GenericMaskT, XxpandMode
+from .types import MaskLike, XxpandMode
 from .utils import max_planes, normalize_mask
 
 __all__ = [
@@ -59,18 +59,13 @@ __all__ = [
 ]
 
 
-class _BaseCMaskCar(vs_object):
-    clips: list[vs.VideoNode]
-
-    def __vs_del__(self, core_id: int) -> None:
-        self.clips.clear()
-
-
 @dataclass
-class CustomMaskFromClipsAndRanges(GeneralMask, _BaseCMaskCar):
+class CustomMaskFromClipsAndRanges(GeneralMask, vs_object):
     """
     Abstract CustomMaskFromClipsAndRanges interface
     """
+
+    clips: list[vs.VideoNode] = field(init=False)
 
     processing: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = field(
         default=core.lazy.std.BinarizeMask, kw_only=True
@@ -112,6 +107,9 @@ class CustomMaskFromClipsAndRanges(GeneralMask, _BaseCMaskCar):
 
     @abstractmethod
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]: ...
+
+    def __vs_del__(self, core_id: int) -> None:
+        self.clips.clear()
 
 
 @dataclass
@@ -226,7 +224,7 @@ class HardsubSignFades(HardsubMask):
 
     highpass: float
     expand: int
-    edgemask: GenericMaskT
+    edgemask: MaskLike
     expand_mode: XxpandMode
 
     def __init__(
@@ -235,7 +233,7 @@ class HardsubSignFades(HardsubMask):
         bound: BoundingBox | None = None,
         highpass: float = 0.0763,
         expand: int = 8,
-        edgemask: GenericMaskT = SobelStd,
+        edgemask: MaskLike = SobelStd,
         expand_mode: XxpandMode = XxpandMode.RECTANGLE,
         *,
         blur: bool = False,
