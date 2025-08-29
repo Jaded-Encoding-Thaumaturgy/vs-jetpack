@@ -178,9 +178,7 @@ class Repair(Generic[P, R]):
         Use RemoveGrain mode 28's result to constrain the pixel.
         """
 
-        def __call__(
-            self, clip: vs.VideoNode, repairclip: vs.VideoNode, planes: Planes = None
-        ) -> vs.VideoNode:
+        def __call__(self, clip: vs.VideoNode, repairclip: vs.VideoNode, planes: Planes = None) -> vs.VideoNode:
             """
             Apply the selected repair mode to a `clip` using a `repairclip`.
 

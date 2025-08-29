@@ -485,9 +485,7 @@ def placebo_deband(
     thr = normalize_param_planes(clip, normalize_seq(thr), planes, 0, placebo_deband)
     ngrain = normalize_param_planes(clip, normalize_seq(grain), planes, 0, placebo_deband)
 
-    def _placebo(
-        clip: vs.VideoNode, threshold: float, grain_val: float, planes: Sequence[int]
-    ) -> vs.VideoNode:
+    def _placebo(clip: vs.VideoNode, threshold: float, grain_val: float, planes: Sequence[int]) -> vs.VideoNode:
         plane = 0
 
         if threshold == grain_val == 0:

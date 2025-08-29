@@ -35,9 +35,7 @@ def weave(clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.Vi
     return clip.std.DoubleWeave(tff)[::2]
 
 
-def reweave(
-    clipa: vs.VideoNode, clipb: vs.VideoNode, tff: FieldBasedLike | bool | None = None
-) -> vs.VideoNode:
+def reweave(clipa: vs.VideoNode, clipb: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
     assert check_variable(clipa, reweave)
     assert check_variable(clipb, reweave)
 
