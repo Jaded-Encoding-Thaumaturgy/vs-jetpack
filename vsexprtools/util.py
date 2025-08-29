@@ -9,7 +9,7 @@ from jetpytools import CustomTypeError, SupportsString
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from vapoursynth._nodes import _ReturnDict_akarin_Version  # pyright: ignore[reportMissingModuleSource]
+    from vapoursynth import _ReturnDict_akarin_Version
 
 from vstools import (
     EXPR_VARS,
