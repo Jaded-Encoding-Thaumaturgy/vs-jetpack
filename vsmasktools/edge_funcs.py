@@ -177,13 +177,9 @@ class dre_edgemask(CustomEnum):  # noqa: N801
     ) -> vs.VideoNode: ...
 
     @overload
-    def __call__(
-        self, clip: vs.VideoNode, tsigma: float = 1, brz: float = 0.122, **kwargs: Any
-    ) -> vs.VideoNode: ...
+    def __call__(self, clip: vs.VideoNode, tsigma: float = 1, brz: float = 0.122, **kwargs: Any) -> vs.VideoNode: ...
 
-    def __call__(
-        self, clip: vs.VideoNode, tsigma: float = 1, brz: float = 0.122, **kwargs: Any
-    ) -> vs.VideoNode:
+    def __call__(self, clip: vs.VideoNode, tsigma: float = 1, brz: float = 0.122, **kwargs: Any) -> vs.VideoNode:
         """
         Creates an edgemask with dynamic range enhancement (DRE) prefiltering.
 

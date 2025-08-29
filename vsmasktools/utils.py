@@ -45,9 +45,7 @@ __all__ = [
 ]
 
 
-def max_planes(
-    *_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelLike = Bilinear
-) -> vs.VideoNode:
+def max_planes(*_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelLike = Bilinear) -> vs.VideoNode:
     clips = flatten_vnodes(_clips)
 
     assert check_variable_format(clips, max_planes)
@@ -324,9 +322,7 @@ def freeze_replace_squaremask(
 
 
 @overload
-def normalize_mask(
-    mask: vs.VideoNode, clip: vs.VideoNode, *, func: FuncExcept | None = None
-) -> vs.VideoNode: ...
+def normalize_mask(mask: vs.VideoNode, clip: vs.VideoNode, *, func: FuncExcept | None = None) -> vs.VideoNode: ...
 
 
 @overload
