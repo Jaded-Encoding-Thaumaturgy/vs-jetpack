@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import cache
 from inspect import signature
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Callable, Generic, Sequence
+from typing import Any, Callable, Generic, Sequence
 
 from jetpytools import (
     CustomEnum,
@@ -115,20 +115,7 @@ def wnnm(
     return func.return_clip(denoised)
 
 
-# TODO: remove this when vs-stubs will be a thing™
-if TYPE_CHECKING:
-    from vapoursynth import Function, Plugin
-
-    class _VSFunction(Function):
-        def __call__(self, *args: Any, **kwargs: Any) -> vs.VideoNode: ...
-
-    class _VSPlugin(Plugin):
-        BM3D: _VSFunction
-        BM3Dv2: _VSFunction
-        VAggregate: _VSFunction
-
-
-def _clean_keywords(kwargs: dict[str, Any], function: _VSFunction) -> dict[str, Any]:
+def _clean_keywords(kwargs: dict[str, Any], function: vs.Function) -> dict[str, Any]:
     return {k: v for k, v in kwargs.items() if k in signature(function).parameters}
 
 
@@ -232,7 +219,7 @@ class BM3D(Generic[P, R]):
             )
 
         @property
-        def plugin(self) -> _VSPlugin:
+        def plugin(self) -> vs.Plugin:
             """
             Returns the appropriate BM3D plugin based on the current backend.
 

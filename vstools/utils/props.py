@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from types import UnionType
 from typing import (
     Any,
@@ -379,9 +378,6 @@ def get_props(
             props[k if isinstance(k, str) else k.prop_key] = prop
 
     if exceptions:
-        if sys.version_info >= (3, 11):
-            raise ExceptionGroup("Multiple exceptions occurred!", exceptions) from None
-
-        raise Exception(exceptions)
+        raise ExceptionGroup("Multiple exceptions occurred!", exceptions) from None
 
     return props

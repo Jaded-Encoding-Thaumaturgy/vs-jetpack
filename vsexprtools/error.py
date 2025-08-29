@@ -68,9 +68,6 @@ class CustomExprError(CustomRuntimeError, vs_object):
             + "\n".join(args_infos)
         )
 
-        if sys.version_info < (3, 11) and hasattr(self, "__notes__"):
-            out += "\n" + "\n".join(self.__notes__)
-
         return out
 
     def __vs_del__(self, core_id: int) -> None:

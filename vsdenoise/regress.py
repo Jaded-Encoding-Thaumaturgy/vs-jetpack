@@ -618,7 +618,7 @@ class ChromaReconstruct(ABC):
 
         y, y_base, y_m, y_dm, chroma_base, chroma_dm = self._get_bases(clip, include_edges, self.reconstruct)
 
-        reg = Regression.from_param(Regression.BlurConf(gauss_blur, sigma=sigma))  # pyright: ignore
+        reg = Regression.from_param(Regression.BlurConf(gauss_blur, sigma=sigma)) # pyright: ignore[reportCallIssue]
 
         if not isinstance(diff_mode, ReconDiffModeConf):
             diff_mode = diff_mode()
@@ -630,7 +630,7 @@ class ChromaReconstruct(ABC):
         y_diffxb = gauss_blur(norm_expr((y_base, y_dm), f"x y / {reg.eps} 1 clamp"), diff_mode.diff_sigma)
 
         fixup = (
-            y_diff.recon.Reconstruct(  # type: ignore
+            y_diff.recon.Reconstruct(
                 reg.slope,
                 reg.correlation,
                 radius=radius,

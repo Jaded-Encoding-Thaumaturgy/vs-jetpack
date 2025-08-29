@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Iterator, Sequence, SupportsIndex, overload
 from jetpytools import CustomTypeError
 
 if TYPE_CHECKING:
-    from vapoursynth._nodes import _ReturnDict_akarin_Version  # pyright: ignore[reportMissingModuleSource]
+    from vapoursynth import _ReturnDict_akarin_Version
 
 from vstools import (
     EXPR_VARS,
