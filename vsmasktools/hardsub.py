@@ -11,7 +11,6 @@ from vsrgtools import box_blur, median_blur
 from vssource import IMWRI, Indexer
 from vstools import (
     ColorRange,
-    ConstantFormatVideoNode,
     CustomOverflowError,
     FileNotExistsError,
     FilePathType,
@@ -67,12 +66,10 @@ class CustomMaskFromClipsAndRanges(GeneralMask, vs_object):
 
     clips: list[vs.VideoNode] = field(init=False)
 
-    processing: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = field(
-        default=core.lazy.std.BinarizeMask, kw_only=True
-    )
+    processing: VSFunctionNoArgs = field(default=core.lazy.std.BinarizeMask, kw_only=True)
     idx: Indexer | Type[Indexer] = field(default=IMWRI, kw_only=True)
 
-    def get_mask(self, ref: vs.VideoNode, /, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+    def get_mask(self, ref: vs.VideoNode, /, *args: Any, **kwargs: Any) -> vs.VideoNode:
         """
         Get the constructed mask
 
@@ -160,7 +157,7 @@ class HardsubMask(DeferredMask):
 
     def get_progressive_dehardsub(
         self, hardsub: vs.VideoNode, ref: vs.VideoNode, partials: list[vs.VideoNode]
-    ) -> tuple[list[ConstantFormatVideoNode], list[ConstantFormatVideoNode]]:
+    ) -> tuple[list[vs.VideoNode], list[vs.VideoNode]]:
         """
         Dehardsub using multiple superior hardsubbed sources and one inferior non-subbed source.
 
@@ -176,7 +173,7 @@ class HardsubMask(DeferredMask):
 
         masks = [self.get_mask(hardsub, ref)]
         partials_dehardsubbed = [hardsub]
-        dehardsub_masks = list[ConstantFormatVideoNode]()
+        dehardsub_masks = list[vs.VideoNode]()
         partials = [*partials, ref]
 
         thr = scale_value(self.bin_thr, 32, masks[-1])
@@ -194,7 +191,7 @@ class HardsubMask(DeferredMask):
 
     def apply_dehardsub(
         self, hardsub: vs.VideoNode, ref: vs.VideoNode, partials: list[vs.VideoNode] | None = None
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Dehardsub using multiple superior hardsubbed sources and one inferior non-subbed source.
 
@@ -260,7 +257,7 @@ class HardsubSignFades(HardsubMask):
 
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
-    def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         clipedge, refedge = (box_blur(normalize_mask(self.edgemask, x, **kwargs)) for x in (clip, ref))
 
         highpass = scale_delta(self.highpass, 32, clip)
@@ -318,7 +315,7 @@ class HardsubSign(HardsubMask):
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
     @limiter(mask=True)
-    def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         assert check_variable(clip, self._mask)
 
         hsmf = norm_expr([clip, ref], "x y - abs", func=self.__class__)
@@ -366,7 +363,7 @@ class HardsubLine(HardsubMask):
 
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
-    def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         assert check_variable(clip, self.__class__)
 
         expand_n = fallback(self.expand, clip.width // 200)
@@ -444,7 +441,7 @@ class HardsubLineFade(HardsubLine):
 
         super().__init__(ranges, bound, expand, blur=blur, refframes=None)
 
-    def get_mask(self, clip: vs.VideoNode, /, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def get_mask(self, clip: vs.VideoNode, /, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         self.refframes = [r[0] + round((r[1] - r[0]) * self.ref_float) for r in normalize_ranges(ref, self.ranges)]
 
         return super().get_mask(clip, ref)
@@ -483,7 +480,7 @@ class HardsubASS(HardsubMask):
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
     @limiter(mask=True)
-    def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         mask = core.sub.TextFile(ref, self.filename, fontdir=self.fontdir, blend=False).std.PropToClip("_Alpha")
 
         mask = mask.std.BinarizeMask(1)
@@ -496,7 +493,7 @@ class HardsubASS(HardsubMask):
 
 def bounded_dehardsub(
     hrdsb: vs.VideoNode, ref: vs.VideoNode, signs: list[HardsubMask], partials: list[vs.VideoNode] | None = None
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     assert check_variable(hrdsb, bounded_dehardsub)
     for sign in signs:
         hrdsb = sign.apply_dehardsub(hrdsb, ref, partials)
@@ -504,7 +501,7 @@ def bounded_dehardsub(
     return hrdsb
 
 
-def diff_hardsub_mask(a: vs.VideoNode, b: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+def diff_hardsub_mask(a: vs.VideoNode, b: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
     assert check_variable(a, diff_hardsub_mask)
     assert check_variable(b, diff_hardsub_mask)
 
@@ -514,7 +511,7 @@ def diff_hardsub_mask(a: vs.VideoNode, b: vs.VideoNode, **kwargs: Any) -> Consta
 
 
 @limiter(mask=True)
-def get_all_sign_masks(hrdsb: vs.VideoNode, ref: vs.VideoNode, signs: list[HardsubMask]) -> ConstantFormatVideoNode:
+def get_all_sign_masks(hrdsb: vs.VideoNode, ref: vs.VideoNode, signs: list[HardsubMask]) -> vs.VideoNode:
     assert check_variable(hrdsb, get_all_sign_masks)
     assert check_variable(ref, get_all_sign_masks)
 

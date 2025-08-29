@@ -11,14 +11,7 @@ from typing import Any, ClassVar, Sequence
 from jetpytools import interleave_arr
 
 from vsexprtools import ExprList, ExprOp, norm_expr
-from vstools import (
-    ConstantFormatVideoNode,
-    KwargsT,
-    get_depth,
-    join,
-    split,
-    vs,
-)
+from vstools import KwargsT, get_depth, join, split, vs
 
 from ..morpho import Morpho
 from ..types import XxpandMode
@@ -132,7 +125,7 @@ class TriticalTCanny(Matrix3x3, EdgeDetect):
     Plain and simple orthogonal first order derivative.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         _scale_constant = 1 if clip.format.sample_type == vs.FLOAT else (7 / 3 * 1.002 - 0.0001) / 2
 
         return clip.tcanny.TCanny(op=0, **(KwargsT(sigma=0, mode=1, scale=_scale_constant) | kwargs))
@@ -160,7 +153,7 @@ class PrewittStd(Matrix3x3, EdgeDetect):
     Judith M. S. Prewitt Vapoursynth plugin operator.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         return clip.std.Prewitt(**kwargs)
 
 
@@ -169,7 +162,7 @@ class PrewittTCanny(Matrix3x3, EdgeDetect):
     Judith M. S. Prewitt TCanny plugin operator.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         _scale_constant = 2 if clip.format.sample_type == vs.FLOAT else 7 / 3 * 1.002 - 0.0001
 
         return clip.tcanny.TCanny(op=1, **(KwargsT(sigma=0, mode=1, scale=_scale_constant) | kwargs))
@@ -188,7 +181,7 @@ class SobelStd(Matrix3x3, EdgeDetect):
     Sobel-Feldman Vapoursynth plugin operator.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         return clip.std.Sobel(**kwargs)
 
 
@@ -197,7 +190,7 @@ class SobelTCanny(Matrix3x3, EdgeDetect):
     Sobel-Feldman Vapoursynth plugin operator.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         _scale_constant = 1.0 if clip.format.sample_type == vs.FLOAT else (7 / 3 * 1.002 - 0.0001) / 2
 
         return clip.tcanny.TCanny(op=2, **(KwargsT(sigma=0, mode=1, scale=_scale_constant) | kwargs))
@@ -208,7 +201,7 @@ class ASobel(Matrix3x3, EdgeDetect):
     Modified Sobel-Feldman operator from AWarpSharp.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         return (vs.core.warp.ASobel if get_depth(clip) < 32 else vs.core.warpsf.ASobel)(clip, 255, **kwargs)
 
 
@@ -240,7 +233,7 @@ class ScharrTCanny(Matrix3x3, EdgeDetect):
     H. Scharr optimised TCanny Vapoursynth plugin operator.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         _scale_constant = 1 / 3 if clip.format.sample_type == vs.FLOAT else 1 / ((3 - math.sqrt(3) / 4) - 0.00053)
 
         return clip.tcanny.TCanny(op=3, **(KwargsT(sigma=0, mode=1, scale=_scale_constant) | kwargs))
@@ -263,7 +256,7 @@ class KroonTCanny(Matrix3x3, EdgeDetect):
     Dirk-Jan Kroon TCanny Vapoursynth plugin operator.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         _scale_constant = 1 / 17 if clip.format.sample_type == vs.FLOAT else 1 / 14.54325
 
         return clip.tcanny.TCanny(op=4, **(KwargsT(sigma=0, mode=1, scale=_scale_constant) | kwargs))
@@ -288,7 +281,7 @@ class FreyChen(NormalizeProcessor, MatrixEdgeDetect):
     ]
     divisors: ClassVar[Sequence[float] | None] = [2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2, 2, 6, 6, 3]
 
-    def _merge_edge(self, exprs: Sequence[ExprList], clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _merge_edge(self, exprs: Sequence[ExprList], clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         cmats = interleave_arr(exprs, [f"M{i}!" for i in range(len(exprs))], 1)
         M = "M0@ dup * M1@ dup * + M2@ dup * + M3@ dup * +"  # noqa: N806
         S = f"M4@ dup * M5@ dup * + M6@ dup * + M7@ dup * + M8@ dup * + {M} +"  # noqa: N806
@@ -379,7 +372,7 @@ class KirschTCanny(Matrix3x3, EdgeDetect):
     Russell Kirsch compass TCanny Vapoursynth plugin operator.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         return clip.tcanny.TCanny(op=5, **(KwargsT(sigma=0, mode=1) | kwargs))
 
 
@@ -397,7 +390,7 @@ class MinMax(EdgeDetect):
         self.radc = radc
         super().__init__(**kwargs)
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         return join(
             [
                 ExprOp.SUB.combine(

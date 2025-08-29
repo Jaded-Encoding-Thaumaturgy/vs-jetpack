@@ -24,13 +24,13 @@ from vsmasktools import (
 from vsrgtools import BlurMatrixBase, box_blur, contrasharpening_dehalo
 from vsscale import pre_ss as pre_supersample
 from vstools import (
-    ConstantFormatVideoNode,
     ConvMode,
     FuncExcept,
     FunctionUtil,
     InvalidColorFamilyError,
     OneDimConvMode,
     Planes,
+    VSFunctionPlanesArgs,
     check_progressive,
     check_variable,
     get_y,
@@ -43,7 +43,7 @@ from vstools import (
     vs_object,
 )
 
-from .alpha import IterArr, VSFunctionPlanesArgs, dehalo_alpha
+from .alpha import IterArr, dehalo_alpha
 
 __all__ = ["fine_dehalo", "fine_dehalo2"]
 
@@ -83,7 +83,7 @@ class FineDehalo(Generic[P, R]):
         # Misc params
         planes: Planes = 0,
         func: FuncExcept | None = None,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         The fine_dehalo mask.
 
@@ -108,7 +108,7 @@ class FineDehalo(Generic[P, R]):
         """
         return self.Masks(clip, rx, ry, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func).MAIN
 
-    class Masks(Mapping[str, ConstantFormatVideoNode], vs_object):
+    class Masks(Mapping[str, vs.VideoNode], vs_object):
         """
         Class for creating and storing intermediate masks used in the `fine_dehalo` function.
 
@@ -251,7 +251,7 @@ class FineDehalo(Generic[P, R]):
             self._shr_med = shr_med
             self._main = mask
 
-        def __getitem__(self, index: str) -> ConstantFormatVideoNode:
+        def __getitem__(self, index: str) -> vs.VideoNode:
             index = index.upper()
 
             if index in self._names:
@@ -266,31 +266,31 @@ class FineDehalo(Generic[P, R]):
             return len(self._names)
 
         @property
-        def EDGES(self) -> ConstantFormatVideoNode:  # noqa: N802
+        def EDGES(self) -> vs.VideoNode:  # noqa: N802
             return self._edges
 
         @property
-        def SHARP_EDGES(self) -> ConstantFormatVideoNode:  # noqa: N802
+        def SHARP_EDGES(self) -> vs.VideoNode:  # noqa: N802
             return self._strong
 
         @property
-        def LARGE_EDGES(self) -> ConstantFormatVideoNode:  # noqa: N802
+        def LARGE_EDGES(self) -> vs.VideoNode:  # noqa: N802
             return self._large
 
         @property
-        def IGNORE_DETAILS(self) -> ConstantFormatVideoNode:  # noqa: N802
+        def IGNORE_DETAILS(self) -> vs.VideoNode:  # noqa: N802
             return self._light
 
         @property
-        def SHRINK(self) -> ConstantFormatVideoNode:  # noqa: N802
+        def SHRINK(self) -> vs.VideoNode:  # noqa: N802
             return self._shrink
 
         @property
-        def SHRINK_EDGES_EXCL(self) -> ConstantFormatVideoNode:  # noqa: N802
+        def SHRINK_EDGES_EXCL(self) -> vs.VideoNode:  # noqa: N802
             return self._shr_med
 
         @property
-        def MAIN(self) -> ConstantFormatVideoNode:  # noqa: N802
+        def MAIN(self) -> vs.VideoNode:  # noqa: N802
             return self._main
 
         def __vs_del__(self, core_id: int) -> None:

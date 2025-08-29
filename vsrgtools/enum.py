@@ -9,7 +9,6 @@ from typing_extensions import Self
 
 from vsexprtools import ExprList, ExprOp, ExprToken, ExprVars
 from vstools import (
-    ConstantFormatVideoNode,
     ConvMode,
     CustomValueError,
     Planes,
@@ -64,7 +63,7 @@ class BlurMatrixBase(list[_Nb]):
         func: FuncExcept | None = None,
         expr_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Apply the blur kernel to the given clip via spatial or temporal convolution.
 
@@ -148,7 +147,7 @@ class BlurMatrixBase(list[_Nb]):
             clip[0], planes, bias, divisor, saturate, passes, expr_kwargs, func=func, **kwargs
         )
 
-    def _averageframes_akarin(self, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _averageframes_akarin(self, *args: Any, **kwargs: Any) -> vs.VideoNode:
         clip, planes, bias, divisor, saturate, passes, expr_kwargs = args
 
         r = len(self) // 2

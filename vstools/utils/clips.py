@@ -23,7 +23,7 @@ from ..enums import (
     TransferLike,
 )
 from ..functions import DitherType, check_variable_format, depth
-from ..types import ConstantFormatVideoNode, HoldsVideoFormat, VideoFormatLike, VideoNodeT
+from ..types import HoldsVideoFormat, VideoFormatLike
 from . import vs_proxy as vs
 from .cache import DynamicClipsCache
 from .info import get_depth
@@ -47,7 +47,7 @@ def finalize_clip(
     dither_type: DitherType = DitherType.AUTO,
     *,
     func: FuncExcept | None = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Finalize a clip for output to the encoder.
 
@@ -83,7 +83,7 @@ def finalize_output(
     clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExcept | None = None,
-) -> Callable[P, ConstantFormatVideoNode]: ...
+) -> Callable[P, vs.VideoNode]: ...
 
 
 @overload
@@ -93,7 +93,7 @@ def finalize_output(
     clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExcept | None = None,
-) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, ConstantFormatVideoNode]]: ...
+) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
 
 def finalize_output(
@@ -104,7 +104,7 @@ def finalize_output(
     clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExcept | None = None,
-) -> Union[Callable[P, vs.VideoNode], Callable[[Callable[P, vs.VideoNode]], Callable[P, ConstantFormatVideoNode]]]:
+) -> Union[Callable[P, vs.VideoNode], Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]]:
     """
     Decorator implementation of [finalize_clip][vstools.finalize_clip].
     """
@@ -113,7 +113,7 @@ def finalize_output(
         return partial(finalize_output, bits=bits, clamp_tv_range=clamp_tv_range, dither_type=dither_type, func=func)
 
     @wraps(function)
-    def _wrapper(*args: P.args, **kwargs: P.kwargs) -> ConstantFormatVideoNode:
+    def _wrapper(*args: P.args, **kwargs: P.kwargs) -> vs.VideoNode:
         return finalize_clip(function(*args, **kwargs), bits, clamp_tv_range, dither_type, func=func)
 
     return _wrapper
@@ -132,7 +132,7 @@ def initialize_clip(
     dither_type: DitherType = DitherType.AUTO,
     *,
     func: FuncExcept | None = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Initialize a clip with default props.
 
@@ -205,7 +205,7 @@ def initialize_clip(
 
 @overload
 def initialize_input(
-    function: Callable[P, VideoNodeT],
+    function: Callable[P, vs.VideoNode],
     /,
     *,
     bits: int | None = 16,
@@ -218,7 +218,7 @@ def initialize_input(
     strict: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExcept | None = None,
-) -> Callable[P, VideoNodeT]: ...
+) -> Callable[P, vs.VideoNode]: ...
 
 
 @overload
@@ -233,7 +233,7 @@ def initialize_input(
     field_based: FieldBasedLike | None = None,
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExcept | None = None,
-) -> Callable[[Callable[P, VideoNodeT]], Callable[P, VideoNodeT]]: ...
+) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
 
 def initialize_input(
@@ -250,7 +250,7 @@ def initialize_input(
     strict: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExcept | None = None,
-) -> Union[Callable[P, VideoNodeT], Callable[[Callable[P, VideoNodeT]], Callable[P, VideoNodeT]]]:
+) -> Union[Callable[P, vs.VideoNode], Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]]:
     """
     Decorator implementation of [initialize_clip][vstools.initialize_clip]
     """
@@ -284,7 +284,7 @@ def initialize_input(
     )
 
     @wraps(function)
-    def _wrapper(*args: P.args, **kwargs: P.kwargs) -> VideoNodeT:
+    def _wrapper(*args: P.args, **kwargs: P.kwargs) -> vs.VideoNode:
         args_l = list(args)
 
         for i, obj in enumerate(args_l):
@@ -310,14 +310,14 @@ def initialize_input(
     return _wrapper
 
 
-class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
+class ProcessVariableClip(DynamicClipsCache[T]):
     """
     A helper class for processing variable format/resolution clip.
     """
 
     def __init__(
         self,
-        clip: VideoNodeT,
+        clip: vs.VideoNode,
         out_dim: tuple[int, int] | Literal[False] | None = None,
         out_fmt: int | vs.VideoFormat | Literal[False] | None = None,
         cache_size: int = 10,
@@ -355,7 +355,7 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
         self.clip = clip
         self.out = vs.core.std.BlankClip(clip, **bk_args)
 
-    def eval_clip(self) -> VideoNodeT:
+    def eval_clip(self) -> vs.VideoNode:
         if self.out.format and (0 not in (self.out.width, self.out.height)):
             try:
                 return self.get_clip(self.get_key(self.clip))
@@ -364,11 +364,11 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
 
         return vs.core.std.FrameEval(self.out, lambda n, f: self[self.get_key(f)], self.clip)
 
-    def get_clip(self, key: T) -> VideoNodeT:
+    def get_clip(self, key: T) -> vs.VideoNode:
         return self.process(self.normalize(self.clip, key))
 
     @classmethod
-    def from_clip(cls, clip: VideoNodeT) -> VideoNodeT:
+    def from_clip(cls, clip: vs.VideoNode) -> vs.VideoNode:
         """
         Process a variable format/resolution clip.
 
@@ -383,12 +383,12 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
     @classmethod
     def from_func(
         cls,
-        clip: VideoNodeT,
-        func: Callable[[VideoNodeT], VideoNodeT],
+        clip: vs.VideoNode,
+        func: Callable[[vs.VideoNode], vs.VideoNode],
         out_dim: tuple[int, int] | Literal[False] | None = None,
         out_fmt: int | vs.VideoFormat | Literal[False] | None = None,
         cache_size: int = 10,
-    ) -> VideoNodeT:
+    ) -> vs.VideoNode:
         """
         Process a variable format/resolution clip with a given function
 
@@ -403,7 +403,7 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
             Processed variable clip.
         """
 
-        def process(self: ProcessVariableClip[T, VideoNodeT], clip: VideoNodeT) -> VideoNodeT:
+        def process(self: ProcessVariableClip[T], clip: vs.VideoNode) -> vs.VideoNode:
             return func(clip)
 
         ns = cls.__dict__.copy()
@@ -425,7 +425,7 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
         """
 
     @abstractmethod
-    def normalize(self, clip: VideoNodeT, cast_to: T) -> VideoNodeT:
+    def normalize(self, clip: vs.VideoNode, cast_to: T) -> vs.VideoNode:
         """
         Normalize the given node to the format/resolution specified by the unique key `cast_to`.
 
@@ -437,7 +437,7 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
             Normalized clip.
         """
 
-    def process(self, clip: VideoNodeT) -> VideoNodeT:
+    def process(self, clip: vs.VideoNode) -> vs.VideoNode:
         """
         Process the given clip.
 
@@ -454,7 +454,7 @@ class ProcessVariableClip(DynamicClipsCache[T, VideoNodeT]):
         del self.clip, self.out
 
 
-class ProcessVariableResClip(ProcessVariableClip[tuple[int, int], VideoNodeT]):
+class ProcessVariableResClip(ProcessVariableClip[tuple[int, int]]):
     """
     A helper class for processing variable resolution clip.
     """
@@ -462,12 +462,12 @@ class ProcessVariableResClip(ProcessVariableClip[tuple[int, int], VideoNodeT]):
     def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> tuple[int, int]:
         return (frame.width, frame.height)
 
-    def normalize(self, clip: VideoNodeT, cast_to: tuple[int, int]) -> VideoNodeT:
+    def normalize(self, clip: vs.VideoNode, cast_to: tuple[int, int]) -> vs.VideoNode:
         normalized = vs.core.resize.Point(vs.core.std.RemoveFrameProps(clip), *cast_to)
         return vs.core.std.CopyFrameProps(normalized, clip)
 
 
-class ProcessVariableFormatClip(ProcessVariableClip[vs.VideoFormat, vs.VideoNode]):
+class ProcessVariableFormatClip(ProcessVariableClip[vs.VideoFormat]):
     """
     A helper class for processing variable format clip.
     """
@@ -476,12 +476,12 @@ class ProcessVariableFormatClip(ProcessVariableClip[vs.VideoFormat, vs.VideoNode
         assert frame.format
         return frame.format
 
-    def normalize(self, clip: vs.VideoNode, cast_to: vs.VideoFormat) -> ConstantFormatVideoNode:
+    def normalize(self, clip: vs.VideoNode, cast_to: vs.VideoFormat) -> vs.VideoNode:
         normalized = vs.core.resize.Point(vs.core.std.RemoveFrameProps(clip), format=cast_to.id)
         return vs.core.std.CopyFrameProps(normalized, clip)
 
 
-class ProcessVariableResFormatClip(ProcessVariableClip[tuple[int, int, vs.VideoFormat], vs.VideoNode]):
+class ProcessVariableResFormatClip(ProcessVariableClip[tuple[int, int, vs.VideoFormat]]):
     """
     A helper class for processing variable format and resolution clip.
     """

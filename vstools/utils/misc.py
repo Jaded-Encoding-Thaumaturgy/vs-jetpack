@@ -13,7 +13,6 @@ from typing_extensions import Self
 from ..enums import Align, BaseAlign
 from ..exceptions import InvalidSubsamplingError
 from ..functions import Keyframes, check_variable_format, clip_data_gather
-from ..types import ConstantFormatVideoNode, VideoNodeT
 from ..utils.cache import SceneBasedDynamicCache
 from .info import get_video_format
 from .props import get_props
@@ -115,7 +114,7 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):  # noqa: N801
 
     def CROP(  # noqa: N802
         self, clip: vs.VideoNode, crop_scale: float | tuple[float, float] | None = None
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Crop a clip with the padding values.
 
@@ -135,7 +134,7 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):  # noqa: N801
 
         return clip.std.Crop(*(x * y for x, y in zip(padding, crop_pad)))
 
-    def MIRROR(self, clip: VideoNodeT) -> VideoNodeT:  # noqa: N802
+    def MIRROR(self, clip: vs.VideoNode) -> vs.VideoNode:  # noqa: N802
         """
         Pad a clip with reflect mode. This will reflect the clip on each side.
 
@@ -150,7 +149,7 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):  # noqa: N801
         self.pad_ops.append((padding, (out.width, out.height)))
         return out
 
-    def REPEAT(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:  # noqa: N802
+    def REPEAT(self, clip: vs.VideoNode) -> vs.VideoNode:  # noqa: N802
         """
         Pad a clip with repeat mode. This will simply repeat the last row/column till the end.
 
@@ -167,7 +166,7 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):  # noqa: N801
 
     def COLOR(  # noqa: N802
         self, clip: vs.VideoNode, color: int | float | bool | None | Sequence[int | float | bool | None] = (False, None)
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Pad a clip with a constant color.
 
@@ -225,7 +224,7 @@ class padder:  # noqa: N801
         return width, height, fmt, w_sub, h_sub
 
     @classmethod
-    def MIRROR(cls, clip: VideoNodeT, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> VideoNodeT:  # noqa: N802
+    def MIRROR(cls, clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> vs.VideoNode:  # noqa: N802
         """
         Pad a clip with reflect mode. This will reflect the clip on each side.
 
@@ -266,7 +265,7 @@ class padder:  # noqa: N801
     @classmethod
     def REPEAT(  # noqa: N802
         cls, clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Pad a clip with repeat mode. This will simply repeat the last row/column till the end.
 
@@ -338,7 +337,7 @@ class padder:  # noqa: N801
         top: int = 0,
         bottom: int = 0,
         color: int | float | bool | None | MissingT | Sequence[int | float | bool | None | MissingT] = (False, MISSING),
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Pad a clip with a constant color.
 
@@ -453,8 +452,8 @@ class padder:  # noqa: N801
 
 
 def pick_func_stype(
-    clip: vs.VideoNode, func_int: Callable[P, VideoNodeT], func_float: Callable[P, VideoNodeT]
-) -> Callable[P, VideoNodeT]:
+    clip: vs.VideoNode, func_int: Callable[P, vs.VideoNode], func_float: Callable[P, vs.VideoNode]
+) -> Callable[P, vs.VideoNode]:
     """
     Pick the function matching the sample type of the clip's format.
 

@@ -2,9 +2,6 @@ import typing
 import vapoursynth as vs
 from dataclasses import dataclass
 
-if typing.TYPE_CHECKING:
-    from vstools import ConstantFormatVideoNode
-
 __all__ = ["DFTTest", "DFTTest2", "Backend"]
 
 __version__: str
@@ -58,7 +55,7 @@ def DFTTest2(
     ssystem: typing.Literal[0, 1] = 0,
     planes: int | typing.Sequence[int] | None = None,
     backend: backendT = ...,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 FREQ = float
 SIGMA = float
@@ -89,4 +86,4 @@ def DFTTest(
     ssystem: typing.Literal[0, 1] = 0,
     planes: int | typing.Sequence[int] | None = None,
     backend: backendT | None = None,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...

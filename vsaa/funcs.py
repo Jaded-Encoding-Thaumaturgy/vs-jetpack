@@ -9,7 +9,6 @@ from vsmasktools import EdgeDetect, EdgeDetectLike, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
 from vsscale import ArtCNN
 from vstools import (
-    ConstantFormatVideoNode,
     ConvMode,
     CustomValueError,
     FormatsMismatchError,
@@ -29,9 +28,7 @@ __all__ = ["based_aa", "pre_aa"]
 
 def pre_aa(
     clip: vs.VideoNode,
-    sharpener: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] = partial(
-        unsharpen, blur=partial(gauss_blur, mode=ConvMode.VERTICAL, sigma=1)
-    ),
+    sharpener: VSFunctionNoArgs = partial(unsharpen, blur=partial(gauss_blur, mode=ConvMode.VERTICAL, sigma=1)),
     antialiaser: AntiAliaser = NNEDI3(),
     transpose_first: bool = False,
     direction: AntiAliaser.AADirection = AntiAliaser.AADirection.BOTH,
@@ -65,8 +62,8 @@ def based_aa(
     downscaler: ScalerLike | None = None,
     supersampler: ScalerLike | Literal[False] = ArtCNN,
     antialiaser: AntiAliaser | None = None,
-    prefilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] = False,
-    postfilter: VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | Literal[False] | dict[str, Any] | None = None,
+    prefilter: vs.VideoNode | VSFunctionNoArgs | Literal[False] = False,
+    postfilter: VSFunctionNoArgs | Literal[False] | dict[str, Any] | None = None,
     show_mask: bool = False,
     **aa_kwargs: Any,
 ) -> vs.VideoNode:

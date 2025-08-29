@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Mapping, Protocol, TypeAlias, TypeVar, Union
+from typing import Any, Callable, Iterable, Mapping, Protocol, TypeAlias, TypeVar, Union
 
 import vapoursynth as vs
 from jetpytools import MISSING, DataType, FuncExcept, MissingT, PassthroughC, SingleOrSeq, StrArr, StrArrOpt
@@ -35,17 +35,12 @@ __all__ = [
     "VideoFormatLike",
     "VideoFormatT",  # Deprecated alias
     "VideoNodeIterableT",
-    "VideoNodeT",
 ]
 
 
 FuncExceptT = FuncExcept
 
-VideoNodeT = TypeVar("VideoNodeT", bound=vs.VideoNode)
-VideoNodeT_contra = TypeVar("VideoNodeT_contra", bound=vs.VideoNode, contravariant=True)
-VideoNodeT_co = TypeVar("VideoNodeT_co", bound=vs.VideoNode, covariant=True)
-
-VideoNodeIterableT: TypeAlias = Union[VideoNodeT, Iterable["VideoNodeIterableT[VideoNodeT]"]]
+VideoNodeIterableT: TypeAlias = Union[vs.VideoNode, Iterable["VideoNodeIterableT"]]
 
 _VSMapValue = Union[
     SingleOrSeq[int],
@@ -105,43 +100,35 @@ Deprecated alias of HoldsPropValue.
 F_VD = TypeVar("F_VD", bound=Callable[..., vs.VideoNode])
 
 
-class VSFunctionNoArgs(Protocol[VideoNodeT_contra, VideoNodeT_co]):
-    def __call__(self, clip: VideoNodeT_contra) -> VideoNodeT_co: ...
+class VSFunctionNoArgs(Protocol):
+    def __call__(self, clip: vs.VideoNode) -> vs.VideoNode: ...
 
 
-class VSFunctionArgs(Protocol[VideoNodeT_contra, VideoNodeT_co]):
-    def __call__(self, clip: VideoNodeT_contra, *args: Any) -> VideoNodeT_co: ...
+class VSFunctionArgs(Protocol):
+    def __call__(self, clip: vs.VideoNode, *args: Any) -> vs.VideoNode: ...
 
 
-class VSFunctionKwArgs(Protocol[VideoNodeT_contra, VideoNodeT_co]):
-    def __call__(self, clip: VideoNodeT_contra, **kwargs: Any) -> VideoNodeT_co: ...
+class VSFunctionKwArgs(Protocol):
+    def __call__(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode: ...
 
 
-class VSFunctionAllArgs(Protocol[VideoNodeT_contra, VideoNodeT_co]):
-    def __call__(self, clip: VideoNodeT_contra, *args: Any, **kwargs: Any) -> VideoNodeT_co: ...
+class VSFunctionAllArgs(Protocol):
+    def __call__(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode: ...
 
 
-VSFunction = Union[
-    VSFunctionNoArgs[VideoNodeT, VideoNodeT],
-    VSFunctionArgs[VideoNodeT, VideoNodeT],
-    VSFunctionKwArgs[VideoNodeT, VideoNodeT],
-    VSFunctionAllArgs[VideoNodeT, VideoNodeT],
-]
+VSFunction = Union[VSFunctionNoArgs, VSFunctionArgs, VSFunctionKwArgs, VSFunctionAllArgs]
 """
 Function that takes a VideoNode as its first argument and returns a VideoNode.
 """
 
 
-class VSFunctionPlanesArgs(VSFunctionKwArgs[VideoNodeT_contra, VideoNodeT_co], Protocol):
-    def __call__(self, clip: VideoNodeT_contra, *, planes: Planes = ..., **kwargs: Any) -> VideoNodeT_co: ...
+class VSFunctionPlanesArgs(VSFunctionKwArgs, Protocol):
+    def __call__(self, clip: vs.VideoNode, *, planes: Planes = ..., **kwargs: Any) -> vs.VideoNode: ...
 
 
-GenericVSFunction = Callable[..., VideoNodeT]
+GenericVSFunction = Callable[..., vs.VideoNode]
 
-if TYPE_CHECKING:
-
-    class ConstantFormatVideoNode(vs.VideoNode):
-        format: vs.VideoFormat
-
-else:
-    ConstantFormatVideoNode = vs.VideoNode
+ConstantFormatVideoNode = vs.VideoNode
+"""
+Deprecated alias of vs.VideoNode
+"""

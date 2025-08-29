@@ -12,14 +12,12 @@ from jetpytools import CustomIndexError, CustomNotImplementedError, CustomValueE
 
 from vstools import (
     ChromaLocation,
-    ConstantFormatVideoNode,
     Dar,
     FieldBased,
     FieldBasedLike,
     KwargsT,
     Resolution,
     Sar,
-    VideoNodeT,
     check_correct_subsampling,
     check_variable_format,
     depth,
@@ -92,7 +90,7 @@ def _check_dynamic_keeparscaler_params(
 
     if exceptions:
         if sys.version_info >= (3, 11):
-            raise ExceptionGroup("Multiple exceptions occurred!", exceptions)  # noqa: F821
+            raise ExceptionGroup("Multiple exceptions occurred!", exceptions)
 
         raise Exception(exceptions)
 
@@ -127,10 +125,10 @@ def _linearize(
     clip: vs.VideoNode,
     linear: bool | None,
     sigmoid: bool | tuple[Slope, Center],
-    op_partial: partial[VideoNodeT],
+    op_partial: partial[vs.VideoNode],
     func: FuncExcept,
     **kwargs: Any,
-) -> VideoNodeT:
+) -> vs.VideoNode:
     if linear is False and sigmoid is not False:
         raise CustomValueError("If sigmoid is not False, linear can't be False as well!", func, (linear, sigmoid))
 
@@ -155,7 +153,7 @@ def _linearize(
         with LinearLight(**llargs) as ll:
             ll.linear = op_partial(ll.linear, **kwargs)
 
-        return ll.out  # type: ignore[return-value]
+        return ll.out
 
     return op_partial(clip, **kwargs)
 
@@ -199,7 +197,7 @@ class LinearScaler(Scaler):
         linear: bool | None = None,
         sigmoid: bool | tuple[Slope, Center] = False,
         **kwargs: Any,
-    ) -> vs.VideoNode | ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Scale a clip to the given resolution with optional linearization.
 
@@ -255,7 +253,7 @@ class LinearDescaler(Descaler):
             height: int | None,
             shift: tuple[TopShift, LeftShift],
             **kwargs: Any,
-        ) -> ConstantFormatVideoNode:
+        ) -> vs.VideoNode:
             """
             An optional function to be implemented by subclasses.
 
@@ -271,7 +269,7 @@ class LinearDescaler(Descaler):
             height: int | None,
             shift: tuple[TopShift, LeftShift],
             **kwargs: Any,
-        ) -> ConstantFormatVideoNode:
+        ) -> vs.VideoNode:
             """
             An optional function to be implemented by subclasses.
 
@@ -291,7 +289,7 @@ class LinearDescaler(Descaler):
         linear: bool | None = None,
         sigmoid: bool | tuple[Slope, Center] = False,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Descale a clip to the specified resolution, optionally using linear light processing.
 
@@ -337,7 +335,7 @@ class LinearDescaler(Descaler):
         linear: bool | None = None,
         sigmoid: bool | tuple[Slope, Center] = False,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Rescale a clip to the given resolution from a previously descaled clip,
         optionally using linear light processing.
@@ -463,7 +461,7 @@ class KeepArScaler(Scaler):
         dar_in: Dar | bool | float | None = None,
         keep_ar: bool | None = None,
         **kwargs: Any,
-    ) -> vs.VideoNode | ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Scale a clip to the given resolution with aspect ratio support.
 
@@ -545,7 +543,7 @@ class ComplexScaler(KeepArScaler, LinearScaler):
         # ComplexScaler adds blur
         blur: float | None = None,
         **kwargs: Any,
-    ) -> vs.VideoNode | ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Scale a clip to the given resolution, with aspect ratio and linear light support.
 
@@ -685,7 +683,7 @@ class ComplexDescaler(LinearDescaler):
         ignore_mask: vs.VideoNode | None = None,
         blur: float | None = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Descale a clip to the given resolution, with image borders handling and sampling grid alignment,
         optionally using linear light processing.
@@ -788,7 +786,7 @@ class ComplexDescaler(LinearDescaler):
         ignore_mask: vs.VideoNode | None = None,
         blur: float | None = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Rescale a clip to the given resolution from a previously descaled clip,
         with image borders handling and sampling grid alignment, optionally using linear light processing.

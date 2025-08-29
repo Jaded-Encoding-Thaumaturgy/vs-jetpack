@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, MutableMapping, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, MutableMapping, TypeVar
 
 from jetpytools import T
 
 from ..functions import Keyframes
-from ..types import VideoNodeT, vs_object
+from ..types import vs_object
 from . import vs_proxy as vs
 
 if TYPE_CHECKING:
-    from vapoursynth._frames import _PropValue
+    from vapoursynth import _PropValue
 
 
 __all__ = [
@@ -40,14 +40,14 @@ class ClipsCache(vs_object, dict[vs.VideoNode, vs.VideoNode]):
         self.clear()
 
 
-class DynamicClipsCache(vs_object, dict[T, VideoNodeT]):
+class DynamicClipsCache(vs_object, dict[T, vs.VideoNode]):
     def __init__(self, cache_size: int = 2) -> None:
         self.cache_size = cache_size
 
     @abstractmethod
-    def get_clip(self, key: T) -> VideoNodeT: ...
+    def get_clip(self, key: T) -> vs.VideoNode: ...
 
-    def __getitem__(self, key: T) -> VideoNodeT:
+    def __getitem__(self, key: T) -> vs.VideoNode:
         if key not in self:
             self[key] = self.get_clip(key)
 
@@ -62,12 +62,13 @@ class DynamicClipsCache(vs_object, dict[T, VideoNodeT]):
 
 class FramesCache(vs_object, dict[int, FrameT], Generic[NodeT, FrameT]):
     def __init__(self, clip: NodeT, cache_size: int = 10) -> None:
-        self.clip = clip
+        self.clip: NodeT = clip
         self.cache_size = cache_size
 
     def add_frame(self, n: int, f: FrameT) -> FrameT:
-        self[n] = f.copy()
-        return self[n]
+        f = f.copy()
+        self[n] = f
+        return f
 
     def get_frame(self, n: int, f: FrameT) -> FrameT:
         return self[n]
@@ -80,7 +81,7 @@ class FramesCache(vs_object, dict[int, FrameT], Generic[NodeT, FrameT]):
 
     def __getitem__(self, key: int) -> FrameT:
         if key not in self:
-            self.add_frame(key, cast(FrameT, self.clip.get_frame(key)))
+            self.add_frame(key, self.clip.get_frame(key))  # type: ignore[arg-type]
 
         return super().__getitem__(key)
 
@@ -111,7 +112,7 @@ class NodeFramesCache(vs_object, dict[NodeT, FramesCache[NodeT, FrameT]]):
 class ClipFramesCache(NodeFramesCache[vs.VideoNode, vs.VideoFrame]): ...
 
 
-class SceneBasedDynamicCache(DynamicClipsCache[int, vs.VideoNode]):
+class SceneBasedDynamicCache(DynamicClipsCache[int]):
     def __init__(self, clip: vs.VideoNode, keyframes: Keyframes | str, cache_size: int = 5) -> None:
         super().__init__(cache_size)
 
@@ -153,7 +154,7 @@ def cache_clip(_clip: NodeT, cache_size: int = 10) -> NodeT:
         _to_cache_node = vs.core.std.ModifyFrame(blank, _clip, cache.add_frame)
         _from_cache_node = vs.core.std.ModifyFrame(blank, blank, cache.get_frame)
 
-        return cast(NodeT, vs.core.std.FrameEval(blank, lambda n: _from_cache_node if n in cache else _to_cache_node))
+        return vs.core.std.FrameEval(blank, lambda n: _from_cache_node if n in cache else _to_cache_node)  # type: ignore[return-value]
 
     # elif isinstance(_clip, vs.AudioNode):
     #     ...

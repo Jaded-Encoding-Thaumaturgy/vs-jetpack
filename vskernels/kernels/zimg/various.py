@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import ceil
 from typing import Any, Callable
 
-from vstools import ConstantFormatVideoNode, core, vs
+from vstools import core, vs
 
 from ...types import LeftShift, TopShift
 from .abstract import ZimgComplexKernel
@@ -21,9 +21,9 @@ class Point(ZimgComplexKernel):
     """
 
     scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Point
-    resample_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Point
-    descale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Depoint
-    rescale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Point
+    resample_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Point
+    descale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Depoint
+    rescale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Point
     _static_kernel_radius = 1
 
 
@@ -33,9 +33,9 @@ class Bilinear(ZimgComplexKernel):
     """
 
     scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Bilinear
-    resample_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Bilinear
-    descale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Debilinear
-    rescale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Bilinear
+    resample_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Bilinear
+    descale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Debilinear
+    rescale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Bilinear
     _static_kernel_radius = 1
 
 
@@ -45,9 +45,9 @@ class Lanczos(ZimgComplexKernel):
     """
 
     scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Lanczos
-    resample_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Lanczos
-    descale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Delanczos
-    rescale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Lanczos
+    resample_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Lanczos
+    descale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Delanczos
+    rescale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Lanczos
 
     def __init__(self, taps: float = 3, **kwargs: Any) -> None:
         """

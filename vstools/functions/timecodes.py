@@ -13,7 +13,6 @@ from typing_extensions import Self
 
 from ..enums import Matrix, SceneChangeMode
 from ..exceptions import FramesLengthError, InvalidTimecodeVersionError
-from ..types import VideoNodeT
 from .file import PackageStorage
 from .render import clip_async_render
 
@@ -287,7 +286,7 @@ class Timecodes(list[FrameDur]):
 
         return cls(FrameDur(i, f.numerator, f.denominator) for i, f in enumerate(norm_timecodes))
 
-    def assume_vfr(self, clip: VideoNodeT, func: FuncExcept | None = None) -> VideoNodeT:
+    def assume_vfr(self, clip: vs.VideoNode, func: FuncExcept | None = None) -> vs.VideoNode:
         """
         Force the given clip to be assumed to be vfr by other applications.
 

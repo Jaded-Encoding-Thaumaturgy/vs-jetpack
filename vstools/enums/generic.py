@@ -12,7 +12,7 @@ from ..exceptions import (
     UnsupportedChromaLocationError,
     UnsupportedFieldBasedError,
 )
-from ..types import HoldsVideoFormat, VideoFormatLike, VideoNodeT
+from ..types import HoldsVideoFormat, VideoFormatLike
 from .base import PropEnum, _base_from_video
 
 __all__ = ["ChromaLocation", "ChromaLocationLike", "ChromaLocationT", "FieldBased", "FieldBasedLike", "FieldBasedT"]
@@ -214,8 +214,8 @@ class FieldBased(PropEnum):
 
     @classmethod
     def ensure_presence(
-        cls, clip: VideoNodeT, tff: FieldBasedLike | bool | None, func: FuncExcept | None = None
-    ) -> VideoNodeT:
+        cls, clip: vs.VideoNode, tff: FieldBasedLike | bool | None, func: FuncExcept | None = None
+    ) -> vs.VideoNode:
         field_based = cls.from_param_or_video(tff, clip, True, func)
 
         return vs.core.std.SetFieldBased(clip, field_based.value)

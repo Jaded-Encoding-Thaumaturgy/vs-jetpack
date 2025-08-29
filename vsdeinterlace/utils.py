@@ -6,14 +6,14 @@ from __future__ import annotations
 
 from jetpytools import FuncExcept
 
-from vstools import ConstantFormatVideoNode, FieldBased, FieldBasedLike, check_variable, core, vs
+from vstools import FieldBased, FieldBasedLike, check_variable, core, vs
 
 __all__ = ["get_field_difference", "reinterlace", "reweave", "telecine_patterns", "weave"]
 
 
 def telecine_patterns(
     clipa: vs.VideoNode, clipb: vs.VideoNode, length: int = 5, func: FuncExcept | None = None
-) -> list[ConstantFormatVideoNode]:
+) -> list[vs.VideoNode]:
     """
     Generate all possible telecine patterns by interleaving frames from two clips.
 
@@ -39,7 +39,7 @@ def telecine_patterns(
 
 def get_field_difference(
     clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: FuncExcept | None = None
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Compute the difference between top and bottom fields in a clip.
 
@@ -64,9 +64,7 @@ def get_field_difference(
     )
 
 
-def weave(
-    clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: FuncExcept | None = None
-) -> ConstantFormatVideoNode:
+def weave(clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: FuncExcept | None = None) -> vs.VideoNode:
     """
     Recombine fields into frames using DoubleWeave.
 
@@ -89,7 +87,7 @@ def weave(
 
 def reweave(
     clipa: vs.VideoNode, clipb: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: FuncExcept | None = None
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Interleave two clips and weave them into full frames.
 
@@ -111,7 +109,7 @@ def reweave(
 
 def reinterlace(
     clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: FuncExcept | None = None
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Reinterlace a progressive clip by separating and weaving fields.
 
