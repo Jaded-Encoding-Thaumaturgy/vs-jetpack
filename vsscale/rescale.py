@@ -161,9 +161,7 @@ class RescaleBase(vs_object, ABC):
 
     @_add_props
     def _generate_upscale(self, clip: vs.VideoNode) -> vs.VideoNode:
-        return self._downscaler.scale(
-            clip, self._clipy.width, self._clipy.height, **self.descale_args.kwargs(clip)
-        )
+        return self._downscaler.scale(clip, self._clipy.width, self._clipy.height, **self.descale_args.kwargs(clip))
 
     @cachedproperty
     def descale(self) -> vs.VideoNode:

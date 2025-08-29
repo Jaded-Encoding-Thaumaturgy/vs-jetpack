@@ -179,9 +179,7 @@ class EdgeDetect(ABC):
         return self._finalize_mask(mask, lthr, hthr, multi, clamp, planes)
 
     @classmethod
-    def depth_scale(
-        cls, clip: vs.VideoNode, bitdepth: VideoFormatLike | HoldsVideoFormat | int
-    ) -> vs.VideoNode:
+    def depth_scale(cls, clip: vs.VideoNode, bitdepth: VideoFormatLike | HoldsVideoFormat | int) -> vs.VideoNode:
         assert check_variable(clip, cls)
 
         fmt = get_video_format(bitdepth)
@@ -258,9 +256,7 @@ class EdgeDetect(ABC):
     def _preprocess(self, clip: vs.VideoNode) -> vs.VideoNode:
         return ColorRange.FULL.apply(clip)
 
-    def _postprocess(
-        self, clip: vs.VideoNode, input_bits: HoldsVideoFormat | VideoFormatLike | int
-    ) -> vs.VideoNode:
+    def _postprocess(self, clip: vs.VideoNode, input_bits: HoldsVideoFormat | VideoFormatLike | int) -> vs.VideoNode:
         return clip
 
 
@@ -295,9 +291,7 @@ class NormalizeProcessor(MatrixEdgeDetect):
     def _preprocess(self, clip: vs.VideoNode) -> vs.VideoNode:
         return super()._preprocess(depth(clip, 32))
 
-    def _postprocess(
-        self, clip: vs.VideoNode, input_bits: HoldsVideoFormat | VideoFormatLike | int
-    ) -> vs.VideoNode:
+    def _postprocess(self, clip: vs.VideoNode, input_bits: HoldsVideoFormat | VideoFormatLike | int) -> vs.VideoNode:
         return super()._postprocess(self.depth_scale(clip, input_bits), input_bits)
 
 

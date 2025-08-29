@@ -23,9 +23,7 @@ class ZimgBobber(BaseScaler):
 
     _implemented_funcs: ClassVar[tuple[str, ...]] = ("bob", "deinterlace")
 
-    def bob(
-        self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, **kwargs: Any
-    ) -> vs.VideoNode:
+    def bob(self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, **kwargs: Any) -> vs.VideoNode:
         """
         Apply bob deinterlacing to a given clip using the selected resizer.
 
