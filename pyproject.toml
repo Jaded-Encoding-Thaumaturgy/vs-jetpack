@@ -3,7 +3,7 @@ name = "vsjetpack"
 dynamic = ["version"]
 description = "Full suite of filters, wrappers, and helper functions for filtering video using VapourSynth"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = "MIT"
 authors = [
     {name = "Jaded Encoding Thaumaturgy"}
