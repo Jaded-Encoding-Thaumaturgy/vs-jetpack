@@ -6,7 +6,7 @@ from typing import Any
 from jetpytools import SPath, SPathLike
 
 from vskernels import Catrom, KernelLike, ScalerLike
-from vstools import ConstantFormatVideoNode, check_variable, core, depth, join, vs
+from vstools import check_variable, core, depth, join, vs
 
 from .generic import BaseGenericScaler
 
@@ -42,7 +42,7 @@ class PlaceboShader(BaseGenericScaler):
         height: int | None = None,
         shift: tuple[float, float] = (0, 0),
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         assert check_variable(clip, self.__class__)
 
         width, height = self._wh_norm(clip, width, height)

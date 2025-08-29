@@ -14,10 +14,7 @@ __all__ = [
 
 @overload
 def frequency_merge(
-    *_clips: vs.VideoNode
-    | tuple[
-        vs.VideoNode, VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None
-    ],
+    *_clips: vs.VideoNode | tuple[vs.VideoNode, VSFunctionNoArgs | VSFunctionKwArgs | None],
     mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER,
     mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
     lowpass: None = None,
@@ -31,20 +28,17 @@ def frequency_merge(
     *_clips: vs.VideoNode,
     mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER,
     mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
-    lowpass: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode],
+    lowpass: VSFunctionNoArgs | VSFunctionKwArgs,
     planes: Planes = None,
     **kwargs: Any,
 ) -> vs.VideoNode: ...
 
 
 def frequency_merge(
-    *_clips: vs.VideoNode
-    | tuple[
-        vs.VideoNode, VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None
-    ],
+    *_clips: vs.VideoNode | tuple[vs.VideoNode, VSFunctionNoArgs | VSFunctionKwArgs | None],
     mode_high: MeanMode | vs.VideoNode = MeanMode.LEHMER,
     mode_low: MeanMode | vs.VideoNode = MeanMode.ARITHMETIC,
-    lowpass: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    lowpass: VSFunctionNoArgs | VSFunctionKwArgs | None = None,
     planes: Planes = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
@@ -90,9 +84,7 @@ def frequency_merge(
     """
 
     clips = list[vs.VideoNode]()
-    lowpass_funcs = list[
-        VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | None
-    ]()
+    lowpass_funcs = list[VSFunctionNoArgs | VSFunctionKwArgs | None]()
 
     for c in _clips:
         if isinstance(c, tuple):

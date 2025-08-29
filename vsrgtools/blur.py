@@ -10,7 +10,6 @@ from vsexprtools import ExprOp, norm_expr
 from vskernels import Bilinear, Gaussian, Point, Scaler, ScalerLike
 from vstools import (
     ColorRange,
-    ConstantFormatVideoNode,
     ConvMode,
     CustomValueError,
     KwargsT,
@@ -58,7 +57,7 @@ def box_blur(
     mode: OneDimConvMode | TempConvMode = ConvMode.HV,
     planes: Planes = None,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Applies a box blur to the input clip.
 
@@ -100,7 +99,7 @@ def box_blur(
     return clip.vszip.BoxBlur(*box_args)
 
 
-def side_box_blur(clip: vs.VideoNode, radius: int = 1, planes: Planes = None) -> ConstantFormatVideoNode:
+def side_box_blur(clip: vs.VideoNode, radius: int = 1, planes: Planes = None) -> vs.VideoNode:
     assert check_variable_format(clip, side_box_blur)
 
     half_kernel = [(1 if i <= 0 else 0) for i in range(-radius, radius + 1)]
@@ -137,7 +136,7 @@ def gauss_blur(
     mode: OneDimConvMode | TempConvMode = ConvMode.HV,
     planes: Planes = None,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Applies Gaussian blur to a clip, supporting spatial and temporal modes, and per-plane control.
 
@@ -173,7 +172,7 @@ def gauss_blur(
 
     if not mode.is_temporal:
 
-        def _resize2_blur(plane: ConstantFormatVideoNode, sigma: float, taps: int) -> ConstantFormatVideoNode:
+        def _resize2_blur(plane: vs.VideoNode, sigma: float, taps: int) -> vs.VideoNode:
             resize_kwargs = dict[str, Any]()
 
             # Downscale approximation can be used by specifying _fast=True
@@ -194,7 +193,7 @@ def gauss_blur(
             else:
                 resize_kwargs.update({f"force_{k}": k in mode for k in "hv"})
 
-            return Gaussian(sigma, taps).scale(plane, **resize_kwargs | kwargs)  # type: ignore[return-value]
+            return Gaussian(sigma, taps).scale(plane, **resize_kwargs | kwargs)
 
         if not {*range(clip.format.num_planes)} - {*planes}:
             return _resize2_blur(clip, sigma, taps)
@@ -212,7 +211,7 @@ def min_blur(
     mode: tuple[ConvMode, ConvMode] = (ConvMode.HV, ConvMode.SQUARE),
     planes: Planes = None,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Combines binomial (Gaussian-like) blur and median filtering for a balanced smoothing effect.
 
@@ -253,7 +252,7 @@ def min_blur(
 _SbrBlurT = Union[
     BlurMatrix,
     Sequence[float],
-    VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+    VSFunctionNoArgs,
 ]
 
 
@@ -267,7 +266,7 @@ def sbr(
     *,
     func: FuncExcept | None = None,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     A helper function for high-pass filtering a blur difference, inspired by an AviSynth script by Didée.
     `https://forum.doom9.org/showthread.php?p=1584186#post1584186`
@@ -289,7 +288,7 @@ def sbr(
     if isinstance(radius, Sequence):
         return normalize_radius(clip, min_blur, list(radius), planes)
 
-    def _apply_blur(clip: ConstantFormatVideoNode, blur: _SbrBlurT | vs.VideoNode) -> ConstantFormatVideoNode:
+    def _apply_blur(clip: vs.VideoNode, blur: _SbrBlurT | vs.VideoNode) -> vs.VideoNode:
         if isinstance(blur, Sequence):
             return BlurMatrix.custom(blur, mode)(clip, planes, **kwargs)
 
@@ -325,7 +324,7 @@ def median_blur(
     radius: int | Sequence[int] = 1,
     mode: SpatialConvMode = ConvMode.SQUARE,
     planes: Planes = None,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 
 @overload
@@ -337,13 +336,13 @@ def median_blur(
     smart: Literal[True] = ...,
     threshold: float | Sequence[float] | None = None,
     scalep: bool = True,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 
 @overload
 def median_blur(
     clip: vs.VideoNode, radius: int = 1, mode: Literal[ConvMode.TEMPORAL] = ..., planes: Planes = None
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 
 @overload
@@ -355,7 +354,7 @@ def median_blur(
     smart: bool = False,
     threshold: float | Sequence[float] | None = None,
     scalep: bool = True,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 
 def median_blur(
@@ -366,7 +365,7 @@ def median_blur(
     smart: bool = False,
     threshold: float | Sequence[float] | None = None,
     scalep: bool = True,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Applies a median blur to the clip using spatial or temporal neighborhood.
 
@@ -467,7 +466,7 @@ class Bilateral(Generic[P, R]):
         Uses `bilateralgpu_rtc.Bilateral` — a CUDA-based GPU implementation with runtime shader compilation.
         """
 
-        def Bilateral(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
+        def Bilateral(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
             """
             Applies the bilateral filter using the plugin associated with the selected backend.
 
@@ -490,7 +489,7 @@ def bilateral(
     sigmaR: float | Sequence[float] | None = None,  # noqa: N803
     backend: Bilateral.Backend = Bilateral.Backend.CPU,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Applies a bilateral filter for edge-preserving and noise-reducing smoothing.
 
@@ -535,7 +534,7 @@ def flux_smooth(
     spatial_threshold: float | Sequence[float] | None = None,
     planes: Planes = None,
     scalep: bool = True,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     FluxSmoothT examines each pixel and compares it to the corresponding pixel in the previous and next frames.
     Smoothing occurs if both the previous frame's value and the next frame's value are greater,

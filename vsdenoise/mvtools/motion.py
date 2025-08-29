@@ -4,7 +4,7 @@ from collections import defaultdict
 from contextlib import suppress
 from typing import Any
 
-from vstools import ConstantFormatVideoNode, check_variable_format, vs, vs_object
+from vstools import check_variable_format, vs, vs_object
 
 from .enums import MVDirection
 
@@ -13,14 +13,14 @@ __all__ = [
 ]
 
 
-class MotionVectors(defaultdict[MVDirection, dict[int, ConstantFormatVideoNode]], vs_object):
+class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], vs_object):
     """
     Class for storing and managing motion vectors for a video clip.
 
     Contains both backward and forward motion vectors.
     """
 
-    mv_multi: ConstantFormatVideoNode
+    mv_multi: vs.VideoNode
     """Multi-vector clip."""
 
     tr: int

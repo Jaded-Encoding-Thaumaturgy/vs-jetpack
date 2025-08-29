@@ -5,7 +5,7 @@ from typing import Callable, Generic, Sequence
 from jetpytools import CustomIntEnum, CustomStrEnum, P, R
 
 from vsexprtools import norm_expr
-from vstools import ConstantFormatVideoNode, KwargsNotNone, Planes, check_variable, normalize_param_planes, vs
+from vstools import KwargsNotNone, Planes, check_variable, normalize_param_planes, vs
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
 
@@ -180,7 +180,7 @@ class Repair(Generic[P, R]):
 
         def __call__(
             self, clip: vs.VideoNode, repairclip: vs.VideoNode, planes: Planes = None
-        ) -> ConstantFormatVideoNode:
+        ) -> vs.VideoNode:
             """
             Apply the selected repair mode to a `clip` using a `repairclip`.
 
@@ -201,7 +201,7 @@ def repair(
     repairclip: vs.VideoNode,
     mode: int | Repair.Mode | Sequence[int | Repair.Mode],
     planes: Planes = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Constrains the input `clip` using a `repairclip` by clamping pixel values
     based on a chosen [mode][vsrgtools.rgtools.Repair.Mode].
@@ -422,7 +422,7 @@ class RemoveGrain(Generic[P, R]):
         Variant of 27 with different pairs. Usually visually similar.
         """
 
-        def __call__(self, clip: vs.VideoNode, planes: Planes = None) -> ConstantFormatVideoNode:
+        def __call__(self, clip: vs.VideoNode, planes: Planes = None) -> vs.VideoNode:
             """
             Apply the selected remove grain mode to a `clip`.
 
@@ -439,7 +439,7 @@ class RemoveGrain(Generic[P, R]):
 @RemoveGrain
 def remove_grain(
     clip: vs.VideoNode, mode: int | RemoveGrain.Mode | Sequence[int | RemoveGrain.Mode], planes: Planes = None
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Apply spatial denoising using the RemoveGrain algorithm.
 
@@ -532,7 +532,7 @@ class Clense(Generic[P, R]):
             previous_clip: vs.VideoNode | None = None,
             next_clip: vs.VideoNode | None = None,
             planes: Planes = None,
-        ) -> ConstantFormatVideoNode:
+        ) -> vs.VideoNode:
             """
             Apply the selected clense mode to a clip using
             the [zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#clense--forwardclense--backwardclense)
@@ -557,7 +557,7 @@ def clense(
     next_clip: vs.VideoNode | None = None,
     mode: Clense.Mode | str = Clense.Mode.NONE,
     planes: Planes = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Apply a clense (temporal median) filter based on the specified mode.
 
@@ -626,7 +626,7 @@ class VerticalCleaner(Generic[P, R]):
         Applies a detail-preserving vertical median filter (less aggressive).
         """
 
-        def __call__(self, clip: vs.VideoNode, planes: Planes = None) -> ConstantFormatVideoNode:
+        def __call__(self, clip: vs.VideoNode, planes: Planes = None) -> vs.VideoNode:
             """
             Applies the vertical cleaning mode to the given clip.
 
@@ -645,7 +645,7 @@ def vertical_cleaner(
     clip: vs.VideoNode,
     mode: int | VerticalCleaner.Mode | Sequence[int | VerticalCleaner.Mode],
     planes: Planes = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Applies a fast vertical median or relaxed median filter to the clip
     using the [zsmooth](https://github.com/adworacz/zsmooth?tab=readme-ov-file#verticalcleaner) plugin.

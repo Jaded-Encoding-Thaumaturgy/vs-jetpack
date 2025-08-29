@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Sequence, SupportsFloat
 
 from vsexprtools import ExprOp
 from vstools import (
-    ConstantFormatVideoNode,
     DitherType,
     FrameRangeN,
     FrameRangesN,
@@ -31,7 +30,7 @@ __all__ = ["range_mask", "strength_zones_mask"]
 
 
 @limiter
-def range_mask(clip: vs.VideoNode, rad: int = 2, radc: int = 0) -> ConstantFormatVideoNode:
+def range_mask(clip: vs.VideoNode, rad: int = 2, radc: int = 0) -> vs.VideoNode:
     assert check_variable(clip, range_mask)
 
     def _minmax(clip: vs.VideoNode, iters: int, maxx: bool) -> vs.VideoNode:
@@ -55,7 +54,7 @@ def strength_zones_mask(
     zones: Sequence[tuple[FrameRangeN | FrameRangesN, SupportsFloat | vs.VideoNode | None]] | None = None,
     format: int | VideoFormatLike | HoldsVideoFormat = vs.GRAYS,
     length: int | None = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Creates a mask based on a threshold strength, with optional adjustments using defined zones.
 
@@ -90,7 +89,7 @@ def strength_zones_mask(
     if not zones:
         return base_clip
 
-    cache_strength_clips = dict[float, ConstantFormatVideoNode]()
+    cache_strength_clips = dict[float, vs.VideoNode]()
     strength_clips = [base_clip]
     indices = [(0, n) for n in range(base_clip.num_frames)]
 

@@ -9,7 +9,6 @@ from vskernels import Bilinear, Kernel, KernelLike
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
     ColorRange,
-    ConstantFormatVideoNode,
     CustomValueError,
     FrameRangeN,
     FrameRangesN,
@@ -48,7 +47,7 @@ __all__ = [
 
 def max_planes(
     *_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelLike = Bilinear
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     clips = flatten_vnodes(_clips)
 
     assert check_variable_format(clips, max_planes)
@@ -96,7 +95,7 @@ def region_rel_mask(
     replace_out: SupportsString | None = None,
     planes: Planes = None,
     func: FuncExcept | None = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Generates a mask that defines a rectangular region within the clip, replacing pixels inside or outside the region,
     using relative coordinates.
@@ -163,7 +162,7 @@ def region_abs_mask(
     replace_out: SupportsString | None = None,
     planes: Planes = None,
     func: FuncExcept | None = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Generates a mask that defines a rectangular region within the clip, replacing pixels inside or outside the region,
     using absolute coordinates.
@@ -207,7 +206,7 @@ def squaremask(
     force_gray: bool = True,
     planes: Planes = None,
     func: FuncExcept | None = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Create a square used for simple masking.
 
@@ -260,7 +259,7 @@ def replace_squaremask(
     invert: bool = False,
     func: FuncExcept | None = None,
     show_mask: bool = False,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Replace an area of the frame with another clip using a simple square mask.
 
@@ -316,7 +315,7 @@ def freeze_replace_squaremask(
     mask_params: tuple[int, int, int, int],
     frame: int,
     frame_range: tuple[int, int],
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     start, end = frame_range
 
     masked_insert = replace_squaremask(mask[frame], insert[frame], mask_params)
@@ -327,7 +326,7 @@ def freeze_replace_squaremask(
 @overload
 def normalize_mask(
     mask: vs.VideoNode, clip: vs.VideoNode, *, func: FuncExcept | None = None
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 
 @overload
@@ -337,7 +336,7 @@ def normalize_mask(
     ref: vs.VideoNode,
     *,
     func: FuncExcept | None = None,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 
 @overload
@@ -348,13 +347,13 @@ def normalize_mask(
     ridge: bool = ...,
     func: FuncExcept | None = None,
     **kwargs: Any,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 
 @overload
 def normalize_mask(
     mask: GeneralMask, clip: vs.VideoNode, ref: vs.VideoNode, *, func: FuncExcept | None = None
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 
 @overload
@@ -366,7 +365,7 @@ def normalize_mask(
     ridge: bool = ...,
     func: FuncExcept | None = None,
     **kwargs: Any,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 
 def normalize_mask(
@@ -377,7 +376,7 @@ def normalize_mask(
     ridge: bool = False,
     func: FuncExcept | None = None,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Normalize any mask type to match the format and range of the input clip.
 
@@ -451,7 +450,7 @@ class RektPartial(Generic[P, R]):
         offset_y: int = 0,
         *args: Any,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Creates a rectangular mask to apply fixes only within the masked area,
         significantly speeding up filters like anti-aliasing and scaling.
@@ -481,7 +480,7 @@ def rekt_partial(
     bottom: int = 0,
     *args: Any,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Creates a rectangular mask to apply fixes only within the masked area,
     significantly speeding up filters like anti-aliasing and scaling.
@@ -500,8 +499,8 @@ def rekt_partial(
 
     assert check_variable(clip, rekt_partial._func)
 
-    def _filtered_func(clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
-        return func(clip, *args, **kwargs)  # type: ignore[return-value]
+    def _filtered_func(clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:
+        return func(clip, *args, **kwargs)
 
     if left == top == right == bottom == 0:
         return _filtered_func(clip, *args, **kwargs)

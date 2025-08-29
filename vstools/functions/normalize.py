@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Iterator, Literal, Sequence, overload
+from typing import Any, Iterable, Iterator, Sequence, overload
 
 import vapoursynth as vs
 from jetpytools import (
@@ -21,7 +21,7 @@ from jetpytools import normalize_ranges as jetp_normalize_ranges
 from jetpytools import normalize_ranges_to_list as jetp_normalize_ranges_to_list
 from jetpytools import normalize_seq as jetp_normalize_seq
 
-from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, Planes, VideoNodeIterableT, VideoNodeT
+from ..types import FrameRangeN, FrameRangesN, Planes, VideoNodeIterableT
 
 __all__ = [
     "flatten",
@@ -142,23 +142,7 @@ def flatten(items: Any) -> Iterator[Any]:
         yield from jetp_flatten(items)
 
 
-@overload
-def flatten_vnodes(
-    *clips: VideoNodeIterableT[VideoNodeT], split_planes: Literal[False] = ...
-) -> Sequence[VideoNodeT]: ...
-
-
-@overload
-def flatten_vnodes(
-    *clips: VideoNodeIterableT[VideoNodeT], split_planes: Literal[True] = ...
-) -> Sequence[ConstantFormatVideoNode]: ...
-
-
-@overload
-def flatten_vnodes(*clips: VideoNodeIterableT[VideoNodeT], split_planes: bool = ...) -> Sequence[VideoNodeT]: ...
-
-
-def flatten_vnodes(*clips: VideoNodeIterableT[VideoNodeT], split_planes: bool = False) -> Sequence[vs.VideoNode]:
+def flatten_vnodes(*clips: VideoNodeIterableT, split_planes: bool = False) -> Sequence[vs.VideoNode]:
     """
     Flatten an array of VideoNodes.
 
@@ -172,12 +156,12 @@ def flatten_vnodes(*clips: VideoNodeIterableT[VideoNodeT], split_planes: bool = 
 
     from .utils import split
 
-    nodes = list[VideoNodeT](flatten(clips))
+    nodes = list[vs.VideoNode](flatten(clips))
 
     if not split_planes:
         return nodes
 
-    return sum(map(split, nodes), list[ConstantFormatVideoNode]())
+    return sum(map(split, nodes), list[vs.VideoNode]())
 
 
 def normalize_franges(ranges: SoftRange, /, exclusive: bool | None = None) -> Sequence[int]:

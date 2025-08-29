@@ -3,7 +3,7 @@ from __future__ import annotations
 from vsexprtools import ExprOp, norm_expr
 from vsmasktools import Morpho, XxpandMode
 from vsrgtools import BlurMatrix, box_blur, gauss_blur
-from vstools import ConstantFormatVideoNode, ConvMode, core, get_y, iterate, limiter, shift_clip_multi, split, vs
+from vstools import ConvMode, core, get_y, iterate, limiter, shift_clip_multi, split, vs
 
 __all__ = ["descale_detail_mask", "descale_error_mask"]
 
@@ -11,7 +11,7 @@ __all__ = ["descale_detail_mask", "descale_error_mask"]
 @limiter
 def descale_detail_mask(
     clip: vs.VideoNode, rescaled: vs.VideoNode, thr: float = 0.05, inflate: int = 2, xxpand: tuple[int, int] = (4, 0)
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Mask non-native resolution detail to prevent detail loss and artifacting.
 
@@ -54,7 +54,7 @@ def descale_error_mask(
     blur: int | float = 3,
     bwbias: int = 1,
     tr: int = 0,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Create an error mask from the original and rescaled clip.
 

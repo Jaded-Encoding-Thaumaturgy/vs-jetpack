@@ -1,6 +1,6 @@
 from typing import Any, Union
 
-from vstools import core, vs
+from vstools import FieldBased, FieldBasedLike, check_variable, core, vs
 
 from ...abstract import Bobber, ComplexKernel
 from ...types import LeftShift, TopShift

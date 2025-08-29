@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any, Sequence
 
 from vstools import (
-    ConstantFormatVideoNode,
     GenericVSFunction,
     Planes,
     check_variable_format,
@@ -19,11 +18,11 @@ __all__ = ["normalize_radius"]
 
 def normalize_radius(
     clip: vs.VideoNode,
-    func: GenericVSFunction[ConstantFormatVideoNode],
+    func: GenericVSFunction,
     radius: Sequence[float | int] | dict[str, Sequence[float | int]],
     planes: Planes,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     assert check_variable_format(clip, normalize_radius)
 
     if isinstance(radius, dict):

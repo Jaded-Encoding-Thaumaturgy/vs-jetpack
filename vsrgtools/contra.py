@@ -4,7 +4,6 @@ from typing import Callable, Sequence
 
 from vsexprtools import norm_expr
 from vstools import (
-    ConstantFormatVideoNode,
     CustomValueError,
     GenericVSFunction,
     Planes,
@@ -26,10 +25,10 @@ def contrasharpening(
     flt: vs.VideoNode,
     src: vs.VideoNode,
     radius: int = 1,
-    sharp: vs.VideoNode | GenericVSFunction[vs.VideoNode] | None = None,
+    sharp: vs.VideoNode | GenericVSFunction | None = None,
     mode: int | Repair.Mode = repair.Mode.MINMAX_SQUARE3,
     planes: Planes = 0,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     contra-sharpening: sharpen the denoised clip, but don't add more to any pixel than what was previously removed.
     Script by Didée, at the [VERY GRAINY thread](http://forum.doom9.org/showthread.php?p=1076491#post1076491).
@@ -75,7 +74,7 @@ def contrasharpening(
 
 def contrasharpening_dehalo(
     flt: vs.VideoNode, src: vs.VideoNode, level: float = 1.4, alpha: float = 2.49, planes: Planes = 0
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Contrasharpening for dehalo.
 
@@ -108,9 +107,9 @@ def contrasharpening_dehalo(
 def contrasharpening_median(
     flt: vs.VideoNode,
     src: vs.VideoNode,
-    mode: int | Sequence[int] | RemoveGrain.Mode | Callable[..., ConstantFormatVideoNode] = box_blur,
+    mode: int | Sequence[int] | RemoveGrain.Mode | Callable[..., vs.VideoNode] = box_blur,
     planes: Planes = 0,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Contrasharpening median.
 

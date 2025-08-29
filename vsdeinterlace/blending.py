@@ -4,7 +4,6 @@ from typing import Any
 
 from vsexprtools import norm_expr
 from vstools import (
-    ConstantFormatVideoNode,
     VSFunctionNoArgs,
     check_ref_clip,
     check_variable,
@@ -21,7 +20,7 @@ from .utils import telecine_patterns
 __all__ = ["deblend", "deblend_bob", "deblend_fix_kf", "deblending_helper"]
 
 
-def deblending_helper(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, length: int = 5) -> ConstantFormatVideoNode:
+def deblending_helper(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, length: int = 5) -> vs.VideoNode:
     """
     Helper function to select a deblended clip pattern from a fieldmatched clip.
 
@@ -59,9 +58,9 @@ def deblending_helper(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, lengt
 def deblend(
     clip: vs.VideoNode,
     fieldmatched: vs.VideoNode | None = None,
-    decomber: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = vinverse,
+    decomber: VSFunctionNoArgs | None = vinverse,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Automatically deblends if normal field matching leaves 2 blends every 5 frames. Adopted from jvsfunc.
 
@@ -85,7 +84,7 @@ def deblend(
     return join(fieldmatched or clip, deblended)
 
 
-def deblend_bob(bobbed: vs.VideoNode, fieldmatched: vs.VideoNode | None = None) -> ConstantFormatVideoNode:
+def deblend_bob(bobbed: vs.VideoNode, fieldmatched: vs.VideoNode | None = None) -> vs.VideoNode:
     """
     Stronger version of `deblend` that uses a bobbed clip to deblend. Adopted from jvsfunc.
 
@@ -110,7 +109,7 @@ def deblend_bob(bobbed: vs.VideoNode, fieldmatched: vs.VideoNode | None = None) 
     return deblended
 
 
-def deblend_fix_kf(deblended: vs.VideoNode, fieldmatched: vs.VideoNode) -> ConstantFormatVideoNode:
+def deblend_fix_kf(deblended: vs.VideoNode, fieldmatched: vs.VideoNode) -> vs.VideoNode:
     """
     Should be used after deblend/_bob to fix scene changes. Adopted from jvsfunc.
 

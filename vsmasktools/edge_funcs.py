@@ -8,7 +8,6 @@ from vsexprtools import ExprOp, ExprToken, norm_expr
 from vsrgtools import BlurMatrix, gauss_blur
 from vstools import (
     ColorRange,
-    ConstantFormatVideoNode,
     ConvMode,
     check_variable,
     depth,
@@ -42,7 +41,7 @@ def ringing_mask(
     thlima: float = 0.392,
     credit_mask: MaskLike = Prewitt,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     assert check_variable(clip, ringing_mask)
 
     thmi, thma, thlimi, thlima = (scale_mask(t, 32, clip) for t in [thmi, thma, thlimi, thlima])
@@ -67,7 +66,7 @@ def ringing_mask(
     return ExprOp.convolution("x", blur_kernel, premultiply=2, multiply=2, clamp=True)(mask)
 
 
-def luma_mask(clip: vs.VideoNode, thr_lo: float, thr_hi: float, invert: bool = True) -> ConstantFormatVideoNode:
+def luma_mask(clip: vs.VideoNode, thr_lo: float, thr_hi: float, invert: bool = True) -> vs.VideoNode:
     peak = get_peak_value(clip)
 
     lo, hi = (peak, 0) if invert else (0, peak)
@@ -85,7 +84,7 @@ def luma_mask(clip: vs.VideoNode, thr_lo: float, thr_hi: float, invert: bool = T
 
 def luma_credit_mask(
     clip: vs.VideoNode, thr: float = 0.9, edgemask: MaskLike = FDoGTCanny, draft: bool = False, **kwargs: Any
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     y = plane(clip, 0)
 
     edge_mask = normalize_mask(edgemask, y, **kwargs)
@@ -101,7 +100,7 @@ def luma_credit_mask(
 
 def tcanny_retinex(
     clip: vs.VideoNode, thr: float, sigma: Sequence[float] = [50, 200, 350], blur_sigma: float = 1.0
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     blur = gauss_blur(clip, blur_sigma)
 
     msrcp = retinex(blur, sigma, upper_thr=thr, fast=True, func=tcanny_retinex)
@@ -117,7 +116,7 @@ def limited_linemask(
     detail_sigmas: list[float] = [0.011, 0.013],
     edgemasks: Sequence[MaskLike] = [Kirsch],
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     clip_y = plane(clip, 0)
 
     return ExprOp.ADD(
@@ -143,7 +142,7 @@ class dre_edgemask(CustomEnum):  # noqa: N801
     Based on the [OpenCV implementation](https://docs.opencv.org/5.x/d5/daf/tutorial_py_histogram_equalization.html)
     """
 
-    def _prefilter(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _prefilter(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         if self is dre_edgemask.RETINEX:
             sigmas = kwargs.get("sigmas", [50, 200, 350])
 
@@ -164,7 +163,7 @@ class dre_edgemask(CustomEnum):  # noqa: N801
         brz: float = 0.122,
         *,
         sigmas: Sequence[float] = [50, 200, 350],
-    ) -> ConstantFormatVideoNode: ...
+    ) -> vs.VideoNode: ...
 
     @overload
     def __call__(  # type: ignore[misc]
@@ -175,16 +174,16 @@ class dre_edgemask(CustomEnum):  # noqa: N801
         *,
         limit: float = 0.0305,
         tile: int = 5,
-    ) -> ConstantFormatVideoNode: ...
+    ) -> vs.VideoNode: ...
 
     @overload
     def __call__(
         self, clip: vs.VideoNode, tsigma: float = 1, brz: float = 0.122, **kwargs: Any
-    ) -> ConstantFormatVideoNode: ...
+    ) -> vs.VideoNode: ...
 
     def __call__(
         self, clip: vs.VideoNode, tsigma: float = 1, brz: float = 0.122, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Creates an edgemask with dynamic range enhancement (DRE) prefiltering.
 
