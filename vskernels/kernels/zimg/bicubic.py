@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import sqrt
 from typing import Any, Callable, overload
 
-from vstools import ConstantFormatVideoNode, CustomValueError, core, vs
+from vstools import CustomValueError, core, vs
 
 from ...types import LeftShift, TopShift
 from .abstract import ZimgComplexKernel
@@ -32,9 +32,9 @@ class Bicubic(ZimgComplexKernel):
     """
 
     scale_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Bicubic
-    resample_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Bicubic
-    descale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Debicubic
-    rescale_function: Callable[..., ConstantFormatVideoNode] = core.lazy.descale.Bicubic
+    resample_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Bicubic
+    descale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Debicubic
+    rescale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Bicubic
 
     def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Any) -> None:
         """

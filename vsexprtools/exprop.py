@@ -13,7 +13,6 @@ from typing_extensions import Self
 
 from vstools import (
     ColorRange,
-    ConstantFormatVideoNode,
     ConvMode,
     CustomIndexError,
     CustomValueError,
@@ -23,7 +22,6 @@ from vstools import (
     StrList,
     VideoFormatLike,
     VideoNodeIterableT,
-    VideoNodeT,
     check_variable,
     flatten,
     flatten_vnodes,
@@ -262,7 +260,7 @@ class ExprList(StrList):
 
     def __call__(
         self,
-        *clips: VideoNodeIterableT[vs.VideoNode],
+        *clips: VideoNodeIterableT,
         planes: Planes = None,
         format: HoldsVideoFormat | VideoFormatLike | None = None,
         opt: bool = False,
@@ -270,7 +268,7 @@ class ExprList(StrList):
         func: FuncExcept | None = None,
         split_planes: bool = False,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Apply the expression to one or more input clips.
 
@@ -302,7 +300,7 @@ class TupleExprList(tuple[ExprList, ...]):
 
     def __call__(
         self,
-        *clips: VideoNodeIterableT[vs.VideoNode],
+        *clips: VideoNodeIterableT,
         planes: Planes = None,
         format: HoldsVideoFormat | VideoFormatLike | None = None,
         opt: bool = False,
@@ -310,7 +308,7 @@ class TupleExprList(tuple[ExprList, ...]):
         func: FuncExcept | None = None,
         split_planes: bool = False,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Apply a sequence of expressions to the input clip(s), one after another.
 
@@ -352,7 +350,7 @@ class TupleExprList(tuple[ExprList, ...]):
                 **kwargs,
             )
 
-        return clip[0] if isinstance(clip, Sequence) else clip  # type: ignore[return-value]
+        return clip[0] if isinstance(clip, Sequence) else clip
 
     def __str__(self) -> str:
         return str(tuple(str(e) for e in self))
@@ -378,14 +376,14 @@ class ExprOpBase(CustomStrEnum):
     @overload
     def __call__(
         self,
-        *clips: VideoNodeIterableT[VideoNodeT],
+        *clips: VideoNodeIterableT,
         suffix: SupportsString | Iterable[SupportsString] | None = None,
         prefix: SupportsString | Iterable[SupportsString] | None = None,
         expr_suffix: SupportsString | Iterable[SupportsString] | None = None,
         expr_prefix: SupportsString | Iterable[SupportsString] | None = None,
         planes: Planes = None,
         **kwargs: Any,
-    ) -> VideoNodeT:
+    ) -> vs.VideoNode:
         """
         Combines multiple video clips using the selected expression operator.
 
@@ -460,7 +458,7 @@ class ExprOpBase(CustomStrEnum):
         expr_prefix: SupportsString | Iterable[SupportsString] | None = None,
         planes: Planes = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Combines multiple video clips using the selected expression operator.
 

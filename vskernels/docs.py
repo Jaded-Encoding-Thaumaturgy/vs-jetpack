@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 
 from vstools import (
-    ConstantFormatVideoNode,
     HoldsVideoFormat,
     Matrix,
     MatrixLike,
@@ -69,7 +68,7 @@ class ExampleBicubicKernel(Kernel):
         height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Perform a regular descaling operation.
 
@@ -104,7 +103,7 @@ class ExampleBicubicKernel(Kernel):
         matrix: MatrixLike | None = None,
         matrix_in: MatrixLike | None = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Perform a regular resampling operation.
 

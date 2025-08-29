@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import vapoursynth as vs
 from jetpytools import StrictRange
 
 from ..exceptions import FramesLengthError
-from ..types import VideoNodeT
 
 __all__ = [
     "shift_clip",
@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 
-def shift_clip(clip: VideoNodeT, offset: int) -> VideoNodeT:
+def shift_clip(clip: vs.VideoNode, offset: int) -> vs.VideoNode:
     """
     Shift a clip forwards or backwards by *N* frames.
 
@@ -43,7 +43,7 @@ def shift_clip(clip: VideoNodeT, offset: int) -> VideoNodeT:
     return clip
 
 
-def shift_clip_multi(clip: VideoNodeT, offsets: StrictRange = (-1, 1)) -> list[VideoNodeT]:
+def shift_clip_multi(clip: vs.VideoNode, offsets: StrictRange = (-1, 1)) -> list[vs.VideoNode]:
     """
     Shift a clip forwards or backwards multiple times by a varying amount of frames.
 

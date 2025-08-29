@@ -7,7 +7,7 @@ import vapoursynth as vs
 from jetpytools import CustomValueError, P, R, fallback, flatten, interleave_arr, ranges_product
 
 from ..functions import check_ref_clip
-from ..types import ConstantFormatVideoNode, FrameRangeN, FrameRangesN, Planes, VideoNodeT
+from ..types import FrameRangeN, FrameRangesN, Planes
 
 __all__ = [
     "interleave_arr",
@@ -93,18 +93,7 @@ class ReplaceRanges(Generic[P, R]):
         exclusive: bool | None = None,
         mismatch: Literal[False] = ...,
         planes: Planes = None,
-    ) -> ConstantFormatVideoNode: ...
-
-    @overload
-    def __call__(
-        self,
-        clip_a: VideoNodeT,
-        clip_b: VideoNodeT,
-        ranges: FrameRangeN | FrameRangesN,
-        exclusive: bool | None = None,
-        mismatch: bool = ...,
-        planes: Planes = None,
-    ) -> VideoNodeT: ...
+    ) -> vs.VideoNode: ...
 
     @overload
     def __call__(
@@ -295,7 +284,7 @@ def replace_ranges(
     return vs.core.std.Splice(list(interleave_arr(main, other, 1)), mismatch)
 
 
-def remap_frames(clip: vs.VideoNode, ranges: Sequence[int | tuple[int, int]]) -> ConstantFormatVideoNode:
+def remap_frames(clip: vs.VideoNode, ranges: Sequence[int | tuple[int, int]]) -> vs.VideoNode:
     """
     Remap frames of a clip according to specified ranges.
 
@@ -334,7 +323,7 @@ def remap_frames(clip: vs.VideoNode, ranges: Sequence[int | tuple[int, int]]) ->
 
 def replace_every(
     clipa: vs.VideoNode, clipb: vs.VideoNode, cycle: int, offsets: Sequence[int], modify_duration: bool = True
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Replace frames in one clip with frames from another at regular intervals.
 

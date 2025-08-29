@@ -1,6 +1,6 @@
 from functools import partial
 from math import factorial
-from typing import Any, Iterable, Literal, MutableMapping, Protocol, cast
+from typing import Any, Iterable, Literal, MutableMapping, Protocol
 
 from jetpytools import CustomIntEnum
 from typing_extensions import Self
@@ -23,7 +23,6 @@ from vskernels import Catrom
 from vsmasktools import Coordinates, Morpho
 from vsrgtools import BlurMatrix, gauss_blur, median_blur, remove_grain, repair, unsharpen
 from vstools import (
-    ConstantFormatVideoNode,
     ConvMode,
     FieldBased,
     FieldBasedLike,
@@ -81,31 +80,31 @@ class QTempGaussMC(vs_object):
         ```
     """
 
-    clip: ConstantFormatVideoNode
+    clip: vs.VideoNode
     """Clip to process."""
 
-    draft: ConstantFormatVideoNode
+    draft: vs.VideoNode
     """Draft processed clip, used as a base for prefiltering & denoising."""
 
-    bobbed: ConstantFormatVideoNode
+    bobbed: vs.VideoNode
     """High quality bobbed clip, initial spatial interpolation."""
 
-    noise: ConstantFormatVideoNode
+    noise: vs.VideoNode
     """Extracted noise when noise processing is enabled."""
 
-    prefilter_output: ConstantFormatVideoNode
+    prefilter_output: vs.VideoNode
     """Output of the prefilter stage."""
 
-    denoise_output: ConstantFormatVideoNode
+    denoise_output: vs.VideoNode
     """Output of the denoise stage."""
 
-    basic_output: ConstantFormatVideoNode
+    basic_output: vs.VideoNode
     """Output of the basic stage."""
 
-    final_output: ConstantFormatVideoNode
+    final_output: vs.VideoNode
     """Output of the final stage."""
 
-    motion_blur_output: ConstantFormatVideoNode
+    motion_blur_output: vs.VideoNode
     """Output of the motion blur stage."""
 
     class InputType(CustomIntEnum):
@@ -422,7 +421,7 @@ class QTempGaussMC(vs_object):
         self,
         *,
         tr: int = 2,
-        func: _DenoiseFuncTr | VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = partial(DFTTest().denoise, sigma=8),
+        func: _DenoiseFuncTr | VSFunctionKwArgs = partial(DFTTest().denoise, sigma=8),
         mode: NoiseProcessMode = NoiseProcessMode.IDENTIFY,
         deint: NoiseDeintMode = NoiseDeintMode.GENERATE,
         mc_denoise: bool = True,
@@ -680,7 +679,7 @@ class QTempGaussMC(vs_object):
         threshold: int | float = 1,
         erosion_distance: int = 4,
         over_dilation: int = 0,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Compare processed clip with reference clip,
         only allow thin, horizontal areas of difference, i.e. bob shimmer fixes.
@@ -731,7 +730,7 @@ class QTempGaussMC(vs_object):
             func=self._mask_shimmer,
         )
 
-    def _interpolate(self, clip: vs.VideoNode, bobber: Deinterlacer) -> ConstantFormatVideoNode:
+    def _interpolate(self, clip: vs.VideoNode, bobber: Deinterlacer) -> vs.VideoNode:
         assert check_variable(clip, self._interpolate)
 
         if self.input_type != self.InputType.PROGRESSIVE:
@@ -739,7 +738,7 @@ class QTempGaussMC(vs_object):
 
         return clip
 
-    def _binomial_degrain(self, clip: vs.VideoNode, tr: int) -> ConstantFormatVideoNode:
+    def _binomial_degrain(self, clip: vs.VideoNode, tr: int) -> vs.VideoNode:
         from numpy import linalg, zeros
 
         def _get_weights(n: int) -> Iterable[Any]:
@@ -762,7 +761,7 @@ class QTempGaussMC(vs_object):
 
         backward, forward = self.mv.get_vectors(tr=tr)
         vectors = MotionVectors()
-        degrained = list[ConstantFormatVideoNode]()
+        degrained = list[vs.VideoNode]()
 
         for delta in range(tr):
             vectors.set_vector(backward[delta], MVDirection.BACKWARD, 1)
@@ -860,8 +859,6 @@ class QTempGaussMC(vs_object):
             else:
                 denoised = self.denoise_func(self.draft, tr=self.denoise_tr)
 
-            denoised = cast(ConstantFormatVideoNode, denoised)
-
             if self.input_type == self.InputType.INTERLACE:
                 denoised = reinterlace(denoised, self.tff)
 
@@ -950,13 +947,11 @@ class QTempGaussMC(vs_object):
 
         self.basic_output = self._apply_noise_restore(resharp, self.basic_noise_restore)
 
-    def _apply_source_match(self, clip: vs.VideoNode, ref: vs.VideoNode) -> ConstantFormatVideoNode:
+    def _apply_source_match(self, clip: vs.VideoNode, ref: vs.VideoNode) -> vs.VideoNode:
         assert check_variable(clip, self._apply_source_match)
         assert check_variable(ref, self._apply_source_match)
 
-        def _error_adjustment(
-            clip: ConstantFormatVideoNode, ref: ConstantFormatVideoNode, tr: int
-        ) -> ConstantFormatVideoNode:
+        def _error_adjustment(clip: vs.VideoNode, ref: vs.VideoNode, tr: int) -> vs.VideoNode:
             tr_f = 2 * tr - 1
             binomial_coeff = factorial(tr_f) // factorial(tr) // factorial(tr_f - tr)
             error_adj = 2**tr_f / (binomial_coeff + self.match_similarity * (2**tr_f - binomial_coeff))
@@ -991,7 +986,7 @@ class QTempGaussMC(vs_object):
 
         return out
 
-    def _apply_lossless(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def _apply_lossless(self, clip: vs.VideoNode) -> vs.VideoNode:
         assert check_variable(clip, self._apply_lossless)
 
         if self.input_type == self.InputType.PROGRESSIVE:
@@ -1020,7 +1015,7 @@ class QTempGaussMC(vs_object):
 
         return core.std.SetFieldBased(out, FieldBased.PROGRESSIVE)
 
-    def _apply_sharpen(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def _apply_sharpen(self, clip: vs.VideoNode) -> vs.VideoNode:
         assert check_variable(clip, self._apply_sharpen)
 
         match self.sharp_mode:
@@ -1060,7 +1055,7 @@ class QTempGaussMC(vs_object):
 
         return resharp
 
-    def _apply_back_blend(self, flt: vs.VideoNode, src: vs.VideoNode) -> ConstantFormatVideoNode:
+    def _apply_back_blend(self, flt: vs.VideoNode, src: vs.VideoNode) -> vs.VideoNode:
         assert check_variable(flt, self._apply_back_blend)
 
         if self.backblend_sigma and (self.sharp_mode or self.sharp_thin):
@@ -1068,7 +1063,7 @@ class QTempGaussMC(vs_object):
 
         return flt
 
-    def _apply_sharpen_limit(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def _apply_sharpen_limit(self, clip: vs.VideoNode) -> vs.VideoNode:
         assert check_variable(clip, self._apply_sharpen_limit)
 
         if (self.sharp_mode or self.sharp_thin) and self.limit_radius:
@@ -1093,7 +1088,7 @@ class QTempGaussMC(vs_object):
 
         return clip
 
-    def _apply_noise_restore(self, clip: vs.VideoNode, restore: float = 0.0) -> ConstantFormatVideoNode:
+    def _apply_noise_restore(self, clip: vs.VideoNode, restore: float = 0.0) -> vs.VideoNode:
         assert check_variable(clip, self._apply_noise_restore)
 
         if restore and hasattr(self, "noise"):
@@ -1152,7 +1147,7 @@ class QTempGaussMC(vs_object):
 
         self.motion_blur_output = processed
 
-    def deinterlace(self) -> ConstantFormatVideoNode:
+    def deinterlace(self) -> vs.VideoNode:
         """
         Start the deinterlacing process.
 

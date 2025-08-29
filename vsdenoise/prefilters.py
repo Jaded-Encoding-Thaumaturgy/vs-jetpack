@@ -14,7 +14,6 @@ from vsrgtools import bilateral, flux_smooth, gauss_blur, min_blur
 from vstools import (
     MISSING,
     ColorRange,
-    ConstantFormatVideoNode,
     CustomValueError,
     InvalidColorFamilyError,
     MissingT,
@@ -577,7 +576,7 @@ class MultiPrefilter(AbstractPrefilter):
 PrefilterLike = Prefilter | PrefilterPartial | MultiPrefilter
 
 
-def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: float = 0.0625) -> ConstantFormatVideoNode:
+def prefilter_to_full_range(clip: vs.VideoNode, slope: float = 2.0, smooth: float = 0.0625) -> vs.VideoNode:
     """
     Converts a clip to full range if necessary and amplifies dark areas.
     Essentially acts like a luma-based multiplier on the SAD when used as an mvtools prefilter.

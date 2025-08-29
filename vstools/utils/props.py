@@ -29,7 +29,7 @@ from jetpytools import (
 
 from ..enums import PropEnum
 from ..exceptions import FramePropError
-from ..types import ConstantFormatVideoNode, HoldsPropValue
+from ..types import HoldsPropValue
 from .cache import NodesPropsCache
 
 __all__ = ["get_clip_filepath", "get_prop", "get_props", "merge_clip_props"]
@@ -245,14 +245,6 @@ def get_prop(
         resolved_key,
         f'Key "{resolved_key}" did not contain expected type: Expected "{t}" got "{type(prop)}"!',
     )
-
-
-@overload
-def merge_clip_props(*clips: ConstantFormatVideoNode, main_idx: int = 0) -> ConstantFormatVideoNode: ...
-
-
-@overload
-def merge_clip_props(*clips: vs.VideoNode, main_idx: int = 0) -> vs.VideoNode: ...
 
 
 def merge_clip_props(*clips: vs.VideoNode, main_idx: int = 0) -> vs.VideoNode:

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Protocol
 
 from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
-from vstools import ConstantFormatVideoNode, MatrixLike, check_variable, plane, vs
+from vstools import MatrixLike, check_variable, plane, vs
 
 __all__ = [
     "BaseGenericScaler",
@@ -13,24 +13,22 @@ __all__ = [
 
 
 class _GeneriScaleNoShift(Protocol):
-    def __call__(
-        self, clip: ConstantFormatVideoNode, width: int, height: int, *args: Any, **kwargs: Any
-    ) -> ConstantFormatVideoNode: ...
+    def __call__(self, clip: vs.VideoNode, width: int, height: int, *args: Any, **kwargs: Any) -> vs.VideoNode: ...
 
 
 class _GeneriScaleWithShift(Protocol):
     def __call__(
         self,
-        clip: ConstantFormatVideoNode,
+        clip: vs.VideoNode,
         width: int,
         height: int,
         shift: tuple[float, float],
         *args: Any,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode: ...
+    ) -> vs.VideoNode: ...
 
 
-def _func_no_op(clip: ConstantFormatVideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+def _func_no_op(clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:
     return clip
 
 
@@ -70,7 +68,7 @@ class BaseGenericScaler(Scaler, ABC):
         height: int | None = None,
         shift: tuple[float, float] = (0, 0),
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         assert check_variable(clip, self.__class__)
 
         width, height = self._wh_norm(clip, width, height)
@@ -79,19 +77,19 @@ class BaseGenericScaler(Scaler, ABC):
 
     def _finish_scale(
         self,
-        clip: ConstantFormatVideoNode,
-        input_clip: ConstantFormatVideoNode,
+        clip: vs.VideoNode,
+        input_clip: vs.VideoNode,
         width: int,
         height: int,
         shift: tuple[float, float] = (0, 0),
         matrix: MatrixLike | None = None,
         copy_props: bool = False,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         if input_clip.format.num_planes == 1:
             clip = plane(clip, 0)
 
         if (clip.width, clip.height) != (width, height):
-            clip = self.scaler.scale(clip, width, height)  # type: ignore[assignment]
+            clip = self.scaler.scale(clip, width, height)
 
         if shift != (0, 0):
             clip = self.shifter.shift(clip, shift)
@@ -139,7 +137,7 @@ class GenericScaler(BaseGenericScaler, partial_abstract=True):
         height: int | None = None,
         shift: tuple[float, float] = (0, 0),
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         assert check_variable(clip, self.__class__)
 
         width, height = self._wh_norm(clip, width, height)

@@ -1,6 +1,6 @@
 from typing import Any, Callable, ClassVar, Union
 
-from vstools import ConstantFormatVideoNode, FieldBased, FieldBasedLike, check_variable, core, vs
+from vstools import FieldBased, FieldBasedLike, check_variable, core, vs
 
 from ...abstract import ComplexKernel
 from ...abstract.base import BaseScaler
@@ -18,14 +18,14 @@ class ZimgBobber(BaseScaler):
     Abstract scaler class that applies bob deinterlacing using a zimg-based resizer.
     """
 
-    bob_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Bob
+    bob_function: Callable[..., vs.VideoNode] = core.lazy.resize2.Bob
     """Bob function called internally when performing bobbing operations."""
 
     _implemented_funcs: ClassVar[tuple[str, ...]] = ("bob", "deinterlace")
 
     def bob(
         self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Apply bob deinterlacing to a given clip using the selected resizer.
 
@@ -48,7 +48,7 @@ class ZimgBobber(BaseScaler):
 
     def deinterlace(
         self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, double_rate: bool = True, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Apply deinterlacing to a given clip using the selected resizer.
 
