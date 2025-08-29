@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 
 from vstools import (
-    ConstantFormatVideoNode,
     FieldBased,
     FieldBasedLike,
     FunctionUtil,
@@ -27,7 +26,7 @@ def sivtc(
     pattern: int = 0,
     tff: FieldBasedLike | bool | None = None,
     ivtc_cycle: IVTCycles = IVTCycles.CYCLE_10,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Simplest form of a fieldmatching function.
 
@@ -56,12 +55,12 @@ def jivtc(
     pattern: int,
     tff: FieldBasedLike | bool | None = None,
     chroma_only: bool = True,
-    postprocess: VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] = deblend,
+    postprocess: VSFunctionKwArgs = deblend,
     postdecimate: IVTCycles | None = IVTCycles.CYCLE_05,
     ivtc_cycle: IVTCycles = IVTCycles.CYCLE_10,
     final_ivtc_cycle: IVTCycles = IVTCycles.CYCLE_08,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     This function should only be used when a normal ivtc or ivtc + bobber leaves chroma blend to every fourth frame.
     You can disable chroma_only to use it for luma as well, but it is not recommended.
@@ -102,9 +101,9 @@ def vfm(
     clip: vs.VideoNode,
     tff: FieldBasedLike | bool | None = None,
     mode: VFMMode = VFMMode.TWO_WAY_MATCH_THIRD_COMBED,
-    postprocess: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    postprocess: vs.VideoNode | VSFunctionNoArgs | None = None,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Perform field matching using VFM.
 
@@ -163,7 +162,7 @@ def vfm(
     return func.return_clip(fieldmatch)
 
 
-def vdecimate(clip: vs.VideoNode, weight: float = 0.0, **kwargs: Any) -> ConstantFormatVideoNode:
+def vdecimate(clip: vs.VideoNode, weight: float = 0.0, **kwargs: Any) -> vs.VideoNode:
     """
     Perform frame decimation using VDecimate.
 

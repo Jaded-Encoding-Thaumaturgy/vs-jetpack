@@ -13,14 +13,12 @@ from vsmasktools import KirschTCanny, based_diff_mask, region_rel_mask
 from vsrgtools import BlurMatrix
 from vstools import (
     ColorRange,
-    ConstantFormatVideoNode,
     ConvMode,
     DitherType,
     FieldBased,
     FieldBasedLike,
     FrameRangeN,
     FrameRangesN,
-    VideoNodeT,
     check_variable,
     core,
     depth,
@@ -83,10 +81,10 @@ class RescaleBase(vs_object, ABC):
 
     @staticmethod
     def _apply_field_based(
-        function: Callable[[_RescaleT, VideoNodeT], VideoNodeT],
-    ) -> Callable[[_RescaleT, VideoNodeT], VideoNodeT]:
+        function: Callable[[_RescaleT, vs.VideoNode], vs.VideoNode],
+    ) -> Callable[[_RescaleT, vs.VideoNode], vs.VideoNode]:
         @wraps(function)
-        def wrap(self: _RescaleT, clip: VideoNodeT) -> VideoNodeT:
+        def wrap(self: _RescaleT, clip: vs.VideoNode) -> vs.VideoNode:
             if self._field_based:
                 clip = self._field_based.apply(clip)
                 clip = function(self, clip)
@@ -98,10 +96,10 @@ class RescaleBase(vs_object, ABC):
 
     @staticmethod
     def _add_props(
-        function: Callable[[_RescaleT, VideoNodeT], VideoNodeT],
-    ) -> Callable[[_RescaleT, VideoNodeT], VideoNodeT]:
+        function: Callable[[_RescaleT, vs.VideoNode], vs.VideoNode],
+    ) -> Callable[[_RescaleT, vs.VideoNode], vs.VideoNode]:
         @wraps(function)
-        def wrap(self: _RescaleT, clip: VideoNodeT) -> VideoNodeT:
+        def wrap(self: _RescaleT, clip: vs.VideoNode) -> vs.VideoNode:
             if not self.__add_props:
                 return function(self, clip)
 
@@ -119,7 +117,7 @@ class RescaleBase(vs_object, ABC):
 
     @_add_props
     @_apply_field_based
-    def _generate_descale(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
+    def _generate_descale(self, clip: vs.VideoNode) -> vs.VideoNode:
         return self._kernel.descale(
             clip,
             self.descale_args.width,
@@ -130,8 +128,8 @@ class RescaleBase(vs_object, ABC):
 
     @_add_props
     @_apply_field_based
-    def _generate_rescale(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
-        return self._kernel.scale(  # type: ignore[return-value]
+    def _generate_rescale(self, clip: vs.VideoNode) -> vs.VideoNode:
+        return self._kernel.scale(
             clip,
             self._clipy.width,
             self._clipy.height,
@@ -140,16 +138,14 @@ class RescaleBase(vs_object, ABC):
         )
 
     @_add_props
-    def _generate_doubled(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
+    def _generate_doubled(self, clip: vs.VideoNode) -> vs.VideoNode:
         return self._upscaler.supersample(clip, 2)
 
     @_add_props
-    def _generate_upscale(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
-        return self._downscaler.scale(  # type: ignore[return-value]
-            clip, self._clipy.width, self._clipy.height, **self.descale_args.kwargs(clip)
-        )
+    def _generate_upscale(self, clip: vs.VideoNode) -> vs.VideoNode:
+        return self._downscaler.scale(clip, self._clipy.width, self._clipy.height, **self.descale_args.kwargs(clip))
 
-    descale = cachedproperty[ConstantFormatVideoNode, vs.VideoNode](
+    descale = cachedproperty[vs.VideoNode, vs.VideoNode](
         lambda self: self._generate_descale(self._clipy),
         lambda self, value: cachedproperty.update_cache(self, "descale", value),
         lambda self: cachedproperty.clear_cache(self, ["descale", "rescale", "doubled", "upscale"]),
@@ -158,7 +154,7 @@ class RescaleBase(vs_object, ABC):
     Gets the descaled clip.
     """
 
-    rescale = cachedproperty[ConstantFormatVideoNode, vs.VideoNode](
+    rescale = cachedproperty[vs.VideoNode, vs.VideoNode](
         lambda self: self._generate_rescale(self.descale),
         lambda self, value: cachedproperty.update_cache(self, "rescale", value),
         lambda self: cachedproperty.clear_cache(self, "rescale"),
@@ -167,7 +163,7 @@ class RescaleBase(vs_object, ABC):
     Gets the rescaled clip.
     """
 
-    doubled = cachedproperty[ConstantFormatVideoNode, vs.VideoNode](
+    doubled = cachedproperty[vs.VideoNode, vs.VideoNode](
         lambda self: self._generate_doubled(self.descale),
         lambda self, value: cachedproperty.update_cache(self, "doubled", value),
         lambda self: cachedproperty.clear_cache(self, ["doubled", "upscale"]),
@@ -176,7 +172,7 @@ class RescaleBase(vs_object, ABC):
     Gets the doubled clip.
     """
 
-    upscale = cachedproperty[ConstantFormatVideoNode, vs.VideoNode](
+    upscale = cachedproperty[vs.VideoNode, vs.VideoNode](
         lambda self: core.std.CopyFrameProps(
             join(self._generate_upscale(self.doubled), *self._chroma), self._clipy, "_ChromaLocation"
         ),
@@ -325,9 +321,9 @@ class Rescale(RescaleBase):
 
                 Defaults to ``0``.
         """
-        self._line_mask: ConstantFormatVideoNode | None = None
-        self._credit_mask: ConstantFormatVideoNode | None = None
-        self._ignore_mask: ConstantFormatVideoNode | None = None
+        self._line_mask: vs.VideoNode | None = None
+        self._credit_mask: vs.VideoNode | None = None
+        self._ignore_mask: vs.VideoNode | None = None
         self._crop = crop
         self._pre = clip
 
@@ -340,13 +336,13 @@ class Rescale(RescaleBase):
         if self._crop > (0, 0, 0, 0):
             self._clipy = self._clipy.std.Crop(*self._crop)
 
-    def _generate_descale(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
+    def _generate_descale(self, clip: vs.VideoNode) -> vs.VideoNode:
         if not self._ignore_mask:
             return super()._generate_descale(clip)
 
         @self._add_props
         @self._apply_field_based
-        def _generate_descale_ignore_mask(self: Rescale, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
+        def _generate_descale_ignore_mask(self: Rescale, clip: vs.VideoNode) -> vs.VideoNode:
             assert self._ignore_mask
 
             self.descale_args.mode = "h"
@@ -377,7 +373,7 @@ class Rescale(RescaleBase):
 
         return _generate_descale_ignore_mask(self, clip)
 
-    def _generate_upscale(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
+    def _generate_upscale(self, clip: vs.VideoNode) -> vs.VideoNode:
         upscale = super()._generate_upscale(clip)
 
         merged_mask = norm_expr([self.line_mask, self.credit_mask], "x y - 0 mask_max clamp", func=self.__class__)
@@ -400,7 +396,7 @@ class Rescale(RescaleBase):
         return upscale
 
     @property
-    def line_mask(self) -> ConstantFormatVideoNode:
+    def line_mask(self) -> vs.VideoNode:
         """Gets the lineart mask to be applied on the upscaled clip."""
         lm = self._line_mask or core.std.BlankClip(
             self._clipy, color=get_peak_value(self._clipy, False, ColorRange.FULL), keep=True
@@ -435,7 +431,7 @@ class Rescale(RescaleBase):
         self._line_mask = None
 
     @property
-    def credit_mask(self) -> ConstantFormatVideoNode:
+    def credit_mask(self) -> vs.VideoNode:
         """Gets the credit mask to be applied on the upscaled clip."""
         if self._credit_mask:
             return self._credit_mask
@@ -458,7 +454,7 @@ class Rescale(RescaleBase):
         self._credit_mask = None
 
     @property
-    def ignore_mask(self) -> ConstantFormatVideoNode:
+    def ignore_mask(self) -> vs.VideoNode:
         """Gets the ignore mask to be applied on the descaled clip."""
         if self._ignore_mask:
             return self._ignore_mask
@@ -480,7 +476,7 @@ class Rescale(RescaleBase):
 
     def default_line_mask(
         self, clip: vs.VideoNode | None = None, scaler: ScalerLike = Bilinear, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Load a default Kirsch line mask in the class instance. Additionally, it is returned.
 
@@ -514,7 +510,7 @@ class Rescale(RescaleBase):
         ranges: FrameRangeN | FrameRangesN | None = None,
         stabilize: bool | tuple[Sequence[float], float] = False,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Load a credit mask by making a difference mask between src and rescaled clips
 

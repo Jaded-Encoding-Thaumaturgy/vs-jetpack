@@ -9,7 +9,6 @@ from vsdenoise import MotionVectors, MVTools, MVToolsPreset, prefilter_to_full_r
 from vsexprtools import norm_expr
 from vsrgtools import BlurMatrix, sbr
 from vstools import (
-    ConstantFormatVideoNode,
     ConvMode,
     FormatsMismatchError,
     FunctionUtil,
@@ -53,7 +52,7 @@ class InterpolateOverlay(CustomEnum):
         refine: int = 1,
         thsad_recalc: int | None = None,
         export_globals: Literal[False] = False,
-    ) -> ConstantFormatVideoNode: ...
+    ) -> vs.VideoNode: ...
 
     @overload
     def __call__(
@@ -68,7 +67,7 @@ class InterpolateOverlay(CustomEnum):
         thsad_recalc: int | None = None,
         *,
         export_globals: Literal[True],
-    ) -> tuple[ConstantFormatVideoNode, MVTools]: ...
+    ) -> tuple[vs.VideoNode, MVTools]: ...
 
     @overload
     def __call__(
@@ -82,7 +81,7 @@ class InterpolateOverlay(CustomEnum):
         refine: int = 1,
         thsad_recalc: int | None = None,
         export_globals: bool = ...,
-    ) -> ConstantFormatVideoNode | tuple[ConstantFormatVideoNode, MVTools]: ...
+    ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]: ...
 
     def __call__(
         self,
@@ -95,7 +94,7 @@ class InterpolateOverlay(CustomEnum):
         refine: int = 1,
         thsad_recalc: int | None = None,
         export_globals: bool = False,
-    ) -> ConstantFormatVideoNode | tuple[ConstantFormatVideoNode, MVTools]:
+    ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]:
         """
         Virtually oversamples the video to 120 fps with motion interpolation on credits only, and decimates to 24 fps.
         Requires manually specifying the 3:2 pulldown pattern (the clip must be split into parts if it changes).
@@ -154,7 +153,7 @@ class FixInterlacedFades(CustomIntEnum):
 
     def __call__(
         self, clip: vs.VideoNode, color: float | Sequence[float] | vs.VideoNode = 0.0, planes: Planes = None
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Give a mathematically perfect solution to decombing fades made *after* telecine
         (which made perfect IVTC impossible) that start or end in a solid color.
@@ -179,7 +178,7 @@ class FixInterlacedFades(CustomIntEnum):
 
         func = FunctionUtil(clip, self.__class__, planes, vs.YUV, 32)
 
-        expr_clips = list[ConstantFormatVideoNode]()
+        expr_clips = list[vs.VideoNode]()
         fields = func.work_clip.std.SeparateFields(tff=True)
 
         if isinstance(color, vs.VideoNode):
@@ -221,16 +220,14 @@ class FixInterlacedFades(CustomIntEnum):
 
 def vinverse(
     clip: vs.VideoNode,
-    comb_blur: VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | vs.VideoNode = partial(sbr, mode=ConvMode.VERTICAL),
-    contra_blur: VSFunctionKwArgs[vs.VideoNode, vs.VideoNode] | vs.VideoNode = BlurMatrix.BINOMIAL(
-        mode=ConvMode.VERTICAL
-    ),
+    comb_blur: VSFunctionKwArgs | vs.VideoNode = partial(sbr, mode=ConvMode.VERTICAL),
+    contra_blur: VSFunctionKwArgs | vs.VideoNode = BlurMatrix.BINOMIAL(mode=ConvMode.VERTICAL),
     contra_str: float = 2.7,
     amnt: int | float | None = None,
     scl: float = 0.25,
     thr: int | float = 0,
     planes: Planes = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     A simple but effective script to remove residual combing. Based on an AviSynth script by Didée.
 

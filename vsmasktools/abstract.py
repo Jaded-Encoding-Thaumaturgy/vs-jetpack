@@ -7,7 +7,6 @@ from vsexprtools import ExprOp
 from vsrgtools import box_blur
 from vstools import (
     ColorRange,
-    ConstantFormatVideoNode,
     CustomTypeError,
     FrameRangeN,
     FrameRangesN,
@@ -32,12 +31,12 @@ class GeneralMask(ABC):
     """
 
     @abstractmethod
-    def get_mask(self, clip: vs.VideoNode, /, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode: ...
+    def get_mask(self, clip: vs.VideoNode, /, *args: Any, **kwargs: Any) -> vs.VideoNode: ...
 
     @inject_self.init_kwargs.clean
     def apply_mask(
         self, _clipa: vs.VideoNode, _clipb: vs.VideoNode, _ref: vs.VideoNode | None = None, /, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         return _clipa.std.MaskedMerge(_clipb, self.get_mask(_ref or _clipa, **kwargs))
 
 
@@ -64,7 +63,7 @@ class BoundingBox(GeneralMask):
 
         self.size, self.pos, self.invert = Size(size), Position(pos), invert
 
-    def get_mask(self, ref: vs.VideoNode, /, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:
+    def get_mask(self, ref: vs.VideoNode, /, *args: Any, **kwargs: Any) -> vs.VideoNode:
         from .utils import squaremask
 
         return squaremask(ref, self.size.x, self.size.y, self.pos.x, self.pos.y, self.invert, False, func=self.get_mask)
@@ -110,7 +109,7 @@ class DeferredMask(GeneralMask):
             raise FramesLengthError(self.__class__, "", "Received reference frame and range list size mismatch!")
 
     @limiter(mask=True)
-    def get_mask(self, clip: vs.VideoNode, /, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def get_mask(self, clip: vs.VideoNode, /, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         """
         Get the constructed mask
 
@@ -156,4 +155,4 @@ class DeferredMask(GeneralMask):
         return hm
 
     @abstractmethod
-    def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode: ...
+    def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode: ...

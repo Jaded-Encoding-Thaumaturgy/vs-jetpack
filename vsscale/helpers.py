@@ -284,7 +284,7 @@ class ScalingArgs:
 @overload
 def pre_ss(
     clip: vs.VideoNode,
-    function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+    function: VSFunctionNoArgs,
     rfactor: float = 2.0,
     sp: type[MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]]] = ComplexSuperSamplerProcess[Lanczos],  # type: ignore[assignment]
     *,
@@ -309,7 +309,7 @@ def pre_ss(
 @overload
 def pre_ss(
     clip: vs.VideoNode,
-    function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+    function: VSFunctionNoArgs,
     rfactor: float = 2.0,
     *,
     supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
@@ -322,7 +322,7 @@ def pre_ss(
 
 def pre_ss(  # pyright: ignore[reportInconsistentOverload]
     clip: vs.VideoNode,
-    function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    function: VSFunctionNoArgs | None = None,
     rfactor: float = 2.0,
     sp: type[MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]]]
     | MixedScalerProcess[_ScalerT, Unpack[_BaseScalerTs]] = ComplexSuperSamplerProcess[Lanczos],  # type: ignore[assignment]

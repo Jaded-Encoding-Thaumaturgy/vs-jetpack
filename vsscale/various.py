@@ -20,15 +20,7 @@ from vskernels import (
 )
 from vsmasktools import ringing_mask
 from vsrgtools.rgtools import Repair
-from vstools import (
-    ChromaLocation,
-    ConstantFormatVideoNode,
-    CustomOverflowError,
-    check_ref_clip,
-    check_variable,
-    scale_delta,
-    vs,
-)
+from vstools import ChromaLocation, CustomOverflowError, check_ref_clip, check_variable, scale_delta, vs
 
 from .generic import GenericScaler
 
@@ -107,7 +99,7 @@ class ClampScaler(GenericScaler):
         height: int | None = None,
         shift: tuple[float, float] = (0, 0),
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         width, height = self._wh_norm(clip, width, height)
 
         base = self.base_scaler.scale(clip, width, height, shift, **kwargs)
@@ -200,7 +192,7 @@ class ComplexSuperSamplerProcess(
         height: int | None = None,
         shift: tuple[TopShift | list[TopShift], LeftShift | list[LeftShift]] = (0, 0),
         **kwargs: Any,
-    ) -> vs.VideoNode | ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         assert check_variable(clip, self.scale)
 
         width, height = self._wh_norm(clip, width, height)

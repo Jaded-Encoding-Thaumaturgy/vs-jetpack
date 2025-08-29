@@ -9,7 +9,6 @@ from vsdenoise import PrefilterLike
 from vsexprtools import norm_expr
 from vsrgtools import gauss_blur
 from vstools import (
-    ConstantFormatVideoNode,
     CustomIntEnum,
     InvalidColorFamilyError,
     Planes,
@@ -487,8 +486,8 @@ def placebo_deband(
     ngrain = normalize_param_planes(clip, normalize_seq(grain), planes, 0, placebo_deband)
 
     def _placebo(
-        clip: ConstantFormatVideoNode, threshold: float, grain_val: float, planes: Sequence[int]
-    ) -> ConstantFormatVideoNode:
+        clip: vs.VideoNode, threshold: float, grain_val: float, planes: Sequence[int]
+    ) -> vs.VideoNode:
         plane = 0
 
         if threshold == grain_val == 0:

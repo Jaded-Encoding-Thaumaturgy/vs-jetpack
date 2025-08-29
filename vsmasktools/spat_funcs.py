@@ -6,7 +6,6 @@ from vsexprtools import ExprOp, ExprVars, norm_expr
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
     ColorRange,
-    ConstantFormatVideoNode,
     DitherType,
     FuncExcept,
     StrList,
@@ -32,13 +31,13 @@ __all__ = ["adg_mask", "flat_mask", "retinex", "texture_mask"]
 @overload
 def adg_mask(
     clip: vs.VideoNode, luma_scaling: float = 8.0, relative: bool = False, func: FuncExcept | None = None
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 
 @overload
 def adg_mask(
-    clip: vs.VideoNode, luma_scaling: Sequence[float] = ..., relative: bool = False, func: FuncExcept | None = None
-) -> list[ConstantFormatVideoNode]: ...
+    clip: vs.VideoNode, luma_scaling: Sequence[float], relative: bool = False, func: FuncExcept | None = None
+) -> list[vs.VideoNode]: ...
 
 
 def adg_mask(
@@ -46,7 +45,7 @@ def adg_mask(
     luma_scaling: float | Sequence[float] = 8.0,
     relative: bool = False,
     func: FuncExcept | None = None,
-) -> ConstantFormatVideoNode | list[ConstantFormatVideoNode]:
+) -> vs.VideoNode | list[vs.VideoNode]:
     """
     Generates an adaptive grain mask based on each frame's average luma and pixel value.
 
@@ -83,7 +82,7 @@ def adg_mask(
 
         x_string += "0 0.999 clamp X!"
 
-        def _adgfunc(luma: ConstantFormatVideoNode, ls: float) -> ConstantFormatVideoNode:
+        def _adgfunc(luma: vs.VideoNode, ls: float) -> vs.VideoNode:
             return norm_expr(
                 luma,
                 f"{x_string} 1 X@ X@ X@ X@ X@ "
@@ -94,7 +93,7 @@ def adg_mask(
     else:
         y, y_inv = luma.std.PlaneStats(), luma.std.Invert().std.PlaneStats()
 
-        def _adgfunc(luma: ConstantFormatVideoNode, ls: float) -> ConstantFormatVideoNode:
+        def _adgfunc(luma: vs.VideoNode, ls: float) -> vs.VideoNode:
             return luma.adg.Mask(ls)
 
     scaled_clips = [_adgfunc(y_inv if ls < 0 else y, abs(ls)) for ls in to_arr(luma_scaling)]
@@ -113,7 +112,7 @@ def retinex(
     upper_thr: float = 0.001,
     fast: bool = True,
     func: FuncExcept | None = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Multi-Scale Retinex (MSR) implementation for dynamic range and contrast enhancement.
 
@@ -171,7 +170,7 @@ def retinex(
     return norm_expr(msr_stats, expr_balance, None, y, func=func)
 
 
-def flat_mask(src: vs.VideoNode, radius: int = 5, thr: float = 0.011, gauss: bool = False) -> ConstantFormatVideoNode:
+def flat_mask(src: vs.VideoNode, radius: int = 5, thr: float = 0.011, gauss: bool = False) -> vs.VideoNode:
     luma = get_y(src)
 
     blur = gauss_blur(luma, radius * 0.361083333) if gauss else box_blur(luma, radius)
@@ -191,7 +190,7 @@ def texture_mask(
     thr: float = 0.2,
     stages: list[tuple[int, int]] = [(60, 2), (40, 4), (20, 2)],
     points: list[tuple[bool, float]] = [(False, 1.75), (True, 2.5), (True, 5), (False, 10)],
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     levels = [x for x, _ in points]
     _points = [scale_value(x, 8, clip) for _, x in points]
     thr = scale_value(thr, 8, 32, ColorRange.FULL)

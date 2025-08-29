@@ -7,7 +7,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any, ClassVar, Sequence
 
-from vstools import ConstantFormatVideoNode, vs
+from vstools import vs
 
 from ._abstract import EdgeDetect, EuclideanDistance
 
@@ -36,5 +36,5 @@ class TEdgeTedgemask(Matrix1D, EdgeDetect):
     (tedgemask.TEdgeMask(threshold=0.0, type=2)) Vapoursynth plugin.
     """
 
-    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         return clip.tedgemask.TEdgeMask(threshold=0, type=2)

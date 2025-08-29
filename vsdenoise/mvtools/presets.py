@@ -30,7 +30,7 @@ class SuperArgs(TypedDict, total=False):
     levels: int | None
     sharp: SharpMode | None
     rfilter: RFilterMode | None
-    pelclip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None
+    pelclip: vs.VideoNode | VSFunctionNoArgs | None
 
 
 class AnalyzeArgs(TypedDict, total=False):
@@ -153,7 +153,7 @@ class ScDetectionArgs(TypedDict, total=False):
 
 
 class MVToolsPreset(MutableMapping[str, Any], vs_object):
-    search_clip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode]
+    search_clip: vs.VideoNode | VSFunctionNoArgs
     tr: int
     pel: int
     pad: int | tuple[int | None, int | None]
@@ -174,7 +174,7 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
     def __init__(
         self,
         *,
-        search_clip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+        search_clip: vs.VideoNode | VSFunctionNoArgs | None = None,
         tr: int | None = None,
         pel: int | None = None,
         pad: int | tuple[int | None, int | None] | None = None,

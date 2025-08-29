@@ -7,7 +7,7 @@ import vapoursynth as vs
 from jetpytools import Coordinate, CustomIntEnum, CustomStrEnum, Position, Sentinel, SentinelT, Size
 from typing_extensions import Self
 
-from ..types import ConstantFormatVideoNode, HoldsPropValue, VideoNodeT
+from ..types import HoldsPropValue
 
 __all__ = ["Coordinate", "Dar", "Direction", "Position", "Region", "Resolution", "Sar", "SceneChangeMode", "Size"]
 
@@ -188,7 +188,7 @@ class Sar(_Xar):
 
         return cls(dar / (Fraction(active_area) / height))
 
-    def apply(self, clip: VideoNodeT) -> VideoNodeT:
+    def apply(self, clip: vs.VideoNode) -> vs.VideoNode:
         """
         Apply the SAR values as _SARNum and _SARDen frame properties to a clip.
         """
@@ -359,7 +359,7 @@ class SceneChangeMode(CustomIntEnum):
             SceneChangeMode.WWXD_SCXVID_INTERSECTION,
         )
 
-    def ensure_presence(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def ensure_presence(self, clip: vs.VideoNode) -> vs.VideoNode:
         """
         Ensures all the frame properties necessary for scene change detection are created.
         """
@@ -369,7 +369,7 @@ class SceneChangeMode(CustomIntEnum):
 
         assert check_variable_format(clip, self.ensure_presence)
 
-        stats_clip = list[ConstantFormatVideoNode]()
+        stats_clip = list[vs.VideoNode]()
 
         if self.is_SCXVID:
             if not hasattr(vs.core, "scxvid"):
@@ -409,7 +409,7 @@ class SceneChangeMode(CustomIntEnum):
     def lambda_cb(self) -> Callable[[int, vs.VideoFrame], SentinelT | int]:
         return lambda n, f: Sentinel.check(n, bool(f[0][0, 0]))
 
-    def prepare_clip(self, clip: vs.VideoNode, height: int | Literal[False] = 360) -> ConstantFormatVideoNode:
+    def prepare_clip(self, clip: vs.VideoNode, height: int | Literal[False] = 360) -> vs.VideoNode:
         """
         Prepare a clip for scene change metric calculations.
 
