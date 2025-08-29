@@ -58,7 +58,7 @@ def deblending_helper(
         length=length,
     )
 
-    return core.std.FrameEval(fieldmatched, lambda n, f: inters[f[0][0, 0]], index_src)
+    return core.std.FrameEval(fieldmatched, lambda n, f: inters[int(f[0][0, 0])], index_src)
 
 
 def deblend(
@@ -145,4 +145,4 @@ def deblend_fix_kf(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, func: Fu
         prop_srcs, "x._Combed x.VFMSceneChange and y.VFMSceneChange 2 0 ? 1 ?", format=vs.GRAY8, func=func
     )
 
-    return core.std.FrameEval(deblended, lambda n, f: shifted_clips[f[0][0, 0]], index_src)
+    return core.std.FrameEval(deblended, lambda n, f: shifted_clips[int(f[0][0, 0])], index_src)

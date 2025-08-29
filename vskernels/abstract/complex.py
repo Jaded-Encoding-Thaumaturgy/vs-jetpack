@@ -4,7 +4,6 @@ This module defines the abstract classes for scaling, descaling and resampling o
 
 from __future__ import annotations
 
-import sys
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, Union, overload
 
@@ -89,10 +88,7 @@ def _check_dynamic_keeparscaler_params(
         )
 
     if exceptions:
-        if sys.version_info >= (3, 11):
-            raise ExceptionGroup("Multiple exceptions occurred!", exceptions)
-
-        raise Exception(exceptions)
+        raise ExceptionGroup("Multiple exceptions occurred!", exceptions)
 
     return True
 
