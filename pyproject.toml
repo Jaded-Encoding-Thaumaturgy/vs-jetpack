@@ -147,6 +147,7 @@ line-length = 120
 
 [tool.ruff.format]
 docstring-code-format = true
+exclude = ["stubs/vapoursynth/__init__.pyi"]
 
 [tool.ruff.lint]
 exclude = [
@@ -174,7 +175,9 @@ ignore = ["PYI041"]
     "N801",
     "N802",
     "N803",
+    "N805",
     "PYI021",
+    "PYI029",
     "PYI002",
     "RUF022",
 ]
