@@ -42,10 +42,14 @@ def video_heuristics(
     Args:
         clip: The input clip.
         props: Source properties used to retrieve values.
-            If True, uses the frame properties from the clip.
-            Otherwise, values are inferred from the clip's resolution.
+
+               - If True: uses the frame properties from the clip when available.
+               - If a Mapping is passed: uses the frame properties from it when available.
+               - If any other value or frame properties unavailable: values are inferred from the clip's resolution.
+
         prop_in: If True, returns a dict with keys in the form `{prop_name}_in` (e.g., `matrix_in`
             instead of `matrix`).
+
             For more details, see the [Resize docs](https://www.vapoursynth.com/doc/functions/video/resize.html).
         assumed_return: If True, returns the assumed props as a list alongside the heuristics.
 
