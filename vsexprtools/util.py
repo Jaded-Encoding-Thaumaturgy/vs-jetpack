@@ -3,10 +3,9 @@ from __future__ import annotations
 import re
 from functools import cache
 from itertools import count
-from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Sequence, SupportsIndex, overload
+from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Self, Sequence, SupportsIndex, overload
 
 from jetpytools import CustomTypeError, SupportsString
-from typing_extensions import Self
 
 if TYPE_CHECKING:
     from vapoursynth import _ReturnDict_akarin_Version

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from fractions import Fraction
-from typing import Callable, Iterator, Literal, NamedTuple
+from typing import Callable, Iterator, Literal, NamedTuple, Self
 
 import vapoursynth as vs
 from jetpytools import Coordinate, CustomIntEnum, CustomStrEnum, Position, Sentinel, SentinelT, Size
-from typing_extensions import Self
 
 from ..types import HoldsPropValue
 

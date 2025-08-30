@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
-from typing import TYPE_CHECKING, Any, Protocol, Sequence, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, Self, Sequence, runtime_checkable
 
 from jetpytools import MISSING
-from typing_extensions import Self, TypeVar
+from typing_extensions import TypeVar
 
 from vskernels import Catrom, ComplexScaler, ComplexScalerLike, LeftShift, MixedScalerProcess, Point, Scaler, TopShift
 from vstools import (

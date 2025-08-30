@@ -10,6 +10,7 @@ from typing import (
     Iterable,
     Literal,
     NoReturn,
+    Self,
     SupportsIndex,
     TypeAlias,
     cast,
@@ -17,7 +18,6 @@ from typing import (
 
 from jetpytools import SupportsString, to_arr
 from jetpytools.types.utils import SingletonMeta
-from typing_extensions import Self
 
 from vstools import ConvMode, OnePassConvMode, flatten, vs, vs_object
 
