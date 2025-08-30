@@ -5,19 +5,10 @@ from dataclasses import dataclass
 from functools import cache, partial, wraps
 from math import exp
 from types import GenericAlias
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Concatenate,
-    Generic,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Generic, Self, TypeVarTuple, Union, overload
 
 from jetpytools import P, classproperty
-from typing_extensions import Self, TypeIs, TypeVar, TypeVarTuple, Unpack
+from typing_extensions import TypeIs, TypeVar
 
 from vsexprtools import norm_expr
 from vstools import (
@@ -244,22 +235,22 @@ This includes:
 """
 
 
-class BaseMixedScalerMeta(BaseScalerSpecializerMeta, Generic[Unpack[_BaseScalerTs]]):
+class BaseMixedScalerMeta(BaseScalerSpecializerMeta, Generic[*_BaseScalerTs]):
     """
     Meta class for BaseMixedScaler to handle mixed scaling logic.
     """
 
-    __others__: tuple[Unpack[_BaseScalerTs]]
+    __others__: tuple[*_BaseScalerTs]
 
     def __new__(
         mcls,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
-        *others: Unpack[_BaseScalerTs],
+        *others: *_BaseScalerTs,
         specializer: type[BaseScaler] | None = None,
         **kwargs: Any,
-    ) -> BaseMixedScalerMeta[Unpack[_BaseScalerTs]]:
+    ) -> BaseMixedScalerMeta[*_BaseScalerTs]:
         obj = super().__new__(mcls, name, bases, namespace, specializer=specializer, **kwargs)
 
         if others:
@@ -279,7 +270,7 @@ class BaseMixedScalerMeta(BaseScalerSpecializerMeta, Generic[Unpack[_BaseScalerT
 
 class BaseMixedScaler(
     BaseScalerSpecializer[_BaseScalerT],
-    Generic[_BaseScalerT, Unpack[_BaseScalerTs]],
+    Generic[_BaseScalerT, *_BaseScalerTs],
     metaclass=BaseMixedScalerMeta,
     abstract=True,
 ):
@@ -289,7 +280,7 @@ class BaseMixedScaler(
 
     @classproperty
     @classmethod
-    def _others(cls) -> tuple[Unpack[_BaseScalerTs]]:
+    def _others(cls) -> tuple[*_BaseScalerTs]:
         # Workaround as we can't specify the bound values of a TypeVarTuple yet
         return tuple(o() for o in cls.__others__)  # type: ignore[operator]
 
@@ -325,7 +316,7 @@ class BaseMixedScaler(
         return GenericAlias(mixed_spe, (specializer, *others))
 
 
-class MixedScalerProcess(BaseMixedScaler[_ScalerT, Unpack[_BaseScalerTs]], Scaler, abstract=True):
+class MixedScalerProcess(BaseMixedScaler[_ScalerT, *_BaseScalerTs], Scaler, abstract=True):
     """
     An abstract class for chained scaling with an additional processing step.
     """

@@ -9,10 +9,9 @@ from contextlib import contextmanager
 from functools import cache
 from inspect import currentframe
 from types import FrameType
-from typing import Any, Iterable, Iterator, Sequence, SupportsIndex, cast, overload
+from typing import Any, Iterable, Iterator, Self, Sequence, SupportsIndex, cast, overload
 
 from jetpytools import CustomValueError, to_arr
-from typing_extensions import Self
 
 from vstools import HoldsVideoFormat, VideoFormatLike, get_video_format, vs, vs_object
 

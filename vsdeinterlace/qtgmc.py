@@ -1,10 +1,9 @@
 from copy import deepcopy
 from functools import partial
 from math import factorial
-from typing import Any, Iterable, Literal, MutableMapping, Protocol
+from typing import Any, Iterable, Literal, MutableMapping, Protocol, Self
 
 from jetpytools import CustomIntEnum
-from typing_extensions import Self
 
 from vsaa import NNEDI3
 from vsdeband import Grainer

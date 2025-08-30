@@ -6,10 +6,9 @@ from functools import cache
 from inspect import currentframe
 from itertools import product
 from math import inf, isqrt
-from typing import Any, Collection, Iterable, Iterator, Literal, Sequence, SupportsIndex, cast, overload
+from typing import Any, Collection, Iterable, Iterator, Literal, Self, Sequence, SupportsIndex, cast, overload
 
 from jetpytools import CustomRuntimeError, CustomStrEnum, SupportsString, SupportsSumNoDefaultT, fallback
-from typing_extensions import Self
 
 from vstools import (
     ColorRange,
