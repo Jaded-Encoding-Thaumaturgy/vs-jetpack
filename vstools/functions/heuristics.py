@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal, overload
+from typing import Any, Literal, Mapping, overload
 
 import vapoursynth as vs
 from jetpytools import KwargsT
@@ -12,9 +12,9 @@ __all__ = ["video_heuristics", "video_resample_heuristics"]
 
 
 @overload
-def video_heuristics(  # pyright: ignore[reportOverlappingOverload]
+def video_heuristics(
     clip: vs.VideoNode,
-    props: vs.FrameProps | bool | None = None,
+    props: Mapping[str, Any] | bool | None = None,
     prop_in: bool = True,
     assumed_return: Literal[False] = False,
 ) -> dict[str, PropEnum]: ...
@@ -23,7 +23,7 @@ def video_heuristics(  # pyright: ignore[reportOverlappingOverload]
 @overload
 def video_heuristics(
     clip: vs.VideoNode,
-    props: vs.FrameProps | bool | None = None,
+    props: Mapping[str, Any] | bool | None = None,
     prop_in: bool = True,
     *,
     assumed_return: Literal[True],
@@ -31,7 +31,10 @@ def video_heuristics(
 
 
 def video_heuristics(
-    clip: vs.VideoNode, props: vs.FrameProps | bool | None = None, prop_in: bool = True, assumed_return: bool = False
+    clip: vs.VideoNode,
+    props: Mapping[str, Any] | bool | None = None,
+    prop_in: bool = True,
+    assumed_return: bool = False,
 ) -> dict[str, PropEnum] | tuple[dict[str, PropEnum], list[str]]:
     """
     Determine video heuristics from frame properties.
@@ -44,6 +47,7 @@ def video_heuristics(
         prop_in: If True, returns a dict with keys in the form `{prop_name}_in` (e.g., `matrix_in`
             instead of `matrix`).
             For more details, see the [Resize docs](https://www.vapoursynth.com/doc/functions/video/resize.html).
+        assumed_return: If True, returns the assumed props as a list alongside the heuristics.
 
     Returns:
         A dict containing all determinable video heuristics, optionally using key names derived
@@ -61,7 +65,7 @@ def video_heuristics(
         "chromaloc": ChromaLocation,
     }
 
-    def _get_props(obj: vs.VideoNode | vs.FrameProps, key: type[PropEnum]) -> PropEnum:
+    def _get_props(obj: vs.VideoNode | Mapping[str, Any], key: type[PropEnum]) -> PropEnum:
         p = get_prop(obj, key, int, cast=key, default=None, func=video_heuristics)
 
         if p is not None and not p.is_unknown(p):

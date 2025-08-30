@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Protocol, TypeAlias, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Mapping, Protocol, TypeAlias, TypeVar, Union
 
 import vapoursynth as vs
 from jetpytools import MISSING, DataType, FuncExcept, MissingT, PassthroughC, SingleOrSeq, StrArr, StrArrOpt
@@ -81,7 +81,7 @@ HoldsVideoFormat = vs.VideoNode | vs.VideoFrame | vs.VideoFormat
 Types from which a clear VideoFormat can be retrieved.
 """
 
-HoldsPropValue = vs.FrameProps | vs.VideoFrame | vs.AudioFrame | vs.VideoNode | vs.AudioNode
+HoldsPropValue = vs.FrameProps | vs.VideoFrame | vs.AudioFrame | vs.VideoNode | vs.AudioNode | Mapping[str, Any]
 """
 Types that can hold a vs.FrameProps.
 """

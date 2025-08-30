@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, TypeVar
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, TypeVar
 
 import vapoursynth as vs
 from jetpytools import CustomEnum, CustomError, CustomIntEnum, CustomStrEnum, FuncExcept, classproperty
@@ -55,7 +55,7 @@ class PropEnum(CustomIntEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> Self:
         """
         Get an enum member from the frame properties or optionally fall back to resolution when strict=False.
@@ -158,7 +158,7 @@ PropEnumT = TypeVar("PropEnumT", bound=PropEnum)
 
 def _base_from_video(
     cls: type[PropEnumT],
-    src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+    src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
     exception: type[CustomError],
     strict: bool,
     func: FuncExcept | None = None,
@@ -173,7 +173,7 @@ def _base_from_video(
         if strict:
             raise exception("{class_name} is undefined.", func, class_name=cls, reason=value)
 
-        if isinstance(src, vs.FrameProps):
+        if isinstance(src, Mapping):
             raise exception("Can't determine {class_name} from FrameProps.", func, class_name=cls)
 
         if src.width and src.height:
