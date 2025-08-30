@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from enum import auto
 from math import ceil, exp, pi, sqrt
-from typing import Any, Iterable, Literal, TypeVar, overload
+from typing import Any, Iterable, Literal, Self, TypeVar, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError, FuncExcept, to_arr
-from typing_extensions import Self
 
 from vsexprtools import ExprList, ExprOp, ExprToken, ExprVars
 from vstools import (

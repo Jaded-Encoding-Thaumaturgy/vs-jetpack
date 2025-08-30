@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Self
 
 from jetpytools import (
     KwargsNotNone,
@@ -15,7 +15,6 @@ from jetpytools import (
     inject_self,
     to_singleton,
 )
-from typing_extensions import Self
 
 __all__ = [
     "KwargsNotNone",

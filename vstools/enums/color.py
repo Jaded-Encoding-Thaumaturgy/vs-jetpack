@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Mapping, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Mapping, Self, TypeAlias, overload
 
 import vapoursynth as vs
 from jetpytools import FuncExcept
-from typing_extensions import Self
 
 from ..exceptions import (
     ReservedMatrixError,

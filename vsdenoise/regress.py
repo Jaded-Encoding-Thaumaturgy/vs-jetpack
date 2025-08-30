@@ -618,7 +618,7 @@ class ChromaReconstruct(ABC):
 
         y, y_base, y_m, y_dm, chroma_base, chroma_dm = self._get_bases(clip, include_edges, self.reconstruct)
 
-        reg = Regression.from_param(Regression.BlurConf(gauss_blur, sigma=sigma)) # pyright: ignore[reportCallIssue]
+        reg = Regression.from_param(Regression.BlurConf(gauss_blur, sigma=sigma))  # pyright: ignore[reportCallIssue]
 
         if not isinstance(diff_mode, ReconDiffModeConf):
             diff_mode = diff_mode()

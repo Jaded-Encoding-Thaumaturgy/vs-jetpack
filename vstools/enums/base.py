@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, TypeVar
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Self, TypeVar
 
 import vapoursynth as vs
 from jetpytools import CustomEnum, CustomError, CustomIntEnum, CustomStrEnum, FuncExcept, classproperty
-from typing_extensions import Self
 
 __all__ = [
     "CustomEnum",

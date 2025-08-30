@@ -6,10 +6,10 @@ from __future__ import annotations
 
 import math
 from functools import cache
-from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Sequence, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Self, Sequence, TypeAlias, overload
 
 from jetpytools import KwargsNotNone, MismatchError, classproperty, fallback
-from typing_extensions import Self, deprecated
+from typing_extensions import deprecated
 from vapoursynth import Plugin
 
 from vstools import (

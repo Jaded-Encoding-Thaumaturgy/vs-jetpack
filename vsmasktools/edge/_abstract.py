@@ -3,10 +3,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import IntFlag, auto
 from inspect import isabstract
-from typing import Any, ClassVar, Sequence, TypeAlias, TypeVar
+from typing import Any, ClassVar, Self, Sequence, TypeAlias, TypeVar
 
 from jetpytools import inject_kwargs_params
-from typing_extensions import Self
 
 from vsexprtools import ExprOp, ExprToken, norm_expr
 from vsrgtools import BlurMatrix

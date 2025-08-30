@@ -4,11 +4,10 @@ from contextlib import AbstractContextManager
 from fractions import Fraction
 from math import floor
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Self, Sequence, cast, overload
 
 import vapoursynth as vs
 from jetpytools import MISSING, MissingT, P
-from typing_extensions import Self
 
 from ..enums import Align, BaseAlign
 from ..exceptions import InvalidSubsamplingError

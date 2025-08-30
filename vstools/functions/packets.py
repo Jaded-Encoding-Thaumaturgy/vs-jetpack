@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-import io
-import itertools
-import json
-import shutil
-import warnings
 from functools import cache
+from io import TextIOWrapper
+from itertools import pairwise
+from json import load as json_load
+from shutil import which
 from subprocess import PIPE, Popen
 from tempfile import NamedTemporaryFile
-from typing import Any, TypedDict
+from typing import Any, Self, TypedDict
+from warnings import warn
 
 import vapoursynth as vs
 from jetpytools import CustomValueError, DependencyNotFoundError, FileWasNotFoundError, FuncExcept, SPath, SPathLike
-from typing_extensions import Self
 
 from .file import PackageStorage
 from .timecodes import Keyframes
@@ -93,7 +92,7 @@ class VideoPackets(list[int]):
 
         out_file = _get_packet_storage().get_file(out_file, ext=".txt")
 
-        if not shutil.which("ffprobe"):
+        if not which("ffprobe"):
             raise DependencyNotFoundError(func, "ffprobe", "Could not find {package}! Make sure it's in your PATH!")
 
         proc = Popen(
@@ -118,14 +117,14 @@ class VideoPackets(list[int]):
         with NamedTemporaryFile("a+", delete=False) as tempfile:
             assert proc.stdout
 
-            for line in io.TextIOWrapper(proc.stdout, "utf-8"):
+            for line in TextIOWrapper(proc.stdout, "utf-8"):
                 tempfile.write(line)
 
             tempfile.flush()
 
         try:
             with open(tempfile.name, "r") as f:
-                data = dict(json.load(f))
+                data = dict(json_load(f))
         finally:
             SPath(tempfile.name).unlink()
 
@@ -210,7 +209,7 @@ class VideoPackets(list[int]):
         stats = list[ScenePacketStats]()
 
         try:
-            for start, end in itertools.pairwise(keyframes):
+            for start, end in pairwise(keyframes):
                 pkt_scenes = self[start:end]
 
                 stats.append(
@@ -244,7 +243,7 @@ class VideoPackets(list[int]):
 
         def _set_sizes_props(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
             if (pkt_size := self[n]) < 0:
-                warnings.warn(f"{func}: 'Frame {n} bitrate could not be determined!'", UserWarning)
+                warn(f"{func}: 'Frame {n} bitrate could not be determined!'", UserWarning)
 
             f = f.copy()
             f.props["PktSize"] = pkt_size
@@ -258,7 +257,7 @@ class VideoPackets(list[int]):
 
         def _set_scene_stats(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
             if (pkt_size := self[n]) < 0:
-                warnings.warn(f"{func}: 'Frame {n} bitrate could not be determined!'", UserWarning)
+                warn(f"{func}: 'Frame {n} bitrate could not be determined!'", UserWarning)
 
             f = f.copy()
             pkt: dict[str, Any] = {"PktSize": pkt_size}
@@ -266,7 +265,7 @@ class VideoPackets(list[int]):
             try:
                 stats = scenestats[keyframes.scenes.indices[n]]
             except Exception:
-                warnings.warn(f"{func}: 'Could not find stats for a section... (Frame: {n})'")
+                warn(f"{func}: 'Could not find stats for a section... (Frame: {n})'")
                 pkt = {"PktSize": -1, "PktSceneAvgSize": -1, "PktSceneMaxSize": -1, "PktSceneMinSize": -1}
             else:
                 pkt |= stats

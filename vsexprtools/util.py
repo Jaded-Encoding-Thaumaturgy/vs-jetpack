@@ -9,14 +9,7 @@ from jetpytools import CustomTypeError
 if TYPE_CHECKING:
     from vapoursynth import _ReturnDict_akarin_Version
 
-from vstools import (
-    EXPR_VARS,
-    CustomIndexError,
-    HoldsVideoFormat,
-    VideoFormatLike,
-    get_video_format,
-    vs,
-)
+from vstools import EXPR_VARS, CustomIndexError, HoldsVideoFormat, VideoFormatLike, get_video_format, vs
 
 __all__ = ["ExprVars"]
 

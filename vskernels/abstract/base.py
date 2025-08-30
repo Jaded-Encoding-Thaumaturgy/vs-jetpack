@@ -18,6 +18,7 @@ from typing import (
     Concatenate,
     Literal,
     NoReturn,
+    Self,
     TypeVar,
     Union,
     get_origin,
@@ -26,7 +27,6 @@ from typing import (
 
 from jetpytools import P, R, R_co, classproperty
 from jetpytools import cachedproperty as jetpytools_cachedproperty
-from typing_extensions import Self
 
 from vstools import (
     CustomNotImplementedError,

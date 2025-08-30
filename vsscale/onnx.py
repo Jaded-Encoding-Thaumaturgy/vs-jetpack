@@ -14,6 +14,7 @@ from typing import (
     ClassVar,
     Literal,
     Protocol,
+    Self,
     SupportsFloat,
     TypeAlias,
     TypeVar,
@@ -22,7 +23,7 @@ from typing import (
 )
 
 from jetpytools import CustomImportError
-from typing_extensions import Self, deprecated
+from typing_extensions import deprecated
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
