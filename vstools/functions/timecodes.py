@@ -5,11 +5,10 @@ from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
 from pathlib import Path
-from typing import Any, ClassVar, Iterable, Literal, NamedTuple, TypeVar, overload
+from typing import Any, ClassVar, Iterable, Literal, NamedTuple, Self, TypeVar, overload
 
 import vapoursynth as vs
 from jetpytools import CustomValueError, FilePathType, FuncExcept, LinearRangeLut, Sentinel, SPath, inject_self
-from typing_extensions import Self
 
 from ..enums import Matrix, SceneChangeMode
 from ..exceptions import FramesLengthError, InvalidTimecodeVersionError

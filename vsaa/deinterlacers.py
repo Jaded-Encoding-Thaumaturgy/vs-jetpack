@@ -3,10 +3,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, Self, Sequence
 
 from jetpytools import MISSING, copy_signature, fallback
-from typing_extensions import Self, TypeVar
+from typing_extensions import TypeVar
 
 from vskernels import (
     Bobber,

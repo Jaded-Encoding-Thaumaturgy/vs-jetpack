@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import TracebackType
-from typing import Any, overload
+from typing import Any, Self, overload
 
 from rich.console import Console
 from rich.progress import (
@@ -15,7 +15,6 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 from rich.text import Text
-from typing_extensions import Self
 
 __all__ = [
     "BarColumn",
