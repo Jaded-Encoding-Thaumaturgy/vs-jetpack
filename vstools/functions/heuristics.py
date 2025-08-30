@@ -73,7 +73,7 @@ def video_heuristics(
 
         assumed_props.append(key.prop_key)
 
-        return key.from_video(obj, strict=False, func=video_heuristics)
+        return key.from_video(clip, strict=False, func=video_heuristics)
 
     if props is False or props is None:
         heuristics = {k: t.from_res(clip) for k, t in prop_enums.items()}
