@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Mapping, TypeAlias, overload
 
 import vapoursynth as vs
 from jetpytools import FuncExcept
@@ -74,7 +74,7 @@ class ChromaLocation(PropEnum):
         def from_param_or_video(
             cls,
             value: ChromaLocation | None,
-            src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
             strict: bool = False,
             func_except: FuncExcept | None = None,
         ) -> ChromaLocation: ...
@@ -95,7 +95,7 @@ class ChromaLocation(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> ChromaLocation:
         """
         Obtain the chroma location of a clip from the frame properties.
@@ -207,7 +207,7 @@ class FieldBased(PropEnum):
         def from_param_or_video(
             cls,
             value: FieldBasedLike | bool | None,
-            src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
             strict: bool = False,
             func_except: FuncExcept | None = None,
         ) -> FieldBased: ...
@@ -230,7 +230,7 @@ class FieldBased(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> FieldBased:
         """
         Obtain the Field order of a clip from the frame properties.

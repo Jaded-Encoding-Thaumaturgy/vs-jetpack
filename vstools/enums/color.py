@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Mapping, TypeAlias, overload
 
 import vapoursynth as vs
 from jetpytools import FuncExcept
@@ -232,7 +232,7 @@ class Matrix(PropEnum):
         def from_param_or_video(
             cls,
             value: MatrixLike | None,
-            src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
             strict: bool = False,
             func_except: FuncExcept | None = None,
         ) -> Matrix: ...
@@ -274,7 +274,7 @@ class Matrix(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> Matrix:
         """
         Obtain the matrix of a clip from the frame properties.
@@ -559,7 +559,7 @@ class Transfer(PropEnum):
         def from_param_or_video(
             cls,
             value: TransferLike | None,
-            src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
             strict: bool = False,
             func_except: FuncExcept | None = None,
         ) -> Transfer: ...
@@ -598,7 +598,7 @@ class Transfer(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> Transfer:
         """
         Obtain the transfer of a clip from the frame properties.
@@ -983,7 +983,7 @@ class Primaries(PropEnum):
         def from_param_or_video(
             cls,
             value: PrimariesLike | None,
-            src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
             strict: bool = False,
             func_except: FuncExcept | None = None,
         ) -> Primaries: ...
@@ -1025,7 +1025,7 @@ class Primaries(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> Primaries:
         """
         Obtain the primaries of a clip from the frame properties.
@@ -1204,7 +1204,7 @@ class ColorRange(PropEnum):
         def from_param_or_video(
             cls,
             value: ColorRangeLike | None,
-            src: vs.VideoNode | vs.VideoFrame | vs.FrameProps,
+            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
             strict: bool = False,
             func_except: FuncExcept | None = None,
         ) -> ColorRange: ...
@@ -1226,7 +1226,7 @@ class ColorRange(PropEnum):
 
     @classmethod
     def from_video(
-        cls, src: vs.VideoNode | vs.VideoFrame | vs.FrameProps, strict: bool = False, func: FuncExcept | None = None
+        cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> ColorRange:
         """
         Obtain the color range of a clip from the frame properties.
