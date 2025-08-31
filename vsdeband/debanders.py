@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import NoneType
-from typing import Any, Callable, Generic, Literal, Protocol, Sequence, TypeVar, overload
+from typing import Any, Callable, Generic, Literal, Protocol, Sequence, overload
 
 from jetpytools import CustomValueError, P, R, to_arr
 
@@ -520,10 +520,7 @@ def placebo_deband(
     return debanded
 
 
-_Nb = TypeVar("_Nb", int, float, contravariant=True)
-
-
-class _DebanderFunc(Protocol[_Nb]):
+class _DebanderFunc[_Nb: (float, int)](Protocol):
     """
     Protocol for debanding functions.
     """

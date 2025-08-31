@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import cache, partial, wraps
 from math import exp
 from types import GenericAlias
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Generic, Self, TypeVarTuple, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Self, overload
 
 from jetpytools import P, classproperty
 from typing_extensions import TypeIs, TypeVar
@@ -46,7 +46,7 @@ from .abstract import (
     Scaler,
     ScalerLike,
 )
-from .abstract.base import BaseScaler, BaseScalerMeta, _BaseScalerT
+from .abstract.base import BaseScaler, BaseScalerMeta
 from .kernels import Catrom, Point
 from .types import Center, LeftShift, Slope, TopShift
 
@@ -83,7 +83,7 @@ class BaseScalerSpecializerMeta(BaseScalerMeta):
 
     __specializer__: type[BaseScaler] | None
 
-    def __new__(  # noqa: PYI019
+    def __new__[_BaseScalerSpecializerMetaT: BaseScalerSpecializerMeta](  # noqa: PYI019
         mcls: type[_BaseScalerSpecializerMetaT],
         name: str,
         bases: tuple[type, ...],
@@ -110,13 +110,7 @@ class BaseScalerSpecializerMeta(BaseScalerMeta):
         return bool(self.__specializer__)
 
 
-_BaseScalerTs = TypeVarTuple("_BaseScalerTs")
-_BaseScalerSpecializerMetaT = TypeVar("_BaseScalerSpecializerMetaT", bound=BaseScalerSpecializerMeta)
-_ScalerT = TypeVar("_ScalerT", bound=Scaler)
-_ScalerWithCatromDefaultT = TypeVar("_ScalerWithCatromDefaultT", bound=Scaler, default=Catrom)
-
-
-class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseScalerSpecializerMeta, abstract=True):
+class BaseScalerSpecializer[_BaseScalerT: BaseScaler](BaseScaler, metaclass=BaseScalerSpecializerMeta, abstract=True):
     """
     An abstract base class to provide specialization logic for Scaler-like classes.
     """
@@ -162,6 +156,9 @@ class BaseScalerSpecializer(BaseScaler, Generic[_BaseScalerT], metaclass=BaseSca
         )
 
         return GenericAlias(specialized_scaler, (base_scaler,))
+
+
+_ScalerWithCatromDefaultT = TypeVar("_ScalerWithCatromDefaultT", bound=Scaler, default=Catrom)
 
 
 class NoScale(BaseScalerSpecializer[_ScalerWithCatromDefaultT], Scaler, partial_abstract=True):
@@ -222,7 +219,7 @@ class NoScale(BaseScalerSpecializer[_ScalerWithCatromDefaultT], Scaler, partial_
         return NoScale[Scaler.from_param(scaler)]  # type: ignore[return-value,misc]
 
 
-NoScaleLike = str | type[NoScale[_ScalerT]] | NoScale[_ScalerT]
+type NoScaleLike[_ScalerT: Scaler] = str | type[NoScale[_ScalerT]] | NoScale[_ScalerT]
 """
 Type alias for anything that can resolve to a NoScale scaler.
 
@@ -233,7 +230,7 @@ This includes:
 """
 
 
-class BaseMixedScalerMeta(BaseScalerSpecializerMeta, Generic[*_BaseScalerTs]):
+class BaseMixedScalerMeta[*_BaseScalerTs](BaseScalerSpecializerMeta):
     """
     Meta class for BaseMixedScaler to handle mixed scaling logic.
     """
@@ -266,11 +263,8 @@ class BaseMixedScalerMeta(BaseScalerSpecializerMeta, Generic[*_BaseScalerTs]):
         return obj
 
 
-class BaseMixedScaler(
-    BaseScalerSpecializer[_BaseScalerT],
-    Generic[_BaseScalerT, *_BaseScalerTs],
-    metaclass=BaseMixedScalerMeta,
-    abstract=True,
+class BaseMixedScaler[_BaseScalerT: BaseScaler, *_BaseScalerTs](
+    BaseScalerSpecializer[_BaseScalerT], metaclass=BaseMixedScalerMeta, abstract=True
 ):
     """
     An abstract base class to provide mixed or chained scaling for Scaler-like classes.
@@ -314,7 +308,9 @@ class BaseMixedScaler(
         return GenericAlias(mixed_spe, (specializer, *others))
 
 
-class MixedScalerProcess(BaseMixedScaler[_ScalerT, *_BaseScalerTs], Scaler, abstract=True):
+class MixedScalerProcess[_ScalerT: Scaler, *_BaseScalerTs](
+    BaseMixedScaler[_ScalerT, *_BaseScalerTs], Scaler, abstract=True
+):
     """
     An abstract class for chained scaling with an additional processing step.
     """
@@ -486,12 +482,12 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
         sigmoid: bool | tuple[Slope, Center] = False,
         resampler: ResamplerLike = Catrom,
         out_fmt: int | VideoFormatLike | HoldsVideoFormat | None = None,
-    ) -> Union[
-        Callable[Concatenate[vs.VideoNode, P], vs.VideoNode],
-        Callable[
+    ) -> (
+        Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
+        | Callable[
             [Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]], Callable[Concatenate[vs.VideoNode, P], vs.VideoNode]
-        ],
-    ]:
+        ]
+    ):
         """
         Decorator version of LinearLight.
         """
