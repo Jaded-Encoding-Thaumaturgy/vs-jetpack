@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, TypeAlias, Union, overload
+from typing import Any, Union, overload
 
 from vsexprtools import ExprOp, norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike
@@ -105,7 +105,7 @@ def diff_creditless_oped(
     raise CustomValueError('You must specify one or both of ("opstart", "opend"), ("edstart", "edend")', func)
 
 
-Count: TypeAlias = int
+type Count = int
 
 
 @overload

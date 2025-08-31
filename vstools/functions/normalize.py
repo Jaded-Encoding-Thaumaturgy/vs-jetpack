@@ -21,7 +21,7 @@ from jetpytools import normalize_ranges as jetp_normalize_ranges
 from jetpytools import normalize_ranges_to_list as jetp_normalize_ranges_to_list
 from jetpytools import normalize_seq as jetp_normalize_seq
 
-from ..types import FrameRangeN, FrameRangesN, Planes, VideoNodeIterableT
+from ..types import FrameRangeN, FrameRangesN, Planes, VideoNodeIterable
 
 __all__ = [
     "flatten",
@@ -142,7 +142,7 @@ def flatten(items: Any) -> Iterator[Any]:
         yield from jetp_flatten(items)
 
 
-def flatten_vnodes(*clips: VideoNodeIterableT, split_planes: bool = False) -> Sequence[vs.VideoNode]:
+def flatten_vnodes(*clips: VideoNodeIterable, split_planes: bool = False) -> Sequence[vs.VideoNode]:
     """
     Flatten an array of VideoNodes.
 

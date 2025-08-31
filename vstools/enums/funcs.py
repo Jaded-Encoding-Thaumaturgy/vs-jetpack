@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, TypeAlias
+from typing import Literal
 
 from jetpytools import CustomIntEnum, CustomStrEnum
 
@@ -84,22 +84,22 @@ class ConvMode(CustomStrEnum):
         return self in ["t"]
 
 
-OnePassConvMode: TypeAlias = Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.TEMPORAL]
+type OnePassConvMode = Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.TEMPORAL]
 """Type alias for one pass convolution mode"""
 
-TwoPassesConvMode: TypeAlias = Literal[ConvMode.HV]
+type TwoPassesConvMode = Literal[ConvMode.HV]
 """Type alias for two passes convolution mode"""
 
-OneDimConvMode: TypeAlias = Literal[ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.HV]
+type OneDimConvMode = Literal[ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.HV]
 """Type alias for one dimension convolution mode"""
 
-TwoDimConvMode: TypeAlias = Literal[ConvMode.SQUARE]
+type TwoDimConvMode = Literal[ConvMode.SQUARE]
 """Type alias for two dimensions convolution mode"""
 
-SpatialConvMode: TypeAlias = Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.HV]
+type SpatialConvMode = Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.HV]
 """Type alias for spatial convolution mode only"""
 
-TempConvMode: TypeAlias = Literal[ConvMode.TEMPORAL]
+type TempConvMode = Literal[ConvMode.TEMPORAL]
 """Type alias for temporal convolution mode only"""
 
 OnePassConvModeT = OnePassConvMode

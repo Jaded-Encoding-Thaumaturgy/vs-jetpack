@@ -1,7 +1,7 @@
 from fractions import Fraction
 from os import PathLike
 from pathlib import Path
-from typing import Any, Iterable, Sequence, TypeAlias, overload
+from typing import Any, Iterable, Sequence, overload
 
 from vapoursynth import AudioNode, RawNode, VideoNode
 
@@ -22,14 +22,14 @@ def set_scening(
 ) -> None: ...
 def update_node_info(node_type: type[RawNode | VideoNode | AudioNode], index: int, **kwargs: Any) -> None: ...
 
-TimecodesT: TypeAlias = (
+type TimecodesT = (
     str
     | PathLike[str]
     | dict[tuple[int | None, int | None], float | tuple[int, int] | Fraction]
     | list[Fraction]
     | None
 )
-ScenesT: TypeAlias = Keyframes | list[tuple[int, int]] | list[Keyframes | list[tuple[int, int]]] | None
+type ScenesT = Keyframes | list[tuple[int, int]] | list[Keyframes | list[tuple[int, int]]] | None
 
 @overload
 def set_output(

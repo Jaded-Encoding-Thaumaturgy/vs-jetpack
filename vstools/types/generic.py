@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Mapping, Protocol, TypeAlias, TypeVar, Union
+from typing import Any, Callable, Iterable, Mapping, Protocol, TypeVar, Union
 
 import vapoursynth as vs
 from jetpytools import MISSING, DataType, FuncExcept, MissingT, PassthroughC, SingleOrSeq, StrArr, StrArrOpt
@@ -34,13 +34,16 @@ __all__ = [
     "VSMapValueCallback",
     "VideoFormatLike",
     "VideoFormatT",  # Deprecated alias
-    "VideoNodeIterableT",
+    "VideoNodeIterable",
+    "VideoNodeIterableT",  # Deprecated alias
 ]
 
 
 FuncExceptT = FuncExcept
 
-VideoNodeIterableT: TypeAlias = Union[vs.VideoNode, Iterable["VideoNodeIterableT"]]
+type VideoNodeIterable = vs.VideoNode | Iterable[VideoNodeIterable]
+
+VideoNodeIterableT = VideoNodeIterable
 
 _VSMapValue = Union[
     SingleOrSeq[int],

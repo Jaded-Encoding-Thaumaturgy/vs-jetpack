@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from types import UnionType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Iterable,
     Literal,
-    TypeAlias,
     TypeVar,
     Union,
     get_args,
@@ -15,6 +15,12 @@ from typing import (
 )
 
 import vapoursynth as vs
+
+if TYPE_CHECKING:
+    from vapoursynth import _PropValue
+else:
+    _PropValue = Any
+
 from jetpytools import (
     MISSING,
     FileWasNotFoundError,
@@ -33,24 +39,6 @@ from .cache import NodesPropsCache
 
 __all__ = ["get_clip_filepath", "get_prop", "get_props", "merge_clip_props"]
 
-_PropValue: TypeAlias = (
-    int
-    | float
-    | str
-    | bytes
-    | vs.VideoFrame
-    | vs.VideoNode
-    | vs.AudioFrame
-    | vs.AudioNode
-    | Callable[..., Any]
-    | list[int]
-    | list[float]
-    | list[str]
-    | list[bytes]
-    | list[vs.AudioFrame]
-    | list[vs.AudioNode]
-    | list[Callable[..., Any]]
-)
 DT = TypeVar("DT")
 CT = TypeVar("CT")
 _PropValueT = TypeVar("_PropValueT", bound=_PropValue)
