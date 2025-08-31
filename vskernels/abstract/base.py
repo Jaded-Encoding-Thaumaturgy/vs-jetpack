@@ -491,6 +491,20 @@ class Scaler(BaseScaler):
         width, height = self._wh_norm(clip, width, height)
         check_correct_subsampling(clip, width, height)
 
+        resize2_specific_params = ("blur",)
+        is_resize2 = self.scale_function.__name__ == "resize2"
+
+        if not is_resize2 or not any(k in resize2_specific_params for k in {**self.kwargs, **kwargs}):
+            return self.scale_function(
+                clip, **_norm_props_enums(self.get_scale_args(clip, shift, width, height, **kwargs))
+            )
+
+        if missing_args := [arg for arg in resize2_specific_params if not hasattr(self.scale_function, arg)]:
+            raise CustomValueError(
+                f"The scale function is missing required arguments: {', '.join(missing_args)}. "
+                "Please update your scale function to support these arguments."
+            )
+
         return self.scale_function(clip, **_norm_props_enums(self.get_scale_args(clip, shift, width, height, **kwargs)))
 
     def supersample(
