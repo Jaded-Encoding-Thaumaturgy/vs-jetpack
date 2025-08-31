@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from contextlib import suppress
 from functools import wraps
-from typing import Any, Callable, Sequence, TypeVar
+from typing import Any, Callable, Sequence
 
 from jetpytools import cachedproperty
 
@@ -41,8 +41,6 @@ __all__ = [
     "Rescale",
     "RescaleBase",
 ]
-
-_RescaleT = TypeVar("_RescaleT", bound="RescaleBase")
 
 
 class RescaleBase(vs_object, ABC):
@@ -98,7 +96,7 @@ class RescaleBase(vs_object, ABC):
             super().__delattr__(name)
 
     @staticmethod
-    def _apply_field_based(
+    def _apply_field_based[_RescaleT: RescaleBase](
         function: Callable[[_RescaleT, vs.VideoNode], vs.VideoNode],
     ) -> Callable[[_RescaleT, vs.VideoNode], vs.VideoNode]:
         @wraps(function)
@@ -113,7 +111,7 @@ class RescaleBase(vs_object, ABC):
         return wrap
 
     @staticmethod
-    def _add_props(
+    def _add_props[_RescaleT: RescaleBase](
         function: Callable[[_RescaleT, vs.VideoNode], vs.VideoNode],
     ) -> Callable[[_RescaleT, vs.VideoNode], vs.VideoNode]:
         @wraps(function)

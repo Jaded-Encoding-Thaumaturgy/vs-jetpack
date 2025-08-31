@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from types import NoneType
-from typing import Any, Callable, Generic, Literal, Protocol, Sequence, TypeVar, overload
+from typing import Any, Callable, Literal, Protocol, Sequence, overload
 
-from jetpytools import CustomValueError, P, R, to_arr
+from jetpytools import CustomValueError, to_arr
 
 from vsdenoise import PrefilterLike
 from vsexprtools import norm_expr
@@ -31,7 +31,7 @@ __all__ = [
 ]
 
 
-class F3KDeband(Generic[P, R]):
+class F3KDeband[**P, R]:
     """
     Class decorator that wraps the [f3k_deband][vsdeband.debanders.f3k_deband] function
     and extends its functionality.
@@ -520,10 +520,7 @@ def placebo_deband(
     return debanded
 
 
-_Nb = TypeVar("_Nb", int, float, contravariant=True)
-
-
-class _DebanderFunc(Protocol[_Nb]):
+class _DebanderFunc[_Nb: (float, int)](Protocol):
     """
     Protocol for debanding functions.
     """

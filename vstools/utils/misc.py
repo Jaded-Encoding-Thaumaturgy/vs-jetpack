@@ -7,7 +7,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Self, Sequence, cast, overload
 
 import vapoursynth as vs
-from jetpytools import MISSING, MissingT, P
+from jetpytools import MISSING, MissingT
 
 from ..enums import Align, BaseAlign
 from ..exceptions import InvalidSubsamplingError
@@ -450,7 +450,7 @@ class padder:  # noqa: N801
         return padding, tuple(x * crop_scale[0 if i < 2 else 1] for x, i in enumerate(padding))  # type: ignore
 
 
-def pick_func_stype(
+def pick_func_stype[**P](
     clip: vs.VideoNode, func_int: Callable[P, vs.VideoNode], func_float: Callable[P, vs.VideoNode]
 ) -> Callable[P, vs.VideoNode]:
     """

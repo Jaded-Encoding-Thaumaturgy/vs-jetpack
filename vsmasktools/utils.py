@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Concatenate, Generic, Iterable, overload
+from typing import Any, Callable, Concatenate, Iterable, overload
 
-from jetpytools import P, R, SupportsString, cachedproperty
+from jetpytools import SupportsString, cachedproperty
 
 from vsexprtools import ExprOp, norm_expr
 from vskernels import Bilinear, Kernel, KernelLike
@@ -57,7 +57,7 @@ def max_planes(*_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelLi
     return ExprOp.MAX.combine(split(resizer.scale(clip, width, height, format=fmt)) for clip in clips)
 
 
-class RegionMask(Generic[P, R]):
+class RegionMask[**P, R]:
     """
     Class decorator that wraps [region_rel_mask][vsmasktools.region_rel_mask]
     and [region_abs_mask][vsmasktools.region_abs_mask] function and extends their functionality.
@@ -419,7 +419,7 @@ def normalize_mask(
     return depth(cmask, clip, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
 
 
-class RektPartial(Generic[P, R]):
+class RektPartial[**P, R]:
     """
     Class decorator that wraps the [rekt_partial][vsmasktools.utils.rekt_partial] function
     and extends its functionality.
