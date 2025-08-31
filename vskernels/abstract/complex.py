@@ -5,7 +5,7 @@ This module defines the abstract classes for scaling, descaling and resampling o
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from jetpytools import CustomIndexError, CustomNotImplementedError, CustomValueError, FuncExcept, fallback
 
@@ -32,9 +32,9 @@ from ..types import (
     BotFieldLeftShift,
     BotFieldTopShift,
     Center,
+    FieldShift,
     LeftShift,
     SampleGridModel,
-    ShiftT,
     Slope,
     TopFieldLeftShift,
     TopFieldTopShift,
@@ -95,17 +95,19 @@ def _check_dynamic_keeparscaler_params(
 
 @overload
 def _descale_shift_norm(
-    shift: ShiftT, assume_progressive: Literal[True], func: FuncExcept | None = None
+    shift: tuple[TopShift, LeftShift] | FieldShift, assume_progressive: Literal[True], func: FuncExcept | None = None
 ) -> tuple[TopShift, LeftShift]: ...
 
 
 @overload
 def _descale_shift_norm(
-    shift: ShiftT, assume_progressive: Literal[False], func: FuncExcept | None = None
+    shift: tuple[TopShift, LeftShift] | FieldShift, assume_progressive: Literal[False], func: FuncExcept | None = None
 ) -> tuple[tuple[TopFieldTopShift, BotFieldTopShift], tuple[TopFieldLeftShift, BotFieldLeftShift]]: ...
 
 
-def _descale_shift_norm(shift: ShiftT, assume_progressive: bool = True, func: FuncExcept | None = None) -> Any:
+def _descale_shift_norm(
+    shift: tuple[TopShift, LeftShift] | FieldShift, assume_progressive: bool = True, func: FuncExcept | None = None
+) -> Any:
     if assume_progressive:
         if any(isinstance(sh, tuple) for sh in shift):
             raise CustomValueError("You can't descale per-field when the input is progressive!", func, shift)
@@ -667,7 +669,7 @@ class ComplexDescaler(LinearDescaler):
         clip: vs.VideoNode,
         width: int | None = None,
         height: int | None = None,
-        shift: ShiftT = (0, 0),
+        shift: tuple[TopShift, LeftShift] | FieldShift = (0, 0),
         *,
         # `linear` and `sigmoid` parameters from LinearDescaler
         linear: bool | None = None,
@@ -770,7 +772,7 @@ class ComplexDescaler(LinearDescaler):
         clip: vs.VideoNode,
         width: int | None = None,
         height: int | None = None,
-        shift: ShiftT = (0, 0),
+        shift: tuple[TopShift, LeftShift] | FieldShift = (0, 0),
         *,
         # `linear` and `sigmoid` parameters from LinearDescaler
         linear: bool | None = None,
@@ -847,7 +849,7 @@ class ComplexKernel(Kernel, ComplexDescaler, ComplexScaler):
     """
 
 
-ComplexScalerLike = Union[str, type[ComplexScaler], ComplexScaler]
+type ComplexScalerLike = str | type[ComplexScaler] | ComplexScaler
 """
 Type alias for anything that can resolve to a ComplexScaler.
 
@@ -857,7 +859,7 @@ This includes:
 - An instance of a `ComplexScaler`.
 """
 
-ComplexDescalerLike = Union[str, type[ComplexDescaler], ComplexDescaler]
+type ComplexDescalerLike = str | type[ComplexDescaler] | ComplexDescaler
 """
 Type alias for anything that can resolve to a ComplexDescaler.
 
@@ -867,7 +869,7 @@ This includes:
 - An instance of a `ComplexDescaler`.
 """
 
-ComplexKernelLike = Union[str, type[ComplexKernel], ComplexKernel]
+type ComplexKernelLike = str | type[ComplexKernel] | ComplexKernel
 """
 Type alias for anything that can resolve to a ComplexKernel.
 

@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 from vstools import core, vs
 
@@ -53,7 +53,7 @@ class ZimgComplexKernel(ComplexKernel, ZimgBobber):
     """
 
 
-ZimgComplexKernelLike = Union[str, type[ZimgComplexKernel], ZimgComplexKernel]
+type ZimgComplexKernelLike = str | type[ZimgComplexKernel] | ZimgComplexKernel
 """
 Type alias for anything that can resolve to a ZimgComplexKernel.
 

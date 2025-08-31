@@ -21,7 +21,7 @@ from vstools import (
     Planes,
     StrList,
     VideoFormatLike,
-    VideoNodeIterableT,
+    VideoNodeIterable,
     check_variable,
     flatten,
     flatten_vnodes,
@@ -271,7 +271,7 @@ class ExprList(StrList):
 
     def __call__(
         self,
-        *clips: VideoNodeIterableT,
+        *clips: VideoNodeIterable,
         planes: Planes = None,
         format: HoldsVideoFormat | VideoFormatLike | None = None,
         opt: bool = False,
@@ -311,7 +311,7 @@ class TupleExprList(tuple[ExprList, ...]):
 
     def __call__(
         self,
-        *clips: VideoNodeIterableT,
+        *clips: VideoNodeIterable,
         planes: Planes = None,
         format: HoldsVideoFormat | VideoFormatLike | None = None,
         opt: bool = False,
@@ -388,7 +388,7 @@ class ExprOpBase(CustomStrEnum):
     @overload
     def __call__(
         self,
-        *clips: VideoNodeIterableT,
+        *clips: VideoNodeIterable,
         suffix: SupportsString | Iterable[SupportsString] | None = None,
         prefix: SupportsString | Iterable[SupportsString] | None = None,
         expr_suffix: SupportsString | Iterable[SupportsString] | None = None,
@@ -464,7 +464,7 @@ class ExprOpBase(CustomStrEnum):
 
     def combine(
         self,
-        *clips: VideoNodeIterableT[vs.VideoNode],
+        *clips: VideoNodeIterable,
         suffix: SupportsString | Iterable[SupportsString] | None = None,
         prefix: SupportsString | Iterable[SupportsString] | None = None,
         expr_suffix: SupportsString | Iterable[SupportsString] | None = None,

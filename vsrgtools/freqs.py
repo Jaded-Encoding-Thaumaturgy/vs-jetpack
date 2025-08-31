@@ -13,7 +13,7 @@ from vstools import (
     HoldsVideoFormat,
     Planes,
     VideoFormatLike,
-    VideoNodeIterableT,
+    VideoNodeIterable,
     check_variable_format,
     flatten_vnodes,
     normalize_seq,
@@ -60,7 +60,7 @@ class MeanMode(CustomEnum):
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[MeanMode.LEHMER],
-        *_clips: VideoNodeIterableT,
+        *_clips: VideoNodeIterable,
         p: float = 3,
         planes: Planes = None,
         func: FuncExcept | None = None,
@@ -81,14 +81,14 @@ class MeanMode(CustomEnum):
     @overload
     def __call__(
         self,
-        *_clips: VideoNodeIterableT,
+        *_clips: VideoNodeIterable,
         planes: Planes = None,
         func: FuncExcept | None = None,
     ) -> vs.VideoNode: ...
 
     def __call__(
         self,
-        *_clips: VideoNodeIterableT,
+        *_clips: VideoNodeIterable,
         planes: Planes = None,
         func: FuncExcept | None = None,
         **kwargs: Any,
