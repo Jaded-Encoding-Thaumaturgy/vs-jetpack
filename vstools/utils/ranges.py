@@ -247,14 +247,14 @@ def replace_ranges(
         if _is_cb_nf(callback, params):
             return vs.core.std.FrameEval(
                 base_clip,
-                lambda n, f: clip_b if callback(n, f) else clip_a,  # pyright: ignore[reportArgumentType]
+                lambda n, f: clip_b if callback(n, f) else clip_a,
                 prop_src,
                 [clip_a, clip_b],
             )
         if _is_cb_f(callback, params):
             return vs.core.std.FrameEval(
                 base_clip,
-                lambda n, f: clip_b if callback(f) else clip_a,  # pyright: ignore[reportArgumentType]
+                lambda n, f: clip_b if callback(f) else clip_a,
                 prop_src,
                 [clip_a, clip_b],
             )
