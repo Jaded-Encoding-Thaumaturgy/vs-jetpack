@@ -5,12 +5,14 @@ from copy import deepcopy
 from itertools import count
 from typing import Sequence
 
-from vstools import CustomRuntimeError, T, flatten, remap_frames, vs
+from vstools import CustomRuntimeError, flatten, remap_frames, vs
 
 __all__ = ["apply_rff_array", "apply_rff_video", "cut_array_on_ranges"]
 
 
-def apply_rff_array(old_array: Sequence[T], rff: Sequence[int], tff: Sequence[int], prog_seq: Sequence[int]) -> list[T]:
+def apply_rff_array[T](
+    old_array: Sequence[T], rff: Sequence[int], tff: Sequence[int], prog_seq: Sequence[int]
+) -> list[T]:
     array_double_rate = list[T]()
 
     for prog, arr, rffv, tffv in zip(prog_seq, old_array, rff, tff):
@@ -133,5 +135,5 @@ def apply_rff_video(
     return vs.core.std.ModifyFrame(woven, woven, _update_progressive)
 
 
-def cut_array_on_ranges(array: list[T], ranges: list[tuple[int, int]]) -> list[T]:
+def cut_array_on_ranges[T](array: list[T], ranges: list[tuple[int, int]]) -> list[T]:
     return [array[i] for i in flatten([range(rrange[0], rrange[1] + 1) for rrange in ranges])]

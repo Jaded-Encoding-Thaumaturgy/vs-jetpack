@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Self
 
 import vapoursynth as vs
 from jetpytools import CustomEnum, CustomError, CustomIntEnum, CustomStrEnum, FuncExcept, classproperty
@@ -150,10 +150,7 @@ class PropEnum(CustomIntEnum):
         return int(value) in map(int, cls.__members__.values())
 
 
-PropEnumT = TypeVar("PropEnumT", bound=PropEnum)
-
-
-def _base_from_video(
+def _base_from_video[PropEnumT: PropEnum](
     cls: type[PropEnumT],
     src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
     exception: type[CustomError],

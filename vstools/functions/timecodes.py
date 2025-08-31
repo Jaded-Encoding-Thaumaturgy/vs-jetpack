@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
 from pathlib import Path
-from typing import Any, ClassVar, Iterable, Literal, NamedTuple, Self, TypeVar, overload
+from typing import Any, ClassVar, Iterable, Literal, NamedTuple, Self, overload
 
 import vapoursynth as vs
 from jetpytools import CustomValueError, FilePathType, FuncExcept, LinearRangeLut, Sentinel, SPath, inject_self
@@ -573,9 +573,6 @@ class Keyframes(list[int]):
             return param
 
         return cls(param)
-
-
-KeyframesBoundT = TypeVar("KeyframesBoundT", bound=Keyframes)
 
 
 @dataclass

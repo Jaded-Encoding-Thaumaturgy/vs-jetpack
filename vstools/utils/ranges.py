@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from contextlib import suppress
-from typing import Any, Callable, Generic, Literal, Protocol, Sequence, TypeGuard, TypeVar, Union, overload
+from typing import Any, Callable, Literal, Protocol, Sequence, TypeGuard, TypeVar, Union, overload
 
 import vapoursynth as vs
-from jetpytools import CustomValueError, P, R, fallback, flatten, interleave_arr, ranges_product
+from jetpytools import CustomValueError, fallback, flatten, interleave_arr, ranges_product
 
 from ..functions import check_ref_clip
 from ..types import FrameRangeN, FrameRangesN, Planes
@@ -64,7 +64,7 @@ def _is_cb_n(cb: Callable[..., bool], params: set[str]) -> TypeGuard[_RangesCall
     return "n" in params
 
 
-class ReplaceRanges(Generic[P, R]):
+class ReplaceRanges[**P, R]:
     """
     Class decorator that wraps the [replace_ranges][vstools.utils.replace_ranges] function
     and extends its functionality.

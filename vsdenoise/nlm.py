@@ -5,9 +5,9 @@ This module implements a wrapper for non local means denoisers
 from __future__ import annotations
 
 import warnings
-from typing import Any, Callable, Generic, Sequence
+from typing import Any, Callable, Sequence
 
-from jetpytools import CustomRuntimeError, CustomStrEnum, P, R
+from jetpytools import CustomRuntimeError, CustomStrEnum
 
 from vstools import (
     CustomIntEnum,
@@ -24,7 +24,7 @@ from vstools import (
 __all__ = ["nl_means"]
 
 
-class NLMeans(Generic[P, R]):
+class NLMeans[**P, R]:
     """
     Class decorator that wraps the [nl_means][vsdenoise.nlm.nl_means] function
     and adds enumerations relevant to its implementation.

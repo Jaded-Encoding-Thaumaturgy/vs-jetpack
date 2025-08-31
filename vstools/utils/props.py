@@ -28,7 +28,6 @@ from jetpytools import (
     MissingT,
     SPath,
     SPathLike,
-    T,
     to_arr,
 )
 
@@ -49,7 +48,7 @@ _PropValueT1 = TypeVar("_PropValueT1", bound=_PropValue)
 _get_prop_cache = NodesPropsCache[vs.RawNode]()
 
 
-def _normalize_types(types: type[T] | Iterable[type[T]]) -> tuple[type[T], ...]:
+def _normalize_types[T](types: type[T] | Iterable[type[T]]) -> tuple[type[T], ...]:
     norm_t = list[type[T]]()
 
     for tt in to_arr(types):

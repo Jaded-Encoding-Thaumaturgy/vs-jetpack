@@ -3,14 +3,13 @@ from __future__ import annotations
 from typing import Any, Callable, Iterable, Mapping, Protocol, TypeVar, Union
 
 import vapoursynth as vs
-from jetpytools import MISSING, DataType, FuncExcept, MissingT, PassthroughC, SingleOrSeq, StrArr, StrArrOpt
+from jetpytools import MISSING, DataType, FuncExcept, MissingT, PassthroughC, StrArr, StrArrOpt
 
 from .builtins import Planes
 
 __all__ = [
     "F_VD",
     "MISSING",
-    "BoundVSMapValue",
     "ConstantFormatVideoNode",
     "DataType",
     "FuncExcept",
@@ -30,8 +29,6 @@ __all__ = [
     "VSFunctionKwArgs",
     "VSFunctionNoArgs",
     "VSFunctionPlanesArgs",
-    "VSMapValue",
-    "VSMapValueCallback",
     "VideoFormatLike",
     "VideoFormatT",  # Deprecated alias
     "VideoNodeIterable",
@@ -44,30 +41,6 @@ FuncExceptT = FuncExcept
 type VideoNodeIterable = vs.VideoNode | Iterable[VideoNodeIterable]
 
 VideoNodeIterableT = VideoNodeIterable
-
-_VSMapValue = Union[
-    SingleOrSeq[int],
-    SingleOrSeq[float],
-    SingleOrSeq[DataType],
-    SingleOrSeq[vs.VideoNode],
-    SingleOrSeq[vs.VideoFrame],
-    SingleOrSeq[vs.AudioNode],
-    SingleOrSeq[vs.AudioFrame],
-]
-VSMapValue = Union[_VSMapValue, SingleOrSeq[Callable[..., _VSMapValue]]]
-"""
-Values that a VSMap can hold, so all that a vs.Function can accept in args and can return.
-"""
-
-BoundVSMapValue = TypeVar("BoundVSMapValue", bound=VSMapValue)
-"""
-Type variable that can be one of the types in a VSMapValue.
-"""
-
-VSMapValueCallback = Callable[..., VSMapValue]
-"""
-Callback that can be held in a VSMap. It can only return values representable in a VSMap.
-"""
 
 VideoFormatLike = vs.PresetVideoFormat | vs.VideoFormat
 """

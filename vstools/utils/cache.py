@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, MutableMapping, TypeVar
+from typing import TYPE_CHECKING, Any, MutableMapping
 
 from jetpytools import T
 
@@ -23,10 +23,6 @@ __all__ = [
     "SceneBasedDynamicCache",
     "cache_clip",
 ]
-
-
-NodeT = TypeVar("NodeT", bound=vs.RawNode)
-FrameT = TypeVar("FrameT", bound=vs.RawFrame)
 
 
 class ClipsCache(vs_object, dict[vs.VideoNode, vs.VideoNode]):
@@ -60,26 +56,26 @@ class DynamicClipsCache(vs_object, dict[T, vs.VideoNode]):
         self.clear()
 
 
-class FramesCache(vs_object, dict[int, FrameT], Generic[NodeT, FrameT]):
-    def __init__(self, clip: NodeT, cache_size: int = 10) -> None:
-        self.clip: NodeT = clip
+class FramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](vs_object, dict[int, _FrameT]):
+    def __init__(self, clip: _NodeT, cache_size: int = 10) -> None:
+        self.clip: _NodeT = clip
         self.cache_size = cache_size
 
-    def add_frame(self, n: int, f: FrameT) -> FrameT:
+    def add_frame(self, n: int, f: _FrameT) -> _FrameT:
         f = f.copy()
         self[n] = f
         return f
 
-    def get_frame(self, n: int, f: FrameT) -> FrameT:
+    def get_frame(self, n: int, f: _FrameT) -> _FrameT:
         return self[n]
 
-    def __setitem__(self, key: int, value: FrameT) -> None:
+    def __setitem__(self, key: int, value: _FrameT) -> None:
         super().__setitem__(key, value)
 
         if len(self) > self.cache_size:
             del self[next(iter(self.keys()))]
 
-    def __getitem__(self, key: int) -> FrameT:
+    def __getitem__(self, key: int) -> _FrameT:
         if key not in self:
             self.add_frame(key, self.clip.get_frame(key))  # type: ignore[arg-type]
 
@@ -90,17 +86,17 @@ class FramesCache(vs_object, dict[int, FrameT], Generic[NodeT, FrameT]):
         del self.clip
 
 
-class NodeFramesCache(vs_object, dict[NodeT, FramesCache[NodeT, FrameT]]):
-    def _ensure_key(self, key: NodeT) -> None:
+class NodeFramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](vs_object, dict[_NodeT, FramesCache[_NodeT, _FrameT]]):
+    def _ensure_key(self, key: _NodeT) -> None:
         if key not in self:
             super().__setitem__(key, FramesCache(key))
 
-    def __setitem__(self, key: NodeT, value: FramesCache[NodeT, FrameT]) -> None:
+    def __setitem__(self, key: _NodeT, value: FramesCache[_NodeT, _FrameT]) -> None:
         self._ensure_key(key)
 
         return super().__setitem__(key, value)
 
-    def __getitem__(self, key: NodeT) -> FramesCache[NodeT, FrameT]:
+    def __getitem__(self, key: _NodeT) -> FramesCache[_NodeT, _FrameT]:
         self._ensure_key(key)
 
         return super().__getitem__(key)
@@ -134,8 +130,8 @@ class SceneBasedDynamicCache(DynamicClipsCache[int]):
         del self.clip
 
 
-class NodesPropsCache(vs_object, dict[tuple[NodeT, int], MutableMapping[str, "_PropValue"]]):
-    def __delitem__(self, key: tuple[NodeT, int]) -> None:
+class NodesPropsCache[_NodeT: vs.RawNode](vs_object, dict[tuple[_NodeT, int], MutableMapping[str, "_PropValue"]]):
+    def __delitem__(self, key: tuple[_NodeT, int]) -> None:
         if key not in self:
             return
 
@@ -145,7 +141,7 @@ class NodesPropsCache(vs_object, dict[tuple[NodeT, int], MutableMapping[str, "_P
         self.clear()
 
 
-def cache_clip(_clip: NodeT, cache_size: int = 10) -> NodeT:
+def cache_clip[_NodeT: vs.RawNode](_clip: _NodeT, cache_size: int = 10) -> _NodeT:
     if isinstance(_clip, vs.VideoNode):
         cache = FramesCache[vs.VideoNode, vs.VideoFrame](_clip, cache_size)
 

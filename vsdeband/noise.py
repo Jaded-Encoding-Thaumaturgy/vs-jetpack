@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from enum import auto
-from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, TypeVar, overload
+from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, overload
 
-from jetpytools import MISSING, CustomEnum, FuncExcept, MissingT
+from jetpytools import MISSING, CustomEnum, FuncExcept, MissingT, fallback, inject_self
+from typing_extensions import TypeVar
 
 from vsexprtools import norm_expr
 from vskernels import BaseScalerSpecializer, BicubicAuto, Lanczos, LeftShift, Scaler, ScalerLike, TopShift
@@ -40,7 +41,7 @@ __all__ = [
 ]
 
 
-EdgeLimits = tuple[float | Sequence[float] | bool, float | Sequence[float] | bool]
+type EdgeLimits = tuple[float | Sequence[float] | bool, float | Sequence[float] | bool]
 """
 Tuple representing lower and upper edge limits for each plane.
 
@@ -65,18 +66,11 @@ class _GrainerFunc(Protocol):
     ) -> vs.VideoNode: ...
 
 
-class _PostProcessFunc(Protocol):
-    """
-    Protocol for a post-processing function applied after graining.
-    """
-
-    def __call__(self, grained: vs.VideoNode) -> vs.VideoNode: ...
+_ScalerWithLanczosDefaultT = TypeVar("_ScalerWithLanczosDefaultT", bound=Scaler, default=Lanczos)
 
 
-_ScalerT = TypeVar("_ScalerT", bound=Scaler)
-
-
-class ScalerTwoPasses(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=True):
+# TODO: class ScalerTwoPasses[_ScalerT: Scaler = Lanczos] python 3.13
+class ScalerTwoPasses(BaseScalerSpecializer[_ScalerWithLanczosDefaultT], Scaler, partial_abstract=True):
     """
     Abstract scaler class that applies scaling in two passes.
     """
@@ -183,7 +177,9 @@ class Grainer(AbstractGrainer, CustomEnum):
         scale: float | tuple[float, float] = 1.0,
         scaler: ScalerLike = LanczosTwoPasses,
         temporal: float | tuple[float, int] = (0.0, 0),
-        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        post_process: Callable[[vs.VideoNode], vs.VideoNode]
+        | Iterable[Callable[[vs.VideoNode], vs.VideoNode]]
+        | None = None,
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
@@ -200,7 +196,9 @@ class Grainer(AbstractGrainer, CustomEnum):
         scale: float | tuple[float, float] = 1.0,
         scaler: ScalerLike = LanczosTwoPasses,
         temporal: float | tuple[float, int] = (0.0, 0),
-        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        post_process: Callable[[vs.VideoNode], vs.VideoNode]
+        | Iterable[Callable[[vs.VideoNode], vs.VideoNode]]
+        | None = None,
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
@@ -217,7 +215,9 @@ class Grainer(AbstractGrainer, CustomEnum):
         scale: float | tuple[float, float] = 1.0,
         scaler: ScalerLike = LanczosTwoPasses,
         temporal: float | tuple[float, int] = (0.0, 0),
-        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        post_process: Callable[[vs.VideoNode], vs.VideoNode]
+        | Iterable[Callable[[vs.VideoNode], vs.VideoNode]]
+        | None = None,
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
@@ -236,7 +236,9 @@ class Grainer(AbstractGrainer, CustomEnum):
         scale: float | tuple[float, float] = 1.0,
         scaler: ScalerLike = LanczosTwoPasses,
         temporal: float | tuple[float, int] = (0.0, 0),
-        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        post_process: Callable[[vs.VideoNode], vs.VideoNode]
+        | Iterable[Callable[[vs.VideoNode], vs.VideoNode]]
+        | None = None,
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
@@ -254,7 +256,9 @@ class Grainer(AbstractGrainer, CustomEnum):
         scale: float | tuple[float, float] = 1.0,
         scaler: ScalerLike = LanczosTwoPasses,
         temporal: float | tuple[float, int] = (0.0, 0),
-        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        post_process: Callable[[vs.VideoNode], vs.VideoNode]
+        | Iterable[Callable[[vs.VideoNode], vs.VideoNode]]
+        | None = None,
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
@@ -270,7 +274,9 @@ class Grainer(AbstractGrainer, CustomEnum):
         scale: float | tuple[float, float] = 1.0,
         scaler: ScalerLike = LanczosTwoPasses,
         temporal: float | tuple[float, int] = (0.0, 0),
-        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        post_process: Callable[[vs.VideoNode], vs.VideoNode]
+        | Iterable[Callable[[vs.VideoNode], vs.VideoNode]]
+        | None = None,
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
@@ -287,7 +293,9 @@ class Grainer(AbstractGrainer, CustomEnum):
         scale: float | tuple[float, float] = 1.0,
         scaler: ScalerLike = LanczosTwoPasses,
         temporal: float | tuple[float, int] = (0.0, 0),
-        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        post_process: Callable[[vs.VideoNode], vs.VideoNode]
+        | Iterable[Callable[[vs.VideoNode], vs.VideoNode]]
+        | None = None,
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
@@ -304,7 +312,9 @@ class Grainer(AbstractGrainer, CustomEnum):
         scale: float | tuple[float, float] = 1.0,
         scaler: ScalerLike = LanczosTwoPasses,
         temporal: float | tuple[float, int] = (0.0, 0),
-        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        post_process: Callable[[vs.VideoNode], vs.VideoNode]
+        | Iterable[Callable[[vs.VideoNode], vs.VideoNode]]
+        | None = None,
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
@@ -320,7 +330,9 @@ class Grainer(AbstractGrainer, CustomEnum):
         scale: float | tuple[float, float] = 1.0,
         scaler: ScalerLike = LanczosTwoPasses,
         temporal: float | tuple[float, int] = (0.0, 0),
-        post_process: _PostProcessFunc | Iterable[_PostProcessFunc] | None = None,
+        post_process: Callable[[vs.VideoNode], vs.VideoNode]
+        | Iterable[Callable[[vs.VideoNode], vs.VideoNode]]
+        | None = None,
         protect_edges: bool | EdgeLimits = True,
         protect_neutral_chroma: bool | None = None,
         luma_scaling: float | None = None,
@@ -437,7 +449,7 @@ def _apply_grainer(
     scaler: ScalerLike,
     temporal: float | tuple[float, int],
     protect_edges: bool | EdgeLimits,
-    post_process: Callable[..., vs.VideoNode] | Iterable[Callable[..., vs.VideoNode]] | None,
+    post_process: Callable[[vs.VideoNode], vs.VideoNode] | Iterable[Callable[[vs.VideoNode], vs.VideoNode]] | None,
     protect_neutral_chroma: bool | None,
     luma_scaling: float | None,
     func: FuncExcept,

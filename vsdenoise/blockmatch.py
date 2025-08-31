@@ -3,15 +3,13 @@ from __future__ import annotations
 from functools import cache
 from inspect import signature
 from types import MappingProxyType
-from typing import Any, Callable, Generic, Sequence
+from typing import Any, Callable, Sequence
 
 from jetpytools import (
     CustomEnum,
     CustomRuntimeError,
     CustomStrEnum,
     CustomValueError,
-    P,
-    R,
     cachedproperty,
     fallback,
     interleave_arr,
@@ -125,7 +123,7 @@ class UnsupportedProfileError(CustomValueError):
     """
 
 
-class BM3D(Generic[P, R]):
+class BM3D[**P, R]:
     """
     Class decorator that wraps the [bm3d][vsdenoise.blockmatch.bm3d] function
     and extends its functionality.

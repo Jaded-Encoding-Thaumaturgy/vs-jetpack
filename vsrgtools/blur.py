@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from functools import partial, reduce
 from math import sqrt
-from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Sequence, Union, overload
 
-from jetpytools import CustomIntEnum, CustomStrEnum, FuncExcept, P, R, cround, to_arr
+from jetpytools import CustomIntEnum, CustomStrEnum, FuncExcept, cround, to_arr
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Gaussian, Point, Scaler, ScalerLike
@@ -541,7 +541,7 @@ def median_blur(
     return MeanMode.MEDIAN.single(clip, radius, mode, planes=planes, func=func)
 
 
-class Bilateral(Generic[P, R]):
+class Bilateral[**P, R]:
     """
     Class decorator that wraps the [bilateral][vsrgtools.blur.bilateral] function
     and extends its functionality.
@@ -681,7 +681,7 @@ def flux_smooth(
     return core.zsmooth.FluxSmoothT(clip, temporal_threshold, planes, scalep)
 
 
-class GuidedFilter(Generic[P, R]):
+class GuidedFilter[**P, R]:
     """
     Class decorator that wraps the [guided_filter][vsrgtools.blur.guided_filter] function
     and extends its functionality.

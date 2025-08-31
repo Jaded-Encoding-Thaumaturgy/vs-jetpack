@@ -19,13 +19,12 @@ from typing import (
     Literal,
     NoReturn,
     Self,
-    TypeVar,
     get_origin,
     overload,
 )
 
-from jetpytools import P, R, R_co, classproperty
 from jetpytools import cachedproperty as jetpytools_cachedproperty
+from jetpytools import classproperty
 
 from vstools import (
     CustomNotImplementedError,
@@ -76,7 +75,9 @@ __all__ = [
 ]
 
 
-def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Callable[Concatenate[_BaseScalerT, P], R]:
+def _add_init_kwargs[_BaseScalerT: BaseScaler, **P, R](
+    method: Callable[Concatenate[_BaseScalerT, P], R],
+) -> Callable[Concatenate[_BaseScalerT, P], R]:
     signature = Signature.from_callable(method)
 
     @wraps(method)
@@ -128,7 +129,7 @@ def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Calla
     return _wrapped
 
 
-def _base_from_param(
+def _base_from_param[_BaseScalerT: BaseScaler](
     cls: type[_BaseScalerT],
     value: str | type[_BaseScalerT] | _BaseScalerT | None,
     exception_cls: type[_UnknownBaseScalerError],
@@ -161,7 +162,7 @@ def _base_from_param(
     raise exception_cls(func_except or cls.from_param, str(value))
 
 
-def _base_ensure_obj(
+def _base_ensure_obj[_BaseScalerT: BaseScaler](
     cls: type[_BaseScalerT], value: str | type[_BaseScalerT] | _BaseScalerT | None, func_except: FuncExcept | None
 ) -> _BaseScalerT:
     if isinstance(value, cls):
@@ -214,14 +215,16 @@ class BaseScalerMeta(ABCMeta):
       still allowed to be instantiated. It is added to ``partial_abstract_kernels``.
     """
 
-    class cachedproperty(jetpytools_cachedproperty[R_co]):  # noqa: N801
+    class cachedproperty[R](jetpytools_cachedproperty[R]):  # noqa: N801
         """
         Read only version of jetpytools.cachedproperty.
         """
 
         if TYPE_CHECKING:
 
-            def __init__(self, func: Callable[Concatenate[_BaseScalerT, P], R_co]) -> None: ...
+            def __init__[_BaseScalerT: BaseScaler, **P](
+                self, func: Callable[Concatenate[_BaseScalerT, P], R]
+            ) -> None: ...
 
         def __set__(self, instance: None, value: Any) -> NoReturn:
             """
@@ -231,7 +234,7 @@ class BaseScalerMeta(ABCMeta):
 
     cached_property = cachedproperty
 
-    def __new__(
+    def __new__[_BaseScalerMetaT: BaseScalerMeta](
         mcls: type[_BaseScalerMetaT],
         name: str,
         bases: tuple[type, ...],
@@ -287,9 +290,6 @@ def _partial_abstract_kernel_radius(self: BaseScaler) -> int:
 @BaseScalerMeta.cachedproperty
 def _static_kernel_radius_property(self: BaseScaler) -> int:
     return ceil(self._static_kernel_radius)
-
-
-_BaseScalerMetaT = TypeVar("_BaseScalerMetaT", bound=BaseScalerMeta)
 
 
 class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
@@ -457,9 +457,6 @@ class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
     def __vs_del__(self, core_id: int) -> None:
         with suppress(AttributeError):
             self.kwargs.clear()
-
-
-_BaseScalerT = TypeVar("_BaseScalerT", bound=BaseScaler)
 
 
 class Scaler(BaseScaler):

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Callable, Generic, Sequence
+from typing import Callable, Sequence
 
-from jetpytools import CustomIntEnum, CustomStrEnum, P, R
+from jetpytools import CustomIntEnum, CustomStrEnum
 
 from vsexprtools import norm_expr
 from vstools import KwargsNotNone, Planes, check_variable, normalize_param_planes, vs
@@ -12,7 +12,7 @@ from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
 __all__ = ["clense", "remove_grain", "removegrain", "repair", "vertical_cleaner"]
 
 
-class Repair(Generic[P, R]):
+class Repair[**P, R]:
     """
     Class decorator that wraps the [repair][vsrgtools.rgtools.repair] function
     and extends its functionality.
@@ -246,7 +246,7 @@ def repair(
     return norm_expr([clip, repairclip], tuple([repair_aka_exprs[m]() for m in mode]), func=repair)
 
 
-class RemoveGrain(Generic[P, R]):
+class RemoveGrain[**P, R]:
     """
     Class decorator that wraps the [remove_grain][vsrgtools.rgtools.remove_grain] function
     and extends its functionality.
@@ -479,7 +479,7 @@ def remove_grain(
     return norm_expr(clip, tuple([removegrain_aka_exprs[m]() for m in mode]), func=remove_grain)
 
 
-class Clense(Generic[P, R]):
+class Clense[**P, R]:
     """
     Class decorator that wraps the [clense][vsrgtools.rgtools.clense] function
     and extends its functionality.
@@ -589,7 +589,7 @@ def clense(
     return getattr(clip.zsmooth, mode)(planes=planes, **kwargs)
 
 
-class VerticalCleaner(Generic[P, R]):
+class VerticalCleaner[**P, R]:
     """
     Class decorator that wraps the [vertical_cleaner][vsrgtools.rgtools.vertical_cleaner] function
     and extends its functionality.

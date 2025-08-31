@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from itertools import count
 from typing import TYPE_CHECKING, Callable, Sequence, SupportsIndex, overload
 
-from vstools import CustomValueError, T, get_prop, set_output, to_arr, vs, vs_object
+from vstools import CustomValueError, get_prop, set_output, to_arr, vs, vs_object
 
 from .utils import AC3_FRAME_LENGTH, PCR_CLOCK, absolute_time_from_timecode
 
@@ -354,7 +354,7 @@ class SplitHelper:
         return len(splits) + 1
 
     @staticmethod
-    def _cut_split(
+    def _cut_split[T](
         title: Title, splits: list[int], a: T, b: Callable[[Title, T, int, int], T | None]
     ) -> tuple[T | None, ...]:
         out, last = list[T | None](), 0

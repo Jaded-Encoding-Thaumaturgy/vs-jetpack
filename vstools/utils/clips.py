@@ -3,9 +3,9 @@ from __future__ import annotations
 import inspect
 from abc import abstractmethod
 from functools import partial, wraps
-from typing import Any, Callable, Literal, Union, overload
+from typing import Any, Callable, Literal, overload
 
-from jetpytools import CustomValueError, FuncExcept, KwargsT, P, T
+from jetpytools import CustomValueError, FuncExcept, KwargsT
 
 from ..enums import (
     ChromaLocation,
@@ -75,7 +75,7 @@ def finalize_clip(
 
 
 @overload
-def finalize_output(
+def finalize_output[**P](
     function: Callable[P, vs.VideoNode],
     /,
     *,
@@ -87,7 +87,7 @@ def finalize_output(
 
 
 @overload
-def finalize_output(
+def finalize_output[**P](
     *,
     bits: int | None = 10,
     clamp_tv_range: bool = False,
@@ -96,7 +96,7 @@ def finalize_output(
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
 
-def finalize_output(
+def finalize_output[**P](
     function: Callable[P, vs.VideoNode] | None = None,
     /,
     *,
@@ -104,7 +104,7 @@ def finalize_output(
     clamp_tv_range: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExcept | None = None,
-) -> Union[Callable[P, vs.VideoNode], Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]]:
+) -> Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
     """
     Decorator implementation of [finalize_clip][vstools.finalize_clip].
     """
@@ -204,7 +204,7 @@ def initialize_clip(
 
 
 @overload
-def initialize_input(
+def initialize_input[**P](
     function: Callable[P, vs.VideoNode],
     /,
     *,
@@ -222,7 +222,7 @@ def initialize_input(
 
 
 @overload
-def initialize_input(
+def initialize_input[**P](
     *,
     bits: int | None = 16,
     matrix: MatrixLike | None = None,
@@ -236,7 +236,7 @@ def initialize_input(
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
 
-def initialize_input(
+def initialize_input[**P](
     function: Callable[P, vs.VideoNode] | None = None,
     /,
     *,
@@ -250,7 +250,7 @@ def initialize_input(
     strict: bool = False,
     dither_type: DitherType = DitherType.AUTO,
     func: FuncExcept | None = None,
-) -> Union[Callable[P, vs.VideoNode], Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]]:
+) -> Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
     """
     Decorator implementation of [initialize_clip][vstools.initialize_clip]
     """
@@ -310,7 +310,7 @@ def initialize_input(
     return _wrapper
 
 
-class ProcessVariableClip(DynamicClipsCache[T]):
+class ProcessVariableClip[T](DynamicClipsCache[T]):
     """
     A helper class for processing variable format/resolution clip.
     """
