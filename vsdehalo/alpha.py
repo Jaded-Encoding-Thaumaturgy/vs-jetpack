@@ -4,9 +4,9 @@ This module implements functions based on the famous dehalo_alpha.
 
 from __future__ import annotations
 
-from typing import Any, Iterator, Sequence, TypeAlias, TypeGuard
+from typing import Any, Iterator, Sequence, TypeGuard
 
-from jetpytools import T, mod_x
+from jetpytools import mod_x
 
 from vsdenoise import Prefilter
 from vsexprtools import norm_expr
@@ -34,7 +34,7 @@ from vstools import (
 __all__ = ["AlphaBlur", "dehalo_alpha"]
 
 
-IterArr: TypeAlias = T | list[T] | tuple[T | list[T], ...]
+type IterArr[T] = T | list[T] | tuple[T | list[T], ...]
 
 
 def dehalo_alpha(

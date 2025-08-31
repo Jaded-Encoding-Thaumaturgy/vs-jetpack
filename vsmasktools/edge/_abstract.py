@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import IntFlag, auto
 from inspect import isabstract
-from typing import Any, ClassVar, Self, Sequence, TypeAlias, TypeVar
+from typing import Any, ClassVar, Self, Sequence
 
 from jetpytools import inject_kwargs_params
 
@@ -14,9 +14,7 @@ from vstools import (
     ConvMode,
     FuncExcept,
     HoldsVideoFormat,
-    KwargsT,
     Planes,
-    T,
     VideoFormatLike,
     check_variable,
     depth,
@@ -76,7 +74,7 @@ class MagDirection(IntFlag):
     EAST = E | NE | SE
     SOUTH = S | SW | SE
 
-    def select_matrices(self, matrices: Sequence[T]) -> Sequence[T]:
+    def select_matrices[T](self, matrices: Sequence[T]) -> Sequence[T]:
         # In Python <3.11, composite flags are included in MagDirection's
         # collection and iteration interfaces.
         primary_flags = [flag for flag in MagDirection if flag != 0 and flag & (flag - 1) == 0]
@@ -85,12 +83,12 @@ class MagDirection(IntFlag):
         return [matrix for flag, matrix in zip(primary_flags, matrices) if self & flag]
 
 
-def _base_from_param(
-    cls: type[EdgeDetectTypeVar],
-    value: str | type[EdgeDetectTypeVar] | EdgeDetectTypeVar | None,
+def _base_from_param[_EdgeDetectT: EdgeDetect](
+    cls: type[_EdgeDetectT],
+    value: str | type[_EdgeDetectT] | _EdgeDetectT | None,
     exception_cls: type[_UnknownMaskDetectError],
     func_except: FuncExcept | None = None,
-) -> type[EdgeDetectTypeVar]:
+) -> type[_EdgeDetectT]:
     # If value is an instance returns the class
     if isinstance(value, cls):
         return value.__class__
@@ -114,11 +112,11 @@ def _base_from_param(
     raise exception_cls(func_except or cls.from_param, str(value))
 
 
-def _base_ensure_obj(
-    cls: type[EdgeDetectTypeVar],
-    value: str | type[EdgeDetectTypeVar] | EdgeDetectTypeVar | None,
+def _base_ensure_obj[_EdgeDetectT: EdgeDetect](
+    cls: type[_EdgeDetectT],
+    value: str | type[_EdgeDetectT] | _EdgeDetectT | None,
     func_except: FuncExcept | None = None,
-) -> EdgeDetectTypeVar:
+) -> _EdgeDetectT:
     if isinstance(value, cls):
         return value
 
@@ -133,7 +131,7 @@ class EdgeDetect(ABC):
     _err_class: ClassVar[type[_UnknownMaskDetectError]] = UnknownEdgeDetectError
     """Custom error class used for validation failures."""
 
-    kwargs: KwargsT | None = None
+    kwargs: dict[str, Any] | None = None
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__()
@@ -396,7 +394,7 @@ class RidgeDetect(MatrixEdgeDetect):
         return self.depth_scale(super()._postprocess(clip, input_bits), input_bits)
 
 
-EdgeDetectLike: TypeAlias = type[EdgeDetect] | EdgeDetect | str
+type EdgeDetectLike = type[EdgeDetect] | EdgeDetect | str
 """
 Type alias for anything that can resolve to a EdgeDetect.
 
@@ -406,7 +404,7 @@ This includes:
  - An instance of a `EdgeDetect`.
 """
 
-RidgeDetectLike: TypeAlias = type[RidgeDetect] | RidgeDetect | str
+type RidgeDetectLike = type[RidgeDetect] | RidgeDetect | str
 """
 Type alias for anything that can resolve to a RidgeDetect.
 
@@ -421,9 +419,6 @@ EdgeDetectT = EdgeDetectLike
 
 RidgeDetectT = RidgeDetectLike
 """Deprecated alias of RidgeDetectLike."""
-
-EdgeDetectTypeVar = TypeVar("EdgeDetectTypeVar", bound=EdgeDetect)
-RidgeDetectTypeVar = TypeVar("RidgeDetectTypeVar", bound=RidgeDetect)
 
 
 def get_all_edge_detects(
