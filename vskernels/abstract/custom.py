@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from math import ceil
-from typing import Any, Union
+from typing import Any
 
 from jetpytools import CustomError, CustomValueError
 
@@ -97,7 +97,7 @@ class CustomComplexKernel(CustomKernel, ComplexKernel):
     """
 
 
-CustomComplexKernelLike = Union[str, type[CustomComplexKernel], CustomComplexKernel]
+type CustomComplexKernelLike = str | type[CustomComplexKernel] | CustomComplexKernel
 """
 Type alias for anything that can resolve to a CustomComplexKernel.
 

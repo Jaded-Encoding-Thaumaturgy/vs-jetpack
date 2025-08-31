@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Mapping, Self, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Mapping, Self, overload
 
 import vapoursynth as vs
 from jetpytools import FuncExcept
@@ -304,10 +304,10 @@ class FieldBased(PropEnum):
         return super().pretty_string
 
 
-ChromaLocationLike: TypeAlias = int | vs.ChromaLocation | ChromaLocation
+type ChromaLocationLike = int | vs.ChromaLocation | ChromaLocation
 """Type alias for values that can be used to initialize a [ChromaLocation][vstools.ChromaLocation]."""
 
-FieldBasedLike: TypeAlias = int | vs.FieldBased | FieldBased
+type FieldBasedLike = int | vs.FieldBased | FieldBased
 """Type alias for values that can be used to initialize a [FieldBased][vstools.FieldBased]."""
 
 ChromaLocationT = ChromaLocationLike

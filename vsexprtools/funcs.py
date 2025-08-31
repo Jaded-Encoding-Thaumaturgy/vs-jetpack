@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from logging import debug as logging_debug
 from math import ceil
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence, SupportsIndex, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence, SupportsIndex
 from warnings import warn
 
 from jetpytools import CustomIndexError, norm_func_name
@@ -19,7 +19,7 @@ from vstools import (
     StrList,
     SupportsString,
     VideoFormatLike,
-    VideoNodeIterableT,
+    VideoNodeIterable,
     check_variable_format,
     core,
     flatten_vnodes,
@@ -143,7 +143,7 @@ def combine_expr(
 
 
 def combine(
-    clips: VideoNodeIterableT,
+    clips: VideoNodeIterable,
     operator: ExprOpBase = ExprOp.MAX,
     suffix: SupportsString | Iterable[SupportsString] | None = None,
     prefix: SupportsString | Iterable[SupportsString] | None = None,
@@ -177,7 +177,7 @@ def combine(
     )
 
 
-ExprLike: TypeAlias = Union[SupportsString | None, Iterable["ExprLike"]]
+type ExprLike = SupportsString | None | Iterable[ExprLike]
 """
 A recursive type representing a valid expression input.
 
@@ -190,7 +190,7 @@ Acceptable forms include:
 
 
 def norm_expr(
-    clips: VideoNodeIterableT,
+    clips: VideoNodeIterable,
     expr: ExprLike,
     planes: Planes = None,
     format: HoldsVideoFormat | VideoFormatLike | None = None,

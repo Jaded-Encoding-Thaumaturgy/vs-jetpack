@@ -20,7 +20,6 @@ from typing import (
     NoReturn,
     Self,
     TypeVar,
-    Union,
     get_origin,
     overload,
 )
@@ -1086,7 +1085,7 @@ class Bobber(BaseScaler):
         return self.kwargs | kwargs
 
 
-ScalerLike = Union[str, type[Scaler], Scaler]
+type ScalerLike = str | type[Scaler] | Scaler
 """
 Type alias for anything that can resolve to a Scaler.
 
@@ -1096,7 +1095,7 @@ This includes:
  - An instance of a `Scaler`.
 """
 
-DescalerLike = Union[str, type[Descaler], Descaler]
+type DescalerLike = str | type[Descaler] | Descaler
 """
 Type alias for anything that can resolve to a Descaler.
 
@@ -1106,7 +1105,7 @@ This includes:
  - An instance of a `Descaler`.
 """
 
-ResamplerLike = Union[str, type[Resampler], Resampler]
+type ResamplerLike = str | type[Resampler] | Resampler
 """
 Type alias for anything that can resolve to a Resampler.
 
@@ -1116,7 +1115,7 @@ This includes:
  - An instance of a `Resampler`.
 """
 
-KernelLike = Union[str, type[Kernel], Kernel]
+type KernelLike = str | type[Kernel] | Kernel
 """
 Type alias for anything that can resolve to a Kernel.
 
@@ -1126,7 +1125,7 @@ This includes:
  - An instance of a `Kernel`.
 """
 
-BobberLike = Union[str, type[Bobber], Bobber]
+type BobberLike = str | type[Bobber] | Bobber
 """
 Type alias for anything that can resolve to a Bobber.
 

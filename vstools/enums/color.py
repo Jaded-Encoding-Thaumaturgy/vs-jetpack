@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Mapping, Self, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Mapping, Self, overload
 
 import vapoursynth as vs
 from jetpytools import FuncExcept
@@ -1440,16 +1440,16 @@ _primaries_pretty_name_map = {
 }
 
 
-MatrixLike: TypeAlias = int | vs.MatrixCoefficients | Matrix | HoldsPropValue
+type MatrixLike = int | vs.MatrixCoefficients | Matrix | HoldsPropValue
 """Type alias for values that can be used to initialize a [Matrix][vstools.Matrix]."""
 
-TransferLike: TypeAlias = int | vs.TransferCharacteristics | Transfer | HoldsPropValue
+type TransferLike = int | vs.TransferCharacteristics | Transfer | HoldsPropValue
 """Type alias for values that can be used to initialize a [Transfer][vstools.Transfer]."""
 
-PrimariesLike: TypeAlias = int | vs.ColorPrimaries | Primaries | HoldsPropValue
+type PrimariesLike = int | vs.ColorPrimaries | Primaries | HoldsPropValue
 """Type alias for values that can be used to initialize a [Primaries][vstools.Primaries]."""
 
-ColorRangeLike: TypeAlias = int | vs.ColorRange | ColorRange | HoldsPropValue
+type ColorRangeLike = int | vs.ColorRange | ColorRange | HoldsPropValue
 """Type alias for values that can be used to initialize a [ColorRange][vstools.ColorRange]."""
 
 MatrixT = MatrixLike

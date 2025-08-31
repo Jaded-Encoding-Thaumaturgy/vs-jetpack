@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import math
 from functools import cache
-from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Self, Sequence, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Self, Sequence, overload
 
 from jetpytools import KwargsNotNone, MismatchError, classproperty, fallback
 from typing_extensions import deprecated
@@ -71,13 +71,13 @@ class _BackendBase(CustomEnum):
         return getattr(core.lazy, self.resolve().value)
 
 
-Frequency: TypeAlias = float
+type Frequency = float
 """
 Represents the frequency value in the frequency domain.
 
 The value is a `float` that represents the magnitude or position in the frequency spectrum.
 """
-Sigma: TypeAlias = float
+type Sigma = float
 """
 Represents the sigma value, which is typically associated with noise standard deviation.
 

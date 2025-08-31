@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import partial
 from math import ceil, floor
 from types import NoneType
-from typing import Any, Callable, NamedTuple, Self, TypeAlias, overload
+from typing import Any, Callable, NamedTuple, Self, overload
 
 from jetpytools import CustomTypeError, FuncExcept, mod_x
 
@@ -85,10 +85,10 @@ def scale_var_clip(
     return out_clip.std.FrameEval(_eval_scale, clip, clip)
 
 
-LeftCrop: TypeAlias = int
-RightCrop: TypeAlias = int
-TopCrop: TypeAlias = int
-BottomCrop: TypeAlias = int
+type LeftCrop = int
+type RightCrop = int
+type TopCrop = int
+type BottomCrop = int
 
 
 class CropRel(NamedTuple):

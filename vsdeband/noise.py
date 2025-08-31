@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import auto
-from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, TypeAlias, TypeVar, overload
+from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, TypeVar, overload
 
 from jetpytools import MISSING, CustomEnum, FuncExcept, MissingT
 
@@ -600,7 +600,7 @@ class GrainerPartial(AbstractGrainer):
         return self.grainer(clip, **self.kwargs | kwargs)
 
 
-GrainerLike: TypeAlias = Grainer | GrainerPartial
+type GrainerLike = Grainer | GrainerPartial
 """
 Grainer-like type, which can be a single grainer or a partial grainer.
 """

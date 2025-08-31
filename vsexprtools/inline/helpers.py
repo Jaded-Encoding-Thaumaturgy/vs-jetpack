@@ -12,7 +12,6 @@ from typing import (
     NoReturn,
     Self,
     SupportsIndex,
-    TypeAlias,
     cast,
 )
 
@@ -476,7 +475,7 @@ class ExprVar(ABC):
         return ComputedVar(self)
 
 
-ExprVarLike: TypeAlias = int | float | str | ExprVar
+type ExprVarLike = int | float | str | ExprVar
 """Type alias representing any expression-compatible variable or literal."""
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cache
-from typing import Any, TypeAlias, Union
+from typing import Any
 
 from jetpytools import CustomNotImplementedError
 
@@ -12,6 +12,7 @@ __all__ = [
     "BotFieldLeftShift",
     "BotFieldTopShift",
     "Center",
+    "FieldShift",
     "LeftShift",
     "SampleGridModel",
     "ShiftT",
@@ -91,56 +92,66 @@ class SampleGridModel(CustomIntEnum):
         return self(width, height, src_width, src_height, shift, kwargs)
 
 
-TopShift: TypeAlias = float
+type TopShift = float
 """
 Type alias for vertical shift in pixels (top).
 
 Represents the amount of vertical offset when scaling a video.
 """
 
-LeftShift: TypeAlias = float
+type LeftShift = float
 """
 Type alias for horizontal shift in pixels (left).
 
 Represents the amount of horizontal offset when scaling a video.
 """
 
-TopFieldTopShift: TypeAlias = float
+type TopFieldTopShift = float
 """
 Type alias for the top field's vertical shift in pixels.
 
 Used when processing interlaced video to describe the vertical shift of the top field.
 """
 
-TopFieldLeftShift: TypeAlias = float
+type TopFieldLeftShift = float
 """
 Type alias for the top field's horizontal shift in pixels.
 
 Used when processing interlaced video to describe the horizontal shift of the top field.
 """
 
-BotFieldTopShift: TypeAlias = float
+type BotFieldTopShift = float
 """
 Type alias for the bottom field's vertical shift in pixels.
 
 Used when processing interlaced video to describe the vertical shift of the bottom field.
 """
 
-BotFieldLeftShift: TypeAlias = float
+type BotFieldLeftShift = float
 """
 Type alias for the bottom field's horizontal shift in pixels.
 
 Used when processing interlaced video to describe the horizontal shift of the bottom field.
 """
 
-ShiftT = Union[
-    tuple[TopShift, LeftShift],
-    tuple[
-        TopShift | tuple[TopFieldTopShift, BotFieldTopShift], LeftShift | tuple[TopFieldLeftShift, BotFieldLeftShift]
-    ],
+
+type FieldShift = tuple[
+    TopShift | tuple[TopFieldTopShift, BotFieldTopShift], LeftShift | tuple[TopFieldLeftShift, BotFieldLeftShift]
 ]
 """
-Type alias for shift in both horizontal and vertical directions.
+Type alias for shifts in interlaced content.
+
+Represents separate shifts for top and bottom fields.
+"""
+
+type ShiftT = (
+    tuple[TopShift, LeftShift]
+    | tuple[
+        TopShift | tuple[TopFieldTopShift, BotFieldTopShift], LeftShift | tuple[TopFieldLeftShift, BotFieldLeftShift]
+    ]
+)
+"""
+Deprecated type alias for shift in both horizontal and vertical directions.
 
 Can either represent a single shift (for progressive video)
 or separate shifts for top and bottom fields (for interlaced video).
@@ -148,12 +159,12 @@ or separate shifts for top and bottom fields (for interlaced video).
 The first value in the tuple represents vertical shift, and the second represents horizontal shift.
 """
 
-Slope: TypeAlias = float
+type Slope = float
 """
 Type alias for the slope of the sigmoid curve, controlling the steepness of the transition.
 """
 
-Center: TypeAlias = float
+type Center = float
 """
 Type alias for the center point of the sigmoid curve, determining the midpoint of the transition.
 """

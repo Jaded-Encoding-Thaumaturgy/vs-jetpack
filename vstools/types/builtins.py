@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence, TypeAlias
+from typing import Sequence
 
 from jetpytools import (
     F0,
@@ -97,9 +97,9 @@ __all__ = [
 ]
 
 
-Planes: TypeAlias = int | Sequence[int] | None
+type Planes = int | Sequence[int] | None
 PlanesT = Planes
 
-FrameRange: TypeAlias = SoftRange
-FrameRangeN: TypeAlias = SoftRangeN
-FrameRangesN: TypeAlias = SoftRangesN
+type FrameRange = SoftRange
+type FrameRangeN = SoftRangeN
+type FrameRangesN = SoftRangesN
