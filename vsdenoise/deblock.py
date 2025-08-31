@@ -223,7 +223,7 @@ def deblock_qed(
         clip[0],
         "X 8 % 7 % Y 8 % 7 % and 0 255 ?",
         planes_pp,
-        clip.format.replace(sample_type=vs.SampleType.INTEGER, bits_per_sample=8),  # type: ignore
+        clip.format.replace(sample_type=vs.SampleType.INTEGER, bits_per_sample=8),
         func=deblock_qed,
     )
 

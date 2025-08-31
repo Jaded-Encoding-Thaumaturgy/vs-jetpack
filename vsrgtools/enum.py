@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import auto
 from math import ceil, exp, pi, sqrt
-from typing import Any, Iterable, Literal, Self, TypeVar, overload
+from typing import Any, Iterable, Literal, Self, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError, FuncExcept, to_arr
 
@@ -22,10 +22,7 @@ from vstools import (
 __all__ = ["BlurMatrix", "BlurMatrixBase"]
 
 
-_Nb = TypeVar("_Nb", bound=float | int)
-
-
-class BlurMatrixBase(list[_Nb]):
+class BlurMatrixBase[_Nb: float | int](list[_Nb]):
     """
     Represents a convolution kernel (matrix) for spatial or temporal filtering.
 
@@ -425,7 +422,7 @@ class BlurMatrix(CustomEnum):
         return ceil(sigma * 6 + 1) // 2
 
     @classmethod
-    def custom(cls, values: Iterable[_Nb], mode: ConvMode = ConvMode.SQUARE) -> BlurMatrixBase[_Nb]:
+    def custom[_Nb: float | int](cls, values: Iterable[_Nb], mode: ConvMode = ConvMode.SQUARE) -> BlurMatrixBase[_Nb]:
         """
         Create a custom BlurMatrixBase kernel with explicit values and mode.
 

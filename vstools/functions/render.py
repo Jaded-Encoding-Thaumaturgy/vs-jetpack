@@ -16,7 +16,6 @@ from jetpytools import (
     SentinelT,
     SPath,
     SPathLike,
-    T,
 )
 
 from ..exceptions import InvalidColorFamilyError
@@ -50,7 +49,7 @@ def clip_async_render(  # pyright: ignore[reportOverlappingOverload]
 
 
 @overload
-def clip_async_render(
+def clip_async_render[T](
     clip: vs.VideoNode,
     outfile: BinaryIO | SPathLike | None = None,
     progress: str | Callable[[int, int], None] | None = None,
@@ -62,7 +61,7 @@ def clip_async_render(
 ) -> list[T]: ...
 
 
-def clip_async_render(
+def clip_async_render[T](
     clip: vs.VideoNode,
     outfile: BinaryIO | SPathLike | None = None,
     progress: str | Callable[[int, int], None] | None = None,
@@ -294,7 +293,7 @@ def clip_async_render(
     return None
 
 
-def clip_data_gather(
+def clip_data_gather[T](
     clip: vs.VideoNode,
     progress: str | Callable[[int, int], None] | None,
     callback: Callable[[int, vs.VideoFrame], SentinelT | T],

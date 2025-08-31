@@ -5,9 +5,9 @@ This module implements dehalo functions with complex masking abilities.
 from __future__ import annotations
 
 from contextlib import suppress
-from typing import Any, Callable, Generic, Iterator, Mapping, Sequence
+from typing import Any, Callable, Iterator, Mapping, Sequence
 
-from jetpytools import CustomIndexError, P, R, normalize_seq
+from jetpytools import CustomIndexError, normalize_seq
 
 from vsaa import NNEDI3, SuperSamplerProcess
 from vsdenoise import Prefilter
@@ -48,7 +48,7 @@ from .alpha import IterArr, dehalo_alpha
 __all__ = ["fine_dehalo", "fine_dehalo2"]
 
 
-class FineDehalo(Generic[P, R]):
+class FineDehalo[**P, R]:
     """
     Class decorator that wraps the [fine_dehalo][vsdehalo.fine_dehalo] function
     and extends its functionality.

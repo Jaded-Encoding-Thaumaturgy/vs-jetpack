@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable, Sequence
 
 import vapoursynth as vs
-from jetpytools import FuncExcept, T, cachedproperty, fallback, iterate, kwargs_fallback, normalize_seq, to_arr
+from jetpytools import FuncExcept, cachedproperty, fallback, iterate, kwargs_fallback, normalize_seq, to_arr
 
 from vstools.exceptions.color import InvalidColorspacePathError
 
@@ -364,7 +364,7 @@ class FunctionUtil(list[int], vs_object):
 
         return processed
 
-    def norm_seq(self, seq: T | Sequence[T], null: T) -> list[T]:
+    def norm_seq[T](self, seq: T | Sequence[T], null: T) -> list[T]:
         """
         Normalize a value or sequence to a list mapped to the clip's planes.
         Unprocessed planes will be set to the given "null" value.
