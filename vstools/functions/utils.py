@@ -756,27 +756,27 @@ def join(
     return joined
 
 
-def plane(clip: vs.VideoNode, index: int, /, strict: bool = True) -> ConstantFormatVideoNode:
+def plane(clip: vs.VideoNode, index: SupportsIndex, /, strict: bool = True) -> ConstantFormatVideoNode:
     """
     Extract a plane from the given clip.
 
     Args:
         clip: Input clip.
         index: Index of the plane to extract.
+        strict: If False, removes `_Matrix` property when the input clip is RGB.
 
     Returns:
         Grayscale clip of the clip's plane.
     """
-
     assert check_variable_format(clip, plane)
 
-    if clip.format.num_planes == 1 and index == 0:
+    if clip.format.num_planes == 1 and index.__index__() == 0:
         return clip
 
     if not strict and clip.format.color_family is vs.RGB:
         clip = vs.core.std.RemoveFrameProps(clip, "_Matrix")
 
-    return vs.core.std.ShufflePlanes(clip, index, vs.GRAY)
+    return vs.core.std.ShufflePlanes(clip, index.__index__(), vs.GRAY)
 
 
 def split(clip: vs.VideoNode, /) -> list[ConstantFormatVideoNode]:
