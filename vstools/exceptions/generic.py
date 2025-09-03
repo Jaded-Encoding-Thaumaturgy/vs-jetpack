@@ -124,7 +124,10 @@ class InvalidColorFamilyError(CustomValueError):
     def __init__(
         self,
         func: FuncExcept | None,
-        wrong: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily,
+        wrong: VideoFormatLike
+        | HoldsVideoFormat
+        | vs.ColorFamily
+        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.ColorFamily],
         correct: VideoFormatLike
         | HoldsVideoFormat
         | vs.ColorFamily
@@ -135,19 +138,21 @@ class InvalidColorFamilyError(CustomValueError):
         from ..functions import to_arr
         from ..utils import get_color_family
 
-        wrong_str = get_color_family(wrong).name
-
         super().__init__(
             message,
             func,
-            wrong=wrong_str,
+            wrong=iter({get_color_family(c).name for c in to_arr(wrong)}),  # type: ignore[arg-type]
             correct=iter({get_color_family(c).name for c in to_arr(correct)}),  # type: ignore[arg-type]
             **kwargs,
         )
 
-    @staticmethod
+    @classmethod
     def check(
-        to_check: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily,
+        cls,
+        to_check: VideoFormatLike
+        | HoldsVideoFormat
+        | vs.ColorFamily
+        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.ColorFamily],
         correct: VideoFormatLike
         | HoldsVideoFormat
         | vs.ColorFamily
@@ -174,13 +179,13 @@ class InvalidColorFamilyError(CustomValueError):
         from ..functions import to_arr
         from ..utils import get_color_family
 
-        to_check = get_color_family(to_check)
-        correct_list = [get_color_family(c) for c in to_arr(correct)]  # type: ignore[arg-type]
+        to_check_set = {get_color_family(c) for c in to_arr(to_check)}  # type: ignore[arg-type]
+        correct_set = {get_color_family(c) for c in to_arr(correct)}  # type: ignore[arg-type]
 
-        if to_check not in correct_list:
+        if not to_check_set.issubset(correct_set):
             if message is not None:
                 kwargs.update(message=message)
-            raise InvalidColorFamilyError(func, to_check, correct_list, **kwargs)
+            raise cls(func, to_check_set, correct_set, **kwargs)
 
 
 class UnsupportedSubsamplingError(CustomValueError):

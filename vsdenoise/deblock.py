@@ -104,7 +104,7 @@ class dpir(CustomStrEnum):  # noqa: N801
                 strength = normalize_param_planes(clip, strength, planes, 0, func)
 
                 return join(
-                    (self.__call__(plane(clip, i), s, zones, **kwargs) for i, s in enumerate(strength)),
+                    [self.__call__(plane(clip, i), s, zones, **kwargs) for i, s in enumerate(strength)],
                     clip.format.color_family,
                 )
 
@@ -139,7 +139,7 @@ class dpir(CustomStrEnum):  # noqa: N801
             out = dpired
 
         if planes != normalize_planes(clip, None):
-            out = join({None: clip, tuple(planes): dpired}, family=clip.format.color_family)
+            out = join({None: clip, tuple(planes): dpired}, clip.format.color_family)
 
         return out
 
