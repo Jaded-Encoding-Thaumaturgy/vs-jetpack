@@ -779,20 +779,20 @@ def plane(clip: vs.VideoNode, index: SupportsIndex, /, strict: bool = True) -> C
     return vs.core.std.ShufflePlanes(clip, index.__index__(), vs.GRAY)
 
 
-def split(clip: vs.VideoNode, /) -> list[ConstantFormatVideoNode]:
+def split(clip: vs.VideoNode, /, strict: bool = True) -> list[ConstantFormatVideoNode]:
     """
     Split a clip into a list of individual planes.
 
     Args:
         clip: Input clip.
+        strict: If False, removes `_Matrix` property when the input clip is RGB.
 
     Returns:
         List of individual planes.
     """
-
     assert check_variable_format(clip, split)
 
-    return [clip] if clip.format.num_planes == 1 else [plane(clip, i, False) for i in range(clip.format.num_planes)]
+    return [clip] if clip.format.num_planes == 1 else [plane(clip, i, strict) for i in range(clip.format.num_planes)]
 
 
 depth_func = depth
