@@ -714,7 +714,7 @@ class EEDI3(SuperSampler):
         if self.vthresh is None:
             self.vthresh = (None, None, None)
 
-        eedi3_kwargs = {
+        kwargs = {
             "alpha": self.alpha,
             "beta": self.beta,
             "gamma": self.gamma,
@@ -728,9 +728,12 @@ class EEDI3(SuperSampler):
             "vthresh2": self.vthresh[2],
             "sclip": self.sclip,
             "mclip": self.mclip,
-        }
+        } | kwargs
 
-        return eedi3_kwargs | kwargs
+        if kwargs.get("opt") is None:
+            kwargs["opt"] = 2 if kwargs["mclip"] else 3
+
+        return kwargs
 
     @Scaler.cachedproperty
     def kernel_radius(self) -> int:
