@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fractions import Fraction
-from typing import Any, SupportsFloat, overload
+from typing import Any, SupportsFloat, SupportsInt, overload
 
 import vapoursynth as vs
 from jetpytools import fallback, mod_x
@@ -44,7 +44,7 @@ def get_var_infos(frame: vs.VideoNode | vs.VideoFrame) -> tuple[vs.VideoFormat, 
 
 
 def get_video_format(
-    value: int | VideoFormatLike | HoldsVideoFormat, /, *, sample_type: int | vs.SampleType | None = None
+    value: SupportsInt | VideoFormatLike | HoldsVideoFormat, /, *, sample_type: int | vs.SampleType | None = None
 ) -> vs.VideoFormat:
     """
     Retrieve a VapourSynth VideoFormat object from various input types.
@@ -63,13 +63,15 @@ def get_video_format(
     Returns:
         A VideoFormat object derived from the input.
     """
-    if sample_type is not None:
-        sample_type = vs.SampleType(sample_type)
-
     if isinstance(value, vs.VideoFormat):
         return value
 
-    if isinstance(value, int):
+    if sample_type is not None:
+        sample_type = vs.SampleType(sample_type)
+
+    if isinstance(value, SupportsInt):
+        value = int(value)
+
         if value > 32 or value == 0:
             return vs.core.get_video_format(value)
 
