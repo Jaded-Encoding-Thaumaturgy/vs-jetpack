@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import auto
 from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, overload
 
-from jetpytools import MISSING, CustomEnum, FuncExcept, MissingT, fallback, inject_self
+from jetpytools import MISSING, CustomEnum, FuncExcept, MissingT
 from typing_extensions import TypeVar
 
 from vsexprtools import norm_expr
