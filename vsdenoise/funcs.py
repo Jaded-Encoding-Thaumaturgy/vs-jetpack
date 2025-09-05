@@ -20,8 +20,6 @@ from vstools import (
     check_variable_format,
     fallback,
     get_color_family,
-    get_subsampling,
-    get_video_format,
     join,
     normalize_planes,
     normalize_seq,
@@ -264,15 +262,14 @@ def ccd(
 
     planes = normalize_planes(clip, planes)
 
-    if get_subsampling(clip) not in ["444", None]:
-        full = Scaler.ensure_obj(chroma_upscaler, func).scale(clip, clip.width, clip.height)
-    else:
+    if (clip.format.subsampling_w, clip.format.subsampling_h) == (0, 0):
         full = clip
+        pscale = 1.0
+    else:
+        full = Scaler.ensure_obj(chroma_upscaler, func).scale(clip, clip.width, clip.height)
 
-    full_format = get_video_format(full)
-
-    if (full_format.subsampling_w, full_format.subsampling_h) != (0, 0):
-        raise CustomRuntimeError("`chroma_upscaler` didn't upscale chroma planes.", func, repr(full_format))
+        if (full.subsampling_w, full.subsampling_h) != (0, 0):  # type: ignore[attr-defined]
+            raise CustomRuntimeError("`chroma_upscaler` didn't upscale chroma planes.", func, repr(full))
 
     if get_color_family(clip) != vs.RGB:
         rgb = vs.core.resize.Point(full, format=full_format.replace(color_family=vs.RGB).id)
