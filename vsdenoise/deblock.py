@@ -96,7 +96,7 @@ class dpir(CustomStrEnum):  # noqa: N801
                     {
                         None: clip,
                         tuple(planes): self.__call__(clip, strength[1], zones, planes, **kwargs),
-                        0: plane_0 if 0 in planes else self.__call__(plane_0, strength[0], zones, **kwargs),
+                        0: self.__call__(plane_0, strength[0], zones, planes, **kwargs),
                     }
                 )
 
@@ -110,7 +110,7 @@ class dpir(CustomStrEnum):  # noqa: N801
 
             raise CustomRuntimeError
 
-        if not strength:
+        if not strength or not planes:
             return clip
 
         if not isinstance(strength, vs.VideoNode):
