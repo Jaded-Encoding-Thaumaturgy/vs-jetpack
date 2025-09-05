@@ -160,10 +160,10 @@ class FineDehalo[**P, R]:
 
             thmif, thmaf, thlimif, thlimaf = [
                 [scale_mask(x, 8, clip) for x in th]
-                for th in [normalize_seq(th, clip.format.num_planes) for th in (thmi, thma, thlimi, thlima)]  # type: ignore[union-attr]
+                for th in [normalize_seq(th, clip.format.num_planes) for th in (thmi, thma, thlimi, thlima)]
             ]
-            exclude = normalize_seq(exclude, clip.format.num_planes)  # type: ignore[union-attr]
-            edgeproc = normalize_seq(edgeproc, clip.format.num_planes)  # type: ignore[union-attr]
+            exclude = normalize_seq(exclude, clip.format.num_planes)
+            edgeproc = normalize_seq(edgeproc, clip.format.num_planes)
             planes = normalize_planes(clip, planes)
             work_clip = get_y(clip) if planes == [0] else clip
 

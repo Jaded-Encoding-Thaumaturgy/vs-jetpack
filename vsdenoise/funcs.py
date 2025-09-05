@@ -296,11 +296,11 @@ def ccd(
     else:
         full = Scaler.ensure_obj(chroma_upscaler, func).scale(clip, clip.width, clip.height)
 
-        if (full.format.subsampling_w, full.format.subsampling_h) != (0, 0):  # type: ignore[union-attr]
+        if (full.format.subsampling_w, full.format.subsampling_h) != (0, 0):
             raise CustomRuntimeError("`chroma_upscaler` didn't upscale chroma planes.", func, repr(full))
 
     if get_color_family(full) != vs.RGB:
-        rgb = vs.core.resize.Point(full, format=full.format.replace(color_family=vs.RGB).id)  # type: ignore[union-attr]
+        rgb = vs.core.resize.Point(full, format=full.format.replace(color_family=vs.RGB).id)
     else:
         rgb = full
 
