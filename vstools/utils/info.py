@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fractions import Fraction
-from typing import Any, SupportsFloat, SupportsInt, overload
+from typing import Any, SupportsFloat, SupportsInt
 
 import vapoursynth as vs
 from jetpytools import fallback, mod_x
@@ -226,22 +226,6 @@ def get_subsampling(clip: VideoFormatLike | HoldsVideoFormat, /) -> str | None:
     raise UnsupportedSubsamplingError("Unknown subsampling.", get_subsampling)
 
 
-@overload
-def get_w(height: float, ar: SupportsFloat = 16 / 9, /, mod: int = 2) -> int: ...
-
-
-@overload
-def get_w(height: float, ref: vs.VideoNode | vs.VideoFrame, /, mod: int | None = None) -> int: ...
-
-
-@overload
-def get_w(height: float, dar: Dar, /, mod: int | None = None) -> int: ...
-
-
-@overload
-def get_w(height: float, sar: Sar, /, mod: int | None = None) -> int: ...
-
-
 def get_w(
     height: float,
     ar_or_ref: vs.VideoNode | vs.VideoFrame | SupportsFloat | Dar | Sar = 16 / 9,
@@ -265,7 +249,6 @@ def get_w(
     Returns:
         Calculated width.
     """
-
     if isinstance(ar_or_ref, (Dar, Sar)):
         aspect_ratio = float(ar_or_ref)
         mod = mod or 2
@@ -286,22 +269,6 @@ def get_w(
         return mod_x(width, mod)
 
     return round(width)
-
-
-@overload
-def get_h(width: float, ar: SupportsFloat = 16 / 9, /, mod: int = 2) -> int: ...
-
-
-@overload
-def get_h(width: float, ref: vs.VideoNode | vs.VideoFrame, /, mod: int | None = None) -> int: ...
-
-
-@overload
-def get_h(width: float, dar: Dar, /, mod: int | None = None) -> int: ...
-
-
-@overload
-def get_h(width: float, sar: Sar, /, mod: int | None = None) -> int: ...
 
 
 def get_h(
@@ -327,7 +294,6 @@ def get_h(
     Returns:
         Calculated height.
     """
-
     if isinstance(ar_or_ref, (Dar, Sar)):
         aspect_ratio = 1.0 / float(ar_or_ref)
         mod = mod or 2
