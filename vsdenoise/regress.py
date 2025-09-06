@@ -751,7 +751,7 @@ class MissingFieldsChromaRecon(GenericChromaRecon):
         super().__post_init__()
 
         self._dm_wscaler = Scaler.ensure_obj(self.dm_wscaler, self.__class__)
-        self._dm_hscaler = self._dm_wscaler.ensure_obj(self.dm_hscaler, self.__class__)
+        self._dm_hscaler = Scaler.ensure_obj(self.dm_hscaler or self._dm_wscaler, self.__class__)
 
 
 @dataclass
