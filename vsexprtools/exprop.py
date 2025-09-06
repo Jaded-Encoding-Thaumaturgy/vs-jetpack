@@ -8,7 +8,7 @@ from itertools import cycle, product
 from math import inf, isqrt
 from typing import Any, Collection, Iterable, Iterator, Literal, Sequence, SupportsIndex, cast, overload
 
-from jetpytools import CustomRuntimeError, CustomStrEnum, SupportsString, SupportsSumNoDefaultT
+from jetpytools import CustomRuntimeError, CustomStrEnum, SupportsString, SupportsSumNoDefaultT, fallback
 from typing_extensions import Self
 
 from vstools import (
@@ -225,7 +225,7 @@ class ExprToken(CustomStrEnum, metaclass=_ExprTokenMeta):
 
         raise NotImplementedError
 
-    def __getitem__(self, i: int) -> str:  # type: ignore[override]
+    def __getitem__(self, i: SupportsIndex | slice[SupportsIndex | None, SupportsIndex, SupportsIndex | None]) -> str:
         """
         Returns a version of the token specific to a clip index.
 
@@ -233,15 +233,23 @@ class ExprToken(CustomStrEnum, metaclass=_ExprTokenMeta):
         (e.g., `ExprToken.PlaneMax[2]` results in `'plane_max_z'` suffix for clip index 2).
 
         Args:
-            i: An integer index representing the input clip number.
+            i: An integer index or slice representing input clip numbers.
 
         Returns:
             An string with an index-specific suffix for use in expressions.
         """
-        if i > 25:
-            raise CustomIndexError("Only an index up to 25 is supported", self, i)
 
-        return f"{self._value_}_{ExprVars.get_var(i)}"
+        def validate_index(idx: SupportsIndex) -> SupportsIndex:
+            if idx.__index__() > 25:
+                raise CustomIndexError("Only an index up to 25 is supported", self, idx)
+            return idx
+
+        if isinstance(i, slice):
+            return " ".join(
+                f"{self._value_}_{v}" for v in ExprVars(fallback(i.start, 0), validate_index(i.stop), i.step)
+            )
+
+        return f"{self._value_}_{ExprVars.get_var(validate_index(i))}"
 
 
 def _cache_clear_expr_token(core_id: int) -> None:
