@@ -33,6 +33,8 @@ from vstools import (
     CustomNotImplementedError,
     CustomRuntimeError,
     CustomValueError,
+    FieldBased,
+    FieldBasedLike,
     FuncExcept,
     HoldsVideoFormat,
     Matrix,
@@ -40,6 +42,7 @@ from vstools import (
     VideoFormatLike,
     VideoNodeT,
     check_correct_subsampling,
+    check_variable,
     check_variable_format,
     check_variable_resolution,
     core,
@@ -62,7 +65,18 @@ from ..exceptions import (
 )
 from ..types import LeftShift, TopShift
 
-__all__ = ["Descaler", "DescalerLike", "Kernel", "KernelLike", "Resampler", "ResamplerLike", "Scaler", "ScalerLike"]
+__all__ = [
+    "Bobber",
+    "BobberLike",
+    "Descaler",
+    "DescalerLike",
+    "Kernel",
+    "KernelLike",
+    "Resampler",
+    "ResamplerLike",
+    "Scaler",
+    "ScalerLike",
+]
 
 
 def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Callable[Concatenate[_BaseScalerT, P], R]:
@@ -1021,6 +1035,81 @@ class Kernel(Scaler, Descaler, Resampler):
         } | self.get_params_args(False, clip, **kwargs)
 
 
+class Bobber(BaseScaler):
+    """
+    Abstract scaler class that applies bob deinterlacing.
+    """
+
+    bob_function: Callable[..., ConstantFormatVideoNode]
+    """Bob function called internally when performing bobbing operations."""
+
+    _implemented_funcs: ClassVar[tuple[str, ...]] = ("bob", "deinterlace")
+
+    def bob(
+        self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        """
+        Apply bob deinterlacing to a given clip using the selected resizer.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
+        Args:
+            clip: The source clip
+            tff: Field order of the clip.
+
+        Returns:
+            The bobbed clip.
+        """
+        clip_fieldbased = FieldBased.from_param_or_video(tff, clip, True, self.__class__)
+
+        assert check_variable(clip, self.__class__)
+
+        return self.bob_function(clip, **self.get_bob_args(clip, tff=clip_fieldbased.is_tff, **kwargs))
+
+    def deinterlace(
+        self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, double_rate: bool = True, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
+        """
+        Apply deinterlacing to a given clip using the selected resizer.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
+        Args:
+            clip: The source clip
+            tff: Field order of the clip.
+            double_rate: Whether to double the frame rate (True) or retain the original rate (False).
+
+        Returns:
+            The bobbed clip.
+        """
+        bobbed = self.bob(clip, tff=tff, **kwargs)
+
+        if not double_rate:
+            return bobbed[::2]
+
+        return bobbed
+
+    def get_bob_args(
+        self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Generate the keyword arguments used for bobbing.
+
+        Args:
+            clip: The source clip.
+            shift: Subpixel shift (top, left).
+            **kwargs: Extra parameters to merge.
+
+        Returns:
+            Final dictionary of keyword arguments for the bob function.
+        """
+        return self.kwargs | kwargs
+
+
 ScalerLike = Union[str, type[Scaler], Scaler]
 """
 Type alias for anything that can resolve to a Scaler.
@@ -1059,4 +1148,14 @@ This includes:
  - A string identifier.
  - A class type subclassing `Kernel`.
  - An instance of a `Kernel`.
+"""
+
+BobberLike = Union[str, type[Bobber], Bobber]
+"""
+Type alias for anything that can resolve to a Bobber.
+
+This includes:
+ - A string identifier.
+ - A class type subclassing `Bobber`.
+ - An instance of a `Bobber`.
 """

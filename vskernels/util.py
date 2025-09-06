@@ -39,6 +39,8 @@ from vstools import (
 )
 
 from .abstract import (
+    Bobber,
+    BobberLike,
     ComplexDescaler,
     ComplexDescalerLike,
     ComplexKernel,
@@ -611,6 +613,11 @@ def is_resampler_like(obj: Any) -> TypeIs[ResamplerLike]:
 def is_kernel_like(obj: Any) -> TypeIs[KernelLike]:
     """Returns true if obj is a KernelLike"""
     return _is_base_scaler_like(obj, Kernel)
+
+
+def is_bobber_like(obj: Any) -> TypeIs[BobberLike]:
+    """Returns true if obj is a BobberLike"""
+    return _is_base_scaler_like(obj, Bobber)
 
 
 def is_complex_scaler_like(obj: Any) -> TypeIs[ComplexScalerLike]:

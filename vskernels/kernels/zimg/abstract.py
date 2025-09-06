@@ -1,9 +1,8 @@
-from typing import Any, Callable, ClassVar, Union
+from typing import Any, Union
 
-from vstools import ConstantFormatVideoNode, FieldBased, FieldBasedLike, check_variable, core, vs
+from vstools import core, vs
 
-from ...abstract import ComplexKernel
-from ...abstract.base import BaseScaler
+from ...abstract import Bobber, ComplexKernel
 from ...types import LeftShift, TopShift
 
 __all__ = [
@@ -13,63 +12,13 @@ __all__ = [
 ]
 
 
-class ZimgBobber(BaseScaler):
+class ZimgBobber(Bobber):
     """
     Abstract scaler class that applies bob deinterlacing using a zimg-based resizer.
     """
 
-    bob_function: Callable[..., ConstantFormatVideoNode] = core.lazy.resize2.Bob
+    bob_function = core.lazy.resize2.Bob
     """Bob function called internally when performing bobbing operations."""
-
-    _implemented_funcs: ClassVar[tuple[str, ...]] = ("bob", "deinterlace")
-
-    def bob(
-        self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
-        """
-        Apply bob deinterlacing to a given clip using the selected resizer.
-
-        Keyword arguments passed during initialization are automatically injected here,
-        unless explicitly overridden by the arguments provided at call time.
-        Only arguments that match named parameters in this method are injected.
-
-        Args:
-            clip: The source clip
-            tff: Field order of the clip.
-
-        Returns:
-            The bobbed clip.
-        """
-        clip_fieldbased = FieldBased.from_param_or_video(tff, clip, True, self.__class__)
-
-        assert check_variable(clip, self.__class__)
-
-        return self.bob_function(clip, **self.get_bob_args(clip, tff=clip_fieldbased.is_tff, **kwargs))
-
-    def deinterlace(
-        self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, double_rate: bool = True, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
-        """
-        Apply deinterlacing to a given clip using the selected resizer.
-
-        Keyword arguments passed during initialization are automatically injected here,
-        unless explicitly overridden by the arguments provided at call time.
-        Only arguments that match named parameters in this method are injected.
-
-        Args:
-            clip: The source clip
-            tff: Field order of the clip.
-            double_rate: Whether to double the frame rate (True) or retain the original rate (False).
-
-        Returns:
-            The bobbed clip.
-        """
-        bobbed = self.bob(clip, tff=tff, **kwargs)
-
-        if not double_rate:
-            return bobbed[::2]
-
-        return bobbed
 
     def get_bob_args(
         self,
