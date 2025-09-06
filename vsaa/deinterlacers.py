@@ -1,15 +1,29 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
-from typing import TYPE_CHECKING, Any, Protocol, Sequence, runtime_checkable
+from typing import TYPE_CHECKING, Any, Sequence
 
 from jetpytools import MISSING
 from typing_extensions import Self, TypeVar
 
-from vskernels import Catrom, ComplexScaler, ComplexScalerLike, LeftShift, MixedScalerProcess, Point, Scaler, TopShift
+from vskernels import (
+    Bobber,
+    Catrom,
+    ComplexScaler,
+    ComplexScalerLike,
+    LeftShift,
+    MixedScalerProcess,
+    Point,
+    Scaler,
+    TopShift,
+)
 from vstools import (
     ChromaLocation,
     ConstantFormatVideoNode,
+    FieldBased,
+    FieldBasedLike,
     VideoNodeT,
     VSFunctionAllArgs,
     VSFunctionNoArgs,
@@ -17,7 +31,6 @@ from vstools import (
     core,
     normalize_seq,
     vs,
-    vs_object,
 )
 
 __all__ = [
@@ -35,7 +48,7 @@ __all__ = [
 
 
 @dataclass(kw_only=True)
-class Deinterlacer(vs_object, ABC):
+class Deinterlacer(Bobber, ABC):
     """
     Abstract base class for deinterlacing operations.
     """
@@ -86,50 +99,57 @@ class Deinterlacer(vs_object, ABC):
         """
         return kwargs
 
-    def deinterlace(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def deinterlace(
+        self,
+        clip: vs.VideoNode,
+        *,
+        tff: FieldBasedLike | bool | None = None,
+        double_rate: bool | None = None,
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode:
         """
         Apply deinterlacing to the given clip.
 
         Args:
             clip: The input clip.
+            tff: Field order of the clip.
+            double_rate: Whether to double the frame rate (True) or retain the original rate (False).
             **kwargs: Additional arguments passed to the plugin function.
 
         Returns:
             Deinterlaced clip.
         """
-        return self._interpolate(clip, self.tff, self.double_rate, False, **kwargs)
+        return self._interpolate(
+            clip,
+            FieldBased.from_param(fallback(tff, self.tff), self.__class__).is_tff,
+            fallback(double_rate, self.double_rate),
+            False,
+            **kwargs,
+        )
 
-    def bob(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def bob(
+        self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, **kwargs: Any
+    ) -> ConstantFormatVideoNode:
         """
         Apply bob deinterlacing to the given clip.
 
         Args:
             clip: The input clip.
+            tff: Field order of the clip.
             **kwargs: Additional arguments passed to the plugin function.
 
         Returns:
             Deinterlaced clip.
         """
-        return self._interpolate(clip, self.tff, True, False, **kwargs)
+        return self._interpolate(
+            clip, FieldBased.from_param(fallback(tff, self.tff), self.__class__).is_tff, True, False, **kwargs
+        )
 
     def copy(self, **kwargs: Any) -> Self:
         """
         Returns a new Antialiaser class replacing specified fields with new values
         """
         return replace(self, **kwargs)
-
-
-@runtime_checkable
-class SupportsBobDeinterlace(Protocol):
-    """
-    Protocol for classes that support bob deinterlacing.
-    """
-
-    __slots__ = ()
-
-    def bob(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode: ...
-
-    def deinterlace(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode: ...
 
 
 @dataclass(kw_only=True)
@@ -814,6 +834,8 @@ class BWDIF(Deinterlacer):
 
     def __vs_del__(self, core_id: int) -> None:
         self.edeint = None
+
+    _static_kernel_radius = 2
 
 
 if TYPE_CHECKING:
