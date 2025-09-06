@@ -206,7 +206,7 @@ class AntiAliaser(Deinterlacer, ABC):
 
 
 @dataclass(kw_only=True)
-class SuperSampler(AntiAliaser, Scaler, ABC):
+class SuperSampler(Scaler, AntiAliaser, ABC):
     """
     Abstract base class for supersampling operations.
     """
@@ -221,6 +221,9 @@ class SuperSampler(AntiAliaser, Scaler, ABC):
     - `bool`: Applies to both luma and chroma.
     - `Sequence[bool]`: First for luma, second for chroma.
     """
+
+    def __post_init__(self) -> None:
+        super().__init__()
 
     def scale(
         self,
