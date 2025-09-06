@@ -1,3 +1,4 @@
+from copy import deepcopy
 from functools import partial
 from math import factorial
 from typing import Any, Iterable, Literal, MutableMapping, Protocol, cast
@@ -5,7 +6,7 @@ from typing import Any, Iterable, Literal, MutableMapping, Protocol, cast
 from jetpytools import CustomIntEnum
 from typing_extensions import Self
 
-from vsaa import NNEDI3, Deinterlacer
+from vsaa import NNEDI3
 from vsdeband import Grainer
 from vsdenoise import (
     DFTTest,
@@ -19,7 +20,7 @@ from vsdenoise import (
     refine_blksize,
 )
 from vsexprtools import norm_expr
-from vskernels import Catrom
+from vskernels import Bobber, BobberLike, Catrom
 from vsmasktools import Coordinates, Morpho
 from vsrgtools import BlurMatrix, gauss_blur, median_blur, remove_grain, repair, unsharpen
 from vstools import (
@@ -462,7 +463,7 @@ class QTempGaussMC(vs_object):
         *,
         tr: int = 2,
         thsad: int | tuple[int, int] = 640,
-        bobber: Deinterlacer = NNEDI3(nsize=1),
+        bobber: BobberLike = NNEDI3(nsize=1),
         noise_restore: float = 0.0,
         degrain_args: KwargsT | None = None,
         mask_args: KwargsT | None | Literal[False] = None,
@@ -484,7 +485,12 @@ class QTempGaussMC(vs_object):
 
         self.basic_tr = tr
         self.basic_thsad = thsad
-        self.basic_bobber = bobber.copy(tff=self.tff, double_rate=self.double_rate)
+
+        self.basic_bobber = (
+            deepcopy(bobber) if isinstance(bobber, Bobber) else Bobber.ensure_obj(bobber, self.__class__)
+        )
+        self.basic_bobber.kwargs.update(tff=self.tff, double_rate=self.double_rate)
+
         self.basic_noise_restore = noise_restore
         self.basic_degrain_args = fallback(degrain_args, KwargsT())
         self.basic_mask_shimmer_args = fallback(mask_shimmer_args, KwargsT())
@@ -496,7 +502,7 @@ class QTempGaussMC(vs_object):
         self,
         *,
         tr: int = 1,
-        bobber: Deinterlacer | None = None,
+        bobber: BobberLike | None = None,
         mode: SourceMatchMode = SourceMatchMode.NONE,
         similarity: float = 0.5,
         enhance: float = 0.5,
@@ -515,7 +521,16 @@ class QTempGaussMC(vs_object):
         """
 
         self.match_tr = tr
-        self.match_bobber = fallback(bobber, self.basic_bobber).copy(tff=self.tff, double_rate=self.double_rate)
+
+        if bobber is None:
+            self.match_bobber = deepcopy(self.basic_bobber)
+        elif isinstance(bobber, Bobber):
+            self.match_bobber = deepcopy(bobber)
+        else:
+            self.match_bobber = Bobber.ensure_obj(bobber, self.__class__)
+
+        self.match_bobber.kwargs.update(tff=self.tff, double_rate=self.double_rate)
+
         self.match_mode = mode
         self.match_similarity = similarity
         self.match_enhance = enhance
@@ -731,7 +746,7 @@ class QTempGaussMC(vs_object):
             func=self._mask_shimmer,
         )
 
-    def _interpolate(self, clip: vs.VideoNode, bobber: Deinterlacer) -> ConstantFormatVideoNode:
+    def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> ConstantFormatVideoNode:
         assert check_variable(clip, self._interpolate)
 
         if self.input_type != self.InputType.PROGRESSIVE:
