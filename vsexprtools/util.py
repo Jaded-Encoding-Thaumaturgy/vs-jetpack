@@ -58,14 +58,14 @@ class ExprVars(Iterable[str]):
 
     @overload
     def __init__(
-        self, start: SupportsIndex, stop: SupportsIndex, step: SupportsIndex = 1, /, *, expr_src: bool = False
+        self, start: SupportsIndex, stop: SupportsIndex, step: SupportsIndex | None = 1, /, *, expr_src: bool = False
     ) -> None: ...
 
     def __init__(
         self,
         start_stop: SupportsIndex | Self | HoldsVideoFormat | VideoFormatLike,
         stop: SupportsIndex | MissingT = MISSING,
-        step: SupportsIndex = 1,
+        step: SupportsIndex | None = None,
         /,
         *,
         expr_src: bool = False,
@@ -76,7 +76,7 @@ class ExprVars(Iterable[str]):
         Args:
             start_stop: A start index or an object from which to infer the number of variables (e.g., video format).
             stop: Stop index (exclusive). Required only if `start_stop` is a numeric start value.
-            step: Step size for iteration.
+            step: Step size for iteration. Default to 1.
             expr_src: Whether to use `srcX` naming or use alphabetic variables.
 
         Raises:
@@ -106,7 +106,7 @@ class ExprVars(Iterable[str]):
             self.start = start_stop.__index__()
             self.stop = stop.__index__()
 
-        self.step = step.__index__()
+        self.step = (step or 1).__index__()
 
         if self.start < 0:
             raise CustomIndexError('"start" must be greater than or equal to 0.', self.__class__, self.start)
