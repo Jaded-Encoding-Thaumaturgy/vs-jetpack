@@ -835,13 +835,12 @@ class Point422ChromaRecon(MissingFieldsChromaRecon):
     """
 
     dm_wscaler: ScalerLike = field(default_factory=lambda: SangNom(128))
-    dm_hscaler: ScalerLike = field(
-        # sclip=NNEDI3() didn't work before and has not been re-implemented either
-        default_factory=lambda: EEDI3(0.35, 0.55, 20, 2, 10, vcheck=3, sclip=NNEDI3())  # type: ignore
-    )
+    dm_hscaler: EEDI3 = field(default_factory=lambda: EEDI3(0.35, 0.55, 20, 2, 10, vcheck=3))
 
     def demangle_chroma(self, mangled: vs.VideoNode, y_base: vs.VideoNode) -> vs.VideoNode:
-        demangled = self._dm_hscaler.scale(mangled, mangled.width, y_base.height)
+        demangled = self._dm_hscaler.scale(
+            mangled, mangled.width, y_base.height, sclip=NNEDI3().scale(mangled, height=mangled.height * 2)
+        )
         return self._dm_wscaler.scale(demangled, y_base.width, y_base.height, (self.src_top, self.src_left))
 
     @inject_self.init_kwargs
