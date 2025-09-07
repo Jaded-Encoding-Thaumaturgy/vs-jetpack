@@ -152,6 +152,10 @@ class ExprVars(Iterable[str]):
             else:
                 yield EXPR_VARS[x]
 
+            self.curr += self.step
+
+        self.curr = self.start
+
     def __next__(self) -> str:
         """
         Returns the next variable name in the sequence.
