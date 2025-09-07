@@ -91,11 +91,13 @@ def _add_init_kwargs(method: Callable[Concatenate[_BaseScalerT, P], R]) -> Calla
             import re
             import warnings
 
-            warnings.simplefilter("always", DeprecationWarning)
+            class _SyntaxMethod(DeprecationWarning, SyntaxWarning): ...
+
+            warnings.simplefilter("always", _SyntaxMethod)
             warnings.warn(
                 f"The `{method.__name__}` method must be called on an instance, not the class. "
                 "For example, use: Bicubic().scale(...) instead of Bicubic.scale(...)",
-                DeprecationWarning,
+                _SyntaxMethod,
                 2,
                 skip_file_prefixes=(str(pathlib.Path(__file__).resolve()),),
             )

@@ -457,8 +457,6 @@ def get_all_edge_detects(
     Returns:
         A list of edge masks
     """
-    from warnings import warn
-
     # https://github.com/python/mypy/issues/4717
     all_subclasses = {
         s
@@ -472,6 +470,8 @@ def get_all_edge_detects(
         try:
             mask = edge_detect().edgemask(clip, lthr, hthr, multi, clamp, planes, **kwargs)  # pyright: ignore[reportAbstractUsage]
         except AttributeError as e:
+            from warnings import warn
+
             warn(str(e), RuntimeWarning)
             continue
 
@@ -503,8 +503,6 @@ def get_all_ridge_detect(
     Returns:
         A list edge masks
     """
-    from warnings import warn
-
     # https://github.com/python/mypy/issues/4717
     all_subclasses = {
         s
@@ -518,6 +516,8 @@ def get_all_ridge_detect(
         try:
             mask = edge_detect().ridgemask(clip, lthr, hthr, multi, clamp, planes, **kwargs)  # pyright: ignore[reportAbstractUsage]
         except AttributeError as e:
+            from warnings import warn
+
             warn(str(e), RuntimeWarning)
             continue
 

@@ -10,10 +10,8 @@ their own settings and expected behavior.
 """
 
 # TODO: remove this
-import warnings
-from functools import cache
-from pathlib import Path
 from typing import Any
+from warnings import simplefilter, warn
 
 from .abstract import *
 from .exceptions import *
@@ -33,21 +31,24 @@ _alias_map = {
     "CustomComplexKernelT": CustomComplexKernelLike,
     "ZimgComplexKernelT": ZimgComplexKernelLike,
 }
-warnings.simplefilter("always", DeprecationWarning)
 
 
-@cache
-def _warn_deprecated(name: str) -> None:
-    warnings.warn(
-        f"'{name}' is deprecated and will be removed in a future version. Use '{name[:-1]}Like' instead.",
-        DeprecationWarning,
-        stacklevel=3,
-        skip_file_prefixes=(str(Path(__file__).resolve()),),
-    )
+class _TypeAliasDeprecation(DeprecationWarning): ...
+
+
+simplefilter("module", _TypeAliasDeprecation)
 
 
 def __getattr__(name: str) -> Any:
     if name in _alias_map:
-        _warn_deprecated(name)
+        from pathlib import Path
+
+        warn(
+            f"'{name}' is deprecated and will be removed in a future version. Use '{name[:-1]}Like' instead.",
+            _TypeAliasDeprecation,
+            stacklevel=2,
+            skip_file_prefixes=(str(Path(__file__).resolve()),),
+        )
+
         return _alias_map[name]
     raise AttributeError(f"module {__name__} has no attribute {name}")
