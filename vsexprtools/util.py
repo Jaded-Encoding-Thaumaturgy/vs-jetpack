@@ -13,12 +13,10 @@ if TYPE_CHECKING:
 
 from vstools import (
     EXPR_VARS,
-    MISSING,
     ColorRange,
     CustomIndexError,
     FuncExcept,
     HoldsVideoFormat,
-    MissingT,
     Planes,
     VideoFormatLike,
     get_video_format,
@@ -35,7 +33,7 @@ __all__ = [
 ]
 
 
-class ExprVars(Iterable[str]):
+class ExprVars(Sequence[str], Iterator[str]):
     """
     A helper class for generating variable names used in RPN expressions.
     """
@@ -64,7 +62,7 @@ class ExprVars(Iterable[str]):
     def __init__(
         self,
         start_stop: SupportsIndex | Self | HoldsVideoFormat | VideoFormatLike,
-        stop: SupportsIndex | MissingT = MISSING,
+        stop: SupportsIndex | None = None,
         step: SupportsIndex | None = None,
         /,
         *,
@@ -91,7 +89,7 @@ class ExprVars(Iterable[str]):
             self.expr_src = start_stop.expr_src
             return
 
-        if stop is MISSING:
+        if stop is None:
             self.start = 0
             self.stop = (
                 get_video_format(start_stop).num_planes
@@ -136,26 +134,6 @@ class ExprVars(Iterable[str]):
         """
         return self.__class__(*args, **kwargs)
 
-    def __iter__(self) -> Iterator[str]:
-        """
-        Returns an iterator over the variable names.
-
-        Returns:
-            Iterator yielding variable names (e.g., 'x', 'y', ..., or 'src0', 'src1', ...).
-        """
-
-        indices = range(self.start, self.stop, self.step)
-
-        for x in indices:
-            if self.expr_src or x > 25:
-                yield f"src{x}"
-            else:
-                yield EXPR_VARS[x]
-
-            self.curr += self.step
-
-        self.curr = self.start
-
     def __next__(self) -> str:
         """
         Returns the next variable name in the sequence.
@@ -169,11 +147,24 @@ class ExprVars(Iterable[str]):
         if self.curr >= self.stop:
             raise StopIteration
 
-        var = f"src{self.curr}" if self.expr_src or self.curr > 25 else EXPR_VARS[self.curr]
+        var = self[self.curr]
 
         self.curr += self.step
 
         return var
+
+    def __getitem__(
+        self, index: SupportsIndex | slice[SupportsIndex | None, SupportsIndex, SupportsIndex | None]
+    ) -> str:
+        indices = range(self.start, self.stop, self.step)
+
+        if isinstance(index, slice):
+            return " ".join(self._format_var(i, self.expr_src) for i in indices[index])
+
+        try:
+            return self._format_var(indices[index], self.expr_src)
+        except IndexError:
+            raise CustomIndexError("Index out of range", self.__class__, index) from None
 
     def __len__(self) -> int:
         """
@@ -182,7 +173,11 @@ class ExprVars(Iterable[str]):
         Returns:
             The number of elements in the iterable.
         """
-        return self.stop - self.start
+        return len(range(self.start, self.stop, self.step))
+
+    @staticmethod
+    def _format_var(i: int, expr_src: bool) -> str:
+        return f"src{i}" if expr_src or i > 25 else EXPR_VARS[i]
 
     @classmethod
     def get_var(cls, value: SupportsIndex) -> str:
@@ -203,7 +198,7 @@ class ExprVars(Iterable[str]):
         if value < 0:
             raise CustomIndexError('"value" should be bigger than 0!')
 
-        return f"src{value}" if value > 25 else EXPR_VARS[value]
+        return cls._format_var(value, value > 25)
 
     def __str__(self) -> str:
         """
@@ -212,7 +207,7 @@ class ExprVars(Iterable[str]):
         Returns:
             Space-separated variable names.
         """
-        return " ".join(iter(self))
+        return " ".join(self)
 
     @classmethod
     def cycle(cls) -> Iterator[str]:
