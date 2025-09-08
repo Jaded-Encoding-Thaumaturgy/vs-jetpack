@@ -268,7 +268,7 @@ def ccd(
     else:
         full = Scaler.ensure_obj(chroma_upscaler, func).scale(clip, clip.width, clip.height)
 
-        if (full.subsampling_w, full.subsampling_h) != (0, 0):  # type: ignore[attr-defined]
+        if (full.format.subsampling_w, full.format.subsampling_h) != (0, 0):  # type: ignore[union-attr]
             raise CustomRuntimeError("`chroma_upscaler` didn't upscale chroma planes.", func, repr(full))
 
     if get_color_family(clip) != vs.RGB:
