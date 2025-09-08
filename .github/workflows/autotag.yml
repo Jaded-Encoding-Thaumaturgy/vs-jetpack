@@ -2,7 +2,7 @@ name: Check and create tag
 on:
   push:
     branches:
-      - main
+      - v0.7.X
     paths:
       - _metadata.py
 

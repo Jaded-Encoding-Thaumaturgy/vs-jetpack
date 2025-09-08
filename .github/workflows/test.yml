@@ -3,7 +3,7 @@ name: Test Python code
 on:
   push:
     branches:
-      - main
+      - v0.7.X
     paths:
       - '.github/actions/**'
       - '.github/workflows/test.yml'
