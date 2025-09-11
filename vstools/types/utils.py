@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from enum import Flag
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Self
+from logging import DEBUG, debug, getLogger
+from typing import TYPE_CHECKING, Any, Callable, Self, Mapping
 
 from jetpytools import (
     KwargsNotNone,
@@ -32,6 +34,25 @@ __all__ = [
 ]
 
 
+def _recursive_check(x: Any) -> bool:
+    if isinstance(x, Mapping):
+        for k, v in x.items():
+            if isinstance(k, str) and k.startswith("__"):
+                continue
+            if _recursive_check(k) or _recursive_check(v):
+                return True
+    try:
+        iterable = iter(x)
+    except TypeError:
+        pass
+    else:
+        for y in iterable:
+            if not isinstance(y, (str, bytes, bytearray, Flag)) and _recursive_check(y):
+                return True
+
+    return getattr(x, "__module__", "") == "vapoursynth"
+
+
 class vs_object:  # noqa: N801
     """
     Special object that follows the lifecycle of the VapourSynth environment/core.
@@ -56,7 +77,23 @@ class vs_object:  # noqa: N801
         if hasattr(self, "__vs_del__"):
 
             def _register(core_id: int) -> None:
-                self.__vsdel_partial_register = partial(self.__vs_del__, core_id)
+                def __vsdel_partial_register(core_id: int) -> None:
+                    self.__vs_del__(core_id)
+
+                    if getLogger().getEffectiveLevel() > DEBUG:
+                        return None
+
+                    cname = self.__class__.__name__
+                    debug(f"{cname}.__vs_del__ ...")
+
+                    if _recursive_check(self) or _recursive_check(self.__dict__.copy()):
+                        debug(f"{cname}: Some Vapoursynth objects may have not been freed!")
+                        debug(f"{cname}: {self!r}")
+                    else:
+                        debug(f"{cname}.__vs_del__ GOOD!")
+
+                self.__vsdel_partial_register = partial(__vsdel_partial_register, core_id)
+
                 core.register_on_destroy(self.__vsdel_partial_register)
 
             # [un]register_on_creation/destroy will only hold a weakref to the object
