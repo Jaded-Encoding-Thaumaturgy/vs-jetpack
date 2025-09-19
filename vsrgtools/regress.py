@@ -5,6 +5,8 @@ Most of this is based on the work of `doop`,
 originally written for [Irozuku Sekai no Ashita kara](https://myanimelist.net/anime/37497/Irozuku_Sekai_no_Ashita_kara).
 """
 
+from abc import abstractmethod
+from dataclasses import dataclass, field
 from math import sqrt
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, Sequence, TypeAlias
 
@@ -350,6 +352,7 @@ class SubsampledShift(VSObject):
         return (self._off_top, self._off_left)
 
 
+@dataclass(init=False, repr=False, eq=False, match_args=False)
 class ChromaReconstruct(VSObjectABC):
     """
     Abstract base class for chroma reconstruction via regression.
@@ -446,7 +449,7 @@ class ChromaReconstruct(VSObjectABC):
     clip_src: ConstantFormatVideoNode
     """The original source clip."""
 
-    chroma_loc: ChromaLocation
+    chroma_loc: ChromaLocation = field(init=False)
     """Chroma location derived from the source clip."""
 
     def __init__(self, luma_base: vs.VideoNode, chroma_bases: Sequence[vs.VideoNode], clip_src: vs.VideoNode) -> None:
@@ -473,12 +476,16 @@ class ChromaReconstruct(VSObjectABC):
         self.clip_src = clip_src
         self.chroma_loc = ChromaLocation.from_video(clip_src, True, self.__class__)
 
+    def __post_init__(self) -> None:
+        ChromaReconstruct.__init__(self, self.luma_base, self.chroma_bases, self.clip_src)
+
     def __init_subclass__(cls) -> None:
         if hasattr(cls, "demangle_luma") ^ hasattr(cls, "demangle_chroma"):
             raise CustomRuntimeError(
                 "You must implement both `demangle_luma` and `demangle_chroma` or neither of them.", cls
             )
 
+    @abstractmethod
     def mangle_luma(self, luma_base: vs.VideoNode, /) -> vs.VideoNode:
         """
         Mangle the luma base plane before regression.
