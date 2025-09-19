@@ -1,5 +1,8 @@
 """
 This module provides utilities for chroma reconstruction using local linear regression.
+
+Most of this is based on the work of `doop`,
+originally written for [Irozuku Sekai no Ashita kara](https://myanimelist.net/anime/37497/Irozuku_Sekai_no_Ashita_kara).
 """
 
 from functools import cached_property
@@ -167,7 +170,7 @@ def regression(
     using local neighborhoods for mean/variance estimates.
 
     More information:
-        - https://en.wikipedia.org/wiki/Simple_linear_regression
+        - [Simple_linear_regression](https://en.wikipedia.org/wiki/Simple_linear_regression)
 
     Each regression fits the model:
 
@@ -376,7 +379,7 @@ class ChromaReconstruct(VSObjectABC):
         A custom subclass may then be defined:
         ```py
         from vskernels import BorderHandling, Catrom, Lanczos
-        from vstools import depth
+        from vstools import depth, split
 
 
         class SiriusReconstruct(ChromaReconstruct):
@@ -423,6 +426,7 @@ class ChromaReconstruct(VSObjectABC):
         ```py
         from vskernels import Hermite
         from vsscale import ArtCNN
+        from vstools import join
 
         rescaled_y = ArtCNN.R8F64(scaler=Hermite(linear=True)).scale(descaled_y, 1920, 1080)
         merged = join(
