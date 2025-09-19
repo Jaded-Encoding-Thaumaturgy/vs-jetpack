@@ -5,11 +5,10 @@ Most of this is based on the work of `doop`,
 originally written for [Irozuku Sekai no Ashita kara](https://myanimelist.net/anime/37497/Irozuku_Sekai_no_Ashita_kara).
 """
 
-from functools import cached_property
 from math import sqrt
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, Sequence, TypeAlias
 
-from jetpytools import CustomRuntimeError, CustomValueError, FuncExcept, MismatchRefError, clamp
+from jetpytools import CustomRuntimeError, CustomValueError, FuncExcept, MismatchRefError, cachedproperty, clamp
 
 from vsexprtools import norm_expr
 from vskernels import LeftShift, TopShift
@@ -669,7 +668,7 @@ class ChromaReconstruct(VSObjectABC):
 
         return recons
 
-    @cached_property
+    @cachedproperty
     def ss_shift(self) -> SubsampledShift:
         """
         Helper for handling chroma subsampling shifts.
