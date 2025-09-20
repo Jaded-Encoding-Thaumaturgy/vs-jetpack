@@ -6,8 +6,8 @@ from typing import Any, Callable, Literal, Protocol, Sequence, TypeGuard, TypeVa
 from jetpytools import CustomValueError, P, R, fallback, flatten, interleave_arr, ranges_product
 
 from ..types import FrameRangeN, FrameRangesN, Planes
+from ..utils import check_ref_clip
 from ..vs_proxy import vs
-from .check import check_ref_clip
 from .normalize import invert_ranges, normalize_ranges
 
 __all__ = [
