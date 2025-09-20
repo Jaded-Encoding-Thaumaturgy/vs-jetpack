@@ -8,5 +8,4 @@ from .mime import *
 from .misc import *
 from .other import *
 from .props import *
-from .ranges import *
 from .scale import *
