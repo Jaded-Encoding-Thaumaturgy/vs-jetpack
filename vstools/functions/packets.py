@@ -13,7 +13,7 @@ from warnings import warn
 import vapoursynth as vs
 from jetpytools import CustomValueError, DependencyNotFoundError, FileWasNotFoundError, FuncExcept, SPath, SPathLike
 
-from .file import PackageStorage
+from ..utils import PackageStorage
 from .timecodes import Keyframes
 
 __all__ = [
