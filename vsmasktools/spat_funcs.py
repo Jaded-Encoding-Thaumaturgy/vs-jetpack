@@ -2,23 +2,21 @@ from __future__ import annotations
 
 from typing import Sequence, overload
 
+from jetpytools import FuncExcept, StrList, fallback, to_arr
+
 from vsexprtools import ExprOp, ExprVars, norm_expr
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
     ColorRange,
     DitherType,
-    FuncExcept,
-    StrList,
     check_variable,
     depth,
-    fallback,
     get_peak_value,
     get_sample_type,
     get_y,
     limiter,
     plane,
     scale_value,
-    to_arr,
     vs,
 )
 

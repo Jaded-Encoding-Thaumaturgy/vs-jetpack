@@ -4,25 +4,22 @@ from fractions import Fraction
 from itertools import chain
 from typing import Any, Literal, MutableMapping, Union, overload
 
+from jetpytools import CustomRuntimeError, KwargsNotNone, KwargsT, fallback, normalize_seq
+
 from vstools import (
     ColorRange,
-    CustomRuntimeError,
     FieldBased,
     InvalidColorFamilyError,
-    KwargsNotNone,
-    KwargsT,
     Planes,
     VSFunctionNoArgs,
+    VSObject,
     check_variable,
     check_variable_format,
     core,
     depth,
-    fallback,
     get_props,
-    normalize_seq,
     scale_delta,
     vs,
-    vs_object,
 )
 
 from .enums import (
@@ -44,7 +41,7 @@ from .utils import normalize_thscd, planes_to_mvtools
 __all__ = ["MVTools"]
 
 
-class MVTools(vs_object):
+class MVTools(VSObject):
     """
     MVTools wrapper for motion analysis, degraining, compensation, interpolation, etc.
     """

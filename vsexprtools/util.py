@@ -4,12 +4,12 @@ from functools import cache
 from itertools import count
 from typing import TYPE_CHECKING, Iterator, Sequence, SupportsIndex, overload
 
-from jetpytools import CustomTypeError
+from jetpytools import CustomIndexError, CustomTypeError
 
 if TYPE_CHECKING:
     from vapoursynth import _ReturnDict_akarin_Version
 
-from vstools import EXPR_VARS, CustomIndexError, HoldsVideoFormat, VideoFormatLike, get_video_format, vs
+from vstools import EXPR_VARS, HoldsVideoFormat, VideoFormatLike, get_video_format, vs
 
 __all__ = ["ExprVars"]
 

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Iterable, Iterator, MutableMapping, Self, TypedDict, overload
 
-from vstools import T1, T2, KwargsT, SupportsKeysAndGetItem, VSFunctionNoArgs, classproperty, vs, vs_object
+from jetpytools import KwargsT, SupportsKeysAndGetItem, classproperty
+
+from vstools import VSFunctionNoArgs, VSObjectABC, vs
 
 from ..prefilters import prefilter_to_full_range
 from .enums import FlowMode, MaskMode, MotionMode, PenaltyMode, RFilterMode, SADMode, SearchMode, SharpMode, SmoothMode
@@ -150,7 +152,7 @@ class ScDetectionArgs(TypedDict, total=False):
     thscd2: int | None
 
 
-class MVToolsPreset(MutableMapping[str, Any], vs_object):
+class MVToolsPreset(MutableMapping[str, Any], VSObjectABC):
     search_clip: vs.VideoNode | VSFunctionNoArgs
     tr: int
     pel: int
@@ -251,7 +253,7 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
     def __ror__(self, value: MutableMapping[str, Any], /) -> dict[str, Any]: ...
 
     @overload
-    def __ror__(self, value: MutableMapping[T1, T2], /) -> dict[str | T1, Any | T2]: ...
+    def __ror__[T1, T2](self, value: MutableMapping[T1, T2], /) -> dict[str | T1, Any | T2]: ...
 
     def __ror__(self, value: Any, /) -> Any:
         return self.__class__(**dict(value) | self._dict)

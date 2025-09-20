@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
+from jetpytools import normalize_seq
+
 from vstools import (
     GenericVSFunction,
     Planes,
     check_variable_format,
     join,
     normalize_planes,
-    normalize_seq,
     split,
     vs,
 )

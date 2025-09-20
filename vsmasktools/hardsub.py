@@ -5,36 +5,33 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Type
 
+from jetpytools import CustomOverflowError, FileNotExistsError, FilePathType, fallback, iterate
+
 from vsexprtools import ExprOp, ExprToken, expr_func, norm_expr
 from vskernels import Point
 from vsrgtools import box_blur, median_blur
 from vssource import IMWRI, Indexer
 from vstools import (
     ColorRange,
-    CustomOverflowError,
-    FileNotExistsError,
-    FilePathType,
     FrameRangeN,
     FrameRangesN,
     Matrix,
     VSFunctionNoArgs,
+    VSObjectABC,
     check_variable,
     core,
     depth,
-    fallback,
     get_lowest_value,
     get_neutral_value,
     get_neutral_values,
     get_peak_value,
     get_y,
-    iterate,
     limiter,
     normalize_ranges,
     replace_ranges,
     scale_delta,
     scale_value,
     vs,
-    vs_object,
 )
 
 from .abstract import BoundingBox, DeferredMask, GeneralMask
@@ -59,7 +56,7 @@ __all__ = [
 
 
 @dataclass
-class CustomMaskFromClipsAndRanges(GeneralMask, vs_object):
+class CustomMaskFromClipsAndRanges(GeneralMask, VSObjectABC):
     """
     Abstract CustomMaskFromClipsAndRanges interface
     """

@@ -8,8 +8,10 @@ import math
 from abc import ABC
 from typing import Any, ClassVar, Sequence
 
+from jetpytools import KwargsT
+
 from vsexprtools import ExprOp, norm_expr
-from vstools import KwargsT, get_depth, join, split, vs
+from vstools import get_depth, join, split, vs
 
 from ..morpho import Morpho
 from ..types import XxpandMode

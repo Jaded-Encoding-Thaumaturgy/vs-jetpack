@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Sequence, SupportsFloat
 
+from jetpytools import normalize_seq
+
 from vsexprtools import ExprOp
 from vstools import (
     DitherType,
@@ -17,7 +19,6 @@ from vstools import (
     join,
     limiter,
     normalize_ranges,
-    normalize_seq,
     replace_ranges,
     split,
     vs,

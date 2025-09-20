@@ -5,14 +5,13 @@ from enum import IntFlag, auto
 from inspect import isabstract
 from typing import Any, ClassVar, Self, Sequence
 
-from jetpytools import inject_kwargs_params
+from jetpytools import FuncExcept, get_subclasses, inject_kwargs_params, inject_self
 
 from vsexprtools import ExprOp, ExprToken, norm_expr
 from vsrgtools import BlurMatrix
 from vstools import (
     ColorRange,
     ConvMode,
-    FuncExcept,
     HoldsVideoFormat,
     Planes,
     VideoFormatLike,
@@ -20,9 +19,7 @@ from vstools import (
     depth,
     get_lowest_value,
     get_peak_value,
-    get_subclasses,
     get_video_format,
-    inject_self,
     join,
     limiter,
     normalize_planes,

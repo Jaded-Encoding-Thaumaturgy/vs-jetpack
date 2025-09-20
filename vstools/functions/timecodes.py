@@ -16,6 +16,7 @@ from jetpytools import (
     Sentinel,
     SPath,
     check_perms,
+    fallback,
     inject_self,
 )
 
@@ -135,9 +136,6 @@ class Timecodes(list[FrameDur]):
         """
         Convert from normalized ranges to a list of frame duration.
         """
-
-        from .funcs import fallback
-
         norm_timecodes = [assume] * length if assume else list[Fraction]()
 
         for (startn, endn), fps in timecodes.items():

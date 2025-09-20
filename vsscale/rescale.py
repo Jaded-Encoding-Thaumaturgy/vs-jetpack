@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC
 from functools import wraps
 from typing import Any, Callable, Sequence
 
@@ -19,6 +18,7 @@ from vstools import (
     FieldBasedLike,
     FrameRangeN,
     FrameRangesN,
+    VSObjectABC,
     check_variable,
     core,
     depth,
@@ -30,7 +30,6 @@ from vstools import (
     scale_mask,
     split,
     vs,
-    vs_object,
 )
 
 from .helpers import BottomCrop, CropRel, LeftCrop, RightCrop, ScalingArgs, TopCrop
@@ -42,7 +41,7 @@ __all__ = [
 ]
 
 
-class RescaleBase(vs_object, ABC):
+class RescaleBase(VSObjectABC):
     """Base class for Rescale wrapper"""
 
     descale_args: ScalingArgs

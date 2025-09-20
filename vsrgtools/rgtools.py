@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Callable, Sequence
 
-from jetpytools import CustomIntEnum, CustomStrEnum
+from jetpytools import CustomIntEnum, CustomStrEnum, KwargsNotNone
 
 from vsexprtools import norm_expr
-from vstools import KwargsNotNone, Planes, check_variable, normalize_param_planes, vs
+from vstools import Planes, check_variable, normalize_param_planes, vs
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
 

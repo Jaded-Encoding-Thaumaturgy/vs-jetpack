@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable, Sequence
 
-from jetpytools import FuncExcept, cachedproperty, fallback, iterate, kwargs_fallback, normalize_seq, to_arr
+from jetpytools import FuncExcept, cachedproperty, normalize_seq, to_arr
 
 from ..enums import (
     ChromaLocation,
@@ -24,7 +24,7 @@ from ..utils import check_variable, normalize_planes
 from ..vs_proxy import VSObject, vs
 from .utils import depth, join, plane
 
-__all__ = ["FunctionUtil", "fallback", "iterate", "kwargs_fallback"]
+__all__ = ["FunctionUtil"]
 
 
 class FunctionUtil(list[int], VSObject):

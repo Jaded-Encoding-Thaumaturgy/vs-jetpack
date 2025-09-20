@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from vstools import CustomValueError, Planes, normalize_planes, normalize_seq, vs
+from jetpytools import CustomValueError, normalize_seq
+
+from vstools import Planes, normalize_planes, vs
 
 __all__ = ["normalize_thscd", "planes_to_mvtools", "refine_blksize"]
 

@@ -6,10 +6,10 @@ from math import ceil, floor
 from types import NoneType
 from typing import Any, Callable, NamedTuple, Self, overload
 
-from jetpytools import CustomTypeError, FuncExcept, mod_x
+from jetpytools import CustomTypeError, FuncExcept, mod2, mod_x
 
 from vskernels import Lanczos, MixedScalerProcess, Scaler, ScalerLike, is_scaler_like
-from vstools import FunctionUtil, KwargsT, Planes, Resolution, VSFunctionNoArgs, get_w, mod2, vs
+from vstools import FunctionUtil, Planes, Resolution, VSFunctionNoArgs, get_w, vs
 
 from .various import ComplexSuperSamplerProcess
 
@@ -131,7 +131,7 @@ class ScalingArgs:
 
         return ((clip.height / self.height) if do_h else 1.0, (clip.width / self.width) if do_w else 1.0)
 
-    def kwargs(self, clip_or_rate: vs.VideoNode | float | None = None, /) -> KwargsT:
+    def kwargs(self, clip_or_rate: vs.VideoNode | float | None = None, /) -> dict[str, Any]:
         kwargs = dict[str, Any]()
 
         do_h, do_w = self._do()

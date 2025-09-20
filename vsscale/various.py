@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal
 
-from jetpytools import CustomValueError, normalize_seq
+from jetpytools import CustomOverflowError, CustomValueError, normalize_seq
 from typing_extensions import TypeVar
 
 from vsexprtools import ExprOp, combine, norm_expr
@@ -20,7 +20,7 @@ from vskernels import (
 )
 from vsmasktools import ringing_mask
 from vsrgtools.rgtools import Repair
-from vstools import ChromaLocation, CustomOverflowError, check_ref_clip, check_variable, scale_delta, vs
+from vstools import ChromaLocation, check_ref_clip, check_variable, scale_delta, vs
 
 from .generic import GenericScaler
 

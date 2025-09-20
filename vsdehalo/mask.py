@@ -7,7 +7,7 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import Any, Callable, Iterator, Mapping
 
-from jetpytools import CustomIndexError
+from jetpytools import CustomIndexError, FuncExcept
 
 from vsaa import NNEDI3, SuperSamplerProcess
 from vsdenoise import Prefilter
@@ -25,12 +25,12 @@ from vsrgtools import BlurMatrixBase, box_blur, contrasharpening_dehalo
 from vsscale import pre_ss as pre_supersample
 from vstools import (
     ConvMode,
-    FuncExcept,
     FunctionUtil,
     InvalidColorFamilyError,
     OneDimConvMode,
     Planes,
     VSFunctionPlanesArgs,
+    VSObject,
     check_progressive,
     check_variable,
     get_y,
@@ -40,7 +40,6 @@ from vstools import (
     scale_mask,
     split,
     vs,
-    vs_object,
 )
 
 from .alpha import IterArr, dehalo_alpha
@@ -106,7 +105,7 @@ class FineDehalo[**P, R]:
         """
         return self.Masks(clip, rx, ry, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func).MAIN
 
-    class Masks(Mapping[str, vs.VideoNode], vs_object):
+    class Masks(Mapping[str, vs.VideoNode], VSObject):
         """
         Class for creating and storing intermediate masks used in the `fine_dehalo` function.
 

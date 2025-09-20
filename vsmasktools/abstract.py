@@ -3,11 +3,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Sequence, overload
 
+from jetpytools import CustomTypeError, inject_self, normalize_seq
+
 from vsexprtools import ExprOp
 from vsrgtools import box_blur
 from vstools import (
     ColorRange,
-    CustomTypeError,
     FrameRangeN,
     FrameRangesN,
     FramesLengthError,
@@ -15,9 +16,7 @@ from vstools import (
     Size,
     check_variable,
     depth,
-    inject_self,
     limiter,
-    normalize_seq,
     replace_ranges,
     vs,
 )
