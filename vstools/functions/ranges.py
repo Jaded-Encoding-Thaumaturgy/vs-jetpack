@@ -8,6 +8,7 @@ from jetpytools import CustomValueError, P, R, fallback, flatten, interleave_arr
 from ..types import FrameRangeN, FrameRangesN, Planes
 from ..vs_proxy import vs
 from .check import check_ref_clip
+from .normalize import invert_ranges, normalize_ranges
 
 __all__ = [
     "interleave_arr",
@@ -217,9 +218,6 @@ def replace_ranges(
     Returns:
         Clip with ranges from clip_a replaced with clip_b.
     """
-
-    from . import invert_ranges, normalize_ranges
-
     if (ranges != 0 and not ranges) or clip_a is clip_b:
         return clip_a
 
