@@ -10,8 +10,6 @@ from jetpytools import (
     MISSING,
     FuncExcept,
     MissingT,
-    P,
-    T,
     normalize_seq,
     to_arr,
 )
@@ -695,7 +693,7 @@ def invert_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:
     return sorted(set(normalize_planes(clip, None)) - set(normalize_planes(clip, planes)))
 
 
-def normalize_param_planes(
+def normalize_param_planes[T](
     clip: vs.VideoNode, param: T | Sequence[T], planes: Planes, null: T, func: FuncExcept | None = None
 ) -> list[T]:
     """
@@ -723,7 +721,7 @@ def normalize_param_planes(
 
 
 @overload
-def flatten(items: Iterable[Iterable[T]]) -> Iterator[T]: ...
+def flatten[T](items: Iterable[Iterable[T]]) -> Iterator[T]: ...
 
 
 @overload

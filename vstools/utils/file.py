@@ -2,18 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from jetpytools import (
-    CustomRuntimeError,
-    SPath,
-    SPathLike,
-    add_script_path_hook,
-    check_perms,
-    get_script_path,
-    get_user_data_dir,
-    open_file,
-)
+from jetpytools import CustomRuntimeError, SPath, SPathLike, add_script_path_hook, get_script_path
 
-__all__ = ["PackageStorage", "check_perms", "get_script_path", "get_user_data_dir", "open_file"]
+__all__ = ["PackageStorage"]
 
 
 def _vspreview_script_path() -> SPath | None:
