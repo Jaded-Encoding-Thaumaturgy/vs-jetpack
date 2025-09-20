@@ -37,6 +37,7 @@ __all__ = [
     "finalize_output",
     "initialize_clip",
     "initialize_input",
+    "sc_detect",
     "shift_clip",
     "shift_clip_multi",
 ]
@@ -554,3 +555,17 @@ def shift_clip_multi(clip: vs.VideoNode, offsets: StrictRange = (-1, 1)) -> list
         A list of clips, the amount determined by the amount of offsets.
     """
     return [shift_clip(clip, x) for x in range(offsets[0], offsets[1] + 1)]
+
+
+def sc_detect(clip: vs.VideoNode, threshold: float = 0.1) -> vs.VideoNode:
+    assert check_variable_format(clip, sc_detect)
+
+    stats = vs.core.std.PlaneStats(shift_clip(clip, -1), clip)
+
+    return vs.core.akarin.PropExpr(
+        [clip, stats, stats[1:]],
+        lambda: {
+            "_SceneChangePrev": f"y.PlaneStatsDiff {threshold} > 1 0 ?",
+            "_SceneChangeNext": f"z.PlaneStatsDiff {threshold} > 1 0 ?",
+        },
+    )
