@@ -8,13 +8,21 @@ from functools import cache
 from pathlib import Path
 from typing import Any, ClassVar, Iterable, Literal, NamedTuple, Self, cast, overload
 
-import vapoursynth as vs
-from jetpytools import CustomValueError, FilePathType, FuncExcept, LinearRangeLut, Sentinel, SPath, inject_self
+from jetpytools import (
+    CustomValueError,
+    FilePathType,
+    FuncExcept,
+    LinearRangeLut,
+    Sentinel,
+    SPath,
+    check_perms,
+    inject_self,
+)
 
 from ..enums import Matrix, SceneChangeMode
 from ..exceptions import FramesLengthError, InvalidTimecodeVersionError
 from ..utils import DynamicClipsCache, PackageStorage
-from ..vs_proxy import VSObject
+from ..vs_proxy import VSObject, vs
 from .ranges import replace_ranges
 from .render import clip_async_render, clip_data_gather
 
@@ -325,8 +333,6 @@ class Timecodes(list[FrameDur]):
             out: Path to write the file to.
             format: Format to write the file to.
         """
-        from ..utils import check_perms
-
         func = func or self.to_file
 
         out_path = Path(str(out)).resolve()
@@ -527,8 +533,6 @@ class Keyframes(list[int]):
         header: bool = True,
         force: bool = False,
     ) -> None:
-        from ..utils import check_perms
-
         func = func or self.to_file
 
         out_path = Path(str(out)).resolve()

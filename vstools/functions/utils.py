@@ -6,7 +6,6 @@ from types import NoneType
 from typing import Any, Callable, Iterable, Mapping, Sequence, SupportsIndex, Union, overload
 from weakref import WeakValueDictionary
 
-import vapoursynth as vs
 from jetpytools import (
     CustomIndexError,
     CustomStrEnum,
@@ -22,6 +21,7 @@ from ..enums import ColorRange, ColorRangeLike
 from ..exceptions import ClipLengthError, InvalidColorFamilyError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterable
 from ..utils import check_variable_format, flatten, get_depth
+from ..vs_proxy import vs
 
 __all__ = [
     "EXPR_VARS",

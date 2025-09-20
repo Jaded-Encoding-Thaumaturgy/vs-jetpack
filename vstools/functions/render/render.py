@@ -8,7 +8,6 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, BinaryIO, Callable, Literal, Protocol, Union, overload
 
-import vapoursynth as vs
 from jetpytools import (
     CustomRuntimeError,
     CustomValueError,
@@ -21,6 +20,7 @@ from jetpytools import (
 
 from ...exceptions import InvalidColorFamilyError
 from ...utils import get_prop
+from ...vs_proxy import vs
 from ..ranges import normalize_list_to_ranges, replace_ranges
 
 __all__ = ["AsyncRenderConf", "clip_async_render", "clip_data_gather", "find_prop", "find_prop_rfs", "prop_compare_cb"]
