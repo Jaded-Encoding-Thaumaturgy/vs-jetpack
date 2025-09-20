@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import partial, wraps
 from types import NoneType
-from typing import Callable, Iterable, Mapping, Sequence, SupportsIndex, Union, overload
+from typing import Any, Callable, Iterable, Mapping, Sequence, SupportsIndex, Union, overload
 from weakref import WeakValueDictionary
 
 import vapoursynth as vs
@@ -20,7 +20,7 @@ from jetpytools import (
 from ..enums import ColorRange, ColorRangeLike
 from ..exceptions import ClipLengthError, InvalidColorFamilyError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterableT
-from ..utils import check_variable_format
+from ..utils import check_variable_format, get_depth
 from .clips import shift_clip
 
 __all__ = [
@@ -28,6 +28,7 @@ __all__ = [
     "DitherType",
     "depth",
     "depth_func",
+    "expect_bits",
     "frame2clip",
     "get_b",
     "get_g",
@@ -397,6 +398,30 @@ def depth(
     new_format = in_fmt.replace(bits_per_sample=out_fmt.bits_per_sample, sample_type=out_fmt.sample_type)
 
     return dither_type.apply(clip, new_format, range_in, range_out)
+
+
+def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) -> tuple[vs.VideoNode, int]:
+    """
+    Expected output bitdepth for a clip.
+
+    This function is meant to be used when a clip may not match the expected input bitdepth.
+    Both the dithered clip and the original bitdepth are returned.
+
+    Args:
+        clip: Input clip.
+        expected_depth: Expected bitdepth. Default: 16.
+
+    Returns:
+        Tuple containing the clip dithered to the expected depth and the original bitdepth.
+    """
+    assert check_variable_format(clip, expect_bits)
+
+    bits = get_depth(clip)
+
+    if bits != expected_depth:
+        clip = depth(clip, expected_depth, **kwargs)
+
+    return clip, bits
 
 
 _f2c_cache = WeakValueDictionary[int, vs.VideoNode]()
