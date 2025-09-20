@@ -576,7 +576,7 @@ class Keyframes(list[int]):
         return cls(param)
 
 
-class SceneBasedDynamicCache(DynamicClipsCache[int, vs.VideoNode]):
+class SceneBasedDynamicCache(DynamicClipsCache[int]):
     def __init__(self, clip: vs.VideoNode, keyframes: Keyframes | str, cache_size: int = 5) -> None:
         super().__init__(cache_size)
 

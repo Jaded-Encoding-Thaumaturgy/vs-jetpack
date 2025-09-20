@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Self
 
 from jetpytools import Singleton
-from typing_extensions import Self
 
 from .proxy import core, register_on_creation, register_on_destroy
 
