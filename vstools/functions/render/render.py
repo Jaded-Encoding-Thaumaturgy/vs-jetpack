@@ -16,10 +16,13 @@ from jetpytools import (
     SentinelT,
     SPath,
     SPathLike,
+    fallback,
 )
 
-from ..exceptions import InvalidColorFamilyError
-from .normalize import normalize_list_to_ranges
+from ...exceptions import InvalidColorFamilyError
+from ...utils import get_prop
+from ..normalize import normalize_list_to_ranges
+from ..ranges import replace_ranges
 
 __all__ = ["AsyncRenderConf", "clip_async_render", "clip_data_gather", "find_prop", "find_prop_rfs", "prop_compare_cb"]
 
@@ -103,9 +106,6 @@ def clip_async_render[T](
         async_requests: Whether to render frames non-consecutively. If int, determines the number of requests. Default:
             False.
     """
-
-    from .funcs import fallback
-
     if isinstance(outfile, (str, PathLike, Path, SPath)) and outfile is not None:
         with open(outfile, "wb") as f:
             return clip_async_render(clip, f, progress, callback, prefetch, backlog, y4m, async_requests)
@@ -372,8 +372,6 @@ def prop_compare_cb(
 
         callback = _cb_one_px_return_frame_n if return_frame_n else _cb_one_px_not_return_frame_n
     else:
-        from ..utils import get_prop
-
         _op = _operators[op][0] if isinstance(op, str) else op
 
         def _cb_return_frame_n(n: int, f: vs.VideoFrame) -> int | SentinelT:
@@ -485,9 +483,6 @@ def find_prop_rfs(
     Returns:
         Clip where frames that meet the specified criteria were replaced with a different clip.
     """
-
-    from ..utils import replace_ranges
-
     prop_src, callback = prop_compare_cb(ref or clip_a, prop, op, prop_ref, False)
 
     return replace_ranges(clip_a, clip_b, callback, False, mismatch, prop_src=prop_src)
