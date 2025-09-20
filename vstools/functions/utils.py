@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from functools import partial, wraps
+import operator
+from functools import partial, reduce, wraps
 from types import NoneType
 from typing import Any, Callable, Iterable, Mapping, Sequence, SupportsIndex, Union, overload
 from weakref import WeakValueDictionary
@@ -19,8 +20,8 @@ from jetpytools import (
 
 from ..enums import ColorRange, ColorRangeLike
 from ..exceptions import ClipLengthError, InvalidColorFamilyError
-from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterableT
-from ..utils import check_variable_format, get_depth
+from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterable
+from ..utils import check_variable_format, flatten, get_depth
 
 __all__ = [
     "EXPR_VARS",
@@ -28,6 +29,7 @@ __all__ = [
     "depth",
     "depth_func",
     "expect_bits",
+    "flatten_vnodes",
     "frame2clip",
     "get_b",
     "get_g",
@@ -816,10 +818,29 @@ def split(clip: vs.VideoNode, /, strict: bool = True) -> list[vs.VideoNode]:
     return [clip] if clip.format.num_planes == 1 else [plane(clip, i, strict) for i in range(clip.format.num_planes)]
 
 
+def flatten_vnodes(*clips: VideoNodeIterable, split_planes: bool = False) -> Sequence[vs.VideoNode]:
+    """
+    Flatten an array of VideoNodes.
+
+    Args:
+        *clips: An array of clips to flatten into a list.
+        split_planes: Optionally split the VideoNodes into their individual planes as well. Default: False.
+
+    Returns:
+        Flattened list of VideoNodes.
+    """
+    nodes = list[vs.VideoNode](flatten(clips))
+
+    if not split_planes:
+        return nodes
+
+    return reduce(operator.iadd, map(split, nodes), [])
+
+
 depth_func = depth
 
 
-def stack_clips(clips: Iterable[VideoNodeIterableT]) -> vs.VideoNode:
+def stack_clips(clips: Iterable[VideoNodeIterable]) -> vs.VideoNode:
     """
     Recursively stack clips in alternating directions: horizontal → vertical → horizontal → ...
 
