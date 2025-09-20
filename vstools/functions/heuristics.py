@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Literal, Mapping, overload
 
-import vapoursynth as vs
-
 from ..enums import ChromaLocation, ColorRange, Matrix, Primaries, PropEnum, Transfer
+from ..vs_proxy import vs
 
 __all__ = ["video_heuristics"]
 
