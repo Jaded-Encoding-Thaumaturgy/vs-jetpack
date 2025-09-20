@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable
 from weakref import ReferenceType
 from weakref import ref as weakref_ref
 
-import vapoursynth as vs
+# import vapoursynth as vs
+from jetpytools import CustomRuntimeError
 from vapoursynth import (
     AUDIO,
     BACK_CENTER,
@@ -166,7 +167,6 @@ from vapoursynth import _construct_parameter as construct_parameter
 from vapoursynth import _construct_type as construct_type
 from vapoursynth import _try_enable_introspection as try_enable_introspection
 
-from ..exceptions import CustomRuntimeError
 from .vs_enums import (
     GRAY8,
     GRAY9,
@@ -856,7 +856,7 @@ class PluginProxy(PluginProxyBase):
     def __getattr__(self, name: str) -> Function:
         core, namespace = proxy_utils.get_core(self)
 
-        if core.lazy and name not in vs.Plugin.__dict__:
+        if core.lazy and name not in Plugin.__dict__:
             return FunctionProxy(self, name)
 
         vs_core = proxy_utils.get_vs_core(core)
@@ -875,7 +875,7 @@ class CoreProxy(CoreProxyBase):
         self.__dict__["vs_core_ref"] = (core and weakref_ref(core), vs_proxy)
 
     def __getattr__(self, name: str) -> Plugin:
-        if self.lazy and name not in vs.Core.__dict__:
+        if self.lazy and name not in Core.__dict__:
             return PluginProxy(self, name)
 
         core = proxy_utils.get_vs_core(self)
@@ -944,7 +944,9 @@ def _get_core_with_cb(self: VSCoreProxy | None = None) -> Core:
     _vs_core = _get_core(self) if self else None
 
     if not _vs_core:
-        _vs_core = vs.core.core
+        import vapoursynth
+
+        _vs_core = vapoursynth.core.core
 
     if (core_id := id(_vs_core)) not in core_on_creation_callbacks_cores:
         for cb_id in list(core_on_creation_callbacks.keys()):
