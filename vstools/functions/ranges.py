@@ -3,11 +3,11 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import Any, Callable, Literal, Protocol, Sequence, TypeGuard, TypeVar, Union, overload
 
-import vapoursynth as vs
-from jetpytools import CustomValueError, fallback, flatten, interleave_arr, ranges_product
+from jetpytools import CustomValueError, P, R, fallback, flatten, interleave_arr, ranges_product
 
-from ..functions import check_ref_clip
 from ..types import FrameRangeN, FrameRangesN, Planes
+from ..vs_proxy import vs
+from .check import check_ref_clip
 
 __all__ = [
     "interleave_arr",
@@ -218,7 +218,7 @@ def replace_ranges(
         Clip with ranges from clip_a replaced with clip_b.
     """
 
-    from ..functions import invert_ranges, normalize_ranges
+    from . import invert_ranges, normalize_ranges
 
     if (ranges != 0 and not ranges) or clip_a is clip_b:
         return clip_a
