@@ -600,7 +600,7 @@ class SceneBasedDynamicCache(DynamicClipsCache[int, vs.VideoNode]):
 class SceneAverageStats(SceneBasedDynamicCache):
     _props_keys = ("Min", "Max", "Average")
 
-    class cache(dict[int, tuple[float, float, float]]):  # noqa: N801
+    class _Cache(dict[int, tuple[float, float, float]], VSObject):
         def __init__(self, clip: vs.VideoNode, keyframes: Keyframes, plane: int) -> None:
             self.props = clip.std.PlaneStats(plane=plane)
             self.keyframes = keyframes
@@ -633,7 +633,7 @@ class SceneAverageStats(SceneBasedDynamicCache):
         super().__init__(clip, keyframes, cache_size)
 
         self.prop_keys = tuple(f"{prop}{x}" for x in self._props_keys)
-        self.scene_avgs = self.__class__.cache(self.clip, self.keyframes, plane)
+        self.scene_avgs = self._Cache(self.clip, self.keyframes, plane)
 
     def get_clip(self, key: int) -> vs.VideoNode:
         return self.clip.std.SetFrameProps(**dict(zip(self.prop_keys, self.scene_avgs[key])))
