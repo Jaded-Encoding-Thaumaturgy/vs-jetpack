@@ -11,7 +11,6 @@ from typing import (
     MutableMapping,
     MutableSequence,
     MutableSet,
-    Protocol,
 )
 
 from typing_extensions import Self
@@ -79,14 +78,13 @@ def _safe_vs_object_del(obj: Any) -> None:
         obj.clear()
 
 
-class _VSObjectLike(Protocol):
-    def __vs_del__(self, core_id: int) -> None: ...
-
-
-def _register__vs_del__(obj: _VSObjectLike) -> None:
+def _register__vs_del__(obj: VSObject | VSObjectMeta) -> None:
     def _register(core_id: int) -> None:
         def __vsdel_register(core_id: int) -> None:
-            obj.__vs_del__(core_id)
+            if isinstance(obj, VSObject):
+                obj.__vs_del__(core_id)
+            else:
+                obj.__cls_vs_del__(core_id)
 
         vsdel_partial_register = partial(__vsdel_register, core_id)
         setattr(obj, "__vsdel_partial_register", vsdel_partial_register)
@@ -105,7 +103,7 @@ class VSObjectMeta(type):
         _register__vs_del__(cls)
         return cls
 
-    def __vs_del__(cls, core_id: int) -> None:
+    def __cls_vs_del__(cls, core_id: int) -> None:
         _safe_vs_object_del(cls)
 
 
