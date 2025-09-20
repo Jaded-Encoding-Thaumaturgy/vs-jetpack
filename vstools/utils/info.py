@@ -6,7 +6,7 @@ from typing import Any, SupportsFloat, SupportsInt
 import vapoursynth as vs
 from jetpytools import fallback, mod_x
 
-from ..enums.other import Dar, Sar
+from ..enums import Dar, Sar
 from ..exceptions import UnsupportedColorFamilyError, UnsupportedSubsamplingError
 from ..functions import check_variable_format, depth
 from ..types import HoldsVideoFormat, VideoFormatLike
