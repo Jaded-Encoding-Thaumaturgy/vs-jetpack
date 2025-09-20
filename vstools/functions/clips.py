@@ -5,7 +5,7 @@ from abc import abstractmethod
 from functools import partial, wraps
 from typing import Any, Callable, Literal, overload
 
-from jetpytools import CustomValueError, FuncExcept, KwargsT
+from jetpytools import CustomValueError, FuncExcept, KwargsT, P, StrictRange, T
 
 from ..enums import (
     ChromaLocation,
@@ -22,11 +22,13 @@ from ..enums import (
     Transfer,
     TransferLike,
 )
-from ..functions import DitherType, check_variable_format, depth
+from ..exceptions import FramesLengthError
 from ..types import HoldsVideoFormat, VideoFormatLike
-from ..vs_proxy import vs
-from .cache import DynamicClipsCache
-from .info import get_depth
+from ..utils.cache import DynamicClipsCache
+from ..utils.info import get_depth
+from ..vs_proxy import vs_proxy as vs
+from .check import check_variable_format
+from .utils import DitherType, depth
 
 __all__ = [
     "ProcessVariableClip",
@@ -37,7 +39,197 @@ __all__ = [
     "finalize_output",
     "initialize_clip",
     "initialize_input",
+    "shift_clip",
+    "shift_clip_multi",
 ]
+
+
+class ProcessVariableClip[T](DynamicClipsCache[T]):
+    """
+    A helper class for processing variable format/resolution clip.
+    """
+
+    def __init__(
+        self,
+        clip: vs.VideoNode,
+        out_dim: tuple[int, int] | Literal[False] | None = None,
+        out_fmt: int | vs.VideoFormat | Literal[False] | None = None,
+        cache_size: int = 10,
+    ) -> None:
+        """
+        Args:
+            clip: Clip to process
+            out_dim: Ouput dimension.
+            out_fmt: Output format.
+            cache_size: The maximum number of items allowed in the cache. Defaults to 10.
+        """
+        bk_args = KwargsT(length=clip.num_frames, keep=True, varformat=None)
+
+        if out_dim is None:
+            out_dim = (clip.width, clip.height)
+
+        if out_fmt is None:
+            out_fmt = clip.format or False
+
+        if out_dim is not False and 0 in out_dim:
+            out_dim = False
+
+        if out_dim is False:
+            bk_args.update(width=8, height=8, varsize=True)
+        else:
+            bk_args.update(width=out_dim[0], height=out_dim[1])
+
+        if out_fmt is False:
+            bk_args.update(format=vs.GRAY8, varformat=True)
+        else:
+            bk_args.update(format=out_fmt if isinstance(out_fmt, int) else out_fmt.id)
+
+        super().__init__(cache_size)
+
+        self.clip = clip
+        self.out = vs.core.std.BlankClip(clip, **bk_args)
+
+    def eval_clip(self) -> vs.VideoNode:
+        if self.out.format and (0 not in (self.out.width, self.out.height)):
+            try:
+                return self.get_clip(self.get_key(self.clip))
+            except Exception:
+                ...
+
+        return vs.core.std.FrameEval(self.out, lambda n, f: self[self.get_key(f)], self.clip)
+
+    def get_clip(self, key: T) -> vs.VideoNode:
+        return self.process(self.normalize(self.clip, key))
+
+    @classmethod
+    def from_clip(cls, clip: vs.VideoNode) -> vs.VideoNode:
+        """
+        Process a variable format/resolution clip.
+
+        Args:
+            clip: Clip to process.
+
+        Returns:
+            Processed clip.
+        """
+        return cls(clip).eval_clip()
+
+    @classmethod
+    def from_func(
+        cls,
+        clip: vs.VideoNode,
+        func: Callable[[vs.VideoNode], vs.VideoNode],
+        out_dim: tuple[int, int] | Literal[False] | None = None,
+        out_fmt: int | vs.VideoFormat | Literal[False] | None = None,
+        cache_size: int = 10,
+    ) -> vs.VideoNode:
+        """
+        Process a variable format/resolution clip with a given function
+
+        Args:
+            clip: Clip to process.
+            func: Function that takes and returns a single VideoNode.
+            out_dim: Ouput dimension.
+            out_fmt: Output format.
+            cache_size: The maximum number of VideoNode allowed in the cache. Defaults to 10.
+
+        Returns:
+            Processed variable clip.
+        """
+
+        def process(self: ProcessVariableClip[T], clip: vs.VideoNode) -> vs.VideoNode:
+            return func(clip)
+
+        ns = cls.__dict__.copy()
+        ns[process.__name__] = process
+
+        return type(cls.__name__, cls.__bases__, ns)(clip, out_dim, out_fmt, cache_size).eval_clip()
+
+    @abstractmethod
+    def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> T:
+        """
+        Generate a unique key based on the node or frame.
+        This key will be used to temporarily assert a resolution and format for the clip to process.
+
+        Args:
+            frame: Node or frame from which the unique key is generated.
+
+        Returns:
+            Unique identifier.
+        """
+
+    @abstractmethod
+    def normalize(self, clip: vs.VideoNode, cast_to: T) -> vs.VideoNode:
+        """
+        Normalize the given node to the format/resolution specified by the unique key `cast_to`.
+
+        Args:
+            clip: Clip to normalize.
+            cast_to: The target resolution or format to which the clip should be cast or normalized.
+
+        Returns:
+            Normalized clip.
+        """
+
+    def process(self, clip: vs.VideoNode) -> vs.VideoNode:
+        """
+        Process the given clip.
+
+        Args:
+            clip: Clip to process.
+
+        Returns:
+            Processed clip.
+        """
+        return clip
+
+    def __vs_del__(self, core_id: int) -> None:
+        super().__vs_del__(core_id)
+        del self.clip, self.out
+
+
+class ProcessVariableResClip(ProcessVariableClip[tuple[int, int]]):
+    """
+    A helper class for processing variable resolution clip.
+    """
+
+    def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> tuple[int, int]:
+        return (frame.width, frame.height)
+
+    def normalize(self, clip: vs.VideoNode, cast_to: tuple[int, int]) -> vs.VideoNode:
+        normalized = vs.core.resize.Point(vs.core.std.RemoveFrameProps(clip), *cast_to)
+        return vs.core.std.CopyFrameProps(normalized, clip)
+
+
+class ProcessVariableFormatClip(ProcessVariableClip[vs.VideoFormat]):
+    """
+    A helper class for processing variable format clip.
+    """
+
+    def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> vs.VideoFormat:
+        assert frame.format
+        return frame.format
+
+    def normalize(self, clip: vs.VideoNode, cast_to: vs.VideoFormat) -> vs.VideoNode:
+        normalized = vs.core.resize.Point(vs.core.std.RemoveFrameProps(clip), format=cast_to.id)
+        return vs.core.std.CopyFrameProps(normalized, clip)
+
+
+class ProcessVariableResFormatClip(ProcessVariableClip[tuple[int, int, vs.VideoFormat]]):
+    """
+    A helper class for processing variable format and resolution clip.
+    """
+
+    def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> tuple[int, int, vs.VideoFormat]:
+        assert frame.format
+        return (frame.width, frame.height, frame.format)
+
+    def normalize(self, clip: vs.VideoNode, cast_to: tuple[int, int, vs.VideoFormat]) -> vs.VideoNode:
+        w, h, fmt = cast_to
+
+        normalized = vs.core.resize.Point(vs.core.std.RemoveFrameProps(clip), w, h, fmt.id)
+
+        return vs.core.std.CopyFrameProps(normalized, clip)
 
 
 def finalize_clip(
@@ -310,189 +502,57 @@ def initialize_input[**P](
     return _wrapper
 
 
-class ProcessVariableClip[T](DynamicClipsCache[T]):
+def shift_clip(clip: vs.VideoNode, offset: int) -> vs.VideoNode:
     """
-    A helper class for processing variable format/resolution clip.
-    """
+    Shift a clip forwards or backwards by *N* frames.
 
-    def __init__(
-        self,
-        clip: vs.VideoNode,
-        out_dim: tuple[int, int] | Literal[False] | None = None,
-        out_fmt: int | vs.VideoFormat | Literal[False] | None = None,
-        cache_size: int = 10,
-    ) -> None:
-        """
-        Args:
-            clip: Clip to process
-            out_dim: Ouput dimension.
-            out_fmt: Output format.
-            cache_size: The maximum number of items allowed in the cache. Defaults to 10.
-        """
-        bk_args = KwargsT(length=clip.num_frames, keep=True, varformat=None)
+    This is useful for cases where you must compare every frame of a clip
+    with the frame that comes before or after the current frame,
+    like for example when performing temporal operations.
 
-        if out_dim is None:
-            out_dim = (clip.width, clip.height)
+    Both positive and negative integers are allowed.
+    Positive values will shift a clip forward, negative will shift a clip backward.
 
-        if out_fmt is None:
-            out_fmt = clip.format or False
+    Args:
+        clip: Input clip.
+        offset: Number of frames to offset the clip with. Negative values are allowed. Positive values will shift a clip
+            forward, negative will shift a clip backward.
 
-        if out_dim is not False and 0 in out_dim:
-            out_dim = False
-
-        if out_dim is False:
-            bk_args.update(width=8, height=8, varsize=True)
-        else:
-            bk_args.update(width=out_dim[0], height=out_dim[1])
-
-        if out_fmt is False:
-            bk_args.update(format=vs.GRAY8, varformat=True)
-        else:
-            bk_args.update(format=out_fmt if isinstance(out_fmt, int) else out_fmt.id)
-
-        super().__init__(cache_size)
-
-        self.clip = clip
-        self.out = vs.core.std.BlankClip(clip, **bk_args)
-
-    def eval_clip(self) -> vs.VideoNode:
-        if self.out.format and (0 not in (self.out.width, self.out.height)):
-            try:
-                return self.get_clip(self.get_key(self.clip))
-            except Exception:
-                ...
-
-        return vs.core.std.FrameEval(self.out, lambda n, f: self[self.get_key(f)], self.clip)
-
-    def get_clip(self, key: T) -> vs.VideoNode:
-        return self.process(self.normalize(self.clip, key))
-
-    @classmethod
-    def from_clip(cls, clip: vs.VideoNode) -> vs.VideoNode:
-        """
-        Process a variable format/resolution clip.
-
-        Args:
-            clip: Clip to process.
-
-        Returns:
-            Processed clip.
-        """
-        return cls(clip).eval_clip()
-
-    @classmethod
-    def from_func(
-        cls,
-        clip: vs.VideoNode,
-        func: Callable[[vs.VideoNode], vs.VideoNode],
-        out_dim: tuple[int, int] | Literal[False] | None = None,
-        out_fmt: int | vs.VideoFormat | Literal[False] | None = None,
-        cache_size: int = 10,
-    ) -> vs.VideoNode:
-        """
-        Process a variable format/resolution clip with a given function
-
-        Args:
-            clip: Clip to process.
-            func: Function that takes and returns a single VideoNode.
-            out_dim: Ouput dimension.
-            out_fmt: Output format.
-            cache_size: The maximum number of VideoNode allowed in the cache. Defaults to 10.
-
-        Returns:
-            Processed variable clip.
-        """
-
-        def process(self: ProcessVariableClip[T], clip: vs.VideoNode) -> vs.VideoNode:
-            return func(clip)
-
-        ns = cls.__dict__.copy()
-        ns[process.__name__] = process
-
-        return type(cls.__name__, cls.__bases__, ns)(clip, out_dim, out_fmt, cache_size).eval_clip()
-
-    @abstractmethod
-    def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> T:
-        """
-        Generate a unique key based on the node or frame.
-        This key will be used to temporarily assert a resolution and format for the clip to process.
-
-        Args:
-            frame: Node or frame from which the unique key is generated.
-
-        Returns:
-            Unique identifier.
-        """
-
-    @abstractmethod
-    def normalize(self, clip: vs.VideoNode, cast_to: T) -> vs.VideoNode:
-        """
-        Normalize the given node to the format/resolution specified by the unique key `cast_to`.
-
-        Args:
-            clip: Clip to normalize.
-            cast_to: The target resolution or format to which the clip should be cast or normalized.
-
-        Returns:
-            Normalized clip.
-        """
-
-    def process(self, clip: vs.VideoNode) -> vs.VideoNode:
-        """
-        Process the given clip.
-
-        Args:
-            clip: Clip to process.
-
-        Returns:
-            Processed clip.
-        """
-        return clip
-
-    def __vs_del__(self, core_id: int) -> None:
-        super().__vs_del__(core_id)
-        del self.clip, self.out
-
-
-class ProcessVariableResClip(ProcessVariableClip[tuple[int, int]]):
-    """
-    A helper class for processing variable resolution clip.
+    Returns:
+        Clip that has been shifted forwards or backwards by *N* frames.
     """
 
-    def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> tuple[int, int]:
-        return (frame.width, frame.height)
+    if offset > clip.num_frames - 1:
+        raise FramesLengthError(shift_clip, "offset")
 
-    def normalize(self, clip: vs.VideoNode, cast_to: tuple[int, int]) -> vs.VideoNode:
-        normalized = vs.core.resize.Point(vs.core.std.RemoveFrameProps(clip), *cast_to)
-        return vs.core.std.CopyFrameProps(normalized, clip)
+    if offset < 0:
+        return clip[0] * abs(offset) + clip[:offset]
+
+    if offset > 0:
+        return clip[offset:] + clip[-1] * offset
+
+    return clip
 
 
-class ProcessVariableFormatClip(ProcessVariableClip[vs.VideoFormat]):
+def shift_clip_multi(clip: vs.VideoNode, offsets: StrictRange = (-1, 1)) -> list[vs.VideoNode]:
     """
-    A helper class for processing variable format clip.
+    Shift a clip forwards or backwards multiple times by a varying amount of frames.
+
+    This will return a clip for every shifting operation performed.
+    This is a convenience function that makes handling multiple shifts easier.
+
+    Example:
+
+        >>> shift_clip_multi(clip, (-3, 3))
+            [VideoNode, VideoNode, VideoNode, VideoNode, VideoNode, VideoNode, VideoNode]
+                -3         -2         -1          0         +1         +2         +3
+
+    Args:
+        clip: Input clip.
+        offsets: Tuple of offsets representing an inclusive range.
+            A clip will be returned for every offset. Default: (-1, 1).
+
+    Returns:
+        A list of clips, the amount determined by the amount of offsets.
     """
-
-    def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> vs.VideoFormat:
-        assert frame.format
-        return frame.format
-
-    def normalize(self, clip: vs.VideoNode, cast_to: vs.VideoFormat) -> vs.VideoNode:
-        normalized = vs.core.resize.Point(vs.core.std.RemoveFrameProps(clip), format=cast_to.id)
-        return vs.core.std.CopyFrameProps(normalized, clip)
-
-
-class ProcessVariableResFormatClip(ProcessVariableClip[tuple[int, int, vs.VideoFormat]]):
-    """
-    A helper class for processing variable format and resolution clip.
-    """
-
-    def get_key(self, frame: vs.VideoNode | vs.VideoFrame) -> tuple[int, int, vs.VideoFormat]:
-        assert frame.format
-        return (frame.width, frame.height, frame.format)
-
-    def normalize(self, clip: vs.VideoNode, cast_to: tuple[int, int, vs.VideoFormat]) -> vs.VideoNode:
-        w, h, fmt = cast_to
-
-        normalized = vs.core.resize.Point(vs.core.std.RemoveFrameProps(clip), w, h, fmt.id)
-
-        return vs.core.std.CopyFrameProps(normalized, clip)
+    return [shift_clip(clip, x) for x in range(offsets[0], offsets[1] + 1)]

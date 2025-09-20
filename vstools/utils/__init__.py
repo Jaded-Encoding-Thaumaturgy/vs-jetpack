@@ -1,7 +1,5 @@
 from .cache import *
-from .clips import *
 from .file import *
-from .funcs import *
 from .info import *
 from .math import *
 from .mime import *
