@@ -21,7 +21,6 @@ from ..enums import ColorRange, ColorRangeLike
 from ..exceptions import ClipLengthError, InvalidColorFamilyError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterableT
 from ..utils import check_variable_format, get_depth
-from .clips import shift_clip
 
 __all__ = [
     "EXPR_VARS",
@@ -40,7 +39,6 @@ __all__ = [
     "join",
     "limiter",
     "plane",
-    "sc_detect",
     "split",
     "stack_clips",
 ]
@@ -1061,17 +1059,3 @@ def limiter(
         max_val = normalize_seq(max_val or get_peak_values(clip, clip), clip.format.num_planes)
 
     return clip.vszip.Limiter(min_val, max_val, tv_range, mask, planes)
-
-
-def sc_detect(clip: vs.VideoNode, threshold: float = 0.1) -> vs.VideoNode:
-    assert check_variable_format(clip, sc_detect)
-
-    stats = vs.core.std.PlaneStats(shift_clip(clip, -1), clip)
-
-    return vs.core.akarin.PropExpr(
-        [clip, stats, stats[1:]],
-        lambda: {
-            "_SceneChangePrev": f"y.PlaneStatsDiff {threshold} > 1 0 ?",
-            "_SceneChangeNext": f"z.PlaneStatsDiff {threshold} > 1 0 ?",
-        },
-    )
