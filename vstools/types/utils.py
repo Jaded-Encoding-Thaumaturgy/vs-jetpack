@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Self
+from typing import Callable
 
 from jetpytools import (
     KwargsNotNone,
@@ -28,49 +28,7 @@ __all__ = [
     "get_subclasses",
     "inject_self",
     "to_singleton",
-    "vs_object",
 ]
-
-
-class vs_object:  # noqa: N801
-    """
-    Special object that follows the lifecycle of the VapourSynth environment/core.
-
-    If a special dunder is created, __vs_del__, it will be called when the environment is getting deleted.
-
-    This is especially useful if you have to hold a reference to a VideoNode or Plugin/Function object
-    in this object as you need to remove it for the VapourSynth core to be freed correctly.
-    """
-
-    __vsdel_partial_register: Callable[..., None]
-    __vsdel_register: Callable[[int], None] | None = None
-
-    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
-        from ..utils.vs_proxy import core, register_on_creation
-
-        try:
-            self = super().__new__(cls, *args, **kwargs)
-        except TypeError:
-            self = super().__new__(cls)
-
-        if hasattr(self, "__vs_del__"):
-
-            def _register(core_id: int) -> None:
-                self.__vsdel_partial_register = partial(self.__vs_del__, core_id)
-                core.register_on_destroy(self.__vsdel_partial_register)
-
-            # [un]register_on_creation/destroy will only hold a weakref to the object
-            self.__vsdel_register = _register
-            register_on_creation(self.__vsdel_register)
-
-        return self
-
-    if TYPE_CHECKING:
-
-        def __vs_del__(self, core_id: int) -> None:
-            """
-            Special dunder that will be called when a core is getting freed.
-            """
 
 
 class VSDebug(Singleton, init=True):
@@ -90,7 +48,7 @@ class VSDebug(Singleton, init=True):
                 trying to find the code path that is locking you into a EnvironmentPolicy.
         """
 
-        from ..utils.vs_proxy import register_on_creation
+        from ..vs_proxy.vs_proxy import register_on_creation
 
         if use_logging:
             import logging
@@ -111,7 +69,7 @@ class VSDebug(Singleton, init=True):
 
     @staticmethod
     def _print_env_live(core_id: int) -> None:
-        from ..utils.vs_proxy import core, register_on_destroy
+        from ..vs_proxy.vs_proxy import core, register_on_destroy
 
         VSDebug._print_func(f"New core created with id: {core_id}")
 

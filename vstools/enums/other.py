@@ -3,10 +3,10 @@ from __future__ import annotations
 from fractions import Fraction
 from typing import Callable, Iterator, Literal, NamedTuple, Self
 
-import vapoursynth as vs
 from jetpytools import Coordinate, CustomIntEnum, CustomStrEnum, Position, Sentinel, SentinelT, Size
 
 from ..types import HoldsPropValue
+from ..vs_proxy import vs
 
 __all__ = ["Coordinate", "Dar", "Direction", "Position", "Region", "Resolution", "Sar", "SceneChangeMode", "Size"]
 
