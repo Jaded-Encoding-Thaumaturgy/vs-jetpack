@@ -10,10 +10,10 @@ from tempfile import NamedTemporaryFile
 from typing import Any, Self, TypedDict
 from warnings import warn
 
-import vapoursynth as vs
 from jetpytools import CustomValueError, DependencyNotFoundError, FileWasNotFoundError, FuncExcept, SPath, SPathLike
 
 from ..utils import PackageStorage
+from ..vs_proxy import vs
 from .timecodes import Keyframes
 
 __all__ = [
