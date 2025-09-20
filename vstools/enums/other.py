@@ -3,7 +3,7 @@ from __future__ import annotations
 from fractions import Fraction
 from typing import Callable, Iterator, Literal, NamedTuple, Self
 
-from jetpytools import Coordinate, CustomIntEnum, CustomStrEnum, Position, Sentinel, SentinelT, Size
+from jetpytools import Coordinate, CustomIntEnum, CustomRuntimeError, CustomStrEnum, Position, Sentinel, SentinelT, Size
 
 from ..types import HoldsPropValue
 from ..vs_proxy import vs
@@ -358,7 +358,6 @@ class SceneChangeMode(CustomIntEnum):
         """
         Ensures all the frame properties necessary for scene change detection are created.
         """
-        from ..exceptions import CustomRuntimeError
         from ..utils import merge_clip_props
 
         stats_clip = list[vs.VideoNode]()
