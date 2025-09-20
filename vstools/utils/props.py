@@ -14,8 +14,6 @@ from typing import (
     overload,
 )
 
-import vapoursynth as vs
-
 if TYPE_CHECKING:
     from vapoursynth import _PropValue
 else:
@@ -34,6 +32,7 @@ from jetpytools import (
 from ..enums import PropEnum
 from ..exceptions import FramePropError
 from ..types import HoldsPropValue
+from ..vs_proxy import vs
 from .cache import NodesPropsCache
 
 __all__ = ["get_clip_filepath", "get_prop", "get_props", "merge_clip_props"]
