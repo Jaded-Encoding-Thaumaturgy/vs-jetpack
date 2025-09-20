@@ -22,6 +22,7 @@ from jetpytools import normalize_ranges_to_list as jetp_normalize_ranges_to_list
 from jetpytools import normalize_seq as jetp_normalize_seq
 
 from ..types import FrameRangeN, FrameRangesN, Planes, VideoNodeIterable
+from ..utils import check_variable_format
 
 __all__ = [
     "flatten",
@@ -109,8 +110,6 @@ def normalize_param_planes(
         A list of length equal to the number of planes in the clip, with `param` values or `null`.
     """
     func = func or normalize_param_planes
-
-    from .check import check_variable_format
 
     assert check_variable_format(clip, func)
 

@@ -24,9 +24,8 @@ from ..enums import (
 )
 from ..exceptions import FramesLengthError
 from ..types import HoldsVideoFormat, VideoFormatLike
-from ..utils import DynamicClipsCache, get_depth
+from ..utils import DynamicClipsCache, check_variable_format, get_depth
 from ..vs_proxy import vs
-from .check import check_variable_format
 from .utils import DitherType, depth
 
 __all__ = [
