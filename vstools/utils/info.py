@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fractions import Fraction
-from typing import Any, SupportsFloat, SupportsInt
+from typing import SupportsFloat, SupportsInt
 
 import vapoursynth as vs
 from jetpytools import fallback, mod_x
@@ -12,7 +12,6 @@ from ..types import HoldsVideoFormat, VideoFormatLike
 from .check import check_variable_format
 
 __all__ = [
-    "expect_bits",
     "get_color_family",
     "get_depth",
     "get_framerate",
@@ -132,30 +131,6 @@ def get_framerate(clip: vs.VideoNode | Fraction | tuple[int, int] | float) -> Fr
         return Fraction(*clip)
 
     return Fraction(clip)
-
-
-def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) -> tuple[vs.VideoNode, int]:
-    """
-    Expected output bitdepth for a clip.
-
-    This function is meant to be used when a clip may not match the expected input bitdepth.
-    Both the dithered clip and the original bitdepth are returned.
-
-    Args:
-        clip: Input clip.
-        expected_depth: Expected bitdepth. Default: 16.
-
-    Returns:
-        Tuple containing the clip dithered to the expected depth and the original bitdepth.
-    """
-    assert check_variable_format(clip, expect_bits)
-
-    bits = get_depth(clip)
-
-    if bits != expected_depth:
-        clip = depth(clip, expected_depth, **kwargs)
-
-    return clip, bits
 
 
 def get_plane_sizes(frame: vs.VideoNode | vs.VideoFrame, /, index: int) -> tuple[int, int]:
