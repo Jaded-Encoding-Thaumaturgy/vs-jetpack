@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable
 from weakref import ReferenceType
 from weakref import ref as weakref_ref
 
-# import vapoursynth as vs
 from jetpytools import CustomRuntimeError
 from vapoursynth import (
     AUDIO,
