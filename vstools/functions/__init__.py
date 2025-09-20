@@ -1,4 +1,3 @@
-from .check import *
 from .clips import *
 from .file import *
 from .funcs import *
