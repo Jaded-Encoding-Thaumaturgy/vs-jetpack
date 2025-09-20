@@ -5,12 +5,13 @@ from typing import TYPE_CHECKING, Any, MutableMapping
 
 from jetpytools import T
 
-from ..functions import Keyframes
-from ..types import vs_object
-from . import vs_proxy as vs
+from ..vs_proxy import vs_proxy as vs
+from ..vs_proxy.vs_objects import vs_object
 
 if TYPE_CHECKING:
     from vapoursynth import _PropValue
+
+    from ..functions import Keyframes
 
 
 __all__ = [
@@ -112,6 +113,8 @@ class SceneBasedDynamicCache(DynamicClipsCache[int]):
     def __init__(self, clip: vs.VideoNode, keyframes: Keyframes | str, cache_size: int = 5) -> None:
         super().__init__(cache_size)
 
+        from ..functions import Keyframes
+
         self.clip = clip
         self.keyframes = Keyframes.from_param(clip, keyframes)
 
@@ -137,8 +140,8 @@ class NodesPropsCache[_NodeT: vs.RawNode](vs_object, dict[tuple[_NodeT, int], Mu
 
         return super().__delitem__(key)
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
+    # def __vs_del__(self, core_id: int) -> None:
+    #     self.clear()
 
 
 def cache_clip[_NodeT: vs.RawNode](_clip: _NodeT, cache_size: int = 10) -> _NodeT:

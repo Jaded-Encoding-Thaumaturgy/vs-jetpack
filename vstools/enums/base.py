@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, Self
 
-import vapoursynth as vs
 from jetpytools import CustomEnum, CustomError, CustomIntEnum, CustomStrEnum, FuncExcept, classproperty
+from ..vs_proxy import vs
 
 __all__ = [
     "CustomEnum",

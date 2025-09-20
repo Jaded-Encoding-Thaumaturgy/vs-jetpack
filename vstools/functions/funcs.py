@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable, Sequence
 
-import vapoursynth as vs
 from jetpytools import FuncExcept, cachedproperty, fallback, iterate, kwargs_fallback, normalize_seq, to_arr
-
-from vstools.exceptions.color import InvalidColorspacePathError
 
 from ..enums import (
     ChromaLocation,
@@ -21,8 +18,9 @@ from ..enums import (
     Transfer,
     TransferLike,
 )
-from ..exceptions import UndefinedMatrixError
-from ..types import HoldsVideoFormat, Planes, VideoFormatLike, vs_object
+from ..exceptions import InvalidColorspacePathError, UndefinedMatrixError
+from ..types import HoldsVideoFormat, Planes, VideoFormatLike
+from ..vs_proxy import VSObject, vs
 from .check import check_variable
 from .normalize import normalize_planes
 from .utils import depth, join, plane
@@ -30,7 +28,7 @@ from .utils import depth, join, plane
 __all__ = ["FunctionUtil", "fallback", "iterate", "kwargs_fallback"]
 
 
-class FunctionUtil(list[int], vs_object):
+class FunctionUtil(list[int], VSObject):
     """
     Function util to normalize common actions and boilerplate often used in functions.
 

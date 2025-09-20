@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Callable, Iterable, Mapping, Protocol, TypeVar, Union
 
-import vapoursynth as vs
 from jetpytools import MISSING, DataType, FuncExcept, MissingT, PassthroughC, StrArr, StrArrOpt
 
+from ..vs_proxy import vs
 from .builtins import Planes
 
 __all__ = [
@@ -41,6 +41,7 @@ FuncExceptT = FuncExcept
 type VideoNodeIterable = vs.VideoNode | Iterable[VideoNodeIterable]
 
 VideoNodeIterableT = VideoNodeIterable
+
 
 VideoFormatLike = vs.PresetVideoFormat | vs.VideoFormat
 """

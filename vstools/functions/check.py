@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Literal, Sequence
 
-import vapoursynth as vs
 from jetpytools import FuncExcept
 
 from ..enums import FieldBased
@@ -13,6 +12,7 @@ from ..exceptions import (
     VariableFormatError,
     VariableResolutionError,
 )
+from ..vs_proxy import vs
 
 __all__ = [
     "check_correct_subsampling",
