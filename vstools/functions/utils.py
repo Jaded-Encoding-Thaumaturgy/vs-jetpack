@@ -21,7 +21,7 @@ from ..enums import ColorRange, ColorRangeLike
 from ..exceptions import ClipLengthError, InvalidColorFamilyError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterableT
 from .check import check_variable_format
-from .clip import shift_clip
+from .clips import shift_clip
 
 __all__ = [
     "EXPR_VARS",
