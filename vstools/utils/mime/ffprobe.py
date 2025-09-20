@@ -9,7 +9,7 @@ from typing import Any, Literal, overload
 
 from jetpytools import CustomIndexError, CustomRuntimeError, FuncExcept, check_perms, inject_self
 
-from .mime import FileType
+from .file import FileType
 
 __all__ = [
     "FFProbe",
