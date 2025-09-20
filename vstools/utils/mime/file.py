@@ -6,7 +6,7 @@ from mimetypes import encodings_map
 from mimetypes import guess_type as guess_mime_type
 from os import path
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, TypeGuard
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from jetpytools import (
     CustomRuntimeError,
@@ -17,10 +17,15 @@ from jetpytools import (
     complex_hash,
     inject_self,
 )
+from typing_extensions import Self
 
-from .mime_base import FileTypeBase, FileTypeIndex, FileTypeIndexWithType
-
-__all__ = ["FileSignature", "FileSignatures", "FileType", "IndexingType", "ParsedFile"]
+__all__ = [
+    "FileSignature",
+    "FileSignatures",
+    "FileType",
+    "IndexingType",
+    "ParsedFile",
+]
 
 
 class IndexingType(CustomStrEnum):
@@ -216,7 +221,7 @@ class FileSignatures(list[FileSignature]):
         return found_signatures[0]
 
 
-class FileType(FileTypeBase):
+class FileType(CustomStrEnum):
     """
     Enum for file types and mime types.
     """
@@ -241,10 +246,14 @@ class FileType(FileTypeBase):
     File type for chapters files.
     """
 
-    if not TYPE_CHECKING:
-        INDEX = "index"
-        INDEX_AUDIO = f"{INDEX}_{AUDIO}"
-        INDEX_VIDEO = f"{INDEX}_{VIDEO}"
+    INDEX = "index"
+    """File type representing an indexing file."""
+
+    INDEX_AUDIO = f"{INDEX}_{AUDIO}"
+    """File type representing an audio indexing file."""
+
+    INDEX_VIDEO = f"{INDEX}_{VIDEO}"
+    """File type representing a video indexing file."""
 
     IMAGE = "image"
     """
@@ -271,6 +280,14 @@ class FileType(FileTypeBase):
     File type for generic files, like applications.
     """
 
+    if TYPE_CHECKING:
+
+        def __new__(cls, value_or_mime: str | FileType | None = None) -> Self:
+            """
+            Instantiate the FileType with a string or mime ex video,index/video.
+            """
+            ...
+
     @classmethod
     def _missing_(cls, value: Any) -> FileType:
         if value is None:
@@ -280,7 +297,7 @@ class FileType(FileTypeBase):
             fbase, ftype, *_ = value.split("/")
 
             if fbase == "index":
-                return FileType.INDEX(ftype)  # type: ignore[misc]
+                return FileType.INDEX(ftype)
 
             if value.endswith("-image"):
                 return FileType.IMAGE
@@ -361,35 +378,33 @@ class FileType(FileTypeBase):
 
         return ParsedFile(filename, ext, encoding, file_type, mime)
 
-    def is_index(self) -> TypeGuard[FileTypeIndexWithType]:  # type: ignore
+    def is_index(self) -> bool:
         """
         Verify whether the FileType is an INDEX that holds its own FileType (e.g. mime: index/video).
         """
 
-        return self in {FileType.INDEX, FileType.INDEX_AUDIO, FileType.INDEX_VIDEO}  # type: ignore
+        return self in {FileType.INDEX, FileType.INDEX_AUDIO, FileType.INDEX_VIDEO}
 
-    def __call__(self: FileTypeIndex, file_type: str | FileType) -> FileTypeIndexWithType:  # type: ignore
+    def __call__(self: Literal[FileType.INDEX], file_type: str | FileType) -> FileType:  # type: ignore[misc]
         """
         Get an INDEX FileType of another FileType (Video, Audio, Other).
         """
-
-        if self is not FileType.INDEX:
-            raise NotImplementedError
+        assert self is FileType.INDEX
 
         file_type = FileType(file_type)
 
         if file_type in {FileType.AUDIO, FileType.VIDEO}:
             if file_type is FileType.AUDIO:
-                return FileType.INDEX_AUDIO  # type: ignore
+                return FileType.INDEX_AUDIO
 
             if file_type is FileType.VIDEO:
-                return FileType.INDEX_VIDEO  # type: ignore
+                return FileType.INDEX_VIDEO
 
         raise CustomValueError("You can only have Video, Audio or Other index file types!", str(FileType.INDEX))
 
 
 for _fty, _ftyp in [
-    (FileType.AUDIO, FileType.INDEX_AUDIO),  # type: ignore
-    (FileType.VIDEO, FileType.INDEX_VIDEO),  # type: ignore
+    (FileType.AUDIO, FileType.INDEX_AUDIO),
+    (FileType.VIDEO, FileType.INDEX_VIDEO),
 ]:
     setattr(_ftyp, "file_type", _fty)
