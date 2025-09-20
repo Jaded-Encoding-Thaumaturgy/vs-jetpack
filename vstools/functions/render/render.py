@@ -21,8 +21,7 @@ from jetpytools import (
 
 from ...exceptions import InvalidColorFamilyError
 from ...utils import get_prop
-from ..normalize import normalize_list_to_ranges
-from ..ranges import replace_ranges
+from ..ranges import normalize_list_to_ranges, replace_ranges
 
 __all__ = ["AsyncRenderConf", "clip_async_render", "clip_data_gather", "find_prop", "find_prop_rfs", "prop_compare_cb"]
 

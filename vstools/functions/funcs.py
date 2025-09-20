@@ -20,9 +20,8 @@ from ..enums import (
 )
 from ..exceptions import InvalidColorspacePathError, UndefinedMatrixError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike
-from ..utils import check_variable
+from ..utils import check_variable, normalize_planes
 from ..vs_proxy import VSObject, vs
-from .normalize import normalize_planes
 from .utils import depth, join, plane
 
 __all__ = ["FunctionUtil", "fallback", "iterate", "kwargs_fallback"]
