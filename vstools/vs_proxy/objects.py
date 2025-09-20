@@ -56,7 +56,6 @@ def _iterative_check(x: Any) -> bool:
 
 
 def _safe_vs_object_del(obj: Any) -> None:
-    # Handle normal attributes
     obj_dict = getattr(obj, "__dict__", None)
     if obj_dict is not None:
         for k, v in list(obj_dict.items()):
@@ -64,7 +63,6 @@ def _safe_vs_object_del(obj: Any) -> None:
                 with suppress(AttributeError):
                     delattr(obj, k)
 
-    # Handle slots
     obj_slots = getattr(obj, "__slots__", None)
     if obj_slots:
         for k in obj_slots:
@@ -75,7 +73,6 @@ def _safe_vs_object_del(obj: Any) -> None:
                 with suppress(AttributeError):
                     delattr(obj, k)
 
-    # Handle containers
     if isinstance(obj, (MutableMapping, MutableSequence, MutableSet)):
         obj.clear()
 
@@ -99,6 +96,14 @@ def _register__vs_del__(obj: VSObject | VSObjectMeta) -> None:
 
 
 class VSObjectMeta(type):
+    """
+    Metaclass for VSObject that ensures VapourSynth object lifecycle hooks are registered.
+
+    This metaclass automatically registers the `__vs_del__` cleanup hook for any class that inherits from `VSObject`.
+    By default, the cleanup mechanism will attempt to safely release any VapourSynth-bound objects
+    when the core is freed, preventing resource leaks.
+    """
+
     def __new__[MetaSelf: VSObjectMeta](
         mcls: type[MetaSelf], name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwargs: Any
     ) -> MetaSelf:
@@ -113,12 +118,13 @@ class VSObjectMeta(type):
 
 class VSObject(metaclass=VSObjectMeta):
     """
-    Special object that follows the lifecycle of the VapourSynth environment/core.
+    Base class for objects bound to the lifecycle of a VapourSynth core.
 
-    If a special dunder is created, __vs_del__, it will be called when the environment is getting deleted.
+    Subclasses can define the special dunder method `__vs_del__`, which is invoked when the VapourSynth core
+    that owns the object is released.
 
-    This is especially useful if you have to hold a reference to a VideoNode or Plugin/Function object
-    in this object as you need to remove it for the VapourSynth core to be freed correctly.
+    By default, this method will attempt to safely delete any references to VapourSynth objects held by the instance.
+    Overriding `__vs_del__` is only necessary if you need custom cleanup logic beyond the default safe release.
     """
 
     __slots__ = ()
@@ -135,19 +141,20 @@ class VSObject(metaclass=VSObjectMeta):
             return obj
 
     def __vs_del__(self, core_id: int) -> None:
-        """
-        Special dunder that will be called when a core is getting freed.
-        """
         _safe_vs_object_del(self)
 
 
-vs_object = VSObject
-
-
-class VSObjectABCMeta(VSObjectMeta, ABCMeta): ...
+class VSObjectABCMeta(VSObjectMeta, ABCMeta):
+    """
+    Metaclass for abstract VSObject classes.
+    """
 
 
 class VSObjectABC(VSObject, ABC, metaclass=VSObjectABCMeta):
+    """
+    Abstract base class for VSObject subclasses.
+    """
+
     __slots__ = ()
 
 
@@ -198,3 +205,7 @@ class VSDebug(Singleton, init=True):
     @staticmethod
     def _print_core_destroy(_: int, core_id: int) -> None:
         VSDebug._print_func(f"Core destroyed with id: {core_id}")
+
+
+vs_object = VSObject
+"""Deprecated alias for VSObject"""
