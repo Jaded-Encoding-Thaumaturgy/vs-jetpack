@@ -12,10 +12,10 @@ from typing import (
     MutableMapping,
     MutableSequence,
     MutableSet,
+    Self,
 )
 
 from jetpytools import Singleton
-from typing_extensions import Self
 
 from .proxy import core, register_on_creation, register_on_destroy
 
@@ -99,7 +99,9 @@ def _register__vs_del__(obj: VSObject | VSObjectMeta) -> None:
 
 
 class VSObjectMeta(type):
-    def __new__(mcls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwargs: Any) -> VSObjectMeta:
+    def __new__[MetaSelf: VSObjectMeta](
+        mcls: type[MetaSelf], name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwargs: Any
+    ) -> MetaSelf:
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
 
         _register__vs_del__(cls)
