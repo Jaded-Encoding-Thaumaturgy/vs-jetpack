@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Mapping, Self, overload
 
-import vapoursynth as vs
 from jetpytools import FuncExcept
 
 from ..exceptions import (
@@ -12,6 +11,7 @@ from ..exceptions import (
     UnsupportedFieldBasedError,
 )
 from ..types import HoldsVideoFormat, VideoFormatLike
+from ..vs_proxy import vs
 from .base import PropEnum, _base_from_video
 
 __all__ = ["ChromaLocation", "ChromaLocationLike", "ChromaLocationT", "FieldBased", "FieldBasedLike", "FieldBasedT"]

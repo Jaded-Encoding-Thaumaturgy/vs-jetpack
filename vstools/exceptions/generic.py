@@ -3,7 +3,6 @@ from __future__ import annotations
 from fractions import Fraction
 from typing import TYPE_CHECKING, Any, Iterable, Sized
 
-import vapoursynth as vs
 from jetpytools import (
     CustomKeyError,
     CustomOverflowError,
@@ -15,6 +14,7 @@ from jetpytools import (
 )
 
 from ..types import HoldsVideoFormat, VideoFormatLike
+from ..vs_proxy import vs
 
 if TYPE_CHECKING:
     from ..enums import Resolution
