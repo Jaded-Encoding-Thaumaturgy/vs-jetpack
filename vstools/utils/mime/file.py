@@ -6,7 +6,7 @@ from mimetypes import encodings_map
 from mimetypes import guess_type as guess_mime_type
 from os import path
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
 
 from jetpytools import (
     CustomRuntimeError,
@@ -17,7 +17,6 @@ from jetpytools import (
     complex_hash,
     inject_self,
 )
-from typing_extensions import Self
 
 __all__ = [
     "FileSignature",
