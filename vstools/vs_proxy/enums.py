@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from enum import IntEnum
-from typing import TYPE_CHECKING
 
 from vapoursynth import FLOAT, GRAY, INTEGER, RGB, YUV
 from vapoursynth import PresetVideoFormat as VSPresetVideoFormat
@@ -224,307 +223,264 @@ __all__ = [
     "YUV444PH",
     "YUV444PS",
     "PresetVideoFormat",
-    "VSPresetVideoFormat",
 ]
 
 
-def MAKE_VIDEO_ID(  # noqa: N802
-    colorFamily: int,  # noqa: N803
-    sampleType: int,  # noqa: N803
-    bitsPerSample: int,  # noqa: N803
-    subSamplingW: int,  # noqa: N803
-    subSamplingH: int,  # noqa: N803
-) -> PresetVideoFormat:
-    return (
-        colorFamily << 28 | sampleType << 24 | bitsPerSample << 16 | subSamplingW << 8 | subSamplingH << 0  # type: ignore[return-value]
-    )
-
-
-if TYPE_CHECKING:
-    PresetVideoFormatBase = VSPresetVideoFormat
-else:
-    PresetVideoFormatBase = IntEnum
+def _make_video_id(
+    color_family: int, sample_type: int, bits_per_sample: int, subsampling_w: int, subsampling_h: int
+) -> int:
+    return color_family << 28 | sample_type << 24 | bits_per_sample << 16 | subsampling_w << 8 | subsampling_h << 0
 
 
 ################################################
 
 
-class PresetVideoFormat(PresetVideoFormatBase):  # type: ignore[misc]
-    if not TYPE_CHECKING:
-        NONE = 0
-        GRAY8 = MAKE_VIDEO_ID(GRAY, INTEGER, 8, 0, 0)
-        GRAY9 = MAKE_VIDEO_ID(GRAY, INTEGER, 9, 0, 0)
-        GRAY10 = MAKE_VIDEO_ID(GRAY, INTEGER, 10, 0, 0)
-    GRAY11 = MAKE_VIDEO_ID(GRAY, INTEGER, 11, 0, 0)
-    if not TYPE_CHECKING:
-        GRAY12 = MAKE_VIDEO_ID(GRAY, INTEGER, 12, 0, 0)
-    GRAY13 = MAKE_VIDEO_ID(GRAY, INTEGER, 13, 0, 0)
-    if not TYPE_CHECKING:
-        GRAY14 = MAKE_VIDEO_ID(GRAY, INTEGER, 14, 0, 0)
-    GRAY15 = MAKE_VIDEO_ID(GRAY, INTEGER, 15, 0, 0)
-    if not TYPE_CHECKING:
-        GRAY16 = MAKE_VIDEO_ID(GRAY, INTEGER, 16, 0, 0)
-    GRAY17 = MAKE_VIDEO_ID(GRAY, INTEGER, 17, 0, 0)
-    GRAY18 = MAKE_VIDEO_ID(GRAY, INTEGER, 18, 0, 0)
-    GRAY19 = MAKE_VIDEO_ID(GRAY, INTEGER, 19, 0, 0)
-    GRAY20 = MAKE_VIDEO_ID(GRAY, INTEGER, 20, 0, 0)
-    GRAY21 = MAKE_VIDEO_ID(GRAY, INTEGER, 21, 0, 0)
-    GRAY22 = MAKE_VIDEO_ID(GRAY, INTEGER, 22, 0, 0)
-    GRAY23 = MAKE_VIDEO_ID(GRAY, INTEGER, 23, 0, 0)
-    GRAY24 = MAKE_VIDEO_ID(GRAY, INTEGER, 24, 0, 0)
-    GRAY25 = MAKE_VIDEO_ID(GRAY, INTEGER, 25, 0, 0)
-    GRAY26 = MAKE_VIDEO_ID(GRAY, INTEGER, 26, 0, 0)
-    GRAY27 = MAKE_VIDEO_ID(GRAY, INTEGER, 27, 0, 0)
-    GRAY28 = MAKE_VIDEO_ID(GRAY, INTEGER, 28, 0, 0)
-    GRAY29 = MAKE_VIDEO_ID(GRAY, INTEGER, 29, 0, 0)
-    GRAY30 = MAKE_VIDEO_ID(GRAY, INTEGER, 30, 0, 0)
-    GRAY31 = MAKE_VIDEO_ID(GRAY, INTEGER, 31, 0, 0)
-    if not TYPE_CHECKING:
-        GRAY32 = MAKE_VIDEO_ID(GRAY, INTEGER, 32, 0, 0)
-
-    if not TYPE_CHECKING:
-        GRAYH = MAKE_VIDEO_ID(GRAY, FLOAT, 16, 0, 0)
-        GRAYS = MAKE_VIDEO_ID(GRAY, FLOAT, 32, 0, 0)
+class PresetVideoFormat(IntEnum):
+    NONE = VSPresetVideoFormat.NONE
+    GRAY8 = VSPresetVideoFormat.GRAY8
+    GRAY9 = VSPresetVideoFormat.GRAY9
+    GRAY10 = VSPresetVideoFormat.GRAY10
+    GRAY11 = _make_video_id(GRAY, INTEGER, 11, 0, 0)
+    GRAY12 = VSPresetVideoFormat.GRAY12
+    GRAY13 = _make_video_id(GRAY, INTEGER, 13, 0, 0)
+    GRAY14 = VSPresetVideoFormat.GRAY14
+    GRAY15 = _make_video_id(GRAY, INTEGER, 15, 0, 0)
+    GRAY16 = VSPresetVideoFormat.GRAY16
+    GRAY17 = _make_video_id(GRAY, INTEGER, 17, 0, 0)
+    GRAY18 = _make_video_id(GRAY, INTEGER, 18, 0, 0)
+    GRAY19 = _make_video_id(GRAY, INTEGER, 19, 0, 0)
+    GRAY20 = _make_video_id(GRAY, INTEGER, 20, 0, 0)
+    GRAY21 = _make_video_id(GRAY, INTEGER, 21, 0, 0)
+    GRAY22 = _make_video_id(GRAY, INTEGER, 22, 0, 0)
+    GRAY23 = _make_video_id(GRAY, INTEGER, 23, 0, 0)
+    GRAY24 = _make_video_id(GRAY, INTEGER, 24, 0, 0)
+    GRAY25 = _make_video_id(GRAY, INTEGER, 25, 0, 0)
+    GRAY26 = _make_video_id(GRAY, INTEGER, 26, 0, 0)
+    GRAY27 = _make_video_id(GRAY, INTEGER, 27, 0, 0)
+    GRAY28 = _make_video_id(GRAY, INTEGER, 28, 0, 0)
+    GRAY29 = _make_video_id(GRAY, INTEGER, 29, 0, 0)
+    GRAY30 = _make_video_id(GRAY, INTEGER, 30, 0, 0)
+    GRAY31 = _make_video_id(GRAY, INTEGER, 31, 0, 0)
+    GRAY32 = VSPresetVideoFormat.GRAY32
+    GRAYH = VSPresetVideoFormat.GRAYH
+    GRAYS = VSPresetVideoFormat.GRAYS
 
     ################################################
 
-    if not TYPE_CHECKING:
-        YUV420P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 1, 1)
-        YUV420P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 1, 1)
-        YUV420P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 1, 1)
-    YUV420P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 1, 1)
-    if not TYPE_CHECKING:
-        YUV420P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 1, 1)
-    YUV420P13 = MAKE_VIDEO_ID(YUV, INTEGER, 13, 1, 1)
-    if not TYPE_CHECKING:
-        YUV420P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 1, 1)
-    YUV420P15 = MAKE_VIDEO_ID(YUV, INTEGER, 15, 1, 1)
-    if not TYPE_CHECKING:
-        YUV420P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 1, 1)
-    YUV420P17 = MAKE_VIDEO_ID(YUV, INTEGER, 17, 1, 1)
-    YUV420P18 = MAKE_VIDEO_ID(YUV, INTEGER, 18, 1, 1)
-    YUV420P19 = MAKE_VIDEO_ID(YUV, INTEGER, 19, 1, 1)
-    YUV420P20 = MAKE_VIDEO_ID(YUV, INTEGER, 20, 1, 1)
-    YUV420P21 = MAKE_VIDEO_ID(YUV, INTEGER, 21, 1, 1)
-    YUV420P22 = MAKE_VIDEO_ID(YUV, INTEGER, 22, 1, 1)
-    YUV420P23 = MAKE_VIDEO_ID(YUV, INTEGER, 23, 1, 1)
-    YUV420P24 = MAKE_VIDEO_ID(YUV, INTEGER, 24, 1, 1)
-    YUV420P25 = MAKE_VIDEO_ID(YUV, INTEGER, 25, 1, 1)
-    YUV420P26 = MAKE_VIDEO_ID(YUV, INTEGER, 26, 1, 1)
-    YUV420P27 = MAKE_VIDEO_ID(YUV, INTEGER, 27, 1, 1)
-    YUV420P28 = MAKE_VIDEO_ID(YUV, INTEGER, 28, 1, 1)
-    YUV420P29 = MAKE_VIDEO_ID(YUV, INTEGER, 29, 1, 1)
-    YUV420P30 = MAKE_VIDEO_ID(YUV, INTEGER, 30, 1, 1)
-    YUV420P31 = MAKE_VIDEO_ID(YUV, INTEGER, 31, 1, 1)
-    YUV420P32 = MAKE_VIDEO_ID(YUV, INTEGER, 32, 1, 1)
+    YUV420P8 = VSPresetVideoFormat.YUV420P8
+    YUV420P9 = VSPresetVideoFormat.YUV420P9
+    YUV420P10 = VSPresetVideoFormat.YUV420P10
+    YUV420P11 = _make_video_id(YUV, INTEGER, 11, 1, 1)
+    YUV420P12 = VSPresetVideoFormat.YUV420P12
+    YUV420P13 = _make_video_id(YUV, INTEGER, 13, 1, 1)
+    YUV420P14 = VSPresetVideoFormat.YUV420P14
+    YUV420P15 = _make_video_id(YUV, INTEGER, 15, 1, 1)
+    YUV420P16 = VSPresetVideoFormat.YUV420P16
+    YUV420P17 = _make_video_id(YUV, INTEGER, 17, 1, 1)
+    YUV420P18 = _make_video_id(YUV, INTEGER, 18, 1, 1)
+    YUV420P19 = _make_video_id(YUV, INTEGER, 19, 1, 1)
+    YUV420P20 = _make_video_id(YUV, INTEGER, 20, 1, 1)
+    YUV420P21 = _make_video_id(YUV, INTEGER, 21, 1, 1)
+    YUV420P22 = _make_video_id(YUV, INTEGER, 22, 1, 1)
+    YUV420P23 = _make_video_id(YUV, INTEGER, 23, 1, 1)
+    YUV420P24 = _make_video_id(YUV, INTEGER, 24, 1, 1)
+    YUV420P25 = _make_video_id(YUV, INTEGER, 25, 1, 1)
+    YUV420P26 = _make_video_id(YUV, INTEGER, 26, 1, 1)
+    YUV420P27 = _make_video_id(YUV, INTEGER, 27, 1, 1)
+    YUV420P28 = _make_video_id(YUV, INTEGER, 28, 1, 1)
+    YUV420P29 = _make_video_id(YUV, INTEGER, 29, 1, 1)
+    YUV420P30 = _make_video_id(YUV, INTEGER, 30, 1, 1)
+    YUV420P31 = _make_video_id(YUV, INTEGER, 31, 1, 1)
+    YUV420P32 = _make_video_id(YUV, INTEGER, 32, 1, 1)
 
-    if not TYPE_CHECKING:
-        YUV420PH = MAKE_VIDEO_ID(YUV, FLOAT, 16, 1, 1)
-        YUV420PS = MAKE_VIDEO_ID(YUV, FLOAT, 32, 1, 1)
+    YUV420PH = VSPresetVideoFormat.YUV420PH
+    YUV420PS = VSPresetVideoFormat.YUV420PS
 
     ################################################
 
-    if not TYPE_CHECKING:
-        YUV444P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 0, 0)
-        YUV444P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 0, 0)
-        YUV444P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 0, 0)
-    YUV444P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 0, 0)
-    if not TYPE_CHECKING:
-        YUV444P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 0, 0)
-    YUV444P13 = MAKE_VIDEO_ID(YUV, INTEGER, 13, 0, 0)
-    if not TYPE_CHECKING:
-        YUV444P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 0, 0)
-    YUV444P15 = MAKE_VIDEO_ID(YUV, INTEGER, 15, 0, 0)
-    if not TYPE_CHECKING:
-        YUV444P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 0, 0)
-    YUV444P17 = MAKE_VIDEO_ID(YUV, INTEGER, 17, 0, 0)
-    YUV444P18 = MAKE_VIDEO_ID(YUV, INTEGER, 18, 0, 0)
-    YUV444P19 = MAKE_VIDEO_ID(YUV, INTEGER, 19, 0, 0)
-    YUV444P20 = MAKE_VIDEO_ID(YUV, INTEGER, 20, 0, 0)
-    YUV444P21 = MAKE_VIDEO_ID(YUV, INTEGER, 21, 0, 0)
-    YUV444P22 = MAKE_VIDEO_ID(YUV, INTEGER, 22, 0, 0)
-    YUV444P23 = MAKE_VIDEO_ID(YUV, INTEGER, 23, 0, 0)
-    YUV444P24 = MAKE_VIDEO_ID(YUV, INTEGER, 24, 0, 0)
-    YUV444P25 = MAKE_VIDEO_ID(YUV, INTEGER, 25, 0, 0)
-    YUV444P26 = MAKE_VIDEO_ID(YUV, INTEGER, 26, 0, 0)
-    YUV444P27 = MAKE_VIDEO_ID(YUV, INTEGER, 27, 0, 0)
-    YUV444P28 = MAKE_VIDEO_ID(YUV, INTEGER, 28, 0, 0)
-    YUV444P29 = MAKE_VIDEO_ID(YUV, INTEGER, 29, 0, 0)
-    YUV444P30 = MAKE_VIDEO_ID(YUV, INTEGER, 30, 0, 0)
-    YUV444P31 = MAKE_VIDEO_ID(YUV, INTEGER, 31, 0, 0)
-    YUV444P32 = MAKE_VIDEO_ID(YUV, INTEGER, 32, 0, 0)
+    YUV444P8 = VSPresetVideoFormat.YUV444P8
+    YUV444P9 = VSPresetVideoFormat.YUV444P9
+    YUV444P10 = VSPresetVideoFormat.YUV444P10
+    YUV444P11 = _make_video_id(YUV, INTEGER, 11, 0, 0)
+    YUV444P12 = VSPresetVideoFormat.YUV444P12
+    YUV444P13 = _make_video_id(YUV, INTEGER, 13, 0, 0)
+    YUV444P14 = VSPresetVideoFormat.YUV444P14
+    YUV444P15 = _make_video_id(YUV, INTEGER, 15, 0, 0)
+    YUV444P16 = VSPresetVideoFormat.YUV444P16
+    YUV444P17 = _make_video_id(YUV, INTEGER, 17, 0, 0)
+    YUV444P18 = _make_video_id(YUV, INTEGER, 18, 0, 0)
+    YUV444P19 = _make_video_id(YUV, INTEGER, 19, 0, 0)
+    YUV444P20 = _make_video_id(YUV, INTEGER, 20, 0, 0)
+    YUV444P21 = _make_video_id(YUV, INTEGER, 21, 0, 0)
+    YUV444P22 = _make_video_id(YUV, INTEGER, 22, 0, 0)
+    YUV444P23 = _make_video_id(YUV, INTEGER, 23, 0, 0)
+    YUV444P24 = _make_video_id(YUV, INTEGER, 24, 0, 0)
+    YUV444P25 = _make_video_id(YUV, INTEGER, 25, 0, 0)
+    YUV444P26 = _make_video_id(YUV, INTEGER, 26, 0, 0)
+    YUV444P27 = _make_video_id(YUV, INTEGER, 27, 0, 0)
+    YUV444P28 = _make_video_id(YUV, INTEGER, 28, 0, 0)
+    YUV444P29 = _make_video_id(YUV, INTEGER, 29, 0, 0)
+    YUV444P30 = _make_video_id(YUV, INTEGER, 30, 0, 0)
+    YUV444P31 = _make_video_id(YUV, INTEGER, 31, 0, 0)
+    YUV444P32 = _make_video_id(YUV, INTEGER, 32, 0, 0)
 
-    if not TYPE_CHECKING:
-        YUV444PH = MAKE_VIDEO_ID(YUV, FLOAT, 16, 0, 0)
-        YUV444PS = MAKE_VIDEO_ID(YUV, FLOAT, 32, 0, 0)
+    YUV444PH = VSPresetVideoFormat.YUV444PH
+    YUV444PS = VSPresetVideoFormat.YUV444PS
 
     ################################################
 
-    if not TYPE_CHECKING:
-        YUV422P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 1, 0)
-        YUV422P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 1, 0)
-        YUV422P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 1, 0)
-    YUV422P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 1, 0)
-    if not TYPE_CHECKING:
-        YUV422P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 1, 0)
-    YUV422P13 = MAKE_VIDEO_ID(YUV, INTEGER, 13, 1, 0)
-    if not TYPE_CHECKING:
-        YUV422P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 1, 0)
-    YUV422P15 = MAKE_VIDEO_ID(YUV, INTEGER, 15, 1, 0)
-    if not TYPE_CHECKING:
-        YUV422P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 1, 0)
-    YUV422P17 = MAKE_VIDEO_ID(YUV, INTEGER, 17, 1, 0)
-    YUV422P18 = MAKE_VIDEO_ID(YUV, INTEGER, 18, 1, 0)
-    YUV422P19 = MAKE_VIDEO_ID(YUV, INTEGER, 19, 1, 0)
-    YUV422P20 = MAKE_VIDEO_ID(YUV, INTEGER, 20, 1, 0)
-    YUV422P21 = MAKE_VIDEO_ID(YUV, INTEGER, 21, 1, 0)
-    YUV422P22 = MAKE_VIDEO_ID(YUV, INTEGER, 22, 1, 0)
-    YUV422P23 = MAKE_VIDEO_ID(YUV, INTEGER, 23, 1, 0)
-    YUV422P24 = MAKE_VIDEO_ID(YUV, INTEGER, 24, 1, 0)
-    YUV422P25 = MAKE_VIDEO_ID(YUV, INTEGER, 25, 1, 0)
-    YUV422P26 = MAKE_VIDEO_ID(YUV, INTEGER, 26, 1, 0)
-    YUV422P27 = MAKE_VIDEO_ID(YUV, INTEGER, 27, 1, 0)
-    YUV422P28 = MAKE_VIDEO_ID(YUV, INTEGER, 28, 1, 0)
-    YUV422P29 = MAKE_VIDEO_ID(YUV, INTEGER, 29, 1, 0)
-    YUV422P30 = MAKE_VIDEO_ID(YUV, INTEGER, 30, 1, 0)
-    YUV422P31 = MAKE_VIDEO_ID(YUV, INTEGER, 31, 1, 0)
-    YUV422P32 = MAKE_VIDEO_ID(YUV, INTEGER, 32, 1, 0)
+    YUV422P8 = VSPresetVideoFormat.YUV422P8
+    YUV422P9 = VSPresetVideoFormat.YUV422P9
+    YUV422P10 = VSPresetVideoFormat.YUV422P10
+    YUV422P11 = _make_video_id(YUV, INTEGER, 11, 1, 0)
+    YUV422P12 = VSPresetVideoFormat.YUV422P12
+    YUV422P13 = _make_video_id(YUV, INTEGER, 13, 1, 0)
+    YUV422P14 = VSPresetVideoFormat.YUV422P14
+    YUV422P15 = _make_video_id(YUV, INTEGER, 15, 1, 0)
+    YUV422P16 = VSPresetVideoFormat.YUV422P16
+    YUV422P17 = _make_video_id(YUV, INTEGER, 17, 1, 0)
+    YUV422P18 = _make_video_id(YUV, INTEGER, 18, 1, 0)
+    YUV422P19 = _make_video_id(YUV, INTEGER, 19, 1, 0)
+    YUV422P20 = _make_video_id(YUV, INTEGER, 20, 1, 0)
+    YUV422P21 = _make_video_id(YUV, INTEGER, 21, 1, 0)
+    YUV422P22 = _make_video_id(YUV, INTEGER, 22, 1, 0)
+    YUV422P23 = _make_video_id(YUV, INTEGER, 23, 1, 0)
+    YUV422P24 = _make_video_id(YUV, INTEGER, 24, 1, 0)
+    YUV422P25 = _make_video_id(YUV, INTEGER, 25, 1, 0)
+    YUV422P26 = _make_video_id(YUV, INTEGER, 26, 1, 0)
+    YUV422P27 = _make_video_id(YUV, INTEGER, 27, 1, 0)
+    YUV422P28 = _make_video_id(YUV, INTEGER, 28, 1, 0)
+    YUV422P29 = _make_video_id(YUV, INTEGER, 29, 1, 0)
+    YUV422P30 = _make_video_id(YUV, INTEGER, 30, 1, 0)
+    YUV422P31 = _make_video_id(YUV, INTEGER, 31, 1, 0)
+    YUV422P32 = _make_video_id(YUV, INTEGER, 32, 1, 0)
 
-    if not TYPE_CHECKING:
-        YUV422PH = MAKE_VIDEO_ID(YUV, FLOAT, 16, 1, 0)
-        YUV422PS = MAKE_VIDEO_ID(YUV, FLOAT, 32, 1, 0)
+    YUV422PH = VSPresetVideoFormat.YUV422PH
+    YUV422PS = VSPresetVideoFormat.YUV422PS
 
     ################################################
 
-    if not TYPE_CHECKING:
-        YUV411P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 2, 0)
-    YUV411P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 2, 0)
-    YUV411P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 2, 0)
-    YUV411P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 2, 0)
-    YUV411P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 2, 0)
-    YUV411P13 = MAKE_VIDEO_ID(YUV, INTEGER, 13, 2, 0)
-    YUV411P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 2, 0)
-    YUV411P15 = MAKE_VIDEO_ID(YUV, INTEGER, 15, 2, 0)
-    YUV411P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 2, 0)
-    YUV411P17 = MAKE_VIDEO_ID(YUV, INTEGER, 17, 2, 0)
-    YUV411P18 = MAKE_VIDEO_ID(YUV, INTEGER, 18, 2, 0)
-    YUV411P19 = MAKE_VIDEO_ID(YUV, INTEGER, 19, 2, 0)
-    YUV411P20 = MAKE_VIDEO_ID(YUV, INTEGER, 20, 2, 0)
-    YUV411P21 = MAKE_VIDEO_ID(YUV, INTEGER, 21, 2, 0)
-    YUV411P22 = MAKE_VIDEO_ID(YUV, INTEGER, 22, 2, 0)
-    YUV411P23 = MAKE_VIDEO_ID(YUV, INTEGER, 23, 2, 0)
-    YUV411P24 = MAKE_VIDEO_ID(YUV, INTEGER, 24, 2, 0)
-    YUV411P25 = MAKE_VIDEO_ID(YUV, INTEGER, 25, 2, 0)
-    YUV411P26 = MAKE_VIDEO_ID(YUV, INTEGER, 26, 2, 0)
-    YUV411P27 = MAKE_VIDEO_ID(YUV, INTEGER, 27, 2, 0)
-    YUV411P28 = MAKE_VIDEO_ID(YUV, INTEGER, 28, 2, 0)
-    YUV411P29 = MAKE_VIDEO_ID(YUV, INTEGER, 29, 2, 0)
-    YUV411P30 = MAKE_VIDEO_ID(YUV, INTEGER, 30, 2, 0)
-    YUV411P31 = MAKE_VIDEO_ID(YUV, INTEGER, 31, 2, 0)
-    YUV411P32 = MAKE_VIDEO_ID(YUV, INTEGER, 32, 2, 0)
+    YUV411P8 = VSPresetVideoFormat.YUV411P8
+    YUV411P9 = _make_video_id(YUV, INTEGER, 9, 2, 0)
+    YUV411P10 = _make_video_id(YUV, INTEGER, 10, 2, 0)
+    YUV411P11 = _make_video_id(YUV, INTEGER, 11, 2, 0)
+    YUV411P12 = _make_video_id(YUV, INTEGER, 12, 2, 0)
+    YUV411P13 = _make_video_id(YUV, INTEGER, 13, 2, 0)
+    YUV411P14 = _make_video_id(YUV, INTEGER, 14, 2, 0)
+    YUV411P15 = _make_video_id(YUV, INTEGER, 15, 2, 0)
+    YUV411P16 = _make_video_id(YUV, INTEGER, 16, 2, 0)
+    YUV411P17 = _make_video_id(YUV, INTEGER, 17, 2, 0)
+    YUV411P18 = _make_video_id(YUV, INTEGER, 18, 2, 0)
+    YUV411P19 = _make_video_id(YUV, INTEGER, 19, 2, 0)
+    YUV411P20 = _make_video_id(YUV, INTEGER, 20, 2, 0)
+    YUV411P21 = _make_video_id(YUV, INTEGER, 21, 2, 0)
+    YUV411P22 = _make_video_id(YUV, INTEGER, 22, 2, 0)
+    YUV411P23 = _make_video_id(YUV, INTEGER, 23, 2, 0)
+    YUV411P24 = _make_video_id(YUV, INTEGER, 24, 2, 0)
+    YUV411P25 = _make_video_id(YUV, INTEGER, 25, 2, 0)
+    YUV411P26 = _make_video_id(YUV, INTEGER, 26, 2, 0)
+    YUV411P27 = _make_video_id(YUV, INTEGER, 27, 2, 0)
+    YUV411P28 = _make_video_id(YUV, INTEGER, 28, 2, 0)
+    YUV411P29 = _make_video_id(YUV, INTEGER, 29, 2, 0)
+    YUV411P30 = _make_video_id(YUV, INTEGER, 30, 2, 0)
+    YUV411P31 = _make_video_id(YUV, INTEGER, 31, 2, 0)
+    YUV411P32 = _make_video_id(YUV, INTEGER, 32, 2, 0)
 
-    YUV411PH = MAKE_VIDEO_ID(YUV, FLOAT, 16, 2, 0)
-    YUV411PS = MAKE_VIDEO_ID(YUV, FLOAT, 32, 2, 0)
-
-    ################################################
-
-    if not TYPE_CHECKING:
-        YUV440P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 0, 1)
-    YUV440P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 0, 1)
-    YUV440P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 0, 1)
-    YUV440P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 0, 1)
-    YUV440P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 0, 1)
-    YUV440P13 = MAKE_VIDEO_ID(YUV, INTEGER, 13, 0, 1)
-    YUV440P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 0, 1)
-    YUV440P15 = MAKE_VIDEO_ID(YUV, INTEGER, 15, 0, 1)
-    YUV440P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 0, 1)
-    YUV440P17 = MAKE_VIDEO_ID(YUV, INTEGER, 17, 0, 1)
-    YUV440P18 = MAKE_VIDEO_ID(YUV, INTEGER, 18, 0, 1)
-    YUV440P19 = MAKE_VIDEO_ID(YUV, INTEGER, 19, 0, 1)
-    YUV440P20 = MAKE_VIDEO_ID(YUV, INTEGER, 20, 0, 1)
-    YUV440P21 = MAKE_VIDEO_ID(YUV, INTEGER, 21, 0, 1)
-    YUV440P22 = MAKE_VIDEO_ID(YUV, INTEGER, 22, 0, 1)
-    YUV440P23 = MAKE_VIDEO_ID(YUV, INTEGER, 23, 0, 1)
-    YUV440P24 = MAKE_VIDEO_ID(YUV, INTEGER, 24, 0, 1)
-    YUV440P25 = MAKE_VIDEO_ID(YUV, INTEGER, 25, 0, 1)
-    YUV440P26 = MAKE_VIDEO_ID(YUV, INTEGER, 26, 0, 1)
-    YUV440P27 = MAKE_VIDEO_ID(YUV, INTEGER, 27, 0, 1)
-    YUV440P28 = MAKE_VIDEO_ID(YUV, INTEGER, 28, 0, 1)
-    YUV440P29 = MAKE_VIDEO_ID(YUV, INTEGER, 29, 0, 1)
-    YUV440P30 = MAKE_VIDEO_ID(YUV, INTEGER, 30, 0, 1)
-    YUV440P31 = MAKE_VIDEO_ID(YUV, INTEGER, 31, 0, 1)
-    YUV440P32 = MAKE_VIDEO_ID(YUV, INTEGER, 32, 0, 1)
-
-    YUV440PH = MAKE_VIDEO_ID(YUV, FLOAT, 16, 0, 1)
-    YUV440PS = MAKE_VIDEO_ID(YUV, FLOAT, 32, 0, 1)
+    YUV411PH = _make_video_id(YUV, FLOAT, 16, 2, 0)
+    YUV411PS = _make_video_id(YUV, FLOAT, 32, 2, 0)
 
     ################################################
 
-    if not TYPE_CHECKING:
-        YUV410P8 = MAKE_VIDEO_ID(YUV, INTEGER, 8, 2, 2)
-    YUV410P9 = MAKE_VIDEO_ID(YUV, INTEGER, 9, 2, 2)
-    YUV410P10 = MAKE_VIDEO_ID(YUV, INTEGER, 10, 2, 2)
-    YUV410P11 = MAKE_VIDEO_ID(YUV, INTEGER, 11, 2, 2)
-    YUV410P12 = MAKE_VIDEO_ID(YUV, INTEGER, 12, 2, 2)
-    YUV410P13 = MAKE_VIDEO_ID(YUV, INTEGER, 13, 2, 2)
-    YUV410P14 = MAKE_VIDEO_ID(YUV, INTEGER, 14, 2, 2)
-    YUV410P15 = MAKE_VIDEO_ID(YUV, INTEGER, 15, 2, 2)
-    YUV410P16 = MAKE_VIDEO_ID(YUV, INTEGER, 16, 2, 2)
-    YUV410P17 = MAKE_VIDEO_ID(YUV, INTEGER, 17, 2, 2)
-    YUV410P18 = MAKE_VIDEO_ID(YUV, INTEGER, 18, 2, 2)
-    YUV410P19 = MAKE_VIDEO_ID(YUV, INTEGER, 19, 2, 2)
-    YUV410P20 = MAKE_VIDEO_ID(YUV, INTEGER, 20, 2, 2)
-    YUV410P21 = MAKE_VIDEO_ID(YUV, INTEGER, 21, 2, 2)
-    YUV410P22 = MAKE_VIDEO_ID(YUV, INTEGER, 22, 2, 2)
-    YUV410P23 = MAKE_VIDEO_ID(YUV, INTEGER, 23, 2, 2)
-    YUV410P24 = MAKE_VIDEO_ID(YUV, INTEGER, 24, 2, 2)
-    YUV410P25 = MAKE_VIDEO_ID(YUV, INTEGER, 25, 2, 2)
-    YUV410P26 = MAKE_VIDEO_ID(YUV, INTEGER, 26, 2, 2)
-    YUV410P27 = MAKE_VIDEO_ID(YUV, INTEGER, 27, 2, 2)
-    YUV410P28 = MAKE_VIDEO_ID(YUV, INTEGER, 28, 2, 2)
-    YUV410P29 = MAKE_VIDEO_ID(YUV, INTEGER, 29, 2, 2)
-    YUV410P30 = MAKE_VIDEO_ID(YUV, INTEGER, 30, 2, 2)
-    YUV410P31 = MAKE_VIDEO_ID(YUV, INTEGER, 31, 2, 2)
-    YUV410P32 = MAKE_VIDEO_ID(YUV, INTEGER, 32, 2, 2)
+    YUV440P8 = VSPresetVideoFormat.YUV440P8
+    YUV440P9 = _make_video_id(YUV, INTEGER, 9, 0, 1)
+    YUV440P10 = _make_video_id(YUV, INTEGER, 10, 0, 1)
+    YUV440P11 = _make_video_id(YUV, INTEGER, 11, 0, 1)
+    YUV440P12 = _make_video_id(YUV, INTEGER, 12, 0, 1)
+    YUV440P13 = _make_video_id(YUV, INTEGER, 13, 0, 1)
+    YUV440P14 = _make_video_id(YUV, INTEGER, 14, 0, 1)
+    YUV440P15 = _make_video_id(YUV, INTEGER, 15, 0, 1)
+    YUV440P16 = _make_video_id(YUV, INTEGER, 16, 0, 1)
+    YUV440P17 = _make_video_id(YUV, INTEGER, 17, 0, 1)
+    YUV440P18 = _make_video_id(YUV, INTEGER, 18, 0, 1)
+    YUV440P19 = _make_video_id(YUV, INTEGER, 19, 0, 1)
+    YUV440P20 = _make_video_id(YUV, INTEGER, 20, 0, 1)
+    YUV440P21 = _make_video_id(YUV, INTEGER, 21, 0, 1)
+    YUV440P22 = _make_video_id(YUV, INTEGER, 22, 0, 1)
+    YUV440P23 = _make_video_id(YUV, INTEGER, 23, 0, 1)
+    YUV440P24 = _make_video_id(YUV, INTEGER, 24, 0, 1)
+    YUV440P25 = _make_video_id(YUV, INTEGER, 25, 0, 1)
+    YUV440P26 = _make_video_id(YUV, INTEGER, 26, 0, 1)
+    YUV440P27 = _make_video_id(YUV, INTEGER, 27, 0, 1)
+    YUV440P28 = _make_video_id(YUV, INTEGER, 28, 0, 1)
+    YUV440P29 = _make_video_id(YUV, INTEGER, 29, 0, 1)
+    YUV440P30 = _make_video_id(YUV, INTEGER, 30, 0, 1)
+    YUV440P31 = _make_video_id(YUV, INTEGER, 31, 0, 1)
+    YUV440P32 = _make_video_id(YUV, INTEGER, 32, 0, 1)
 
-    YUV410PH = MAKE_VIDEO_ID(YUV, FLOAT, 16, 2, 2)
-    YUV410PS = MAKE_VIDEO_ID(YUV, FLOAT, 32, 2, 2)
+    YUV440PH = _make_video_id(YUV, FLOAT, 16, 0, 1)
+    YUV440PS = _make_video_id(YUV, FLOAT, 32, 0, 1)
 
     ################################################
 
-    if not TYPE_CHECKING:
-        RGB24 = MAKE_VIDEO_ID(RGB, INTEGER, 8, 0, 0)
-        RGB27 = MAKE_VIDEO_ID(RGB, INTEGER, 9, 0, 0)
-        RGB30 = MAKE_VIDEO_ID(RGB, INTEGER, 10, 0, 0)
-    RGB33 = MAKE_VIDEO_ID(RGB, INTEGER, 11, 0, 0)
-    if not TYPE_CHECKING:
-        RGB36 = MAKE_VIDEO_ID(RGB, INTEGER, 12, 0, 0)
-    RGB39 = MAKE_VIDEO_ID(RGB, INTEGER, 13, 0, 0)
-    if not TYPE_CHECKING:
-        RGB42 = MAKE_VIDEO_ID(RGB, INTEGER, 14, 0, 0)
-    RGB45 = MAKE_VIDEO_ID(RGB, INTEGER, 15, 0, 0)
-    if not TYPE_CHECKING:
-        RGB48 = MAKE_VIDEO_ID(RGB, INTEGER, 16, 0, 0)
-    RGB51 = MAKE_VIDEO_ID(RGB, INTEGER, 17, 0, 0)
-    RGB54 = MAKE_VIDEO_ID(RGB, INTEGER, 18, 0, 0)
-    RGB57 = MAKE_VIDEO_ID(RGB, INTEGER, 19, 0, 0)
-    RGB60 = MAKE_VIDEO_ID(RGB, INTEGER, 20, 0, 0)
-    RGB63 = MAKE_VIDEO_ID(RGB, INTEGER, 21, 0, 0)
-    RGB66 = MAKE_VIDEO_ID(RGB, INTEGER, 22, 0, 0)
-    RGB69 = MAKE_VIDEO_ID(RGB, INTEGER, 23, 0, 0)
-    RGB72 = MAKE_VIDEO_ID(RGB, INTEGER, 24, 0, 0)
-    RGB75 = MAKE_VIDEO_ID(RGB, INTEGER, 25, 0, 0)
-    RGB78 = MAKE_VIDEO_ID(RGB, INTEGER, 26, 0, 0)
-    RGB81 = MAKE_VIDEO_ID(RGB, INTEGER, 27, 0, 0)
-    RGB84 = MAKE_VIDEO_ID(RGB, INTEGER, 28, 0, 0)
-    RGB87 = MAKE_VIDEO_ID(RGB, INTEGER, 29, 0, 0)
-    RGB90 = MAKE_VIDEO_ID(RGB, INTEGER, 30, 0, 0)
-    RGB93 = MAKE_VIDEO_ID(RGB, INTEGER, 31, 0, 0)
-    RGB96 = MAKE_VIDEO_ID(RGB, INTEGER, 32, 0, 0)
+    YUV410P8 = VSPresetVideoFormat.YUV410P8
+    YUV410P9 = _make_video_id(YUV, INTEGER, 9, 2, 2)
+    YUV410P10 = _make_video_id(YUV, INTEGER, 10, 2, 2)
+    YUV410P11 = _make_video_id(YUV, INTEGER, 11, 2, 2)
+    YUV410P12 = _make_video_id(YUV, INTEGER, 12, 2, 2)
+    YUV410P13 = _make_video_id(YUV, INTEGER, 13, 2, 2)
+    YUV410P14 = _make_video_id(YUV, INTEGER, 14, 2, 2)
+    YUV410P15 = _make_video_id(YUV, INTEGER, 15, 2, 2)
+    YUV410P16 = _make_video_id(YUV, INTEGER, 16, 2, 2)
+    YUV410P17 = _make_video_id(YUV, INTEGER, 17, 2, 2)
+    YUV410P18 = _make_video_id(YUV, INTEGER, 18, 2, 2)
+    YUV410P19 = _make_video_id(YUV, INTEGER, 19, 2, 2)
+    YUV410P20 = _make_video_id(YUV, INTEGER, 20, 2, 2)
+    YUV410P21 = _make_video_id(YUV, INTEGER, 21, 2, 2)
+    YUV410P22 = _make_video_id(YUV, INTEGER, 22, 2, 2)
+    YUV410P23 = _make_video_id(YUV, INTEGER, 23, 2, 2)
+    YUV410P24 = _make_video_id(YUV, INTEGER, 24, 2, 2)
+    YUV410P25 = _make_video_id(YUV, INTEGER, 25, 2, 2)
+    YUV410P26 = _make_video_id(YUV, INTEGER, 26, 2, 2)
+    YUV410P27 = _make_video_id(YUV, INTEGER, 27, 2, 2)
+    YUV410P28 = _make_video_id(YUV, INTEGER, 28, 2, 2)
+    YUV410P29 = _make_video_id(YUV, INTEGER, 29, 2, 2)
+    YUV410P30 = _make_video_id(YUV, INTEGER, 30, 2, 2)
+    YUV410P31 = _make_video_id(YUV, INTEGER, 31, 2, 2)
+    YUV410P32 = _make_video_id(YUV, INTEGER, 32, 2, 2)
 
-    if not TYPE_CHECKING:
-        RGBH = MAKE_VIDEO_ID(RGB, FLOAT, 16, 0, 0)
-        RGBS = MAKE_VIDEO_ID(RGB, FLOAT, 32, 0, 0)
+    YUV410PH = _make_video_id(YUV, FLOAT, 16, 2, 2)
+    YUV410PS = _make_video_id(YUV, FLOAT, 32, 2, 2)
+
+    ################################################
+
+    RGB24 = VSPresetVideoFormat.RGB24
+    RGB27 = VSPresetVideoFormat.RGB27
+    RGB30 = VSPresetVideoFormat.RGB30
+    RGB33 = _make_video_id(RGB, INTEGER, 11, 0, 0)
+    RGB36 = VSPresetVideoFormat.RGB36
+    RGB39 = _make_video_id(RGB, INTEGER, 13, 0, 0)
+    RGB42 = VSPresetVideoFormat.RGB42
+    RGB45 = _make_video_id(RGB, INTEGER, 15, 0, 0)
+    RGB48 = VSPresetVideoFormat.RGB48
+    RGB51 = _make_video_id(RGB, INTEGER, 17, 0, 0)
+    RGB54 = _make_video_id(RGB, INTEGER, 18, 0, 0)
+    RGB57 = _make_video_id(RGB, INTEGER, 19, 0, 0)
+    RGB60 = _make_video_id(RGB, INTEGER, 20, 0, 0)
+    RGB63 = _make_video_id(RGB, INTEGER, 21, 0, 0)
+    RGB66 = _make_video_id(RGB, INTEGER, 22, 0, 0)
+    RGB69 = _make_video_id(RGB, INTEGER, 23, 0, 0)
+    RGB72 = _make_video_id(RGB, INTEGER, 24, 0, 0)
+    RGB75 = _make_video_id(RGB, INTEGER, 25, 0, 0)
+    RGB78 = _make_video_id(RGB, INTEGER, 26, 0, 0)
+    RGB81 = _make_video_id(RGB, INTEGER, 27, 0, 0)
+    RGB84 = _make_video_id(RGB, INTEGER, 28, 0, 0)
+    RGB87 = _make_video_id(RGB, INTEGER, 29, 0, 0)
+    RGB90 = _make_video_id(RGB, INTEGER, 30, 0, 0)
+    RGB93 = _make_video_id(RGB, INTEGER, 31, 0, 0)
+    RGB96 = _make_video_id(RGB, INTEGER, 32, 0, 0)
+
+    RGBH = VSPresetVideoFormat.RGBH
+    RGBS = VSPresetVideoFormat.RGBS
 
 
 GRAY8 = PresetVideoFormat.GRAY8
