@@ -1,5 +1,5 @@
 from .check import *
-from .clip import *
+from .clips import *
 from .file import *
 from .funcs import *
 from .heuristics import *
