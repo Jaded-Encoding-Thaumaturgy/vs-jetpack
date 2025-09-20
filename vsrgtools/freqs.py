@@ -3,20 +3,18 @@ from __future__ import annotations
 from enum import auto
 from typing import Any, Iterable, Literal, Sequence, SupportsIndex, overload
 
-from jetpytools import CustomValueError, SupportsString
+from jetpytools import CustomValueError, FuncExcept, SupportsString, normalize_seq
 
 from vsexprtools import ExprList, ExprOp, ExprVars, combine_expr, norm_expr
 from vstools import (
     ConvMode,
     CustomEnum,
-    FuncExcept,
     HoldsVideoFormat,
     Planes,
     VideoFormatLike,
     VideoNodeIterable,
     check_variable_format,
     flatten_vnodes,
-    normalize_seq,
     shift_clip_multi,
     vs,
 )

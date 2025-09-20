@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from jetpytools import CustomImportError, DependencyNotFoundError, FuncExcept, SupportsString
+from jetpytools import CustomImportError, FuncExcept, SupportsString
 
-__all__ = ["CustomImportError", "DependencyNotFoundError", "OutdatedPluginError"]
+__all__ = ["OutdatedPluginError"]
 
 
 class OutdatedPluginError(CustomImportError):

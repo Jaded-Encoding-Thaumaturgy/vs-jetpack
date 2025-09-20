@@ -7,7 +7,9 @@ from fractions import Fraction
 from functools import partial
 from typing import Callable, ClassVar
 
-from vstools import SPath, core, vs
+from jetpytools import SPath
+
+from vstools import core, vs
 
 from ..dataclasses import D2VIndexFileInfo, D2VIndexFrameData, D2VIndexHeader
 from .base import ExternalIndexer

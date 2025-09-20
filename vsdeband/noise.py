@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import auto
 from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, overload
 
-from jetpytools import MISSING, CustomEnum, FuncExcept, MissingT
+from jetpytools import MISSING, CustomEnum, FuncExcept, MissingT, mod_x, normalize_seq, to_arr
 from typing_extensions import TypeVar
 
 from vsexprtools import norm_expr
@@ -22,12 +22,9 @@ from vstools import (
     get_peak_values,
     get_u,
     get_v,
-    mod_x,
     normalize_param_planes,
-    normalize_seq,
     scale_delta,
     split,
-    to_arr,
     vs,
 )
 

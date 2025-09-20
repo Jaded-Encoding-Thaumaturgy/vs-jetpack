@@ -1,4 +1,4 @@
-from vstools import SPath
+from jetpytools import SPath
 
 __all__ = ["MainWindow"]
 

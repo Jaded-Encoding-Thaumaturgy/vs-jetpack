@@ -7,7 +7,7 @@ from __future__ import annotations
 import warnings
 from typing import Any, Callable, Sequence
 
-from jetpytools import CustomRuntimeError, CustomStrEnum
+from jetpytools import CustomRuntimeError, CustomStrEnum, normalize_seq, to_arr
 
 from vstools import (
     CustomIntEnum,
@@ -16,8 +16,6 @@ from vstools import (
     core,
     join,
     normalize_planes,
-    normalize_seq,
-    to_arr,
     vs,
 )
 

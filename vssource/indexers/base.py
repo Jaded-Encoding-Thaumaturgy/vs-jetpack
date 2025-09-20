@@ -8,24 +8,19 @@ from subprocess import Popen
 from tempfile import gettempdir
 from typing import Any, Callable, ClassVar, Iterable, Literal, Protocol, Sequence
 
+from jetpytools import MISSING, CustomRuntimeError, DataType, SPath, SPathLike, inject_self, to_arr
+
 from vstools import (
-    MISSING,
     ChromaLocation,
     ColorRangeLike,
-    CustomRuntimeError,
-    DataType,
     FieldBasedLike,
     MatrixLike,
     MissingT,
     PackageStorage,
     PrimariesLike,
-    SPath,
-    SPathLike,
     TransferLike,
     core,
     initialize_clip,
-    inject_self,
-    to_arr,
     vs,
 )
 
@@ -35,7 +30,7 @@ __all__ = ["ExternalIndexer", "Indexer", "VSSourceFunc"]
 
 
 class VSSourceFunc(Protocol):
-    def __call__(self, path: DataType, *args: Any, **kwargs: Any) -> vs.VideoNode: ...
+    def __call__(self, path: str | bytes | bytearray, *args: Any, **kwargs: Any) -> vs.VideoNode: ...
 
 
 class Indexer(ABC):

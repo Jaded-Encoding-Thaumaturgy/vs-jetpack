@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any, Iterator, Sequence, TypeGuard
 
-from jetpytools import mod_x
+from jetpytools import CustomIndexError, FuncExcept, mod_x, normalize_seq
 
 from vsdenoise import Prefilter
 from vsexprtools import norm_expr
@@ -14,8 +14,6 @@ from vskernels import BSpline, Lanczos, Mitchell, Scaler
 from vsmasktools import Morpho
 from vsrgtools import gauss_blur, repair
 from vstools import (
-    CustomIndexError,
-    FuncExcept,
     FunctionUtil,
     Planes,
     VSFunctionPlanesArgs,
@@ -25,7 +23,6 @@ from vstools import (
     join,
     limiter,
     normalize_planes,
-    normalize_seq,
     scale_delta,
     split,
     vs,
@@ -305,7 +302,7 @@ def _normalize_iter_arr_t(*values: IterArr[Any]) -> Iterator[tuple[list[Any], ..
         sublist = list[list[Any]]()
 
         for item in subgroup:
-            group = normalize_seq(item)
+            group = normalize_seq(item, 3)
 
             sublist.append(group)
 

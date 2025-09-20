@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from jetpytools import iterate
+
 from vsexprtools import ExprOp, norm_expr
 from vsmasktools import Morpho, XxpandMode
 from vsrgtools import BlurMatrix, box_blur, gauss_blur
-from vstools import ConvMode, core, get_y, iterate, limiter, shift_clip_multi, split, vs
+from vstools import ConvMode, core, get_y, limiter, shift_clip_multi, split, vs
 
 __all__ = ["descale_detail_mask", "descale_error_mask"]
 

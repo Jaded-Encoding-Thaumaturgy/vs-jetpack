@@ -3,6 +3,8 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
 
+from jetpytools import CustomValueError, fallback
+
 from vsexprtools import norm_expr
 from vskernels import Box, Catrom, NoScale, Scaler, ScalerLike, is_noscale_like
 from vsmasktools import EdgeDetect, EdgeDetectLike, Prewitt
@@ -10,13 +12,11 @@ from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
 from vsscale import ArtCNN
 from vstools import (
     ConvMode,
-    CustomValueError,
     FormatsMismatchError,
     FunctionUtil,
     Planes,
     VSFunctionNoArgs,
     check_variable_format,
-    fallback,
     scale_mask,
     vs,
 )

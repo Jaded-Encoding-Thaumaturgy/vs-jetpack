@@ -8,20 +8,24 @@ import math
 from functools import cache
 from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Self, Sequence, overload
 
-from jetpytools import KwargsNotNone, MismatchError, classproperty, fallback
+from jetpytools import (
+    CustomOverflowError,
+    CustomRuntimeError,
+    CustomValueError,
+    FuncExcept,
+    KwargsNotNone,
+    MismatchError,
+    SupportsFloatOrIndex,
+    classproperty,
+    fallback,
+)
 from typing_extensions import deprecated
-from vapoursynth import Plugin
 
 from vstools import (
     CustomEnum,
     CustomIntEnum,
-    CustomOverflowError,
-    CustomRuntimeError,
-    CustomValueError,
     FieldBased,
-    FuncExcept,
     Planes,
-    SupportsFloatOrIndex,
     check_progressive,
     core,
     flatten,
@@ -67,7 +71,7 @@ class _BackendBase(CustomEnum):
         )
 
     @property
-    def plugin(self) -> Plugin:
+    def plugin(self) -> vs.Plugin:
         return getattr(core.lazy, self.resolve().value)
 
 
@@ -883,7 +887,7 @@ class DFTTest:
                 ...
 
             @property
-            def plugin(self) -> Plugin:
+            def plugin(self) -> vs.Plugin:
                 """
                 Returns the appropriate DFTTest plugin based on the current backend.
 

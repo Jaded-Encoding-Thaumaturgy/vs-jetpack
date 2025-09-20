@@ -3,17 +3,7 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, TypeGuard, TypeVar, Union, overload
 
-from jetpytools import (
-    CustomValueError,
-    P,
-    R,
-    SoftRange,
-    StrictRange,
-    fallback,
-    flatten,
-    interleave_arr,
-    ranges_product,
-)
+from jetpytools import CustomValueError, SoftRange, StrictRange, fallback, flatten, interleave_arr
 from jetpytools import invert_ranges as jetp_invert_ranges
 from jetpytools import normalize_list_to_ranges as jetp_normalize_list_to_ranges
 from jetpytools import normalize_range as jetp_normalize_range
@@ -25,13 +15,11 @@ from ..utils import check_ref_clip
 from ..vs_proxy import vs
 
 __all__ = [
-    "interleave_arr",
     "invert_ranges",
     "normalize_franges",
     "normalize_list_to_ranges",
     "normalize_ranges",
     "normalize_ranges_to_list",
-    "ranges_product",
     "remap_frames",
     "replace_every",
     "replace_ranges",

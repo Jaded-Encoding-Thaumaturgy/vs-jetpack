@@ -8,18 +8,24 @@ from itertools import product
 from math import inf, isqrt
 from typing import Any, Collection, Iterable, Iterator, Literal, Self, Sequence, SupportsIndex, cast, overload
 
-from jetpytools import CustomRuntimeError, CustomStrEnum, SupportsString, SupportsSumNoDefaultT, fallback
+from jetpytools import (
+    CustomIndexError,
+    CustomRuntimeError,
+    CustomStrEnum,
+    CustomValueError,
+    FuncExcept,
+    StrList,
+    SupportsString,
+    SupportsSumNoDefaultT,
+    fallback,
+)
 
 from vstools import (
     ColorRange,
     ColorRangeLike,
     ConvMode,
-    CustomIndexError,
-    CustomValueError,
-    FuncExcept,
     HoldsVideoFormat,
     Planes,
-    StrList,
     VideoFormatLike,
     VideoNodeIterable,
     check_variable,

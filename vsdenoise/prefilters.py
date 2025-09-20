@@ -7,14 +7,20 @@ from __future__ import annotations
 from enum import auto
 from typing import Any, Literal, Sequence, cast, overload
 
-from jetpytools import CustomEnum, CustomNotImplementedError, FuncExcept, KwargsT
+from jetpytools import (
+    MISSING,
+    CustomEnum,
+    CustomNotImplementedError,
+    CustomValueError,
+    FuncExcept,
+    KwargsT,
+    normalize_seq,
+)
 
 from vsexprtools import norm_expr
 from vsrgtools import bilateral, flux_smooth, gauss_blur, min_blur
 from vstools import (
-    MISSING,
     ColorRange,
-    CustomValueError,
     InvalidColorFamilyError,
     MissingT,
     Planes,
@@ -23,7 +29,6 @@ from vstools import (
     get_peak_value,
     get_y,
     normalize_planes,
-    normalize_seq,
     scale_value,
     vs,
 )

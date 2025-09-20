@@ -6,22 +6,19 @@ from __future__ import annotations
 
 from typing import Any, Literal, Sequence, overload
 
-from jetpytools import MISSING, CustomRuntimeError, FuncExcept, MissingT
+from jetpytools import MISSING, CustomRuntimeError, FuncExcept, KwargsNotNone, MissingT, fallback, normalize_seq
 
 from vsexprtools import ExprOp, ExprVars, combine_expr, norm_expr
 from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
 from vsscale import ArtCNN
 from vstools import (
-    KwargsNotNone,
     Planes,
     VSFunctionNoArgs,
     check_ref_clip,
     check_variable_format,
-    fallback,
     get_color_family,
     join,
     normalize_planes,
-    normalize_seq,
     scale_delta,
     vs,
 )
