@@ -5,6 +5,7 @@ from .funcs import *
 from .heuristics import *
 from .normalize import *
 from .packets import *
+from .ranges import *
 
 # from .progress import *  # Importing the progress submodule will import the rich module which will impact init time
 from .render import *
