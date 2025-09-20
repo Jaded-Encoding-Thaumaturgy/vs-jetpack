@@ -6,13 +6,13 @@ from math import floor
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Self, Sequence, cast, overload
 
-import vapoursynth as vs
 from jetpytools import MISSING, MissingT
 
 from ..enums import Align, BaseAlign
 from ..exceptions import InvalidSubsamplingError
 from ..functions import Keyframes, check_variable_format, clip_data_gather
-from ..utils.cache import SceneBasedDynamicCache
+from ..utils import SceneBasedDynamicCache
+from ..vs_proxy import core, vs
 from .info import get_video_format
 from .props import get_props
 
@@ -245,8 +245,6 @@ class padder:  # noqa: N801
         Returns:
             Padded clip with reflected borders.
         """
-
-        from ..utils import core
 
         width, height, *_ = cls._base(clip, left, right, top, bottom)
 

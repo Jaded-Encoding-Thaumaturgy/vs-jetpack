@@ -11,3 +11,4 @@ from .exceptions import *
 from .functions import *
 from .types import *
 from .utils import *
+from .vs_proxy import *

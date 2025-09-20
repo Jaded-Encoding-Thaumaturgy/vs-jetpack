@@ -24,7 +24,7 @@ from ..enums import (
 )
 from ..functions import DitherType, check_variable_format, depth
 from ..types import HoldsVideoFormat, VideoFormatLike
-from . import vs_proxy as vs
+from ..vs_proxy import vs
 from .cache import DynamicClipsCache
 from .info import get_depth
 

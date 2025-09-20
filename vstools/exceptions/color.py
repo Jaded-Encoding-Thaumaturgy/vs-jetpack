@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-import vapoursynth as vs
 from jetpytools import CustomPermissionError, CustomValueError, FuncExcept, SupportsString
+
+from ..vs_proxy import vs
 
 __all__ = [
     "InvalidColorspacePathError",
