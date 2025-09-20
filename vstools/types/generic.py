@@ -2,16 +2,14 @@ from __future__ import annotations
 
 from typing import Any, Callable, Iterable, Mapping, Protocol, TypeVar, Union
 
-from jetpytools import MISSING, DataType, FuncExcept, MissingT, PassthroughC, StrArr, StrArrOpt
+from jetpytools import FuncExcept, MissingT
 
 from ..vs_proxy import vs
 from .builtins import Planes
 
 __all__ = [
     "F_VD",
-    "MISSING",
     "ConstantFormatVideoNode",
-    "DataType",
     "FuncExcept",
     "FuncExceptT",  # Deprecated alias
     "GenericVSFunction",
@@ -20,9 +18,6 @@ __all__ = [
     "HoldsVideoFormat",
     "HoldsVideoFormatT",  # Deprecated alias
     "MissingT",
-    "PassthroughC",
-    "StrArr",
-    "StrArrOpt",
     "VSFunction",
     "VSFunctionAllArgs",
     "VSFunctionArgs",
