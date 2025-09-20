@@ -4,19 +4,18 @@ from contextlib import AbstractContextManager
 from fractions import Fraction
 from math import floor
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Self, Sequence, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Self, Sequence, overload
 
 from jetpytools import MISSING, MissingT
 
-from ..enums import Align, BaseAlign
+from ..enums import Align, BaseAlign, Matrix
 from ..exceptions import InvalidSubsamplingError
-from ..functions import Keyframes, check_variable_format, clip_data_gather
-from ..utils import SceneBasedDynamicCache
 from ..vs_proxy import core, vs
+from .check import check_variable, check_variable_format
 from .info import get_video_format
 from .props import get_props
 
-__all__ = ["SceneAverageStats", "change_fps", "match_clip", "padder", "padder_ctx", "pick_func_stype", "set_output"]
+__all__ = ["change_fps", "match_clip", "padder", "padder_ctx", "pick_func_stype", "set_output"]
 
 
 def change_fps(clip: vs.VideoNode, fps: Fraction) -> vs.VideoNode:
@@ -69,9 +68,6 @@ def match_clip(
             clip. Default: True.
         length: Whether to adjust the length of the reference clip to match the original clip.
     """
-    from ..enums import Matrix
-    from ..functions import check_variable
-
     assert check_variable(clip, match_clip)
     assert check_variable(ref, match_clip)
 
@@ -204,8 +200,6 @@ class padder:  # noqa: N801
     def _base(
         clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0
     ) -> tuple[int, int, vs.VideoFormat, int, int]:
-        from ..functions import check_variable
-
         assert check_variable(clip, "padder")
 
         width = clip.width + left + right
@@ -363,7 +357,6 @@ class padder:  # noqa: N801
         Returns:
             Padded clip with colored borders.
         """
-
         from ..functions import normalize_seq
         from ..utils import core, get_lowest_values, get_neutral_values, get_peak_values
 
@@ -651,45 +644,3 @@ def set_output(
     except ModuleNotFoundError:
         for idx, n in zip(index, nodes):
             n.set_output(idx)
-
-
-class SceneAverageStats(SceneBasedDynamicCache):
-    _props_keys = ("Min", "Max", "Average")
-
-    class cache(dict[int, tuple[float, float, float]]):  # noqa: N801
-        def __init__(self, clip: vs.VideoNode, keyframes: Keyframes, plane: int) -> None:
-            self.props = clip.std.PlaneStats(plane=plane)
-            self.keyframes = keyframes
-
-        def __getitem__(self, idx: int) -> tuple[float, float, float]:
-            if idx not in self:
-                frame_range = self.keyframes.scenes[idx]
-                cut_clip = self.props[frame_range.start : frame_range.stop]
-
-                frames_min_max_avg = clip_data_gather(
-                    cut_clip,
-                    None,
-                    lambda n, f: tuple(cast(float, f.props[f"PlaneStats{p}"]) for p in SceneAverageStats._props_keys),
-                )
-
-                frames_min, frames_max, frames_avgs = [[x[i] for x in frames_min_max_avg] for i in (0, 1, 2)]
-
-                self[idx] = (min(frames_min), max(frames_max), sum(frames_avgs) / len(frames_avgs))
-
-            return super().__getitem__(idx)
-
-    def __init__(
-        self,
-        clip: vs.VideoNode,
-        keyframes: Keyframes | str,
-        prop: str = "SceneStats",
-        plane: int = 0,
-        cache_size: int = 5,
-    ) -> None:
-        super().__init__(clip, keyframes, cache_size)
-
-        self.prop_keys = tuple(f"{prop}{x}" for x in self._props_keys)
-        self.scene_avgs = self.__class__.cache(self.clip, self.keyframes, plane)
-
-    def get_clip(self, key: int) -> vs.VideoNode:
-        return self.clip.std.SetFrameProps(**dict(zip(self.prop_keys, self.scene_avgs[key])))
