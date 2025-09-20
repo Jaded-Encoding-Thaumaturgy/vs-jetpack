@@ -11,6 +11,7 @@ from jetpytools import (
     MismatchError,
     MismatchRefError,
     SupportsString,
+    to_arr,
 )
 
 from ..types import HoldsVideoFormat, VideoFormatLike
@@ -135,7 +136,6 @@ class InvalidColorFamilyError(CustomValueError):
         message: SupportsString = "Input clip must be of {correct} color family, not {wrong}!",
         **kwargs: Any,
     ) -> None:
-        from ..functions import to_arr
         from ..utils import get_color_family
 
         super().__init__(
@@ -176,7 +176,6 @@ class InvalidColorFamilyError(CustomValueError):
         Raises:
             InvalidColorFamilyError: Given color family is not in list of correct color families.
         """
-        from ..functions import to_arr
         from ..utils import get_color_family
 
         to_check_set = {get_color_family(c) for c in to_arr(to_check)}  # type: ignore[arg-type]
@@ -541,8 +540,6 @@ class InvalidTimecodeVersionError(CustomValueError):
         Raises:
             InvalidTimecodeVersionError: Given timecodes version is not in list of correct versions.
         """
-        from ..functions import to_arr
-
         correct_list = to_arr(correct)
 
         if to_check not in correct_list:
