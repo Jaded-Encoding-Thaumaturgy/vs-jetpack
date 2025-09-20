@@ -15,7 +15,7 @@ from typing import (
 
 from typing_extensions import Self
 
-from .vs_proxy import core, register_on_creation
+from .proxy import core, register_on_creation
 
 __all__ = ["VSObject", "VSObjectABC", "VSObjectABCMeta", "VSObjectMeta", "vs_object"]
 

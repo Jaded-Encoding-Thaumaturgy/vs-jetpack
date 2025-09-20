@@ -1,6 +1,6 @@
-from . import vs_proxy as vapoursynth
-from .vs_enums import *
-from .vs_objects import *
+from . import proxy as vapoursynth
+from .enums import *
+from .objects import *
 
 vs = vapoursynth
 core = vapoursynth.core
