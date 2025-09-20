@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from abc import abstractmethod
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
@@ -12,6 +13,7 @@ from jetpytools import CustomValueError, FilePathType, FuncExcept, LinearRangeLu
 
 from ..enums import Matrix, SceneChangeMode
 from ..exceptions import FramesLengthError, InvalidTimecodeVersionError
+from ..utils import DynamicClipsCache
 from .file import PackageStorage
 from .render import clip_async_render
 
@@ -573,6 +575,28 @@ class Keyframes(list[int]):
             return param
 
         return cls(param)
+
+
+class SceneBasedDynamicCache(DynamicClipsCache[int, vs.VideoNode]):
+    def __init__(self, clip: vs.VideoNode, keyframes: Keyframes | str, cache_size: int = 5) -> None:
+        super().__init__(cache_size)
+
+        self.clip = clip
+        self.keyframes = Keyframes.from_param(clip, keyframes)
+
+    @abstractmethod
+    def get_clip(self, key: int) -> vs.VideoNode: ...
+
+    def get_eval(self) -> vs.VideoNode:
+        return self.clip.std.FrameEval(lambda n: self[self.keyframes.scenes.indices[n]])
+
+    @classmethod
+    def from_clip(cls, clip: vs.VideoNode, keyframes: Keyframes | str, *args: Any, **kwargs: Any) -> vs.VideoNode:
+        return cls(clip, keyframes, *args, **kwargs).get_eval()
+
+    def __vs_del__(self, core_id: int) -> None:
+        super().__vs_del__(core_id)
+        del self.clip
 
 
 @dataclass

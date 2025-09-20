@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, MutableMapping
+from typing import TYPE_CHECKING, MutableMapping
 
 from jetpytools import T
 
@@ -9,9 +9,7 @@ from ..vs_proxy import vs_proxy as vs
 from ..vs_proxy.vs_objects import vs_object
 
 if TYPE_CHECKING:
-    from vapoursynth import _PropValue
-
-    from ..functions import Keyframes
+    from vapoursynth import _PropValue  # pyright: ignore[reportMissingModuleSource]
 
 
 __all__ = [
@@ -21,7 +19,6 @@ __all__ = [
     "FramesCache",
     "NodeFramesCache",
     "NodesPropsCache",
-    "SceneBasedDynamicCache",
     "cache_clip",
 ]
 
@@ -107,30 +104,6 @@ class NodeFramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](vs_object, dict[
 
 
 class ClipFramesCache(NodeFramesCache[vs.VideoNode, vs.VideoFrame]): ...
-
-
-class SceneBasedDynamicCache(DynamicClipsCache[int]):
-    def __init__(self, clip: vs.VideoNode, keyframes: Keyframes | str, cache_size: int = 5) -> None:
-        super().__init__(cache_size)
-
-        from ..functions import Keyframes
-
-        self.clip = clip
-        self.keyframes = Keyframes.from_param(clip, keyframes)
-
-    @abstractmethod
-    def get_clip(self, key: int) -> vs.VideoNode: ...
-
-    def get_eval(self) -> vs.VideoNode:
-        return self.clip.std.FrameEval(lambda n: self[self.keyframes.scenes.indices[n]])
-
-    @classmethod
-    def from_clip(cls, clip: vs.VideoNode, keyframes: Keyframes | str, *args: Any, **kwargs: Any) -> vs.VideoNode:
-        return cls(clip, keyframes, *args, **kwargs).get_eval()
-
-    def __vs_del__(self, core_id: int) -> None:
-        super().__vs_del__(core_id)
-        del self.clip
 
 
 class NodesPropsCache[_NodeT: vs.RawNode](vs_object, dict[tuple[_NodeT, int], MutableMapping[str, "_PropValue"]]):
