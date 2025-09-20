@@ -1,22 +1,127 @@
 from __future__ import annotations
 
 from contextlib import suppress
-from typing import Any, Callable, Literal, Protocol, Sequence, TypeGuard, TypeVar, Union, overload
+from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, TypeGuard, TypeVar, Union, overload
 
-from jetpytools import CustomValueError, P, R, fallback, flatten, interleave_arr, ranges_product
+from jetpytools import (
+    CustomValueError,
+    P,
+    R,
+    SoftRange,
+    StrictRange,
+    fallback,
+    flatten,
+    interleave_arr,
+    ranges_product,
+)
+from jetpytools import invert_ranges as jetp_invert_ranges
+from jetpytools import normalize_list_to_ranges as jetp_normalize_list_to_ranges
+from jetpytools import normalize_range as jetp_normalize_range
+from jetpytools import normalize_ranges as jetp_normalize_ranges
+from jetpytools import normalize_ranges_to_list as jetp_normalize_ranges_to_list
 
 from ..types import FrameRangeN, FrameRangesN, Planes
 from ..utils import check_ref_clip
 from ..vs_proxy import vs
-from .normalize import invert_ranges, normalize_ranges
 
 __all__ = [
     "interleave_arr",
+    "invert_ranges",
+    "normalize_franges",
+    "normalize_list_to_ranges",
+    "normalize_ranges",
+    "normalize_ranges_to_list",
     "ranges_product",
     "remap_frames",
     "replace_every",
     "replace_ranges",
 ]
+
+
+def normalize_franges(ranges: SoftRange, /, exclusive: bool | None = None) -> Sequence[int]:
+    """
+    Normalize ranges represented by a tuple to an iterable of frame numbers.
+
+    :param ranges:      Ranges to normalize.
+    :param exclusive:   Whether to use exclusive (Python-style) ranges.
+                        Defaults to False.
+
+    :return:            List of positive frame ranges.
+    """
+    return jetp_normalize_range(ranges, fallback(exclusive, replace_ranges.exclusive, False))
+
+
+def normalize_list_to_ranges(
+    flist: Iterable[int], min_length: int = 0, exclusive: bool | None = None
+) -> list[StrictRange]:
+    return jetp_normalize_list_to_ranges(flist, min_length, fallback(exclusive, replace_ranges.exclusive, False))
+
+
+def normalize_ranges(
+    clip: vs.VideoNode, ranges: FrameRangeN | FrameRangesN, exclusive: bool | None = None
+) -> list[tuple[int, int]]:
+    """
+    Normalize ranges to a list of positive ranges.
+
+    Frame ranges can include `None` and negative values.
+    None will be converted to either 0 if it's the first value in a FrameRange,
+    or the clip's length if it's the second item.
+    Negative values will be subtracted from the clip's length.
+
+    Examples:
+
+        >>> clip.num_frames
+        1000
+        >>> normalize_ranges(clip, (None, None))
+        [(0, 999)]
+        >>> normalize_ranges(clip, (24, -24))
+        [(24, 975)]
+        >>> normalize_ranges(clip, [(24, 100), (80, 150)])
+        [(24, 150)]
+
+    Args:
+        clip: Input clip.
+        ranges: Frame range or list of frame ranges.
+        exclusive: Whether to use exclusive (Python-style) ranges. Defaults to False.
+
+    Returns:
+        List of positive frame ranges.
+    """
+    return jetp_normalize_ranges(ranges, clip.num_frames, fallback(exclusive, replace_ranges.exclusive, False))
+
+
+def normalize_ranges_to_list(ranges: Iterable[SoftRange], exclusive: bool | None = None) -> list[int]:
+    return jetp_normalize_ranges_to_list(ranges, fallback(exclusive, replace_ranges.exclusive, False))
+
+
+def invert_ranges(
+    clipa: vs.VideoNode, clipb: vs.VideoNode | None, ranges: FrameRangeN | FrameRangesN, exclusive: bool | None = None
+) -> list[tuple[int, int]]:
+    """
+    Invert FrameRanges.
+
+    Example:
+
+        >>> franges = [(100, 200), 600, (1200, 2400)]
+        >>> invert_ranges(core.std.BlankClip(length=10000), core.std.BlankClip(length=10000), franges)
+        [(0, 99), (201, 599), (601, 1199), (2401, 9999)]
+
+    Args:
+        clipa: Original clip.
+        clipb: Replacement clip.
+        ranges: Ranges to replace clipa (original clip) with clipb (replacement clip). These ranges will be inverted.
+            For more info, see `replace_ranges`.
+        exclusive: Whether to use exclusive (Python-style) ranges. Defaults to False.
+
+    Returns:
+        A list of inverted frame ranges.
+    """
+    return jetp_invert_ranges(
+        ranges,
+        clipa.num_frames,
+        None if clipb is None else clipb.num_frames,
+        fallback(exclusive, replace_ranges.exclusive, False),
+    )
 
 
 _VideoFrameT_contra = TypeVar(
