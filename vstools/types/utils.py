@@ -48,7 +48,7 @@ class VSDebug(Singleton, init=True):
                 trying to find the code path that is locking you into a EnvironmentPolicy.
         """
 
-        from ..vs_proxy.vs_proxy import register_on_creation
+        from ..vs_proxy.proxy import register_on_creation
 
         if use_logging:
             import logging
@@ -69,7 +69,7 @@ class VSDebug(Singleton, init=True):
 
     @staticmethod
     def _print_env_live(core_id: int) -> None:
-        from ..vs_proxy.vs_proxy import core, register_on_destroy
+        from ..vs_proxy.proxy import core, register_on_destroy
 
         VSDebug._print_func(f"New core created with id: {core_id}")
 
