@@ -3,12 +3,12 @@ from __future__ import annotations
 from fractions import Fraction
 from typing import SupportsFloat, SupportsInt
 
-import vapoursynth as vs
 from jetpytools import fallback, mod_x
 
 from ..enums import Dar, Sar
 from ..exceptions import UnsupportedColorFamilyError, UnsupportedSubsamplingError
 from ..types import HoldsVideoFormat, VideoFormatLike
+from ..vs_proxy import vs
 from .check import check_variable_format
 
 __all__ = [

@@ -3,8 +3,6 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, MutableMapping
 
-from jetpytools import T
-
 from ..vs_proxy import vs, vs_object
 
 if TYPE_CHECKING:
@@ -33,7 +31,7 @@ class ClipsCache(vs_object, dict[vs.VideoNode, vs.VideoNode]):
         self.clear()
 
 
-class DynamicClipsCache(vs_object, dict[T, vs.VideoNode]):
+class DynamicClipsCache[T](vs_object, dict[T, vs.VideoNode]):
     def __init__(self, cache_size: int = 2) -> None:
         self.cache_size = cache_size
 

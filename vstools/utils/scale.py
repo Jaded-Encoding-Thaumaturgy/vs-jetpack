@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import vapoursynth as vs
 from jetpytools import normalize_seq
 
 from ..enums import ColorRange, ColorRangeLike
 from ..types import HoldsVideoFormat, VideoFormatLike
+from ..vs_proxy import vs
 from .info import get_depth, get_video_format
 
 __all__ = [
