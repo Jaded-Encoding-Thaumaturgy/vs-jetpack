@@ -14,6 +14,7 @@ from jetpytools import CustomValueError, FilePathType, FuncExcept, LinearRangeLu
 from ..enums import Matrix, SceneChangeMode
 from ..exceptions import FramesLengthError, InvalidTimecodeVersionError
 from ..utils import DynamicClipsCache, PackageStorage
+from ..vs_proxy import VSObject
 from .ranges import replace_ranges
 from .render import clip_async_render, clip_data_gather
 
@@ -456,7 +457,7 @@ class Keyframes(list[int]):
         prop_key: str = next(iter(SceneChangeMode.SCXVID.prop_keys)),
         scene_idx_prop: bool = False,
     ) -> vs.VideoNode:
-        from ..utils import replace_ranges
+        from .ranges import replace_ranges
 
         propset_clip = clip.std.SetFrameProp(prop_key, True)
 

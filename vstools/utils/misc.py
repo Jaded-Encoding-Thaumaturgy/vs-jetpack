@@ -6,14 +6,14 @@ from math import floor
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Self, Sequence, overload
 
-from jetpytools import MISSING, MissingT
+from jetpytools import MISSING, MissingT, P, normalize_seq
 
 from ..enums import Align, BaseAlign, Matrix
 from ..exceptions import InvalidSubsamplingError
 from ..vs_proxy import core, vs
 from .check import check_variable, check_variable_format
-from .info import get_video_format
 from .props import get_props
+from .scale import get_lowest_values, get_neutral_values, get_peak_values
 
 __all__ = ["change_fps", "match_clip", "padder", "padder_ctx", "pick_func_stype", "set_output"]
 
@@ -205,16 +205,16 @@ class padder:  # noqa: N801
         width = clip.width + left + right
         height = clip.height + top + bottom
 
-        fmt = get_video_format(clip)
-
-        w_sub, h_sub = 1 << fmt.subsampling_w, 1 << fmt.subsampling_h
+        w_sub, h_sub = 1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h
 
         if width % w_sub and height % h_sub:
             raise InvalidSubsamplingError(
-                "padder", fmt, "Values must result in a mod congruent to the clip's subsampling ({subsampling})!"
+                "padder",
+                clip.format,
+                "Values must result in a mod congruent to the clip's subsampling ({subsampling})!",
             )
 
-        return width, height, fmt, w_sub, h_sub
+        return width, height, clip.format, w_sub, h_sub
 
     @classmethod
     def MIRROR(cls, clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> vs.VideoNode:  # noqa: N802
@@ -357,9 +357,6 @@ class padder:  # noqa: N801
         Returns:
             Padded clip with colored borders.
         """
-        from ..functions import normalize_seq
-        from ..utils import core, get_lowest_values, get_neutral_values, get_peak_values
-
         assert check_variable_format(clip, "padder")
 
         cls._base(clip, left, right, top, bottom)
