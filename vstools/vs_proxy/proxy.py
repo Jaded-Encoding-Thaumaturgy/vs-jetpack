@@ -167,7 +167,7 @@ from vapoursynth import _construct_parameter as construct_parameter
 from vapoursynth import _construct_type as construct_type
 from vapoursynth import _try_enable_introspection as try_enable_introspection
 
-from .vs_enums import (
+from .enums import (
     GRAY8,
     GRAY9,
     GRAY10,

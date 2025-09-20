@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from typing_extensions import Self
 
-from .vs_proxy import core, register_on_creation
+from .proxy import core, register_on_creation
 
 __all__ = ["vs_object"]
 
