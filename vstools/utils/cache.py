@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, MutableMapping
 
 from jetpytools import T
 
-from ..vs_proxy import vs_proxy as vs
-from ..vs_proxy.vs_objects import vs_object
+from ..vs_proxy import vs, vs_object
 
 if TYPE_CHECKING:
     from vapoursynth import _PropValue  # pyright: ignore[reportMissingModuleSource]
