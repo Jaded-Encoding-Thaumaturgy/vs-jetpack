@@ -3,7 +3,9 @@ from __future__ import annotations
 from math import sqrt
 from typing import Any, Callable, overload
 
-from vstools import CustomValueError, core, vs
+from jetpytools import CustomValueError
+
+from vstools import core, vs
 
 from ...types import LeftShift, TopShift
 from .abstract import ZimgComplexKernel

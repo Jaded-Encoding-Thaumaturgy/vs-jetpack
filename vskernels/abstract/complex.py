@@ -7,14 +7,20 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, overload
 
-from jetpytools import CustomIndexError, CustomNotImplementedError, CustomValueError, FuncExcept, fallback
+from jetpytools import (
+    CustomIndexError,
+    CustomNotImplementedError,
+    CustomValueError,
+    FuncExcept,
+    fallback,
+    normalize_seq,
+)
 
 from vstools import (
     ChromaLocation,
     Dar,
     FieldBased,
     FieldBasedLike,
-    KwargsT,
     Resolution,
     Sar,
     check_correct_subsampling,
@@ -22,7 +28,6 @@ from vstools import (
     depth,
     expect_bits,
     get_video_format,
-    normalize_seq,
     split,
     vs,
 )
@@ -409,7 +414,7 @@ class KeepArScaler(Scaler):
         dar_in: Dar | bool | float | None,
         keep_ar: bool | None,
         **kwargs: Any,
-    ) -> tuple[KwargsT, tuple[TopShift, LeftShift], Sar | Literal[False]]:
+    ) -> tuple[dict[str, Any], tuple[TopShift, LeftShift], Sar | Literal[False]]:
         kwargs.setdefault("src_top", kwargs.pop("sy", shift[0]))
         kwargs.setdefault("src_left", kwargs.pop("sx", shift[1]))
         kwargs.setdefault("src_width", kwargs.pop("sw", clip.width))

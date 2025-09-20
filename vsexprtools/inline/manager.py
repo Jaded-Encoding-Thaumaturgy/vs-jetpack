@@ -13,7 +13,7 @@ from typing import Any, Iterable, Iterator, Self, Sequence, SupportsIndex, cast,
 
 from jetpytools import CustomValueError, to_arr
 
-from vstools import HoldsVideoFormat, VideoFormatLike, get_video_format, vs, vs_object
+from vstools import HoldsVideoFormat, VideoFormatLike, VSObject, get_video_format, vs
 
 from ..error import CustomExprError
 from ..funcs import norm_expr
@@ -304,7 +304,7 @@ def inline_expr(
     raise error.with_traceback(catcher.tb)
 
 
-class InlineExprWrapper(vs_object):
+class InlineExprWrapper(VSObject):
     """
     A wrapper class for constructing and evaluating VapourSynth expressions inline using Python syntax.
 

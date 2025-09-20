@@ -3,7 +3,9 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any
 
-from vstools import inject_self, vs
+from jetpytools import inject_self
+
+from vstools import vs
 
 __all__ = ["Debander"]
 

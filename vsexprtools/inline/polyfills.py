@@ -4,7 +4,7 @@ import math
 from functools import wraps
 from typing import Any
 
-from vstools import copy_func
+from jetpytools import copy_func
 
 from .helpers import ExprVar, op
 

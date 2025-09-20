@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Iterable, Mapping, Protocol, TypeVar, Union
 
-from jetpytools import FuncExcept, MissingT
+from jetpytools import MissingT
 
 from ..vs_proxy import vs
 from .builtins import Planes
@@ -10,8 +10,6 @@ from .builtins import Planes
 __all__ = [
     "F_VD",
     "ConstantFormatVideoNode",
-    "FuncExcept",
-    "FuncExceptT",  # Deprecated alias
     "GenericVSFunction",
     "HoldsPropValue",
     "HoldsPropValueT",  # Deprecated alias
@@ -29,9 +27,6 @@ __all__ = [
     "VideoNodeIterable",
     "VideoNodeIterableT",  # Deprecated alias
 ]
-
-
-FuncExceptT = FuncExcept
 
 type VideoNodeIterable = vs.VideoNode | Iterable[VideoNodeIterable]
 
