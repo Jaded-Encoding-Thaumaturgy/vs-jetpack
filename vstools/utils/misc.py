@@ -4,18 +4,39 @@ from contextlib import AbstractContextManager
 from fractions import Fraction
 from math import floor
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Self, Sequence, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Self, Sequence, overload
 
-from jetpytools import MISSING, MissingT, P, normalize_seq
+from jetpytools import (
+    MISSING,
+    FuncExcept,
+    MissingT,
+    P,
+    T,
+    normalize_seq,
+    to_arr,
+)
+from jetpytools import flatten as jetp_flatten
 
 from ..enums import Align, BaseAlign, Matrix
 from ..exceptions import InvalidSubsamplingError
+from ..types import Planes
 from ..vs_proxy import core, vs
 from .check import check_variable, check_variable_format
 from .props import get_props
 from .scale import get_lowest_values, get_neutral_values, get_peak_values
 
-__all__ = ["change_fps", "match_clip", "padder", "padder_ctx", "pick_func_stype", "set_output"]
+__all__ = [
+    "change_fps",
+    "flatten",
+    "invert_planes",
+    "match_clip",
+    "normalize_param_planes",
+    "normalize_planes",
+    "padder",
+    "padder_ctx",
+    "pick_func_stype",
+    "set_output",
+]
 
 
 def change_fps(clip: vs.VideoNode, fps: Fraction) -> vs.VideoNode:
@@ -615,8 +636,6 @@ def set_output(
         alpha: Alpha planes node, defaults to None.
         **kwargs: Additional arguments to be passed to `vspreview.set_output`.
     """
-    from ..functions import flatten, to_arr
-
     if isinstance(index_or_name, (str, bool)):
         index = None
         if not TYPE_CHECKING and isinstance(name, vs.VideoNode):
@@ -641,3 +660,86 @@ def set_output(
     except ModuleNotFoundError:
         for idx, n in zip(index, nodes):
             n.set_output(idx)
+
+
+def normalize_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:
+    """
+    Normalize a sequence of planes.
+
+    Args:
+        clip: Input clip.
+        planes: Array of planes. If None, returns all planes of the input clip's format. Default: None.
+
+    Returns:
+        Sorted list of planes.
+    """
+
+    assert clip.format
+
+    planes = list(range(clip.format.num_planes)) if planes is None or planes == 4 else to_arr(planes)
+
+    return sorted(set(planes).intersection(range(clip.format.num_planes)))
+
+
+def invert_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:
+    """
+    Invert a sequence of planes.
+
+    Args:
+        clip: Input clip.
+        planes: Array of planes. If None, selects all planes of the input clip's format.
+
+    Returns:
+        Sorted inverted list of planes.
+    """
+    return sorted(set(normalize_planes(clip, None)) - set(normalize_planes(clip, planes)))
+
+
+def normalize_param_planes(
+    clip: vs.VideoNode, param: T | Sequence[T], planes: Planes, null: T, func: FuncExcept | None = None
+) -> list[T]:
+    """
+    Normalize a value or sequence to a list mapped to the clip's planes.
+
+    For any plane not included in `planes`, the corresponding output value is set to `null`.
+
+    Args:
+        clip: The input clip whose format and number of planes will be used to determine mapping.
+        param: A single value or a sequence of values to normalize across the clip's planes.
+        planes: The planes to apply the values to. Other planes will receive `null`.
+        null: The default value to use for planes that are not included in `planes`.
+        func: Function returned for custom error handling.
+
+    Returns:
+        A list of length equal to the number of planes in the clip, with `param` values or `null`.
+    """
+    func = func or normalize_param_planes
+
+    assert check_variable_format(clip, func)
+
+    planes = normalize_planes(clip, planes)
+
+    return [p if i in planes else null for i, p in enumerate(normalize_seq(param, clip.format.num_planes))]
+
+
+@overload
+def flatten(items: Iterable[Iterable[T]]) -> Iterator[T]: ...
+
+
+@overload
+def flatten(items: Iterable[Any]) -> Iterator[Any]: ...
+
+
+@overload
+def flatten(items: Any) -> Iterator[Any]: ...
+
+
+def flatten(items: Any) -> Iterator[Any]:
+    """
+    Flatten an array of values, clips and frames included.
+    """
+
+    if isinstance(items, (vs.RawNode, vs.RawFrame)):
+        yield items
+    else:
+        yield from jetp_flatten(items)
