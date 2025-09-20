@@ -20,7 +20,7 @@ from jetpytools import (
 from ..enums import ColorRange, ColorRangeLike
 from ..exceptions import ClipLengthError, InvalidColorFamilyError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterableT
-from .check import check_variable_format
+from ..utils import check_variable_format
 from .clips import shift_clip
 
 __all__ = [

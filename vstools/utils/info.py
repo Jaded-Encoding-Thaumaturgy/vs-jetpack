@@ -8,8 +8,8 @@ from jetpytools import fallback, mod_x
 
 from ..enums import Dar, Sar
 from ..exceptions import UnsupportedColorFamilyError, UnsupportedSubsamplingError
-from ..functions import check_variable_format, depth
 from ..types import HoldsVideoFormat, VideoFormatLike
+from .check import check_variable_format
 
 __all__ = [
     "expect_bits",
