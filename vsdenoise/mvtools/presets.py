@@ -268,9 +268,6 @@ class MVToolsPreset(MutableMapping[str, Any], VSObjectABC):
         self._dict |= dict[str, Any](value)
         return self
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
-
     @classproperty
     @classmethod
     def HQ_COHERENCE(cls) -> Self:  # noqa: N802

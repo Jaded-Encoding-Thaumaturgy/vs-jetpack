@@ -180,11 +180,6 @@ class RescaleBase(VSObjectABC):
     Returns the upscaled clip
     """
 
-    def __vs_del__(self, core_id: int) -> None:
-        del self._clipy
-        del self._chroma
-        cachedproperty.clear_cache(self)
-
 
 class Rescale(RescaleBase):
     """
@@ -568,11 +563,3 @@ class Rescale(RescaleBase):
         self.credit_mask = credit_mask
 
         return self.credit_mask
-
-    def __vs_del__(self, core_id: int) -> None:
-        del self._line_mask
-        del self._credit_mask
-        del self._ignore_mask
-        del self._pre
-
-        super().__vs_del__(core_id)

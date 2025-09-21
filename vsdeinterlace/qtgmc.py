@@ -1,7 +1,7 @@
 from copy import deepcopy
 from functools import partial
 from math import factorial
-from typing import Any, Iterable, Literal, MutableMapping, Protocol, Self
+from typing import Any, Iterable, Literal, Protocol, Self
 
 from jetpytools import CustomIntEnum, KwargsT, fallback, normalize_seq
 
@@ -1192,11 +1192,3 @@ class QTempGaussMC(VSObject):
         self._apply_motion_blur()
 
         return self.motion_blur_output
-
-    def __vs_del__(self, core_id: int) -> None:
-        for k, v in self.__dict__.copy().items():
-            if isinstance(v, vs.VideoNode):
-                delattr(self, k)
-
-            if isinstance(v, MutableMapping):
-                v.clear()

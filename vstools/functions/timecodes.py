@@ -595,10 +595,6 @@ class SceneBasedDynamicCache(DynamicClipsCache[int]):
     def from_clip(cls, clip: vs.VideoNode, keyframes: Keyframes | str, *args: Any, **kwargs: Any) -> vs.VideoNode:
         return cls(clip, keyframes, *args, **kwargs).get_eval()
 
-    def __vs_del__(self, core_id: int) -> None:
-        super().__vs_del__(core_id)
-        del self.clip
-
 
 class SceneAverageStats(SceneBasedDynamicCache):
     _props_keys = ("Min", "Max", "Average")

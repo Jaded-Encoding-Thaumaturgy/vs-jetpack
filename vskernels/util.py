@@ -398,10 +398,6 @@ class LinearLightProcessing(VSObjectABC):
 
         return resample_to(processed, self.ll._fmt, self.ll._matrix, self.ll._resampler)
 
-    def __vs_del__(self, core_id: int) -> None:
-        del self._linear
-        cachedproperty.clear_cache(self)
-
 
 @dataclass
 class LinearLight(AbstractContextManager[LinearLightProcessing], VSObjectABC):
@@ -533,11 +529,6 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], VSObjectABC):
 
     def __exit__(self, *args: object, **kwargs: Any) -> None:
         self._exited = True
-
-    def __vs_del__(self, core_id: int) -> None:
-        for name in ("clip", "out_fmt", "_fmt", "_wclip"):
-            with suppress(AttributeError):
-                delattr(self, name)
 
 
 def resample_to(

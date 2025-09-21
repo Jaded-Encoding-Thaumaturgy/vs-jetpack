@@ -4,7 +4,6 @@ This module defines the base abstract interfaces for general scaling operations.
 
 from __future__ import annotations
 
-from contextlib import suppress
 from functools import cache, wraps
 from inspect import Signature
 from math import ceil
@@ -455,10 +454,6 @@ class BaseScaler(VSObjectABC, metaclass=BaseScalerMeta, abstract=True):
             Frozen set of function names.
         """
         return frozenset(func for klass in cls.mro() for func in getattr(klass, "_implemented_funcs", ()))
-
-    def __vs_del__(self, core_id: int) -> None:
-        with suppress(AttributeError):
-            self.kwargs.clear()
 
 
 class Scaler(BaseScaler):

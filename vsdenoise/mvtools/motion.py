@@ -73,6 +73,3 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
         assert check_variable_format(vector, self.set_vector)
 
         self[direction][delta] = vector
-
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()

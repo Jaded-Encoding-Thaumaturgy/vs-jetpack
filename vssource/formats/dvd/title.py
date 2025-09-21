@@ -117,9 +117,6 @@ class TitleAudios(Sequence[vs.AudioNode], VSObject):
     def __len__(self) -> int:
         return len(self.cache)
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.cache.clear()
-
 
 @dataclass
 class Title:

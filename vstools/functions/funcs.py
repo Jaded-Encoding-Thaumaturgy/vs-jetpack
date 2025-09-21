@@ -368,7 +368,3 @@ class FunctionUtil(list[int], VSObject):
         """
 
         return [x if i in self else null for i, x in enumerate(normalize_seq(seq, self.num_planes))]
-
-    def __vs_del__(self, core_id: int) -> None:
-        del self.clip, self.func, self.allowed_cfamilies
-        cachedproperty.clear_cache(self)

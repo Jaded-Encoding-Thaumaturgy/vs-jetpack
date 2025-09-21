@@ -102,9 +102,6 @@ class CustomMaskFromClipsAndRanges(GeneralMask, VSObjectABC):
     @abstractmethod
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]: ...
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.clips.clear()
-
 
 @dataclass
 class CustomMaskFromFolder(CustomMaskFromClipsAndRanges):
