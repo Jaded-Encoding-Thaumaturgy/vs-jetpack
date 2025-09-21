@@ -27,9 +27,6 @@ class ClipsCache(VSObject, dict[vs.VideoNode, vs.VideoNode]):
 
         return super().__delitem__(key)
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
-
 
 class DynamicClipsCache[T](VSObject, dict[T, vs.VideoNode]):
     def __init__(self, cache_size: int = 2) -> None:
@@ -46,9 +43,6 @@ class DynamicClipsCache[T](VSObject, dict[T, vs.VideoNode]):
                 del self[next(iter(self.keys()))]
 
         return super().__getitem__(key)
-
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
 
 
 class FramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](VSObject, dict[int, _FrameT]):
@@ -76,10 +70,6 @@ class FramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](VSObject, dict[int, 
 
         return super().__getitem__(key)
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
-        del self.clip
-
 
 class NodeFramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](VSObject, dict[_NodeT, FramesCache[_NodeT, _FrameT]]):
     def _ensure_key(self, key: _NodeT) -> None:
@@ -96,9 +86,6 @@ class NodeFramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](VSObject, dict[_
 
         return super().__getitem__(key)
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
-
 
 class ClipFramesCache(NodeFramesCache[vs.VideoNode, vs.VideoFrame]): ...
 
@@ -109,9 +96,6 @@ class NodesPropsCache[_NodeT: vs.RawNode](VSObject, dict[tuple[_NodeT, int], Mut
             return
 
         return super().__delitem__(key)
-
-    # def __vs_del__(self, core_id: int) -> None:
-    #     self.clear()
 
 
 def cache_clip[_NodeT: vs.RawNode](_clip: _NodeT, cache_size: int = 10) -> _NodeT:

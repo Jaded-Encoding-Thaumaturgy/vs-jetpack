@@ -4,10 +4,9 @@ This module implements dehalo functions with complex masking abilities.
 
 from __future__ import annotations
 
-from contextlib import suppress
 from typing import Any, Callable, Iterator, Mapping, Sequence
 
-from jetpytools import CustomIndexError, normalize_seq, FuncExcept
+from jetpytools import CustomIndexError, FuncExcept, normalize_seq
 
 from vsaa import NNEDI3, SuperSamplerProcess
 from vsdenoise import Prefilter
@@ -290,11 +289,6 @@ class FineDehalo[**P, R]:
         @property
         def MAIN(self) -> vs.VideoNode:  # noqa: N802
             return self._main
-
-        def __vs_del__(self, core_id: int) -> None:
-            for name in ["_edges", "_strong", "_large", "_light", "_shrink", "_shr_med", "_main"]:
-                with suppress(AttributeError):
-                    delattr(self, name)
 
 
 @FineDehalo

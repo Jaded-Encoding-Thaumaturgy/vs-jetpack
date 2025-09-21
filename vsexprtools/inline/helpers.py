@@ -778,9 +778,6 @@ class ClipVar(ExprVar, VSObjectABC):
                     f"'{self.__class__.__name__}' object has no attribute '{name}'", name=name, obj=self
                 )
 
-    def __vs_del__(self, core_id: int) -> None:
-        del self._node
-
 
 class Token(LiteralVar):
     """An expression token wrapping [ExprToken][vsexprtools.ExprToken]."""

@@ -1343,9 +1343,6 @@ class BaseDPIR(BaseOnnxScaler):
 
         return inference([clip, strength], self.model, overlaps, tilesize, self.backend, **kwargs).std.Crop(*padding)
 
-    def __vs_del__(self, core_id: int) -> None:
-        del self.strength
-
 
 class DPIR(BaseDPIR):
     """

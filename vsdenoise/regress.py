@@ -42,9 +42,7 @@ __all__ = [
 ]
 
 
-class _CachedBlurs(dict[int, list[tuple[vs.VideoNode, vs.VideoNode]]], VSObject):
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
+class _CachedBlurs(dict[int, list[tuple[vs.VideoNode, vs.VideoNode]]], VSObject): ...
 
 
 _cached_blurs = _CachedBlurs()
