@@ -1,25 +1,20 @@
 from __future__ import annotations
 
 from abc import ABC, ABCMeta
-from contextlib import suppress
 from enum import Flag
 from functools import partial
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Mapping,
-    MutableMapping,
-    MutableSequence,
-    MutableSet,
-    Self,
-)
+from itertools import chain
+from typing import TYPE_CHECKING, Any, Callable, Mapping, MutableMapping, MutableSequence, MutableSet, Self
 
-from jetpytools import Singleton
+from jetpytools import Singleton, classproperty
 
 from .proxy import core, register_on_creation, register_on_destroy
 
 __all__ = ["VSDebug", "VSObject", "VSObjectABC", "VSObjectABCMeta", "VSObjectMeta", "vs_object"]
+
+
+def _get_mangle_name(name: str) -> str:
+    return "_" + name.lstrip("_")
 
 
 def _iterative_check(x: Any) -> bool:
@@ -60,18 +55,21 @@ def _safe_vs_object_del(obj: Any) -> None:
     if obj_dict is not None:
         for k, v in list(obj_dict.items()):
             if not k.startswith("__") and _iterative_check(v):
-                with suppress(AttributeError):
-                    delattr(obj, k)
+                delattr(obj, k)
 
     obj_slots = getattr(obj, "__slots__", None)
-    if obj_slots:
-        for k in obj_slots:
-            if k.startswith("__"):
+    # We only want to check the instances.
+    if obj_slots is not None and isinstance(obj, VSObject):
+        mname = _get_mangle_name(obj.__class__.__name__)
+
+        for k in obj.__all_slots__:
+            if k.startswith(("__", mname)):
                 continue
+
             v = getattr(obj, k, None)
+
             if _iterative_check(v):
-                with suppress(AttributeError):
-                    delattr(obj, k)
+                delattr(obj, k)
 
     if isinstance(obj, (MutableMapping, MutableSequence, MutableSet)):
         obj.clear()
@@ -85,26 +83,20 @@ def _register_vs_del(obj: VSObject | VSObjectMeta) -> None:
     """
     Register cleanup for both VSObject (instance-level) and VSObjectMeta (class-level).
     """
+    prefix = ""
+
     if isinstance(obj, VSObjectMeta):
         del_method = "__cls_vs_del__"
         partial_attr, register_attr = _clsregisters
-        prefix = ""
     else:
         del_method = "__vs_del__"
         partial_attr, register_attr = _objregisters
 
-        prefix = ""
-        if hasattr(obj, "__slots__"):
-            name = obj.__class__.__name__
-            while name.startswith("_"):
-                name = name.removeprefix("_")
-            prefix = "_" + name
+        if not hasattr(obj, "__dict__"):
+            prefix = _get_mangle_name(obj.__class__.__name__)
 
     def _register(core_id: int) -> None:
-        def _vsdel_register(core_id: int) -> None:
-            getattr(obj, del_method)(core_id)
-
-        vsdel_partial_register = partial(_vsdel_register, core_id)
+        vsdel_partial_register = partial(getattr(obj, del_method), core_id)
         setattr(obj, prefix + partial_attr, vsdel_partial_register)
         core.register_on_destroy(vsdel_partial_register)
 
@@ -124,9 +116,23 @@ class VSObjectMeta(type):
     def __new__[MetaSelf: VSObjectMeta](
         mcls: type[MetaSelf], name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwargs: Any
     ) -> MetaSelf:
-        if namespace.get("__slots__", ()):
-            namespace["__slots__"] = (*_objregisters, *namespace["__slots__"])
-            namespace |= dict.fromkeys(_clsregisters)
+        """
+        Extend classes with lifecycle cleanup hooks if they declare __slots__.
+
+        If the class or any of its bases use __slots__, automatically injects the necessary attributes
+        for VapourSynth cleanup registration.
+        """
+        if "__slots__" in namespace and (
+            namespace["__slots__"] or any(getattr(base, "__slots__", ()) for base in bases)
+        ):
+            mname = _get_mangle_name(name)
+
+            original_slots = tuple(namespace.get("__slots__", ()))
+            extra_slots = tuple(f"{mname}{slot}" for slot in _objregisters)
+            namespace["__slots__"] = (*extra_slots, *original_slots)
+
+            for reg in _clsregisters:
+                namespace[f"{mname}{reg}"] = None
 
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
 
@@ -160,6 +166,12 @@ class VSObject(metaclass=VSObjectMeta):
 
             _register_vs_del(obj)
             return obj
+
+    @classproperty.cached
+    @classmethod
+    def __all_slots__(cls) -> tuple[str, ...]:
+        slots = dict.fromkeys(chain.from_iterable(getattr(base, "__slots__", ()) for base in reversed(cls.mro())))
+        return tuple(slots)
 
     def __vs_del__(self, core_id: int) -> None:
         _safe_vs_object_del(self)
