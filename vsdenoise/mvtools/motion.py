@@ -71,6 +71,3 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
             delta: Frame distance for the motion vector.
         """
         self[direction][delta] = vector
-
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()

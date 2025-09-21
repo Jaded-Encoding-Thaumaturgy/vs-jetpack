@@ -73,6 +73,3 @@ class CustomExprError(CustomRuntimeError, VSObject, metaclass=_CustomExprErrorMe
         )
 
         return out
-
-    def __vs_del__(self, core_id: int) -> None:
-        self.clips.clear()
