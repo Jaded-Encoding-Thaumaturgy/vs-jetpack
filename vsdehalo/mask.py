@@ -29,7 +29,7 @@ from vstools import (
     OneDimConvMode,
     Planes,
     VSFunctionPlanesArgs,
-    VSObject,
+    VSObjectABC,
     check_progressive,
     check_variable,
     get_y,
@@ -104,7 +104,7 @@ class FineDehalo[**P, R]:
         """
         return self.Masks(clip, rx, ry, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func).MAIN
 
-    class Masks(Mapping[str, vs.VideoNode], VSObject):
+    class Masks(Mapping[str, vs.VideoNode], VSObjectABC):
         """
         Class for creating and storing intermediate masks used in the `fine_dehalo` function.
 
