@@ -77,21 +77,38 @@ def _safe_vs_object_del(obj: Any) -> None:
         obj.clear()
 
 
-def _register__vs_del__(obj: VSObject | VSObjectMeta) -> None:
+_clsregisters = "__clsvsdel_partial_register", "__clsvsdel_register"
+_objregisters = "__vsdel_partial_register", "__vsdel_register"
+
+
+def _register_vs_del(obj: VSObject | VSObjectMeta) -> None:
+    """
+    Register cleanup for both VSObject (instance-level) and VSObjectMeta (class-level).
+    """
+    if isinstance(obj, VSObjectMeta):
+        del_method = "__cls_vs_del__"
+        partial_attr, register_attr = _clsregisters
+        prefix = ""
+    else:
+        del_method = "__vs_del__"
+        partial_attr, register_attr = _objregisters
+
+        prefix = ""
+        if hasattr(obj, "__slots__"):
+            name = obj.__class__.__name__
+            while name.startswith("_"):
+                name = name.removeprefix("_")
+            prefix = "_" + name
+
     def _register(core_id: int) -> None:
-        def __vsdel_register(core_id: int) -> None:
-            if isinstance(obj, VSObject):
-                obj.__vs_del__(core_id)
-            else:
-                obj.__cls_vs_del__(core_id)
+        def _vsdel_register(core_id: int) -> None:
+            getattr(obj, del_method)(core_id)
 
-        vsdel_partial_register = partial(__vsdel_register, core_id)
-        setattr(obj, "__vsdel_partial_register", vsdel_partial_register)
-
+        vsdel_partial_register = partial(_vsdel_register, core_id)
+        setattr(obj, prefix + partial_attr, vsdel_partial_register)
         core.register_on_destroy(vsdel_partial_register)
 
-    # [un]register_on_creation/destroy will only hold a weakref to the object
-    setattr(obj, "__vsdel_register", _register)
+    setattr(obj, prefix + register_attr, _register)
     register_on_creation(_register)
 
 
@@ -107,9 +124,13 @@ class VSObjectMeta(type):
     def __new__[MetaSelf: VSObjectMeta](
         mcls: type[MetaSelf], name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwargs: Any
     ) -> MetaSelf:
+        if namespace.get("__slots__", ()):
+            namespace["__slots__"] = (*_objregisters, *namespace["__slots__"])
+            namespace |= dict.fromkeys(_clsregisters)
+
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
 
-        _register__vs_del__(cls)
+        _register_vs_del(cls)
         return cls
 
     def __cls_vs_del__(cls, core_id: int) -> None:
@@ -137,7 +158,7 @@ class VSObject(metaclass=VSObjectMeta):
             except TypeError:
                 obj = super().__new__(cls)
 
-            _register__vs_del__(obj)
+            _register_vs_del(obj)
             return obj
 
     def __vs_del__(self, core_id: int) -> None:
