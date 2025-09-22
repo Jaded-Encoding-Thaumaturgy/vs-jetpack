@@ -380,6 +380,22 @@ class BlurMatrix(CustomEnum):
 
         return kernel
 
+    def get_sigma(self: Literal[BlurMatrix.GAUSS], radius: int) -> float:  # type: ignore[misc]
+        """
+        Generate a Gaussian sigma value from an intuitive radius.
+
+        This is a shortcut that converts a blur radius to a corresponding sigma value.
+
+        Args:
+            radius: Blur radius.
+
+        Returns:
+            Gaussian sigma value
+        """
+        assert self is BlurMatrix.GAUSS
+
+        return radius / 3
+
     def from_radius(self: Literal[BlurMatrix.GAUSS], radius: int) -> BlurMatrixBase[float]:  # type: ignore[misc]
         """
         Generate a Gaussian blur kernel from an intuitive radius.
@@ -394,7 +410,7 @@ class BlurMatrix(CustomEnum):
         """
         assert self is BlurMatrix.GAUSS
 
-        return BlurMatrix.GAUSS(None, sigma=(radius + 1.0) / 3)
+        return BlurMatrix.GAUSS(None, sigma=self.get_sigma(radius))
 
     def get_radius(self: Literal[BlurMatrix.GAUSS], sigma: float) -> int:  # type: ignore[misc]
         """
@@ -408,10 +424,7 @@ class BlurMatrix(CustomEnum):
         """
         assert self is BlurMatrix.GAUSS
 
-        if taps is None:
-            taps = ceil(abs(sigma) * 8 + 1) // 2
-
-        return taps
+        return ceil(sigma * 6 + 1) // 2
 
     @classmethod
     def custom(cls, values: Iterable[_Nb], mode: ConvMode = ConvMode.SQUARE) -> BlurMatrixBase[_Nb]:
