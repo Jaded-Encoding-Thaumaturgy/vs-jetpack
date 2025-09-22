@@ -275,23 +275,23 @@ class BlurMatrix(CustomEnum):
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Literal[BlurMatrix.MEAN_NO_CENTER], taps: int = 1, *, mode: ConvMode = ConvMode.SQUARE
+        self: Literal[BlurMatrix.MEAN_NO_CENTER], radius: int = 1, *, mode: ConvMode = ConvMode.SQUARE
     ) -> BlurMatrixBase[int]: ...
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Literal[BlurMatrix.MEAN], taps: int = 1, *, mode: ConvMode = ConvMode.SQUARE
+        self: Literal[BlurMatrix.MEAN], radius: int = 1, *, mode: ConvMode = ConvMode.SQUARE
     ) -> BlurMatrixBase[int]: ...
 
     @overload
     def __call__(  # type: ignore[misc]
-        self: Literal[BlurMatrix.BINOMIAL], taps: int = 1, *, mode: ConvMode = ConvMode.HV
+        self: Literal[BlurMatrix.BINOMIAL], radius: int = 1, *, mode: ConvMode = ConvMode.HV
     ) -> BlurMatrixBase[int]: ...
 
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[BlurMatrix.GAUSS],
-        taps: int | None = None,
+        radius: int | None = None,
         *,
         sigma: float = 0.5,
         mode: ConvMode = ConvMode.HV,
@@ -299,14 +299,14 @@ class BlurMatrix(CustomEnum):
     ) -> BlurMatrixBase[float]: ...
 
     @overload
-    def __call__(self, taps: int | None = None, **kwargs: Any) -> Any: ...
+    def __call__(self, radius: int | None = None, **kwargs: Any) -> Any: ...
 
-    def __call__(self, taps: int | None = None, **kwargs: Any) -> Any:
+    def __call__(self, radius: int | None = None, **kwargs: Any) -> Any:
         """
         Generate the blur kernel based on the enum variant.
 
         Args:
-            taps: Size of the kernel in each direction.
+            radius: Size of the kernel in each direction.
             **kwargs: Additional keywords arguments:
 
                    - sigma: [GAUSS only] Standard deviation of the Gaussian kernel.
@@ -319,30 +319,30 @@ class BlurMatrix(CustomEnum):
 
         match self:
             case BlurMatrix.MEAN_NO_CENTER:
-                taps = fallback(taps, 1)
+                radius = fallback(radius, 1)
                 mode = kwargs.pop("mode", ConvMode.SQUARE)
 
-                matrix = [1 for _ in range(((2 * taps + 1) ** (2 if mode == ConvMode.SQUARE else 1)) - 1)]
+                matrix = [1 for _ in range(((2 * radius + 1) ** (2 if mode == ConvMode.SQUARE else 1)) - 1)]
                 matrix.insert(len(matrix) // 2, 0)
 
                 return self.custom(matrix, mode)
 
             case BlurMatrix.MEAN:
-                taps = fallback(taps, 1)
+                radius = fallback(radius, 1)
                 mode = kwargs.pop("mode", ConvMode.SQUARE)
 
-                kernel = self.custom((1 for _ in range((2 * taps + 1))), mode)
+                kernel = self.custom((1 for _ in range((2 * radius + 1))), mode)
 
             case BlurMatrix.BINOMIAL:
-                taps = fallback(taps, 1)
+                radius = fallback(radius, 1)
                 mode = kwargs.pop("mode", ConvMode.HV)
 
                 c = 1
-                n = taps * 2 + 1
+                n = radius * 2 + 1
 
                 matrix = list[int]()
 
-                for i in range(1, taps + 2):
+                for i in range(1, radius + 2):
                     matrix.append(c)
                     c = c * (n - i) // i
 
@@ -356,16 +356,14 @@ class BlurMatrix(CustomEnum):
                 if mode == ConvMode.SQUARE:
                     scale_value = sqrt(scale_value)
 
-                taps = self.get_taps(sigma, taps)
-
-                if taps < 0:
-                    raise CustomValueError("Taps must be >= 0!")
+                if radius is None:
+                    radius = self.get_radius(sigma)
 
                 if sigma > 0.0:
                     half_pisqrt = 1.0 / sqrt(2.0 * pi) * sigma
                     doub_qsigma = 2 * sigma**2
 
-                    high, *mat = [half_pisqrt * exp(-(x**2) / doub_qsigma) for x in range(taps + 1)]
+                    high, *mat = [half_pisqrt * exp(-(x**2) / doub_qsigma) for x in range(radius + 1)]
 
                     mat = [x * scale_value / high for x in mat]
                     mat = [*mat[::-1], scale_value, *mat]
@@ -398,16 +396,15 @@ class BlurMatrix(CustomEnum):
 
         return BlurMatrix.GAUSS(None, sigma=(radius + 1.0) / 3)
 
-    def get_taps(self: Literal[BlurMatrix.GAUSS], sigma: float, taps: int | None = None) -> int:  # type: ignore[misc]
+    def get_radius(self: Literal[BlurMatrix.GAUSS], sigma: float) -> int:  # type: ignore[misc]
         """
-        Compute the number of taps required for a given sigma value.
+        Compute the radius required for a given sigma value.
 
         Args:
             sigma: Gaussian sigma value.
-            taps: Optional manual override; if not provided, it's computed from sigma.
 
         Returns:
-            Number of taps.
+            Radius.
         """
         assert self is BlurMatrix.GAUSS
 

@@ -57,7 +57,7 @@ def contrasharpening(
         diff_blur = core.std.MakeDiff(sharp, flt, planes)
     else:
         damp = min_blur(flt, radius, planes=planes)
-        blurred = BlurMatrix.BINOMIAL(taps=radius)(damp, planes=planes)
+        blurred = BlurMatrix.BINOMIAL(radius)(damp, planes=planes)
         diff_blur = core.std.MakeDiff(damp, blurred, planes)
 
     # Difference achieved by the filtering

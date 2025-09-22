@@ -108,7 +108,7 @@ def descale_error_mask(
         error = Morpho.expand(error, exp2, mode=XxpandMode.ELLIPSE, func=descale_error_mask)
 
     if tr:
-        avg = Morpho.binarize(BlurMatrix.MEAN(taps=tr, mode=ConvMode.TEMPORAL)(error), 0.5)
+        avg = Morpho.binarize(BlurMatrix.MEAN(tr, mode=ConvMode.TEMPORAL)(error), 0.5)
 
         error = ExprOp.MIN(error, ExprOp.MAX(shift_clip_multi(ExprOp.MIN(error, avg), (-tr, tr))))
 

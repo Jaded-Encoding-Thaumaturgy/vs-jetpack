@@ -133,7 +133,7 @@ def side_box_blur(clip: vs.VideoNode, radius: int = 1, planes: Planes = None) ->
 def gauss_blur(
     clip: vs.VideoNode,
     sigma: float | Sequence[float] = 0.5,
-    taps: int | None = None,
+    radius: int | None = None,
     mode: OneDimConvMode | TempConvMode = ConvMode.HV,
     planes: Planes = None,
     **kwargs: Any,
@@ -144,7 +144,7 @@ def gauss_blur(
     Args:
         clip: Source clip.
         sigma: Standard deviation of the Gaussian kernel. Can be a float or a list for per-plane control.
-        taps: Number of taps in the kernel. Automatically determined if not specified.
+        radius: Size of the kernel in each direction. Automatically determined if not specified.
         mode: Convolution mode (horizontal, vertical, both, or temporal). Defaults to HV.
         planes: Planes to process. Defaults to all.
         **kwargs: Additional arguments passed to the resizer or blur kernel. Specifying `_fast=True` enables fast
@@ -164,12 +164,14 @@ def gauss_blur(
         raise CustomValueError("Invalid mode specified", gauss_blur, mode)
 
     if isinstance(sigma, Sequence):
-        return normalize_radius(clip, gauss_blur, {"sigma": sigma}, planes, taps=taps, mode=mode)
+        return normalize_radius(clip, gauss_blur, {"sigma": sigma}, planes, radius=radius, mode=mode)
 
     fast = kwargs.pop("_fast", False)
 
     sigma_constant = 0.9 if fast and not mode.is_temporal else sigma
-    taps = BlurMatrix.GAUSS.get_taps(sigma_constant, taps)
+
+    if radius is None:
+        radius = BlurMatrix.GAUSS.get_radius(sigma_constant)
 
     if not mode.is_temporal:
 
@@ -197,11 +199,11 @@ def gauss_blur(
             return Gaussian(sigma, taps).scale(plane, **resize_kwargs | kwargs)  # type: ignore[return-value]
 
         if not {*range(clip.format.num_planes)} - {*planes}:
-            return _resize2_blur(clip, sigma, taps)
+            return _resize2_blur(clip, sigma, radius)
 
-        return join([_resize2_blur(p, sigma, taps) if i in planes else p for i, p in enumerate(split(clip))])
+        return join([_resize2_blur(p, sigma, radius) if i in planes else p for i, p in enumerate(split(clip))])
 
-    kernel = BlurMatrix.GAUSS(taps, sigma=sigma, mode=mode, scale_value=1023)
+    kernel = BlurMatrix.GAUSS(radius, sigma=sigma, mode=mode, scale_value=1023)
 
     return kernel(clip, planes, **kwargs)
 
@@ -244,7 +246,7 @@ def min_blur(
 
     mode_blur, mode_median = normalize_seq(mode, 2)
 
-    blurred = BlurMatrix.BINOMIAL(radius=radius, mode=mode_blur)(clip, planes=planes, **kwargs)
+    blurred = BlurMatrix.BINOMIAL(radius, mode=mode_blur)(clip, planes=planes, **kwargs)
     median = median_blur(clip, radius, mode_median, planes=planes)
 
     return MeanMode.MEDIAN([clip, blurred, median], planes=planes)
@@ -295,7 +297,7 @@ def sbr(
             return BlurMatrix.custom(blur, mode)(clip, planes, **kwargs)
 
         if isinstance(blur, BlurMatrix):
-            return blur(taps=radius, mode=mode)(clip, planes, **kwargs)
+            return blur(radius, mode=mode)(clip, planes, **kwargs)
 
         blurred = blur(clip) if callable(blur) else blur
 
