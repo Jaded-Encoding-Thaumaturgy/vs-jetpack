@@ -26,9 +26,11 @@ from vstools import (
     depth,
     expect_bits,
     get_plane_sizes,
+    get_prop,
     join,
     normalize_planes,
     normalize_seq,
+    shift_clip_multi,
     split,
     vs,
 )
@@ -340,6 +342,7 @@ def median_blur(
     smart: Literal[True] = ...,
     threshold: float | Sequence[float] | None = None,
     scalep: bool = True,
+    *,
     func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode: ...
 
@@ -351,6 +354,7 @@ def median_blur(
     mode: Literal[ConvMode.TEMPORAL] = ...,
     planes: Planes = None,
     *,
+    scenechange: bool = False,
     func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode: ...
 
@@ -364,6 +368,7 @@ def median_blur(
     smart: bool = False,
     threshold: float | Sequence[float] | None = None,
     scalep: bool = True,
+    scenechange: bool = False,
     func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode: ...
 
@@ -376,6 +381,7 @@ def median_blur(
     smart: bool = False,
     threshold: float | Sequence[float] | None = None,
     scalep: bool = True,
+    scenechange: bool = False,
     func: FuncExcept | None = None,
 ) -> ConstantFormatVideoNode:
     """
@@ -395,6 +401,8 @@ def median_blur(
             and over the threshold are returned as is.
         scalep: Parameter scaling when ``smart=True``. If True, all threshold values will be automatically scaled
             from 8-bit range (0-255) to the corresponding range of the input clip's bit depth.
+        scenechange: If True, avoid averaging frames over scene changes.
+            The user must first invoke [sc_detect][vstools.sc_detect].
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Raises:
@@ -409,10 +417,43 @@ def median_blur(
     assert check_variable(clip, func)
 
     if mode == ConvMode.TEMPORAL:
-        if isinstance(radius, int):
-            return core.zsmooth.TemporalMedian(clip, radius, planes)
+        if not isinstance(radius, int):
+            raise CustomValueError("A list of radius isn't supported for ConvMode.TEMPORAL!", func, radius)
 
-        raise CustomValueError("A list of radius isn't supported for ConvMode.TEMPORAL!", func, radius)
+        tmedian = core.zsmooth.TemporalMedian(clip, radius, planes)
+
+        if not scenechange:
+            return tmedian
+
+        clips = shift_clip_multi(clip, (-radius, radius))
+        r = radius
+
+        def median_scenechange(
+            n: int, f: list[vs.VideoFrame], tmedian: vs.VideoNode, clips: Sequence[vs.VideoNode]
+        ) -> vs.VideoNode:
+            backwards_prop = [get_prop(frame, "_SceneChangeNext", int) for frame in f[:r]]
+            forward_prop = [get_prop(frame, "_SceneChangePrev", int) for frame in f[r + 1 :]]
+
+            if not any([*backwards_prop, *forward_prop]):
+                return tmedian
+
+            clips_back = clips[:r]
+
+            for i, prop in enumerate(reversed(backwards_prop)):
+                if prop:
+                    clips_back = clips_back[r - i :]
+                    break
+
+            clips_forw = clips[r + 1 :]
+
+            for i, prop in enumerate(forward_prop):
+                if prop:
+                    clips_forw = clips_forw[: i - r]
+                    break
+
+            return MeanMode.MEDIAN(clips[r], clips_back, clips_forw, planes=planes)
+
+        return core.std.FrameEval(clip, lambda n, f: median_scenechange(n, f, tmedian, clips), clips, clips)
 
     radius = normalize_seq(radius, clip.format.num_planes)
 
