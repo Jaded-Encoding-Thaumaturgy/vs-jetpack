@@ -2,19 +2,17 @@ from __future__ import annotations
 
 from abc import ABC
 from functools import wraps
-from typing import Any, Callable, Sequence, TypeVar
+from typing import Any, Callable, Iterable, TypeVar
 
 from jetpytools import cachedproperty
 
 from vsexprtools import ExprToken, norm_expr
 from vskernels import Bilinear, BorderHandling, Hermite, Kernel, KernelLike, Scaler, ScalerLike
 from vskernels.types import LeftShift, TopShift
-from vsmasktools import KirschTCanny, based_diff_mask, region_rel_mask
-from vsrgtools import BlurMatrix
+from vsmasktools import KirschTCanny, based_diff_mask, region_rel_mask, stabilize_mask
 from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
-    ConvMode,
     DitherType,
     FieldBased,
     FieldBasedLike,
@@ -27,9 +25,7 @@ from vstools import (
     get_peak_value,
     get_y,
     join,
-    normalize_ranges,
     replace_ranges,
-    scale_mask,
     split,
     vs,
     vs_object,
@@ -512,7 +508,8 @@ class Rescale(RescaleBase):
         thr: float = 0.216,
         expand: int = 4,
         ranges: FrameRangeN | FrameRangesN | None = None,
-        stabilize: bool | tuple[Sequence[float], float] = False,
+        stabilize: bool = True,
+        scenechanges: Iterable[int] | None = None,
         **kwargs: Any,
     ) -> ConstantFormatVideoNode:
         """
@@ -526,6 +523,8 @@ class Rescale(RescaleBase):
             ranges: If specified, ranges to apply the credit clip to.
             stabilize: Try to stabilize the mask by applying a temporal convolution and then binarized by a threshold.
                 Only works when there are ranges specified.
+            scenechanges: Explicit list of scenechange frames for stabilizing the mask.
+            **kwargs: Additional keyword arguments for [based_diff_mask][vsmasktools.based_diff_mask]
 
         Returns:
             Generated mask.
@@ -541,34 +540,7 @@ class Rescale(RescaleBase):
 
         if ranges is not None:
             if stabilize:
-                ranges = normalize_ranges(credit_mask, ranges)
-
-                scprev = [x for s, e in ranges for x in (s, e + int(not replace_ranges.exclusive))]
-                scnext = [x - 1 for x in scprev]
-
-                def set_credit_ranges(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-                    f = f.copy()
-                    f.props.update(_SceneChangePrev=False, _SceneChangeNext=False)
-
-                    if n in scprev:
-                        f.props["_SceneChangePrev"] = True
-                        return f
-
-                    if n in scnext:
-                        f.props["_SceneChangeNext"] = True
-
-                    return f
-
-                credit_mask = core.std.ModifyFrame(credit_mask, credit_mask, set_credit_ranges)
-
-                if isinstance(stabilize, tuple):
-                    weights, thr = stabilize
-                else:
-                    weights, thr = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], 0.24
-
-                credit_mask = BlurMatrix.custom(weights, ConvMode.T)(credit_mask, scenechange=True).std.BinarizeMask(
-                    scale_mask(thr, 32, credit_mask)
-                )
+                credit_mask = stabilize_mask(credit_mask, 3, ranges, scenechanges, func=self.default_credit_mask)
 
             credit_mask = replace_ranges(credit_mask.std.BlankClip(keep=True), credit_mask, ranges)
 
