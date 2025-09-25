@@ -4,7 +4,7 @@ from functools import partial, reduce
 from math import sqrt
 from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, Sequence, Union, overload
 
-from jetpytools import CustomIntEnum, CustomStrEnum, FuncExcept, P, R, cround
+from jetpytools import CustomIntEnum, CustomStrEnum, FuncExcept, P, R, cround, to_arr
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Gaussian, Point, Scaler, ScalerLike
@@ -130,6 +130,74 @@ def side_box_blur(clip: vs.VideoNode, radius: int = 1, planes: Planes = None) ->
     )
 
 
+class GaussBlur(Generic[P, R]):
+    """
+    Class decorator that wraps the [gauss_blur][vsrgtools.blur.gauss_blur] function
+    and extends its functionality.
+
+    It is not meant to be used directly.
+    """
+
+    def __init__(self, gauss_blur: Callable[P, R]) -> None:
+        self._func = gauss_blur
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        return self._func(*args, **kwargs)
+
+    @staticmethod
+    def get_sigma(radius: int) -> float:
+        """
+        Generate a Gaussian sigma value from an intuitive radius.
+
+        This is a shortcut that converts a blur radius to a corresponding sigma value.
+
+        Args:
+            radius: Blur radius.
+
+        Returns:
+            Gaussian sigma value
+        """
+        return BlurMatrix.GAUSS.get_sigma(radius)
+
+    @staticmethod
+    def from_radius(
+        clip: vs.VideoNode,
+        radius: int | Sequence[int] = 1,
+        mode: OneDimConvMode | TempConvMode = ConvMode.HV,
+        planes: Planes = None,
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode:
+        """
+        Applies Gaussian blur to a clip from an intuitive radius.
+
+        Args:
+            clip: Source clip.
+            radius: Size of the kernel in each direction. Automatically determined if not specified.
+            mode: Convolution mode (horizontal, vertical, both, or temporal). Defaults to HV.
+            planes: Planes to process. Defaults to all.
+            **kwargs: Additional arguments passed to the resizer or blur kernel. Specifying `_fast=True` enables fast
+                approximation.
+
+        Returns:
+            Blurred clip.
+        """
+        return gauss_blur(clip, [gauss_blur.get_sigma(r) for r in to_arr(radius)], None, mode, planes, **kwargs)
+
+    @staticmethod
+    def get_radius(sigma: float) -> int:
+        """
+        Compute the radius required for a given sigma value.
+
+        Args:
+            sigma: Gaussian sigma value.
+
+        Returns:
+            Radius.
+        """
+        return BlurMatrix.GAUSS.get_radius(sigma)
+
+
+@GaussBlur
 def gauss_blur(
     clip: vs.VideoNode,
     sigma: float | Sequence[float] = 0.5,
@@ -171,7 +239,7 @@ def gauss_blur(
     sigma_constant = 0.9 if fast and not mode.is_temporal else sigma
 
     if radius is None:
-        radius = BlurMatrix.GAUSS.get_radius(sigma_constant)
+        radius = gauss_blur.get_radius(sigma_constant)
 
     if not mode.is_temporal:
 
