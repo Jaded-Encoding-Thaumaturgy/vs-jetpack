@@ -19,7 +19,7 @@ from ..enums import Align, BaseAlign, Matrix
 from ..exceptions import InvalidSubsamplingError
 from ..types import Planes
 from ..vs_proxy import core, vs
-from .check import check_variable, check_variable_format
+from .check import check_variable
 from .props import get_props
 from .scale import get_lowest_values, get_neutral_values, get_peak_values
 
@@ -219,8 +219,6 @@ class padder:  # noqa: N801
     def _base(
         clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0
     ) -> tuple[int, int, vs.VideoFormat, int, int]:
-        assert check_variable(clip, "padder")
-
         width = clip.width + left + right
         height = clip.height + top + bottom
 
@@ -376,8 +374,6 @@ class padder:  # noqa: N801
         Returns:
             Padded clip with colored borders.
         """
-        assert check_variable_format(clip, "padder")
-
         cls._base(clip, left, right, top, bottom)
 
         def _norm(colr: int | float | bool | None | MissingT) -> Sequence[int | float]:
@@ -471,9 +467,6 @@ def pick_func_stype[**P](
     Returns:
         Function matching the sample type of your clip's format.
     """
-
-    assert check_variable_format(clip, pick_func_stype)
-
     return func_float if clip.format.sample_type == vs.FLOAT else func_int
 
 
@@ -712,8 +705,6 @@ def normalize_param_planes[T](
         A list of length equal to the number of planes in the clip, with `param` values or `null`.
     """
     func = func or normalize_param_planes
-
-    assert check_variable_format(clip, func)
 
     planes = normalize_planes(clip, planes)
 

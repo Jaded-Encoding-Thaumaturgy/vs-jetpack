@@ -5,15 +5,7 @@ from typing import Callable, Sequence
 from jetpytools import CustomValueError
 
 from vsexprtools import norm_expr
-from vstools import (
-    GenericVSFunction,
-    Planes,
-    check_ref_clip,
-    check_variable,
-    core,
-    normalize_planes,
-    vs,
-)
+from vstools import GenericVSFunction, Planes, check_ref_clip, core, normalize_planes, vs
 
 from .blur import box_blur, median_blur, min_blur
 from .enum import BlurMatrix
@@ -45,9 +37,6 @@ def contrasharpening(
     Returns:
         Contrasharpened clip
     """
-
-    assert check_variable(src, contrasharpening)
-    assert check_variable(flt, contrasharpening)
     check_ref_clip(src, flt, contrasharpening)
 
     # Damp down remaining spots of the denoised clip
@@ -87,8 +76,6 @@ def contrasharpening_dehalo(
     Returns:
         Contrasharpened clip
     """
-    assert check_variable(src, contrasharpening_dehalo)
-    assert check_variable(flt, contrasharpening_dehalo)
     check_ref_clip(src, flt, contrasharpening_dehalo)
 
     blur = BlurMatrix.BINOMIAL()(flt, planes)
@@ -123,8 +110,6 @@ def contrasharpening_median(
     Returns:
         Contrasharpened clip
     """
-    assert check_variable(src, contrasharpening_median)
-    assert check_variable(flt, contrasharpening_median)
     check_ref_clip(src, flt, contrasharpening_median)
 
     planes = normalize_planes(flt, planes)

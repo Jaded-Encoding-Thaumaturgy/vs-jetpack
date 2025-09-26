@@ -9,15 +9,7 @@ from typing import Any, Callable, Sequence
 
 from jetpytools import CustomRuntimeError, CustomStrEnum, normalize_seq, to_arr
 
-from vstools import (
-    CustomIntEnum,
-    Planes,
-    check_variable,
-    core,
-    join,
-    normalize_planes,
-    vs,
-)
+from vstools import CustomIntEnum, Planes, core, join, normalize_planes, vs
 
 __all__ = ["nl_means"]
 
@@ -203,9 +195,6 @@ def nl_means(
     Returns:
         Denoised clip.
     """
-
-    assert check_variable(clip, nl_means)
-
     planes = normalize_planes(clip, planes)
 
     if not planes:

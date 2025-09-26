@@ -9,7 +9,6 @@ from vsrgtools import box_blur, gauss_blur
 from vstools import (
     ColorRange,
     DitherType,
-    check_variable,
     depth,
     get_peak_value,
     get_sample_type,
@@ -61,8 +60,6 @@ def adg_mask(
         A single mask or a list of masks (if `luma_scaling` is a sequence), corresponding to the input clip.
     """
     func = func or adg_mask
-
-    assert check_variable(clip, func)
 
     luma = plane(clip, 0)
 
@@ -128,8 +125,6 @@ def retinex(
         Processed luma-enhanced clip.
     """
     func = func or retinex
-
-    assert check_variable(clip, func)
 
     sigma = sorted(sigma)
 

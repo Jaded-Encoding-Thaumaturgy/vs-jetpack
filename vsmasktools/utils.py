@@ -13,8 +13,6 @@ from vstools import (
     FrameRangesN,
     Planes,
     check_ref_clip,
-    check_variable,
-    check_variable_format,
     core,
     depth,
     flatten_vnodes,
@@ -45,8 +43,6 @@ __all__ = [
 
 def max_planes(*_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelLike = Bilinear) -> vs.VideoNode:
     clips = flatten_vnodes(_clips)
-
-    assert check_variable_format(clips, max_planes)
 
     resizer = Kernel.ensure_obj(resizer, max_planes)
 
@@ -113,8 +109,6 @@ def region_rel_mask(
         A new clip with the specified rectangular region masked in or out.
     """
     func = func or region_rel_mask
-
-    assert check_variable_format(clip, func)
 
     if replace_in is None:
         replace_in = "x"
@@ -224,8 +218,6 @@ def squaremask(
     """
     func = func or squaremask
 
-    assert check_variable(clip, func)
-
     mask_format = (
         clip.format.replace(color_family=vs.GRAY, subsampling_w=0, subsampling_h=0) if force_gray else clip.format
     )
@@ -280,8 +272,6 @@ def replace_squaremask(
         Clip with a squaremask applied, and optionally set to specific frameranges.
     """
     func = func or replace_squaremask
-
-    assert check_variable(clipa, func) and check_variable(clipb, func)
 
     mask = squaremask(clipb[0], *mask_params, invert, func=func)
 
@@ -490,8 +480,6 @@ def rekt_partial(
     Returns:
         A new clip with the applied mask.
     """
-
-    assert check_variable(clip, rekt_partial._func)
 
     def _filtered_func(clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:
         return func(clip, *args, **kwargs)

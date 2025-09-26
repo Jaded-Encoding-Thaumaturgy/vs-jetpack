@@ -20,7 +20,7 @@ from jetpytools import (
 from ..enums import ColorRange, ColorRangeLike
 from ..exceptions import ClipLengthError, InvalidColorFamilyError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterable
-from ..utils import check_variable_format, flatten, get_depth
+from ..utils import flatten, get_depth
 from ..vs_proxy import vs
 
 __all__ = [
@@ -366,10 +366,7 @@ def depth(
     Returns:
         Converted clip with desired bit depth and sample type. ``ColorFamily`` will be same as input.
     """
-
     from ..utils import get_video_format
-
-    assert check_variable_format(clip, depth)
 
     in_fmt = get_video_format(clip)
     out_fmt = get_video_format(bitdepth or clip, sample_type=sample_type)
@@ -414,8 +411,6 @@ def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) 
     Returns:
         Tuple containing the clip dithered to the expected depth and the original bitdepth.
     """
-    assert check_variable_format(clip, expect_bits)
-
     bits = get_depth(clip)
 
     if bits != expected_depth:
@@ -791,8 +786,6 @@ def plane(clip: vs.VideoNode, index: SupportsIndex, /, strict: bool = True) -> v
     Returns:
         Grayscale clip of the clip's plane.
     """
-    assert check_variable_format(clip, plane)
-
     if clip.format.num_planes == 1 and index.__index__() == 0:
         return clip
 
@@ -813,8 +806,6 @@ def split(clip: vs.VideoNode, /, strict: bool = True) -> list[vs.VideoNode]:
     Returns:
         List of individual planes.
     """
-    assert check_variable_format(clip, split)
-
     return [clip] if clip.format.num_planes == 1 else [plane(clip, i, strict) for i in range(clip.format.num_planes)]
 
 
@@ -1067,8 +1058,6 @@ def limiter(
 
     if clip is None:
         return partial(limiter, min_val=min_val, max_val=max_val, tv_range=tv_range, planes=planes, func=func)
-
-    assert check_variable_format(clip, func)
 
     if all([clip.format.sample_type == vs.INTEGER, min_val is None, max_val is None, tv_range is False]):
         return clip

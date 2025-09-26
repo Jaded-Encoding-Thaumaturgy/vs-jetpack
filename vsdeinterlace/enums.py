@@ -1,4 +1,4 @@
-from vstools import CustomEnum, CustomIntEnum, check_variable, core, vs
+from vstools import CustomEnum, CustomIntEnum, core, vs
 
 __all__ = [
     "IVTCycles",
@@ -75,7 +75,6 @@ class IVTCycles(CustomEnum):
         """
         Get the length of the pattern cycle in frames.
         """
-
         return int(self._name_[6:])
 
     @property
@@ -83,15 +82,12 @@ class IVTCycles(CustomEnum):
         """
         Get the total number of available pattern variations for this cycle.
         """
-
         return len(self.value)
 
     def decimate(self, clip: vs.VideoNode, pattern: int = 0) -> vs.VideoNode:
         """
         Apply the decimation pattern to a video clip with the given pattern index.
         """
-
-        assert check_variable(clip, self.decimate)
         assert 0 <= pattern < self.cycle
 
         return core.std.SelectEvery(clip, self.pattern_length, self.value[pattern])

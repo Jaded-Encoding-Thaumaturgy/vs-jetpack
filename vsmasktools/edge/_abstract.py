@@ -15,7 +15,6 @@ from vstools import (
     HoldsVideoFormat,
     Planes,
     VideoFormatLike,
-    check_variable,
     depth,
     get_lowest_value,
     get_peak_value,
@@ -162,8 +161,6 @@ class EdgeDetect(ABC):
         Returns:
             Mask clip
         """
-        assert check_variable(clip, self.__class__)
-
         clip_p = self._preprocess(clip)
 
         mask = self._compute_edge_mask(clip_p, planes=planes, **kwargs)
@@ -174,8 +171,6 @@ class EdgeDetect(ABC):
 
     @classmethod
     def depth_scale(cls, clip: vs.VideoNode, bitdepth: VideoFormatLike | HoldsVideoFormat | int) -> vs.VideoNode:
-        assert check_variable(clip, cls)
-
         fmt = get_video_format(bitdepth)
 
         if fmt.sample_type == vs.INTEGER:
@@ -345,9 +340,6 @@ class RidgeDetect(MatrixEdgeDetect):
         Returns:
             Mask clip
         """
-
-        assert check_variable(clip, self.__class__)
-
         clip_p = self._preprocess_ridge(clip)
 
         mask = self._compute_ridge_mask(clip_p, planes=planes, **kwargs)

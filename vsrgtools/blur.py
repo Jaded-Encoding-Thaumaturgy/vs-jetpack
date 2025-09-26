@@ -17,8 +17,6 @@ from vstools import (
     TempConvMode,
     VSFunctionNoArgs,
     check_ref_clip,
-    check_variable,
-    check_variable_format,
     core,
     depth,
     expect_bits,
@@ -73,8 +71,6 @@ def box_blur(
     Returns:
         Blurred clip.
     """
-    assert check_variable(clip, box_blur)
-
     if isinstance(radius, Sequence):
         return normalize_radius(clip, box_blur, radius, planes, passes=passes, mode=mode, **kwargs)
 
@@ -99,8 +95,6 @@ def box_blur(
 
 
 def side_box_blur(clip: vs.VideoNode, radius: int = 1, planes: Planes = None) -> vs.VideoNode:
-    assert check_variable_format(clip, side_box_blur)
-
     half_kernel = [(1 if i <= 0 else 0) for i in range(-radius, radius + 1)]
 
     vrt_filters = [
@@ -222,8 +216,6 @@ def gauss_blur(
     Returns:
         Blurred clip.
     """
-    assert check_variable(clip, gauss_blur)
-
     planes = normalize_planes(clip, planes)
 
     if not TYPE_CHECKING and mode == ConvMode.SQUARE:
@@ -303,8 +295,6 @@ def min_blur(
     Returns:
         Clip with MinBlur applied.
     """
-    assert check_variable(clip, min_blur)
-
     planes = normalize_planes(clip, planes)
 
     if isinstance(radius, Sequence):
@@ -367,11 +357,7 @@ def sbr(
 
         blurred = blur(clip) if callable(blur) else blur
 
-        assert check_variable_format(blurred, func)
-
         return blurred
-
-    assert check_variable(clip, func)
 
     planes = normalize_planes(clip, planes)
 
@@ -479,8 +465,6 @@ def median_blur(
         Median-blurred video clip.
     """
     func = func or median_blur
-
-    assert check_variable(clip, func)
 
     if mode == ConvMode.TEMPORAL:
         if not isinstance(radius, int):
@@ -624,8 +608,6 @@ def bilateral(
     Returns:
         Bilaterally filtered clip.
     """
-    assert check_variable_format(clip, bilateral)
-
     if backend == Bilateral.Backend.CPU:
         bilateral_args = {"ref": ref, "sigmaS": sigmaS, "sigmaR": sigmaR, "planes": normalize_planes(clip)}
     else:
@@ -669,9 +651,6 @@ def flux_smooth(
     Returns:
         Smoothed clip.
     """
-
-    assert check_variable_format(clip, flux_smooth)
-
     if spatial_threshold:
         return core.zsmooth.FluxSmoothST(clip, temporal_threshold, spatial_threshold, planes, scalep)
 
@@ -725,8 +704,6 @@ def guided_filter(
     downscaler: ScalerLike = Point,
     upscaler: ScalerLike = Bilinear,
 ) -> vs.VideoNode:
-    assert check_variable(clip, guided_filter)
-
     planes = normalize_planes(clip, planes)
 
     downscaler = Scaler.ensure_obj(downscaler, guided_filter)

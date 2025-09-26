@@ -5,16 +5,7 @@ from typing import Any
 from jetpytools import FuncExcept
 
 from vsexprtools import norm_expr
-from vstools import (
-    VSFunctionNoArgs,
-    check_ref_clip,
-    check_variable,
-    core,
-    join,
-    shift_clip,
-    shift_clip_multi,
-    vs,
-)
+from vstools import VSFunctionNoArgs, check_ref_clip, core, join, shift_clip, shift_clip_multi, vs
 
 from .funcs import vinverse
 from .utils import telecine_patterns
@@ -39,8 +30,6 @@ def deblending_helper(
     """
     func = func or deblending_helper
 
-    assert check_variable(deblended, func)
-    assert check_variable(fieldmatched, func)
     check_ref_clip(fieldmatched, deblended, func)
 
     inters = telecine_patterns(fieldmatched, deblended, length, func)
@@ -109,8 +98,6 @@ def deblend_bob(
     """
     func = func or deblend_bob
 
-    assert check_variable(bobbed, func)
-
     ab0, bc0, c0 = shift_clip_multi(bobbed[::2], (0, 2))
     bc1, ab1, a1 = shift_clip_multi(bobbed[1::2])
 
@@ -135,8 +122,6 @@ def deblend_fix_kf(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, func: Fu
         Deblended clip with fixed blended keyframes.
     """
     func = func or deblend_fix_kf
-
-    assert check_variable(deblended, func)
 
     shifted_clips = shift_clip_multi(deblended)
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
