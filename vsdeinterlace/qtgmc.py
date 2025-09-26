@@ -30,7 +30,6 @@ from vstools import (
     UnsupportedVideoFormatError,
     VSFunctionKwArgs,
     VSObject,
-    check_variable,
     core,
     get_y,
     sc_detect,
@@ -317,9 +316,6 @@ class QTempGaussMC(VSObject):
             input_type: Indicates processing routine.
             tff: Field order of the clip.
         """
-
-        assert check_variable(clip, self.__class__)
-
         clip_fieldbased = FieldBased.from_param_or_video(tff, clip, True, self.__class__)
 
         self.clip = clip
@@ -702,9 +698,6 @@ class QTempGaussMC(VSObject):
             erosion_distance: How much to deflate then reflate to remove thin areas.
             over_dilation: Extra inflation to ensure areas to restore back are fully caught.
         """
-
-        assert check_variable(flt, self._mask_shimmer)
-
         if not erosion_distance:
             return flt
 
@@ -746,8 +739,6 @@ class QTempGaussMC(VSObject):
         )
 
     def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
-        assert check_variable(clip, self._interpolate)
-
         if self.input_type != self.InputType.PROGRESSIVE:
             clip = bobber.deinterlace(clip)
 
@@ -768,8 +759,6 @@ class QTempGaussMC(VSObject):
             mat[n, 0] = 1
 
             return linalg.solve(mat, rhs)
-
-        assert check_variable(clip, self._binomial_degrain)
 
         if not tr:
             return clip
@@ -971,9 +960,6 @@ class QTempGaussMC(VSObject):
         self.basic_output = self._apply_noise_restore(resharp, self.basic_noise_restore)
 
     def _apply_source_match(self, clip: vs.VideoNode, ref: vs.VideoNode) -> vs.VideoNode:
-        assert check_variable(clip, self._apply_source_match)
-        assert check_variable(ref, self._apply_source_match)
-
         def _error_adjustment(clip: vs.VideoNode, ref: vs.VideoNode, tr: int) -> vs.VideoNode:
             tr_f = 2 * tr - 1
             binomial_coeff = factorial(tr_f) // factorial(tr) // factorial(tr_f - tr)
@@ -1010,8 +996,6 @@ class QTempGaussMC(VSObject):
         return out
 
     def _apply_lossless(self, clip: vs.VideoNode) -> vs.VideoNode:
-        assert check_variable(clip, self._apply_lossless)
-
         if self.input_type == self.InputType.PROGRESSIVE:
             return clip
 
@@ -1039,8 +1023,6 @@ class QTempGaussMC(VSObject):
         return core.std.SetFieldBased(out, FieldBased.PROGRESSIVE)
 
     def _apply_sharpen(self, clip: vs.VideoNode) -> vs.VideoNode:
-        assert check_variable(clip, self._apply_sharpen)
-
         match self.sharp_mode:
             case self.SharpMode.NONE:
                 resharp = clip
@@ -1084,16 +1066,12 @@ class QTempGaussMC(VSObject):
         return resharp
 
     def _apply_back_blend(self, flt: vs.VideoNode, src: vs.VideoNode) -> vs.VideoNode:
-        assert check_variable(flt, self._apply_back_blend)
-
         if self.backblend_sigma and (self.sharp_mode or self.sharp_thin):
             flt = flt.std.MakeDiff(gauss_blur(flt.std.MakeDiff(src), self.backblend_sigma))
 
         return flt
 
     def _apply_sharpen_limit(self, clip: vs.VideoNode) -> vs.VideoNode:
-        assert check_variable(clip, self._apply_sharpen_limit)
-
         if (self.sharp_mode or self.sharp_thin) and self.limit_radius:
             if self.limit_mode in (self.SharpLimitMode.SPATIAL_PRESMOOTH, self.SharpLimitMode.SPATIAL_POSTSMOOTH):
                 if self.limit_radius == 1:
@@ -1118,8 +1096,6 @@ class QTempGaussMC(VSObject):
         return clip
 
     def _apply_noise_restore(self, clip: vs.VideoNode, restore: float = 0.0) -> vs.VideoNode:
-        assert check_variable(clip, self._apply_noise_restore)
-
         if restore and hasattr(self, "noise"):
             clip = norm_expr(
                 [clip, self.noise], "x y neutral - {restore} * +", restore=restore, func=self._apply_noise_restore

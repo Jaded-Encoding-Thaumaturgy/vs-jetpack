@@ -12,7 +12,6 @@ from vstools import (
     CustomIntEnum,
     InvalidColorFamilyError,
     Planes,
-    check_variable,
     core,
     depth,
     expect_bits,
@@ -478,9 +477,6 @@ def placebo_deband(
     Returns:
         Debanded and optionally grained clip.
     """
-
-    assert check_variable(clip, placebo_deband)
-
     thr = normalize_param_planes(clip, thr, planes, 0, placebo_deband)
     ngrain = normalize_param_planes(clip, grain, planes, 0, placebo_deband)
 
@@ -570,8 +566,6 @@ def mdb_bilateral(
     Returns:
         Debanded clip.
     """
-    assert check_variable(clip, mdb_bilateral)
-
     clip, bits = expect_bits(clip, 16)
 
     rad1, rad2, rad3 = round(radius * 4 / 3), round(radius * 2 / 3), round(radius / 3)

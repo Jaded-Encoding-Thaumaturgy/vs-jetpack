@@ -11,7 +11,6 @@ from vstools import (
     InvalidColorFamilyError,
     Planes,
     check_ref_clip,
-    check_variable,
     flatten_vnodes,
     get_y,
     normalize_planes,
@@ -82,8 +81,6 @@ def decrease_size(
         InvalidColorFamilyError: Input clip is not a YUV clip.
         InvalidColorFamilyError: A VideoNode is passed to `mask` and the clip is not a GRAY clip.
     """
-    assert check_variable(clip, decrease_size)
-
     if min_in > max_in:
         raise CustomIndexError("The blur min must be lower than max!", decrease_size, {"min": min_in, "max": max_in})
 

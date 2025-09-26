@@ -25,7 +25,6 @@ from vstools import (
     FieldBasedLike,
     VSFunctionAllArgs,
     VSFunctionNoArgs,
-    check_variable,
     core,
     vs,
 )
@@ -220,8 +219,6 @@ class AntiAliaser(Deinterlacer, ABC):
         Returns:
             Anti-aliased clip.
         """
-        assert check_variable(clip, self.antialias)
-
         for y in sorted((aa_dir for aa_dir in self.AADirection), key=lambda x: x.value, reverse=self.transpose_first):
             if direction in (y, self.AADirection.BOTH):
                 if y == self.AADirection.HORIZONTAL:
@@ -290,8 +287,6 @@ class SuperSampler(Scaler, AntiAliaser, ABC):
         Returns:
             The scaled clip.
         """
-        assert check_variable(clip, self.scale)
-
         dims = self._wh_norm(clip, width, height)
         dest_dimensions = list(dims)
         sy, sx = shift

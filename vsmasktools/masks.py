@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence, SupportsFloat
+from typing import Sequence, SupportsFloat
 
 from jetpytools import normalize_seq
 
@@ -12,8 +12,6 @@ from vstools import (
     HoldsVideoFormat,
     VideoFormatLike,
     check_ref_clip,
-    check_variable,
-    check_variable_format,
     depth,
     get_video_format,
     join,
@@ -32,8 +30,6 @@ __all__ = ["range_mask", "strength_zones_mask"]
 
 @limiter(mask=True)
 def range_mask(clip: vs.VideoNode, rad: int = 2, radc: int = 0) -> vs.VideoNode:
-    assert check_variable(clip, range_mask)
-
     def _minmax(clip: vs.VideoNode, iters: int, maxx: bool) -> vs.VideoNode:
         func = Morpho.maximum if maxx else Morpho.minimum
 
@@ -103,11 +99,7 @@ def strength_zones_mask(
             indices[s:e] = [(i, n) for n in range(s, e)]
 
         if isinstance(strength, vs.VideoNode):
-            if TYPE_CHECKING:
-                assert check_variable_format(strength, strength_zones_mask)
-
             check_ref_clip(base_clip, strength, strength_zones_mask)
-
             strength_clips.append(strength)
             continue
 

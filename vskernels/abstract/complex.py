@@ -24,7 +24,6 @@ from vstools import (
     Resolution,
     Sar,
     check_correct_subsampling,
-    check_variable_format,
     depth,
     expect_bits,
     get_video_format,
@@ -591,8 +590,6 @@ class ComplexScaler(KeepArScaler, LinearScaler):
 
         if isinstance(shift_top, (int, float)) and isinstance(shift_left, (int, float)):
             return super().scale(clip, width, height, (shift_top, shift_left), **kwargs)
-
-        assert check_variable_format(clip, self.scale)
 
         n_planes = clip.format.num_planes
 

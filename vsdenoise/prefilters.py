@@ -24,8 +24,6 @@ from vstools import (
     InvalidColorFamilyError,
     MissingT,
     Planes,
-    check_variable,
-    check_variable_format,
     get_peak_value,
     get_y,
     normalize_planes,
@@ -48,9 +46,6 @@ def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: Planes, **k
     """
     Internal function for applying a prefilter to a clip.
     """
-
-    assert check_variable(clip, pref_type)
-
     if pref_type == Prefilter.NONE:
         return clip
 
@@ -597,8 +592,6 @@ def prefilter_to_full_range(
         Range expanded clip.
     """
     func = func or prefilter_to_full_range
-
-    assert check_variable_format(clip, func)
 
     InvalidColorFamilyError.check(clip, (vs.YUV, vs.GRAY), func)
 

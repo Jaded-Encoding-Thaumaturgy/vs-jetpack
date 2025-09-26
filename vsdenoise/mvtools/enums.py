@@ -5,7 +5,7 @@ from typing import Any
 
 from jetpytools import CustomEnum, CustomIntEnum, CustomValueError, fallback
 
-from vstools import ConstantFormatVideoNode, VSFunctionAllArgs, check_variable_format, core, vs
+from vstools import VSFunctionAllArgs, core, vs
 
 __all__ = [
     "FlowMode",
@@ -145,8 +145,6 @@ class MVToolsPlugin(CustomEnum):
         Returns:
             The accompanying MVTools plugin for the clip.
         """
-        assert check_variable_format(clip, cls.from_video)
-
         if clip.format.sample_type is vs.FLOAT:
             return MVToolsPlugin.FLOAT
 

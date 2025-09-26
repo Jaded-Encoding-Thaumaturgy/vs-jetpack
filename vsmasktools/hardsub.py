@@ -18,7 +18,6 @@ from vstools import (
     Matrix,
     VSFunctionNoArgs,
     VSObjectABC,
-    check_variable,
     core,
     depth,
     get_lowest_value,
@@ -77,8 +76,6 @@ class CustomMaskFromClipsAndRanges(GeneralMask, VSObjectABC):
         Returns:
             Constructed mask
         """
-        assert check_variable(ref, self.get_mask)
-
         mask = vs.core.std.BlankClip(
             ref,
             format=ref.format.replace(color_family=vs.GRAY, subsampling_h=0, subsampling_w=0).id,
@@ -163,8 +160,6 @@ class HardsubMask(DeferredMask):
         Returns:
             Dehardsub stages and masks used for progressive dehardsub.
         """
-        assert check_variable(hardsub, self.get_progressive_dehardsub)
-
         masks = [self.get_mask(hardsub, ref)]
         partials_dehardsubbed = [hardsub]
         dehardsub_masks = list[vs.VideoNode]()
@@ -310,8 +305,6 @@ class HardsubSign(HardsubMask):
 
     @limiter(mask=True)
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        assert check_variable(clip, self._mask)
-
         hsmf = norm_expr([clip, ref], "x y - abs", func=self.__class__)
         hsmf = core.resize.Bilinear(hsmf, format=clip.format.replace(subsampling_w=0, subsampling_h=0).id)
 
@@ -358,8 +351,6 @@ class HardsubLine(HardsubMask):
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        assert check_variable(clip, self.__class__)
-
         expand_n = fallback(self.expand, clip.width // 200)
 
         y_range = get_peak_value(clip) - get_lowest_value(clip)
@@ -488,7 +479,6 @@ class HardsubASS(HardsubMask):
 def bounded_dehardsub(
     hrdsb: vs.VideoNode, ref: vs.VideoNode, signs: list[HardsubMask], partials: list[vs.VideoNode] | None = None
 ) -> vs.VideoNode:
-    assert check_variable(hrdsb, bounded_dehardsub)
     for sign in signs:
         hrdsb = sign.apply_dehardsub(hrdsb, ref, partials)
 
@@ -496,9 +486,6 @@ def bounded_dehardsub(
 
 
 def diff_hardsub_mask(a: vs.VideoNode, b: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-    assert check_variable(a, diff_hardsub_mask)
-    assert check_variable(b, diff_hardsub_mask)
-
     return a.std.BlankClip(color=get_neutral_values(a), keep=True).std.MaskedMerge(
         a.std.MakeDiff(b), HardsubLine(**kwargs).get_mask(a, b)
     )
@@ -506,9 +493,6 @@ def diff_hardsub_mask(a: vs.VideoNode, b: vs.VideoNode, **kwargs: Any) -> vs.Vid
 
 @limiter(mask=True)
 def get_all_sign_masks(hrdsb: vs.VideoNode, ref: vs.VideoNode, signs: list[HardsubMask]) -> vs.VideoNode:
-    assert check_variable(hrdsb, get_all_sign_masks)
-    assert check_variable(ref, get_all_sign_masks)
-
     mask = core.std.BlankClip(
         ref, format=ref.format.replace(color_family=vs.GRAY, subsampling_w=0, subsampling_h=0).id, keep=True
     )

@@ -9,7 +9,6 @@ from ..enums import Dar, Sar
 from ..exceptions import UnsupportedColorFamilyError, UnsupportedSubsamplingError
 from ..types import HoldsVideoFormat, VideoFormatLike
 from ..vs_proxy import vs
-from .check import check_variable_format
 
 __all__ = [
     "get_color_family",
@@ -76,9 +75,6 @@ def get_video_format(
             sample_type = vs.SampleType(value == 32)
 
         return vs.core.query_video_format(vs.YUV, sample_type, value)
-
-    if isinstance(value, vs.VideoNode):
-        assert check_variable_format(value, get_video_format)
 
     if sample_type is not None:
         return value.format.replace(sample_type=sample_type)

@@ -17,8 +17,6 @@ from vstools import (
     InvalidColorFamilyError,
     Planes,
     check_progressive,
-    check_variable,
-    check_variable_format,
     core,
     depth,
     get_y,
@@ -72,8 +70,6 @@ class dpir(CustomStrEnum):  # noqa: N801
             **kwargs: Additional arguments to be passed to `vsscale.DPIR`.
         """
         func = "dpir." + str(self.value)
-
-        assert check_variable_format(clip, func)
 
         planes = normalize_planes(clip, planes)
 
@@ -202,10 +198,6 @@ def deblock_qed(
     Returns:
         Deblocked clip
     """
-    from vsdeinterlace import weave
-
-    assert check_variable(clip, deblock_qed)
-
     fieldbased = FieldBased.from_video(clip, func=deblock_qed)
     planes_pp = 0 if chroma_mode else planes
 
@@ -236,6 +228,8 @@ def deblock_qed(
             deblocked = join(deblocked, strong)
 
     if fieldbased.is_inter:
+        from vsdeinterlace import weave
+
         deblocked = weave(Box().scale(deblocked, height=clip.height // 2), fieldbased, deblock_qed)
 
     return deblocked
@@ -302,7 +296,6 @@ def mpeg2stinx(
 
         return bobbed
 
-    assert check_variable(clip, mpeg2stinx)
     assert check_progressive(clip, mpeg2stinx)
 
     sw, sh = normalize_seq(radius, 2)

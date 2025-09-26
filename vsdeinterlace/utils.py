@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from jetpytools import FuncExcept
 
-from vstools import FieldBased, FieldBasedLike, check_variable, core, vs
+from vstools import FieldBased, FieldBasedLike, core, vs
 
 __all__ = ["get_field_difference", "reinterlace", "reweave", "telecine_patterns", "weave"]
 
@@ -27,9 +27,6 @@ def telecine_patterns(
         A list of interleaved clips, each representing a unique telecine pattern.
     """
     func = func or telecine_patterns
-
-    assert check_variable(clipa, func)
-    assert check_variable(clipb, func)
 
     a_select = [clipa.std.SelectEvery(length, i) for i in range(length)]
     b_select = [clipb.std.SelectEvery(length, i) for i in range(length)]
@@ -52,8 +49,6 @@ def get_field_difference(
         A clip with a per-frame property "FieldDifference" indicating the absolute difference between fields.
     """
     func = func or get_field_difference
-
-    assert check_variable(clip, func)
 
     tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
 
@@ -78,8 +73,6 @@ def weave(clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: Fu
     """
     func = func or weave
 
-    assert check_variable(clip, func)
-
     tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
 
     return clip.std.DoubleWeave(tff)[::2]
@@ -101,8 +94,6 @@ def reweave(
         A reweaved clip with fields combined into frames.
     """
     func = func or reweave
-    assert check_variable(clipa, func)
-    assert check_variable(clipb, func)
 
     return weave(core.std.Interleave([clipa, clipb]), tff, func)
 
@@ -122,8 +113,6 @@ def reinterlace(
         A reinterlaced clip with fields woven back into interlaced frames.
     """
     func = func or reinterlace
-
-    assert check_variable(clip, func)
 
     tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
 

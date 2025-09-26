@@ -4,15 +4,7 @@ from typing import Any, Sequence
 
 from jetpytools import normalize_seq
 
-from vstools import (
-    GenericVSFunction,
-    Planes,
-    check_variable_format,
-    join,
-    normalize_planes,
-    split,
-    vs,
-)
+from vstools import GenericVSFunction, Planes, join, normalize_planes, split, vs
 
 __all__ = ["normalize_radius"]
 
@@ -25,8 +17,6 @@ def normalize_radius(
     planes: Planes,
     **kwargs: Any,
 ) -> vs.VideoNode:
-    assert check_variable_format(__clip, normalize_radius)
-
     if isinstance(__radius, dict):
         name, radius = __radius.popitem()
     else:

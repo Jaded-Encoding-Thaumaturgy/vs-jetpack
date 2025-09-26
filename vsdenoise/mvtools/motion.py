@@ -4,7 +4,7 @@ from collections import defaultdict
 from contextlib import suppress
 from typing import Any
 
-from vstools import VSObject, check_variable_format, vs
+from vstools import VSObject, vs
 
 from .enums import MVDirection
 
@@ -70,6 +70,4 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
             direction: Direction of the motion vector (forward or backward).
             delta: Frame distance for the motion vector.
         """
-        assert check_variable_format(vector, self.set_vector)
-
         self[direction][delta] = vector

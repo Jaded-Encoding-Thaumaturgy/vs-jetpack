@@ -13,7 +13,6 @@ from vstools import (
     Planes,
     VideoFormatLike,
     VideoNodeIterable,
-    check_variable_format,
     flatten_vnodes,
     shift_clip_multi,
     vs,
@@ -112,8 +111,6 @@ class MeanMode(CustomEnum):
 
         clips = flatten_vnodes(_clips)
 
-        assert check_variable_format(clips, func)
-
         if not clips:
             raise CustomValueError("There is no clip to evaluate.", func)
 
@@ -155,8 +152,6 @@ class MeanMode(CustomEnum):
             A new clip with the mean applied.
         """
         func = func or f"{self!s}.single"
-
-        assert check_variable_format(clip, func)
 
         if mode == ConvMode.TEMPORAL:
             if not isinstance(radius, int):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from jetpytools import CustomOverflowError, CustomValueError, normalize_seq
 from typing_extensions import TypeVar
@@ -20,7 +20,7 @@ from vskernels import (
 )
 from vsmasktools import ringing_mask
 from vsrgtools.rgtools import Repair
-from vstools import ChromaLocation, check_ref_clip, check_variable, scale_delta, vs
+from vstools import ChromaLocation, check_ref_clip, check_variable_resolution, scale_delta, vs
 
 from .generic import GenericScaler
 
@@ -114,12 +114,6 @@ class ClampScaler(GenericScaler):
 
         check_ref_clip(base, smooth)
 
-        if TYPE_CHECKING:
-            from vstools import check_variable_format
-
-            assert check_variable_format(base, self.__class__)
-            assert check_variable_format(smooth, self.__class__)
-
         merge_weight = self.strength / 100
 
         if self.limit is True:
@@ -193,7 +187,7 @@ class ComplexSuperSamplerProcess(
         shift: tuple[TopShift | list[TopShift], LeftShift | list[LeftShift]] = (0, 0),
         **kwargs: Any,
     ) -> vs.VideoNode:
-        assert check_variable(clip, self.scale)
+        assert check_variable_resolution(clip, self.scale)
 
         width, height = self._wh_norm(clip, width, height)
         rfactor_w, rfactor_h = (width / clip.width), (height / clip.height)

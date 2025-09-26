@@ -24,7 +24,6 @@ from vstools import (
     UnsupportedVideoFormatError,
     check_progressive,
     check_ref_clip,
-    check_variable,
     core,
     depth,
     get_y,
@@ -77,7 +76,6 @@ def wnnm(
     Returns:
         Denoised clip.
     """
-
     assert check_progressive(clip, wnnm)
 
     func = FunctionUtil(clip, wnnm, planes, bitdepth=32)
@@ -673,8 +671,6 @@ def bm3d(
             final = join({p: preclip if s == 0 else final for p, s in zip(range(3), nsigma)}, vs.YUV)
 
         return core.bm3d.OPP2RGB(final, preclip.format.sample_type)
-
-    assert check_variable(clip, func)
 
     if clip.format.color_family == vs.RGB:
         if backend == BM3D.Backend.OLD:

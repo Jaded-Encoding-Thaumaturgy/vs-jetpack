@@ -31,7 +31,6 @@ from vstools import (
     VSFunctionPlanesArgs,
     VSObjectABC,
     check_progressive,
-    check_variable,
     get_y,
     join,
     limiter,
@@ -446,8 +445,6 @@ def fine_dehalo2(
         Dehaloed clip.
     """
     func = fine_dehalo2
-
-    assert check_variable(clip, func)
 
     work_clip, *chroma = split(clip)
 

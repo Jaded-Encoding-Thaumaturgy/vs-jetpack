@@ -8,7 +8,7 @@ from vsexprtools import ExprOp, norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike
 from vsrgtools import bilateral, remove_grain
 from vsrgtools.rgtools import RemoveGrain
-from vstools import ColorRange, VSFunctionNoArgs, check_variable, depth, get_w, get_y, insert_clip, vs
+from vstools import ColorRange, VSFunctionNoArgs, depth, get_w, get_y, insert_clip, vs
 
 from .edge import EdgeDetect, EdgeDetectLike, ExLaplacian4
 from .morpho import Morpho
@@ -176,8 +176,6 @@ def based_diff_mask(
     """
     func = func or based_diff_mask
 
-    assert check_variable(clip, func)
-
     if isinstance(ref_or_height, vs.VideoNode):
         ref = ref_or_height
     else:
@@ -189,8 +187,6 @@ def based_diff_mask(
 
         ref = kernel.descale(clip, get_w(ref_or_height), ref_or_height)
         ref = kernel.scale(ref, clip.width, clip.height)
-
-    assert check_variable(ref, func)
 
     if clip.format.num_planes != ref.format.num_planes:
         clip, ref = get_y(clip), get_y(ref)

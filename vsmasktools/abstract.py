@@ -14,7 +14,6 @@ from vstools import (
     FramesLengthError,
     Position,
     Size,
-    check_variable,
     depth,
     limiter,
     replace_ranges,
@@ -120,9 +119,6 @@ class DeferredMask(GeneralMask):
         Returns:
             Constructed mask
         """
-        assert check_variable(clip, self.get_mask)
-        assert check_variable(ref, self.get_mask)
-
         if self.refframes:
             hm = vs.core.std.BlankClip(
                 ref, format=ref.format.replace(color_family=vs.GRAY, subsampling_h=0, subsampling_w=0).id, keep=True

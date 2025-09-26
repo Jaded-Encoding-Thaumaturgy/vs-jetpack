@@ -3,7 +3,7 @@ from __future__ import annotations
 from vsexprtools import ExprOp
 from vsrgtools import bilateral, gauss_blur, remove_grain
 from vsrgtools.rgtools import RemoveGrain
-from vstools import check_variable, get_y, limiter, plane, vs
+from vstools import get_y, limiter, plane, vs
 
 from .edge import Kirsch, MinMax, Prewitt, PrewittTCanny
 from .masks import range_mask
@@ -27,8 +27,6 @@ def detail_mask(
     minmax: MinMax = MinMax(rady=3, radc=2),
     edge: MaskLike = Kirsch,
 ) -> vs.VideoNode:
-    assert check_variable(clip, detail_mask)
-
     range_mask = Morpho.binarize(minmax.edgemask(clip), brz_mm)
 
     edges = Morpho.binarize(normalize_mask(edge, clip), brz_ed)
@@ -50,8 +48,6 @@ def detail_mask_neo(
     edgemask: MaskLike = Prewitt,
     rg_mode: RemoveGrain.Mode = remove_grain.Mode.MINMAX_MEDIAN_OPP,
 ) -> vs.VideoNode:
-    assert check_variable(clip, detail_mask_neo)
-
     clip_y = get_y(clip)
     blur_pf = gauss_blur(clip_y, sigma * 0.75)
 

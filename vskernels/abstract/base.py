@@ -43,8 +43,6 @@ from vstools import (
     VSObjectABC,
     VSObjectABCMeta,
     check_correct_subsampling,
-    check_variable,
-    check_variable_format,
     check_variable_resolution,
     core,
     get_video_format,
@@ -858,7 +856,6 @@ class Kernel(Scaler, Descaler, Resampler):
             VariableFormatError: If the input clip has variable format.
             CustomValueError: If the input clip is GRAY but lists of shift has been passed.
         """
-        assert check_variable_format(clip, self.shift)
 
         def _shift(src: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0)) -> vs.VideoNode:
             return self.scale(src, shift=shift, **kwargs)
@@ -1030,8 +1027,6 @@ class Bobber(BaseScaler):
             The bobbed clip.
         """
         clip_fieldbased = FieldBased.from_param_or_video(tff, clip, True, self.__class__)
-
-        assert check_variable(clip, self.__class__)
 
         return self.bob_function(clip, **self.get_bob_args(clip, tff=clip_fieldbased.is_tff, **kwargs))
 

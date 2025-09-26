@@ -13,8 +13,6 @@ from vstools import (
     Planes,
     VSFunctionNoArgs,
     VSObject,
-    check_variable,
-    check_variable_format,
     core,
     depth,
     get_props,
@@ -150,9 +148,6 @@ class MVTools(VSObject):
             sc_detection_args: Arguments passed to every
                 [MVToolsPlugin.SCDetection][vsdenoise.MVToolsPlugin.SCDetection] calls.
         """
-
-        assert check_variable(clip, self.__class__)
-
         InvalidColorFamilyError.check(clip, (vs.YUV, vs.GRAY), self.__class__)
 
         self.mvtools = MVToolsPlugin.from_video(clip)
@@ -670,11 +665,7 @@ class MVTools(VSObject):
         interleaved = core.std.Interleave(comp_clips)
 
         if temporal_func:
-            processed = temporal_func(interleaved)
-
-            assert check_variable_format(processed, self.compensate)
-
-            return core.std.SelectEvery(processed, cycle, offset)
+            return core.std.SelectEvery(temporal_func(interleaved), cycle, offset)
 
         return interleaved, (cycle, offset)
 
@@ -808,11 +799,7 @@ class MVTools(VSObject):
         interleaved = core.std.Interleave(flow_clips)
 
         if temporal_func:
-            processed = temporal_func(interleaved)
-
-            assert check_variable_format(processed, self.compensate)
-
-            return core.std.SelectEvery(processed, cycle, offset)
+            return core.std.SelectEvery(temporal_func(interleaved), cycle, offset)
 
         return interleaved, (cycle, offset)
 
@@ -939,10 +926,7 @@ class MVTools(VSObject):
         Returns:
             List of the motion interpolated frames if interleave=False else a motion interpolated clip.
         """
-
         clip = fallback(clip, self.clip)
-
-        assert check_variable_format(clip, self.flow_interpolate)
 
         super_clip = self.get_super(fallback(super, clip))
 
@@ -1190,8 +1174,6 @@ class MVTools(VSObject):
         """
 
         clip = fallback(clip, self.clip)
-
-        assert check_variable_format(clip, self.sc_detection)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 

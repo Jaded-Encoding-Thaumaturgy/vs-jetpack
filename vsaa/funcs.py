@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from jetpytools import CustomValueError, fallback
 
@@ -16,7 +16,6 @@ from vstools import (
     FunctionUtil,
     Planes,
     VSFunctionNoArgs,
-    check_variable_format,
     scale_mask,
     vs,
 )
@@ -149,10 +148,6 @@ def based_aa(
         ss_clip = prefilter(func.work_clip)
     elif isinstance(prefilter, vs.VideoNode):
         FormatsMismatchError.check(based_aa, func.work_clip, prefilter)
-
-        if TYPE_CHECKING:
-            assert check_variable_format(prefilter, func.func)
-
         ss_clip = prefilter
     else:
         ss_clip = func.work_clip

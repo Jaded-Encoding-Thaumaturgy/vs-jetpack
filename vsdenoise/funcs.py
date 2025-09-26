@@ -15,7 +15,6 @@ from vstools import (
     Planes,
     VSFunctionNoArgs,
     check_ref_clip,
-    check_variable_format,
     get_color_family,
     join,
     normalize_planes,
@@ -279,8 +278,6 @@ def ccd(
         Denoised clip.
     """
     func = func or ccd
-
-    assert check_variable_format(clip, func)
 
     if planes is MISSING:
         planes = [1, 2] if clip.format.color_family == vs.YUV else None

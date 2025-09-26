@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Protocol
 
 from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
-from vstools import MatrixLike, check_variable, plane, vs
+from vstools import MatrixLike, plane, vs
 
 __all__ = [
     "BaseGenericScaler",
@@ -69,8 +69,6 @@ class BaseGenericScaler(Scaler, ABC):
         shift: tuple[float, float] = (0, 0),
         **kwargs: Any,
     ) -> vs.VideoNode:
-        assert check_variable(clip, self.__class__)
-
         width, height = self._wh_norm(clip, width, height)
 
         return self._finish_scale(clip, clip, width, height, shift)
@@ -138,8 +136,6 @@ class GenericScaler(BaseGenericScaler, partial_abstract=True):
         shift: tuple[float, float] = (0, 0),
         **kwargs: Any,
     ) -> vs.VideoNode:
-        assert check_variable(clip, self.__class__)
-
         width, height = self._wh_norm(clip, width, height)
 
         if shift != (0, 0):
