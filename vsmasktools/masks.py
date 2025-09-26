@@ -1,18 +1,24 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence, SupportsFloat
+from typing import TYPE_CHECKING, Iterable, Sequence, SupportsFloat
+
+from jetpytools import FuncExcept, clamp
 
 from vsexprtools import ExprOp
+from vsrgtools import BlurMatrix, median_blur
 from vstools import (
     ConstantFormatVideoNode,
+    ConvMode,
     DitherType,
     FrameRangeN,
     FrameRangesN,
     HoldsVideoFormat,
+    Planes,
     VideoFormatLike,
     check_ref_clip,
     check_variable,
     check_variable_format,
+    core,
     depth,
     get_video_format,
     join,
@@ -20,6 +26,7 @@ from vstools import (
     normalize_ranges,
     normalize_seq,
     replace_ranges,
+    scale_mask,
     split,
     vs,
 )
@@ -27,7 +34,7 @@ from vstools import (
 from .morpho import Morpho
 from .types import Coordinates
 
-__all__ = ["range_mask", "strength_zones_mask"]
+__all__ = ["range_mask", "stabilize_mask", "strength_zones_mask"]
 
 
 @limiter(mask=True)
@@ -121,3 +128,76 @@ def strength_zones_mask(
     cache_strength_clips.clear()
 
     return vs.core.std.FrameEval(base_clip, lambda n: strength_clips[indices[n][0]][indices[n][1]], clip_src=base_clip)
+
+
+def stabilize_mask(
+    clip: vs.VideoNode,
+    radius: int = 3,
+    ranges: FrameRangeN | FrameRangesN = None,
+    scenechanges: Iterable[int] | None = None,
+    kernel: BlurMatrix = BlurMatrix.MEAN_NO_CENTER,
+    brz: int = 0,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
+) -> vs.VideoNode:
+    """
+    Generate a stabilization mask highlighting unstable regions between frames using temporal median and blur filtering.
+
+    Useful for stabilizing credit masks.
+
+    Args:
+        clip: Input mask.
+        radius: Temporal radius for filtering. Higher values smooth more. Defaults to 3.
+        ranges: Frame ranges treated as scene changes.
+        scenechanges: Explicit list of scenechange frames.
+        kernel: Blur kernel applied after the median step.
+        brz: Threshold bias for binarization. Higher = stricter. Defaults to 0.
+        planes: Which planes to process. Defaults to all.
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Returns:
+        A mask clip where white marks unstable areas and black marks stable regions.
+    """
+    func = func or stabilize_mask
+
+    frames = list[int]()
+    scprev, scnext = set[int](), set[int]()
+
+    if ranges:
+        frames.extend(x for s, e in normalize_ranges(clip, ranges) for x in (s, e + int(not replace_ranges.exclusive)))
+
+    if scenechanges:
+        frames.extend(scenechanges)
+
+    for f in frames:
+        scprev.add(f)
+        scnext.add(f - 1)
+
+    def set_scenechanges(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
+        f = f.copy()
+        f.props.update(
+            _SceneChangePrev=f.props.get("_SceneChangePrev", False),
+            _SceneChangeNext=f.props.get("_SceneChangeNext", False),
+        )
+
+        if n in scprev:
+            f.props["_SceneChangePrev"] = True
+
+        if n in scnext:
+            f.props["_SceneChangeNext"] = True
+
+        return f
+
+    if scprev or scnext:
+        clip = core.std.ModifyFrame(clip, clip, set_scenechanges)
+
+    median = median_blur(clip, radius, ConvMode.TEMPORAL, planes, scenechange=True, func=func)
+
+    radius_blur = radius * 2 + 1
+    blurred = kernel(radius_blur, mode=ConvMode.TEMPORAL)(median, planes, scenechange=True, func=func)
+
+    binarized = blurred.std.Binarize(
+        scale_mask(1.0 / (radius_blur - clamp(brz, 0, radius_blur)), 32, clip), planes=planes
+    )
+
+    return binarized
