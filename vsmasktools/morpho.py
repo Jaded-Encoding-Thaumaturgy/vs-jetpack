@@ -24,7 +24,6 @@ from vstools import (
     Planes,
     SpatialConvMode,
     VSFunctionAllArgs,
-    check_variable_format,
     core,
     scale_mask,
     scale_value,
@@ -444,8 +443,6 @@ class Morpho:
         """
         func = func or self.gradient
 
-        assert check_variable_format(clip, func)
-
         if isinstance(radius, tuple):
             r, conv_mode = radius
         else:
@@ -503,8 +500,6 @@ class Morpho:
         """
         func = func or self.top_hat
 
-        assert check_variable_format(clip, func)
-
         opened = self.opening(clip, radius, thr, iterations, coords, multiply, planes, func=func, **kwargs)
 
         return norm_expr([clip, opened], "x y -", planes, func=func)
@@ -547,8 +542,6 @@ class Morpho:
         """
         func = func or self.bottom_hat
 
-        assert check_variable_format(clip, func)
-
         closed = self.closing(clip, radius, thr, iterations, coords, multiply, planes, func=func, **kwargs)
 
         return norm_expr([closed, clip], "x y -", planes, func=func)
@@ -590,8 +583,6 @@ class Morpho:
             planes: Which plane to process.
         """
         func = func or self.outer_hat
-
-        assert check_variable_format(clip, func)
 
         if isinstance(radius, tuple):
             r, conv_mode = radius
@@ -644,8 +635,6 @@ class Morpho:
             planes: Which plane to process.
         """
         func = func or self.inner_hat
-
-        assert check_variable_format(clip, func)
 
         if isinstance(radius, tuple):
             r, conv_mode = radius

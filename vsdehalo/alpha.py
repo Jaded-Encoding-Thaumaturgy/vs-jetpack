@@ -18,7 +18,6 @@ from vstools import (
     Planes,
     VSFunctionPlanesArgs,
     check_progressive,
-    check_variable_format,
     core,
     join,
     limiter,
@@ -243,8 +242,6 @@ class AlphaBlur:
         Returns:
             Blurred clip.
         """
-        assert check_variable_format(clip, self.func)
-
         planes = normalize_planes(clip, planes)
 
         work_clip, *chroma = split(clip) if planes == [0] else (clip,)

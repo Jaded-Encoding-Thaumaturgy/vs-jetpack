@@ -144,8 +144,6 @@ class FunctionUtil(list[int], VSObject):
         else:
             clip = self.clip
 
-        assert check_variable(clip, self.func)
-
         cfamily = clip.format.color_family
 
         if not self.allowed_cfamilies or cfamily in self.allowed_cfamilies:
@@ -339,9 +337,6 @@ class FunctionUtil(list[int], VSObject):
         Returns:
             Processed clip converted back to the original input clip's format.
         """
-
-        assert check_variable(processed, self.func)
-
         if len(self.chroma_planes):
             processed = join([processed, *self.chroma_planes], self.norm_clip.format.color_family, prop_src=prop_src)
 

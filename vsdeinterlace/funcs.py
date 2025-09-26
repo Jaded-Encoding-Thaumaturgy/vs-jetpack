@@ -15,7 +15,6 @@ from vstools import (
     Planes,
     VSFunctionKwArgs,
     check_ref_clip,
-    check_variable,
     core,
     scale_delta,
     vs,
@@ -114,8 +113,6 @@ class InterpolateOverlay(CustomEnum):
         Returns:
             Decimated clip with text resampled down to 24p.
         """
-        assert check_variable(clip, self.__class__)
-
         step, lookup = self.value
         offset = lookup[pattern % 5]
         offsets = [(offset + i * step) % 40 for i in range(4)]
@@ -175,14 +172,12 @@ class FixInterlacedFades(CustomIntEnum):
             Clip with fades to/from `color` accurately deinterlaced. Frames that don't contain such fades may be
             damaged.
         """
-
         func = FunctionUtil(clip, self.__class__, planes, vs.YUV, 32)
 
         expr_clips = list[vs.VideoNode]()
         fields = func.work_clip.std.SeparateFields(tff=True)
 
         if isinstance(color, vs.VideoNode):
-            assert check_variable(color, self.__class__)
             check_ref_clip(color, func.work_clip, self.__class__)
 
             expr_clips.append(color)
@@ -240,14 +235,9 @@ def vinverse(
         thr: Skip processing if abs(clip - comb_blur(clip)) < thr
         scl: Scale factor for vshrpD * vblurD < 0.
     """
-
     blurred = comb_blur(clip, planes=planes) if callable(comb_blur) else comb_blur
 
     blurred2 = contra_blur(blurred, planes=planes) if callable(contra_blur) else contra_blur
-
-    assert check_variable(clip, vinverse)
-    assert check_variable(blurred, vinverse)
-    assert check_variable(blurred2, vinverse)
 
     FormatsMismatchError.check(vinverse, clip, blurred, blurred2)
 

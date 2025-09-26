@@ -5,7 +5,7 @@ from typing import Callable, Sequence
 from jetpytools import CustomIntEnum, CustomStrEnum, KwargsNotNone
 
 from vsexprtools import norm_expr
-from vstools import Planes, check_variable, normalize_param_planes, vs
+from vstools import Planes, normalize_param_planes, vs
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
 
@@ -232,9 +232,6 @@ def repair(
     Returns:
         Clip with repaired pixels, bounded by the reference.
     """
-    assert check_variable(clip, repair)
-    assert check_variable(repairclip, repair)
-
     mode = normalize_param_planes(clip, mode, planes, Repair.Mode.NONE)
 
     if not sum(mode):
@@ -466,8 +463,6 @@ def remove_grain(
     Returns:
         Processed (denoised) clip.
     """
-    assert check_variable(clip, remove_grain)
-
     mode = normalize_param_planes(clip, mode, planes, RemoveGrain.Mode.NONE)
 
     if not sum(mode):
@@ -579,8 +574,6 @@ def clense(
     Returns:
         Clensed clip with temporal median filtering.
     """
-    assert check_variable(clip, clense)
-
     kwargs = KwargsNotNone(previous=previous_clip, next=next_clip)
 
     if mode == Clense.Mode.NONE:
@@ -671,8 +664,6 @@ def vertical_cleaner(
     Returns:
         Filtered clip.
     """
-    assert check_variable(clip, vertical_cleaner)
-
     mode = normalize_param_planes(clip, mode, planes, VerticalCleaner.Mode.NONE)
 
     if not sum(mode):

@@ -7,7 +7,7 @@ from typing import Any, Iterable, Literal, Self, overload
 from jetpytools import CustomEnum, CustomNotImplementedError, CustomValueError, FuncExcept, fallback, iterate, to_arr
 
 from vsexprtools import ExprList, ExprOp, ExprToken, ExprVars
-from vstools import ConvMode, Planes, check_variable_format, core, shift_clip_multi, vs
+from vstools import ConvMode, Planes, core, shift_clip_multi, vs
 
 __all__ = ["BlurMatrix", "BlurMatrixBase"]
 
@@ -70,11 +70,9 @@ class BlurMatrixBase[_Nb: float | int](list[_Nb]):
         Returns:
             Processed (blurred) video clip.
         """
-        clip = to_arr(clip)
-
         func = func or self
 
-        assert check_variable_format(clip, func)
+        clip = to_arr(clip)
 
         if len(self) <= 1:
             return clip[0]

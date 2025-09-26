@@ -24,7 +24,7 @@ from ..enums import (
 )
 from ..exceptions import FramesLengthError
 from ..types import HoldsVideoFormat, VideoFormatLike
-from ..utils import DynamicClipsCache, check_variable_format, get_depth
+from ..utils import DynamicClipsCache, get_depth
 from ..vs_proxy import vs
 from .utils import DitherType, depth
 
@@ -254,8 +254,6 @@ def finalize_clip(
     """
     from ..functions import limiter
 
-    assert check_variable_format(clip, func or finalize_clip)
-
     if bits:
         clip = depth(clip, bits, dither_type=dither_type)
 
@@ -357,10 +355,7 @@ def initialize_clip(
     Returns:
         Clip with relevant frame properties set, and optionally dithered up to 16 bits by default.
     """
-
     func = func or initialize_clip
-
-    assert check_variable_format(clip, func)
 
     values: list[tuple[type[PropEnum], Any]] = [
         (Matrix, matrix),
@@ -558,8 +553,6 @@ def shift_clip_multi(clip: vs.VideoNode, offsets: StrictRange = (-1, 1)) -> list
 
 
 def sc_detect(clip: vs.VideoNode, threshold: float = 0.1) -> vs.VideoNode:
-    assert check_variable_format(clip, sc_detect)
-
     stats = vs.core.std.PlaneStats(shift_clip(clip, -1), clip)
 
     return vs.core.akarin.PropExpr(

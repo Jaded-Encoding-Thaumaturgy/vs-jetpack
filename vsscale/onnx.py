@@ -31,7 +31,6 @@ from vstools import (
     Matrix,
     MatrixLike,
     ProcessVariableResClip,
-    check_variable_format,
     check_variable_resolution,
     core,
     depth,
@@ -256,8 +255,6 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         """
         from vsmlrt import Backend
 
-        assert check_variable_format(clip, self.__class__)
-
         width, height = self._wh_norm(clip, width, height)
 
         preprocess_kwargs = dict[str, Any]()
@@ -411,8 +408,6 @@ class BaseOnnxScalerRGB(BaseOnnxScaler):
         return limiter(clip, func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        assert check_variable_format(clip, self.__class__)
-
         if get_video_format(clip) != get_video_format(input_clip):
             kwargs = (
                 dict[str, Any](
@@ -534,7 +529,6 @@ class BaseArtCNNLuma(BaseArtCNN):
 
 class BaseArtCNNChroma(BaseArtCNN):
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        assert check_variable_format(clip, self.__class__)
         assert clip.format.color_family == vs.YUV
 
         if clip.format.subsampling_h != 0 or clip.format.subsampling_w != 0:
@@ -1298,8 +1292,6 @@ class BaseDPIR(BaseOnnxScaler):
         return limiter(clip, func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        assert check_variable_format(clip, self.__class__)
-
         if get_video_format(clip) != get_video_format(input_clip):
             kwargs = (
                 dict[str, Any](

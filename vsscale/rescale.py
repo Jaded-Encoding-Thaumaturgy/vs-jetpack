@@ -17,7 +17,6 @@ from vstools import (
     FrameRangeN,
     FrameRangesN,
     VSObjectABC,
-    check_variable,
     core,
     depth,
     get_peak_value,
@@ -56,8 +55,6 @@ class RescaleBase(VSObjectABC):
         border_handling: int | BorderHandling = BorderHandling.MIRROR,
         **kwargs: Any,
     ) -> None:
-        assert check_variable(clip, self.__class__)
-
         self._clipy, *chroma = split(clip)
         self._chroma = chroma
 

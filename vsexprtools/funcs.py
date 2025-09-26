@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from logging import debug as logging_debug
 from math import ceil
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence, SupportsIndex
+from typing import Any, Callable, Iterable, Sequence, SupportsIndex
 from warnings import warn
 
 from jetpytools import (
@@ -24,7 +24,6 @@ from vstools import (
     ProcessVariableResClip,
     VideoFormatLike,
     VideoNodeIterable,
-    check_variable_format,
     core,
     flatten_vnodes,
     get_video_format,
@@ -76,9 +75,6 @@ def expr_func(
     func = func or expr_func
 
     clips = to_arr(clips)
-
-    if TYPE_CHECKING:
-        assert check_variable_format(clips, func)
 
     fmt = get_video_format(format).id if format is not None else None
 

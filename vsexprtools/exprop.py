@@ -28,7 +28,6 @@ from vstools import (
     Planes,
     VideoFormatLike,
     VideoNodeIterable,
-    check_variable,
     flatten,
     flatten_vnodes,
     get_lowest_value,
@@ -152,8 +151,6 @@ class ExprToken(CustomStrEnum, metaclass=_ExprTokenMeta):
         Returns:
             The value corresponding to the symbolic token.
         """
-        assert check_variable(clip, self.get_value)
-
         if self is ExprToken.PlaneMin:
             return get_lowest_value(clip, chroma, range_in)
 

@@ -15,7 +15,7 @@ from vstools import (
     ConvMode,
     Planes,
     UnsupportedColorFamilyError,
-    check_variable,
+    check_variable_resolution,
     core,
     get_lowest_values,
     get_neutral_values,
@@ -82,7 +82,7 @@ class ScalerTwoPasses(BaseScalerSpecializer[_ScalerWithLanczosDefaultT], Scaler,
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any,
     ) -> vs.VideoNode:
-        assert check_variable(clip, self.__class__)
+        assert check_variable_resolution(clip, self.__class__)
 
         width, height = self._wh_norm(clip, width, height)
 
@@ -402,8 +402,6 @@ class Grainer(AbstractGrainer, CustomEnum):
 
         if clip is MISSING:
             return GrainerPartial(self, **kwargs)
-
-        assert check_variable(clip, self.name)
 
         if self == Grainer.PLACEBO:
             assert static is False, "PlaceboGrain does not support static noise!"
