@@ -8,8 +8,7 @@ from typing import Any, ClassVar, Sequence, TypeAlias, TypeVar
 from jetpytools import inject_kwargs_params
 from typing_extensions import Self
 
-from vsexprtools import ExprOp, ExprToken, norm_expr
-from vsrgtools import BlurMatrix
+from vsexprtools import ExprList, ExprOp, ExprToken, norm_expr
 from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
@@ -272,16 +271,14 @@ class MatrixEdgeDetect(EdgeDetect):
     mode_types: ClassVar[Sequence[str] | None] = None
 
     def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        return self._merge_edge(
-            [
-                BlurMatrix.custom(mat, ConvMode(mode))(clip, divisor=div, saturate=False, func=self.__class__, **kwargs)
-                for mat, div, mode in zip(self._get_matrices(), self._get_divisors(), self._get_mode_types())
-            ]
-        )
+        exprs = [
+            ExprOp.convolution("x", mat, divisor=div, saturate=False, mode=ConvMode(mode))[0]
+            for mat, div, mode in zip(self._get_matrices(), self._get_divisors(), self._get_mode_types())
+        ]
+        return self._merge_edge(exprs, clip, **kwargs)
 
     @abstractmethod
-    def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode], **kwargs: Any) -> ConstantFormatVideoNode:
-        raise NotImplementedError
+    def _merge_edge(self, exprs: Sequence[ExprList], clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode: ...
 
     def _get_matrices(self) -> Sequence[Sequence[float]]:
         return self.matrices
@@ -314,18 +311,23 @@ class MagnitudeMatrix(MatrixEdgeDetect):
 
 
 class SingleMatrix(MatrixEdgeDetect, ABC):
-    def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode], **kwargs: Any) -> ConstantFormatVideoNode:
-        return clips[0]
+    def _merge_edge(self, exprs: Sequence[ExprList], clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        return exprs[0](clip)
 
 
 class EuclideanDistance(MatrixEdgeDetect, ABC):
-    def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode], **kwargs: Any) -> ConstantFormatVideoNode:
-        return norm_expr(clips, "x dup * y dup * + sqrt 0 mask_max clamp", kwargs.get("planes"), func=self.__class__)
+    def _merge_edge(self, exprs: Sequence[ExprList], clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        return norm_expr(
+            clip,
+            [exprs[0], "dup *", exprs[1], "dup * + sqrt 0 mask_max clamp"],
+            kwargs.get("planes"),
+            func=self.__class__,
+        )
 
 
 class Max(MatrixEdgeDetect, ABC):
-    def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode], **kwargs: Any) -> ConstantFormatVideoNode:
-        return ExprOp.MAX.combine(*clips, planes=kwargs.get("planes"), func=self.__class__)
+    def _merge_edge(self, exprs: Sequence[ExprList], clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        return ExprOp.MAX.combine_expr(exprs)(clip, planes=kwargs.get("planes"), func=self.__class__)
 
 
 class RidgeDetect(MatrixEdgeDetect):
@@ -381,20 +383,24 @@ class RidgeDetect(MatrixEdgeDetect):
                 matrix=self._get_matrices()[1], divisor=self._get_divisors()[1], planes=kwargs.get("planes")
             )
 
-        x = _x(clip)
-        y = _y(clip)
-        xx = _x(x)
-        yy = _y(y)
-        xy = _y(x)
-        return self._merge_ridge([xx, yy, xy])
+        return self._merge_ridge([_x(clip), _y(clip)], **kwargs)
 
     def _merge_ridge(self, clips: Sequence[ConstantFormatVideoNode], **kwargs: Any) -> ConstantFormatVideoNode:
-        return norm_expr(
-            clips,
-            "x dup * z dup * 4 * + x y * 2 * - y dup * + sqrt x y + + 0.5 *",
-            kwargs.get("planes"),
-            func=self.__class__,
-        )
+        (xx,) = ExprOp.convolution("x", self._get_matrices()[0], divisor=self._get_divisors()[0], mode=ConvMode.SQUARE)
+        (yy,) = ExprOp.convolution("y", self._get_matrices()[1], divisor=self._get_divisors()[1], mode=ConvMode.SQUARE)
+        (xy,) = ExprOp.convolution("x", self._get_matrices()[1], divisor=self._get_divisors()[1], mode=ConvMode.SQUARE)
+
+        expr = [
+            xx,
+            "XX!",
+            yy,
+            "YY!",
+            xy,
+            "XY!",
+            "XX@ dup * XY@ dup * 4 * + XX@ YY@ * 2 * - YY@ dup * + sqrt XX@ YY@ + + 0.5 *",
+        ]
+
+        return norm_expr(clips, expr, kwargs.get("planes"), func=self.__class__)
 
     def _preprocess_ridge(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
         return depth(super()._preprocess(clip), 32)

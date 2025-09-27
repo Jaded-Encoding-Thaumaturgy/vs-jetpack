@@ -8,7 +8,9 @@ import math
 from abc import ABC
 from typing import Any, ClassVar, Sequence
 
-from vsexprtools import ExprOp, norm_expr
+from jetpytools import interleave_arr
+
+from vsexprtools import ExprList, ExprOp, norm_expr
 from vstools import (
     ConstantFormatVideoNode,
     KwargsT,
@@ -286,10 +288,11 @@ class FreyChen(NormalizeProcessor, MatrixEdgeDetect):
     ]
     divisors: ClassVar[Sequence[float] | None] = [2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2, 2, 6, 6, 3]
 
-    def _merge_edge(self, clips: Sequence[ConstantFormatVideoNode], **kwargs: Any) -> ConstantFormatVideoNode:
-        M = "x dup * y dup * + z dup * + a dup * +"  # noqa: N806
-        S = f"b dup * c dup * + d dup * + e dup * + f dup * + {M} +"  # noqa: N806
-        return norm_expr(clips, f"{M} {S} / sqrt", kwargs.get("planes"), func=self.__class__)
+    def _merge_edge(self, exprs: Sequence[ExprList], clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        cmats = interleave_arr(exprs, [f"M{i}!" for i in range(len(exprs))], 1)
+        M = "M0@ dup * M1@ dup * + M2@ dup * + M3@ dup * +"  # noqa: N806
+        S = f"M4@ dup * M5@ dup * + M6@ dup * + M7@ dup * + M8@ dup * + {M} +"  # noqa: N806
+        return norm_expr(clip, [cmats, f"{M} {S} / sqrt"], kwargs.get("planes"), func=self.__class__)
 
 
 class FreyChenG41(RidgeDetect, EuclideanDistance, Matrix3x3):
