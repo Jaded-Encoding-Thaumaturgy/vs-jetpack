@@ -234,7 +234,7 @@ class EdgeDetect(ABC):
         elif hthr < peak:
             mask = norm_expr(mask, f"x {hthr} > {ExprToken.RangeMax} x ?", planes, func=self.__class__)
 
-        if clamp is True:
+        if clamp is True and mask.format.sample_type == vs.FLOAT:
             clamp = (get_lowest_value(mask, range_in=ColorRange.FULL), get_peak_value(mask, range_in=ColorRange.FULL))
 
         if isinstance(clamp, list):
