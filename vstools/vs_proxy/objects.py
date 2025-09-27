@@ -1,56 +1,194 @@
 from __future__ import annotations
 
+from abc import ABC, ABCMeta
+from enum import Flag
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Self
+from itertools import chain
+from typing import TYPE_CHECKING, Any, Callable, Mapping, MutableMapping, MutableSequence, MutableSet, Self
 
-from jetpytools import Singleton
+from jetpytools import Singleton, classproperty
 
 from .proxy import core, register_on_creation, register_on_destroy
 
-__all__ = ["VSDebug", "vs_object"]
+__all__ = ["VSDebug", "VSObject", "VSObjectABC", "VSObjectABCMeta", "VSObjectMeta", "vs_object"]
 
 
-class vs_object:  # noqa: N801
-    """
-    Special object that follows the lifecycle of the VapourSynth environment/core.
+def _get_mangle_name(name: str) -> str:
+    return "_" + name.lstrip("_")
 
-    If a special dunder is created, __vs_del__, it will be called when the environment is getting deleted.
 
-    This is especially useful if you have to hold a reference to a VideoNode or Plugin/Function object
-    in this object as you need to remove it for the VapourSynth core to be freed correctly.
-    """
+def _iterative_check(x: Any) -> bool:
+    stack = [x]
 
-    __vsdel_partial_register: Callable[..., None]
-    __vsdel_register: Callable[[int], None] | None = None
+    while stack:
+        current = stack.pop()
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
+        if getattr(current, "__module__", "") == "vapoursynth":
+            return True
+
+        if isinstance(current, (str, bytes, bytearray, Flag)):
+            continue
+
+        if isinstance(current, Mapping):
+            for k, v in current.items():
+                if not (isinstance(k, str) and k.startswith("__")):
+                    stack.append(k)
+                stack.append(v)
+            continue
+
+        if isinstance(current, (list, tuple, set, frozenset)):
+            stack.extend(current)
+            continue
+
         try:
-            self = super().__new__(cls, *args, **kwargs)
+            iterator = iter(current)
         except TypeError:
-            self = super().__new__(cls)
+            continue
+        else:
+            stack.extend(iterator)
 
-        if hasattr(self, "__vs_del__"):
+    return False
 
-            def _register(core_id: int) -> None:
-                def __vsdel_partial_register(core_id: int) -> None:
-                    self.__vs_del__(core_id)
 
-                self.__vsdel_partial_register = partial(__vsdel_partial_register, core_id)
+def _safe_vs_object_del(obj: Any) -> None:
+    obj_dict = getattr(obj, "__dict__", None)
+    if obj_dict is not None:
+        for k, v in list(obj_dict.items()):
+            if not k.startswith("__") and _iterative_check(v):
+                delattr(obj, k)
 
-                core.register_on_destroy(self.__vsdel_partial_register)
+    obj_slots = getattr(obj, "__slots__", None)
+    # We only want to check the instances.
+    if obj_slots is not None and isinstance(obj, VSObject):
+        mname = _get_mangle_name(obj.__class__.__name__)
 
-            # [un]register_on_creation/destroy will only hold a weakref to the object
-            self.__vsdel_register = _register
-            register_on_creation(self.__vsdel_register)
+        for k in obj.__all_slots__:
+            if k.startswith(("__", mname)):
+                continue
 
-        return self
+            v = getattr(obj, k, None)
 
-    if TYPE_CHECKING:
+            if _iterative_check(v):
+                delattr(obj, k)
 
-        def __vs_del__(self, core_id: int) -> None:
-            """
-            Special dunder that will be called when a core is getting freed.
-            """
+    if isinstance(obj, (MutableMapping, MutableSequence, MutableSet)):
+        obj.clear()
+
+
+_clsregisters = "__clsvsdel_partial_register", "__clsvsdel_register"
+_objregisters = "__vsdel_partial_register", "__vsdel_register"
+
+
+def _register_vs_del(obj: VSObject | VSObjectMeta) -> None:
+    """
+    Register cleanup for both VSObject (instance-level) and VSObjectMeta (class-level).
+    """
+    prefix = ""
+
+    if isinstance(obj, VSObjectMeta):
+        del_method = "__cls_vs_del__"
+        partial_attr, register_attr = _clsregisters
+    else:
+        del_method = "__vs_del__"
+        partial_attr, register_attr = _objregisters
+
+        if not hasattr(obj, "__dict__"):
+            prefix = _get_mangle_name(obj.__class__.__name__)
+
+    def _register(core_id: int) -> None:
+        vsdel_partial_register = partial(getattr(obj, del_method), core_id)
+        setattr(obj, prefix + partial_attr, vsdel_partial_register)
+        core.register_on_destroy(vsdel_partial_register)
+
+    setattr(obj, prefix + register_attr, _register)
+    register_on_creation(_register)
+
+
+class VSObjectMeta(type):
+    """
+    Metaclass for VSObject that ensures VapourSynth object lifecycle hooks are registered.
+
+    This metaclass automatically registers the `__vs_del__` cleanup hook for any class that inherits from `VSObject`.
+    By default, the cleanup mechanism will attempt to safely release any VapourSynth-bound objects
+    when the core is freed, preventing resource leaks.
+    """
+
+    def __new__[MetaSelf: VSObjectMeta](
+        mcls: type[MetaSelf], name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwargs: Any
+    ) -> MetaSelf:
+        """
+        Extend classes with lifecycle cleanup hooks if they declare __slots__.
+
+        If the class or any of its bases use __slots__, automatically injects the necessary attributes
+        for VapourSynth cleanup registration.
+        """
+        if "__slots__" in namespace and (
+            namespace["__slots__"] or any(getattr(base, "__slots__", ()) for base in bases)
+        ):
+            mname = _get_mangle_name(name)
+
+            original_slots = tuple(namespace.get("__slots__", ()))
+            extra_slots = tuple(f"{mname}{slot}" for slot in _objregisters)
+            namespace["__slots__"] = (*extra_slots, *original_slots)
+
+            for reg in _clsregisters:
+                namespace[f"{mname}{reg}"] = None
+
+        cls = super().__new__(mcls, name, bases, namespace, **kwargs)
+
+        _register_vs_del(cls)
+        return cls
+
+    def __cls_vs_del__(cls, core_id: int) -> None:
+        _safe_vs_object_del(cls)
+
+
+class VSObject(metaclass=VSObjectMeta):
+    """
+    Base class for objects bound to the lifecycle of a VapourSynth core.
+
+    Subclasses can define the special dunder method `__vs_del__`, which is invoked when the VapourSynth core
+    that owns the object is released.
+
+    By default, this method will attempt to safely delete any references to VapourSynth objects held by the instance.
+    Overriding `__vs_del__` is only necessary if you need custom cleanup logic beyond the default safe release.
+    """
+
+    __slots__ = ()
+
+    if not TYPE_CHECKING:
+
+        def __new__(cls, *args: Any, **kwargs: Any) -> Self:
+            try:
+                obj = super().__new__(cls, *args, **kwargs)
+            except TypeError:
+                obj = super().__new__(cls)
+
+            _register_vs_del(obj)
+            return obj
+
+    @classproperty.cached
+    @classmethod
+    def __all_slots__(cls) -> tuple[str, ...]:
+        slots = dict.fromkeys(chain.from_iterable(getattr(base, "__slots__", ()) for base in reversed(cls.mro())))
+        return tuple(slots)
+
+    def __vs_del__(self, core_id: int) -> None:
+        _safe_vs_object_del(self)
+
+
+class VSObjectABCMeta(VSObjectMeta, ABCMeta):
+    """
+    Metaclass for abstract VSObject classes.
+    """
+
+
+class VSObjectABC(VSObject, ABC, metaclass=VSObjectABCMeta):
+    """
+    Abstract base class for VSObject subclasses.
+    """
+
+    __slots__ = ()
 
 
 class VSDebug(Singleton, init=True):
@@ -100,3 +238,7 @@ class VSDebug(Singleton, init=True):
     @staticmethod
     def _print_core_destroy(_: int, core_id: int) -> None:
         VSDebug._print_func(f"Core destroyed with id: {core_id}")
+
+
+vs_object = VSObject
+"""Deprecated alias for VSObject"""
