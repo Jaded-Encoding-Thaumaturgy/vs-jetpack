@@ -1,5 +1,6 @@
 """
-Wrappers for denoising, regression, and motion-compensation-related plugins and functions.
+Wrappers for denoising and motion-compensation-related plugins and functions.
+
 
 ## Example usage
 
@@ -25,4 +26,3 @@ from .mvtools import *
 from .nlm import *
 from .postprocess import *
 from .prefilters import *
-from .regress import *
