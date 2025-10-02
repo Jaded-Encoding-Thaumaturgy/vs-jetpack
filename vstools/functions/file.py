@@ -34,7 +34,7 @@ class PackageStorage:
             cwd = SPath(cwd)
 
         self.mode = mode
-        self.folder = cwd / self.BASE_FOLDER / package_name
+        self.folder = cwd.get_folder() / self.BASE_FOLDER / package_name
 
     def ensure_folder(self) -> None:
         self.folder.mkdir(self.mode, True, True)
