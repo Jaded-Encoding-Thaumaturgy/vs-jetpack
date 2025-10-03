@@ -443,7 +443,7 @@ class EuclideanDistance(MatrixEdgeDetect, ABC):
     def _merge_edge(self, exprs: Sequence[ExprList], clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         return norm_expr(
             clip,
-            [exprs[0], "dup *", exprs[1], "dup * + sqrt 0 mask_max clamp"],
+            [exprs[0], "dup *", exprs[1], "dup * + sqrt 0 max"],
             kwargs.get("planes"),
             func=self.__class__,
         )
