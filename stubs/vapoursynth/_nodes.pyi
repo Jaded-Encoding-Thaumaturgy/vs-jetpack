@@ -1762,6 +1762,198 @@ class _Plugin_dvdsrc2_Core_Bound(Plugin):
 
 # end implementation
 
+# implementation: edgemasks
+
+class _Plugin_edgemasks_Core_Bound(Plugin):
+    """This class implements the module definitions for the "edgemasks" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Cross(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def ExKirsch(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def ExPrewitt(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def ExSobel(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def FDoG(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Kirsch(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Kroon(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Prewitt(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Robinson3(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Robinson5(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def RScharr(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Scharr(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Sobel(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Tritical(
+        self,
+        clip: VideoNode,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+
+class _Plugin_edgemasks_VideoNode_Bound(Plugin):
+    """This class implements the module definitions for the "edgemasks" VapourSynth plugin.\n\n*This class cannot be imported.*"""
+    def Cross(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def ExKirsch(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def ExPrewitt(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def ExSobel(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def FDoG(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Kirsch(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Kroon(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Prewitt(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Robinson3(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Robinson5(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def RScharr(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Scharr(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Sobel(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+    def Tritical(
+        self,
+        planes: _SingleAndSequence[int] | None = None,
+        scale: _SingleAndSequence[float] | None = None,
+        opt: int | None = None,
+    ) -> VideoNode: ...
+
+# end implementation
+
 # implementation: eedi2
 
 class _Plugin_eedi2_Core_Bound(Plugin):
@@ -11396,6 +11588,11 @@ class VideoNode(RawNode):
     def dfttest2_nvrtc(self) -> _Plugin_dfttest2_nvrtc_VideoNode_Bound:
         """DFTTest2 (NVRTC)"""
     # end instance
+    # instance_bound_VideoNode: edgemasks
+    @property
+    def edgemasks(self) -> _Plugin_edgemasks_VideoNode_Bound:
+        """Creates an edge mask using various operators"""
+    # end instance
     # instance_bound_VideoNode: eedi2
     @property
     def eedi2(self) -> _Plugin_eedi2_VideoNode_Bound:
@@ -11741,6 +11938,11 @@ class Core:
     @property
     def dvdsrc2(self) -> _Plugin_dvdsrc2_Core_Bound:
         """Dvdsrc 2nd tour"""
+    # end instance
+    # instance_bound_Core: edgemasks
+    @property
+    def edgemasks(self) -> _Plugin_edgemasks_Core_Bound:
+        """Creates an edge mask using various operators"""
     # end instance
     # instance_bound_Core: eedi2
     @property
