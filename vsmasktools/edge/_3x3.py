@@ -9,6 +9,7 @@ from abc import ABC
 from typing import Any, ClassVar, Sequence
 
 from jetpytools import interleave_arr
+from typing_extensions import deprecated
 
 from vsexprtools import ExprList, ExprOp, norm_expr
 from vstools import ConstantFormatVideoNode, get_depth, join, split, vs
@@ -152,6 +153,11 @@ class Prewitt(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     matrices: ClassVar[Sequence[Sequence[float]]] = [[1, 0, -1, 1, 0, -1, 1, 0, -1], [1, 1, 1, 0, 0, 0, -1, -1, -1]]
 
 
+@deprecated(
+    "PrewittStd is deprecated and will be removed in a future version. "
+    "Please use Prewitt and install the 'edgemasks' plugin instead.",
+    category=DeprecationWarning,
+)
 class PrewittStd(SupportsScalePlanes, Matrix3x3):
     """
     Judith M. S. Prewitt Vapoursynth plugin operator.
@@ -178,6 +184,11 @@ class Sobel(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     matrices: ClassVar[Sequence[Sequence[float]]] = [[1, 0, -1, 2, 0, -2, 1, 0, -1], [1, 2, 1, 0, 0, 0, -1, -2, -1]]
 
 
+@deprecated(
+    "SobelStd is deprecated and will be removed in a future version. "
+    "Please use Sobel and install the 'edgemasks' plugin instead.",
+    category=DeprecationWarning,
+)
 class SobelStd(SupportsScalePlanes, Matrix3x3):
     """
     Sobel-Feldman Vapoursynth plugin operator.
