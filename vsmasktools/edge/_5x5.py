@@ -9,8 +9,9 @@ from typing import ClassVar, Sequence
 
 from ._abstract import (
     EdgeDetect,
+    EdgeMasksEdgeDetect,
     EuclideanDistance,
-    MagnitudeMatrix,
+    MagnitudeEdgeMasks,
     Max,
     NormalizeProcessor,
     RidgeDetect,
@@ -97,7 +98,7 @@ class LoG(SingleMatrix, Matrix5x5):
 
 
 # Euclidean distance
-class ExPrewitt(RidgeDetect, EuclideanDistance, Matrix5x5):
+class ExPrewitt(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix5x5):
     """
     Extended Judith M. S. Prewitt operator.
     """
@@ -108,7 +109,7 @@ class ExPrewitt(RidgeDetect, EuclideanDistance, Matrix5x5):
     ]
 
 
-class ExSobel(RidgeDetect, EuclideanDistance, Matrix5x5):
+class ExSobel(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix5x5):
     """
     Extended Sobel-Feldman operator.
     """
@@ -119,7 +120,7 @@ class ExSobel(RidgeDetect, EuclideanDistance, Matrix5x5):
     ]
 
 
-class FDoG(RidgeDetect, EuclideanDistance, Matrix5x5):
+class FDoG(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix5x5):
     """
     Flow-based Difference of Gaussian
     """
@@ -129,6 +130,7 @@ class FDoG(RidgeDetect, EuclideanDistance, Matrix5x5):
         [1, 2, 3, 2, 1, 1, 2, 3, 2, 1, 0, 0, 0, 0, 0, -1, -2, -3, -2, -1, -1, -2, -3, -2, -1],
     ]
     divisors: ClassVar[Sequence[float] | None] = [2, 2]
+    _scale = 1 / 2
 
 
 class FDoGTCanny(TCannyEdgeDetect, Matrix5x5):
@@ -204,7 +206,7 @@ class Farid(NormalizeProcessor, RidgeDetect, EuclideanDistance, Matrix5x5):
 
 
 # Max
-class ExKirsch(MagnitudeMatrix, Max):
+class ExKirsch(MagnitudeEdgeMasks, Max):
     """
     Extended Russell Kirsch compass operator. 5x5 matrices.
     """
