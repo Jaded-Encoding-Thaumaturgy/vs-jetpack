@@ -147,10 +147,10 @@ class FixBorderBrightness(vs_object):
         plane = plane.__index__()
 
         if isinstance(column, SupportsIndex):
-            return next((value for num, value in self._tofix_columns[plane].items() if num == column.__index__()), 0.0)
+            return self._tofix_columns[plane].get(column.__index__(), 0.0)
 
         if isinstance(row, SupportsIndex):
-            return next((value for num, value in self._tofix_rows[plane].items() if num == row.__index__()), 0.0)
+            return self._tofix_rows[plane].get(row.__index__(), 0.0)
 
         raise CustomTypeError(
             f"Invalid key format: {key}. Expected a valid (column, row[, plane]) combination.", self.__class__
