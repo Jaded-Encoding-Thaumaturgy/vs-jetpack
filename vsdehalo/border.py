@@ -86,10 +86,10 @@ class FixBorderBrightness(vs_object):
         assert check_variable_format(clip, self.__class__)
         self.clip = clip
 
-        res = {k: (w, h) for k, w, h in get_resolutions(clip)}
+        ws, hs = zip(*((w, h) for _, w, h in get_resolutions(clip)))
 
-        self._tofix_columns = {i: _BorderDict(w) for i, (w, _) in res.items()}
-        self._tofix_rows = {i: _BorderDict(h) for i, (_, h) in res.items()}
+        self._tofix_columns = {i: _BorderDict(w) for i, w in enumerate(ws)}
+        self._tofix_rows = {i: _BorderDict(h) for i, h in enumerate(hs)}
 
         if protect is True:
             protect = [(low, hight) for low, hight in zip(get_lowest_values(clip), get_peak_values(clip))]
