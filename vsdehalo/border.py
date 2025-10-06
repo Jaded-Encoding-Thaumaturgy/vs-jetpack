@@ -2,7 +2,7 @@
 This module implements utilities for correcting dirty or damaged borders.
 """
 
-from typing import TYPE_CHECKING, Any, NamedTuple, SupportsIndex, TypeAlias, TypeIs
+from typing import TYPE_CHECKING, Any, SupportsIndex, TypeAlias, TypeIs
 
 from jetpytools import CustomTypeError, normalize_seq
 
@@ -38,19 +38,28 @@ def _is_slice_none(index: SupportsIndex | slice | None) -> TypeIs[slice | None]:
     return index is None or index == slice(None, None, None)
 
 
-class _Border(NamedTuple):
-    num: int
-    value: float
-
-
-class _BorderSet(set[_Border]):
-    width: int
-    height: int
-
-    def __init__(self, width: int, height: int) -> None:
-        self.width = width
-        self.height = height
+class _BorderDict(dict[int, float]):
+    def __init__(self, length: int) -> None:
+        self.length = length
         super().__init__()
+
+    def __getitem__(self, key: int) -> float:
+        if key < 0:
+            key += self.length
+
+        return super().__getitem__(key)
+
+    def __setitem__(self, key: int, value: float) -> None:
+        if key < 0:
+            key += self.length
+
+        return super().__setitem__(key, value)
+
+    def __delitem__(self, key: int) -> None:
+        if key < 0:
+            key += self.length
+
+        return super().__delitem__(key)
 
 
 class FixClipBorder(vs_object):
@@ -79,8 +88,8 @@ class FixClipBorder(vs_object):
 
         res = {k: (w, h) for k, w, h in get_resolutions(clip)}
 
-        self._tofix_columns = {i: _BorderSet(w, h) for i, (w, h) in res.items()}
-        self._tofix_rows = {i: _BorderSet(w, h) for i, (w, h) in res.items()}
+        self._tofix_columns = {i: _BorderDict(w) for i, (w, _) in res.items()}
+        self._tofix_rows = {i: _BorderDict(h) for i, (_, h) in res.items()}
 
         if protect is True:
             protect = [(low, hight) for low, hight in zip(get_lowest_values(clip), get_peak_values(clip))]
@@ -138,16 +147,10 @@ class FixClipBorder(vs_object):
         plane = plane.__index__()
 
         if isinstance(column, SupportsIndex):
-            if (column := column.__index__()) < 0:
-                column += self._tofix_columns[plane].width
-
-            return next((b.value for b in self._tofix_columns[plane] if b.num == column), 0.0)
+            return next((value for num, value in self._tofix_columns[plane].items() if num == column.__index__()), 0.0)
 
         if isinstance(row, SupportsIndex):
-            if (row := row.__index__()) < 0:
-                row += self._tofix_rows[plane].height
-
-            return next((b.value for b in self._tofix_rows[plane] if b.num == row), 0.0)
+            return next((value for num, value in self._tofix_rows[plane].items() if num == row.__index__()), 0.0)
 
         raise CustomTypeError(
             f"Invalid key format: {key}. Expected a valid (column, row[, plane]) combination.", self.__class__
@@ -179,7 +182,7 @@ class FixClipBorder(vs_object):
             CustomTypeError: If both row and column are specified or both are `None`.
         """
         if isinstance(key, IndexLike):
-            return self.__setitem__((_normalize_slice(key, self._tofix_columns[0].width), None, 0), value)
+            return self.__setitem__((key, None, 0), value)
 
         if len(key) == 2:
             (columns, rows), plane = key, 0
@@ -202,16 +205,16 @@ class FixClipBorder(vs_object):
 
         for p_i in range(*plane.indices(self.clip.format.num_planes)):
             if _is_slice_not_none(columns):
-                length = self._tofix_columns[p_i].width
+                length = self._tofix_columns[p_i].length
 
                 for k in range(*_normalize_slice(columns, length).indices(length)):
-                    self._tofix_columns[p_i].add(_Border(k, value))
+                    self._tofix_columns[p_i][k] = value
 
             if _is_slice_not_none(rows):
-                length = self._tofix_rows[p_i].height
+                length = self._tofix_rows[p_i].length
 
                 for k in range(*_normalize_slice(rows, length).indices(length)):
-                    self._tofix_rows[p_i].add(_Border(k, value))
+                    self._tofix_rows[p_i][k] = value
 
     def fix_column(self, num: int, value: float, plane_index: int = 0) -> None:
         """
@@ -261,13 +264,13 @@ class FixClipBorder(vs_object):
             expr.append(f"x {norm} - CLIP!")
 
             if columns:
-                for column in columns:
-                    expr.append("X", column.num, "=", "CLIP@", column.value, "*")
+                for num, value in columns.items():
+                    expr.append("X", num, "=", "CLIP@", value, "*")
                 expr.append("CLIP@", ExprOp.TERN * len(columns), "CLIP!")
 
             if rows:
-                for row in rows:
-                    expr.append("Y", row.num, "=", "CLIP@", row.value, "*")
+                for num, value in rows.items():
+                    expr.append("Y", num, "=", "CLIP@", value, "*")
                 expr.append("CLIP@", ExprOp.TERN * len(rows), "CLIP!")
 
             expr.append("CLIP@", norm, "+")
