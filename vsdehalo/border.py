@@ -62,9 +62,9 @@ class _BorderDict(dict[int, float]):
         return super().__delitem__(key)
 
 
-class FixClipBorder(vs_object):
+class FixBorderBrightness(vs_object):
     """
-    Utility class to correct dirty or corrupted border pixels.
+    Utility class to adjust or correct brightness inconsistencies along clip borders.
     """
 
     def __init__(
