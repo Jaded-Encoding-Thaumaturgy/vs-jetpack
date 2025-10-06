@@ -1,3 +1,7 @@
+"""
+This module implements utilities for correcting dirty or damaged borders.
+"""
+
 from typing import TYPE_CHECKING, Any, NamedTuple, SupportsIndex, TypeAlias, TypeIs
 
 from jetpytools import CustomTypeError, normalize_seq
@@ -50,9 +54,26 @@ class _BorderSet(set[_Border]):
 
 
 class FixClipBorder(vs_object):
+    """
+    Utility class to correct dirty or corrupted border pixels.
+    """
+
     def __init__(
         self, clip: vs.VideoNode, protect: bool | tuple[float, float] | list[tuple[float, float]] = True
     ) -> None:
+        """
+        Initializes the class.
+
+        Args:
+            clip: Input clip.
+            protect: Protection configuration for pixel intensity ranges.
+
+                   - If `True`, automatically determines safe low/high protection thresholds
+                     per plane using the clip's minimum and maximum allowed pixel values.
+                   - If `False`, disables protection (no clipping protection is applied).
+                   - If a tuple `(low, high)` is given, applies it as a protection range.
+                   - If a list of tuples is provided, applies individual protection ranges per plane.
+        """
         assert check_variable_format(clip, self.__class__)
         self.clip = clip
 
@@ -81,6 +102,21 @@ class FixClipBorder(vs_object):
         | tuple[NoneSlice, SupportsIndex, SupportsIndex],
         /,
     ) -> float:
+        """
+        Retrieve the correction value for a specific border pixel position.
+
+        Args:
+            key: Index or tuple specifying a position:
+
+                   - (column, None[, plane]) to get a column border value
+                   - (None, row[, plane]) to get a row border value
+
+        Raises:
+            CustomTypeError: If both column and row are specified or both are `None`.
+
+        Returns:
+            The correction multiplier for the specified position, or 0.0 if none is set.
+        """
         if isinstance(key, SupportsIndex):
             return self.__getitem__((key, None, 0))
 
@@ -90,7 +126,11 @@ class FixClipBorder(vs_object):
             column, row, plane = key
 
         if (_is_slice_not_none(column) and _is_slice_not_none(row)) or (_is_slice_none(column) and _is_slice_none(row)):
-            raise CustomTypeError
+            raise CustomTypeError(
+                f"Invalid key combination: column={column}, row={row}. "
+                "Exactly one of column or row must be a non-slice index.",
+                self.__class__,
+            )
 
         if _is_slice_none(plane):
             plane = 0
@@ -99,19 +139,19 @@ class FixClipBorder(vs_object):
 
         if isinstance(column, SupportsIndex):
             if (column := column.__index__()) < 0:
-                length = self._tofix_columns[plane].width
-                column += length
+                column += self._tofix_columns[plane].width
 
             return next((b.value for b in self._tofix_columns[plane] if b.num == column), 0.0)
 
         if isinstance(row, SupportsIndex):
             if (row := row.__index__()) < 0:
-                length = self._tofix_rows[plane].height
-                row += length
+                row += self._tofix_rows[plane].height
 
             return next((b.value for b in self._tofix_rows[plane] if b.num == row), 0.0)
 
-        raise CustomTypeError
+        raise CustomTypeError(
+            f"Invalid key format: {key}. Expected a valid (column, row[, plane]) combination.", self.__class__
+        )
 
     def __setitem__(
         self,
@@ -125,6 +165,19 @@ class FixClipBorder(vs_object):
         value: float,
         /,
     ) -> None:
+        """
+        Define a correction value for a specific row or column border.
+
+        Args:
+            key: Index or tuple specifying the border to correct:
+
+                   - (column, None[, plane]) for column correction
+                   - (None, row[, plane]) for row correction
+            value: Correction multiplier to apply to the specified border region.
+
+        Raises:
+            CustomTypeError: If both row and column are specified or both are `None`.
+        """
         if isinstance(key, IndexLike):
             return self.__setitem__((_normalize_slice(key, self._tofix_columns[0].width), None, 0), value)
 
@@ -136,7 +189,11 @@ class FixClipBorder(vs_object):
         if (_is_slice_not_none(columns) and _is_slice_not_none(rows)) or (
             _is_slice_none(columns) and _is_slice_none(rows)
         ):
-            raise CustomTypeError
+            raise CustomTypeError(
+                f"Invalid key combination: columns={columns}, rows={rows}. "
+                "Exactly one of columns or rows must be a non-slice index.",
+                self.__class__,
+            )
 
         if _is_slice_none(plane):
             plane = 0
@@ -157,12 +214,37 @@ class FixClipBorder(vs_object):
                     self._tofix_rows[p_i].add(_Border(k, value))
 
     def fix_column(self, num: int, value: float, plane_index: int = 0) -> None:
+        """
+        Apply a correction multiplier to an entire column in a specific plane.
+
+        Args:
+            num: Column index to correct.
+            value: Correction value.
+            plane_index: Plane index to apply the correction to (default is 0).
+        """
         self[num, :, plane_index] = value
 
     def fix_row(self, num: int, value: float, plane_index: int = 0) -> None:
+        """
+        Apply a correction multiplier to an entire row in a specific plane.
+
+        Args:
+            num: Row index to correct.
+            value: Correction value.
+            plane_index: Plane index to apply the correction to (default is 0).
+        """
         self[:, num, plane_index] = value
 
     def process(self, **kwargs: Any) -> vs.VideoNode:
+        """
+        Apply all configured border corrections to the clip.
+
+        Args:
+            **kwargs: Additional arguments forwarded to [vsexprtools.norm_expr][].
+
+        Returns:
+            A new clip with fixed borders applied.
+        """
         exprs = list[ExprList]()
 
         for i, (columns, rows, protect) in enumerate(
