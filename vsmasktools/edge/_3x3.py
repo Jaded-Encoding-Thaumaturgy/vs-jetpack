@@ -11,7 +11,7 @@ from typing import Any, ClassVar, Sequence
 from jetpytools import interleave_arr
 
 from vsexprtools import ExprList, ExprOp, norm_expr
-from vstools import ConstantFormatVideoNode, get_depth, join, split, vs
+from vstools import ConstantFormatVideoNode, Planes, get_depth, join, split, vs
 
 from ..morpho import Morpho
 from ..types import XxpandMode
@@ -24,7 +24,6 @@ from ._abstract import (
     NormalizeProcessor,
     RidgeDetect,
     SingleMatrix,
-    SupportsScalePlanes,
     TCannyEdgeDetect,
 )
 
@@ -150,13 +149,23 @@ class Prewitt(RidgeDetect, EuclideanDistance, Matrix3x3):
     matrices: ClassVar[Sequence[Sequence[float]]] = [[1, 0, -1, 1, 0, -1, 1, 0, -1], [1, 1, 1, 0, 0, 0, -1, -1, -1]]
 
 
-class PrewittStd(SupportsScalePlanes, Matrix3x3):
+class PrewittStd(Matrix3x3):
     """
     Judith M. S. Prewitt Vapoursynth plugin operator.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        return clip.std.Prewitt(**kwargs)
+    def _compute_edge_mask(
+        self,
+        clip: ConstantFormatVideoNode,
+        *,
+        multi: float | Sequence[float] = 1.0,
+        planes: Planes = None,
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode:
+        if not isinstance(multi, Sequence):
+            return clip.std.Prewitt(planes, multi)
+
+        return norm_expr(clip.std.Prewitt(planes), "x {multi} *", planes, func=self.__class__, multi=multi, **kwargs)
 
 
 class PrewittTCanny(TCannyEdgeDetect, Matrix3x3):
@@ -176,13 +185,23 @@ class Sobel(RidgeDetect, EuclideanDistance, Matrix3x3):
     matrices: ClassVar[Sequence[Sequence[float]]] = [[1, 0, -1, 2, 0, -2, 1, 0, -1], [1, 2, 1, 0, 0, 0, -1, -2, -1]]
 
 
-class SobelStd(SupportsScalePlanes, Matrix3x3):
+class SobelStd(Matrix3x3):
     """
     Sobel-Feldman Vapoursynth plugin operator.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
-        return clip.std.Sobel(**kwargs)
+    def _compute_edge_mask(
+        self,
+        clip: ConstantFormatVideoNode,
+        *,
+        multi: float | Sequence[float] = 1.0,
+        planes: Planes = None,
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode:
+        if not isinstance(multi, Sequence):
+            return clip.std.Sobel(planes, multi)
+
+        return norm_expr(clip.std.Sobel(planes), "x {multi} *", planes, func=self.__class__, multi=multi, **kwargs)
 
 
 class SobelTCanny(TCannyEdgeDetect, Matrix3x3):
