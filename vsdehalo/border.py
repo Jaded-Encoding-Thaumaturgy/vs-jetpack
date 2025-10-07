@@ -2,9 +2,11 @@
 This module implements utilities for correcting dirty or damaged borders.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeAlias, TypeIs
 
-from jetpytools import CustomTypeError, normalize_seq
+from jetpytools import CustomOverflowError, CustomTypeError, FuncExcept, normalize_seq
 
 from vsexprtools import ExprList, ExprOp, ExprToken, norm_expr
 from vstools import check_variable_format, get_lowest_values, get_peak_values, get_resolutions, vs, vs_object
@@ -16,16 +18,27 @@ else:
     NoneSlice: TypeAlias = slice | None
 
 
-def _normalize_slice(index: IndexLike, length: int) -> slice:
+def _normalize_slice(index: IndexLike, length: int, func: FuncExcept) -> slice:
+    index_i = index
+
     if index == slice(None, None, None):
         index = 0
 
     if isinstance(index, SupportsIndex):
-        return (
-            slice(length + i, length + i + 1)
-            if (i := index.__index__()) < 0
-            else slice(index.__index__(), index.__index__() + 1)
-        )
+        index = index.__index__()
+
+        if index < 0:
+            index += length
+
+        if not 0 < index < length:
+            raise CustomOverflowError(
+                "Passed 'num' is out of bound. Must be in the range (-{last}, {last})",
+                func,
+                index_i,
+                last=length - 1,
+            )
+
+        index = slice(index, index + 1)
 
     return index
 
@@ -42,24 +55,6 @@ class _BorderDict(dict[int, float]):
     def __init__(self, length: int) -> None:
         self.length = length
         super().__init__()
-
-    def __getitem__(self, key: int) -> float:
-        if key < 0:
-            key += self.length
-
-        return super().__getitem__(key)
-
-    def __setitem__(self, key: int, value: float) -> None:
-        if key < 0:
-            key += self.length
-
-        return super().__setitem__(key, value)
-
-    def __delitem__(self, key: int) -> None:
-        if key < 0:
-            key += self.length
-
-        return super().__delitem__(key)
 
 
 class FixBorderBrightness(vs_object):
@@ -201,19 +196,19 @@ class FixBorderBrightness(vs_object):
         if _is_slice_none(plane):
             plane = 0
 
-        plane = _normalize_slice(plane, self.clip.format.num_planes)
-
-        for p_i in range(*plane.indices(self.clip.format.num_planes)):
+        for p_i in range(
+            *_normalize_slice(plane, self.clip.format.num_planes, self.__class__).indices(self.clip.format.num_planes)
+        ):
             if _is_slice_not_none(columns):
                 length = self._tofix_columns[p_i].length
 
-                for k in range(*_normalize_slice(columns, length).indices(length)):
+                for k in range(*_normalize_slice(columns, length, self.__class__).indices(length)):
                     self._tofix_columns[p_i][k] = value
 
             if _is_slice_not_none(rows):
                 length = self._tofix_rows[p_i].length
 
-                for k in range(*_normalize_slice(rows, length).indices(length)):
+                for k in range(*_normalize_slice(rows, length, self.__class__).indices(length)):
                     self._tofix_rows[p_i][k] = value
 
     def fix_column(self, num: int, value: float, plane_index: int = 0) -> None:
