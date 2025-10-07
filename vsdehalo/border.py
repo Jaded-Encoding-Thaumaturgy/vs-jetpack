@@ -11,17 +11,18 @@ from jetpytools import CustomOverflowError, CustomTypeError, FuncExcept, normali
 from vsexprtools import ExprList, ExprOp, ExprToken, norm_expr
 from vstools import check_variable_format, get_lowest_values, get_peak_values, get_resolutions, vs, vs_object
 
-IndexLike: TypeAlias = SupportsIndex | slice
 if TYPE_CHECKING:
     NoneSlice: TypeAlias = slice[None, None, None] | None
+    IndexLike: TypeAlias = SupportsIndex | slice[SupportsIndex, SupportsIndex, SupportsIndex]
 else:
     NoneSlice: TypeAlias = slice | None
+    IndexLike: TypeAlias = SupportsIndex | slice
 
 
-def _normalize_slice(index: IndexLike, length: int, func: FuncExcept) -> slice:
+def _normalize_slice(index: IndexLike | NoneSlice, length: int, func: FuncExcept) -> slice:
     index_i = index
 
-    if index == slice(None, None, None):
+    if _is_slice_none(index):
         index = 0
 
     if isinstance(index, SupportsIndex):
@@ -38,16 +39,16 @@ def _normalize_slice(index: IndexLike, length: int, func: FuncExcept) -> slice:
                 last=length - 1,
             )
 
-        index = slice(index, index + 1)
+        index = slice(index, index + 1, 1)
 
     return index
 
 
-def _is_slice_not_none(index: SupportsIndex | slice | None) -> TypeIs[SupportsIndex | slice]:
+def _is_slice_not_none(index: SupportsIndex | slice | None) -> TypeIs[IndexLike]:
     return index is not None and index != slice(None, None, None)
 
 
-def _is_slice_none(index: SupportsIndex | slice | None) -> TypeIs[slice | None]:
+def _is_slice_none(index: SupportsIndex | slice | None) -> TypeIs[NoneSlice]:
     return index is None or index == slice(None, None, None)
 
 
@@ -176,7 +177,7 @@ class FixBorderBrightness(vs_object):
         Raises:
             CustomTypeError: If both row and column are specified or both are `None`.
         """
-        if isinstance(key, IndexLike):
+        if isinstance(key, (SupportsIndex, slice)):
             return self.__setitem__((key, None, 0), value)
 
         if len(key) == 2:
