@@ -17,7 +17,9 @@ from ..morpho import Morpho
 from ..types import XxpandMode
 from ._abstract import (
     EdgeDetect,
+    EdgeMasksEdgeDetect,
     EuclideanDistance,
+    MagnitudeEdgeMasks,
     MagnitudeMatrix,
     MatrixEdgeDetect,
     Max,
@@ -114,7 +116,7 @@ class Kayyali(SingleMatrix, Matrix3x3):
 
 
 # Euclidean Distance
-class Tritical(RidgeDetect, EuclideanDistance, Matrix3x3):
+class Tritical(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     """
     Operator used in Tritical's original TCanny filter.
     Plain and simple orthogonal first order derivative.
@@ -132,7 +134,7 @@ class TriticalTCanny(TCannyEdgeDetect, Matrix3x3):
     _op = 0
 
 
-class Cross(RidgeDetect, EuclideanDistance, Matrix3x3):
+class Cross(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     """
     "HotDoG" Operator from AVS ExTools by Dogway.
     Plain and simple cross first order derivative.
@@ -141,7 +143,7 @@ class Cross(RidgeDetect, EuclideanDistance, Matrix3x3):
     matrices: ClassVar[Sequence[Sequence[float]]] = [[1, 0, 0, 0, 0, 0, 0, 0, -1], [0, 0, -1, 0, 0, 0, 1, 0, 0]]
 
 
-class Prewitt(RidgeDetect, EuclideanDistance, Matrix3x3):
+class Prewitt(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     """
     Judith M. S. Prewitt operator.
     """
@@ -177,7 +179,7 @@ class PrewittTCanny(TCannyEdgeDetect, Matrix3x3):
     _scale = 2.0
 
 
-class Sobel(RidgeDetect, EuclideanDistance, Matrix3x3):
+class Sobel(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     """
     Sobel-Feldman operator.
     """
@@ -221,7 +223,7 @@ class ASobel(Matrix3x3, EdgeDetect):
         return (vs.core.warp.ASobel if get_depth(clip) < 32 else vs.core.warpsf.ASobel)(clip, 255, **kwargs)
 
 
-class Scharr(RidgeDetect, EuclideanDistance, Matrix3x3):
+class Scharr(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     """
     Original H. Scharr optimised operator which attempts
     to achieve the perfect rotational symmetry with coefficients 3 and 10.
@@ -231,7 +233,7 @@ class Scharr(RidgeDetect, EuclideanDistance, Matrix3x3):
     divisors: ClassVar[Sequence[float] | None] = [3, 3]
 
 
-class RScharr(RidgeDetect, EuclideanDistance, Matrix3x3):
+class RScharr(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     """
     Refined H. Scharr operator to more accurately calculate
     1st derivatives for a 3x3 kernel with coeffs 47 and 162.
@@ -253,7 +255,7 @@ class ScharrTCanny(TCannyEdgeDetect, Matrix3x3):
     _scale = 1 / 3
 
 
-class Kroon(RidgeDetect, EuclideanDistance, Matrix3x3):
+class Kroon(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     """
     Dirk-Jan Kroon operator.
     """
@@ -310,7 +312,7 @@ class FreyChenG41(RidgeDetect, EuclideanDistance, Matrix3x3):
 
 
 # Max
-class Robinson3(MagnitudeMatrix, Max, Matrix3x3):
+class Robinson3(MagnitudeEdgeMasks, Max, Matrix3x3):
     """
     Robinson compass operator level 3.
     """
@@ -327,7 +329,7 @@ class Robinson3(MagnitudeMatrix, Max, Matrix3x3):
     ]
 
 
-class Robinson5(MagnitudeMatrix, Max, Matrix3x3):
+class Robinson5(MagnitudeEdgeMasks, Max, Matrix3x3):
     """
     Robinson compass operator level 5.
     """
@@ -362,7 +364,7 @@ class TheToof(MagnitudeMatrix, Max, Matrix3x3):
     divisors: ClassVar[Sequence[float] | None] = [4] * 4
 
 
-class Kirsch(MagnitudeMatrix, Max, Matrix3x3):
+class Kirsch(MagnitudeEdgeMasks, Max, Matrix3x3):
     """
     Russell Kirsch compass operator.
     """

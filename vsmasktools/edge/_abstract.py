@@ -7,7 +7,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import IntFlag, auto
 from inspect import isabstract
-from typing import Any, ClassVar, Sequence, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Sequence, TypeAlias, TypeVar
 
 from jetpytools import inject_kwargs_params, to_arr
 from typing_extensions import Self
@@ -21,6 +21,7 @@ from vstools import (
     Planes,
     T,
     check_variable,
+    core,
     depth,
     get_peak_value,
     get_subclasses,
@@ -38,8 +39,10 @@ __all__ = [
     "EdgeDetect",
     "EdgeDetectLike",
     "EdgeDetectT",
+    "EdgeMasksEdgeDetect",
     "EuclideanDistance",
     "MagDirection",
+    "MagnitudeEdgeMasks",
     "MagnitudeMatrix",
     "MatrixEdgeDetect",
     "Max",
@@ -312,7 +315,7 @@ class EdgeDetect(ABC):
         **kwargs: Any,
     ) -> ConstantFormatVideoNode: ...
 
-    def _preprocess(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
+    def _preprocess(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         return ColorRange.FULL.apply(clip)
 
     def _postprocess(self, clip: ConstantFormatVideoNode, input_bits: vs.VideoNode) -> ConstantFormatVideoNode:
@@ -398,12 +401,53 @@ class MatrixEdgeDetect(EdgeDetect):
         return self.mode_types if self.mode_types else ["s"] * len(self._get_matrices())
 
 
+class EdgeMasksEdgeDetect(MatrixEdgeDetect):
+    """
+    Edge detection using VapourSynth's `EdgeMasks` plugin with expression-based convolution fallback.
+    """
+
+    @inject_self
+    @inject_kwargs_params
+    def edgemask(
+        self,
+        clip: vs.VideoNode,
+        lthr: float | Sequence[float] | None = None,
+        hthr: float | Sequence[float] | None = None,
+        multi: float | Sequence[float] = 1.0,
+        clamp: bool | tuple[float, float] | list[tuple[float, float]] = False,
+        planes: Planes = None,
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode:
+        if not hasattr(core, "edgemasks"):
+            kwargs.setdefault("use_expr", True)
+
+        return super().edgemask(clip, lthr, hthr, multi, clamp, planes, **kwargs)
+
+    def _preprocess(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+        if kwargs.get("use_expr"):
+            return super()._preprocess(clip)
+        return clip
+
+    def _compute_edge_mask(
+        self,
+        clip: ConstantFormatVideoNode,
+        *,
+        multi: float | Sequence[float] = 1.0,
+        planes: Planes = None,
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode:
+        if kwargs.pop("use_expr", False):
+            return super()._compute_edge_mask(clip, multi=multi, planes=planes, **kwargs)
+
+        return getattr(core.edgemasks, self.__class__.__name__)(clip, planes, multi, **kwargs)
+
+
 class NormalizeProcessor(MatrixEdgeDetect):
     """
     Edge detection processor with normalized precision.
     """
 
-    def _preprocess(self, clip: ConstantFormatVideoNode) -> ConstantFormatVideoNode:
+    def _preprocess(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
         return super()._preprocess(depth(clip, 32))
 
     def _postprocess(self, clip: ConstantFormatVideoNode, input_bits: vs.VideoNode) -> ConstantFormatVideoNode:
@@ -431,6 +475,47 @@ class MagnitudeMatrix(MatrixEdgeDetect):
 
     def _get_matrices(self) -> Sequence[Sequence[float]]:
         return [m for m in self.mag_directions.select_matrices(self.matrices) if m]
+
+
+class MagnitudeEdgeMasks(EdgeMasksEdgeDetect, MagnitudeMatrix):
+    """
+    Edge detector using a subset of convolution matrices.
+
+    Allows selecting which matrices to apply based on directional flags. By default, all directions are used.
+
+    If a subset of directions is selected, the computation automatically switches to the expression-based backend.
+    """
+
+    if TYPE_CHECKING:
+
+        def __init__(self, mag_directions: MagDirection = MagDirection.ALL, **kwargs: Any) -> None:
+            """
+            Initialize the MagnitudeEdgeMasks detector.
+
+            Args:
+                mag_directions: Directional flags controlling which matrices are used. Defaults to all directions.
+                    If a subset is specified, the expression-based backend is used automatically
+                    to support custom directions.
+                **kwargs: Additional parameters forwarded to the base EdgeMasksEdgeDetect class.
+            """
+            ...
+
+    @inject_self
+    @inject_kwargs_params
+    def edgemask(
+        self,
+        clip: vs.VideoNode,
+        lthr: float | Sequence[float] | None = None,
+        hthr: float | Sequence[float] | None = None,
+        multi: float | Sequence[float] = 1.0,
+        clamp: bool | tuple[float, float] | list[tuple[float, float]] = False,
+        planes: Planes = None,
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode:
+        if self.mag_directions != MagDirection.ALL:
+            kwargs["use_expr"] = True
+
+        return super().edgemask(clip, lthr, hthr, multi, clamp, planes, **kwargs)
 
 
 class SingleMatrix(MatrixEdgeDetect, ABC):
