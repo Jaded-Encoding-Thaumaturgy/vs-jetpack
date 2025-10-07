@@ -7,6 +7,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any, ClassVar, Sequence
 
+from typing_extensions import deprecated
+
 from vsexprtools import norm_expr
 from vstools import ConstantFormatVideoNode, Planes, core
 
@@ -34,6 +36,29 @@ class TEdge(EuclideanDistance, Matrix1D):
     divisors: ClassVar[Sequence[float] | None] = [62, 62]
     mode_types: ClassVar[Sequence[str] | None] = ["h", "v"]
 
+    def _compute_edge_mask(
+        self,
+        clip: ConstantFormatVideoNode,
+        *,
+        multi: float | Sequence[float] = 1,
+        planes: int | Sequence[int] | None = None,
+        **kwargs: Any,
+    ) -> ConstantFormatVideoNode:
+        if (
+            hasattr(core, "tedgemask")
+            and max(clip.format.subsampling_h, clip.format.subsampling_w) <= 2
+            and clip.format.bits_per_sample <= 16
+            and not isinstance(multi, Sequence)
+        ):
+            return clip.tedgemask.TEdgeMask(0, 2, scale=multi, planes=planes, **kwargs)
+
+        return super()._compute_edge_mask(clip, multi=multi, planes=planes, **kwargs)
+
+
+@deprecated(
+    "TEdgeTedgemask is deprecated and will be removed in a future version. Please use TEdge instead.",
+    category=DeprecationWarning,
+)
 class TEdgeTedgemask(Matrix1D):
     """
     (tedgemask.TEdgeMask(threshold=0.0, type=2)) Vapoursynth plugin.
