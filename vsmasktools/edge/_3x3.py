@@ -126,6 +126,11 @@ class Tritical(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     matrices: ClassVar[Sequence[Sequence[float]]] = [[0, 0, 0, -1, 0, 1, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, -1, 0]]
 
 
+@deprecated(
+    "TriticalTCanny is deprecated and will be removed in a future version. "
+    "Please use Tritical and install the 'edgemasks' plugin instead.",
+    category=DeprecationWarning,
+)
 class TriticalTCanny(TCannyEdgeDetect, Matrix3x3):
     """
     Operator used in Tritical's original TCanny filter.
@@ -176,6 +181,11 @@ class PrewittStd(Matrix3x3):
         return norm_expr(clip.std.Prewitt(planes), "x {multi} *", planes, func=self.__class__, multi=multi, **kwargs)
 
 
+@deprecated(
+    "PrewittTCanny is deprecated and will be removed in a future version. "
+    "Please use Prewitt and install the 'edgemasks' plugin instead.",
+    category=DeprecationWarning,
+)
 class PrewittTCanny(TCannyEdgeDetect, Matrix3x3):
     """
     Judith M. S. Prewitt TCanny plugin operator.
@@ -217,6 +227,11 @@ class SobelStd(Matrix3x3):
         return norm_expr(clip.std.Sobel(planes), "x {multi} *", planes, func=self.__class__, multi=multi, **kwargs)
 
 
+@deprecated(
+    "SobelTCanny is deprecated and will be removed in a future version. "
+    "Please use Sobel and install the 'edgemasks' plugin instead.",
+    category=DeprecationWarning,
+)
 class SobelTCanny(TCannyEdgeDetect, Matrix3x3):
     """
     Sobel-Feldman Vapoursynth plugin operator.
@@ -257,6 +272,11 @@ class RScharr(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     divisors: ClassVar[Sequence[float] | None] = [47, 47]
 
 
+@deprecated(
+    "ScharrTCanny is deprecated and will be removed in a future version. "
+    "Please use Scharr and install the 'edgemasks' plugin instead.",
+    category=DeprecationWarning,
+)
 class ScharrTCanny(TCannyEdgeDetect, Matrix3x3):
     """
     H. Scharr optimised TCanny Vapoursynth plugin operator.
@@ -278,6 +298,11 @@ class Kroon(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix3x3):
     divisors: ClassVar[Sequence[float] | None] = [17, 17]
 
 
+@deprecated(
+    "KroonTCanny is deprecated and will be removed in a future version. "
+    "Please use Kroon and install the 'edgemasks' plugin instead.",
+    category=DeprecationWarning,
+)
 class KroonTCanny(TCannyEdgeDetect, Matrix3x3):
     """
     Dirk-Jan Kroon TCanny Vapoursynth plugin operator.
@@ -392,6 +417,11 @@ class Kirsch(MagnitudeEdgeMasks, Max, Matrix3x3):
     ]
 
 
+@deprecated(
+    "KirschTCanny is deprecated and will be removed in a future version. "
+    "Please use Kirsch and install the 'edgemasks' plugin instead.",
+    category=DeprecationWarning,
+)
 class KirschTCanny(TCannyEdgeDetect, Matrix3x3):
     """
     Russell Kirsch compass TCanny Vapoursynth plugin operator.

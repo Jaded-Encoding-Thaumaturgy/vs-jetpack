@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from vsexprtools import ExprOp, ExprToken, norm_expr
-from vsmasktools import EdgeDetect, EdgeDetectLike, FDoGTCanny, range_mask
+from vsmasktools import EdgeDetect, EdgeDetectLike, FDoG, range_mask
 from vsrgtools import bilateral, box_blur, gauss_blur
 from vstools import (
     CustomIndexError,
@@ -31,7 +31,7 @@ def decrease_size(
     min_in: int = 180,
     max_in: int = 230,
     gamma: float = 1.0,
-    mask: vs.VideoNode | tuple[float, float] | tuple[float, float, EdgeDetectLike] = (0.0496, 0.125, FDoGTCanny),
+    mask: vs.VideoNode | tuple[float, float] | tuple[float, float, EdgeDetectLike] = (0.0496, 0.125, FDoG),
     prefilter: bool | tuple[int, int] | float = True,
     planes: Planes = None,
     show_mask: bool = False,
@@ -110,7 +110,7 @@ def decrease_size(
             range_mask(clip, rad=3, radc=2), format=clip.format.replace(subsampling_h=0, subsampling_w=0).id
         )
 
-        mask = EdgeDetect.ensure_obj(emask[0]).edgemask(pre) if emask else FDoGTCanny.edgemask(pre)
+        mask = EdgeDetect.ensure_obj(emask[0]).edgemask(pre) if emask else FDoG.edgemask(pre)
 
         mask = mask.std.Maximum().std.Minimum()
 

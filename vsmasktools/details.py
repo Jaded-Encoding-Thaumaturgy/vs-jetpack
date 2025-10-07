@@ -5,7 +5,7 @@ from vsrgtools import bilateral, gauss_blur, remove_grain
 from vsrgtools.rgtools import RemoveGrain
 from vstools import ConstantFormatVideoNode, check_variable, get_y, limiter, plane, vs
 
-from .edge import Kirsch, MinMax, Prewitt, PrewittTCanny
+from .edge import Kirsch, MinMax, Prewitt
 from .masks import range_mask
 from .morpho import Morpho
 from .types import MaskLike
@@ -82,7 +82,7 @@ def simple_detail_mask(
 
     mask_a = Morpho.binarize(range_mask(blur, rad=rad), brz_a)
 
-    mask_b = Morpho.binarize(PrewittTCanny.edgemask(blur), brz_b)
+    mask_b = Morpho.binarize(Prewitt.edgemask(blur), brz_b)
 
     mask = ExprOp.MAX.combine(mask_a, mask_b)
 

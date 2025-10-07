@@ -9,7 +9,7 @@ from jetpytools import cachedproperty
 from vsexprtools import ExprToken, norm_expr
 from vskernels import Bilinear, BorderHandling, Hermite, Kernel, KernelLike, Scaler, ScalerLike
 from vskernels.types import LeftShift, TopShift
-from vsmasktools import KirschTCanny, based_diff_mask, region_rel_mask, stabilize_mask
+from vsmasktools import Kirsch, based_diff_mask, region_rel_mask, stabilize_mask
 from vstools import (
     ColorRange,
     ConstantFormatVideoNode,
@@ -492,7 +492,7 @@ class Rescale(RescaleBase):
 
         clip = clip if clip else self.doubled
 
-        line_mask = KirschTCanny.edgemask(clip, **kwargs).std.Maximum().std.Minimum()
+        line_mask = Kirsch.edgemask(clip, **kwargs).std.Maximum().std.Minimum()
         line_mask = scaler.scale(
             line_mask, self._clipy.width, self._clipy.height, format=self._clipy.format, **scale_kwargs
         )

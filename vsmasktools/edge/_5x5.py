@@ -7,6 +7,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import ClassVar, Sequence
 
+from typing_extensions import deprecated
+
 from ._abstract import (
     EdgeDetect,
     EdgeMasksEdgeDetect,
@@ -132,6 +134,11 @@ class FDoG(EdgeMasksEdgeDetect, RidgeDetect, EuclideanDistance, Matrix5x5):
     divisors: ClassVar[Sequence[float] | None] = [2, 2]
 
 
+@deprecated(
+    "FDoGTCanny is deprecated and will be removed in a future version. "
+    "Please use FDoG and install the 'edgemasks' plugin instead.",
+    category=DeprecationWarning,
+)
 class FDoGTCanny(TCannyEdgeDetect, Matrix5x5):
     """
     Flow-based Difference of Gaussian TCanny Vapoursynth plugin.

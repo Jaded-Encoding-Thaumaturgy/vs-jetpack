@@ -23,7 +23,7 @@ from vstools import (
 )
 
 from .details import multi_detail_mask
-from .edge import FDoGTCanny, Kirsch, MagDirection, Prewitt, PrewittTCanny
+from .edge import FDoG, Kirsch, MagDirection, Prewitt
 from .morpho import Morpho
 from .spat_funcs import retinex
 from .types import Coordinates, MaskLike
@@ -84,7 +84,7 @@ def luma_mask(clip: vs.VideoNode, thr_lo: float, thr_hi: float, invert: bool = T
 
 
 def luma_credit_mask(
-    clip: vs.VideoNode, thr: float = 0.9, edgemask: MaskLike = FDoGTCanny, draft: bool = False, **kwargs: Any
+    clip: vs.VideoNode, thr: float = 0.9, edgemask: MaskLike = FDoG, draft: bool = False, **kwargs: Any
 ) -> ConstantFormatVideoNode:
     y = plane(clip, 0)
 
@@ -206,7 +206,7 @@ class dre_edgemask(CustomEnum):  # noqa: N801
 
         dreluma = self._prefilter(luma, **kwargs)
 
-        tcanny = PrewittTCanny.edgemask(dreluma, sigma=tsigma, scale=1)
+        tcanny = Prewitt.edgemask(dreluma, sigma=tsigma, scale=1)
         tcanny = Morpho.minimum(tcanny, coords=Coordinates.CORNERS)
 
         kirsch = Kirsch(MagDirection.N | MagDirection.EAST).edgemask(luma)
