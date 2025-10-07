@@ -39,7 +39,7 @@ from vstools import (
 )
 
 from .abstract import BoundingBox, DeferredMask, GeneralMask
-from .edge import SobelStd
+from .edge import Sobel
 from .morpho import Morpho
 from .types import MaskLike, XxpandMode
 from .utils import max_planes, normalize_mask
@@ -233,7 +233,7 @@ class HardsubSignFades(HardsubMask):
         bound: BoundingBox | None = None,
         highpass: float = 0.0763,
         expand: int = 8,
-        edgemask: MaskLike = SobelStd,
+        edgemask: MaskLike = Sobel,
         expand_mode: XxpandMode = XxpandMode.RECTANGLE,
         *,
         blur: bool = False,

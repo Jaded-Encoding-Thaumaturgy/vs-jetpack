@@ -13,7 +13,7 @@ from vsaa import NNEDI3
 from vsdenoise import Prefilter, PrefilterLike, frequency_merge, nl_means
 from vsexprtools import norm_expr
 from vskernels import Catrom, Scaler, ScalerLike
-from vsmasktools import Morpho, PrewittStd
+from vsmasktools import Morpho, Prewitt
 from vsrgtools import (
     contrasharpening_dehalo,
     gauss_blur,
@@ -132,7 +132,7 @@ def hq_dering(
     )
 
     if ringmask is None:
-        edgemask = PrewittStd.edgemask(func.work_clip, scale_mask(mthr, 8, 32), planes=planes)
+        edgemask = Prewitt.edgemask(func.work_clip, scale_mask(mthr, 8, 32), planes=planes)
         fmask = median_blur(edgemask, planes=planes).hysteresis.Hysteresis(edgemask, planes)
 
         omask = Morpho.expand(fmask, mrad, planes=planes)

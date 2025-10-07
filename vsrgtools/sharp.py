@@ -107,7 +107,7 @@ def awarpsharp(
     Returns:
         Warp-sharpened clip.
     """
-    from vsmasktools import SobelStd, normalize_mask
+    from vsmasktools import Sobel, normalize_mask
 
     func = FunctionUtil(clip, awarpsharp, planes)
 
@@ -116,7 +116,7 @@ def awarpsharp(
     mask_planes = planes if chroma else 0
 
     if mask is None:
-        mask = SobelStd
+        mask = Sobel
 
     kwargs = {"clamp": (0, thresh)} | kwargs
 

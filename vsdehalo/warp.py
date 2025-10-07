@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Literal, Sequence
 
 from vsexprtools import norm_expr
-from vsmasktools import EdgeDetect, EdgeDetectLike, Morpho, PrewittStd
+from vsmasktools import EdgeDetect, EdgeDetectLike, Morpho, Prewitt
 from vsrgtools import BlurMatrix, awarpsharp, box_blur, min_blur, remove_grain, repair
 from vsrgtools.rgtools import Repair
 from vstools import Planes, limiter, scale_mask, scale_value, vs
@@ -22,7 +22,7 @@ def edge_cleaner(
     rmode: int | Repair.Mode = 17,
     hot: bool = False,
     smode: bool = False,
-    edgemask: EdgeDetectLike = PrewittStd,
+    edgemask: EdgeDetectLike = Prewitt,
     planes: Planes = 0,
 ) -> vs.VideoNode:
     """
@@ -34,7 +34,7 @@ def edge_cleaner(
         rmode: Repair mode to use for edge refinement. Default is 17.
         hot: If True, applies additional repair to hot edges. Default is False.
         smode: If True, applies a stronger cleaning mode. Default is False.
-        edgemask: The edge detection method to use. Default is PrewittStd.
+        edgemask: The edge detection method to use. Default is Prewitt.
         planes: The planes to process. Default is 0 (luma only).
 
     Returns:
