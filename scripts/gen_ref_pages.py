@@ -7,7 +7,6 @@ from pkgutil import iter_modules
 
 import mkdocs_gen_files
 import vsaa
-import vsadjust
 import vsdeband
 import vsdehalo
 import vsdeinterlace
@@ -25,7 +24,6 @@ import vstransitions
 # Modules to document.
 MODULES = [
     vsaa,
-    vsadjust,
     vsdeband,
     vsdehalo,
     vsdeinterlace,
