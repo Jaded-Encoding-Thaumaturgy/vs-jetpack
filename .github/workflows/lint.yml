@@ -5,18 +5,17 @@ on:
     branches:
       - main
     paths:
-      - '**.py'
+      - "**.py"
   pull_request:
     paths:
-      - '**.py'
+      - "**.py"
 
 permissions:
   contents: read
 
-
-env:  
-  VAPOURSYNTH_VERSION: 71  
-  PYTHON_VERSION: "3.13"  
+env:
+  VAPOURSYNTH_VERSION: 72
+  PYTHON_VERSION: "3.14"
 
 jobs:
   lint:
@@ -25,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: qoomon/actions--context@v3
+      - uses: qoomon/actions--context@v5
         id: context
       - name: Determine branch name
         id: branch-names
@@ -37,7 +36,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
@@ -60,7 +59,7 @@ jobs:
 
       - name: Post webhook for failure
         if: failure() && github.event.pull_request.head.repo.owner.login == github.event.pull_request.base.repo.owner.login
-        uses: tsickert/discord-webhook@v6.0.0
+        uses: tsickert/discord-webhook@v7.0.0
         with:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
           embed-url: ${{ steps.context.outputs.job_log_url }}
