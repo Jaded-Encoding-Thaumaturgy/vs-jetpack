@@ -51,7 +51,7 @@ jobs:
         uses: tsickert/discord-webhook@v7.0.0
         with:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
-          embed-url: ${{ steps.context.outputs.job_log_url }}
-          embed-title: "[${{ github.event.repository.name }}] ${{ steps.context.outputs.job }} failed on ${{ steps.branch-names.outputs.current_branch }}"
+          embed-url: ${{ steps.context.outputs.job_html_url }}
+          embed-title: "[${{ github.event.repository.name }}] ${{ steps.context.outputs.job_name }} failed on ${{ steps.branch-names.outputs.current_branch }}"
           username: "GitHub - ${{ github.repository }}"
           avatar-url: https://github.githubassets.com/favicons/favicon.png
