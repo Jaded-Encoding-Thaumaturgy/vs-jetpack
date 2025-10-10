@@ -30,7 +30,6 @@ from vsexprtools import norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vstools import (
     ColorRange,
-    ConstantFormatVideoNode,
     CustomValueError,
     DitherType,
     Matrix,
@@ -322,7 +321,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         height: int | None = None,
         shift: tuple[float, float] = (0, 0),
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Scale the given clip using the ONNX model.
 
@@ -386,7 +385,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
                 warning("opt_shapes is None, setting it to (64, 64). You may want to adjust it...")
                 self.backend.opt_shapes = (64, 64)
 
-            scaled = ProcessVariableResClip[ConstantFormatVideoNode].from_func(
+            scaled = ProcessVariableResClip.from_func(
                 wclip, lambda c: self.inference(c, **inference_kwargs), False, wclip.format, self.max_instances
             )
 
@@ -413,7 +412,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         return calc_tilesize(**kwargs)
 
-    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         """
         Performs preprocessing on the clip prior to inference.
         """
@@ -425,7 +424,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         return limiter(clip, func=self.__class__)
 
-    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         """
         Handles postprocessing of the model's output after inference.
         """
@@ -442,7 +441,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         return clip
 
-    def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         """
         Runs inference on the given video clip using the configured model and backend.
         """
@@ -490,11 +489,11 @@ class BaseOnnxScalerRGB(BaseOnnxScaler):
     Abstract ONNX class for RGB models.
     """
 
-    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         clip = self.kernel.resample(clip, self._pick_precision(vs.RGBH, vs.RGBS), Matrix.RGB, **kwargs)
         return limiter(clip, func=self.__class__)
 
-    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         assert check_variable_format(clip, self.__class__)
 
         if get_video_format(clip) != get_video_format(input_clip):
@@ -579,26 +578,26 @@ class BaseArtCNN(BaseOnnxScaler):
 
 
 class BaseArtCNNLuma(BaseArtCNN):
-    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         return super().preprocess_clip(get_y(clip), **kwargs)
 
     def _finish_scale(
         self,
-        clip: ConstantFormatVideoNode,
-        input_clip: ConstantFormatVideoNode,
+        clip: vs.VideoNode,
+        input_clip: vs.VideoNode,
         width: int,
         height: int,
         shift: tuple[float, float] = (0, 0),
         matrix: MatrixLike | None = None,
         copy_props: bool = False,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         # Changes compared to BaseGenericScaler are:
         # - extract luma if input clip is luma only is removed  since this is a no op here
         # - Chroma planes are scaled accordingly with the artcnn'd luma,
         #   avoiding getting a luma plane when passing a YUV clip.
 
         if (clip.width, clip.height) != (width, height):
-            clip = self.scaler.scale(clip, width, height)  # type: ignore[assignment]
+            clip = self.scaler.scale(clip, width, height)
 
         if input_clip.format.color_family == vs.YUV:
             scaled_chroma = self.scaler.scale(input_clip, clip.width, clip.height)
@@ -617,7 +616,7 @@ class BaseArtCNNLuma(BaseArtCNN):
 
 
 class BaseArtCNNChroma(BaseArtCNN):
-    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         assert check_variable_format(clip, self.__class__)
         assert clip.format.color_family == vs.YUV
 
@@ -645,11 +644,11 @@ class BaseArtCNNChroma(BaseArtCNN):
 
         return norm_expr(super().preprocess_clip(clip, **kwargs), "x 0.5 +", [1, 2], func=self.__class__)
 
-    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         clip = norm_expr(clip, "x 0.5 -", [1, 2], func=self.__class__)
         return super().postprocess_clip(clip, input_clip, **kwargs)
 
-    def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         from vsmlrt import flexible_inference
 
         tilesize, overlaps = self.calc_tilesize(clip)
@@ -669,16 +668,16 @@ class BaseArtCNNChroma(BaseArtCNN):
 
     def _finish_scale(
         self,
-        clip: ConstantFormatVideoNode,
-        input_clip: ConstantFormatVideoNode,
+        clip: vs.VideoNode,
+        input_clip: vs.VideoNode,
         width: int,
         height: int,
         shift: tuple[float, float] = (0, 0),
         matrix: MatrixLike | None = None,
         copy_props: bool = False,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         if (clip.width, clip.height) != (width, height):
-            clip = self.scaler.scale(clip, width, height)  # type: ignore[assignment]
+            clip = self.scaler.scale(clip, width, height)
 
         if shift != (0, 0):
             clip = self.shifter.shift(clip, shift)
@@ -1047,7 +1046,7 @@ class BaseWaifu2x(BaseOnnxScaler):
             **kwargs,
         )
 
-    def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         from vsmlrt import Waifu2x as mlrt_Waifu2x
         from vsmlrt import Waifu2xModel
 
@@ -1077,7 +1076,7 @@ class _Waifu2xCunet(BaseWaifu2x, BaseOnnxScalerRGB):
             height: int | None = None,
             shift: tuple[float, float] = (0, 0),
             **kwargs: Any,
-        ) -> ConstantFormatVideoNode:
+        ) -> vs.VideoNode:
             """
             Scale the given clip using the ONNX model.
 
@@ -1105,7 +1104,7 @@ class _Waifu2xCunet(BaseWaifu2x, BaseOnnxScalerRGB):
             """
             ...
 
-    def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         # Cunet model ruins image borders, so we need to pad it before upscale and crop it after.
         if kwargs.pop("no_pad", False):
             return super().inference(clip, **kwargs)
@@ -1117,7 +1116,7 @@ class _Waifu2xCunet(BaseWaifu2x, BaseOnnxScalerRGB):
 
         return cropped
 
-    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         # Cunet model also has a tint issue but it is not constant
         # It leaves flat areas alone but tints detailed areas.
         # Since most people will use Cunet to rescale details, the tint fix is enabled by default.
@@ -1368,12 +1367,12 @@ class BaseDPIR(BaseOnnxScaler):
         *,
         copy_props: bool = True,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         assert check_variable_resolution(clip, self.__class__)
 
         return super().scale(clip, width, height, shift, copy_props=copy_props, **kwargs)
 
-    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         if get_color_family(clip) == vs.GRAY:
             return super().preprocess_clip(clip, **kwargs)
 
@@ -1381,7 +1380,7 @@ class BaseDPIR(BaseOnnxScaler):
 
         return limiter(clip, func=self.__class__)
 
-    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         assert check_variable_format(clip, self.__class__)
 
         if get_video_format(clip) != get_video_format(input_clip):
@@ -1398,7 +1397,7 @@ class BaseDPIR(BaseOnnxScaler):
 
         return clip
 
-    def inference(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         from vsmlrt import DPIRModel, inference, models_path
 
         # Normalizing the strength clip

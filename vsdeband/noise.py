@@ -11,7 +11,6 @@ from vsmasktools import adg_mask
 from vsrgtools import BlurMatrix
 from vstools import (
     ColorRange,
-    ConstantFormatVideoNode,
     ConvMode,
     Planes,
     UnsupportedColorFamilyError,
@@ -91,7 +90,7 @@ class ScalerTwoPasses(BaseScalerSpecializer[_ScalerT], Scaler, partial_abstract=
         height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any,
-    ) -> vs.VideoNode | ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         assert check_variable(clip, self.__class__)
 
         width, height = self._wh_norm(clip, width, height)
@@ -431,7 +430,7 @@ class Grainer(AbstractGrainer, CustomEnum):
 
 
 def _apply_grainer(
-    clip: ConstantFormatVideoNode,
+    clip: vs.VideoNode,
     grainer_function: _GrainerFunc,
     strength: float | Sequence[float],
     scale: float | tuple[float, float],
@@ -523,7 +522,7 @@ def _apply_grainer(
 
 
 def _protect_pixel_range(
-    clip: ConstantFormatVideoNode,
+    clip: vs.VideoNode,
     grained: vs.VideoNode,
     low: list[float],
     high: list[float],
@@ -545,7 +544,7 @@ def _protect_pixel_range(
 
 
 def _protect_neutral_chroma(
-    clip: ConstantFormatVideoNode,
+    clip: vs.VideoNode,
     grained: vs.VideoNode,
     base_clip: vs.VideoNode,
     blend: float = 0.0,

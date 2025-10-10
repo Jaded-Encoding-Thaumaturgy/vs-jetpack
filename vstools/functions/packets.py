@@ -14,7 +14,6 @@ import vapoursynth as vs
 from jetpytools import CustomValueError, DependencyNotFoundError, FileWasNotFoundError, FuncExcept, SPath, SPathLike
 from typing_extensions import Self
 
-from ..types import VideoNodeT
 from .file import PackageStorage
 from .timecodes import Keyframes
 
@@ -227,8 +226,8 @@ class VideoPackets(list[int]):
         return stats
 
     def apply_props(
-        self, clip: VideoNodeT, keyframes: Keyframes | None = None, *, func: FuncExcept | None = None
-    ) -> VideoNodeT:
+        self, clip: vs.VideoNode, keyframes: Keyframes | None = None, *, func: FuncExcept | None = None
+    ) -> vs.VideoNode:
         """
         Apply packet size properties to a clip.
 

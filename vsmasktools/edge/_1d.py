@@ -10,7 +10,7 @@ from typing import Any, ClassVar, Sequence
 from typing_extensions import deprecated
 
 from vsexprtools import norm_expr
-from vstools import ConstantFormatVideoNode, Planes, core
+from vstools import Planes, core, vs
 
 from ._abstract import EdgeDetect, EuclideanDistance
 
@@ -38,12 +38,12 @@ class TEdge(EuclideanDistance, Matrix1D):
 
     def _compute_edge_mask(
         self,
-        clip: ConstantFormatVideoNode,
+        clip: vs.VideoNode,
         *,
         multi: float | Sequence[float] = 1,
         planes: int | Sequence[int] | None = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         if (
             hasattr(core, "tedgemask")
             and max(clip.format.subsampling_h, clip.format.subsampling_w) <= 2
@@ -66,12 +66,12 @@ class TEdgeTedgemask(Matrix1D):
 
     def _compute_edge_mask(
         self,
-        clip: ConstantFormatVideoNode,
+        clip: vs.VideoNode,
         *,
         multi: float | Sequence[float] = 1.0,
         planes: Planes = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         if not isinstance(multi, Sequence):
             return clip.tedgemask.TEdgeMask(0, 2, scale=multi, planes=planes, **kwargs)
 

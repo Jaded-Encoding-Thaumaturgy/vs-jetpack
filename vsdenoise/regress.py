@@ -243,7 +243,7 @@ class Regression:
 
             return blur, variation, var_mul
 
-    blur_func: BlurConf | VSFunction[vs.VideoNode] = BlurConf(box_blur, radius=2)
+    blur_func: BlurConf | VSFunction = BlurConf(box_blur, radius=2)
     """Function used for blurring (averaging)."""
 
     eps: float = 1e-7

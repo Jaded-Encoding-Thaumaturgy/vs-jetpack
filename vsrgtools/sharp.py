@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 from vstools import (
     ChromaLocation,
-    ConstantFormatVideoNode,
     ConvMode,
     FunctionUtil,
     Planes,
@@ -39,10 +38,10 @@ __all__ = ["awarpsharp", "fine_sharp", "soothe", "unsharpen"]
 def unsharpen(
     clip: vs.VideoNode,
     strength: float = 1.0,
-    blur: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] = partial(gauss_blur, sigma=1.5),
+    blur: vs.VideoNode | VSFunctionNoArgs = partial(gauss_blur, sigma=1.5),
     planes: Planes = None,
     func: FuncExcept | None = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Apply an unsharp mask to a clip.
 
@@ -77,12 +76,12 @@ def awarpsharp(
     clip: vs.VideoNode,
     mask: MaskLike | None = None,
     thresh: int | float = 128,
-    blur: int | VSFunctionPlanesArgs[vs.VideoNode, vs.VideoNode] | Literal[False] = 3,
+    blur: int | VSFunctionPlanesArgs | Literal[False] = 3,
     depth: int | Sequence[int] | None = None,
     chroma: bool = False,
     planes: Planes = None,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Sharpens edges by warping them.
 
@@ -151,7 +150,7 @@ def fine_sharp(
     ldmp: float | None = None,
     hdmp: float = 0.01,
     planes: Planes = 0,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     func = FunctionUtil(clip, fine_sharp, planes)
 
     if cstr is None:
@@ -210,7 +209,7 @@ def soothe(
     temporal_radius: int = 1,
     scenechange: bool = False,
     planes: Planes = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     sharp_diff = src.std.MakeDiff(flt, planes)
 
     expr = (

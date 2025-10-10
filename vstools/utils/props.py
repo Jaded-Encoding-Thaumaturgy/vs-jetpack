@@ -29,7 +29,7 @@ from jetpytools import (
 
 from ..enums import PropEnum
 from ..exceptions import FramePropError
-from ..types import ConstantFormatVideoNode, HoldsPropValue
+from ..types import HoldsPropValue
 from .cache import NodesPropsCache
 
 __all__ = ["get_clip_filepath", "get_prop", "get_props", "merge_clip_props"]
@@ -248,14 +248,6 @@ def get_prop(
     )
 
 
-@overload
-def merge_clip_props(*clips: ConstantFormatVideoNode, main_idx: int = 0) -> ConstantFormatVideoNode: ...
-
-
-@overload
-def merge_clip_props(*clips: vs.VideoNode, main_idx: int = 0) -> vs.VideoNode: ...
-
-
 def merge_clip_props(*clips: vs.VideoNode, main_idx: int = 0) -> vs.VideoNode:
     """
     Merge frame properties from all provided clips.
@@ -387,7 +379,7 @@ def get_props(
 
     if exceptions:
         if sys.version_info >= (3, 11):
-            raise ExceptionGroup("Multiple exceptions occurred!", exceptions) from None  # noqa: F821
+            raise ExceptionGroup("Multiple exceptions occurred!", exceptions) from None
 
         raise Exception(exceptions)
 

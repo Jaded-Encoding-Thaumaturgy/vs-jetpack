@@ -5,7 +5,7 @@ from typing import Any
 
 from jetpytools import CustomEnum, CustomIntEnum, CustomValueError
 
-from vstools import ConstantFormatVideoNode, VSFunctionAllArgs, check_variable_format, core, fallback, vs
+from vstools import VSFunctionAllArgs, check_variable_format, core, fallback, vs
 
 __all__ = [
     "FlowMode",
@@ -46,83 +46,83 @@ class MVToolsPlugin(CustomEnum):
         return getattr(core.proxied, self._value_)
 
     @property
-    def Super(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def Super(self) -> VSFunctionAllArgs:
         """
         Get the Super function for creating motion vector clips.
         """
         return self.namespace.Super
 
     @property
-    def Analyze(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def Analyze(self) -> VSFunctionAllArgs:
         """
         Get the Analyze function for analyzing motion vectors.
         """
         return self.namespace.Analyze if self is MVToolsPlugin.FLOAT else self.namespace.Analyse
 
     @property
-    def Recalculate(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def Recalculate(self) -> VSFunctionAllArgs:
         """
         Get the Recalculate function for refining motion vectors.
         """
         return self.namespace.Recalculate
 
     @property
-    def Compensate(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def Compensate(self) -> VSFunctionAllArgs:
         """
         Get the Compensate function for motion compensation.
         """
         return self.namespace.Compensate
 
     @property
-    def Flow(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def Flow(self) -> VSFunctionAllArgs:
         """
         Get the Flow function for motion vector visualization.
         """
         return self.namespace.Flow
 
     @property
-    def FlowInter(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def FlowInter(self) -> VSFunctionAllArgs:
         """
         Get the FlowInter function for motion-compensated frame interpolation.
         """
         return self.namespace.FlowInter
 
     @property
-    def FlowBlur(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def FlowBlur(self) -> VSFunctionAllArgs:
         """
         Get the FlowBlur function for motion-compensated frame blending.
         """
         return self.namespace.FlowBlur
 
     @property
-    def FlowFPS(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def FlowFPS(self) -> VSFunctionAllArgs:
         """
         Get the FlowFPS function for motion-compensated frame rate conversion.
         """
         return self.namespace.FlowFPS
 
     @property
-    def BlockFPS(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def BlockFPS(self) -> VSFunctionAllArgs:
         """
         Get the BlockFPS function for block-based frame rate conversion.
         """
         return self.namespace.BlockFPS
 
     @property
-    def Mask(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def Mask(self) -> VSFunctionAllArgs:
         """
         Get the Mask function for generating motion masks.
         """
         return self.namespace.Mask
 
     @property
-    def SCDetection(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def SCDetection(self) -> VSFunctionAllArgs:
         """
         Get the SCDetection function for scene change detection.
         """
         return self.namespace.SCDetection
 
-    def Degrain(self, tr: int | None = None) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def Degrain(self, tr: int | None = None) -> VSFunctionAllArgs:
         """
         Get the Degrain function for motion compensated denoising.
         """

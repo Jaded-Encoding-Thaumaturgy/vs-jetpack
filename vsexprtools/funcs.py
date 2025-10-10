@@ -10,7 +10,6 @@ from jetpytools import CustomIndexError, norm_func_name
 
 from vstools import (
     EXPR_VARS,
-    ConstantFormatVideoNode,
     CustomRuntimeError,
     FuncExcept,
     HoldsVideoFormat,
@@ -44,7 +43,7 @@ def expr_func(
     opt: bool = False,
     boundary: bool = True,
     func: FuncExcept | None = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Calls `akarin.Expr` plugin.
 
@@ -88,7 +87,7 @@ def expr_func(
         raise CustomRuntimeError(e)
     except vs.Error as e:
         if len(clips) == 1 and 0 in (clips[0].width, clips[0].height):
-            return ProcessVariableResClip[ConstantFormatVideoNode].from_func(
+            return ProcessVariableResClip.from_func(
                 clips[0], lambda clip: core.akarin.Expr(clip, expr, fmt, opt, boundary)
             )
 
@@ -143,7 +142,7 @@ def combine_expr(
 
 
 def combine(
-    clips: VideoNodeIterableT[vs.VideoNode],
+    clips: VideoNodeIterableT,
     operator: ExprOpBase = ExprOp.MAX,
     suffix: SupportsString | Iterable[SupportsString] | None = None,
     prefix: SupportsString | Iterable[SupportsString] | None = None,
@@ -152,7 +151,7 @@ def combine(
     planes: Planes = None,
     split_planes: bool = False,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Combines multiple video clips using a specified expression operator.
 
@@ -190,7 +189,7 @@ Acceptable forms include:
 
 
 def norm_expr(
-    clips: VideoNodeIterableT[vs.VideoNode],
+    clips: VideoNodeIterableT,
     expr: ExprLike,
     planes: Planes = None,
     format: HoldsVideoFormat | VideoFormatLike | None = None,
@@ -200,7 +199,7 @@ def norm_expr(
     split_planes: bool = False,
     debug: bool = False,
     **kwargs: Iterable[SupportsString] | SupportsString,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Evaluate a per-pixel expression on input clip(s), normalize it based on the specified planes,
     and format [tokens][vsexprtools.ExprToken] and placeholders using provided keyword arguments.

@@ -6,8 +6,6 @@ import vapoursynth as vs
 from jetpytools import CustomEnum, CustomError, CustomIntEnum, CustomStrEnum, FuncExcept, classproperty
 from typing_extensions import Self
 
-from ..types import VideoNodeT
-
 __all__ = [
     "CustomEnum",
     "CustomIntEnum",
@@ -92,8 +90,8 @@ class PropEnum(CustomIntEnum):
 
     @classmethod
     def ensure_presence(
-        cls, clip: VideoNodeT, value: int | Self | None, /, func: FuncExcept | None = None
-    ) -> VideoNodeT:
+        cls, clip: vs.VideoNode, value: int | Self | None, /, func: FuncExcept | None = None
+    ) -> vs.VideoNode:
         """
         Ensure the presence of the property in the VideoNode.
         """
@@ -102,7 +100,7 @@ class PropEnum(CustomIntEnum):
 
         return vs.core.std.SetFrameProp(clip, enum_value.prop_key, enum_value.value)
 
-    def apply(self, clip: VideoNodeT) -> VideoNodeT:
+    def apply(self, clip: vs.VideoNode) -> vs.VideoNode:
         """
         Applies the property to the VideoNode.
         """
@@ -111,8 +109,8 @@ class PropEnum(CustomIntEnum):
 
     @staticmethod
     def ensure_presences(
-        clip: VideoNodeT, prop_enums: Iterable[type[PropEnum] | PropEnum], func: FuncExcept | None = None
-    ) -> VideoNodeT:
+        clip: vs.VideoNode, prop_enums: Iterable[type[PropEnum] | PropEnum], func: FuncExcept | None = None
+    ) -> vs.VideoNode:
         """
         Ensure the presence of multiple PropEnums at once.
         """

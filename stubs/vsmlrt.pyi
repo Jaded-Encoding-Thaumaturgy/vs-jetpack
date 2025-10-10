@@ -4,9 +4,6 @@ import vapoursynth as vs
 from dataclasses import dataclass
 from fractions import Fraction
 
-if typing.TYPE_CHECKING:
-    from vstools import ConstantFormatVideoNode
-
 __version__: str
 
 __all__ = [
@@ -226,7 +223,7 @@ def Waifu2x(
     model: Waifu2xModel = ...,
     backend: backendT = ...,
     preprocess: bool = True,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 class DPIRModel(enum.IntEnum):
     drunet_gray = 0
@@ -242,7 +239,7 @@ def DPIR(
     overlap: int | tuple[int, int] | None = None,
     model: DPIRModel = ...,
     backend: backendT = ...,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 
 class RealESRGANModel(enum.IntEnum):
     animevideo_xsx2 = 0
@@ -449,7 +446,7 @@ def ArtCNN(
     overlap: int | tuple[int, int] | None = None,
     model: ArtCNNModel = ...,
     backend: backendT = ...,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 def inference(
     clips: vs.VideoNode | list[vs.VideoNode],
     network_path: str,
@@ -458,7 +455,7 @@ def inference(
     backend: backendT = ...,
     input_name: str | None = "input",
     batch_size: int = 1,
-) -> ConstantFormatVideoNode: ...
+) -> vs.VideoNode: ...
 def flexible_inference(
     clips: vs.VideoNode | list[vs.VideoNode],
     network_path: str,

@@ -22,7 +22,7 @@ from ..enums import (
     TransferLike,
 )
 from ..exceptions import UndefinedMatrixError
-from ..types import ConstantFormatVideoNode, HoldsVideoFormat, Planes, VideoFormatLike, vs_object
+from ..types import HoldsVideoFormat, Planes, VideoFormatLike, vs_object
 from .check import check_variable
 from .normalize import normalize_planes
 from .utils import depth, join, plane
@@ -130,7 +130,7 @@ class FunctionUtil(list[int], vs_object):
         self.num_planes = self.work_clip.format.num_planes
 
     @cachedproperty
-    def norm_clip(self) -> ConstantFormatVideoNode:
+    def norm_clip(self) -> vs.VideoNode:
         """
         Get a "normalized" clip. This means color space and bitdepth are converted if necessary.
         """
@@ -184,7 +184,7 @@ class FunctionUtil(list[int], vs_object):
         return clip
 
     @cachedproperty
-    def work_clip(self) -> ConstantFormatVideoNode:
+    def work_clip(self) -> vs.VideoNode:
         """
         Get the "work clip" as specified from the input planes.
         """
@@ -330,7 +330,7 @@ class FunctionUtil(list[int], vs_object):
     def without_planes(self, planes: Planes) -> list[int]:
         return self.normalize_planes(sorted(set(self) - {*self.normalize_planes(planes)}))
 
-    def return_clip(self, processed: vs.VideoNode, prop_src: vs.VideoNode | None = None) -> ConstantFormatVideoNode:
+    def return_clip(self, processed: vs.VideoNode, prop_src: vs.VideoNode | None = None) -> vs.VideoNode:
         """
         Merge back the chroma if necessary and convert the processed clip back to the original clip's format.
         If `bitdepth != None`, the bitdepth will also be converted if necessary.

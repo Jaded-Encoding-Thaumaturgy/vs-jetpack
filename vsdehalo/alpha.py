@@ -14,11 +14,11 @@ from vskernels import BSpline, Lanczos, Mitchell, Scaler
 from vsmasktools import Morpho
 from vsrgtools import gauss_blur, repair
 from vstools import (
-    ConstantFormatVideoNode,
     CustomIndexError,
     FuncExcept,
     FunctionUtil,
     Planes,
+    VSFunctionPlanesArgs,
     check_progressive,
     check_variable_format,
     core,
@@ -30,13 +30,11 @@ from vstools import (
     split,
     vs,
 )
-from vstools import VSFunctionPlanesArgs as GenericVSFunctionPlanesArgs
 
 __all__ = ["AlphaBlur", "dehalo_alpha"]
 
 
 IterArr: TypeAlias = T | list[T] | tuple[T | list[T], ...]
-VSFunctionPlanesArgs: TypeAlias = GenericVSFunctionPlanesArgs[vs.VideoNode, vs.VideoNode]
 
 
 def dehalo_alpha(
@@ -112,7 +110,7 @@ def dehalo_alpha(
         kwargs.get("supersampler", Lanczos()),
         kwargs.get("supersampler_ref", Mitchell()),
     )
-    masks_to_prop = list[ConstantFormatVideoNode]()
+    masks_to_prop = list[vs.VideoNode]()
 
     work_clip = util.work_clip
 
@@ -272,7 +270,7 @@ class AlphaBlur:
 
     def _function(
         self,
-        clip: ConstantFormatVideoNode,
+        clip: vs.VideoNode,
         rx: float,
         ry: float,
     ) -> vs.VideoNode:

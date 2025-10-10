@@ -1,4 +1,4 @@
-from vstools import ConstantFormatVideoNode, CustomEnum, CustomIntEnum, check_variable, core, vs
+from vstools import CustomEnum, CustomIntEnum, check_variable, core, vs
 
 __all__ = [
     "IVTCycles",
@@ -86,7 +86,7 @@ class IVTCycles(CustomEnum):
 
         return len(self.value)
 
-    def decimate(self, clip: vs.VideoNode, pattern: int = 0) -> ConstantFormatVideoNode:
+    def decimate(self, clip: vs.VideoNode, pattern: int = 0) -> vs.VideoNode:
         """
         Apply the decimation pattern to a video clip with the given pattern index.
         """

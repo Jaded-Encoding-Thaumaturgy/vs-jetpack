@@ -21,7 +21,6 @@ from typing_extensions import Self, TypeIs, TypeVar, TypeVarTuple, Unpack
 
 from vsexprtools import norm_expr
 from vstools import (
-    ConstantFormatVideoNode,
     CustomRuntimeError,
     CustomValueError,
     HoldsVideoFormat,
@@ -192,7 +191,7 @@ class NoScale(BaseScalerSpecializer[_ScalerWithCatromDefaultT], Scaler, partial_
         height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any,
-    ) -> vs.VideoNode | ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Return the input clip unscaled, validating that the dimensions are consistent.
 
@@ -332,7 +331,7 @@ class MixedScalerProcess(BaseMixedScaler[_ScalerT, Unpack[_BaseScalerTs]], Scale
     An abstract class for chained scaling with an additional processing step.
     """
 
-    def __init__(self, *, function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode], **kwargs: Any) -> None:
+    def __init__(self, *, function: VSFunctionNoArgs, **kwargs: Any) -> None:
         """
         Initialize the MixedScalerProcess.
 

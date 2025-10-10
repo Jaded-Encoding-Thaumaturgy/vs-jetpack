@@ -12,7 +12,6 @@ from vsexprtools import ExprOp, ExprVars, combine_expr, norm_expr
 from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
 from vsscale import ArtCNN
 from vstools import (
-    ConstantFormatVideoNode,
     KwargsNotNone,
     Planes,
     VSFunctionNoArgs,
@@ -41,8 +40,8 @@ __all__ = [
 def mc_degrain(
     clip: vs.VideoNode,
     vectors: MotionVectors | None = None,
-    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
-    mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
+    mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: MVToolsPreset = ...,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
@@ -62,8 +61,8 @@ def mc_degrain(
 def mc_degrain(
     clip: vs.VideoNode,
     vectors: MotionVectors | None = None,
-    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
-    mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
+    mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: MVToolsPreset = ...,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
@@ -84,8 +83,8 @@ def mc_degrain(
 def mc_degrain(
     clip: vs.VideoNode,
     vectors: MotionVectors | None = None,
-    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
-    mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
+    mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: MVToolsPreset = ...,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
@@ -104,8 +103,8 @@ def mc_degrain(
 def mc_degrain(
     clip: vs.VideoNode,
     vectors: MotionVectors | None = None,
-    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
-    mfilter: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, vs.VideoNode] | None = None,
+    prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
+    mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: MVToolsPreset = MVToolsPreset.HQ_SAD,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
@@ -182,7 +181,7 @@ def mc_clamp(
     clamp: int | float | tuple[int | float, int | float] = 0,
     func: FuncExcept | None = None,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Motion-compensated clamping of a filtered clip against the source.
 

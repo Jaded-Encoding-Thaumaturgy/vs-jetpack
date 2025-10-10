@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from math import floor
 from os import PathLike
 from pathlib import Path
-from typing import Any, BinaryIO, Callable, Literal, Union, overload
+from typing import Any, BinaryIO, Callable, Literal, Protocol, Union, overload
 
 import vapoursynth as vs
 from jetpytools import (
@@ -20,10 +20,13 @@ from jetpytools import (
 )
 
 from ..exceptions import InvalidColorFamilyError
-from ..types import VideoNodeT
 from .normalize import normalize_list_to_ranges
 
 __all__ = ["AsyncRenderConf", "clip_async_render", "clip_data_gather", "find_prop", "find_prop_rfs", "prop_compare_cb"]
+
+
+class _CallbackModifyFrame(Protocol):
+    def __call__(self, n: int, f: vs.VideoFrame) -> vs.VideoFrame: ...
 
 
 @dataclass
@@ -131,7 +134,7 @@ def clip_async_render(
 
     if callback:
 
-        def get_callback(shift: int = 0) -> Callable[[int, vs.VideoFrame], vs.VideoFrame]:
+        def get_callback(shift: int = 0) -> _CallbackModifyFrame:
             if shift:
                 if outfile is None and progress is not None:
                     if isinstance(progress, str):
@@ -316,34 +319,34 @@ _operators: dict[str, tuple[Callable[[Any, Any], bool], str]] = {
 
 @overload
 def prop_compare_cb(
-    src: VideoNodeT,
+    src: vs.VideoNode,
     prop: str,
     op: str | Callable[[float, float], bool] | None,
     ref: float | bool,
     return_frame_n: Literal[False] = False,
-) -> tuple[VideoNodeT, Callable[[int, vs.VideoFrame], bool]]: ...
+) -> tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], bool]]: ...
 
 
 @overload
 def prop_compare_cb(
-    src: VideoNodeT,
+    src: vs.VideoNode,
     prop: str,
     op: str | Callable[[float, float], bool] | None,
     ref: float | bool,
     *,
     return_frame_n: Literal[True],
-) -> tuple[VideoNodeT, Callable[[int, vs.VideoFrame], int | SentinelT]]: ...
+) -> tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], int | SentinelT]]: ...
 
 
 def prop_compare_cb(
-    src: VideoNodeT,
+    src: vs.VideoNode,
     prop: str,
     op: str | Callable[[float, float], bool] | None,
     ref: float | bool,
     return_frame_n: bool = False,
 ) -> Union[
-    tuple[VideoNodeT, Callable[[int, vs.VideoFrame], bool]],
-    tuple[VideoNodeT, Callable[[int, vs.VideoFrame], int | SentinelT]],
+    tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], bool]],
+    tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], int | SentinelT]],
 ]:
     bool_check = isinstance(ref, bool)
     one_pix = hasattr(vs.core, "akarin") and not (callable(op) or " " in prop)
@@ -360,7 +363,7 @@ def prop_compare_cb(
                 f"x.{prop}" if bool_check else f"x.{prop} {ref} {_operators[op][1]}"  # type: ignore[index]
             )
         )
-        src = clip  # type: ignore[assignment]
+        src = clip
 
         def _cb_one_px_return_frame_n(n: int, f: vs.VideoFrame) -> int | SentinelT:
             return Sentinel.check(n, bool(f[0][0, 0]))

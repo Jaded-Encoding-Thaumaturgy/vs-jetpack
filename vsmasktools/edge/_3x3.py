@@ -12,7 +12,7 @@ from jetpytools import interleave_arr
 from typing_extensions import deprecated
 
 from vsexprtools import ExprList, ExprOp, norm_expr
-from vstools import ConstantFormatVideoNode, Planes, get_depth, join, split, vs
+from vstools import Planes, get_depth, join, split, vs
 
 from ..morpho import Morpho
 from ..types import XxpandMode
@@ -169,12 +169,12 @@ class PrewittStd(Matrix3x3):
 
     def _compute_edge_mask(
         self,
-        clip: ConstantFormatVideoNode,
+        clip: vs.VideoNode,
         *,
         multi: float | Sequence[float] = 1.0,
         planes: Planes = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         if not isinstance(multi, Sequence):
             return clip.std.Prewitt(planes, multi)
 
@@ -215,12 +215,12 @@ class SobelStd(Matrix3x3):
 
     def _compute_edge_mask(
         self,
-        clip: ConstantFormatVideoNode,
+        clip: vs.VideoNode,
         *,
         multi: float | Sequence[float] = 1.0,
         planes: Planes = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         if not isinstance(multi, Sequence):
             return clip.std.Sobel(planes, multi)
 
@@ -245,7 +245,7 @@ class ASobel(Matrix3x3, EdgeDetect):
     Modified Sobel-Feldman operator from AWarpSharp.
     """
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         return (vs.core.warp.ASobel if get_depth(clip) < 32 else vs.core.warpsf.ASobel)(clip, 255, **kwargs)
 
 
@@ -331,7 +331,7 @@ class FreyChen(NormalizeProcessor, MatrixEdgeDetect):
     ]
     divisors: ClassVar[Sequence[float] | None] = [2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2 * sqrt2, 2, 2, 6, 6, 3]
 
-    def _merge_edge(self, exprs: Sequence[ExprList], clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _merge_edge(self, exprs: Sequence[ExprList], clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         cmats = interleave_arr(exprs, [f"M{i}!" for i in range(len(exprs))], 1)
         M = "M0@ dup * M1@ dup * + M2@ dup * + M3@ dup * +"  # noqa: N806
         S = f"M4@ dup * M5@ dup * + M6@ dup * + M7@ dup * + M8@ dup * + {M} +"  # noqa: N806
@@ -444,7 +444,7 @@ class MinMax(EdgeDetect):
         self.radc = radc
         super().__init__(**kwargs)
 
-    def _compute_edge_mask(self, clip: ConstantFormatVideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+    def _compute_edge_mask(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         return join(
             [
                 ExprOp.SUB.combine(

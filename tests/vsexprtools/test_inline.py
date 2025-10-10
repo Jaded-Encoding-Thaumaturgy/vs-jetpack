@@ -8,11 +8,11 @@ import pytest
 from vsdenoise import prefilter_to_full_range
 from vsexprtools import inline_expr, norm_expr
 from vsmasktools import Sobel
-from vstools import ColorRange, ConstantFormatVideoNode, ConvMode, core, get_video_format, vs
+from vstools import ColorRange, ConvMode, core, get_video_format, vs
 
 
-def _spawn_random(amount: int, format: int = vs.RGB24, length: int | None = None) -> list[ConstantFormatVideoNode]:
-    clips = list[ConstantFormatVideoNode]()
+def _spawn_random(amount: int, format: int = vs.RGB24, length: int | None = None) -> list[vs.VideoNode]:
+    clips = list[vs.VideoNode]()
 
     for _ in range(amount):
         clips.append(
@@ -56,7 +56,7 @@ def test_inline_expr_simple_1() -> None:
 
 @pytest.mark.parametrize("format", [vs.YUV420P16, vs.YUV420PS, vs.GRAYS, vs.GRAY16])
 def test_inline_expr_advanced(format: int) -> None:
-    def pf_full(clip: ConstantFormatVideoNode, slope: float = 2.0, smooth: float = 0.0625) -> vs.VideoNode:
+    def pf_full(clip: vs.VideoNode, slope: float = 2.0, smooth: float = 0.0625) -> vs.VideoNode:
         with inline_expr(clip) as ie:
             x, *_ = ie.vars
 

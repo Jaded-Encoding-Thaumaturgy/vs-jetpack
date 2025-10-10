@@ -21,7 +21,6 @@ from jetpytools import (
 from vsexprtools import norm_expr
 from vskernels import Point
 from vstools import (
-    ConstantFormatVideoNode,
     FunctionUtil,
     Planes,
     UnsupportedVideoFormatError,
@@ -121,7 +120,7 @@ if TYPE_CHECKING:
     from vapoursynth import Function, Plugin
 
     class _VSFunction(Function):
-        def __call__(self, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode: ...
+        def __call__(self, *args: Any, **kwargs: Any) -> vs.VideoNode: ...
 
     class _VSPlugin(Plugin):
         BM3D: _VSFunction
@@ -532,7 +531,7 @@ def bm3d(
     final_args: dict[str, Any] | None = None,
     planes: Planes = None,
     **kwargs: Any,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     Block-Matching and 3D filtering (BM3D) is a state-of-the-art algorithm for image denoising.
 
@@ -609,11 +608,11 @@ def bm3d(
         raise UnsupportedProfileError("The VERY_NOISY profile is only supported with BM3D.Backend.OLD.", func)
 
     def _bm3d_wolfram(
-        preclip: ConstantFormatVideoNode,
-        pre: ConstantFormatVideoNode | None,
-        ref: ConstantFormatVideoNode | None,
+        preclip: vs.VideoNode,
+        pre: vs.VideoNode | None,
+        ref: vs.VideoNode | None,
         chroma: bool = False,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Internal function for WolframRhodium implementation.
         """
@@ -640,10 +639,10 @@ def bm3d(
         return final
 
     def _bm3d_mawen(
-        preclip: ConstantFormatVideoNode,
-        pre: ConstantFormatVideoNode | None,
-        ref: ConstantFormatVideoNode | None,
-    ) -> ConstantFormatVideoNode:
+        preclip: vs.VideoNode,
+        pre: vs.VideoNode | None,
+        ref: vs.VideoNode | None,
+    ) -> vs.VideoNode:
         """
         Internal function for mawen1250 implementation.
         """

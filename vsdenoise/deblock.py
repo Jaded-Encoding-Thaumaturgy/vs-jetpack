@@ -11,7 +11,6 @@ from vsmasktools import FDoG, MaskLike, Morpho, adg_mask, normalize_mask, streng
 from vsrgtools import MeanMode, gauss_blur, repair
 from vsscale import DPIR
 from vstools import (
-    ConstantFormatVideoNode,
     FieldBased,
     FrameRangeN,
     FrameRangesN,
@@ -56,7 +55,7 @@ class dpir(CustomStrEnum):  # noqa: N801
         zones: Sequence[tuple[FrameRangeN | FrameRangesN, _StrengthT]] | None = None,
         planes: Planes = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Deep Plug-and-Play Image Restoration.
 
@@ -207,7 +206,7 @@ def deblock_qed(
     beta: tuple[int | None, int | None] = (2, 2),
     chroma_mode: int = 0,
     planes: Planes = None,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     A post-processed deblock. Uses full frequencies of Deblock's changes on block borders, but DCT-lowpassed changes on
     block interiors. Designed to provide 8x8 deblocking sensitive to the amount of blocking in the source, compared to
@@ -256,7 +255,7 @@ def deblock_qed(
     strong_pp = strong_diff.dctf.DCTFilter([1, 1, 0, 0, 0, 0, 0, 0], planes_pp)
     deblocked = norm_expr([clip, normal, strong_pp, mask], "a y x z neutral - - ?", planes_pp, func=deblock_qed)
 
-    if clip.format.color_family is not vs.GRAY:  # type: ignore
+    if clip.format.color_family is not vs.GRAY:
         if chroma_mode == 1:
             deblocked = join(deblocked, normal)
         if chroma_mode == 2:
@@ -275,7 +274,7 @@ def mpeg2stinx(
     mask: bool = True,
     radius: int | tuple[int, int] = 2,
     limit: float | None = 1.0,
-) -> ConstantFormatVideoNode:
+) -> vs.VideoNode:
     """
     This filter is designed to eliminate certain combing-like compression artifacts that show up all too often
     in hard-telecined MPEG-2 encodes, and works to a smaller extent on bitrate-starved hard-telecined AVC as well.

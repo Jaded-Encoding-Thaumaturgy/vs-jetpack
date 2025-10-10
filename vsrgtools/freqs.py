@@ -7,7 +7,6 @@ from jetpytools import CustomValueError, SupportsString
 
 from vsexprtools import ExprList, ExprOp, ExprVars, combine_expr, norm_expr
 from vstools import (
-    ConstantFormatVideoNode,
     ConvMode,
     CustomEnum,
     FuncExcept,
@@ -61,11 +60,11 @@ class MeanMode(CustomEnum):
     @overload
     def __call__(  # type: ignore[misc]
         self: Literal[MeanMode.LEHMER],
-        *_clips: VideoNodeIterableT[vs.VideoNode],
+        *_clips: VideoNodeIterableT,
         p: float = 3,
         planes: Planes = None,
         func: FuncExcept | None = None,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Combine clips using the Lehmer mean with a configurable exponent.
 
@@ -82,18 +81,18 @@ class MeanMode(CustomEnum):
     @overload
     def __call__(
         self,
-        *_clips: VideoNodeIterableT[vs.VideoNode],
+        *_clips: VideoNodeIterableT,
         planes: Planes = None,
         func: FuncExcept | None = None,
-    ) -> ConstantFormatVideoNode: ...
+    ) -> vs.VideoNode: ...
 
     def __call__(
         self,
-        *_clips: VideoNodeIterableT[vs.VideoNode],
+        *_clips: VideoNodeIterableT,
         planes: Planes = None,
         func: FuncExcept | None = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Applies the selected mean to multiple clips.
 
@@ -135,7 +134,7 @@ class MeanMode(CustomEnum):
         planes: Planes = None,
         func: FuncExcept | None = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Applies the selected mean to one clip, spatially or temporally.
 

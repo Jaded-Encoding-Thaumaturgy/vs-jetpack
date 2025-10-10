@@ -13,7 +13,6 @@ from typing_extensions import Self, deprecated
 from vapoursynth import Plugin
 
 from vstools import (
-    ConstantFormatVideoNode,
     CustomEnum,
     CustomIntEnum,
     CustomOverflowError,
@@ -37,7 +36,7 @@ __all__ = ["DFTTest", "SLocationLike", "fft3d"]
 class _BackendBase(CustomEnum):
     kwargs: dict[str, Any]
 
-    def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
+    def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
         self = self.resolve()
 
         if self == DFTTest.Backend.OLD:
@@ -850,7 +849,7 @@ class DFTTest:
             Additional configuration parameters for the backend.
             """
 
-            def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> ConstantFormatVideoNode:  # noqa: N802
+            def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
                 """
                 Applies the DFTTest denoising filter using the plugin associated with the selected backend.
 
@@ -1121,7 +1120,7 @@ SLocationT = SLocationLike
 
 
 @deprecated("`fft3d` is permanently deprecated and known to contain many bugs. Use with caution.")
-def fft3d(clip: vs.VideoNode, **kwargs: Any) -> ConstantFormatVideoNode:
+def fft3d(clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
     """
     Applies FFT3DFilter, a 3D frequency-domain filter used for strong denoising and mild sharpening.
 

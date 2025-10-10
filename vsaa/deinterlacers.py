@@ -21,10 +21,8 @@ from vskernels import (
 )
 from vstools import (
     ChromaLocation,
-    ConstantFormatVideoNode,
     FieldBased,
     FieldBasedLike,
-    VideoNodeT,
     VSFunctionAllArgs,
     VSFunctionNoArgs,
     check_variable,
@@ -95,15 +93,13 @@ class Deinterlacer(Bobber, ABC):
 
     @property
     @abstractmethod
-    def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def _deinterlacer_function(self) -> VSFunctionAllArgs:
         """
         Get the plugin function.
         """
 
     @abstractmethod
-    def _interpolate(
-        self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         """
         Performs deinterlacing if dh is False or doubling if dh is True.
 
@@ -140,7 +136,7 @@ class Deinterlacer(Bobber, ABC):
         tff: FieldBasedLike | bool | None = None,
         double_rate: bool | None = None,
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Apply deinterlacing to the given clip.
 
@@ -161,9 +157,7 @@ class Deinterlacer(Bobber, ABC):
             **kwargs,
         )
 
-    def bob(
-        self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    def bob(self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, **kwargs: Any) -> vs.VideoNode:
         """
         Apply bob deinterlacing to the given clip.
 
@@ -215,9 +209,7 @@ class AntiAliaser(Deinterlacer, ABC):
         Apply anti-aliasing in both horizontal and vertical directions.
         """
 
-    def antialias(
-        self, clip: vs.VideoNode, direction: AADirection = AADirection.BOTH, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    def antialias(self, clip: vs.VideoNode, direction: AADirection = AADirection.BOTH, **kwargs: Any) -> vs.VideoNode:
         """
         Apply anti-aliasing to the given clip.
 
@@ -246,7 +238,7 @@ class AntiAliaser(Deinterlacer, ABC):
 
         return clip
 
-    def transpose(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def transpose(self, clip: vs.VideoNode) -> vs.VideoNode:
         """
         Transpose the input clip by swapping its horizontal and vertical axes.
 
@@ -283,7 +275,7 @@ class SuperSampler(Scaler, AntiAliaser, ABC):
         height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         """
         Scale the given clip using super sampling method.
 
@@ -356,15 +348,13 @@ class SuperSampler(Scaler, AntiAliaser, ABC):
                 for i in range(len(ns)):
                     ns[i] *= not noshift[i]
 
-        return ComplexScaler.ensure_obj(self.scaler, self.__class__).scale(  # type: ignore[return-value]
-            clip, width, height, (nshift[1], nshift[0])
-        )
+        return ComplexScaler.ensure_obj(self.scaler, self.__class__).scale(clip, width, height, (nshift[1], nshift[0]))
 
     if TYPE_CHECKING:
 
         def supersample(
-            self, clip: VideoNodeT, rfactor: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
-        ) -> VideoNodeT:
+            self, clip: vs.VideoNode, rfactor: float = 2.0, shift: tuple[TopShift, LeftShift] = (0, 0), **kwargs: Any
+        ) -> vs.VideoNode:
             """
             Supersample a clip by a given scaling factor.
 
@@ -460,12 +450,10 @@ class NNEDI3(SuperSampler):
     """
 
     @property
-    def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def _deinterlacer_function(self) -> VSFunctionAllArgs:
         return core.lazy.sneedif.NNEDI3 if self.opencl else core.lazy.znedi3.nnedi3
 
-    def _interpolate(
-        self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = int(tff) + int(double_rate) * 2
 
         return self._deinterlacer_function(clip, field, dh, **self.get_deint_args(**kwargs))
@@ -571,12 +559,10 @@ class EEDI2(SuperSampler):
     """Enables the use of the CUDA variant for processing."""
 
     @property
-    def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def _deinterlacer_function(self) -> VSFunctionAllArgs:
         return core.lazy.eedi2cuda.EEDI2 if self.cuda else core.lazy.eedi2.EEDI2
 
-    def _interpolate(
-        self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = int(tff) + int(double_rate) * 2
 
         if not dh:
@@ -687,13 +673,13 @@ class EEDI3(SuperSampler):
     - vthresh[2]: Controls the weighting of the interpolation direction.
     """
 
-    sclip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | None = None
+    sclip: vs.VideoNode | VSFunctionNoArgs | None = None
     """
     Provides additional control over the interpolation by using a reference clip.
     If set to None, vertical cubic interpolation is used as a fallback method instead.
     """
 
-    mclip: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | None = None
+    mclip: vs.VideoNode | VSFunctionNoArgs | None = None
     """
     A mask used to apply edge-directed interpolation only to specified pixels.
     Pixels where the mask value is 0 will be interpolated using cubic linear
@@ -714,12 +700,10 @@ class EEDI3(SuperSampler):
         return kwargs
 
     @property
-    def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def _deinterlacer_function(self) -> VSFunctionAllArgs:
         return core.lazy.eedi3m.EEDI3
 
-    def _interpolate(
-        self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = int(tff) + int(double_rate) * 2
 
         kwargs = self.get_deint_args(**kwargs)
@@ -734,7 +718,7 @@ class EEDI3(SuperSampler):
 
     def antialias(
         self, clip: vs.VideoNode, direction: AntiAliaser.AADirection = AntiAliaser.AADirection.BOTH, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         kwargs = self._set_sclip_mclip(kwargs)
 
         if self.sclip and self.double_rate:
@@ -745,7 +729,7 @@ class EEDI3(SuperSampler):
 
         return super().antialias(clip, direction, **kwargs)
 
-    def transpose(self, clip: vs.VideoNode) -> ConstantFormatVideoNode:
+    def transpose(self, clip: vs.VideoNode) -> vs.VideoNode:
         if isinstance(self.sclip, vs.VideoNode):
             self.sclip = self.sclip.std.Transpose()
 
@@ -761,7 +745,7 @@ class EEDI3(SuperSampler):
         height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         return super().scale(clip, width, height, shift, **self._set_sclip_mclip(kwargs))
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
@@ -806,12 +790,10 @@ class SangNom(SuperSampler):
     """
 
     @property
-    def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def _deinterlacer_function(self) -> VSFunctionAllArgs:
         return core.lazy.sangnom.SangNom
 
-    def _interpolate(
-        self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         if double_rate:
             order = 0
             clip = clip.std.SeparateFields(tff).std.DoubleWeave(tff)
@@ -832,7 +814,7 @@ class BWDIF(Deinterlacer):
     Motion adaptive deinterlacing based on yadif with the use of w3fdif and cubic interpolation algorithms.
     """
 
-    edeint: vs.VideoNode | VSFunctionNoArgs[vs.VideoNode, ConstantFormatVideoNode] | None = None
+    edeint: vs.VideoNode | VSFunctionNoArgs | None = None
     """
     Allows the specification of an external clip from which to take spatial predictions
     instead of having Bwdif use cubic interpolation.
@@ -842,12 +824,10 @@ class BWDIF(Deinterlacer):
     """
 
     @property
-    def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]:
+    def _deinterlacer_function(self) -> VSFunctionAllArgs:
         return core.lazy.bwdif.Bwdif
 
-    def _interpolate(
-        self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any
-    ) -> ConstantFormatVideoNode:
+    def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = int(tff) + int(double_rate) * 2
 
         if callable(self.edeint):
@@ -868,10 +848,10 @@ if TYPE_CHECKING:
     # Let's assume the specialized SuperSampler isn't abstract
     class _ConcreteSuperSampler(SuperSampler):
         @property
-        def _deinterlacer_function(self) -> VSFunctionAllArgs[vs.VideoNode, ConstantFormatVideoNode]: ...
+        def _deinterlacer_function(self) -> VSFunctionAllArgs: ...
         def _interpolate(
             self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any
-        ) -> ConstantFormatVideoNode: ...
+        ) -> vs.VideoNode: ...
         def get_deint_args(self, **kwargs: Any) -> dict[str, Any]: ...
 else:
     _ConcreteSuperSampler = SuperSampler
@@ -894,7 +874,7 @@ class SuperSamplerProcess(
     def __init__(
         self,
         *,
-        function: VSFunctionNoArgs[vs.VideoNode, vs.VideoNode],
+        function: VSFunctionNoArgs,
         noshift: bool | Sequence[bool] = True,
         **kwargs: Any,
     ) -> None:
@@ -930,7 +910,7 @@ class SuperSamplerProcess(
         height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any,
-    ) -> ConstantFormatVideoNode:
+    ) -> vs.VideoNode:
         ss_clip = super().scale(clip, width, height, shift, **kwargs)
 
         processed = self.function(ss_clip)
@@ -941,7 +921,7 @@ class SuperSamplerProcess(
                 processed,
                 clip.width,
                 clip.height,
-                tuple([round(s - 1e-6) for s in dim_shifts] for dim_shifts in reversed(self._ss_shifts)),  # type: ignore[return-value, arg-type]
+                tuple([round(s - 1e-6) for s in dim_shifts] for dim_shifts in reversed(self._ss_shifts)),  # type: ignore[arg-type]
             )
             .std.CopyFrameProps(processed)
         )
