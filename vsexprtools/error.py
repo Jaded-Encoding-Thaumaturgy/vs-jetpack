@@ -1,7 +1,9 @@
 import sys
+from abc import ABCMeta
 from typing import Any, Sequence
 
 from jetpytools import CustomRuntimeError, FuncExcept, SupportsString, norm_func_name, to_arr
+from jetpytools.exceptions.base import CustomErrorMeta
 
 from vstools import get_video_format, vs, vs_object
 
@@ -16,7 +18,10 @@ def _color_tag(string: str, tag_start: str, tag_end: str = "\033[0m") -> str:
     return string
 
 
-class CustomExprError(CustomRuntimeError, vs_object):
+class _CustomExprErrorMeta(CustomErrorMeta, ABCMeta): ...
+
+
+class CustomExprError(CustomRuntimeError, vs_object, metaclass=_CustomExprErrorMeta):
     """Thrown when a Expr error occurs."""
 
     def __init__(

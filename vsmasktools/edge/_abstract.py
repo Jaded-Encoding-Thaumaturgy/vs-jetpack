@@ -9,21 +9,18 @@ from enum import IntFlag, auto
 from inspect import isabstract
 from typing import TYPE_CHECKING, Any, ClassVar, Self, Sequence
 
-from jetpytools import inject_kwargs_params, to_arr
+from jetpytools import FuncExcept, get_subclasses, inject_kwargs_params, inject_self, to_arr
 
 from vsexprtools import ExprList, ExprOp, norm_expr
 from vstools import (
     ColorRange,
     ConvMode,
-    FuncExcept,
     Planes,
     check_variable,
     core,
     depth,
     get_peak_value,
-    get_subclasses,
     get_video_format,
-    inject_self,
     join,
     normalize_planes,
     scale_mask,

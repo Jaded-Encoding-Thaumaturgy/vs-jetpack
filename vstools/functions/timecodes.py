@@ -16,13 +16,14 @@ from jetpytools import (
     Sentinel,
     SPath,
     check_perms,
+    fallback,
     inject_self,
 )
 
 from ..enums import Matrix, SceneChangeMode
 from ..exceptions import FramesLengthError, InvalidTimecodeVersionError
 from ..utils import DynamicClipsCache, PackageStorage
-from ..vs_proxy import VSObject, vs
+from ..vs_proxy import vs, vs_object
 from .ranges import replace_ranges
 from .render import clip_async_render, clip_data_gather
 
@@ -135,9 +136,6 @@ class Timecodes(list[FrameDur]):
         """
         Convert from normalized ranges to a list of frame duration.
         """
-
-        from .funcs import fallback
-
         norm_timecodes = [assume] * length if assume else list[Fraction]()
 
         for (startn, endn), fps in timecodes.items():
@@ -605,7 +603,7 @@ class SceneBasedDynamicCache(DynamicClipsCache[int]):
 class SceneAverageStats(SceneBasedDynamicCache):
     _props_keys = ("Min", "Max", "Average")
 
-    class _Cache(dict[int, tuple[float, float, float]], VSObject):
+    class _Cache(dict[int, tuple[float, float, float]], vs_object):
         def __init__(self, clip: vs.VideoNode, keyframes: Keyframes, plane: int) -> None:
             self.props = clip.std.PlaneStats(plane=plane)
             self.keyframes = keyframes

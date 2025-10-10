@@ -6,17 +6,22 @@ from math import ceil
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence, SupportsIndex
 from warnings import warn
 
-from jetpytools import CustomIndexError, norm_func_name
+from jetpytools import (
+    CustomIndexError,
+    CustomRuntimeError,
+    FuncExcept,
+    StrList,
+    SupportsString,
+    norm_func_name,
+    normalize_seq,
+    to_arr,
+)
 
 from vstools import (
     EXPR_VARS,
-    CustomRuntimeError,
-    FuncExcept,
     HoldsVideoFormat,
     Planes,
     ProcessVariableResClip,
-    StrList,
-    SupportsString,
     VideoFormatLike,
     VideoNodeIterable,
     check_variable_format,
@@ -24,8 +29,6 @@ from vstools import (
     flatten_vnodes,
     get_video_format,
     normalize_planes,
-    normalize_seq,
-    to_arr,
     vs,
 )
 
@@ -338,7 +341,7 @@ def norm_expr_planes(
 
     planes = normalize_planes(clip, planes)
 
-    string_args = [(key, normalize_seq(value)) for key, value in kwargs.items()]
+    string_args = [(key, normalize_seq(value, 3)) for key, value in kwargs.items()]
 
     return [
         exp.format(**({"plane_idx": i} | {key: value[i] for key, value in string_args})) if i in planes else ""

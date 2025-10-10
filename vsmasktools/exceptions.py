@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from jetpytools import fallback
-
-from vstools import CustomValueError, FuncExcept
+from jetpytools import CustomValueError, FuncExcept, fallback
 
 
 class _UnknownMaskDetectError(CustomValueError):

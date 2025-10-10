@@ -4,20 +4,10 @@ from enum import auto
 from math import ceil, exp, pi, sqrt
 from typing import Any, Iterable, Literal, Self, overload
 
-from jetpytools import CustomEnum, CustomNotImplementedError, FuncExcept, to_arr
+from jetpytools import CustomEnum, CustomNotImplementedError, CustomValueError, FuncExcept, fallback, iterate, to_arr
 
 from vsexprtools import ExprList, ExprOp, ExprToken, ExprVars
-from vstools import (
-    ConvMode,
-    CustomValueError,
-    Planes,
-    check_variable_format,
-    core,
-    fallback,
-    iterate,
-    shift_clip_multi,
-    vs,
-)
+from vstools import ConvMode, Planes, check_variable_format, core, shift_clip_multi, vs
 
 __all__ = ["BlurMatrix", "BlurMatrixBase"]
 

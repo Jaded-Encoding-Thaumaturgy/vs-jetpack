@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from itertools import count
 from typing import TYPE_CHECKING, Callable, Sequence, SupportsIndex, overload
 
-from vstools import CustomValueError, get_prop, set_output, to_arr, vs, vs_object
+from jetpytools import CustomValueError, to_arr
+
+from vstools import get_prop, set_output, vs, vs_object
 
 from .utils import AC3_FRAME_LENGTH, PCR_CLOCK, absolute_time_from_timecode
 

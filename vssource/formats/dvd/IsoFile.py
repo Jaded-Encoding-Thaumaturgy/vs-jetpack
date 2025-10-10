@@ -6,7 +6,9 @@ from fractions import Fraction
 from itertools import count
 from typing import cast
 
-from vstools import CustomValueError, DependencyNotFoundError, Region, SPath, core, get_prop, vs
+from jetpytools import CustomValueError, DependencyNotFoundError, SPath
+
+from vstools import Region, core, get_prop, vs
 
 from ...dataclasses import AllNeddedDvdFrameData
 from ...rff import apply_rff_array, apply_rff_video

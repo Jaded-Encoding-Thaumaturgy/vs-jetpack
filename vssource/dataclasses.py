@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Union
 
-from vstools import SPath
+from jetpytools import SPath
 
 __all__ = [
     "AllNeddedDvdFrameData",

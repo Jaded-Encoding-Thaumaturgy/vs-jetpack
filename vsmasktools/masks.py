@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable, Sequence, SupportsFloat
 
-from jetpytools import FuncExcept, clamp
+from jetpytools import FuncExcept, clamp, normalize_seq
 
 from vsexprtools import ExprOp
 from vsrgtools import BlurMatrix, median_blur
@@ -23,7 +23,6 @@ from vstools import (
     join,
     limiter,
     normalize_ranges,
-    normalize_seq,
     replace_ranges,
     scale_mask,
     split,

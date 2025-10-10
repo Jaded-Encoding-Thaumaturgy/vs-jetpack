@@ -5,7 +5,7 @@ from typing import Any
 
 from jetpytools import CustomNotImplementedError
 
-from vstools import CustomIntEnum, KwargsT, padder, vs
+from vstools import CustomIntEnum, padder, vs
 
 __all__ = [
     "BorderHandling",
@@ -61,8 +61,14 @@ class SampleGridModel(CustomIntEnum):
     MATCH_CENTERS = 1
 
     def __call__(
-        self, width: int, height: int, src_width: float, src_height: float, shift: tuple[float, float], kwargs: KwargsT
-    ) -> tuple[KwargsT, tuple[float, float]]:
+        self,
+        width: int,
+        height: int,
+        src_width: float,
+        src_height: float,
+        shift: tuple[float, float],
+        kwargs: dict[str, Any],
+    ) -> tuple[dict[str, Any], tuple[float, float]]:
         if self is SampleGridModel.MATCH_CENTERS:
             src_width = src_width * (width - 1) / (src_width - 1)
             src_height = src_height * (height - 1) / (src_height - 1)
@@ -77,7 +83,7 @@ class SampleGridModel(CustomIntEnum):
 
     def for_dst(
         self, clip: vs.VideoNode, width: int, height: int, shift: tuple[float, float], **kwargs: Any
-    ) -> tuple[KwargsT, tuple[float, float]]:
+    ) -> tuple[dict[str, Any], tuple[float, float]]:
         src_width = kwargs.get("src_width", width)
         src_height = kwargs.get("src_height", height)
 
@@ -85,7 +91,7 @@ class SampleGridModel(CustomIntEnum):
 
     def for_src(
         self, clip: vs.VideoNode, width: int, height: int, shift: tuple[float, float], **kwargs: Any
-    ) -> tuple[KwargsT, tuple[float, float]]:
+    ) -> tuple[dict[str, Any], tuple[float, float]]:
         src_width = kwargs.get("src_width", clip.width)
         src_height = kwargs.get("src_height", clip.height)
 

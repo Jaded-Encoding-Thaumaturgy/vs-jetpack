@@ -3,7 +3,7 @@ from functools import partial
 from math import factorial
 from typing import Any, Iterable, Literal, MutableMapping, Protocol, Self
 
-from jetpytools import CustomIntEnum
+from jetpytools import CustomIntEnum, KwargsT, fallback, normalize_seq
 
 from vsaa import NNEDI3
 from vsdeband import Grainer
@@ -26,15 +26,12 @@ from vstools import (
     ConvMode,
     FieldBased,
     FieldBasedLike,
-    KwargsT,
     UnsupportedFieldBasedError,
     UnsupportedVideoFormatError,
     VSFunctionKwArgs,
     check_variable,
     core,
-    fallback,
     get_y,
-    normalize_seq,
     sc_detect,
     scale_delta,
     vs,
@@ -349,8 +346,8 @@ class QTempGaussMC(vs_object):
         postprocess: SearchPostProcess = SearchPostProcess.GAUSSBLUR_EDGESOFTEN,
         strength: tuple[float, float] = (1.9, 0.1),
         limit: tuple[int | float, int | float, int | float] = (3, 7, 2),
-        range_expansion_args: KwargsT | None | Literal[False] = None,
-        mask_shimmer_args: KwargsT | None = None,
+        range_expansion_args: dict[str, Any] | None | Literal[False] = None,
+        mask_shimmer_args: dict[str, Any] | None = None,
     ) -> Self:
         """
         Configure parameters for the prefilter stage.
@@ -371,8 +368,8 @@ class QTempGaussMC(vs_object):
         self.prefilter_postprocess = postprocess
         self.prefilter_blur_strength = strength
         self.prefilter_soften_limit = limit
-        self.prefilter_range_expansion_args: KwargsT | Literal[False] = fallback(range_expansion_args, KwargsT())
-        self.prefilter_mask_shimmer_args = fallback(mask_shimmer_args, KwargsT())
+        self.prefilter_range_expansion_args: dict[str, Any] | Literal[False] = fallback(range_expansion_args, {})
+        self.prefilter_mask_shimmer_args = fallback(mask_shimmer_args, {})
 
         return self
 

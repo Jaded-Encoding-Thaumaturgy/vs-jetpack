@@ -699,7 +699,7 @@ class ClipVarProps:
         return ComputedVar(f"{self._var.char}.{name}")
 
 
-class ClipVar(ExprVar, vs_object):
+class ClipVar(ExprVar, vs_object, ABC):
     """
     Expression variable that wraps a VideoNode and provides symbolic and numeric access.
     """

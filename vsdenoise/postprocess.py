@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from jetpytools import CustomIndexError
+
 from vsexprtools import ExprOp, ExprToken, norm_expr
 from vsmasktools import EdgeDetect, EdgeDetectLike, FDoG, range_mask
 from vsrgtools import bilateral, box_blur, gauss_blur
 from vstools import (
-    CustomIndexError,
     InvalidColorFamilyError,
     Planes,
     check_ref_clip,

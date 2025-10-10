@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Sequence, SupportsFloat, cast
 
-from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomStrEnum
+from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomStrEnum, fallback, normalize_seq
 
 from vsaa import BWDIF, NNEDI3, Deinterlacer
 from vsexprtools import norm_expr
@@ -21,13 +21,11 @@ from vstools import (
     check_variable_format,
     core,
     depth,
-    fallback,
     get_y,
     join,
     normalize_param_planes,
     normalize_planes,
     normalize_ranges,
-    normalize_seq,
     plane,
     replace_ranges,
     shift_clip_multi,

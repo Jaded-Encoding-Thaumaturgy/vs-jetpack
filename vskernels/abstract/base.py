@@ -4,7 +4,7 @@ This module defines the base abstract interfaces for general scaling operations.
 
 from __future__ import annotations
 
-from abc import ABC, ABCMeta
+from abc import ABCMeta
 from contextlib import suppress
 from functools import cache, wraps
 from inspect import Signature
@@ -23,16 +23,21 @@ from typing import (
     overload,
 )
 
-from jetpytools import cachedproperty as jetpytools_cachedproperty
-from jetpytools import classproperty
-
-from vstools import (
+from jetpytools import (
     CustomNotImplementedError,
     CustomRuntimeError,
     CustomValueError,
+    FuncExcept,
+    classproperty,
+    fallback,
+    get_subclasses,
+    normalize_seq,
+)
+from jetpytools import cachedproperty as jetpytools_cachedproperty
+
+from vstools import (
     FieldBased,
     FieldBasedLike,
-    FuncExcept,
     HoldsVideoFormat,
     Matrix,
     MatrixLike,
@@ -42,10 +47,7 @@ from vstools import (
     check_variable_format,
     check_variable_resolution,
     core,
-    fallback,
-    get_subclasses,
     get_video_format,
-    normalize_seq,
     split,
     vs,
     vs_object,
@@ -234,8 +236,8 @@ class BaseScalerMeta(ABCMeta):
 
     cached_property = cachedproperty
 
-    def __new__[_BaseScalerMetaT: BaseScalerMeta](
-        mcls: type[_BaseScalerMetaT],
+    def __new__[MetaSelf: BaseScalerMeta](
+        mcls: type[MetaSelf],
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
@@ -244,7 +246,7 @@ class BaseScalerMeta(ABCMeta):
         abstract: bool = False,
         partial_abstract: bool = False,
         **kwargs: Any,
-    ) -> _BaseScalerMetaT:
+    ) -> MetaSelf:
         """
         Makes a new BaseScalerMeta type class.
 
@@ -292,7 +294,7 @@ def _static_kernel_radius_property(self: BaseScaler) -> int:
     return ceil(self._static_kernel_radius)
 
 
-class BaseScaler(vs_object, ABC, metaclass=BaseScalerMeta, abstract=True):
+class BaseScaler(vs_object, metaclass=BaseScalerMeta, abstract=True):
     """
     Base abstract scaling interface for VapourSynth scalers.
     """
@@ -863,8 +865,6 @@ class Kernel(Scaler, Descaler, Resampler):
         """
         assert check_variable_format(clip, self.shift)
 
-        n_planes = clip.format.num_planes
-
         def _shift(src: vs.VideoNode, shift: tuple[TopShift, LeftShift] = (0, 0)) -> vs.VideoNode:
             return self.scale(src, shift=shift, **kwargs)
 
@@ -877,10 +877,10 @@ class Kernel(Scaler, Descaler, Resampler):
         if shift_left is None:
             shift_left = 0.0
 
-        shifts_top = normalize_seq(shifts_or_top, n_planes)
-        shifts_left = normalize_seq(shift_left, n_planes)
+        shifts_top = normalize_seq(shifts_or_top, clip.format.num_planes)
+        shifts_left = normalize_seq(shift_left, clip.format.num_planes)
 
-        if n_planes == 1:
+        if clip.format.num_planes == 1:
             return _shift(clip, (shifts_top[0], shifts_left[0]))
 
         shifted_planes = [

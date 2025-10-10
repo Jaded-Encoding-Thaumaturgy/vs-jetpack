@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Type
+
+from jetpytools import CustomOverflowError, FileNotExistsError, FilePathType, fallback, iterate
 
 from vsexprtools import ExprOp, ExprToken, expr_func, norm_expr
 from vskernels import Point
@@ -11,9 +13,6 @@ from vsrgtools import box_blur, median_blur
 from vssource import IMWRI, Indexer
 from vstools import (
     ColorRange,
-    CustomOverflowError,
-    FileNotExistsError,
-    FilePathType,
     FrameRangeN,
     FrameRangesN,
     Matrix,
@@ -21,13 +20,11 @@ from vstools import (
     check_variable,
     core,
     depth,
-    fallback,
     get_lowest_value,
     get_neutral_value,
     get_neutral_values,
     get_peak_value,
     get_y,
-    iterate,
     limiter,
     normalize_ranges,
     replace_ranges,
@@ -59,7 +56,7 @@ __all__ = [
 
 
 @dataclass
-class CustomMaskFromClipsAndRanges(GeneralMask, vs_object):
+class CustomMaskFromClipsAndRanges(GeneralMask, vs_object, ABC):
     """
     Abstract CustomMaskFromClipsAndRanges interface
     """

@@ -7,7 +7,7 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import Any, Callable, Iterator, Mapping, Sequence
 
-from jetpytools import CustomIndexError, normalize_seq
+from jetpytools import CustomIndexError, FuncExcept, normalize_seq
 
 from vsaa import NNEDI3, SuperSamplerProcess
 from vsdenoise import Prefilter
@@ -25,7 +25,6 @@ from vsrgtools import BlurMatrixBase, box_blur, contrasharpening_dehalo
 from vsscale import pre_ss as pre_supersample
 from vstools import (
     ConvMode,
-    FuncExcept,
     FunctionUtil,
     InvalidColorFamilyError,
     OneDimConvMode,

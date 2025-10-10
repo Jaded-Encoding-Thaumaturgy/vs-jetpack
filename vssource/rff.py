@@ -5,7 +5,9 @@ from copy import deepcopy
 from itertools import count
 from typing import Sequence
 
-from vstools import CustomRuntimeError, flatten, remap_frames, vs
+from jetpytools import CustomRuntimeError
+
+from vstools import flatten, remap_frames, vs
 
 __all__ = ["apply_rff_array", "apply_rff_video", "cut_array_on_ranges"]
 

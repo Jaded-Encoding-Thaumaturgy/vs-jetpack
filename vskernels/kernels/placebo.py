@@ -3,7 +3,9 @@ from __future__ import annotations
 from math import ceil
 from typing import Any, ClassVar
 
-from vstools import core, fallback, vs
+from jetpytools import fallback
+
+from vstools import core, vs
 
 from ..abstract import ComplexScaler
 from ..types import LeftShift, TopShift

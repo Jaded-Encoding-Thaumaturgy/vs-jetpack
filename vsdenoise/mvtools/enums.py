@@ -3,9 +3,9 @@ from __future__ import annotations
 from enum import IntFlag
 from typing import Any
 
-from jetpytools import CustomEnum, CustomIntEnum, CustomValueError
+from jetpytools import CustomEnum, CustomIntEnum, CustomValueError, fallback
 
-from vstools import VSFunctionAllArgs, check_variable_format, core, fallback, vs
+from vstools import VSFunctionAllArgs, check_variable_format, core, vs
 
 __all__ = [
     "FlowMode",

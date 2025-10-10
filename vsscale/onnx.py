@@ -21,7 +21,7 @@ from typing import (
     runtime_checkable,
 )
 
-from jetpytools import CustomImportError
+from jetpytools import CustomImportError, CustomValueError, SPath, SPathLike
 from packaging.version import Version
 from typing_extensions import deprecated
 
@@ -29,14 +29,11 @@ from vsexprtools import norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vstools import (
     ColorRange,
-    CustomValueError,
     DitherType,
     Matrix,
     MatrixLike,
     OutdatedPluginError,
     ProcessVariableResClip,
-    SPath,
-    SPathLike,
     check_variable_format,
     check_variable_resolution,
     core,

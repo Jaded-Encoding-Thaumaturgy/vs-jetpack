@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC
 from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass
 from functools import cache, partial, wraps
@@ -7,20 +8,17 @@ from math import exp
 from types import GenericAlias
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Self, overload
 
-from jetpytools import classproperty
+from jetpytools import CustomRuntimeError, CustomValueError, cachedproperty, classproperty
 from typing_extensions import TypeIs, TypeVar
 
 from vsexprtools import norm_expr
 from vstools import (
-    CustomRuntimeError,
-    CustomValueError,
     HoldsVideoFormat,
     Matrix,
     MatrixLike,
     Transfer,
     VideoFormatLike,
     VSFunctionNoArgs,
-    cachedproperty,
     check_variable_format,
     depth,
     get_video_format,
@@ -332,7 +330,7 @@ class MixedScalerProcess[_ScalerT: Scaler, *_BaseScalerTs](
 
 
 @dataclass
-class LinearLightProcessing(vs_object):
+class LinearLightProcessing(vs_object, ABC):
     ll: LinearLight
 
     def get_linear(self) -> vs.VideoNode:
@@ -408,7 +406,7 @@ class LinearLightProcessing(vs_object):
 
 
 @dataclass
-class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object):
+class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object, ABC):
     """
     Utility class for processing a clip in linear format.
 

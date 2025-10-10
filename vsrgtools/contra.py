@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Callable, Sequence
 
+from jetpytools import CustomValueError
+
 from vsexprtools import norm_expr
 from vstools import (
-    CustomValueError,
     GenericVSFunction,
     Planes,
     check_ref_clip,

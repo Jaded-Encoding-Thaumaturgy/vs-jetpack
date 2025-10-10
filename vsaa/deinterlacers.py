@@ -5,7 +5,7 @@ from dataclasses import dataclass, replace
 from enum import IntFlag, auto
 from typing import TYPE_CHECKING, Any, Self, Sequence
 
-from jetpytools import MISSING, copy_signature, fallback
+from jetpytools import MISSING, copy_signature, fallback, normalize_seq
 from typing_extensions import TypeVar
 
 from vskernels import (
@@ -27,7 +27,6 @@ from vstools import (
     VSFunctionNoArgs,
     check_variable,
     core,
-    normalize_seq,
     vs,
 )
 

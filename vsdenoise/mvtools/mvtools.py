@@ -4,22 +4,19 @@ from fractions import Fraction
 from itertools import chain
 from typing import Any, Literal, MutableMapping, Union, overload
 
+from jetpytools import CustomRuntimeError, KwargsNotNone, KwargsT, fallback, normalize_seq
+
 from vstools import (
     ColorRange,
-    CustomRuntimeError,
     FieldBased,
     InvalidColorFamilyError,
-    KwargsNotNone,
-    KwargsT,
     Planes,
     VSFunctionNoArgs,
     check_variable,
     check_variable_format,
     core,
     depth,
-    fallback,
     get_props,
-    normalize_seq,
     scale_delta,
     vs,
     vs_object,

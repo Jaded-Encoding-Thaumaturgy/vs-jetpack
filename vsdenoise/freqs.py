@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any, overload
 
-from jetpytools import CustomRuntimeError
+from jetpytools import CustomRuntimeError, CustomValueError
 
 from vsrgtools import MeanMode
-from vstools import CustomValueError, FormatsMismatchError, Planes, VSFunctionKwArgs, VSFunctionNoArgs, vs
+from vstools import FormatsMismatchError, Planes, VSFunctionKwArgs, VSFunctionNoArgs, vs
 
 __all__ = [
     "frequency_merge",

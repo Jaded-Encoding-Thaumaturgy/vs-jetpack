@@ -3,7 +3,7 @@ from __future__ import annotations
 from types import NoneType
 from typing import Any, Callable, Literal, Protocol, Sequence, overload
 
-from jetpytools import CustomValueError, to_arr
+from jetpytools import CustomValueError, normalize_seq, to_arr
 
 from vsdenoise import PrefilterLike
 from vsexprtools import norm_expr
@@ -18,7 +18,6 @@ from vstools import (
     expect_bits,
     join,
     normalize_param_planes,
-    normalize_seq,
     split,
     vs,
 )
@@ -482,8 +481,8 @@ def placebo_deband(
 
     assert check_variable(clip, placebo_deband)
 
-    thr = normalize_param_planes(clip, normalize_seq(thr), planes, 0, placebo_deband)
-    ngrain = normalize_param_planes(clip, normalize_seq(grain), planes, 0, placebo_deband)
+    thr = normalize_param_planes(clip, thr, planes, 0, placebo_deband)
+    ngrain = normalize_param_planes(clip, grain, planes, 0, placebo_deband)
 
     def _placebo(clip: vs.VideoNode, threshold: float, grain_val: float, planes: Sequence[int]) -> vs.VideoNode:
         plane = 0

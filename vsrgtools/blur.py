@@ -4,15 +4,13 @@ from functools import partial, reduce
 from math import sqrt
 from typing import TYPE_CHECKING, Any, Callable, Literal, Sequence, Union, overload
 
-from jetpytools import CustomIntEnum, CustomStrEnum, FuncExcept, cround, to_arr
+from jetpytools import CustomIntEnum, CustomStrEnum, CustomValueError, FuncExcept, cround, normalize_seq, to_arr
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Gaussian, Point, Scaler, ScalerLike
 from vstools import (
     ColorRange,
     ConvMode,
-    CustomValueError,
-    KwargsT,
     OneDimConvMode,
     Planes,
     SpatialConvMode,
@@ -28,7 +26,6 @@ from vstools import (
     get_prop,
     join,
     normalize_planes,
-    normalize_seq,
     shift_clip_multi,
     split,
     vs,
@@ -631,9 +628,9 @@ def bilateral(
     assert check_variable_format(clip, bilateral)
 
     if backend == Bilateral.Backend.CPU:
-        bilateral_args = KwargsT(ref=ref, sigmaS=sigmaS, sigmaR=sigmaR, planes=normalize_planes(clip))
+        bilateral_args = {"ref": ref, "sigmaS": sigmaS, "sigmaR": sigmaR, "planes": normalize_planes(clip)}
     else:
-        bilateral_args = KwargsT(ref=ref, sigma_spatial=sigmaS, sigma_color=sigmaR)
+        bilateral_args = {"ref": ref, "sigma_spatial": sigmaS, "sigma_color": sigmaR}
 
     return backend.Bilateral(clip, **bilateral_args | kwargs)
 
