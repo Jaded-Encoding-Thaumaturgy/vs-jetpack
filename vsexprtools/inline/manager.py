@@ -442,6 +442,11 @@ class InlineExprWrapper(VSObject):
 
         raise CustomValueError("You can only get the output clip out of the context manager!", self.__class__)
 
+    def __vs_del__(self, core_id: int) -> None:
+        del self._nodes
+        del self._format
+        del self._final_clip
+
 
 def _capture_locals(frame: FrameType | None, level: int = 0) -> dict[str, Any]:
     """Snapshot locals from a given frame depth, with no frame leaks."""
