@@ -8,7 +8,7 @@ originally written for [Irozuku Sekai no Ashita kara](https://myanimelist.net/an
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from math import sqrt
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, Sequence, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, Sequence
 
 from jetpytools import CustomRuntimeError, CustomValueError, FuncExcept, MismatchRefError, cachedproperty, clamp
 
@@ -34,12 +34,12 @@ from .freqs import MeanMode
 
 __all__ = ["ChromaReconstruct", "reconstruct", "regression"]
 
-Width: TypeAlias = int
+type Width = int
 """
 Type alias for width in pixels.
 """
 
-Height: TypeAlias = int
+type Height = int
 """
 Type alias for height in pixels.
 """
