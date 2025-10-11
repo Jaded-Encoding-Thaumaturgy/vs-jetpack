@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, SupportsIndex, TypeIs
 from jetpytools import CustomOverflowError, CustomTypeError, FuncExcept, normalize_seq
 
 from vsexprtools import ExprList, ExprOp, ExprToken, norm_expr
-from vstools import get_lowest_values, get_peak_values, get_resolutions, vs, vs_object
+from vstools import VSObject, get_lowest_values, get_peak_values, get_resolutions, vs
 
 if TYPE_CHECKING:
     type NoneSlice = slice[None, None, None] | None
@@ -58,7 +58,7 @@ class _BorderDict(dict[int, float]):
         super().__init__()
 
 
-class FixBorderBrightness(vs_object):
+class FixBorderBrightness(VSObject):
     """
     Utility class to adjust or correct brightness inconsistencies along clip borders.
     """
@@ -280,6 +280,3 @@ class FixBorderBrightness(vs_object):
         return norm_expr(
             self.clip, tuple(exprs), func=self.__class__, **kwargs, protect_lo=protect_lo, protect_hi=protect_hi
         )
-
-    def __vs_del__(self, core_id: int) -> None:
-        del self.clip

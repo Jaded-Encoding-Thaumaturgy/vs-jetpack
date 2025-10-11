@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fractions import Fraction
 from itertools import chain
-from typing import Any, Literal, MutableMapping, Union, overload
+from typing import Any, Literal, Union, overload
 
 from jetpytools import CustomRuntimeError, KwargsNotNone, KwargsT, fallback, normalize_seq
 
@@ -12,12 +12,12 @@ from vstools import (
     InvalidColorFamilyError,
     Planes,
     VSFunctionNoArgs,
+    VSObject,
     core,
     depth,
     get_props,
     scale_delta,
     vs,
-    vs_object,
 )
 
 from .enums import (
@@ -39,7 +39,7 @@ from .utils import normalize_thscd, planes_to_mvtools
 __all__ = ["MVTools"]
 
 
-class MVTools(vs_object):
+class MVTools(VSObject):
     """
     MVTools wrapper for motion analysis, degraining, compensation, interpolation, etc.
     """
@@ -1448,11 +1448,3 @@ class MVTools(vs_object):
                 vectors_forward.append(self.get_vector(vectors, direction=MVDirection.FORWARD, delta=delta))
 
         return (vectors_backward, vectors_forward)
-
-    def __vs_del__(self, core_id: int) -> None:
-        for k, v in self.__dict__.copy().items():
-            if isinstance(v, vs.VideoNode):
-                delattr(self, k)
-
-            if isinstance(v, MutableMapping):
-                v.clear()

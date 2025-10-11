@@ -1,11 +1,10 @@
 import sys
-from abc import ABCMeta
 from typing import Any, Sequence
 
 from jetpytools import CustomRuntimeError, FuncExcept, SupportsString, norm_func_name, to_arr
 from jetpytools.exceptions.base import CustomErrorMeta
 
-from vstools import get_video_format, vs, vs_object
+from vstools import VSObject, VSObjectMeta, get_video_format, vs
 
 from .util import ExprVars
 
@@ -18,10 +17,10 @@ def _color_tag(string: str, tag_start: str, tag_end: str = "\033[0m") -> str:
     return string
 
 
-class _CustomExprErrorMeta(CustomErrorMeta, ABCMeta): ...
+class _CustomExprErrorMeta(CustomErrorMeta, VSObjectMeta): ...
 
 
-class CustomExprError(CustomRuntimeError, vs_object, metaclass=_CustomExprErrorMeta):
+class CustomExprError(CustomRuntimeError, VSObject, metaclass=_CustomExprErrorMeta):
     """Thrown when a Expr error occurs."""
 
     def __init__(
@@ -74,6 +73,3 @@ class CustomExprError(CustomRuntimeError, vs_object, metaclass=_CustomExprErrorM
         )
 
         return out
-
-    def __vs_del__(self, core_id: int) -> None:
-        self.clips.clear()

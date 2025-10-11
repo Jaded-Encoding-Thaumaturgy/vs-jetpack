@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Type
@@ -17,6 +17,7 @@ from vstools import (
     FrameRangesN,
     Matrix,
     VSFunctionNoArgs,
+    VSObjectABC,
     core,
     depth,
     get_lowest_value,
@@ -30,7 +31,6 @@ from vstools import (
     scale_delta,
     scale_value,
     vs,
-    vs_object,
 )
 
 from .abstract import BoundingBox, DeferredMask, GeneralMask
@@ -55,7 +55,7 @@ __all__ = [
 
 
 @dataclass
-class CustomMaskFromClipsAndRanges(GeneralMask, vs_object, ABC):
+class CustomMaskFromClipsAndRanges(GeneralMask, VSObjectABC):
     """
     Abstract CustomMaskFromClipsAndRanges interface
     """
@@ -98,9 +98,6 @@ class CustomMaskFromClipsAndRanges(GeneralMask, vs_object, ABC):
 
     @abstractmethod
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]: ...
-
-    def __vs_del__(self, core_id: int) -> None:
-        self.clips.clear()
 
 
 @dataclass

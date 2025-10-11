@@ -4,8 +4,6 @@ This module defines the base abstract interfaces for general scaling operations.
 
 from __future__ import annotations
 
-from abc import ABCMeta
-from contextlib import suppress
 from functools import cache, wraps
 from inspect import Signature
 from math import ceil
@@ -42,13 +40,14 @@ from vstools import (
     Matrix,
     MatrixLike,
     VideoFormatLike,
+    VSObjectABC,
+    VSObjectABCMeta,
     check_correct_subsampling,
     check_variable_resolution,
     core,
     get_video_format,
     split,
     vs,
-    vs_object,
 )
 from vstools.enums.color import _norm_props_enums
 
@@ -201,7 +200,7 @@ These may implement some but not all kernel functionality.
 """
 
 
-class BaseScalerMeta(ABCMeta):
+class BaseScalerMeta(VSObjectABCMeta):
     """
     Metaclass for scaler classes.
 
@@ -234,7 +233,7 @@ class BaseScalerMeta(ABCMeta):
 
     cached_property = cachedproperty
 
-    def __new__[MetaSelf: BaseScalerMeta](
+    def __new__[MetaSelf: BaseScalerMeta](  # noqa: PYI019
         mcls: type[MetaSelf],
         name: str,
         bases: tuple[type, ...],
@@ -292,7 +291,7 @@ def _static_kernel_radius_property(self: BaseScaler) -> int:
     return ceil(self._static_kernel_radius)
 
 
-class BaseScaler(vs_object, metaclass=BaseScalerMeta, abstract=True):
+class BaseScaler(VSObjectABC, metaclass=BaseScalerMeta, abstract=True):
     """
     Base abstract scaling interface for VapourSynth scalers.
     """
@@ -453,10 +452,6 @@ class BaseScaler(vs_object, metaclass=BaseScalerMeta, abstract=True):
             Frozen set of function names.
         """
         return frozenset(func for klass in cls.mro() for func in getattr(klass, "_implemented_funcs", ()))
-
-    def __vs_del__(self, core_id: int) -> None:
-        with suppress(AttributeError):
-            self.kwargs.clear()
 
 
 class Scaler(BaseScaler):

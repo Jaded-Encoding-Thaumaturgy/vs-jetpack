@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, MutableMapping
 
-from ..vs_proxy import vs, vs_object
+from ..vs_proxy import VSObject, vs
 
 if TYPE_CHECKING:
     from vapoursynth import _PropValue  # pyright: ignore[reportMissingModuleSource]
@@ -20,18 +20,15 @@ __all__ = [
 ]
 
 
-class ClipsCache(vs_object, dict[vs.VideoNode, vs.VideoNode]):
+class ClipsCache(VSObject, dict[vs.VideoNode, vs.VideoNode]):
     def __delitem__(self, key: vs.VideoNode) -> None:
         if key not in self:
             return
 
         return super().__delitem__(key)
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
 
-
-class DynamicClipsCache[T](vs_object, dict[T, vs.VideoNode]):
+class DynamicClipsCache[T](VSObject, dict[T, vs.VideoNode]):
     def __init__(self, cache_size: int = 2) -> None:
         self.cache_size = cache_size
 
@@ -47,11 +44,8 @@ class DynamicClipsCache[T](vs_object, dict[T, vs.VideoNode]):
 
         return super().__getitem__(key)
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
 
-
-class FramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](vs_object, dict[int, _FrameT]):
+class FramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](VSObject, dict[int, _FrameT]):
     def __init__(self, clip: _NodeT, cache_size: int = 10) -> None:
         self.clip: _NodeT = clip
         self.cache_size = cache_size
@@ -76,12 +70,8 @@ class FramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](vs_object, dict[int,
 
         return super().__getitem__(key)
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
-        del self.clip
 
-
-class NodeFramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](vs_object, dict[_NodeT, FramesCache[_NodeT, _FrameT]]):
+class NodeFramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](VSObject, dict[_NodeT, FramesCache[_NodeT, _FrameT]]):
     def _ensure_key(self, key: _NodeT) -> None:
         if key not in self:
             super().__setitem__(key, FramesCache(key))
@@ -96,22 +86,16 @@ class NodeFramesCache[_NodeT: vs.RawNode, _FrameT: vs.RawFrame](vs_object, dict[
 
         return super().__getitem__(key)
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
-
 
 class ClipFramesCache(NodeFramesCache[vs.VideoNode, vs.VideoFrame]): ...
 
 
-class NodesPropsCache[_NodeT: vs.RawNode](vs_object, dict[tuple[_NodeT, int], MutableMapping[str, "_PropValue"]]):
+class NodesPropsCache[_NodeT: vs.RawNode](VSObject, dict[tuple[_NodeT, int], MutableMapping[str, "_PropValue"]]):
     def __delitem__(self, key: tuple[_NodeT, int]) -> None:
         if key not in self:
             return
 
         return super().__delitem__(key)
-
-    # def __vs_del__(self, core_id: int) -> None:
-    #     self.clear()
 
 
 def cache_clip[_NodeT: vs.RawNode](_clip: _NodeT, cache_size: int = 10) -> _NodeT:

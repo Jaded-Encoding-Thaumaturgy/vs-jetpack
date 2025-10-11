@@ -13,7 +13,7 @@ from typing import Any, Iterable, Iterator, Self, Sequence, SupportsIndex, cast,
 
 from jetpytools import CustomValueError, to_arr
 
-from vstools import HoldsVideoFormat, VideoFormatLike, get_video_format, vs, vs_object
+from vstools import HoldsVideoFormat, VideoFormatLike, VSObject, get_video_format, vs
 
 from ..error import CustomExprError
 from ..funcs import norm_expr
@@ -304,7 +304,7 @@ def inline_expr(
     raise error.with_traceback(catcher.tb)
 
 
-class InlineExprWrapper(vs_object):
+class InlineExprWrapper(VSObject):
     """
     A wrapper class for constructing and evaluating VapourSynth expressions inline using Python syntax.
 
@@ -441,11 +441,6 @@ class InlineExprWrapper(vs_object):
             return self._final_clip
 
         raise CustomValueError("You can only get the output clip out of the context manager!", self.__class__)
-
-    def __vs_del__(self, core_id: int) -> None:
-        del self._final_clip
-        del self._nodes
-        del self._format
 
 
 def _capture_locals(frame: FrameType | None, level: int = 0) -> dict[str, Any]:

@@ -1,7 +1,7 @@
 from copy import deepcopy
 from functools import partial
 from math import factorial
-from typing import Any, Iterable, Literal, MutableMapping, Protocol, Self
+from typing import Any, Iterable, Literal, Protocol, Self
 
 from jetpytools import CustomIntEnum, KwargsT, fallback, normalize_seq
 
@@ -29,12 +29,12 @@ from vstools import (
     UnsupportedFieldBasedError,
     UnsupportedVideoFormatError,
     VSFunctionKwArgs,
+    VSObject,
     core,
     get_y,
     sc_detect,
     scale_delta,
     vs,
-    vs_object,
 )
 
 from .utils import reinterlace, reweave
@@ -46,7 +46,7 @@ class _DenoiseFuncTr(Protocol):
     def __call__(self, clip: vs.VideoNode, /, *, tr: int = ...) -> vs.VideoNode: ...
 
 
-class QTempGaussMC(vs_object):
+class QTempGaussMC(VSObject):
     """
     Quasi Temporal Gaussian Motion Compensated (QTGMC)
 
@@ -1172,11 +1172,3 @@ class QTempGaussMC(vs_object):
         self._apply_motion_blur()
 
         return self.motion_blur_output
-
-    def __vs_del__(self, core_id: int) -> None:
-        for k, v in self.__dict__.copy().items():
-            if isinstance(v, vs.VideoNode):
-                delattr(self, k)
-
-            if isinstance(v, MutableMapping):
-                v.clear()

@@ -21,13 +21,13 @@ from ..enums import (
 from ..exceptions import InvalidColorspacePathError, UndefinedMatrixError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike
 from ..utils import check_variable, normalize_planes
-from ..vs_proxy import vs, vs_object
+from ..vs_proxy import VSObject, vs
 from .utils import depth, join, plane
 
 __all__ = ["FunctionUtil"]
 
 
-class FunctionUtil(list[int], vs_object):
+class FunctionUtil(list[int], VSObject):
     """
     Function util to normalize common actions and boilerplate often used in functions.
 
@@ -363,7 +363,3 @@ class FunctionUtil(list[int], vs_object):
         """
 
         return [x if i in self else null for i, x in enumerate(normalize_seq(seq, self.num_planes))]
-
-    def __vs_del__(self, core_id: int) -> None:
-        del self.clip, self.func, self.allowed_cfamilies
-        cachedproperty.clear_cache(self)

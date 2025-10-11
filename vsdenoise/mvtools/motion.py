@@ -4,7 +4,7 @@ from collections import defaultdict
 from contextlib import suppress
 from typing import Any
 
-from vstools import vs, vs_object
+from vstools import VSObject, vs
 
 from .enums import MVDirection
 
@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 
-class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], vs_object):
+class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject):
     """
     Class for storing and managing motion vectors for a video clip.
 
@@ -71,6 +71,3 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], vs_object
             delta: Frame distance for the motion vector.
         """
         self[direction][delta] = vector
-
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
