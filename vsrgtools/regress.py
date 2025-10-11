@@ -23,7 +23,6 @@ from vstools import (
     UnsupportedVideoFormatError,
     VSObject,
     VSObjectABC,
-    check_variable_format,
     core,
     get_video_format,
     vs,
@@ -271,8 +270,6 @@ def reconstruct(
     """
     func = func or reconstruct
 
-    assert check_variable_format(clip, func)
-
     if isinstance(mean, MeanMode):
         mean = mean.single
 
@@ -464,8 +461,6 @@ class ChromaReconstruct(VSObjectABC):
         Raises:
             UnsupportedVideoFormatError: If any base clip is not GRAY float format.
         """
-        assert check_variable_format(clip_src, self.__class__)
-
         if any(
             get_video_format(c) != core.query_video_format(vs.GRAY, vs.FLOAT, 32) for c in [luma_base, *chroma_bases]
         ):
