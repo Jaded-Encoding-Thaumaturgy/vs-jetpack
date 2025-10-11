@@ -47,7 +47,7 @@ def expr_func(
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
     """
-    Calls `akarin.Expr` plugin.
+    Calls `llvmexpr.Expr` plugin.
 
     For a higher-level function, see [norm_expr][vsexprtools.norm_expr].
 
@@ -66,7 +66,7 @@ def expr_func(
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Raises:
-        CustomRuntimeError: If `akarin` plugin is not found.
+        CustomRuntimeError: If `llvmexpr` plugin is not found.
         CustomExprError: If the expression could not be evaluated.
 
     Returns:
@@ -81,7 +81,7 @@ def expr_func(
     logging_debug(f"expr_func ({norm_func_name(func)}): {expr}")
 
     try:
-        return core.akarin.Expr(clips, expr, fmt, opt, boundary)
+        return core.llvmexpr.Expr(clips, expr, fmt, boundary, None, opt, None)
     except AttributeError as e:
         raise CustomRuntimeError(e)
     except vs.Error as e:

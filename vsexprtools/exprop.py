@@ -36,7 +36,7 @@ from vstools import (
     vs,
 )
 
-from .util import ExprVars, _get_akarin_expr_version
+from .util import ExprVars
 
 __all__ = ["ExprList", "ExprOp", "ExprToken", "TupleExprList"]
 
@@ -524,18 +524,7 @@ class ExprOpBase(CustomStrEnum):
 class ExprOpExtraMeta(EnumMeta):
     @property
     def _extra_op_names_(cls) -> tuple[str, ...]:
-        return (
-            "SGN",
-            "NEG",
-            "TAN",
-            "ATAN",
-            "ASIN",
-            "ACOS",
-            "CEIL",
-            "MMG",
-            "LERP",
-            "POLYVAL",
-        )
+        return ("MMG", "LERP", "POLYVAL")
 
 
 class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
@@ -549,7 +538,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         Format strings can include placeholders for dynamic substitution (e.g., `{N:d}`, `{name:s}`).
     """
 
-    # 0 Argument (akarin)
+    # 0 Argument (llvmexpr)
     N = "N", 0
     """Current frame number."""
 
@@ -596,7 +585,43 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     DUPN = "dup{N:d}", 1
     """Duplicate the top N items on the stack."""
 
-    # 1 Argument (akarin)
+    # 1 Argument (llvmexpr)
+    EXP2 = "exp2", 1
+    """(2^x)."""
+
+    LOG2 = "log2", 1
+    """Base-2 logarithm."""
+
+    LOG10 = "log10", 1
+    """Base-10 logarithm."""
+
+    SGN = "sgn", 1
+    """Sign function: -1, 0, or 1 depending on value."""
+
+    NEG = "neg", 1
+    """Negation (multiply by -1)."""
+
+    TAN = "tan", 1
+    """Tangent (radians)."""
+
+    ATAN = "atan", 1
+    """Arctangent."""
+
+    ASIN = "asin", 1
+    """Arcsine (inverse sine)."""
+
+    ACOS = "acos", 1
+    """Arccosine (inverse cosine)."""
+
+    TANH = "tanh", 1
+    """Hyperbolic tangent."""
+
+    SINH = "sinh", 1
+    """Hyperbolic sine."""
+
+    COSH = "cosh", 1
+    """Hyperbolic cosine."""
+
     TRUNC = "trunc", 1
     """Truncate to integer (toward zero)."""
 
@@ -605,6 +630,9 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
 
     FLOOR = "floor", 1
     """Round down to nearest integer."""
+
+    CEIL = "ceil", 1
+    """Round up to nearest integer."""
 
     BITNOT = "bitnot", 1
     """Bitwise NOT."""
@@ -676,9 +704,15 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     SWAPN = "swap{N:d}", 2
     """Swap the top N values (custom depth)."""
 
-    # 2 Argument (akarin)
+    # 2 Argument (llvmexpr)
     MOD = "%", 2
     """Modulo operation (remainder)."""
+
+    ATAN2 = "atan2", 2
+    """Arctangent of y/x using signs to find the correct quadrant."""
+
+    COPYSIGN = "copysign", 2
+    """`x y copysign` returns a value with the magnitude of `x` and the sign of `y`"""
 
     BITAND = "bitand", 2
     """Bitwise AND."""
@@ -693,9 +727,12 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     TERN = "?", 3
     """Ternary operation: cond ? if_true : if_false."""
 
-    # 3 Argument (akarin)
+    # 3 Argument (llvmexpr)
     CLAMP = "clamp", 3
     """Clamp a value between min and max."""
+
+    FMA = "fma", 3
+    """`a b c fma` computes `(a * b) + c` as a single fused multiply-add"""
 
     # Special Operators
     REL_PIX = "{char:s}[{x:d},{y:d}]", 3
@@ -705,26 +742,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     """Get value of absolute pixel at coordinates ({x},{y}) on clip `{char}`."""
 
     # Not Implemented in akarin or std
-    SGN = "sgn", 1
-    """Sign function: -1, 0, or 1 depending on value."""
-
-    NEG = "neg", 1
-    """Negation (multiply by -1)."""
-
-    TAN = "tan", 1
-    """Tangent (radians)."""
-
-    ATAN = "atan", 1
-    """Arctangent."""
-
-    ASIN = "asin", 1
-    """Arcsine (inverse sine)."""
-
-    ACOS = "acos", 1
-    """Arccosine (inverse cosine)."""
-
-    CEIL = "ceil", 1
-    """Round up to nearest integer."""
 
     MMG = "mmg", 3
     """MaskedMerge implementation from std lib."""
@@ -753,21 +770,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         """
         return self.name in ExprOp._extra_op_names_
 
-    def convert_extra(  # type: ignore[misc]
-        self: Literal[
-            ExprOp.SGN,
-            ExprOp.NEG,
-            ExprOp.TAN,
-            ExprOp.ATAN,
-            ExprOp.ASIN,
-            ExprOp.ACOS,
-            ExprOp.CEIL,
-            ExprOp.MMG,
-            ExprOp.LERP,
-            ExprOp.POLYVAL,
-        ],  # pyright: ignore[reportGeneralTypeIssues]
-        degree: int | None = None,
-    ) -> str:
+    def convert_extra(self: Literal[ExprOp.MMG, ExprOp.LERP, ExprOp.POLYVAL], degree: int | None = None) -> str:  # type: ignore[misc]
         """
         Converts an 'extra' operator into a valid `akarin.Expr` expression string.
 
@@ -785,25 +788,9 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
             raise CustomValueError
 
         match self:
-            case ExprOp.SGN:
-                return "dup 0 > swap 0 < -"
-            case ExprOp.NEG:
-                return "-1 *"
-            case ExprOp.TAN:
-                return "dup sin swap cos /"
-            case ExprOp.ATAN:
-                return self.atan().to_str()
-            case ExprOp.ASIN:
-                return self.asin().to_str()
-            case ExprOp.ACOS:
-                return self.acos().to_str()
-            case ExprOp.CEIL:
-                return "-1 * floor -1 *"
             case ExprOp.MMG:
                 return self.masked_merge().to_str()
             case ExprOp.LERP:
-                if bytes(self, "utf-8") in _get_akarin_expr_version()["expr_features"]:
-                    return str(self)
                 return "dup 1 - swap2 * swap2 * -"
             case ExprOp.POLYVAL:
                 assert degree is not None
@@ -1056,96 +1043,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         return expr
 
     @classmethod
-    def atan(cls, c: SupportsString = "", n: int = 10) -> ExprList:
-        """
-        Build an expression to compute arctangent (atan) using domain reduction.
-
-        Args:
-            c: The expression variable or string input.
-            n: The number of terms to use in the Taylor series approximation.
-
-        Returns:
-            An [ExprList][vsexprtools.ExprList] representing the arctangent expression.
-        """
-        # Using domain reduction when |x| > 1
-        expr = ExprList(
-            [
-                ExprList([c, cls.DUP, "__atanvar!", cls.ABS, 1, cls.GT]),
-                ExprList(
-                    [
-                        "__atanvar@",
-                        cls.SGN.convert_extra(),
-                        cls.PI,
-                        cls.MUL,
-                        2,
-                        cls.DIV,
-                        1,
-                        "__atanvar@",
-                        cls.DIV,
-                        cls.atanf("", n),
-                        cls.SUB,
-                    ]
-                ),
-                ExprList([cls.atanf("__atanvar@", n)]),
-                cls.TERN,
-            ]
-        )
-
-        return expr
-
-    @classmethod
-    def atanf(cls, c: SupportsString = "", n: int = 10) -> ExprList:
-        """
-        Approximate atan(x) using a Taylor series centered at 0.
-
-        This is accurate for inputs in [-1, 1]. Use [ExprOp.atan][vsexprtools.ExprOp.atan] for full-range values.
-
-        Args:
-            c: The expression variable or string input.
-            n: The number of terms in the Taylor series (min 2).
-
-        Returns:
-            An [ExprList][vsexprtools.ExprList] approximating atan(x).
-        """
-        # Approximation using Taylor series
-        n = max(2, n)
-
-        expr = ExprList([c, cls.DUP, "__atanfvar!"])
-
-        for i in range(1, n):
-            expr.append("__atanfvar@", 2 * i + 1, cls.POW, 2 * i + 1, cls.DIV, cls.SUB if i % 2 else cls.ADD)
-
-        return expr
-
-    @classmethod
-    def asin(cls, c: SupportsString = "", n: int = 10) -> ExprList:
-        """
-        Build an expression to approximate arcsine using an identity: `asin(x) = atan(x / sqrt(1 - x²))`
-
-        Args:
-            c: The input expression variable.
-            n: Number of terms to use in the internal atan approximation.
-
-        Returns:
-            An [ExprList][vsexprtools.ExprList] representing the asin(x) expression.
-        """
-        return cls.atan(ExprList([c, cls.DUP, cls.DUP, cls.MUL, 1, cls.SWAP, cls.SUB, cls.SQRT, cls.DIV]).to_str(), n)
-
-    @classmethod
-    def acos(cls, c: SupportsString = "", n: int = 10) -> ExprList:
-        """
-        Build an expression to approximate arccosine using an identity: `acos(x) = π/2 - asin(x)`
-
-        Args:
-            c: The input expression variable.
-            n: Number of terms to use in the internal asin approximation.
-
-        Returns:
-            An [ExprList][vsexprtools.ExprList] representing the acos(x) expression.
-        """
-        return ExprList([c, "__acosvar!", cls.PI, 2, cls.DIV, cls.asin("__acosvar@", n), cls.SUB])
-
-    @classmethod
     def masked_merge(cls, c_a: SupportsString = "", c_b: SupportsString = "", mask: SupportsString = "") -> ExprList:
         """
         Build a masked merge expression from two inputs and a mask.
@@ -1177,9 +1074,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         """
         if len(coeffs) < 1:
             raise CustomValueError("You must provide at least one coefficient.", cls.polyval, coeffs)
-
-        if b"polyval" in _get_akarin_expr_version()["expr_features"]:
-            return ExprList([*coeffs, c, ExprOp.POLYVAL(len(coeffs) - 1)])
 
         stack_len = len(coeffs) + 1
 
