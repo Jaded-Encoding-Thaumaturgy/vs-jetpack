@@ -24,7 +24,6 @@ from vstools import (
     VSObject,
     VSObjectABC,
     core,
-    get_video_format,
     vs,
 )
 
@@ -461,9 +460,7 @@ class ChromaReconstruct(VSObjectABC):
         Raises:
             UnsupportedVideoFormatError: If any base clip is not GRAY float format.
         """
-        if any(
-            get_video_format(c) != core.query_video_format(vs.GRAY, vs.FLOAT, 32) for c in [luma_base, *chroma_bases]
-        ):
+        if any(c.format.id != vs.GRAYS for c in [luma_base, *chroma_bases]):
             raise UnsupportedVideoFormatError("All base clips must be of GRAYS format.", self.__class__)
 
         self.luma_base = luma_base
