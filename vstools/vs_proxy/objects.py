@@ -31,7 +31,10 @@ def _iterative_check(x: Any) -> bool:
 
         if isinstance(current, Mapping):
             for k, v in current.items():
-                if not (isinstance(k, str) and k.startswith("__")):
+                if isinstance(k, str):
+                    if k.startswith("__"):
+                        continue
+                else:
                     stack.append(k)
                 stack.append(v)
             continue
