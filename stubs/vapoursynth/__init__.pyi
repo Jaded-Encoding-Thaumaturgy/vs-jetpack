@@ -1110,6 +1110,10 @@ class VideoNode(RawNode):
     knlm: Final[_knlm._VideoNode_bound.Plugin]
     """KNLMeansCL for VapourSynth"""
 # </attribute/VideoNode_bound/knlm>
+# <attribute/VideoNode_bound/llvmexpr>
+    llvmexpr: Final[_llvmexpr._VideoNode_bound.Plugin]
+    """LLVM JIT RPN Expression Filter"""
+# </attribute/VideoNode_bound/llvmexpr>
 # <attribute/VideoNode_bound/manipmv>
     manipmv: Final[_manipmv._VideoNode_bound.Plugin]
     """Manipulate Motion Vectors"""
@@ -1392,6 +1396,10 @@ class Core:
     knlm: Final[_knlm._Core_bound.Plugin]
     """KNLMeansCL for VapourSynth"""
 # </attribute/Core_bound/knlm>
+# <attribute/Core_bound/llvmexpr>
+    llvmexpr: Final[_llvmexpr._Core_bound.Plugin]
+    """LLVM JIT RPN Expression Filter"""
+# </attribute/Core_bound/llvmexpr>
 # <attribute/Core_bound/lsmas>
     lsmas: Final[_lsmas._Core_bound.Plugin]
     """LSMASHSource for VapourSynth"""
@@ -2189,6 +2197,20 @@ class _knlm:
             def KNLMeansCL(self, d: int | None = None, a: int | None = None, s: int | None = None, h: float | None = None, channels: _AnyStr | None = None, wmode: int | None = None, wref: float | None = None, rclip: VideoNode | None = None, device_type: _AnyStr | None = None, device_id: int | None = None, ocl_x: int | None = None, ocl_y: int | None = None, ocl_r: int | None = None, info: int | None = None) -> VideoNode: ...
 
 # </implementation/knlm>
+
+# <implementation/llvmexpr>
+class _llvmexpr:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def Expr(self, clips: VideoNode | _SequenceLike[VideoNode], expr: _AnyStr | _SequenceLike[_AnyStr], format: int | None = None, boundary: int | None = None, dump_ir: _AnyStr | None = None, opt_level: int | None = None, approx_math: int | None = None) -> VideoNode: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def Expr(self, expr: _AnyStr | _SequenceLike[_AnyStr], format: int | None = None, boundary: int | None = None, dump_ir: _AnyStr | None = None, opt_level: int | None = None, approx_math: int | None = None) -> VideoNode: ...
+
+# </implementation/llvmexpr>
 
 # <implementation/lsmas>
 class _lsmas:
