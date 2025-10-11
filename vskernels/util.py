@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC
 from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass
 from functools import cache, partial, wraps
@@ -19,10 +18,11 @@ from vstools import (
     Transfer,
     VideoFormatLike,
     VSFunctionNoArgs,
+    VSObject,
+    VSObjectABC,
     depth,
     get_video_format,
     vs,
-    vs_object,
 )
 
 from .abstract import (
@@ -329,7 +329,7 @@ class MixedScalerProcess[_ScalerT: Scaler, *_BaseScalerTs](
 
 
 @dataclass
-class LinearLightProcessing(vs_object, ABC):
+class LinearLightProcessing(VSObject):
     ll: LinearLight
 
     def get_linear(self) -> vs.VideoNode:
@@ -399,13 +399,9 @@ class LinearLightProcessing(vs_object, ABC):
 
         return resample_to(processed, self.ll._fmt, self.ll._matrix, self.ll._resampler)
 
-    def __vs_del__(self, core_id: int) -> None:
-        del self._linear
-        cachedproperty.clear_cache(self)
-
 
 @dataclass
-class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object, ABC):
+class LinearLight(AbstractContextManager[LinearLightProcessing], VSObjectABC):
     """
     Utility class for processing a clip in linear format.
 
@@ -532,11 +528,6 @@ class LinearLight(AbstractContextManager[LinearLightProcessing], vs_object, ABC)
 
     def __exit__(self, *args: object, **kwargs: Any) -> None:
         self._exited = True
-
-    def __vs_del__(self, core_id: int) -> None:
-        for name in ("clip", "out_fmt", "_fmt", "_wclip"):
-            with suppress(AttributeError):
-                delattr(self, name)
 
 
 def resample_to(

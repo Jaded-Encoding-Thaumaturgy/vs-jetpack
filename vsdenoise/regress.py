@@ -19,7 +19,7 @@ from vstools import (
     InvalidColorFamilyError,
     InvalidSubsamplingError,
     VSFunction,
-    vs_object,
+    VSObject,
     core,
     depth,
     flatten,
@@ -42,9 +42,7 @@ __all__ = [
 ]
 
 
-class _CachedBlurs(dict[int, list[tuple[vs.VideoNode, vs.VideoNode]]], vs_object):
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
+class _CachedBlurs(dict[int, list[tuple[vs.VideoNode, vs.VideoNode]]], VSObject): ...
 
 
 _cached_blurs = _CachedBlurs()

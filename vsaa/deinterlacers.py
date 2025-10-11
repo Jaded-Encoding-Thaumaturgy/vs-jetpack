@@ -766,10 +766,6 @@ class EEDI3(SuperSampler):
     def kernel_radius(self) -> int:
         return self.mdis
 
-    def __vs_del__(self, core_id: int) -> None:
-        self.sclip = None
-        self.mclip = None
-
 
 @dataclass
 class SangNom(SuperSampler):
@@ -831,9 +827,6 @@ class BWDIF(Deinterlacer):
 
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         return {"edeint": self.edeint} | kwargs
-
-    def __vs_del__(self, core_id: int) -> None:
-        self.edeint = None
 
     _static_kernel_radius = 2
 

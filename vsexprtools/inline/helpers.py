@@ -18,7 +18,7 @@ from typing import (
 from jetpytools import SupportsString, to_arr
 from jetpytools.types.utils import SingletonMeta
 
-from vstools import ConvMode, OnePassConvMode, flatten, vs, vs_object
+from vstools import ConvMode, OnePassConvMode, VSObjectABC, flatten, vs
 
 from ..exprop import ExprOp, ExprToken
 
@@ -699,7 +699,7 @@ class ClipVarProps:
         return ComputedVar(f"{self._var.char}.{name}")
 
 
-class ClipVar(ExprVar, vs_object, ABC):
+class ClipVar(ExprVar, VSObjectABC):
     """
     Expression variable that wraps a VideoNode and provides symbolic and numeric access.
     """
@@ -777,9 +777,6 @@ class ClipVar(ExprVar, vs_object, ABC):
                 raise AttributeError(
                     f"'{self.__class__.__name__}' object has no attribute '{name}'", name=name, obj=self
                 )
-
-    def __vs_del__(self, core_id: int) -> None:
-        del self._node
 
 
 class Token(LiteralVar):

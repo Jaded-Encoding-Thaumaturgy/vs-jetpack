@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC
 from functools import wraps
 from typing import Any, Callable, Iterable
 
@@ -17,6 +16,7 @@ from vstools import (
     FieldBasedLike,
     FrameRangeN,
     FrameRangesN,
+    VSObjectABC,
     core,
     depth,
     get_peak_value,
@@ -25,7 +25,6 @@ from vstools import (
     replace_ranges,
     split,
     vs,
-    vs_object,
 )
 
 from .helpers import BottomCrop, CropRel, LeftCrop, RightCrop, ScalingArgs, TopCrop
@@ -37,7 +36,7 @@ __all__ = [
 ]
 
 
-class RescaleBase(vs_object, ABC):
+class RescaleBase(VSObjectABC):
     """Base class for Rescale wrapper"""
 
     descale_args: ScalingArgs
@@ -173,11 +172,6 @@ class RescaleBase(vs_object, ABC):
     """
     Returns the upscaled clip
     """
-
-    def __vs_del__(self, core_id: int) -> None:
-        del self._clipy
-        del self._chroma
-        cachedproperty.clear_cache(self)
 
 
 class Rescale(RescaleBase):
@@ -538,11 +532,3 @@ class Rescale(RescaleBase):
         self.credit_mask = credit_mask
 
         return self.credit_mask
-
-    def __vs_del__(self, core_id: int) -> None:
-        del self._line_mask
-        del self._credit_mask
-        del self._ignore_mask
-        del self._pre
-
-        super().__vs_del__(core_id)

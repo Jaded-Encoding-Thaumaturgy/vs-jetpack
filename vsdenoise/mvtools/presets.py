@@ -4,7 +4,7 @@ from typing import Any, Iterable, Iterator, MutableMapping, Self, TypedDict, ove
 
 from jetpytools import KwargsT, SupportsKeysAndGetItem, classproperty
 
-from vstools import VSFunctionNoArgs, vs, vs_object
+from vstools import VSFunctionNoArgs, VSObjectABC, vs
 
 from ..prefilters import prefilter_to_full_range
 from .enums import FlowMode, MaskMode, MotionMode, PenaltyMode, RFilterMode, SADMode, SearchMode, SharpMode, SmoothMode
@@ -152,7 +152,7 @@ class ScDetectionArgs(TypedDict, total=False):
     thscd2: int | None
 
 
-class MVToolsPreset(MutableMapping[str, Any], vs_object):
+class MVToolsPreset(MutableMapping[str, Any], VSObjectABC):
     search_clip: vs.VideoNode | VSFunctionNoArgs
     tr: int
     pel: int
@@ -267,9 +267,6 @@ class MVToolsPreset(MutableMapping[str, Any], vs_object):
     def __ior__(self, value: Any, /) -> Self:  # type: ignore[misc]
         self._dict |= dict[str, Any](value)
         return self
-
-    def __vs_del__(self, core_id: int) -> None:
-        self.clear()
 
     @classproperty
     @classmethod

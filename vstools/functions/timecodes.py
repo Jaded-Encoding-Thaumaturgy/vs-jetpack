@@ -23,7 +23,7 @@ from jetpytools import (
 from ..enums import Matrix, SceneChangeMode
 from ..exceptions import FramesLengthError, InvalidTimecodeVersionError
 from ..utils import DynamicClipsCache, PackageStorage
-from ..vs_proxy import vs, vs_object
+from ..vs_proxy import VSObject, vs
 from .ranges import replace_ranges
 from .render import clip_async_render, clip_data_gather
 
@@ -595,15 +595,11 @@ class SceneBasedDynamicCache(DynamicClipsCache[int]):
     def from_clip(cls, clip: vs.VideoNode, keyframes: Keyframes | str, *args: Any, **kwargs: Any) -> vs.VideoNode:
         return cls(clip, keyframes, *args, **kwargs).get_eval()
 
-    def __vs_del__(self, core_id: int) -> None:
-        super().__vs_del__(core_id)
-        del self.clip
-
 
 class SceneAverageStats(SceneBasedDynamicCache):
     _props_keys = ("Min", "Max", "Average")
 
-    class _Cache(dict[int, tuple[float, float, float]], vs_object):
+    class _Cache(dict[int, tuple[float, float, float]], VSObject):
         def __init__(self, clip: vs.VideoNode, keyframes: Keyframes, plane: int) -> None:
             self.props = clip.std.PlaneStats(plane=plane)
             self.keyframes = keyframes
