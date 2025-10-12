@@ -752,22 +752,21 @@ class ExprOp(ExprOpBase):
     Uses N coefficients below the top value (x), ordered from highest to lowest degree.
     """
 
-    @cache
     def is_extra(self) -> bool:
         """
         Check if the operator is an 'extra' operator.
 
-        Extra operators are not natively supported by VapourSynth's `std.Expr` or `akarin.Expr`
+        Extra operators are not natively supported by VapourSynth's `std.Expr` or `llvmexpr.Expr`
         and require conversion to a valid equivalent expression.
 
         Returns:
             True if the operator is considered extra and requires conversion.
         """
-        return self.name in ("MMG", "LERP", "POLYVAL")
+        return self.name in self._extra_op_names_
 
     def convert_extra(self: Literal[ExprOp.MMG, ExprOp.LERP, ExprOp.POLYVAL], degree: int | None = None) -> str:  # type: ignore[misc]
         """
-        Converts an 'extra' operator into a valid `akarin.Expr` expression string.
+        Converts an 'extra' operator into a valid `llvmexpr.Expr` expression string.
 
         Args:
             degree: If calling from POLYVAL, the degree of the polynomial.
@@ -776,8 +775,7 @@ class ExprOp(ExprOpBase):
             A string representation of the equivalent expression.
 
         Raises:
-            ValueError: If the operator is not marked as extra.
-            NotImplementedError: If the extra operator has no defined conversion.
+            CustomValueError: If the operator is not marked as extra.
         """
         if not self.is_extra():
             raise CustomValueError
