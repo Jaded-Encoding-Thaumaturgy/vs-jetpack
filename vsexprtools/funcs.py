@@ -42,7 +42,7 @@ def expr_func(
     clips: vs.VideoNode | Sequence[vs.VideoNode],
     expr: str | Sequence[str],
     format: HoldsVideoFormat | VideoFormatLike | None = None,
-    opt: bool = False,
+    opt: int | None = None,
     boundary: bool = True,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
@@ -58,7 +58,7 @@ def expr_func(
         clips: Input clip(s). Supports constant format clips, or one variable resolution clip.
         expr: Expression to be evaluated.
         format: Output format, defaults to the first clip format.
-        opt: Forces integer evaluation as much as possible.
+        opt: Optimization level (> 0, default: 5).
         boundary: Specifies the default boundary condition for relative pixel accesses:
 
                - `True` (default): Mirrored edges.
@@ -204,7 +204,7 @@ def norm_expr(
     expr: ExprLike,
     planes: Planes = None,
     format: HoldsVideoFormat | VideoFormatLike | None = None,
-    opt: bool = False,
+    opt: int | None = None,
     boundary: bool = True,
     func: FuncExcept | None = None,
     split_planes: bool = False,
@@ -228,7 +228,7 @@ def norm_expr(
                 within this tuple.
         planes: Plane to process, defaults to all.
         format: Output format, defaults to the first clip format.
-        opt: Forces integer evaluation as much as possible.
+        opt: Optimization level (> 0, default: 5).
         boundary: Specifies the default boundary condition for relative pixel accesses:
 
                - `True` (default): Mirrored edges.
