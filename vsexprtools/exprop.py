@@ -278,7 +278,7 @@ class ExprList(StrList):
         *clips: VideoNodeIterable,
         planes: Planes = None,
         format: HoldsVideoFormat | VideoFormatLike | None = None,
-        opt: bool = False,
+        opt: int | None = None,
         boundary: bool = True,
         func: FuncExcept | None = None,
         split_planes: bool = False,
@@ -291,7 +291,7 @@ class ExprList(StrList):
             clips: Input clip(s).
             planes: Plane to process, defaults to all.
             format: Output format, defaults to the first clip format.
-            opt: Forces integer evaluation as much as possible.
+            opt: Optimization level (> 0, default: 5).
             boundary: Specifies the default boundary condition for relative pixel accesses:
 
                    - `True` (default): Mirrored edges.
@@ -318,7 +318,7 @@ class TupleExprList(tuple[ExprList, ...]):
         *clips: VideoNodeIterable,
         planes: Planes = None,
         format: HoldsVideoFormat | VideoFormatLike | None = None,
-        opt: bool = False,
+        opt: int | None = None,
         boundary: bool = True,
         func: FuncExcept | None = None,
         split_planes: bool = False,
@@ -333,7 +333,7 @@ class TupleExprList(tuple[ExprList, ...]):
             clips: Input clip(s).
             planes: Plane to process, defaults to all.
             format: Output format, defaults to the first clip format.
-            opt: Forces integer evaluation as much as possible.
+            opt: Optimization level (> 0, default: 5).
             boundary: Specifies the default boundary condition for relative pixel accesses:
 
                    - `True` (default): Mirrored edges.
