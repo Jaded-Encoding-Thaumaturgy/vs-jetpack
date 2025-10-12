@@ -17,6 +17,7 @@ from jetpytools import (
     StrList,
     SupportsString,
     SupportsSumNoDefaultT,
+    classproperty,
     fallback,
 )
 
@@ -378,10 +379,14 @@ class ExprOpBase(CustomStrEnum):
     n_op: int
     """The number of operands the operator requires."""
 
-    def __new__(cls, value: str, n_op: int) -> Self:
+    support: str
+    """The plugin name that supports this operator."""
+
+    def __new__(cls, value: str, n_op: int, support: str) -> Self:
         self = str.__new__(cls, value)
         self._value_ = value
         self.n_op = n_op
+        self.support = support
 
         return self
 
@@ -521,13 +526,7 @@ class ExprOpBase(CustomStrEnum):
         return combine_expr(n, self, suffix, prefix, expr_suffix, expr_prefix)
 
 
-class ExprOpExtraMeta(EnumMeta):
-    @property
-    def _extra_op_names_(cls) -> tuple[str, ...]:
-        return ("MMG", "LERP", "POLYVAL")
-
-
-class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
+class ExprOp(ExprOpBase):
     """
     Represents operators used in RPN expressions.
 
@@ -538,219 +537,215 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         Format strings can include placeholders for dynamic substitution (e.g., `{N:d}`, `{name:s}`).
     """
 
-    # 0 Argument (llvmexpr)
-    N = "N", 0
+    # 0 Argument
+    N = "N", 0, "llvmexpr"
     """Current frame number."""
 
-    X = "X", 0
+    X = "X", 0, "llvmexpr"
     """Current pixel X-coordinate."""
 
-    Y = "Y", 0
+    Y = "Y", 0, "llvmexpr"
     """Current pixel Y-coordinate."""
 
-    WIDTH = "width", 0
+    WIDTH = "width", 0, "llvmexpr"
     """Frame width."""
 
-    HEIGHT = "height", 0
+    HEIGHT = "height", 0, "llvmexpr"
     """Frame height."""
 
-    PI = "pi", 0
+    PI = "pi", 0, "llvmexpr"
     """Mathematical constant π (pi)."""
 
-    # 1 Argument (std)
-    EXP = "exp", 1
-    """Exponential function (e^x)."""
-
-    LOG = "log", 1
-    """Natural logarithm."""
-
-    SQRT = "sqrt", 1
-    """Square root."""
-
-    SIN = "sin", 1
-    """Sine (radians)."""
-
-    COS = "cos", 1
-    """Cosine (radians)."""
-
-    ABS = "abs", 1
-    """Absolute value."""
-
-    NOT = "not", 1
+    # 1 Argument
+    NOT = "not", 1, "std"
     """Logical NOT."""
 
-    DUP = "dup", 1
-    """Duplicate the top of the stack."""
-
-    DUPN = "dup{N:d}", 1
-    """Duplicate the top N items on the stack."""
-
-    # 1 Argument (llvmexpr)
-    EXP2 = "exp2", 1
-    """(2^x)."""
-
-    LOG2 = "log2", 1
-    """Base-2 logarithm."""
-
-    LOG10 = "log10", 1
-    """Base-10 logarithm."""
-
-    SGN = "sgn", 1
-    """Sign function: -1, 0, or 1 depending on value."""
-
-    NEG = "neg", 1
-    """Negation (multiply by -1)."""
-
-    TAN = "tan", 1
-    """Tangent (radians)."""
-
-    ATAN = "atan", 1
-    """Arctangent."""
-
-    ASIN = "asin", 1
-    """Arcsine (inverse sine)."""
-
-    ACOS = "acos", 1
-    """Arccosine (inverse cosine)."""
-
-    TANH = "tanh", 1
-    """Hyperbolic tangent."""
-
-    SINH = "sinh", 1
-    """Hyperbolic sine."""
-
-    COSH = "cosh", 1
-    """Hyperbolic cosine."""
-
-    TRUNC = "trunc", 1
-    """Truncate to integer (toward zero)."""
-
-    ROUND = "round", 1
-    """Round to nearest integer."""
-
-    FLOOR = "floor", 1
-    """Round down to nearest integer."""
-
-    CEIL = "ceil", 1
-    """Round up to nearest integer."""
-
-    BITNOT = "bitnot", 1
+    BITNOT = "bitnot", 1, "llvmexpr"
     """Bitwise NOT."""
 
-    DROP = "drop", 1
+    SQRT = "sqrt", 1, "std"
+    """Square root."""
+
+    EXP = "exp", 1, "std"
+    """Exponential function (e^x)."""
+
+    EXP2 = "exp2", 1, "llvmexpr"
+    """Base-2 exponential (2^x)."""
+
+    LOG = "log", 1, "std"
+    """Natural logarithm."""
+
+    LOG2 = "log2", 1, "llvmexpr"
+    """Base-2 logarithm."""
+
+    LOG10 = "log10", 1, "llvmexpr"
+    """Base-10 logarithm."""
+
+    SIN = "sin", 1, "std"
+    """Sine (radians)."""
+
+    COS = "cos", 1, "std"
+    """Cosine (radians)."""
+
+    TAN = "tan", 1, "llvmexpr"
+    """Tangent (radians)."""
+
+    ASIN = "asin", 1, "llvmexpr"
+    """Arcsine (inverse sine)."""
+
+    ACOS = "acos", 1, "llvmexpr"
+    """Arccosine (inverse cosine)."""
+
+    ATAN = "atan", 1, "llvmexpr"
+    """Arctangent."""
+
+    SINH = "sinh", 1, "llvmexpr"
+    """Hyperbolic sine."""
+
+    COSH = "cosh", 1, "llvmexpr"
+    """Hyperbolic cosine."""
+
+    TANH = "tanh", 1, "llvmexpr"
+    """Hyperbolic tangent."""
+
+    FLOOR = "floor", 1, "llvmexpr"
+    """Round down to nearest integer."""
+
+    CEIL = "ceil", 1, "llvmexpr"
+    """Round up to nearest integer."""
+
+    ROUND = "round", 1, "llvmexpr"
+    """Round to nearest integer."""
+
+    TRUNC = "trunc", 1, "llvmexpr"
+    """Truncate to integer (toward zero)."""
+
+    ABS = "abs", 1, "std"
+    """Absolute value."""
+
+    SGN = "sgn", 1, "llvmexpr"
+    """Sign function: -1, 0, or 1 depending on value."""
+
+    NEG = "neg", 1, "llvmexpr"
+    """Negation (multiply by -1)."""
+
+    DUP = "dup", 1, "std"
+    """Duplicate the top of the stack."""
+
+    DUPN = "dup{N:d}", 1, "std"
+    """Duplicate the top N items on the stack."""
+
+    DROP = "drop", 1, "llvmexpr"
     """Remove top value from the stack."""
 
-    DROPN = "drop{N:d}", 1
+    DROPN = "drop{N:d}", 1, "llvmexpr"
     """Remove top N values from the stack."""
 
-    SORTN = "sort{N:d}", 1
+    SORTN = "sort{N:d}", 1, "llvmexpr"
     """Sort top N values on the stack."""
 
-    VAR_STORE = "{name:s}!", 1
+    VAR_STORE = "{name:s}!", 1, "llvmexpr"
     """Store value in variable named `{name}`."""
 
-    VAR_PUSH = "{name:s}@", 1
+    VAR_PUSH = "{name:s}@", 1, "llvmexpr"
     """Push value of variable `{name}` to the stack."""
 
-    # 2 Arguments (std)
-    MAX = "max", 2
+    # 2 Arguments
+    MAX = "max", 2, "std"
     """Maximum of two values."""
 
-    MIN = "min", 2
+    MIN = "min", 2, "std"
     """Minimum of two values."""
 
-    ADD = "+", 2
+    ADD = "+", 2, "std"
     """Addition."""
 
-    SUB = "-", 2
+    SUB = "-", 2, "std"
     """Subtraction."""
 
-    MUL = "*", 2
+    MUL = "*", 2, "std"
     """Multiplication."""
 
-    DIV = "/", 2
+    DIV = "/", 2, "std"
     """Division."""
 
-    POW = "pow", 2
-    """Exponentiation (x^y)."""
-
-    GT = ">", 2
-    """Greater than (x > y)."""
-
-    LT = "<", 2
-    """Less than (x < y)."""
-
-    EQ = "=", 2
-    """Equality (x == y)."""
-
-    GTE = ">=", 2
-    """Greater than or equal."""
-
-    LTE = "<=", 2
-    """Less than or equal."""
-
-    AND = "and", 2
-    """Logical AND."""
-
-    OR = "or", 2
-    """Logical OR."""
-
-    XOR = "xor", 2
-    """Logical XOR."""
-
-    SWAP = "swap", 2
-    """Swap top two values on the stack."""
-
-    SWAPN = "swap{N:d}", 2
-    """Swap the top N values (custom depth)."""
-
-    # 2 Argument (llvmexpr)
-    MOD = "%", 2
+    MOD = "%", 2, "llvmexpr"
     """Modulo operation (remainder)."""
 
-    ATAN2 = "atan2", 2
-    """Arctangent of y/x using signs to find the correct quadrant."""
+    POW = "pow", 2, "std"
+    """Exponentiation (x^y)."""
 
-    COPYSIGN = "copysign", 2
-    """`x y copysign` returns a value with the magnitude of `x` and the sign of `y`"""
+    GT = ">", 2, "std"
+    """Greater than (x > y)."""
 
-    BITAND = "bitand", 2
+    LT = "<", 2, "std"
+    """Less than (x < y)."""
+
+    EQ = "=", 2, "std"
+    """Equality (x == y)."""
+
+    GTE = ">=", 2, "std"
+    """Greater than or equal."""
+
+    LTE = "<=", 2, "std"
+    """Less than or equal."""
+
+    AND = "and", 2, "std"
+    """Logical AND."""
+
+    OR = "or", 2, "std"
+    """Logical OR."""
+
+    XOR = "xor", 2, "std"
+    """Logical XOR."""
+
+    BITAND = "bitand", 2, "llvmexpr"
     """Bitwise AND."""
 
-    BITOR = "bitor", 2
+    BITOR = "bitor", 2, "llvmexpr"
     """Bitwise OR."""
 
-    BITXOR = "bitxor", 2
+    BITXOR = "bitxor", 2, "llvmexpr"
     """Bitwise XOR."""
 
-    # 3 Arguments (std)
-    TERN = "?", 3
+    ATAN2 = "atan2", 2, "llvmexpr"
+    """Arctangent of y/x with quadrant correction."""
+
+    SWAP = "swap", 2, "std"
+    """Swap top two values on the stack."""
+
+    SWAPN = "swap{N:d}", 2, "std"
+    """Swap the top N values (custom depth)."""
+
+    COPYSIGN = "copysign", 2, "llvmexpr"
+    """Magnitude of x with sign of y."""
+
+    # 3 Arguments
+    TERN = "?", 3, "std"
     """Ternary operation: cond ? if_true : if_false."""
 
-    # 3 Argument (llvmexpr)
-    CLAMP = "clamp", 3
+    CLAMP = "clamp", 3, "llvmexpr"
     """Clamp a value between min and max."""
 
-    FMA = "fma", 3
-    """`a b c fma` computes `(a * b) + c` as a single fused multiply-add"""
+    FMA = "fma", 3, "llvmexpr"
+    """Fused multiply-add (a * b + c)."""
 
     # Special Operators
-    REL_PIX = "{char:s}[{x:d},{y:d}]", 3
+    REL_PIX = "{char:s}[{x:d},{y:d}]", 3, "llvmexpr"
     """Get value of relative pixel at offset ({x},{y}) on clip `{char}`."""
 
-    ABS_PIX = "{x:d} {y:d} {char:s}[]", 3
+    ABS_PIX = "{x:d} {y:d} {char:s}[]", 3, "llvmexpr"
     """Get value of absolute pixel at coordinates ({x},{y}) on clip `{char}`."""
 
-    # Not Implemented in akarin or std
-
-    MMG = "mmg", 3
+    # Not Implemented in any plugin
+    MMG = "mmg", 3, "extra"
     """MaskedMerge implementation from std lib."""
 
     # Implemented in akarin v0.96g but closed source and only available on Windows.
-    LERP = "lerp", 3
+    LERP = "lerp", 3, "extra"
     """Linear interpolation of a value between two border values."""
 
-    POLYVAL = "polyval{N:d}", cast(int, inf)
+    POLYVAL = "polyval{N:d}", cast(int, inf), "extra"
     """
     Evaluate a degree-N polynomial at the top value on the stack.
 
@@ -768,7 +763,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         Returns:
             True if the operator is considered extra and requires conversion.
         """
-        return self.name in ExprOp._extra_op_names_
+        return self.name in ("MMG", "LERP", "POLYVAL")
 
     def convert_extra(self: Literal[ExprOp.MMG, ExprOp.LERP, ExprOp.POLYVAL], degree: int | None = None) -> str:  # type: ignore[misc]
         """
@@ -795,8 +790,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
             case ExprOp.POLYVAL:
                 assert degree is not None
                 return self.polyval("", *[""] * (degree + 1)).to_str()
-            case _:
-                raise NotImplementedError
 
     @classmethod
     def clamp(
@@ -1085,3 +1078,8 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         expr.append(ExprOp.SWAPN(stack_len), ExprOp.DROPN(stack_len))
 
         return expr
+
+    @classproperty
+    @classmethod
+    def _extra_op_names_(cls) -> frozenset[str]:
+        return frozenset({"MMG", "LERP", "POLYVAL"})
