@@ -30,7 +30,7 @@ class CustomExprError(CustomRuntimeError, VSObject, metaclass=_CustomExprErrorMe
         clips: vs.VideoNode | Sequence[vs.VideoNode],
         expr: str | Sequence[str],
         fmt: int | None,
-        opt: bool,
+        opt: int | None,
         boundary: bool,
         **kwargs: Any,
     ) -> None:
