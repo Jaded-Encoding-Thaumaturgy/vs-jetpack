@@ -760,7 +760,7 @@ class ExprOp(ExprOpBase):
         Returns:
             True if the operator is considered extra and requires conversion.
         """
-        return self.name in self._extra_op_names_
+        return self.name in self._extra_op_names
 
     def convert_extra(self: Literal[ExprOp.MMG, ExprOp.LERP, ExprOp.POLYVAL], degree: int | None = None) -> str:  # type: ignore[misc]
         """
@@ -1077,5 +1077,5 @@ class ExprOp(ExprOpBase):
 
     @classproperty
     @classmethod
-    def _extra_op_names_(cls) -> frozenset[str]:
+    def _extra_op_names(cls) -> frozenset[str]:
         return frozenset({"MMG", "LERP", "POLYVAL"})
