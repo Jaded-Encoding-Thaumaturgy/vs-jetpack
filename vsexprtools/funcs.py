@@ -283,7 +283,7 @@ def extra_op_tokenize_expr(expr: str) -> str:
         degree = int(matched.group(1))
         return ExprOp.POLYVAL.convert_extra(degree)
 
-    for extra_op in ExprOp._extra_op_names_:
+    for extra_op in ExprOp._extra_op_names:
         if extra_op.lower() in expr:
             if extra_op == ExprOp.POLYVAL.name:
                 expr = re.sub(rf"\b{extra_op.lower()}(\d+)\b", _replace_polyval, expr)
