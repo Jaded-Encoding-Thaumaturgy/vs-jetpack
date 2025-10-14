@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Self, cast
 
 from jetpytools import CustomNotImplementedError, CustomValueError, fallback, normalize_seq
 
-from vsjetpack import TypeVar
 from vskernels import (
     Bobber,
     Catrom,
@@ -882,18 +881,16 @@ if TYPE_CHECKING:
 else:
     _ConcreteSuperSampler = SuperSampler
 
-_SuperSamplerWithNNEDI3DefaultT = TypeVar("_SuperSamplerWithNNEDI3DefaultT", bound=SuperSampler, default=NNEDI3)
 
-
-class SuperSamplerProcess(MixedScalerProcess[_SuperSamplerWithNNEDI3DefaultT, Point], _ConcreteSuperSampler):
+class SuperSamplerProcess[DefaultScalerT: SuperSampler = NNEDI3](
+    MixedScalerProcess[DefaultScalerT, Point], _ConcreteSuperSampler
+):
     """
     A utility SuperSampler class that applies a given function to a supersampled clip,
     then downsamples it back using Point.
 
     If used without a specified scaler, it defaults to inheriting from `NNEDI3`.
     """
-
-    default_scaler = NNEDI3
 
     def __init__(self, *, function: VSFunctionNoArgs, noshift: bool | Sequence[bool] = True, **kwargs: Any) -> None:
         """
