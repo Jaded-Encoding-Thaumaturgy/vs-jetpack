@@ -6,11 +6,10 @@ from dataclasses import dataclass
 from functools import partial, wraps
 from math import exp
 from types import GenericAlias
-from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, Self, TypeAlias, get_origin, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, Self, TypeIs, TypeVar, get_origin, overload
 
-from jetpytools import CustomRuntimeError, CustomValueError, cachedproperty, classproperty
+from jetpytools import CustomRuntimeError, CustomTypeError, CustomValueError, cachedproperty, classproperty
 
-from vsjetpack import TypeIs, TypeVar
 from vstools import (
     HoldsVideoFormat,
     Matrix,
@@ -113,7 +112,7 @@ class BaseScalerSpecializer[DefaultScalerT: BaseScaler](BaseScaler, metaclass=Ba
     An abstract base class to provide specialization logic for BaseScaler-like classes.
     """
 
-    default_scaler: ClassVar[type[BaseScaler]]
+    __scaler_type_param_name__: ClassVar[str] = "DefaultScalerT"
 
     if not TYPE_CHECKING:
 
@@ -157,7 +156,7 @@ class BaseScalerSpecializer[DefaultScalerT: BaseScaler](BaseScaler, metaclass=Ba
         return GenericAlias(specialized_scaler, (base_scaler,))
 
     @property
-    def specializer(self) -> DefaultScalerT:
+    def specializer(self) -> type[DefaultScalerT]:
         """
         Returns the effective specializer.
 
@@ -166,6 +165,54 @@ class BaseScalerSpecializer[DefaultScalerT: BaseScaler](BaseScaler, metaclass=Ba
         """
         return self.__class__.__specializer__  # type: ignore[return-value]
 
+    @classproperty.cached
+    @classmethod
+    def default_scaler(cls) -> type[DefaultScalerT]:
+        """
+        Retrieve the default scaler type associated with this class.
+
+        This method looks up the type parameter that matches `cls.__scaler_type_param_name__`
+        in the class's type parameters (`__type_params__`) or, if not found, in the MRO.
+
+        If no default scaler type is defined, an error is raised.
+
+        Raises:
+            CustomRuntimeError: If neither the class nor any of its bases define a type parameter matching
+                `__scaler_type_param_name__`.
+            CustomRuntimeError: If the type parameter exists but does not specify a default scaler type.
+
+        Returns:
+            The default scaler type defined for the class.
+        """
+        type_param = next(
+            (t for t in cls.__dict__.get("__type_params__", ()) if t.__name__ == cls.__scaler_type_param_name__), None
+        )
+
+        if type_param is None:
+            for base in cls.__mro__:
+                type_param = next(
+                    (t for t in base.__type_params__ if t.__name__ == cls.__scaler_type_param_name__), None
+                )
+
+                if type_param is not None:
+                    break
+            else:
+                raise CustomRuntimeError(
+                    f"At least one base class of '{cls.__name__}' must define a "
+                    f"default scaler type parameter named '{cls.__scaler_type_param_name__}'.",
+                    cls,
+                )
+
+        if not isinstance(type_param, TypeVar):
+            raise CustomTypeError(f"Expected a TypeVar for scaler type parameter, got {type(type_param).__name__}", cls)
+
+        if type_param.has_default():
+            return type_param.__default__
+
+        raise CustomRuntimeError(
+            f"'{cls.__name__}' does not define a default scaler type and cannot be instantiated.", cls
+        )
+
 
 class ScalerSpecializer[DefaultScalerT: Scaler](BaseScalerSpecializer[DefaultScalerT], Scaler, abstract=True):
     """
@@ -173,17 +220,12 @@ class ScalerSpecializer[DefaultScalerT: Scaler](BaseScalerSpecializer[DefaultSca
     """
 
 
-_ScalerWithCatromDefaultT = TypeVar("_ScalerWithCatromDefaultT", bound=Scaler, default=Catrom)
-
-
-class NoScale(ScalerSpecializer[_ScalerWithCatromDefaultT]):
+class NoScale[DefaultScalerT: Scaler = Catrom](ScalerSpecializer[DefaultScalerT]):
     """
     A utility scaler class that performs no scaling on the input clip.
 
     If used without a specified scaler, it defaults to inheriting from `Catrom`.
     """
-
-    default_scaler = Catrom
 
     def scale(
         self,
@@ -234,10 +276,7 @@ class NoScale(ScalerSpecializer[_ScalerWithCatromDefaultT]):
         return NoScale[Scaler.from_param(scaler)]  # type: ignore[return-value,misc]
 
 
-_ScalerWithScalerDefaultT = TypeVar("_ScalerWithScalerDefaultT", bound=Scaler, default=Scaler)
-
-# TODO: type NoScaleLike[_ScalerT: Scaler = Scaler] = str | type[NoScale[_ScalerT]] | NoScale[_ScalerT]
-NoScaleLike: TypeAlias = str | type[NoScale[_ScalerWithScalerDefaultT]] | NoScale[_ScalerWithScalerDefaultT]  # noqa: UP040
+type NoScaleLike[_ScalerT: Scaler = Scaler] = str | type[NoScale[_ScalerT]] | NoScale[_ScalerT]
 """
 Type alias for anything that can resolve to a NoScale scaler.
 
