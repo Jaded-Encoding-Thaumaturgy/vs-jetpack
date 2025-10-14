@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from jetpytools import CustomOverflowError, CustomValueError, normalize_seq
-from typing_extensions import TypeVar
 
 from vsexprtools import ExprOp, combine, norm_expr
 from vskernels import (
@@ -150,10 +149,9 @@ class ClampScaler(GenericScaler):
         return self.base_scaler.kernel_radius
 
 
-_ComplexScalerWithLanczosDefaultT = TypeVar("_ComplexScalerWithLanczosDefaultT", bound=ComplexScaler, default=Lanczos)
-
-
-class ComplexSuperSamplerProcess(MixedScalerProcess[_ComplexScalerWithLanczosDefaultT, Point], ComplexScaler):
+class ComplexSuperSamplerProcess[DefaultScalerT: ComplexScaler = Lanczos](
+    MixedScalerProcess[DefaultScalerT, Point], ComplexScaler
+):
     """
     A utility ComplexScaler class that applies a given function to a supersampled clip,
     then downsamples it back using Point.
@@ -174,8 +172,6 @@ class ComplexSuperSamplerProcess(MixedScalerProcess[_ComplexScalerWithLanczosDef
         not align properly during processing. Avoid using this class if accurate
         chroma placement relative to luma is required.
     """
-
-    default_scaler = Lanczos
 
     def scale(
         self,
