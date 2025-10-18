@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "VapourSynth>=71",
-    "jetpytools~=1.7.3",
+    "jetpytools~=2.0.1",
     "numpy>=2.0.0",
     "rich>=14.0.0",
     "scipy>=1.16.0",

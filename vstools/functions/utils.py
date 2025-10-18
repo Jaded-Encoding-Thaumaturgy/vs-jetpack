@@ -12,7 +12,6 @@ from jetpytools import (
     CustomTypeError,
     CustomValueError,
     FuncExcept,
-    P,
     normalize_seq,
     to_arr,
 )
@@ -939,7 +938,7 @@ def limiter(
 
 
 @overload
-def limiter(
+def limiter[**P](
     _func: Callable[P, vs.VideoNode],
     /,
     min_val: float | Sequence[float] | None = None,
@@ -973,7 +972,7 @@ def limiter(
 
 
 @overload
-def limiter(
+def limiter[**P](
     *,
     min_val: float | Sequence[float] | None = None,
     max_val: float | Sequence[float] | None = None,
@@ -1003,7 +1002,7 @@ def limiter(
     """
 
 
-def limiter(
+def limiter[**P](
     clip_or_func: vs.VideoNode | Callable[P, vs.VideoNode] | None = None,
     /,
     min_val: float | Sequence[float] | None = None,

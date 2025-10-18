@@ -4,9 +4,9 @@ from __future__ import annotations
 import contextlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Callable, ClassVar, Concatenate, Sequence
+from typing import Any, Callable, ClassVar, Concatenate, ParamSpec, Sequence
 
-from jetpytools import P, P1, CustomOverflowError, FuncExcept, complex_hash, inject_self
+from jetpytools import CustomOverflowError, FuncExcept, complex_hash, inject_self
 
 from vsaa import EEDI3, NNEDI3, SangNom
 from vsexprtools import ExprOp, norm_expr
@@ -46,6 +46,9 @@ class _CachedBlurs(dict[int, list[tuple[vs.VideoNode, vs.VideoNode]]], VSObject)
 
 
 _cached_blurs = _CachedBlurs()
+
+P = ParamSpec("P")
+P1 = ParamSpec("P1")
 
 
 @dataclass
