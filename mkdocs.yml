@@ -58,6 +58,8 @@ plugins:
           options:
             docstring_section_style: list
             docstring_style: "google"
+            extensions:
+              - griffe_inherited_docstrings
             filters:
               - "!^_"
               - "^__call__$"
@@ -75,8 +77,6 @@ plugins:
             show_symbol_type_toc: true
             signature_crossrefs: true
             summary: true
-            extensions:
-              - griffe_inherited_docstrings
   - minify:
       minify_html: !ENV [PROD, false]
 
