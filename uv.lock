@@ -451,6 +451,18 @@ wheels = [
 ]
 
 [[package]]
+name = "griffe-inherited-docstrings"
+version = "1.1.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "griffe" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/28/02/36d9929bb8ad929941b27117aba4d850b8a9f2c12f982e2b59ab4bc4d80b/griffe_inherited_docstrings-1.1.2.tar.gz", hash = "sha256:0a489ac4bb6093a7789d014b23083b4cbb1ab139f0b8dd878c8f3a4f8e892624", size = 27541, upload-time = "2025-09-05T15:17:13.081Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ad/12/4c67b644dc5965000874908dfa89d05ba878d5ca22a9b4ebfbfadc41467b/griffe_inherited_docstrings-1.1.2-py3-none-any.whl", hash = "sha256:b1cf61fff6e12a769db75de5718ddbbb5361b2cc4155af1f1ad86c13f56c197b", size = 6709, upload-time = "2025-09-05T15:17:11.853Z" },
+]
+
+[[package]]
 name = "htmlmin2"
 version = "0.1.13"
 source = { registry = "https://pypi.org/simple" }
@@ -1784,6 +1796,7 @@ dev = [
 ]
 doc = [
     { name = "black" },
+    { name = "griffe-inherited-docstrings" },
     { name = "mkdocs-gen-files" },
     { name = "mkdocs-literate-nav" },
     { name = "mkdocs-material" },
@@ -1817,6 +1830,7 @@ dev = [
 ]
 doc = [
     { name = "black", specifier = "==25.1.0" },
+    { name = "griffe-inherited-docstrings", specifier = "==1.1.2" },
     { name = "mkdocs-gen-files", specifier = "==0.5.0" },
     { name = "mkdocs-literate-nav", specifier = "==0.6.2" },
     { name = "mkdocs-material", specifier = "==9.6.16" },
