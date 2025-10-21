@@ -9,6 +9,7 @@ from vsexprtools import ExprOp, combine, norm_expr
 from vskernels import (
     Catrom,
     ComplexScaler,
+    EwaLanczos,
     KernelLike,
     Lanczos,
     LeftShift,
@@ -20,11 +21,22 @@ from vskernels import (
 )
 from vsmasktools import ringing_mask
 from vsrgtools.rgtools import Repair
-from vstools import ChromaLocation, check_ref_clip, check_variable_resolution, scale_delta, vs
+from vstools import (
+    ChromaLocation,
+    InvalidColorFamilyError,
+    check_ref_clip,
+    check_variable_resolution,
+    get_u,
+    get_v,
+    get_y,
+    join,
+    scale_delta,
+    vs,
+)
 
 from .generic import GenericScaler
 
-__all__ = ["ClampScaler", "ComplexSuperSamplerProcess"]
+__all__ = ["ClampScaler", "ComplexSuperSamplerProcess", "EwaLanczosChroma"]
 
 
 class ClampScaler(GenericScaler):
@@ -230,3 +242,45 @@ class ComplexSuperSamplerProcess(MixedScalerProcess[_ComplexScalerWithLanczosDef
             )
 
         return ChromaLocation.from_video(clip).apply(downscaled)
+
+
+class EwaLanczosChroma(EwaLanczos):
+    """
+    EWA Lanczos-based chroma upscaler for converting YUV sources to YUV444.
+
+    Upscales the U and V planes using EWA Lanczos resampling with proper chroma alignment
+    while optionally scaling the Y plane if needed.
+
+    Only supports YUV input and disallows manual shifting.
+    """
+
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[TopShift | list[TopShift], LeftShift | list[LeftShift]] = (0, 0),
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        InvalidColorFamilyError.check(clip, vs.YUV, self.__class__)
+
+        if shift != (0, 0):
+            raise CustomValueError("Shifting is unsupported.", self.__class__, f"{shift} != (0, 0)")
+
+        width, height = self._wh_norm(clip, width, height)
+
+        u, v = get_u(clip), get_v(clip)
+        left_shift, top_shift = ChromaLocation.from_video(clip).get_offsets(clip)
+        left_shift *= u.width / clip.width
+        top_shift *= u.height / clip.height
+
+        u = super().scale(u, width, height, (-top_shift, -left_shift), **kwargs)
+        v = super().scale(v, width, height, (-top_shift, -left_shift), **kwargs)
+
+        y = (
+            super().scale(get_y(clip), width, height, **kwargs)
+            if (width, height) != (clip.width, clip.height)
+            else clip
+        )
+
+        return join(y, u, v)
