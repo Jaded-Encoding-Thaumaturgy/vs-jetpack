@@ -3,12 +3,14 @@ from __future__ import annotations
 from math import ceil
 from typing import Any, ClassVar
 
-from jetpytools import fallback
+from jetpytools import fallback, to_arr
 
-from vstools import core, vs
+from vskernels.types import BorderHandling, SampleGridModel
+from vstools import UnsupportedVideoFormatError, core, get_video_format, vs
+from vstools.enums.other import Dar, Sar
 
 from ..abstract import ComplexScaler
-from ..types import LeftShift, TopShift
+from ..types import Center, LeftShift, Slope, TopShift
 
 __all__ = [
     "EwaBicubic",
@@ -74,6 +76,62 @@ class Placebo(ComplexScaler, abstract=True):
         self.taper = taper
         self.antiring = antiring
         super().__init__(**kwargs)
+
+    def scale(
+        self,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        # ComplexScaler adds shift per planes
+        shift: tuple[TopShift | list[TopShift], LeftShift | list[LeftShift]] = (0, 0),
+        *,
+        # `linear` and `sigmoid` from LinearScaler
+        linear: bool | None = None,
+        sigmoid: bool | tuple[Slope, Center] = False,
+        # `border_handling`, `sample_grid_model`, `sar`, `dar`, `dar_in` and `keep_ar` from KeepArScaler
+        border_handling: BorderHandling = BorderHandling.MIRROR,
+        sample_grid_model: SampleGridModel = SampleGridModel.MATCH_EDGES,
+        sar: Sar | float | bool | None = None,
+        dar: Dar | float | bool | None = None,
+        dar_in: Dar | bool | float | None = None,
+        keep_ar: bool | None = None,
+        # ComplexScaler adds blur
+        blur: float | None = None,
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        if fmt := kwargs.get("format"):
+            fmt = get_video_format(fmt)
+
+            if (
+                any(
+                    in_v != out_v
+                    for (k, in_v), out_v in zip(clip.format._as_dict().items(), fmt._as_dict().values())
+                    if not k.startswith("subsampling")
+                )
+                and clip.format.color_family is fmt.color_family is vs.YUV
+            ):
+                raise UnsupportedVideoFormatError(
+                    "Only YUV subsampling scaling is supported.", self.__class__, fmt.name
+                )
+
+            shift = (to_arr(shift[0]), to_arr(shift[1]))
+
+        return super().scale(
+            clip,
+            width,
+            height,
+            shift,
+            linear=linear,
+            sigmoid=sigmoid,
+            border_handling=border_handling,
+            sample_grid_model=sample_grid_model,
+            sar=sar,
+            dar=dar,
+            dar_in=dar_in,
+            keep_ar=keep_ar,
+            blur=blur,
+            **kwargs,
+        )
 
     def get_scale_args(
         self,
