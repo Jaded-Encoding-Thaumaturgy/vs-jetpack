@@ -99,7 +99,38 @@ class Placebo(ComplexScaler, abstract=True):
         blur: float | None = None,
         **kwargs: Any,
     ) -> vs.VideoNode:
-        if fmt := kwargs.get("format"):
+        """
+        Scale a clip to the given resolution, with aspect ratio and linear light support.
+
+        Keyword arguments passed during initialization are automatically injected here,
+        unless explicitly overridden by the arguments provided at call time.
+        Only arguments that match named parameters in this method are injected.
+
+        If a `format` is provided, only a change in chroma subsampling is allowed.
+        Other format characteristics (bit depth, sample type, color family, etc.) must match the source clip.
+
+        Args:
+            clip: The source clip.
+            width: Target width (defaults to clip width if None).
+            height: Target height (defaults to clip height if None).
+            shift: Subpixel shift (top, left) applied during scaling. If a tuple is provided, it is used uniformly. If a
+                list is given, the shift is applied per plane.
+            linear: Whether to linearize the input before descaling. If None, inferred from sigmoid.
+            sigmoid: Whether to use sigmoid transfer curve. Can be True, False, or a tuple of (slope, center). `True`
+                applies the defaults values (6.5, 0.75). Keep in mind sigmoid slope has to be in range 1.0-20.0
+                (inclusive) and sigmoid center has to be in range 0.0-1.0 (inclusive).
+            border_handling: Method for handling image borders during sampling.
+            sample_grid_model: Model used to align sampling grid.
+            sar: Sample aspect ratio to assume or convert to.
+            dar: Desired display aspect ratio.
+            dar_in: Input display aspect ratio, if different from clip's.
+            keep_ar: Whether to adjust dimensions to preserve aspect ratio.
+            blur: Amount of blur to apply during scaling.
+
+        Returns:
+            Scaled clip, optionally aspect-corrected and linearized.
+        """
+        if fmt := fallback(kwargs.get("format"), self.kwargs.get("format"), False):
             fmt = get_video_format(fmt)
 
             if (
