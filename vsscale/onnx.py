@@ -608,29 +608,25 @@ class BaseArtCNNChroma(BaseArtCNN):
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         assert clip.format.color_family == vs.YUV
 
+        bits = self._pick_precision(16, 32)
+
         if clip.format.subsampling_h != 0 or clip.format.subsampling_w != 0:
             chroma_scaler = Kernel.ensure_obj(kwargs.pop("chroma_scaler", Bilinear))
 
-            format = clip.format.replace(
-                subsampling_h=0,
-                subsampling_w=0,
-                sample_type=vs.FLOAT,
-                bits_per_sample=self._pick_precision(16, 32),
-            )
+            format = clip.format.replace(subsampling_h=0, subsampling_w=0, sample_type=vs.FLOAT, bits_per_sample=bits)
             dither_type = DitherType.ORDERED if DitherType.should_dither(clip.format, format) else DitherType.NONE
 
             debug(f"{self}.pre: Before pp; Clip format is {clip.format!r}")
 
-            clip = limiter(
-                chroma_scaler.resample(clip, **dict[str, Any](format=format, dither_type=dither_type) | kwargs),
-                func=self.__class__,
-            )
+            clip = chroma_scaler.resample(clip, **dict[str, Any](format=format, dither_type=dither_type) | kwargs)
 
             debug(f"{self}.pre: Before pp; Clip format is {clip.format!r}")
 
-            return norm_expr(clip, "x 0.5 +", [1, 2], func=self.__class__)
+            return norm_expr(clip, ("x 0 1 clamp", "x 0.5 + 0 1 clamp"), func=self.__class__)
 
-        return norm_expr(super().preprocess_clip(clip, **kwargs), "x 0.5 +", [1, 2], func=self.__class__)
+        return norm_expr(
+            depth(clip, bits, vs.FLOAT, **kwargs), ("x 0 1 clamp", "x 0.5 + 0 1 clamp"), func=self.__class__
+        )
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         clip = norm_expr(clip, "x 0.5 -", [1, 2], func=self.__class__)
