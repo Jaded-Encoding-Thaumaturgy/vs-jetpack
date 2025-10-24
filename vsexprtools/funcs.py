@@ -81,7 +81,7 @@ def expr_func(
     logging_debug(f"expr_func ({norm_func_name(func)}): {expr}")
 
     try:
-        return core.llvmexpr.Expr(clips, expr, fmt, boundary, None, opt, None)
+        return core.llvmexpr.Expr(clips, expr, fmt, boundary, None, opt, None, False)
     except AttributeError as e:
         raise CustomRuntimeError(e)
     except vs.Error as e:
