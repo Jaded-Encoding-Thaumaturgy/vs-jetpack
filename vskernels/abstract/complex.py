@@ -4,6 +4,7 @@ This module defines the abstract classes for scaling, descaling and resampling o
 
 from __future__ import annotations
 
+from fractions import Fraction
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, overload
 
@@ -403,15 +404,23 @@ class KeepArScaler(Scaler):
                 'If "keep_ar" is not None, then at least one of "sar", "dar", or "dar_in" must be None.'
             )
 
-        # Basically what it does:
-        # - If `xar` is Xar or float -> Converted to Xar
-        # - If `xar` is None         -> It fallbacks to bool(keep_ar). Becomes True or False
-        # - If `xar` is True         -> Value after the `or`
-        # - If `xar` is False        -> Fallback value: Sar(1, 1), Dar(0) or out_dar
-        src_sar = Sar.from_param(sar if sar is not None else bool(keep_ar), Sar(1, 1)) or Sar.from_clip(clip)
+        def _norm_xar[XarT: (Dar, Sar)](
+            xar: Fraction | float | bool | None, if_true: XarT, if_false: XarT, xar_t: type[XarT]
+        ) -> XarT:
+            if xar is None:
+                xar = bool(keep_ar)
 
-        out_dar = Dar.from_param(dar if dar is not None else bool(keep_ar), Dar(0)) or Dar.from_res(width, height)
-        src_dar = Dar.from_param(dar_in if dar_in is not None else bool(keep_ar), out_dar) or Dar.from_clip(clip, False)
+            if xar is True:
+                return if_true
+
+            if xar is False:
+                return if_false
+
+            return xar_t(xar)
+
+        src_sar = _norm_xar(sar, Sar.from_clip(clip), Sar(1, 1), Sar)
+        out_dar = _norm_xar(dar, Dar.from_res(width, height), Dar(0), Dar)
+        src_dar = _norm_xar(dar_in, Dar.from_clip(clip, False), out_dar, Dar)
 
         return float(src_sar), float(src_dar), float(out_dar)
 
