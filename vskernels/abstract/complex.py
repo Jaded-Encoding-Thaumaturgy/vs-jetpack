@@ -741,7 +741,7 @@ class ComplexDescaler(LinearDescaler):
         input_clip = clip
         clip = depth(clip, 32, vs.FLOAT)
 
-        de_base_args = (width, height // (1 + field_based.is_inter))
+        de_base_args = (width, height // (1 + field_based.is_inter()))
         kwargs.update(
             linear=linear,
             sigmoid=sigmoid,
@@ -752,7 +752,7 @@ class ComplexDescaler(LinearDescaler):
 
         sample_grid_model = SampleGridModel(sample_grid_model)
 
-        if field_based.is_inter:
+        if field_based.is_inter():
             from vsdeinterlace import reweave
 
             shift_y, shift_x = _descale_shift_norm(shift, False, self.descale)
@@ -768,7 +768,7 @@ class ComplexDescaler(LinearDescaler):
 
             field_shift = 0.125 * height / clip.height
 
-            fields = clip.std.SeparateFields(field_based.is_tff)
+            fields = clip.std.SeparateFields(field_based.is_tff())
 
             descaled_tf = super().descale(
                 fields[0::2],
@@ -839,14 +839,14 @@ class ComplexDescaler(LinearDescaler):
 
         clip, bits = expect_bits(clip, 32)
 
-        de_base_args = (width, height // (1 + field_based.is_inter))
+        de_base_args = (width, height // (1 + field_based.is_inter()))
         kwargs.update(
             border_handling=BorderHandling.from_param(border_handling, self.rescale), ignore_mask=ignore_mask, blur=blur
         )
 
         sample_grid_model = SampleGridModel(sample_grid_model)
 
-        if field_based.is_inter:
+        if field_based.is_inter():
             raise NotImplementedError
         else:
             shift = _descale_shift_norm(shift, True, self.rescale)

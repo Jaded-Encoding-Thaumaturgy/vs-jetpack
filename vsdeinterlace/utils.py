@@ -50,7 +50,7 @@ def get_field_difference(
     """
     func = func or get_field_difference
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
+    tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff()
 
     stats = clip.std.SeparateFields(tff).std.PlaneStats()
 
@@ -73,7 +73,7 @@ def weave(clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: Fu
     """
     func = func or weave
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
+    tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff()
 
     return clip.std.DoubleWeave(tff)[::2]
 
@@ -114,6 +114,6 @@ def reinterlace(
     """
     func = func or reinterlace
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
+    tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff()
 
     return weave(clip.std.SeparateFields(tff).std.SelectEvery(4, (0, 3)), tff, func)

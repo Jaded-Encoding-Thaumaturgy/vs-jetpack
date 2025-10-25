@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Mapping, Self, overload
+from typing import Any, Mapping
 
-from jetpytools import FuncExcept
+from jetpytools import CustomValueError, FuncExcept
 
 from ..exceptions import (
-    ReservedMatrixError,
-    ReservedPrimariesError,
-    ReservedTransferError,
+    UndefinedColorRangeError,
     UndefinedMatrixError,
     UndefinedPrimariesError,
     UndefinedTransferError,
-    UnsupportedColorRangeError,
     UnsupportedMatrixError,
     UnsupportedPrimariesError,
     UnsupportedTransferError,
@@ -40,30 +37,6 @@ class Matrix(PropEnum):
     """
     Matrix coefficients ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.5).
     """
-
-    _value_: int
-
-    @classmethod
-    def _missing_(cls, value: Any) -> Matrix | None:
-        value = super()._missing_(value)
-
-        if value is None:
-            return Matrix.UNKNOWN
-        elif isinstance(value, cls):
-            return value
-
-        if Matrix.RGB < value < Matrix.ICTCP:
-            raise ReservedMatrixError(f"Matrix({value}) is reserved.", cls)
-
-        if value > Matrix.ICTCP:
-            raise UnsupportedMatrixError(
-                f"Matrix({value}) is current unsupported. "
-                "If you believe this to be in error, please leave an issue "
-                "in the vs-tools GitHub repository.",
-                cls,
-            )
-
-        return None
 
     RGB = 0
     """
@@ -213,49 +186,23 @@ class Matrix(PropEnum):
 
     """
 
-    if TYPE_CHECKING:
-
-        @overload
-        @classmethod
-        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: MatrixLike, func_except: FuncExcept | None = None) -> Self: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: MatrixLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
-
-        @classmethod
-        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
-            """
-            Determine the Matrix through a parameter.
-
-            Args:
-                value: Value or Matrix object.
-                func_except: Function returned for custom error handling.
-
-            Returns:
-                Matrix object or None.
-            """
-
-        @classmethod
-        def from_param_or_video(
-            cls,
-            value: MatrixLike | None,
-            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
-            strict: bool = False,
-            func_except: FuncExcept | None = None,
-        ) -> Matrix: ...
-
     @classmethod
-    def is_unknown(cls, value: int | Matrix) -> bool:
-        """
-        Check if Matrix is Matrix.UNKNOWN.
-        """
+    def _missing_(cls, value: object) -> Matrix:
+        return Matrix.UNKNOWN if (v := super()._missing_(value)) is None else v
 
-        return value == cls.UNKNOWN
+    @property
+    def pretty_string(self) -> str:
+        return _matrix_pretty_name_map.get(self, super().pretty_string)
+
+    @property
+    def string(self) -> str:
+        return _matrix_name_map.get(self, super().string)
+
+    def is_unknown(self) -> bool:
+        """
+        Check if the matrix is Matrix.UNKNOWN.
+        """
+        return self is Matrix.UNKNOWN
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Matrix:
@@ -268,7 +215,6 @@ class Matrix(PropEnum):
         Returns:
             Matrix object.
         """
-
         from ..utils import get_var_infos
 
         fmt, width, height = get_var_infos(frame)
@@ -276,11 +222,8 @@ class Matrix(PropEnum):
         if fmt.color_family == vs.RGB:
             return Matrix.RGB
 
-        if width <= 1024 and height <= 576:
-            if height > 486:
-                return Matrix.BT470BG
-
-            return Matrix.SMPTE170M
+        if (width, height) <= (1024, 576):
+            return Matrix.SMPTE170M if height <= 486 else Matrix.BT470BG
 
         return Matrix.BT709
 
@@ -289,107 +232,67 @@ class Matrix(PropEnum):
         cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> Matrix:
         """
-        Obtain the matrix of a clip from the frame properties.
+        Try to obtain the matrix of a clip from the frame props or fallback to clip's resolution
+        if the prop is undefined, strict=False and src is a clip.
 
         Args:
             src: Input clip, frame, or props.
-            strict: Be strict about the frame properties. Will ALWAYS error with Matrix.UNKNOWN.
+            strict: Be strict about the frame props. Will ALWAYS error with Matrix.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Matrix object.
 
         Raises:
-            UndefinedMatrixError: Matrix is undefined.
-            UndefinedMatrixError: Matrix can not be determined from the frameprops.
+            UndefinedMatrixError: If the matrix is undefined or can not be determined from the frameprops.
         """
-
         return _base_from_video(cls, src, UndefinedMatrixError, strict, func)
 
     @classmethod
-    def from_transfer(cls, transfer: Transfer, strict: bool = False) -> Matrix:
+    def from_transfer(cls, value: TransferLike, strict: bool = False, func: FuncExcept | None = None) -> Matrix:
         """
         Obtain the matrix from a Transfer object.
 
         Args:
             transfer: Transfer object.
             strict: Be strict about the transfer-matrix mapping. Will ALWAYS error with Transfer.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Matrix object.
 
         Raises:
-            UnsupportedTransferError: Transfer is not supported.
+            UnsupportedTransferError: If the transfer is unsupported.
         """
-
-        if transfer not in _transfer_matrix_map:
-            if strict:
-                raise UnsupportedTransferError(f"{transfer} is not supported!", cls.from_transfer)
-
-            return cls(transfer.value)
-
-        return _transfer_matrix_map[transfer]
+        return _base_from_colorspace_spec(
+            cls, Transfer, value, _transfer_matrix_map, UnsupportedTransferError, strict, func
+        )
 
     @classmethod
-    def from_primaries(cls, primaries: Primaries, strict: bool = False) -> Matrix:
+    def from_primaries(cls, value: PrimariesLike, strict: bool = False, func: FuncExcept | None = None) -> Matrix:
         """
         Obtain the matrix from a Primaries object.
 
         Args:
             primaries: Primaries object.
             strict: Be strict about the primaries-matrix mapping. Will ALWAYS error with Primaries.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Matrix object.
 
         Raises:
-            UnsupportedPrimariesError: Primaries is not supported.
+            UnsupportedPrimariesError: If the primaries are unsupported.
         """
-
-        if primaries not in _primaries_matrix_map:
-            if strict:
-                raise UnsupportedPrimariesError(f"{primaries} is not supported!", cls.from_primaries)
-
-            return cls(primaries.value)
-
-        return _primaries_matrix_map[primaries]
-
-    @property
-    def pretty_string(self) -> str:
-        return _matrix_pretty_name_map.get(self, super().pretty_string)
-
-    @property
-    def string(self) -> str:
-        return _matrix_name_map.get(self, super().string)
+        return _base_from_colorspace_spec(
+            cls, Primaries, value, _primaries_matrix_map, UnsupportedPrimariesError, strict, func
+        )
 
 
 class Transfer(PropEnum):
     """
     Transfer characteristics ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.4).
     """
-
-    _value_: int
-
-    @classmethod
-    def _missing_(cls, value: Any) -> Transfer | None:
-        value = super()._missing_(value)
-
-        if value is None:
-            return Transfer.UNKNOWN
-        elif isinstance(value, cls):
-            return value
-
-        if Transfer.BT709 < value < Transfer.STD_B67 or value == 0:
-            raise ReservedTransferError(f"Transfer({value}) is reserved.", cls)
-
-        if value > Transfer.STD_B67:
-            raise UnsupportedTransferError(
-                f"Transfer({value}) is current unsupported. "
-                "If you believe this to be in error, please leave an issue "
-                "in the vs-tools GitHub repository.",
-                cls,
-            )
-
-        return None
 
     BT709 = 1
     """
@@ -539,50 +442,51 @@ class Transfer(PropEnum):
     Sony S-Log2
     """
 
-    if TYPE_CHECKING:
-
-        @overload
-        @classmethod
-        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: TransferLike, func_except: FuncExcept | None = None) -> Self: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: TransferLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
-
-        @classmethod
-        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
-            """
-            Determine the Transfer through a parameter.
-
-            Args:
-                value: Value or Transfer object.
-                func_except: Function returned for custom error handling. This should only be set by VS package
-                    developers.
-
-            Returns:
-                Transfer object or None.
-            """
-
-        @classmethod
-        def from_param_or_video(
-            cls,
-            value: TransferLike | None,
-            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
-            strict: bool = False,
-            func_except: FuncExcept | None = None,
-        ) -> Transfer: ...
-
     @classmethod
-    def is_unknown(cls, value: int | Transfer) -> bool:
-        """
-        Check if Transfer is unknown.
-        """
+    def _missing_(cls, value: Any) -> Transfer | None:
+        return Transfer.UNKNOWN if (v := super()._missing_(value)) is None else v
 
-        return value == cls.UNKNOWN
+    @property
+    def pretty_string(self) -> str:
+        return _transfer_pretty_name_map.get(self, super().pretty_string)
+
+    @property
+    def string(self) -> str:
+        return _transfer_name_map.get(self, super().string)
+
+    @property
+    def value_vs(self) -> int:
+        """
+        VapourSynth value.
+
+        Raises:
+            UnsupportedTransferError: If the transfer is unsupported by VapourSynth/zimg.
+        """
+        if self >= self.GAMMA18:
+            raise UnsupportedTransferError(
+                "This transfer is unsupported by VapourSynth.", f"{self.__class__.__name__}.value_vs"
+            )
+
+        return self.value
+
+    @property
+    def value_libplacebo(self) -> int:
+        """
+        libplacebo value.
+        """
+        return _transfer_placebo_map[self]
+
+    def is_unknown(self) -> bool:
+        """
+        Check if the transfer is Transfer.UNKNOWN.
+        """
+        return self is Transfer.UNKNOWN
+
+    def from_libplacebo(self) -> int:
+        """
+        Obtain the transfer from libplacebo.
+        """
+        return _placebo_transfer_map[self]
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Transfer:
@@ -595,7 +499,6 @@ class Transfer(PropEnum):
         Returns:
             Transfer object.
         """
-
         from ..utils import get_var_infos
 
         fmt, width, height = get_var_infos(frame)
@@ -603,150 +506,74 @@ class Transfer(PropEnum):
         if fmt.color_family == vs.RGB:
             return Transfer.SRGB
 
-        if width <= 1024 and height <= 576:
-            return Transfer.BT601
-
-        return Transfer.BT709
+        return Transfer.BT601 if (width, height) <= (1024, 576) else Transfer.BT709
 
     @classmethod
     def from_video(
         cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> Transfer:
         """
-        Obtain the transfer of a clip from the frame properties.
+        Try to obtain the transfer of a clip from the frame props or fallback to clip's resolution
+        if the prop is undefined, strict=False and src is a clip.
 
         Args:
             src: Input clip, frame, or props.
             strict: Be strict about the properties. The result may NOT be Transfer.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Transfer object.
 
         Raises:
-            UndefinedTransferError: Transfer is undefined.
-            UndefinedTransferError: Transfer can not be determined from the frameprops.
+            UndefinedTransferError: If the transfer is undefined or can not be determined from the frameprops.
         """
-
         return _base_from_video(cls, src, UndefinedTransferError, strict, func)
 
     @classmethod
-    def from_matrix(cls, matrix: Matrix, strict: bool = False) -> Transfer:
+    def from_matrix(cls, value: MatrixLike, strict: bool = False, func: FuncExcept | None = None) -> Transfer:
         """
         Obtain the transfer from a Matrix object.
 
         Args:
             matrix: Matrix object.
             strict: Be strict about the matrix-transfer mapping. Will ALWAYS error with Matrix.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Transfer object.
 
         Raises:
-            UnsupportedMatrixError: Matrix is not supported.
+            UnsupportedMatrixError: If the matrix is unsupported.
         """
-
-        if matrix not in _matrix_transfer_map:
-            if strict:
-                raise UnsupportedMatrixError(f"{matrix} is not supported!", cls.from_matrix)
-
-            return cls(matrix.value)
-
-        return _matrix_transfer_map[matrix]
+        return _base_from_colorspace_spec(
+            cls, Matrix, value, _matrix_transfer_map, UnsupportedMatrixError, strict, func
+        )
 
     @classmethod
-    def from_primaries(cls, primaries: Primaries, strict: bool = False) -> Transfer:
+    def from_primaries(cls, value: PrimariesLike, strict: bool = False, func: FuncExcept | None = None) -> Transfer:
         """
         Obtain the transfer from a Primaries object.
 
         Args:
             primaries: Primaries object.
             strict: Be strict about the primaries-transfer mapping. Will ALWAYS error with Primaries.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Transfer object.
 
         Raises:
-            UnsupportedPrimariesError: Primaries is not supported.
+            UnsupportedPrimariesError: If the primaries are unsupported.
         """
-
-        if primaries not in _primaries_transfer_map:
-            if strict:
-                raise UnsupportedPrimariesError(f"{primaries} is not supported!", cls.from_primaries)
-
-            return cls(primaries.value)
-
-        return _primaries_transfer_map[primaries]
-
-    @classmethod
-    def from_libplacebo(cls, val: int) -> int:
-        """
-        Obtain the transfer from libplacebo.
-        """
-
-        return _placebo_transfer_map[val]
-
-    @property
-    def value_vs(self) -> int:
-        """
-        VapourSynth value.
-
-        Raises:
-            ReservedTransferError: Transfer is not an internal transfer, but a libplacebo one.
-        """
-
-        if self >= self.GAMMA18:
-            raise ReservedTransferError(
-                "This transfer isn't a VapourSynth internal transfer, but a libplacebo one!",
-                f"{self.__class__.__name__}.value_vs",
-            )
-
-        return self.value
-
-    @property
-    def value_libplacebo(self) -> int:
-        """
-        libplacebo value.
-        """
-
-        return _transfer_placebo_map[self]
-
-    @property
-    def pretty_string(self) -> str:
-        return _transfer_pretty_name_map.get(self, super().pretty_string)
-
-    @property
-    def string(self) -> str:
-        return _transfer_name_map.get(self, super().string)
+        return _base_from_colorspace_spec(
+            cls, Primaries, value, _primaries_transfer_map, UnsupportedPrimariesError, strict, func
+        )
 
 
 class Primaries(PropEnum):
     """
     Color primaries ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.3).
     """
-
-    _value_: int
-
-    @classmethod
-    def _missing_(cls, value: Any) -> Primaries | None:
-        value = super()._missing_(value)
-
-        if value is None:
-            return Primaries.UNKNOWN
-        elif isinstance(value, cls):
-            return value
-
-        if cls.BT709 < value < cls.JEDEC_P22:
-            raise ReservedPrimariesError(f"Primaries({value}) is reserved.", cls)
-
-        if value > cls.JEDEC_P22:
-            raise UnsupportedPrimariesError(
-                f"Primaries({value}) is current unsupported. "
-                "If you believe this to be in error, please leave an issue "
-                "in the vs-tools GitHub repository.",
-                cls,
-            )
-
-        return None
 
     BT709 = 1
     """
@@ -987,50 +814,52 @@ class Primaries(PropEnum):
     ACES Primaries #1
     """
 
-    if TYPE_CHECKING:
-
-        @overload
-        @classmethod
-        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: PrimariesLike, func_except: FuncExcept | None = None) -> Self: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: PrimariesLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
-
-        @classmethod
-        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
-            """
-            Determine the Primaries through a parameter.
-
-            Args:
-                value: Value or Primaries object.
-                func_except: Function returned for custom error handling. This should only be set by VS package
-                    developers.
-
-            Returns:
-                Primaries object or None.
-            """
-
-        @classmethod
-        def from_param_or_video(
-            cls,
-            value: PrimariesLike | None,
-            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
-            strict: bool = False,
-            func_except: FuncExcept | None = None,
-        ) -> Primaries: ...
-
     @classmethod
-    def is_unknown(cls, value: int | Primaries) -> bool:
-        """
-        Check if Primaries is unknown.
-        """
+    def _missing_(cls, value: Any) -> Primaries | None:
+        return Primaries.UNKNOWN if (v := super()._missing_(value)) is None else v
 
-        return value == cls.UNKNOWN
+    @property
+    def pretty_string(self) -> str:
+        return _primaries_pretty_name_map.get(self, super().pretty_string)
+
+    @property
+    def string(self) -> str:
+        return _primaries_name_map.get(self, super().string)
+
+    @property
+    def value_vs(self) -> int:
+        """
+        VapourSynth value.
+
+        Raises:
+            UnsupportedPrimariesError: If the Primaries are unsupported by VapourSynth/zimg.
+        """
+        if self >= self.APPLE:
+            raise UnsupportedPrimariesError(
+                "These primaries are unsupported by VapourSynth.",
+                f"{self.__class__.__name__}.value_vs",
+            )
+
+        return self.value
+
+    @property
+    def value_libplacebo(self) -> int:
+        """
+        libplacebo value.
+        """
+        return _primaries_placebo_map[self]
+
+    def is_unknown(self) -> bool:
+        """
+        Check if the primaries are Primaries.UNKNOWN.
+        """
+        return self is Primaries.UNKNOWN
+
+    def from_libplacebo(self) -> int:
+        """
+        Obtain the primaries from libplacebo.
+        """
+        return _placebo_primaries_map[self]
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Primaries:
@@ -1043,7 +872,6 @@ class Primaries(PropEnum):
         Returns:
             Primaries object.
         """
-
         from ..utils import get_var_infos
 
         fmt, width, height = get_var_infos(frame)
@@ -1051,11 +879,8 @@ class Primaries(PropEnum):
         if fmt.color_family == vs.RGB:
             return Primaries.BT709
 
-        if width <= 1024 and height <= 576:
-            if height > 486:
-                return Primaries.BT470BG
-
-            return Primaries.SMPTE170M
+        if (width, height) <= (1024, 576):
+            return Primaries.SMPTE170M if height <= 486 else Primaries.BT470BG
 
         return Primaries.BT709
 
@@ -1064,132 +889,67 @@ class Primaries(PropEnum):
         cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> Primaries:
         """
-        Obtain the primaries of a clip from the frame properties.
+        Try to obtain the primaries of a clip from the frame props or fallback to clip's resolution
+        if the prop is undefined, strict=False and src is a clip.
 
         Args:
             src: Input clip, frame, or props.
-            strict: Be strict about the frame properties. Will ALWAYS error with Primaries.UNKNOWN.
+            strict: Be strict about the frame props. Will ALWAYS error with Primaries.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Primaries object.
 
         Raises:
-            UndefinedPrimariesError: Primaries is undefined.
-            UndefinedPrimariesError: Primaries can not be determined from the frame properties.
+            UndefinedPrimariesError: If the primaries are undefined or can not be determined from the frameprops.
         """
-
         return _base_from_video(cls, src, UndefinedPrimariesError, strict, func)
 
     @classmethod
-    def from_matrix(cls, matrix: Matrix, strict: bool = False) -> Primaries:
+    def from_matrix(cls, value: MatrixLike, strict: bool = False, func: FuncExcept | None = None) -> Primaries:
         """
         Obtain the primaries from a Matrix object.
 
         Args:
             matrix: Matrix object.
             strict: Be strict about the matrix-primaries mapping. Will ALWAYS error with Matrix.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Primaries object.
 
         Raises:
-            UnsupportedMatrixError: Matrix is not supported.
+            UnsupportedMatrixError: If the matrix is unsupported.
         """
-
-        if matrix not in _matrix_primaries_map:
-            if strict:
-                raise UnsupportedMatrixError(f"{matrix} is not supported!", cls.from_matrix)
-
-            return cls(matrix.value)
-
-        return _matrix_primaries_map[matrix]
+        return _base_from_colorspace_spec(
+            cls, Matrix, value, _matrix_primaries_map, UnsupportedMatrixError, strict, func
+        )
 
     @classmethod
-    def from_transfer(cls, transfer: Transfer, strict: bool = False) -> Primaries:
+    def from_transfer(cls, value: TransferLike, strict: bool = False, func: FuncExcept | None = None) -> Primaries:
         """
         Obtain the primaries from a Transfer object.
 
         Args:
             transfer: Transfer object.
             strict: Be strict about the transfer-primaries mapping. Will ALWAYS error with Transfer.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Matrix object.
 
         Raises:
-            UnsupportedTransferError: Transfer is not supported.
+            UnsupportedTransferError: If the transfer is unsupported.
         """
-
-        if transfer not in _transfer_primaries_map:
-            if strict:
-                raise UnsupportedTransferError(f"{transfer} is not supported!", cls.from_transfer)
-
-            return cls(transfer.value)
-
-        return _transfer_primaries_map[transfer]
-
-    @classmethod
-    def from_libplacebo(cls, val: int) -> int:
-        """
-        Obtain the primaries from libplacebo.
-        """
-
-        return _placebo_primaries_map[val]
-
-    @property
-    def value_vs(self) -> int:
-        """
-        VapourSynth value.
-
-        Raises:
-            ReservedPrimariesError: Primaries are not an internal primaries, but a libplacebo one.
-        """
-
-        if self >= self.APPLE:
-            raise ReservedPrimariesError(
-                "This primaries isn't a VapourSynth internal primaries, but a libplacebo one!",
-                f"{self.__class__.__name__}.value_vs",
-            )
-
-        return self.value
-
-    @property
-    def value_libplacebo(self) -> int:
-        """
-        libplacebo value.
-        """
-
-        return _primaries_placebo_map[self]
-
-    @property
-    def pretty_string(self) -> str:
-        return _primaries_pretty_name_map.get(self, super().pretty_string)
-
-    @property
-    def string(self) -> str:
-        return _primaries_name_map.get(self, super().string)
+        return _base_from_colorspace_spec(
+            cls, Transfer, value, _transfer_primaries_map, UnsupportedTransferError, strict, func
+        )
 
 
 class ColorRange(PropEnum):
     """
     Pixel Range ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Equations E-10 through E-20.
     """
-
-    _value_: int
-
-    @classmethod
-    def _missing_(cls, value: Any) -> ColorRange | None:
-        value = super()._missing_(value)
-
-        if value is None:
-            return ColorRange.LIMITED
-        elif isinstance(value, cls):
-            return value
-
-        if value > ColorRange.LIMITED:
-            raise UnsupportedPrimariesError(f"ColorRange({value}) is unsupported.", cls)
-
-        return None
 
     LIMITED = 1
     """
@@ -1208,49 +968,41 @@ class ColorRange(PropEnum):
     """
     PC = FULL
 
-    if TYPE_CHECKING:
+    @classmethod
+    def _missing_(cls, value: object) -> ColorRange:
+        return ColorRange.LIMITED if (v := super()._missing_(value)) is None else v
 
-        @overload
-        @classmethod
-        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
+    @property
+    def value_vs(self) -> int:
+        """
+        VapourSynth (props) value.
+        """
+        return self.value
 
-        @overload
-        @classmethod
-        def from_param(cls, value: ColorRangeLike, func_except: FuncExcept | None = None) -> Self: ...
+    @property
+    def value_zimg(self) -> int:
+        """
+        zimg (resize plugin) value.
+        """
+        return ~self.value + 2
 
-        @overload
-        @classmethod
-        def from_param(cls, value: ColorRangeLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
+    def is_limited(self) -> bool:
+        """
+        Check if ColorRange is limited.
+        """
+        return bool(self.value)
 
-        @classmethod
-        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
-            """
-            Determine the ColorRange through a parameter.
-
-            Args:
-                value: Value or ColorRange object.
-                func_except: Function returned for custom error handling. This should only be set by VS package
-                    developers.
-
-            Returns:
-                ColorRange object or None.
-            """
-
-        @classmethod
-        def from_param_or_video(
-            cls,
-            value: ColorRangeLike | None,
-            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
-            strict: bool = False,
-            func_except: FuncExcept | None = None,
-        ) -> ColorRange: ...
+    def is_full(self) -> bool:
+        """
+        Check if ColorRange is full.
+        """
+        return not self.value
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> ColorRange:
         """
         Guess the color range from the frame resolution.
         """
-
         from ..utils import get_var_infos
 
         fmt, _, _ = get_var_infos(frame)
@@ -1265,49 +1017,21 @@ class ColorRange(PropEnum):
         cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> ColorRange:
         """
-        Obtain the color range of a clip from the frame properties.
+        Try to obtain the color range of a clip from the frame props or fallback to clip's resolution
+        if the prop is undefined, strict=False and src is a clip.
 
         Args:
             src: Input clip, frame, or props.
-            strict: Be strict about the frame properties. Sets the ColorRange as MISSING if prop is not there.
+            strict: Be strict about the frame props. Sets the ColorRange as MISSING if prop is not there.
+            func: Function returned for custom error handling.
 
         Returns:
             ColorRange object.
-        """
 
-        return _base_from_video(cls, src, UnsupportedColorRangeError, strict, func)
-
-    @property
-    def value_vs(self) -> int:
+        Raises:
+            UndefinedColorRangeError: If the color range is undefined or can not be determined from the frameprops.
         """
-        VapourSynth (props) value.
-        """
-
-        return self.value
-
-    @property
-    def value_zimg(self) -> int:
-        """
-        zimg (resize plugin) value.
-        """
-
-        return ~self.value + 2
-
-    @property
-    def is_limited(self) -> bool:
-        """
-        Check if ColorRange is limited.
-        """
-
-        return bool(self.value)
-
-    @property
-    def is_full(self) -> bool:
-        """
-        Check if ColorRange is full.
-        """
-
-        return not self.value
+        return _base_from_video(cls, src, UndefinedColorRangeError, strict, func)
 
 
 _transfer_matrix_map: dict[Transfer, Matrix] = {
@@ -1503,11 +1227,24 @@ ColorRangeT = ColorRangeLike
 
 
 def _norm_props_enums(kwargs: dict[str, Any]) -> dict[str, Any]:
-    return {
-        key: (
-            (value.value_zimg if hasattr(value, "value_zimg") else int(value))  # pyright: ignore[reportAttributeAccessIssue]
-            if isinstance(value, PropEnum)
-            else value
-        )
-        for key, value in kwargs.items()
-    }
+    return {key: (value.value_zimg if isinstance(value, ColorRange) else value) for key, value in kwargs.items()}
+
+
+def _base_from_colorspace_spec[PropEnumT0: PropEnum, PropEnumT1: PropEnum](
+    cls: type[PropEnumT0],
+    cast_cls: type[PropEnumT1],
+    value: MatrixLike | TransferLike | PrimariesLike,
+    lut: Mapping[PropEnumT1, PropEnumT0],
+    exception: type[CustomValueError],
+    strict: bool,
+    func: FuncExcept | None,
+) -> PropEnumT0:
+    value = cast_cls.from_param(value, func)
+
+    try:
+        return lut[value]
+    except KeyError:
+        if strict:
+            raise exception(f"{value} is not supported!", func) from None
+
+    return cls.from_param(None, func)

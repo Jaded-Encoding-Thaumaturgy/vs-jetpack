@@ -73,9 +73,9 @@ def video_heuristics(
         prop_enums["chromaloc"] = ChromaLocation
 
     def _get_props(obj: vs.VideoNode | Mapping[str, Any], key: type[PropEnum]) -> PropEnum:
-        p = get_prop(obj, key, int, cast=key, default=None, func=video_heuristics)
+        p = get_prop(obj, key, int, cast=key, default=key.from_param(None, video_heuristics), func=video_heuristics)
 
-        if p is not None and not p.is_unknown(p):
+        if not p.is_unknown():
             return p
 
         assumed_props.append(key.prop_key)

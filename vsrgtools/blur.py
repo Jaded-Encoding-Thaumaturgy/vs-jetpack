@@ -716,7 +716,7 @@ def guided_filter(
     thr = normalize_seq(thr, clip.format.num_planes)
 
     size = normalize_seq(
-        [220, 225, 225] if ColorRange.from_video(clip, func=guided_filter).is_full else 256, clip.format.num_planes
+        [220, 225, 225] if ColorRange.from_video(clip, func=guided_filter).is_full() else 256, clip.format.num_planes
     )
 
     thr = [t / s for t, s in zip(thr, size)]

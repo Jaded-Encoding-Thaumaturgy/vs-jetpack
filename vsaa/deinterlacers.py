@@ -149,7 +149,7 @@ class Deinterlacer(Bobber, ABC):
         """
         return self._interpolate(
             clip,
-            FieldBased.from_param(fallback(tff, self.tff), self.__class__).is_tff,
+            FieldBased.from_param(fallback(tff, self.tff), self.__class__).is_tff(),
             fallback(double_rate, self.double_rate),
             False,
             **kwargs,
@@ -168,7 +168,7 @@ class Deinterlacer(Bobber, ABC):
             Deinterlaced clip.
         """
         return self._interpolate(
-            clip, FieldBased.from_param(fallback(tff, self.tff), self.__class__).is_tff, True, False, **kwargs
+            clip, FieldBased.from_param(fallback(tff, self.tff), self.__class__).is_tff(), True, False, **kwargs
         )
 
     def copy(self, **kwargs: Any) -> Self:

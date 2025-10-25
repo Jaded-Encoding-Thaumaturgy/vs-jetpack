@@ -1026,7 +1026,7 @@ class Bobber(BaseScaler):
         """
         clip_fieldbased = FieldBased.from_param_or_video(tff, clip, True, self.__class__)
 
-        return self.bob_function(clip, **self.get_bob_args(clip, tff=clip_fieldbased.is_tff, **kwargs))
+        return self.bob_function(clip, **self.get_bob_args(clip, tff=clip_fieldbased.is_tff(), **kwargs))
 
     def deinterlace(
         self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, double_rate: bool = True, **kwargs: Any

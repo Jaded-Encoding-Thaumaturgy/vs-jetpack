@@ -154,7 +154,7 @@ class MVTools(VSObject):
         self.vectors = fallback(vectors, MotionVectors())
 
         self.fieldbased = FieldBased.from_video(clip, False, self.__class__)
-        self.clip = clip.std.SeparateFields(self.fieldbased.is_tff) if self.fieldbased.is_inter else clip
+        self.clip = clip.std.SeparateFields(self.fieldbased.is_tff()) if self.fieldbased.is_inter() else clip
 
         self.pel = pel
         self.pad = normalize_seq(pad, 2)
@@ -380,8 +380,8 @@ class MVTools(VSObject):
             badrange=badrange,
             meander=meander,
             trymany=trymany,
-            fields=self.fieldbased.is_inter,
-            tff=self.fieldbased.is_tff,
+            fields=self.fieldbased.is_inter(),
+            tff=self.fieldbased.is_tff(),
             dct=dct,
         )
 
@@ -496,8 +496,8 @@ class MVTools(VSObject):
             overlapv=overlapv,
             divide=divide,
             meander=meander,
-            fields=self.fieldbased.is_inter,
-            tff=self.fieldbased.is_tff,
+            fields=self.fieldbased.is_inter(),
+            tff=self.fieldbased.is_tff(),
             dct=dct,
         )
 
@@ -644,10 +644,10 @@ class MVTools(VSObject):
             thsad=thsad,
             thsad2=thsad2,
             time=time,
-            fields=self.fieldbased.is_inter,
+            fields=self.fieldbased.is_inter(),
             thscd1=thscd1,
             thscd2=thscd2,
-            tff=self.fieldbased.is_tff,
+            tff=self.fieldbased.is_tff(),
         )
 
         comp_back, comp_fwrd = [
@@ -778,10 +778,10 @@ class MVTools(VSObject):
         flow_args = self.flow_args | KwargsNotNone(
             time=time,
             mode=mode,
-            fields=self.fieldbased.is_inter,
+            fields=self.fieldbased.is_inter(),
             thscd1=thscd1,
             thscd2=thscd2,
-            tff=self.fieldbased.is_tff,
+            tff=self.fieldbased.is_tff(),
         )
 
         flow_back, flow_fwrd = [

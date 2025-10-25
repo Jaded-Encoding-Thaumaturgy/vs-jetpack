@@ -14,6 +14,7 @@ __all__ = [
     "ReservedMatrixError",
     "ReservedPrimariesError",
     "ReservedTransferError",
+    "UndefinedColorRangeError",
     "UndefinedMatrixError",
     "UndefinedPrimariesError",
     "UndefinedTransferError",
@@ -178,6 +179,12 @@ class InvalidPrimariesError(CustomValueError):
 
 ########################################################
 # ColorRange
+
+
+class UndefinedColorRangeError(CustomValueError):
+    """
+    Raised when a undefined color range value is passed.
+    """
 
 
 class UnsupportedColorRangeError(CustomValueError):

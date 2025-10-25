@@ -1146,7 +1146,7 @@ def fft3d(clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
     Returns:
         A heavily degraded version of DFTTest, with added banding and color shifts.
     """
-    kwargs |= {"interlaced": FieldBased.from_video(clip, False, fft3d).is_inter}
+    kwargs |= {"interlaced": FieldBased.from_video(clip, False, fft3d).is_inter()}
 
     # fft3dfilter requires sigma values to be scaled to bit depth
     # https://github.com/myrsloik/VapourSynth-FFT3DFilter/blob/master/doc/fft3dfilter.md#scaling-parameters-according-to-bit-depth

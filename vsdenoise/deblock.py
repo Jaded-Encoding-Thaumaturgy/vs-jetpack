@@ -224,8 +224,8 @@ def deblock_qed(
     fieldbased = FieldBased.from_video(clip, func=deblock_qed)
     planes_pp = 0 if chroma_mode else planes
 
-    if fieldbased.is_inter:
-        clip = Point().scale(clip.std.SeparateFields(fieldbased.is_tff), height=clip.height)
+    if fieldbased.is_inter():
+        clip = Point().scale(clip.std.SeparateFields(fieldbased.is_tff()), height=clip.height)
 
     normal, strong = (
         clip.deblock.Deblock(quant[0], alpha[0], beta[0], planes),
@@ -250,7 +250,7 @@ def deblock_qed(
         if chroma_mode == 2:
             deblocked = join(deblocked, strong)
 
-    if fieldbased.is_inter:
+    if fieldbased.is_inter():
         from vsdeinterlace import weave
 
         deblocked = weave(Box().scale(deblocked, height=clip.height // 2), fieldbased, deblock_qed)
