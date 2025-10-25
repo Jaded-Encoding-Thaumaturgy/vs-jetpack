@@ -38,7 +38,7 @@ runs:
 
     - name: Install Python dependencies
       shell: bash
-      run: uv pip install --system -U cython setuptools wheel
+      run: uv pip install --system -U pip cython setuptools wheel
 
     - name: Checkout VapourSynth
       uses: actions/checkout@v5
@@ -62,7 +62,7 @@ runs:
         python setup.py sdist -d sdist
         mkdir empty
         pushd empty
-        pip install vapoursynth --no-index --find-links ../sdist
+        pip install vapoursynth --no-index --find-links ../sdist --no-build-isolation
         popd
         popd
         rm -rf vapoursynth
