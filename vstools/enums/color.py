@@ -4,14 +4,7 @@ from typing import Any, Mapping
 
 from jetpytools import FuncExcept
 
-from ..exceptions import (
-    UndefinedColorRangeError,
-    UndefinedMatrixError,
-    UndefinedPrimariesError,
-    UndefinedTransferError,
-    UnsupportedPrimariesError,
-    UnsupportedTransferError,
-)
+from ..exceptions import UndefinedColorRangeError, UndefinedMatrixError, UndefinedPrimariesError, UndefinedTransferError
 from ..types import HoldsPropValue
 from ..vs_proxy import vs
 from .base import PropEnum, _base_from_video
@@ -356,51 +349,6 @@ class Transfer(PropEnum):
     """
     HLG = STD_B67
 
-    # Transfer characteristics from libplacebo
-
-    GAMMA18 = 104
-    """
-    Pure power gamma 1.8
-    """
-
-    GAMMA20 = 105
-    """
-    Pure power gamma 2.0
-    """
-
-    GAMMA26 = 108
-    """
-    Pure power gamma 2.6
-    """
-
-    PROPHOTO = 110
-    """
-    ProPhoto RGB (ROMM)
-    """
-    ROMM = PROPHOTO
-
-    ST428 = 111
-    """
-    Digital Cinema Distribution Master (XYZ)
-    """
-    XYZ = ST428
-
-    VLOG = 114
-    """
-    Panasonic V-Log (VARICAM)
-    """
-    VARICAM = VLOG
-
-    SLOG_1 = 115
-    """
-    Sony S-Log1
-    """
-
-    SLOG_2 = 116
-    """
-    Sony S-Log2
-    """
-
     @classmethod
     def _missing_(cls, value: Any) -> Transfer | None:
         return Transfer.UNKNOWN if (v := super()._missing_(value)) is None else v
@@ -413,39 +361,11 @@ class Transfer(PropEnum):
     def string(self) -> str:
         return _transfer_name_map.get(self, super().string)
 
-    @property
-    def value_vs(self) -> int:
-        """
-        VapourSynth value.
-
-        Raises:
-            UnsupportedTransferError: If the transfer is unsupported by VapourSynth/zimg.
-        """
-        if self >= self.GAMMA18:
-            raise UnsupportedTransferError(
-                "This transfer is unsupported by VapourSynth.", f"{self.__class__.__name__}.value_vs"
-            )
-
-        return self.value
-
-    @property
-    def value_libplacebo(self) -> int:
-        """
-        libplacebo value.
-        """
-        return _transfer_placebo_map[self]
-
     def is_unknown(self) -> bool:
         """
         Check if the transfer is Transfer.UNKNOWN.
         """
         return self is Transfer.UNKNOWN
-
-    def from_libplacebo(self) -> int:
-        """
-        Obtain the transfer from libplacebo.
-        """
-        return _placebo_transfer_map[self]
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Transfer:
@@ -694,45 +614,6 @@ class Primaries(PropEnum):
     """
     EBU3213 = JEDEC_P22
 
-    # Primary characteristics from libplacebo
-
-    APPLE = 107
-    """
-    Apple RGB.
-    """
-
-    ADOBE = 108
-    """
-    Adobe RGB (1998).
-    """
-
-    PROPHOTO = 109
-    """
-    ProPhoto RGB (ROMM).
-    """
-    ROMM = PROPHOTO
-
-    VGAMUT = 113
-    """
-    Panasonic V-Gamut (VARICAM).
-    """
-    VARICAM = VGAMUT
-
-    SGAMUT = 114
-    """
-    Sony S-Gamut.
-    """
-
-    ACES_0 = 116
-    """
-    ACES Primaries #0 (ultra wide)
-    """
-
-    ACES_1 = 117
-    """
-    ACES Primaries #1
-    """
-
     @classmethod
     def _missing_(cls, value: Any) -> Primaries | None:
         return Primaries.UNKNOWN if (v := super()._missing_(value)) is None else v
@@ -745,40 +626,11 @@ class Primaries(PropEnum):
     def string(self) -> str:
         return _primaries_name_map.get(self, super().string)
 
-    @property
-    def value_vs(self) -> int:
-        """
-        VapourSynth value.
-
-        Raises:
-            UnsupportedPrimariesError: If the Primaries are unsupported by VapourSynth/zimg.
-        """
-        if self >= self.APPLE:
-            raise UnsupportedPrimariesError(
-                "These primaries are unsupported by VapourSynth.",
-                f"{self.__class__.__name__}.value_vs",
-            )
-
-        return self.value
-
-    @property
-    def value_libplacebo(self) -> int:
-        """
-        libplacebo value.
-        """
-        return _primaries_placebo_map[self]
-
     def is_unknown(self) -> bool:
         """
         Check if the primaries are Primaries.UNKNOWN.
         """
         return self is Primaries.UNKNOWN
-
-    def from_libplacebo(self) -> int:
-        """
-        Obtain the primaries from libplacebo.
-        """
-        return _placebo_primaries_map[self]
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Primaries:
@@ -912,51 +764,6 @@ class ColorRange(PropEnum):
         """
         return _base_from_video(cls, src, UndefinedColorRangeError, strict, func)
 
-
-_transfer_placebo_map = {
-    Transfer.UNKNOWN: 0,
-    Transfer.BT601: 1,
-    Transfer.BT709: 1,
-    Transfer.SRGB: 2,
-    Transfer.LINEAR: 3,
-    Transfer.GAMMA18: 4,
-    Transfer.GAMMA20: 5,
-    Transfer.BT470M: 6,
-    Transfer.GAMMA26: 8,
-    Transfer.BT470BG: 9,
-    Transfer.PROPHOTO: 10,
-    Transfer.ST428: 11,
-    Transfer.ST2084: 12,
-    Transfer.STD_B67: 13,
-    Transfer.VLOG: 14,
-    Transfer.SLOG_1: 15,
-    Transfer.SLOG_2: 16,
-}
-
-_primaries_placebo_map = {
-    Primaries.UNKNOWN: 0,
-    Primaries.SMPTE170M: 1,
-    Primaries.BT470BG: 2,
-    Primaries.BT709: 3,
-    Primaries.BT470M: 4,
-    Primaries.JEDEC_P22: 5,
-    Primaries.BT2020: 6,
-    Primaries.APPLE: 7,
-    Primaries.ADOBE: 8,
-    Primaries.PROPHOTO: 9,
-    Primaries.ST428: 10,
-    Primaries.ST431_2: 11,
-    Primaries.ST432_1: 12,
-    Primaries.VGAMUT: 13,
-    Primaries.SGAMUT: 14,
-    Primaries.FILM: 15,
-    Primaries.ACES_0: 16,
-    Primaries.ACES_1: 17,
-}
-
-_placebo_transfer_map = {value: key for key, value in _transfer_placebo_map.items()}
-
-_placebo_primaries_map = {value: key for key, value in _primaries_placebo_map.items()}
 
 _matrix_name_map = {
     Matrix.RGB: "gbr",
