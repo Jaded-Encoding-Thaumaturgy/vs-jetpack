@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from string import capwords
 from typing import Any, Iterable, Mapping, Self
 
 from jetpytools import (
@@ -10,7 +11,9 @@ from jetpytools import (
     CustomValueError,
     EnumABCMeta,
     FuncExcept,
+    cachedproperty,
     classproperty,
+    fallback,
 )
 
 from ..vs_proxy import vs
@@ -19,30 +22,41 @@ __all__ = ["PropEnum"]
 
 
 class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
+    """
+    Base class for enumerations representing frame or clip properties in VapourSynth.
+    """
+
+    def __new__(cls, value: int, *_: str | None) -> Self:
+        obj = int.__new__(cls, value)
+        obj._value_ = value
+        return obj
+
+    def __init__(self, _: int, string: str | None = None, pretty_string: str | None = None) -> None:
+        self._string = fallback(string, self._name_.lower())
+        self._pretty_string = fallback(pretty_string, capwords(self._string.replace("_", " ")))
+
     @classmethod
     @abstractmethod
-    # Subclasses must implement a default value when value is None
     def _missing_(cls, value: object) -> Self | None:
+        # Subclasses must implement a default value when value is None
         if isinstance(value, (vs.VideoNode, vs.VideoFrame, Mapping)):
             return cls.from_video(value, func=cls)
 
         return None
 
-    @property
+    @cachedproperty
     def pretty_string(self) -> str:
         """
         Get a pretty, displayable string of the enum member.
         """
-        from string import capwords
+        return self._pretty_string
 
-        return capwords(self.string.replace("_", " "))
-
-    @property
+    @cachedproperty
     def string(self) -> str:
         """
         Get the string representation used in resize plugin/encoders.
         """
-        return self._name_.lower()
+        return self._string
 
     @classproperty
     @classmethod

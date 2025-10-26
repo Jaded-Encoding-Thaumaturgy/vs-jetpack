@@ -30,7 +30,7 @@ class Matrix(PropEnum):
     Matrix coefficients ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.5).
     """
 
-    RGB = 0
+    RGB = 0, "gbr", "RGB"
     """
     The identity matrix.
 
@@ -42,9 +42,10 @@ class Matrix(PropEnum):
 
     See ITU-T H.265 Equations E-31 to E-33
     """
+
     GBR = RGB
 
-    BT709 = 1
+    BT709 = 1, "bt709", "BT.709"
     """
     Kr = 0.2126; Kb = 0.0722
 
@@ -57,12 +58,12 @@ class Matrix(PropEnum):
     SMPTE RP 177 (1993) Annex B
     """
 
-    UNKNOWN = 2
+    UNKNOWN = 2, "unknown"
     """
     Image characteristics are unknown or are determined by the application.
     """
 
-    FCC = 4
+    FCC = 4, "fcc", "FCC"
     """
     KR = 0.30; KB = 0.11
 
@@ -71,7 +72,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-28 to E-30
     """
 
-    BT470BG = 5
+    BT470BG = 5, "bt470bg", "BT.470bg"
     """
     KR = 0.299; KB = 0.114
 
@@ -91,9 +92,10 @@ class Matrix(PropEnum):
 
     See ITU-T H.265 Equations E-28 to E-30
     """
+
     BT601_625 = BT470BG
 
-    SMPTE170M = 6
+    SMPTE170M = 6, "smpte170m", "SMPTE ST 170m"
     """
     Kr = 0.299; Kb = 0.114
 
@@ -110,9 +112,10 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-28 to E-30
 
     """
+
     BT601_525 = SMPTE170M
 
-    SMPTE240M = 7
+    SMPTE240M = 7, "smpte240m", "SMPTE ST 240m"
     """
     KR = 0.212; KB = 0.087
 
@@ -121,14 +124,14 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-28 to E-30
     """
 
-    YCGCO = 8
+    YCGCO = 8, "ycgco", "YCgCo"
     """
     KR = 0.2126; KB = 0.0722
 
     See Implementation And Evaluation Of Residual Color Transform For 4:4:4 RGB Lossless Coding
     """
 
-    BT2020NCL = 9
+    BT2020NCL = 9, "bt2020nc", "BT.2020 non-constant luminance"
     """
     KR = 0.2627; KB = 0.0593
 
@@ -140,7 +143,7 @@ class Matrix(PropEnum):
 
     """
 
-    BT2020CL = 10
+    BT2020CL = 10, "bt2020c", "BT.2020 constant luminance"
     """
     KR = 0.2627; KB = 0.0593
 
@@ -149,7 +152,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-49 to E-58
     """
 
-    CHROMANCL = 12
+    CHROMANCL = 12, "chroma-derived-nc", "Chromaticity derived non-constant luminance"
     """
     Chromaticity-derived non-constant luminance system
 
@@ -157,7 +160,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-28 to E-30
     """
 
-    CHROMACL = 13
+    CHROMACL = 13, "chroma-derived-c", "Chromaticity derived constant luminance"
     """
     Chromaticity-derived constant luminance system
 
@@ -166,7 +169,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-49 to E-58
     """
 
-    ICTCP = 14
+    ICTCP = 14, "ictcp", "ICtCp"
     """
     ICtCp
 
@@ -181,14 +184,6 @@ class Matrix(PropEnum):
     @classmethod
     def _missing_(cls, value: object) -> Matrix:
         return Matrix.UNKNOWN if (v := super()._missing_(value)) is None else v
-
-    @property
-    def pretty_string(self) -> str:
-        return _matrix_pretty_name_map.get(self, super().pretty_string)
-
-    @property
-    def string(self) -> str:
-        return _matrix_name_map.get(self, super().string)
 
     def is_unknown(self) -> bool:
         """
@@ -246,7 +241,7 @@ class Transfer(PropEnum):
     Transfer characteristics ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.4).
     """
 
-    BT709 = 1
+    BT709 = 1, "bt709", "BT.709"
     """
     (Functionally the same as [Transfer.BT601][vstools.Transfer.BT601],
     [Transfer.BT2020_10][vstools.Transfer.BT2020_10],
@@ -255,31 +250,35 @@ class Transfer(PropEnum):
     Rec. ITU-R BT.1361-0 conventional
     Colour gamut system (historical)
     """
+
     BT1886 = BT709
+
     GAMMA24 = BT709  # Not exactly, but since zimg assumes infinite contrast BT1886 is effectively GAMMA24 here.
 
-    UNKNOWN = 2
+    UNKNOWN = 2, "unknown"
     """
     Image characteristics are unknown or are determined by the application.
     """
 
-    BT470M = 4
+    BT470M = 4, "bt470m", "BT.470m"
     """
     Rec. ITU-R BT.470-6 System M (historical)
     NTSC Recommendation for transmission standards for colour television (1953)
     FCC, Title 47 Code of Federal Regulations (2003) 73.682 (a) (20)
     """
+
     GAMMA22 = BT470M
 
-    BT470BG = 5
+    BT470BG = 5, "bt470bg", "BT.470bg"
     """
     Rec. ITU-R BT.470-6 System B, G (historical)
     Rec. ITU-R BT.1700-0 625 PAL and
     625 SECAM
     """
+
     GAMMA28 = BT470BG
 
-    BT601 = 6
+    BT601 = 6, "smpte170m", "BT.601"
     """
     (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709],
     [Transfer.BT2020_10][vstools.Transfer.BT2020_10],
@@ -290,76 +289,70 @@ class Transfer(PropEnum):
     SMPTE ST 170 (2004)
     """
 
-    SMPTE240M = 7
+    SMPTE240M = 7, "smpte240m", "SMPTE ST 240m"
     """
     SMPTE ST 240 (1999, historical).
     """
 
-    LINEAR = 8
+    LINEAR = 8, "linear", "Linear"
     """
     Linear transfer characteristics.
     """
 
-    LOG100 = 9
+    LOG100 = 9, "log100", "Log 1:100 contrast"
     """
     Logarithmic transfer characteristic (100:1 range).
     """
 
-    LOG316 = 10
+    LOG316 = 10, "log316", "Log 1:316 contrast"
     """
     Logarithmic transfer characteristic (100 * sqrt(10):1 range).
     """
 
-    XVYCC = 11
+    XVYCC = 11, "iec61966-2-4", "xvYCC"
     """
     IEC 61966-2-4.
     """
 
-    SRGB = 13
+    SRGB = 13, "iec61966-2-1", "sRGB"
     """
     IEC 61966-2-1 sRGB when matrix is equal to [Matrix.RGB][vstools.Matrix.RGB]
     IEC 61966-2-1 sYCC when matrix is equal to [Matrix.BT470BG][vstools.Matrix.BT470BG]
     """
 
-    BT2020_10 = 14
+    BT2020_10 = 14, "bt2020-10", "BT.2020 10 bits"
     """
     (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709], [Transfer.BT601][vstools.Transfer.BT601],
     and [Transfer.BT2020_12][vstools.Transfer.BT2020_12])
     Rec. ITU-R BT.2020-2
     """
 
-    BT2020_12 = 15
+    BT2020_12 = 15, "bt2020-12", "BT.2020 12 bits"
     """
     (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709], [Transfer.BT601][vstools.Transfer.BT601],
     and [Transfer.BT2020_10][vstools.Transfer.BT2020_10])
     Rec. ITU-R BT.2020-2
     """
 
-    ST2084 = 16
+    ST2084 = 16, "smpte2084", "SMPTE ST 2084 (PQ)"
     """
     SMPTE ST 2084 (2014) for 10, 12, 14, and 16-bit systems
     Rec. ITU-R BT.2100-2 perceptual quantization (PQ) system
     """
+
     PQ = ST2084
 
-    STD_B67 = 18
+    STD_B67 = 18, "arib-std-b67", "ARIB std-b67 (HLG)"
     """
     Association of Radio Industries and Businesses (ARIB) STD-B67
     Rec. ITU-R BT.2100-2 hybrid loggamma (HLG) system
     """
+
     HLG = STD_B67
 
     @classmethod
     def _missing_(cls, value: Any) -> Transfer | None:
         return Transfer.UNKNOWN if (v := super()._missing_(value)) is None else v
-
-    @property
-    def pretty_string(self) -> str:
-        return _transfer_pretty_name_map.get(self, super().pretty_string)
-
-    @property
-    def string(self) -> str:
-        return _transfer_name_map.get(self, super().string)
 
     def is_unknown(self) -> bool:
         """
@@ -414,7 +407,7 @@ class Primaries(PropEnum):
     Color primaries ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.3).
     """
 
-    BT709 = 1
+    BT709 = 1, "bt709", "BT.709"
     """
     Rec. ITU-R BT.709-6
 
@@ -437,12 +430,12 @@ class Primaries(PropEnum):
     SMPTE RP 177 (1993) Annex B
     """
 
-    UNKNOWN = 2
+    UNKNOWN = 2, "unknown"
     """
     Unspecified image characteristics are unknown or are determined by the application.
     """
 
-    BT470M = 4
+    BT470M = 4, "bt470m", "BT.470m"
     """
     Rec. ITU-R BT.470-6 System M (historical)
 
@@ -460,7 +453,7 @@ class Primaries(PropEnum):
     73.682 (a) (20)
     """
 
-    BT470BG = 5
+    BT470BG = 5, "bt470bg", "BT.470bg"
     """
     Rec. ITU-R BT.470-6 System B, G (historical)
 
@@ -478,9 +471,10 @@ class Primaries(PropEnum):
     Rec. ITU-R BT.1700-0 625 PAL and 625
     SECAM
     """
+
     BT601_625 = BT470BG
 
-    SMPTE170M = 6
+    SMPTE170M = 6, "smpte170m", "SMPTE ST 170m"
     """
     (Functionally the same as [Primaries.SMPTE240M][vstools.Primaries.SMPTE240M])
 
@@ -500,9 +494,10 @@ class Primaries(PropEnum):
 
     SMPTE ST 170 (2004)
     """
+
     BT601_525 = SMPTE170M
 
-    SMPTE240M = 7
+    SMPTE240M = 7, "smpte240m", "SMPTE ST 240m"
     """
     SMPTE ST 240 (1999, historical)
 
@@ -519,7 +514,7 @@ class Primaries(PropEnum):
     SMPTE ST 240 (1999, historical)
     """
 
-    FILM = 8
+    FILM = 8, "film", "Film"
     """
     Generic film (colour filters using Illuminant C)
 
@@ -532,7 +527,7 @@ class Primaries(PropEnum):
     ```
     """
 
-    BT2020 = 9
+    BT2020 = 9, "bt2020", "BT.2020"
     """
     Rec. ITU-R BT.2020-2
 
@@ -549,7 +544,7 @@ class Primaries(PropEnum):
     Rec. ITU-R BT.2100-2
     """
 
-    ST428 = 10
+    ST428 = 10, "smpte428", "SMPTE ST 428 (XYZ)"
     """
     SMPTE ST 428-1 (2006)
 
@@ -563,10 +558,12 @@ class Primaries(PropEnum):
 
     (CIE 1931 XYZ)
     """
+
     XYZ = ST428
+
     CIE1931 = ST428
 
-    ST431_2 = 11
+    ST431_2 = 11, "smpte431", "DCI-P3, DCI white point"
     """
     SMPTE RP 431-2 (2011)
 
@@ -580,9 +577,10 @@ class Primaries(PropEnum):
 
     SMPTE ST 2113 (2019) "P3DCI"
     """
+
     DCI_P3 = ST431_2
 
-    ST432_1 = 12
+    ST432_1 = 12, "smpte432", "DCI-P3 D65 white point"
     """
     SMPTE EG 432-1 (2010)
 
@@ -600,7 +598,7 @@ class Primaries(PropEnum):
     """
     DISPLAY_P3 = ST432_1
 
-    JEDEC_P22 = 22
+    JEDEC_P22 = 22, "jedec-p22", "JEDEC P22 (EBU 3213-E)"
     """
     EBU Tech. 3213-E (1975)
 
@@ -612,19 +610,12 @@ class Primaries(PropEnum):
     White D65 0.3127 0.3290
     ```
     """
+
     EBU3213 = JEDEC_P22
 
     @classmethod
     def _missing_(cls, value: Any) -> Primaries | None:
         return Primaries.UNKNOWN if (v := super()._missing_(value)) is None else v
-
-    @property
-    def pretty_string(self) -> str:
-        return _primaries_pretty_name_map.get(self, super().pretty_string)
-
-    @property
-    def string(self) -> str:
-        return _primaries_name_map.get(self, super().string)
 
     def is_unknown(self) -> bool:
         """
@@ -763,102 +754,6 @@ class ColorRange(PropEnum):
             UndefinedColorRangeError: If the color range is undefined or can not be determined from the frameprops.
         """
         return _base_from_video(cls, src, UndefinedColorRangeError, strict, func)
-
-
-_matrix_name_map = {
-    Matrix.RGB: "gbr",
-    Matrix.BT709: "bt709",
-    Matrix.UNKNOWN: "unknown",
-    Matrix.FCC: "fcc",
-    Matrix.BT470BG: "bt470bg",
-    Matrix.SMPTE170M: "smpte170m",
-    Matrix.SMPTE240M: "smpte240m",
-    Matrix.YCGCO: "ycgco",
-    Matrix.BT2020NCL: "bt2020nc",
-    Matrix.BT2020CL: "bt2020c",
-    Matrix.CHROMANCL: "chroma-derived-nc",
-    Matrix.CHROMACL: "chroma-derived-c",
-    Matrix.ICTCP: "ictcp",
-}
-
-_transfer_name_map = {
-    Transfer.BT709: "bt709",
-    Transfer.UNKNOWN: "unknown",
-    Transfer.BT470M: "bt470m",
-    Transfer.BT470BG: "bt470bg",
-    Transfer.BT601: "smpte170m",
-    Transfer.SMPTE240M: "smpte240m",
-    Transfer.LINEAR: "linear",
-    Transfer.LOG100: "log100",
-    Transfer.LOG316: "log316",
-    Transfer.XVYCC: "iec61966-2-4",
-    Transfer.SRGB: "iec61966-2-1",
-    Transfer.BT2020_10: "bt2020-10",
-    Transfer.BT2020_12: "bt2020-12",
-    Transfer.ST2084: "smpte2084",
-    Transfer.STD_B67: "arib-std-b67",
-}
-
-_primaries_name_map = {
-    Primaries.BT709: "bt709",
-    Primaries.UNKNOWN: "unknown",
-    Primaries.BT470M: "bt470m",
-    Primaries.BT470BG: "bt470bg",
-    Primaries.SMPTE170M: "smpte170m",
-    Primaries.SMPTE240M: "smpte240m",
-    Primaries.FILM: "film",
-    Primaries.BT2020: "bt2020",
-    Primaries.ST428: "smpte428",
-    Primaries.ST431_2: "smpte431",
-    Primaries.ST432_1: "smpte432",
-    Primaries.JEDEC_P22: "jedec-p22",
-}
-
-_matrix_pretty_name_map = {
-    Matrix.RGB: "RGB",
-    Matrix.BT709: "BT.709",
-    Matrix.FCC: "FCC",
-    Matrix.BT470BG: "BT.470bg",
-    Matrix.SMPTE170M: "SMPTE ST 170m",
-    Matrix.SMPTE240M: "SMPTE ST 240m",
-    Matrix.YCGCO: "YCgCo",
-    Matrix.BT2020NCL: "BT.2020 non-constant luminance",
-    Matrix.BT2020CL: "BT.2020 constant luminance",
-    Matrix.CHROMANCL: "Chromaticity derived non-constant luminance",
-    Matrix.CHROMACL: "Chromaticity derived constant luminance",
-    Matrix.ICTCP: "ICtCp",
-}
-
-_transfer_pretty_name_map = {
-    Transfer.BT709: "BT.709",
-    Transfer.BT470M: "BT.470m",
-    Transfer.BT470BG: "BT.470bg",
-    Transfer.BT601: "BT.601",
-    Transfer.SMPTE240M: "SMPTE ST 240m",
-    Transfer.LINEAR: "Linear",
-    Transfer.LOG100: "Log 1:100 contrast",
-    Transfer.LOG316: "Log 1:316 contrast",
-    Transfer.XVYCC: "xvYCC",
-    Transfer.SRGB: "sRGB",
-    Transfer.BT2020_10: "BT.2020 10 bits",
-    Transfer.BT2020_12: "BT.2020 12 bits",
-    Transfer.ST2084: "SMPTE ST 2084 (PQ)",
-    Transfer.STD_B67: "ARIB std-b67 (HLG)",
-}
-
-_primaries_pretty_name_map = {
-    Primaries.BT709: "BT.709",
-    Primaries.BT470M: "BT.470m",
-    Primaries.BT470BG: "BT.470bg",
-    Primaries.SMPTE170M: "SMPTE ST 170m",
-    Primaries.SMPTE240M: "SMPTE ST 240m",
-    Primaries.FILM: "Film",
-    Primaries.BT2020: "BT.2020",
-    Primaries.ST428: "SMPTE ST 428 (XYZ)",
-    Primaries.ST431_2: "DCI-P3, DCI white point",
-    Primaries.ST432_1: "DCI-P3 D65 white point",
-    Primaries.JEDEC_P22: "JEDEC P22 (EBU 3213-E)",
-}
 
 
 type MatrixLike = int | vs.MatrixCoefficients | Matrix | HoldsPropValue
