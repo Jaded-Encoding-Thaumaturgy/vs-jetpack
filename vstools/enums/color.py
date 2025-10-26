@@ -1049,8 +1049,10 @@ _primaries_matrix_map: dict[Primaries, Matrix] = {}
 _matrix_transfer_map = {
     Matrix.RGB: Transfer.SRGB,
     Matrix.BT709: Transfer.BT709,
+    Matrix.BT470BG: Transfer.BT470BG,
     Matrix.SMPTE170M: Transfer.BT601,
     Matrix.SMPTE240M: Transfer.SMPTE240M,
+    Matrix.CHROMACL: Transfer.SRGB,
     Matrix.ICTCP: Transfer.BT2020_10,
 }
 
