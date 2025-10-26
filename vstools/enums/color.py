@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from jetpytools import CustomValueError, FuncExcept
+from jetpytools import FuncExcept
 
 from ..exceptions import (
     UndefinedColorRangeError,
     UndefinedMatrixError,
     UndefinedPrimariesError,
     UndefinedTransferError,
-    UnsupportedMatrixError,
     UnsupportedPrimariesError,
     UnsupportedTransferError,
 )
@@ -247,46 +246,6 @@ class Matrix(PropEnum):
             UndefinedMatrixError: If the matrix is undefined or can not be determined from the frameprops.
         """
         return _base_from_video(cls, src, UndefinedMatrixError, strict, func)
-
-    @classmethod
-    def from_transfer(cls, value: TransferLike, strict: bool = False, func: FuncExcept | None = None) -> Matrix:
-        """
-        Obtain the matrix from a Transfer object.
-
-        Args:
-            transfer: Transfer object.
-            strict: Be strict about the transfer-matrix mapping. Will ALWAYS error with Transfer.UNKNOWN.
-            func: Function returned for custom error handling.
-
-        Returns:
-            Matrix object.
-
-        Raises:
-            UnsupportedTransferError: If the transfer is unsupported.
-        """
-        return _base_from_colorspace_spec(
-            cls, Transfer, value, _transfer_matrix_map, UnsupportedTransferError, strict, func
-        )
-
-    @classmethod
-    def from_primaries(cls, value: PrimariesLike, strict: bool = False, func: FuncExcept | None = None) -> Matrix:
-        """
-        Obtain the matrix from a Primaries object.
-
-        Args:
-            primaries: Primaries object.
-            strict: Be strict about the primaries-matrix mapping. Will ALWAYS error with Primaries.UNKNOWN.
-            func: Function returned for custom error handling.
-
-        Returns:
-            Matrix object.
-
-        Raises:
-            UnsupportedPrimariesError: If the primaries are unsupported.
-        """
-        return _base_from_colorspace_spec(
-            cls, Primaries, value, _primaries_matrix_map, UnsupportedPrimariesError, strict, func
-        )
 
 
 class Transfer(PropEnum):
@@ -528,46 +487,6 @@ class Transfer(PropEnum):
             UndefinedTransferError: If the transfer is undefined or can not be determined from the frameprops.
         """
         return _base_from_video(cls, src, UndefinedTransferError, strict, func)
-
-    @classmethod
-    def from_matrix(cls, value: MatrixLike, strict: bool = False, func: FuncExcept | None = None) -> Transfer:
-        """
-        Obtain the transfer from a Matrix object.
-
-        Args:
-            matrix: Matrix object.
-            strict: Be strict about the matrix-transfer mapping. Will ALWAYS error with Matrix.UNKNOWN.
-            func: Function returned for custom error handling.
-
-        Returns:
-            Transfer object.
-
-        Raises:
-            UnsupportedMatrixError: If the matrix is unsupported.
-        """
-        return _base_from_colorspace_spec(
-            cls, Matrix, value, _matrix_transfer_map, UnsupportedMatrixError, strict, func
-        )
-
-    @classmethod
-    def from_primaries(cls, value: PrimariesLike, strict: bool = False, func: FuncExcept | None = None) -> Transfer:
-        """
-        Obtain the transfer from a Primaries object.
-
-        Args:
-            primaries: Primaries object.
-            strict: Be strict about the primaries-transfer mapping. Will ALWAYS error with Primaries.UNKNOWN.
-            func: Function returned for custom error handling.
-
-        Returns:
-            Transfer object.
-
-        Raises:
-            UnsupportedPrimariesError: If the primaries are unsupported.
-        """
-        return _base_from_colorspace_spec(
-            cls, Primaries, value, _primaries_transfer_map, UnsupportedPrimariesError, strict, func
-        )
 
 
 class Primaries(PropEnum):
@@ -905,46 +824,6 @@ class Primaries(PropEnum):
         """
         return _base_from_video(cls, src, UndefinedPrimariesError, strict, func)
 
-    @classmethod
-    def from_matrix(cls, value: MatrixLike, strict: bool = False, func: FuncExcept | None = None) -> Primaries:
-        """
-        Obtain the primaries from a Matrix object.
-
-        Args:
-            matrix: Matrix object.
-            strict: Be strict about the matrix-primaries mapping. Will ALWAYS error with Matrix.UNKNOWN.
-            func: Function returned for custom error handling.
-
-        Returns:
-            Primaries object.
-
-        Raises:
-            UnsupportedMatrixError: If the matrix is unsupported.
-        """
-        return _base_from_colorspace_spec(
-            cls, Matrix, value, _matrix_primaries_map, UnsupportedMatrixError, strict, func
-        )
-
-    @classmethod
-    def from_transfer(cls, value: TransferLike, strict: bool = False, func: FuncExcept | None = None) -> Primaries:
-        """
-        Obtain the primaries from a Transfer object.
-
-        Args:
-            transfer: Transfer object.
-            strict: Be strict about the transfer-primaries mapping. Will ALWAYS error with Transfer.UNKNOWN.
-            func: Function returned for custom error handling.
-
-        Returns:
-            Matrix object.
-
-        Raises:
-            UnsupportedTransferError: If the transfer is unsupported.
-        """
-        return _base_from_colorspace_spec(
-            cls, Transfer, value, _transfer_primaries_map, UnsupportedTransferError, strict, func
-        )
-
 
 class ColorRange(PropEnum):
     """
@@ -1033,34 +912,6 @@ class ColorRange(PropEnum):
         """
         return _base_from_video(cls, src, UndefinedColorRangeError, strict, func)
 
-
-_transfer_matrix_map: dict[Transfer, Matrix] = {
-    Transfer.SRGB: Matrix.RGB,
-    Transfer.BT709: Matrix.BT709,
-    Transfer.BT470BG: Matrix.BT470BG,
-    Transfer.ST2084: Matrix.BT2020NCL,
-    Transfer.BT2020_10: Matrix.BT2020NCL,
-    Transfer.BT2020_12: Matrix.BT2020NCL,
-    Transfer.STD_B67: Matrix.BT2020NCL,
-}
-
-_primaries_matrix_map: dict[Primaries, Matrix] = {}
-
-_matrix_transfer_map = {
-    Matrix.RGB: Transfer.SRGB,
-    Matrix.BT709: Transfer.BT709,
-    Matrix.BT470BG: Transfer.BT470BG,
-    Matrix.SMPTE170M: Transfer.BT601,
-    Matrix.SMPTE240M: Transfer.SMPTE240M,
-    Matrix.CHROMACL: Transfer.SRGB,
-    Matrix.ICTCP: Transfer.BT2020_10,
-}
-
-_primaries_transfer_map: dict[Primaries, Transfer] = {}
-
-_matrix_primaries_map: dict[Matrix, Primaries] = {}
-
-_transfer_primaries_map: dict[Transfer, Primaries] = {}
 
 _transfer_placebo_map = {
     Transfer.UNKNOWN: 0,
@@ -1230,23 +1081,3 @@ ColorRangeT = ColorRangeLike
 
 def _norm_props_enums(kwargs: dict[str, Any]) -> dict[str, Any]:
     return {key: (value.value_zimg if isinstance(value, ColorRange) else value) for key, value in kwargs.items()}
-
-
-def _base_from_colorspace_spec[PropEnumT0: PropEnum, PropEnumT1: PropEnum](
-    cls: type[PropEnumT0],
-    cast_cls: type[PropEnumT1],
-    value: MatrixLike | TransferLike | PrimariesLike,
-    lut: Mapping[PropEnumT1, PropEnumT0],
-    exception: type[CustomValueError],
-    strict: bool,
-    func: FuncExcept | None,
-) -> PropEnumT0:
-    value = cast_cls.from_param(value, func)
-
-    try:
-        return lut[value]
-    except KeyError:
-        if strict:
-            raise exception(f"{value} is not supported!", func) from None
-
-    return cls.from_param(None, func)

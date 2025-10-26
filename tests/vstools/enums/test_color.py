@@ -1,15 +1,6 @@
 from unittest import TestCase
 
-from vstools import (
-    ColorRange,
-    Matrix,
-    Primaries,
-    Transfer,
-    UnsupportedMatrixError,
-    UnsupportedPrimariesError,
-    UnsupportedTransferError,
-    vs,
-)
+from vstools import ColorRange, Matrix, Primaries, Transfer, vs
 
 
 class TestMatrix(TestCase):
@@ -82,22 +73,6 @@ class TestMatrix(TestCase):
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=1024, height=576)
         result = Matrix.from_video(clip)
         self.assertEqual(result, Matrix.BT470BG)
-
-    def test_from_transfer_unknown(self) -> None:
-        result = Matrix.from_transfer(Transfer.UNKNOWN)
-        self.assertEqual(result, Matrix.UNKNOWN)
-
-    def test_from_transfer_unknown_strict(self) -> None:
-        with self.assertRaises(UnsupportedTransferError):
-            Matrix.from_transfer(Transfer.UNKNOWN, strict=True)
-
-    def test_from_primaries_unknown(self) -> None:
-        result = Matrix.from_primaries(Primaries.UNKNOWN)
-        self.assertEqual(result, Matrix.UNKNOWN)
-
-    def test_from_primaries_unknown_strict(self) -> None:
-        with self.assertRaises(UnsupportedPrimariesError):
-            Matrix.from_primaries(Primaries.UNKNOWN, strict=True)
 
 
 class TestTransfer(TestCase):
@@ -191,44 +166,6 @@ class TestTransfer(TestCase):
         result = Transfer.from_video(clip)
         self.assertEqual(result, Transfer.BT601)
 
-    def test_from_matrix(self) -> None:
-        result = Transfer.from_matrix(Matrix.RGB)
-        self.assertEqual(result, Transfer.SRGB)
-
-        result = Transfer.from_matrix(Matrix.BT709)
-        self.assertEqual(result, Transfer.BT709)
-
-        result = Transfer.from_matrix(Matrix.BT470BG)
-        self.assertEqual(result, Transfer.BT470BG)
-
-        result = Transfer.from_matrix(Matrix.SMPTE170M)
-        self.assertEqual(result, Transfer.BT601)
-
-        result = Transfer.from_matrix(Matrix.SMPTE240M)
-        self.assertEqual(result, Transfer.SMPTE240M)
-
-        result = Transfer.from_matrix(Matrix.CHROMACL)
-        self.assertEqual(result, Transfer.SRGB)
-
-        result = Transfer.from_matrix(Matrix.ICTCP)
-        self.assertEqual(result, Transfer.BT2020_10)
-
-    def test_from_matrix_unknown(self) -> None:
-        result = Transfer.from_matrix(Matrix.UNKNOWN)
-        self.assertEqual(result, Transfer.UNKNOWN)
-
-    def test_from_matrix_unknown_strict(self) -> None:
-        with self.assertRaises(UnsupportedMatrixError):
-            Transfer.from_matrix(Matrix.UNKNOWN, strict=True)
-
-    def test_from_primaries_unknown(self) -> None:
-        result = Transfer.from_primaries(Primaries.BT709)
-        self.assertEqual(result, Transfer.BT709)
-
-    def test_from_primaries_unknown_strict(self) -> None:
-        with self.assertRaises(UnsupportedPrimariesError):
-            Transfer.from_primaries(Primaries.BT709, strict=True)
-
 
 class TestPrimaries(TestCase):
     def test_is_unknown(self) -> None:
@@ -300,22 +237,6 @@ class TestPrimaries(TestCase):
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=1024, height=576)
         result = Primaries.from_video(clip)
         self.assertEqual(result, Primaries.BT470BG)
-
-    def test_from_matrix_unknown(self) -> None:
-        result = Primaries.from_matrix(Matrix.BT709)
-        self.assertEqual(result, Primaries.BT709)
-
-    def test_from_matrix_unknown_strict(self) -> None:
-        with self.assertRaises(UnsupportedMatrixError):
-            Primaries.from_matrix(Matrix.BT709, strict=True)
-
-    def test_from_transfer_unknown(self) -> None:
-        result = Primaries.from_transfer(Transfer.BT709)
-        self.assertEqual(result, Primaries.BT709)
-
-    def test_from_transfer_unknown_strict(self) -> None:
-        with self.assertRaises(UnsupportedTransferError):
-            Primaries.from_transfer(Transfer.BT709, strict=True)
 
 
 class TestColorRange(TestCase):
