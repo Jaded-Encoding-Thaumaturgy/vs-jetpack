@@ -14,10 +14,12 @@ from vstools import (
 
 class TestMatrix(TestCase):
     def test_is_unknown(self) -> None:
-        self.assertTrue(Matrix.is_unknown(Matrix.UNKNOWN))
-        self.assertTrue(Matrix.is_unknown(2))
-        self.assertFalse(Matrix.is_unknown(Matrix.RGB))
-        self.assertFalse(Matrix.is_unknown(0))
+        self.assertTrue(Matrix.UNKNOWN.is_unknown())
+        self.assertTrue(Matrix(2).is_unknown())
+        self.assertTrue(Matrix.from_param(2).is_unknown())
+        self.assertFalse(Matrix.RGB.is_unknown())
+        self.assertFalse(Matrix(0).is_unknown())
+        self.assertFalse(Matrix.from_param(0).is_unknown())
 
     def test_from_res_rgb(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.RGB24)
@@ -100,10 +102,12 @@ class TestMatrix(TestCase):
 
 class TestTransfer(TestCase):
     def test_is_unknown(self) -> None:
-        self.assertTrue(Transfer.is_unknown(Transfer.UNKNOWN))
-        self.assertTrue(Transfer.is_unknown(2))
-        self.assertFalse(Transfer.is_unknown(Transfer.BT709))
-        self.assertFalse(Transfer.is_unknown(1))
+        self.assertTrue(Transfer.UNKNOWN.is_unknown())
+        self.assertTrue(Transfer(2).is_unknown())
+        self.assertTrue(Transfer.from_param(2).is_unknown())
+        self.assertFalse(Transfer.BT709.is_unknown())
+        self.assertFalse(Transfer(1).is_unknown())
+        self.assertFalse(Transfer.from_param(1).is_unknown())
 
     def test_from_res_rgb(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.RGB24)
@@ -228,10 +232,12 @@ class TestTransfer(TestCase):
 
 class TestPrimaries(TestCase):
     def test_is_unknown(self) -> None:
-        self.assertTrue(Primaries.is_unknown(Primaries.UNKNOWN))
-        self.assertTrue(Primaries.is_unknown(2))
-        self.assertFalse(Primaries.is_unknown(Primaries.BT709))
-        self.assertFalse(Primaries.is_unknown(1))
+        self.assertTrue(Primaries.UNKNOWN.is_unknown())
+        self.assertTrue(Primaries(2).is_unknown())
+        self.assertTrue(Primaries.from_param(2).is_unknown())
+        self.assertFalse(Primaries.BT709.is_unknown())
+        self.assertFalse(Primaries(1).is_unknown())
+        self.assertFalse(Primaries.from_param(1).is_unknown())
 
     def test_from_res_rgb(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.RGB24)
@@ -354,9 +360,9 @@ class TestColorRange(TestCase):
         self.assertEqual(ColorRange.FULL.value_zimg, 1)
 
     def test_value_is_limited(self) -> None:
-        self.assertTrue(ColorRange.LIMITED.is_limited)
-        self.assertFalse(ColorRange.FULL.is_limited)
+        self.assertTrue(ColorRange.LIMITED.is_limited())
+        self.assertFalse(ColorRange.FULL.is_limited())
 
     def test_value_is_full(self) -> None:
-        self.assertFalse(ColorRange.LIMITED.is_full)
-        self.assertTrue(ColorRange.FULL.is_full)
+        self.assertFalse(ColorRange.LIMITED.is_full())
+        self.assertTrue(ColorRange.FULL.is_full())

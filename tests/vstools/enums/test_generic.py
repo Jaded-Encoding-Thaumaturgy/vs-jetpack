@@ -82,9 +82,9 @@ class TestFieldBased(TestCase):
         self.assertEqual(result, FieldBased.PROGRESSIVE)
 
     def test_is_inter(self) -> None:
-        self.assertTrue(FieldBased.TFF.is_inter)
-        self.assertTrue(FieldBased.BFF.is_inter)
-        self.assertFalse(FieldBased.PROGRESSIVE.is_inter)
+        self.assertTrue(FieldBased.TFF.is_inter())
+        self.assertTrue(FieldBased.BFF.is_inter())
+        self.assertFalse(FieldBased.PROGRESSIVE.is_inter())
 
     def test_field(self) -> None:
         self.assertEqual(FieldBased.TFF.field, 1)
@@ -93,9 +93,9 @@ class TestFieldBased(TestCase):
             FieldBased.PROGRESSIVE.field
 
     def test_is_tff(self) -> None:
-        self.assertTrue(FieldBased.TFF.is_tff)
-        self.assertFalse(FieldBased.BFF.is_tff)
-        self.assertFalse(FieldBased.PROGRESSIVE.is_tff)
+        self.assertTrue(FieldBased.TFF.is_tff())
+        self.assertFalse(FieldBased.BFF.is_tff())
+        self.assertFalse(FieldBased.PROGRESSIVE.is_tff())
 
     def test_inverted(self) -> None:
         self.assertEqual(FieldBased.TFF.inverted_field, FieldBased.BFF)
