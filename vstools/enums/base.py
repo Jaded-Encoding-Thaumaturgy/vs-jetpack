@@ -141,16 +141,15 @@ def _base_from_video[PropEnumT: PropEnum](
 
     func = func or cls.from_video
 
-    value = get_prop(src, cls, int, cast=cls, default=cls.from_param(None, func), func=func)
+    value = get_prop(src, cls, int, cast=cls, default=None, func=func)
 
-    if value.is_unknown():
+    if value is None or value.is_unknown():
         if strict:
-            raise exception("{class_name} is undefined.", func, class_name=cls, reason=value)
+            raise exception(f"{cls.__name__} is undefined.", func, value)
 
         if isinstance(src, Mapping):
             raise exception("Can't determine {class_name} from FrameProps.", func, class_name=cls)
 
-        if src.width and src.height:
-            return cls.from_res(src)
+        value = cls.from_res(src)
 
     return value
