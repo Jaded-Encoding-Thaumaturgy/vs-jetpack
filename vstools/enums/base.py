@@ -72,9 +72,9 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
         """
         return clip.std.SetFrameProp(self.prop_key, self.value)
 
-    def is_unknown(self) -> bool:
+    def is_unspecified(self) -> bool:
         """
-        Whether the value represents an unknown value.
+        Whether the value is unspecified.
         """
         return False
 
@@ -115,7 +115,7 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
         """
         prop = cls.from_param(value, func_except)
 
-        return prop if not prop.is_unknown() else cls.from_video(src, strict, func_except)
+        return prop if not prop.is_unspecified() else cls.from_video(src, strict, func_except)
 
     @classmethod
     def ensure_presence(cls, clip: vs.VideoNode, value: Any, func: FuncExcept | None = None) -> vs.VideoNode:
@@ -157,7 +157,7 @@ def _base_from_video[PropEnumT: PropEnum](
 
     value = get_prop(src, cls, int, cast=cls, default=None, func=func)
 
-    if value is None or value.is_unknown():
+    if value is None or value.is_unspecified():
         if strict:
             raise exception(f"{cls.__name__} is undefined.", func, value)
 

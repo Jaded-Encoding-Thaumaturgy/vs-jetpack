@@ -30,7 +30,7 @@ class Matrix(PropEnum):
     Matrix coefficients ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.5).
     """
 
-    RGB = 0, "gbr", "RGB"
+    RGB = 0, "rgb", "RGB"
     """
     The identity matrix.
 
@@ -43,9 +43,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-31 to E-33
     """
 
-    GBR = RGB
-
-    BT709 = 1, "bt709", "BT.709"
+    BT709 = 1, "709", "BT.709"
     """
     Kr = 0.2126; Kb = 0.0722
 
@@ -58,8 +56,10 @@ class Matrix(PropEnum):
     SMPTE RP 177 (1993) Annex B
     """
 
-    UNKNOWN = 2, "unknown"
+    UNSPECIFIED = 2, "unspec"
     """
+    Unspecified.
+
     Image characteristics are unknown or are determined by the application.
     """
 
@@ -72,7 +72,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-28 to E-30
     """
 
-    BT470BG = 5, "bt470bg", "BT.470bg"
+    BT470_BG = 5, "470bg", "BT.470bg"
     """
     KR = 0.299; KB = 0.114
 
@@ -93,9 +93,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-28 to E-30
     """
 
-    BT601_625 = BT470BG
-
-    SMPTE170M = 6, "smpte170m", "SMPTE ST 170m"
+    ST170_M = 6, "170m", "SMPTE ST 170m"
     """
     Kr = 0.299; Kb = 0.114
 
@@ -113,9 +111,7 @@ class Matrix(PropEnum):
 
     """
 
-    BT601_525 = SMPTE170M
-
-    SMPTE240M = 7, "smpte240m", "SMPTE ST 240m"
+    ST240_M = 7, "240m", "SMPTE ST 240m"
     """
     KR = 0.212; KB = 0.087
 
@@ -131,7 +127,7 @@ class Matrix(PropEnum):
     See Implementation And Evaluation Of Residual Color Transform For 4:4:4 RGB Lossless Coding
     """
 
-    BT2020NCL = 9, "bt2020nc", "BT.2020 non-constant luminance"
+    BT2020_NCL = 9, "2020ncl", "BT.2020 non-constant luminance"
     """
     KR = 0.2627; KB = 0.0593
 
@@ -143,7 +139,7 @@ class Matrix(PropEnum):
 
     """
 
-    BT2020CL = 10, "bt2020c", "BT.2020 constant luminance"
+    BT2020_CL = 10, "2020cl", "BT.2020 constant luminance"
     """
     KR = 0.2627; KB = 0.0593
 
@@ -152,7 +148,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-49 to E-58
     """
 
-    CHROMANCL = 12, "chroma-derived-nc", "Chromaticity derived non-constant luminance"
+    CHROMATICITY_DERIVED_NC = 12, "chromancl", "Chromaticity derived non-constant luminance"
     """
     Chromaticity-derived non-constant luminance system
 
@@ -160,7 +156,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-28 to E-30
     """
 
-    CHROMACL = 13, "chroma-derived-c", "Chromaticity derived constant luminance"
+    CHROMATICITY_DERIVED_CL = 13, "chromacl", "Chromaticity derived constant luminance"
     """
     Chromaticity-derived constant luminance system
 
@@ -183,13 +179,13 @@ class Matrix(PropEnum):
 
     @classmethod
     def _missing_(cls, value: object) -> Matrix:
-        return Matrix.UNKNOWN if (v := super()._missing_(value)) is None else v
+        return Matrix.UNSPECIFIED if (v := super()._missing_(value)) is None else v
 
-    def is_unknown(self) -> bool:
+    def is_unspecified(self) -> bool:
         """
-        Check if the matrix is Matrix.UNKNOWN.
+        Check if the matrix is Matrix.UNSPECIFIED.
         """
-        return self is Matrix.UNKNOWN
+        return self is Matrix.UNSPECIFIED
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Matrix:
@@ -210,7 +206,7 @@ class Matrix(PropEnum):
             return Matrix.RGB
 
         if (width, height) <= (1024, 576):
-            return Matrix.SMPTE170M if height <= 486 else Matrix.BT470BG
+            return Matrix.ST170_M if height <= 486 else Matrix.BT470_BG
 
         return Matrix.BT709
 
@@ -241,7 +237,7 @@ class Transfer(PropEnum):
     Transfer characteristics ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.4).
     """
 
-    BT709 = 1, "bt709", "BT.709"
+    BT709 = 1, "709", "BT.709"
     """
     (Functionally the same as [Transfer.BT601][vstools.Transfer.BT601],
     [Transfer.BT2020_10][vstools.Transfer.BT2020_10],
@@ -251,34 +247,28 @@ class Transfer(PropEnum):
     Colour gamut system (historical)
     """
 
-    BT1886 = BT709
-
-    GAMMA24 = BT709  # Not exactly, but since zimg assumes infinite contrast BT1886 is effectively GAMMA24 here.
-
-    UNKNOWN = 2, "unknown"
+    UNSPECIFIED = 2, "unspec"
     """
+    Unspecified.
+
     Image characteristics are unknown or are determined by the application.
     """
 
-    BT470M = 4, "bt470m", "BT.470m"
+    BT470_M = 4, "470m", "BT.470m"
     """
     Rec. ITU-R BT.470-6 System M (historical)
     NTSC Recommendation for transmission standards for colour television (1953)
     FCC, Title 47 Code of Federal Regulations (2003) 73.682 (a) (20)
     """
 
-    GAMMA22 = BT470M
-
-    BT470BG = 5, "bt470bg", "BT.470bg"
+    BT470_BG = 5, "470bg", "BT.470bg"
     """
     Rec. ITU-R BT.470-6 System B, G (historical)
     Rec. ITU-R BT.1700-0 625 PAL and
     625 SECAM
     """
 
-    GAMMA28 = BT470BG
-
-    BT601 = 6, "smpte170m", "BT.601"
+    BT601 = 6, "601", "BT.601"
     """
     (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709],
     [Transfer.BT2020_10][vstools.Transfer.BT2020_10],
@@ -289,7 +279,7 @@ class Transfer(PropEnum):
     SMPTE ST 170 (2004)
     """
 
-    SMPTE240M = 7, "smpte240m", "SMPTE ST 240m"
+    ST240_M = 7, "240m", "SMPTE ST 240m"
     """
     SMPTE ST 240 (1999, historical).
     """
@@ -299,66 +289,72 @@ class Transfer(PropEnum):
     Linear transfer characteristics.
     """
 
-    LOG100 = 9, "log100", "Log 1:100 contrast"
+    LOG_100 = 9, "log100", "Log 1:100 contrast"
     """
     Logarithmic transfer characteristic (100:1 range).
     """
 
-    LOG316 = 10, "log316", "Log 1:316 contrast"
+    LOG_316 = 10, "log316", "Log 1:316 contrast"
     """
     Logarithmic transfer characteristic (100 * sqrt(10):1 range).
     """
 
-    XVYCC = 11, "iec61966-2-4", "xvYCC"
+    IEC_61966_2_4 = 11, "xvycc", "xvYCC"
     """
     IEC 61966-2-4.
     """
 
-    SRGB = 13, "iec61966-2-1", "sRGB"
+    IEC_61966_2_1 = 13, "srgb", "sRGB"
     """
     IEC 61966-2-1 sRGB when matrix is equal to [Matrix.RGB][vstools.Matrix.RGB]
+
     IEC 61966-2-1 sYCC when matrix is equal to [Matrix.BT470BG][vstools.Matrix.BT470BG]
     """
 
-    BT2020_10 = 14, "bt2020-10", "BT.2020 10 bits"
+    BT2020_10 = 14, "2020_10", "BT.2020 10 bits"
     """
     (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709], [Transfer.BT601][vstools.Transfer.BT601],
     and [Transfer.BT2020_12][vstools.Transfer.BT2020_12])
+
     Rec. ITU-R BT.2020-2
     """
 
-    BT2020_12 = 15, "bt2020-12", "BT.2020 12 bits"
+    BT2020_12 = 15, "2020_12", "BT.2020 12 bits"
     """
     (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709], [Transfer.BT601][vstools.Transfer.BT601],
     and [Transfer.BT2020_10][vstools.Transfer.BT2020_10])
+
     Rec. ITU-R BT.2020-2
     """
 
-    ST2084 = 16, "smpte2084", "SMPTE ST 2084 (PQ)"
+    ST2084 = 16, "st2084", "SMPTE ST 2084 (PQ)"
     """
     SMPTE ST 2084 (2014) for 10, 12, 14, and 16-bit systems
+
     Rec. ITU-R BT.2100-2 perceptual quantization (PQ) system
     """
 
-    PQ = ST2084
+    ST428 = 17, "st428", "SMPTE ST 428-1"
+    """
+    SMPTE ST 428-1
+    """
 
-    STD_B67 = 18, "arib-std-b67", "ARIB std-b67 (HLG)"
+    ARIB_B67 = 18, "std-b67", "ARIB std-b67 (HLG)"
     """
     Association of Radio Industries and Businesses (ARIB) STD-B67
+
     Rec. ITU-R BT.2100-2 hybrid loggamma (HLG) system
     """
 
-    HLG = STD_B67
-
     @classmethod
     def _missing_(cls, value: Any) -> Transfer | None:
-        return Transfer.UNKNOWN if (v := super()._missing_(value)) is None else v
+        return Transfer.UNSPECIFIED if (v := super()._missing_(value)) is None else v
 
-    def is_unknown(self) -> bool:
+    def is_unspecified(self) -> bool:
         """
-        Check if the transfer is Transfer.UNKNOWN.
+        Check if the transfer is Transfer.UNSPECIFIED.
         """
-        return self is Transfer.UNKNOWN
+        return self is Transfer.UNSPECIFIED
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Transfer:
@@ -376,7 +372,7 @@ class Transfer(PropEnum):
         fmt, width, height = get_var_infos(frame)
 
         if fmt.color_family == vs.RGB:
-            return Transfer.SRGB
+            return Transfer.IEC_61966_2_1
 
         return Transfer.BT601 if (width, height) <= (1024, 576) else Transfer.BT709
 
@@ -407,7 +403,7 @@ class Primaries(PropEnum):
     Color primaries ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.3).
     """
 
-    BT709 = 1, "bt709", "BT.709"
+    BT709 = 1, "709", "BT.709"
     """
     Rec. ITU-R BT.709-6
 
@@ -430,12 +426,14 @@ class Primaries(PropEnum):
     SMPTE RP 177 (1993) Annex B
     """
 
-    UNKNOWN = 2, "unknown"
+    UNSPECIFIED = 2, "unspec"
     """
-    Unspecified image characteristics are unknown or are determined by the application.
+    Unspecified.
+
+    Image characteristics are unknown or are determined by the application.
     """
 
-    BT470M = 4, "bt470m", "BT.470m"
+    BT470_M = 4, "470m", "BT.470m"
     """
     Rec. ITU-R BT.470-6 System M (historical)
 
@@ -453,7 +451,7 @@ class Primaries(PropEnum):
     73.682 (a) (20)
     """
 
-    BT470BG = 5, "bt470bg", "BT.470bg"
+    BT470_BG = 5, "470bg", "BT.470bg"
     """
     Rec. ITU-R BT.470-6 System B, G (historical)
 
@@ -472,9 +470,7 @@ class Primaries(PropEnum):
     SECAM
     """
 
-    BT601_625 = BT470BG
-
-    SMPTE170M = 6, "smpte170m", "SMPTE ST 170m"
+    ST170_M = 6, "170m", "SMPTE ST 170m"
     """
     (Functionally the same as [Primaries.SMPTE240M][vstools.Primaries.SMPTE240M])
 
@@ -495,9 +491,7 @@ class Primaries(PropEnum):
     SMPTE ST 170 (2004)
     """
 
-    BT601_525 = SMPTE170M
-
-    SMPTE240M = 7, "smpte240m", "SMPTE ST 240m"
+    ST240_M = 7, "240m", "SMPTE ST 240m"
     """
     SMPTE ST 240 (1999, historical)
 
@@ -527,7 +521,7 @@ class Primaries(PropEnum):
     ```
     """
 
-    BT2020 = 9, "bt2020", "BT.2020"
+    BT2020 = 9, "2020", "BT.2020"
     """
     Rec. ITU-R BT.2020-2
 
@@ -544,7 +538,7 @@ class Primaries(PropEnum):
     Rec. ITU-R BT.2100-2
     """
 
-    ST428 = 10, "smpte428", "SMPTE ST 428 (XYZ)"
+    ST428 = 10, "st428", "SMPTE ST 428 (XYZ)"
     """
     SMPTE ST 428-1 (2006)
 
@@ -561,9 +555,7 @@ class Primaries(PropEnum):
 
     XYZ = ST428
 
-    CIE1931 = ST428
-
-    ST431_2 = 11, "smpte431", "DCI-P3, DCI white point"
+    ST431_2 = 11, "st431-2", "DCI-P3, DCI white point"
     """
     SMPTE RP 431-2 (2011)
 
@@ -578,9 +570,7 @@ class Primaries(PropEnum):
     SMPTE ST 2113 (2019) "P3DCI"
     """
 
-    DCI_P3 = ST431_2
-
-    ST432_1 = 12, "smpte432", "DCI-P3 D65 white point"
+    ST432_1 = 12, "st432-1", "DCI-P3 D65 white point"
     """
     SMPTE EG 432-1 (2010)
 
@@ -596,9 +586,8 @@ class Primaries(PropEnum):
 
     SMPTE ST 2113 (2019) "P3D65"
     """
-    DISPLAY_P3 = ST432_1
 
-    JEDEC_P22 = 22, "jedec-p22", "JEDEC P22 (EBU 3213-E)"
+    EBU3213_E = 22, "jedec-p22", "JEDEC P22 (EBU 3213-E)"
     """
     EBU Tech. 3213-E (1975)
 
@@ -611,17 +600,15 @@ class Primaries(PropEnum):
     ```
     """
 
-    EBU3213 = JEDEC_P22
-
     @classmethod
     def _missing_(cls, value: Any) -> Primaries | None:
-        return Primaries.UNKNOWN if (v := super()._missing_(value)) is None else v
+        return Primaries.UNSPECIFIED if (v := super()._missing_(value)) is None else v
 
-    def is_unknown(self) -> bool:
+    def is_unspecified(self) -> bool:
         """
-        Check if the primaries are Primaries.UNKNOWN.
+        Check if the primaries are Primaries.UNSPECIFIED.
         """
-        return self is Primaries.UNKNOWN
+        return self is Primaries.UNSPECIFIED
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Primaries:
@@ -642,7 +629,7 @@ class Primaries(PropEnum):
             return Primaries.BT709
 
         if (width, height) <= (1024, 576):
-            return Primaries.SMPTE170M if height <= 486 else Primaries.BT470BG
+            return Primaries.ST170_M if height <= 486 else Primaries.BT470_BG
 
         return Primaries.BT709
 
@@ -679,7 +666,6 @@ class ColorRange(PropEnum):
 
     This is primarily used with YUV integer formats.
     """
-    TV = LIMITED
 
     FULL = 0
     """
@@ -688,7 +674,6 @@ class ColorRange(PropEnum):
     Note that float clips should ALWAYS be FULL range!
     RGB clips will ALWAYS be FULL range!
     """
-    PC = FULL
 
     @classmethod
     def _missing_(cls, value: object) -> ColorRange:

@@ -4,13 +4,13 @@ from vstools import ColorRange, Matrix, Primaries, Transfer, vs
 
 
 class TestMatrix(TestCase):
-    def test_is_unknown(self) -> None:
-        self.assertTrue(Matrix.UNKNOWN.is_unknown())
-        self.assertTrue(Matrix(2).is_unknown())
-        self.assertTrue(Matrix.from_param(2).is_unknown())
-        self.assertFalse(Matrix.RGB.is_unknown())
-        self.assertFalse(Matrix(0).is_unknown())
-        self.assertFalse(Matrix.from_param(0).is_unknown())
+    def test_is_unspecified(self) -> None:
+        self.assertTrue(Matrix.UNSPECIFIED.is_unspecified())
+        self.assertTrue(Matrix(2).is_unspecified())
+        self.assertTrue(Matrix.from_param(2).is_unspecified())
+        self.assertFalse(Matrix.RGB.is_unspecified())
+        self.assertFalse(Matrix(0).is_unspecified())
+        self.assertFalse(Matrix.from_param(0).is_unspecified())
 
     def test_from_res_rgb(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.RGB24)
@@ -30,12 +30,12 @@ class TestMatrix(TestCase):
     def test_from_res_sd(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=640, height=480)
         result = Matrix.from_res(clip)
-        self.assertEqual(result, Matrix.SMPTE170M)
+        self.assertEqual(result, Matrix.ST170_M)
 
     def test_from_res_pal(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=1024, height=576)
         result = Matrix.from_res(clip)
-        self.assertEqual(result, Matrix.BT470BG)
+        self.assertEqual(result, Matrix.BT470_BG)
 
     def test_from_video_rgb(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.RGB24)
@@ -67,27 +67,27 @@ class TestMatrix(TestCase):
     def test_from_video_sd(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=640, height=480)
         result = Matrix.from_video(clip)
-        self.assertEqual(result, Matrix.SMPTE170M)
+        self.assertEqual(result, Matrix.ST170_M)
 
     def test_from_video_pal(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=1024, height=576)
         result = Matrix.from_video(clip)
-        self.assertEqual(result, Matrix.BT470BG)
+        self.assertEqual(result, Matrix.BT470_BG)
 
 
 class TestTransfer(TestCase):
-    def test_is_unknown(self) -> None:
-        self.assertTrue(Transfer.UNKNOWN.is_unknown())
-        self.assertTrue(Transfer(2).is_unknown())
-        self.assertTrue(Transfer.from_param(2).is_unknown())
-        self.assertFalse(Transfer.BT709.is_unknown())
-        self.assertFalse(Transfer(1).is_unknown())
-        self.assertFalse(Transfer.from_param(1).is_unknown())
+    def test_is_unspecified(self) -> None:
+        self.assertTrue(Transfer.UNSPECIFIED.is_unspecified())
+        self.assertTrue(Transfer(2).is_unspecified())
+        self.assertTrue(Transfer.from_param(2).is_unspecified())
+        self.assertFalse(Transfer.BT709.is_unspecified())
+        self.assertFalse(Transfer(1).is_unspecified())
+        self.assertFalse(Transfer.from_param(1).is_unspecified())
 
     def test_from_res_rgb(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.RGB24)
         result = Transfer.from_res(clip)
-        self.assertEqual(result, Transfer.SRGB)
+        self.assertEqual(result, Transfer.IEC_61966_2_1)
 
     def test_from_res_uhd(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=3840, height=2160)
@@ -134,7 +134,7 @@ class TestTransfer(TestCase):
     def test_from_video_rgb(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.RGB24)
         result = Transfer.from_video(clip)
-        self.assertEqual(result, Transfer.SRGB)
+        self.assertEqual(result, Transfer.IEC_61966_2_1)
 
     def test_from_video_uhd(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=3840, height=2160)
@@ -168,13 +168,13 @@ class TestTransfer(TestCase):
 
 
 class TestPrimaries(TestCase):
-    def test_is_unknown(self) -> None:
-        self.assertTrue(Primaries.UNKNOWN.is_unknown())
-        self.assertTrue(Primaries(2).is_unknown())
-        self.assertTrue(Primaries.from_param(2).is_unknown())
-        self.assertFalse(Primaries.BT709.is_unknown())
-        self.assertFalse(Primaries(1).is_unknown())
-        self.assertFalse(Primaries.from_param(1).is_unknown())
+    def test_is_unspecified(self) -> None:
+        self.assertTrue(Primaries.UNSPECIFIED.is_unspecified())
+        self.assertTrue(Primaries(2).is_unspecified())
+        self.assertTrue(Primaries.from_param(2).is_unspecified())
+        self.assertFalse(Primaries.BT709.is_unspecified())
+        self.assertFalse(Primaries(1).is_unspecified())
+        self.assertFalse(Primaries.from_param(1).is_unspecified())
 
     def test_from_res_rgb(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.RGB24)
@@ -194,12 +194,12 @@ class TestPrimaries(TestCase):
     def test_from_res_sd(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=640, height=480)
         result = Primaries.from_res(clip)
-        self.assertEqual(result, Primaries.SMPTE170M)
+        self.assertEqual(result, Primaries.ST170_M)
 
     def test_from_res_pal(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=1024, height=576)
         result = Primaries.from_res(clip)
-        self.assertEqual(result, Primaries.BT470BG)
+        self.assertEqual(result, Primaries.BT470_BG)
 
     def test_from_video_property(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=3840, height=2160)
@@ -231,12 +231,12 @@ class TestPrimaries(TestCase):
     def test_from_video_sd(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=640, height=480)
         result = Primaries.from_video(clip)
-        self.assertEqual(result, Primaries.SMPTE170M)
+        self.assertEqual(result, Primaries.ST170_M)
 
     def test_from_video_pal(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=1024, height=576)
         result = Primaries.from_video(clip)
-        self.assertEqual(result, Primaries.BT470BG)
+        self.assertEqual(result, Primaries.BT470_BG)
 
 
 class TestColorRange(TestCase):
