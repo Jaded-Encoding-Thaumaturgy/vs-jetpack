@@ -20,6 +20,7 @@ from vstools import (
     ConvMode,
     FormatsRefClipMismatchError,
     ResolutionsRefClipMismatchError,
+    UnsupportedSampleTypeError,
     UnsupportedVideoFormatError,
     VSObject,
     VSObjectABC,
@@ -198,6 +199,8 @@ def regression(
     """
     func = func or regression
 
+    UnsupportedSampleTypeError.check([x, *ys], vs.FLOAT, func, "All input clips must have a FLOAT sample type.")
+
     if not radius > 0:
         raise CustomValueError('"radius" must be greater than zero.', func, radius)
 
@@ -268,6 +271,10 @@ def reconstruct(
         A new clip representing the reconstructed dependent variable.
     """
     func = func or reconstruct
+
+    UnsupportedSampleTypeError.check(
+        [clip, *filter(None, r)], vs.FLOAT, func, "All input clips must have a FLOAT sample type."
+    )
 
     if isinstance(mean, MeanMode):
         mean = mean.single
@@ -460,8 +467,9 @@ class ChromaReconstruct(VSObjectABC):
         Raises:
             UnsupportedVideoFormatError: If any base clip is not GRAY float format.
         """
-        if any(c.format.id != vs.GRAYS for c in [luma_base, *chroma_bases]):
-            raise UnsupportedVideoFormatError("All base clips must be of GRAYS format.", self.__class__)
+        UnsupportedVideoFormatError.check(
+            [luma_base, *chroma_bases], vs.GRAYS, self.__class__, "All base clips must be of GRAYS format."
+        )
 
         self.luma_base = luma_base
         self.chroma_bases = chroma_bases
