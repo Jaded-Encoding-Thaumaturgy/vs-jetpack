@@ -63,7 +63,7 @@ class RescaleBase(VSObjectABC):
 
         self._downscaler = Scaler.ensure_obj(downscaler)
 
-        self._field_based = FieldBased.from_param(field_based)
+        self._field_based = FieldBased.from_param_with_fallback(field_based)
 
         self._border_handling = BorderHandling(int(border_handling))
 

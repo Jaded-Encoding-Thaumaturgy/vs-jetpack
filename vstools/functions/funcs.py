@@ -117,13 +117,12 @@ class FunctionUtil(list[int], VSObject):
         self.cfamily_converted = False
         self.bitdepth = bitdepth
 
-        self._matrix = Matrix.from_param(matrix, self.func)
-        self._transfer = Transfer.from_param(transfer, self.func)
-        self._primaries = Primaries.from_param(primaries, self.func)
-
-        self._range_in = ColorRange.from_param(range_in, self.func) if range_in is not None else None
-        self._chromaloc = ChromaLocation.from_param(chromaloc, self.func) if chromaloc is not None else None
-        self._order = FieldBased.from_param(order, self.func) if order is not None else None
+        self._matrix = Matrix.from_param_with_fallback(matrix)
+        self._transfer = Transfer.from_param_with_fallback(transfer)
+        self._primaries = Primaries.from_param_with_fallback(primaries)
+        self._range_in = ColorRange.from_param_with_fallback(range_in)
+        self._chromaloc = ChromaLocation.from_param_with_fallback(chromaloc)
+        self._order = FieldBased.from_param_with_fallback(order)
 
         self.norm_planes = normalize_planes(self.norm_clip, self.planes)
 
@@ -153,7 +152,7 @@ class FunctionUtil(list[int], VSObject):
             return clip
 
         if cfamily is vs.RGB:
-            if self._matrix.is_unspecified():
+            if self._matrix is None or self._matrix.is_unspecified():
                 raise UndefinedMatrixError(
                     "You must specify a matrix for RGB to {} conversions!".format(
                         "/".join(cf.name for cf in sorted(self.allowed_cfamilies, key=lambda x: x.name))

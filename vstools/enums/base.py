@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from contextlib import suppress
 from string import capwords
-from typing import Any, Iterable, Mapping, Self
+from typing import Any, Iterable, Mapping, Self, overload
 
 from jetpytools import (
     CustomEnum,
@@ -11,6 +12,7 @@ from jetpytools import (
     CustomValueError,
     EnumABCMeta,
     FuncExcept,
+    NotFoundEnumValueError,
     cachedproperty,
     classproperty,
     fallback,
@@ -26,19 +28,17 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
     Base class for enumerations representing frame or clip properties in VapourSynth.
     """
 
-    def __new__(cls, value: int, *_: str | None) -> Self:
+    def __new__(cls, value: Any, *_: str | None) -> Self:
         obj = int.__new__(cls, value)
         obj._value_ = value
         return obj
 
-    def __init__(self, _: int, string: str | None = None, pretty_string: str | None = None) -> None:
+    def __init__(self, _: Any, string: str | None = None, pretty_string: str | None = None) -> None:
         self._string = fallback(string, self._name_.lower())
         self._pretty_string = fallback(pretty_string, capwords(self._string.replace("_", " ")))
 
     @classmethod
-    @abstractmethod
     def _missing_(cls, value: object) -> Self | None:
-        # Subclasses must implement a default value when value is None
         if isinstance(value, (vs.VideoNode, vs.VideoFrame, Mapping)):
             return cls.from_video(value, func=cls)
 
@@ -94,6 +94,37 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
         Get an enum member from the frame properties or optionally fall back to resolution when strict=False.
         """
 
+    @overload
+    @classmethod
+    def from_param_with_fallback(cls, value: Any, fallback: None = None) -> Self | None: ...
+    @overload
+    @classmethod
+    def from_param_with_fallback[T](cls, value: Any, fallback: T) -> Self | T: ...
+    @classmethod
+    def from_param_with_fallback[T](cls, value: Any, fallback: T | None = None) -> Self | T | None:
+        """
+        Attempts to obtain an enum member from a parameter value, returning a fallback if the value cannot be converted
+        or represents an unspecified enum member.
+
+        Args:
+            value: The input value to convert into an enum member.
+            fallback: The value to return if the input cannot be converted. Defaults to `None`.
+
+        Returns:
+            The corresponding enum member if conversion succeeds, otherwise the provided `fallback` value.
+        """
+        with suppress(NotFoundEnumValueError, CustomValueError):
+            # Will raise a NotFoundEnumValueError if the value can't be casted
+            casted = cls.from_param(value)
+
+            # If unspecified, fallbacks to `fallback` value
+            if casted.is_unspecified():
+                raise CustomValueError
+
+            return casted
+
+        return fallback
+
     @classmethod
     def from_param_or_video(
         cls,
@@ -113,9 +144,13 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
             strict: Be strict about the frame properties. Default: False.
             func_except: Function returned for custom error handling.
         """
-        prop = cls.from_param(value, func_except)
+        prop = cls.from_param_with_fallback(value, None)
 
-        return prop if not prop.is_unspecified() else cls.from_video(src, strict, func_except)
+        # Delay the `from_video` call here to avoid unnecessary frame rendering
+        if prop is None:
+            return cls.from_video(src, strict, func_except)
+
+        return prop
 
     @classmethod
     def ensure_presence(cls, clip: vs.VideoNode, value: Any, func: FuncExcept | None = None) -> vs.VideoNode:
