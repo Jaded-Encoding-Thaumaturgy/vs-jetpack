@@ -6,9 +6,7 @@ from string import capwords
 from typing import Any, Iterable, Mapping, Self, overload
 
 from jetpytools import (
-    CustomEnum,
     CustomIntEnum,
-    CustomStrEnum,
     CustomValueError,
     EnumABCMeta,
     FuncExcept,
