@@ -7,5 +7,6 @@ from .contra import *
 from .enum import *
 from .freqs import *
 from .limit import *
+from .regress import *
 from .rgtools import *
 from .sharp import *
