@@ -93,9 +93,11 @@ class ScalerTwoPasses(ScalerSpecializer[_ScalerWithLanczosDefaultT]):
         if width / clip.width > 1.5 or height / clip.height > 1.5:
             # If the scale is too big, we need to scale it in two passes, else the window
             # will be too big and the grain will be dampened down too much
-            mod = max(clip.format.subsampling_w, clip.format.subsampling_h) << 1
             clip = super().scale(
-                clip, mod_x((width + clip.width) / 2, mod), mod_x((height + clip.height) / 2, mod), **kwargs
+                clip,
+                mod_x((width + clip.width) / 2, 2**clip.format.subsampling_w),
+                mod_x((height + clip.height) / 2, 2**clip.format.subsampling_h),
+                **kwargs,
             )
 
         return super().scale(clip, width, height, (0, 0), **kwargs)
@@ -505,12 +507,10 @@ def _apply_grainer(
     protect_neutral_chroma_blend = kwargs.pop("protect_neutral_chroma_blend", scale_delta(2, 8, clip))
     neutral_out = kwargs.pop("neutral_out", False)
 
-    (scalex, scaley), mod = scale, max(clip.format.subsampling_w, clip.format.subsampling_h) << 1
-
     # Making a neutral blank clip
     base_clip = clip.std.BlankClip(
-        mod_x(clip.width / scalex, mod),
-        mod_x(clip.height / scaley, mod),
+        mod_x(clip.width / scale[0], 2**clip.format.subsampling_w),
+        mod_x(clip.height / scale[1], 2**clip.format.subsampling_h),
         length=clip.num_frames + temporal_rad * 2,
         color=get_neutral_values(clip),
         keep=True,

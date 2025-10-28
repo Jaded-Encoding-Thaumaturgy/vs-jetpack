@@ -495,7 +495,7 @@ def rekt_partial(
 
     filtered = core.std.AddBorders(filtered, left, right, top, bottom)
 
-    ratio_w, ratio_h = 1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h
+    ratio_w, ratio_h = 2**clip.format.subsampling_w, 2**clip.format.subsampling_h
 
     vals = list(
         filter(

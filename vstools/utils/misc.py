@@ -221,7 +221,7 @@ class padder:
         width = clip.width + left + right
         height = clip.height + top + bottom
 
-        w_sub, h_sub = 1 << clip.format.subsampling_w, 1 << clip.format.subsampling_h
+        w_sub, h_sub = 2**clip.format.subsampling_w, 2**clip.format.subsampling_h
 
         if width % w_sub or height % h_sub:
             raise CustomValueError(

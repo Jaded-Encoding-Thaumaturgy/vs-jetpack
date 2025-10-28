@@ -221,17 +221,14 @@ def get_w(
     """
     if isinstance(ar_or_ref, (Dar, Sar)):
         aspect_ratio = float(ar_or_ref)
-        mod = mod or 2
     elif not isinstance(ar_or_ref, SupportsFloat):
         ref = ar_or_ref
         assert ref.format
+
         aspect_ratio = ref.width / ref.height
-        mod = fallback(mod, ref.format.subsampling_w and 2 << ref.format.subsampling_w)
+        mod = fallback(mod, 2**ref.format.subsampling_w)
     else:
         aspect_ratio = float(ar_or_ref)
-
-        if mod is None:
-            mod = 0 if height % 2 else 2
 
     width = height * aspect_ratio
 
@@ -266,17 +263,14 @@ def get_h(
     """
     if isinstance(ar_or_ref, (Dar, Sar)):
         aspect_ratio = 1.0 / float(ar_or_ref)
-        mod = mod or 2
     elif not isinstance(ar_or_ref, SupportsFloat):
         ref = ar_or_ref
         assert ref.format
+
         aspect_ratio = ref.height / ref.width
-        mod = fallback(mod, ref.format.subsampling_h and 2 << ref.format.subsampling_h)
+        mod = fallback(mod, 2**ref.format.subsampling_h)
     else:
         aspect_ratio = 1.0 / float(ar_or_ref)
-
-        if mod is None:
-            mod = 0 if width % 2 else 2
 
     height = width * aspect_ratio
 

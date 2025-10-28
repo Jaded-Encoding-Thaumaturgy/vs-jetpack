@@ -120,7 +120,7 @@ def check_correct_subsampling(clip: vs.VideoNode, width: int, height: int, func:
     Raises:
         CustomValueError: The clip has invalid subsampling.
     """
-    if (width % (1 << clip.format.subsampling_w)) or (height % (1 << clip.format.subsampling_h)):
+    if (width % (2**clip.format.subsampling_w)) or (height % (2**clip.format.subsampling_h)):
         from .info import get_subsampling
 
         raise CustomValueError(
