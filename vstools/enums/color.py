@@ -177,10 +177,6 @@ class Matrix(PropEnum):
 
     """
 
-    @classmethod
-    def _missing_(cls, value: object) -> Matrix:
-        return Matrix.UNSPECIFIED if (v := super()._missing_(value)) is None else v
-
     def is_unspecified(self) -> bool:
         """
         Check if the matrix is Matrix.UNSPECIFIED.
@@ -345,10 +341,6 @@ class Transfer(PropEnum):
 
     Rec. ITU-R BT.2100-2 hybrid loggamma (HLG) system
     """
-
-    @classmethod
-    def _missing_(cls, value: Any) -> Transfer | None:
-        return Transfer.UNSPECIFIED if (v := super()._missing_(value)) is None else v
 
     def is_unspecified(self) -> bool:
         """
@@ -600,10 +592,6 @@ class Primaries(PropEnum):
     ```
     """
 
-    @classmethod
-    def _missing_(cls, value: Any) -> Primaries | None:
-        return Primaries.UNSPECIFIED if (v := super()._missing_(value)) is None else v
-
     def is_unspecified(self) -> bool:
         """
         Check if the primaries are Primaries.UNSPECIFIED.
@@ -674,10 +662,6 @@ class ColorRange(PropEnum):
     Note that float clips should ALWAYS be FULL range!
     RGB clips will ALWAYS be FULL range!
     """
-
-    @classmethod
-    def _missing_(cls, value: object) -> ColorRange:
-        return ColorRange.LIMITED if (v := super()._missing_(value)) is None else v
 
     @property
     def value_vs(self) -> int:

@@ -24,10 +24,6 @@ class ChromaLocation(PropEnum):
     BOTTOM_LEFT = 4
     BOTTOM = 5
 
-    @classmethod
-    def _missing_(cls, value: object) -> ChromaLocation:
-        return ChromaLocation.LEFT if (v := super()._missing_(value)) is None else v
-
     def get_offsets(self, src: SupportsInt | VideoFormatLike | HoldsVideoFormat) -> tuple[float, float]:
         """
         Get (left,top) shift for chroma relative to luma.
@@ -103,10 +99,6 @@ class FieldBased(PropEnum):
     """
     The frame is interlaced and the field order is top field first.
     """
-
-    @classmethod
-    def _missing_(cls, value: object) -> FieldBased:
-        return cls.PROGRESSIVE if (v := super()._missing_(value)) is None else v
 
     @property
     def field(self) -> int:
