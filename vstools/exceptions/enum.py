@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from jetpytools import CustomValueError, NotFoundEnumValue
+from jetpytools import CustomValueError
 
 __all__ = [
-    "NotFoundEnumValue",
     "UndefinedChromaLocationError",
     "UndefinedFieldBasedError",
+    "UndefinedFieldError",
     "UnsupportedChromaLocationError",
     "UnsupportedFieldBasedError",
+    "UnsupportedFieldError",
 ]
 
 
@@ -32,4 +33,16 @@ class UndefinedFieldBasedError(CustomValueError):
 class UnsupportedFieldBasedError(CustomValueError):
     """
     Raised when an unsupported field type is passed.
+    """
+
+
+class UndefinedFieldError(CustomValueError):
+    """
+    Raised when an undefined field is passed.
+    """
+
+
+class UnsupportedFieldError(CustomValueError):
+    """
+    Raised when an unsupported field is passed.
     """

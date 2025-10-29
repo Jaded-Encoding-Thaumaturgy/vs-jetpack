@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, SupportsInt
+from typing import Any, Mapping, NoReturn, SupportsInt
 
-from jetpytools import FuncExcept
+from jetpytools import CustomNotImplementedError, FuncExcept
 
-from ..exceptions import UndefinedChromaLocationError, UndefinedFieldBasedError, UnsupportedFieldBasedError
+from ..exceptions import (
+    UndefinedChromaLocationError,
+    UndefinedFieldBasedError,
+    UndefinedFieldError,
+    UnsupportedFieldBasedError,
+)
 from ..types import HoldsVideoFormat, VideoFormatLike
 from ..vs_proxy import vs
 from .base import PropEnum, _base_from_video
@@ -101,7 +106,7 @@ class FieldBased(PropEnum):
     """
 
     @property
-    def field(self) -> int:
+    def field(self) -> Field:
         """
         Check what field the enum signifies.
 
@@ -113,7 +118,7 @@ class FieldBased(PropEnum):
                 "Progressive video aren't field based!", f"{self.__class__.__name__}.field"
             )
 
-        return self.value - 1
+        return Field.from_param(self.value - 1)
 
     @property
     def inverted_field(self) -> FieldBased:
@@ -210,11 +215,52 @@ class FieldBased(PropEnum):
         return clip.std.SetFieldBased(cls.from_param_or_video(value, clip, True, func))
 
 
+class Field(PropEnum):
+    """
+    Indicates which field (top or bottom) was used to generate the current frame.
+
+    This property is typically set when the frame is produced by a function such as `.std.SeparateFields`.
+    """
+
+    BOTTOM = 0
+    """Frame generated from the bottom field."""
+
+    TOP = 1
+    """Frame generated from the top field."""
+
+    @classmethod
+    def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> NoReturn:
+        raise CustomNotImplementedError
+
+    @classmethod
+    def from_video(
+        cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
+    ) -> Field:
+        """
+        Obtain the Field of a clip from the frame properties.
+
+        Args:
+            src: Input clip, frame, or props.
+            strict: Be strict about the properties. Will ALWAYS error if the Field is missing.
+            func_except: Function returned for custom error handling.
+
+        Returns:
+            Field object.
+
+        Raises:
+            UndefinedFieldError: if the Field is undefined or can not be determined from the frame properties.
+        """
+        return _base_from_video(cls, src, UndefinedFieldError, strict, func)
+
+
 type ChromaLocationLike = int | vs.ChromaLocation | ChromaLocation
 """Type alias for values that can be used to initialize a [ChromaLocation][vstools.ChromaLocation]."""
 
 type FieldBasedLike = int | vs.FieldBased | FieldBased
 """Type alias for values that can be used to initialize a [FieldBased][vstools.FieldBased]."""
+
+type FieldLike = int | Field
+"""Type alias for values that can be used to initialize a [Field][vstools.Field]."""
 
 ChromaLocationT = ChromaLocationLike
 """Deprecated alias of ChromaLocationLike"""
