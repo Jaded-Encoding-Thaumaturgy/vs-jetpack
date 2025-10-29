@@ -406,7 +406,7 @@ def initialize_clip(
 
     clip = PropEnum.ensure_presences(clip, to_ensure_presence, func)
 
-    return depth(clip, bits, dither_type=dither_type)
+    return depth(clip, max((bits := fallback(bits, 0)), bits), dither_type=dither_type)
 
 
 @overload
