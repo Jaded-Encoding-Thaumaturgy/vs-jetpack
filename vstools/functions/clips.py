@@ -5,7 +5,7 @@ from functools import partial, wraps
 from inspect import signature
 from typing import Any, Callable, Literal, overload
 
-from jetpytools import CustomValueError, FuncExcept, KwargsT, StrictRange
+from jetpytools import CustomValueError, FuncExcept, KwargsT, StrictRange, fallback
 
 from ..enums import (
     ChromaLocation,
@@ -344,7 +344,7 @@ def initialize_clip(
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Returns:
-        Clip with relevant frame properties set, and optionally dithered up to 16 bits by default.
+        Clip with relevant frame properties set, and optionally dithered up to 32 bits by default.
     """
     func = func or initialize_clip
 
@@ -375,7 +375,7 @@ def initialize_input[**P](
     function: Callable[P, vs.VideoNode],
     /,
     *,
-    bits: int | None = 16,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -391,7 +391,7 @@ def initialize_input[**P](
 @overload
 def initialize_input[**P](
     *,
-    bits: int | None = 16,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -407,7 +407,7 @@ def initialize_input[**P](
     function: Callable[P, vs.VideoNode] | None = None,
     /,
     *,
-    bits: int | None = 16,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -421,7 +421,7 @@ def initialize_input[**P](
     """
     Decorator implementation of [initialize_clip][vstools.initialize_clip].
 
-    Initializes the first clip found in this order: positional arguments -> keyword arguments ->  default arguments.
+    Initializes the first clip found in this order: positional arguments -> keyword arguments -> default arguments.
     """
 
     if function is None:
