@@ -5,7 +5,7 @@ from functools import partial, wraps
 from inspect import signature
 from typing import Any, Callable, Literal, overload
 
-from jetpytools import CustomValueError, FuncExcept, KwargsT, StrictRange, fallback
+from jetpytools import CustomValueError, FuncExcept, KwargsT, StrictRange
 
 from ..enums import (
     ChromaLocation,
@@ -306,7 +306,7 @@ def finalize_output[**P](
 
 def initialize_clip(
     clip: vs.VideoNode,
-    bits: int | None = None,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -372,7 +372,7 @@ def initialize_clip(
 
     clip = PropEnum.ensure_presences(clip, to_ensure_presence, func)
 
-    return depth(clip, fallback(bits, 32), dither_type=dither_type)
+    return depth(clip, bits, dither_type=dither_type)
 
 
 @overload
