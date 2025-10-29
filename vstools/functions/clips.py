@@ -327,12 +327,7 @@ def initialize_clip(
 
     Args:
         clip: Clip to initialize.
-        bits: Bits to dither to.
-
-               - If 0, no dithering is applied.
-               - If None, 16 if bit depth is lower than it, else leave untouched.
-               - If positive integer, dither to that bitdepth.
-
+        bits: Bits to dither to. If False, None, less than or equal to 0, no dithering is applied. Default to 32.
         matrix: Matrix property to set. If None, tries to get the Matrix from existing props. If no props are set or
             Matrix=2, guess from the video resolution.
         transfer: Transfer property to set. If None, tries to get the Transfer from existing props. If no props are set
@@ -375,7 +370,7 @@ def initialize_clip(
 
     clip = PropEnum.ensure_presences(clip, to_ensure_presence, func)
 
-    return depth(clip, bits, dither_type=dither_type)
+    return depth(clip, max((bits := fallback(bits, 0)), bits), dither_type=dither_type)
 
 
 @overload
