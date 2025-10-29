@@ -6,7 +6,7 @@ from functools import partial, wraps
 from inspect import signature
 from typing import Any, Literal, SupportsInt, overload
 
-from jetpytools import CustomValueError, FuncExcept, StrictRange
+from jetpytools import CustomValueError, FuncExcept, StrictRange, fallback
 
 from ..enums import (
     ChromaLocation,
@@ -25,7 +25,7 @@ from ..enums import (
 )
 from ..exceptions import FramesLengthError
 from ..types import HoldsVideoFormat, VideoFormatLike
-from ..utils import DynamicClipsCache, get_depth
+from ..utils import DynamicClipsCache
 from ..vs_proxy import vs
 from .utils import DitherType, depth, limiter
 
@@ -406,12 +406,7 @@ def initialize_clip(
 
     clip = PropEnum.ensure_presences(clip, to_ensure_presence, func)
 
-    if bits is None:
-        bits = max(get_depth(clip), 16)
-    elif bits <= 0:
-        return clip
-
-    return depth(clip, bits, dither_type=dither_type)
+    return depth(clip, fallback(bits, 32), dither_type=dither_type)
 
 
 @overload
