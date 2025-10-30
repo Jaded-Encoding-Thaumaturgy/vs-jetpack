@@ -35,12 +35,7 @@ class TestClips(TestCase):
         self.assertEqual(get_prop(clip, "_Transfer", int), 1)
 
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=1920, height=1080)
-        clip = initialize_clip(
-            clip,
-            matrix=Matrix.SMPTE170M,
-            transfer=Transfer.BT470BG,
-            primaries=Primaries.BT470BG,
-        )
+        clip = initialize_clip(clip, matrix=Matrix.ST170_M, transfer=Transfer.BT470_BG, primaries=Primaries.BT470_BG)
         assert clip.format
         self.assertEqual(clip.format.bits_per_sample, 16)
         self.assertEqual(get_prop(clip, "_Matrix", int), 6)

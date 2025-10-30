@@ -370,12 +370,7 @@ def initialize_clip(
         if strict:
             to_ensure_presence.append(prop_t)
         else:
-            p = prop_t.from_param(prop_v, func)
-
-            if p is None:
-                to_ensure_presence.append(prop_t.from_video(clip, False, func))
-            else:
-                to_ensure_presence.append(p)
+            to_ensure_presence.append(prop_t.from_param_or_video(prop_v, clip, False, func))
 
     clip = PropEnum.ensure_presences(clip, to_ensure_presence, func)
 

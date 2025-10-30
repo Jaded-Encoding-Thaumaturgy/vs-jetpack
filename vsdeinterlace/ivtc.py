@@ -42,7 +42,7 @@ def sivtc(
         IVTC'd clip.
     """
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, sivtc).is_tff
+    tff = FieldBased.from_param_or_video(tff, clip, True, sivtc).is_tff()
 
     ivtc = clip.std.SeparateFields(tff).std.DoubleWeave(tff)
     ivtc = ivtc_cycle.decimate(ivtc, pattern)
@@ -77,7 +77,7 @@ def jivtc(
         Inverse Telecined clip.
     """
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, jivtc).is_tff
+    tff = FieldBased.from_param_or_video(tff, clip, True, jivtc).is_tff()
 
     UnsupportedFramerateError.check(clip, (30000, 1001), jivtc)
 

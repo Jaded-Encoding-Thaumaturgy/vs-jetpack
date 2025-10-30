@@ -121,7 +121,7 @@ class ExampleBicubicKernel(Kernel):
             format=get_video_format(format).id,
             filter_param_a=self.b,
             filter_param_b=self.c,
-            matrix=Matrix.from_param(matrix),
-            matrix_in=Matrix.from_param(matrix_in),
+            matrix=Matrix.from_param_with_fallback(matrix),
+            matrix_in=Matrix.from_param_with_fallback(matrix_in),
             **self.kwargs | kwargs,
         )

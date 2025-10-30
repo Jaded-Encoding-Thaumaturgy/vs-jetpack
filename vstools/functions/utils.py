@@ -276,8 +276,8 @@ class DitherType(CustomStrEnum):
         in_fmt = get_video_format(in_bits_or_fmt, sample_type=in_sample_type)
         out_fmt = get_video_format(out_bits_or_fmt, sample_type=out_sample_type)
 
-        in_range = ColorRange.from_param(in_range, (DitherType.should_dither, "in_range"))
-        out_range = ColorRange.from_param(out_range, (DitherType.should_dither, "out_range"))
+        in_range = ColorRange.from_param_with_fallback(in_range)
+        out_range = ColorRange.from_param_with_fallback(out_range)
 
         if out_fmt.sample_type is vs.FLOAT:
             return False

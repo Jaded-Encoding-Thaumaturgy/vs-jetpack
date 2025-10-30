@@ -75,7 +75,7 @@ def video_heuristics(
     def _get_props(obj: vs.VideoNode | Mapping[str, Any], key: type[PropEnum]) -> PropEnum:
         p = get_prop(obj, key, int, cast=key, default=None, func=video_heuristics)
 
-        if p is not None and not p.is_unknown(p):
+        if p is not None and not p.is_unspecified():
             return p
 
         assumed_props.append(key.prop_key)

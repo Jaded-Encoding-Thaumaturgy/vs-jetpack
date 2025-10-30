@@ -142,8 +142,7 @@ def check_progressive(clip: vs.VideoNode, func: FuncExcept) -> Literal[True]:
     Raises:
         UnsupportedFieldBasedError: The clip is interlaced.
     """
-
-    if FieldBased.from_video(clip, func=func).is_inter:
+    if FieldBased.from_video(clip, func=func).is_inter():
         raise UnsupportedFieldBasedError("Only progressive video is supported!", func)
 
     return True

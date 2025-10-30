@@ -72,7 +72,7 @@ def test_inline_expr_advanced(format: int) -> None:
 
             ie.out.y = weight_mul
 
-            if ColorRange.from_video(clip).is_full or clip.format.sample_type is vs.FLOAT:
+            if ColorRange.from_video(clip).is_full() or clip.format.sample_type is vs.FLOAT:
                 ie.out.uv = x
             else:
                 chroma_expanded = ((x - x.Neutral) / (x.PlaneMax - x.PlaneMin) + 0.5) * x.RangeMax

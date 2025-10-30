@@ -607,6 +607,6 @@ def prefilter_to_full_range(
     )
     chroma_expr = "x neutral - plane_max plane_min - / 0.5 + range_max *"
 
-    planes = 0 if clip_range.is_full or clip.format.sample_type is vs.FLOAT else None
+    planes = 0 if clip_range.is_full() or clip.format.sample_type is vs.FLOAT else None
 
     return ColorRange.FULL.apply(norm_expr(clip, (luma_expr, chroma_expr), planes, k=curve, c=smooth, func=func))

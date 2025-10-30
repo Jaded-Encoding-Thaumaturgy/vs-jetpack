@@ -1,21 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Mapping, Self, overload
+from typing import Any, Mapping
 
 from jetpytools import FuncExcept
 
-from ..exceptions import (
-    ReservedMatrixError,
-    ReservedPrimariesError,
-    ReservedTransferError,
-    UndefinedMatrixError,
-    UndefinedPrimariesError,
-    UndefinedTransferError,
-    UnsupportedColorRangeError,
-    UnsupportedMatrixError,
-    UnsupportedPrimariesError,
-    UnsupportedTransferError,
-)
+from ..exceptions import UndefinedColorRangeError, UndefinedMatrixError, UndefinedPrimariesError, UndefinedTransferError
 from ..types import HoldsPropValue
 from ..vs_proxy import vs
 from .base import PropEnum, _base_from_video
@@ -41,31 +30,7 @@ class Matrix(PropEnum):
     Matrix coefficients ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.5).
     """
 
-    _value_: int
-
-    @classmethod
-    def _missing_(cls, value: Any) -> Matrix | None:
-        value = super()._missing_(value)
-
-        if value is None:
-            return Matrix.UNKNOWN
-        elif isinstance(value, cls):
-            return value
-
-        if Matrix.RGB < value < Matrix.ICTCP:
-            raise ReservedMatrixError(f"Matrix({value}) is reserved.", cls)
-
-        if value > Matrix.ICTCP:
-            raise UnsupportedMatrixError(
-                f"Matrix({value}) is current unsupported. "
-                "If you believe this to be in error, please leave an issue "
-                "in the vs-tools GitHub repository.",
-                cls,
-            )
-
-        return None
-
-    RGB = 0
+    RGB = 0, "rgb", "RGB"
     """
     The identity matrix.
 
@@ -77,9 +42,8 @@ class Matrix(PropEnum):
 
     See ITU-T H.265 Equations E-31 to E-33
     """
-    GBR = RGB
 
-    BT709 = 1
+    BT709 = 1, "709", "BT.709"
     """
     Kr = 0.2126; Kb = 0.0722
 
@@ -92,12 +56,14 @@ class Matrix(PropEnum):
     SMPTE RP 177 (1993) Annex B
     """
 
-    UNKNOWN = 2
+    UNSPECIFIED = 2, "unspec"
     """
+    Unspecified.
+
     Image characteristics are unknown or are determined by the application.
     """
 
-    FCC = 4
+    FCC = 4, "fcc", "FCC"
     """
     KR = 0.30; KB = 0.11
 
@@ -106,7 +72,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-28 to E-30
     """
 
-    BT470BG = 5
+    BT470_BG = 5, "470bg", "BT.470bg"
     """
     KR = 0.299; KB = 0.114
 
@@ -126,9 +92,8 @@ class Matrix(PropEnum):
 
     See ITU-T H.265 Equations E-28 to E-30
     """
-    BT601_625 = BT470BG
 
-    SMPTE170M = 6
+    ST170_M = 6, "170m", "SMPTE ST 170m"
     """
     Kr = 0.299; Kb = 0.114
 
@@ -145,9 +110,8 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-28 to E-30
 
     """
-    BT601_525 = SMPTE170M
 
-    SMPTE240M = 7
+    ST240_M = 7, "240m", "SMPTE ST 240m"
     """
     KR = 0.212; KB = 0.087
 
@@ -156,14 +120,14 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-28 to E-30
     """
 
-    YCGCO = 8
+    YCGCO = 8, "ycgco", "YCgCo"
     """
     KR = 0.2126; KB = 0.0722
 
     See Implementation And Evaluation Of Residual Color Transform For 4:4:4 RGB Lossless Coding
     """
 
-    BT2020NCL = 9
+    BT2020_NCL = 9, "2020ncl", "BT.2020 non-constant luminance"
     """
     KR = 0.2627; KB = 0.0593
 
@@ -175,7 +139,7 @@ class Matrix(PropEnum):
 
     """
 
-    BT2020CL = 10
+    BT2020_CL = 10, "2020cl", "BT.2020 constant luminance"
     """
     KR = 0.2627; KB = 0.0593
 
@@ -184,7 +148,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-49 to E-58
     """
 
-    CHROMANCL = 12
+    CHROMATICITY_DERIVED_NC = 12, "chromancl", "Chromaticity derived non-constant luminance"
     """
     Chromaticity-derived non-constant luminance system
 
@@ -192,7 +156,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-28 to E-30
     """
 
-    CHROMACL = 13
+    CHROMATICITY_DERIVED_CL = 13, "chromacl", "Chromaticity derived constant luminance"
     """
     Chromaticity-derived constant luminance system
 
@@ -201,7 +165,7 @@ class Matrix(PropEnum):
     See ITU-T H.265 Equations E-49 to E-58
     """
 
-    ICTCP = 14
+    ICTCP = 14, "ictcp", "ICtCp"
     """
     ICtCp
 
@@ -213,49 +177,11 @@ class Matrix(PropEnum):
 
     """
 
-    if TYPE_CHECKING:
-
-        @overload
-        @classmethod
-        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: MatrixLike, func_except: FuncExcept | None = None) -> Self: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: MatrixLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
-
-        @classmethod
-        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
-            """
-            Determine the Matrix through a parameter.
-
-            Args:
-                value: Value or Matrix object.
-                func_except: Function returned for custom error handling.
-
-            Returns:
-                Matrix object or None.
-            """
-
-        @classmethod
-        def from_param_or_video(
-            cls,
-            value: MatrixLike | None,
-            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
-            strict: bool = False,
-            func_except: FuncExcept | None = None,
-        ) -> Matrix: ...
-
-    @classmethod
-    def is_unknown(cls, value: int | Matrix) -> bool:
+    def is_unspecified(self) -> bool:
         """
-        Check if Matrix is Matrix.UNKNOWN.
+        Check if the matrix is Matrix.UNSPECIFIED.
         """
-
-        return value == cls.UNKNOWN
+        return self is Matrix.UNSPECIFIED
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Matrix:
@@ -268,7 +194,6 @@ class Matrix(PropEnum):
         Returns:
             Matrix object.
         """
-
         from ..utils import get_var_infos
 
         fmt, width, height = get_var_infos(frame)
@@ -276,11 +201,8 @@ class Matrix(PropEnum):
         if fmt.color_family == vs.RGB:
             return Matrix.RGB
 
-        if width <= 1024 and height <= 576:
-            if height > 486:
-                return Matrix.BT470BG
-
-            return Matrix.SMPTE170M
+        if (width, height) <= (1024, 576):
+            return Matrix.ST170_M if height <= 486 else Matrix.BT470_BG
 
         return Matrix.BT709
 
@@ -289,77 +211,21 @@ class Matrix(PropEnum):
         cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> Matrix:
         """
-        Obtain the matrix of a clip from the frame properties.
+        Try to obtain the matrix of a clip from the frame props or fallback to clip's resolution
+        if the prop is undefined, strict=False and src is a clip.
 
         Args:
             src: Input clip, frame, or props.
-            strict: Be strict about the frame properties. Will ALWAYS error with Matrix.UNKNOWN.
+            strict: Be strict about the frame props. Will ALWAYS error with Matrix.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Matrix object.
 
         Raises:
-            UndefinedMatrixError: Matrix is undefined.
-            UndefinedMatrixError: Matrix can not be determined from the frameprops.
+            UndefinedMatrixError: If the matrix is undefined or can not be determined from the frameprops.
         """
-
         return _base_from_video(cls, src, UndefinedMatrixError, strict, func)
-
-    @classmethod
-    def from_transfer(cls, transfer: Transfer, strict: bool = False) -> Matrix:
-        """
-        Obtain the matrix from a Transfer object.
-
-        Args:
-            transfer: Transfer object.
-            strict: Be strict about the transfer-matrix mapping. Will ALWAYS error with Transfer.UNKNOWN.
-
-        Returns:
-            Matrix object.
-
-        Raises:
-            UnsupportedTransferError: Transfer is not supported.
-        """
-
-        if transfer not in _transfer_matrix_map:
-            if strict:
-                raise UnsupportedTransferError(f"{transfer} is not supported!", cls.from_transfer)
-
-            return cls(transfer.value)
-
-        return _transfer_matrix_map[transfer]
-
-    @classmethod
-    def from_primaries(cls, primaries: Primaries, strict: bool = False) -> Matrix:
-        """
-        Obtain the matrix from a Primaries object.
-
-        Args:
-            primaries: Primaries object.
-            strict: Be strict about the primaries-matrix mapping. Will ALWAYS error with Primaries.UNKNOWN.
-
-        Returns:
-            Matrix object.
-
-        Raises:
-            UnsupportedPrimariesError: Primaries is not supported.
-        """
-
-        if primaries not in _primaries_matrix_map:
-            if strict:
-                raise UnsupportedPrimariesError(f"{primaries} is not supported!", cls.from_primaries)
-
-            return cls(primaries.value)
-
-        return _primaries_matrix_map[primaries]
-
-    @property
-    def pretty_string(self) -> str:
-        return _matrix_pretty_name_map.get(self, super().pretty_string)
-
-    @property
-    def string(self) -> str:
-        return _matrix_name_map.get(self, super().string)
 
 
 class Transfer(PropEnum):
@@ -367,31 +233,7 @@ class Transfer(PropEnum):
     Transfer characteristics ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.4).
     """
 
-    _value_: int
-
-    @classmethod
-    def _missing_(cls, value: Any) -> Transfer | None:
-        value = super()._missing_(value)
-
-        if value is None:
-            return Transfer.UNKNOWN
-        elif isinstance(value, cls):
-            return value
-
-        if Transfer.BT709 < value < Transfer.STD_B67 or value == 0:
-            raise ReservedTransferError(f"Transfer({value}) is reserved.", cls)
-
-        if value > Transfer.STD_B67:
-            raise UnsupportedTransferError(
-                f"Transfer({value}) is current unsupported. "
-                "If you believe this to be in error, please leave an issue "
-                "in the vs-tools GitHub repository.",
-                cls,
-            )
-
-        return None
-
-    BT709 = 1
+    BT709 = 1, "709", "BT.709"
     """
     (Functionally the same as [Transfer.BT601][vstools.Transfer.BT601],
     [Transfer.BT2020_10][vstools.Transfer.BT2020_10],
@@ -400,31 +242,29 @@ class Transfer(PropEnum):
     Rec. ITU-R BT.1361-0 conventional
     Colour gamut system (historical)
     """
-    BT1886 = BT709
-    GAMMA24 = BT709  # Not exactly, but since zimg assumes infinite contrast BT1886 is effectively GAMMA24 here.
 
-    UNKNOWN = 2
+    UNSPECIFIED = 2, "unspec"
     """
+    Unspecified.
+
     Image characteristics are unknown or are determined by the application.
     """
 
-    BT470M = 4
+    BT470_M = 4, "470m", "BT.470m"
     """
     Rec. ITU-R BT.470-6 System M (historical)
     NTSC Recommendation for transmission standards for colour television (1953)
     FCC, Title 47 Code of Federal Regulations (2003) 73.682 (a) (20)
     """
-    GAMMA22 = BT470M
 
-    BT470BG = 5
+    BT470_BG = 5, "470bg", "BT.470bg"
     """
     Rec. ITU-R BT.470-6 System B, G (historical)
     Rec. ITU-R BT.1700-0 625 PAL and
     625 SECAM
     """
-    GAMMA28 = BT470BG
 
-    BT601 = 6
+    BT601 = 6, "601", "BT.601"
     """
     (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709],
     [Transfer.BT2020_10][vstools.Transfer.BT2020_10],
@@ -435,154 +275,78 @@ class Transfer(PropEnum):
     SMPTE ST 170 (2004)
     """
 
-    SMPTE240M = 7
+    ST240_M = 7, "240m", "SMPTE ST 240m"
     """
     SMPTE ST 240 (1999, historical).
     """
 
-    LINEAR = 8
+    LINEAR = 8, "linear", "Linear"
     """
     Linear transfer characteristics.
     """
 
-    LOG100 = 9
+    LOG_100 = 9, "log100", "Log 1:100 contrast"
     """
     Logarithmic transfer characteristic (100:1 range).
     """
 
-    LOG316 = 10
+    LOG_316 = 10, "log316", "Log 1:316 contrast"
     """
     Logarithmic transfer characteristic (100 * sqrt(10):1 range).
     """
 
-    XVYCC = 11
+    IEC_61966_2_4 = 11, "xvycc", "xvYCC"
     """
     IEC 61966-2-4.
     """
 
-    SRGB = 13
+    IEC_61966_2_1 = 13, "srgb", "sRGB"
     """
     IEC 61966-2-1 sRGB when matrix is equal to [Matrix.RGB][vstools.Matrix.RGB]
+
     IEC 61966-2-1 sYCC when matrix is equal to [Matrix.BT470BG][vstools.Matrix.BT470BG]
     """
 
-    BT2020_10 = 14
+    BT2020_10 = 14, "2020_10", "BT.2020 10 bits"
     """
     (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709], [Transfer.BT601][vstools.Transfer.BT601],
     and [Transfer.BT2020_12][vstools.Transfer.BT2020_12])
+
     Rec. ITU-R BT.2020-2
     """
 
-    BT2020_12 = 15
+    BT2020_12 = 15, "2020_12", "BT.2020 12 bits"
     """
     (Functionally the same as [Transfer.BT709][vstools.Transfer.BT709], [Transfer.BT601][vstools.Transfer.BT601],
     and [Transfer.BT2020_10][vstools.Transfer.BT2020_10])
+
     Rec. ITU-R BT.2020-2
     """
 
-    ST2084 = 16
+    ST2084 = 16, "st2084", "SMPTE ST 2084 (PQ)"
     """
     SMPTE ST 2084 (2014) for 10, 12, 14, and 16-bit systems
+
     Rec. ITU-R BT.2100-2 perceptual quantization (PQ) system
     """
-    PQ = ST2084
 
-    STD_B67 = 18
+    ST428 = 17, "st428", "SMPTE ST 428-1"
+    """
+    SMPTE ST 428-1
+    """
+
+    ARIB_B67 = 18, "std-b67", "ARIB std-b67 (HLG)"
     """
     Association of Radio Industries and Businesses (ARIB) STD-B67
+
     Rec. ITU-R BT.2100-2 hybrid loggamma (HLG) system
     """
-    HLG = STD_B67
 
-    # Transfer characteristics from libplacebo
-
-    GAMMA18 = 104
-    """
-    Pure power gamma 1.8
-    """
-
-    GAMMA20 = 105
-    """
-    Pure power gamma 2.0
-    """
-
-    GAMMA26 = 108
-    """
-    Pure power gamma 2.6
-    """
-
-    PROPHOTO = 110
-    """
-    ProPhoto RGB (ROMM)
-    """
-    ROMM = PROPHOTO
-
-    ST428 = 111
-    """
-    Digital Cinema Distribution Master (XYZ)
-    """
-    XYZ = ST428
-
-    VLOG = 114
-    """
-    Panasonic V-Log (VARICAM)
-    """
-    VARICAM = VLOG
-
-    SLOG_1 = 115
-    """
-    Sony S-Log1
-    """
-
-    SLOG_2 = 116
-    """
-    Sony S-Log2
-    """
-
-    if TYPE_CHECKING:
-
-        @overload
-        @classmethod
-        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: TransferLike, func_except: FuncExcept | None = None) -> Self: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: TransferLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
-
-        @classmethod
-        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
-            """
-            Determine the Transfer through a parameter.
-
-            Args:
-                value: Value or Transfer object.
-                func_except: Function returned for custom error handling. This should only be set by VS package
-                    developers.
-
-            Returns:
-                Transfer object or None.
-            """
-
-        @classmethod
-        def from_param_or_video(
-            cls,
-            value: TransferLike | None,
-            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
-            strict: bool = False,
-            func_except: FuncExcept | None = None,
-        ) -> Transfer: ...
-
-    @classmethod
-    def is_unknown(cls, value: int | Transfer) -> bool:
+    def is_unspecified(self) -> bool:
         """
-        Check if Transfer is unknown.
+        Check if the transfer is Transfer.UNSPECIFIED.
         """
-
-        return value == cls.UNKNOWN
+        return self is Transfer.UNSPECIFIED
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Transfer:
@@ -595,128 +359,35 @@ class Transfer(PropEnum):
         Returns:
             Transfer object.
         """
-
         from ..utils import get_var_infos
 
         fmt, width, height = get_var_infos(frame)
 
         if fmt.color_family == vs.RGB:
-            return Transfer.SRGB
+            return Transfer.IEC_61966_2_1
 
-        if width <= 1024 and height <= 576:
-            return Transfer.BT601
-
-        return Transfer.BT709
+        return Transfer.BT601 if (width, height) <= (1024, 576) else Transfer.BT709
 
     @classmethod
     def from_video(
         cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> Transfer:
         """
-        Obtain the transfer of a clip from the frame properties.
+        Try to obtain the transfer of a clip from the frame props or fallback to clip's resolution
+        if the prop is undefined, strict=False and src is a clip.
 
         Args:
             src: Input clip, frame, or props.
             strict: Be strict about the properties. The result may NOT be Transfer.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Transfer object.
 
         Raises:
-            UndefinedTransferError: Transfer is undefined.
-            UndefinedTransferError: Transfer can not be determined from the frameprops.
+            UndefinedTransferError: If the transfer is undefined or can not be determined from the frameprops.
         """
-
         return _base_from_video(cls, src, UndefinedTransferError, strict, func)
-
-    @classmethod
-    def from_matrix(cls, matrix: Matrix, strict: bool = False) -> Transfer:
-        """
-        Obtain the transfer from a Matrix object.
-
-        Args:
-            matrix: Matrix object.
-            strict: Be strict about the matrix-transfer mapping. Will ALWAYS error with Matrix.UNKNOWN.
-
-        Returns:
-            Transfer object.
-
-        Raises:
-            UnsupportedMatrixError: Matrix is not supported.
-        """
-
-        if matrix not in _matrix_transfer_map:
-            if strict:
-                raise UnsupportedMatrixError(f"{matrix} is not supported!", cls.from_matrix)
-
-            return cls(matrix.value)
-
-        return _matrix_transfer_map[matrix]
-
-    @classmethod
-    def from_primaries(cls, primaries: Primaries, strict: bool = False) -> Transfer:
-        """
-        Obtain the transfer from a Primaries object.
-
-        Args:
-            primaries: Primaries object.
-            strict: Be strict about the primaries-transfer mapping. Will ALWAYS error with Primaries.UNKNOWN.
-
-        Returns:
-            Transfer object.
-
-        Raises:
-            UnsupportedPrimariesError: Primaries is not supported.
-        """
-
-        if primaries not in _primaries_transfer_map:
-            if strict:
-                raise UnsupportedPrimariesError(f"{primaries} is not supported!", cls.from_primaries)
-
-            return cls(primaries.value)
-
-        return _primaries_transfer_map[primaries]
-
-    @classmethod
-    def from_libplacebo(cls, val: int) -> int:
-        """
-        Obtain the transfer from libplacebo.
-        """
-
-        return _placebo_transfer_map[val]
-
-    @property
-    def value_vs(self) -> int:
-        """
-        VapourSynth value.
-
-        Raises:
-            ReservedTransferError: Transfer is not an internal transfer, but a libplacebo one.
-        """
-
-        if self >= self.GAMMA18:
-            raise ReservedTransferError(
-                "This transfer isn't a VapourSynth internal transfer, but a libplacebo one!",
-                f"{self.__class__.__name__}.value_vs",
-            )
-
-        return self.value
-
-    @property
-    def value_libplacebo(self) -> int:
-        """
-        libplacebo value.
-        """
-
-        return _transfer_placebo_map[self]
-
-    @property
-    def pretty_string(self) -> str:
-        return _transfer_pretty_name_map.get(self, super().pretty_string)
-
-    @property
-    def string(self) -> str:
-        return _transfer_name_map.get(self, super().string)
 
 
 class Primaries(PropEnum):
@@ -724,31 +395,7 @@ class Primaries(PropEnum):
     Color primaries ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Table E.3).
     """
 
-    _value_: int
-
-    @classmethod
-    def _missing_(cls, value: Any) -> Primaries | None:
-        value = super()._missing_(value)
-
-        if value is None:
-            return Primaries.UNKNOWN
-        elif isinstance(value, cls):
-            return value
-
-        if cls.BT709 < value < cls.JEDEC_P22:
-            raise ReservedPrimariesError(f"Primaries({value}) is reserved.", cls)
-
-        if value > cls.JEDEC_P22:
-            raise UnsupportedPrimariesError(
-                f"Primaries({value}) is current unsupported. "
-                "If you believe this to be in error, please leave an issue "
-                "in the vs-tools GitHub repository.",
-                cls,
-            )
-
-        return None
-
-    BT709 = 1
+    BT709 = 1, "709", "BT.709"
     """
     Rec. ITU-R BT.709-6
 
@@ -771,12 +418,14 @@ class Primaries(PropEnum):
     SMPTE RP 177 (1993) Annex B
     """
 
-    UNKNOWN = 2
+    UNSPECIFIED = 2, "unspec"
     """
-    Unspecified image characteristics are unknown or are determined by the application.
+    Unspecified.
+
+    Image characteristics are unknown or are determined by the application.
     """
 
-    BT470M = 4
+    BT470_M = 4, "470m", "BT.470m"
     """
     Rec. ITU-R BT.470-6 System M (historical)
 
@@ -794,7 +443,7 @@ class Primaries(PropEnum):
     73.682 (a) (20)
     """
 
-    BT470BG = 5
+    BT470_BG = 5, "470bg", "BT.470bg"
     """
     Rec. ITU-R BT.470-6 System B, G (historical)
 
@@ -812,9 +461,8 @@ class Primaries(PropEnum):
     Rec. ITU-R BT.1700-0 625 PAL and 625
     SECAM
     """
-    BT601_625 = BT470BG
 
-    SMPTE170M = 6
+    ST170_M = 6, "170m", "SMPTE ST 170m"
     """
     (Functionally the same as [Primaries.SMPTE240M][vstools.Primaries.SMPTE240M])
 
@@ -834,9 +482,8 @@ class Primaries(PropEnum):
 
     SMPTE ST 170 (2004)
     """
-    BT601_525 = SMPTE170M
 
-    SMPTE240M = 7
+    ST240_M = 7, "240m", "SMPTE ST 240m"
     """
     SMPTE ST 240 (1999, historical)
 
@@ -853,7 +500,7 @@ class Primaries(PropEnum):
     SMPTE ST 240 (1999, historical)
     """
 
-    FILM = 8
+    FILM = 8, "film", "Film"
     """
     Generic film (colour filters using Illuminant C)
 
@@ -866,7 +513,7 @@ class Primaries(PropEnum):
     ```
     """
 
-    BT2020 = 9
+    BT2020 = 9, "2020", "BT.2020"
     """
     Rec. ITU-R BT.2020-2
 
@@ -883,7 +530,7 @@ class Primaries(PropEnum):
     Rec. ITU-R BT.2100-2
     """
 
-    ST428 = 10
+    ST428 = 10, "st428", "SMPTE ST 428 (XYZ)"
     """
     SMPTE ST 428-1 (2006)
 
@@ -897,10 +544,10 @@ class Primaries(PropEnum):
 
     (CIE 1931 XYZ)
     """
-    XYZ = ST428
-    CIE1931 = ST428
 
-    ST431_2 = 11
+    XYZ = ST428
+
+    ST431_2 = 11, "st431-2", "DCI-P3, DCI white point"
     """
     SMPTE RP 431-2 (2011)
 
@@ -914,9 +561,8 @@ class Primaries(PropEnum):
 
     SMPTE ST 2113 (2019) "P3DCI"
     """
-    DCI_P3 = ST431_2
 
-    ST432_1 = 12
+    ST432_1 = 12, "st432-1", "DCI-P3 D65 white point"
     """
     SMPTE EG 432-1 (2010)
 
@@ -932,9 +578,8 @@ class Primaries(PropEnum):
 
     SMPTE ST 2113 (2019) "P3D65"
     """
-    DISPLAY_P3 = ST432_1
 
-    JEDEC_P22 = 22
+    EBU3213_E = 22, "jedec-p22", "JEDEC P22 (EBU 3213-E)"
     """
     EBU Tech. 3213-E (1975)
 
@@ -946,91 +591,12 @@ class Primaries(PropEnum):
     White D65 0.3127 0.3290
     ```
     """
-    EBU3213 = JEDEC_P22
 
-    # Primary characteristics from libplacebo
-
-    APPLE = 107
-    """
-    Apple RGB.
-    """
-
-    ADOBE = 108
-    """
-    Adobe RGB (1998).
-    """
-
-    PROPHOTO = 109
-    """
-    ProPhoto RGB (ROMM).
-    """
-    ROMM = PROPHOTO
-
-    VGAMUT = 113
-    """
-    Panasonic V-Gamut (VARICAM).
-    """
-    VARICAM = VGAMUT
-
-    SGAMUT = 114
-    """
-    Sony S-Gamut.
-    """
-
-    ACES_0 = 116
-    """
-    ACES Primaries #0 (ultra wide)
-    """
-
-    ACES_1 = 117
-    """
-    ACES Primaries #1
-    """
-
-    if TYPE_CHECKING:
-
-        @overload
-        @classmethod
-        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: PrimariesLike, func_except: FuncExcept | None = None) -> Self: ...
-
-        @overload
-        @classmethod
-        def from_param(cls, value: PrimariesLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
-
-        @classmethod
-        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
-            """
-            Determine the Primaries through a parameter.
-
-            Args:
-                value: Value or Primaries object.
-                func_except: Function returned for custom error handling. This should only be set by VS package
-                    developers.
-
-            Returns:
-                Primaries object or None.
-            """
-
-        @classmethod
-        def from_param_or_video(
-            cls,
-            value: PrimariesLike | None,
-            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
-            strict: bool = False,
-            func_except: FuncExcept | None = None,
-        ) -> Primaries: ...
-
-    @classmethod
-    def is_unknown(cls, value: int | Primaries) -> bool:
+    def is_unspecified(self) -> bool:
         """
-        Check if Primaries is unknown.
+        Check if the primaries are Primaries.UNSPECIFIED.
         """
-
-        return value == cls.UNKNOWN
+        return self is Primaries.UNSPECIFIED
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Primaries:
@@ -1043,7 +609,6 @@ class Primaries(PropEnum):
         Returns:
             Primaries object.
         """
-
         from ..utils import get_var_infos
 
         fmt, width, height = get_var_infos(frame)
@@ -1051,11 +616,8 @@ class Primaries(PropEnum):
         if fmt.color_family == vs.RGB:
             return Primaries.BT709
 
-        if width <= 1024 and height <= 576:
-            if height > 486:
-                return Primaries.BT470BG
-
-            return Primaries.SMPTE170M
+        if (width, height) <= (1024, 576):
+            return Primaries.ST170_M if height <= 486 else Primaries.BT470_BG
 
         return Primaries.BT709
 
@@ -1064,110 +626,21 @@ class Primaries(PropEnum):
         cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> Primaries:
         """
-        Obtain the primaries of a clip from the frame properties.
+        Try to obtain the primaries of a clip from the frame props or fallback to clip's resolution
+        if the prop is undefined, strict=False and src is a clip.
 
         Args:
             src: Input clip, frame, or props.
-            strict: Be strict about the frame properties. Will ALWAYS error with Primaries.UNKNOWN.
+            strict: Be strict about the frame props. Will ALWAYS error with Primaries.UNKNOWN.
+            func: Function returned for custom error handling.
 
         Returns:
             Primaries object.
 
         Raises:
-            UndefinedPrimariesError: Primaries is undefined.
-            UndefinedPrimariesError: Primaries can not be determined from the frame properties.
+            UndefinedPrimariesError: If the primaries are undefined or can not be determined from the frameprops.
         """
-
         return _base_from_video(cls, src, UndefinedPrimariesError, strict, func)
-
-    @classmethod
-    def from_matrix(cls, matrix: Matrix, strict: bool = False) -> Primaries:
-        """
-        Obtain the primaries from a Matrix object.
-
-        Args:
-            matrix: Matrix object.
-            strict: Be strict about the matrix-primaries mapping. Will ALWAYS error with Matrix.UNKNOWN.
-
-        Returns:
-            Primaries object.
-
-        Raises:
-            UnsupportedMatrixError: Matrix is not supported.
-        """
-
-        if matrix not in _matrix_primaries_map:
-            if strict:
-                raise UnsupportedMatrixError(f"{matrix} is not supported!", cls.from_matrix)
-
-            return cls(matrix.value)
-
-        return _matrix_primaries_map[matrix]
-
-    @classmethod
-    def from_transfer(cls, transfer: Transfer, strict: bool = False) -> Primaries:
-        """
-        Obtain the primaries from a Transfer object.
-
-        Args:
-            transfer: Transfer object.
-            strict: Be strict about the transfer-primaries mapping. Will ALWAYS error with Transfer.UNKNOWN.
-
-        Returns:
-            Matrix object.
-
-        Raises:
-            UnsupportedTransferError: Transfer is not supported.
-        """
-
-        if transfer not in _transfer_primaries_map:
-            if strict:
-                raise UnsupportedTransferError(f"{transfer} is not supported!", cls.from_transfer)
-
-            return cls(transfer.value)
-
-        return _transfer_primaries_map[transfer]
-
-    @classmethod
-    def from_libplacebo(cls, val: int) -> int:
-        """
-        Obtain the primaries from libplacebo.
-        """
-
-        return _placebo_primaries_map[val]
-
-    @property
-    def value_vs(self) -> int:
-        """
-        VapourSynth value.
-
-        Raises:
-            ReservedPrimariesError: Primaries are not an internal primaries, but a libplacebo one.
-        """
-
-        if self >= self.APPLE:
-            raise ReservedPrimariesError(
-                "This primaries isn't a VapourSynth internal primaries, but a libplacebo one!",
-                f"{self.__class__.__name__}.value_vs",
-            )
-
-        return self.value
-
-    @property
-    def value_libplacebo(self) -> int:
-        """
-        libplacebo value.
-        """
-
-        return _primaries_placebo_map[self]
-
-    @property
-    def pretty_string(self) -> str:
-        return _primaries_pretty_name_map.get(self, super().pretty_string)
-
-    @property
-    def string(self) -> str:
-        return _primaries_name_map.get(self, super().string)
 
 
 class ColorRange(PropEnum):
@@ -1175,29 +648,12 @@ class ColorRange(PropEnum):
     Pixel Range ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Equations E-10 through E-20.
     """
 
-    _value_: int
-
-    @classmethod
-    def _missing_(cls, value: Any) -> ColorRange | None:
-        value = super()._missing_(value)
-
-        if value is None:
-            return ColorRange.LIMITED
-        elif isinstance(value, cls):
-            return value
-
-        if value > ColorRange.LIMITED:
-            raise UnsupportedPrimariesError(f"ColorRange({value}) is unsupported.", cls)
-
-        return None
-
     LIMITED = 1
     """
     Studio (TV) legal range, 16-235 in 8 bits.
 
     This is primarily used with YUV integer formats.
     """
-    TV = LIMITED
 
     FULL = 0
     """
@@ -1206,51 +662,38 @@ class ColorRange(PropEnum):
     Note that float clips should ALWAYS be FULL range!
     RGB clips will ALWAYS be FULL range!
     """
-    PC = FULL
 
-    if TYPE_CHECKING:
+    @property
+    def value_vs(self) -> int:
+        """
+        VapourSynth (props) value.
+        """
+        return self.value
 
-        @overload
-        @classmethod
-        def from_param(cls, value: None, func_except: FuncExcept | None = None) -> None: ...
+    @property
+    def value_zimg(self) -> int:
+        """
+        zimg (resize plugin) value.
+        """
+        return ~self.value + 2
 
-        @overload
-        @classmethod
-        def from_param(cls, value: ColorRangeLike, func_except: FuncExcept | None = None) -> Self: ...
+    def is_limited(self) -> bool:
+        """
+        Check if ColorRange is limited.
+        """
+        return bool(self.value)
 
-        @overload
-        @classmethod
-        def from_param(cls, value: ColorRangeLike | None, func_except: FuncExcept | None = None) -> Self | None: ...
-
-        @classmethod
-        def from_param(cls, value: Any, func_except: Any = None) -> Self | None:
-            """
-            Determine the ColorRange through a parameter.
-
-            Args:
-                value: Value or ColorRange object.
-                func_except: Function returned for custom error handling. This should only be set by VS package
-                    developers.
-
-            Returns:
-                ColorRange object or None.
-            """
-
-        @classmethod
-        def from_param_or_video(
-            cls,
-            value: ColorRangeLike | None,
-            src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any],
-            strict: bool = False,
-            func_except: FuncExcept | None = None,
-        ) -> ColorRange: ...
+    def is_full(self) -> bool:
+        """
+        Check if ColorRange is full.
+        """
+        return not self.value
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> ColorRange:
         """
         Guess the color range from the frame resolution.
         """
-
         from ..utils import get_var_infos
 
         fmt, _, _ = get_var_infos(frame)
@@ -1265,216 +708,21 @@ class ColorRange(PropEnum):
         cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
     ) -> ColorRange:
         """
-        Obtain the color range of a clip from the frame properties.
+        Try to obtain the color range of a clip from the frame props or fallback to clip's resolution
+        if the prop is undefined, strict=False and src is a clip.
 
         Args:
             src: Input clip, frame, or props.
-            strict: Be strict about the frame properties. Sets the ColorRange as MISSING if prop is not there.
+            strict: Be strict about the frame props. Sets the ColorRange as MISSING if prop is not there.
+            func: Function returned for custom error handling.
 
         Returns:
             ColorRange object.
+
+        Raises:
+            UndefinedColorRangeError: If the color range is undefined or can not be determined from the frameprops.
         """
-
-        return _base_from_video(cls, src, UnsupportedColorRangeError, strict, func)
-
-    @property
-    def value_vs(self) -> int:
-        """
-        VapourSynth (props) value.
-        """
-
-        return self.value
-
-    @property
-    def value_zimg(self) -> int:
-        """
-        zimg (resize plugin) value.
-        """
-
-        return ~self.value + 2
-
-    @property
-    def is_limited(self) -> bool:
-        """
-        Check if ColorRange is limited.
-        """
-
-        return bool(self.value)
-
-    @property
-    def is_full(self) -> bool:
-        """
-        Check if ColorRange is full.
-        """
-
-        return not self.value
-
-
-_transfer_matrix_map: dict[Transfer, Matrix] = {
-    Transfer.SRGB: Matrix.RGB,
-    Transfer.BT709: Matrix.BT709,
-    Transfer.BT470BG: Matrix.BT470BG,
-    Transfer.ST2084: Matrix.BT2020NCL,
-    Transfer.BT2020_10: Matrix.BT2020NCL,
-    Transfer.BT2020_12: Matrix.BT2020NCL,
-    Transfer.STD_B67: Matrix.BT2020NCL,
-}
-
-_primaries_matrix_map: dict[Primaries, Matrix] = {}
-
-_matrix_transfer_map = {
-    Matrix.RGB: Transfer.SRGB,
-    Matrix.BT709: Transfer.BT709,
-    Matrix.SMPTE170M: Transfer.BT601,
-    Matrix.SMPTE240M: Transfer.SMPTE240M,
-    Matrix.ICTCP: Transfer.BT2020_10,
-}
-
-_primaries_transfer_map: dict[Primaries, Transfer] = {}
-
-_matrix_primaries_map: dict[Matrix, Primaries] = {}
-
-_transfer_primaries_map: dict[Transfer, Primaries] = {}
-
-_transfer_placebo_map = {
-    Transfer.UNKNOWN: 0,
-    Transfer.BT601: 1,
-    Transfer.BT709: 1,
-    Transfer.SRGB: 2,
-    Transfer.LINEAR: 3,
-    Transfer.GAMMA18: 4,
-    Transfer.GAMMA20: 5,
-    Transfer.BT470M: 6,
-    Transfer.GAMMA26: 8,
-    Transfer.BT470BG: 9,
-    Transfer.PROPHOTO: 10,
-    Transfer.ST428: 11,
-    Transfer.ST2084: 12,
-    Transfer.STD_B67: 13,
-    Transfer.VLOG: 14,
-    Transfer.SLOG_1: 15,
-    Transfer.SLOG_2: 16,
-}
-
-_primaries_placebo_map = {
-    Primaries.UNKNOWN: 0,
-    Primaries.SMPTE170M: 1,
-    Primaries.BT470BG: 2,
-    Primaries.BT709: 3,
-    Primaries.BT470M: 4,
-    Primaries.JEDEC_P22: 5,
-    Primaries.BT2020: 6,
-    Primaries.APPLE: 7,
-    Primaries.ADOBE: 8,
-    Primaries.PROPHOTO: 9,
-    Primaries.ST428: 10,
-    Primaries.ST431_2: 11,
-    Primaries.ST432_1: 12,
-    Primaries.VGAMUT: 13,
-    Primaries.SGAMUT: 14,
-    Primaries.FILM: 15,
-    Primaries.ACES_0: 16,
-    Primaries.ACES_1: 17,
-}
-
-_placebo_transfer_map = {value: key for key, value in _transfer_placebo_map.items()}
-
-_placebo_primaries_map = {value: key for key, value in _primaries_placebo_map.items()}
-
-_matrix_name_map = {
-    Matrix.RGB: "gbr",
-    Matrix.BT709: "bt709",
-    Matrix.UNKNOWN: "unknown",
-    Matrix.FCC: "fcc",
-    Matrix.BT470BG: "bt470bg",
-    Matrix.SMPTE170M: "smpte170m",
-    Matrix.SMPTE240M: "smpte240m",
-    Matrix.YCGCO: "ycgco",
-    Matrix.BT2020NCL: "bt2020nc",
-    Matrix.BT2020CL: "bt2020c",
-    Matrix.CHROMANCL: "chroma-derived-nc",
-    Matrix.CHROMACL: "chroma-derived-c",
-    Matrix.ICTCP: "ictcp",
-}
-
-_transfer_name_map = {
-    Transfer.BT709: "bt709",
-    Transfer.UNKNOWN: "unknown",
-    Transfer.BT470M: "bt470m",
-    Transfer.BT470BG: "bt470bg",
-    Transfer.BT601: "smpte170m",
-    Transfer.SMPTE240M: "smpte240m",
-    Transfer.LINEAR: "linear",
-    Transfer.LOG100: "log100",
-    Transfer.LOG316: "log316",
-    Transfer.XVYCC: "iec61966-2-4",
-    Transfer.SRGB: "iec61966-2-1",
-    Transfer.BT2020_10: "bt2020-10",
-    Transfer.BT2020_12: "bt2020-12",
-    Transfer.ST2084: "smpte2084",
-    Transfer.STD_B67: "arib-std-b67",
-}
-
-_primaries_name_map = {
-    Primaries.BT709: "bt709",
-    Primaries.UNKNOWN: "unknown",
-    Primaries.BT470M: "bt470m",
-    Primaries.BT470BG: "bt470bg",
-    Primaries.SMPTE170M: "smpte170m",
-    Primaries.SMPTE240M: "smpte240m",
-    Primaries.FILM: "film",
-    Primaries.BT2020: "bt2020",
-    Primaries.ST428: "smpte428",
-    Primaries.ST431_2: "smpte431",
-    Primaries.ST432_1: "smpte432",
-    Primaries.JEDEC_P22: "jedec-p22",
-}
-
-_matrix_pretty_name_map = {
-    Matrix.RGB: "RGB",
-    Matrix.BT709: "BT.709",
-    Matrix.FCC: "FCC",
-    Matrix.BT470BG: "BT.470bg",
-    Matrix.SMPTE170M: "SMPTE ST 170m",
-    Matrix.SMPTE240M: "SMPTE ST 240m",
-    Matrix.YCGCO: "YCgCo",
-    Matrix.BT2020NCL: "BT.2020 non-constant luminance",
-    Matrix.BT2020CL: "BT.2020 constant luminance",
-    Matrix.CHROMANCL: "Chromaticity derived non-constant luminance",
-    Matrix.CHROMACL: "Chromaticity derived constant luminance",
-    Matrix.ICTCP: "ICtCp",
-}
-
-_transfer_pretty_name_map = {
-    Transfer.BT709: "BT.709",
-    Transfer.BT470M: "BT.470m",
-    Transfer.BT470BG: "BT.470bg",
-    Transfer.BT601: "BT.601",
-    Transfer.SMPTE240M: "SMPTE ST 240m",
-    Transfer.LINEAR: "Linear",
-    Transfer.LOG100: "Log 1:100 contrast",
-    Transfer.LOG316: "Log 1:316 contrast",
-    Transfer.XVYCC: "xvYCC",
-    Transfer.SRGB: "sRGB",
-    Transfer.BT2020_10: "BT.2020 10 bits",
-    Transfer.BT2020_12: "BT.2020 12 bits",
-    Transfer.ST2084: "SMPTE ST 2084 (PQ)",
-    Transfer.STD_B67: "ARIB std-b67 (HLG)",
-}
-
-_primaries_pretty_name_map = {
-    Primaries.BT709: "BT.709",
-    Primaries.BT470M: "BT.470m",
-    Primaries.BT470BG: "BT.470bg",
-    Primaries.SMPTE170M: "SMPTE ST 170m",
-    Primaries.SMPTE240M: "SMPTE ST 240m",
-    Primaries.FILM: "Film",
-    Primaries.BT2020: "BT.2020",
-    Primaries.ST428: "SMPTE ST 428 (XYZ)",
-    Primaries.ST431_2: "DCI-P3, DCI white point",
-    Primaries.ST432_1: "DCI-P3 D65 white point",
-    Primaries.JEDEC_P22: "JEDEC P22 (EBU 3213-E)",
-}
+        return _base_from_video(cls, src, UndefinedColorRangeError, strict, func)
 
 
 type MatrixLike = int | vs.MatrixCoefficients | Matrix | HoldsPropValue
@@ -1503,11 +751,4 @@ ColorRangeT = ColorRangeLike
 
 
 def _norm_props_enums(kwargs: dict[str, Any]) -> dict[str, Any]:
-    return {
-        key: (
-            (value.value_zimg if hasattr(value, "value_zimg") else int(value))  # pyright: ignore[reportAttributeAccessIssue]
-            if isinstance(value, PropEnum)
-            else value
-        )
-        for key, value in kwargs.items()
-    }
+    return {key: (value.value_zimg if isinstance(value, ColorRange) else value) for key, value in kwargs.items()}
