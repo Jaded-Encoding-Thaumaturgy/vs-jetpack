@@ -208,14 +208,6 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
         return clip.manipmv.ShowVect(vect, scenechange)
 
     @property
-    def has_vectors(self) -> bool:
-        """
-        Check if motion vectors are available.
-        """
-
-        return bool(self[MVDirection.BACKWARD] or self[MVDirection.FORWARD])
-
-    @property
     def tr(self) -> int:
         """
         Temporal radius of the motion vectors.

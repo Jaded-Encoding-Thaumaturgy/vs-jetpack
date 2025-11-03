@@ -4,7 +4,7 @@ from fractions import Fraction
 from itertools import chain
 from typing import Any, Literal, Union, overload
 
-from jetpytools import CustomRuntimeError, KwargsNotNone, KwargsT, fallback, normalize_seq
+from jetpytools import KwargsNotNone, KwargsT, fallback, normalize_seq
 
 from vstools import (
     ColorRange,
@@ -381,8 +381,7 @@ class MVTools(VSObject):
             tff=self.tff,
         )
 
-        if self.vectors.has_vectors:
-            self.vectors.clear()
+        self.vectors.clear()
 
         for delta in range(1, tr + 1):
             for direction in MVDirection:
@@ -456,9 +455,6 @@ class MVTools(VSObject):
         super_clip = self.get_super(fallback(super, self.search_clip))
 
         vectors = fallback(vectors, self.vectors)
-
-        if not vectors.has_vectors:
-            raise CustomRuntimeError("No motion vectors exist!", self.recalculate)
 
         blksize, blksizev = normalize_seq(blksize, 2)
         overlap, overlapv = normalize_seq(overlap, 2)
