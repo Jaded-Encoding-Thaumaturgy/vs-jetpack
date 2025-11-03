@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 from enum import IntFlag
-from typing import Any
 
-from jetpytools import CustomEnum, CustomIntEnum, CustomValueError, fallback
-
-from vstools import VSFunctionAllArgs, core, vs
+from jetpytools import CustomIntEnum
 
 __all__ = [
     "FlowMode",
     "MVDirection",
-    "MVToolsPlugin",
     "MaskMode",
     "MotionMode",
     "PenaltyMode",
@@ -18,137 +14,7 @@ __all__ = [
     "SADMode",
     "SearchMode",
     "SharpMode",
-    "SmoothMode",
 ]
-
-
-# ruff: noqa: N802
-class MVToolsPlugin(CustomEnum):
-    """
-    Abstraction around both mvtools plugin versions.
-    """
-
-    INTEGER = "mv"
-    """
-    Original plugin. Only accepts integer 8-16 bits clips.
-    """
-
-    FLOAT = "mvsf"
-    """
-    Fork by IFeelBloated. Only works with float single precision clips.
-    """
-
-    @property
-    def namespace(self) -> Any:
-        """
-        Get the appropriate MVTools namespace based on plugin type.
-        """
-        return getattr(core.proxied, self._value_)
-
-    @property
-    def Super(self) -> VSFunctionAllArgs:
-        """
-        Get the Super function for creating motion vector clips.
-        """
-        return self.namespace.Super
-
-    @property
-    def Analyze(self) -> VSFunctionAllArgs:
-        """
-        Get the Analyze function for analyzing motion vectors.
-        """
-        return self.namespace.Analyze if self is MVToolsPlugin.FLOAT else self.namespace.Analyse
-
-    @property
-    def Recalculate(self) -> VSFunctionAllArgs:
-        """
-        Get the Recalculate function for refining motion vectors.
-        """
-        return self.namespace.Recalculate
-
-    @property
-    def Compensate(self) -> VSFunctionAllArgs:
-        """
-        Get the Compensate function for motion compensation.
-        """
-        return self.namespace.Compensate
-
-    @property
-    def Flow(self) -> VSFunctionAllArgs:
-        """
-        Get the Flow function for motion vector visualization.
-        """
-        return self.namespace.Flow
-
-    @property
-    def FlowInter(self) -> VSFunctionAllArgs:
-        """
-        Get the FlowInter function for motion-compensated frame interpolation.
-        """
-        return self.namespace.FlowInter
-
-    @property
-    def FlowBlur(self) -> VSFunctionAllArgs:
-        """
-        Get the FlowBlur function for motion-compensated frame blending.
-        """
-        return self.namespace.FlowBlur
-
-    @property
-    def FlowFPS(self) -> VSFunctionAllArgs:
-        """
-        Get the FlowFPS function for motion-compensated frame rate conversion.
-        """
-        return self.namespace.FlowFPS
-
-    @property
-    def BlockFPS(self) -> VSFunctionAllArgs:
-        """
-        Get the BlockFPS function for block-based frame rate conversion.
-        """
-        return self.namespace.BlockFPS
-
-    @property
-    def Mask(self) -> VSFunctionAllArgs:
-        """
-        Get the Mask function for generating motion masks.
-        """
-        return self.namespace.Mask
-
-    @property
-    def SCDetection(self) -> VSFunctionAllArgs:
-        """
-        Get the SCDetection function for scene change detection.
-        """
-        return self.namespace.SCDetection
-
-    def Degrain(self, tr: int | None = None) -> VSFunctionAllArgs:
-        """
-        Get the Degrain function for motion compensated denoising.
-        """
-        if tr is None and self is not MVToolsPlugin.FLOAT:
-            raise CustomValueError("This implementation needs a temporal radius!", f"{self.name}.Degrain")
-
-        try:
-            return getattr(self.namespace, f"Degrain{fallback(tr, '')}")
-        except AttributeError:
-            raise CustomValueError("This temporal radius isn't supported!", f"{self.name}.Degrain", tr)
-
-    @classmethod
-    def from_video(cls, clip: vs.VideoNode) -> MVToolsPlugin:
-        """
-        Automatically select the appropriate plugin based on the given clip.
-
-        Args:
-            clip: The clip to process.
-
-        Returns:
-            The accompanying MVTools plugin for the clip.
-        """
-        if clip.format.sample_type is vs.FLOAT:
-            return MVToolsPlugin.FLOAT
-
-        return MVToolsPlugin.INTEGER
 
 
 class MVDirection(IntFlag):
@@ -372,22 +238,6 @@ class PenaltyMode(CustomIntEnum):
     QUADRATIC = 2
     """
     Penalties scale quadratically with hierarchical level size.
-    """
-
-
-class SmoothMode(CustomIntEnum):
-    """
-    This is method for dividing coarse blocks into smaller ones.
-    """
-
-    NEAREST = 0
-    """
-    Use motion of nearest block.
-    """
-
-    BILINEAR = 1
-    """
-    Bilinear interpolation of 4 neighbors.
     """
 
 

@@ -27,7 +27,6 @@ from vstools import (
     FieldBased,
     FieldBasedLike,
     UnsupportedFieldBasedError,
-    UnsupportedSampleTypeError,
     VSFunctionKwArgs,
     VSObject,
     core,
@@ -322,8 +321,6 @@ class QTempGaussMC(VSObject):
         self.input_type = input_type
         self.tff = clip_fieldbased.is_tff()
         self.double_rate = self.input_type != self.InputType.REPAIR
-
-        UnsupportedSampleTypeError.check(self.clip, vs.INTEGER, self.__class__, "FLOAT input is not supported!")
 
         if self.input_type == self.InputType.PROGRESSIVE and clip_fieldbased.is_inter():
             raise UnsupportedFieldBasedError(f"{self.input_type} incompatible with interlaced video!", self.__class__)
@@ -753,14 +750,13 @@ class QTempGaussMC(VSObject):
         if not tr:
             return clip
 
-        backward, forward = self.mv.get_vectors(tr=tr)
+        backward, forward = self.mv.vectors.get_vectors(tr=tr)
         vectors = MotionVectors()
         degrained = list[vs.VideoNode]()
 
         for delta in range(tr):
             vectors.set_vector(backward[delta], MVDirection.BACKWARD, 1)
             vectors.set_vector(forward[delta], MVDirection.FORWARD, 1)
-            vectors.tr = 1
 
             degrained.append(
                 self.mv.degrain(

@@ -7,7 +7,7 @@ from jetpytools import KwargsT, SupportsKeysAndGetItem, classproperty
 from vstools import VSFunctionNoArgs, VSObjectABC, vs
 
 from ..prefilters import prefilter_to_full_range
-from .enums import FlowMode, MaskMode, MotionMode, PenaltyMode, RFilterMode, SADMode, SearchMode, SharpMode, SmoothMode
+from .enums import FlowMode, MaskMode, MotionMode, PenaltyMode, RFilterMode, SADMode, SearchMode, SharpMode
 
 __all__ = [
     "AnalyzeArgs",
@@ -59,7 +59,6 @@ class AnalyzeArgs(TypedDict, total=False):
 
 
 class RecalculateArgs(TypedDict, total=False):
-    smooth: SmoothMode | None
     thsad: int | None
     blksize: int | None
     blksizev: int | None
@@ -78,7 +77,6 @@ class RecalculateArgs(TypedDict, total=False):
 class CompensateArgs(TypedDict, total=False):
     scbehavior: bool | None
     thsad: int | None
-    thsad2: int | None
     time: float | None
     thscd1: int | None
     thscd2: int | None
@@ -94,7 +92,6 @@ class FlowArgs(TypedDict, total=False):
 class DegrainArgs(TypedDict, total=False):
     thsad: int | None
     thsadc: int | None
-    thsad2: int | None
     limit: int | None
     limitc: int | None
     thscd1: int | None
