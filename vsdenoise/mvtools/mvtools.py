@@ -8,7 +8,7 @@ from jetpytools import CustomRuntimeError, KwargsNotNone, KwargsT, fallback, nor
 
 from vstools import (
     ColorRange,
-    FieldBased,
+    Field,
     Planes,
     UnsupportedColorFamilyError,
     VSFunctionNoArgs,
@@ -91,6 +91,7 @@ class MVTools(VSObject):
         pad: int | tuple[int | None, int | None] | None = None,
         pel: int | None = None,
         chroma: bool | None = None,
+        field: Field | None = None,
         *,
         super_args: KwargsT | None = None,
         analyze_args: KwargsT | None = None,
@@ -128,6 +129,7 @@ class MVTools(VSObject):
                 frame borders.
             pel: Subpixel precision for motion estimation (1=pixel, 2=half-pixel, 4=quarter-pixel). Default: 1.
             chroma: Whether to consider chroma in motion vector calculations.
+            field: Set field order for interlaced processing, input is expected to be separated fields.
             super_args: Arguments passed to every [MVToolsPlugin.Super][vsdenoise.MVToolsPlugin.Super] calls.
             analyze_args: Arguments passed to every [MVToolsPlugin.Analyze][vsdenoise.MVToolsPlugin.Analyze] calls.
             recalculate_args: Arguments passed to every [MVToolsPlugin.Recalculate][vsdenoise.MVToolsPlugin.Recalculate]
@@ -147,14 +149,14 @@ class MVTools(VSObject):
         """
         UnsupportedColorFamilyError.check(clip, (vs.YUV, vs.GRAY), self.__class__)
 
-        self.vectors = fallback(vectors, MotionVectors())
-
-        self.fieldbased = FieldBased.from_video(clip, False, self.__class__)
-        self.clip = clip.std.SeparateFields(self.fieldbased.is_tff()) if self.fieldbased.is_inter() else clip
-
+        self.clip = clip
         self.pel = pel
         self.pad = normalize_seq(pad, 2)
         self.chroma = chroma
+        self.tff = Field.from_param(field, self.__class__)
+        self.fields = field is not None
+
+        self.vectors = fallback(vectors, MotionVectors())
 
         if callable(search_clip):
             self.search_clip = search_clip(self.clip)
@@ -374,9 +376,9 @@ class MVTools(VSObject):
             badrange=badrange,
             meander=meander,
             trymany=trymany,
-            fields=self.fieldbased.is_inter(),
-            tff=self.fieldbased.is_tff(),
             dct=dct,
+            fields=self.fields,
+            tff=self.tff,
         )
 
         if self.vectors.has_vectors:
@@ -478,9 +480,9 @@ class MVTools(VSObject):
             overlapv=overlapv,
             divide=divide,
             meander=meander,
-            fields=self.fieldbased.is_inter(),
-            tff=self.fieldbased.is_tff(),
             dct=dct,
+            fields=self.fields,
+            tff=self.tff,
         )
 
         vectors.analysis_data.clear()
@@ -608,10 +610,10 @@ class MVTools(VSObject):
             scbehavior=scbehavior,
             thsad=thsad,
             time=time,
-            fields=self.fieldbased.is_inter(),
             thscd1=thscd1,
             thscd2=thscd2,
-            tff=self.fieldbased.is_tff(),
+            fields=self.fields,
+            tff=self.tff,
         )
 
         comp_back, comp_fwrd = [
@@ -743,10 +745,10 @@ class MVTools(VSObject):
         flow_args = self.flow_args | KwargsNotNone(
             time=time,
             mode=mode,
-            fields=self.fieldbased.is_inter(),
             thscd1=thscd1,
             thscd2=thscd2,
-            tff=self.fieldbased.is_tff(),
+            fields=self.fields,
+            tff=self.tff,
         )
 
         flow_back, flow_fwrd = [
