@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Protocol
 
 from vskernels import Catrom, Kernel, KernelLike, Scaler, ScalerLike
-from vstools import MatrixLike, plane, vs
+from vstools import plane, vs
 
 __all__ = [
     "BaseGenericScaler",
@@ -50,7 +50,7 @@ class BaseGenericScaler(Scaler, ABC):
         Initializes the BaseGenericScaler.
 
         Args:
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
         """
@@ -80,7 +80,6 @@ class BaseGenericScaler(Scaler, ABC):
         width: int,
         height: int,
         shift: tuple[float, float] = (0, 0),
-        matrix: MatrixLike | None = None,
         copy_props: bool = False,
     ) -> vs.VideoNode:
         if input_clip.format.num_planes == 1:
@@ -91,9 +90,6 @@ class BaseGenericScaler(Scaler, ABC):
 
         if shift != (0, 0):
             clip = self.shifter.shift(clip, shift)
-
-        if clip.format.id != input_clip.format.id:
-            clip = self.kernel.resample(clip, input_clip, matrix)
 
         if copy_props:
             return vs.core.std.CopyFrameProps(clip, input_clip)
@@ -121,7 +117,7 @@ class GenericScaler(BaseGenericScaler, partial_abstract=True):
         Args:
             func: The scaling function to apply. Can either be a function without shifting or one that includes shifting
                 logic.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
         """
