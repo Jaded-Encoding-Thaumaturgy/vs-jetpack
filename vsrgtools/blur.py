@@ -19,7 +19,6 @@ from vstools import (
     check_ref_clip,
     core,
     depth,
-    expect_bits,
     get_plane_sizes,
     get_prop,
     join,
@@ -729,7 +728,7 @@ def guided_filter(
 
     check_ref_clip(clip, guidance)
 
-    p, bits = expect_bits(clip, 32)
+    p = depth(clip, 32)
     guidance_clip = g = depth(guidance, 32) if guidance is not None else p
 
     radius = normalize_seq(radius, clip.format.num_planes)
@@ -810,4 +809,4 @@ def guided_filter(
 
     q = norm_expr([mean_a, guidance_clip, mean_b], "x y * z +", planes, func=guided_filter)
 
-    return depth(q, bits)
+    return q

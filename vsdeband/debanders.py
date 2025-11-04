@@ -8,17 +8,7 @@ from jetpytools import CustomIntEnum, CustomValueError, normalize_seq, to_arr
 from vsdenoise import PrefilterLike
 from vsexprtools import norm_expr
 from vsrgtools import gauss_blur
-from vstools import (
-    Planes,
-    UnsupportedColorFamilyError,
-    core,
-    depth,
-    expect_bits,
-    join,
-    normalize_param_planes,
-    split,
-    vs,
-)
+from vstools import FunctionUtil, Planes, core, join, normalize_param_planes, split, vs
 
 __all__ = [
     "f3k_deband",
@@ -402,12 +392,10 @@ def f3k_deband(
     Returns:
         Debanded and optionally grained clip.
     """
-    UnsupportedColorFamilyError.check(clip, (vs.GRAY, vs.YUV), f3k_deband)
+    func_util = FunctionUtil(clip, f3k_deband, planes, (vs.GRAY, vs.YUV), (8, 16))
 
-    clip, bits = expect_bits(clip, 16)
-
-    y, cb, cr = normalize_param_planes(clip, normalize_seq(thr, 3), planes, 0)
-    grainy, *ngrainc = normalize_param_planes(clip, normalize_seq(grain, 2), planes, 0)
+    y, cb, cr = normalize_param_planes(func_util.work_clip, normalize_seq(thr, 3), planes, 0)
+    grainy, *ngrainc = normalize_param_planes(func_util.work_clip, normalize_seq(grain, 2), planes, 0)
 
     if len(set(ngrainc)) > 1:
         raise CustomValueError("Inconsistent grain parameters across chroma planes.", f3k_deband)
@@ -427,7 +415,7 @@ def f3k_deband(
     )
 
     debanded = core.neo_f3kdb.Deband(
-        clip,
+        func_util.work_clip,
         radius,
         y,
         cb,
@@ -441,7 +429,7 @@ def f3k_deband(
         **kwargs,
     )
 
-    return depth(debanded, bits)
+    return func_util.return_clip(debanded)
 
 
 def placebo_deband(
@@ -564,17 +552,13 @@ def mdb_bilateral(
     Returns:
         Debanded clip.
     """
-    clip, bits = expect_bits(clip, 16)
-
     rad1, rad2, rad3 = round(radius * 4 / 3), round(radius * 2 / 3), round(radius / 3)
 
     db1 = debander(clip, rad1, [max(1, th // 2) for th in to_arr(thr)], 0, planes)
     db2 = debander(db1, rad2, thr, 0, planes)
     db3 = debander(db2, rad3, thr, 0, planes)
 
-    limit = core.vszip.LimitFilter(db3, clip, db1, dark_thr, bright_thr, elast, planes)
-
-    return depth(limit, bits)
+    return core.vszip.LimitFilter(db3, clip, db1, dark_thr, bright_thr, elast, planes)
 
 
 class _SupportPlanesParam(Protocol):
@@ -615,11 +599,9 @@ def pfdeband(
     Returns:
         Debanded clip.
     """
-    clip, bits = expect_bits(clip, 16)
-
     blur = prefilter(clip, planes=planes)
     smooth = debander(blur, radius, thr, planes=planes)
-    limit = core.vszip.LimitFilter(smooth, blur, ref, dark_thr, bright_thr, elast, planes)
-    merge = norm_expr([clip, blur, limit], "z x y - +", planes, func=pfdeband)
 
-    return depth(merge, bits)
+    limit = core.vszip.LimitFilter(smooth, blur, ref, dark_thr, bright_thr, elast, planes)
+
+    return norm_expr([clip, blur, limit], "z x y - +", planes, func=pfdeband)
