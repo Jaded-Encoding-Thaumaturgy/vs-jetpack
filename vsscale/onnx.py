@@ -24,7 +24,6 @@ from vsmasktools import Morpho
 from vstools import (
     ColorRange,
     Matrix,
-    MatrixLike,
     OutdatedPluginError,
     ProcessVariableResClip,
     check_variable_resolution,
@@ -253,7 +252,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             overlap: The size of overlap between tiles.
             multiple: Multiple of the tiles.
             max_instances: Maximum instances to spawn when scaling a variable resolution clip.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
@@ -543,7 +542,7 @@ class BaseArtCNN(BaseOnnxScaler):
             tilesize: The size of each tile when splitting the image (if tiles are enabled).
             overlap: The size of overlap between tiles.
             max_instances: Maximum instances to spawn when scaling a variable resolution clip.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
@@ -576,31 +575,15 @@ class BaseArtCNNLuma(BaseArtCNN):
         width: int,
         height: int,
         shift: tuple[float, float] = (0, 0),
-        matrix: MatrixLike | None = None,
         copy_props: bool = False,
     ) -> vs.VideoNode:
-        # Changes compared to BaseGenericScaler are:
-        # - extract luma if input clip is luma only is removed  since this is a no op here
-        # - Chroma planes are scaled accordingly with the artcnn'd luma,
-        #   avoiding getting a luma plane when passing a YUV clip.
-
-        if (clip.width, clip.height) != (width, height):
-            clip = self.scaler.scale(clip, width, height)
-
         if input_clip.format.color_family == vs.YUV:
             scaled_chroma = self.scaler.scale(input_clip, clip.width, clip.height)
             clip = join(clip, scaled_chroma, prop_src=scaled_chroma)
 
-        if shift != (0, 0):
-            clip = self.shifter.shift(clip, shift)
+            debug(f"{self}: Chroma planes has been scaled accordingly")
 
-        if clip.format.id != input_clip.format.id:
-            clip = self.kernel.resample(clip, input_clip, matrix)
-
-        if copy_props:
-            return vs.core.std.CopyFrameProps(clip, input_clip)
-
-        return clip
+        return super()._finish_scale(clip, input_clip, width, height, shift, copy_props)
 
 
 class BaseArtCNNChroma(BaseArtCNN):
@@ -642,30 +625,6 @@ class BaseArtCNNChroma(BaseArtCNN):
         _log.debug("%s: Inferenced clip: %s", self.inference, v.format)
 
         return core.std.ShufflePlanes([clip, u, v], [0, 0, 0], vs.YUV, clip)
-
-    def _finish_scale(
-        self,
-        clip: vs.VideoNode,
-        input_clip: vs.VideoNode,
-        width: int,
-        height: int,
-        shift: tuple[float, float] = (0, 0),
-        matrix: MatrixLike | None = None,
-        copy_props: bool = False,
-    ) -> vs.VideoNode:
-        if (clip.width, clip.height) != (width, height):
-            clip = self.scaler.scale(clip, width, height)
-
-        if shift != (0, 0):
-            clip = self.shifter.shift(clip, shift)
-
-        if clip.format.id != input_clip.format.replace(subsampling_w=0, subsampling_h=0).id:
-            clip = self.kernel.resample(clip, input_clip, matrix)
-
-        if copy_props:
-            return vs.core.std.CopyFrameProps(clip, input_clip)
-
-        return clip
 
 
 class ArtCNN(BaseArtCNNLuma):
@@ -988,7 +947,7 @@ class BaseWaifu2x(BaseOnnxScaler):
             tilesize: The size of each tile when splitting the image (if tiles are enabled).
             overlap: The size of overlap between tiles.
             max_instances: Maximum instances to spawn when scaling a variable resolution clip.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
@@ -1289,7 +1248,7 @@ class BaseDPIR(BaseOnnxScaler):
                 model's behavior may vary when they are used.
             tilesize: The size of each tile when splitting the image (if tiles are enabled).
             overlap: The size of overlap between tiles.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
