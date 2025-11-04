@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import math
 from collections.abc import Iterable
-from typing import cast
 
 from jetpytools import CustomNotImplementedError, FuncExcept, cachedproperty, to_arr
 
@@ -62,11 +60,11 @@ class FunctionUtil(VSObject):
         if color_family is None:
             color_family = [vs.GRAY, vs.RGB, vs.YUV]
 
-        self.allowed_cfamilies = [get_color_family(c) for c in to_arr(color_family)]  # type: ignore[arg-type]
+        self.allowed_cfamilies = frozenset(get_color_family(c) for c in to_arr(color_family))  # type: ignore[arg-type]
 
         UnsupportedColorFamilyError.check(self.clip, self.allowed_cfamilies, func)
 
-        if self.allowed_cfamilies == [vs.GRAY]:
+        if self.allowed_cfamilies == {vs.GRAY}:
             planes = 0
 
         self.planes = normalize_planes(self.clip, planes)
@@ -76,10 +74,10 @@ class FunctionUtil(VSObject):
 
         if isinstance(bitdepth, int):
             bitdepth = {bitdepth}
-        elif bitdepth is None:
-            bitdepth = {cast(int, math.inf)}
         elif isinstance(bitdepth, tuple):
             bitdepth = range(bitdepth[0], bitdepth[1] + 1)
+        elif bitdepth is None:
+            bitdepth = set()
 
         self.allowed_bitdepth = frozenset(bitdepth)
 
@@ -91,17 +89,22 @@ class FunctionUtil(VSObject):
         Raises:
             UnsupportedVideoFormatError: If the input clip has a bit depth higher than the allowed maximum.
         """
-        clip = self.clip
+        if not self.allowed_bitdepth or self.clip.format.bits_per_sample in self.allowed_bitdepth:
+            return self.clip
 
-        if clip.format.bits_per_sample > max(self.allowed_bitdepth):
-            raise UnsupportedVideoFormatError(
-                self.func, clip, (clip.format.replace(bits_per_sample=b) for b in sorted(self.allowed_bitdepth))
-            )
+        bits = next((b for b in sorted(self.allowed_bitdepth) if b >= self.clip.format.bits_per_sample), None)
 
-        if clip.format.bits_per_sample < (bits := min(self.allowed_bitdepth)):
-            clip = depth(clip, bits) if not math.isinf(bits) else clip
+        if bits is not None:
+            return depth(self.clip, bits)
 
-        return clip
+        raise UnsupportedVideoFormatError(
+            self.func,
+            self.clip,
+            (
+                self.clip.format.replace(bits_per_sample=b, sample_type=vs.SampleType(b > 16))
+                for b in sorted(self.allowed_bitdepth)
+            ),
+        )
 
     @cachedproperty
     def work_clip(self) -> vs.VideoNode:
