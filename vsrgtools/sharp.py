@@ -19,6 +19,7 @@ from vstools import (
     VSFunctionNoArgs,
     VSFunctionPlanesArgs,
     check_ref_clip,
+    normalize_param_planes,
     get_peak_value,
     limiter,
     scale_delta,
@@ -222,7 +223,7 @@ def fine_sharp(
     if xstr:
         xysharp = norm_expr([sharp, box_blur(sharp, planes=planes)], "x x y - 9.9 * +", planes, func=func.func)
         rpsharp = repair(xysharp, sharp, 12, planes)
-        sharp = sharp.std.Merge(rpsharp, func.norm_seq(xstr, 0))
+        sharp = sharp.std.Merge(rpsharp, normalize_param_planes(rpsharp, xstr, func.planes, 0))
 
     return func.return_clip(sharp)
 
