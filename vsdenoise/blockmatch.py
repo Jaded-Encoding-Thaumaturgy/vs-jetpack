@@ -723,7 +723,7 @@ def bm3d(
             col_fam=vs.RGB,
         )
 
-        return depth(denoised, clip)
+        return denoised
 
     preclip = depth(clip, 32)
     prepre = depth(pre, 32) if pre else pre
@@ -752,7 +752,7 @@ def bm3d(
 
         denoised = _bm3d_wolfram(preclip, prepre, preref, chroma=True)
 
-        return depth(denoised, clip)
+        return denoised
 
     # GRAY or subsampled YUV
     if backend == BM3D.Backend.OLD:
@@ -761,4 +761,4 @@ def bm3d(
 
     denoised = _bm3d_wolfram(preclip, prepre, preref)
 
-    return depth(denoised, clip)
+    return denoised
