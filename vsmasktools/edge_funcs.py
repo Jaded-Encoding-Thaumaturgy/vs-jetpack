@@ -7,18 +7,7 @@ from jetpytools import CustomEnum, CustomNotImplementedError
 
 from vsexprtools import ExprOp, ExprToken, norm_expr
 from vsrgtools import BlurMatrix, gauss_blur
-from vstools import (
-    ConvMode,
-    depth,
-    get_peak_value,
-    get_y,
-    limiter,
-    plane,
-    scale_delta,
-    scale_mask,
-    scale_value,
-    vs,
-)
+from vstools import ConvMode, get_peak_value, get_y, limiter, plane, scale_delta, scale_mask, scale_value, vs
 
 from .details import multi_detail_mask
 from .edge import EdgeDetect, EdgeDetectLike, FDoG, Kirsch, Prewitt
@@ -153,7 +142,7 @@ class dre_edgemask(CustomEnum):  # noqa: N801
         if self is dre_edgemask.CLAHE:
             limit, tile = kwargs.get("limit", 0.0305), kwargs.get("tile", 5)
 
-            return depth(depth(clip, 16).vszip.CLAHE(int(scale_delta(limit, 32, 16)), tile), clip)
+            return clip.vszip.CLAHE(int(scale_delta(limit, 32, 16)), tile)
 
         raise CustomNotImplementedError
 
