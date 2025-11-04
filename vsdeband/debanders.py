@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 from vsexprtools import norm_expr
 from vsrgtools import gauss_blur
-from vstools import Planes, core, depth, expect_bits, join, normalize_param_planes, split, vs
+from vstools import Planes, core, depth, join, normalize_param_planes, split, vs
 
 __all__ = ["f3k_deband", "mdb_bilateral", "pfdeband", "placebo_deband"]
 
@@ -414,17 +414,13 @@ def mdb_bilateral(
     Returns:
         Debanded clip.
     """
-    clip, bits = expect_bits(clip, 16)
-
     rad1, rad2, rad3 = round(radius * 4 / 3), round(radius * 2 / 3), round(radius / 3)
 
     db1 = debander(clip, rad1, [max(1, th // 2) for th in to_arr(thr)], 0, planes)
     db2 = debander(db1, rad2, thr, 0, planes)
     db3 = debander(db2, rad3, thr, 0, planes)
 
-    limit = core.vszip.LimitFilter(db3, clip, db1, dark_thr, bright_thr, elast, planes)
-
-    return depth(limit, bits)
+    return core.vszip.LimitFilter(db3, clip, db1, dark_thr, bright_thr, elast, planes)
 
 
 class _SupportPlanesParam(Protocol):
@@ -465,11 +461,9 @@ def pfdeband(
     Returns:
         Debanded clip.
     """
-    clip, bits = expect_bits(clip, 16)
-
     blur = prefilter(clip, planes=planes)
     smooth = debander(blur, radius, thr, planes=planes)
-    limit = core.vszip.LimitFilter(smooth, blur, ref, dark_thr, bright_thr, elast, planes)
-    merge = norm_expr([clip, blur, limit], "z x y - +", planes, func=pfdeband)
 
-    return depth(merge, bits)
+    limit = core.vszip.LimitFilter(smooth, blur, ref, dark_thr, bright_thr, elast, planes)
+
+    return norm_expr([clip, blur, limit], "z x y - +", planes, func=pfdeband)
