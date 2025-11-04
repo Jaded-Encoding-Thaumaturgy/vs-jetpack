@@ -25,7 +25,6 @@ from vstools import (
     Matrix,
     OutdatedPluginError,
     ProcessVariableResClip,
-    Range,
     check_variable_resolution,
     core,
     depth,
@@ -422,13 +421,6 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         """
         Handles postprocessing of the model's output after inference.
         """
-        _log.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
-        _log.debug("%s: Before pp; Clip format is %r", self.postprocess_clip, clip.format)
-
-        clip = depth(clip, input_clip, **kwargs)
-
-        _log.debug("%s: After pp; Clip format is %r", self.postprocess_clip, clip.format)
-
         return clip
 
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
@@ -484,16 +476,21 @@ class BaseOnnxScalerRGB(BaseOnnxScaler):
         return limiter(clip, func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        if get_video_format(clip) != get_video_format(input_clip):
-            kwargs = (
-                dict[str, Any](
-                    format=input_clip,
-                    matrix=Matrix.from_video(input_clip, func=self.__class__),
-                    range=Range.from_video(input_clip, func=self.__class__),
-                )
-                | kwargs
-            )
-            clip = self.kernel.resample(clip, **kwargs)
+        _log.debug(f"{self}.post: Before pp; Clip format is {clip.format!r}")
+
+        # Basically everything except color_family
+        out_fmt = input_clip.format.replace(
+            sample_type=clip.format.sample_type,
+            bits_per_sample=clip.format.bits_per_sample,
+            subsampling_w=0,
+            subsampling_h=0,
+        )
+
+        # Resamples only for color_family changes e.g. RGB -> YUV
+        if clip.format != out_fmt:
+            clip = self.kernel.resample(clip, out_fmt, input_clip, range=input_clip, **kwargs)
+
+        _log.debug(f"{self}.post: After pp; Clip format is {clip.format!r}")
 
         return clip
 
@@ -565,8 +562,8 @@ class BaseArtCNN(BaseOnnxScaler):
 
 
 class BaseArtCNNLuma(BaseArtCNN):
-    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        return super().preprocess_clip(get_y(clip), **kwargs)
+    def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
+        return super().inference(get_y(clip), **kwargs)
 
     def _finish_scale(
         self,
@@ -1219,7 +1216,7 @@ type _DPIRGrayModel = int
 type _DPIRColorModel = int
 
 
-class BaseDPIR(BaseOnnxScaler):
+class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
     _model: ClassVar[tuple[_DPIRGrayModel, _DPIRColorModel]]
     _static_kernel_radius = 8
 
@@ -1287,26 +1284,11 @@ class BaseDPIR(BaseOnnxScaler):
         return super().scale(clip, width, height, shift, copy_props=copy_props, **kwargs)
 
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        if get_color_family(clip) == vs.GRAY:
-            return super().preprocess_clip(clip, **kwargs)
-
-        clip = self.kernel.resample(clip, self._pick_precision(vs.RGBH, vs.RGBS), Matrix.RGB, **kwargs)
-
-        return limiter(clip, func=self.__class__)
-
-    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        if get_video_format(clip) != get_video_format(input_clip):
-            kwargs = (
-                dict[str, Any](
-                    format=input_clip,
-                    matrix=Matrix.from_video(input_clip, func=self.__class__),
-                    range=Range.from_video(input_clip, func=self.__class__),
-                )
-                | kwargs
-            )
-            clip = self.kernel.resample(clip, **kwargs)
-
-        return clip
+        return (
+            BaseOnnxScaler.preprocess_clip(self, clip, **kwargs)
+            if get_color_family(clip) == vs.GRAY
+            else BaseOnnxScalerRGB.preprocess_clip(self, clip, **kwargs)
+        )
 
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         # Normalizing the strength clip
