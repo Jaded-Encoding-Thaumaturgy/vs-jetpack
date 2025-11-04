@@ -42,40 +42,40 @@ class MVTools(VSObject):
     """
 
     super_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.Super][vsdenoise.mvtools.enums.MVToolsPlugin.Super] call."""
+    """Arguments passed to every [MVTools.super][vsdenoise.MVTools.super] call."""
 
     analyze_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.Analyze][vsdenoise.MVToolsPlugin.Analyze] call."""
+    """Arguments passed to every [MVTools.analyze][vsdenoise.MVTools.analyze] call."""
 
     recalculate_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.Recalculate][vsdenoise.MVToolsPlugin.Recalculate] call."""
+    """Arguments passed to every [MVTools.recalculate][vsdenoise.MVTools.recalculate] call."""
 
     compensate_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.Compensate][vsdenoise.MVToolsPlugin.Compensate] call."""
+    """Arguments passed to every [MVTools.compensate][vsdenoise.MVTools.compensate] call."""
 
     flow_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.Flow][vsdenoise.MVToolsPlugin.Flow] call."""
+    """Arguments passed to every [MVTools.flow][vsdenoise.MVTools.flow] call."""
 
     degrain_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.Degrain][vsdenoise.MVToolsPlugin.Degrain] call."""
+    """Arguments passed to every [MVTools.degrain][vsdenoise.MVTools.degrain] call."""
 
     flow_interpolate_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.FlowInter][vsdenoise.MVToolsPlugin.FlowInter] call."""
+    """Arguments passed to every [MVTools.flow_interpolate][vsdenoise.MVTools.flow_interpolate] call."""
 
     flow_fps_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.FlowFPS][vsdenoise.MVToolsPlugin.FlowFPS] call."""
+    """Arguments passed to every [MVTools.flow_fps][vsdenoise.MVTools.flow_fps] call."""
 
     block_fps_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.BlockFPS][vsdenoise.MVToolsPlugin.BlockFPS] call."""
+    """Arguments passed to every [MVTools.block_fps][vsdenoise.MVTools.block_fps] call."""
 
     flow_blur_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.FlowBlur][vsdenoise.MVToolsPlugin.FlowBlur] call."""
+    """Arguments passed to every [MVTools.flow_blur][vsdenoise.MVTools.flow_blur] call."""
 
     mask_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.Mask][vsdenoise.MVToolsPlugin.Mask] call."""
+    """Arguments passed to every [MVTools.mask][vsdenoise.MVTools.mask] call."""
 
     sc_detection_args: KwargsT
-    """Arguments passed to every [MVToolsPlugin.SCDetection][vsdenoise.MVToolsPlugin.SCDetection] call."""
+    """Arguments passed to every [MVTools.sc_detection][vsdenoise.MVTools.sc_detection] call."""
 
     vectors: MotionVectors
     """Motion vectors analyzed and used for all operations."""
@@ -130,22 +130,19 @@ class MVTools(VSObject):
             pel: Subpixel precision for motion estimation (1=pixel, 2=half-pixel, 4=quarter-pixel). Default: 1.
             chroma: Whether to consider chroma in motion vector calculations.
             field: Set field order for interlaced processing, input is expected to be separated fields.
-            super_args: Arguments passed to every [MVToolsPlugin.Super][vsdenoise.MVToolsPlugin.Super] calls.
-            analyze_args: Arguments passed to every [MVToolsPlugin.Analyze][vsdenoise.MVToolsPlugin.Analyze] calls.
-            recalculate_args: Arguments passed to every [MVToolsPlugin.Recalculate][vsdenoise.MVToolsPlugin.Recalculate]
-                calls.
-            compensate_args: Arguments passed to every [MVToolsPlugin.Compensate][vsdenoise.MVToolsPlugin.Compensate]
-                calls.
-            flow_args: Arguments passed to every [MVToolsPlugin.Flow][vsdenoise.MVToolsPlugin.Flow] calls.
-            degrain_args: Arguments passed to every [MVToolsPlugin.Degrain][vsdenoise.MVToolsPlugin.Degrain] calls.
+            super_args: Arguments passed to every [MVTools.super][vsdenoise.MVTools.super] call.
+            analyze_args: Arguments passed to every [MVTools.analyze][vsdenoise.MVTools.analyze] call.
+            recalculate_args: Arguments passed to every [MVTools.recalculate][vsdenoise.MVTools.recalculate] call.
+            compensate_args: Arguments passed to every [MVTools.compensate][vsdenoise.MVTools.compensate] call.
+            flow_args: Arguments passed to every [MVTools.flow][vsdenoise.MVTools.flow] call.
+            degrain_args: Arguments passed to every [MVTools.degrain][vsdenoise.MVTools.degrain] call.
             flow_interpolate_args: Arguments passed to every
-                [MVToolsPlugin.FlowInter][vsdenoise.MVToolsPlugin.FlowInter] calls.
-            flow_fps_args: Arguments passed to every [MVToolsPlugin.FlowFPS][vsdenoise.MVToolsPlugin.FlowFPS] calls.
-            block_fps_args: Arguments passed to every [MVToolsPlugin.BlockFPS][vsdenoise.MVToolsPlugin.BlockFPS] calls.
-            flow_blur_args: Arguments passed to every [MVToolsPlugin.FlowBlur][vsdenoise.MVToolsPlugin.FlowBlur] calls.
-            mask_args: Arguments passed to every [MVToolsPlugin.Mask][vsdenoise.MVToolsPlugin.Mask] calls.
-            sc_detection_args: Arguments passed to every
-                [MVToolsPlugin.SCDetection][vsdenoise.MVToolsPlugin.SCDetection] calls.
+                [MVTools.flow_interpolate][vsdenoise.MVTools.flow_interpolate] call.
+            flow_fps_args: Arguments passed to every [MVTools.flow_fps][vsdenoise.MVTools.flow_fps] call.
+            block_fps_args: Arguments passed to every [MVTools.block_fps][vsdenoise.MVTools.block_fps] call.
+            flow_blur_args: Arguments passed to every [MVTools.flow_blur][vsdenoise.MVTools.flow_blur] call.
+            mask_args: Arguments passed to every [MVTools.mask][vsdenoise.MVTools.mask] call.
+            sc_detection_args: Arguments passed to every [MVTools.sc_detection][vsdenoise.MVTools.sc_detection] call.
         """
         UnsupportedColorFamilyError.check(clip, (vs.YUV, vs.GRAY), self.__class__)
 
@@ -153,8 +150,8 @@ class MVTools(VSObject):
         self.pel = pel
         self.pad = normalize_seq(pad, 2)
         self.chroma = chroma
-        self.tff = Field.from_param(field, self.__class__)
         self.fields = field is not None
+        self.tff = Field.from_param(field, self.__class__)
 
         self.vectors = fallback(vectors, MotionVectors())
 
