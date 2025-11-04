@@ -94,7 +94,7 @@ def wnnm(
 
     func = FunctionUtil(clip, wnnm, planes, bitdepth=32)
 
-    sigma = func.norm_seq(sigma, 0)
+    sigma = normalize_param_planes(clip, sigma, planes, 0)
 
     if ref is not None:
         ref = depth(ref, 32)
