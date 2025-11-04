@@ -157,7 +157,7 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
 
         scalex, scaley = normalize_seq(scale, 2)
 
-        if scalex > 1 and scaley > 1:
+        if scalex > 1 or scaley > 1:
             blksizex, blksizev = self.analysis_data["Analysis_BlockSize"]
 
             scaled_blksize = (blksizex * scalex, blksizev * scaley)
