@@ -218,8 +218,6 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
 
         if vectors.scaled:
-            vectors.expand_analysis_data()
-
             hpad, vpad = vectors.analysis_data["Analysis_Padding"]
         else:
             hpad, vpad = self.pad
@@ -481,7 +479,7 @@ class MVTools(VSObject):
             tff=self.tff,
         )
 
-        vectors.analysis_data.clear()
+        del vectors.analysis_data
 
         for delta in range(1, vectors.tr + 1):
             for direction in MVDirection:

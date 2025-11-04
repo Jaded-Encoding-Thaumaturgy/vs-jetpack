@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from types import MappingProxyType
 from typing import Any, Literal
 
-from jetpytools import CustomRuntimeError, fallback, normalize_seq
+from jetpytools import CustomRuntimeError, cachedproperty, fallback, normalize_seq
 
 from vstools import VSObject, get_props, vs
 
@@ -21,16 +22,8 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
     Contains both backward and forward motion vectors.
     """
 
-    analysis_data: dict[str, Any]
-    """Dictionary containing motion vector analysis data."""
-
-    scaled: bool
-    """Whether motion vectors have been scaled."""
-
     def __init__(self) -> None:
         super().__init__(None, {w: {} for w in MVDirection})
-        self.analysis_data = {}
-        self.scaled = False
 
     def clear(self) -> None:
         """
@@ -40,8 +33,7 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
         for v in self.values():
             v.clear()
 
-        self.analysis_data.clear()
-        self.scaled = False
+        cachedproperty.clear_cache(self)
 
     def set_vector(self, vector: vs.VideoNode, direction: MVDirection, delta: int) -> None:
         """
@@ -111,29 +103,33 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
 
         return (vectors_backward, vectors_forward)
 
-    def expand_analysis_data(self) -> None:
-        """
-        Expands the binary MVTools_MVAnalysisData frame prop into separate frame props for convenience.
-        """
+    @cachedproperty
+    def analysis_data(self) -> MappingProxyType[str, Any]:
+        """Mapping containing motion vector analysis data."""
 
-        if not self.analysis_data:
-            vect = self.get_vector(MVDirection.BACKWARD, 1).manipmv.ExpandAnalysisData()
+        vect = self.get_vector(MVDirection.BACKWARD, 1).manipmv.ExpandAnalysisData()
 
-            props_list = (
-                "Analysis_BlockSize",
-                "Analysis_Pel",
-                "Analysis_LevelCount",
-                "Analysis_CpuFlags",
-                "Analysis_MotionFlags",
-                "Analysis_FrameSize",
-                "Analysis_Overlap",
-                "Analysis_BlockCount",
-                "Analysis_BitsPerSample",
-                "Analysis_ChromaRatio",
-                "Analysis_Padding",
-            )
+        props_list = (
+            "Analysis_BlockSize",
+            "Analysis_Pel",
+            "Analysis_LevelCount",
+            "Analysis_CpuFlags",
+            "Analysis_MotionFlags",
+            "Analysis_FrameSize",
+            "Analysis_Overlap",
+            "Analysis_BlockCount",
+            "Analysis_BitsPerSample",
+            "Analysis_ChromaRatio",
+            "Analysis_Padding",
+        )
 
-            self.analysis_data = get_props(vect, props_list, (int, list), func=self.expand_analysis_data)
+        return MappingProxyType(
+            get_props(vect, props_list, (int, list), func=self.__class__.__name__ + ".analysis_data")
+        )
+
+    @analysis_data.deleter  # type: ignore[no-redef]
+    def analysis_data(self) -> None:
+        cachedproperty.clear_cache(self, "analysis_data")
 
     def scale_vectors(self, scale: int | tuple[int, int], strict: bool = True) -> None:
         """
@@ -162,8 +158,6 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
         scalex, scaley = normalize_seq(scale, 2)
 
         if scalex > 1 and scaley > 1:
-            self.expand_analysis_data()
-
             blksizex, blksizev = self.analysis_data["Analysis_BlockSize"]
 
             scaled_blksize = (blksizex * scalex, blksizev * scaley)
@@ -171,8 +165,8 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
             if strict and scaled_blksize not in supported_blksize:
                 raise CustomRuntimeError("Unsupported block size!", self.scale_vectors, scaled_blksize)
 
-            self.analysis_data.clear()
-            self.scaled = True
+            del self.analysis_data
+            cachedproperty.update_cache(self, "scaled", True)
 
             for delta in range(1, self.tr + 1):
                 for direction in MVDirection:
@@ -206,6 +200,12 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
         vect = self.get_vector(direction, delta)
 
         return clip.manipmv.ShowVect(vect, scenechange)
+
+    @cachedproperty
+    def scaled(self) -> bool:
+        """Whether motion vectors have been scaled."""
+
+        return False
 
     @property
     def tr(self) -> int:
