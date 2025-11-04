@@ -170,11 +170,7 @@ class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject)
 
             for delta in range(1, self.tr + 1):
                 for direction in MVDirection:
-                    self.set_vector(
-                        self.get_vector(direction, delta).manipmv.ScaleVect(scalex, scaley),
-                        direction,
-                        delta,
-                    )
+                    self[direction][delta] = self[direction][delta].manipmv.ScaleVect(scalex, scaley)
 
     def show_vector(
         self,
