@@ -4,13 +4,13 @@ from contextlib import AbstractContextManager
 from fractions import Fraction
 from math import floor
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Self, Sequence, overload
+from typing import Any, Callable, Iterable, Iterator, Self, Sequence, overload
 
 from jetpytools import MISSING, CustomValueError, MissingT, normalize_seq, to_arr
 from jetpytools import flatten as jetp_flatten
 
 from ..enums import Align, Matrix
-from ..types import Planes
+from ..types import AudioNodeIterable, Planes, RawNodeIterable, VideoNodeIterable
 from ..vs_proxy import core, vs
 from .check import check_variable
 from .info import get_subsampling
@@ -467,31 +467,13 @@ def pick_func_stype[**P0, **P1](
 
 
 @overload
-def set_output(node: vs.VideoNode, index: int = ..., /, *, alpha: vs.VideoNode | None = ..., **kwargs: Any) -> None:
-    """
-    Set output node with optional index, and if available, use vspreview set_output.
-
-    Args:
-        node: Output node
-        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet
-        alpha: Alpha planes node, defaults to None
-        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
-    """
+def set_output(node: vs.VideoNode, index: int = ..., /, *, alpha: vs.VideoNode | None = ..., **kwargs: Any) -> None: ...
 
 
 @overload
 def set_output(
     node: vs.VideoNode, name: str | bool | None = ..., /, *, alpha: vs.VideoNode | None = ..., **kwargs: Any
-) -> None:
-    """
-    Set output node with optional name, and if available, use vspreview set_output.
-
-    Args:
-        node: Output node
-        name: Node's name, defaults to variable name
-        alpha: Alpha planes node, defaults to None
-        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
-    """
+) -> None: ...
 
 
 @overload
@@ -502,111 +484,33 @@ def set_output(
     /,
     alpha: vs.VideoNode | None = ...,
     **kwargs: Any,
-) -> None:
-    """
-    Set output node with optional index and name, and if available, use vspreview set_output.
-
-    Args:
-        node: Output node.
-        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet.
-        name: Node's name, defaults to variable name
-        alpha: Alpha planes node, defaults to None.
-        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
-    """
-
-
-@overload
-def set_output(node: vs.AudioNode, index: int = ..., /, **kwargs: Any) -> None:
-    """
-    Set output node with optional index, and if available, use vspreview set_output.
-
-    Args:
-        node: Output node.
-        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet.
-        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
-    """
-
-
-@overload
-def set_output(node: vs.AudioNode, name: str | bool | None = ..., /, **kwargs: Any) -> None:
-    """
-    Set output node with optional name, and if available, use vspreview set_output.
-
-    Args:
-        node: Output node.
-        name: Node's name, defaults to variable name
-        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
-    """
-
-
-@overload
-def set_output(node: vs.AudioNode, index: int = ..., name: str | bool | None = ..., /, **kwargs: Any) -> None:
-    """
-    Set output node with optional index and name, and if available, use vspreview set_output.
-
-    Args:
-        node: Output node.
-        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet.
-        name: Node's name, defaults to variable name.
-        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
-    """
+) -> None: ...
 
 
 @overload
 def set_output(
-    node: Iterable[vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode]]],
-    index: int | Sequence[int] = ...,
-    /,
-    **kwargs: Any,
-) -> None:
-    """
-    Set output node with optional index, and if available, use vspreview set_output.
-
-    Args:
-        node: Output node.
-        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet.
-        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
-    """
+    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable, index: int | Sequence[int] = ..., /, **kwargs: Any
+) -> None: ...
 
 
 @overload
 def set_output(
-    node: Iterable[vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode]]],
-    name: str | bool | None = ...,
-    /,
-    **kwargs: Any,
-) -> None:
-    """
-    Set output node with optional name, and if available, use vspreview set_output.
-
-    Args:
-        node: Output node.
-        name: Node's name, defaults to variable name.
-        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
-    """
+    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable, name: str | bool | None = ..., /, **kwargs: Any
+) -> None: ...
 
 
 @overload
 def set_output(
-    node: Iterable[vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode]]],
+    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable,
     index: int | Sequence[int] = ...,
     name: str | bool | None = ...,
     /,
     **kwargs: Any,
-) -> None:
-    """
-    Set output node with optional index and name, and if available, use vspreview set_output.
-
-    Args:
-        node: Output node.
-        index: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet
-        name: Node's name, defaults to variable name
-        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
-    """
+) -> None: ...
 
 
 def set_output(
-    node: vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode]]],
+    node: vs.VideoNode | VideoNodeIterable | AudioNodeIterable | RawNodeIterable,
     index_or_name: int | Sequence[int] | str | bool | None = None,
     name: str | bool | None = None,
     /,
@@ -614,39 +518,32 @@ def set_output(
     **kwargs: Any,
 ) -> None:
     """
-    Set output node with optional index and name, and if available, use vspreview set_output.
+    Wrapper around vspreview.set_output if available, falling back to basic VapourSynth output.
 
     Args:
-        node: Output node.
-        index_or_name: Index number, defaults to current maximum index number + 1 or 0 if no ouput exists yet.
-        name: Node's name, defaults to variable name
-        alpha: Alpha planes node, defaults to None.
-        **kwargs: Additional arguments to be passed to `vspreview.set_output`.
+        node: Output node(s).
+        index_or_name: Index number or name, defaults to current maximum index number + 1.
+        name: Node's display name, defaults to variable name if True.
+        alpha: Optional alpha planes node.
+        **kwargs: Extra arguments passed through to vspreview.set_output.
     """
-    if isinstance(index_or_name, (str, bool)):
-        index = None
-        if not TYPE_CHECKING and isinstance(name, vs.VideoNode):
-            # Backward compatible with older api
-            alpha = name
-        name = index_or_name
-    else:
-        index = index_or_name
-
-    ouputs = vs.get_outputs()
-    nodes = list[vs.RawNode](flatten(node)) if isinstance(node, Iterable) else [node]
-
-    index = to_arr(index) if index is not None else [max(ouputs, default=-1) + 1]
-
-    while len(index) < len(nodes):
-        index.append(index[-1] + 1)
-
     try:
         from vspreview import set_output as vsp_set_output
 
-        vsp_set_output(nodes, index, name, alpha=alpha, f_back=2, force_preview=True, **kwargs)
     except ModuleNotFoundError:
-        for idx, n in zip(index, nodes):
+        index = None if isinstance(index_or_name, (str, bool)) else index_or_name
+
+        outputs = vs.get_outputs()
+        nodes = list(flatten(node))
+        indices = to_arr(index) if index is not None else [max(outputs, default=-1) + 1]
+        indices = normalize_seq(indices, len(nodes))
+
+        for idx, n in zip(indices, nodes):
             n.set_output(idx)
+    else:
+        kwargs.setdefault("frame_depth", 2)
+
+        return vsp_set_output(node, index_or_name, name, alpha=alpha, **kwargs)  # type: ignore[arg-type]
 
 
 def normalize_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:

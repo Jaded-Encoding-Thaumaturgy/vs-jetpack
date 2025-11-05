@@ -1,11 +1,11 @@
 from fractions import Fraction
 from os import PathLike
 from pathlib import Path
-from typing import Any, Iterable, Sequence, overload
+from typing import Any, Sequence, overload
 
 from vapoursynth import AudioNode, RawNode, VideoNode
 
-from vstools import Keyframes, vs
+from vstools import Keyframes, vs, VideoNodeIterable, AudioNodeIterable, RawNodeIterable
 
 __all__ = ["is_preview", "set_output", "set_scening", "set_timecodes", "start_preview", "update_node_info"]
 
@@ -69,58 +69,16 @@ def set_output(
     **kwargs: Any,
 ) -> None: ...
 @overload
-def set_output(node: vs.AudioNode, index: int = ..., /, **kwargs: Any) -> None: ...
-@overload
-def set_output(node: vs.AudioNode, name: str | bool | None = ..., /, **kwargs: Any) -> None: ...
-@overload
-def set_output(node: vs.AudioNode, index: int = ..., name: str | bool | None = ..., /, **kwargs: Any) -> None: ...
-@overload
 def set_output(
-    node: Iterable[vs.VideoNode | Iterable[vs.VideoNode | Iterable[vs.VideoNode]]],
-    index: int | Sequence[int] = ...,
-    /,
-    **kwargs: Any,
+    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable, index: int | Sequence[int] = ..., /, **kwargs: Any
 ) -> None: ...
 @overload
 def set_output(
-    node: Iterable[vs.VideoNode | Iterable[vs.VideoNode | Iterable[vs.VideoNode]]],
-    name: str | bool | None = ...,
-    /,
-    **kwargs: Any,
+    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable, name: str | bool | None = ..., /, **kwargs: Any
 ) -> None: ...
 @overload
 def set_output(
-    node: Iterable[vs.VideoNode | Iterable[vs.VideoNode | Iterable[vs.VideoNode]]],
-    index: int | Sequence[int] = ...,
-    name: str | bool | None = ...,
-    /,
-    **kwargs: Any,
-) -> None: ...
-@overload
-def set_output(
-    node: Iterable[vs.AudioNode | Iterable[vs.AudioNode | Iterable[vs.AudioNode]]],
-    index: int | Sequence[int] = ...,
-    /,
-    **kwargs: Any,
-) -> None: ...
-@overload
-def set_output(
-    node: Iterable[vs.AudioNode | Iterable[vs.AudioNode | Iterable[vs.AudioNode]]],
-    name: str | bool | None = ...,
-    /,
-    **kwargs: Any,
-) -> None: ...
-@overload
-def set_output(
-    node: Iterable[vs.AudioNode | Iterable[vs.AudioNode | Iterable[vs.AudioNode]]],
-    index: int | Sequence[int] = ...,
-    name: str | bool | None = ...,
-    /,
-    **kwargs: Any,
-) -> None: ...
-@overload
-def set_output(
-    node: vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode | Iterable[vs.RawNode]]],
+    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable,
     index: int | Sequence[int] = ...,
     name: str | bool | None = ...,
     /,
