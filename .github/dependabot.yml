@@ -18,8 +18,9 @@ updates:
     directory: "/"
     patterns: ["*"]
     multi-ecosystem-group: "infrastructure"
-
     versioning-strategy: increase-if-necessary
+    ignore:
+      - dependency-name: vspreview
 
   - package-ecosystem: "github-actions"
     directory: "/"
