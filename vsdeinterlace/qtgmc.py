@@ -1,4 +1,5 @@
 from copy import deepcopy
+from functools import lru_cache
 from math import factorial
 from typing import Any, Callable, Iterable, Literal, Protocol, Self
 
@@ -41,6 +42,11 @@ __all__ = ["QTempGaussMC"]
 
 class _DenoiseFuncTr(Protocol):
     def __call__(self, clip: vs.VideoNode, /, *, tr: int) -> vs.VideoNode: ...
+
+
+# lru_cache changes the Callable signatures
+def _cache_setting[**P, R](func: Callable[P, R]) -> Callable[P, R]:
+    return lru_cache(maxsize=1, typed=True)(func)  # type: ignore[return-value]
 
 
 class QTempGaussMC(VSObject):
@@ -345,6 +351,8 @@ class QTempGaussMC(VSObject):
             kwargs_method = {k.removeprefix(prefix): v for k, v in kwargs.items() if k.startswith(prefix)}
 
             method(**kwargs_method)
+
+    @_cache_setting
     def prefilter(
         self,
         *,
@@ -380,6 +388,7 @@ class QTempGaussMC(VSObject):
 
         return self
 
+    @_cache_setting
     def analyze(
         self,
         *,
@@ -421,6 +430,7 @@ class QTempGaussMC(VSObject):
 
         return self
 
+    @_cache_setting
     def denoise(
         self,
         *,
@@ -460,6 +470,7 @@ class QTempGaussMC(VSObject):
 
         return self
 
+    @_cache_setting
     def basic(
         self,
         *,
@@ -500,6 +511,7 @@ class QTempGaussMC(VSObject):
 
         return self
 
+    @_cache_setting
     def source_match(
         self,
         *,
@@ -540,6 +552,7 @@ class QTempGaussMC(VSObject):
 
         return self
 
+    @_cache_setting
     def lossless(
         self,
         *,
@@ -556,6 +569,7 @@ class QTempGaussMC(VSObject):
 
         return self
 
+    @_cache_setting
     def sharpen(
         self,
         *,
@@ -583,6 +597,7 @@ class QTempGaussMC(VSObject):
 
         return self
 
+    @_cache_setting
     def back_blend(
         self,
         *,
@@ -602,6 +617,7 @@ class QTempGaussMC(VSObject):
 
         return self
 
+    @_cache_setting
     def sharpen_limit(
         self,
         *,
@@ -630,6 +646,7 @@ class QTempGaussMC(VSObject):
 
         return self
 
+    @_cache_setting
     def final(
         self,
         *,
@@ -658,6 +675,7 @@ class QTempGaussMC(VSObject):
 
         return self
 
+    @_cache_setting
     def motion_blur(
         self,
         *,
@@ -1173,3 +1191,10 @@ class QTempGaussMC(VSObject):
         self._apply_motion_blur()
 
         return self.motion_blur_output
+
+    def __vs_del__(self, core_id: int) -> None:
+        super().__vs_del__(core_id)
+
+        # In case the user passed a VS object somewhere
+        for method in self._settings_methods:
+            getattr(method, "cache_clear")()
