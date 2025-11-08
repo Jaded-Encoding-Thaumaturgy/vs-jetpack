@@ -509,7 +509,7 @@ class QTempGaussMC(VSObject):
 
         Args:
             tr: Temporal radius of the refinement motion compensated binomial smooth.
-            bobber: Bobber to use for refined spatial interpolation.
+            bobber: Bobber to use for refined spatial interpolation. Defaut to the basic bobber.
             mode: Specifies number of refinement steps to perform.
             similarity: Temporal similarity of the error created by smoothing.
             enhance: Sharpening strength prior to source match refinement.
@@ -517,22 +517,30 @@ class QTempGaussMC(VSObject):
         """
 
         self.match_tr = tr
-
-        if bobber is None:
-            self.match_bobber = deepcopy(self.basic_bobber)
-        elif isinstance(bobber, Bobber):
-            self.match_bobber = deepcopy(bobber)
-        else:
-            self.match_bobber = Bobber.ensure_obj(bobber, self.__class__)
-
-        self.match_bobber.kwargs.update(tff=self.tff, double_rate=self.double_rate)
-
+        self.match_bobber = bobber
         self.match_mode = mode
         self.match_similarity = similarity
         self.match_enhance = enhance
         self.match_degrain_args = fallback(degrain_args, {})
 
         return self
+
+    @property
+    def match_bobber(self) -> Bobber:
+        return fallback(self._match_bobber, self.basic_bobber)
+
+    @match_bobber.setter
+    def match_bobber(self, value: BobberLike | None) -> None:
+        if value is None:
+            self._match_bobber = value
+            return
+
+        if isinstance(value, Bobber):
+            self._match_bobber = deepcopy(value)
+        else:
+            self._match_bobber = Bobber.ensure_obj(value, self.__class__)
+
+        self._match_bobber.kwargs.update(tff=self.tff, double_rate=self.double_rate)
 
     def lossless(self, *, mode: LosslessMode = LosslessMode.NONE) -> Self:
         """
@@ -566,12 +574,20 @@ class QTempGaussMC(VSObject):
             thin: How much to vertically thin edges.
         """
 
-        self.sharp_mode = fallback(mode, self.SharpMode.NONE if self.match_mode else self.SharpMode.UNSHARP_MINMAX)
+        self.sharp_mode = mode
         self.sharp_strength = strength
         self.sharp_clamp = normalize_seq(clamp, 2)
         self.sharp_thin = thin
 
         return self
+
+    @property
+    def sharp_mode(self) -> SharpMode:
+        return fallback(self._sharp_mode, self.SharpMode.NONE if self.match_mode else self.SharpMode.UNSHARP_MINMAX)
+
+    @sharp_mode.setter
+    def sharp_mode(self, value: SharpMode | None) -> None:
+        self._sharp_mode = value
 
     def back_blend(
         self,
@@ -611,14 +627,22 @@ class QTempGaussMC(VSObject):
                 temporal limiting.
         """
 
-        self.limit_mode = fallback(
-            mode, self.SharpLimitMode.NONE if self.match_mode else self.SharpLimitMode.TEMPORAL_PRESMOOTH
-        )
+        self.limit_mode = mode
         self.limit_radius = radius
         self.limit_clamp = clamp
         self.limit_comp_args = fallback(comp_args, {})
 
         return self
+
+    @property
+    def limit_mode(self) -> SharpLimitMode:
+        return fallback(
+            self._limit_mode, self.SharpLimitMode.NONE if self.match_mode else self.SharpLimitMode.TEMPORAL_PRESMOOTH
+        )
+
+    @limit_mode.setter
+    def limit_mode(self, value: SharpLimitMode | None) -> None:
+        self._limit_mode = value
 
     def final(
         self,
