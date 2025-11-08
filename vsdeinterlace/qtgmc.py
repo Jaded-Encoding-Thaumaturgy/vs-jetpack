@@ -1,6 +1,6 @@
 from copy import deepcopy
 from math import factorial
-from typing import Any, Iterable, Literal, Protocol, Self
+from typing import Any, Callable, Iterable, Literal, Protocol, Self
 
 from jetpytools import CustomIntEnum, KwargsT, fallback, normalize_seq
 
@@ -301,12 +301,16 @@ class QTempGaussMC(VSObject):
         clip: vs.VideoNode,
         input_type: InputType = InputType.INTERLACE,
         tff: FieldBasedLike | bool | None = None,
+        **kwargs: Any,
     ) -> None:
         """
+        Initialize a new QTempGaussMC instance
+
         Args:
             clip: Clip to process.
             input_type: Indicates processing routine.
             tff: Field order of the clip.
+            **kwargs: Parameter stages
         """
         clip_fieldbased = FieldBased.from_param_or_video(tff, clip, True, self.__class__)
 
@@ -321,6 +325,26 @@ class QTempGaussMC(VSObject):
         self.tff = None if self.input_type == self.InputType.PROGRESSIVE else clip_fieldbased.is_tff()
         self.double_rate = self.input_type != self.InputType.REPAIR
 
+        # Set default parameters for all the stages
+        self._settings_methods: list[Callable[..., QTempGaussMC]] = [
+            self.prefilter,
+            self.analyze,
+            self.denoise,
+            self.basic,
+            self.source_match,
+            self.lossless,
+            self.sharpen,
+            self.back_blend,
+            self.sharpen_limit,
+            self.final,
+            self.motion_blur,
+        ]
+
+        for method in self._settings_methods:
+            prefix = f"{method.__name__}_"
+            kwargs_method = {k.removeprefix(prefix): v for k, v in kwargs.items() if k.startswith(prefix)}
+
+            method(**kwargs_method)
     def prefilter(
         self,
         *,
