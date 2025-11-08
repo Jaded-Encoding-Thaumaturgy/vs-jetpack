@@ -61,21 +61,7 @@ class QTempGaussMC(VSObject):
 
     Basic usage:
         ```py
-        deinterlace = (
-            QTempGaussMC(clip)
-            .prefilter()
-            .analyze()
-            .denoise()
-            .basic()
-            .source_match()
-            .lossless()
-            .sharpen()
-            .back_blend()
-            .sharpen_limit()
-            .final()
-            .motion_blur()
-            .deinterlace()
-        )
+        deinterlace = QTempGaussMC(clip).deinterlace()
         ```
     """
 
@@ -310,13 +296,16 @@ class QTempGaussMC(VSObject):
         **kwargs: Any,
     ) -> None:
         """
-        Initialize a new QTempGaussMC instance
+        Initialize a new QTempGaussMC instance.
 
         Args:
             clip: Clip to process.
             input_type: Indicates processing routine.
             tff: Field order of the clip.
-            **kwargs: Parameter stages
+            **kwargs: Additional arguments to be passed to the parameter stage methods.
+                Use the method's name as prefix to pass an argument to the respective method.
+
+                Example for passing tr=1 to the prefilter stage: `prefilter_tr=1`.
         """
         clip_fieldbased = FieldBased.from_param_or_video(tff, clip, True, self.__class__)
 
