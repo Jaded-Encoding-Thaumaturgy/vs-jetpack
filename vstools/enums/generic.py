@@ -146,6 +146,9 @@ class FieldBased(PropEnum):
 
         return super().pretty_string
 
+    def apply(self, clip: vs.VideoNode) -> vs.VideoNode:
+        return clip.std.SetFieldBased(self.value)
+
     def is_inter(self) -> bool:
         """
         Check whether the value belongs to an interlaced value.

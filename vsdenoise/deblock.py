@@ -334,4 +334,4 @@ def mpeg2stinx(
     fixed1 = _temporal_limit(clip, _crossfield_repair(clip, _bobfunc(clip)), adj)
     fixed2 = _temporal_limit(fixed1, _crossfield_repair(fixed1, _bobfunc(fixed1)), adj)
 
-    return core.std.SetFieldBased(fixed1.std.Merge(fixed2), FieldBased.PROGRESSIVE)
+    return FieldBased.PROGRESSIVE.apply(fixed1.std.Merge(fixed2))

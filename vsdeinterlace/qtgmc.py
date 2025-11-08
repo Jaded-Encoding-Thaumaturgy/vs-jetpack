@@ -1013,7 +1013,7 @@ class QTempGaussMC(VSObject):
 
         out = reweave(fields_src, fields_flt.std.MakeDiff(processed_diff), self.tff, self._apply_lossless)
 
-        return core.std.SetFieldBased(out, FieldBased.PROGRESSIVE)
+        return FieldBased.PROGRESSIVE.apply(out)
 
     def _apply_sharpen(self, clip: vs.VideoNode) -> vs.VideoNode:
         match self.sharp_mode:
