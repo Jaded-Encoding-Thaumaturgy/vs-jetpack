@@ -769,7 +769,7 @@ class MVTools(VSObject):
         tr: int | None = None,
         thsad: int | tuple[int | None, int | None] | None = None,
         limit: int | tuple[int | None, int | None] | None = None,
-        thscd: int | tuple[int | None, int | float | None] | None = None,
+        thscd: int | tuple[int | None, float | None] | None = None,
         planes: Planes = None,
     ) -> vs.VideoNode:
         """
