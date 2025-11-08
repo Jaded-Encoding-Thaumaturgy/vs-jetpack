@@ -3,7 +3,7 @@ from functools import lru_cache
 from math import factorial
 from typing import Any, Callable, Iterable, Literal, Protocol, Self
 
-from jetpytools import CustomIntEnum, KwargsT, fallback, normalize_seq
+from jetpytools import CustomIntEnum, CustomValueError, KwargsT, fallback, normalize_seq
 
 from vsaa import NNEDI3
 from vsdeband import Grainer
@@ -331,8 +331,8 @@ class QTempGaussMC(VSObject):
         self.tff = None if self.input_type == self.InputType.PROGRESSIVE else clip_fieldbased.is_tff()
         self.double_rate = self.input_type != self.InputType.REPAIR
 
-        # Set default parameters for all the stages
-        self._settings_methods: list[Callable[..., QTempGaussMC]] = [
+        # Set default parameters for all the stages in this exact order
+        self._settings_methods = (
             self.prefilter,
             self.analyze,
             self.denoise,
@@ -344,13 +344,15 @@ class QTempGaussMC(VSObject):
             self.sharpen_limit,
             self.final,
             self.motion_blur,
-        ]
+        )
 
         for method in self._settings_methods:
             prefix = f"{method.__name__}_"
-            kwargs_method = {k.removeprefix(prefix): v for k, v in kwargs.items() if k.startswith(prefix)}
 
-            method(**kwargs_method)
+            method(**{k.removeprefix(prefix): kwargs.pop(k) for k in tuple(kwargs) if k.startswith(prefix)})
+
+        if kwargs:
+            raise CustomValueError("Unknown arguments were passed", self.__class__, kwargs)
 
     @_cache_setting
     def prefilter(
