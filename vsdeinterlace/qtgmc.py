@@ -57,7 +57,31 @@ class QTempGaussMC(VSObject):
         ```py
         deinterlace = QTempGaussMC(clip).deinterlace()
         ```
-    """
+
+    Refer to the [AviSynth QTGMC documentation](http://avisynth.nl/index.php/QTGMC)
+    and the [havsfunc implementation](https://github.com/HomeOfVapourSynthEvolution/havsfunc/blob/aa79ebc9eb5517a3a76a74caa98a9d41993ac39b/havsfunc/havsfunc.py#L598-L848)
+    for detailed explanations of the underlying algorithm.
+
+    These resources remain relevant, as the core algorithm used here is largely similar.
+
+    Note that parameter names differ in this implementation due to a complete rewrite.
+    A mapping between vsjetpack and havsfunc parameters is available [here](https://gist.github.com/emotion3459/33bd2b2a2c21afc6497f65adaf7f0b02).
+
+    Examples:
+        - ...
+        - Passing a progressive input to reduce shimmering (equivalent to `InputType=2, ProgSADMask=12.0`):
+        ```python
+        clip = (
+            QTempGaussMC(clip, QTempGaussMC.InputType.REPAIR)
+            .basic(mask_args=dict(ml=12.0))
+            .deinterlace()
+        )
+        ```
+        Or:
+        ```python
+        clip = QTempGaussMC(clip, QTempGaussMC.InputType.REPAIR, basic_mask_args=dict(ml=12.0)).deinterlace()
+        ```
+    """  # fmt: skip
 
     clip: vs.VideoNode
     """Clip to process."""
@@ -290,8 +314,6 @@ class QTempGaussMC(VSObject):
         **kwargs: Any,
     ) -> None:
         """
-        Initialize a new QTempGaussMC instance.
-
         Args:
             clip: Clip to process.
             input_type: Indicates processing routine.
