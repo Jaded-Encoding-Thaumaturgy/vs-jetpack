@@ -75,8 +75,6 @@ class QArgs:
         Arguments available when passing to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate].
         """
 
-        super: vs.VideoNode | None
-        vectors: MotionVectors | None
         scbehavior: bool | None
         thsad: int | None
         time: float | None
@@ -91,8 +89,6 @@ class QArgs:
         [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final]
         """
 
-        super: vs.VideoNode | None
-        vectors: MotionVectors | None
         limit: int | tuple[int | None, int | None] | None
         planes: Planes
 
@@ -101,7 +97,6 @@ class QArgs:
         Arguments available when passing to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask].
         """
 
-        vectors: MotionVectors | None
         delta: int
         ml: float | None
         gamma: float | None
@@ -113,8 +108,6 @@ class QArgs:
         Arguments available when passing to [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur].
         """
 
-        super: vs.VideoNode | None
-        vectors: MotionVectors | None
         prec: int | None
 
 
