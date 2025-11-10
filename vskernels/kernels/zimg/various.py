@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import Any, Callable
+from typing import Any, Callable, Unpack
 
 from vstools import core, vs
 
+from ...abstract.base import ResolvableKwargs
 from ...types import LeftShift, TopShift
 from .abstract import ZimgComplexKernel
 
@@ -49,7 +50,7 @@ class Lanczos(ZimgComplexKernel):
     descale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Delanczos
     rescale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Lanczos
 
-    def __init__(self, taps: float = 3, **kwargs: Any) -> None:
+    def __init__(self, taps: float = 3, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the kernel with a specific number of taps.
 

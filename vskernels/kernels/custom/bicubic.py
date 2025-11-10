@@ -1,6 +1,7 @@
-from typing import Any
+from typing import Unpack
 
 from ...abstract import CustomComplexKernel
+from ...abstract.base import ResolvableKwargs
 from ..zimg import Bicubic
 from .helpers import poly3
 
@@ -43,7 +44,7 @@ class CustomBicubic(CustomComplexKernel, Bicubic):
         def q3(b: float, c: float) -> float:
             return (-b - 6.0 * c) / 6.0
 
-    def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Any) -> None:
+    def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Unpack[ResolvableKwargs]) -> None:
         self.b = b
         self.c = c
         super().__init__(**kwargs)
