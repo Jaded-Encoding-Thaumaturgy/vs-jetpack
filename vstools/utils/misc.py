@@ -4,7 +4,7 @@ from contextlib import AbstractContextManager
 from fractions import Fraction
 from math import floor
 from types import TracebackType
-from typing import Any, Callable, Iterable, Iterator, Self, Sequence, overload
+from typing import Any, Iterable, Iterator, Self, Sequence, overload
 
 from jetpytools import MISSING, CustomValueError, MissingT, normalize_seq, to_arr
 from jetpytools import flatten as jetp_flatten
@@ -26,7 +26,6 @@ __all__ = [
     "normalize_planes",
     "padder",
     "padder_ctx",
-    "pick_func_stype",
     "set_output",
 ]
 
@@ -445,25 +444,6 @@ class padder:
         sizes, crop_scale = cls._get_sizes_crop_scale(sizes, crop_scale)
         padding = cls.mod_padding(sizes, mod, min, align)
         return padding, tuple(x * crop_scale[0 if i < 2 else 1] for x, i in enumerate(padding))  # type: ignore
-
-
-def pick_func_stype[**P0, **P1](
-    clip: vs.VideoNode,
-    func_int: Callable[P0, vs.VideoNode],
-    func_float: Callable[P1, vs.VideoNode],
-) -> Callable[P0, vs.VideoNode] | Callable[P1, vs.VideoNode]:
-    """
-    Pick the function matching the sample type of the clip's format.
-
-    Args:
-        clip: Input clip.
-        func_int: Function to run on integer clips.
-        func_float: Function to run on float clips.
-
-    Returns:
-        Function matching the sample type of your clip's format.
-    """
-    return func_float if clip.format.sample_type == vs.FLOAT else func_int
 
 
 @overload

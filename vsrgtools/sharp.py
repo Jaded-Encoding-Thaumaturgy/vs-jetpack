@@ -6,23 +6,17 @@ from typing import TYPE_CHECKING, Any, Literal, Sequence
 from jetpytools import FuncExcept
 
 from vsexprtools import norm_expr
-from vskernels import Bilinear
 
 if TYPE_CHECKING:
     from vsmasktools import MaskLike
 
 from vstools import (
-    ChromaLocation,
     ConvMode,
     FunctionUtil,
     Planes,
     VSFunctionNoArgs,
     VSFunctionPlanesArgs,
     check_ref_clip,
-    core,
-    get_y,
-    join,
-    pick_func_stype,
     scale_delta,
     scale_mask,
     vs,
@@ -77,8 +71,9 @@ def awarpsharp(
     mask: MaskLike | None = None,
     thresh: int | float = 128,
     blur: int | VSFunctionPlanesArgs | Literal[False] = 3,
-    depth: int | Sequence[int] | None = None,
-    chroma: bool = False,
+    depth_h: int | Sequence[int] | None = None,
+    depth_v: int | Sequence[int] | None = None,
+    mask_first_plane: bool = False,
     planes: Planes = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
@@ -97,10 +92,13 @@ def awarpsharp(
                - If an `int`, it sets the number of passes for the default `box_blur` filter.
                - If a callable, a custom blur function will be used instead.
                - If `False`, no blur will be applied.
-        depth: Controls how far to warp. Negative values warp in the other direction, i.e. will blur the image instead
-            of sharpening.
-        chroma: Controls the chroma handling method. False will use the edge mask from the luma to warp the chroma.
-            True will create an edge mask from each chroma channel and use those to warp each chroma channel
+        depth_h: Controls how far to warp horizontally.
+            Negative values warp in the other direction, i.e. will blur the image instead of sharpening.
+        depth_v: Controls how far to warp vertically.
+            Negative values warp in the other direction, i.e. will blur the image instead of sharpening.
+        mask_first_plane: Controls the chroma handling method.
+            True will use the edge mask from the luma to warp the chroma.
+            False will create an edge mask from each chroma channel and use those to warp each chroma channel
             individually.
         planes: Planes to process. Defaults to all.
         **kwargs: Additional arguments forwarded to the [normalize_mask][vsmasktools.normalize_mask] function.
@@ -113,8 +111,7 @@ def awarpsharp(
     func = FunctionUtil(clip, awarpsharp, planes)
 
     thresh = scale_mask(thresh, 8, func.work_clip)
-    chroma = True if func.work_clip.format.color_family is vs.RGB else chroma
-    mask_planes = planes if chroma else 0
+    mask_planes = 0 if mask_first_plane else planes
 
     if mask is None:
         mask = Sobel
@@ -127,16 +124,7 @@ def awarpsharp(
         blur_fn = partial(box_blur, radius=2, passes=blur, planes=planes) if isinstance(blur, int) else blur
         mask = blur_fn(mask, planes=mask_planes)
 
-    if not chroma:
-        loc = ChromaLocation.from_video(func.work_clip)
-
-        mask = get_y(mask)
-        mask = join(mask, mask, mask)
-        mask = Bilinear().resample(mask, func.work_clip.format.id, chromaloc=loc)
-
-    warp = pick_func_stype(func.work_clip, core.lazy.warp.AWarp, core.lazy.warpsf.AWarp)(
-        func.work_clip, mask, depth, 1, planes
-    )
+    warp = func.work_clip.awarp.AWarp(mask, depth_h, depth_v, mask_first_plane, planes)
 
     return func.return_clip(warp)
 
