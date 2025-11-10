@@ -10,7 +10,7 @@ from ..exceptions import (
     UndefinedFieldError,
     UnsupportedFieldBasedError,
 )
-from ..types import HoldsVideoFormat, VideoFormatLike
+from ..types import HoldsPropValue, HoldsVideoFormat, VideoFormatLike
 from ..vs_proxy import vs
 from .base import PropEnum, _base_from_video
 
@@ -263,13 +263,13 @@ class Field(PropEnum):
         return _base_from_video(cls, src, UndefinedFieldError, strict, func)
 
 
-type ChromaLocationLike = int | vs.ChromaLocation | ChromaLocation
+type ChromaLocationLike = int | vs.ChromaLocation | ChromaLocation | HoldsPropValue
 """Type alias for values that can be used to initialize a [ChromaLocation][vstools.ChromaLocation]."""
 
-type FieldBasedLike = int | vs.FieldBased | FieldBased
+type FieldBasedLike = int | vs.FieldBased | FieldBased | HoldsPropValue
 """Type alias for values that can be used to initialize a [FieldBased][vstools.FieldBased]."""
 
-type FieldLike = int | Field
+type FieldLike = int | Field | HoldsPropValue
 """Type alias for values that can be used to initialize a [Field][vstools.Field]."""
 
 ChromaLocationT = ChromaLocationLike

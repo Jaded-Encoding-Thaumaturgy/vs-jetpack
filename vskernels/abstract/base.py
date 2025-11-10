@@ -17,6 +17,7 @@ from typing import (
     Literal,
     NoReturn,
     Self,
+    SupportsInt,
     get_origin,
     overload,
 )
@@ -32,8 +33,13 @@ from jetpytools import (
     normalize_seq,
 )
 from jetpytools import cachedproperty as jetpytools_cachedproperty
+from typing_extensions import TypeIs
 
 from vstools import (
+    ChromaLocation,
+    ChromaLocationLike,
+    ColorRange,
+    ColorRangeLike,
     FieldBased,
     FieldBasedLike,
     HoldsVideoFormat,
@@ -41,6 +47,7 @@ from vstools import (
     MatrixLike,
     Primaries,
     PrimariesLike,
+    PropEnum,
     Transfer,
     TransferLike,
     VideoFormatLike,
@@ -187,6 +194,36 @@ def _check_kernel_radius(cls: type[BaseScaler]) -> Literal[True]:
         "the `kernel_radius` property or setting the class variable `_static_kernel_radius`.",
         cls,
     )
+
+
+def _is_format_resolver(value: Any) -> TypeIs[Callable[..., VideoFormatLike | HoldsVideoFormat | SupportsInt]]:
+    return callable(value)
+
+
+def _resolve_video_spec_args(clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
+    if _is_format_resolver((fmt := kwargs.get("format"))):
+        kwargs["format"] = get_video_format(fmt(clip))
+
+    spec_map: dict[str, type[PropEnum]] = {
+        "matrix": Matrix,
+        "matrix_in": Matrix,
+        "transfer": Transfer,
+        "transfer_in": Transfer,
+        "primaries": Primaries,
+        "primaries_in": Primaries,
+        "range": ColorRange,
+        "range_in": ColorRange,
+        "chromaloc": ChromaLocation,
+        "chromaloc_in": ChromaLocation,
+    }
+
+    for name, prop_enum in spec_map.items():
+        if callable((resolver := kwargs.get(name))):
+            kwargs[name] = prop_enum.from_param_with_fallback(resolver(clip))
+
+    return kwargs
+
+
 
 
 abstract_kernels: list[BaseScalerMeta] = []
@@ -708,7 +745,7 @@ class Resampler(BaseScaler):
     def resample(
         self,
         clip: vs.VideoNode,
-        format: int | VideoFormatLike | HoldsVideoFormat,
+        format: SupportsInt | VideoFormatLike | HoldsVideoFormat,
         matrix: MatrixLike | None = None,
         matrix_in: MatrixLike | None = None,
         transfer: TransferLike | None = None,
@@ -754,7 +791,7 @@ class Resampler(BaseScaler):
     def get_resample_args(
         self,
         clip: vs.VideoNode,
-        format: int | VideoFormatLike | HoldsVideoFormat,
+        format: SupportsInt | VideoFormatLike | HoldsVideoFormat,
         matrix: MatrixLike | None,
         matrix_in: MatrixLike | None,
         transfer: TransferLike | None = None,
@@ -784,18 +821,21 @@ class Resampler(BaseScaler):
         Returns:
             A dictionary containing the resampling arguments.
         """
-        return (
-            {
-                "format": get_video_format(format).id,
-                "matrix": Matrix.from_param_with_fallback(matrix),
-                "matrix_in": Matrix.from_param_with_fallback(matrix_in),
-                "transfer": Transfer.from_param_with_fallback(transfer),
-                "transfer_in": Transfer.from_param_with_fallback(transfer_in),
-                "primaries": Primaries.from_param_with_fallback(primaries),
-                "primaries_in": Primaries.from_param_with_fallback(primaries_in),
-            }
-            | self.kwargs
-            | kwargs
+        return _resolve_video_spec_args(
+            clip,
+            **(
+                {
+                    "format": get_video_format(format).id,
+                    "matrix": Matrix.from_param_with_fallback(matrix),
+                    "matrix_in": Matrix.from_param_with_fallback(matrix_in),
+                    "transfer": Transfer.from_param_with_fallback(transfer),
+                    "transfer_in": Transfer.from_param_with_fallback(transfer_in),
+                    "primaries": Primaries.from_param_with_fallback(primaries),
+                    "primaries_in": Primaries.from_param_with_fallback(primaries_in),
+                }
+                | self.kwargs
+                | kwargs
+            ),
         )
 
 
@@ -931,7 +971,7 @@ class Kernel(Scaler, Descaler, Resampler):
         Returns:
             Dictionary of combined parameters.
         """
-        return {"width": width, "height": height} | self.kwargs | kwargs
+        return _resolve_video_spec_args(clip, **{"width": width, "height": height} | self.kwargs | kwargs)
 
     def get_scale_args(
         self,
@@ -1005,7 +1045,7 @@ class Kernel(Scaler, Descaler, Resampler):
     def get_resample_args(
         self,
         clip: vs.VideoNode,
-        format: int | VideoFormatLike | HoldsVideoFormat,
+        format: SupportsInt | VideoFormatLike | HoldsVideoFormat,
         matrix: MatrixLike | None,
         matrix_in: MatrixLike | None,
         transfer: TransferLike | None = None,
