@@ -8,13 +8,13 @@ from __future__ import annotations
 from abc import abstractmethod
 from logging import getLogger
 from math import ceil
-from typing import Any
+from typing import Any, Unpack
 
 from jetpytools import CustomError, CustomValueError
 
 from vstools import core, vs
 
-from .base import Kernel
+from .base import Kernel, ResolvableKwargs
 from .complex import ComplexKernel
 
 __all__ = [
@@ -124,7 +124,7 @@ class CustomComplexTapsKernel(CustomComplexKernel):
     Extension of [CustomComplexKernel][vskernels.CustomComplexKernel] that introduces configurable kernel taps.
     """
 
-    def __init__(self, taps: float, **kwargs: Any) -> None:
+    def __init__(self, taps: float, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the kernel with a specific number of taps and optional keyword arguments.
 
