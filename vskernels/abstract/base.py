@@ -37,9 +37,7 @@ from typing_extensions import TypeIs
 
 from vstools import (
     ChromaLocation,
-    ChromaLocationLike,
     ColorRange,
-    ColorRangeLike,
     FieldBased,
     FieldBasedLike,
     HoldsVideoFormat,
@@ -196,7 +194,9 @@ def _check_kernel_radius(cls: type[BaseScaler]) -> Literal[True]:
     )
 
 
-def _is_format_resolver(value: Any) -> TypeIs[Callable[..., VideoFormatLike | HoldsVideoFormat | SupportsInt]]:
+def _is_format_resolver(
+    value: Any,
+) -> TypeIs[Callable[[vs.VideoNode], SupportsInt | VideoFormatLike | HoldsVideoFormat]]:
     return callable(value)
 
 
@@ -222,8 +222,6 @@ def _resolve_video_spec_args(clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any
             kwargs[name] = prop_enum.from_param_with_fallback(resolver(clip))
 
     return kwargs
-
-
 
 
 abstract_kernels: list[BaseScalerMeta] = []
