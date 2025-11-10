@@ -47,7 +47,7 @@ def edge_cleaner(
     if smode:
         strength += 4
 
-    warped = awarpsharp(clip, blur=2, depth=strength, planes=planes)
+    warped = awarpsharp(clip, blur=2, depth_h=strength, depth_v=strength, planes=planes)
     warped = repair(warped, clip, rmode, planes)
 
     mask = edgemask.edgemask(clip, lthr, planes=planes)
@@ -95,7 +95,7 @@ def YAHR(  # noqa: N802
     Returns:
         The processed video clip with reduced halos.
     """
-    warped = awarpsharp(clip, blur=blur, depth=depth, planes=planes)
+    warped = awarpsharp(clip, blur=blur, depth_h=depth, depth_v=depth, planes=planes)
 
     blur_diff, blur_warped_diff = [
         c.std.MakeDiff(BlurMatrix.BINOMIAL()(min_blur(c, 2, planes=planes), planes=planes), planes)
