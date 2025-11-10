@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from math import sqrt
-from typing import Any, overload
+from typing import Any, Unpack, overload
 
 from jetpytools import CustomValueError, complex_hash
 
 from vstools import core, vs
 
+from ...abstract.base import ResolvableKwargs
 from ...types import LeftShift, TopShift
 from .abstract import ZimgComplexKernel
 
@@ -39,7 +40,7 @@ class Bicubic(ZimgComplexKernel):
     descale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Debicubic
     rescale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Bicubic
 
-    def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Any) -> None:
+    def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with specific 'b' and 'c' parameters and optional arguments.
 
@@ -91,7 +92,7 @@ class BSpline(Bicubic):
     BSpline resizer (b=1, c=0).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -106,7 +107,7 @@ class Hermite(Bicubic):
     Hermite resizer (b=0, c=0).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -121,7 +122,7 @@ class Mitchell(Bicubic):
     Mitchell resizer (b=1/3, c=1/3).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -136,7 +137,7 @@ class Catrom(Bicubic):
     Catrom resizer (b=0, c=0.5).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -151,7 +152,7 @@ class FFmpegBicubic(Bicubic):
     FFmpeg's swscale default resizer (b=0, c=0.6).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -166,7 +167,7 @@ class AdobeBicubic(Bicubic):
     Adobe's "Bicubic" interpolation preset resizer (b=0, c=0.75).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -181,7 +182,7 @@ class AdobeBicubicSharper(Bicubic):
     Adobe's "Bicubic Sharper" interpolation preset resizer (b=0, c=1, blur=1.05).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -196,7 +197,7 @@ class AdobeBicubicSmoother(Bicubic):
     Adobe's "Bicubic Smoother" interpolation preset resizer (b=0, c=0.625, blur=1.15).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -211,7 +212,7 @@ class BicubicSharp(Bicubic):
     BicubicSharp resizer (b=0, c=1).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -226,7 +227,7 @@ class RobidouxSoft(Bicubic):
     RobidouxSoft resizer (b=0.67962, c=0.16019).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -243,7 +244,7 @@ class Robidoux(Bicubic):
     Robidoux resizer (b=0.37822, c=0.31089).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -261,7 +262,7 @@ class RobidouxSharp(Bicubic):
     RobidouxSharp resizer (b=0.26201, c=0.36899).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -280,12 +281,12 @@ class BicubicAuto(Bicubic):
     """
 
     @overload
-    def __init__(self, b: float = ..., c: None = None, **kwargs: Any) -> None: ...
+    def __init__(self, b: float = ..., c: None = None, **kwargs: Unpack[ResolvableKwargs]) -> None: ...
 
     @overload
-    def __init__(self, b: None = None, c: float = ..., **kwargs: Any) -> None: ...
+    def __init__(self, b: None = None, c: float = ..., **kwargs: Unpack[ResolvableKwargs]) -> None: ...
 
-    def __init__(self, b: float | None = None, c: float | None = None, **kwargs: Any) -> None:
+    def __init__(self, b: float | None = None, c: float | None = None, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
