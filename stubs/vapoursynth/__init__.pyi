@@ -1010,6 +1010,10 @@ class VideoNode(RawNode):
     akarin: Final[_akarin._VideoNode_bound.Plugin]
     """Akarin's Experimental Filters"""
 # </attribute/VideoNode_bound/akarin>
+# <attribute/VideoNode_bound/awarp>
+    awarp: Final[_awarp._VideoNode_bound.Plugin]
+    """Sharpen images by warping"""
+# </attribute/VideoNode_bound/awarp>
 # <attribute/VideoNode_bound/bilateralgpu>
     bilateralgpu: Final[_bilateralgpu._VideoNode_bound.Plugin]
     """Bilateral filter using CUDA"""
@@ -1276,6 +1280,10 @@ class Core:
     akarin: Final[_akarin._Core_bound.Plugin]
     """Akarin's Experimental Filters"""
 # </attribute/Core_bound/akarin>
+# <attribute/Core_bound/awarp>
+    awarp: Final[_awarp._Core_bound.Plugin]
+    """Sharpen images by warping"""
+# </attribute/Core_bound/awarp>
 # <attribute/Core_bound/bilateralgpu>
     bilateralgpu: Final[_bilateralgpu._Core_bound.Plugin]
     """Bilateral filter using CUDA"""
@@ -1546,6 +1554,20 @@ class _akarin:
             def Tmpl(self, prop: _AnyStr | _SequenceLike[_AnyStr], text: _AnyStr | _SequenceLike[_AnyStr]) -> VideoNode: ...
 
 # </implementation/akarin>
+
+# <implementation/awarp>
+class _awarp:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def AWarp(self, clip: VideoNode, mask: VideoNode, depth_h: int | _SequenceLike[int] | None = None, depth_v: int | _SequenceLike[int] | None = None, mask_first_plane: int | None = None, planes: int | _SequenceLike[int] | None = None) -> VideoNode: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def AWarp(self, mask: VideoNode, depth_h: int | _SequenceLike[int] | None = None, depth_v: int | _SequenceLike[int] | None = None, mask_first_plane: int | None = None, planes: int | _SequenceLike[int] | None = None) -> VideoNode: ...
+
+# </implementation/awarp>
 
 # <implementation/bilateralgpu>
 class _bilateralgpu:
