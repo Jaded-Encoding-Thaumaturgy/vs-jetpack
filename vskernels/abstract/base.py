@@ -18,6 +18,7 @@ from typing import (
     NoReturn,
     Self,
     SupportsInt,
+    Unpack,
     get_origin,
     overload,
 )
@@ -34,10 +35,12 @@ from jetpytools import (
     normalize_seq,
 )
 from jetpytools import cachedproperty as jetpytools_cachedproperty
+from typing_extensions import TypedDict as TypedDictEx
 
 from vsjetpack import TypeIs
 from vstools import (
     ChromaLocation,
+    ChromaLocationLike,
     FieldBased,
     FieldBasedLike,
     HoldsVideoFormat,
@@ -47,6 +50,7 @@ from vstools import (
     PrimariesLike,
     PropEnum,
     Range,
+    RangeLike,
     Transfer,
     TransferLike,
     VideoFormatLike,
@@ -179,6 +183,42 @@ def _resolve_video_spec_args(clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any
             kwargs[name] = prop_enum.from_param_with_fallback(resolver(clip))
 
     return kwargs
+
+
+# Using the new https://peps.python.org/pep-0728/ available in python 3.15
+class ResolvableKwargs(TypedDictEx, total=False, extra_items=Any):  # type: ignore[call-arg]
+    """
+    Defines a set of resolvable keyword arguments for use with [Resampler][vskernels.Resampler] and its subclasses.
+
+    This type is intended to be used in function signatures as: `**kwargs: Unpack[ResolvableKwargs]`
+
+    It provides structured type hints for known keyword arguments while allowing additional arbitrary ones
+    via `extra_items=Any`.
+
+    Each field may accept either:
+
+    - A direct value of the expected type
+    - `None`, to indicate absence
+    - A callable that dynamically resolves to a valid value at runtime
+    """
+
+    format: (
+        SupportsInt
+        | VideoFormatLike
+        | HoldsVideoFormat
+        | None
+        | Callable[[vs.VideoNode], SupportsInt | VideoFormatLike | HoldsVideoFormat]
+    )
+    matrix: MatrixLike | None | Callable[[vs.VideoNode], MatrixLike | None]
+    matrix_in: MatrixLike | None | Callable[[vs.VideoNode], MatrixLike | None]
+    transfer: TransferLike | None | Callable[[vs.VideoNode], TransferLike | None]
+    transfer_in: TransferLike | None | Callable[[vs.VideoNode], TransferLike | None]
+    primaries: PrimariesLike | None | Callable[[vs.VideoNode], PrimariesLike | None]
+    primaries_in: PrimariesLike | None | Callable[[vs.VideoNode], PrimariesLike | None]
+    range: RangeLike | None | Callable[[vs.VideoNode], RangeLike | None]
+    range_in: RangeLike | None | Callable[[vs.VideoNode], RangeLike | None]
+    chromaloc: ChromaLocationLike | None | Callable[[vs.VideoNode], ChromaLocationLike | None]
+    chromaloc_in: ChromaLocationLike | None | Callable[[vs.VideoNode], ChromaLocationLike | None]
 
 
 abstract_kernels: list[BaseScalerMeta] = []
@@ -738,6 +778,10 @@ class Resampler(BaseScaler):
 
     _implemented_funcs: ClassVar[tuple[str, ...]] = ("resample",)
 
+    if TYPE_CHECKING:
+
+        def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None: ...
+
     def resample(
         self,
         clip: vs.VideoNode,
@@ -851,6 +895,10 @@ class Kernel(Scaler, Descaler, Resampler):
     _err_class: ClassVar[type[_UnknownBaseScalerError]] = UnknownKernelError
 
     _implemented_funcs: ClassVar[tuple[str, ...]] = ("shift",)
+
+    if TYPE_CHECKING:
+
+        def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None: ...
 
     @overload
     def shift(self, clip: vs.VideoNode, shift: tuple[TopShift, LeftShift], /, **kwargs: Any) -> vs.VideoNode:
