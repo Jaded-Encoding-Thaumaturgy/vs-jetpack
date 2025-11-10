@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from math import sqrt
-from typing import Any, overload
+from typing import Any, Unpack, overload
 
 from jetpytools import CustomValueError, complex_hash
 
 from vstools import core, vs
 
+from ...abstract.base import ResolvableKwargs
 from ...types import LeftShift, TopShift
 from .abstract import ZimgComplexKernel
 
@@ -39,7 +40,7 @@ class Bicubic(ZimgComplexKernel):
     descale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Debicubic
     rescale_function: Callable[..., vs.VideoNode] = core.lazy.descale.Bicubic
 
-    def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Any) -> None:
+    def __init__(self, b: float = 0, c: float = 0.5, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with specific 'b' and 'c' parameters and optional arguments.
 
@@ -95,7 +96,7 @@ class SpecialBicubic(Bicubic, abstract=True):
     c: float
     blur: float = 1.0
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
@@ -221,12 +222,12 @@ class BicubicAuto(Bicubic):
     """
 
     @overload
-    def __init__(self, b: float = ..., c: None = None, **kwargs: Any) -> None: ...
+    def __init__(self, b: float = ..., c: None = None, **kwargs: Unpack[ResolvableKwargs]) -> None: ...
 
     @overload
-    def __init__(self, b: None = None, c: float = ..., **kwargs: Any) -> None: ...
+    def __init__(self, b: None = None, c: float = ..., **kwargs: Unpack[ResolvableKwargs]) -> None: ...
 
-    def __init__(self, b: float | None = None, c: float | None = None, **kwargs: Any) -> None:
+    def __init__(self, b: float | None = None, c: float | None = None, **kwargs: Unpack[ResolvableKwargs]) -> None:
         """
         Initialize the scaler with optional arguments.
 
