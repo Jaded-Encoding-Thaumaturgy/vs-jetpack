@@ -44,7 +44,7 @@ class _DenoiseFuncTr(Protocol):
     def __call__(self, clip: vs.VideoNode, /, *, tr: int) -> vs.VideoNode: ...
 
 
-class QArgs:
+class QTGMCArgs:
     """Namespace containing helper TypedDict definitions for various argument groups."""
 
     class PrefilterToFullRange(TypedDict, total=False):
@@ -70,7 +70,7 @@ class QArgs:
         over_dilation: int
         """Extra inflation to ensure areas to restore back are fully caught."""
 
-    class Comp(TypedDict, total=False):
+    class Compensate(TypedDict, total=False):
         """
         Arguments available when passing to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate].
         """
@@ -435,8 +435,8 @@ class QTempGaussMC(VSObject):
         postprocess: SearchPostProcess = SearchPostProcess.GAUSSBLUR_EDGESOFTEN,
         strength: tuple[float, float] = (1.9, 0.1),
         limit: tuple[float, float, float] = (3, 7, 2),
-        range_expansion_args: QArgs.PrefilterToFullRange | Literal[False] | None = None,
-        mask_shimmer_args: QArgs.MaskShimmer | None = None,
+        range_expansion_args: QTGMCArgs.PrefilterToFullRange | Literal[False] | None = None,
+        mask_shimmer_args: QTGMCArgs.MaskShimmer | None = None,
     ) -> Self:
         """
         Configure parameters for the prefilter stage.
@@ -457,10 +457,10 @@ class QTempGaussMC(VSObject):
         self.prefilter_postprocess = postprocess
         self.prefilter_blur_strength = strength
         self.prefilter_soften_limit = limit
-        self.prefilter_range_expansion_args: QArgs.PrefilterToFullRange | Literal[False] = fallback(
-            range_expansion_args, QArgs.PrefilterToFullRange()
+        self.prefilter_range_expansion_args: QTGMCArgs.PrefilterToFullRange | Literal[False] = fallback(
+            range_expansion_args, QTGMCArgs.PrefilterToFullRange()
         )
-        self.prefilter_mask_shimmer_args = fallback(mask_shimmer_args, QArgs.MaskShimmer())
+        self.prefilter_mask_shimmer_args = fallback(mask_shimmer_args, QTGMCArgs.MaskShimmer())
 
         return self
 
@@ -516,8 +516,8 @@ class QTempGaussMC(VSObject):
         deint: NoiseDeintMode = NoiseDeintMode.GENERATE,
         mc_denoise: bool = True,
         stabilize: tuple[float, float] | Literal[False] = (0.6, 0.2),
-        func_comp_args: QArgs.Comp | None = None,
-        stabilize_comp_args: QArgs.Comp | None = None,
+        func_comp_args: QTGMCArgs.Compensate | None = None,
+        stabilize_comp_args: QTGMCArgs.Compensate | None = None,
     ) -> Self:
         """
         Configure parameters for the denoise stage.
@@ -541,8 +541,8 @@ class QTempGaussMC(VSObject):
         self.denoise_deint = deint
         self.denoise_mc_denoise = mc_denoise
         self.denoise_stabilize: tuple[float, float] | Literal[False] = stabilize
-        self.denoise_func_comp_args = fallback(func_comp_args, QArgs.Comp())
-        self.denoise_stabilize_comp_args = fallback(stabilize_comp_args, QArgs.Comp())
+        self.denoise_func_comp_args = fallback(func_comp_args, QTGMCArgs.Compensate())
+        self.denoise_stabilize_comp_args = fallback(stabilize_comp_args, QTGMCArgs.Compensate())
 
         return self
 
@@ -553,9 +553,9 @@ class QTempGaussMC(VSObject):
         thsad: int | tuple[int, int] = 640,
         bobber: BobberLike = NNEDI3(nsize=1),
         noise_restore: float = 0.0,
-        degrain_args: QArgs.Degrain | None = None,
-        mask_args: QArgs.Mask | Literal[False] | None = None,
-        mask_shimmer_args: QArgs.MaskShimmer | None = {"erosion_distance": 0},
+        degrain_args: QTGMCArgs.Degrain | None = None,
+        mask_args: QTGMCArgs.Mask | Literal[False] | None = None,
+        mask_shimmer_args: QTGMCArgs.MaskShimmer | None = {"erosion_distance": 0},
     ) -> Self:
         """
         Configure parameters for the basic stage.
@@ -580,9 +580,9 @@ class QTempGaussMC(VSObject):
         self.basic_bobber.kwargs.update(tff=self.tff, double_rate=self.double_rate)
 
         self.basic_noise_restore = noise_restore
-        self.basic_degrain_args = fallback(degrain_args, QArgs.Degrain())
-        self.basic_mask_shimmer_args = fallback(mask_shimmer_args, QArgs.MaskShimmer())
-        self.basic_mask_args: QArgs.Mask | Literal[False] = fallback(mask_args, QArgs.Mask())
+        self.basic_degrain_args = fallback(degrain_args, QTGMCArgs.Degrain())
+        self.basic_mask_shimmer_args = fallback(mask_shimmer_args, QTGMCArgs.MaskShimmer())
+        self.basic_mask_args: QTGMCArgs.Mask | Literal[False] = fallback(mask_args, QTGMCArgs.Mask())
 
         return self
 
@@ -594,7 +594,7 @@ class QTempGaussMC(VSObject):
         mode: SourceMatchMode = SourceMatchMode.NONE,
         similarity: float = 0.5,
         enhance: float = 0.5,
-        degrain_args: QArgs.Degrain | None = None,
+        degrain_args: QTGMCArgs.Degrain | None = None,
     ) -> Self:
         """
         Configure parameters for the source_match stage.
@@ -613,7 +613,7 @@ class QTempGaussMC(VSObject):
         self.match_mode = mode
         self.match_similarity = similarity
         self.match_enhance = enhance
-        self.match_degrain_args = fallback(degrain_args, QArgs.Degrain())
+        self.match_degrain_args = fallback(degrain_args, QTGMCArgs.Degrain())
 
         return self
 
@@ -701,7 +701,7 @@ class QTempGaussMC(VSObject):
         mode: SharpLimitMode | None = None,
         radius: int = 3,
         clamp: float | tuple[float, float] = 0,
-        comp_args: QArgs.Comp | None = None,
+        comp_args: QTGMCArgs.Compensate | None = None,
     ) -> Self:
         """
         Configure parameters for the sharpen_limit stage.
@@ -717,7 +717,7 @@ class QTempGaussMC(VSObject):
         self.limit_mode = mode
         self.limit_radius = radius
         self.limit_clamp = clamp
-        self.limit_comp_args = fallback(comp_args, QArgs.Comp())
+        self.limit_comp_args = fallback(comp_args, QTGMCArgs.Compensate())
 
         return self
 
@@ -737,8 +737,8 @@ class QTempGaussMC(VSObject):
         tr: int = 3,
         thsad: int | tuple[int, int] = 256,
         noise_restore: float = 0.0,
-        degrain_args: QArgs.Degrain | None = None,
-        mask_shimmer_args: QArgs.MaskShimmer | None = None,
+        degrain_args: QTGMCArgs.Degrain | None = None,
+        mask_shimmer_args: QTGMCArgs.MaskShimmer | None = None,
     ) -> Self:
         """
         Configure parameters for the final stage.
@@ -754,8 +754,8 @@ class QTempGaussMC(VSObject):
         self.final_tr = tr
         self.final_thsad = thsad
         self.final_noise_restore = noise_restore
-        self.final_degrain_args = fallback(degrain_args, QArgs.Degrain())
-        self.final_mask_shimmer_args = fallback(mask_shimmer_args, QArgs.MaskShimmer())
+        self.final_degrain_args = fallback(degrain_args, QTGMCArgs.Degrain())
+        self.final_mask_shimmer_args = fallback(mask_shimmer_args, QTGMCArgs.MaskShimmer())
 
         return self
 
@@ -764,8 +764,8 @@ class QTempGaussMC(VSObject):
         *,
         shutter_angle: tuple[float, float] = (180, 180),
         fps_divisor: int = 1,
-        blur_args: QArgs.Blur | None = None,
-        mask_args: QArgs.Mask | Literal[False] | None = {"ml": 4},
+        blur_args: QTGMCArgs.Blur | None = None,
+        mask_args: QTGMCArgs.Mask | Literal[False] | None = {"ml": 4},
     ) -> Self:
         """
         Configure parameters for the motion blur stage.
@@ -780,8 +780,8 @@ class QTempGaussMC(VSObject):
 
         self.motion_blur_shutter_angle = shutter_angle
         self.motion_blur_fps_divisor = fps_divisor
-        self.motion_blur_args = fallback(blur_args, QArgs.Blur())
-        self.motion_blur_mask_args: QArgs.Mask | Literal[False] = fallback(mask_args, QArgs.Mask())
+        self.motion_blur_args = fallback(blur_args, QTGMCArgs.Blur())
+        self.motion_blur_mask_args: QTGMCArgs.Mask | Literal[False] = fallback(mask_args, QTGMCArgs.Mask())
 
         return self
 
