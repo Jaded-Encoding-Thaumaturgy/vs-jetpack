@@ -768,7 +768,7 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         tr: int | None = None,
         thsad: int | tuple[int | None, int | None] | None = None,
-        limit: int | tuple[int | None, int | None] | None = None,
+        limit: float | tuple[float | None, float | None] | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
         planes: Planes = None,
     ) -> vs.VideoNode:
@@ -787,7 +787,7 @@ class MVTools(VSObject):
             thsad: Defines the soft threshold of block sum absolute differences. Blocks with SAD above this threshold
                 have zero weight for averaging (denoising). Blocks with low SAD have highest weight. The remaining
                 weight is taken from pixels of source clip.
-            limit: Maximum allowed change in pixel values.
+            limit: Maximum allowed change in pixel values (8 bits scale).
             thscd: Scene change detection thresholds:
 
                    - First value: SAD threshold for considering a block changed between frames.

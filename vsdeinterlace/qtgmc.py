@@ -89,7 +89,7 @@ class QTGMCArgs:
         [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final]
         """
 
-        limit: int | tuple[int | None, int | None] | None
+        limit: float | tuple[float | None, float | None] | None
         planes: Planes
 
     class Mask(TypedDict, total=False):
