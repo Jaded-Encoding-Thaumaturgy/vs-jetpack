@@ -577,7 +577,6 @@ class QTempGaussMC(VSObject):
         self.basic_bobber = (
             deepcopy(bobber) if isinstance(bobber, Bobber) else Bobber.ensure_obj(bobber, self.__class__)
         )
-        self.basic_bobber.kwargs.update(tff=self.tff, double_rate=self.double_rate)
 
         self.basic_noise_restore = noise_restore
         self.basic_degrain_args = fallback(degrain_args, QTGMCArgs.Degrain())
@@ -631,8 +630,6 @@ class QTempGaussMC(VSObject):
             self._match_bobber = deepcopy(value)
         else:
             self._match_bobber = Bobber.ensure_obj(value, self.__class__)
-
-        self._match_bobber.kwargs.update(tff=self.tff, double_rate=self.double_rate)
 
     def lossless(self, *, mode: LosslessMode = LosslessMode.NONE) -> Self:
         """
@@ -846,7 +843,7 @@ class QTempGaussMC(VSObject):
 
     def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
         if self.input_type != self.InputType.PROGRESSIVE:
-            clip = bobber.deinterlace(clip)
+            clip = bobber.deinterlace(clip, tff=self.tff, double_rate=self.double_rate)
 
         return clip
 
@@ -885,7 +882,7 @@ class QTempGaussMC(VSObject):
         return BlurMatrix.custom(_get_weights(tr), ConvMode.TEMPORAL)([clip, *degrained], func=self._binomial_degrain)
 
     def _apply_prefilter(self) -> None:
-        self.draft = Catrom(tff=self.tff).bob(self.clip) if self.input_type == self.InputType.INTERLACE else self.clip
+        self.draft = Catrom().bob(self.clip, tff=self.tff) if self.input_type == self.InputType.INTERLACE else self.clip
 
         search = self.draft
 
@@ -989,7 +986,7 @@ class QTempGaussMC(VSObject):
                 case self.NoiseDeintMode.WEAVE:
                     self.noise = self.noise.std.SeparateFields(self.tff).std.DoubleWeave(self.tff)
                 case self.NoiseDeintMode.BOB:
-                    self.noise = Catrom(tff=self.tff).bob(self.noise)
+                    self.noise = Catrom().bob(self.noise, tff=self.tff)
                 case self.NoiseDeintMode.GENERATE:
                     noise_source = self.noise.std.SeparateFields(self.tff)
 
