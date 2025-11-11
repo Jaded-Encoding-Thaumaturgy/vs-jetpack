@@ -571,7 +571,7 @@ class QTempGaussMC(VSObject):
 
         Args:
             tr: Temporal radius of the refinement motion compensated binomial smooth.
-            bobber: Bobber to use for refined spatial interpolation. Defaut to the basic bobber.
+            bobber: Bobber to use for refined spatial interpolation. Defaults to the basic bobber.
             mode: Specifies number of refinement steps to perform.
             similarity: Temporal similarity of the error created by smoothing.
             enhance: Sharpening strength prior to source match refinement.
@@ -629,7 +629,11 @@ class QTempGaussMC(VSObject):
 
         Args:
             mode: Specifies the type of sharpening to use.
-            strength: Sharpening radius and strength.
+                Defaults to [SharpMode.UNSHARP][vsdeinterlace.qtgmc.QTempGaussMC.SharpMode.UNSHARP] for
+                    [InputType.PROGRESSIVE][vsdeinterlace.qtgmc.QTempGaussMC.InputType.PROGRESSIVE] or
+                    [SharpMode.UNSHARP_MINMAX][vsdeinterlace.qtgmc.QTempGaussMC.SharpMode.UNSHARP_MINMAX] otherwise.
+            strength: Sharpening radius and strength. Defaults to 1 for
+                [SourceMatchMode.NONE][vsdeinterlace.qtgmc.QTempGaussMC.SourceMatchMode.NONE] or 0 otherwise.
             clamp: Clamp the sharpening strength of
                 [SharpMode.UNSHARP_MINMAX][vsdeinterlace.qtgmc.QTempGaussMC.SharpMode.UNSHARP_MINMAX] to the min/max
                 average plus/minus this.
@@ -691,7 +695,8 @@ class QTempGaussMC(VSObject):
 
         Args:
             mode: Specifies type of limiting & at which stage to perform it.
-            radius: Radius of sharpness limiting.
+            radius: Radius of sharpness limiting. Defaults to 1 for
+                [SourceMatchMode.NONE][vsdeinterlace.qtgmc.QTempGaussMC.SourceMatchMode.NONE] or 0 otherwise.
             clamp: How much undershoot/overshoot to allow.
             comp_args: Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for
                 temporal limiting.
