@@ -435,7 +435,7 @@ class QTempGaussMC(VSObject):
         self.prefilter_tr = tr
         self.prefilter_sc_threshold = sc_threshold
         self.prefilter_postprocess = postprocess
-        self.prefilter_strength = strength
+        self.prefilter_strength: tuple[float, float] | Literal[False] = strength
         self.prefilter_limit = limit
         self.prefilter_range_expansion_args = fallback(range_expansion_args, QTGMCArgs.PrefilterToFullRange())
         self.prefilter_mask_shimmer_args = fallback(mask_shimmer_args, QTGMCArgs.MaskShimmer())
@@ -515,7 +515,7 @@ class QTempGaussMC(VSObject):
         self.denoise_mode = mode
         self.denoise_deint = deint
         self.denoise_mc_denoise = mc_denoise
-        self.denoise_stabilize = stabilize
+        self.denoise_stabilize: tuple[float, float] | Literal[False] = stabilize
         self.denoise_func_comp_args = fallback(func_comp_args, QTGMCArgs.Compensate())
         self.denoise_stabilize_comp_args = fallback(stabilize_comp_args, QTGMCArgs.Compensate())
 
@@ -959,52 +959,54 @@ class QTempGaussMC(VSObject):
 
         self.noise = self.clip.std.MakeDiff(denoised)
 
-        if not no_restore:
-            if self.input_type == self.InputType.INTERLACE:
-                match self.denoise_deint:
-                    case self.NoiseDeintMode.WEAVE:
-                        new_noise = self.noise.std.SeparateFields(self.tff).std.DoubleWeave(self.tff)
-                    case self.NoiseDeintMode.BOB:
-                        new_noise = Catrom().bob(self.noise, tff=self.tff)
-                    case self.NoiseDeintMode.GENERATE:
-                        noise_source = self.noise.std.SeparateFields(self.tff)
+        if no_restore:
+            return
 
-                        noise_max = Morpho.maximum(
-                            Morpho.maximum(noise_source), coords=Coordinates.HORIZONTAL, func=self._apply_denoise
-                        )
-                        noise_min = Morpho.minimum(
-                            Morpho.minimum(noise_source), coords=Coordinates.HORIZONTAL, func=self._apply_denoise
-                        )
+        if self.input_type == self.InputType.INTERLACE:
+            match self.denoise_deint:
+                case self.NoiseDeintMode.WEAVE:
+                    new_noise = self.noise.std.SeparateFields(self.tff).std.DoubleWeave(self.tff)
+                case self.NoiseDeintMode.BOB:
+                    new_noise = Catrom().bob(self.noise, tff=self.tff)
+                case self.NoiseDeintMode.GENERATE:
+                    noise_source = self.noise.std.SeparateFields(self.tff)
 
-                        gen_noise = Grainer.GAUSS(
-                            noise_source, 2048, protect_edges=False, protect_neutral_chroma=False, neutral_out=True
-                        )
-                        gen_noise = norm_expr(
-                            [noise_max, noise_min, gen_noise], "x y - z * range_size / y +", func=self._apply_denoise
-                        )
-                        new_noise = reweave(noise_source, gen_noise, self.tff, self._apply_denoise)
+                    noise_max = Morpho.maximum(
+                        Morpho.maximum(noise_source), coords=Coordinates.HORIZONTAL, func=self._apply_denoise
+                    )
+                    noise_min = Morpho.minimum(
+                        Morpho.minimum(noise_source), coords=Coordinates.HORIZONTAL, func=self._apply_denoise
+                    )
 
-                self.noise = FieldBased.PROGRESSIVE.apply(new_noise)
+                    gen_noise = Grainer.GAUSS(
+                        noise_source, 2048, protect_edges=False, protect_neutral_chroma=False, neutral_out=True
+                    )
+                    gen_noise = norm_expr(
+                        [noise_max, noise_min, gen_noise], "x y - z * range_size / y +", func=self._apply_denoise
+                    )
+                    new_noise = reweave(noise_source, gen_noise, self.tff, self._apply_denoise)
 
-            if self.denoise_stabilize:
-                weight1, weight2 = self.denoise_stabilize
+            self.noise = FieldBased.PROGRESSIVE.apply(new_noise)
 
-                noise_comp, _ = self.mv.compensate(
-                    self.noise,
-                    direction=MVDirection.BACKWARD,
-                    tr=1,
-                    thscd=self.analyze_thscd,
-                    interleave=False,
-                    **self.denoise_stabilize_comp_args,
-                )
+        if self.denoise_stabilize:
+            weight1, weight2 = self.denoise_stabilize
 
-                self.noise = norm_expr(
-                    [self.noise, *noise_comp],
-                    "x neutral - abs y neutral - abs > x y ? {weight1} * x y + {weight2} * +",
-                    weight1=weight1,
-                    weight2=weight2,
-                    func=self._apply_denoise,
-                )
+            noise_comp, _ = self.mv.compensate(
+                self.noise,
+                direction=MVDirection.BACKWARD,
+                tr=1,
+                thscd=self.analyze_thscd,
+                interleave=False,
+                **self.denoise_stabilize_comp_args,
+            )
+
+            self.noise = norm_expr(
+                [self.noise, *noise_comp],
+                "x neutral - abs y neutral - abs > x y ? {weight1} * x y + {weight2} * +",
+                weight1=weight1,
+                weight2=weight2,
+                func=self._apply_denoise,
+            )
 
     def _apply_basic(self) -> None:
         self.bobbed = self._interpolate(self.denoise_output, self.basic_bobber)
@@ -1113,6 +1115,8 @@ class QTempGaussMC(VSObject):
         return FieldBased.PROGRESSIVE.apply(woven)
 
     def _apply_sharpen(self, clip: vs.VideoNode) -> vs.VideoNode:
+        resharp = clip
+
         if self.sharpen_strength:
             if self.sharpen_mode == self.SharpenMode.UNSHARP:
                 resharp = unsharpen(clip, self.sharpen_strength, BlurMatrix.BINOMIAL(), func=self._apply_sharpen)
