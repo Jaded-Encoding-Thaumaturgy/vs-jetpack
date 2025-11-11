@@ -60,7 +60,7 @@ class RescaleBase(VSObjectABC):
         /,
         kernel: ComplexKernelLike,
         upscaler: ScalerLike = ArtCNN,
-        downscaler: ScalerLike = Hermite(linear=True),
+        downscaler: ScalerLike = Hermite(linear=True),  # type: ignore[call-arg]
         field_based: FieldBasedLike | bool | None = None,
         border_handling: int = BorderHandling.MIRROR,
         **kwargs: Any,
@@ -277,7 +277,7 @@ class Rescale(RescaleBase):
         height: int | float,  # noqa: PYI041
         kernel: ComplexKernelLike,
         upscaler: ScalerLike = ArtCNN,
-        downscaler: ScalerLike = Hermite(linear=True),
+        downscaler: ScalerLike = Hermite(linear=True),  # type: ignore[call-arg]
         width: int | float | None = None,  # noqa: PYI041
         base_height: int | None = None,
         base_width: int | None = None,

@@ -185,6 +185,7 @@ def _resolve_video_spec_args(clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any
 
 
 # Using the new https://peps.python.org/pep-0728/ available in python 3.15
+# https://github.com/python/mypy/issues/18176
 class ResolvableKwargs(TypedDictEx, total=False, extra_items=Any):  # type: ignore[call-arg]
     """
     Defines a set of resolvable keyword arguments for use with [Resampler][vskernels.Resampler] and its subclasses.

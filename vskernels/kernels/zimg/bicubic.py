@@ -185,7 +185,7 @@ class AdobeBicubicSharper(Bicubic):
         Args:
             **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
-        super().__init__(b=0, c=1, blur=1.05, **kwargs)
+        super().__init__(b=0, c=1, blur=1.05, **kwargs)  # type: ignore[call-arg]
 
 
 class AdobeBicubicSmoother(Bicubic):
@@ -200,7 +200,7 @@ class AdobeBicubicSmoother(Bicubic):
         Args:
             **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
-        super().__init__(b=0, c=5 / 8, blur=1.15, **kwargs)
+        super().__init__(b=0, c=5 / 8, blur=1.15, **kwargs)  # type: ignore[call-arg]
 
 
 class BicubicSharp(Bicubic):
