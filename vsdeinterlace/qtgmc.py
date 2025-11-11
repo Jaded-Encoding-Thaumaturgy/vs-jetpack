@@ -67,8 +67,6 @@ class QTGMCArgs:
         """How much to deflate then reflate to remove thin areas."""
         over_dilation: int
         """Extra inflation to ensure areas to restore back are fully caught."""
-        threshold: float
-        """Threshold of change to perform masking."""
 
     class Compensate(TypedDict, total=False):
         """
@@ -774,7 +772,6 @@ class QTempGaussMC(VSObject):
         src: vs.VideoNode,
         erosion_distance: int = 4,
         over_dilation: int = 0,
-        threshold: float = 0,
     ) -> vs.VideoNode:
         """
         Compare processed clip with reference clip,
@@ -785,7 +782,6 @@ class QTempGaussMC(VSObject):
             src: Unprocessed clip to restore from.
             erosion_distance: How much to deflate then reflate to remove thin areas.
             over_dilation: Extra inflation to ensure areas to restore back are fully caught.
-            threshold: Threshold of change to perform masking.
         """
         if not erosion_distance:
             return flt
@@ -817,10 +813,7 @@ class QTempGaussMC(VSObject):
             opening = Morpho.inflate(opening, iterations=od_iter2, func=self._mask_shimmer)
 
         return norm_expr(
-            [flt, diff, closing, opening],
-            "x y neutral - abs {thr} > y z neutral min a neutral max clip y ? neutral - +",
-            thr=scale_delta(threshold, 8, flt),
-            func=self._mask_shimmer,
+            [flt, diff, closing, opening], "x y z neutral min a neutral max clip neutral - +", func=self._mask_shimmer
         )
 
     def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
