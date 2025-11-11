@@ -717,7 +717,7 @@ class QTempGaussMC(VSObject):
         self.limit_mode = mode
         self.limit_radius = radius
         self.limit_clamp = clamp
-        self.limit_comp_args = fallback(comp_args, {})
+        self.limit_comp_args = fallback(comp_args, QArgs.Comp())
 
         return self
 
