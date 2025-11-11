@@ -760,7 +760,7 @@ class QTempGaussMC(VSObject):
         return BlurMatrix.custom(_get_weights(tr), ConvMode.TEMPORAL)([clip, *degrained], func=self._binomial_degrain)
 
     def _apply_prefilter(self) -> None:
-        self.draft = Catrom(tff=self.tff).bob(self.clip) if self.input_type == self.InputType.INTERLACE else self.clip
+        self.draft = Catrom(tff=self.tff).bob(self.clip) if self.input_type == self.InputType.INTERLACE else self.clip  # type: ignore[call-arg]
 
         search = self.draft
 
@@ -864,7 +864,7 @@ class QTempGaussMC(VSObject):
                 case self.NoiseDeintMode.WEAVE:
                     self.noise = self.noise.std.SeparateFields(self.tff).std.DoubleWeave(self.tff)
                 case self.NoiseDeintMode.BOB:
-                    self.noise = Catrom(tff=self.tff).bob(self.noise)
+                    self.noise = Catrom(tff=self.tff).bob(self.noise)  # type: ignore[call-arg]
                 case self.NoiseDeintMode.GENERATE:
                     noise_source = self.noise.std.SeparateFields(self.tff)
 
