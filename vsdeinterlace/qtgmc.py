@@ -632,7 +632,7 @@ class QTempGaussMC(VSObject):
                 Defaults to [SharpMode.UNSHARP][vsdeinterlace.qtgmc.QTempGaussMC.SharpMode.UNSHARP] for
                     [InputType.PROGRESSIVE][vsdeinterlace.qtgmc.QTempGaussMC.InputType.PROGRESSIVE] or
                     [SharpMode.UNSHARP_MINMAX][vsdeinterlace.qtgmc.QTempGaussMC.SharpMode.UNSHARP_MINMAX] otherwise.
-            strength: Sharpening radius and strength. Defaults to 1 for
+            strength: Sharpening strength. Defaults to 1 for
                 [SourceMatchMode.NONE][vsdeinterlace.qtgmc.QTempGaussMC.SourceMatchMode.NONE] or 0 otherwise.
             clamp: Clamp the sharpening strength of
                 [SharpMode.UNSHARP_MINMAX][vsdeinterlace.qtgmc.QTempGaussMC.SharpMode.UNSHARP_MINMAX] to the min/max
