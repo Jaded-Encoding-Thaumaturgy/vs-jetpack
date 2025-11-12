@@ -756,14 +756,20 @@ class EEDI3(SuperSampler):
 
             sclip = core.std.Interleave([sclip, sclip])
 
-        if callable(mclip):
+        if isinstance(mclip, VSFunctionNoArgs):
             mclip = mclip(clip)
 
         return super().antialias(clip, direction, sclip=sclip, mclip=mclip, **kwargs)
 
     def transpose(
-        self, clip: vs.VideoNode, *, sclip: vs.VideoNode | None = None, mclip: vs.VideoNode | None = None, **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        *,
+        sclip: vs.VideoNode | None = None,
+        mclip: vs.VideoNode | None = None,
+        **kwargs: Any,
     ) -> tuple[vs.VideoNode, Mapping[str, vs.VideoNode | None]]:
+        # At this point, sclip and mclip can only be a VideoNode or None
         if isinstance(sclip, vs.VideoNode):
             sclip = sclip.std.Transpose()
 
