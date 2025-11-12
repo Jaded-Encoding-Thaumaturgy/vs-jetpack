@@ -41,6 +41,10 @@ dev = [
     "scipy-stubs>=1.16.0.0",
     "twine>=6.1.0",
     "types-psutil>=7.0.0.20250801",
+    # Needed for the folder "scripts"
+    "hatchling>=1.27.0",
+    "mkdocs-gen-files==0.5.0",
+    "vstransitions==0.1.4",
 ]
 doc = [
     "griffe-inherited-docstrings==1.1.2",
@@ -129,7 +133,6 @@ pythonpath = "."
 [tool.mypy]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
 
-exclude = ["scripts/"]
 exclude_gitignore = true
 
 # Flags changed by --strict
@@ -150,7 +153,6 @@ color_output = true
 error_summary = true
 
 [tool.ruff]
-extend-exclude = ["scripts"]
 line-length = 120
 
 [tool.ruff.format]
