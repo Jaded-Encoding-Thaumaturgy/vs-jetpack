@@ -5,7 +5,7 @@ from dataclasses import dataclass, replace
 from enum import IntFlag, auto
 from typing import TYPE_CHECKING, Any, Self, Sequence
 
-from jetpytools import MISSING, copy_signature, fallback, normalize_seq
+from jetpytools import MISSING, CustomNotImplementedError, CustomValueError, copy_signature, fallback, normalize_seq
 from typing_extensions import TypeVar
 
 from vskernels import (
@@ -659,10 +659,12 @@ class EEDI3(SuperSampler):
     - vthresh[2]: Controls the weighting of the interpolation direction.
     """
 
-    sclip: vs.VideoNode | VSFunctionNoArgs | None = None
+    sclip: vs.VideoNode | Deinterlacer | VSFunctionNoArgs | None = None
     """
     Provides additional control over the interpolation by using a reference clip.
     If set to None, vertical cubic interpolation is used as a fallback method instead.
+
+    Passing a Deinterlacer object is only supported for pure deinterlacing.
     """
 
     mclip: vs.VideoNode | VSFunctionNoArgs | None = None
@@ -703,6 +705,9 @@ class EEDI3(SuperSampler):
     ) -> vs.VideoNode:
         kwargs = self._set_sclip_mclip(kwargs)
 
+        if isinstance(self.sclip, Deinterlacer):
+            raise CustomValueError("sclip must be a callable or VideoNode", self.antialias)
+
         if self.sclip and self.double_rate:
             if callable(self.sclip):
                 self.sclip = self.sclip(clip)
@@ -728,7 +733,12 @@ class EEDI3(SuperSampler):
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any,
     ) -> vs.VideoNode:
-        return super().scale(clip, width, height, shift, **self._set_sclip_mclip(kwargs))
+        kwargs = self._set_sclip_mclip(kwargs)
+
+        if self.sclip or self.mclip:
+            raise CustomNotImplementedError("sclip and mclip should be None.", self.scale)
+
+        return super().scale(clip, width, height, shift, **kwargs)
 
     @property
     def _deinterlacer_function(self) -> VSFunctionAllArgs:
@@ -739,11 +749,14 @@ class EEDI3(SuperSampler):
 
         kwargs = self.get_deint_args(**kwargs)
 
+        if isinstance(self.sclip, Deinterlacer):
+            kwargs["sclip"] = self.sclip._interpolate(clip, tff, double_rate, dh)
+
         if callable(self.sclip):
-            kwargs.update(sclip=self.sclip(clip))
+            kwargs["sclip"] = self.sclip(clip)
 
         if callable(self.mclip):
-            kwargs.update(mclip=self.mclip(clip))
+            kwargs["mclip"] = self.mclip(clip)
 
         return self._deinterlacer_function(clip, field, dh, **kwargs)
 
