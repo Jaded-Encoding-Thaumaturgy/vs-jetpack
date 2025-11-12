@@ -1829,6 +1829,7 @@ dev = [
     { name = "scipy-stubs" },
     { name = "twine" },
     { name = "types-psutil" },
+    { name = "vstransitions" },
 ]
 doc = [
     { name = "black" },
@@ -1864,6 +1865,7 @@ dev = [
     { name = "scipy-stubs", specifier = ">=1.16.0.0" },
     { name = "twine", specifier = ">=6.1.0" },
     { name = "types-psutil", specifier = ">=7.0.0.20250801" },
+    { name = "vstransitions", specifier = "==0.1.4" },
 ]
 doc = [
     { name = "black", specifier = "==25.9.0" },

@@ -44,6 +44,7 @@ dev = [
     # Needed for the folder "scripts"
     "hatchling>=1.27.0",
     "mkdocs-gen-files==0.5.0",
+    "vstransitions==0.1.4",
 ]
 doc = [
     "griffe-inherited-docstrings==1.1.2",
