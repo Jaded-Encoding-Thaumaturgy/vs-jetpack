@@ -3,9 +3,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
-from typing import TYPE_CHECKING, Any, Self, Sequence
+from typing import TYPE_CHECKING, Any, Mapping, Self, Sequence
 
-from jetpytools import MISSING, CustomNotImplementedError, CustomValueError, copy_signature, fallback, normalize_seq
+from jetpytools import CustomNotImplementedError, CustomValueError, copy_signature, fallback, normalize_seq
 from typing_extensions import TypeVar
 
 from vskernels import (
@@ -209,10 +209,11 @@ class AntiAliaser(Deinterlacer, ABC):
         """
         tff = fallback(kwargs.pop("tff", self.tff), True)
 
-        for y in sorted((aa_dir for aa_dir in self.AADirection), key=lambda x: x.value, reverse=self.transpose_first):
+        for y in sorted(self.AADirection, key=lambda x: x.value, reverse=self.transpose_first):
             if direction in (y, self.AADirection.BOTH):
                 if y == self.AADirection.HORIZONTAL:
-                    clip = self.transpose(clip)
+                    clip, tclips = self.transpose(clip, **kwargs)
+                    kwargs |= tclips
 
                 clip = self._interpolate(clip, tff, self.double_rate, False, **kwargs)
 
@@ -220,11 +221,12 @@ class AntiAliaser(Deinterlacer, ABC):
                     clip = core.std.Merge(clip[::2], clip[1::2])
 
                 if y == self.AADirection.HORIZONTAL:
-                    clip = self.transpose(clip)
+                    clip, tclips = self.transpose(clip, **kwargs)
+                    kwargs |= tclips
 
         return clip
 
-    def transpose(self, clip: vs.VideoNode) -> vs.VideoNode:
+    def transpose(self, clip: vs.VideoNode, **kwargs: Any) -> tuple[vs.VideoNode, Mapping[str, vs.VideoNode | None]]:
         """
         Transpose the input clip by swapping its horizontal and vertical axes.
 
@@ -234,7 +236,7 @@ class AntiAliaser(Deinterlacer, ABC):
         Returns:
             The transposed clip.
         """
-        return clip.std.Transpose()
+        return clip.std.Transpose(), {}
 
 
 @dataclass(kw_only=True)
@@ -301,7 +303,7 @@ class SuperSampler(Scaler, AntiAliaser, ABC):
             is_width = (not x and self.transpose_first) or (not self.transpose_first and x)
 
             if is_width:
-                clip = self.transpose(clip)
+                clip, _ = self.transpose(clip)
 
             while clip.height < dim:
                 delta = max(nshift[x], key=lambda y: abs(y))
@@ -317,7 +319,7 @@ class SuperSampler(Scaler, AntiAliaser, ABC):
                 clip = self._interpolate(clip, tff, False, True, **kwargs)
 
             if is_width:
-                clip = self.transpose(clip)
+                clip, _ = self.transpose(clip)
 
         if not self.transpose_first:
             nshift.reverse()
@@ -680,9 +682,47 @@ class EEDI3(SuperSampler):
     def kernel_radius(self) -> int:
         return self.mdis
 
+    def deinterlace(
+        self,
+        clip: vs.VideoNode,
+        *,
+        tff: FieldBasedLike | bool | None = None,
+        double_rate: bool | None = None,
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        kwargs = self.get_deint_args(**kwargs)
+
+        sclip, mclip = kwargs.pop("sclip"), kwargs.pop("mclip")
+
+        if isinstance(sclip, Deinterlacer):
+            sclip = sclip.deinterlace(clip, tff=tff, double_rate=double_rate)
+
+        if callable(sclip):
+            sclip = sclip(clip)
+
+        if callable(mclip):
+            mclip = mclip(clip)
+
+        return super().deinterlace(clip, tff=tff, double_rate=double_rate, sclip=sclip, mclip=mclip, **kwargs)
+
+    def bob(self, clip: vs.VideoNode, *, tff: FieldBasedLike | bool | None = None, **kwargs: Any) -> vs.VideoNode:
+        kwargs = self.get_deint_args(**kwargs)
+
+        sclip, mclip = kwargs.pop("sclip"), kwargs.pop("mclip")
+
+        if isinstance(sclip, Deinterlacer):
+            sclip = sclip.bob(clip, tff=tff)
+
+        if callable(sclip):
+            sclip = sclip(clip)
+
+        if callable(mclip):
+            mclip = mclip(clip)
+
+        return super().bob(clip, tff=tff, sclip=sclip, mclip=mclip, **kwargs)
+
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
-        if self.vthresh is None:
-            self.vthresh = (None, None, None)
+        vthresh = (None, None, None) if self.vthresh is None else self.vthresh
 
         return {
             "alpha": self.alpha,
@@ -693,9 +733,9 @@ class EEDI3(SuperSampler):
             "ucubic": self.ucubic,
             "cost3": self.cost3,
             "vcheck": self.vcheck,
-            "vthresh0": self.vthresh[0],
-            "vthresh1": self.vthresh[1],
-            "vthresh2": self.vthresh[2],
+            "vthresh0": vthresh[0],
+            "vthresh1": vthresh[1],
+            "vthresh2": vthresh[2],
             "sclip": self.sclip,
             "mclip": self.mclip,
         } | kwargs
@@ -703,27 +743,34 @@ class EEDI3(SuperSampler):
     def antialias(
         self, clip: vs.VideoNode, direction: AntiAliaser.AADirection = AntiAliaser.AADirection.BOTH, **kwargs: Any
     ) -> vs.VideoNode:
-        kwargs = self._set_sclip_mclip(kwargs)
+        kwargs = self.get_deint_args(**kwargs)
 
-        if isinstance(self.sclip, Deinterlacer):
+        sclip, mclip = kwargs.pop("sclip"), kwargs.pop("mclip")
+
+        if isinstance(sclip, Deinterlacer):
             raise CustomValueError("sclip must be a callable or VideoNode", self.antialias)
 
-        if self.sclip and self.double_rate:
-            if callable(self.sclip):
-                self.sclip = self.sclip(clip)
+        if sclip and self.double_rate:
+            if isinstance(sclip, VSFunctionNoArgs):
+                sclip = sclip(clip)
 
-            self.sclip = core.std.Interleave([self.sclip, self.sclip])
+            sclip = core.std.Interleave([sclip, sclip])
 
-        return super().antialias(clip, direction, **kwargs)
+        if callable(mclip):
+            mclip = mclip(clip)
 
-    def transpose(self, clip: vs.VideoNode) -> vs.VideoNode:
-        if isinstance(self.sclip, vs.VideoNode):
-            self.sclip = self.sclip.std.Transpose()
+        return super().antialias(clip, direction, sclip=sclip, mclip=mclip, **kwargs)
 
-        if isinstance(self.mclip, vs.VideoNode):
-            self.mclip = self.mclip.std.Transpose()
+    def transpose(
+        self, clip: vs.VideoNode, *, sclip: vs.VideoNode | None = None, mclip: vs.VideoNode | None = None, **kwargs: Any
+    ) -> tuple[vs.VideoNode, Mapping[str, vs.VideoNode | None]]:
+        if isinstance(sclip, vs.VideoNode):
+            sclip = sclip.std.Transpose()
 
-        return super().transpose(clip)
+        if isinstance(mclip, vs.VideoNode):
+            mclip = mclip.std.Transpose()
+
+        return clip.std.Transpose(), kwargs | {"sclip": sclip, "mclip": mclip}
 
     def scale(
         self,
@@ -733,10 +780,10 @@ class EEDI3(SuperSampler):
         shift: tuple[TopShift, LeftShift] = (0, 0),
         **kwargs: Any,
     ) -> vs.VideoNode:
-        kwargs = self._set_sclip_mclip(kwargs)
+        kwargs = self.get_deint_args(**kwargs)
 
-        if self.sclip or self.mclip:
-            raise CustomNotImplementedError("sclip and mclip should be None.", self.scale)
+        if kwargs["sclip"] or kwargs["mclip"]:
+            raise CustomNotImplementedError("sclip and mclip are currently not supported.", self.scale)
 
         return super().scale(clip, width, height, shift, **kwargs)
 
@@ -745,31 +792,7 @@ class EEDI3(SuperSampler):
         return core.lazy.eedi3m.EEDI3
 
     def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
-        field = tff + double_rate * 2
-
-        kwargs = self.get_deint_args(**kwargs)
-
-        if isinstance(self.sclip, Deinterlacer):
-            kwargs["sclip"] = self.sclip._interpolate(clip, tff, double_rate, dh)
-
-        if callable(self.sclip):
-            kwargs["sclip"] = self.sclip(clip)
-
-        if callable(self.mclip):
-            kwargs["mclip"] = self.mclip(clip)
-
-        return self._deinterlacer_function(clip, field, dh, **kwargs)
-
-    def _set_sclip_mclip(self, kwargs: dict[str, Any]) -> dict[str, Any]:
-        sclip, mclip = kwargs.pop("sclip", MISSING), kwargs.pop("mclip", MISSING)
-
-        if sclip is not MISSING:
-            self.sclip = sclip
-
-        if mclip is not MISSING:
-            self.mclip = mclip
-
-        return kwargs
+        return self._deinterlacer_function(clip, tff + double_rate * 2, dh, **kwargs)
 
 
 @dataclass
