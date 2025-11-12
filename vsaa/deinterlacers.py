@@ -832,11 +832,13 @@ class BWDIF(Deinterlacer):
     Motion adaptive deinterlacing based on yadif with the use of w3fdif and cubic interpolation algorithms.
     """
 
-    edeint: vs.VideoNode | VSFunctionNoArgs | None = None
+    edeint: vs.VideoNode | Deinterlacer | VSFunctionNoArgs | None = None
     """
     Allows the specification of an external clip from which to take spatial predictions
     instead of having Bwdif use cubic interpolation.
+
     This clip must be the same width, height, and colorspace as the input clip.
+
     If using same rate output, this clip should have the same number of frames as the input.
     If using double rate output, this clip should have twice as many frames as the input.
     """
@@ -853,10 +855,17 @@ class BWDIF(Deinterlacer):
     def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = tff + double_rate * 2
 
-        if callable(self.edeint):
-            kwargs.update(edeint=self.edeint(clip))
+        kwargs = self.get_deint_args(**kwargs)
 
-        return self._deinterlacer_function(clip, field, **self.get_deint_args(**kwargs))
+        edeint = kwargs.pop("edeint")
+
+        if isinstance(edeint, Deinterlacer):
+            kwargs["edeint"] = edeint._interpolate(clip, tff, double_rate, False)
+
+        if callable(edeint):
+            kwargs["edeint"] = edeint(clip)
+
+        return self._deinterlacer_function(clip, field, **kwargs)
 
 
 if TYPE_CHECKING:
