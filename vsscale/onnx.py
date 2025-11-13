@@ -28,10 +28,7 @@ from typing_extensions import deprecated
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vstools import (
-    ColorRange,
-    DitherType,
     Matrix,
-    MatrixLike,
     OutdatedPluginError,
     ProcessVariableResClip,
     check_variable_resolution,
@@ -43,6 +40,7 @@ from vstools import (
     get_y,
     join,
     limiter,
+    normalize_planes,
     padder,
     vs,
 )
@@ -247,7 +245,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             overlap: The size of overlap between tiles.
             multiple: Multiple of the tiles.
             max_instances: Maximum instances to spawn when scaling a variable resolution clip.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
@@ -419,17 +417,6 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         """
         Handles postprocessing of the model's output after inference.
         """
-        debug(f"{self}.post: Before pp; Clip format is {clip.format!r}")
-
-        clip = depth(
-            clip,
-            input_clip,
-            dither_type=DitherType.ORDERED if 0 in {clip.width, clip.height} else DitherType.AUTO,
-            **kwargs,
-        )
-
-        debug(f"{self}.post: After pp; Clip format is {clip.format!r}")
-
         return clip
 
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
@@ -485,17 +472,21 @@ class BaseOnnxScalerRGB(BaseOnnxScaler):
         return limiter(clip, func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        if get_video_format(clip) != get_video_format(input_clip):
-            kwargs = (
-                dict[str, Any](
-                    format=input_clip,
-                    matrix=Matrix.from_video(input_clip, func=self.__class__),
-                    range=ColorRange.from_video(input_clip, func=self.__class__),
-                    dither_type=DitherType.ORDERED,
-                )
-                | kwargs
-            )
-            clip = self.kernel.resample(clip, **kwargs)
+        debug(f"{self}.post: Before pp; Clip format is {clip.format!r}")
+
+        # Basically everything except color_family
+        out_fmt = input_clip.format.replace(
+            sample_type=clip.format.sample_type,
+            bits_per_sample=clip.format.bits_per_sample,
+            subsampling_w=0,
+            subsampling_h=0,
+        )
+
+        # Resamples only for color_family changes e.g. RGB -> YUV
+        if clip.format != out_fmt:
+            clip = self.kernel.resample(clip, out_fmt, input_clip, range=input_clip, **kwargs)
+
+        debug(f"{self}.post: After pp; Clip format is {clip.format!r}")
 
         return clip
 
@@ -544,7 +535,7 @@ class BaseArtCNN(BaseOnnxScaler):
             tilesize: The size of each tile when splitting the image (if tiles are enabled).
             overlap: The size of overlap between tiles.
             max_instances: Maximum instances to spawn when scaling a variable resolution clip.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
@@ -567,8 +558,8 @@ class BaseArtCNN(BaseOnnxScaler):
 
 
 class BaseArtCNNLuma(BaseArtCNN):
-    def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        return super().preprocess_clip(get_y(clip), **kwargs)
+    def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
+        return super().inference(get_y(clip), **kwargs)
 
     def _finish_scale(
         self,
@@ -577,31 +568,15 @@ class BaseArtCNNLuma(BaseArtCNN):
         width: int,
         height: int,
         shift: tuple[float, float] = (0, 0),
-        matrix: MatrixLike | None = None,
         copy_props: bool = False,
     ) -> vs.VideoNode:
-        # Changes compared to BaseGenericScaler are:
-        # - extract luma if input clip is luma only is removed  since this is a no op here
-        # - Chroma planes are scaled accordingly with the artcnn'd luma,
-        #   avoiding getting a luma plane when passing a YUV clip.
-
-        if (clip.width, clip.height) != (width, height):
-            clip = self.scaler.scale(clip, width, height)
-
         if input_clip.format.color_family == vs.YUV:
             scaled_chroma = self.scaler.scale(input_clip, clip.width, clip.height)
             clip = join(clip, scaled_chroma, prop_src=scaled_chroma)
 
-        if shift != (0, 0):
-            clip = self.shifter.shift(clip, shift)
+            debug(f"{self}: Chroma planes has been scaled accordingly")
 
-        if clip.format.id != input_clip.format.id:
-            clip = self.kernel.resample(clip, input_clip, matrix)
-
-        if copy_props:
-            return vs.core.std.CopyFrameProps(clip, input_clip)
-
-        return clip
+        return super()._finish_scale(clip, input_clip, width, height, shift, copy_props)
 
 
 class BaseArtCNNChroma(BaseArtCNN):
@@ -645,30 +620,6 @@ class BaseArtCNNChroma(BaseArtCNN):
         debug(f"{self}: Inferenced clip: {v.format!r}")
 
         return core.std.ShufflePlanes([clip, u, v], [0, 0, 0], vs.YUV, clip)
-
-    def _finish_scale(
-        self,
-        clip: vs.VideoNode,
-        input_clip: vs.VideoNode,
-        width: int,
-        height: int,
-        shift: tuple[float, float] = (0, 0),
-        matrix: MatrixLike | None = None,
-        copy_props: bool = False,
-    ) -> vs.VideoNode:
-        if (clip.width, clip.height) != (width, height):
-            clip = self.scaler.scale(clip, width, height)
-
-        if shift != (0, 0):
-            clip = self.shifter.shift(clip, shift)
-
-        if clip.format.id != input_clip.format.replace(subsampling_w=0, subsampling_h=0).id:
-            clip = self.kernel.resample(clip, input_clip, matrix)
-
-        if copy_props:
-            return vs.core.std.CopyFrameProps(clip, input_clip)
-
-        return clip
 
 
 class ArtCNN(BaseArtCNNLuma):
@@ -1005,7 +956,7 @@ class BaseWaifu2x(BaseOnnxScaler):
             tilesize: The size of each tile when splitting the image (if tiles are enabled).
             overlap: The size of overlap between tiles.
             max_instances: Maximum instances to spawn when scaling a variable resolution clip.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
@@ -1106,7 +1057,7 @@ class _Waifu2xCunet(BaseWaifu2x, BaseOnnxScalerRGB):
         tint_fix = norm_expr(
             clip,
             "x 0.5 255 / + 0 1 clamp",
-            planes=0 if get_video_format(input_clip).color_family is vs.GRAY else None,
+            normalize_planes(input_clip, None),
             func="Waifu2x." + self.__class__.__name__,
         )
         return super().postprocess_clip(tint_fix, input_clip, **kwargs)
@@ -1283,7 +1234,7 @@ type _DPIRGrayModel = int
 type _DPIRColorModel = int
 
 
-class BaseDPIR(BaseOnnxScaler):
+class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
     _model: ClassVar[tuple[_DPIRGrayModel, _DPIRColorModel]]
     _static_kernel_radius = 8
 
@@ -1312,7 +1263,7 @@ class BaseDPIR(BaseOnnxScaler):
                 model's behavior may vary when they are used.
             tilesize: The size of each tile when splitting the image (if tiles are enabled).
             overlap: The size of overlap between tiles.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
@@ -1354,26 +1305,9 @@ class BaseDPIR(BaseOnnxScaler):
 
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         if get_color_family(clip) == vs.GRAY:
-            return super().preprocess_clip(clip, **kwargs)
+            return BaseOnnxScaler.preprocess_clip(self, clip, **kwargs)
 
-        clip = self.kernel.resample(clip, self._pick_precision(vs.RGBH, vs.RGBS), Matrix.RGB, **kwargs)
-
-        return limiter(clip, func=self.__class__)
-
-    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        if get_video_format(clip) != get_video_format(input_clip):
-            kwargs = (
-                dict[str, Any](
-                    format=input_clip,
-                    matrix=Matrix.from_video(input_clip, func=self.__class__),
-                    range=ColorRange.from_video(input_clip, func=self.__class__),
-                    dither_type=DitherType.ORDERED,
-                )
-                | kwargs
-            )
-            clip = self.kernel.resample(clip, **kwargs)
-
-        return clip
+        return BaseOnnxScalerRGB.preprocess_clip(self, clip, **kwargs)
 
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         from vsmlrt import DPIRModel, inference, models_path
