@@ -37,7 +37,7 @@ type RawNodeIterable = vs.RawNode | Iterable[RawNodeIterable]
 VideoNodeIterableT = VideoNodeIterable
 
 
-VideoFormatLike = int
+VideoFormatLike = vs.PresetVideoFormat | vs.VideoFormat
 """
 Types representing a clear VideoFormat.
 """
