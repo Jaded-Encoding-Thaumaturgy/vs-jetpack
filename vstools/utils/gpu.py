@@ -1,5 +1,3 @@
-from subprocess import run
-
 __all__ = ["get_nvidia_version", "is_gpu_available"]
 
 
@@ -11,6 +9,7 @@ def get_nvidia_version() -> tuple[int, int] | None:
     """
     Check if nvidia drivers are installed and if available return the version.
     """
+    from subprocess import run
 
     try:
         smi = run(["nvidia-smi", "-q"], capture_output=True)
@@ -27,6 +26,7 @@ def is_gpu_available() -> bool:
     """
     Check if any GPU is available.
     """
+    from subprocess import run
 
     try:
         smi = run(["nvidia-smi"], capture_output=True, text=True)

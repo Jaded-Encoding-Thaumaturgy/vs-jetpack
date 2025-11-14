@@ -3,10 +3,6 @@ from __future__ import annotations
 from functools import cache
 from io import TextIOWrapper
 from itertools import pairwise
-from json import load as json_load
-from shutil import which
-from subprocess import PIPE, Popen
-from tempfile import NamedTemporaryFile
 from typing import Any, Self, TypedDict
 from warnings import warn
 
@@ -76,6 +72,10 @@ class VideoPackets(list[int]):
         Returns:
             A VideoPackets object containing the packet sizes.
         """
+        from json import load as json_load
+        from shutil import which
+        from subprocess import PIPE, Popen
+        from tempfile import NamedTemporaryFile
 
         func = func or cls.from_video
 

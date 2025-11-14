@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 from fractions import Fraction
-from json import JSONDecoder
 from pathlib import Path
-from shutil import which
-from subprocess import PIPE, run
-from typing import Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from jetpytools import CustomIndexError, CustomRuntimeError, FuncExcept, check_perms, inject_self
 
@@ -125,9 +122,15 @@ class FFProbeAudioStream(FFProbeStream):
 
 
 class FFProbe:
+    if TYPE_CHECKING:
+        from json import JSONDecoder
+
     json_decoder: JSONDecoder
 
     def __init__(self, *, func: FuncExcept | None = None, bin_path: str | Path = "ffprobe") -> None:
+        from json import JSONDecoder
+        from shutil import which
+
         self.bin_path = Path(bin_path)
 
         if not which(str(self.bin_path)):
@@ -165,6 +168,8 @@ class FFProbe:
         index: int | None = 0,
         func: FuncExcept | None = None,
     ) -> FFProbeStream | list[FFProbeStream] | None:
+        from subprocess import PIPE, run
+
         check_perms(filename, "r", func=func)
 
         if index is not None and index < 0:
