@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import re
 from abc import abstractmethod
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
 from pathlib import Path
-from typing import Any, ClassVar, Iterable, Literal, NamedTuple, Self, cast, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Literal, NamedTuple, Self, cast, overload
 
 from jetpytools import (
     CustomValueError,
@@ -16,6 +15,7 @@ from jetpytools import (
     Sentinel,
     SPath,
     check_perms,
+    classproperty,
     fallback,
     inject_self,
 )
@@ -645,20 +645,38 @@ class LWIndex:
     keyframes: Keyframes
 
     class Regex:
-        frame_first = re.compile(
-            r"Index=(?P<Index>-?[0-9]+),POS=(?P<POS>-?[0-9]+),PTS=(?P<PTS>-?[0-9]+),"
-            r"DTS=(?P<DTS>-?[0-9]+),EDI=(?P<EDI>-?[0-9]+)"
-        )
+        if TYPE_CHECKING:
+            from re import Pattern
 
-        frame_second = re.compile(
-            r"Key=(?P<Key>-?[0-9]+),Pic=(?P<Pic>-?[0-9]+),POC=(?P<POC>-?[0-9]+),"
-            r"Repeat=(?P<Repeat>-?[0-9]+),Field=(?P<Field>-?[0-9]+)"
-        )
+        @classproperty
+        @classmethod
+        def frame_first(cls) -> Pattern[str]:
+            import re
 
-        streaminfo = re.compile(
-            r"Codec=(?P<Codec>[0-9]+),TimeBase=(?P<TimeBase>[0-9\/]+),Width=(?P<Width>[0-9]+),"
-            r"Height=(?P<Height>[0-9]+),Format=(?P<Format>[0-9a-zA-Z]+),ColorSpace=(?P<ColorSpace>[0-9]+)"
-        )
+            return re.compile(
+                r"Index=(?P<Index>-?[0-9]+),POS=(?P<POS>-?[0-9]+),PTS=(?P<PTS>-?[0-9]+),"
+                r"DTS=(?P<DTS>-?[0-9]+),EDI=(?P<EDI>-?[0-9]+)"
+            )
+
+        @classproperty
+        @classmethod
+        def frame_second(cls) -> Pattern[str]:
+            import re
+
+            return re.compile(
+                r"Key=(?P<Key>-?[0-9]+),Pic=(?P<Pic>-?[0-9]+),POC=(?P<POC>-?[0-9]+),"
+                r"Repeat=(?P<Repeat>-?[0-9]+),Field=(?P<Field>-?[0-9]+)"
+            )
+
+        @classproperty
+        @classmethod
+        def streaminfo(cls) -> Pattern[str]:
+            import re
+
+            return re.compile(
+                r"Codec=(?P<Codec>[0-9]+),TimeBase=(?P<TimeBase>[0-9\/]+),Width=(?P<Width>[0-9]+),"
+                r"Height=(?P<Height>[0-9]+),Format=(?P<Format>[0-9a-zA-Z]+),ColorSpace=(?P<ColorSpace>[0-9]+)"
+            )
 
     class StreamInfo(NamedTuple):
         codec: int

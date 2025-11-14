@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import json
 from itertools import chain
-from mimetypes import encodings_map
-from mimetypes import guess_type as guess_mime_type
 from os import path
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
@@ -146,6 +143,7 @@ class FileSignatures(list[FileSignature]):
         Returns:
             List of parsed FileSignature from json file.
         """
+        from json import loads as json_loads
 
         if self._file_headers_data is None or force or custom_header_data:
             header_data: list[dict[str, Any]] = []
@@ -156,7 +154,7 @@ class FileSignatures(list[FileSignature]):
                 filenames.add(Path(custom_header_data))
 
             for filename in filenames:
-                header_data.extend(json.loads(filename.read_text()))
+                header_data.extend(json_loads(filename.read_text()))
 
             _file_headers_data = list(
                 {
@@ -358,12 +356,16 @@ class FileType(CustomStrEnum):
                     return self.parse(path, force_ffprobe=False)
 
             if stream is None:
+                from mimetypes import guess_type as guess_mime_type
+
                 mime, encoding = guess_mime_type(filename)
 
                 file_type = FileType(mime)
 
         if ext is None:
             ext = filename.suffix
+
+        from mimetypes import encodings_map
 
         encoding = encodings_map.get(filename.suffix, None)
 
