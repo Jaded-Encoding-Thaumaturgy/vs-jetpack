@@ -1,11 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from hashlib import md5
-from os import name as os_name
-from shutil import which
-from subprocess import Popen
-from tempfile import gettempdir
 from typing import Any, Callable, ClassVar, Iterable, Literal, Protocol, Sequence
 
 from jetpytools import MISSING, CustomRuntimeError, DataType, SPath, SPathLike, inject_self, to_arr
@@ -56,6 +51,8 @@ class Indexer(ABC):
 
     @classmethod
     def get_videos_hash(cls, files: list[SPath]) -> str:
+        from hashlib import md5
+
         length = sum(file.stat().st_size for file in files)
         to_hash = length.to_bytes(32, "little") + cls.get_joined_names(files).encode()
         return md5(to_hash).hexdigest()
@@ -171,11 +168,17 @@ class ExternalIndexer(Indexer):
         raise NotImplementedError
 
     def _get_bin_path(self) -> SPath:
+        from os import name as os_name
+        from shutil import which
+
         if not (bin_path := which(str(self.bin_path))):
             raise FileNotFoundError(f"Indexer: `{self.bin_path}` was not found{' in PATH' if os_name == 'nt' else ''}!")
         return SPath(bin_path)
 
     def _run_index(self, files: list[SPath], output: SPath, cmd_args: Sequence[str]) -> None:
+        from os import name as os_name
+        from subprocess import Popen
+
         output.mkdirp()
 
         proc = Popen(
@@ -210,6 +213,8 @@ class ExternalIndexer(Indexer):
             return SPath(file).get_folder() if file else self.get_out_folder(False)
 
         if not output_folder:
+            from tempfile import gettempdir
+
             return SPath(gettempdir())
 
         return SPath(output_folder)
