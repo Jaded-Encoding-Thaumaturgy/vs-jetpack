@@ -9,7 +9,6 @@ from typing_extensions import TypeVar
 
 from vsexprtools import norm_expr
 from vskernels import BicubicAuto, Lanczos, LeftShift, Scaler, ScalerLike, ScalerSpecializer, TopShift
-from vsmasktools import adg_mask
 from vsrgtools import BlurMatrix
 from vstools import (
     ColorRange,
@@ -564,6 +563,8 @@ def _apply_grainer(
             grained = _protect_neutral_chroma(clip, grained, base_clip, protect_neutral_chroma_blend, planes, func)
 
         if luma_scaling is not None:
+            from vsmasktools import adg_mask
+
             grained = core.std.MaskedMerge(base_clip, grained, adg_mask(clip, luma_scaling), planes)
 
     return core.std.MergeDiff(clip, grained, planes) if not neutral_out else grained

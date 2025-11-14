@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from types import NoneType
-from typing import Any, Callable, Literal, Protocol, Sequence, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Protocol, Sequence, overload
 
 from jetpytools import CustomIntEnum, CustomValueError, normalize_seq, to_arr
 
-from vsdenoise import PrefilterLike
+if TYPE_CHECKING:
+    from vsdenoise import PrefilterLike
+
 from vsexprtools import norm_expr
 from vsrgtools import gauss_blur
 from vstools import (
