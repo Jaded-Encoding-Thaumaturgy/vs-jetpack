@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from functools import cache
-from inspect import signature
 from types import MappingProxyType
 from typing import Any, Callable, Sequence
 
@@ -116,7 +115,7 @@ def wnnm(
 
 
 def _clean_keywords(kwargs: dict[str, Any], function: vs.Function) -> dict[str, Any]:
-    return {k: v for k, v in kwargs.items() if k in signature(function).parameters}
+    return {k: v for k, v in kwargs.items() if k in function.__signature__.parameters}
 
 
 class UnsupportedProfileError(CustomValueError):
