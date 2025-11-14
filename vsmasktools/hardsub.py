@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
-from typing import Any, Mapping, Type
+from typing import TYPE_CHECKING, Any, Mapping, Type
 
 from jetpytools import CustomOverflowError, FileNotExistsError, FilePathType, fallback, iterate
 
 from vsexprtools import ExprOp, ExprToken, expr_func, norm_expr
 from vskernels import Point
 from vsrgtools import box_blur, median_blur
-from vssource import IMWRI, Indexer
+
+if TYPE_CHECKING:
+    from vssource import Indexer
+
 from vstools import (
     ColorRange,
     FrameRangeN,
@@ -63,7 +66,12 @@ class CustomMaskFromClipsAndRanges(GeneralMask, VSObjectABC):
     clips: list[vs.VideoNode] = field(init=False)
 
     processing: VSFunctionNoArgs = field(default=core.lazy.std.BinarizeMask, kw_only=True)
-    idx: Indexer | Type[Indexer] = field(default=IMWRI, kw_only=True)
+    idx: InitVar[Indexer | Type[Indexer] | None] = field(default=None, kw_only=True)
+
+    def __post_init__(self, idx: Indexer | Type[Indexer] | None) -> None:
+        from vssource import IMWRI
+
+        self._idx = idx if idx else IMWRI
 
     def get_mask(self, ref: vs.VideoNode, /, *args: Any, **kwargs: Any) -> vs.VideoNode:
         """
@@ -108,13 +116,14 @@ class CustomMaskFromFolder(CustomMaskFromClipsAndRanges):
 
     folder_path: FilePathType
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, idx: Indexer | Type[Indexer] | None) -> None:
+        super().__post_init__(idx)
         if not (folder_path := Path(str(self.folder_path))).is_dir():
             raise FileNotExistsError('"folder_path" must be an existing path directory!', self.get_mask)
 
         self.files = list(folder_path.glob("*"))
 
-        self.clips = [self.idx.source(file, bits=-1) for file in self.files]
+        self.clips = [self._idx.source(file, bits=-1) for file in self.files]
 
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]:
         return [
@@ -132,8 +141,8 @@ class CustomMaskFromRanges(CustomMaskFromClipsAndRanges):
 
     ranges: Mapping[FilePathType, FrameRangeN | FrameRangesN]
 
-    def __post_init__(self) -> None:
-        self.clips = [self.idx.source(str(file), bits=-1) for file in self.ranges]
+    def __post_init__(self, idx: Indexer | Type[Indexer] | None) -> None:
+        self.clips = [self._idx.source(str(file), bits=-1) for file in self.ranges]
 
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]:
         return [normalize_ranges(clip, ranges) for ranges in self.ranges.values()]

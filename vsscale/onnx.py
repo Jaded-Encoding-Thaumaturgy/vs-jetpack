@@ -22,7 +22,10 @@ from typing import (
 )
 
 from jetpytools import CustomImportError, CustomValueError, SPath, SPathLike
-from packaging.version import Version
+
+if TYPE_CHECKING:
+    from packaging.version import Version
+
 from typing_extensions import deprecated
 
 from vsexprtools import norm_expr
@@ -92,6 +95,8 @@ else:
 
 
 def _normalize_git_version(raw: str) -> Version:
+    from packaging.version import Version
+
     raw = raw.strip().lstrip("v")
 
     matched = re.match(r"(?P<tag>[0-9A-Za-z.\-_]+?)(?:-(?P<count>\d+)-g(?P<hash>[0-9a-f]+))?$", raw)
@@ -133,7 +138,9 @@ def _check_vsmlrt_script_version(cls: type[BaseOnnxScaler]) -> None:
     except ImportError:
         raise CustomImportError(cls, "vsmlrt") from None
 
-    if (current_version := Version(vsmlrt.__version__)) < cls._REQUIRED_VSMLRT_SCRIPT_VERSION:
+    from packaging.version import Version
+
+    if (current_version := Version(vsmlrt.__version__)) < Version(cls._REQUIRED_VSMLRT_SCRIPT_VERSION):
         raise CustomImportError(
             cls,
             "vsmlrt",
@@ -149,7 +156,9 @@ def _check_vsmlrt_plugin_version(backend_name: str, cls: type[BaseOnnxScaler]) -
 
     current_version = _normalize_git_version(getattr(core, plugin_name).Version()["version"].decode())
 
-    if current_version < cls._REQUIRED_VSMLRT_PLUGIN_VERSION:
+    from packaging.version import Version
+
+    if current_version < Version(cls._REQUIRED_VSMLRT_PLUGIN_VERSION):
         raise OutdatedPluginError(
             cls,
             plugin_name,
@@ -210,8 +219,8 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
     Abstract generic scaler class for an ONNX model.
     """
 
-    _REQUIRED_VSMLRT_SCRIPT_VERSION = Version("3.22.36")
-    _REQUIRED_VSMLRT_PLUGIN_VERSION = Version("15.14")
+    _REQUIRED_VSMLRT_SCRIPT_VERSION = "3.22.36"
+    _REQUIRED_VSMLRT_PLUGIN_VERSION = "15.14"
 
     if not TYPE_CHECKING:
 

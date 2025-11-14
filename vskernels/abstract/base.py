@@ -5,7 +5,6 @@ This module defines the base abstract interfaces for general scaling operations.
 from __future__ import annotations
 
 from functools import cache, wraps
-from inspect import Signature
 from math import ceil
 from types import NoneType
 from typing import (
@@ -86,8 +85,6 @@ __all__ = [
 def _add_init_kwargs[_BaseScalerT: BaseScaler, **P, R](
     method: Callable[Concatenate[_BaseScalerT, P], R],
 ) -> Callable[Concatenate[_BaseScalerT, P], R]:
-    signature = Signature.from_callable(method)
-
     @wraps(method)
     def _wrapped(self: _BaseScalerT, *args: P.args, **kwargs: P.kwargs) -> R:
         # TODO: remove this
@@ -124,7 +121,7 @@ def _add_init_kwargs[_BaseScalerT: BaseScaler, **P, R](
                 frame_infos.clear()
                 del frame_info, f0, f1
 
-        init_kwargs = {k: self.kwargs.pop(k) for k in self.kwargs.keys() & signature.parameters.keys()}
+        init_kwargs = {k: self.kwargs.pop(k) for k in self.kwargs.keys() & method.__annotations__.keys()}
 
         returned = method(self, *args, **init_kwargs | kwargs)
 
