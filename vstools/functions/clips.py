@@ -558,10 +558,8 @@ def sc_detect(clip: vs.VideoNode, threshold: float = 0.1) -> vs.VideoNode:
     """
     stats = vs.core.std.PlaneStats(shift_clip(clip, -1), clip)
 
-    return vs.core.akarin.PropExpr(
+    return vs.core.llvmexpr.SingleExpr(
         [clip, stats, stats[1:]],
-        lambda: {
-            "_SceneChangePrev": f"y.PlaneStatsDiff {threshold} > 1 0 ?",
-            "_SceneChangeNext": f"z.PlaneStatsDiff {threshold} > 1 0 ?",
-        },
+        f"y.PlaneStatsDiff {threshold} > 1 0 ? _SceneChangePrev$ "
+        f"z.PlaneStatsDiff {threshold} > 1 0 ? _SceneChangeNext$",
     )
