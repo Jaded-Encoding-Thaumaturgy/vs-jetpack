@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Self, Ty
 from jetpytools import CustomRuntimeError, CustomValueError, cachedproperty, classproperty
 from typing_extensions import TypeIs, TypeVar
 
-from vsexprtools import norm_expr
 from vstools import (
     HoldsVideoFormat,
     Matrix,
@@ -370,6 +369,8 @@ class LinearLightProcessing(VSObject):
         )
 
         if self.ll.sigmoid:
+            from vsexprtools import norm_expr
+
             wclip = norm_expr(
                 wclip,
                 "{center} 1 {slope} / 1 x 0 max 1 min {scale} * {offset} + / 1 - log * -",
@@ -408,6 +409,8 @@ class LinearLightProcessing(VSObject):
             raise CustomValueError("You need to set .linear before getting .out!", self.__class__)
 
         if self.ll.sigmoid:
+            from vsexprtools import norm_expr
+
             processed = norm_expr(
                 self._linear,
                 "1 1 {slope} {center} x 0 max 1 min - * exp + / {offset} - {scale} /",
