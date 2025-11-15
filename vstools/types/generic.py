@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Mapping, Protocol, TypeVar, Union
+from typing import Any, Callable, Iterable, Mapping, Protocol, TypeVar, runtime_checkable
 
 from jetpytools import MissingT
 
@@ -71,23 +71,27 @@ Deprecated alias of HoldsPropValue.
 F_VD = TypeVar("F_VD", bound=Callable[..., vs.VideoNode])
 
 
+@runtime_checkable
 class VSFunctionNoArgs(Protocol):
     def __call__(self, clip: vs.VideoNode) -> vs.VideoNode: ...
 
 
+@runtime_checkable
 class VSFunctionArgs(Protocol):
     def __call__(self, clip: vs.VideoNode, *args: Any) -> vs.VideoNode: ...
 
 
+@runtime_checkable
 class VSFunctionKwArgs(Protocol):
     def __call__(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode: ...
 
 
+@runtime_checkable
 class VSFunctionAllArgs(Protocol):
     def __call__(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode: ...
 
 
-VSFunction = Union[VSFunctionNoArgs, VSFunctionArgs, VSFunctionKwArgs, VSFunctionAllArgs]
+VSFunction = VSFunctionNoArgs | VSFunctionArgs | VSFunctionKwArgs | VSFunctionAllArgs
 """
 Function that takes a VideoNode as its first argument and returns a VideoNode.
 """
