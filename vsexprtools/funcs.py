@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import sys
-from logging import debug as logging_debug
+from logging import getLogger
 from math import ceil
 from typing import Any, Callable, Iterable, Sequence, SupportsIndex
 from warnings import warn
@@ -40,6 +40,8 @@ from .exprop import ExprList, ExprOp, ExprOpBase, TupleExprList, _TokenDeprecati
 from .util import ExprVars
 
 __all__ = ["combine", "combine_expr", "expr_func", "norm_expr"]
+
+log = getLogger(__name__)
 
 
 def expr_func(
@@ -82,7 +84,7 @@ def expr_func(
 
     fmt = get_video_format(format).id if format is not None else None
 
-    logging_debug(f"expr_func ({norm_func_name(func)}): {expr}")
+    log.debug("expr_func (%s): %s", norm_func_name(func), expr)
 
     try:
         return core.akarin.Expr(clips, expr, fmt, opt, boundary)
