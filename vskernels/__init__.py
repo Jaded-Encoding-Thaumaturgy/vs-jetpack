@@ -41,14 +41,6 @@ if not TYPE_CHECKING:
     simplefilter("module", _TypeAliasDeprecation)
 
     def __getattr__(name: str) -> Any:
-        if name == "__version__":
-            from importlib import import_module
-
-            try:
-                return import_module("._version", package=__package__).__version__
-            except ModuleNotFoundError:
-                return "unknown"
-
         if name in _alias_map:
             from pathlib import Path
 
