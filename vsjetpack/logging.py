@@ -14,12 +14,7 @@ from ._modules import JETPACK_MODULES
 __all__ = ["setup_logging"]
 
 
-_DEFAULT_LOG_LEVEL = INFO
-
-
-def setup_logging(
-    level: str | int = _DEFAULT_LOG_LEVEL, handlers: Iterable[Handler] | None = None, **kwargs: Any
-) -> None:
+def setup_logging(level: str | int = INFO, handlers: Iterable[Handler] | None = None, **kwargs: Any) -> None:
     """
     Configure global logging.
 
@@ -40,23 +35,22 @@ class CustomJetHandler(RichHandler):
     def format(self, record: LogRecord) -> str:
         # Return a modified shallow copy of the LogRecord with transformed
         # parameters for specific loggers.
-        new_record = copy(record)
-
         if record.name.startswith(JETPACK_MODULES):
+            record = copy(record)
             if isinstance(record.args, tuple):
                 # Convert tuple -> dict -> transform -> back to tuple
                 transformed = _transform_record_args(dict(enumerate(record.args)))
-                new_record.args = tuple(transformed.values())
+                record.args = tuple(transformed.values())
             elif isinstance(record.args, Mapping):
                 # Transform a dict-like args mapping
-                new_record.args = _transform_record_args(record.args)
+                record.args = _transform_record_args(record.args)
 
-        return super().format(new_record)
+        return super().format(record)
 
 
 def _transform_record_args[T](args: Mapping[T, object]) -> dict[T, object]:
     """
-    Transform values in the args dictionary based on type and logger name.
+    Transform values in the args dictionary based on type.
     """
     transformed = dict[T, object]()
 
