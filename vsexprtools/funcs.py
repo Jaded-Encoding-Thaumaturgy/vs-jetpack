@@ -2,21 +2,13 @@ from __future__ import annotations
 
 import re
 import sys
+from itertools import groupby
 from logging import getLogger
 from math import ceil
 from typing import Any, Callable, Iterable, Sequence, SupportsIndex
 from warnings import warn
 
-from jetpytools import (
-    CustomIndexError,
-    CustomRuntimeError,
-    FuncExcept,
-    StrList,
-    SupportsString,
-    norm_func_name,
-    normalize_seq,
-    to_arr,
-)
+from jetpytools import CustomIndexError, CustomRuntimeError, FuncExcept, StrList, SupportsString, normalize_seq, to_arr
 
 from vstools import (
     EXPR_VARS,
@@ -42,6 +34,16 @@ from .util import ExprVars
 __all__ = ["combine", "combine_expr", "expr_func", "norm_expr"]
 
 log = getLogger(__name__)
+
+
+class _LazyLogExpr:
+    __slots__ = "expr"
+
+    def __init__(self, expr: str | Sequence[str]) -> None:
+        self.expr = expr
+
+    def __str__(self) -> str:
+        return str([k for k, _ in groupby(to_arr(self.expr))])
 
 
 def expr_func(
@@ -84,7 +86,7 @@ def expr_func(
 
     fmt = get_video_format(format).id if format is not None else None
 
-    log.debug("expr_func (%s): %s", norm_func_name(func), expr)
+    log.debug("expr_func (%s): %s", func, _LazyLogExpr(expr))
 
     try:
         return core.akarin.Expr(clips, expr, fmt, opt, boundary)

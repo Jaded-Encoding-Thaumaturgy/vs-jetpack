@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import copy
-from inspect import isclass, ismethod
+from inspect import isclass
 from logging import INFO, Handler, LogRecord, basicConfig
 from typing import Any, Iterable, Mapping
 
@@ -38,11 +38,9 @@ class CustomJetHandler(RichHandler):
         if record.name.startswith(JETPACK_MODULES):
             record = copy(record)
             if isinstance(record.args, tuple):
-                # Convert tuple -> dict -> transform -> back to tuple
                 transformed = _transform_record_args(dict(enumerate(record.args)))
                 record.args = tuple(transformed.values())
             elif isinstance(record.args, Mapping):
-                # Transform a dict-like args mapping
                 record.args = _transform_record_args(record.args)
 
         return super().format(record)
@@ -64,8 +62,8 @@ def _transform_record_args[T](args: Mapping[T, object]) -> dict[T, object]:
             if value_t.__str__ is not object.__str__:
                 new_value = repr(value)
 
-        # Normalize method names
-        elif ismethod(value):
+        # Normalize method and class names
+        if callable(value) or isclass(value):
             new_value = norm_func_name(value)
 
         transformed[key] = new_value
