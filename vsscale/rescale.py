@@ -55,7 +55,7 @@ class RescaleBase(VSObjectABC):
         border_handling: int | BorderHandling = BorderHandling.MIRROR,
         **kwargs: Any,
     ) -> None:
-        self._clipy, *chroma = split(clip)
+        self._clipy, *chroma = split(depth(clip, 32))
         self._chroma = chroma
 
         self._kernel = ComplexKernel.ensure_obj(kernel)
@@ -129,7 +129,7 @@ class RescaleBase(VSObjectABC):
 
     @_add_props
     def _generate_doubled(self, clip: vs.VideoNode) -> vs.VideoNode:
-        return self._upscaler.supersample(clip, 2)
+        return depth(self._upscaler.supersample(clip, 2), 32)
 
     @_add_props
     def _generate_upscale(self, clip: vs.VideoNode) -> vs.VideoNode:

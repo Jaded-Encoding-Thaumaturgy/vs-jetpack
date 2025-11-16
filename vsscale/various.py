@@ -58,7 +58,7 @@ class ClampScaler(GenericScaler):
             limit: Whether to use under/overshoot limit (True) or a reference repaired clip for limiting.
             operator: Whether to take the brightest or darkest pixels in the merge. Defaults to ExprOp.MIN.
             masked: Whether to mask with a ringing mask or not. Defaults to True
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
         """

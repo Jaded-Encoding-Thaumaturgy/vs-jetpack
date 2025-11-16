@@ -5,7 +5,7 @@ from functools import partial, wraps
 from inspect import signature
 from typing import Any, Callable, Literal, overload
 
-from jetpytools import CustomValueError, FuncExcept, KwargsT, StrictRange
+from jetpytools import CustomValueError, FuncExcept, KwargsT, StrictRange, fallback
 
 from ..enums import (
     ChromaLocation,
@@ -24,7 +24,7 @@ from ..enums import (
 )
 from ..exceptions import FramesLengthError
 from ..types import HoldsVideoFormat, VideoFormatLike
-from ..utils import DynamicClipsCache, get_depth
+from ..utils import DynamicClipsCache
 from ..vs_proxy import vs
 from .utils import DitherType, depth, limiter
 
@@ -306,7 +306,7 @@ def finalize_output[**P](
 
 def initialize_clip(
     clip: vs.VideoNode,
-    bits: int | None = None,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -325,12 +325,7 @@ def initialize_clip(
 
     Args:
         clip: Clip to initialize.
-        bits: Bits to dither to.
-
-               - If 0, no dithering is applied.
-               - If None, 16 if bit depth is lower than it, else leave untouched.
-               - If positive integer, dither to that bitdepth.
-
+        bits: Bits to dither to. If False, None, less than or equal to 0, no dithering is applied. Default to 32.
         matrix: Matrix property to set. If None, tries to get the Matrix from existing props. If no props are set or
             Matrix=2, guess from the video resolution.
         transfer: Transfer property to set. If None, tries to get the Transfer from existing props. If no props are set
@@ -349,7 +344,7 @@ def initialize_clip(
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Returns:
-        Clip with relevant frame properties set, and optionally dithered up to 16 bits by default.
+        Clip with relevant frame properties set, and optionally dithered up to 32 bits by default.
     """
     func = func or initialize_clip
 
@@ -372,12 +367,7 @@ def initialize_clip(
 
     clip = PropEnum.ensure_presences(clip, to_ensure_presence, func)
 
-    if bits is None:
-        bits = max(get_depth(clip), 16)
-    elif bits <= 0:
-        return clip
-
-    return depth(clip, bits, dither_type=dither_type)
+    return depth(clip, max((bits := fallback(bits, 0)), bits), dither_type=dither_type)
 
 
 @overload
@@ -385,7 +375,7 @@ def initialize_input[**P](
     function: Callable[P, vs.VideoNode],
     /,
     *,
-    bits: int | None = 16,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -401,7 +391,7 @@ def initialize_input[**P](
 @overload
 def initialize_input[**P](
     *,
-    bits: int | None = 16,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -417,7 +407,7 @@ def initialize_input[**P](
     function: Callable[P, vs.VideoNode] | None = None,
     /,
     *,
-    bits: int | None = 16,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -431,7 +421,7 @@ def initialize_input[**P](
     """
     Decorator implementation of [initialize_clip][vstools.initialize_clip].
 
-    Initializes the first clip found in this order: positional arguments -> keyword arguments ->  default arguments.
+    Initializes the first clip found in this order: positional arguments -> keyword arguments -> default arguments.
     """
 
     if function is None:
