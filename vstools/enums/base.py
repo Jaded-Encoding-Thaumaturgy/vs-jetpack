@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from contextlib import suppress
+from string import capwords
 from typing import Any, Iterable, Mapping, Self, overload
 
 from jetpytools import (
@@ -32,7 +33,7 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
 
     def __init__(self, _: Any, string: str | None = None, pretty_string: str | None = None) -> None:
         self._string = fallback(string, self._name_.lower())
-        self._pretty_string = fallback(pretty_string, self._string.replace("_", " ").title())
+        self._pretty_string = fallback(pretty_string, capwords(self._string.replace("_", " ")))
 
     @classmethod
     def _missing_(cls, value: object) -> Self | None:

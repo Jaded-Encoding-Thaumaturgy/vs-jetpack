@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from os import name as os_name
 from typing import Any, Callable, ClassVar, Iterable, Literal, Protocol, Sequence
 
 from jetpytools import MISSING, CustomRuntimeError, DataType, SPath, SPathLike, inject_self, to_arr
@@ -168,7 +169,6 @@ class ExternalIndexer(Indexer):
         raise NotImplementedError
 
     def _get_bin_path(self) -> SPath:
-        from os import name as os_name
         from shutil import which
 
         if not (bin_path := which(str(self.bin_path))):
@@ -176,7 +176,6 @@ class ExternalIndexer(Indexer):
         return SPath(bin_path)
 
     def _run_index(self, files: list[SPath], output: SPath, cmd_args: Sequence[str]) -> None:
-        from os import name as os_name
         from subprocess import Popen
 
         output.mkdirp()

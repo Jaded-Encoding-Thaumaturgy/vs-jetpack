@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from gc import get_referents, get_referrers
 from inspect import stack
+from math import ceil
 from pathlib import Path
 from sys import modules
 from sys import path as sys_path
@@ -10,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable
 from weakref import ReferenceType
 from weakref import ref as weakref_ref
 
-from jetpytools import CustomRuntimeError
+from jetpytools import CustomRuntimeError, CustomValueError
 from vapoursynth import (
     AUDIO,
     BACK_CENTER,
@@ -165,6 +166,8 @@ from vapoursynth import __pyx_capi__ as pyx_capi  # type: ignore[attr-defined]
 from vapoursynth import _construct_parameter as construct_parameter
 from vapoursynth import _construct_type as construct_type
 from vapoursynth import _try_enable_introspection as try_enable_introspection
+
+import __main__
 
 from .enums import (
     GRAY8,
@@ -762,9 +765,6 @@ __all__ = [
     "vs_file",
 ]
 
-
-import __main__
-
 if not hasattr(__main__, "__file__") and "__vapoursynth__" not in modules:
     first_stack = stack()[-1]
 
@@ -1144,10 +1144,8 @@ class VSCoreProxy(CoreProxyBase):
         Raises:
             CustomValueError: If ``threads`` is lower than or equal to 0.
         """
-        from math import ceil
         from multiprocessing import cpu_count
 
-        from jetpytools import CustomValueError
         from psutil import Process
 
         if threads is None:
