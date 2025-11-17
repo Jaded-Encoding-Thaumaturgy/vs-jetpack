@@ -60,6 +60,7 @@ _JETPACK_MODULES = (
     "vsdeinterlace",
     "vsdenoise",
     "vsexprtools",
+    "vsjetpack",
     "vskernels",
     "vsmasktools",
     "vsrgtools",
