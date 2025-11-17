@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import sys
 from abc import ABC, ABCMeta
 from enum import Flag
 from functools import partial
-from inspect import getmodule
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Callable, Mapping, MutableMapping, MutableSequence, MutableSet, Self
 
 from jetpytools import Singleton, classproperty
+
+from vsjetpack import is_from_vs_module
 
 from .proxy import core, register_on_creation, register_on_destroy
 
@@ -19,23 +19,13 @@ def _get_mangle_name(name: str) -> str:
     return "_" + name.lstrip("_")
 
 
-_vs_module = sys.modules["vapoursynth"]
-
-
-def _is_vs_module(obj: Any) -> bool:
-    if hasattr(obj, "__module__"):
-        return sys.modules[obj.__module__] is _vs_module
-
-    return getmodule(type(obj)) is _vs_module
-
-
 def _iterative_check(x: Any) -> bool:
     stack = [x]
 
     while stack:
         current = stack.pop()
 
-        if res := _is_vs_module(current):
+        if res := is_from_vs_module(current):
             return res
 
         if isinstance(current, (str, bytes, bytearray, Flag)):
