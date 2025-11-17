@@ -87,8 +87,11 @@ doc = [
 ]
 
 [build-system]
-requires = ["hatchling>=1.27.0"]
+requires = ["hatchling>=1.27.0", "versioningit"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build]
+artifacts = ["vsjetpack/_version.py"]
 
 [tool.hatch.build.targets.wheel]
 packages = [
@@ -106,7 +109,6 @@ packages = [
     "vsdeinterlace",
     "vssource",
 ]
-force-include = { "_version.py" = "/vsjetpack/_version.py" }
 exclude = ["docs", "scripts", "site", "stubs", "tests", "README.*"]
 
 [tool.hatch.build.targets.sdist]
@@ -133,7 +135,15 @@ include = [
 ]
 
 [tool.hatch.version]
-path = "_version.py"
+source = "versioningit"
+default-version = "0.0.0+unknown"
+next-version = "minor-release"
+write = { file = "vsjetpack/_version.py", template = "__version__ = \"{normalized_version}\"\n__version_tuple__ = {version_tuple}" }
+
+[tool.hatch.version.format]
+distance = "{next_version}.dev{distance}+{vcs}{rev}"
+dirty = "{next_version}+dirty"
+distance-dirty = "{next_version}.dev{distance}+{vcs}{rev}.dirty"
 
 [tool.pytest.ini_options]
 pythonpath = "."

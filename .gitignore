@@ -14,6 +14,9 @@ wheels/
 *.egg-info/
 *.egg
 
+# versioningit
+vsjetpack/_version.py
+
 # pytest-cov
 .coverage
 

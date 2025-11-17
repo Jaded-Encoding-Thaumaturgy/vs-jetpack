@@ -9,12 +9,14 @@ from .helpers import *
 if not TYPE_CHECKING:
 
     def __getattr__(name: str) -> Any:
-        if name == "__version__":
+        if name in ("__version__", "__version_tuple__"):
             from importlib import import_module
 
             try:
-                return import_module("._version", package=__package__).__version__
+                module = import_module("._version", package=__package__)
             except ModuleNotFoundError:
                 return "unknown"
+
+            return getattr(module, name)
 
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
