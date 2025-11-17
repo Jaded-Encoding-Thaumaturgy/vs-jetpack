@@ -7,9 +7,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any, ClassVar, Sequence
 
-from typing_extensions import deprecated
-
 from vsexprtools import norm_expr
+from vsjetpack import deprecated
 from vstools import Planes, core, vs
 
 from ._abstract import EdgeDetect, EdgeMasksEdgeDetect, EuclideanDistance, RidgeDetect, TCannyEdgeDetect

@@ -1,13 +1,14 @@
 import sys
 from copy import copy
+from functools import wraps
 from inspect import getmodule, isclass
 from logging import INFO, Handler, LogRecord, basicConfig
 from types import ModuleType
-from typing import Any, Callable, Iterable, Mapping
+from typing import Any, Callable, Iterable, Literal, Mapping
 
-from jetpytools import norm_func_name
+from jetpytools import DependencyNotFoundError, norm_func_name
 
-__all__ = ["is_from_vs_module", "lazy_load", "setup_logging"]
+__all__ = ["is_from_vs_module", "lazy_load", "require_jet_dependency", "setup_logging"]
 
 
 _vs_module: ModuleType | None = None
@@ -53,6 +54,28 @@ def lazy_load(name: str, package: str | None = None, exc: Callable[[], Exception
     return module
 
 
+def require_jet_dependency[**P, R](
+    *name: Literal["scipy", "rich", "psutil"],
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    """Decorator that raises DependencyNotFoundError when a specific package is missing."""
+
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
+        @wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            try:
+                return func(*args, **kwargs)
+            except ImportError as e:
+                if e.name in name:
+                    raise DependencyNotFoundError(
+                        func, e.name, "Missing dependency '{package}'. Please install vsjetpack[full]"
+                    ) from None
+            raise
+
+        return wrapper
+
+    return decorator
+
+
 _JETPACK_MODULES = (
     "vsaa",
     "vsdeband",
@@ -70,6 +93,7 @@ _JETPACK_MODULES = (
 )
 
 
+@require_jet_dependency("rich")
 def setup_logging(level: str | int = INFO, handlers: Iterable[Handler] | None = None, **kwargs: Any) -> None:
     """
     Configure global logging.

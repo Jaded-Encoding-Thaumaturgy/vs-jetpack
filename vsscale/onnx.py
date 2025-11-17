@@ -17,9 +17,8 @@ from jetpytools import CustomImportError, CustomValueError, SPath, SPathLike
 if TYPE_CHECKING:
     from packaging.version import Version
 
-from typing_extensions import deprecated
-
 from vsexprtools import norm_expr
+from vsjetpack import deprecated
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vstools import (
     ColorRange,

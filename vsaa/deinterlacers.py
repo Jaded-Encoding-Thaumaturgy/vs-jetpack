@@ -6,8 +6,8 @@ from enum import IntFlag, auto
 from typing import TYPE_CHECKING, Any, Mapping, Self, Sequence
 
 from jetpytools import CustomNotImplementedError, CustomValueError, copy_signature, fallback, normalize_seq
-from typing_extensions import TypeVar
 
+from vsjetpack import TypeVar
 from vskernels import (
     Bobber,
     Catrom,

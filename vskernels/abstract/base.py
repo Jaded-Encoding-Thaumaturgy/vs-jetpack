@@ -32,8 +32,8 @@ from jetpytools import (
     normalize_seq,
 )
 from jetpytools import cachedproperty as jetpytools_cachedproperty
-from typing_extensions import TypeIs
 
+from vsjetpack import TypeIs
 from vstools import (
     ChromaLocation,
     ColorRange,

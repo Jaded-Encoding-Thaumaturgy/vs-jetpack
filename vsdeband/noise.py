@@ -5,9 +5,9 @@ from enum import auto
 from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, overload
 
 from jetpytools import MISSING, CustomEnum, CustomValueError, EnumABCMeta, FuncExcept, MissingT, mod_x, to_arr
-from typing_extensions import TypeVar
 
 from vsexprtools import norm_expr
+from vsjetpack import TypeVar
 from vskernels import BicubicAuto, Lanczos, LeftShift, Scaler, ScalerLike, ScalerSpecializer, TopShift
 from vsrgtools import BlurMatrix
 from vstools import (

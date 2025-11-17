@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, Sequence
 from jetpytools import CustomRuntimeError, CustomValueError, FuncExcept, MismatchRefError, cachedproperty, clamp
 
 from vsexprtools import norm_expr
+from vsjetpack import require_jet_dependency
 from vskernels import LeftShift, TopShift
 from vstools import (
     ChromaLocation,
@@ -72,6 +73,7 @@ class RegressClips(NamedTuple):
     """Correlation coefficient."""
 
 
+@require_jet_dependency("scipy")
 def t_based_weight(n: int, alpha: float) -> float:
     """
     Compute a reliability weight based on the t-distribution critical correlation.
@@ -100,6 +102,7 @@ def t_based_weight(n: int, alpha: float) -> float:
     return clamp(1.0 - float(rcrit), 0.0, 1.0)
 
 
+@require_jet_dependency("scipy")
 def fisher_weight(n: int, alpha: float) -> float:
     """
     Compute a reliability weight using Fisher's z-transformation.

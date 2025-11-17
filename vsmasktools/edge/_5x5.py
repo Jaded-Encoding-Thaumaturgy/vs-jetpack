@@ -7,7 +7,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import ClassVar, Sequence
 
-from typing_extensions import deprecated
+from vsjetpack import deprecated
 
 from ._abstract import (
     EdgeDetect,

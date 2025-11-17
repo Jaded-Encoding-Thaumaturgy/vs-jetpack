@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Literal, Sequence
 
 from jetpytools import CustomValueError, FuncExcept
-from typing_extensions import deprecated
+
+from vsjetpack import deprecated
 
 from ..enums import FieldBased
 from ..exceptions import (

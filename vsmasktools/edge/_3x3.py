@@ -9,9 +9,9 @@ from abc import ABC
 from typing import Any, ClassVar, Sequence
 
 from jetpytools import interleave_arr, to_arr
-from typing_extensions import deprecated
 
 from vsexprtools import ExprList, ExprOp, norm_expr
+from vsjetpack import deprecated
 from vstools import Planes, join, split, vs
 
 from ..morpho import Morpho

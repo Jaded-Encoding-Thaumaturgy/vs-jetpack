@@ -7,9 +7,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, SupportsIndex
 
 from jetpytools import CustomOverflowError, CustomTypeError, FuncExcept, normalize_seq
-from typing_extensions import TypeIs
 
 from vsexprtools import ExprList, ExprOp, ExprToken, norm_expr
+from vsjetpack import TypeIs
 from vstools import VSObject, get_lowest_values, get_peak_values, get_resolutions, vs
 
 __all__ = ["FixBorderBrightness"]

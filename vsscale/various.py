@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from jetpytools import CustomOverflowError, CustomValueError, normalize_seq
-from typing_extensions import TypeVar
 
 from vsexprtools import ExprOp, combine, norm_expr
+from vsjetpack import TypeVar
 from vskernels import (
     Catrom,
     ComplexScaler,

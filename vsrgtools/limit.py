@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Sequence
 
 from jetpytools import fallback, to_arr
-from typing_extensions import deprecated
 
 from vsexprtools import norm_expr
+from vsjetpack import deprecated
 from vstools import Planes, scale_delta, vs
 
 __all__ = ["limit_filter"]

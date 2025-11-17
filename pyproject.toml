@@ -45,10 +45,11 @@ dependencies = [
     "VapourSynth>=69",
     "jetpytools~=2.1.0",
     "numpy>=2.0.0",
-    "rich>=14.0.0",
-    "scipy>=1.16.0",
-    "typing_extensions>=4.15.0",
+    "typing_extensions>=4.15.0; python_version<'3.13'",
 ]
+
+[project.optional-dependencies]
+full = ["scipy>=1.16.0", "rich>=14.0.0", "psutil>=7.0.0"]
 
 [project.urls]
 Documentation = "https://jaded-encoding-thaumaturgy.github.io/vs-jetpack/"

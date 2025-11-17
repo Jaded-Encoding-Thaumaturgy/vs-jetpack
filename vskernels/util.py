@@ -8,8 +8,8 @@ from types import GenericAlias
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Self, TypeAlias, get_origin, overload
 
 from jetpytools import CustomRuntimeError, CustomValueError, cachedproperty, classproperty
-from typing_extensions import TypeIs, TypeVar
 
+from vsjetpack import TypeIs, TypeVar
 from vstools import (
     HoldsVideoFormat,
     Matrix,
