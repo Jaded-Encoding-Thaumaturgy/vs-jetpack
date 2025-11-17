@@ -57,7 +57,7 @@ def _transform_record_args[T](args: Mapping[T, object]) -> dict[T, object]:
 
         # Special formatting for vapoursyth objects
         if getattr(value, "__module__", "") == "vapoursynth":
-            value_t = type(value) if not isclass(value) else value
+            value_t = value if isclass(value) else type(value)
 
             if value_t.__str__ is not object.__str__:
                 new_value = repr(value)
