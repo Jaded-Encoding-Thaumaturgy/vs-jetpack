@@ -21,10 +21,8 @@ from vstools import (
     depth,
     expect_bits,
     get_plane_sizes,
-    get_prop,
     join,
     normalize_planes,
-    shift_clip_multi,
     split,
     vs,
 )
@@ -471,40 +469,7 @@ def median_blur(
         if not isinstance(radius, int):
             raise CustomValueError("A list of radius isn't supported for ConvMode.TEMPORAL!", func, radius)
 
-        tmedian = core.zsmooth.TemporalMedian(clip, radius, planes)
-
-        if not scenechange:
-            return tmedian
-
-        clips = shift_clip_multi(clip, (-radius, radius))
-        r = radius
-
-        def median_scenechange(
-            n: int, f: list[vs.VideoFrame], tmedian: vs.VideoNode, clips: Sequence[vs.VideoNode]
-        ) -> vs.VideoNode:
-            backwards_prop = [get_prop(frame, "_SceneChangeNext", int) for frame in f[:r]]
-            forward_prop = [get_prop(frame, "_SceneChangePrev", int) for frame in f[r + 1 :]]
-
-            if not any([*backwards_prop, *forward_prop]):
-                return tmedian
-
-            clips_back = clips[:r]
-
-            for i, prop in enumerate(reversed(backwards_prop)):
-                if prop:
-                    clips_back = clips_back[r - i :]
-                    break
-
-            clips_forw = clips[r + 1 :]
-
-            for i, prop in enumerate(forward_prop):
-                if prop:
-                    clips_forw = clips_forw[: i - r]
-                    break
-
-            return MeanMode.MEDIAN(clips[r], clips_back, clips_forw, planes=planes)
-
-        return core.std.FrameEval(clip, lambda n, f: median_scenechange(n, f, tmedian, clips), clips, clips)
+        return core.zsmooth.TemporalMedian(clip, radius, planes, scenechange)
 
     radius = normalize_seq(radius, clip.format.num_planes)
 
