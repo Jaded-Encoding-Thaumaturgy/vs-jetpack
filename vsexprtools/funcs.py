@@ -196,6 +196,8 @@ A recursive type representing a valid expression input.
 Acceptable forms include:
 
 - A single string (or string-like object): Used as the same expression for all planes.
+- A t-string or Template object: Used as the same expression for all planes (Python >=3.14).
+  Interpolations attributes may be sequences that will be associated with the corresponding plane.
 - A list of expressions: Concatenated into a single expression for all planes.
 - A tuple of expressions: Interpreted as separate expressions for each plane.
 - A [TupleExprList][vsexprtools.TupleExprList]: will make a [norm_expr][vsexprtools.norm_expr] call for each expression
@@ -226,6 +228,8 @@ def norm_expr(
         expr: Expression to be evaluated.
 
                - A single str will be processed for all planes.
+               - A t-string or Template object: Used as the same expression for all planes (Python >=3.14).
+                 Interpolations attributes may be sequences will be associated with the corresponding plane.
                - A list will be concatenated to form a single expr for all planes.
                - A tuple of these types will allow specification of different expr for each planes.
                - A [TupleExprList][vsexprtools.TupleExprList] will make a `norm_expr` call for each expression
