@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import sys
 from logging import debug as logging_debug
 from math import ceil
 from typing import Any, Callable, Iterable, Sequence, SupportsIndex
@@ -30,6 +31,9 @@ from vstools import (
     normalize_planes,
     vs,
 )
+
+if sys.version_info >= (3, 14):
+    from string.templatelib import Template
 
 from .error import CustomExprError
 from .exprop import ExprList, ExprOp, ExprOpBase, TupleExprList, _TokenDeprecation
@@ -185,7 +189,7 @@ Acceptable forms include:
 - An iterable (list, tuple, etc.) containing other NestedStrLike values, which may themselves be further nested.
 """
 
-type ExprLike = str | Sequence[NestedStrLike]
+type ExprLike = str | Template | Sequence[NestedStrLike]
 """
 A recursive type representing a valid expression input.
 
@@ -261,12 +265,14 @@ def norm_expr(
             )
         else:
             nexpr = tuple(to_arr(x) for x in expr)
-    else:
+    elif isinstance(expr, Sequence):
         nexpr = (to_arr(expr),)
+    else:
+        nexpr = expr
 
     clips = flatten_vnodes(clips, split_planes=split_planes)
 
-    normalized_exprs = [StrList(plane_expr).to_str() for plane_expr in nexpr]
+    normalized_exprs = [StrList(plane_expr).to_str() for plane_expr in nexpr] if isinstance(nexpr, Sequence) else nexpr
 
     normalized_expr = norm_expr_planes(clips[0], normalized_exprs, planes, **kwargs)
 
@@ -338,19 +344,29 @@ def bitdepth_aware_tokenize_expr(
 
 def norm_expr_planes(
     clip: vs.VideoNode,
-    expr: str | list[str],
+    expr: str | Template | Sequence[str],
     planes: Planes = None,
     **kwargs: Iterable[SupportsString] | SupportsString,
 ) -> list[str]:
-    assert clip.format
-
-    expr_array = normalize_seq(expr, clip.format.num_planes)
-
     planes = normalize_planes(clip, planes)
 
-    string_args = [(key, normalize_seq(value, 3)) for key, value in kwargs.items()]
+    if sys.version_info >= (3, 14) and isinstance(expr, Template):
+        from string.templatelib import convert
+
+        normalized_values = {t: normalize_seq(t.value, clip.format.num_planes) for t in expr if not isinstance(t, str)}
+
+        expr = [
+            "".join(
+                t if isinstance(t, str) else format(convert(normalized_values[t][i], t.conversion), t.format_spec)
+                for t in expr
+            )
+            for i in range(clip.format.num_planes)
+        ]
+
+    expr_array = normalize_seq(to_arr(expr), clip.format.num_planes)
+    kw_arrays = {k: normalize_seq(v, 3) for k, v in kwargs.items()}
 
     return [
-        exp.format(**({"plane_idx": i} | {key: value[i] for key, value in string_args})) if i in planes else ""
+        exp.format(plane_idx=i, **{k: v[i] for k, v in kw_arrays.items()}) if i in planes else ""
         for i, exp in enumerate(expr_array)
     ]
