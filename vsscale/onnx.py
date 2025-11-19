@@ -413,11 +413,11 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         """
         Performs preprocessing on the clip prior to inference.
         """
-        log.debug("%s: Before pp; Clip format is %s", self.preprocess_clip, clip.format)
+        log.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
 
         clip = depth(clip, self._pick_precision(16, 32), vs.FLOAT, **kwargs)
 
-        log.debug("%s: After pp; Clip format is %s", self.preprocess_clip, clip.format)
+        log.debug("%s: After pp; Clip format is %r", self.preprocess_clip, clip.format)
 
         return limiter(clip, func=self.__class__)
 
@@ -425,8 +425,8 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         """
         Handles postprocessing of the model's output after inference.
         """
-        log.debug("%s: Before pp; Clip format is %s", self.preprocess_clip, clip.format)
-        log.debug("%s: Before pp; Clip format is %s", self.postprocess_clip, clip.format)
+        log.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
+        log.debug("%s: Before pp; Clip format is %r", self.postprocess_clip, clip.format)
 
         clip = depth(
             clip,
@@ -435,7 +435,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             **kwargs,
         )
 
-        log.debug("%s: After pp; Clip format is %s", self.postprocess_clip, clip.format)
+        log.debug("%s: After pp; Clip format is %r", self.postprocess_clip, clip.format)
 
         return clip
 
@@ -448,7 +448,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         tilesize, overlaps = self.calc_tilesize(clip)
 
-        log.debug("%s: Passing clip to inference: %s", self.inference, clip.format)
+        log.debug("%s: Passing clip to inference: %r", self.inference, clip.format)
         log.debug("%s: Passing model: %s", self.inference, self.model)
         log.debug("%s: Passing tiles size: %s", self.inference, tilesize)
         log.debug("%s: Passing overlaps: %s", self.inference, overlaps)
@@ -478,7 +478,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         )
 
         log.debug(
-            "%s: Selecting precision: %s",
+            "%s: Selecting precision: %r",
             self._pick_precision,
             get_video_format(precision) if precision > 32 else precision,
         )
@@ -625,11 +625,11 @@ class BaseArtCNNChroma(BaseArtCNN):
         if clip.format.subsampling_h != 0 or clip.format.subsampling_w != 0:
             chroma_scaler = Kernel.ensure_obj(kwargs.pop("chroma_scaler", Bilinear))
 
-            log.debug("%s: Before pp; Clip format is %s", self.preprocess_clip, clip.format)
+            log.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
 
             clip = chroma_scaler.resample(clip, format, **kwargs)
 
-            log.debug("%s: Before pp; Clip format is %s", self.preprocess_clip, clip.format)
+            log.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
 
             return norm_expr(clip, ("x 0 1 clamp", "x 0.5 + 0 1 clamp"), func=self.__class__)
 

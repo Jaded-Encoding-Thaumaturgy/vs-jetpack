@@ -113,13 +113,6 @@ def _transform_record_args[T](args: Mapping[T, object]) -> dict[T, object]:
     for key, value in args.items():
         new_value = value
 
-        # Special formatting for vapoursyth objects
-        if is_from_vs_module(value):
-            value_t = value if isclass(value) else type(value)
-
-            if value_t.__str__ is not object.__str__:
-                new_value = repr(value)
-
         # Normalize method and class names
         if callable(value) or isclass(value):
             new_value = norm_func_name(value)
