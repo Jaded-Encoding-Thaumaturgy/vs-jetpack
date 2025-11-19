@@ -430,11 +430,6 @@ class NNEDI3(SuperSampler):
     Wrapper default is 1, plugin default is 2 for integer input and 1 for float input.
     """
 
-    opencl: bool = False
-    """
-    Enables the use of the OpenCL variant.
-    """
-
     @Scaler.cachedproperty
     def kernel_radius(self) -> int:
         match self.nsize:
@@ -458,7 +453,7 @@ class NNEDI3(SuperSampler):
 
     @property
     def _deinterlacer_function(self) -> VSFunctionAllArgs:
-        return core.lazy.sneedif.NNEDI3 if self.opencl else core.lazy.znedi3.nnedi3
+        return core.lazy.znedi3.nnedi3
 
     def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = tff + int(double_rate) * 2
@@ -537,12 +532,7 @@ class EEDI2(SuperSampler):
     - 1 = Check for spatial consistency of final interpolation directions
     - 2 = Check for junctions and corners
     - 3 = Apply both checks from 1 and 2
-
-    Only `pp=0` and `pp=1` is implemented for the CUDA variant.
     """
-
-    cuda: bool = False
-    """Enables the use of the CUDA variant for processing."""
 
     @Scaler.cachedproperty
     def kernel_radius(self) -> int:
@@ -563,7 +553,7 @@ class EEDI2(SuperSampler):
 
     @property
     def _deinterlacer_function(self) -> VSFunctionAllArgs:
-        return core.lazy.eedi2cuda.EEDI2 if self.cuda else core.lazy.eedi2.EEDI2
+        return core.lazy.eedi2.EEDI2
 
     def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = tff + int(double_rate) * 2

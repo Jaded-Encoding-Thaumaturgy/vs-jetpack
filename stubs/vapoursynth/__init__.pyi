@@ -1081,10 +1081,6 @@ class VideoNode(RawNode):
     eedi2: Final[_eedi2._VideoNode_bound.Plugin]
     """EEDI2"""
 # </attribute/VideoNode_bound/eedi2>
-# <attribute/VideoNode_bound/eedi2cuda>
-    eedi2cuda: Final[_eedi2cuda._VideoNode_bound.Plugin]
-    """EEDI2 filter using CUDA"""
-# </attribute/VideoNode_bound/eedi2cuda>
 # <attribute/VideoNode_bound/eedi3m>
     eedi3m: Final[_eedi3m._VideoNode_bound.Plugin]
     """Enhanced Edge Directed Interpolation 3"""
@@ -1149,10 +1145,6 @@ class VideoNode(RawNode):
     scxvid: Final[_scxvid._VideoNode_bound.Plugin]
     """VapourSynth Scxvid Plugin"""
 # </attribute/VideoNode_bound/scxvid>
-# <attribute/VideoNode_bound/sneedif>
-    sneedif: Final[_sneedif._VideoNode_bound.Plugin]
-    """Setsugen No Ensemble of Edge Directed Interpolation Functions"""
-# </attribute/VideoNode_bound/sneedif>
 # <attribute/VideoNode_bound/std>
     std: Final[_std._VideoNode_bound.Plugin]
     """VapourSynth Core Functions"""
@@ -1355,10 +1347,6 @@ class Core:
     eedi2: Final[_eedi2._Core_bound.Plugin]
     """EEDI2"""
 # </attribute/Core_bound/eedi2>
-# <attribute/Core_bound/eedi2cuda>
-    eedi2cuda: Final[_eedi2cuda._Core_bound.Plugin]
-    """EEDI2 filter using CUDA"""
-# </attribute/Core_bound/eedi2cuda>
 # <attribute/Core_bound/eedi3m>
     eedi3m: Final[_eedi3m._Core_bound.Plugin]
     """Enhanced Edge Directed Interpolation 3"""
@@ -1431,10 +1419,6 @@ class Core:
     scxvid: Final[_scxvid._Core_bound.Plugin]
     """VapourSynth Scxvid Plugin"""
 # </attribute/Core_bound/scxvid>
-# <attribute/Core_bound/sneedif>
-    sneedif: Final[_sneedif._Core_bound.Plugin]
-    """Setsugen No Ensemble of Edge Directed Interpolation Functions"""
-# </attribute/Core_bound/sneedif>
 # <attribute/Core_bound/std>
     std: Final[_std._Core_bound.Plugin]
     """VapourSynth Core Functions"""
@@ -2018,30 +2002,6 @@ class _eedi2:
 
 # </implementation/eedi2>
 
-# <implementation/eedi2cuda>
-class _eedi2cuda:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def AA2(self, clip: VideoNode, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: int | _SequenceLike[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def BuildConfig(self) -> _AnyStr: ...
-            @_Wrapper.Function
-            def EEDI2(self, clip: VideoNode, field: int, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: int | _SequenceLike[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def Enlarge2(self, clip: VideoNode, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: int | _SequenceLike[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def AA2(self, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: int | _SequenceLike[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def EEDI2(self, field: int, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: int | _SequenceLike[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def Enlarge2(self, mthresh: int | None = None, lthresh: int | None = None, vthresh: int | None = None, estr: int | None = None, dstr: int | None = None, maxd: int | None = None, map: int | None = None, nt: int | None = None, pp: int | None = None, planes: int | _SequenceLike[int] | None = None, num_streams: int | None = None, device_id: int | None = None) -> VideoNode: ...
-
-# </implementation/eedi2cuda>
-
 # <implementation/eedi3m>
 class _eedi3m:
     class _Core_bound:
@@ -2499,30 +2459,6 @@ class _scxvid:
             def Scxvid(self, log: _AnyStr | None = None, use_slices: int | None = None) -> VideoNode: ...
 
 # </implementation/scxvid>
-
-# <implementation/sneedif>
-_ReturnDict_sneedif_DeviceInfo = TypedDict("_ReturnDict_sneedif_DeviceInfo", {"name": _AnyStr, "vendor": _AnyStr, "profile": _AnyStr, "version": _AnyStr, "max_compute_units": int, "max_work_group_size": int, "max_work_item_sizes": int | _SequenceLike[int], "image2D_max_width": int, "image2D_max_height": int, "image_support": int, "global_memory_cache_type": _AnyStr, "global_memory_cache": int, "global_memory_size": int, "max_constant_buffer_size": int, "max_constant_arguments": int, "local_memory_type": _AnyStr, "local_memory_size": int, "available": int, "compiler_available": int, "linker_available": int, "opencl_c_version": _AnyStr, "image_max_buffer_size": int})
-_ReturnDict_sneedif_ListDevices = TypedDict("_ReturnDict_sneedif_ListDevices", {"numDevices": int, "deviceNames": _AnyStr | _SequenceLike[_AnyStr], "platformNames": _AnyStr | _SequenceLike[_AnyStr]})
-_ReturnDict_sneedif_PlatformInfo = TypedDict("_ReturnDict_sneedif_PlatformInfo", {"profile": _AnyStr, "version": _AnyStr, "name": _AnyStr, "vendor": _AnyStr})
-
-class _sneedif:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def DeviceInfo(self, device: int | None = None) -> _ReturnDict_sneedif_DeviceInfo: ...
-            @_Wrapper.Function
-            def ListDevices(self) -> _ReturnDict_sneedif_ListDevices: ...
-            @_Wrapper.Function
-            def NNEDI3(self, clip: VideoNode, field: int, dh: int | None = None, dw: int | None = None, planes: int | _SequenceLike[int] | None = None, nsize: int | None = None, nns: int | None = None, qual: int | None = None, etype: int | None = None, pscrn: int | None = None, transpose_first: int | None = None, device: int | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def PlatformInfo(self, device: int | None = None) -> _ReturnDict_sneedif_PlatformInfo: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NNEDI3(self, field: int, dh: int | None = None, dw: int | None = None, planes: int | _SequenceLike[int] | None = None, nsize: int | None = None, nns: int | None = None, qual: int | None = None, etype: int | None = None, pscrn: int | None = None, transpose_first: int | None = None, device: int | None = None) -> VideoNode: ...
-
-# </implementation/sneedif>
 
 # <implementation/std>
 class _std:
