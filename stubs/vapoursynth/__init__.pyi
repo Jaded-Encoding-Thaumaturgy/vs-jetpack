@@ -2008,15 +2008,11 @@ class _eedi3m:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
             def EEDI3(self, clip: VideoNode, field: int, dh: int | None = None, planes: int | _SequenceLike[int] | None = None, alpha: float | None = None, beta: float | None = None, gamma: float | None = None, nrad: int | None = None, mdis: int | None = None, hp: int | None = None, ucubic: int | None = None, cost3: int | None = None, vcheck: int | None = None, vthresh0: float | None = None, vthresh1: float | None = None, vthresh2: float | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None, opt: int | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def EEDI3CL(self, clip: VideoNode, field: int, dh: int | None = None, planes: int | _SequenceLike[int] | None = None, alpha: float | None = None, beta: float | None = None, gamma: float | None = None, nrad: int | None = None, mdis: int | None = None, hp: int | None = None, ucubic: int | None = None, cost3: int | None = None, vcheck: int | None = None, vthresh0: float | None = None, vthresh1: float | None = None, vthresh2: float | None = None, sclip: VideoNode | None = None, opt: int | None = None, device: int | None = None, list_device: int | None = None, info: int | None = None) -> VideoNode: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
             def EEDI3(self, field: int, dh: int | None = None, planes: int | _SequenceLike[int] | None = None, alpha: float | None = None, beta: float | None = None, gamma: float | None = None, nrad: int | None = None, mdis: int | None = None, hp: int | None = None, ucubic: int | None = None, cost3: int | None = None, vcheck: int | None = None, vthresh0: float | None = None, vthresh1: float | None = None, vthresh2: float | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None, opt: int | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def EEDI3CL(self, field: int, dh: int | None = None, planes: int | _SequenceLike[int] | None = None, alpha: float | None = None, beta: float | None = None, gamma: float | None = None, nrad: int | None = None, mdis: int | None = None, hp: int | None = None, ucubic: int | None = None, cost3: int | None = None, vcheck: int | None = None, vthresh0: float | None = None, vthresh1: float | None = None, vthresh2: float | None = None, sclip: VideoNode | None = None, opt: int | None = None, device: int | None = None, list_device: int | None = None, info: int | None = None) -> VideoNode: ...
 
 # </implementation/eedi3m>
 
