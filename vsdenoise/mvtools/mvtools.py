@@ -41,7 +41,7 @@ class _SuperConfigKey(NamedTuple):
     args: tuple[tuple[str, Any], ...]
 
 
-class _SuperConfigCache(dict[_SuperConfigKey, vs.VideoNode], VSObject):
+class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
     def get_cached_super(self, clip: vs.VideoNode, levels: int, **args: Any) -> vs.VideoNode:
         args_key = tuple(sorted(args.items()))
         key = _SuperConfigKey(levels, args_key)
@@ -70,7 +70,7 @@ class _SuperConfigCache(dict[_SuperConfigKey, vs.VideoNode], VSObject):
         return self[key]
 
 
-class _ClipSuperCache(dict[vs.VideoNode, _SuperConfigCache], VSObject):
+class _ClipSuperCache(VSObject, dict[vs.VideoNode, _SuperConfigCache]):
     def get_cached_super(self, clip: vs.VideoNode, levels: int, **args: Any) -> vs.VideoNode:
         cache = self.get(clip)
 
