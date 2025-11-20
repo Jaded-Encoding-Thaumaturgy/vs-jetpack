@@ -855,14 +855,12 @@ class QTempGaussMC(VSObject):
         vectors = MotionVectors()
         degrained = list[vs.VideoNode]()
 
-        sup = self.mv.super(clip, levels=1)
-
         for delta in range(tr):
             vectors.set_vector(backward[delta], MVDirection.BACKWARD, 1)
             vectors.set_vector(forward[delta], MVDirection.FORWARD, 1)
 
             degrained.append(
-                self.mv.degrain(clip, sup, vectors, thsad=self.basic_thsad, thscd=self.analyze_thscd, **degrain_args)
+                self.mv.degrain(clip, vectors=vectors, thsad=self.basic_thsad, thscd=self.analyze_thscd, **degrain_args)
             )
             vectors.clear()
 
@@ -1032,8 +1030,6 @@ class QTempGaussMC(VSObject):
                 **self.basic_mask_args,
             )
             self.bobbed = self.denoise_output.std.MaskedMerge(self.bobbed, mask)
-
-        self.bobbed = self.mv.super(self.bobbed, levels=1)
 
         smoothed = self._binomial_degrain(self.bobbed, self.basic_tr, **self.basic_degrain_args)
         if self.basic_tr:
