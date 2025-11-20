@@ -416,9 +416,7 @@ class MVTools(VSObject):
         for delta in range(1, tr + 1):
             for direction in MVDirection:
                 self.vectors.set_vector(
-                    core.proxied.mv.Analyse(
-                        super_clip, isb=direction is MVDirection.BACKWARD, delta=delta, **analyze_args
-                    ),
+                    core.mv.Analyse(super_clip, isb=direction is MVDirection.BACKWARD, delta=delta, **analyze_args),
                     direction,
                     delta,
                 )
@@ -516,7 +514,7 @@ class MVTools(VSObject):
         for delta in range(1, vectors.tr + 1):
             for direction in MVDirection:
                 vectors.set_vector(
-                    core.proxied.mv.Recalculate(super_clip, vectors.get_vector(direction, delta), **recalculate_args),
+                    core.mv.Recalculate(super_clip, vectors.get_vector(direction, delta), **recalculate_args),
                     direction,
                     delta,
                 )
@@ -643,7 +641,7 @@ class MVTools(VSObject):
         )
 
         comp_back, comp_fwrd = [
-            [core.proxied.mv.Compensate(clip, super_clip, vectors=vect, **compensate_args) for vect in vectors]
+            [core.mv.Compensate(clip, super_clip, vectors=vect, **compensate_args) for vect in vectors]
             for vectors in (reversed(vect_b), vect_f)
         ]
 
@@ -778,7 +776,7 @@ class MVTools(VSObject):
         )
 
         flow_back, flow_fwrd = [
-            [core.proxied.mv.Flow(clip, super_clip, vectors=vect, **flow_args) for vect in vectors]
+            [core.mv.Flow(clip, super_clip, vectors=vect, **flow_args) for vect in vectors]
             for vectors in (reversed(vect_b), vect_f)
         ]
 
@@ -861,7 +859,7 @@ class MVTools(VSObject):
             thscd2=thscd2,
         )
 
-        return getattr(core.proxied.mv, f"Degrain{tr}")(
+        return getattr(core.mv, f"Degrain{tr}")(
             clip, super_clip, *chain.from_iterable(zip(vect_b, vect_f)), **degrain_args
         )
 
@@ -916,7 +914,7 @@ class MVTools(VSObject):
             time=time, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
         )
 
-        interpolated = core.proxied.mv.FlowInter(clip, super_clip, vect_b[0], vect_f[0], **flow_interpolate_args)
+        interpolated = core.mv.FlowInter(clip, super_clip, vect_b[0], vect_f[0], **flow_interpolate_args)
 
         if interleave:
             interpolated = core.std.Interleave([clip, interpolated])
@@ -976,7 +974,7 @@ class MVTools(VSObject):
 
         flow_fps_args = self.flow_fps_args | flow_fps_args
 
-        return core.proxied.mv.FlowFPS(clip, super_clip, vect_b[0], vect_f[0], **flow_fps_args)
+        return core.mv.FlowFPS(clip, super_clip, vect_b[0], vect_f[0], **flow_fps_args)
 
     def block_fps(
         self,
@@ -1032,7 +1030,7 @@ class MVTools(VSObject):
 
         block_fps_args = self.block_fps_args | block_fps_args
 
-        return core.proxied.mv.BlockFPS(clip, super_clip, vect_b[0], vect_f[0], **block_fps_args)
+        return core.mv.BlockFPS(clip, super_clip, vect_b[0], vect_f[0], **block_fps_args)
 
     def flow_blur(
         self,
@@ -1076,7 +1074,7 @@ class MVTools(VSObject):
 
         flow_blur_args = self.flow_blur_args | KwargsNotNone(blur=blur, prec=prec, thscd1=thscd1, thscd2=thscd2)
 
-        return core.proxied.mv.FlowBlur(clip, super_clip, vect_b[0], vect_f[0], **flow_blur_args)
+        return core.mv.FlowBlur(clip, super_clip, vect_b[0], vect_f[0], **flow_blur_args)
 
     def mask(
         self,
@@ -1126,7 +1124,7 @@ class MVTools(VSObject):
             ml=ml, gamma=gamma, kind=kind, time=time, ysc=ysc, thscd1=thscd1, thscd2=thscd2
         )
 
-        mask_clip = core.proxied.mv.Mask(depth(clip, 8), vect, **mask_args)
+        mask_clip = core.mv.Mask(depth(clip, 8), vect, **mask_args)
 
         return depth(mask_clip, clip, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
 
@@ -1163,6 +1161,6 @@ class MVTools(VSObject):
 
         detect = clip
         for direction in MVDirection:
-            detect = core.proxied.mv.SCDetection(detect, vectors.get_vector(direction, delta), **sc_detection_args)
+            detect = core.mv.SCDetection(detect, vectors.get_vector(direction, delta), **sc_detection_args)
 
         return detect
