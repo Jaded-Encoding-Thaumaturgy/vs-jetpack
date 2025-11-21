@@ -11,6 +11,7 @@ from .base import Indexer
 __all__ = ["FFMS2", "IMWRI", "LSMAS", "BestSource", "CarefulSource"]
 
 
+# Video indexers
 class BestSource(Indexer):
     """
     BestSource indexer.
@@ -56,12 +57,12 @@ class BestSource(Indexer):
         super().__init__(force=force, cachemode=cachemode, **kwargs)
 
 
-class IMWRI(Indexer):
+class FFMS2(Indexer):
     """
-    ImageMagick Writer-Reader indexer
+    FFmpegSource2 indexer
     """
 
-    _source_func = core.lazy.imwri.Read
+    _source_func = core.lazy.ffms2.Source
 
 
 class LSMAS(Indexer):
@@ -80,12 +81,13 @@ class CarefulSource(Indexer):
     _source_func = core.lazy.cs.ImageSource
 
 
-class FFMS2(Indexer):
+# Image indexers
+class IMWRI(Indexer):
     """
-    FFmpegSource2 indexer
+    ImageMagick Writer-Reader indexer
     """
 
-    _source_func = core.lazy.ffms2.Source
+    _source_func = core.lazy.imwri.Read
 
 
 class ZipSource(Indexer):
