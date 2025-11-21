@@ -66,9 +66,14 @@ def require_jet_dependency[**P, R](
                 return func(*args, **kwargs)
             except ImportError as e:
                 if e.name in name:
-                    raise DependencyNotFoundError(
-                        func, e.name, "Missing dependency '{package}'. Please install vsjetpack[full]"
-                    ) from None
+                    exc = DependencyNotFoundError(
+                        func,
+                        e.name,
+                        "Missing dependency '{package}' for function '{func_name}'. Please install vsjetpack[full]",
+                        func_name=func,
+                    )
+
+                    raise exc from None
             raise
 
         return wrapper
