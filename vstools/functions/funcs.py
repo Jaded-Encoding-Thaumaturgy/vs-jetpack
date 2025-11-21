@@ -27,7 +27,7 @@ from .utils import depth, join, plane
 __all__ = ["FunctionUtil"]
 
 
-class FunctionUtil(list[int], VSObject):
+class FunctionUtil(VSObject, list[int]):
     """
     Function util to normalize common actions and boilerplate often used in functions.
 

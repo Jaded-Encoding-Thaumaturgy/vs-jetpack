@@ -17,8 +17,6 @@ denoise = nl_means(denoise, 0.2, tr=2, ref=ref, planes=[1, 2])
 ```
 """
 
-from typing import TYPE_CHECKING, Any
-
 from .blockmatch import *
 from .deblock import *
 from .fft import *
@@ -28,18 +26,3 @@ from .mvtools import *
 from .nlm import *
 from .postprocess import *
 from .prefilters import *
-
-__version__: str
-
-if not TYPE_CHECKING:
-
-    def __getattr__(name: str) -> Any:
-        if name == "__version__":
-            from importlib import import_module
-
-            try:
-                return import_module("._version", package=__package__).__version__
-            except ModuleNotFoundError:
-                return "unknown"
-
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

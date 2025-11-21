@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Literal, Sequence, overload
+from typing import Any, Literal, Mapping, Sequence, overload
 
-from jetpytools import CustomEnum, CustomIntEnum, KwargsT
+from jetpytools import CustomEnum, CustomIntEnum
 
 from vsdenoise import MotionVectors, MVTools, MVToolsPreset, prefilter_to_full_range, refine_blksize
 from vsexprtools import norm_expr
@@ -49,7 +49,7 @@ class InterpolateOverlay(CustomEnum):
         clip: vs.VideoNode,
         pattern: int,
         vectors: MotionVectors | None = None,
-        preset: MVToolsPreset = MVToolsPreset.HQ_COHERENCE,
+        preset: Mapping[str, Any] = ...,
         blksize: int | tuple[int, int] = 8,
         overlap: int | tuple[int, int] = 2,
         refine: int = 1,
@@ -63,7 +63,7 @@ class InterpolateOverlay(CustomEnum):
         clip: vs.VideoNode,
         pattern: int,
         vectors: MotionVectors | None = None,
-        preset: MVToolsPreset = MVToolsPreset.HQ_COHERENCE,
+        preset: Mapping[str, Any] = ...,
         blksize: int | tuple[int, int] = 8,
         overlap: int | tuple[int, int] = 2,
         refine: int = 1,
@@ -78,7 +78,7 @@ class InterpolateOverlay(CustomEnum):
         clip: vs.VideoNode,
         pattern: int,
         vectors: MotionVectors | None = None,
-        preset: MVToolsPreset = MVToolsPreset.HQ_COHERENCE,
+        preset: Mapping[str, Any] = ...,
         blksize: int | tuple[int, int] = 8,
         overlap: int | tuple[int, int] = 2,
         refine: int = 1,
@@ -91,7 +91,7 @@ class InterpolateOverlay(CustomEnum):
         clip: vs.VideoNode,
         pattern: int,
         vectors: MotionVectors | None = None,
-        preset: MVToolsPreset = MVToolsPreset.HQ_COHERENCE,
+        preset: Mapping[str, Any] = MVToolsPreset.HQ_COHERENCE,
         blksize: int | tuple[int, int] = 8,
         overlap: int | tuple[int, int] = 2,
         refine: int = 1,
@@ -124,7 +124,7 @@ class InterpolateOverlay(CustomEnum):
         mv = MVTools(
             clip,
             vectors=vectors,
-            **preset | KwargsT(search_clip=partial(prefilter_to_full_range, slope=1, func=self.__class__)),
+            **{**preset, "search_clip": partial(prefilter_to_full_range, slope=1, func=self.__class__)},
         )
 
         if not vectors:

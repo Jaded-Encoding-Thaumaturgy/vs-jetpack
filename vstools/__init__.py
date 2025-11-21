@@ -15,17 +15,9 @@ from .types import *
 from .utils import *
 from .vs_proxy import *
 
-__version__: str
-
 
 def __getattr__(name: str) -> Any:
     from importlib import import_module
-
-    if name == "__version__":
-        try:
-            return import_module("._version", package=__package__).__version__
-        except ModuleNotFoundError:
-            return "unknown"
 
     # TODO: add deprecation warning soon tm
     try:

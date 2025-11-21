@@ -179,13 +179,17 @@ class MeanMode(CustomEnum):
         return clip
 
     def expr(
-        self, n: SupportsIndex | Sequence[SupportsString] | HoldsVideoFormat | VideoFormatLike, **kwargs: Any
+        self,
+        n: SupportsIndex | Sequence[SupportsString] | HoldsVideoFormat | VideoFormatLike,
+        eps: float = 1e-7,
+        **kwargs: Any,
     ) -> ExprList:
         """
         Builds a mean expression using a specified mode.
 
         Args:
             n: Object from which to infer the variables.
+            eps: Small constant to avoid division by zero. Defaults to 1e-7.
             **kwargs: Additional keyword arguments for certain modes.
 
                    - p (float): Exponent for `LEHMER` mode. Defaults to 3.
@@ -202,7 +206,7 @@ class MeanMode(CustomEnum):
             case MeanMode.LEHMER:
                 p = kwargs.pop("p", self.value)
 
-                expr = ExprList((f"{v} neutral - D{i}!" for i, v in enumerate(evars)))
+                expr = ExprList((f"{v} neutral - {eps} + D{i}!" for i, v in enumerate(evars)))
 
                 for x in range(2):
                     expr.extend([[f"D{i}@ {p - x} pow" for i in range(n_len)], ExprOp.ADD * (n_len - 1), f"P{x}!"])
@@ -211,7 +215,7 @@ class MeanMode(CustomEnum):
 
                 return expr
             case MeanMode.HARMONIC | MeanMode.GEOMETRIC | MeanMode.CONTRAHARMONIC:
-                return MeanMode.LEHMER.expr(n, p=self.value)
+                return MeanMode.LEHMER.expr(n, eps, p=self.value)
             case MeanMode.MEDIAN:
                 n_op = (n_len - 1) // 2
                 mean = "" if n_len % 2 else "+ 2 /"

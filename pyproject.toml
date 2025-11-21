@@ -66,7 +66,6 @@ dev = [
     "twine>=6.1.0",
     "types-psutil>=7.0.0.20250801",
     # Needed for the folder "scripts"
-    "hatchling>=1.27.0",
     "mkdocs-gen-files==0.5.0",
     "vstransitions==0.1.4",
 ]
@@ -93,6 +92,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = [
+    "vsjetpack",
     "vstools",
     "vskernels",
     "vsexprtools",
@@ -106,44 +106,28 @@ packages = [
     "vsdeinterlace",
     "vssource",
 ]
-include = [
-    "vstools/py.typed",
-    "vstools/utils/*.json",
-    "vskernels/py.typed",
-    "vsexprtools/py.typed",
-    "vsrgtools/py.typed",
-    "vsmasktools/py.typed",
-    "vsaa/py.typed",
-    "vsscale/py.typed",
-    "vsdenoise/py.typed",
-    "vsdehalo/py.typed",
-    "vsdeband/py.typed",
-    "vsdeinterlace/py.typed",
-    "vssource/py.typed",
-]
+force-include = { "_version.py" = "/vsjetpack/_version.py" }
 exclude = ["docs", "scripts", "site", "stubs", "tests", "README.*"]
-
-[tool.hatch.build.targets.wheel.hooks.custom]
-path = "scripts/add_version_pkgs.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/docs",
-    "/scripts",
-    "/stubs",
-    "/tests",
-    "/vsaa",
-    "/vsdeband",
-    "/vsdehalo",
-    "/vsdeinterlace",
-    "/vsdenoise",
-    "/vsexprtools",
-    "/vskernels",
-    "/vsmasktools",
-    "/vsrgtools",
-    "/vsscale",
-    "/vssource",
-    "/vstools",
+    "docs",
+    "scripts",
+    "stubs",
+    "tests",
+    "vsaa",
+    "vsdeband",
+    "vsdehalo",
+    "vsdeinterlace",
+    "vsdenoise",
+    "vsexprtools",
+    "vsjetpack",
+    "vskernels",
+    "vsmasktools",
+    "vsrgtools",
+    "vsscale",
+    "vssource",
+    "vstools",
     "_version.py",
     "mkdocs.yml",
 ]

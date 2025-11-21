@@ -65,7 +65,7 @@ class SplitTitle:
         return "\n".join(to_print)
 
 
-class TitleAudios(Sequence[vs.AudioNode], VSObjectABC):
+class TitleAudios(VSObjectABC, Sequence[vs.AudioNode]):
     def __init__(self, title: Title) -> None:
         self.title = title
 

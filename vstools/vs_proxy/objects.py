@@ -1,32 +1,26 @@
 from __future__ import annotations
 
-import sys
 from abc import ABC, ABCMeta
 from enum import Flag
 from functools import partial
-from inspect import getmodule
 from itertools import chain
+from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable, Mapping, MutableMapping, MutableSequence, MutableSet, Self
 
 from jetpytools import Singleton, classproperty
+
+from vsjetpack import is_from_vs_module
 
 from .proxy import core, register_on_creation, register_on_destroy
 
 __all__ = ["VSDebug", "VSObject", "VSObjectABC", "VSObjectABCMeta", "VSObjectMeta", "vs_object"]
 
 
+log = getLogger(__name__)
+
+
 def _get_mangle_name(name: str) -> str:
     return "_" + name.lstrip("_")
-
-
-_vs_module = sys.modules["vapoursynth"]
-
-
-def _is_vs_module(obj: Any) -> bool:
-    if hasattr(obj, "__module__"):
-        return sys.modules[obj.__module__] is _vs_module
-
-    return getmodule(type(obj)) is _vs_module
 
 
 def _iterative_check(x: Any) -> bool:
@@ -35,7 +29,7 @@ def _iterative_check(x: Any) -> bool:
     while stack:
         current = stack.pop()
 
-        if res := _is_vs_module(current):
+        if res := is_from_vs_module(current):
             return res
 
         if isinstance(current, (str, bytes, bytearray, Flag)):
@@ -110,13 +104,27 @@ def _register_vs_del(obj: VSObject | VSObjectMeta) -> None:
         if not hasattr(obj, "__dict__"):
             prefix = _get_mangle_name(obj.__class__.__name__)
 
-    def _register(core_id: int) -> None:
-        vsdel_partial_register = partial(getattr(obj, del_method), core_id)
+    def del_register(core_id: int) -> None:
+        def vsdel_partial_register() -> None:
+            getattr(obj, del_method)(core_id)
+            log.log(
+                5,
+                "%r has been freed using %r%s",
+                getattr(obj, "__name__", obj.__class__.__name__),
+                del_method,
+                "... Custom dunder detected!"
+                if (
+                    (isinstance(obj, VSObject) and obj.__class__.__vs_del__ != VSObject.__vs_del__)
+                    or (isinstance(obj, VSObjectMeta) and obj.__class__.__cls_vs_del__ != VSObjectMeta.__cls_vs_del__)
+                )
+                else "",
+            )
+
         setattr(obj, prefix + partial_attr, vsdel_partial_register)
         core.register_on_destroy(vsdel_partial_register)
 
-    setattr(obj, prefix + register_attr, _register)
-    register_on_creation(_register)
+    setattr(obj, prefix + register_attr, del_register)
+    register_on_creation(del_register)
 
 
 class VSObjectMeta(type):
@@ -152,6 +160,9 @@ class VSObjectMeta(type):
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
 
         _register_vs_del(cls)
+
+        log.log(5, "%s: Registering %r as VS object meta", mcls, cls)
+
         return cls
 
     def __cls_vs_del__(cls, core_id: int) -> None:
@@ -178,6 +189,8 @@ class VSObject(metaclass=VSObjectMeta):
                 obj = super().__new__(cls, *args, **kwargs)
             except TypeError:
                 obj = super().__new__(cls)
+
+            log.log(5, "%s: Registering %r as VS object", "VSObject", cls)
 
             _register_vs_del(obj)
             return obj

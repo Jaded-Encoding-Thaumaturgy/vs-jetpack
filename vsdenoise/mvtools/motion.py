@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 
-class MotionVectors(defaultdict[MVDirection, dict[int, vs.VideoNode]], VSObject):
+class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]]):
     """
     Class for storing and managing motion vectors for a video clip.
 

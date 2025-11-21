@@ -1,21 +1,14 @@
 from __future__ import annotations
 
 import re
-from logging import debug as logging_debug
+import sys
+from itertools import groupby
+from logging import getLogger
 from math import ceil
 from typing import Any, Callable, Iterable, Sequence, SupportsIndex
 from warnings import warn
 
-from jetpytools import (
-    CustomIndexError,
-    CustomRuntimeError,
-    FuncExcept,
-    StrList,
-    SupportsString,
-    norm_func_name,
-    normalize_seq,
-    to_arr,
-)
+from jetpytools import CustomIndexError, CustomRuntimeError, FuncExcept, StrList, SupportsString, normalize_seq, to_arr
 
 from vstools import (
     EXPR_VARS,
@@ -31,11 +24,26 @@ from vstools import (
     vs,
 )
 
+if sys.version_info >= (3, 14):
+    from string.templatelib import Template
+
 from .error import CustomExprError
 from .exprop import ExprList, ExprOp, ExprOpBase, TupleExprList, _TokenDeprecation
 from .util import ExprVars
 
 __all__ = ["combine", "combine_expr", "expr_func", "norm_expr"]
+
+log = getLogger(__name__)
+
+
+class _LazyLogExpr:
+    __slots__ = "expr"
+
+    def __init__(self, expr: str | Sequence[str]) -> None:
+        self.expr = expr
+
+    def __str__(self) -> str:
+        return str([k for k, _ in groupby(to_arr(self.expr))])
 
 
 def expr_func(
@@ -78,7 +86,7 @@ def expr_func(
 
     fmt = get_video_format(format).id if format is not None else None
 
-    logging_debug(f"expr_func ({norm_func_name(func)}): {expr}")
+    log.debug("expr_func (%s): %s", func, _LazyLogExpr(expr))
 
     try:
         return core.akarin.Expr(clips, expr, fmt, opt, boundary)
@@ -185,13 +193,15 @@ Acceptable forms include:
 - An iterable (list, tuple, etc.) containing other NestedStrLike values, which may themselves be further nested.
 """
 
-type ExprLike = str | Sequence[NestedStrLike]
+type ExprLike = str | Template | Sequence[NestedStrLike]
 """
 A recursive type representing a valid expression input.
 
 Acceptable forms include:
 
 - A single string (or string-like object): Used as the same expression for all planes.
+- A t-string or Template object: Used as the same expression for all planes (Python >=3.14).
+  Interpolations attributes may be sequences that will be associated with the corresponding plane.
 - A list of expressions: Concatenated into a single expression for all planes.
 - A tuple of expressions: Interpreted as separate expressions for each plane.
 - A [TupleExprList][vsexprtools.TupleExprList]: will make a [norm_expr][vsexprtools.norm_expr] call for each expression
@@ -222,6 +232,8 @@ def norm_expr(
         expr: Expression to be evaluated.
 
                - A single str will be processed for all planes.
+               - A t-string or Template object: Used as the same expression for all planes (Python >=3.14).
+                 Interpolations attributes may be sequences will be associated with the corresponding plane.
                - A list will be concatenated to form a single expr for all planes.
                - A tuple of these types will allow specification of different expr for each planes.
                - A [TupleExprList][vsexprtools.TupleExprList] will make a `norm_expr` call for each expression
@@ -261,12 +273,14 @@ def norm_expr(
             )
         else:
             nexpr = tuple(to_arr(x) for x in expr)
-    else:
+    elif isinstance(expr, Sequence):
         nexpr = (to_arr(expr),)
+    else:
+        nexpr = expr
 
     clips = flatten_vnodes(clips, split_planes=split_planes)
 
-    normalized_exprs = [StrList(plane_expr).to_str() for plane_expr in nexpr]
+    normalized_exprs = [StrList(plane_expr).to_str() for plane_expr in nexpr] if isinstance(nexpr, Sequence) else nexpr
 
     normalized_expr = norm_expr_planes(clips[0], normalized_exprs, planes, **kwargs)
 
@@ -338,19 +352,29 @@ def bitdepth_aware_tokenize_expr(
 
 def norm_expr_planes(
     clip: vs.VideoNode,
-    expr: str | list[str],
+    expr: str | Template | Sequence[str],
     planes: Planes = None,
     **kwargs: Iterable[SupportsString] | SupportsString,
 ) -> list[str]:
-    assert clip.format
-
-    expr_array = normalize_seq(expr, clip.format.num_planes)
-
     planes = normalize_planes(clip, planes)
 
-    string_args = [(key, normalize_seq(value, 3)) for key, value in kwargs.items()]
+    if sys.version_info >= (3, 14) and isinstance(expr, Template):
+        from string.templatelib import convert
+
+        normalized_values = {t: normalize_seq(t.value, clip.format.num_planes) for t in expr if not isinstance(t, str)}
+
+        expr = [
+            "".join(
+                t if isinstance(t, str) else format(convert(normalized_values[t][i], t.conversion), t.format_spec)
+                for t in expr
+            )
+            for i in range(clip.format.num_planes)
+        ]
+
+    expr_array = normalize_seq(to_arr(expr), clip.format.num_planes)
+    kw_arrays = {k: normalize_seq(v, 3) for k, v in kwargs.items()}
 
     return [
-        exp.format(**({"plane_idx": i} | {key: value[i] for key, value in string_args})) if i in planes else ""
+        exp.format(plane_idx=i, **{k: v[i] for k, v in kw_arrays.items()}) if i in planes else ""
         for i, exp in enumerate(expr_array)
     ]

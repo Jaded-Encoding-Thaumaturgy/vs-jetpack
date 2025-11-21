@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Union, overload
 
-from jetpytools import CustomValueError, FuncExcept, KwargsT, iterate
+from jetpytools import CustomValueError, FuncExcept, iterate
 
 from vsexprtools import ExprOp, norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike
@@ -74,7 +74,7 @@ def diff_creditless_oped(
 
     op_mask = ed_mask = None
 
-    kwargs |= KwargsT(expand=4, prefilter=False, func=func, ep_clip=ep) | kwargs
+    kwargs = {"expand": 4, "prefilter": False, "func": func, "ep_clip": ep} | kwargs
 
     if opstart is not None and opend is not None and ncop is not None:
         op_mask = diff_creditless(ep[opstart : opend + 1], ncop[: opend - opstart + 1], thr, opstart, **kwargs)
@@ -104,7 +104,7 @@ def based_diff_mask(
     /,
     *,
     thr: float = 0.216,
-    prefilter: int | KwargsT | bool | VSFunctionNoArgs = False,
+    prefilter: int | dict[str, Any] | bool | VSFunctionNoArgs = False,
     postfilter: Union[
         int,
         tuple[Count, RemoveGrain.Mode],
@@ -124,7 +124,7 @@ def based_diff_mask(
     kernel: KernelLike,
     /,
     thr: float = 0.216,
-    prefilter: int | KwargsT | bool | VSFunctionNoArgs = False,
+    prefilter: int | dict[str, Any] | bool | VSFunctionNoArgs = False,
     postfilter: Union[
         int,
         tuple[Count, RemoveGrain.Mode],
@@ -143,7 +143,7 @@ def based_diff_mask(
     kernel: KernelLike | None = None,
     /,
     thr: float = 0.216,
-    prefilter: int | KwargsT | bool | VSFunctionNoArgs = False,
+    prefilter: int | dict[str, Any] | bool | VSFunctionNoArgs = False,
     postfilter: Union[
         int,
         tuple[Count, RemoveGrain.Mode],
@@ -166,7 +166,7 @@ def based_diff_mask(
 
                - int -> equivalent of number of taps used in the bilateral call applied to the clips
                - True -> 5 taps
-               - KwargsT -> Arguments passed to the bilateral function
+               - dict -> Arguments passed to the bilateral function
         postfilter: Filter applied to the difference clip. Default is RemoveGrainMode.MINMAX_AROUND2 applied twice.
         ampl: Amplification expression.
         expand: Additional expand radius applied to the mask, defaults to 4
@@ -197,7 +197,7 @@ def based_diff_mask(
         else:
             if isinstance(prefilter, int):
                 sigma = 5 if prefilter is True else prefilter
-                kwargs = KwargsT(sigmaS=((sigma**2 - 1) / 12) ** 0.5, sigmaR=sigma / 10)
+                kwargs = {"sigmaS": ((sigma**2 - 1) / 12) ** 0.5, "sigmaR": sigma / 10}
             else:
                 kwargs = prefilter
 

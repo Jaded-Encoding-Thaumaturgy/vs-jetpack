@@ -15,7 +15,6 @@ from jetpytools import (
     CustomValueError,
     EnumABCMeta,
     FuncExcept,
-    KwargsT,
     normalize_seq,
 )
 
@@ -89,7 +88,7 @@ def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: Planes, **k
     if pref_type == Prefilter.NLMEANS:
         from .nlm import nl_means
 
-        return nl_means(clip, **KwargsT(h=7.0, s=2, planes=planes) | kwargs)
+        return nl_means(clip, **{"h": 7.0, "s": 2, "planes": planes} | kwargs)
 
     if pref_type == Prefilter.BM3D:
         from .blockmatch import bm3d
@@ -98,7 +97,7 @@ def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: Planes, **k
 
         sigmas = kwargs.pop("sigma", [10 if 0 in planes else 0, 10 if (1 in planes or 2 in planes) else 0])
 
-        return bm3d(clip, **KwargsT(sigma=sigmas, radius=1) | kwargs)
+        return bm3d(clip, **{"sigma": sigmas, "radius": 1} | kwargs)
 
     if pref_type is Prefilter.BILATERAL:
         planes = normalize_planes(clip, planes)

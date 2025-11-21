@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from fractions import Fraction
 from itertools import chain
-from typing import Any, Literal, Union, overload
+from typing import Any, Literal, Mapping, Union, overload
 
-from jetpytools import KwargsNotNone, KwargsT, fallback, normalize_seq
+from jetpytools import KwargsNotNone, fallback, normalize_seq
 
 from vstools import (
     ColorRange,
@@ -41,40 +41,40 @@ class MVTools(VSObject):
     MVTools wrapper for motion analysis, degraining, compensation, interpolation, etc.
     """
 
-    super_args: KwargsT
+    super_args: dict[str, Any]
     """Arguments passed to every [MVTools.super][vsdenoise.MVTools.super] call."""
 
-    analyze_args: KwargsT
+    analyze_args: dict[str, Any]
     """Arguments passed to every [MVTools.analyze][vsdenoise.MVTools.analyze] call."""
 
-    recalculate_args: KwargsT
+    recalculate_args: dict[str, Any]
     """Arguments passed to every [MVTools.recalculate][vsdenoise.MVTools.recalculate] call."""
 
-    compensate_args: KwargsT
+    compensate_args: dict[str, Any]
     """Arguments passed to every [MVTools.compensate][vsdenoise.MVTools.compensate] call."""
 
-    flow_args: KwargsT
+    flow_args: dict[str, Any]
     """Arguments passed to every [MVTools.flow][vsdenoise.MVTools.flow] call."""
 
-    degrain_args: KwargsT
+    degrain_args: dict[str, Any]
     """Arguments passed to every [MVTools.degrain][vsdenoise.MVTools.degrain] call."""
 
-    flow_interpolate_args: KwargsT
+    flow_interpolate_args: dict[str, Any]
     """Arguments passed to every [MVTools.flow_interpolate][vsdenoise.MVTools.flow_interpolate] call."""
 
-    flow_fps_args: KwargsT
+    flow_fps_args: dict[str, Any]
     """Arguments passed to every [MVTools.flow_fps][vsdenoise.MVTools.flow_fps] call."""
 
-    block_fps_args: KwargsT
+    block_fps_args: dict[str, Any]
     """Arguments passed to every [MVTools.block_fps][vsdenoise.MVTools.block_fps] call."""
 
-    flow_blur_args: KwargsT
+    flow_blur_args: dict[str, Any]
     """Arguments passed to every [MVTools.flow_blur][vsdenoise.MVTools.flow_blur] call."""
 
-    mask_args: KwargsT
+    mask_args: dict[str, Any]
     """Arguments passed to every [MVTools.mask][vsdenoise.MVTools.mask] call."""
 
-    sc_detection_args: KwargsT
+    sc_detection_args: dict[str, Any]
     """Arguments passed to every [MVTools.sc_detection][vsdenoise.MVTools.sc_detection] call."""
 
     vectors: MotionVectors
@@ -93,18 +93,18 @@ class MVTools(VSObject):
         chroma: bool | None = None,
         field: Field | None = None,
         *,
-        super_args: KwargsT | None = None,
-        analyze_args: KwargsT | None = None,
-        recalculate_args: KwargsT | None = None,
-        compensate_args: KwargsT | None = None,
-        flow_args: KwargsT | None = None,
-        degrain_args: KwargsT | None = None,
-        flow_interpolate_args: KwargsT | None = None,
-        flow_fps_args: KwargsT | None = None,
-        block_fps_args: KwargsT | None = None,
-        flow_blur_args: KwargsT | None = None,
-        mask_args: KwargsT | None = None,
-        sc_detection_args: KwargsT | None = None,
+        super_args: Mapping[str, Any] | None = None,
+        analyze_args: Mapping[str, Any] | None = None,
+        recalculate_args: Mapping[str, Any] | None = None,
+        compensate_args: Mapping[str, Any] | None = None,
+        flow_args: Mapping[str, Any] | None = None,
+        degrain_args: Mapping[str, Any] | None = None,
+        flow_interpolate_args: Mapping[str, Any] | None = None,
+        flow_fps_args: Mapping[str, Any] | None = None,
+        block_fps_args: Mapping[str, Any] | None = None,
+        flow_blur_args: Mapping[str, Any] | None = None,
+        mask_args: Mapping[str, Any] | None = None,
+        sc_detection_args: Mapping[str, Any] | None = None,
     ) -> None:
         """
         MVTools is a collection of functions for motion estimation and compensation in video.
@@ -160,18 +160,18 @@ class MVTools(VSObject):
         else:
             self.search_clip = fallback(search_clip, self.clip)
 
-        self.super_args = fallback(super_args, KwargsT())
-        self.analyze_args = fallback(analyze_args, KwargsT())
-        self.recalculate_args = fallback(recalculate_args, KwargsT())
-        self.compensate_args = fallback(compensate_args, KwargsT())
-        self.degrain_args = fallback(degrain_args, KwargsT())
-        self.flow_args = fallback(flow_args, KwargsT())
-        self.flow_interpolate_args = fallback(flow_interpolate_args, KwargsT())
-        self.flow_fps_args = fallback(flow_fps_args, KwargsT())
-        self.block_fps_args = fallback(block_fps_args, KwargsT())
-        self.flow_blur_args = fallback(flow_blur_args, KwargsT())
-        self.mask_args = fallback(mask_args, KwargsT())
-        self.sc_detection_args = fallback(sc_detection_args, KwargsT())
+        self.super_args = dict(super_args) if super_args else {}
+        self.analyze_args = dict(analyze_args) if analyze_args else {}
+        self.recalculate_args = dict(recalculate_args) if recalculate_args else {}
+        self.compensate_args = dict(compensate_args) if compensate_args else {}
+        self.degrain_args = dict(degrain_args) if degrain_args else {}
+        self.flow_args = dict(flow_args) if flow_args else {}
+        self.flow_interpolate_args = dict(flow_interpolate_args) if flow_interpolate_args else {}
+        self.flow_fps_args = dict(flow_fps_args) if flow_fps_args else {}
+        self.block_fps_args = dict(block_fps_args) if block_fps_args else {}
+        self.flow_blur_args = dict(flow_blur_args) if flow_blur_args else {}
+        self.mask_args = dict(mask_args) if mask_args else {}
+        self.sc_detection_args = dict(sc_detection_args) if sc_detection_args else {}
 
     def super(
         self,

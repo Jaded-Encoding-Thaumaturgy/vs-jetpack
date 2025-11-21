@@ -58,7 +58,7 @@ __all__ = [
 
 
 @dataclass
-class CustomMaskFromClipsAndRanges(GeneralMask, VSObjectABC):
+class CustomMaskFromClipsAndRanges(VSObjectABC, GeneralMask):
     """
     Abstract CustomMaskFromClipsAndRanges interface
     """

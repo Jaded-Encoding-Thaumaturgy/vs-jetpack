@@ -1,6 +1,6 @@
 import contextlib
 import math
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Sequence, cast
 
 import pytest
 from jetpytools import clamp
@@ -199,7 +199,7 @@ def test_expr_op_str_lerp(clip_a: vs.VideoNode, clip_b: vs.VideoNode, t: float, 
         _get_akarin_expr_version.cache_clear()
     else:
         with contextlib.suppress(ValueError):
-            _get_akarin_expr_version()["expr_features"].remove(bytes(ExprOp.LERP.value, "utf-8"))
+            cast(list[bytes], _get_akarin_expr_version()["expr_features"]).remove(bytes(ExprOp.LERP.value, "utf-8"))
 
     expr = norm_expr([clip_a, clip_b], f"x y {t} {ExprOp.LERP.convert_extra()}")
 
@@ -287,7 +287,7 @@ def test_expr_op_str_polyval(input_clip: vs.VideoNode, coeffs: Sequence[float], 
         _get_akarin_expr_version.cache_clear()
     else:
         with contextlib.suppress(ValueError):
-            _get_akarin_expr_version()["expr_features"].remove(b"polyval")
+            cast(list[bytes], _get_akarin_expr_version()["expr_features"]).remove(b"polyval")
 
     expr = expr_func(
         input_clip, " ".join(str(c) for c in coeffs) + " x " + ExprOp.POLYVAL.convert_extra(len(coeffs) - 1)

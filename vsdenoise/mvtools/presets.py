@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Iterator, MutableMapping, Self, TypedDict, overload
+from typing import Any, Iterator, Mapping, Self, TypedDict
 
-from jetpytools import KwargsT, SupportsKeysAndGetItem, classproperty
+from jetpytools import KwargsNotNone, classproperty
 
 from vstools import VSFunctionNoArgs, VSObjectABC, vs
 
@@ -149,24 +149,24 @@ class ScDetectionArgs(TypedDict, total=False):
     thscd2: int | None
 
 
-class MVToolsPreset(MutableMapping[str, Any], VSObjectABC):
+class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     search_clip: vs.VideoNode | VSFunctionNoArgs
     tr: int
     pel: int
     pad: int | tuple[int | None, int | None]
     chroma: bool
-    super_args: SuperArgs | KwargsT
-    analyze_args: AnalyzeArgs | KwargsT
-    recalculate_args: RecalculateArgs | KwargsT
-    compensate_args: CompensateArgs | KwargsT
-    flow_args: FlowArgs | KwargsT
-    degrain_args: DegrainArgs | KwargsT
-    flow_interpolate_args: FlowInterpolateArgs | KwargsT
-    flow_fps_args: FlowFpsArgs | KwargsT
-    block_fps_args: BlockFpsArgs | KwargsT
-    flow_blur_args: FlowBlurArgs | KwargsT
-    mask_args: MaskArgs | KwargsT
-    sc_detection_args: ScDetectionArgs | KwargsT
+    super_args: SuperArgs
+    analyze_args: AnalyzeArgs
+    recalculate_args: RecalculateArgs
+    compensate_args: CompensateArgs
+    flow_args: FlowArgs
+    degrain_args: DegrainArgs
+    flow_interpolate_args: FlowInterpolateArgs
+    flow_fps_args: FlowFpsArgs
+    block_fps_args: BlockFpsArgs
+    flow_blur_args: FlowBlurArgs
+    mask_args: MaskArgs
+    sc_detection_args: ScDetectionArgs
 
     def __init__(
         self,
@@ -176,20 +176,20 @@ class MVToolsPreset(MutableMapping[str, Any], VSObjectABC):
         pel: int | None = None,
         pad: int | tuple[int | None, int | None] | None = None,
         chroma: bool | None = None,
-        super_args: SuperArgs | KwargsT | None = None,
-        analyze_args: AnalyzeArgs | KwargsT | None = None,
-        recalculate_args: RecalculateArgs | KwargsT | None = None,
-        compensate_args: CompensateArgs | KwargsT | None = None,
-        flow_args: FlowArgs | KwargsT | None = None,
-        degrain_args: DegrainArgs | KwargsT | None = None,
-        flow_interpolate_args: FlowInterpolateArgs | KwargsT | None = None,
-        flow_fps_args: FlowFpsArgs | KwargsT | None = None,
-        block_fps_args: BlockFpsArgs | KwargsT | None = None,
-        flow_blur_args: FlowBlurArgs | KwargsT | None = None,
-        mask_args: MaskArgs | KwargsT | None = None,
-        sc_detection_args: ScDetectionArgs | KwargsT | None = None,
+        super_args: SuperArgs | None = None,
+        analyze_args: AnalyzeArgs | None = None,
+        recalculate_args: RecalculateArgs | None = None,
+        compensate_args: CompensateArgs | None = None,
+        flow_args: FlowArgs | None = None,
+        degrain_args: DegrainArgs | None = None,
+        flow_interpolate_args: FlowInterpolateArgs | None = None,
+        flow_fps_args: FlowFpsArgs | None = None,
+        block_fps_args: BlockFpsArgs | None = None,
+        flow_blur_args: FlowBlurArgs | None = None,
+        mask_args: MaskArgs | None = None,
+        sc_detection_args: ScDetectionArgs | None = None,
     ) -> None:
-        self._dict = dict[str, Any](
+        self._dict = KwargsNotNone(
             search_clip=search_clip,
             tr=tr,
             pel=pel,
@@ -210,60 +210,35 @@ class MVToolsPreset(MutableMapping[str, Any], VSObjectABC):
         )
 
     def __str__(self) -> str:
-        return self.__clean_dict__().__str__()
-
-    def __clean_dict__(self) -> dict[str, Any]:
-        return {k: v for k, v in self._dict.items() if v is not None}
+        return self._dict.__str__()
 
     def __getattr__(self, name: str) -> Any:
+        d = self.__clean_dict__ if name in self.__annotations__ else self.__dict__
+
         try:
-            return self.__clean_dict__()[name]
+            return d[name]
         except KeyError:
             pass
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'") from None
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        if name in self.__annotations__:
-            self._dict[name] = value
-
-        self.__dict__[name] = value
-
     def __getitem__(self, key: str) -> Any:
-        return self.__clean_dict__().__getitem__(key)
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        self._dict.__setitem__(key, value)
-
-    def __delitem__(self, key: str) -> None:
-        self._dict.__delitem__(key)
+        return self._dict.__getitem__(key)
 
     def __iter__(self) -> Iterator[str]:
-        return self.__clean_dict__().__iter__()
+        return self._dict.__iter__()
 
     def __len__(self) -> int:
-        return self.__clean_dict__().__len__()
+        return self._dict.__len__()
 
-    def __or__(self, value: MutableMapping[str, Any], /) -> MVToolsPreset:
-        return self.__class__(**self._dict | dict(value))
+    def __or__(self, value: Mapping[str, Any], /) -> dict[str, Any]:
+        return self._dict | dict(value)
 
-    @overload
-    def __ror__(self, value: MutableMapping[str, Any], /) -> dict[str, Any]: ...
+    def __ror__(self, value: Mapping[str, Any], /) -> dict[str, Any]:
+        return dict(value) | self._dict
 
-    @overload
-    def __ror__[T1, T2](self, value: MutableMapping[T1, T2], /) -> dict[str | T1, Any | T2]: ...
-
-    def __ror__(self, value: Any, /) -> Any:
-        return self.__class__(**dict(value) | self._dict)
-
-    @overload  # type: ignore[misc]
-    def __ior__(self, value: SupportsKeysAndGetItem[str, Any], /) -> Self: ...
-
-    @overload
-    def __ior__(self, value: Iterable[tuple[str, Any]], /) -> Self: ...
-
-    def __ior__(self, value: Any, /) -> Self:  # type: ignore[misc]
-        self._dict |= dict[str, Any](value)
-        return self
+    def copy(self) -> dict[str, Any]:
+        """Return a shallow copy of the preset."""
+        return self._dict.copy()
 
     @classproperty
     @classmethod

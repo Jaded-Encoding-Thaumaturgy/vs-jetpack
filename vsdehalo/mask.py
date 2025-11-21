@@ -105,7 +105,7 @@ class FineDehalo[**P, R]:
         """
         return self.Masks(clip, rx, ry, edgemask, thmi, thma, thlimi, thlima, exclude, edgeproc, planes, func).MAIN
 
-    class Masks(Mapping[str, vs.VideoNode], VSObjectABC):
+    class Masks(VSObjectABC, Mapping[str, vs.VideoNode]):
         """
         Class for creating and storing intermediate masks used in the [fine_dehalo][vsdehalo.fine_dehalo] function.
 

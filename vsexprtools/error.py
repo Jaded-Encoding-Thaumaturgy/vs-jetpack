@@ -17,10 +17,10 @@ def _color_tag(string: str, tag_start: str, tag_end: str = "\033[0m") -> str:
     return string
 
 
-class _CustomExprErrorMeta(CustomErrorMeta, VSObjectMeta): ...
+class _CustomExprErrorMeta(VSObjectMeta, CustomErrorMeta): ...
 
 
-class CustomExprError(CustomRuntimeError, VSObject, metaclass=_CustomExprErrorMeta):
+class CustomExprError(VSObject, CustomRuntimeError, metaclass=_CustomExprErrorMeta):
     """Thrown when a Expr error occurs."""
 
     def __init__(

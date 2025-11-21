@@ -796,7 +796,7 @@ class QTempGaussMC(VSObject):
         if not erosion_distance:
             return flt
 
-        ed_iter1, ed_iter2 = (1 + (erosion_distance + 1) // 3, 1 + (erosion_distance + 2) // 3)
+        ed_iter1, ed_iter2 = (1 + erosion_distance // 3, 1 + (erosion_distance + 1) // 3)
         od_iter1, od_iter2 = (over_dilation // 3, over_dilation % 3)
 
         diff = src.std.MakeDiff(flt)
@@ -855,12 +855,14 @@ class QTempGaussMC(VSObject):
         vectors = MotionVectors()
         degrained = list[vs.VideoNode]()
 
+        sup = self.mv.super(clip, levels=1)
+
         for delta in range(tr):
             vectors.set_vector(backward[delta], MVDirection.BACKWARD, 1)
             vectors.set_vector(forward[delta], MVDirection.FORWARD, 1)
 
             degrained.append(
-                self.mv.degrain(clip, vectors=vectors, thsad=self.basic_thsad, thscd=self.analyze_thscd, **degrain_args)
+                self.mv.degrain(clip, sup, vectors, thsad=self.basic_thsad, thscd=self.analyze_thscd, **degrain_args)
             )
             vectors.clear()
 
@@ -1030,6 +1032,8 @@ class QTempGaussMC(VSObject):
                 **self.basic_mask_args,
             )
             self.bobbed = self.denoise_output.std.MaskedMerge(self.bobbed, mask)
+
+        self.bobbed = self.mv.super(self.bobbed, levels=1)
 
         smoothed = self._binomial_degrain(self.bobbed, self.basic_tr, **self.basic_degrain_args)
         if self.basic_tr:

@@ -429,7 +429,7 @@ class LinearLightProcessing(VSObject):
 
 
 @dataclass
-class LinearLight(AbstractContextManager[LinearLightProcessing], VSObjectABC):
+class LinearLight(VSObjectABC, AbstractContextManager[LinearLightProcessing]):
     """
     Utility class for processing a clip in linear format.
 

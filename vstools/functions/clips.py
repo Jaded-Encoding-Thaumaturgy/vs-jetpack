@@ -5,7 +5,7 @@ from functools import partial, wraps
 from inspect import signature
 from typing import Any, Callable, Literal, overload
 
-from jetpytools import CustomValueError, FuncExcept, KwargsT, StrictRange
+from jetpytools import CustomValueError, FuncExcept, StrictRange
 
 from ..enums import (
     ChromaLocation,
@@ -64,7 +64,7 @@ class ProcessVariableClip[T](DynamicClipsCache[T]):
             out_fmt: Output format.
             cache_size: The maximum number of items allowed in the cache. Defaults to 10.
         """
-        bk_args = KwargsT(length=clip.num_frames, keep=True, varformat=None)
+        bk_args = {"length": clip.num_frames, "keep": True, "varformat": None}
 
         if out_dim is None:
             out_dim = (clip.width, clip.height)
