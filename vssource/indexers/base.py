@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from functools import cache
 from os import name as os_name
 from typing import Any, Callable, ClassVar, Iterable, Literal, Protocol, Sequence
 
-from jetpytools import MISSING, CustomRuntimeError, DataType, SPath, SPathLike, inject_self, to_arr
+from jetpytools import MISSING, CustomRuntimeError, SPath, SPathLike, inject_self, to_arr
 
 from vstools import (
     ChromaLocation,
@@ -22,7 +23,7 @@ from vstools import (
 
 from ..dataclasses import IndexFileType
 
-__all__ = ["ExternalIndexer", "Indexer", "VSSourceFunc"]
+__all__ = ["CacheIndexer", "ExternalIndexer", "Indexer", "VSSourceFunc"]
 
 
 class VSSourceFunc(Protocol):
@@ -59,8 +60,8 @@ class Indexer(ABC):
         return md5(to_hash).hexdigest()
 
     @classmethod
-    def source_func(cls, path: DataType | SPathLike, *args: Any, **kwargs: Any) -> vs.VideoNode:
-        return cls._source_func(str(path), *args, **kwargs)
+    def source_func(cls, path: SPathLike, **kwargs: Any) -> vs.VideoNode:
+        return cls._source_func(str(path), **kwargs)
 
     @classmethod
     def normalize_filenames(cls, file: SPathLike | Sequence[SPathLike]) -> list[SPath]:
@@ -121,6 +122,33 @@ class Indexer(ABC):
             clip = clip.std.SetFrameProps(IdxFilePath=[f.to_str() for f in nfiles], Idx=self.__class__.__name__)
 
         return clip
+
+
+@cache
+def _get_indexer_cache_storage() -> PackageStorage:
+    return PackageStorage(package_name=f"{__name__}/cache")
+
+
+class CacheIndexer(Indexer):
+    """Indexer interface with cache storage logic."""
+
+    _cache_arg_name: ClassVar[str]
+    _ext: ClassVar[str | None]
+
+    @staticmethod
+    def get_cache_path(file_name: SPathLike, ext: str | None = None) -> SPath:
+        storage = _get_indexer_cache_storage()
+
+        return storage.get_file(file_name, ext=ext)
+
+    @classmethod
+    def source_func(cls, path: SPathLike, **kwargs: Any) -> vs.VideoNode:
+        path = SPath(path)
+
+        if cls._cache_arg_name not in kwargs:
+            kwargs[cls._cache_arg_name] = cls.get_cache_path(path.name, cls._ext)
+
+        return cls._source_func(str(path), **kwargs)
 
 
 class ExternalIndexer(Indexer):
