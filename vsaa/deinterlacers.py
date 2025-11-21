@@ -415,7 +415,7 @@ class NNEDI3(SuperSampler):
     - 1: Weights trained to minimise squared error.
     """
 
-    pscrn: int | None = 1
+    pscrn: int | None = None
     """
     The prescreener used to decide which pixels should be processed by the predictor neural network,
     and which can be handled by simple cubic interpolation.
@@ -429,7 +429,8 @@ class NNEDI3(SuperSampler):
 
     The new prescreener is not available with float input.
 
-    Wrapper default is 1, plugin default is 2 for integer input and 1 for float input.
+    Wrapper default is 4 for integer input and 1 for float input,
+    plugin default is 2 for integer input and 1 for float input.
     """
 
     @Scaler.cachedproperty
@@ -444,13 +445,19 @@ class NNEDI3(SuperSampler):
             case _:
                 return 32
 
-    def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
+    def get_deint_args(self, *, clip: vs.VideoNode | None = None, **kwargs: Any) -> dict[str, Any]:
+        pscrn = (
+            ((4 if clip.format.sample_type is vs.INTEGER else 1) if self.pscrn is None else self.pscrn)
+            if clip
+            else self.pscrn
+        )
+
         return {
             "nsize": self.nsize,
             "nns": self.nns,
             "qual": self.qual,
             "etype": self.etype,
-            "pscrn": self.pscrn,
+            "pscrn": pscrn,
         } | kwargs
 
     @property
@@ -460,7 +467,7 @@ class NNEDI3(SuperSampler):
     def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = tff + double_rate * 2
 
-        return self._deinterlacer_function(clip, field, dh, **self.get_deint_args(**kwargs))
+        return self._deinterlacer_function(clip, field, dh, **self.get_deint_args(clip=clip, **kwargs))
 
 
 @dataclass
