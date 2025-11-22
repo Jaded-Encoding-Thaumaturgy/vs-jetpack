@@ -6,7 +6,6 @@ from pathlib import Path
 from pkgutil import iter_modules
 
 import mkdocs_gen_files
-import vspreview
 import vstransitions
 
 import vsaa
@@ -32,7 +31,6 @@ MODULES = [
     vsexprtools,
     vskernels,
     vsmasktools,
-    vspreview,
     vsrgtools,
     vsscale,
     vssource,
@@ -43,16 +41,6 @@ MODULES = [
 # Excluded submodules.
 EXCLUDE = frozenset(
     {
-        # Cannot be found.
-        "vspreview.plugins.builtins.frame_props",
-        "vspreview.plugins.builtins.frame_props.category",
-        "vspreview.plugins.builtins.frame_props.exclude",
-        "vspreview.plugins.builtins.frame_props.lut",
-        "vspreview.plugins.builtins.slowpics_comp",
-        "vspreview.plugins.builtins.slowpics_comp.main",
-        "vspreview.plugins.builtins.slowpics_comp.settings",
-        "vspreview.plugins.builtins.slowpics_comp.utils",
-        "vspreview.plugins.builtins.slowpics_comp.workers",
         # Cannot be found.
         "vstransitions.libs.movis",
     }
