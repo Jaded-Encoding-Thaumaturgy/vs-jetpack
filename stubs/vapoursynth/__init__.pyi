@@ -1497,10 +1497,10 @@ class Core:
     scxvid: Final[_scxvid._Core_bound.Plugin]
     """VapourSynth Scxvid Plugin"""
 # </attribute/Core_bound/scxvid>
-# <attribute/VideoNode_bound/sneedif>
-    sneedif: Final[_sneedif._VideoNode_bound.Plugin]
+# <attribute/Core_bound/sneedif>
+    sneedif: Final[_sneedif._Core_bound.Plugin]
     """Setsugen No Ensemble of Edge Directed Interpolation Functions"""
-# </attribute/VideoNode_bound/sneedif>
+# </attribute/Core_bound/sneedif>
 # <attribute/Core_bound/std>
     std: Final[_std._Core_bound.Plugin]
     """VapourSynth Core Functions"""
