@@ -1169,6 +1169,17 @@ numpy = [
 ]
 
 [[package]]
+name = "orderedsets"
+version = "2025.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "more-itertools" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/89/0d/920698bd9231e13882fb6144962855a850202f2df6317fded454c0c95a45/orderedsets-2025.2-py3-none-any.whl", hash = "sha256:9e59a09d338e7e8aeaafe5b214fffceb74886cb6bb8586ae7b68bc7395e01f70", size = 7607, upload-time = "2025-10-23T01:49:06.97Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1833,6 +1844,7 @@ full = [
 dev = [
     { name = "mkdocs-gen-files" },
     { name = "mypy" },
+    { name = "orderedsets" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -1850,6 +1862,7 @@ doc = [
     { name = "mkdocs-minify-plugin" },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings", extra = ["python"] },
+    { name = "orderedsets" },
     { name = "vspreview" },
     { name = "vstransitions" },
 ]
@@ -1870,6 +1883,7 @@ provides-extras = ["full"]
 dev = [
     { name = "mkdocs-gen-files", specifier = "==0.5.0" },
     { name = "mypy", specifier = "~=1.18.2" },
+    { name = "orderedsets" },
     { name = "pytest", specifier = ">=9.0.0,<10.0.0" },
     { name = "pytest-cov", specifier = ">=6.2.1,<8.0.0" },
     { name = "ruff", specifier = "~=0.14.0" },
@@ -1887,16 +1901,16 @@ doc = [
     { name = "mkdocs-minify-plugin", specifier = "==0.8.0" },
     { name = "mkdocs-redirects", specifier = "==1.2.2" },
     { name = "mkdocstrings", extras = ["python"], specifier = "==0.30.1" },
-    { name = "vspreview", specifier = "==0.15.0" },
+    { name = "orderedsets" },
+    { name = "vspreview", specifier = "==0.18.0rc1.post1" },
     { name = "vstransitions", specifier = "==0.1.4" },
 ]
 
 [[package]]
 name = "vspreview"
-version = "0.15.0"
+version = "0.18.0rc1.post1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "jetpytools" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pillow", marker = "sys_platform == 'win32'" },
@@ -1911,9 +1925,9 @@ dependencies = [
     { name = "vsengine" },
     { name = "vsjetpack" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4a/92/3798535a24126b9a0a0d4fb05543c14ee7ab3eb38b16e97fdb2d13f5b6d9/vspreview-0.15.0.tar.gz", hash = "sha256:1919ef5e3d17d7879d02ec6df0af8551e1e3ccbe5bb87f260782afc6c782b31c", size = 19044511, upload-time = "2025-07-21T19:41:45.934Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a5/50/9dc5be685452514384d5471333b64eababfa66805fd90d4e895c08510500/vspreview-0.18.0rc1.post1.tar.gz", hash = "sha256:e484d7739a2180963c0395dfe576481d48d2978bd1be575954063eeef65f656a", size = 157180, upload-time = "2025-11-22T17:06:10.532Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c8/f1/4ae0921754329190d0197b1bc6f2a0ef7ab06653b46f236c828ee17407e7/vspreview-0.15.0-py3-none-any.whl", hash = "sha256:b53922f5da124dc146573266bd83af22fd40a87785c0e941d7371a1b03bb8803", size = 158965, upload-time = "2025-07-21T19:41:43.876Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/49/cb640c2413d341e24455a591c3741ae140d9c6e0b144cbd088d9c6bec3cd/vspreview-0.18.0rc1.post1-py3-none-any.whl", hash = "sha256:dcfabbff166c727076d3f67550671ceffa8c355311de004722811ee515e86425", size = 162559, upload-time = "2025-11-22T17:06:09.356Z" },
 ]
 
 [[package]]

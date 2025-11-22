@@ -4,10 +4,12 @@ import inspect
 from io import TextIOWrapper
 from pathlib import Path
 from pkgutil import iter_modules
+from typing import Any, Iterable
 
 import mkdocs_gen_files
 import vspreview
 import vstransitions
+from orderedsets import FrozenOrderedSet
 
 import vsaa
 import vsdeband
@@ -41,47 +43,44 @@ MODULES = [
 ]
 
 # Excluded submodules.
-EXCLUDE = frozenset(
-    {
-        # Cannot be found.
-        "vspreview.plugins.builtins.frame_props",
-        "vspreview.plugins.builtins.frame_props.category",
-        "vspreview.plugins.builtins.frame_props.exclude",
-        "vspreview.plugins.builtins.frame_props.lut",
-        "vspreview.plugins.builtins.slowpics_comp",
-        "vspreview.plugins.builtins.slowpics_comp.main",
-        "vspreview.plugins.builtins.slowpics_comp.settings",
-        "vspreview.plugins.builtins.slowpics_comp.utils",
-        "vspreview.plugins.builtins.slowpics_comp.workers",
-        # Cannot be found.
-        "vstransitions.libs.movis",
-    }
-)
+EXCLUDE = [FrozenOrderedSet(path.split(".")) for path in {"vspreview"}]
 
 # Explicitly included submodules that would otherwise not have been processed.
-INCLUDE = frozenset(
-    {
-        # Submodules are `_` prefixed, so include the overarching module.
-        "vsmasktools.edge",
-    }
-)
+# vsmasktools.edge submodules are `_` prefixed, so include the overarching module.
+INCLUDE = [FrozenOrderedSet(path.split(".")) for path in {"vsmasktools.edge", "vspreview.api"}]
+
+
+def is_excluded(s: Iterable[Any]) -> bool:
+    return any(excl.issubset(s) for excl in EXCLUDE)
+
+
+def is_included(s: Iterable[Any]) -> bool:
+    return any(excl.issubset(s) for excl in INCLUDE)
+
 
 nav = mkdocs_gen_files.Nav()
 
 for module in MODULES:
     src = Path(inspect.getfile(module)).parent
+
     site_packages = src.parent
+
     for path in sorted(src.rglob("*.py")):
         module_path = path.relative_to(site_packages).with_suffix("")
         doc_path = path.relative_to(site_packages).with_suffix(".md")
         full_doc_path = Path("api", doc_path)
         parts = tuple(module_path.parts)
 
+        if is_included(parts):
+            pass
+        elif is_excluded(parts):
+            continue
+
         if parts[-1] == "__init__":
             parts = parts[:-1]
             doc_path = doc_path.with_name("index.md")
             full_doc_path = full_doc_path.with_name("index.md")
-        elif parts[-1].startswith("_") or ".".join(parts) in EXCLUDE:
+        elif parts[-1].startswith("_"):
             continue
 
         nav[parts] = doc_path.as_posix()
@@ -91,7 +90,7 @@ for module in MODULES:
 
             ident = ".".join(parts)
 
-            if ident in EXCLUDE:
+            if is_excluded(parts) and not is_included(parts):
                 continue
 
             # An `__init__.py`.
@@ -103,7 +102,7 @@ for module in MODULES:
                         "---\n\n",
                         f"::: {ident}\n",
                         "    options:\n",
-                        f"       members: {ident in INCLUDE}\n",
+                        f"       members: {is_included(parts) and not is_excluded(parts)}\n",
                     )
                 )
 

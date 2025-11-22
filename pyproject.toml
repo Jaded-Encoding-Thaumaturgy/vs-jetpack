@@ -69,8 +69,10 @@ dev = [
     # Needed for the folder "scripts"
     "mkdocs-gen-files==0.5.0",
     "vstransitions==0.1.4",
+    "orderedsets",
 ]
 doc = [
+    "orderedsets",
     "griffe-inherited-docstrings==1.1.2",
     "mkdocs-gen-files==0.5.0",
     "mkdocs-literate-nav==0.6.2",
@@ -83,7 +85,7 @@ doc = [
     "black==25.11.0",
 
     # Additional packages to be documented.
-    "vspreview==0.15.0",
+    "vspreview==0.18.0rc1.post1",
     "vstransitions==0.1.4",
 ]
 
@@ -138,7 +140,7 @@ include = [
 [tool.hatch.version]
 source = "versioningit"
 default-version = "0.0.0+unknown"
-next-version = "minor-release"
+next-version = "minor"
 write = { file = "vsjetpack/_version.py", template = "__version__ = \"{normalized_version}\"\n__version_tuple__ = {version_tuple}" }
 
 [tool.hatch.version.format]
