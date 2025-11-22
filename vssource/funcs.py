@@ -154,6 +154,7 @@ def source(
     """
 
     kwargs.update(
+        bits=bits,
         matrix=matrix,
         transfer=transfer,
         primaries=primaries,
@@ -163,16 +164,16 @@ def source(
     )
 
     if filepath is None:
-        return partial(source, bits=bits if bits is not None else filepath, **kwargs)
+        return partial(source, **kwargs)
 
     filepath, file = parse_video_filepath(filepath)
     to_skip = to_arr(kwargs.get("_to_skip", []))
     clip = None
 
     if file.ext is IndexingType.LWI:
-        clip = LSMAS.source(filepath, bits, **kwargs)
+        clip = LSMAS.source(filepath, **kwargs)
     elif file.file_type is FileType.IMAGE:
-        clip = IMWRI.source(filepath, bits, **kwargs)
+        clip = IMWRI.source(filepath, **kwargs)
     elif clip is None:
         try:
             from vspreview import is_preview
@@ -189,13 +190,13 @@ def source(
 
         for indexer in filter(lambda i: i not in to_skip, indexers):
             try:
-                clip = indexer.source(filepath, bits, **kwargs)
+                clip = indexer.source(filepath, **kwargs)
                 break
             except AttributeError:
                 continue
             except vs.Error as e:
                 if "bgr0 is not supported" in str(e) and indexer is LSMAS:
-                    clip = indexer.source(filepath, bits=bits, format="rgb24", **kwargs)
+                    clip = indexer.source(filepath, format="rgb24", **kwargs)
                     break
                 log.debug("Exception:", exc_info=False)
             except Exception:
