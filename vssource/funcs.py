@@ -189,6 +189,8 @@ def source(
             try:
                 clip = indexer.source(filepath, bits, **kwargs)
                 break
+            except AttributeError:
+                continue
             except vs.Error as e:
                 if "bgr0 is not supported" in str(e) and indexer is LSMAS:
                     clip = indexer.source(filepath, bits=bits, format="rgb24", **kwargs)
