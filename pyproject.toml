@@ -83,7 +83,7 @@ doc = [
     "black==25.11.0",
 
     # Additional packages to be documented.
-    "vspreview==0.15.0",
+    "vspreview==0.18.0rc1.post1",
     "vstransitions==0.1.4",
 ]
 
@@ -138,7 +138,7 @@ include = [
 [tool.hatch.version]
 source = "versioningit"
 default-version = "0.0.0+unknown"
-next-version = "minor-release"
+next-version = "minor"
 write = { file = "vsjetpack/_version.py", template = "__version__ = \"{normalized_version}\"\n__version_tuple__ = {version_tuple}" }
 
 [tool.hatch.version.format]

@@ -1887,16 +1887,15 @@ doc = [
     { name = "mkdocs-minify-plugin", specifier = "==0.8.0" },
     { name = "mkdocs-redirects", specifier = "==1.2.2" },
     { name = "mkdocstrings", extras = ["python"], specifier = "==0.30.1" },
-    { name = "vspreview", specifier = "==0.15.0" },
+    { name = "vspreview", specifier = "==0.18.0rc1.post1" },
     { name = "vstransitions", specifier = "==0.1.4" },
 ]
 
 [[package]]
 name = "vspreview"
-version = "0.15.0"
+version = "0.18.0rc1.post1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "jetpytools" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pillow", marker = "sys_platform == 'win32'" },
@@ -1911,9 +1910,9 @@ dependencies = [
     { name = "vsengine" },
     { name = "vsjetpack" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4a/92/3798535a24126b9a0a0d4fb05543c14ee7ab3eb38b16e97fdb2d13f5b6d9/vspreview-0.15.0.tar.gz", hash = "sha256:1919ef5e3d17d7879d02ec6df0af8551e1e3ccbe5bb87f260782afc6c782b31c", size = 19044511, upload-time = "2025-07-21T19:41:45.934Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a5/50/9dc5be685452514384d5471333b64eababfa66805fd90d4e895c08510500/vspreview-0.18.0rc1.post1.tar.gz", hash = "sha256:e484d7739a2180963c0395dfe576481d48d2978bd1be575954063eeef65f656a", size = 157180, upload-time = "2025-11-22T17:06:10.532Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c8/f1/4ae0921754329190d0197b1bc6f2a0ef7ab06653b46f236c828ee17407e7/vspreview-0.15.0-py3-none-any.whl", hash = "sha256:b53922f5da124dc146573266bd83af22fd40a87785c0e941d7371a1b03bb8803", size = 158965, upload-time = "2025-07-21T19:41:43.876Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/49/cb640c2413d341e24455a591c3741ae140d9c6e0b144cbd088d9c6bec3cd/vspreview-0.18.0rc1.post1-py3-none-any.whl", hash = "sha256:dcfabbff166c727076d3f67550671ceffa8c355311de004722811ee515e86425", size = 162559, upload-time = "2025-11-22T17:06:09.356Z" },
 ]
 
 [[package]]
