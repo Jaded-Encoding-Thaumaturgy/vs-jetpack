@@ -137,7 +137,7 @@ class Indexer(ABC):
 
 @cache
 def _get_indexer_cache_storage() -> PackageStorage:
-    return PackageStorage(package_name=f"{__name__}/cache")
+    return PackageStorage(package_name=f"{__name__}")
 
 
 class CacheIndexer(Indexer):

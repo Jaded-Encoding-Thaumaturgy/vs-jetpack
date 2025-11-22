@@ -17,7 +17,7 @@ class BestSource(CacheIndexer):
     """
     [BestSource](https://github.com/vapoursynth/bestsource) indexer.
 
-    Unlike the plugin's default behavior, the indexer cache file will be stored in `.vsjet/vssource/cache`
+    Unlike the plugin's default behavior, the indexer cache file will be stored in `.vsjet/vssource`
     next to the script file.
 
     When ``cachemode`` is 0, 1, or 2 (NEVER, CACHE_PATH, or CACHE_PATH_WRITE), the behavior falls back
@@ -75,9 +75,9 @@ class BestSource(CacheIndexer):
 
 class FFMS2(CacheIndexer):
     """
-    (FFmpegSource2)[https://github.com/FFMS/ffms2] indexer.
+    [FFmpegSource2](https://github.com/FFMS/ffms2) indexer.
 
-    Unlike the plugin's default behavior, the indexer cache file will be stored in ``.vsjet/vssource/cache``
+    Unlike the plugin's default behavior, the indexer cache file will be stored in `.vsjet/vssource`
     next to the script file.
     """
 
@@ -88,9 +88,9 @@ class FFMS2(CacheIndexer):
 
 class LSMAS(CacheIndexer):
     """
-    (L-SMASH-Works)[https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works] indexer.
+    [L-SMASH-Works](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works) indexer.
 
-    Unlike the plugin's default behavior, the indexer cache file will be stored in `.vsjet/vssource/cache`
+    Unlike the plugin's default behavior, the indexer cache file will be stored in `.vsjet/vssource`
     next to the script file.
     """
 
