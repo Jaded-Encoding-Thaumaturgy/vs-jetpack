@@ -433,6 +433,11 @@ class NNEDI3(SuperSampler):
     plugin default is 2 for integer input and 1 for float input.
     """
 
+    opencl: bool = False
+    """
+    Enables the use of the OpenCL variant.
+    """
+
     @Scaler.cachedproperty
     def kernel_radius(self) -> int:
         match self.nsize:
@@ -446,11 +451,7 @@ class NNEDI3(SuperSampler):
                 return 32
 
     def get_deint_args(self, *, clip: vs.VideoNode | None = None, **kwargs: Any) -> dict[str, Any]:
-        pscrn = (
-            ((4 if clip.format.sample_type is vs.INTEGER else 1) if self.pscrn is None else self.pscrn)
-            if clip
-            else self.pscrn
-        )
+        pscrn = fallback(self.pscrn, 1 if clip.format.sample_type is vs.FLOAT else 4) if clip else self.pscrn
 
         return {
             "nsize": self.nsize,
@@ -462,7 +463,7 @@ class NNEDI3(SuperSampler):
 
     @property
     def _deinterlacer_function(self) -> VSFunctionAllArgs:
-        return core.lazy.znedi3.nnedi3
+        return core.lazy.sneedif.NNEDI3 if self.opencl else core.lazy.znedi3.nnedi3
 
     def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = tff + double_rate * 2

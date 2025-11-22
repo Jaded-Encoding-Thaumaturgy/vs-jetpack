@@ -1216,6 +1216,10 @@ class VideoNode(RawNode):
     scxvid: Final[_scxvid._VideoNode_bound.Plugin]
     """VapourSynth Scxvid Plugin"""
 # </attribute/VideoNode_bound/scxvid>
+# <attribute/VideoNode_bound/sneedif>
+    sneedif: Final[_sneedif._VideoNode_bound.Plugin]
+    """Setsugen No Ensemble of Edge Directed Interpolation Functions"""
+# </attribute/VideoNode_bound/sneedif>
 # <attribute/VideoNode_bound/std>
     std: Final[_std._VideoNode_bound.Plugin]
     """VapourSynth Core Functions"""
@@ -1493,6 +1497,10 @@ class Core:
     scxvid: Final[_scxvid._Core_bound.Plugin]
     """VapourSynth Scxvid Plugin"""
 # </attribute/Core_bound/scxvid>
+# <attribute/VideoNode_bound/sneedif>
+    sneedif: Final[_sneedif._VideoNode_bound.Plugin]
+    """Setsugen No Ensemble of Edge Directed Interpolation Functions"""
+# </attribute/VideoNode_bound/sneedif>
 # <attribute/Core_bound/std>
     std: Final[_std._Core_bound.Plugin]
     """VapourSynth Core Functions"""
@@ -2529,6 +2537,30 @@ class _scxvid:
             def Scxvid(self, log: _AnyStr | None = None, use_slices: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/scxvid>
+
+# <implementation/sneedif>
+_ReturnDict_sneedif_DeviceInfo = TypedDict("_ReturnDict_sneedif_DeviceInfo", {"name": _AnyStr, "vendor": _AnyStr, "profile": _AnyStr, "version": _AnyStr, "max_compute_units": int, "max_work_group_size": int, "max_work_item_sizes": _IntLike | list[_IntLike], "image2D_max_width": int, "image2D_max_height": int, "image_support": int, "global_memory_cache_type": _AnyStr, "global_memory_cache": int, "global_memory_size": int, "max_constant_buffer_size": int, "max_constant_arguments": int, "local_memory_type": _AnyStr, "local_memory_size": int, "available": int, "compiler_available": int, "linker_available": int, "opencl_c_version": _AnyStr, "image_max_buffer_size": int})
+_ReturnDict_sneedif_ListDevices = TypedDict("_ReturnDict_sneedif_ListDevices", {"numDevices": int, "deviceNames": _AnyStr | list[_AnyStr], "platformNames": _AnyStr | list[_AnyStr]})
+_ReturnDict_sneedif_PlatformInfo = TypedDict("_ReturnDict_sneedif_PlatformInfo", {"profile": _AnyStr, "version": _AnyStr, "name": _AnyStr, "vendor": _AnyStr})
+
+class _sneedif:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def DeviceInfo(self, device: _IntLike | None = None) -> _ReturnDict_sneedif_DeviceInfo: ...
+            @_Wrapper.Function
+            def ListDevices(self) -> _ReturnDict_sneedif_ListDevices: ...
+            @_Wrapper.Function
+            def NNEDI3(self, clip: VideoNode, field: _IntLike, dh: _IntLike | None = None, dw: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, nsize: _IntLike | None = None, nns: _IntLike | None = None, qual: _IntLike | None = None, etype: _IntLike | None = None, pscrn: _IntLike | None = None, transpose_first: _IntLike | None = None, device: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def PlatformInfo(self, device: _IntLike | None = None) -> _ReturnDict_sneedif_PlatformInfo: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def NNEDI3(self, field: _IntLike, dh: _IntLike | None = None, dw: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, nsize: _IntLike | None = None, nns: _IntLike | None = None, qual: _IntLike | None = None, etype: _IntLike | None = None, pscrn: _IntLike | None = None, transpose_first: _IntLike | None = None, device: _IntLike | None = None) -> VideoNode: ...
+
+# </implementation/sneedif>
 
 # <implementation/std>
 class _std:
