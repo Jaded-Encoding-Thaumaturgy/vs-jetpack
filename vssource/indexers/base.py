@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from functools import cache
+from logging import getLogger
 from os import name as os_name
 from typing import Any, Callable, ClassVar, Iterable, Literal, Protocol, Sequence
 
@@ -24,6 +25,8 @@ from vstools import (
 from ..dataclasses import IndexFileType
 
 __all__ = ["CacheIndexer", "ExternalIndexer", "Indexer", "VSSourceFunc"]
+
+log = getLogger(__name__)
 
 
 class VSSourceFunc(Protocol):
@@ -61,6 +64,7 @@ class Indexer(ABC):
 
     @classmethod
     def source_func(cls, path: SPathLike, **kwargs: Any) -> vs.VideoNode:
+        log.debug("%s: indexing %r; arguments: %r", cls, path, kwargs)
         return cls._source_func(str(path), **kwargs)
 
     @classmethod
@@ -155,7 +159,7 @@ class CacheIndexer(Indexer):
         if cls._cache_arg_name not in kwargs:
             kwargs[cls._cache_arg_name] = cls.get_cache_path(path.name, cls._ext)
 
-        return cls._source_func(str(path), **kwargs)
+        return super().source_func(path, **kwargs)
 
 
 class ExternalIndexer(Indexer):
