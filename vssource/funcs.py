@@ -125,7 +125,7 @@ def source(
 
     - If `filepath` is an image, the indexer order is: `CarefulSource` -> `ZipSource` -> `IMWRI`.
     - If `filepath` is a video, the indexer order is: `BestSource` -> `LSMAS` -> `FFMS2` -> `D2VWitch`.
-      `BestSource` is moved to the end when not in preview mode.
+      `BestSource` is moved to the end when in preview mode.
 
     Args:
         filepath: The path to the video file or image sequence. Can be a string path or an iterable of paths.
