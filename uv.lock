@@ -1169,6 +1169,17 @@ numpy = [
 ]
 
 [[package]]
+name = "orderedsets"
+version = "2025.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "more-itertools" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/89/0d/920698bd9231e13882fb6144962855a850202f2df6317fded454c0c95a45/orderedsets-2025.2-py3-none-any.whl", hash = "sha256:9e59a09d338e7e8aeaafe5b214fffceb74886cb6bb8586ae7b68bc7395e01f70", size = 7607, upload-time = "2025-10-23T01:49:06.97Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1833,6 +1844,7 @@ full = [
 dev = [
     { name = "mkdocs-gen-files" },
     { name = "mypy" },
+    { name = "orderedsets" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -1850,6 +1862,7 @@ doc = [
     { name = "mkdocs-minify-plugin" },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings", extra = ["python"] },
+    { name = "orderedsets" },
     { name = "vspreview" },
     { name = "vstransitions" },
 ]
@@ -1870,6 +1883,7 @@ provides-extras = ["full"]
 dev = [
     { name = "mkdocs-gen-files", specifier = "==0.5.0" },
     { name = "mypy", specifier = "~=1.18.2" },
+    { name = "orderedsets" },
     { name = "pytest", specifier = ">=9.0.0,<10.0.0" },
     { name = "pytest-cov", specifier = ">=6.2.1,<8.0.0" },
     { name = "ruff", specifier = "~=0.14.0" },
@@ -1887,6 +1901,7 @@ doc = [
     { name = "mkdocs-minify-plugin", specifier = "==0.8.0" },
     { name = "mkdocs-redirects", specifier = "==1.2.2" },
     { name = "mkdocstrings", extras = ["python"], specifier = "==0.30.1" },
+    { name = "orderedsets" },
     { name = "vspreview", specifier = "==0.18.0rc1.post1" },
     { name = "vstransitions", specifier = "==0.1.4" },
 ]
