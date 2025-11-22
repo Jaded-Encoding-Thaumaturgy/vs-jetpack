@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 from functools import partial
+from logging import getLogger
 from os import PathLike
 from typing import Any, Callable, Iterable, Literal, overload
 
@@ -24,6 +25,9 @@ from vstools import (
 from .indexers import FFMS2, IMWRI, LSMAS, BestSource, D2VWitch, Indexer
 
 __all__ = ["parse_video_filepath", "source"]
+
+
+log = getLogger(__name__)
 
 
 def parse_video_filepath(filepath: SPathLike | Iterable[SPathLike]) -> tuple[SPath, ParsedFile]:
@@ -156,8 +160,6 @@ def source(
         chroma_location=chroma_location,
         color_range=color_range,
         field_based=field_based,
-        ref=ref,
-        name=name,
     )
 
     if filepath is None:
@@ -195,6 +197,9 @@ def source(
                 if "bgr0 is not supported" in str(e) and indexer is LSMAS:
                     clip = indexer.source(filepath, bits=bits, format="rgb24", **kwargs)
                     break
+                log.debug("Exception:", exc_info=False)
+            except Exception:
+                log.debug("Exception:", exc_info=False)
         else:
             raise CustomRuntimeError(f'None of the indexers you have installed work on this file! "{filepath}"', source)
 
