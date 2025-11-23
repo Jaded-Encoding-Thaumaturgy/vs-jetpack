@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
@@ -72,7 +72,7 @@ jobs:
         run: uv run coverage xml
 
       - name: Coveralls GitHub Action
-        uses: coverallsapp/github-action@v2.3.6
+        uses: coverallsapp/github-action@v2.3.7
         with:
           file: coverage.xml
           format: cobertura
@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Mark Coveralls as finished
-        uses: coverallsapp/github-action@v2.3.6
+        uses: coverallsapp/github-action@v2.3.7
         with:
           parallel-finished: true
           fail-on-error: false
