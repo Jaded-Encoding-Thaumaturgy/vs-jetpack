@@ -22,6 +22,7 @@ from vstools import (
     scale_delta,
     scale_mask,
     scale_value,
+    get_peak_value,
     vs,
 )
 
@@ -262,8 +263,10 @@ def fast_line_darken(
     thr = scale_delta(threshold, 8, func.work_clip)
     thinning /= 16
 
-    closing = limiter(Morpho.minimum(Morpho.maximum(func.work_clip, scale_delta(protection + 1, 8, 32))), max_val=cap)
-    thick = norm_expr([func.work_clip, closing], "y x {thr} + > x y - {strength} * x ?", thr=thr, strength=strength)
+    max_thr = get_peak_value(func.work_clip) / (protection + 1)
+
+    closing = limiter(Morpho.minimum(func.work_clip.std.Maximum(threshold=max_thr)), max_val=cap)
+    thick = norm_expr([func.work_clip, closing], "y x {thr} + > x y - {strength} * x + x ?", thr=thr, strength=strength)
 
     if not thinning:
         return func.return_clip(thick)
