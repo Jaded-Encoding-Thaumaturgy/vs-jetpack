@@ -19,6 +19,7 @@ from vstools import (
     TransferLike,
     core,
     initialize_clip,
+    match_clip,
     vs,
 )
 
@@ -68,7 +69,7 @@ class Indexer(ABC):
         return cls._source_func(str(path), **kwargs)
 
     @classmethod
-    def normalize_filenames(cls, file: SPathLike | Sequence[SPathLike]) -> list[SPath]:
+    def normalize_filenames(cls, file: SPathLike | Iterable[SPathLike]) -> list[SPath]:
         files = list[SPath]()
 
         for f in to_arr(file):
@@ -99,7 +100,7 @@ class Indexer(ABC):
     @inject_self
     def source(
         self,
-        file: SPathLike | Sequence[SPathLike],
+        file: SPathLike | Iterable[SPathLike],
         bits: int | None = None,
         *,
         matrix: MatrixLike | None = None,
@@ -109,6 +110,8 @@ class Indexer(ABC):
         color_range: ColorRangeLike | None = None,
         field_based: FieldBasedLike | None = None,
         idx_props: bool = True,
+        ref: vs.VideoNode | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> vs.VideoNode:
         """
@@ -131,6 +134,12 @@ class Indexer(ABC):
         )
         if idx_props:
             clip = clip.std.SetFrameProps(IdxFilePath=[f.to_str() for f in nfiles], Idx=self.__class__.__name__)
+
+        if name:
+            clip = clip.std.SetFrameProps(Name=name)
+
+        if ref:
+            clip = match_clip(clip, ref, length=True)
 
         return clip
 
@@ -325,7 +334,7 @@ class ExternalIndexer(Indexer):
     @inject_self
     def source(
         self,
-        file: SPathLike | Sequence[SPathLike],
+        file: SPathLike | Iterable[SPathLike],
         bits: int | None = None,
         *,
         matrix: MatrixLike | None = None,
