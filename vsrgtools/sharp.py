@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from vsmasktools import MaskLike
 
 from vsjetpack import require_jet_dependency
+from vsmasktools import Morpho
 from vstools import (
     ConvMode,
     FunctionUtil,
@@ -18,8 +19,10 @@ from vstools import (
     VSFunctionNoArgs,
     VSFunctionPlanesArgs,
     check_ref_clip,
+    limiter,
     scale_delta,
     scale_mask,
+    scale_value,
     vs,
 )
 
@@ -27,7 +30,7 @@ from .blur import box_blur, gauss_blur, median_blur
 from .enum import BlurMatrix
 from .rgtools import repair
 
-__all__ = ["awarpsharp", "fine_sharp", "soothe", "unsharpen"]
+__all__ = ["awarpsharp", "fast_line_darken", "fine_sharp", "soothe", "unsharpen"]
 
 
 def unsharpen(
@@ -221,3 +224,48 @@ def soothe(
         )
 
     return src.std.MakeDiff(sharp_diff, planes)
+
+
+def fast_line_darken(
+    clip: vs.VideoNode,
+    strength: float = 48,
+    protection: float = 5,
+    luma_cap: float = 191,
+    threshold: float = 4,
+    thinning: float = 0,
+) -> vs.VideoNode:
+    """
+    Args:
+        clip: Clip to process.
+        strength: Line darkening amount. Represents the maximum amount that the luma will be reduced by, weaker
+            lines will be reduced by proportionately less.
+        protection: Prevents the darkest lines from being darkened. Protection acts as a threshold. Values range from 0
+            (no prot) to ~50 (protect everything).
+        luma_cap: Value from 0 (black) to 255 (white), used to stop the darkening determination from being 'blinded' by
+            bright pixels, and to stop grey lines on white backgrounds being darkened. Any pixels brighter than luma_cap
+            are treated as only being as bright as luma_cap. Lowering luma_cap tends to reduce line darkening. 255
+            disables capping.
+        threshold: Any pixels that were going to be darkened by an amount less than threshold will not be touched.
+            Setting this to 0 will disable it, setting it to 4 (default) is recommended, since often a lot of random
+            pixels are marked for very slight darkening and a threshold of about 4 should fix them. Note if you set
+            threshold too high, some lines will not be darkened.
+        thinning: Optional line thinning amount. Setting this to 0 will disable it, which gives a big speed
+            increase. Note that thinning the lines will inherently darken the remaining pixels in each line a little.
+    """
+    func = FunctionUtil(clip, fast_line_darken, 0, vs.YUV)
+
+    strength /= 128
+    cap = scale_value(luma_cap, 8, func.work_clip)
+    thr = scale_delta(threshold, 8, func.work_clip)
+    thinning /= 16
+
+    closing = limiter(Morpho.minimum(Morpho.maximum(func.work_clip, scale_delta(protection + 1, 8, 32))), max_val=cap)
+    thick = norm_expr([func.work_clip, closing], "y x {thr} + > x y - {strength} * x ?", thr=thr, strength=strength)
+
+    if not thinning:
+        return func.return_clip(thick)
+
+    diff = norm_expr([func.work_clip, closing], "y x {thr} + > x y - neutral + neutral ?", thr=thr)
+    linemask = BlurMatrix.MEAN()(norm_expr(Morpho.minimum(diff), "x neutral - {thn} * plane_max +", thn=thinning))
+    thin = norm_expr([Morpho.maximum(func.work_clip), diff], "x y neutral - {strength} 1 + * +", strength=strength)
+    return func.return_clip(thin.std.MaskedMerge(thick, linemask))
