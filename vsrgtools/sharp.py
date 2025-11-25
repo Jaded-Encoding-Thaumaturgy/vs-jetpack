@@ -18,11 +18,11 @@ from vstools import (
     VSFunctionNoArgs,
     VSFunctionPlanesArgs,
     check_ref_clip,
+    get_peak_value,
     limiter,
     scale_delta,
     scale_mask,
     scale_value,
-    get_peak_value,
     vs,
 )
 
