@@ -127,7 +127,7 @@ def source(
     If `filepath` is not provided, a partially-applied version of this function is returned,
     allowing delayed path specification.
 
-    - If `filepath` is an image, the indexer order is: `CarefulSource` -> `ZipSource` -> `IMWRI`.
+    - If `filepath` is an image, the indexer is hardcoded as `IMWRI`.
     - If `filepath` is a video, the indexer order is: `BestSource` -> `LSMAS` -> `FFMS2` -> `D2VWitch`.
       `BestSource` is moved to the end when in preview mode.
 
