@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from vsmasktools import MaskLike
 
 from vsjetpack import require_jet_dependency
-from vsmasktools import Morpho
 from vstools import (
     ConvMode,
     FunctionUtil,
@@ -235,6 +234,8 @@ def fast_line_darken(
     thinning: float = 0,
 ) -> vs.VideoNode:
     """
+    Sharpens by darkening lines.
+
     Args:
         clip: Clip to process.
         strength: Line darkening amount. Represents the maximum amount that the luma will be reduced by, weaker
@@ -252,6 +253,8 @@ def fast_line_darken(
         thinning: Optional line thinning amount. Setting this to 0 will disable it, which gives a big speed
             increase. Note that thinning the lines will inherently darken the remaining pixels in each line a little.
     """
+    from vsmasktools import Morpho
+
     func = FunctionUtil(clip, fast_line_darken, 0, vs.YUV)
 
     strength /= 128
