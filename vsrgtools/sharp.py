@@ -263,9 +263,9 @@ def fast_line_darken(
     thr = scale_delta(threshold, 8, func.work_clip)
     thinning /= 16
 
-    max_thr = get_peak_value(func.work_clip) / (protection + 1)
+    max_thr = scale_delta(get_peak_value(func.work_clip) / (protection + 1), func.work_clip, 32)
 
-    closing = limiter(Morpho.minimum(func.work_clip.std.Maximum(threshold=max_thr)), max_val=cap)
+    closing = limiter(Morpho.minimum(Morpho.maximum(func.work_clip, max_thr)), max_val=cap)
     thick = norm_expr([func.work_clip, closing], "y x {thr} + > x y - {strength} * x + x ?", thr=thr, strength=strength)
 
     if not thinning:
