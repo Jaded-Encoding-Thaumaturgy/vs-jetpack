@@ -25,6 +25,7 @@ from vstools import (
     SpatialConvMode,
     VSFunctionAllArgs,
     core,
+    scale_delta,
     scale_mask,
     scale_value,
     vs,
@@ -712,7 +713,7 @@ class Morpho:
             planes: Specifies which planes to process. Unprocessed planes are copied unchanged.
         """
         midthr, lowval, highval = (
-            thr and [scale_value(t, 32, clip) for t in to_arr(thr)] for thr in (midthr, lowval, highval)
+            thr and [scale_mask(t, 32, clip) for t in to_arr(thr)] for thr in (midthr, lowval, highval)
         )
 
         return core.std.BinarizeMask(clip, midthr, lowval, highval, planes)
@@ -741,7 +742,7 @@ class Morpho:
             e = ExprList(interleave_arr(e, op * e.mlength, 2))
 
             if thr is not None:
-                e.append("x", scale_value(thr, 32, clip))
+                e.append("x", scale_delta(thr, 32, clip))
                 limit = (ExprOp.SUB, ExprOp.MAX) if op == ExprOp.MIN else (ExprOp.ADD, ExprOp.MIN)
                 e.append(*limit)
 
@@ -795,7 +796,7 @@ class Morpho:
                         coords = Coordinates.RECTANGLE
 
             if thr is not None:
-                kwargs.update(threshold=scale_mask(thr, 32, clip))
+                kwargs.update(threshold=scale_delta(thr, 32, clip))
 
             kwargs.update(coordinates=coords, planes=planes)
 
@@ -861,7 +862,7 @@ class Morpho:
             kwargs.update(planes=planes)
 
             if thr is not None:
-                kwargs.update(threshold=scale_mask(thr, 32, clip))
+                kwargs.update(threshold=scale_delta(thr, 32, clip))
 
             if multiply is not None:
                 xxflate_func = self._multiply_mm_func(xxflate_func, multiply)
@@ -875,7 +876,7 @@ class Morpho:
                 e.append(ExprOp.ADD * e.mlength, len(e), ExprOp.DIV, "x", ExprOp.MAX if inflate else ExprOp.MIN)
 
                 if thr is not None:
-                    thr = scale_value(thr, 32, clip)
+                    thr = scale_delta(thr, 32, clip)
                     limit = ["x", thr, ExprOp.ADD, ExprOp.MIN] if inflate else ["x", thr, ExprOp.SUB, ExprOp.MAX]
                     e.append(limit)
 
