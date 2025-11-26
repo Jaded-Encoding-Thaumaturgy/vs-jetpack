@@ -6,6 +6,7 @@ from pathlib import Path
 from pkgutil import iter_modules
 from typing import Any, Iterable
 
+import jetpytools
 import mkdocs_gen_files
 import vspreview
 import vstransitions
@@ -26,6 +27,7 @@ import vstools
 
 # Modules to document.
 MODULES = [
+    jetpytools,
     vsaa,
     vsdeband,
     vsdehalo,
