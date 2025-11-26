@@ -25,12 +25,6 @@ class MeanMode(CustomEnum):
     Enum of different mean for combining clips.
     """
 
-    HARMONIC = 0
-    """Harmonic mean, implemented as a Lehmer mean with p=0."""
-
-    GEOMETRIC = 0.5
-    """Geometric mean, implemented as a Lehmer mean with p=0.5."""
-
     ARITHMETIC = 1
     """Arithmetic mean."""
 
@@ -179,10 +173,7 @@ class MeanMode(CustomEnum):
         return clip
 
     def expr(
-        self,
-        n: SupportsIndex | Sequence[SupportsString] | HoldsVideoFormat | VideoFormatLike,
-        eps: float = 1e-7,
-        **kwargs: Any,
+        self, n: SupportsIndex | Sequence[SupportsString] | HoldsVideoFormat | VideoFormatLike, **kwargs: Any
     ) -> ExprList:
         """
         Builds a mean expression using a specified mode.
@@ -206,10 +197,7 @@ class MeanMode(CustomEnum):
             case MeanMode.LEHMER:
                 p = kwargs.pop("p", self.value)
 
-                if p > 0:
-                    eps = 0
-
-                expr = ExprList((f"{v} neutral - {eps} max D{i}!" for i, v in enumerate(evars)))
+                expr = ExprList((f"{v} neutral - D{i}!" for i, v in enumerate(evars)))
 
                 for x in range(2):
                     expr.extend([[f"D{i}@ {p - x} pow" for i in range(n_len)], ExprOp.ADD * (n_len - 1), f"P{x}!"])
@@ -217,8 +205,8 @@ class MeanMode(CustomEnum):
                 expr.append("P1@ abs 2 -126 pow < neutral P0@ P1@ / neutral + ?")
 
                 return expr
-            case MeanMode.HARMONIC | MeanMode.GEOMETRIC | MeanMode.CONTRAHARMONIC:
-                return MeanMode.LEHMER.expr(n, eps, p=self.value)
+            case MeanMode.CONTRAHARMONIC:
+                return MeanMode.LEHMER.expr(n, p=self.value)
             case MeanMode.MEDIAN:
                 n_op = (n_len - 1) // 2
                 mean = "" if n_len % 2 else "+ 2 /"
