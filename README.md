@@ -10,6 +10,12 @@ and antialiasing, as well as general utility functions.
 
 For support you can check out the [JET Discord server](https://discord.gg/XTpc6Fa9eB). <br><br>
 
+## Documentation
+
+You can find the full API reference on the project's documentation [site](https://jaded-encoding-thaumaturgy.github.io/vs-jetpack/).
+
+If you're looking for workflow recommendations, the JET Encoding Guide is available [here](https://github.com/Jaded-Encoding-Thaumaturgy/JET-guide).
+
 ## How to install
 
 `vsjetpack` is distributed via **PyPI**, and the latest stable release can be installed using:
@@ -27,7 +33,7 @@ Note that `vsjetpack` only provides Python functions, many of them wrapping or c
 You will need to install these plugins separately, for example using [vsrepo](https://github.com/vapoursynth/vsrepo).
 
 | **Essential**                                                                          | **Source filters**                                                    | **Optional**                                                                   |                                                                              |
-|----------------------------------------------------------------------------------------|-----------------------------------------------------------------------|--------------------------------------------------------------------------------|------------------------------------------------------------------------------|
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | [akarin](https://github.com/Jaded-Encoding-Thaumaturgy/akarin-vapoursynth-plugin) [^1] | [bestsource](https://github.com/vapoursynth/bestsource)               | [adaptivegrain](https://github.com/Irrational-Encoding-Wizardry/adaptivegrain) | [mvtools](https://github.com/dubhater/vapoursynth-mvtools)                   |
 | [fmtconv](https://gitlab.com/EleonoreMizo/fmtconv/) [^1]                               | [carefulsource](https://github.com/wwww-wwww/carefulsource)           | [awarp](https://github.com/HolyWu/VapourSynth-AWarp)                           | [neo_f3kdb](https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb)        |
 | [resize2](https://github.com/Jaded-Encoding-Thaumaturgy/vapoursynth-resize2) [^1]      | [d2vsource](https://github.com/dwbuiten/d2vsource)                    | [bilateralgpu](https://github.com/WolframRhodium/VapourSynth-BilateralGPU)     | [nlm-cuda](https://github.com/AmusementClub/vs-nlm-cuda)                     |
