@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 from vsexprtools import norm_expr
 from vsjetpack import deprecated
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
+from vsmasktools import Morpho
 from vstools import (
     ColorRange,
     DitherType,
@@ -1086,7 +1087,6 @@ class _Waifu2xCunet(BaseWaifu2x, BaseOnnxScalerRGB):
                        This behavior can be disabled by setting `inference_no_pad=True`.
                        - A tint issue is also present but it is not constant. It leaves flat areas alone but tints
                        detailed areas.
-                       Since most people will use Cunet to rescale details, the tint fix is enabled by default.
                        This behavior can be disabled with `postprocess_no_tint_fix=True`
 
             Returns:
@@ -1109,11 +1109,14 @@ class _Waifu2xCunet(BaseWaifu2x, BaseOnnxScalerRGB):
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         # Cunet model also has a tint issue but it is not constant
         # It leaves flat areas alone but tints detailed areas.
-        # Since most people will use Cunet to rescale details, the tint fix is enabled by default.
         if kwargs.pop("no_tint_fix", False):
             return super().postprocess_clip(clip, input_clip, **kwargs)
 
-        tint_fix = norm_expr(clip, "x 0.5 255 / +", func="Waifu2x." + self.__class__.__name__)
+        tint_fix = norm_expr(
+            [clip, Morpho.minimum(clip), Morpho.maximum(clip)],
+            "x 0.5 255 / + y z clip",
+            func="Waifu2x." + self.__class__.__name__,
+        )
         return super().postprocess_clip(tint_fix, input_clip, **kwargs)
 
 
