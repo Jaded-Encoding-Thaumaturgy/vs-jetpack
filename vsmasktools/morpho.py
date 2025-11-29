@@ -682,11 +682,7 @@ class Morpho:
                 upper bound of the format's range. Can be specified per plane.
             planes: Specifies which planes to process. Unprocessed planes are copied unchanged.
         """
-        midthr, lowval, highval = (
-            thr and [scale_value(t, 32, clip) for t in to_arr(thr)] for thr in (midthr, lowval, highval)
-        )
-
-        return core.std.Binarize(clip, midthr, lowval, highval, planes)
+        return self._binarize(clip, midthr, lowval, highval, planes, core.proxied.std.Binarize, False)
 
     @inject_self
     def binarize_mask(
@@ -712,11 +708,7 @@ class Morpho:
                 upper bound of the format's range for mask clips. Can be specified per plane.
             planes: Specifies which planes to process. Unprocessed planes are copied unchanged.
         """
-        midthr, lowval, highval = (
-            thr and [scale_mask(t, 32, clip) for t in to_arr(thr)] for thr in (midthr, lowval, highval)
-        )
-
-        return core.std.BinarizeMask(clip, midthr, lowval, highval, planes)
+        return self._binarize(clip, midthr, lowval, highval, planes, core.proxied.std.BinarizeMask, True)
 
     @classmethod
     def _morpho_xx_imum(
@@ -776,7 +768,7 @@ class Morpho:
         else:
             conv_mode = ConvMode.SQUARE
 
-        if radius > 1:
+        if radius > 1 or (clip.format.sample_type == vs.FLOAT and clip.format.bits_per_sample == 16):
             mm_func = norm_expr
             kwargs.update(
                 expr=self._morpho_xx_imum(clip, (radius, conv_mode), thr, coords, multiply, False, op=op, func=func),
@@ -857,7 +849,12 @@ class Morpho:
 
         xxflate_func: VSFunctionAllArgs
 
-        if radius == 1 and conv_mode == ConvMode.SQUARE and not coords:
+        if (
+            radius == 1
+            and conv_mode == ConvMode.SQUARE
+            and not coords
+            and not (clip.format.sample_type == vs.FLOAT and clip.format.bits_per_sample == 16)
+        ):
             xxflate_func = core.lazy.std.Inflate if inflate else core.lazy.std.Deflate
             kwargs.update(planes=planes)
 
@@ -894,6 +891,33 @@ class Morpho:
             return norm_expr(func(clip, *args, **kwargs), "x {multiply} *", multiply=multiply, func=self.__class__)
 
         return mm_func
+
+    def _binarize(
+        self,
+        clip: vs.VideoNode,
+        midthr: float | Sequence[float] | None,
+        lowval: float | Sequence[float] | None,
+        highval: float | Sequence[float] | None,
+        planes: Planes,
+        binarize_func: VSFunctionAllArgs,
+        mask: bool,
+    ) -> vs.VideoNode:
+        midthr, lowval, highval = (
+            thr and [(scale_mask if mask else scale_value)(t, 32, clip) for t in to_arr(thr)]
+            for thr in (midthr, lowval, highval)
+        )
+
+        if clip.format.sample_type == vs.FLOAT and clip.format.bits_per_sample == 16:
+            return norm_expr(
+                clip,
+                "x {thr} >= {v1} {v0} ?",
+                planes,
+                thr=fallback(midthr, "mask_max 2 /" if mask else "range_max range_min - 2 /"),
+                v0=fallback(lowval, 0 if mask else "range_min"),
+                v1=fallback(highval, "mask_max" if mask else "range_max"),
+            )
+
+        return binarize_func(clip, midthr, lowval, highval, planes)
 
     @staticmethod
     def _get_matrix_from_coords(coords: Sequence[int], func: FuncExcept) -> tuple[int, TupleExprList]:
