@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 from vsexprtools import norm_expr
 from vsjetpack import deprecated
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
-from vsrgtools import repair
+from vsmasktools import Morpho
 from vstools import (
     ColorRange,
     DitherType,
@@ -1112,7 +1112,11 @@ class _Waifu2xCunet(BaseWaifu2x, BaseOnnxScalerRGB):
         if kwargs.pop("no_tint_fix", False):
             return super().postprocess_clip(clip, input_clip, **kwargs)
 
-        tint_fix = repair(norm_expr(clip, "x 0.5 255 / +", func="Waifu2x." + self.__class__.__name__), clip, 1)
+        clip = depth(clip, 32)
+
+        tint_fix = norm_expr(
+            [clip, Morpho.maximum(clip)], "x 0.5 255 / + y min", func="Waifu2x." + self.__class__.__name__
+        )
         return super().postprocess_clip(tint_fix, input_clip, **kwargs)
 
 
