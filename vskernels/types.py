@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from functools import cache
 from typing import Any
 
-from jetpytools import CustomIntEnum, CustomNotImplementedError
+from jetpytools import CustomIntEnum, CustomNotImplementedError, fallback, mod_x
 
 from vstools import padder, vs
 
@@ -37,20 +36,27 @@ class BorderHandling(CustomIntEnum):
     """Assume the image was resized with extend padding, where the outermost row was extended infinitely far."""
 
     def prepare_clip(
-        self, clip: vs.VideoNode, min_pad: int = 2, shift: tuple[TopShift, LeftShift] = (0, 0)
+        self,
+        clip: vs.VideoNode,
+        kernel_radius: int,
+        width: int | None = None,
+        height: int | None = None,
+        shift: tuple[TopShift, LeftShift] = (0, 0),
     ) -> tuple[vs.VideoNode, tuple[TopShift, LeftShift]]:
         """
         Apply required padding and adjust shift.
 
         Args:
             clip: Input clip.
-            min_pad: Minimum padding before alignment.
+            kernel_radius: Kernel radius.
+            width: Output width.
+            height: Output height.
             shift: Current (top, left) shift.
 
         Returns:
             (padded clip, updated shift).
         """
-        pad_w, pad_h = (self.pad_amount(size, min_pad) for size in (clip.width, clip.height))
+        pad_w, pad_h = self.pad_amount(clip, kernel_radius, fallback(width, clip.width), fallback(height, clip.height))
 
         if pad_w == pad_h == 0:
             return clip, shift
@@ -67,24 +73,30 @@ class BorderHandling(CustomIntEnum):
 
         return padded, shift
 
-    @cache
-    def pad_amount(self, size: int, min_amount: int = 2) -> int:
+    def pad_amount(self, clip: vs.VideoNode, kernel_radius: int, width: int, height: int) -> tuple[int, int]:
         """
         Return required padding for one dimension.
 
-        MIRROR always returns zero. Other modes pad to an 8-pixel boundary.
+        MIRROR always returns zero as zimg has native mirror padding.
 
         Args:
-            size: Dimension size.
-            min_amount: Minimum required padding.
+            kernel_radius: Kernel radius.
+            width: Output width.
+            height: Output height.
 
         Returns:
             Padding amount.
         """
         if self is BorderHandling.MIRROR:
-            return 0
+            return (0, 0)
 
-        return (((size + min_amount) + 7) & -8) - size
+        w_factor = kernel_radius * min(width / clip.width, 1)
+        h_factor = kernel_radius * min(height / clip.height, 1)
+
+        pad_w = mod_x((w_factor / 2) + 0.5, 2**clip.format.subsampling_w)
+        pad_h = mod_x((h_factor / 2) + 0.5, 2**clip.format.subsampling_h)
+
+        return (pad_w, pad_h)
 
 
 class SampleGridModel(CustomIntEnum):
