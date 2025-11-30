@@ -38,10 +38,11 @@ class BorderHandling(CustomIntEnum):
     def prepare_clip(
         self,
         clip: vs.VideoNode,
+        width: int,
+        height: int,
+        shift: tuple[TopShift, LeftShift],
         kernel_radius: int,
-        width: int | None = None,
-        height: int | None = None,
-        shift: tuple[TopShift, LeftShift] = (0, 0),
+        kwargs: dict[str, Any],
     ) -> tuple[vs.VideoNode, tuple[TopShift, LeftShift]]:
         """
         Apply required padding and adjust shift.
@@ -56,16 +57,31 @@ class BorderHandling(CustomIntEnum):
         Returns:
             (padded clip, updated shift).
         """
-        pad_w, pad_h = self.pad_amount(clip, kernel_radius, fallback(width, clip.width), fallback(height, clip.height))
 
-        if pad_w == pad_h == 0:
+        if self is BorderHandling.MIRROR:
+            return (clip, shift)
+
+        src_width = kwargs.get("src_width", clip.width)
+        src_height = kwargs.get("src_height", clip.height)
+
+        left, right, top, bottom = self.pad_amount(
+            clip,
+            kernel_radius,
+            fallback(width, clip.width),
+            fallback(height, clip.height),
+            shift,
+            src_width,
+            src_height,
+        )
+
+        if left == right == top == bottom == 0:
             return clip, shift
 
         match self:
             case BorderHandling.ZERO:
-                padded = padder.COLOR(clip, pad_w, pad_w, pad_h, pad_h)
+                padded = padder.COLOR(clip, left, right, top, bottom)
             case BorderHandling.REPEAT:
-                padded = padder.REPEAT(clip, pad_w, pad_w, pad_h, pad_h)
+                padded = padder.REPEAT(clip, left, right, top, bottom)
             case _:
                 raise CustomNotImplementedError
 
@@ -73,11 +89,18 @@ class BorderHandling(CustomIntEnum):
 
         return padded, shift
 
-    def pad_amount(self, clip: vs.VideoNode, kernel_radius: int, width: int, height: int) -> tuple[int, int]:
+    def pad_amount(
+        self,
+        clip: vs.VideoNode,
+        kernel_radius: int,
+        width: int,
+        height: int,
+        shift: tuple[TopShift, LeftShift],
+        src_width: float,
+        src_height: float,
+    ) -> tuple[int, int, int, int]:
         """
         Return required padding for one dimension.
-
-        MIRROR always returns zero as zimg has native mirror padding.
 
         Args:
             kernel_radius: Kernel radius.
@@ -87,16 +110,23 @@ class BorderHandling(CustomIntEnum):
         Returns:
             Padding amount.
         """
-        if self is BorderHandling.MIRROR:
-            return (0, 0)
+        top_shift, left_shift = shift
 
-        w_factor = kernel_radius * min(width / clip.width, 1)
-        h_factor = kernel_radius * min(height / clip.height, 1)
+        w_factor = kernel_radius * min(width / src_width, 1)
 
-        pad_w = mod_x((w_factor / 2) + 0.5, 2**clip.format.subsampling_w)
-        pad_h = mod_x((h_factor / 2) + 0.5, 2**clip.format.subsampling_h)
+        left, right = (
+            mod_x((w_factor / 2) - left_shift + 0.5, 2**clip.format.subsampling_w),
+            mod_x((w_factor / 2) + left_shift + 0.5, 2**clip.format.subsampling_w),
+        )
 
-        return (pad_w, pad_h)
+        h_factor = kernel_radius * min(height / src_height, 1)
+
+        top, bottom = (
+            mod_x((h_factor / 2) - top_shift + 0.5, 2**clip.format.subsampling_h),
+            mod_x((h_factor / 2) + top_shift + 0.5, 2**clip.format.subsampling_h),
+        )
+
+        return (left, right, top, bottom)
 
 
 class SampleGridModel(CustomIntEnum):
