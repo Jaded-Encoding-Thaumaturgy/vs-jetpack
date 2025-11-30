@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import ceil
 from typing import Any
 
-from jetpytools import CustomIntEnum, CustomNotImplementedError, fallback
+from jetpytools import CustomIntEnum, CustomNotImplementedError
 
 from vstools import padder, vs
 
@@ -68,8 +68,8 @@ class BorderHandling(CustomIntEnum):
         left, right, top, bottom = self.pad_amount(
             clip,
             kernel_radius,
-            fallback(width, clip.width),
-            fallback(height, clip.height),
+            width,
+            height,
             shift,
             src_width,
             src_height,
