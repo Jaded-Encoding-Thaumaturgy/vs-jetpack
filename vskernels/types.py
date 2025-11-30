@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from math import ceil
 from typing import Any
 
-from jetpytools import CustomIntEnum, CustomNotImplementedError, fallback, mod_x
+from jetpytools import CustomIntEnum, CustomNotImplementedError, fallback
 
 from vstools import padder, vs
 
@@ -85,7 +86,7 @@ class BorderHandling(CustomIntEnum):
             case _:
                 raise CustomNotImplementedError
 
-        shift = tuple(s + ((p - c) // 2) for s, c, p in zip(shift, *((x.height, x.width) for x in (clip, padded))))
+        shift = tuple(s + c for s, c in zip(shift, (top, left)))  # type: ignore
 
         return padded, shift
 
@@ -113,17 +114,15 @@ class BorderHandling(CustomIntEnum):
         top_shift, left_shift = shift
 
         w_factor = kernel_radius * min(width / src_width, 1)
-
         left, right = (
-            mod_x(((w_factor - left_shift) / 2) + 0.5, 2**clip.format.subsampling_w),
-            mod_x(((w_factor + left_shift) / 2) + 0.5, 2**clip.format.subsampling_w),
+            ceil((((w_factor - left_shift) / 2) + 0.5) * 2**clip.format.subsampling_w),
+            ceil((((w_factor + left_shift) / 2) + 0.5) * 2**clip.format.subsampling_w),
         )
 
         h_factor = kernel_radius * min(height / src_height, 1)
-
         top, bottom = (
-            mod_x(((h_factor - top_shift) / 2) + 0.5, 2**clip.format.subsampling_h),
-            mod_x(((h_factor + top_shift) / 2) + 0.5, 2**clip.format.subsampling_h),
+            ceil((((h_factor - top_shift) / 2) + 0.5) * 2**clip.format.subsampling_h),
+            ceil((((h_factor + top_shift) / 2) + 0.5) * 2**clip.format.subsampling_h),
         )
 
         return (left, right, top, bottom)
