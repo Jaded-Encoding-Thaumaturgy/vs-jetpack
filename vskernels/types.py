@@ -115,15 +115,15 @@ class BorderHandling(CustomIntEnum):
         w_factor = kernel_radius * min(width / src_width, 1)
 
         left, right = (
-            mod_x((w_factor / 2) - left_shift + 0.5, 2**clip.format.subsampling_w),
-            mod_x((w_factor / 2) + left_shift + 0.5, 2**clip.format.subsampling_w),
+            mod_x(((w_factor - left_shift) / 2) + 0.5, 2**clip.format.subsampling_w),
+            mod_x(((w_factor + left_shift) / 2) + 0.5, 2**clip.format.subsampling_w),
         )
 
         h_factor = kernel_radius * min(height / src_height, 1)
 
         top, bottom = (
-            mod_x((h_factor / 2) - top_shift + 0.5, 2**clip.format.subsampling_h),
-            mod_x((h_factor / 2) + top_shift + 0.5, 2**clip.format.subsampling_h),
+            mod_x(((h_factor - top_shift) / 2) + 0.5, 2**clip.format.subsampling_h),
+            mod_x(((h_factor + top_shift) / 2) + 0.5, 2**clip.format.subsampling_h),
         )
 
         return (left, right, top, bottom)
