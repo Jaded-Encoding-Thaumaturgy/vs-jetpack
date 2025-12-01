@@ -43,7 +43,7 @@ class BorderHandling(CustomIntEnum):
         height: int,
         shift: tuple[TopShift, LeftShift],
         kernel_radius: int,
-        kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> tuple[vs.VideoNode, tuple[TopShift, LeftShift]]:
         """
         Apply required padding and adjust shift.
@@ -74,9 +74,6 @@ class BorderHandling(CustomIntEnum):
             src_width,
             src_height,
         )
-
-        if left == right == top == bottom == 0:
-            return clip, shift
 
         match self:
             case BorderHandling.ZERO:
