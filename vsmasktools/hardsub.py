@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Mapping, Type
+from typing import TYPE_CHECKING, Any, Mapping
 
 from jetpytools import CustomOverflowError, FileNotExistsError, FilePathType, fallback, iterate
 
@@ -12,7 +12,7 @@ from vskernels import Point
 from vsrgtools import box_blur, median_blur
 
 if TYPE_CHECKING:
-    from vssource import Indexer
+    from vssource import IndexerLike
 
 from vstools import (
     ColorRange,
@@ -66,12 +66,12 @@ class CustomMaskFromClipsAndRanges(VSObjectABC, GeneralMask):
     clips: list[vs.VideoNode] = field(init=False)
 
     processing: VSFunctionNoArgs = field(default=core.lazy.std.BinarizeMask, kw_only=True)
-    idx: InitVar[Indexer | Type[Indexer] | None] = field(default=None, kw_only=True)
+    idx: InitVar[IndexerLike | None] = field(default=None, kw_only=True)
 
-    def __post_init__(self, idx: Indexer | Type[Indexer] | None) -> None:
-        from vssource import IMWRI
+    def __post_init__(self, idx: IndexerLike | None) -> None:
+        from vssource import BestSource, Indexer
 
-        self._idx = idx if idx else IMWRI
+        self._idx = Indexer.ensure_obj(idx, self.__class__) if idx else BestSource
 
     def get_mask(self, ref: vs.VideoNode, /, *args: Any, **kwargs: Any) -> vs.VideoNode:
         """
@@ -116,7 +116,7 @@ class CustomMaskFromFolder(CustomMaskFromClipsAndRanges):
 
     folder_path: FilePathType
 
-    def __post_init__(self, idx: Indexer | Type[Indexer] | None) -> None:
+    def __post_init__(self, idx: IndexerLike | None) -> None:
         super().__post_init__(idx)
         if not (folder_path := Path(str(self.folder_path))).is_dir():
             raise FileNotExistsError('"folder_path" must be an existing path directory!', self.get_mask)
@@ -141,7 +141,7 @@ class CustomMaskFromRanges(CustomMaskFromClipsAndRanges):
 
     ranges: Mapping[FilePathType, FrameRangeN | FrameRangesN]
 
-    def __post_init__(self, idx: Indexer | Type[Indexer] | None) -> None:
+    def __post_init__(self, idx: IndexerLike | None) -> None:
         self.clips = [self._idx.source(str(file), bits=-1) for file in self.ranges]
 
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]:
