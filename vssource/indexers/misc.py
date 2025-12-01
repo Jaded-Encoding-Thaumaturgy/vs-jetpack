@@ -68,15 +68,21 @@ class BestSource(CacheIndexer):
     def __init__(
         self,
         *,
-        force: bool = True,
         cachemode: int = CacheMode.ABSOLUTE,
         rff: int | None = True,
         showprogress: int | None = True,
         show_pretty_progress: int | None = False,
         **kwargs: Any,
     ) -> None:
+        """
+        Args:
+            cachemode: The cache mode. See [here][vssource.BestSource] and [here][vssource.BestSource.CacheMode]
+                for more explanation.
+            rff: Apply RFF flags to the video. If the video doesn't have or use RFF flags, the output is unchanged.
+            showprogress: Print indexing progress as VapourSynth information level log messages.
+            show_pretty_progress: Display a rich-based progress bar if `showprogress` is also set to True.
+        """
         super().__init__(
-            force=force,
             cachemode=cachemode,
             rff=rff,
             showprogress=showprogress,
