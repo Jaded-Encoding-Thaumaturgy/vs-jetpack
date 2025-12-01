@@ -454,7 +454,7 @@ class ExternalIndexer(Indexer):
 
 type IndexerLike = str | type[Indexer] | Indexer
 """
-Type alias for anything that can resolve to a Indexer.
+Type alias for anything that can resolve to an Indexer.
 
 This includes:
 
