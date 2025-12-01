@@ -201,8 +201,9 @@ def _bs_pretty_progress() -> Iterator[None]:
 
     task_id = progress.add_task("Indexing with BestSource...", total=100, visible=False)
 
-    with progress, ProgressFromLogHandler(progress=progress, task_id=task_id, level=INFO).with_logger(vs_logger):
-        try:
+    try:
+        with progress, ProgressFromLogHandler(progress=progress, task_id=task_id, level=INFO).with_logger(vs_logger):
             yield
-        finally:
-            vs_logger.propagate = True
+            progress.update(task_id, visible=True)
+    finally:
+        vs_logger.propagate = True
