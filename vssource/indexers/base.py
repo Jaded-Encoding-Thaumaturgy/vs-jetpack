@@ -54,20 +54,20 @@ def _base_from_param[IndexerT: Indexer](
     # Search for the subclasses of the caller and the caller itself
     # + plugin namespace
     if isinstance(value, str):
-        all_scalers = dict[str, type[IndexerT]]()
+        all_indexers = dict[str, type[IndexerT]]()
 
         for s in [*get_subclasses(cls), cls]:
-            all_scalers[s.__name__.lower()] = s
+            all_indexers[s.__name__.lower()] = s
 
             source_func = getattr(s, "_source_func", None)
             plugin = getattr(source_func, "plugin", None)
             plugin_ns = getattr(plugin, "namespace", None)
 
             if plugin_ns:
-                all_scalers[plugin_ns] = s
+                all_indexers[plugin_ns] = s
 
         try:
-            return all_scalers[value.lower().strip()]
+            return all_indexers[value.lower().strip()]
         except KeyError:
             raise CustomValueError("Unknown indexer", func_except or cls.from_param, value) from None
 
