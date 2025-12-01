@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from typing import Any
+import re
+from contextlib import contextmanager
+from logging import INFO, Handler, Logger, LogRecord, getLogger
+from typing import Any, Iterator
 
 from jetpytools import CustomIntEnum, SPathLike
-from vapoursynth import VideoNode
 
-from vstools import core
+from vsjetpack import require_jet_dependency
+from vstools import core, vs
 
 from .base import CacheIndexer, Indexer
 
@@ -63,14 +66,32 @@ class BestSource(CacheIndexer):
         """
 
     def __init__(
-        self, *, force: bool = True, cachemode: int = CacheMode.ABSOLUTE, rff: int | None = True, **kwargs: Any
+        self,
+        *,
+        force: bool = True,
+        cachemode: int = CacheMode.ABSOLUTE,
+        rff: int | None = True,
+        showprogress: int | None = True,
+        show_pretty_progress: int | None = False,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(force=force, cachemode=cachemode, rff=rff, **kwargs)
+        super().__init__(
+            force=force,
+            cachemode=cachemode,
+            rff=rff,
+            showprogress=showprogress,
+            show_pretty_progress=show_pretty_progress,
+            **kwargs,
+        )
 
     @classmethod
-    def source_func(cls, path: SPathLike, **kwargs: Any) -> VideoNode:
+    def source_func(cls, path: SPathLike, **kwargs: Any) -> vs.VideoNode:
         if kwargs["cachemode"] <= cls.CacheMode.CACHE_PATH_WRITE and cls._cache_arg_name not in kwargs:
             kwargs[cls._cache_arg_name] = None
+
+        if kwargs.pop("show_pretty_progress"):
+            with _bs_pretty_progress():
+                return super().source_func(path, **kwargs)
 
         return super().source_func(path, **kwargs)
 
@@ -128,3 +149,60 @@ class ZipSource(Indexer):
     """
 
     _source_func = core.lazy.vszip.ImageRead
+
+
+@contextmanager
+@require_jet_dependency("rich")
+def _bs_pretty_progress() -> Iterator[None]:
+    from rich.console import Console
+    from rich.progress import BarColumn, Progress, TaskID, TextColumn, TimeElapsedColumn, TimeRemainingColumn
+
+    progress_re = re.compile(r"progress\s+(\d+(?:\.\d+)?)%")
+
+    class ProgressFromLogHandler(Handler):
+        def __init__(self, progress: Progress, task_id: TaskID, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+            self.setLevel(kwargs.get("level", INFO))
+            self.progress = progress
+            self.task_id = task_id
+
+        @contextmanager
+        def with_logger(self, logger: Logger) -> Iterator[None]:
+            logger.addHandler(self)
+
+            try:
+                yield
+            finally:
+                logger.removeHandler(self)
+
+        def emit(self, record: LogRecord) -> None:
+            try:
+                m = progress_re.search(record.getMessage())
+                if m:
+                    pct = float(m.group(1))
+
+                    self.progress.update(self.task_id, completed=pct, visible=True)
+                    return
+            except Exception:
+                self.handleError(record)
+
+    vs_logger = getLogger("vapoursynth")
+    vs_logger.propagate = False
+
+    progress = Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("{task.percentage:>3.0f}%"),
+        TimeElapsedColumn(),
+        TimeRemainingColumn(),
+        console=Console(stderr=True),
+        transient=True,
+    )
+
+    task_id = progress.add_task("Indexing with BestSource...", total=100, visible=False)
+
+    with progress, ProgressFromLogHandler(progress=progress, task_id=task_id, level=INFO).with_logger(vs_logger):
+        try:
+            yield
+        finally:
+            vs_logger.propagate = True
