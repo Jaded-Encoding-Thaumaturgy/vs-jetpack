@@ -939,8 +939,8 @@ def stack_planes(
         clip = depth(clip, 32)
 
     if clip.format.color_family is vs.YUV:
-        if clip.format.sample_type and shift_float_chroma:
-            clip = core.std.Expr(clip, ["", "x 0.5 +"], clip.format.replace(bits_per_sample=32))
+        if clip.format.sample_type is vs.FLOAT and shift_float_chroma:
+            clip = core.std.Expr(clip, ["", "x 0.5 +"])
 
         def offset_uv_planes(value: float, plane_stats: str) -> list[vs.VideoNode]:
             planes = split(clip)
