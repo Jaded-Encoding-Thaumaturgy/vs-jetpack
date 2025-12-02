@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import math
 from abc import ABC
-from typing import Any, ClassVar, Sequence
+from collections.abc import Sequence
+from typing import Any, ClassVar
 
 from jetpytools import interleave_arr, to_arr
 

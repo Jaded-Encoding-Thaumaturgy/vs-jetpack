@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Sequence
+from collections.abc import Iterable, Sequence
 
 from jetpytools import FuncExcept, cachedproperty, normalize_seq, to_arr
 

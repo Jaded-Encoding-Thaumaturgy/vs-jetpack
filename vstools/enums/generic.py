@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, NoReturn, SupportsInt
+from collections.abc import Mapping
+from typing import Any, NoReturn, SupportsInt
 
 from jetpytools import CustomNotImplementedError, FuncExcept
 

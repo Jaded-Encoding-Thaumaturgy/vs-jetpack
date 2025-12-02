@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import operator
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial, reduce, wraps
 from types import NoneType
-from typing import Any, Callable, Iterable, Mapping, Self, Sequence, SupportsIndex, Union, overload
+from typing import Any, Self, SupportsIndex, overload
 from weakref import WeakValueDictionary
 
 from jetpytools import CustomIndexError, CustomStrEnum, CustomTypeError, FuncExcept, normalize_seq, to_arr
@@ -975,11 +976,7 @@ def limiter[**P](
     mask: bool = False,
     planes: Planes = None,
     func: FuncExcept | None = None,
-) -> Union[
-    vs.VideoNode,
-    Callable[P, vs.VideoNode],
-    Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]],
-]:
+) -> vs.VideoNode | Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
     """
     Wraps [vszip.Limiter](https://github.com/dnjulek/vapoursynth-zip/wiki/Limiter)
     but only processes if clip format is not integer, a min/max val is specified or tv_range is True.

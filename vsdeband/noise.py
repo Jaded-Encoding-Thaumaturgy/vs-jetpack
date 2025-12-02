@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable, Sequence
 from enum import auto
-from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, overload
+from typing import Any, Literal, Protocol, overload
 
 from jetpytools import MISSING, CustomEnum, CustomValueError, EnumABCMeta, FuncExcept, MissingT, mod_x, to_arr
 

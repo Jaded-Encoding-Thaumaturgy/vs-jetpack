@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Mapping
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Mapping
+from typing import TYPE_CHECKING, Any
 
 from jetpytools import CustomOverflowError, FileNotExistsError, FilePathType, fallback, iterate
 

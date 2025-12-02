@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from functools import partial
 from itertools import zip_longest
 from math import sqrt
-from typing import Any, Literal, Sequence
+from typing import Any, Literal
 
 from jetpytools import (
     CustomValueError,

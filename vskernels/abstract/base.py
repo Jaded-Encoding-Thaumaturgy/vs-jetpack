@@ -4,6 +4,7 @@ This module defines the base abstract interfaces for general scaling operations.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import cache, wraps
 from inspect import isabstract
 from math import ceil
@@ -11,7 +12,6 @@ from types import NoneType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     Concatenate,
     NoReturn,
@@ -82,11 +82,11 @@ __all__ = [
 ]
 
 
-def _add_init_kwargs[_BaseScalerT: BaseScaler, **P, R](
-    method: Callable[Concatenate[_BaseScalerT, P], R],
-) -> Callable[Concatenate[_BaseScalerT, P], R]:
+def _add_init_kwargs[BaseScalerT: BaseScaler, **P, R](
+    method: Callable[Concatenate[BaseScalerT, P], R],
+) -> Callable[Concatenate[BaseScalerT, P], R]:
     @wraps(method)
-    def _wrapped(self: _BaseScalerT, *args: P.args, **kwargs: P.kwargs) -> R:
+    def _wrapped(self: BaseScalerT, *args: P.args, **kwargs: P.kwargs) -> R:
         init_kwargs = {k: self.kwargs.pop(k) for k in self.kwargs.keys() & method.__annotations__.keys()}
 
         returned = method(self, *args, **init_kwargs | kwargs)
@@ -100,12 +100,12 @@ def _add_init_kwargs[_BaseScalerT: BaseScaler, **P, R](
     return _wrapped
 
 
-def _base_from_param[_BaseScalerT: BaseScaler](
-    cls: type[_BaseScalerT],
-    value: str | type[_BaseScalerT] | _BaseScalerT | None,
+def _base_from_param[BaseScalerT: BaseScaler](
+    cls: type[BaseScalerT],
+    value: str | type[BaseScalerT] | BaseScalerT | None,
     exception_cls: type[_UnknownBaseScalerError],
     func_except: FuncExcept | None,
-) -> type[_BaseScalerT]:
+) -> type[BaseScalerT]:
     # If value is an instance returns the class
     if isinstance(value, cls):
         return value.__class__
@@ -133,9 +133,9 @@ def _base_from_param[_BaseScalerT: BaseScaler](
     raise exception_cls(func_except or cls.from_param, str(value))
 
 
-def _base_ensure_obj[_BaseScalerT: BaseScaler](
-    cls: type[_BaseScalerT], value: str | type[_BaseScalerT] | _BaseScalerT | None, func_except: FuncExcept | None
-) -> _BaseScalerT:
+def _base_ensure_obj[BaseScalerT: BaseScaler](
+    cls: type[BaseScalerT], value: str | type[BaseScalerT] | BaseScalerT | None, func_except: FuncExcept | None
+) -> BaseScalerT:
     if isinstance(value, cls):
         return value
 
@@ -154,7 +154,7 @@ def _is_format_resolver(
 
 
 def _resolve_video_spec_args(clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any]:
-    if _is_format_resolver((fmt := kwargs.get("format"))):
+    if _is_format_resolver(fmt := kwargs.get("format")):
         kwargs["format"] = get_video_format(fmt(clip))
 
     spec_map: dict[str, type[PropEnum]] = {
@@ -171,7 +171,7 @@ def _resolve_video_spec_args(clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any
     }
 
     for name, prop_enum in spec_map.items():
-        if callable((resolver := kwargs.get(name))):
+        if callable(resolver := kwargs.get(name)):
             kwargs[name] = prop_enum.from_param_with_fallback(resolver(clip))
 
     return kwargs
@@ -213,8 +213,8 @@ class BaseScalerMeta(VSObjectABCMeta):
 
         if TYPE_CHECKING:
 
-            def __init__[_BaseScalerT: BaseScaler, **P](
-                self, func: Callable[Concatenate[_BaseScalerT, P], R]
+            def __init__[BaseScalerT: BaseScaler, **P](
+                self, func: Callable[Concatenate[BaseScalerT, P], R]
             ) -> None: ...
 
         def __set__(self, instance: None, value: Any) -> NoReturn:

@@ -4,7 +4,8 @@ This module implements dehalo functions with complex masking abilities.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from typing import Any
 
 from jetpytools import CustomIndexError, FuncExcept, normalize_seq
 

@@ -1,6 +1,7 @@
+from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from math import factorial
-from typing import Any, Iterable, Literal, Mapping, Protocol, Self, TypedDict
+from typing import Any, Literal, Protocol, Self, TypedDict
 
 from jetpytools import CustomIntEnum, CustomValueError, fallback, normalize_seq
 

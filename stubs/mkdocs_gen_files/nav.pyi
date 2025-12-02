@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Iterable
+from collections.abc import Iterable
 
 class Nav:
     def __init__(self) -> None: ...

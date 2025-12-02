@@ -4,8 +4,9 @@ This modules implements dehaho functions based on spatial denoising operations.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from math import ceil, log
-from typing import Any, Sequence
+from typing import Any
 
 from jetpytools import fallback, to_arr
 

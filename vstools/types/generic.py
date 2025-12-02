@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Mapping, Protocol, runtime_checkable
+from collections.abc import Callable, Iterable, Mapping
+from typing import Any, Protocol, runtime_checkable
 
 from jetpytools import MissingT
 

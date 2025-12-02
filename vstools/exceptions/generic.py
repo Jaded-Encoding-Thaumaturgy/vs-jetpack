@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Sized
 from fractions import Fraction
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Sized, SupportsInt
+from typing import TYPE_CHECKING, Any, SupportsInt
 
 from jetpytools import (
     CustomKeyError,

@@ -5,9 +5,10 @@ This module defines core abstract classes for building edge detection and ridge 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from enum import IntFlag, auto
 from inspect import isabstract
-from typing import TYPE_CHECKING, Any, ClassVar, Self, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from jetpytools import FuncExcept, get_subclasses, inject_kwargs_params, inject_self, to_arr
 
@@ -102,12 +103,12 @@ class MagDirection(IntFlag):
         return [matrix for flag, matrix in zip(primary_flags, matrices) if self & flag]
 
 
-def _base_from_param[_EdgeDetectT: EdgeDetect](
-    cls: type[_EdgeDetectT],
-    value: str | type[_EdgeDetectT] | _EdgeDetectT | None,
+def _base_from_param[EdgeDetectT: EdgeDetect](
+    cls: type[EdgeDetectT],
+    value: str | type[EdgeDetectT] | EdgeDetectT | None,
     exception_cls: type[_UnknownMaskDetectError],
     func_except: FuncExcept | None = None,
-) -> type[_EdgeDetectT]:
+) -> type[EdgeDetectT]:
     # If value is an instance returns the class
     if isinstance(value, cls):
         return value.__class__
@@ -131,11 +132,11 @@ def _base_from_param[_EdgeDetectT: EdgeDetect](
     raise exception_cls(func_except or cls.from_param, str(value))
 
 
-def _base_ensure_obj[_EdgeDetectT: EdgeDetect](
-    cls: type[_EdgeDetectT],
-    value: str | type[_EdgeDetectT] | _EdgeDetectT | None,
+def _base_ensure_obj[EdgeDetectT: EdgeDetect](
+    cls: type[EdgeDetectT],
+    value: str | type[EdgeDetectT] | EdgeDetectT | None,
     func_except: FuncExcept | None = None,
-) -> _EdgeDetectT:
+) -> EdgeDetectT:
     if isinstance(value, cls):
         return value
 

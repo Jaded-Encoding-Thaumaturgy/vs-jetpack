@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Sequence
 from contextlib import suppress
-from typing import Any, Callable, Iterable, Literal, Protocol, Sequence, TypeGuard, TypeVar, Union, overload
+from typing import Any, Literal, Protocol, TypeGuard, TypeVar, Union, overload
 
 from jetpytools import CustomValueError, SoftRange, StrictRange, fallback, flatten, interleave_arr
 from jetpytools import invert_ranges as jetp_invert_ranges

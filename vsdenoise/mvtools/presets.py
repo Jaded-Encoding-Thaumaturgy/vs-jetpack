@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Iterator, Mapping, Self, TypedDict
+from collections.abc import Iterator, Mapping
+from typing import Any, Self, TypedDict
 
 from jetpytools import KwargsNotNone, classproperty
 

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from functools import partial, reduce
 from math import sqrt
-from typing import TYPE_CHECKING, Any, Callable, Literal, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Union, overload
 
 from jetpytools import CustomIntEnum, CustomStrEnum, CustomValueError, FuncExcept, cround, normalize_seq, to_arr
 

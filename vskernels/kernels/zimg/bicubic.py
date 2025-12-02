@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from math import sqrt
-from typing import Any, Callable, overload
+from typing import Any, overload
 
 from jetpytools import CustomValueError
 

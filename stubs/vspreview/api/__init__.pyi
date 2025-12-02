@@ -1,7 +1,8 @@
+from collections.abc import Sequence
 from fractions import Fraction
 from os import PathLike
 from pathlib import Path
-from typing import Any, Sequence, overload
+from typing import Any, overload
 
 from vapoursynth import AudioNode, RawNode, VideoNode
 

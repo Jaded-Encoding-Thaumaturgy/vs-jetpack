@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Union, overload
+from typing import Any, overload
 
 from jetpytools import CustomValueError, FuncExcept, iterate
 
@@ -105,12 +105,7 @@ def based_diff_mask(
     *,
     thr: float = 0.216,
     prefilter: int | dict[str, Any] | bool | VSFunctionNoArgs = False,
-    postfilter: Union[
-        int,
-        tuple[Count, RemoveGrain.Mode],
-        list[tuple[Count, RemoveGrain.Mode]],
-        VSFunctionNoArgs,
-    ] = 2,
+    postfilter: int | tuple[Count, RemoveGrain.Mode] | list[tuple[Count, RemoveGrain.Mode]] | VSFunctionNoArgs = 2,
     ampl: str | type[EdgeDetect] | EdgeDetect = ...,
     expand: int = 4,
     func: FuncExcept | None = None,
@@ -125,12 +120,7 @@ def based_diff_mask(
     /,
     thr: float = 0.216,
     prefilter: int | dict[str, Any] | bool | VSFunctionNoArgs = False,
-    postfilter: Union[
-        int,
-        tuple[Count, RemoveGrain.Mode],
-        list[tuple[Count, RemoveGrain.Mode]],
-        VSFunctionNoArgs,
-    ] = 2,
+    postfilter: int | tuple[Count, RemoveGrain.Mode] | list[tuple[Count, RemoveGrain.Mode]] | VSFunctionNoArgs = 2,
     ampl: str | type[EdgeDetect] | EdgeDetect = ...,
     expand: int = 4,
     func: FuncExcept | None = None,
@@ -144,12 +134,7 @@ def based_diff_mask(
     /,
     thr: float = 0.216,
     prefilter: int | dict[str, Any] | bool | VSFunctionNoArgs = False,
-    postfilter: Union[
-        int,
-        tuple[Count, RemoveGrain.Mode],
-        list[tuple[Count, RemoveGrain.Mode]],
-        VSFunctionNoArgs,
-    ] = 2,
+    postfilter: int | tuple[Count, RemoveGrain.Mode] | list[tuple[Count, RemoveGrain.Mode]] | VSFunctionNoArgs = 2,
     ampl: str | type[EdgeDetect] | EdgeDetect = "x mask_max / 2 4 pow * {thr} < 0 1 ? mask_max *",
     expand: int = 4,
     func: FuncExcept | None = None,

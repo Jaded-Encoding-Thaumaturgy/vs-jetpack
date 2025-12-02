@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import AbstractContextManager
 from fractions import Fraction
 from math import floor
 from types import TracebackType
-from typing import Any, Iterable, Iterator, Self, Sequence, overload
+from typing import Any, Self, overload
 
 from jetpytools import MISSING, CustomValueError, MissingT, normalize_seq, to_arr
 from jetpytools import flatten as jetp_flatten
@@ -323,7 +324,7 @@ class padder:
                         ?
                     ?
                 ?
-            """.format(left=l_, right=r_ - 1, top=t_, bottom=b_ - 1)
+            """.format(left=l_, right=r_ - 1, top=t_, bottom=b_ - 1)  # noqa: UP032
                 for l_, r_, t_, b_ in pads
             ]
         )

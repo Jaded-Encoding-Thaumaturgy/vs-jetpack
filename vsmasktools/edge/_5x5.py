@@ -5,7 +5,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import ClassVar, Sequence
+from collections.abc import Sequence
+from typing import ClassVar
 
 from ._abstract import (
     EdgeDetect,

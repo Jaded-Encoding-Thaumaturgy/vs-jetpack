@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Collection, Iterable
 from functools import cache
 from typing import (
     TYPE_CHECKING,
     Any,
-    Collection,
     Final,
-    Iterable,
     Literal,
     NoReturn,
     Self,

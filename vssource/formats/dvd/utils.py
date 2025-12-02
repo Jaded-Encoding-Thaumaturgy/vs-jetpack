@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Sequence, SupportsFloat
+from collections.abc import Sequence
+from typing import SupportsFloat
 
 __all__ = ["AC3_FRAME_LENGTH", "PCR_CLOCK", "absolute_time_from_timecode"]
 

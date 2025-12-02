@@ -1,6 +1,7 @@
+from collections.abc import MutableMapping
 from logging import Logger
 from os import PathLike
-from typing import IO, Any, Final, MutableMapping
+from typing import IO, Any, Final
 
 from mkdocs.config import Config
 from mkdocs.structure.files import Files

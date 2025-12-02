@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from enum import auto
-from typing import Any, Iterable, Literal, Sequence, SupportsIndex, overload
+from typing import Any, Literal, SupportsIndex, overload
 
 from jetpytools import CustomEnum, CustomValueError, FuncExcept, SupportsString, normalize_seq
 

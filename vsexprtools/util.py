@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterator, Sequence
 from functools import cache
 from itertools import count
-from typing import TYPE_CHECKING, Iterator, Sequence, SupportsIndex, overload
+from typing import TYPE_CHECKING, SupportsIndex, overload
 
 from jetpytools import CustomIndexError, CustomTypeError
 

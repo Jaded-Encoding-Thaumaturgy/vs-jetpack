@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import datetime
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from itertools import count
-from typing import TYPE_CHECKING, Callable, Sequence, SupportsIndex, overload
+from typing import TYPE_CHECKING, SupportsIndex, overload
 
 from jetpytools import CustomValueError, to_arr
 
@@ -229,8 +230,7 @@ class Title:
 
         if not only_calc_delay:
             with open(a, "wb") as wrt:
-                for f in nd.frames():
-                    wrt.write(bytes(f[0]))
+                wrt.writelines(bytes(f[0]) for f in nd.frames())
 
         return float(get_prop(nd, "Stuff_Start_PTS", int)) / PCR_CLOCK
 

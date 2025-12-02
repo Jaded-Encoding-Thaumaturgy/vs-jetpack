@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from functools import wraps
-from typing import Any, Callable, Iterable
+from typing import Any
 
 from jetpytools import cachedproperty
 
@@ -70,11 +71,11 @@ class RescaleBase(VSObjectABC):
         self.__add_props = kwargs.get("_add_props")
 
     @staticmethod
-    def _apply_field_based[_RescaleT: RescaleBase](
-        function: Callable[[_RescaleT, vs.VideoNode], vs.VideoNode],
-    ) -> Callable[[_RescaleT, vs.VideoNode], vs.VideoNode]:
+    def _apply_field_based[RescaleT: RescaleBase](
+        function: Callable[[RescaleT, vs.VideoNode], vs.VideoNode],
+    ) -> Callable[[RescaleT, vs.VideoNode], vs.VideoNode]:
         @wraps(function)
-        def wrap(self: _RescaleT, clip: vs.VideoNode) -> vs.VideoNode:
+        def wrap(self: RescaleT, clip: vs.VideoNode) -> vs.VideoNode:
             if self._field_based:
                 clip = self._field_based.apply(clip)
                 clip = function(self, clip)
@@ -85,11 +86,11 @@ class RescaleBase(VSObjectABC):
         return wrap
 
     @staticmethod
-    def _add_props[_RescaleT: RescaleBase](
-        function: Callable[[_RescaleT, vs.VideoNode], vs.VideoNode],
-    ) -> Callable[[_RescaleT, vs.VideoNode], vs.VideoNode]:
+    def _add_props[RescaleT: RescaleBase](
+        function: Callable[[RescaleT, vs.VideoNode], vs.VideoNode],
+    ) -> Callable[[RescaleT, vs.VideoNode], vs.VideoNode]:
         @wraps(function)
-        def wrap(self: _RescaleT, clip: vs.VideoNode) -> vs.VideoNode:
+        def wrap(self: RescaleT, clip: vs.VideoNode) -> vs.VideoNode:
             if not self.__add_props:
                 return function(self, clip)
 

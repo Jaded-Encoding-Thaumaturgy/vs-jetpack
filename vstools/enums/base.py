@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Iterable, Mapping
 from contextlib import suppress
 from string import capwords
-from typing import Any, Iterable, Mapping, Self, overload
+from typing import Any, Self, overload
 
 from jetpytools import (
     CustomIntEnum,

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, ABCMeta
+from collections.abc import Callable, Mapping, MutableMapping, MutableSequence, MutableSet
 from enum import Flag
 from functools import partial
 from itertools import chain
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Callable, Mapping, MutableMapping, MutableSequence, MutableSet, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from jetpytools import Singleton, classproperty
 

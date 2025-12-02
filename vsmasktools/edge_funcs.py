@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence, cast, overload
+from collections.abc import Sequence
+from typing import Any, Literal, cast, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError
 

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import re
 from abc import abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
 from pathlib import Path
-from typing import Any, ClassVar, Iterable, Literal, NamedTuple, Self, cast, overload
+from typing import Any, ClassVar, Literal, NamedTuple, Self, cast, overload
 
 from jetpytools import (
     CustomValueError,

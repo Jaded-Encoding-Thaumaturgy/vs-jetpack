@@ -6,9 +6,10 @@ originally written for [Irozuku Sekai no Ashita kara](https://myanimelist.net/an
 """
 
 from abc import abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from math import sqrt
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, Sequence
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol
 
 from jetpytools import CustomRuntimeError, CustomValueError, FuncExcept, MismatchRefError, cachedproperty, clamp
 

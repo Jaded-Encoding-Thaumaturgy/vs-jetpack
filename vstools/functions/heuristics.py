@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Mapping, overload
+from collections.abc import Mapping
+from typing import Any, Literal, overload
 
 from ..enums import ChromaLocation, ColorRange, Matrix, Primaries, PropEnum, Transfer
 from ..vs_proxy import vs

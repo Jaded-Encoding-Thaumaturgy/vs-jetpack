@@ -1,10 +1,11 @@
 import sys
+from collections.abc import Callable, Iterable, Mapping
 from copy import copy
 from functools import wraps
 from inspect import getmodule, isclass
 from logging import INFO, Handler, LogRecord, basicConfig
 from types import ModuleType
-from typing import Any, Callable, Iterable, Literal, Mapping
+from typing import Any, Literal
 
 from jetpytools import DependencyNotFoundError, norm_func_name
 

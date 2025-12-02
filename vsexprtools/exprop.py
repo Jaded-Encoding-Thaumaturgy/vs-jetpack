@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Collection, Iterable, Iterator, Sequence
 from enum import EnumMeta
 from functools import cache
 from itertools import product
 from math import inf, isqrt
-from typing import Any, Collection, Iterable, Iterator, Literal, Self, Sequence, SupportsIndex, cast, overload
+from typing import Any, Literal, Self, SupportsIndex, cast, overload
 
 from jetpytools import (
     CustomIndexError,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from vsrgtools import gauss_blur, remove_grain
 from vstools import get_y, vs

@@ -1,6 +1,7 @@
 import contextlib
 import math
-from typing import Any, Iterable, Sequence, cast
+from collections.abc import Iterable, Sequence
+from typing import Any, cast
 
 import pytest
 from jetpytools import clamp

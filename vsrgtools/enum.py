@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from enum import auto
 from math import ceil, exp, pi, sqrt
-from typing import Any, Iterable, Literal, Self, overload
+from typing import Any, Literal, Self, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError, CustomValueError, FuncExcept, fallback, iterate, to_arr
 
@@ -12,7 +13,7 @@ from vstools import ConvMode, Planes, core, shift_clip_multi, vs
 __all__ = ["BlurMatrix", "BlurMatrixBase"]
 
 
-class BlurMatrixBase[_Nb: float | int](list[_Nb]):
+class BlurMatrixBase[Nb: float | int](list[Nb]):
     """
     Represents a convolution kernel (matrix) for spatial or temporal filtering.
 
@@ -29,7 +30,7 @@ class BlurMatrixBase[_Nb: float | int](list[_Nb]):
         ```
     """
 
-    def __init__(self, iterable: Iterable[_Nb], /, mode: ConvMode = ConvMode.SQUARE) -> None:
+    def __init__(self, iterable: Iterable[Nb], /, mode: ConvMode = ConvMode.SQUARE) -> None:
         """
         Args:
             iterable: Iterable of kernel coefficients.
@@ -220,7 +221,7 @@ class BlurMatrixBase[_Nb: float | int](list[_Nb]):
         """
         from numpy import outer
 
-        return self.__class__(list[_Nb](outer(self, self).flatten()), self.mode)  # pyright: ignore[reportArgumentType]
+        return self.__class__(list[Nb](outer(self, self).flatten()), self.mode)  # pyright: ignore[reportArgumentType]
 
 
 class BlurMatrix(CustomEnum):
@@ -410,7 +411,7 @@ class BlurMatrix(CustomEnum):
         return ceil(sigma * 6 + 1) // 2
 
     @classmethod
-    def custom[_Nb: float | int](cls, values: Iterable[_Nb], mode: ConvMode = ConvMode.SQUARE) -> BlurMatrixBase[_Nb]:
+    def custom[Nb: float | int](cls, values: Iterable[Nb], mode: ConvMode = ConvMode.SQUARE) -> BlurMatrixBase[Nb]:
         """
         Create a custom BlurMatrixBase kernel with explicit values and mode.
 

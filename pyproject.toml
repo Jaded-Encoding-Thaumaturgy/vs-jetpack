@@ -177,22 +177,22 @@ line-length = 120
 
 [tool.ruff.format]
 docstring-code-format = true
-exclude = ["stubs/vapoursynth/__init__.pyi"]
 
 [tool.ruff.lint]
 exclude = ["stubs/vspreview", "stubs/dfttest2.pyi", "stubs/vsmlrt.pyi"]
-extend-select = ["E", "C4", "I", "PYI", "Q", "SIM", "N", "W", "RUF"]
+extend-select = [
+    "E",
+    "C4",
+    "I",
+    "PYI",
+    "Q",
+    "SIM",
+    "N",
+    "W",
+    "UP",
+    "FURB",
+    "RUF",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.*" = ["F401", "F403"]
-"stubs/vapoursynth/**.pyi" = [
-    "E501",
-    "N801",
-    "N802",
-    "N803",
-    "N805",
-    "PYI021",
-    "PYI029",
-    "PYI002",
-    "RUF022",
-]

@@ -123,7 +123,7 @@ class VideoPackets(list[int]):
             tempfile.flush()
 
         try:
-            with open(tempfile.name, "r") as f:
+            with open(tempfile.name) as f:
                 data = dict(json_load(f))
         finally:
             SPath(tempfile.name).unlink()

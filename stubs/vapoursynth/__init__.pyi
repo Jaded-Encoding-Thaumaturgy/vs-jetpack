@@ -1,5 +1,10 @@
-# ruff: noqa: RUF100, E501, PYI002, PYI029, PYI046, PYI047, N801, N802, N803, N805, I001
-from collections.abc import Buffer
+# This file is auto-generated. DO NOT EDIT.
+# ruff: noqa
+# flake8: noqa
+# fmt: off
+# isort: skip_file
+
+from collections.abc import Buffer, Callable, Iterable, Iterator, Mapping, MutableMapping
 from concurrent.futures import Future
 from ctypes import c_void_p
 from enum import Enum, IntEnum, IntFlag
@@ -7,7 +12,7 @@ from fractions import Fraction
 from inspect import Signature
 from logging import Handler, LogRecord, StreamHandler
 from types import MappingProxyType, TracebackType
-from typing import Any, Callable, Concatenate, Final, IO, Iterable, Iterator, Literal, Mapping, MutableMapping, NamedTuple, Protocol, Self, SupportsFloat, SupportsIndex, SupportsInt, TextIO, TypedDict, final, overload
+from typing import Any, Concatenate, Final, IO, Literal, NamedTuple, Protocol, Self, SupportsFloat, SupportsIndex, SupportsInt, TextIO, TypedDict, final, overload
 from warnings import deprecated
 from weakref import ReferenceType
 
@@ -113,19 +118,19 @@ type _VSValueIterable = (
 )
 type _VSValue = _VSValueSingle | _VSValueIterable
 
-class _SupportsIter[_T](Protocol):
-    def __iter__(self) -> Iterator[_T]: ...
+class _SupportsIter[T](Protocol):
+    def __iter__(self) -> Iterator[T]: ...
 
-class _SequenceLike[_T](Protocol):
-    def __iter__(self) -> Iterator[_T]: ...
+class _SequenceLike[T](Protocol):
+    def __iter__(self) -> Iterator[T]: ...
     def __len__(self) -> int: ...
 
-class _GetItemIterable[_T](Protocol):
-    def __getitem__(self, i: SupportsIndex, /) -> _T: ...
+class _GetItemIterable[T](Protocol):
+    def __getitem__(self, i: SupportsIndex, /) -> T: ...
 
-class _SupportsKeysAndGetItem[_KT, _VT](Protocol):
-    def __getitem__(self, key: _KT, /) -> _VT: ...
-    def keys(self) -> Iterable[_KT]: ...
+class _SupportsKeysAndGetItem[KT, VT](Protocol):
+    def __getitem__(self, key: KT, /) -> VT: ...
+    def keys(self) -> Iterable[KT]: ...
 
 class _VSCallback(Protocol):
     def __call__(self, *args: Any, **kwargs: Any) -> _VSValue: ...
@@ -809,13 +814,13 @@ _VSPlugin = Plugin
 _VSFunction = Function
 
 class _Wrapper:
-    class Function[**_P, _R](_VSFunction):
-        def __init__[_PluginT: Plugin](self, function: Callable[Concatenate[_PluginT, _P], _R]) -> None: ...
-        def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _R: ...
+    class Function[**P, R](_VSFunction):
+        def __init__[PluginT: Plugin](self, function: Callable[Concatenate[PluginT, P], R]) -> None: ...
+        def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
 
 class _Wrapper_Core_bound_FrameEval:
     class Function(_VSFunction):
-        def __init__[_PluginT: Plugin](self, function: Callable[Concatenate[_PluginT, ...], VideoNode]) -> None: ...
+        def __init__[PluginT: Plugin](self, function: Callable[Concatenate[PluginT, ...], VideoNode]) -> None: ...
         @overload
         def __call__(
             self,
@@ -859,7 +864,7 @@ class _Wrapper_Core_bound_FrameEval:
 
 class _Wrapper_VideoNode_bound_FrameEval:
     class Function(_VSFunction):
-        def __init__[_PluginT: Plugin](self, function: Callable[Concatenate[_PluginT, ...], VideoNode]) -> None: ...
+        def __init__[PluginT: Plugin](self, function: Callable[Concatenate[PluginT, ...], VideoNode]) -> None: ...
         @overload
         def __call__(
             self,
@@ -898,7 +903,7 @@ class _Wrapper_VideoNode_bound_FrameEval:
 
 class _Wrapper_Core_bound_ModifyFrame:
     class Function(_VSFunction):
-        def __init__[_PluginT: Plugin](self, function: Callable[Concatenate[_PluginT, ...], VideoNode]) -> None: ...
+        def __init__[PluginT: Plugin](self, function: Callable[Concatenate[PluginT, ...], VideoNode]) -> None: ...
         @overload
         def __call__(
             self, clip: VideoNode, clips: VideoNode, selector: _VSCallback_std_ModifyFrame_selector_0
@@ -917,7 +922,7 @@ class _Wrapper_Core_bound_ModifyFrame:
 
 class _Wrapper_VideoNode_bound_ModifyFrame:
     class Function(_VSFunction):
-        def __init__[_PluginT: Plugin](self, function: Callable[Concatenate[_PluginT, ...], VideoNode]) -> None: ...
+        def __init__[PluginT: Plugin](self, function: Callable[Concatenate[PluginT, ...], VideoNode]) -> None: ...
         @overload
         def __call__(self, clips: VideoNode, selector: _VSCallback_std_ModifyFrame_selector_0) -> VideoNode: ...
         @overload
@@ -1569,6 +1574,7 @@ class _adg:
 # <implementation/akarin>
 _ReturnDict_akarin_Version = TypedDict("_ReturnDict_akarin_Version", {"version": _AnyStr, "expr_backend": _AnyStr, "expr_features": _AnyStr | list[_AnyStr], "select_features": _AnyStr | list[_AnyStr], "text_features": _AnyStr | list[_AnyStr], "tmpl_features": _AnyStr | list[_AnyStr]})
 
+
 class _akarin:
     class _Core_bound:
         class Plugin(_VSPlugin):
@@ -1764,6 +1770,7 @@ class _bm3dcuda_rtc:
 
 # <implementation/bs>
 _ReturnDict_bs_TrackInfo = TypedDict("_ReturnDict_bs_TrackInfo", {"mediatype": int, "mediatypestr": _AnyStr, "codec": int, "codecstr": _AnyStr, "disposition": int, "dispositionstr": _AnyStr})
+
 
 class _bs:
     class _Core_bound:

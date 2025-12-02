@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from gc import get_referents, get_referrers
 from inspect import stack
 from math import ceil
@@ -7,7 +8,7 @@ from pathlib import Path
 from sys import modules
 from sys import path as sys_path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Iterable
+from typing import TYPE_CHECKING, Any
 from weakref import ReferenceType
 from weakref import ref as weakref_ref
 

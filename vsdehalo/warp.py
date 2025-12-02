@@ -5,7 +5,8 @@ as the core processing method.
 
 from __future__ import annotations
 
-from typing import Literal, Sequence
+from collections.abc import Sequence
+from typing import Literal
 
 from vsexprtools import norm_expr
 from vsmasktools import EdgeDetect, EdgeDetectLike, Morpho, Prewitt

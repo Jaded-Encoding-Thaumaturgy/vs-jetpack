@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import operator
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass
 from math import floor
 from os import PathLike
-from typing import Any, BinaryIO, Callable, Literal, Protocol, Union, overload
+from typing import Any, BinaryIO, Literal, Protocol, overload
 
 from jetpytools import CustomRuntimeError, CustomValueError, Sentinel, SentinelT, SPathLike, fallback
 
@@ -337,10 +338,7 @@ def prop_compare_cb(
     op: str | Callable[[float, float], bool] | None,
     ref: float | bool,
     return_frame_n: bool = False,
-) -> Union[
-    tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], bool]],
-    tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], int | SentinelT]],
-]:
+) -> tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], bool]] | tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], int | SentinelT]]:
     bool_check = isinstance(ref, bool)
     one_pix = hasattr(vs.core, "akarin") and not (callable(op) or " " in prop)
     assert (op is None) if bool_check else (op is not None)

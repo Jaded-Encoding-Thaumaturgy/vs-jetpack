@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterator
 from fractions import Fraction
-from typing import Callable, Iterator, Literal, NamedTuple, Self
+from typing import Literal, NamedTuple, Self
 
 from jetpytools import CustomIntEnum, CustomRuntimeError, Sentinel, SentinelT
 

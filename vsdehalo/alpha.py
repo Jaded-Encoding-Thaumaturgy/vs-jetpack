@@ -4,7 +4,8 @@ This module implements functions based on the famous dehalo_alpha.
 
 from __future__ import annotations
 
-from typing import Any, Iterator, Sequence, TypeGuard
+from collections.abc import Iterator, Sequence
+from typing import Any, TypeGuard
 
 from jetpytools import CustomIndexError, FuncExcept, mod_x, normalize_seq
 

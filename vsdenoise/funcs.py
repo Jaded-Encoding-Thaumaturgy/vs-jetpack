@@ -4,7 +4,8 @@ This module contains general denoising functions built on top of base denoisers.
 
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence, overload
+from collections.abc import Sequence
+from typing import Any, Literal, overload
 
 from jetpytools import MISSING, CustomRuntimeError, FuncExcept, KwargsNotNone, MissingT, fallback, normalize_seq
 

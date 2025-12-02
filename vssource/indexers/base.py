@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable, Sequence
 from functools import cache
 from logging import getLogger
 from os import name as os_name
-from typing import Any, Callable, ClassVar, Iterable, Literal, Protocol, Self, Sequence
+from typing import Any, ClassVar, Literal, Protocol, Self
 
 from jetpytools import (
     MISSING,

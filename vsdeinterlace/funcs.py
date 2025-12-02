@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from functools import partial
-from typing import Any, Literal, Mapping, Sequence, overload
+from typing import Any, Literal, overload
 
 from jetpytools import CustomEnum, CustomIntEnum
 

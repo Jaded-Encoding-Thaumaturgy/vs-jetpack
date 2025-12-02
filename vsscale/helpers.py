@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from math import ceil, floor
 from types import NoneType
-from typing import Any, Callable, NamedTuple, Self, overload
+from typing import Any, NamedTuple, Self, overload
 
 from jetpytools import CustomTypeError, FuncExcept, mod2, mod_x
 

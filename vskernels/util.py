@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass
 from functools import partial, wraps
 from math import exp
 from types import GenericAlias
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Concatenate, Self, TypeAlias, get_origin, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, Self, TypeAlias, get_origin, overload
 
 from jetpytools import CustomRuntimeError, CustomValueError, cachedproperty, classproperty
 
@@ -236,7 +237,7 @@ class NoScale(ScalerSpecializer[_ScalerWithCatromDefaultT]):
 _ScalerWithScalerDefaultT = TypeVar("_ScalerWithScalerDefaultT", bound=Scaler, default=Scaler)
 
 # TODO: type NoScaleLike[_ScalerT: Scaler = Scaler] = str | type[NoScale[_ScalerT]] | NoScale[_ScalerT]
-NoScaleLike: TypeAlias = str | type[NoScale[_ScalerWithScalerDefaultT]] | NoScale[_ScalerWithScalerDefaultT]
+NoScaleLike: TypeAlias = str | type[NoScale[_ScalerWithScalerDefaultT]] | NoScale[_ScalerWithScalerDefaultT]  # noqa: UP040
 """
 Type alias for anything that can resolve to a NoScale scaler.
 
@@ -248,22 +249,22 @@ This includes:
 """
 
 
-class BaseMixedScalerMeta[*_BaseScalerTs](BaseScalerSpecializerMeta):
+class BaseMixedScalerMeta[*BaseScalerTs](BaseScalerSpecializerMeta):
     """
     Meta class for BaseMixedScaler to handle mixed scaling logic.
     """
 
-    __others__: tuple[*_BaseScalerTs]
+    __others__: tuple[*BaseScalerTs]
 
     def __new__(
         mcls,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
-        *others: *_BaseScalerTs,
+        *others: *BaseScalerTs,
         specializer: type[BaseScaler] | None = None,
         **kwargs: Any,
-    ) -> BaseMixedScalerMeta[*_BaseScalerTs]:
+    ) -> BaseMixedScalerMeta[*BaseScalerTs]:
         obj = super().__new__(mcls, name, bases, namespace, specializer=specializer, **kwargs)
 
         if others:
@@ -281,7 +282,7 @@ class BaseMixedScalerMeta[*_BaseScalerTs](BaseScalerSpecializerMeta):
         return obj
 
 
-class BaseMixedScaler[DefaultScalerT: BaseScaler, *_BaseScalerTs](
+class BaseMixedScaler[DefaultScalerT: BaseScaler, *BaseScalerTs](
     BaseScalerSpecializer[DefaultScalerT], metaclass=BaseMixedScalerMeta, abstract=True
 ):
     """
@@ -290,7 +291,7 @@ class BaseMixedScaler[DefaultScalerT: BaseScaler, *_BaseScalerTs](
 
     @classproperty
     @classmethod
-    def _others(cls) -> tuple[*_BaseScalerTs]:
+    def _others(cls) -> tuple[*BaseScalerTs]:
         # Workaround as we can't specify the bound values of a TypeVarTuple yet
         return tuple(o() for o in cls.__others__)  # type: ignore[operator]
 
@@ -327,8 +328,8 @@ class BaseMixedScaler[DefaultScalerT: BaseScaler, *_BaseScalerTs](
         return GenericAlias(mixed_spe, (specializer, *others))
 
 
-class MixedScalerProcess[DefaultScalerT: Scaler, *_BaseScalerTs](
-    BaseMixedScaler[DefaultScalerT, *_BaseScalerTs], Scaler, abstract=True
+class MixedScalerProcess[DefaultScalerT: Scaler, *BaseScalerTs](
+    BaseMixedScaler[DefaultScalerT, *BaseScalerTs], Scaler, abstract=True
 ):
     """
     An abstract class for chained scaling with an additional processing step.
@@ -640,7 +641,7 @@ def is_custom_complex_kernel_like(obj: Any) -> TypeIs[CustomComplexKernelLike]:
     return _is_base_scaler_like(obj, CustomComplexKernel)
 
 
-def is_noscale_like[_ScalerT: Scaler](obj: Any, specializer: type[_ScalerT] = Scaler) -> TypeIs[NoScaleLike[_ScalerT]]:  # type: ignore[assignment]
+def is_noscale_like[ScalerT: Scaler](obj: Any, specializer: type[ScalerT] = Scaler) -> TypeIs[NoScaleLike[ScalerT]]:  # type: ignore[assignment]
     """
     Returns true if obj is a NoScaleLike.
     """

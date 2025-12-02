@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import re
 import sys
+from collections.abc import Callable, Iterable, Sequence
 from itertools import groupby
 from logging import getLogger
 from math import ceil
-from typing import Any, Callable, Iterable, Sequence, SupportsIndex
+from typing import Any, SupportsIndex
 
 from jetpytools import CustomIndexError, CustomRuntimeError, FuncExcept, StrList, SupportsString, normalize_seq, to_arr
 

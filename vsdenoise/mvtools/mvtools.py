@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from fractions import Fraction
 from itertools import chain
-from typing import Any, Literal, Mapping, NamedTuple, Union, overload
+from typing import Any, Literal, NamedTuple, overload
 
 from jetpytools import KwargsNotNone, fallback, normalize_seq
 
@@ -584,11 +585,7 @@ class MVTools(VSObject):
         thscd: int | tuple[int | None, float | None] | None = None,
         interleave: bool = True,
         temporal_func: VSFunctionNoArgs | None = None,
-    ) -> Union[
-        vs.VideoNode,
-        tuple[list[vs.VideoNode], list[vs.VideoNode]],
-        tuple[vs.VideoNode, tuple[int, int]],
-    ]:
+    ) -> vs.VideoNode | tuple[list[vs.VideoNode], list[vs.VideoNode]] | tuple[vs.VideoNode, tuple[int, int]]:
         """
         Perform motion compensation by moving blocks from reference frames to the current frame
         according to motion vectors.
@@ -720,11 +717,7 @@ class MVTools(VSObject):
         thscd: int | tuple[int | None, float | None] | None = None,
         interleave: bool = True,
         temporal_func: VSFunctionNoArgs | None = None,
-    ) -> Union[
-        vs.VideoNode,
-        tuple[list[vs.VideoNode], list[vs.VideoNode]],
-        tuple[vs.VideoNode, tuple[int, int]],
-    ]:
+    ) -> vs.VideoNode | tuple[list[vs.VideoNode], list[vs.VideoNode]] | tuple[vs.VideoNode, tuple[int, int]]:
         """
         Performs motion compensation using pixel-level motion vectors interpolated from block vectors.
 

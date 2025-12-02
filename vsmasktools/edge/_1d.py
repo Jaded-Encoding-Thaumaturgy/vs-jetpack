@@ -5,7 +5,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any, ClassVar, Sequence
+from collections.abc import Sequence
+from typing import Any, ClassVar
 
 from vstools import core, vs
 

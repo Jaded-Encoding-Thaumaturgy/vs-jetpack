@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Callable, Literal, Protocol, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Protocol, overload
 
 from jetpytools import CustomIntEnum, CustomValueError, normalize_seq, to_arr
 
@@ -516,7 +517,7 @@ def placebo_deband(
     return debanded
 
 
-class _DebanderFunc[_Nb: (float, int)](Protocol):
+class _DebanderFunc[Nb: (float, int)](Protocol):
     """
     Protocol for debanding functions.
     """
@@ -525,8 +526,8 @@ class _DebanderFunc[_Nb: (float, int)](Protocol):
         self,
         clip: vs.VideoNode,
         radius: int = ...,
-        thr: _Nb | Sequence[_Nb] = ...,
-        grain: _Nb | Sequence[_Nb] = ...,
+        thr: Nb | Sequence[Nb] = ...,
+        grain: Nb | Sequence[Nb] = ...,
         planes: Planes = ...,
     ) -> vs.VideoNode: ...
 

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from fractions import Fraction
 from functools import partial
-from typing import Callable, ClassVar
+from typing import ClassVar
 
 from jetpytools import SPath
 
@@ -28,7 +29,7 @@ class D2VWitch(ExternalIndexer):
         return list(map(str, [self._get_bin_path(), *files, "--output", output]))
 
     def update_video_filenames(self, index_path: SPath, filepaths: list[SPath]) -> None:
-        with open(index_path, "r") as file:
+        with open(index_path) as file:
             file_content = file.read()
 
         lines = file_content.split("\n")
@@ -52,7 +53,7 @@ class D2VWitch(ExternalIndexer):
             file.write("\n".join(lines))
 
     def get_info(self, index_path: SPath, file_idx: int = -1) -> D2VIndexFileInfo:
-        with open(index_path, "r") as f:
+        with open(index_path) as f:
             file_content = f.read()
 
         lines = file_content.split("\n")

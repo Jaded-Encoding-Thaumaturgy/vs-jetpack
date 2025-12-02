@@ -1,5 +1,6 @@
 import sys
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from jetpytools import CustomRuntimeError, FuncExcept, SupportsString, norm_func_name, to_arr
 from jetpytools.exceptions.base import CustomErrorMeta

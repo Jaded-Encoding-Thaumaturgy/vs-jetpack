@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Sequence, overload
+from collections.abc import Sequence
+from typing import Any, overload
 
 from jetpytools import CustomTypeError, inject_self, normalize_seq
 

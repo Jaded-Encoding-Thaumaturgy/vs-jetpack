@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import inspect
+from collections.abc import Iterable
 from io import TextIOWrapper
 from pathlib import Path
 from pkgutil import iter_modules
-from typing import Any, Iterable
+from typing import Any
 
 import jetpytools
 import mkdocs_gen_files

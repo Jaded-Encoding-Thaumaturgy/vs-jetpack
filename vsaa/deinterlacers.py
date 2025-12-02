@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
-from typing import TYPE_CHECKING, Any, Mapping, Self, Sequence
+from typing import TYPE_CHECKING, Any, Self
 
 from jetpytools import CustomNotImplementedError, CustomValueError, copy_signature, fallback, normalize_seq
 

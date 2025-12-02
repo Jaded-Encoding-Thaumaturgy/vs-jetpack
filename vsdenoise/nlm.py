@@ -5,7 +5,8 @@ This module implements a wrapper for non local means denoisers
 from __future__ import annotations
 
 import warnings
-from typing import Any, Callable, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from jetpytools import CustomIntEnum, CustomRuntimeError, CustomStrEnum, normalize_seq, to_arr
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Sequence, SupportsFloat, cast
+from collections.abc import Sequence
+from typing import Any, SupportsFloat, cast
 
 from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomStrEnum, fallback, normalize_seq
 

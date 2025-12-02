@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Callable
 from functools import partial, wraps
 from inspect import signature
-from typing import Any, Callable, Literal, overload
+from typing import Any, Literal, overload
 
 from jetpytools import CustomValueError, FuncExcept, StrictRange
 

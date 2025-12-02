@@ -5,11 +5,12 @@ using standard Python syntax.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from functools import cache
 from inspect import currentframe
 from types import FrameType
-from typing import Any, Iterable, Iterator, Self, Sequence, SupportsIndex, cast, overload
+from typing import Any, Self, SupportsIndex, cast, overload
 
 from jetpytools import CustomValueError, to_arr
 

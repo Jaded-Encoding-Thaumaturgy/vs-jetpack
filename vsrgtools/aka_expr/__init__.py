@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from functools import partial
-from typing import Callable
 
 from ._rg import (
     aka_remove_grain_expr_1,

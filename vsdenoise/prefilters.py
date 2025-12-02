@@ -5,8 +5,9 @@ This module implements prefilters for denoisers.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from enum import auto
-from typing import Any, Literal, Sequence, cast, overload
+from typing import Any, Literal, cast, overload
 
 from jetpytools import (
     MISSING,

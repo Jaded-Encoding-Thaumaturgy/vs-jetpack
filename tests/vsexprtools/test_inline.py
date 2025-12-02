@@ -134,7 +134,7 @@ def test_inline_expr_complex(strength: float, limit: float, low_freq: _LowFreqSe
         local_max = functools.reduce(ie.op.max, neighbors)
 
         if limit > 0:
-            variance = sum(((n - x) ** 2 for n in neighbors)) / 8
+            variance = sum((n - x) ** 2 for n in neighbors) / 8
 
             h_conv, v_conv = Sobel.matrices
             h_edge = ie.op.convolution(x, h_conv, divisor=False, saturate=False)

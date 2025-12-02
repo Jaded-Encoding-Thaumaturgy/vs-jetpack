@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from math import ceil
-from typing import Any, Callable
+from typing import Any
 
 from vstools import core, vs
 

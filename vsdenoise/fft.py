@@ -5,8 +5,9 @@ This module implements wrappers for FFT (Fast Fourier Transform) based plugins.
 from __future__ import annotations
 
 import math
+from collections.abc import Iterator, Mapping, Sequence
 from functools import cache
-from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Self, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Self, overload
 
 from jetpytools import (
     CustomEnum,
