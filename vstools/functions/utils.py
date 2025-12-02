@@ -4,16 +4,24 @@ import operator
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial, reduce, wraps
 from types import NoneType
-from typing import Any, Self, SupportsIndex, overload
+from typing import Any, Literal, Self, SupportsIndex, overload
 from weakref import WeakValueDictionary
 
-from jetpytools import CustomIndexError, CustomStrEnum, CustomTypeError, FuncExcept, normalize_seq, to_arr
+from jetpytools import (
+    CustomIndexError,
+    CustomNotImplementedError,
+    CustomStrEnum,
+    CustomTypeError,
+    FuncExcept,
+    normalize_seq,
+    to_arr,
+)
 
-from ..enums import ColorRange, ColorRangeLike
+from ..enums import ColorRange, ColorRangeLike, Matrix
 from ..exceptions import ClipLengthError, UnsupportedColorFamilyError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterable
-from ..utils import flatten, get_depth, get_video_format
-from ..vs_proxy import vs
+from ..utils import flatten, get_depth, get_lowest_value, get_peak_value, get_video_format
+from ..vs_proxy import core, vs
 
 __all__ = [
     "EXPR_VARS",
@@ -34,6 +42,7 @@ __all__ = [
     "plane",
     "split",
     "stack_clips",
+    "stack_planes",
 ]
 
 
@@ -867,6 +876,122 @@ def stack_clips(clips: Iterable[VideoNodeIterable]) -> vs.VideoNode:
             for inner_clips in clips
         ]
     )
+
+
+@overload
+def stack_planes(
+    clip: vs.VideoNode,
+    shift_float_chroma: bool = True,
+    offset_chroma: Literal["min", "max", False] | float = False,
+    mode: Literal["h", "v"] = "h",
+    write_plane_name: Literal[False] = False,
+) -> vs.VideoNode: ...
+
+
+@overload
+def stack_planes(
+    clip: vs.VideoNode,
+    shift_float_chroma: bool = True,
+    offset_chroma: Literal["min", "max", False] | float = False,
+    mode: Literal["h", "v"] = "h",
+    write_plane_name: bool = ...,
+    alignment: int = 7,
+    scale: int = 1,
+) -> vs.VideoNode: ...
+
+
+def stack_planes(
+    clip: vs.VideoNode,
+    shift_float_chroma: bool = True,
+    offset_chroma: Literal["min", "max", False] | float = False,
+    mode: Literal["h", "v"] = "h",
+    write_plane_name: bool = False,
+    alignment: int = 7,
+    scale: int = 1,
+) -> vs.VideoNode:
+    """
+    Split a clip into its individual planes and stack them visually for inspection.
+
+    Args:
+        clip: Input clip to be split and visually stacked.
+        shift_float_chroma: If True, shift U and V by +0.5 when working in float YUV formats.
+        offset_chroma: Apply chroma plane offseting:
+
+               - "min": match luma minimum
+               - "max": match luma maximum
+               - float: add value directly
+               - False: no chroma offseting
+        mode: Stacking direction:
+
+               - "h": horizontal (default)
+               - "v": vertical
+        write_plane_name: If True, overlays the short plane name ("Y", "U", "V", "R", "G", ...) on each plane.
+        alignment: Text alignment for plane labels (only used if `write_plane_name=True`).
+        scale: Font scale for plane labels (only used if `write_plane_name=True`).
+
+    Returns:
+        A clip containing the stacked planes.
+    """
+    if clip.format.color_family is vs.GRAY:
+        return clip
+
+    if clip.format.sample_type is vs.FLOAT:
+        clip = depth(clip, 32)
+
+    if clip.format.color_family is vs.YUV:
+        if clip.format.sample_type is vs.FLOAT and shift_float_chroma:
+            clip = core.std.Expr(clip, ["", "x 0.5 +"])
+
+        def offset_uv_planes(value: float, plane_stats: str) -> list[vs.VideoNode]:
+            planes = split(clip)
+
+            if clip.format.sample_type is vs.FLOAT:
+                value += 0.5
+
+            planes[1:] = [
+                p.std.PlaneStats().akarin.Expr(f"x {value} x.PlaneStats{plane_stats} - +") for p in planes[1:]
+            ]
+            return planes
+
+        match offset_chroma:
+            case "min":
+                planes = offset_uv_planes(get_lowest_value(clip, True), "Min")
+            case "max":
+                planes = offset_uv_planes(get_peak_value(clip, True), "Max")
+            case False:
+                planes = split(clip)
+            case _:
+                planes = split(core.std.Expr(clip, ["", f"x {offset_chroma} +"]))
+    else:
+        planes = split(clip)
+
+    if write_plane_name:
+        planes = [c.text.Text(k, alignment, scale) for k, c in zip(clip.format.name, planes)]
+
+    org: VideoNodeIterable
+
+    dim = {"h": "h", "v": "w"}[mode]
+
+    match getattr(clip.format, f"subsampling_{dim}"):
+        case 2:
+            blank = planes[1].std.BlankClip(keep=True)
+            org = [planes[0], (blank, *planes[1:], blank)]
+        case 1:
+            org = [planes[0], planes[1:]]
+        case 0:
+            org = planes
+        case _:
+            raise CustomNotImplementedError
+
+    if mode == "v":
+        org = [org]
+
+    stacked = stack_clips(org)
+
+    if clip.format.color_family == vs.RGB:
+        return core.std.RemoveFrameProps(stacked, Matrix.prop_key)
+
+    return stacked
 
 
 @overload

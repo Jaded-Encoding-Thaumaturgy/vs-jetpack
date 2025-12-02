@@ -1,9 +1,12 @@
 from unittest import TestCase
 
+import pytest
+
 from vstools import (
     ColorRange,
     DitherType,
     UnsupportedColorFamilyError,
+    core,
     depth,
     get_b,
     get_g,
@@ -12,6 +15,7 @@ from vstools import (
     get_v,
     get_y,
     plane,
+    stack_planes,
     vs,
 )
 
@@ -138,3 +142,15 @@ class TestUtils(TestCase):
         result = plane(clip, 0)
         assert result.format
         self.assertEqual(result.format.name, "Gray8")
+
+
+formats = [fmt for fmt in vs.PresetVideoFormat if fmt]
+
+
+@pytest.mark.parametrize(
+    "clip",
+    [core.std.BlankClip(format=fmt) for fmt in formats],
+    ids=[f"{fmt.name}/{fmt}" for fmt in formats],
+)
+def test_stack_plane(clip: vs.VideoNode) -> None:
+    stack_planes(clip)
