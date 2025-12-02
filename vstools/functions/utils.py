@@ -970,7 +970,7 @@ def stack_planes(
 
     org: VideoNodeIterable
 
-    dim = {"h": "w", "v": "h"}[mode]
+    dim = {"h": "h", "v": "w"}[mode]
 
     match getattr(clip.format, f"subsampling_{dim}"):
         case 2:
