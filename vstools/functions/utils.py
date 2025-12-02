@@ -970,7 +970,9 @@ def stack_planes(
 
     org: VideoNodeIterable
 
-    match getattr(clip.format, f"subsampling_{mode}"):
+    dim = {"h": "w", "v": "h"}[mode]
+
+    match getattr(clip.format, f"subsampling_{dim}"):
         case 2:
             blank = planes[1].std.BlankClip(keep=True)
             org = [planes[0], (blank, *planes[1:], blank)]
