@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from fractions import Fraction
-from typing import Union
 
 from jetpytools import SPath
 
@@ -107,7 +106,7 @@ class DGIndexFileInfo(_IndexFileInfoBase):
     footer: DGIndexFooter
 
 
-IndexFileType = Union[D2VIndexFileInfo, DGIndexFileInfo]
+type IndexFileType = D2VIndexFileInfo | DGIndexFileInfo
 
 
 @dataclass

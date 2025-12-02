@@ -2,31 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from types import UnionType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeVar,
-    Union,
-    get_args,
-    get_origin,
-    overload,
-)
+from typing import Any, Literal, Union, get_args, get_origin, overload
 
-if TYPE_CHECKING:
-    from vapoursynth import _PropValue
-else:
-    _PropValue = Any
-
-from jetpytools import (
-    MISSING,
-    FileWasNotFoundError,
-    FuncExcept,
-    MissingT,
-    SPath,
-    SPathLike,
-    to_arr,
-)
+from jetpytools import MISSING, FileWasNotFoundError, FuncExcept, MissingT, SPath, SPathLike, to_arr
 
 from ..enums import PropEnum
 from ..exceptions import FramePropError
@@ -36,11 +14,31 @@ from .cache import NodesPropsCache
 
 __all__ = ["get_clip_filepath", "get_prop", "get_props", "merge_clip_props"]
 
-DT = TypeVar("DT")
-CT = TypeVar("CT")
-_PropValueT = TypeVar("_PropValueT", bound=_PropValue)
-_PropValueT0 = TypeVar("_PropValueT0", bound=_PropValue)
-_PropValueT1 = TypeVar("_PropValueT1", bound=_PropValue)
+
+type _PropValue = (
+    int
+    | float
+    | str
+    | bytes
+    | vs.RawFrame
+    | vs.VideoFrame
+    | vs.AudioFrame
+    | vs.RawNode
+    | vs.VideoNode
+    | vs.AudioNode
+    | Callable[..., Any]
+    | list[int]
+    | list[float]
+    | list[str]
+    | list[bytes]
+    | list[vs.RawFrame]
+    | list[vs.VideoFrame]
+    | list[vs.AudioFrame]
+    | list[vs.RawNode]
+    | list[vs.VideoNode]
+    | list[vs.AudioNode]
+    | list[Callable[..., Any]]
+)
 
 
 _get_prop_cache = NodesPropsCache[vs.RawNode]()
@@ -65,46 +63,46 @@ def _normalize_types[T](types: type[T] | Iterable[type[T]]) -> tuple[type[T], ..
 
 # One type signature
 @overload
-def get_prop(
+def get_prop[PropValueT: _PropValue, DT](
     obj: HoldsPropValue,
     key: str | type[PropEnum],
-    t: type[_PropValueT],
+    t: type[PropValueT],
     *,
     default: DT = ...,
     func: FuncExcept | None = None,
-) -> _PropValueT | DT: ...
+) -> PropValueT | DT: ...
 
 
 # Tuple of two types signature
 @overload
-def get_prop(
+def get_prop[PropValueT: _PropValue, PropValueT0: _PropValue, DT](
     obj: HoldsPropValue,
     key: str | type[PropEnum],
-    t: tuple[type[_PropValueT], type[_PropValueT0]],
+    t: tuple[type[PropValueT], type[PropValueT0]],
     *,
     default: DT = ...,
     func: FuncExcept | None = None,
-) -> _PropValueT | _PropValueT0 | DT: ...
+) -> PropValueT | PropValueT0 | DT: ...
 
 
 # Tuple of three types signature
 @overload
-def get_prop(
+def get_prop[PropValueT: _PropValue, PropValueT0: _PropValue, PropValueT1: _PropValue, DT](
     obj: HoldsPropValue,
     key: str | type[PropEnum],
-    t: tuple[type[_PropValueT], type[_PropValueT0], type[_PropValueT1]],
+    t: tuple[type[PropValueT], type[PropValueT0], type[PropValueT1]],
     *,
     default: DT = ...,
     func: FuncExcept | None = None,
-) -> _PropValueT | _PropValueT0 | _PropValueT1 | DT: ...
+) -> PropValueT | PropValueT0 | PropValueT1 | DT: ...
 
 
 # Tuple of four types or more signature
 @overload
-def get_prop(
+def get_prop[PropValueT: _PropValue, DT](
     obj: HoldsPropValue,
     key: str | type[PropEnum],
-    t: tuple[type[_PropValueT], ...],
+    t: tuple[type[PropValueT], ...],
     *,
     default: DT = ...,
     func: FuncExcept | None = None,
@@ -113,11 +111,11 @@ def get_prop(
 
 # Signature when cast is specified
 @overload
-def get_prop(
+def get_prop[PropValueT: _PropValue, CT, DT](
     obj: HoldsPropValue,
     key: str | type[PropEnum],
-    t: type[_PropValueT] | tuple[type[_PropValue], ...],
-    cast: Callable[[_PropValueT], CT],
+    t: type[PropValueT] | tuple[type[_PropValue], ...],
+    cast: Callable[[PropValueT], CT],
     default: DT = ...,
     func: FuncExcept | None = None,
 ) -> CT | DT: ...
@@ -125,7 +123,7 @@ def get_prop(
 
 # Signature for callable
 @overload
-def get_prop(
+def get_prop[DT](
     obj: HoldsPropValue,
     key: str | type[PropEnum],
     t: Literal["Callable"],
@@ -137,7 +135,7 @@ def get_prop(
 
 # Generic signature
 @overload
-def get_prop(
+def get_prop[CT, DT](
     obj: HoldsPropValue,
     key: str | type[PropEnum],
     t: type[Any] | tuple[type[Any], ...] | Literal["Callable"],
@@ -147,7 +145,7 @@ def get_prop(
 ) -> Any | CT | DT: ...
 
 
-def get_prop(
+def get_prop[CT, DT](
     obj: HoldsPropValue,
     key: str | type[PropEnum],
     t: type[Any] | tuple[type[Any], ...] | Literal["Callable"],
@@ -295,18 +293,18 @@ def get_clip_filepath(clip: vs.VideoNode, fallback: SPathLike | None = None, fun
 
 
 @overload
-def get_props(
+def get_props[PropValueT: _PropValue, CT, DT](
     obj: HoldsPropValue,
     keys: Iterable[str | type[PropEnum]],
-    t: type[_PropValueT],
-    cast: Callable[[_PropValueT], CT] = ...,  # pyright: ignore[reportInvalidTypeVarUse]
+    t: type[PropValueT],
+    cast: Callable[[PropValueT], CT] = ...,  # pyright: ignore[reportInvalidTypeVarUse]
     default: DT = ...,  # pyright: ignore[reportInvalidTypeVarUse]
     func: FuncExcept | None = None,
-) -> dict[str, _PropValueT | CT | DT]: ...
+) -> dict[str, PropValueT | CT | DT]: ...
 
 
 @overload
-def get_props(
+def get_props[CT, DT](
     obj: HoldsPropValue,
     keys: Iterable[str | type[PropEnum]],
     t: tuple[type[Any], ...],
@@ -316,7 +314,7 @@ def get_props(
 ) -> dict[str, Any | DT | CT]: ...
 
 
-def get_props(
+def get_props[CT](
     obj: HoldsPropValue,
     keys: Iterable[str | type[PropEnum]],
     t: type[Any] | tuple[type[Any], ...],

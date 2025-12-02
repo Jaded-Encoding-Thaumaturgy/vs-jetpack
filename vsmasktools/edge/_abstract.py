@@ -288,7 +288,7 @@ class EdgeDetect(ABC):
             func=self.__class__,
             lthr=lthr,
             hthr=hthr,
-            clamp=["%s %s clamp" % c if any(c) else "" for c in clamp],
+            clamp=["{} {} clamp".format(*c) if any(c) else "" for c in clamp],
         )
 
         return self._finalize_mask(mask, None, None, False, planes)

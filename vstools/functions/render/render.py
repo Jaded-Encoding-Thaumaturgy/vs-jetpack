@@ -338,7 +338,10 @@ def prop_compare_cb(
     op: str | Callable[[float, float], bool] | None,
     ref: float | bool,
     return_frame_n: bool = False,
-) -> tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], bool]] | tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], int | SentinelT]]:
+) -> (
+    tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], bool]]
+    | tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], int | SentinelT]]
+):
     bool_check = isinstance(ref, bool)
     one_pix = hasattr(vs.core, "akarin") and not (callable(op) or " " in prop)
     assert (op is None) if bool_check else (op is not None)

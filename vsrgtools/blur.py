@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from functools import partial, reduce
 from math import sqrt
-from typing import TYPE_CHECKING, Any, Literal, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from jetpytools import CustomIntEnum, CustomStrEnum, CustomValueError, FuncExcept, cround, normalize_seq, to_arr
 
@@ -309,19 +309,12 @@ def min_blur(
     return MeanMode.MEDIAN([clip, blurred, median], planes=planes)
 
 
-_SbrBlurT = Union[
-    BlurMatrix,
-    Sequence[float],
-    VSFunctionNoArgs,
-]
-
-
 def sbr(
     clip: vs.VideoNode,
     radius: int | Sequence[int] = 1,
     mode: ConvMode = ConvMode.HV,
-    blur: _SbrBlurT | vs.VideoNode = BlurMatrix.BINOMIAL,
-    blur_diff: _SbrBlurT = BlurMatrix.BINOMIAL,
+    blur: BlurMatrix | Sequence[float] | vs.VideoNode | VSFunctionNoArgs = BlurMatrix.BINOMIAL,
+    blur_diff: BlurMatrix | Sequence[float] | VSFunctionNoArgs = BlurMatrix.BINOMIAL,
     planes: Planes = None,
     *,
     func: FuncExcept | None = None,
@@ -350,7 +343,9 @@ def sbr(
     if isinstance(radius, Sequence):
         return normalize_radius(clip, min_blur, list(radius), planes)
 
-    def _apply_blur(clip: vs.VideoNode, blur: _SbrBlurT | vs.VideoNode) -> vs.VideoNode:
+    def _apply_blur(
+        clip: vs.VideoNode, blur: BlurMatrix | Sequence[float] | vs.VideoNode | VSFunctionNoArgs
+    ) -> vs.VideoNode:
         if isinstance(blur, Sequence):
             return BlurMatrix.custom(blur, mode)(clip, planes, **kwargs)
 

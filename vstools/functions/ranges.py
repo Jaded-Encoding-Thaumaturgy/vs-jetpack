@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import suppress
-from typing import Any, Literal, Protocol, TypeGuard, TypeVar, Union, overload
+from typing import Any, Literal, Protocol, TypeGuard, TypeVar, overload
 
 from jetpytools import CustomValueError, SoftRange, StrictRange, fallback, flatten, interleave_arr
 from jetpytools import invert_ranges as jetp_invert_ranges
@@ -137,13 +137,13 @@ class _RangesCallBackNF(Protocol[_VideoFrameT_contra]):
     def __call__(self, n: int, f: _VideoFrameT_contra, /) -> bool: ...
 
 
-_RangesCallBackLike = Union[
-    _RangesCallBack,
-    _RangesCallBackF[vs.VideoFrame],
-    _RangesCallBackNF[vs.VideoFrame],
-    _RangesCallBackF[Sequence[vs.VideoFrame]],
-    _RangesCallBackNF[Sequence[vs.VideoFrame]],
-]
+_RangesCallBackLike = (
+    _RangesCallBack
+    | _RangesCallBackF[vs.VideoFrame]
+    | _RangesCallBackNF[vs.VideoFrame]
+    | _RangesCallBackF[Sequence[vs.VideoFrame]]
+    | _RangesCallBackNF[Sequence[vs.VideoFrame]]
+)
 
 
 def _is_cb_nf(
