@@ -50,10 +50,10 @@ class BorderHandling(CustomIntEnum):
 
         Args:
             clip: Input clip.
-            kernel_radius: Kernel radius.
             width: Output width.
             height: Output height.
             shift: Current (top, left) shift.
+            kernel_radius: Kernel radius.
 
         Returns:
             (padded clip, updated shift).
@@ -67,10 +67,10 @@ class BorderHandling(CustomIntEnum):
 
         left, right, top, bottom = self.pad_amount(
             clip,
-            kernel_radius,
             width,
             height,
             shift,
+            kernel_radius,
             src_width,
             src_height,
         )
@@ -90,20 +90,24 @@ class BorderHandling(CustomIntEnum):
     def pad_amount(
         self,
         clip: vs.VideoNode,
-        kernel_radius: int,
         width: int,
         height: int,
         shift: tuple[TopShift, LeftShift],
+        kernel_radius: int,
         src_width: float,
         src_height: float,
     ) -> tuple[int, int, int, int]:
         """
-        Return required padding for one dimension.
+        Return required padding.
 
         Args:
-            kernel_radius: Kernel radius.
+            clip: Input clip.
             width: Output width.
             height: Output height.
+            shift: Current (top, left) shift.
+            kernel_radius: Kernel radius.
+            src_width: Width source region.
+            src_height: Height source region.
 
         Returns:
             Padding amount.
