@@ -221,9 +221,7 @@ class ScalingArgs:
         if crop:
             if isinstance(crop, CropAbs):
                 crop = crop.to_rel(base_clip)
-            elif isinstance(crop, CropRel):
-                pass
-            else:
+            elif not isinstance(crop, CropRel):
                 crop = CropRel(*crop)
         else:
             crop = CropRel()
@@ -231,6 +229,8 @@ class ScalingArgs:
         ratio_height = height / base_clip.height
 
         if width is None:
+            # Integer scaling -> compute width from aspect ratio
+            # Fractional scaling -> proportional scaling
             width = get_w(height, base_clip, 2) if isinstance(height, int) else ratio_height * base_clip.width
 
         ratio_width = width / base_clip.width
@@ -253,19 +253,26 @@ class ScalingArgs:
         if base_width is None:
             base_width = mod2(ceil(width))
 
+        # half of (container - target), plus cropped portion
         margin_left = (base_width - width) / 2 + ratio_width * crop.left
         margin_right = (base_width - width) / 2 + ratio_width * crop.right
+        # Cropped output = container minus floored margins
         cropped_width = base_width - floor(margin_left) - floor(margin_right)
 
         margin_top = (base_height - height) / 2 + ratio_height * crop.top
         margin_bottom = (base_height - height) / 2 + ratio_height * crop.bottom
         cropped_height = base_height - floor(margin_top) - floor(margin_bottom)
 
+        # Compute src width/height after crop and scaling
+
         if isinstance(width, int) and crop.left == crop.right == 0:
+            # Fully integer width + no crop = source width equals cropped container width
             cropped_src_width = float(cropped_width)
         else:
+            # Otherwise scale from cropped source region
             cropped_src_width = ratio_width * (base_clip.width - crop.left - crop.right)
 
+        # Horizontal source offset: fractional remainder + user offset
         cropped_src_left = margin_left - floor(margin_left) + src_left
 
         if isinstance(height, int) and crop.top == crop.bottom == 0:
@@ -278,6 +285,7 @@ class ScalingArgs:
         if sample_grid_model:
             sgm = SampleGridModel.from_param(sample_grid_model, cls.from_args)
 
+            # sample_grid_model() adjusts sampling grid and may modify src_top/left and src dimensions
             kw, (cropped_src_top, cropped_src_left) = sgm(
                 cropped_src_width,
                 cropped_src_height,
