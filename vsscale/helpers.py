@@ -9,7 +9,7 @@ from typing import Any, NamedTuple, Self, overload
 
 from jetpytools import CustomTypeError, FuncExcept, mod2, mod_x
 
-from vskernels import MixedScalerProcess, Scaler, ScalerLike, is_scaler_like
+from vskernels import MixedScalerProcess, SampleGridModel, Scaler, ScalerLike, is_scaler_like
 from vstools import FunctionUtil, Planes, Resolution, VSFunctionNoArgs, get_w, vs
 
 from .various import ComplexSuperSamplerProcess
@@ -160,6 +160,7 @@ class ScalingArgs:
         *,
         src_top: float = ...,
         src_left: float = ...,
+        sample_grid_model: int = SampleGridModel.MATCH_EDGES,
         mode: str = "hw",
     ) -> Self: ...
 
@@ -175,6 +176,7 @@ class ScalingArgs:
         src_top: float = ...,
         src_left: float = ...,
         crop: tuple[LeftCrop, RightCrop, TopCrop, BottomCrop] | CropRel | CropAbs | None = ...,
+        sample_grid_model: int = SampleGridModel.MATCH_EDGES,
         mode: str = "hw",
     ) -> Self: ...
 
@@ -189,6 +191,7 @@ class ScalingArgs:
         src_top: float = 0,
         src_left: float = 0,
         crop: tuple[LeftCrop, RightCrop, TopCrop, BottomCrop] | CropRel | CropAbs | None = None,
+        sample_grid_model: int = SampleGridModel.MATCH_EDGES,
         mode: str = "hw",
     ) -> Self:
         """
@@ -210,15 +213,15 @@ class ScalingArgs:
                    - "h" means only the height is calculated.
                    - "hw" or "wh" mean both width and height are calculated.
 
+            sample_grid_model: Model used to align sampling grid.
+
         Returns:
             ScalingArgs object suitable for scaling functions.
         """
         if crop:
             if isinstance(crop, CropAbs):
                 crop = crop.to_rel(base_clip)
-            elif isinstance(crop, CropRel):
-                pass
-            else:
+            elif not isinstance(crop, CropRel):
                 crop = CropRel(*crop)
         else:
             crop = CropRel()
@@ -226,6 +229,8 @@ class ScalingArgs:
         ratio_height = height / base_clip.height
 
         if width is None:
+            # Integer scaling -> compute width from aspect ratio
+            # Fractional scaling -> proportional scaling
             width = get_w(height, base_clip, 2) if isinstance(height, int) else ratio_height * base_clip.width
 
         ratio_width = width / base_clip.width
@@ -237,6 +242,7 @@ class ScalingArgs:
                 base_height is None,
                 base_width is None,
                 crop == (0, 0, 0, 0),
+                not sample_grid_model,
             ]
         ):
             return cls(int(width), int(height), int(width), int(height), src_top, src_left, mode)
@@ -247,19 +253,26 @@ class ScalingArgs:
         if base_width is None:
             base_width = mod2(ceil(width))
 
+        # half of (container - target), plus cropped portion
         margin_left = (base_width - width) / 2 + ratio_width * crop.left
         margin_right = (base_width - width) / 2 + ratio_width * crop.right
+        # Cropped output = container minus floored margins
         cropped_width = base_width - floor(margin_left) - floor(margin_right)
 
         margin_top = (base_height - height) / 2 + ratio_height * crop.top
         margin_bottom = (base_height - height) / 2 + ratio_height * crop.bottom
         cropped_height = base_height - floor(margin_top) - floor(margin_bottom)
 
+        # Compute src width/height after crop and scaling
+
         if isinstance(width, int) and crop.left == crop.right == 0:
+            # Fully integer width + no crop = source width equals cropped container width
             cropped_src_width = float(cropped_width)
         else:
+            # Otherwise scale from cropped source region
             cropped_src_width = ratio_width * (base_clip.width - crop.left - crop.right)
 
+        # Horizontal source offset: fractional remainder + user offset
         cropped_src_left = margin_left - floor(margin_left) + src_left
 
         if isinstance(height, int) and crop.top == crop.bottom == 0:
@@ -268,6 +281,20 @@ class ScalingArgs:
             cropped_src_height = ratio_height * (base_clip.height - crop.top - crop.bottom)
 
         cropped_src_top = margin_top - floor(margin_top) + src_top
+
+        if sample_grid_model:
+            sgm = SampleGridModel.from_param(sample_grid_model, cls.from_args)
+
+            # sample_grid_model() adjusts sampling grid and may modify src_top/left and src dimensions
+            kw, (cropped_src_top, cropped_src_left) = sgm(
+                cropped_src_width,
+                cropped_src_height,
+                base_clip.width - crop.left - crop.right,
+                base_clip.height - crop.top - crop.bottom,
+                (cropped_src_top, cropped_src_left),
+                {},
+            )
+            cropped_src_width, cropped_src_height = kw["src_width"], kw["src_height"]
 
         return cls(
             cropped_width,
