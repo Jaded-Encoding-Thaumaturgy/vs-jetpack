@@ -526,7 +526,7 @@ class KeepArScaler(Scaler):
             clip, width, height, shift, **kwargs
         )
         padded, shift = BorderHandling.from_param(border_handling, self.scale).prepare_clip(
-            clip, self.kernel_radius, shift
+            clip, width, height, shift, self.kernel_radius, **kwargs
         )
 
         scaled = super().scale(padded, width, height, shift, **kwargs)

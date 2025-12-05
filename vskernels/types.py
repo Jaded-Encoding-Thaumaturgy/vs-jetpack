@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from functools import cache
+from math import ceil
 from typing import Any
 
-from jetpytools import CustomIntEnum, CustomNotImplementedError
+from jetpytools import CustomIntEnum, CustomNotImplementedError, fallback
 
 from vstools import padder, vs
 
@@ -37,54 +37,97 @@ class BorderHandling(CustomIntEnum):
     """Assume the image was resized with extend padding, where the outermost row was extended infinitely far."""
 
     def prepare_clip(
-        self, clip: vs.VideoNode, min_pad: int = 2, shift: tuple[TopShift, LeftShift] = (0, 0)
+        self,
+        clip: vs.VideoNode,
+        width: int,
+        height: int,
+        shift: tuple[TopShift, LeftShift],
+        kernel_radius: int,
+        **kwargs: Any,
     ) -> tuple[vs.VideoNode, tuple[TopShift, LeftShift]]:
         """
         Apply required padding and adjust shift.
 
         Args:
             clip: Input clip.
-            min_pad: Minimum padding before alignment.
+            width: Output width.
+            height: Output height.
             shift: Current (top, left) shift.
+            kernel_radius: Kernel radius.
+            **kwargs: Optional src_width/src_height.
 
         Returns:
             (padded clip, updated shift).
         """
-        pad_w, pad_h = (self.pad_amount(size, min_pad) for size in (clip.width, clip.height))
 
-        if pad_w == pad_h == 0:
-            return clip, shift
+        if self is BorderHandling.MIRROR:
+            return (clip, shift)
+
+        src_width = fallback(kwargs.get("src_width"), clip.width)
+        src_height = fallback(kwargs.get("src_height"), clip.height)
+
+        left, right, top, bottom = self.pad_amount(
+            clip,
+            width,
+            height,
+            shift,
+            kernel_radius,
+            src_width,
+            src_height,
+        )
 
         match self:
             case BorderHandling.ZERO:
-                padded = padder.COLOR(clip, pad_w, pad_w, pad_h, pad_h)
+                padded = padder.COLOR(clip, left, right, top, bottom)
             case BorderHandling.REPEAT:
-                padded = padder.REPEAT(clip, pad_w, pad_w, pad_h, pad_h)
+                padded = padder.REPEAT(clip, left, right, top, bottom)
             case _:
                 raise CustomNotImplementedError
 
-        shift = tuple(s + ((p - c) // 2) for s, c, p in zip(shift, *((x.height, x.width) for x in (clip, padded))))
+        shift = tuple(s + c for s, c in zip(shift, (top, left)))  # type: ignore
 
         return padded, shift
 
-    @cache
-    def pad_amount(self, size: int, min_amount: int = 2) -> int:
+    def pad_amount(
+        self,
+        clip: vs.VideoNode,
+        width: int,
+        height: int,
+        shift: tuple[TopShift, LeftShift],
+        kernel_radius: int,
+        src_width: float,
+        src_height: float,
+    ) -> tuple[int, int, int, int]:
         """
-        Return required padding for one dimension.
-
-        MIRROR always returns zero. Other modes pad to an 8-pixel boundary.
+        Return required padding.
 
         Args:
-            size: Dimension size.
-            min_amount: Minimum required padding.
+            clip: Input clip.
+            width: Output width.
+            height: Output height.
+            shift: Current (top, left) shift.
+            kernel_radius: Kernel radius.
+            src_width: Width source region.
+            src_height: Height source region.
 
         Returns:
             Padding amount.
         """
-        if self is BorderHandling.MIRROR:
-            return 0
+        top_shift, left_shift = shift
 
-        return (((size + min_amount) + 7) & -8) - size
+        w_factor = kernel_radius * min(width / src_width, 1)
+        left, right = (
+            ceil((w_factor - left_shift) / 2) * 2**clip.format.subsampling_w,
+            ceil((w_factor + left_shift) / 2) * 2**clip.format.subsampling_w,
+        )
+
+        h_factor = kernel_radius * min(height / src_height, 1)
+        top, bottom = (
+            ceil((h_factor - top_shift) / 2) * 2**clip.format.subsampling_h,
+            ceil((h_factor + top_shift) / 2) * 2**clip.format.subsampling_h,
+        )
+
+        return (left, right, top, bottom)
 
 
 class SampleGridModel(CustomIntEnum):
@@ -160,7 +203,7 @@ class SampleGridModel(CustomIntEnum):
             src_width = src_width * (width - 1) / (src_width - 1)
             src_height = src_height * (height - 1) / (src_height - 1)
 
-            kwargs |= {"src_width": src_width, "src_height": src_height}
+            kwargs.update(src_width=src_width, src_height=src_height)
             shift_x, shift_y, *_ = tuple(
                 (x / 2 + y for x, y in zip(((height - src_height), (width - src_width)), shift))
             )
@@ -185,8 +228,8 @@ class SampleGridModel(CustomIntEnum):
             (updated kwargs, updated shift).
         """
 
-        src_width = kwargs.get("src_width", width)
-        src_height = kwargs.get("src_height", height)
+        src_width = fallback(kwargs.get("src_width"), width)
+        src_height = fallback(kwargs.get("src_height"), height)
 
         return self(src_width, src_height, width, height, shift, kwargs)
 
@@ -207,8 +250,8 @@ class SampleGridModel(CustomIntEnum):
             (updated kwargs, updated shift).
         """
 
-        src_width = kwargs.get("src_width", clip.width)
-        src_height = kwargs.get("src_height", clip.height)
+        src_width = fallback(kwargs.get("src_width"), clip.width)
+        src_height = fallback(kwargs.get("src_height"), clip.height)
 
         return self(width, height, src_width, src_height, shift, kwargs)
 
