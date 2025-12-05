@@ -7,7 +7,16 @@ from typing import Any
 from jetpytools import cachedproperty
 
 from vsexprtools import ExprToken, norm_expr
-from vskernels import Bilinear, BorderHandling, ComplexKernel, ComplexKernelLike, Hermite, Scaler, ScalerLike
+from vskernels import (
+    Bilinear,
+    BorderHandling,
+    ComplexKernel,
+    ComplexKernelLike,
+    Hermite,
+    SampleGridModel,
+    Scaler,
+    ScalerLike,
+)
 from vskernels.types import LeftShift, TopShift
 from vsmasktools import Kirsch, based_diff_mask, region_rel_mask, stabilize_mask
 from vstools import (
@@ -276,6 +285,7 @@ class Rescale(RescaleBase):
         shift: tuple[TopShift, LeftShift] = (0, 0),
         field_based: FieldBasedLike | bool | None = None,
         border_handling: int = BorderHandling.MIRROR,
+        sample_grid_model: int = SampleGridModel.MATCH_EDGES,
         **kwargs: Any,
     ) -> None:
         """
@@ -306,6 +316,7 @@ class Rescale(RescaleBase):
                      where the outermost row was extended infinitely far.
 
                 Defaults to ``0``.
+            sample_grid_model: Model used to align sampling grid.
         """
         self._line_mask: vs.VideoNode | None = None
         self._credit_mask: vs.VideoNode | None = None
@@ -314,7 +325,7 @@ class Rescale(RescaleBase):
         self._pre = clip
 
         self.descale_args = ScalingArgs.from_args(
-            clip, height, width, base_height, base_width, shift[0], shift[1], crop, mode="hw"
+            clip, height, width, base_height, base_width, shift[0], shift[1], crop, sample_grid_model, mode="hw"
         )
 
         super().__init__(clip, kernel, upscaler, downscaler, field_based, border_handling, **kwargs)
