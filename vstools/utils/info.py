@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from fractions import Fraction
-from typing import SupportsFloat, SupportsInt
+from typing import Any, SupportsFloat, SupportsInt
 
 from jetpytools import CustomNotImplementedError, fallback, mod_x
 
 from ..enums import Dar, Sar
 from ..exceptions import UnsupportedColorFamilyError
 from ..types import HoldsVideoFormat, VideoFormatLike
-from ..vs_proxy import vs
+from ..vs_proxy import core, vs
 
 __all__ = [
     "get_color_family",
@@ -22,6 +22,7 @@ __all__ = [
     "get_var_infos",
     "get_video_format",
     "get_w",
+    "show_frame_info",
 ]
 
 
@@ -280,3 +281,36 @@ def get_h(
         return mod_x(height, mod)
 
     return round(height)
+
+
+def show_frame_info(clip: vs.VideoNode, title: str | None = None, **sub_args: Any) -> vs.VideoNode:
+    """
+    Write picture type, frame number and an optional title to the current frame as a overlay text.
+
+    Uses the [`sub`](https://github.com/vapoursynth/subtext) plugin if available.
+
+    Args:
+        clip: Source clip.
+        title: Optional title.
+        kwargs: Additional parameters passed to the `sub.Subtitle` or `text.Text` plugin.
+
+    Returns:
+        Clip with frame informations.
+    """
+    default_style = "sans-serif,20,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,7,10,10,10,1"
+    sub_args.setdefault("style", default_style)
+
+    def write_info(n: int, f: vs.VideoFrame) -> vs.VideoNode:
+        from .props import get_prop
+
+        pict_type = get_prop(f, "_PictType", str, default=None)
+
+        info = f"{title if title else ''}\nFrame {n} of {clip.num_frames}"
+        info += f"\nPicture type: {pict_type if pict_type else 'N/A'}"
+
+        if hasattr(core, "sub"):
+            return core.sub.Subtitle(clip, info, **sub_args)
+
+        return core.text.Text(clip, info, sub_args.get("alignment"), sub_args.get("scale"))
+
+    return core.std.FrameEval(clip, write_info, clip, clip)
