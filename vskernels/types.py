@@ -54,6 +54,7 @@ class BorderHandling(CustomIntEnum):
             height: Output height.
             shift: Current (top, left) shift.
             kernel_radius: Kernel radius.
+            **kwargs: Optional src_width/src_height.
 
         Returns:
             (padded clip, updated shift).
