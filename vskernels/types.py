@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import ceil
 from typing import Any
 
-from jetpytools import CustomIntEnum, CustomNotImplementedError
+from jetpytools import CustomIntEnum, CustomNotImplementedError, fallback
 
 from vstools import padder, vs
 
@@ -63,8 +63,8 @@ class BorderHandling(CustomIntEnum):
         if self is BorderHandling.MIRROR:
             return (clip, shift)
 
-        src_width = kwargs.get("src_width", clip.width)
-        src_height = kwargs.get("src_height", clip.height)
+        src_width = fallback(kwargs.get("src_width"), clip.width)
+        src_height = fallback(kwargs.get("src_height"), clip.height)
 
         left, right, top, bottom = self.pad_amount(
             clip,
@@ -203,7 +203,7 @@ class SampleGridModel(CustomIntEnum):
             src_width = src_width * (width - 1) / (src_width - 1)
             src_height = src_height * (height - 1) / (src_height - 1)
 
-            kwargs |= {"src_width": src_width, "src_height": src_height}
+            kwargs.update(src_width=src_width, src_height=src_height)
             shift_x, shift_y, *_ = tuple(
                 (x / 2 + y for x, y in zip(((height - src_height), (width - src_width)), shift))
             )
@@ -228,8 +228,8 @@ class SampleGridModel(CustomIntEnum):
             (updated kwargs, updated shift).
         """
 
-        src_width = kwargs.get("src_width", width)
-        src_height = kwargs.get("src_height", height)
+        src_width = fallback(kwargs.get("src_width"), width)
+        src_height = fallback(kwargs.get("src_height"), height)
 
         return self(src_width, src_height, width, height, shift, kwargs)
 
@@ -250,8 +250,8 @@ class SampleGridModel(CustomIntEnum):
             (updated kwargs, updated shift).
         """
 
-        src_width = kwargs.get("src_width", clip.width)
-        src_height = kwargs.get("src_height", clip.height)
+        src_width = fallback(kwargs.get("src_width"), clip.width)
+        src_height = fallback(kwargs.get("src_height"), clip.height)
 
         return self(width, height, src_width, src_height, shift, kwargs)
 
