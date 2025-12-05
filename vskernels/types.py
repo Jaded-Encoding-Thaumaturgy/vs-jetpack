@@ -177,8 +177,8 @@ class SampleGridModel(CustomIntEnum):
 
     def __call__(
         self,
-        width: int,
-        height: int,
+        width: float,
+        height: float,
         src_width: float,
         src_height: float,
         shift: tuple[float, float],
@@ -192,7 +192,7 @@ class SampleGridModel(CustomIntEnum):
             height: Destination height.
             src_width: Current source width.
             src_height: Current source height.
-            shift: (x, y) sampling shift.
+            shift: Top, left sampling shift.
             kwargs: Parameter dict to update.
 
         Returns:
@@ -205,7 +205,7 @@ class SampleGridModel(CustomIntEnum):
 
             kwargs.update(src_width=src_width, src_height=src_height)
             shift_x, shift_y, *_ = tuple(
-                (x / 2 + y for x, y in zip(((height - src_height), (width - src_width)), shift))
+                (x / 2 + sh for x, sh in zip(((height - src_height), (width - src_width)), shift))
             )
             shift = shift_x, shift_y
 
