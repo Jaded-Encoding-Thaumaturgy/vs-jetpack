@@ -115,13 +115,13 @@ class BorderHandling(CustomIntEnum):
         """
         top_shift, left_shift = shift
 
-        w_factor = kernel_radius * min(width / src_width, 1)
+        w_factor = kernel_radius * max(src_width / width, 1)
         left, right = (
             ceil((w_factor - left_shift) / 2) * 2**clip.format.subsampling_w,
             ceil((w_factor + left_shift) / 2) * 2**clip.format.subsampling_w,
         )
 
-        h_factor = kernel_radius * min(height / src_height, 1)
+        h_factor = kernel_radius * max(src_height / height, 1)
         top, bottom = (
             ceil((h_factor - top_shift) / 2) * 2**clip.format.subsampling_h,
             ceil((h_factor + top_shift) / 2) * 2**clip.format.subsampling_h,
