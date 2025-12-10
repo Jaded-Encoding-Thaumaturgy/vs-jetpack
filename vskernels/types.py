@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import Any
+from typing import Any, assert_never
 
-from jetpytools import CustomIntEnum, CustomNotImplementedError, fallback
+from jetpytools import CustomIntEnum, fallback
 
 from vstools import padder, vs
 
@@ -84,7 +84,7 @@ class BorderHandling(CustomIntEnum):
             case BorderHandling.REPEAT:
                 padded = padder.REPEAT(clip, left, right, top, bottom)
             case _:
-                raise CustomNotImplementedError
+                assert_never(self)
 
         shift = tuple(s + c for s, c in zip(shift, (top, left)))  # type: ignore
 
