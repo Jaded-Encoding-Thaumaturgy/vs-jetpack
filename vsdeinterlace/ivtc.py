@@ -8,7 +8,6 @@ from vstools import (
     FieldBased,
     FieldBasedLike,
     FramerateMismatchError,
-    FunctionUtil,
     UnsupportedFramerateError,
     VSFunctionKwArgs,
     VSFunctionNoArgs,
@@ -199,11 +198,10 @@ def vfm(
         Field matched clip with progressive frames.
     """
 
-    func = FunctionUtil(clip, vfm, None, (vs.YUV, vs.GRAY), 8)
+    tff = FieldBased.from_param_or_video(tff, clip, True, vfm).is_tff
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, func.func).is_tff
-
-    fieldmatch = func.work_clip.vivtc.VFM(
+    fieldmatch = core.vivtc.VFM(
+        clip,
         tff,
         field,
         mode,
@@ -232,9 +230,9 @@ def vfm(
             message="The post-processing function must return a clip with the same framerate as the input clip!",
         )
 
-        fieldmatch = core.akarin.Select([fieldmatch, postprocess], fieldmatch, "x._Combed 1 0 ?")
+        fieldmatch = core.akarin.Select([fieldmatch, postprocess], fieldmatch, "x._Combed")
 
-    return func.return_clip(fieldmatch)
+    return fieldmatch
 
 
 def vdecimate(
@@ -291,8 +289,4 @@ def vdecimate(
     Returns:
          Decimated clip.
     """
-    func = FunctionUtil(clip, vdecimate, None, (vs.YUV, vs.GRAY), (8, 16))
-
-    return func.return_clip(
-        func.work_clip.vivtc.VDecimate(cycle, chroma, dupthresh, scthresh, block[0], block[1], clip2, ovr, dryrun)
-    )
+    return core.vivtc.VDecimate(clip, cycle, chroma, dupthresh, scthresh, block[0], block[1], clip2, ovr, dryrun)
