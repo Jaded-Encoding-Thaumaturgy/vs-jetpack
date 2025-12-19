@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from jetpytools import FuncExcept
+from jetpytools import FuncExcept, fallback
 
 from vsexprtools import norm_expr
-from vstools import VSFunctionNoArgs, check_ref_clip, core, shift_clip, shift_clip_multi, vs
+from vstools import VSFunctionNoArgs, core, shift_clip, shift_clip_multi, vs
 
 from .funcs import vinverse
 from .utils import telecine_patterns
@@ -14,7 +14,11 @@ __all__ = ["deblend", "deblend_bob", "deblend_fix_kf", "deblending_helper"]
 
 
 def deblending_helper(
-    deblended: vs.VideoNode, fieldmatched: vs.VideoNode, length: int = 5, func: FuncExcept | None = None
+    deblended: vs.VideoNode,
+    fieldmatched: vs.VideoNode,
+    clip: vs.VideoNode | None = None,
+    length: int = 5,
+    func: FuncExcept | None = None,
 ) -> vs.VideoNode:
     """
     Helper function to select a deblended clip pattern from a fieldmatched clip.
@@ -30,24 +34,17 @@ def deblending_helper(
     """
     func = func or deblending_helper
 
-    check_ref_clip(fieldmatched, deblended, func)
-
-    inters = telecine_patterns(fieldmatched, deblended, length, func)
+    inters = telecine_patterns(fallback(clip, fieldmatched), deblended, length, func)
     inters += [shift_clip(inter, 1) for inter in inters]
 
-    inters.insert(0, fieldmatched)
-
+    shifted_clips = shift_clip_multi(fieldmatched)
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
 
-    index_src = norm_expr(
-        prop_srcs,
-        "x._Combed N {length} % 1 + y._Combed {length} 0 ? + 0 ?",
-        format=vs.GRAY8,
-        func=func,
-        length=length,
-    )
+    expr_clips = inters + shifted_clips
 
-    return core.std.FrameEval(fieldmatched, lambda n, f: inters[int(f[0][0, 0])], index_src)
+    return core.akarin.Select(
+        expr_clips, prop_srcs, f"x._Combed N {length * 2} % {len(inters)} ? x._Combed y._Combed and 1 0 ? +"
+    )
 
 
 def deblend(
@@ -77,7 +74,7 @@ def deblend(
         deblended = decomber(deblended, **kwargs)
 
     if fieldmatched:
-        deblended = deblending_helper(deblended, fieldmatched, func=func)
+        deblended = deblending_helper(deblended, fieldmatched, clip, func=func)
 
     return deblended
 
@@ -111,7 +108,8 @@ def deblend_bob(
 
 def deblend_fix_kf(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, func: FuncExcept | None = None) -> vs.VideoNode:
     """
-    Should be used after [deblend_bob][vsdeinterlace.deblend_bob] to fix scene changes. Adopted from jvsfunc.
+    Should be used after [deblend_bob][vsdeinterlace.deblend_bob] or [deblend][vsdeinterlace.deblend] to fix scene
+    changes. Adopted from jvsfunc.
 
     Args:
         deblended: Deblended clip.
@@ -126,8 +124,4 @@ def deblend_fix_kf(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, func: Fu
     shifted_clips = shift_clip_multi(deblended)
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
 
-    index_src = norm_expr(
-        prop_srcs, "x._Combed x.VFMSceneChange and y.VFMSceneChange 2 0 ? 1 ?", format=vs.GRAY8, func=func
-    )
-
-    return core.std.FrameEval(deblended, lambda n, f: shifted_clips[int(f[0][0, 0])], index_src)
+    return core.akarin.Select(shifted_clips, prop_srcs, "x._Combed x.VFMSceneChange y.VFMSceneChange and 2 0 ? 1 ?")
