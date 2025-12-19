@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from jetpytools import fallback
+
 from vstools import (
     FieldBased,
     FieldBasedLike,
@@ -11,7 +13,6 @@ from vstools import (
     VSFunctionKwArgs,
     VSFunctionNoArgs,
     core,
-    find_prop_rfs,
     join,
     vs,
 )
@@ -101,71 +102,128 @@ def jivtc(
 def vfm(
     clip: vs.VideoNode,
     tff: FieldBasedLike | bool | None = None,
+    field: int = 2,
     mode: VFMMode = VFMMode.TWO_WAY_MATCH_THIRD_COMBED,
+    mchroma: bool = True,
+    cthresh: int = 9,
+    mi: int = 80,
+    chroma: bool = True,
+    block: tuple[int, int] = (16, 16),
+    y: tuple[int, int] = (16, 16),
+    scthresh: float = 12,
+    micmatch: int = 1,
+    micout: bool = False,
+    clip2: vs.VideoNode | None = None,
     postprocess: vs.VideoNode | VSFunctionNoArgs | None = None,
-    **kwargs: Any,
 ) -> vs.VideoNode:
     """
-    Perform field matching using VFM.
+    VFM is a field matching filter that recovers the original progressive frames
+    from a telecined stream. VFM's output will contain duplicated frames, which
+    is why it must be further processed by a decimation filter, like VDecimate.
 
-    This function uses VIVTC's VFM plugin to detect and match pairs of fields in telecined content.
-
-    You can pass a post-processing clip or function that will act on leftover combed frames.
-    If you pass a clip, it will replace combed frames with that clip. If you pass a function,
-    it will run that function on your input clip and replace combed frames with it.
-    The output of the clip or function must have the same framerate as the input clip.
-
-    Example:
+    Usage xample:
         ```py
         # Run vsaa.NNEDI3 on leftover combed frames
         vfm(clip, postprocess=NNEDI3(double_rate=False).deinterlace)
         ```
 
-    Args:
-        clip: Input clip to field matching telecine on.
-        tff:
-            Field order of the input clip.
-            If None, it will be automatically detected.
-        mode:
-            VFM matching mode. For more information, see [VFMMode][vsdeinterlace.VFMMode].
-            Default: VFMMode.TWO_WAY_MATCH_THIRD_COMBED.
-        postprocess:
-            Optional function or clip to process combed frames.
-                If a function is passed, it should take a clip as input and return a clip as output.
-                If a clip is passed, it will be used as the postprocessed clip.
+     Args:
+         clip: Input clip. YUV420P8, YUV422P8, YUV440P8, YUV444P8, and GRAY8 are supported. Must have constant format
+            and dimensions.
+         tff: Sets the field order of the clip. Normally the field order is obtained from the ```_FieldBased``` frame
+            property. This parameter is only used for those frames where the ```_FieldBased``` property has an invalid
+            value or doesn't exist. If the field order is wrong, VFM's output will be visibly wrong in mode 0.
+         field: Sets the field to match from. This is the field that VFM will take from the current frame in case of p
+            or n matches. It is recommended to make this the same as the field order, unless you experience matching
+            failures with that setting. In certain circumstances changing the field that is used to match from can have
+            a large impact on matching performance. 0 and 1 will disregard the ```_FieldBased``` frame property. 2 and 3
+            will adapt to the field order obtained from the ```_FieldBased``` property. Defaults to 2.
+         mode: Sets the matching mode or strategy to use. Plain 2-way matching (option 0) is the safest of all the
+            options in the sense that it won't risk creating jerkiness due to duplicate frames when possible, but if
+            there are bad edits or blended fields it will end up outputting combed frames when a good match might
+            actually exist. 3-way matching + trying the 4th/5th matches if all 3 of the original matches are detected as
+            combed (option 5) is the most risky in terms of creating jerkiness, but will almost always find a good frame
+            if there is one. The other settings (options 1, 2, 3, and 4) are all somewhere in between options 0 and 5 in
+            terms of risking jerkiness and creating duplicate frames vs. finding good matches in sections with bad
+            edits, orphaned fields, blended fields, etc. Note that the combed condition here is not the same as the
+            ```_Combed``` frame property. Instead it's a combination of relative and absolute threshold comparisons and
+            can still lead to the match being changed even when the ```_Combed``` flag is not set on the original frame.
+            Defaults to VFMMode.TWO_WAY_MATCH_THIRD_COMBED.
+         mchroma: Sets whether or not chroma is included during the match comparisons. In most cases it is recommended
+            to leave this enabled. Only if your clip has bad chroma problems such as heavy rainbowing or other artifacts
+            should you set this to false. Setting this to false could also be used to speed things up at the cost of
+            some accuracy. Defaults to True.
+         cthresh: This is the area combing threshold used for combed frame detection. This essentially controls how
+            "strong" or "visible" combing must be to be detected. Larger values mean combing must be more visible and
+            smaller values mean combing can be less visible or strong and still be detected. Valid settings are from -1
+            (every pixel will be detected as combed) to 255 (no pixel will be detected as combed). This is basically a
+            pixel difference value. A good range is between 8 to 12. Defaults to 9.
+         mi: The number of combed pixels inside any of the *blockx* by *blocky* size blocks on the frame for the frame
+            to be detected as combed. While *cthresh* controls how "visible" the combing must be, this setting controls
+            "how much" combing there must be in any localized area (a window defined by the *blockx* and *blocky*
+            settings) on the frame. The minimum is 0, the maximum is *blocky* * *blockx* (at which point no frames will
+            ever be detected as combed). Defaults to 80.
+         chroma: Sets whether or not chroma is considered in the combed frame decision. Only disable this if your source
+            has chroma problems (rainbowing, etc) that are causing problems for the combed frame detection with *chroma*
+            enabled. Actually, using chroma=false is usually more reliable, except in case there is chroma-only combing
+            in the source. Defaults to True.
+         block: Sets the size of the window used during combed frame detection. This has to do with the size of the area
+            in which *mi* number of pixels are required to be detected as combed for a frame to be declared combed. See
+            the *mi* parameter description for more info. Possible values are any power of 2 between 4 and 512. Defaults
+            to (16, 16).
+         y: The rows from *y0* to *y1* will be excluded from the field matching decision. This can be used to ignore
+            subtitles, a logo, or other things that may interfere with the matching. Set *y0* equal to *y1* to disable.
+            Defaults to (16, 16).
+         scthresh: Sets the scenechange threshold as a percentage of maximum change on the luma plane. Good values are
+            in the 8 to 14 range. Defaults to 12.
+         micmatch: When micmatch is greater than 0, tfm will take into account the mic values of matches when deciding
+            what match to use as the final match. Only matches that could be used within the current matching mode are
+            considered. micmatch has 3 possible settings:
 
-                The output of the clip or function must have the same framerate as the input clip.
-        **kwargs:
-            Additional keyword arguments to pass to VFM.
-            For a list of parameters, see the VIVTC documentation.
+                - 0: disabled. Modes 1, 2 and 3 effectively become identical to mode 0. Mode 5 becomes identical to mode
+                    4.
+                - 1: micmatching will be used only around scene changes. See the *scthresh* parameter.
+                - 2: micmatching will be used everywhere.
 
-    Returns:
-        Field matched clip with progressive frames.
+            Defaults to 1.
+         micout: If true, VFM will calculate the mic values for all possible matches (p/c/n/b/u). Otherwise, only the
+            mic values for the matches allowed by *mode* will be calculated. Defaults to False.
+         clip2: Clip that VFM will use to create the output frames. If *clip2* is used, VFM will perform all
+            calculations based on *clip*, but will copy the chosen fields from *clip2*. This can be used to work around
+            VFM's video format limitations. Defaults to None.
+         postprocess: Optional function or clip to process combed frames. If a function is passed, it should take a clip
+            as input and return a clip as output. If a clip is passed, it will be used as the postprocessed clip. The
+            output of the clip or function must have the same framerate as the input clip. Defaults to None.
+
+     Returns:
+         Field matched clip with progressive frames.
     """
 
     func = FunctionUtil(clip, vfm, None, (vs.YUV, vs.GRAY), 8)
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, func.func).field
+    tff = FieldBased.from_param_or_video(tff, clip, True, func.func).is_tff
 
-    vfm_kwargs = dict[str, Any](order=tff, mode=mode)
-
-    if block := kwargs.pop("block", None):
-        if isinstance(block, int):
-            block = (block, block)
-
-        vfm_kwargs.update(blockx=block[0], blocky=block[1])
-
-    if (y := kwargs.pop("y", None)) and not isinstance(y, int):
-        vfm_kwargs.update(y0=y[0], y1=y[1])
-
-    if not kwargs.get("clip2") and func.work_clip.format != clip.format:
-        vfm_kwargs.update(clip2=clip)
-
-    fieldmatch = func.work_clip.vivtc.VFM(**(vfm_kwargs | kwargs))
+    fieldmatch = func.work_clip.vivtc.VFM(
+        tff,
+        field,
+        mode,
+        mchroma,
+        cthresh,
+        mi,
+        chroma,
+        block[0],
+        block[1],
+        y[0],
+        y[1],
+        scthresh,
+        micmatch,
+        micout,
+        clip2,
+    )
 
     if postprocess:
         if callable(postprocess):
-            postprocess = postprocess(kwargs.get("clip2", clip))
+            postprocess = postprocess(fallback(clip2, clip))
 
         FramerateMismatchError.check(
             vfm,
@@ -174,56 +232,68 @@ def vfm(
             message="The post-processing function must return a clip with the same framerate as the input clip!",
         )
 
-        fieldmatch = find_prop_rfs(fieldmatch, postprocess, "_Combed", "==", 1)
+        fieldmatch = core.akarin.Select([fieldmatch, postprocess], fieldmatch, "x._Combed 1 0 ?")
 
     return func.return_clip(fieldmatch)
 
 
-def vdecimate(clip: vs.VideoNode, weight: float = 0.0, **kwargs: Any) -> vs.VideoNode:
+def vdecimate(
+    clip: vs.VideoNode,
+    cycle: int = 5,
+    chroma: bool = True,
+    dupthresh: float = 1.1,
+    scthresh: float = 15,
+    block: tuple[int, int] = (16, 16),
+    clip2: vs.VideoNode | None = None,
+    ovr: str | bytes | bytearray | None = None,
+    dryrun: bool = False,
+) -> vs.VideoNode:
     """
-    Perform frame decimation using VDecimate.
+    VDecimate is a decimation filter. It drops one in every *cycle* frames - the one that is most likely to be a
+    duplicate.
 
-    This function uses VIVTC's VDecimate plugin to remove duplicate frames from telecined content.
-    It's recommended to use the vfm function before running this.
+     Args:
+         clip: Input clip. Must have constant format and dimensions, known length, integer sample type, and bit depth
+            between 8 and 16 bits per sample.
+         cycle: Size of a cycle, in frames. One in every *cycle* frames will be decimated. Defaults to 5.
+         chroma: Controls whether the chroma is considered when calculating frame difference metrics. Defaults to True.
+         dupthresh: This sets the threshold for duplicate detection. If the difference metric for a frame is less than
+            or equal to this value then it is declared a duplicate. This value is a percentage of maximum change for a
+            block defined by the *blockx* and *blocky* values, so 1.1 means 1.1% of maximum possible change. Defaults to
+            1.1.
+         scthresh: Sets the threshold for detecting scene changes. This value is a percentage of maximum change for the
+            luma plane. Good values are between 10 and 15. Defaults to 15.
+         block: Sets the size of the blocks used for metric calculations. Larger blocks give better noise suppression,
+            but also give worse detection of small movements. Possible values are any power of 2 between 4 and 512.
+            Defaults to (16, 16).
+         clip2: Clip that VDecimate will use to create the output frames. If *clip2* is used, VDecimate will perform all
+            calculations based on *clip*, but will decimate frames from *clip2*. This can be used to work around
+            VDecimate's video format limitations. Defaults to None.
+         ovr: Text file containing overrides. This can be used to manually choose what frames get dropped.
+            The frame numbers apply to the undecimated input clip, of course The decimation pattern must contain *cycle*
+            characters If the overrides mark more than one frame per cycle, the first frame marked for decimation in the
+            cycle will be dropped. Lines starting with # are ignored.
 
-    Args:
-        clip: Input clip to decimate.
-        weight: Weight for frame blending. If > 0, blends duplicate frames before dropping one. Default: 0.0 (frames are
-            dropped, not blended).
-        **kwargs: Additional keyword arguments to pass to VDecimate. For a list of parameters, see the VIVTC
-            documentation.
+                - Drop a specific frame: 314 -
+                - Drop every fourth frame, starting at frame 1001, up to frame 5403: 1001,5403 +++-
 
-    Returns:
-        Decimated clip with duplicate frames removed or blended.
+            Defaults to None.
+
+         dryrun: If True, VDecimate will not drop any frames. Instead, it will attach the following properties to every
+            frame:
+
+                - VDecimateDrop: 1 if VDecimate would normally drop the frame, 0 otherwise.
+                - VDecimateMaxBlockDiff: This is the highest absolute difference between the current frame and the
+                    previous frame found in any *blockx* *blocky* block.
+                - VDecimateTotalDiff: This is the absolute difference between the current frame and the previous frame.
+
+            Defaults to False.
+
+     Returns:
+         Decimated clip.
     """
-
     func = FunctionUtil(clip, vdecimate, None, (vs.YUV, vs.GRAY), (8, 16))
 
-    vdecimate_kwargs = dict[str, Any]()
-
-    if block := kwargs.pop("block", None):
-        if isinstance(block, int):
-            block = (block, block)
-
-        vdecimate_kwargs.update(blockx=block[0], blocky=block[1])
-
-    if not kwargs.get("clip2") and func.work_clip.format != clip.format:
-        vdecimate_kwargs.update(clip2=clip)
-
-    dryrun = kwargs.pop("dryrun", False)
-
-    if dryrun or weight:
-        stats = func.work_clip.vivtc.VDecimate(dryrun=True, **(vdecimate_kwargs | kwargs))
-
-        if dryrun:
-            return func.return_clip(stats)
-
-        clip = kwargs.pop("clip2", clip)
-
-        avg = clip.std.AverageFrames(weights=[0, 1 - weight, weight])
-        splice = find_prop_rfs(clip, avg, "VDecimateDrop", "==", 1, stats)
-        vdecimate_kwargs.update(clip2=splice)
-
-    decimate = func.work_clip.vivtc.VDecimate(**(vdecimate_kwargs | kwargs))
-
-    return func.return_clip(decimate)
+    return func.return_clip(
+        func.work_clip.vivtc.VDecimate(cycle, chroma, dupthresh, scthresh, block[0], block[1], clip2, ovr, dryrun)
+    )
