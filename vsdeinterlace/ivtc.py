@@ -122,23 +122,23 @@ def vfm(
     is why it must be further processed by a decimation filter, like VDecimate.
 
     Usage Example:
-        ```py
+        ```python
         # Run vsaa.NNEDI3 on leftover combed frames
         vfm(clip, postprocess=NNEDI3(double_rate=False).deinterlace)
         ```
 
-     Args:
-         clip: Input clip. YUV420P8, YUV422P8, YUV440P8, YUV444P8, and GRAY8 are supported. Must have constant format
+    Args:
+        clip: Input clip. YUV420P8, YUV422P8, YUV440P8, YUV444P8, and GRAY8 are supported. Must have constant format
             and dimensions.
-         tff: Sets the field order of the clip. Normally the field order is obtained from the ```_FieldBased``` frame
-            property. This parameter is only used for those frames where the ```_FieldBased``` property has an invalid
+        tff: Sets the field order of the clip. Normally the field order is obtained from the `_FieldBased` frame
+            property. This parameter is only used for those frames where the `_FieldBased` property has an invalid
             value or doesn't exist. If the field order is wrong, VFM's output will be visibly wrong in mode 0.
-         field: Sets the field to match from. This is the field that VFM will take from the current frame in case of p
+        field: Sets the field to match from. This is the field that VFM will take from the current frame in case of p
             or n matches. It is recommended to make this the same as the field order, unless you experience matching
             failures with that setting. In certain circumstances changing the field that is used to match from can have
-            a large impact on matching performance. 0 and 1 will disregard the ```_FieldBased``` frame property. 2 and 3
-            will adapt to the field order obtained from the ```_FieldBased``` property. Defaults to 2.
-         mode: Sets the matching mode or strategy to use. Plain 2-way matching (option 0) is the safest of all the
+            a large impact on matching performance. 0 and 1 will disregard the `_FieldBased` frame property. 2 and 3
+            will adapt to the field order obtained from the `_FieldBased` property. Defaults to 2.
+        mode: Sets the matching mode or strategy to use. Plain 2-way matching (option 0) is the safest of all the
             options in the sense that it won't risk creating jerkiness due to duplicate frames when possible, but if
             there are bad edits or blended fields it will end up outputting combed frames when a good match might
             actually exist. 3-way matching + trying the 4th/5th matches if all 3 of the original matches are detected as
@@ -146,57 +146,57 @@ def vfm(
             if there is one. The other settings (options 1, 2, 3, and 4) are all somewhere in between options 0 and 5 in
             terms of risking jerkiness and creating duplicate frames vs. finding good matches in sections with bad
             edits, orphaned fields, blended fields, etc. Note that the combed condition here is not the same as the
-            ```_Combed``` frame property. Instead it's a combination of relative and absolute threshold comparisons and
-            can still lead to the match being changed even when the ```_Combed``` flag is not set on the original frame.
+            `_Combed` frame property. Instead it's a combination of relative and absolute threshold comparisons and
+            can still lead to the match being changed even when the `_Combed` flag is not set on the original frame.
             Defaults to VFMMode.TWO_WAY_MATCH_THIRD_COMBED.
-         mchroma: Sets whether or not chroma is included during the match comparisons. In most cases it is recommended
+        mchroma: Sets whether or not chroma is included during the match comparisons. In most cases it is recommended
             to leave this enabled. Only if your clip has bad chroma problems such as heavy rainbowing or other artifacts
             should you set this to false. Setting this to false could also be used to speed things up at the cost of
             some accuracy. Defaults to True.
-         cthresh: This is the area combing threshold used for combed frame detection. This essentially controls how
+        cthresh: This is the area combing threshold used for combed frame detection. This essentially controls how
             "strong" or "visible" combing must be to be detected. Larger values mean combing must be more visible and
             smaller values mean combing can be less visible or strong and still be detected. Valid settings are from -1
             (every pixel will be detected as combed) to 255 (no pixel will be detected as combed). This is basically a
             pixel difference value. A good range is between 8 to 12. Defaults to 9.
-         mi: The number of combed pixels inside any of the *blockx* by *blocky* size blocks on the frame for the frame
-            to be detected as combed. While *cthresh* controls how "visible" the combing must be, this setting controls
-            "how much" combing there must be in any localized area (a window defined by the *blockx* and *blocky*
-            settings) on the frame. The minimum is 0, the maximum is *blocky* * *blockx* (at which point no frames will
+        mi: The number of combed pixels inside any of the `blockx` by `blocky` size blocks on the frame for the frame
+            to be detected as combed. While `cthresh` controls how "visible" the combing must be, this setting controls
+            "how much" combing there must be in any localized area (a window defined by the `blockx` and `blocky`
+            settings) on the frame. The minimum is 0, the maximum is `blocky` * `blockx` (at which point no frames will
             ever be detected as combed). Defaults to 80.
-         chroma: Sets whether or not chroma is considered in the combed frame decision. Only disable this if your source
-            has chroma problems (rainbowing, etc) that are causing problems for the combed frame detection with *chroma*
+        chroma: Sets whether or not chroma is considered in the combed frame decision. Only disable this if your source
+            has chroma problems (rainbowing, etc) that are causing problems for the combed frame detection with `chroma`
             enabled. Actually, using chroma=false is usually more reliable, except in case there is chroma-only combing
             in the source. Defaults to True.
-         block: Sets the size of the window used during combed frame detection. This has to do with the size of the area
-            in which *mi* number of pixels are required to be detected as combed for a frame to be declared combed. See
-            the *mi* parameter description for more info. Possible values are any power of 2 between 4 and 512. Defaults
+        block: Sets the size of the window used during combed frame detection. This has to do with the size of the area
+            in which `mi` number of pixels are required to be detected as combed for a frame to be declared combed. See
+            the `mi` parameter description for more info. Possible values are any power of 2 between 4 and 512. Defaults
             to (16, 16).
-         y: The rows from *y0* to *y1* will be excluded from the field matching decision. This can be used to ignore
-            subtitles, a logo, or other things that may interfere with the matching. Set *y0* equal to *y1* to disable.
+        y: The rows from `y0` to `y1` will be excluded from the field matching decision. This can be used to ignore
+            subtitles, a logo, or other things that may interfere with the matching. Set `y0` equal to `y1` to disable.
             Defaults to (16, 16).
-         scthresh: Sets the scenechange threshold as a percentage of maximum change on the luma plane. Good values are
+        scthresh: Sets the scenechange threshold as a percentage of maximum change on the luma plane. Good values are
             in the 8 to 14 range. Defaults to 12.
-         micmatch: When micmatch is greater than 0, tfm will take into account the mic values of matches when deciding
+        micmatch: When micmatch is greater than 0, tfm will take into account the mic values of matches when deciding
             what match to use as the final match. Only matches that could be used within the current matching mode are
             considered. micmatch has 3 possible settings:
 
-                - 0: disabled. Modes 1, 2 and 3 effectively become identical to mode 0. Mode 5 becomes identical to mode
-                    4.
-                - 1: micmatching will be used only around scene changes. See the *scthresh* parameter.
-                - 2: micmatching will be used everywhere.
+               - 0: disabled. Modes 1, 2 and 3 effectively become identical to mode 0. Mode 5 becomes identical to mode
+                4.
+               - 1: micmatching will be used only around scene changes. See the `scthresh` parameter.
+               - 2: micmatching will be used everywhere.
 
             Defaults to 1.
-         micout: If true, VFM will calculate the mic values for all possible matches (p/c/n/b/u). Otherwise, only the
-            mic values for the matches allowed by *mode* will be calculated. Defaults to False.
-         clip2: Clip that VFM will use to create the output frames. If *clip2* is used, VFM will perform all
-            calculations based on *clip*, but will copy the chosen fields from *clip2*. This can be used to work around
+        micout: If true, VFM will calculate the mic values for all possible matches (p/c/n/b/u). Otherwise, only the
+            mic values for the matches allowed by `mode` will be calculated. Defaults to False.
+        clip2: Clip that VFM will use to create the output frames. If `clip2` is used, VFM will perform all
+            calculations based on `clip`, but will copy the chosen fields from `clip2`. This can be used to work around
             VFM's video format limitations. Defaults to None.
-         postprocess: Optional function or clip to process combed frames. If a function is passed, it should take a clip
+        postprocess: Optional function or clip to process combed frames. If a function is passed, it should take a clip
             as input and return a clip as output. If a clip is passed, it will be used as the postprocessed clip. The
             output of the clip or function must have the same framerate as the input clip. Defaults to None.
 
-     Returns:
-         Field matched clip with progressive frames.
+    Returns:
+        Field matched clip with progressive frames.
     """
 
     func = FunctionUtil(clip, vfm, None, (vs.YUV, vs.GRAY), 8)
@@ -249,47 +249,46 @@ def vdecimate(
     dryrun: bool = False,
 ) -> vs.VideoNode:
     """
-    VDecimate is a decimation filter. It drops one in every *cycle* frames - the one that is most likely to be a
+    VDecimate is a decimation filter. It drops one in every `cycle` frames - the one that is most likely to be a
     duplicate.
 
-     Args:
-         clip: Input clip. Must have constant format and dimensions, known length, integer sample type, and bit depth
+    Args:
+        clip: Input clip. Must have constant format and dimensions, known length, integer sample type, and bit depth
             between 8 and 16 bits per sample.
-         cycle: Size of a cycle, in frames. One in every *cycle* frames will be decimated. Defaults to 5.
-         chroma: Controls whether the chroma is considered when calculating frame difference metrics. Defaults to True.
-         dupthresh: This sets the threshold for duplicate detection. If the difference metric for a frame is less than
+        cycle: Size of a cycle, in frames. One in every `cycle` frames will be decimated. Defaults to 5.
+        chroma: Controls whether the chroma is considered when calculating frame difference metrics. Defaults to True.
+        dupthresh: This sets the threshold for duplicate detection. If the difference metric for a frame is less than
             or equal to this value then it is declared a duplicate. This value is a percentage of maximum change for a
-            block defined by the *blockx* and *blocky* values, so 1.1 means 1.1% of maximum possible change. Defaults to
+            block defined by the `blockx` and `blocky` values, so 1.1 means 1.1% of maximum possible change. Defaults to
             1.1.
-         scthresh: Sets the threshold for detecting scene changes. This value is a percentage of maximum change for the
+        scthresh: Sets the threshold for detecting scene changes. This value is a percentage of maximum change for the
             luma plane. Good values are between 10 and 15. Defaults to 15.
-         block: Sets the size of the blocks used for metric calculations. Larger blocks give better noise suppression,
+        block: Sets the size of the blocks used for metric calculations. Larger blocks give better noise suppression,
             but also give worse detection of small movements. Possible values are any power of 2 between 4 and 512.
             Defaults to (16, 16).
-         clip2: Clip that VDecimate will use to create the output frames. If *clip2* is used, VDecimate will perform all
-            calculations based on *clip*, but will decimate frames from *clip2*. This can be used to work around
+        clip2: Clip that VDecimate will use to create the output frames. If `clip2` is used, VDecimate will perform all
+            calculations based on `clip`, but will decimate frames from `clip2`. This can be used to work around
             VDecimate's video format limitations. Defaults to None.
-         ovr: Text file containing overrides. This can be used to manually choose what frames get dropped.
-            The frame numbers apply to the undecimated input clip, of course The decimation pattern must contain *cycle*
+        ovr: Text file containing overrides. This can be used to manually choose what frames get dropped.
+            The frame numbers apply to the undecimated input clip, of course The decimation pattern must contain `cycle`
             characters If the overrides mark more than one frame per cycle, the first frame marked for decimation in the
             cycle will be dropped. Lines starting with # are ignored.
 
-                - Drop a specific frame: 314 -
-                - Drop every fourth frame, starting at frame 1001, up to frame 5403: 1001,5403 +++-
+               - Drop a specific frame: 314 -
+               - Drop every fourth frame, starting at frame 1001, up to frame 5403: 1001,5403 +++-
 
             Defaults to None.
+        dryrun: If True, VDecimate will not drop any frames.
+            Instead, it will attach the following properties to everyframe:
 
-         dryrun: If True, VDecimate will not drop any frames. Instead, it will attach the following properties to every
-            frame:
-
-                - VDecimateDrop: 1 if VDecimate would normally drop the frame, 0 otherwise.
-                - VDecimateMaxBlockDiff: This is the highest absolute difference between the current frame and the
-                    previous frame found in any *blockx* *blocky* block.
-                - VDecimateTotalDiff: This is the absolute difference between the current frame and the previous frame.
+               - VDecimateDrop: 1 if VDecimate would normally drop the frame, 0 otherwise.
+               - VDecimateMaxBlockDiff: This is the highest absolute difference between the current frame and the
+                   previous frame found in any `blockx` `blocky` block.
+               - VDecimateTotalDiff: This is the absolute difference between the current frame and the previous frame.
 
             Defaults to False.
 
-     Returns:
+    Returns:
          Decimated clip.
     """
     func = FunctionUtil(clip, vdecimate, None, (vs.YUV, vs.GRAY), (8, 16))
