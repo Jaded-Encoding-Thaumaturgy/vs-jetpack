@@ -121,7 +121,7 @@ def vfm(
     from a telecined stream. VFM's output will contain duplicated frames, which
     is why it must be further processed by a decimation filter, like VDecimate.
 
-    Usage xample:
+    Usage Example:
         ```py
         # Run vsaa.NNEDI3 on leftover combed frames
         vfm(clip, postprocess=NNEDI3(double_rate=False).deinterlace)
