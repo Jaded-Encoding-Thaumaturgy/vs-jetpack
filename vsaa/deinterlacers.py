@@ -5,6 +5,7 @@ from collections import UserDict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
+from fractions import Fraction
 from typing import TYPE_CHECKING, Any, Self, cast
 
 from jetpytools import CustomNotImplementedError, CustomValueError, fallback, normalize_seq
@@ -274,6 +275,7 @@ class SuperSampler(Scaler, AntiAliaser, ABC):
         dims = self._wh_norm(clip, width, height)
         dest_dimensions = list(dims)
         sy, sx = shift
+        in_width, in_height = clip.width, clip.height
 
         cloc = list(ChromaLocation.from_video(clip).get_offsets(clip))
         subsampling = [2**clip.format.subsampling_w, 2**clip.format.subsampling_h]
@@ -326,7 +328,14 @@ class SuperSampler(Scaler, AntiAliaser, ABC):
                 for i in range(len(ns)):
                     ns[i] *= not noshift[i]
 
-        return ComplexScaler.ensure_obj(self.scaler, self.__class__).scale(clip, width, height, (nshift[1], nshift[0]))
+        scaler = ComplexScaler.ensure_obj(self.scaler, self.__class__)
+
+        if scaler.kwargs.get("keep_ar"):
+            sar = scaler.kwargs.pop("sar")
+            scalex, scaley = clip.width // in_width, clip.height // in_height
+            scaler.kwargs |= {"sar": sar * Fraction(scaley, scalex)}
+
+        return scaler.scale(clip, width, height, (nshift[1], nshift[0]))
 
     if TYPE_CHECKING:
 
