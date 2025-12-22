@@ -22,7 +22,7 @@ from vskernels import (
     Scaler,
     TopShift,
 )
-from vstools import ChromaLocation, FieldBased, FieldBasedLike, VSFunctionAllArgs, VSFunctionNoArgs, core, vs
+from vstools import ChromaLocation, FieldBased, FieldBasedLike, Sar, VSFunctionAllArgs, VSFunctionNoArgs, core, vs
 
 __all__ = [
     "BWDIF",
@@ -331,7 +331,13 @@ class SuperSampler(Scaler, AntiAliaser, ABC):
         scaler = ComplexScaler.ensure_obj(self.scaler, self.__class__)
 
         if scaler.kwargs.get("keep_ar"):
-            sar = scaler.kwargs.pop("sar")
+            sar = scaler.kwargs.pop("sar", None)
+
+            if sar in (True, None):
+                sar = Sar.from_clip(clip)
+            elif sar is False:
+                sar = Sar(1, 1)
+
             scalex, scaley = clip.width // in_width, clip.height // in_height
             scaler.kwargs |= {"sar": sar * Fraction(scaley, scalex)}
 

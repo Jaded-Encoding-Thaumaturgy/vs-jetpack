@@ -445,7 +445,7 @@ class KeepArScaler(Scaler):
         src_sar, src_dar, out_dar = self._ar_params_norm(clip, width, height, sar, dar, dar_in, keep_ar)
         out_sar: Sar | Literal[False] = False
 
-        if src_sar not in {0.0, 1.0}:
+        if src_sar != 1.0:
             out_dar = width / src_sar / height if src_sar > 1.0 else width / (height * src_sar)
 
             out_sar = Sar(1, 1)
