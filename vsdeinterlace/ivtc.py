@@ -127,8 +127,7 @@ def vfm(
         ```
 
     Args:
-        clip: Input clip. YUV420P8, YUV422P8, YUV440P8, YUV444P8, and GRAY8 are supported. Must have constant format
-            and dimensions.
+        clip: Input clip.
         tff: Sets the field order of the clip. Normally the field order is obtained from the `_FieldBased` frame
             property. This parameter is only used for those frames where the `_FieldBased` property has an invalid
             value or doesn't exist. If the field order is wrong, VFM's output will be visibly wrong in mode 0.
@@ -199,6 +198,22 @@ def vfm(
     """
 
     tff = FieldBased.from_param_or_video(tff, clip, True, vfm).is_tff
+
+    if clip2 is None and clip.format not in (vs.YUV420P8, vs.YUV422P8, vs.YUV440P8, vs.YUV444P8, vs.GRAY8):
+        new_family = vs.GRAY if clip.format.color_family is vs.GRAY else vs.YUV
+        new_subsampling_w = min(clip.format.subsampling_w, 2)
+        new_subsampling_h = min(clip.format.subsampling_h, 2)
+
+        clip2 = clip
+        clip = clip.resize.Bilinear(
+            format=clip.format.replace(
+                color_family=new_family,
+                sample_type=vs.SampleType.INTEGER,
+                bits_per_sample=8,
+                subsampling_w=new_subsampling_w,
+                subsampling_h=new_subsampling_h,
+            )
+        )
 
     fieldmatch = core.vivtc.VFM(
         clip,
@@ -289,4 +304,13 @@ def vdecimate(
     Returns:
          Decimated clip.
     """
+
+    if clip2 is None and (clip.format.sample_type is not vs.SampleType.INTEGER or clip.format.bits_per_sample > 16):
+        new_bits = min(clip.format.bits_per_sample, 16)
+
+        clip2 = clip
+        clip = clip.resize.Bilinear(
+            format=clip.format.replace(sample_type=vs.SampleType.INTEGER, bits_per_sample=new_bits)
+        )
+
     return core.vivtc.VDecimate(clip, cycle, chroma, dupthresh, scthresh, block[0], block[1], clip2, ovr, dryrun)
