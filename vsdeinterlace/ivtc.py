@@ -266,8 +266,7 @@ def vdecimate(
     duplicate.
 
     Args:
-        clip: Input clip. Must have constant format and dimensions, known length, integer sample type, and bit depth
-            between 8 and 16 bits per sample.
+        clip: Input clip.
         cycle: Size of a cycle, in frames. One in every `cycle` frames will be decimated. Defaults to 5.
         chroma: Controls whether the chroma is considered when calculating frame difference metrics. Defaults to True.
         dupthresh: This sets the threshold for duplicate detection. If the difference metric for a frame is less than
