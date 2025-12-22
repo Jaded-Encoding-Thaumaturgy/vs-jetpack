@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import UserDict
 from collections.abc import Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
 from fractions import Fraction
@@ -331,6 +332,7 @@ class SuperSampler(Scaler, AntiAliaser, ABC):
         scaler = ComplexScaler.ensure_obj(self.scaler, self.__class__)
 
         if scaler.kwargs.get("keep_ar"):
+            scaler = deepcopy(scaler)
             sar = scaler.kwargs.pop("sar", None)
 
             if sar in (True, None):
