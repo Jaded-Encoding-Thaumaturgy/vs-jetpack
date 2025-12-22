@@ -674,12 +674,9 @@ class ComplexScaler(KeepArScaler, LinearScaler):
                 )
             )
 
-        merged = vs.core.std.ShufflePlanes(scaled_planes, [0, 0, 0], format_out.color_family, clip)
+        merged = vs.core.std.ShufflePlanes(scaled_planes, [0, 0, 0], format_out.color_family, scaled_planes[0])
 
-        if chromaloc_in != chromaloc_out:
-            return chromaloc_out.apply(merged)
-
-        return merged
+        return chromaloc_out.apply(merged)
 
 
 class ComplexDescaler(LinearDescaler):
