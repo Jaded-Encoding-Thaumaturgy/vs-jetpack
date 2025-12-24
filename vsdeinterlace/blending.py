@@ -121,4 +121,4 @@ def deblend_fix_kf(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, func: Fu
     shifted_clips = shift_clip_multi(deblended)
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
 
-    return core.akarin.Select(shifted_clips, prop_srcs, "x._Combed x.VFMSceneChange y.VFMSceneChange and 2 0 ? 1 ?")
+    return core.akarin.Select(shifted_clips, prop_srcs, "x._Combed x.VFMSceneChange and y.VFMSceneChange 0 2 ? 1 ?")
