@@ -14,10 +14,7 @@ __all__ = ["deblend", "deblend_bob", "deblend_fix_kf", "deblending_helper"]
 
 
 def deblending_helper(
-    deblended: vs.VideoNode,
-    fieldmatched: vs.VideoNode,
-    length: int = 5,
-    func: FuncExcept | None = None,
+    deblended: vs.VideoNode, fieldmatched: vs.VideoNode, length: int = 5, func: FuncExcept | None = None
 ) -> vs.VideoNode:
     """
     Helper function to select a deblended clip pattern from a fieldmatched clip.
@@ -37,7 +34,6 @@ def deblending_helper(
     inters += [shift_clip(inter, 1) for inter in inters]
 
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
-
     expr_clips = inters + prop_srcs
 
     return core.akarin.Select(expr_clips, prop_srcs, f"x._Combed N {length} % y._Combed 0 {length} ? + {len(inters)} ?")
