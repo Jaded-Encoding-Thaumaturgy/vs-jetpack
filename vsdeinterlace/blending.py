@@ -40,9 +40,7 @@ def deblending_helper(
 
     expr_clips = inters + prop_srcs
 
-    return core.akarin.Select(
-        expr_clips, prop_srcs, f"x._Combed N {length} % {len(inters)} ? x._Combed y._Combed and +"
-    )
+    return core.akarin.Select(expr_clips, prop_srcs, f"x._Combed N {length} % y._Combed 0 {length} ? + {len(inters)} ?")
 
 
 def deblend(
