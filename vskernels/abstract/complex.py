@@ -396,6 +396,7 @@ class KeepArScaler(Scaler):
         sar: Sar | float | bool | None,
         dar: Dar | float | bool | None,
         dar_in: Dar | float | bool | None,
+        sar_scale: Fraction | float | Literal[False],
         keep_ar: bool | None,
     ) -> tuple[float, float, float]:
         if keep_ar is not None and None not in (sar, dar, dar_in):
@@ -421,6 +422,9 @@ class KeepArScaler(Scaler):
         out_dar = _norm_xar(dar, Dar.from_res(width, height), Dar(0), Dar)
         src_dar = _norm_xar(dar_in, Dar.from_clip(clip, False), out_dar, Dar)
 
+        if sar_scale is not False:
+            src_sar *= sar_scale
+
         return float(src_sar), float(src_dar), float(out_dar)
 
     def _handle_crop_resize_kwargs(
@@ -440,9 +444,11 @@ class KeepArScaler(Scaler):
         kwargs.setdefault("src_width", kwargs.pop("sw", clip.width))
         kwargs.setdefault("src_height", kwargs.pop("sh", clip.height))
 
+        sar_scale = kwargs.pop("_sar_scale", False)
+
         src_res = Resolution(kwargs["src_width"], kwargs["src_height"])
 
-        src_sar, src_dar, out_dar = self._ar_params_norm(clip, width, height, sar, dar, dar_in, keep_ar)
+        src_sar, src_dar, out_dar = self._ar_params_norm(clip, width, height, sar, dar, dar_in, sar_scale, keep_ar)
         out_sar: Sar | Literal[False] = False
 
         if src_sar != 1.0:

@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import UserDict
 from collections.abc import Mapping, Sequence
-from copy import deepcopy
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
 from fractions import Fraction
@@ -23,7 +22,7 @@ from vskernels import (
     Scaler,
     TopShift,
 )
-from vstools import ChromaLocation, FieldBased, FieldBasedLike, Sar, VSFunctionAllArgs, VSFunctionNoArgs, core, vs
+from vstools import ChromaLocation, FieldBased, FieldBasedLike, VSFunctionAllArgs, VSFunctionNoArgs, core, vs
 
 __all__ = [
     "BWDIF",
@@ -329,21 +328,11 @@ class SuperSampler(Scaler, AntiAliaser, ABC):
                 for i in range(len(ns)):
                     ns[i] *= not noshift[i]
 
-        scaler = ComplexScaler.ensure_obj(self.scaler, self.__class__)
+        sar_scale = Fraction(clip.height // in_height, clip.width // in_width)
 
-        if scaler.kwargs.get("keep_ar"):
-            scaler = deepcopy(scaler)
-            sar = scaler.kwargs.pop("sar", None)
-
-            if sar in (True, None):
-                sar = Sar.from_clip(clip)
-            elif sar is False:
-                sar = Sar(1, 1)
-
-            scalex, scaley = clip.width // in_width, clip.height // in_height
-            scaler.kwargs |= {"sar": sar * Fraction(scaley, scalex)}
-
-        return scaler.scale(clip, width, height, (nshift[1], nshift[0]))
+        return ComplexScaler.ensure_obj(self.scaler, self.__class__).scale(
+            clip, width, height, (nshift[1], nshift[0]), _sar_scale=sar_scale
+        )
 
     if TYPE_CHECKING:
 
