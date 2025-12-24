@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from jetpytools import FuncExcept, fallback
+from jetpytools import FuncExcept
 
 from vsexprtools import norm_expr
 from vstools import VSFunctionNoArgs, core, shift_clip, shift_clip_multi, vs
@@ -16,7 +16,6 @@ __all__ = ["deblend", "deblend_bob", "deblend_fix_kf", "deblending_helper"]
 def deblending_helper(
     deblended: vs.VideoNode,
     fieldmatched: vs.VideoNode,
-    clip: vs.VideoNode | None = None,
     length: int = 5,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
@@ -34,16 +33,15 @@ def deblending_helper(
     """
     func = func or deblending_helper
 
-    inters = telecine_patterns(fallback(clip, fieldmatched), deblended, length, func)
+    inters = telecine_patterns(fieldmatched, deblended, length, func)
     inters += [shift_clip(inter, 1) for inter in inters]
 
-    shifted_clips = shift_clip_multi(fieldmatched)
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
 
-    expr_clips = inters + shifted_clips
+    expr_clips = inters + prop_srcs
 
     return core.akarin.Select(
-        expr_clips, prop_srcs, f"x._Combed N {length * 2} % {len(inters)} ? x._Combed y._Combed and 1 0 ? +"
+        expr_clips, prop_srcs, f"x._Combed N {length} % {len(inters)} ? x._Combed y._Combed and +"
     )
 
 
@@ -59,7 +57,8 @@ def deblend(
 
     Args:
         clip: Input source to fieldmatching.
-        fieldmatched: Source after field matching, must have field=3 and possibly low cthresh.
+        fieldmatched: Source after field matching with [vfm][vsdeinterlace.vfm], must have field=3 and possibly low
+            cthresh.
         decomber: Optional post processing decomber after deblending and before pattern matching.
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
@@ -74,7 +73,7 @@ def deblend(
         deblended = decomber(deblended, **kwargs)
 
     if fieldmatched:
-        deblended = deblending_helper(deblended, fieldmatched, clip, func=func)
+        deblended = deblending_helper(deblended, fieldmatched, func=func)
 
     return deblended
 
@@ -96,7 +95,7 @@ def deblend_bob(
     func = func or deblend_bob
 
     ab0, bc0, c0 = shift_clip_multi(bobbed[::2], (0, 2))
-    bc1, ab1, a1 = shift_clip_multi(bobbed[1::2])
+    a1, ab1, bc1 = shift_clip_multi(bobbed[1::2])
 
     deblended = norm_expr([a1, ab1, ab0, bc1, bc0, c0], "y x - z + b c - a + + 2 /", func=func)
 
