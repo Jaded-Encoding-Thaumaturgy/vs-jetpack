@@ -536,6 +536,7 @@ class ComplexScaler(KeepArScaler, LinearScaler):
             border_handling: Method for handling image borders during sampling.
             sample_grid_model: Model used to align sampling grid.
             sar: Sample aspect ratio to assume.
+            keep_ar: Whether to adjust dimensions to preserve aspect ratio.
             blur: Amount of blur to apply during scaling.
 
         Returns:
