@@ -400,25 +400,29 @@ class KeepArScaler(Scaler):
         kwargs.setdefault("src_height", kwargs.pop("sh", clip.height))
         sar_scale = kwargs.pop("_sar_scale", 1)
 
-        src_sar = Sar.from_clip(clip) if sar is True else Sar(1, 1) if sar is False else sar
+        if sar is not False:
+            keep_ar = True
 
-        src_dar = Dar.from_res(clip.width, clip.height)
-        out_dar = Dar.from_res(width, height, src_sar * sar_scale)
+        if keep_ar:
+            src_sar = Sar.from_clip(clip) if sar is True else Sar(1, 1) if sar is False else sar
 
-        src_dar, out_dar = float(src_dar), float(out_dar)
+            src_dar = Dar.from_res(clip.width, clip.height)
+            out_dar = Dar.from_res(width, height, src_sar * sar_scale)
 
-        if keep_ar and src_dar != out_dar:
-            if src_dar > out_dar:
-                src_shift, src_window = "src_left", "src_width"
-                fix_crop = clip.width - (clip.height * out_dar)
-            else:
-                src_shift, src_window = "src_top", "src_height"
-                fix_crop = clip.height - (clip.width / out_dar)
+            src_dar, out_dar = float(src_dar), float(out_dar)
 
-            fix_shift = fix_crop / 2
+            if src_dar != out_dar:
+                if src_dar > out_dar:
+                    src_shift, src_window = "src_left", "src_width"
+                    fix_crop = clip.width - (clip.height * out_dar)
+                else:
+                    src_shift, src_window = "src_top", "src_height"
+                    fix_crop = clip.height - (clip.width / out_dar)
 
-            kwargs[src_shift] += fix_shift
-            kwargs[src_window] -= fix_crop
+                fix_shift = fix_crop / 2
+
+                kwargs[src_shift] += fix_shift
+                kwargs[src_window] -= fix_crop
 
         out_shift = (kwargs.pop("src_top"), kwargs.pop("src_left"))
 
