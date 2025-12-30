@@ -1,34 +1,21 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from types import NoneType
+from logging import getLogger
 from typing import TYPE_CHECKING, Any, Literal, Protocol, overload
 
-from jetpytools import CustomIntEnum, CustomValueError, normalize_seq, to_arr
+from jetpytools import CustomIntEnum, normalize_seq, to_arr
 
 if TYPE_CHECKING:
     from vsdenoise import PrefilterLike
 
 from vsexprtools import norm_expr
 from vsrgtools import gauss_blur
-from vstools import (
-    Planes,
-    UnsupportedColorFamilyError,
-    core,
-    depth,
-    expect_bits,
-    join,
-    normalize_param_planes,
-    split,
-    vs,
-)
+from vstools import Planes, core, depth, expect_bits, join, normalize_param_planes, split, vs
 
-__all__ = [
-    "f3k_deband",
-    "mdb_bilateral",
-    "pfdeband",
-    "placebo_deband",
-]
+__all__ = ["f3k_deband", "mdb_bilateral", "pfdeband", "placebo_deband"]
+
+logger = getLogger(__name__)
 
 
 class F3KDeband[**P, R]:
@@ -58,126 +45,42 @@ class F3KDeband[**P, R]:
             self.kwargs = kwargs
 
         COLUMN = 1
-        """
-        Take 2 reference pixels from the same column as the current pixel.
-        """
+        """Column references (vertical pair)."""
 
         SQUARE = 2
-        """
-        Take 4 reference pixels forming a square pattern around the current pixel.
-        """
+        """Square references (four points)."""
 
         ROW = 3
-        """
-        Take 2 reference pixels from the same row as the current pixel.
-        """
+        """Row references (horizontal pair)."""
 
         COL_ROW_MEAN = 4
-        """
-        Take the arithmetic mean of COLUMN and ROW sampling patterns.
-        Reference pixels are randomly selected from both configurations.
-        """
+        """Average of modes COLUMN and ROW."""
 
         MEAN_DIFF_INT = 5
-        """
-        Similar to COL_ROW_MEAN, but includes configurable maximum and median
-        difference thresholds for finer control and detail preservation.
-        """
+        """Detail-preserving mode using additional thresholds (`thr1`, `thr2`)."""
 
         MEAN_DIFF_FLOAT = 6
-        """
-        Similar to COL_ROW_MEAN, but includes configurable maximum and median
-        difference thresholds for finer control and detail preservation.
-        """
+        """Similar to COL_ROW_MEAN but uses multiple thresholds for detail preservation."""
 
         MEAN_DIFF_GRADIENT = 7
-        """
-        An extension of MEAN_DIFF_FLOAT that adds a gradient angle check for smarter detail preservation.
-        """
+        """An extension of MEAN_DIFF_FLOAT that adds a gradient angle check for more intelligent detail preservation."""
 
         @overload
-        def __call__(  # type: ignore[misc]
-            self: Literal[F3KDeband.SampleMode.MEAN_DIFF_INT],
-            y1: int | None = None,
-            cb1: int | None = None,
-            cr1: int | None = None,
-            y2: int | None = None,
-            cb2: int | None = None,
-            cr2: int | None = None,
-            /,
-        ) -> Literal[F3KDeband.SampleMode.MEAN_DIFF_INT]:
+        def __call__[
+            MeanDiffT: (Literal[F3KDeband.SampleMode.MEAN_DIFF_INT], Literal[F3KDeband.SampleMode.MEAN_DIFF_FLOAT])
+        ](
+            self: MeanDiffT,
+            thr_max: float | Sequence[float] | None = None,
+            thr_mid: float | Sequence[float] | None = None,
+        ) -> MeanDiffT:
             """
-            Configure MEAN_DIFF_INT using direct values.
+            Configure MEAN_DIFF_INT or MEAN_DIFF_FLOAT using threshold sequences.
 
             Args:
-                y1: maxDif threshold for luma (Y).
-                cb1: maxDif threshold for blue-difference chroma (U).
-                cr1: maxDif threshold for red-difference chroma (V).
-                y2: midDif threshold for luma (Y).
-                cb2: midDif threshold for blue-difference chroma (U).
-                cr2: midDif threshold for red-difference chroma (V).
-
-            Returns:
-                The configured enum.
-            """
-
-        @overload
-        def __call__(  # type: ignore[misc]
-            self: Literal[F3KDeband.SampleMode.MEAN_DIFF_INT],
-            thr_max: Sequence[int | None] | None = None,
-            thr_mid: Sequence[int | None] | None = None,
-            /,
-        ) -> Literal[F3KDeband.SampleMode.MEAN_DIFF_INT]:
-            """
-            Configure MEAN_DIFF_INT using threshold sequences.
-
-            Args:
-                thr_max: maxDif thresholds for Y, Cb, and Cr.
-                thr_mid: midDif thresholds for Y, Cb, and Cr.
-
-            Returns:
-                The configured enum.
-            """
-
-        @overload
-        def __call__(  # type: ignore[misc]
-            self: Literal[F3KDeband.SampleMode.MEAN_DIFF_FLOAT],
-            y1: int | None = None,
-            cb1: int | None = None,
-            cr1: int | None = None,
-            y2: int | None = None,
-            cb2: int | None = None,
-            cr2: int | None = None,
-            /,
-        ) -> Literal[F3KDeband.SampleMode.MEAN_DIFF_FLOAT]:
-            """
-            Configure MEAN_DIFF_FLOAT using direct values.
-
-            Args:
-                y1: maxDif threshold for luma (Y).
-                cb1: maxDif threshold for blue-difference chroma (U).
-                cr1: maxDif threshold for red-difference chroma (V).
-                y2: midDif threshold for luma (Y).
-                cb2: midDif threshold for blue-difference chroma (U).
-                cr2: midDif threshold for red-difference chroma (V).
-
-            Returns:
-                The configured enum.
-            """
-
-        @overload
-        def __call__(  # type: ignore[misc]
-            self: Literal[F3KDeband.SampleMode.MEAN_DIFF_FLOAT],
-            thr_max: Sequence[int | None] | None = None,
-            thr_mid: Sequence[int | None] | None = None,
-            /,
-        ) -> Literal[F3KDeband.SampleMode.MEAN_DIFF_FLOAT]:
-            """
-            Configure MEAN_DIFF_FLOAT using threshold sequences.
-
-            Args:
-                thr_max: maxDif thresholds for Y, Cb, and Cr.
-                thr_mid: midDif thresholds for Y, Cb, and Cr.
+                thr_max: Detail protection threshold (`thr1` in vszip) for respective planes.
+                    Applies to the max difference check.
+                thr_mid: Gradient/Texture protection threshold (`thr2` in vszip) for respective planes.
+                    Applies to the midpoint difference check.
 
             Returns:
                 The configured enum.
@@ -186,40 +89,8 @@ class F3KDeband[**P, R]:
         @overload
         def __call__(  # type: ignore[misc]
             self: Literal[F3KDeband.SampleMode.MEAN_DIFF_GRADIENT],
-            y1: int | None = None,
-            cb1: int | None = None,
-            cr1: int | None = None,
-            y2: int | None = None,
-            cb2: int | None = None,
-            cr2: int | None = None,
-            /,
-            angle_boost: float | None = None,
-            max_angle: float | None = None,
-        ) -> Literal[F3KDeband.SampleMode.MEAN_DIFF_GRADIENT]:
-            """
-            Configure MEAN_DIFF_GRADIENT using direct values.
-
-            Args:
-                y1: maxDif threshold for luma (Y).
-                cb1: maxDif threshold for blue-difference chroma (U).
-                cr1: maxDif threshold for red-difference chroma (V).
-                y2: midDif threshold for luma (Y).
-                cb2: midDif threshold for blue-difference chroma (U).
-                cr2: midDif threshold for red-difference chroma (V).
-                angle_boost: Multiplier to increase the debanding strength on consistent gradients.
-                max_angle: Threshold for the gradient angle check.
-
-            Returns:
-                The configured enum.
-            """
-
-        @overload
-        def __call__(  # type: ignore[misc]
-            self: Literal[F3KDeband.SampleMode.MEAN_DIFF_GRADIENT],
-            thr_max: Sequence[int | None] | None = None,
-            thr_mid: Sequence[int | None] | None = None,
-            /,
-            *,
+            thr_max: float | Sequence[float] | None = None,
+            thr_mid: float | Sequence[float] | None = None,
             angle_boost: float | None = None,
             max_angle: float | None = None,
         ) -> Literal[F3KDeband.SampleMode.MEAN_DIFF_GRADIENT]:
@@ -227,8 +98,10 @@ class F3KDeband[**P, R]:
             Configure MEAN_DIFF_GRADIENT using threshold sequences.
 
             Args:
-                thr_max: maxDif thresholds for Y, Cb, and Cr.
-                thr_mid: midDif thresholds for Y, Cb, and Cr.
+                thr_max: Detail protection threshold (`thr1` in vszip) for respective planes.
+                    Applies to the max difference check.
+                thr_mid: Gradient/Texture protection threshold (`thr2` in vszip) for respective planes.
+                    Applies to the midpoint difference check.
                 angle_boost: Multiplier to increase the debanding strength on consistent gradients.
                 max_angle: Threshold for the gradient angle check.
 
@@ -238,51 +111,40 @@ class F3KDeband[**P, R]:
 
         def __call__(
             self,
-            y1_or_thr_max: int | None | Sequence[int | None] = None,
-            cb1_or_thr_mid: int | None | Sequence[int | None] = None,
-            cr1: int | None = None,
-            y2: int | None = None,
-            cb2: int | None = None,
-            cr2: int | None = None,
+            thr_max: float | Sequence[float] | None = None,
+            thr_mid: float | Sequence[float] | None = None,
             angle_boost: float | None = None,
             max_angle: float | None = None,
         ) -> Any:
             """
             Configure `MEAN_DIFF` with either individual values or sequences.
 
-            You can use either:
-
-            - Individual thresholds: ``y1, cb1, cr1, y2, cb2, cr2``
-            - Sequences: ``thr_max`` and ``thr_mid``
-
-            ## y1 / cb1 / cr1
+            ## `thr_max` or `thr1` in vszip
             These are detail protection thresholds (max difference).
 
             This threshold applies to the maxDif check.
             maxDif is the largest absolute difference found between the current pixel
             and any of its four individual cross-shaped reference pixels.
-            If this maxDif is greater than or equal to y1 / cb1 / cr1, the pixel is considered detail.
+            If this maxDif is greater than or equal to any of the thresholds, the pixel is considered detail.
 
             It helps protect sharp edges and fine details from being blurred by the debanding process.
 
-            ## y2 / cb2 / cr2
-            These are gradient / texture protection threshold (mid-pair difference).
+            ## `thr_mid` or `thr2` in vszip
+            These are gradient / texture protection thresholds (mid-pair difference).
 
             This threshold applies to the midDif checks.
             midDif measures how much the current pixel deviates from the midpoint of a pair of opposing reference pixels
             (one check for the vertical pair, one for the horizontal pair).
-            If the current pixel is far from this midpoint (i.e., midDif is greater than or equal to y2 / cb2 / cr2),
-            it might indicate a texture.
+            If the current pixel is far from this midpoint (i.e., midDif is greater than or equal
+            to any of the thresholds), it might indicate a texture.
 
             This helps distinguish true banding in gradients from textured areas or complex details.
 
             Args:
-                y1_or_thr_max: maxDif threshold for luma (Y) or sequence of max thresholds.
-                cb1_or_thr_mid: maxDif threshold for blue-difference chroma (U) or sequence of mid thresholds.
-                cr1: maxDif threshold for red-difference chroma (V).
-                y2: midDif threshold for luma (Y).
-                cb2: midDif threshold for blue-difference chroma (U).
-                cr2: midDif threshold for red-difference chroma (V).
+                thr_max: Detail protection threshold (`thr1` in vszip) for respective planes.
+                    Applies to the max difference check.
+                thr_mid: Gradient/Texture protection threshold (`thr2` in vszip) for respective planes.
+                    Applies to the midpoint difference check.
                 angle_boost: Multiplier to increase the debanding strength on consistent gradients.
                 max_angle: Threshold for the gradient angle check.
 
@@ -291,17 +153,9 @@ class F3KDeband[**P, R]:
             """
             assert self >= 5
 
-            if isinstance(y1_or_thr_max, Sequence) and isinstance(cb1_or_thr_mid, Sequence):
-                y1, cb1, cr1 = normalize_seq(y1_or_thr_max, 3)
-                y2, cb2, cr2 = normalize_seq(cb1_or_thr_mid, 3)
-            elif isinstance(y1_or_thr_max, (int, NoneType)) and isinstance(cb1_or_thr_mid, (int, NoneType)):
-                y1, cb1 = y1_or_thr_max, cb1_or_thr_mid
-            else:
-                raise TypeError
-
             new_enum = CustomIntEnum(self.__class__.__name__, F3KDeband.SampleMode.__members__)  # type: ignore
             member = getattr(new_enum, self.name)
-            member.kwargs = dict[str, Any](y1=y1, cb1=cb1, cr1=cr1, y2=y2, cb2=cb2, cr2=cr2)
+            member.kwargs = dict[str, Any](thr1=thr_max, thr2=thr_mid)
 
             if self is F3KDeband.SampleMode.MEAN_DIFF_GRADIENT:
                 member.kwargs.update(angle_boost=angle_boost, max_angle=max_angle)
@@ -365,8 +219,8 @@ class F3KDeband[**P, R]:
 def f3k_deband(
     clip: vs.VideoNode,
     radius: int = 16,
-    thr: int | Sequence[int] = 96,
-    grain: int | Sequence[int] = 0,
+    thr: float | Sequence[float] = 96,
+    grain: float | Sequence[float] = 0,
     planes: Planes = None,
     *,
     sample_mode: F3KDeband.SampleMode = F3KDeband.SampleMode.SQUARE,
@@ -377,50 +231,46 @@ def f3k_deband(
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
-    Debanding filter wrapper using the `neo_f3kdb` plugin.
+    Debanding filter wrapper using the `vszip.Deband` plugin.
 
-    More information can be found in the plugin documentation: <https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb>
+    More information:
+        <https://github.com/dnjulek/vapoursynth-zip/wiki/Deband>
+        <https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb>
 
     Args:
         clip: Input clip.
         radius: Radius used for banding detection. Valid range is [1, 255].
-        thr: Banding detection threshold(s) for each plane (Y, Cb, Cr). A pixel is considered banded if the difference
+        thr: Banding detection threshold(s) for each plane. A pixel is considered banded if the difference
             with its reference pixel(s) is less than the corresponding threshold.
-        grain: Amount of grain to add after debanding. Accepts a int or sequence of ints.
+        grain: Amount of grain to add after debanding.
         planes: Specifies which planes to process. Default is all planes.
-        sample_mode: Strategy used to sample reference pixels. See
-            [SampleMode][vsdeband.debanders.F3KDeband.SampleMode].
+        sample_mode: Strategy used to sample reference pixels.
+            See [SampleMode][vsdeband.debanders.F3KDeband.SampleMode].
         dynamic_grain: If True, generates a unique grain pattern for each frame.
         blur_first: If True, compares current pixel to the mean of surrounding pixels. If False, compares directly to
             all reference pixels. A pixel is marked as banded only if all pixel-wise differences are below threshold.
         seed: Random seed for grain generation.
         random: Random number generation strategy. Can be a single value for both reference and grain, or a tuple
             specifying separate algorithms. See [RandomAlgo][vsdeband.debanders.F3KDeband.RandomAlgo].
-        **kwargs: Additional keyword arguments passed directly to the `neo_f3kdb.Deband` plugin.
-
-    Raises:
-        CustomValueError: If inconsistent grain parameters are provided across chroma planes.
-        UnsupportedColorFamilyError: If input clip is not YUV or GRAY.
+        **kwargs: Additional keyword arguments passed directly to the `vszip.Deband` plugin.
 
     Returns:
         Debanded and optionally grained clip.
     """
-    UnsupportedColorFamilyError.check(clip, (vs.GRAY, vs.YUV), f3k_deband)
 
-    clip, bits = expect_bits(clip, 16)
+    # Simulate scale=True like the default we had when wrapping neo_f3kdb
+    scale = kwargs.pop("scale", True)
+    thr = [t * 255 / ((1 << (16 if scale else 14)) - 1) for t in to_arr(thr)]
+    grain = [g * 255 / ((1 << 14) - 1) for g in to_arr(grain)]
 
-    y, cb, cr = normalize_param_planes(clip, normalize_seq(thr, 3), planes, 0)
-    grainy, *ngrainc = normalize_param_planes(clip, normalize_seq(grain, 2), planes, 0)
-
-    if len(set(ngrainc)) > 1:
-        raise CustomValueError("Inconsistent grain parameters across chroma planes.", f3k_deband)
+    thr = normalize_param_planes(clip, thr, planes, 0)
+    grain = normalize_param_planes(clip, grain, planes, 0)
 
     random_ref, random_grain = normalize_seq(random, 2)
 
     kwargs = (
         sample_mode.kwargs
         | {
-            "scale": True,
             "random_algo_ref": random_ref,
             "random_algo_grain": random_ref.sigma,
             "random_param_ref": random_grain,
@@ -429,22 +279,19 @@ def f3k_deband(
         | kwargs
     )
 
-    debanded = core.neo_f3kdb.Deband(
+    logger.debug("vszip.Deband params: thr=%s, grain=%s %s", thr, grain, kwargs)
+
+    return core.vszip.Deband(
         clip,
         radius,
-        y,
-        cb,
-        cr,
-        grainy,
-        ngrainc[0],
+        thr,
+        grain[:2],
         sample_mode,
         seed,
         blur_first,
         dynamic_grain,
         **kwargs,
     )
-
-    return depth(debanded, bits)
 
 
 def placebo_deband(

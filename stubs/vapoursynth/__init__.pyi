@@ -1185,10 +1185,6 @@ class VideoNode(RawNode):
     mv: Final[_mv._VideoNode_bound.Plugin]
     """MVTools v24"""
 # </attribute/VideoNode_bound/mv>
-# <attribute/VideoNode_bound/neo_f3kdb>
-    neo_f3kdb: Final[_neo_f3kdb._VideoNode_bound.Plugin]
-    """Neo F3KDB Deband Filter r10"""
-# </attribute/VideoNode_bound/neo_f3kdb>
 # <attribute/VideoNode_bound/nlm_cuda>
     nlm_cuda: Final[_nlm_cuda._VideoNode_bound.Plugin]
     """Non-local means denoise filter implemented in CUDA"""
@@ -1466,10 +1462,6 @@ class Core:
     mv: Final[_mv._Core_bound.Plugin]
     """MVTools v24"""
 # </attribute/Core_bound/mv>
-# <attribute/Core_bound/neo_f3kdb>
-    neo_f3kdb: Final[_neo_f3kdb._Core_bound.Plugin]
-    """Neo F3KDB Deband Filter r10"""
-# </attribute/Core_bound/neo_f3kdb>
 # <attribute/Core_bound/nlm_cuda>
     nlm_cuda: Final[_nlm_cuda._Core_bound.Plugin]
     """Non-local means denoise filter implemented in CUDA"""
@@ -1573,7 +1565,6 @@ class _adg:
 
 # <implementation/akarin>
 _ReturnDict_akarin_Version = TypedDict("_ReturnDict_akarin_Version", {"version": _AnyStr, "expr_backend": _AnyStr, "expr_features": _AnyStr | list[_AnyStr], "select_features": _AnyStr | list[_AnyStr], "text_features": _AnyStr | list[_AnyStr], "tmpl_features": _AnyStr | list[_AnyStr]})
-
 
 class _akarin:
     class _Core_bound:
@@ -1770,7 +1761,6 @@ class _bm3dcuda_rtc:
 
 # <implementation/bs>
 _ReturnDict_bs_TrackInfo = TypedDict("_ReturnDict_bs_TrackInfo", {"mediatype": int, "mediatypestr": _AnyStr, "codec": int, "codecstr": _AnyStr, "disposition": int, "dispositionstr": _AnyStr})
-
 
 class _bs:
     class _Core_bound:
@@ -2342,20 +2332,6 @@ class _mv:
             def Super(self, hpad: _IntLike | None = None, vpad: _IntLike | None = None, pel: _IntLike | None = None, levels: _IntLike | None = None, chroma: _IntLike | None = None, sharp: _IntLike | None = None, rfilter: _IntLike | None = None, pelclip: VideoNode | None = None, opt: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/mv>
-
-# <implementation/neo_f3kdb>
-class _neo_f3kdb:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Deband(self, clip: VideoNode, range: _IntLike | None = None, y: _IntLike | None = None, cb: _IntLike | None = None, cr: _IntLike | None = None, grainy: _IntLike | None = None, grainc: _IntLike | None = None, sample_mode: _IntLike | None = None, seed: _IntLike | None = None, blur_first: _IntLike | None = None, dynamic_grain: _IntLike | None = None, opt: _IntLike | None = None, mt: _IntLike | None = None, dither_algo: _IntLike | None = None, keep_tv_range: _IntLike | None = None, output_depth: _IntLike | None = None, random_algo_ref: _IntLike | None = None, random_algo_grain: _IntLike | None = None, random_param_ref: _FloatLike | None = None, random_param_grain: _FloatLike | None = None, preset: _AnyStr | None = None, y_1: _IntLike | None = None, cb_1: _IntLike | None = None, cr_1: _IntLike | None = None, y_2: _IntLike | None = None, cb_2: _IntLike | None = None, cr_2: _IntLike | None = None, scale: _IntLike | None = None, angle_boost: _FloatLike | None = None, max_angle: _FloatLike | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Deband(self, range: _IntLike | None = None, y: _IntLike | None = None, cb: _IntLike | None = None, cr: _IntLike | None = None, grainy: _IntLike | None = None, grainc: _IntLike | None = None, sample_mode: _IntLike | None = None, seed: _IntLike | None = None, blur_first: _IntLike | None = None, dynamic_grain: _IntLike | None = None, opt: _IntLike | None = None, mt: _IntLike | None = None, dither_algo: _IntLike | None = None, keep_tv_range: _IntLike | None = None, output_depth: _IntLike | None = None, random_algo_ref: _IntLike | None = None, random_algo_grain: _IntLike | None = None, random_param_ref: _FloatLike | None = None, random_param_grain: _FloatLike | None = None, preset: _AnyStr | None = None, y_1: _IntLike | None = None, cb_1: _IntLike | None = None, cr_1: _IntLike | None = None, y_2: _IntLike | None = None, cb_2: _IntLike | None = None, cr_2: _IntLike | None = None, scale: _IntLike | None = None, angle_boost: _FloatLike | None = None, max_angle: _FloatLike | None = None) -> VideoNode: ...
-
-# </implementation/neo_f3kdb>
 
 # <implementation/nlm_cuda>
 class _nlm_cuda:
@@ -2995,6 +2971,8 @@ class _vszip:
             @_Wrapper.Function
             def CombMaskMT(self, clip: VideoNode, thY1: _IntLike | None = None, thY2: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
+            def Deband(self, clip: VideoNode, range: _IntLike | None = None, thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, grain: _FloatLike | _SequenceLike[_FloatLike] | None = None, sample_mode: _IntLike | None = None, seed: _IntLike | None = None, blur_first: _IntLike | None = None, dynamic_grain: _IntLike | None = None, keep_tv_range: _IntLike | None = None, random_algo_ref: _IntLike | None = None, random_algo_grain: _IntLike | None = None, random_param_ref: _FloatLike | None = None, random_param_grain: _FloatLike | None = None, thr1: _FloatLike | _SequenceLike[_FloatLike] | None = None, thr2: _FloatLike | _SequenceLike[_FloatLike] | None = None, angle_boost: _FloatLike | None = None, max_angle: _FloatLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
             def ImageRead(self, path: _AnyStr | _SequenceLike[_AnyStr], validate: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def LimitFilter(self, flt: VideoNode, src: VideoNode, ref: VideoNode | None = None, dark_thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, bright_thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, elast: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
@@ -3033,6 +3011,8 @@ class _vszip:
             def CombMask(self, cthresh: _IntLike | None = None, mthresh: _IntLike | None = None, expand: _IntLike | None = None, metric: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def CombMaskMT(self, thY1: _IntLike | None = None, thY2: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def Deband(self, range: _IntLike | None = None, thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, grain: _FloatLike | _SequenceLike[_FloatLike] | None = None, sample_mode: _IntLike | None = None, seed: _IntLike | None = None, blur_first: _IntLike | None = None, dynamic_grain: _IntLike | None = None, keep_tv_range: _IntLike | None = None, random_algo_ref: _IntLike | None = None, random_algo_grain: _IntLike | None = None, random_param_ref: _FloatLike | None = None, random_param_grain: _FloatLike | None = None, thr1: _FloatLike | _SequenceLike[_FloatLike] | None = None, thr2: _FloatLike | _SequenceLike[_FloatLike] | None = None, angle_boost: _FloatLike | None = None, max_angle: _FloatLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def LimitFilter(self, src: VideoNode, ref: VideoNode | None = None, dark_thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, bright_thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, elast: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
