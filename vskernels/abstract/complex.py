@@ -4,7 +4,6 @@ This module defines the abstract classes for scaling, descaling and resampling o
 
 from __future__ import annotations
 
-from fractions import Fraction
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, overload
 
@@ -62,8 +61,6 @@ def _check_dynamic_keeparscaler_params(
     border_handling: int,
     sample_grid_model: int,
     sar: Any,
-    dar: Any,
-    dar_in: Any,
     keep_ar: Any,
     func: FuncExcept,
 ) -> bool:
@@ -81,12 +78,12 @@ def _check_dynamic_keeparscaler_params(
                 'When passing a dynamic size clip, "sample_grid_model" must be MATCH_EDGES', func, sample_grid_model
             )
         )
-    if any(p is not None for p in [sar, dar, dar_in, keep_ar]):
+    if any(p is not False for p in [sar, keep_ar]):
         exceptions.append(
             CustomNotImplementedError(
-                'When passing a dynamic size clip, "sar", "dar", "dar_in" and "keep_ar" must all be None',
+                'When passing a dynamic size clip, "sar", "and "keep_ar" must both be False',
                 func,
-                (sar, dar, dar_in, keep_ar),
+                (sar, keep_ar),
             )
         )
 
@@ -387,86 +384,49 @@ class KeepArScaler(Scaler):
     when `keep_ar` is enabled.
     """
 
-    def _ar_params_norm(
-        self,
-        clip: vs.VideoNode,
-        width: int,
-        height: int,
-        sar: Sar | float | bool | None,
-        dar: Dar | float | bool | None,
-        dar_in: Dar | float | bool | None,
-        sar_scale: Fraction | float,
-        keep_ar: bool | None,
-    ) -> tuple[float, float, float]:
-        if keep_ar is not None and None not in (sar, dar, dar_in):
-            raise CustomValueError(
-                'If "keep_ar" is not None, then at least one of "sar", "dar", or "dar_in" must be None.'
-            )
-
-        def _norm_xar[XarT: (Dar, Sar)](
-            xar: Fraction | float | bool | None, if_true: XarT, if_false: XarT, xar_t: type[XarT]
-        ) -> XarT:
-            if xar is None:
-                xar = bool(keep_ar)
-
-            if xar is True:
-                return if_true
-
-            if xar is False:
-                return if_false
-
-            return xar_t(xar)
-
-        src_sar = _norm_xar(sar, Sar.from_clip(clip), Sar(1, 1), Sar)
-        out_dar = _norm_xar(dar, Dar.from_res(width, height), Dar(0), Dar)
-        src_dar = _norm_xar(dar_in, Dar.from_clip(clip, False), out_dar, Dar)
-
-        if sar_scale != 1:
-            src_sar *= sar_scale
-
-        return float(src_sar), float(src_dar), float(out_dar)
-
     def _handle_crop_resize_kwargs(
         self,
         clip: vs.VideoNode,
         width: int,
         height: int,
         shift: tuple[TopShift, LeftShift],
-        sar: Sar | bool | float | None,
-        dar: Dar | bool | float | None,
-        dar_in: Dar | bool | float | None,
-        keep_ar: bool | None,
+        sar: Sar | bool,
+        keep_ar: bool,
         **kwargs: Any,
-    ) -> tuple[dict[str, Any], tuple[TopShift, LeftShift], Sar | Literal[False]]:
-        kwargs.setdefault("src_top", kwargs.pop("sy", shift[0]))
+    ) -> tuple[dict[str, Any], tuple[TopShift, LeftShift]]:
         kwargs.setdefault("src_left", kwargs.pop("sx", shift[1]))
+        kwargs.setdefault("src_top", kwargs.pop("sy", shift[0]))
         kwargs.setdefault("src_width", kwargs.pop("sw", clip.width))
         kwargs.setdefault("src_height", kwargs.pop("sh", clip.height))
         sar_scale = kwargs.pop("_sar_scale", 1)
 
-        src_sar, src_dar, out_dar = self._ar_params_norm(clip, width, height, sar, dar, dar_in, sar_scale, keep_ar)
-        out_sar: Sar | Literal[False] = False
+        if sar is not False:
+            keep_ar = True
 
-        if src_sar != 1:
-            out_dar = (width / src_sar) / height if src_sar > 1 else width / (height * src_sar)
-            out_sar = Sar(1, 1)
+        if keep_ar:
+            src_sar = Sar.from_clip(clip) if sar is True else Sar(1, 1) if sar is False else sar
 
-        if src_dar != out_dar:
-            if src_dar > out_dar:
-                src_shift, src_window = "src_left", "src_width"
-                fix_crop = kwargs["src_width"] - (kwargs["src_height"] * out_dar)
-            else:
-                src_shift, src_window = "src_top", "src_height"
-                fix_crop = kwargs["src_height"] - (kwargs["src_width"] / out_dar)
+            src_dar = Dar.from_clip(clip, False)
+            out_dar = Dar.from_res(width, height, src_sar * sar_scale)
 
-            fix_shift = fix_crop / 2
+            src_dar, out_dar = float(src_dar), float(out_dar)
 
-            kwargs[src_shift] += fix_shift
-            kwargs[src_window] -= fix_crop
+            if src_dar != out_dar:
+                if src_dar > out_dar:
+                    src_shift, src_window = "src_left", "src_width"
+                    fix_crop = clip.width - (clip.height * out_dar)
+                else:
+                    src_shift, src_window = "src_top", "src_height"
+                    fix_crop = clip.height - (clip.width / out_dar)
+
+                fix_shift = fix_crop / 2
+
+                kwargs[src_shift] += fix_shift
+                kwargs[src_window] -= fix_crop
 
         out_shift = (kwargs.pop("src_top"), kwargs.pop("src_left"))
 
-        return kwargs, out_shift, out_sar
+        return kwargs, out_shift
 
     def scale(
         self,
@@ -475,13 +435,11 @@ class KeepArScaler(Scaler):
         height: int | None = None,
         shift: tuple[TopShift, LeftShift] = (0, 0),
         *,
-        # KeepArScaler adds `border_handling`, `sample_grid_model`, `sar`, `dar`, `dar_in` and `keep_ar`
+        # KeepArScaler adds `border_handling`, `sample_grid_model`, `sar`, and `keep_ar`
         border_handling: int = BorderHandling.MIRROR,
         sample_grid_model: int = SampleGridModel.MATCH_EDGES,
-        sar: Sar | float | bool | None = None,
-        dar: Dar | float | bool | None = None,
-        dar_in: Dar | bool | float | None = None,
-        keep_ar: bool | None = None,
+        sar: Sar | bool = False,
+        keep_ar: bool = False,
         **kwargs: Any,
     ) -> vs.VideoNode:
         """
@@ -498,9 +456,7 @@ class KeepArScaler(Scaler):
             shift: Subpixel shift (top, left) applied during scaling.
             border_handling: Method for handling image borders during sampling.
             sample_grid_model: Model used to align sampling grid.
-            sar: Sample aspect ratio to assume or convert to.
-            dar: Desired display aspect ratio.
-            dar_in: Input display aspect ratio, if different from clip's.
+            sar: Sample aspect ratio to assume.
             keep_ar: Whether to adjust dimensions to preserve aspect ratio.
 
         Returns:
@@ -509,17 +465,13 @@ class KeepArScaler(Scaler):
         width, height = self._wh_norm(clip, width, height)
 
         if 0 in (clip.width, clip.height):
-            _check_dynamic_keeparscaler_params(
-                border_handling, sample_grid_model, sar, dar, dar_in, keep_ar, self.scale
-            )
+            _check_dynamic_keeparscaler_params(border_handling, sample_grid_model, sar, keep_ar, self.scale)
             return super().scale(clip, width, height, shift, **kwargs)
 
-        if border_handling == sample_grid_model == 0 and sar is dar is dar_in is keep_ar is None:
+        if border_handling == sample_grid_model == 0 and sar is keep_ar is False:
             return super().scale(clip, width, height, shift, **kwargs)
 
-        kwargs, shift, out_sar = self._handle_crop_resize_kwargs(
-            clip, width, height, shift, sar, dar, dar_in, keep_ar, **kwargs
-        )
+        kwargs, shift = self._handle_crop_resize_kwargs(clip, width, height, shift, sar, keep_ar, **kwargs)
 
         kwargs, shift = SampleGridModel.from_param(sample_grid_model, self.scale).for_dst(
             clip, width, height, shift, **kwargs
@@ -529,9 +481,6 @@ class KeepArScaler(Scaler):
         )
 
         scaled = super().scale(padded, width, height, shift, **kwargs)
-
-        if out_sar:
-            return out_sar.apply(scaled)
 
         return scaled
 
@@ -558,13 +507,11 @@ class ComplexScaler(KeepArScaler, LinearScaler):
         # `linear` and `sigmoid` from LinearScaler
         linear: bool | None = None,
         sigmoid: bool | tuple[Slope, Center] = False,
-        # `border_handling`, `sample_grid_model`, `sar`, `dar`, `dar_in` and `keep_ar` from KeepArScaler
+        # `border_handling`, `sample_grid_model`, `sar`, and `keep_ar` from KeepArScaler
         border_handling: int = BorderHandling.MIRROR,
         sample_grid_model: int = SampleGridModel.MATCH_EDGES,
-        sar: Sar | float | bool | None = None,
-        dar: Dar | float | bool | None = None,
-        dar_in: Dar | bool | float | None = None,
-        keep_ar: bool | None = None,
+        sar: Sar | bool = False,
+        keep_ar: bool = False,
         # ComplexScaler adds blur
         blur: float | None = None,
         **kwargs: Any,
@@ -588,9 +535,7 @@ class ComplexScaler(KeepArScaler, LinearScaler):
                 (inclusive) and sigmoid center has to be in range 0.0-1.0 (inclusive).
             border_handling: Method for handling image borders during sampling.
             sample_grid_model: Model used to align sampling grid.
-            sar: Sample aspect ratio to assume or convert to.
-            dar: Desired display aspect ratio.
-            dar_in: Input display aspect ratio, if different from clip's.
+            sar: Sample aspect ratio to assume.
             keep_ar: Whether to adjust dimensions to preserve aspect ratio.
             blur: Amount of blur to apply during scaling.
 
@@ -603,8 +548,6 @@ class ComplexScaler(KeepArScaler, LinearScaler):
             border_handling=border_handling,
             sample_grid_model=sample_grid_model,
             sar=sar,
-            dar=dar,
-            dar_in=dar_in,
             keep_ar=keep_ar,
             blur=blur,
         )
