@@ -130,6 +130,8 @@ class DitherType(CustomStrEnum):
     Slow, available only for integer input at the moment. Avoids usual F-S artifacts.
     """
 
+    VOID = RANDOM
+
     QUASIRANDOM = "quasirandom", 9
     """
     Dither using quasirandom sequences.
