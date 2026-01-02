@@ -23,7 +23,6 @@ from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vsmasktools import Morpho
 from vstools import (
     ColorRange,
-    DitherType,
     Matrix,
     MatrixLike,
     OutdatedPluginError,
@@ -428,12 +427,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         _log.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
         _log.debug("%s: Before pp; Clip format is %r", self.postprocess_clip, clip.format)
 
-        clip = depth(
-            clip,
-            input_clip,
-            dither_type=DitherType.ORDERED if 0 in {clip.width, clip.height} else DitherType.AUTO,
-            **kwargs,
-        )
+        clip = depth(clip, input_clip, **kwargs)
 
         _log.debug("%s: After pp; Clip format is %r", self.postprocess_clip, clip.format)
 
@@ -502,7 +496,6 @@ class BaseOnnxScalerRGB(BaseOnnxScaler):
                     format=input_clip,
                     matrix=Matrix.from_video(input_clip, func=self.__class__),
                     range=ColorRange.from_video(input_clip, func=self.__class__),
-                    dither_type=DitherType.ORDERED,
                 )
                 | kwargs
             )
@@ -1375,7 +1368,6 @@ class BaseDPIR(BaseOnnxScaler):
                     format=input_clip,
                     matrix=Matrix.from_video(input_clip, func=self.__class__),
                     range=ColorRange.from_video(input_clip, func=self.__class__),
-                    dither_type=DitherType.ORDERED,
                 )
                 | kwargs
             )
