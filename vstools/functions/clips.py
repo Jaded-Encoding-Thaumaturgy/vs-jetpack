@@ -234,7 +234,7 @@ def finalize_clip(
     clip: vs.VideoNode,
     bits: VideoFormatLike | HoldsVideoFormat | int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.AUTO,
+    dither_type: DitherType = DitherType.RANDOM,
     *,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
@@ -267,7 +267,7 @@ def finalize_output[**P](
     *,
     bits: int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.AUTO,
+    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[P, vs.VideoNode]: ...
 
@@ -277,7 +277,7 @@ def finalize_output[**P](
     *,
     bits: int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.AUTO,
+    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
@@ -288,7 +288,7 @@ def finalize_output[**P](
     *,
     bits: int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.AUTO,
+    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
     """
@@ -315,7 +315,7 @@ def initialize_clip(
     color_range: ColorRangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.AUTO,
+    dither_type: DitherType = DitherType.RANDOM,
     *,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
@@ -394,7 +394,7 @@ def initialize_input[**P](
     color_range: ColorRangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.AUTO,
+    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[P, vs.VideoNode]: ...
 
@@ -409,7 +409,7 @@ def initialize_input[**P](
     chroma_location: ChromaLocationLike | None = None,
     color_range: ColorRangeLike | None = None,
     field_based: FieldBasedLike | None = None,
-    dither_type: DitherType = DitherType.AUTO,
+    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
@@ -426,7 +426,7 @@ def initialize_input[**P](
     color_range: ColorRangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.AUTO,
+    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
     """

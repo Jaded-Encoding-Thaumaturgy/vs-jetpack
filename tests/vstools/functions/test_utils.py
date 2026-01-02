@@ -67,7 +67,7 @@ class TestUtils(TestCase):
         self.assertEqual(src_10.format.name, "YUV420P10")
 
         src2_10 = vs.core.std.BlankClip(format=vs.RGB30)
-        src2_8 = depth(src2_10, 8, dither_type=DitherType.RANDOM)
+        src2_8 = depth(src2_10, 8)
         assert src2_8.format
         self.assertEqual(src2_8.format.name, "RGB24")
 
