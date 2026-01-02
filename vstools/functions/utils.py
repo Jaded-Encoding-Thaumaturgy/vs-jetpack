@@ -154,26 +154,23 @@ class DitherType(CustomStrEnum):
         out_fmt: vs.VideoFormat,
         range_in: ColorRange,
         range_out: ColorRange,
-        use_fmtc: bool | None = None,
+        force_fmtc: bool,
     ) -> vs.VideoNode:
         """
         Apply the given DitherType to a clip.
         """
-        if use_fmtc is None:
-            if self in (
-                DitherType.SIERRA_2_4A,
-                DitherType.STUCKI,
-                DitherType.ATKINSON,
-                DitherType.OSTROMOUKHOV,
-                DitherType.QUASIRANDOM,
-            ):
-                use_fmtc = True
-            else:
-                use_fmtc = False
+        if self in (
+            DitherType.SIERRA_2_4A,
+            DitherType.STUCKI,
+            DitherType.ATKINSON,
+            DitherType.OSTROMOUKHOV,
+            DitherType.QUASIRANDOM,
+        ):
+            force_fmtc = True
 
         fmt = get_video_format(clip)
 
-        if not use_fmtc:
+        if not force_fmtc:
             return clip.resize.Point(
                 format=out_fmt,
                 dither_type=self.value.lower(),
@@ -183,7 +180,7 @@ class DitherType(CustomStrEnum):
 
         # Workaround because fmtc doesn't support FLOAT 16 input
         if fmt.sample_type is vs.FLOAT and fmt.bits_per_sample == 16:
-            clip = DitherType.NONE.apply(clip, fmt.replace(bits_per_sample=32), range_in, range_out)
+            clip = DitherType.NONE.apply(clip, fmt.replace(bits_per_sample=32), range_in, range_out, False)
 
         return clip.fmtc.bitdepth(
             dmode=self._fmtc_dmode,
@@ -315,7 +312,7 @@ def depth(
     range_in: ColorRangeLike | None = None,
     range_out: ColorRangeLike | None = None,
     dither_type: str | DitherType = DitherType.RANDOM,
-    use_fmtc: bool | None = None,
+    force_fmtc: bool = False,
 ) -> vs.VideoNode:
     """
     A convenience bitdepth conversion function using only internal plugins if possible.
@@ -340,7 +337,7 @@ def depth(
         range_in: Input pixel range (defaults to input `clip`'s range).
         range_out: Output pixel range (defaults to input `clip`'s range).
         dither_type: Dithering algorithm. Allows overriding default dithering behavior.
-        use_fmtc: Force usage of fmtc to apply dithering.
+        force_fmtc: Force usage of fmtc to apply dithering.
 
     Returns:
         Converted clip with desired bit depth and sample type. `ColorFamily` will be same as input.
@@ -363,7 +360,7 @@ def depth(
 
     new_format = in_fmt.replace(bits_per_sample=out_fmt.bits_per_sample, sample_type=out_fmt.sample_type)
 
-    return DitherType.from_param(dither_type, depth).apply(clip, new_format, range_in, range_out, use_fmtc)
+    return DitherType.from_param(dither_type, depth).apply(clip, new_format, range_in, range_out, force_fmtc)
 
 
 def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) -> tuple[vs.VideoNode, int]:
