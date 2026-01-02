@@ -240,8 +240,8 @@ class DitherType(CustomStrEnum):
             Whether the clip should be dithered.
         """
 
-    @deprecated("should_dither is deprecated and will be removed in a future version.", category=DeprecationWarning)
     @staticmethod
+    @deprecated("should_dither is deprecated and will be removed in a future version.", category=DeprecationWarning)
     def should_dither(
         in_bits_or_fmt: int | VideoFormatLike | HoldsVideoFormat,
         out_bits_or_fmt: int | VideoFormatLike | HoldsVideoFormat,
