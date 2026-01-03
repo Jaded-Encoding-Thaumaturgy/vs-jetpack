@@ -29,7 +29,6 @@ jobs:
         vapoursynth-version: [73]
         python-version: ["3.12", "3.14"]
         vszip-version: [10]
-        fmtc-version: [30]
 
     steps:
       - name: Checkout repository
@@ -56,11 +55,6 @@ jobs:
         uses: ./.github/actions/setup-vszip
         with:
           vszip-version: ${{ matrix.vszip-version }}
-
-      - name: Set up fmtc
-        uses: ./.github/actions/setup-fmtc
-        with:
-          fmtc-version: ${{ matrix.fmtc-version }}
 
       - name: Install dependencies
         run: uv sync --all-extras --locked
