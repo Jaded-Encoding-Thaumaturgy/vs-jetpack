@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import operator
 from collections.abc import Callable, Iterable, Mapping, Sequence
+from enum import EnumMeta
 from functools import partial, reduce, wraps
 from types import NoneType
 from typing import Any, Literal, Self, SupportsIndex, overload
@@ -81,7 +82,20 @@ Variables to access clips in Expr.
 """
 
 
-class DitherType(CustomStrEnum):
+class _EnumDeprecationWarning(DeprecationWarning): ...
+
+
+class _DitherTypeMeta(EnumMeta):
+    @property
+    @deprecated(
+        '"AUTO" member is deprecated and will be removed in a future version. Please use RANDOM instead',
+        category=_EnumDeprecationWarning,
+    )
+    def AUTO(cls) -> Literal[DitherType.RANDOM]:  # noqa: N802
+        return DitherType.RANDOM
+
+
+class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
     """
     Enum for `zimg_dither_type_e` and fmtc `dmode`.
     """
