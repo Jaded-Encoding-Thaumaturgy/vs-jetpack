@@ -17,6 +17,8 @@ from jetpytools import (
     to_arr,
 )
 
+from vsjetpack import deprecated
+
 from ..enums import ColorRange, ColorRangeLike, Matrix
 from ..exceptions import ClipLengthError, UnsupportedColorFamilyError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterable
@@ -84,35 +86,24 @@ class DitherType(CustomStrEnum):
     Enum for `zimg_dither_type_e` and fmtc `dmode`.
     """
 
-    AUTO = "auto"
-    """
-    Choose automatically.
-    """
-
-    NONE = "none"
+    NONE = "none", 1
     """
     Round to nearest.
     """
 
-    ORDERED = "ordered"
+    ORDERED = "ordered", 0
     """
     Bayer patterned dither.
     """
 
-    RANDOM = "random"
+    RANDOM = "random", 8
     """
     Pseudo-random noise of magnitude 0.5.
     """
 
-    ERROR_DIFFUSION = "error_diffusion"
+    ERROR_DIFFUSION = "error_diffusion", 6
     """
     Floyd-Steinberg error diffusion.
-    """
-
-    ERROR_DIFFUSION_FMTC = "error_diffusion_fmtc", 6
-    """
-    Floyd-Steinberg error diffusion.
-    Modified for serpentine scan (avoids worm artifacts).
     """
 
     SIERRA_2_4A = "sierra_2_4a", 3
@@ -139,10 +130,7 @@ class DitherType(CustomStrEnum):
     Slow, available only for integer input at the moment. Avoids usual F-S artifacts.
     """
 
-    VOID = "void", 8
-    """
-    A way to generate blue-noise dither and has a much better visual aspect than ordered dithering.
-    """
+    VOID = RANDOM
 
     QUASIRANDOM = "quasirandom", 9
     """
@@ -150,9 +138,9 @@ class DitherType(CustomStrEnum):
     Good intermediary between void, cluster, and error diffusion algorithms.
     """
 
-    _fmtc_dmode: int | None
+    _fmtc_dmode: int
 
-    def __new__(cls, value: Any, fmtc_dmode: int | None = None) -> Self:
+    def __new__(cls, value: Any, fmtc_dmode: int) -> Self:
         obj = str.__new__(cls, value)
         obj._value_ = value
 
@@ -161,18 +149,28 @@ class DitherType(CustomStrEnum):
         return obj
 
     def apply(
-        self, clip: vs.VideoNode, out_fmt: vs.VideoFormat, range_in: ColorRange, range_out: ColorRange
+        self,
+        clip: vs.VideoNode,
+        out_fmt: vs.VideoFormat,
+        range_in: ColorRange,
+        range_out: ColorRange,
+        force_fmtc: bool,
     ) -> vs.VideoNode:
         """
         Apply the given DitherType to a clip.
         """
-        if self is DitherType.AUTO:
-            self = DitherType.VOID if DitherType.should_dither(clip, out_fmt, range_in, range_out) else DitherType.NONE
+        if self in (
+            DitherType.SIERRA_2_4A,
+            DitherType.STUCKI,
+            DitherType.ATKINSON,
+            DitherType.OSTROMOUKHOV,
+            DitherType.QUASIRANDOM,
+        ):
+            force_fmtc = True
 
         fmt = get_video_format(clip)
-        clip = ColorRange.ensure_presence(clip, range_in)
 
-        if not self.is_fmtc():
+        if not force_fmtc:
             return clip.resize.Point(
                 format=out_fmt,
                 dither_type=self.value.lower(),
@@ -182,7 +180,7 @@ class DitherType(CustomStrEnum):
 
         # Workaround because fmtc doesn't support FLOAT 16 input
         if fmt.sample_type is vs.FLOAT and fmt.bits_per_sample == 16:
-            clip = DitherType.NONE.apply(clip, fmt.replace(bits_per_sample=32), range_in, range_out)
+            clip = DitherType.NONE.apply(clip, fmt.replace(bits_per_sample=32), range_in, range_out, False)
 
         return clip.fmtc.bitdepth(
             dmode=self._fmtc_dmode,
@@ -190,12 +188,6 @@ class DitherType(CustomStrEnum):
             fulls=range_in is ColorRange.FULL,
             fulld=range_out is ColorRange.FULL,
         )
-
-    def is_fmtc(self) -> bool:
-        """
-        Whether the DitherType is applied through fmtc.
-        """
-        return self._fmtc_dmode is not None
 
     @overload
     @staticmethod
@@ -246,6 +238,7 @@ class DitherType(CustomStrEnum):
         """
 
     @staticmethod
+    @deprecated("should_dither is deprecated and will be removed in a future version.", category=DeprecationWarning)
     def should_dither(
         in_bits_or_fmt: int | VideoFormatLike | HoldsVideoFormat,
         out_bits_or_fmt: int | VideoFormatLike | HoldsVideoFormat,
@@ -318,13 +311,13 @@ def depth(
     *,
     range_in: ColorRangeLike | None = None,
     range_out: ColorRangeLike | None = None,
-    dither_type: str | DitherType = DitherType.AUTO,
+    dither_type: str | DitherType = DitherType.RANDOM,
+    force_fmtc: bool = False,
 ) -> vs.VideoNode:
     """
     A convenience bitdepth conversion function using only internal plugins if possible.
 
     This uses exclusively internal plugins except for specific dither_types.
-    To check whether your DitherType uses fmtc, use [DitherType.is_fmtc][vstools.DitherType.is_fmtc].
 
     Example:
         ```py
@@ -344,18 +337,14 @@ def depth(
         range_in: Input pixel range (defaults to input `clip`'s range).
         range_out: Output pixel range (defaults to input `clip`'s range).
         dither_type: Dithering algorithm. Allows overriding default dithering behavior.
-            See [DitherType][vstools.DitherType].
-
-            When integer output is desired but the conversion may produce fractional values,
-            defaults to [VOID][vstools.DitherType.VOID].
-
-            In other cases, defaults to no dither.
-
-            See [DitherType.should_dither][vstools.DitherType.should_dither] for more information.
+        force_fmtc: Force usage of fmtc to apply dithering.
 
     Returns:
         Converted clip with desired bit depth and sample type. `ColorFamily` will be same as input.
     """
+    if range_in is not None:
+        clip = ColorRange.ensure_presence(clip, range_in)
+
     in_fmt = get_video_format(clip)
     out_fmt = get_video_format(bitdepth or clip, sample_type=sample_type)
 
@@ -371,7 +360,7 @@ def depth(
 
     new_format = in_fmt.replace(bits_per_sample=out_fmt.bits_per_sample, sample_type=out_fmt.sample_type)
 
-    return DitherType.from_param(dither_type, depth).apply(clip, new_format, range_in, range_out)
+    return DitherType.from_param(dither_type, depth).apply(clip, new_format, range_in, range_out, force_fmtc)
 
 
 def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) -> tuple[vs.VideoNode, int]:
