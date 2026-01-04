@@ -14,6 +14,7 @@ from jetpytools import (
     CustomStrEnum,
     CustomTypeError,
     FuncExcept,
+    cachedproperty,
     normalize_seq,
     to_arr,
 )
@@ -194,7 +195,7 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
             fulld=range_out is ColorRange.FULL,
         )
 
-    @property
+    @cachedproperty
     def is_fmtc(self) -> bool:
         """
         Whether the DitherType is exclusive to fmtc.
