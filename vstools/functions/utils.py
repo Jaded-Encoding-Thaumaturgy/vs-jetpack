@@ -121,6 +121,8 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
     Floyd-Steinberg error diffusion.
     """
 
+    FLOYD_STEINBERG = ERROR_DIFFUSION
+
     SIERRA_2_4A = "sierra_2_4a", 3
     """
     Another type of error diffusion.
