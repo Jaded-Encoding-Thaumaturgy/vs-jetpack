@@ -173,18 +173,9 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
         """
         Apply the given DitherType to a clip.
         """
-        if self in (
-            DitherType.SIERRA_2_4A,
-            DitherType.STUCKI,
-            DitherType.ATKINSON,
-            DitherType.OSTROMOUKHOV,
-            DitherType.QUASIRANDOM,
-        ):
-            force_fmtc = True
-
         fmt = get_video_format(clip)
 
-        if not force_fmtc:
+        if not (self.is_fmtc or force_fmtc):
             return clip.resize.Point(
                 format=out_fmt,
                 dither_type=self.value.lower(),
@@ -201,6 +192,19 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
             bits=out_fmt.bits_per_sample,
             fulls=range_in is ColorRange.FULL,
             fulld=range_out is ColorRange.FULL,
+        )
+
+    @property
+    def is_fmtc(self) -> bool:
+        """
+        Whether the DitherType is exclusive to fmtc.
+        """
+        return self in (
+            DitherType.SIERRA_2_4A,
+            DitherType.STUCKI,
+            DitherType.ATKINSON,
+            DitherType.OSTROMOUKHOV,
+            DitherType.QUASIRANDOM,
         )
 
     @overload
