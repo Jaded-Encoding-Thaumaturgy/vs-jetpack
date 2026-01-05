@@ -21,7 +21,7 @@ class Dar(Fraction):
     """
 
     @classmethod
-    def from_res(cls, width: int, height: int, sar: Sar | Literal[False] = False) -> Self:
+    def from_res(cls, width: int, height: int, sar: Fraction | Literal[False] = False) -> Self:
         """
         Get the DAR from the specified dimensions and SAR.
 
@@ -68,8 +68,6 @@ class Dar(Fraction):
             A SAR object created using the DAR.
         """
 
-        assert isinstance(active_area, int | Fraction)
-
         return Sar.from_ar(active_area, height, self)
 
 
@@ -99,7 +97,7 @@ class Sar(Fraction):
         return cls(get_prop(clip, "_SARNum", int, default=1), get_prop(clip, "_SARDen", int, default=1))
 
     @classmethod
-    def from_ar(cls, active_area: int | Fraction, height: int, dar: Dar) -> Self:
+    def from_ar(cls, active_area: int | Fraction, height: int, dar: Fraction) -> Self:
         """
         Calculate the SAR using a DAR object & active area. See ``Dar.to_sar`` for more information.
 
@@ -114,8 +112,6 @@ class Sar(Fraction):
         Returns:
             A SAR object created using DAR and active image area information.
         """
-
-        assert isinstance(active_area, int | Fraction)
 
         return cls(dar / (Fraction(active_area) / height))
 
