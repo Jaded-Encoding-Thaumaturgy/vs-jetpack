@@ -4,6 +4,7 @@ This module defines the abstract classes for scaling, descaling and resampling o
 
 from __future__ import annotations
 
+from fractions import Fraction
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, overload
 
@@ -392,22 +393,24 @@ class KeepArScaler(Scaler):
         shift: tuple[TopShift, LeftShift],
         sar: Sar | bool,
         keep_ar: bool,
+        sar_scale: Fraction | Literal[False],
         **kwargs: Any,
     ) -> tuple[dict[str, Any], tuple[TopShift, LeftShift]]:
         kwargs.setdefault("src_left", kwargs.pop("sx", shift[1]))
         kwargs.setdefault("src_top", kwargs.pop("sy", shift[0]))
         kwargs.setdefault("src_width", kwargs.pop("sw", clip.width))
         kwargs.setdefault("src_height", kwargs.pop("sh", clip.height))
-        sar_scale = kwargs.pop("_sar_scale", 1)
 
         if sar is not False:
             keep_ar = True
 
         if keep_ar:
             src_sar = Sar.from_clip(clip) if sar is True else Sar(1, 1) if sar is False else sar
+            if sar_scale is not False:
+                src_sar *= sar_scale
 
             src_dar = Dar.from_clip(clip, False)
-            out_dar = Dar.from_res(width, height, src_sar * sar_scale)
+            out_dar = Dar.from_res(width, height, src_sar)
 
             src_dar, out_dar = float(src_dar), float(out_dar)
 
@@ -463,6 +466,7 @@ class KeepArScaler(Scaler):
             Scaled clip, optionally aspect-corrected.
         """
         width, height = self._wh_norm(clip, width, height)
+        sar_scale = kwargs.pop("_sar_scale", False)
 
         if 0 in (clip.width, clip.height):
             _check_dynamic_keeparscaler_params(border_handling, sample_grid_model, sar, keep_ar, self.scale)
@@ -471,7 +475,7 @@ class KeepArScaler(Scaler):
         if border_handling == sample_grid_model == 0 and sar is keep_ar is False:
             return super().scale(clip, width, height, shift, **kwargs)
 
-        kwargs, shift = self._handle_crop_resize_kwargs(clip, width, height, shift, sar, keep_ar, **kwargs)
+        kwargs, shift = self._handle_crop_resize_kwargs(clip, width, height, shift, sar, keep_ar, sar_scale, **kwargs)
 
         kwargs, shift = SampleGridModel.from_param(sample_grid_model, self.scale).for_dst(
             clip, width, height, shift, **kwargs
