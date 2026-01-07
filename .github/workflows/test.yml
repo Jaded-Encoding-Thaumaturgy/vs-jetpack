@@ -28,7 +28,6 @@ jobs:
       matrix:
         vapoursynth-version: [73]
         python-version: ["3.12", "3.14"]
-        vszip-version: [10]
 
     steps:
       - name: Checkout repository
@@ -50,11 +49,6 @@ jobs:
         uses: ./.github/actions/setup-akarin
         with:
           akarin-version: 6d7c733b3014a42be75299427b5c35f56f02a47a
-
-      - name: Set up vszip
-        uses: ./.github/actions/setup-vszip
-        with:
-          vszip-version: ${{ matrix.vszip-version }}
 
       - name: Install dependencies
         run: uv sync --all-extras --locked
