@@ -1,9 +1,9 @@
 import sys
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Mapping
 from copy import copy
 from functools import wraps
 from inspect import getmodule, isclass
-from logging import INFO, Handler, LogRecord, basicConfig
+from logging import INFO, Formatter, LogRecord, basicConfig, getLogger
 from types import ModuleType
 from typing import Any, Literal
 
@@ -100,47 +100,49 @@ _JETPACK_MODULES = (
 
 
 @require_jet_dependency("rich")
-def setup_logging(level: str | int = INFO, handlers: Iterable[Handler] | None = None, **kwargs: Any) -> None:
+def setup_logging(level: str | int = INFO, **kwargs: Any) -> None:
     """
     Configure global logging.
 
     Args:
         level: Log level. Defaults to INFO.
-        handlers: "None" will add a custom rich-based handler, with custom formatting for certain values.
         kwargs: Arguments forwarded to logging.basicConfig
     """
-    if handlers is None:
-        from rich.console import Console
-        from rich.logging import RichHandler
-        from rich.text import Text
+    from rich.console import Console
+    from rich.logging import RichHandler
+    from rich.text import Text
 
-        class CustomJetHandler(RichHandler):
-            def format(self, record: LogRecord) -> str:
-                # Return a modified shallow copy of the LogRecord with transformed
-                # parameters for specific loggers.
-                if record.name.startswith(_JETPACK_MODULES):
-                    record = copy(record)
-                    if isinstance(record.args, tuple):
-                        transformed = _transform_record_args(dict(enumerate(record.args)))
-                        record.args = tuple(transformed.values())
-                    elif isinstance(record.args, Mapping):
-                        record.args = _transform_record_args(record.args)
+    class CustomJetHandler(RichHandler):
+        def format(self, record: LogRecord) -> str:
+            # Return a modified shallow copy of the LogRecord with transformed
+            # parameters for specific loggers.
+            record = copy(record)
+            if isinstance(record.args, tuple):
+                transformed = _transform_record_args(dict(enumerate(record.args)))
+                record.args = tuple(transformed.values())
+            elif isinstance(record.args, Mapping):
+                record.args = _transform_record_args(record.args)
 
-                return super().format(record)
+            return super().format(record)
 
-        handlers = [
-            CustomJetHandler(
-                console=Console(stderr=True),
-                omit_repeated_times=False,
-                show_time=True,
-                rich_tracebacks=True,
-                log_time_format=lambda dt: Text("[{}.{:03d}]".format(dt.strftime("%H:%M:%S"), dt.microsecond // 1000)),
-            )
-        ]
+    handler = CustomJetHandler(
+        console=Console(stderr=True),
+        omit_repeated_times=False,
+        show_time=True,
+        rich_tracebacks=True,
+        log_time_format=lambda dt: Text("[{}.{:03d}]".format(dt.strftime("%H:%M:%S"), dt.microsecond // 1000)),
+    )
+    handler.setFormatter(Formatter("{name}: {message}", style="{"))
 
-    kwargs = {"format": "{name}: {message}", "style": "{"} | kwargs
+    for module in _JETPACK_MODULES:
+        logger = getLogger(module)
+        logger.setLevel(level)
+        logger.propagate = False
 
-    basicConfig(level=level, handlers=handlers, **kwargs)
+        if not logger.hasHandlers():
+            logger.addHandler(handler)
+
+    basicConfig(level=level, **kwargs)
 
 
 def _transform_record_args[T](args: Mapping[T, object]) -> dict[T, object]:

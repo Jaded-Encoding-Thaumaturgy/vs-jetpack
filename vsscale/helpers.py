@@ -10,7 +10,7 @@ from typing import Any, NamedTuple, Self, overload
 from jetpytools import CustomTypeError, FuncExcept, mod2, mod_x
 
 from vskernels import MixedScalerProcess, SampleGridModel, Scaler, ScalerLike, is_scaler_like
-from vstools import FunctionUtil, Planes, Resolution, VSFunctionNoArgs, get_w, vs
+from vstools import FunctionUtil, Planes, VSFunctionNoArgs, get_w, vs
 
 from .various import ComplexSuperSamplerProcess
 
@@ -19,9 +19,9 @@ __all__ = ["CropAbs", "CropRel", "ScalingArgs", "pre_ss", "scale_var_clip"]
 
 def scale_var_clip(
     clip: vs.VideoNode,
-    scaler: Scaler | Callable[[Resolution], Scaler] | Callable[[tuple[int, int]], Scaler],
-    width: int | Callable[[Resolution], int] | Callable[[tuple[int, int]], int] | None,
-    height: int | Callable[[Resolution], int] | Callable[[tuple[int, int]], int],
+    scaler: Scaler | Callable[[tuple[int, int]], Scaler],
+    width: int | Callable[[tuple[int, int]], int] | None,
+    height: int | Callable[[tuple[int, int]], int],
     shift: tuple[float, float] | Callable[[tuple[int, int]], tuple[float, float]] = (0, 0),
     debug: bool = False,
 ) -> vs.VideoNode:
@@ -48,14 +48,14 @@ def scale_var_clip(
         key = f"{f.width}_{f.height}"
 
         if key not in cached_clips:
-            res = Resolution(f.width, f.height)
+            res = (f.width, f.height)
 
             norm_scaler = scaler(res) if callable(scaler) else scaler
             norm_shift = shift(res) if callable(shift) else shift
             norm_height = height(res) if callable(height) else height
 
             if width is None:
-                norm_width = get_w(norm_height, res.width / res.height)
+                norm_width = get_w(norm_height, f.width / f.height)
             else:
                 norm_width = width(res) if callable(width) else width
 
@@ -70,12 +70,12 @@ def scale_var_clip(
                         no_accepts_var.append(norm_scaler)
 
                 if norm_scaler in no_accepts_var:
-                    const_clip = clip.resize.Point(res.width, res.height)
+                    const_clip = clip.resize.Point(f.width, f.height)
 
                     scaled = part_scaler(const_clip)
 
             if debug:
-                scaled = scaled.std.SetFrameProps(var_width=res.width, var_height=res.height)
+                scaled = scaled.std.SetFrameProps(var_width=f.width, var_height=f.height)
 
             cached_clips[key] = scaled
 

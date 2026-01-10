@@ -6,7 +6,7 @@ from typing import Any, ClassVar
 from jetpytools import CustomValueError, fallback, to_arr
 
 from vskernels.types import BorderHandling, SampleGridModel
-from vstools import Dar, Sar, core, get_video_format, vs
+from vstools import Sar, core, get_video_format, vs
 
 from ..abstract import ComplexScaler
 from ..types import Center, LeftShift, Slope, TopShift
@@ -87,13 +87,11 @@ class Placebo(ComplexScaler, abstract=True):
         # `linear` and `sigmoid` from LinearScaler
         linear: bool | None = None,
         sigmoid: bool | tuple[Slope, Center] = False,
-        # `border_handling`, `sample_grid_model`, `sar`, `dar`, `dar_in` and `keep_ar` from KeepArScaler
+        # `border_handling`, `sample_grid_model`, `sar`, and `keep_ar` from KeepArScaler
         border_handling: int = BorderHandling.MIRROR,
         sample_grid_model: int = SampleGridModel.MATCH_EDGES,
-        sar: Sar | float | bool | None = None,
-        dar: Dar | float | bool | None = None,
-        dar_in: Dar | bool | float | None = None,
-        keep_ar: bool | None = None,
+        sar: Sar | bool = False,
+        keep_ar: bool = False,
         # ComplexScaler adds blur
         blur: float | None = None,
         **kwargs: Any,
@@ -120,9 +118,7 @@ class Placebo(ComplexScaler, abstract=True):
                 (inclusive) and sigmoid center has to be in range 0.0-1.0 (inclusive).
             border_handling: Method for handling image borders during sampling.
             sample_grid_model: Model used to align sampling grid.
-            sar: Sample aspect ratio to assume or convert to.
-            dar: Desired display aspect ratio.
-            dar_in: Input display aspect ratio, if different from clip's.
+            sar: Sample aspect ratio to assume.
             keep_ar: Whether to adjust dimensions to preserve aspect ratio.
             blur: Amount of blur to apply during scaling.
 
@@ -152,8 +148,6 @@ class Placebo(ComplexScaler, abstract=True):
             border_handling=border_handling,
             sample_grid_model=sample_grid_model,
             sar=sar,
-            dar=dar,
-            dar_in=dar_in,
             keep_ar=keep_ar,
             blur=blur,
             **kwargs,

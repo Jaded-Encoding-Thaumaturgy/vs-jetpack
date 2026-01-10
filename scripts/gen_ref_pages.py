@@ -19,6 +19,7 @@ import vsdehalo
 import vsdeinterlace
 import vsdenoise
 import vsexprtools
+import vsjetpack
 import vskernels
 import vsmasktools
 import vsrgtools
@@ -35,6 +36,7 @@ MODULES = [
     vsdeinterlace,
     vsdenoise,
     vsexprtools,
+    vsjetpack,
     vskernels,
     vsmasktools,
     vspreview,

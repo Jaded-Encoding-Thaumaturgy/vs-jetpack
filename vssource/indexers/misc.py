@@ -76,6 +76,11 @@ class BestSource(CacheIndexer):
         **kwargs: Any,
     ) -> None:
         """
+
+        Note:
+            You will need to call [setup_logging][vsjetpack.setup_logging] or [basicConfig][logging.basicConfig]
+            to show progress.
+
         Args:
             cachemode: The cache mode. See [here][vssource.BestSource] and [here][vssource.BestSource.CacheMode]
                 for more explanation.

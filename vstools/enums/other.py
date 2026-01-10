@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from fractions import Fraction
-from typing import Literal, NamedTuple, Self
+from typing import Literal, Self
 
 from jetpytools import CustomIntEnum, CustomRuntimeError, Sentinel, SentinelT
 
 from ..types import HoldsPropValue
 from ..vs_proxy import vs
 
-__all__ = ["Dar", "Resolution", "Sar", "SceneChangeMode"]
+__all__ = ["Dar", "Sar", "SceneChangeMode"]
 
 
 class Dar(Fraction):
@@ -21,7 +21,7 @@ class Dar(Fraction):
     """
 
     @classmethod
-    def from_res(cls, width: int, height: int, sar: Sar | None = None) -> Self:
+    def from_res(cls, width: int, height: int, sar: Fraction | Literal[False] = False) -> Self:
         """
         Get the DAR from the specified dimensions and SAR.
 
@@ -36,11 +36,8 @@ class Dar(Fraction):
 
         dar = Fraction(width, height)
 
-        if sar:
-            if sar.denominator > sar.numerator:
-                dar /= sar
-            else:
-                dar *= sar
+        if sar is not False:
+            dar /= sar
 
         return cls(dar)
 
@@ -57,7 +54,7 @@ class Dar(Fraction):
             A DAR object created using the specified clip and SAR.
         """
 
-        return cls.from_res(clip.width, clip.height, Sar.from_clip(clip) if sar else None)
+        return cls.from_res(clip.width, clip.height, Sar.from_clip(clip) if sar else sar)
 
     def to_sar(self, active_area: int | Fraction, height: int) -> Sar:
         """
@@ -70,8 +67,6 @@ class Dar(Fraction):
         Returns:
             A SAR object created using the DAR.
         """
-
-        assert isinstance(active_area, int | Fraction)
 
         return Sar.from_ar(active_area, height, self)
 
@@ -102,7 +97,7 @@ class Sar(Fraction):
         return cls(get_prop(clip, "_SARNum", int, default=1), get_prop(clip, "_SARDen", int, default=1))
 
     @classmethod
-    def from_ar(cls, active_area: int | Fraction, height: int, dar: Dar) -> Self:
+    def from_ar(cls, active_area: int | Fraction, height: int, dar: Fraction) -> Self:
         """
         Calculate the SAR using a DAR object & active area. See ``Dar.to_sar`` for more information.
 
@@ -118,8 +113,6 @@ class Sar(Fraction):
             A SAR object created using DAR and active image area information.
         """
 
-        assert isinstance(active_area, int | Fraction)
-
         return cls(dar / (Fraction(active_area) / height))
 
     def apply(self, clip: vs.VideoNode) -> vs.VideoNode:
@@ -128,31 +121,6 @@ class Sar(Fraction):
         """
 
         return vs.core.std.SetFrameProps(clip, _SARNum=self.numerator, _SARDen=self.denominator)
-
-
-class Resolution(NamedTuple):
-    """
-    Tuple representing a resolution.
-    """
-
-    width: int
-    height: int
-
-    @classmethod
-    def from_video(cls, clip: vs.VideoNode) -> Self:
-        """
-        Create a Resolution object using a given clip's dimensions.
-        """
-        return cls(clip.width, clip.height)
-
-    def transpose(self) -> Self:
-        """
-        Flip the Resolution matrix over its diagonal.
-        """
-        return self.__class__(self.height, self.width)
-
-    def __str__(self) -> str:
-        return f"{self.width}x{self.height}"
 
 
 class SceneChangeMode(CustomIntEnum):

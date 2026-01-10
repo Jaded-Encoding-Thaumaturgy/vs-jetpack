@@ -18,10 +18,6 @@ from jetpytools import (
 from ..types import HoldsVideoFormat, VideoFormatLike
 from ..vs_proxy import vs
 
-if TYPE_CHECKING:
-    from ..enums import Resolution
-
-
 __all__ = [
     "ClipLengthError",
     "FormatsMismatchError",
@@ -568,15 +564,13 @@ class ResolutionsMismatchError(MismatchError):
     """
 
     @classmethod
-    def _item_to_name(cls, item: Resolution | vs.VideoNode) -> str:
-        from ..enums import Resolution
-
-        return str(item if isinstance(item, Resolution) else Resolution.from_video(item))
+    def _item_to_name(cls, item: tuple[int, int] | vs.VideoNode) -> str:
+        return str(item if isinstance(item, tuple) else (item.width, item.height))
 
     def __init__(
         self,
         func: FuncExcept,
-        resolutions: Iterable[Resolution | vs.VideoNode],
+        resolutions: Iterable[tuple[int, int] | vs.VideoNode],
         message: SupportsString = "All the resolutions must be equal!",
         **kwargs: Any,
     ) -> None:
@@ -585,7 +579,7 @@ class ResolutionsMismatchError(MismatchError):
     if TYPE_CHECKING:
 
         @classmethod
-        def check(cls, func: FuncExcept, /, *resolutions: Resolution | vs.VideoNode, **kwargs: Any) -> None: ...
+        def check(cls, func: FuncExcept, /, *resolutions: tuple[int, int] | vs.VideoNode, **kwargs: Any) -> None: ...
 
 
 class ResolutionsRefClipMismatchError(MismatchRefError, ResolutionsMismatchError):
@@ -596,8 +590,8 @@ class ResolutionsRefClipMismatchError(MismatchRefError, ResolutionsMismatchError
     def __init__(
         self,
         func: FuncExcept,
-        clip: Resolution | vs.VideoNode,
-        ref: Resolution | vs.VideoNode,
+        clip: tuple[int, int] | vs.VideoNode,
+        ref: tuple[int, int] | vs.VideoNode,
         message: SupportsString = "The resolution of ref and main clip must be equal!",
         **kwargs: Any,
     ) -> None:
@@ -607,7 +601,12 @@ class ResolutionsRefClipMismatchError(MismatchRefError, ResolutionsMismatchError
 
         @classmethod
         def check(  # type: ignore[override]
-            cls, func: FuncExcept, clip: Resolution | vs.VideoNode, ref: Resolution | vs.VideoNode, /, **kwargs: Any
+            cls,
+            func: FuncExcept,
+            clip: tuple[int, int] | vs.VideoNode,
+            ref: tuple[int, int] | vs.VideoNode,
+            /,
+            **kwargs: Any,
         ) -> None: ...
 
 

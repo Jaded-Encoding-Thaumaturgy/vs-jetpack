@@ -148,10 +148,9 @@ def fine_sharp(
     pstr: float = 1.272,
     ldmp: float | None = None,
     hdmp: float = 0.01,
-    planes: Planes = 0,
+    planes: Planes = None,
 ) -> vs.VideoNode:
     """
-    Original author: Didée (https://forum.doom9.org/showthread.php?t=166082)
     Small and relatively fast realtime-sharpening function, for 1080p,
     or after scaling 720p → 1080p during playback.
     (to make 720p look more like being 1080p)
@@ -164,14 +163,18 @@ def fine_sharp(
 
     Args:
         clip: Clip to process.
-        mode: 0 or 1, weakest to strongest.
-        sstr: strength of sharpening.
-        cstr: strength of equalisation.
-        xstr: strength of XSharpen-style final sharpening.
-        lstr: modifier for non-linear sharpening.
-        pstr: exponent for non-linear sharpening.
-        ldmp: "low damp" - Avoid over-enhancing very small differences.
-        hdmp: "high damp" - Avoid over-enhancing very large differences.
+        mode: 0 or 1, weakest to strongest.. Defaults to 0.
+        sstr: strength of sharpening.. Defaults to 2.0.
+        cstr: strength of equalisation.. Defaults to None.
+        xstr: strength of XSharpen-style final sharpening. Defaults to 0.19.
+        lstr: modifier for non-linear sharpening. Defaults to 1.49.
+        pstr: exponent for non-linear sharpening. Defaults to 1.272.
+        ldmp: "low damp" - Avoid over-enhancing very small differences. Defaults to None.
+        hdmp: "high damp" - Avoid over-enhancing very large differences. Defaults to 0.01.
+        planes: Planes to process. Defaults to all.
+
+    Raises:
+        NotImplementedError: When invalid mode is used.
 
     Returns:
         Sharpened clip.
