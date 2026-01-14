@@ -794,7 +794,7 @@ def register_on_creation(callback: Callable[..., None], strict: bool = False) ->
         except RuntimeError:
             return False
 
-    if not strict and has_policy() and has_env():
+    if not strict and has_policy() and has_env() and core.active:
         with get_current_environment().use():
             try:
                 callback(core.core_id)
