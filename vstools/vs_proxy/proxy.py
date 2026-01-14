@@ -788,11 +788,18 @@ def register_on_creation(callback: Callable[..., None], strict: bool = False) ->
 
     core_on_creation_callbacks.update({id(callback): weakref_ref(callback)})
 
-    if not strict and core.active:
+    def has_env() -> bool:
         try:
-            callback(core.core_id)
-        except TypeError:
-            callback()
+            return bool(get_current_environment())
+        except RuntimeError:
+            return False
+
+    if not strict and has_policy() and has_env():
+        with get_current_environment().use():
+            try:
+                callback(core.core_id)
+            except TypeError:
+                callback()
 
 
 def unregister_on_creation(callback: Callable[..., None]) -> None:
