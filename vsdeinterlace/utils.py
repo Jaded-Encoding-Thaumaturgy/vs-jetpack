@@ -142,6 +142,9 @@ def dmetrics(
             the image between lines y0 and y1 (inclusive) are excluded from consideration when the field matching is
             decided. This feature is typically used to ignore subtitling, which might otherwise throw off the matching.
             Defaults to (0, 0).
+        clip2: Clip that dmetrics will copy the frame properties to. If `clip2` is used, dmetrics will perform all
+            calculations based on `clip`, but will copy the calculated metrics to `clip2`. This can be used to work
+            around dmetrics's video format limitations. Defaults to None.
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Returns:
