@@ -125,8 +125,8 @@ def dmetrics(
     chroma: bool = True,
     nt: int = 10,
     y: tuple[int, int] = (0, 0),
-    func: FuncExcept | None = None,
     clip2: vs.VideoNode | None = None,
+    func: FuncExcept | None = None,
 ) -> vs.VideoNode:
     """
     Attaches the match metrics calculated by Telecide (decomb package) to frames as properties. Primarily intended for
