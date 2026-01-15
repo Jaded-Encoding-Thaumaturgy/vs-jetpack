@@ -1149,6 +1149,10 @@ class VideoNode(RawNode):
     dfttest2_nvrtc: Final[_dfttest2_nvrtc._VideoNode_bound.Plugin]
     """DFTTest2 (NVRTC)"""
 # </attribute/VideoNode_bound/dfttest2_nvrtc>
+# <attribute/VideoNode_bound/dmetrics>
+    dmetrics: Final[_dmetrics._VideoNode_bound.Plugin]
+    """Decomb Metrics"""
+# </attribute/VideoNode_bound/dmetrics>
 # <attribute/VideoNode_bound/edgemasks>
     edgemasks: Final[_edgemasks._VideoNode_bound.Plugin]
     """Creates an edge mask using various operators"""
@@ -1414,6 +1418,10 @@ class Core:
     dfttest2_nvrtc: Final[_dfttest2_nvrtc._Core_bound.Plugin]
     """DFTTest2 (NVRTC)"""
 # </attribute/Core_bound/dfttest2_nvrtc>
+# <attribute/Core_bound/dmetrics>
+    dmetrics: Final[_dmetrics._Core_bound.Plugin]
+    """Decomb Metrics"""
+# </attribute/Core_bound/dmetrics>
 # <attribute/Core_bound/dvdsrc2>
     dvdsrc2: Final[_dvdsrc2._Core_bound.Plugin]
     """Dvdsrc 2nd tour"""
@@ -1983,6 +1991,20 @@ class _dfttest2_nvrtc:
             def DFTTest(self, kernel: _AnyStr | _SequenceLike[_AnyStr], radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/dfttest2_nvrtc>
+
+# <implementation/dmetrics>
+class _dmetrics:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def DMetrics(self, clip: VideoNode, tff: _IntLike | None = None, chroma: _IntLike | None = None, nt: _IntLike | None = None, y0: _IntLike | None = None, y1: _IntLike | None = None, prefix: _AnyStr | None = None) -> VideoNode: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def DMetrics(self, tff: _IntLike | None = None, chroma: _IntLike | None = None, nt: _IntLike | None = None, y0: _IntLike | None = None, y1: _IntLike | None = None, prefix: _AnyStr | None = None) -> VideoNode: ...
+
+# </implementation/dmetrics>
 
 # <implementation/dvdsrc2>
 class _dvdsrc2:
