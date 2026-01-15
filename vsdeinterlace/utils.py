@@ -151,7 +151,7 @@ def dmetrics(
 
     tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
 
-    if clip2 is None and clip.format is not vs.YUV420P8:
+    if clip2 is None and clip.format.id is not vs.YUV420P8:
         clip2 = clip
         clip = clip.resize.Bilinear(format=vs.YUV420P8)
 
