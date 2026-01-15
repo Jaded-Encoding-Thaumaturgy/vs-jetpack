@@ -8,7 +8,7 @@ from jetpytools import FuncExcept
 
 from vstools import FieldBased, FieldBasedLike, core, vs
 
-__all__ = ["get_field_difference", "reinterlace", "reweave", "telecine_patterns", "weave"]
+__all__ = ["dmetrics", "get_field_difference", "reinterlace", "reweave", "telecine_patterns", "weave"]
 
 
 def telecine_patterns(
