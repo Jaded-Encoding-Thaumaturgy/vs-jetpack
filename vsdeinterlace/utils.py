@@ -117,3 +117,47 @@ def reinterlace(
     tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
 
     return weave(clip.std.SeparateFields(tff).std.SelectEvery(4, (0, 3)), tff, func)
+
+
+def dmetrics(
+    clip: vs.VideoNode,
+    tff: FieldBasedLike | bool | None = None,
+    chroma: bool = True,
+    nt: int = 10,
+    y: tuple[int, int] = (0, 0),
+    func: FuncExcept | None = None,
+    clip2: vs.VideoNode | None = None,
+) -> vs.VideoNode:
+    """
+    Attaches the match metrics calculated by Telecide (decomb package) to frames as properties. Primarily intended for
+    use with Wobbly.
+
+    Args:
+        clip: Input clip.
+        tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
+        chroma: Determines whether chroma combing is included in the decision made during postprocessing as to whether a
+            frame is combed or not. Defaults to True.
+        nt: Defines the noise tolerance threshold. Defaults to 10.
+        y: Define an exclusion band for the field matching. If y0 is not equal to y1 this feature is enabled. Rows in
+            the image between lines y0 and y1 (inclusive) are excluded from consideration when the field matching is
+            decided. This feature is typically used to ignore subtitling, which might otherwise throw off the matching.
+            Defaults to (0, 0).
+        func: Function returned for custom error handling. This should only be set by VS package developers.
+
+    Returns:
+        Clip with metrics attached as frame properties.
+    """
+    func = func or dmetrics
+
+    tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
+
+    if clip2 is None and clip.format is not vs.YUV420P8:
+        clip2 = clip
+        clip = clip.resize.Bilinear(format=vs.YUV420P8)
+
+    metrics = core.dmetrics.DMetrics(clip, tff, chroma, nt, y[0], y[1])
+
+    if clip2 is not None:
+        metrics = core.std.CopyFrameProps(clip2, clip, ("MMetrics", "VMetrics"))
+
+    return metrics
