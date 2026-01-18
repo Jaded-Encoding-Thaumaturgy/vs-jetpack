@@ -521,7 +521,7 @@ class GenericOnnxScaler(BaseOnnxScaler, partial_abstract=True):
 
 
 class BaseArtCNN(BaseOnnxScaler):
-    _model: ClassVar[int]
+    _model: ClassVar[str]
     _static_kernel_radius = 2
 
     def __init__(
@@ -553,10 +553,12 @@ class BaseArtCNN(BaseOnnxScaler):
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
         """
-        from vsmlrt import ArtCNNModel, models_path
+        from vsmlrt import models_path
+
+        model = self._model if hasattr(self, "_model") else self.__class__.__name__
 
         super().__init__(
-            (SPath(models_path) / "ArtCNN" / f"{ArtCNNModel(self._model).name}.onnx").to_str(),
+            (SPath(models_path) / "ArtCNN" / f"ArtCNN_{model}.onnx").to_str(),
             backend,
             tiles,
             tilesize,
@@ -695,7 +697,7 @@ class ArtCNN(BaseArtCNNLuma):
     ```
     """
 
-    _model = 7
+    _model = "R8F64"
 
     class C4F16(BaseArtCNNLuma):
         """
@@ -712,8 +714,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 10
-
     class C4F16_DN(BaseArtCNNLuma):  # noqa: N801
         """
         The same as C4F16 but intended to also denoise. Works well on noisy sources when you don't want any sharpening.
@@ -726,8 +726,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 13
-
     class C4F16_DS(BaseArtCNNLuma):  # noqa: N801
         """
         The same as C4F16 but intended to also denoise and sharpen.
@@ -739,8 +737,6 @@ class ArtCNN(BaseArtCNNLuma):
         doubled = ArtCNN.C4F16_DS().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
-
-        _model = 11
 
     class C4F32(BaseArtCNNLuma):
         """
@@ -755,8 +751,6 @@ class ArtCNN(BaseArtCNNLuma):
         doubled = ArtCNN.C4F32().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
-
-        _model = 0
 
     @deprecated(
         "This model is no longer maintained and has been deprecated. Please use R8F64_Chroma instead.",
@@ -776,8 +770,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 4
-
     class C4F32_DN(BaseArtCNNLuma):  # noqa: N801
         """
         The same as C4F32 but intended to also denoise. Works well on noisy sources when you don't want any sharpening.
@@ -790,8 +782,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 14
-
     class C4F32_DS(BaseArtCNNLuma):  # noqa: N801
         """
         The same as C4F32 but intended to also denoise and sharpen.
@@ -803,8 +793,6 @@ class ArtCNN(BaseArtCNNLuma):
         doubled = ArtCNN.C4F32_DS().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
-
-        _model = 1
 
     @deprecated(
         "This model is no longer maintained and has been deprecated. Please use R8F64 instead.",
@@ -826,8 +814,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 2
-
     @deprecated(
         "This model is no longer maintained and has been deprecated. Please use R8F64_Chroma instead.",
         category=DeprecationWarning,
@@ -846,8 +832,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 5
-
     @deprecated(
         "This model is no longer maintained and has been deprecated. Please use R8F64 instead.",
         category=DeprecationWarning,
@@ -864,8 +848,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 3
-
     class R8F64(BaseArtCNNLuma):
         """
         A smaller and faster version of R16F96 but very competitive.
@@ -877,8 +859,6 @@ class ArtCNN(BaseArtCNNLuma):
         doubled = ArtCNN.R8F64().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
-
-        _model = 7
 
     class R8F64_Chroma(BaseArtCNNChroma):  # noqa: N801
         """
@@ -894,8 +874,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 9
-
     class R8F64_DS(BaseArtCNNLuma):  # noqa: N801
         """
         The same as R8F64 but intended to also denoise and sharpen.
@@ -907,8 +885,6 @@ class ArtCNN(BaseArtCNNLuma):
         doubled = ArtCNN.R8F64_DS().scale(clip, clip.width * 2, clip.height * 2)
         ```
         """
-
-        _model = 8
 
     class R8F64_JPEG420(BaseArtCNN, BaseOnnxScalerRGB):  # noqa: N801
         """
@@ -922,8 +898,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 15
-
     class R8F64_JPEG444(BaseArtCNN, BaseOnnxScalerRGB):  # noqa: N801
         """
         1x RGB model meant to clean JPEG artifacts.
@@ -935,8 +909,6 @@ class ArtCNN(BaseArtCNNLuma):
         doubled = ArtCNN.R8F64_JPEG444().scale(clip)
         ```
         """
-
-        _model = 16
 
     class R16F96(BaseArtCNNLuma):
         """
@@ -967,8 +939,6 @@ class ArtCNN(BaseArtCNNLuma):
         chroma_upscaled = ArtCNN.R16F96_Chroma().scale(clip)
         ```
         """
-
-        _model = 12
 
 
 class BaseWaifu2x(BaseOnnxScaler):
