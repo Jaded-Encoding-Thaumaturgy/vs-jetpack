@@ -860,6 +860,18 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
+    class R8F64_DS(BaseArtCNNLuma):  # noqa: N801
+        """
+        The same as R8F64 but intended to also denoise and sharpen.
+
+        Example usage:
+        ```py
+        from vsscale import ArtCNN
+
+        doubled = ArtCNN.R8F64_DS().scale(clip, clip.width * 2, clip.height * 2)
+        ```
+        """
+
     class R8F64_Chroma(BaseArtCNNChroma):  # noqa: N801
         """
         The new and fancy big chroma model.
@@ -874,15 +886,17 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-    class R8F64_DS(BaseArtCNNLuma):  # noqa: N801
+    class R8F64_Chroma_DN(BaseArtCNNChroma):  # noqa: N801
         """
-        The same as R8F64 but intended to also denoise and sharpen.
+        Noise-focused variant of R8F64_Chroma.
+
+        Trained for noisy or heavily compressed sources, aggressively removing chroma noise and artifacts.
 
         Example usage:
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.R8F64_DS().scale(clip, clip.width * 2, clip.height * 2)
+        chroma_upscaled = ArtCNN.R8F64_Chroma_DN().scale(clip)
         ```
         """
 
