@@ -924,13 +924,17 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 6
-
+    @deprecated(
+        "This model is no longer maintained and has been deprecated. Please use R8F64_Chroma instead.",
+        category=DeprecationWarning,
+    )
     class R16F96_Chroma(BaseArtCNNChroma):  # noqa: N801
         """
         The biggest and fancy chroma model. Shows almost biblical results on the right sources.
 
         These don't double the input clip and rather just try to enhance the chroma using luma information.
+
+        ONNX file available at https://github.com/Artoriuz/ArtCNN/tree/d8f0297f11b1bc71f5f33e19f5ed6dfff904e758/ONNX
 
         Example usage:
         ```py
