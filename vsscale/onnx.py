@@ -693,7 +693,7 @@ class ArtCNN(BaseArtCNNLuma):
     ```py
     from vsscale import ArtCNN
 
-    doubled = ArtCNN().scale(clip, clip.width * 2, clip.height * 2)
+    doubled = ArtCNN().supersample(clip, 2)
     ```
     """
 
@@ -710,7 +710,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F16().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F16().supersample(clip, 2)
         ```
         """
 
@@ -722,7 +722,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F16_DN().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F16_DN().supersample(clip, 2)
         ```
         """
 
@@ -734,7 +734,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F16_DS().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F16_DS().supersample(clip, 2)
         ```
         """
 
@@ -748,7 +748,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F32().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F32().supersample(clip, 2)
         ```
         """
 
@@ -778,7 +778,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F32_DN().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F32_DN().supersample(clip, 2)
         ```
         """
 
@@ -790,7 +790,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F32_DS().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F32_DS().supersample(clip, 2)
         ```
         """
 
@@ -810,7 +810,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C16F64().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C16F64().supersample(clip, 2)
         ```
         """
 
@@ -844,7 +844,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C16F64_DS().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C16F64_DS().supersample(clip, 2)
         ```
         """
 
@@ -856,7 +856,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.R8F64().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.R8F64().supersample(clip, 2)
         ```
         """
 
@@ -868,7 +868,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.R8F64_DS().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.R8F64_DS().supersample(clip, 2)
         ```
         """
 
@@ -934,7 +934,7 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.R16F96().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.R16F96().supersample(clip, 2)
         ```
         """
 
@@ -1111,7 +1111,7 @@ class Waifu2x(_Waifu2xCunet):
     ```py
     from vsscale import Waifu2x
 
-    doubled = Waifu2x().scale(clip, clip.width * 2, clip.height * 2)
+    doubled = Waifu2x().supersample(clip, 2)
     ```
     """
 
@@ -1123,7 +1123,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.AnimeStyleArt().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.AnimeStyleArt().supersample(clip, 2)
         ```
         """
 
@@ -1137,7 +1137,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.AnimeStyleArtRGB().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.AnimeStyleArtRGB().supersample(clip, 2)
         ```
         """
 
@@ -1151,7 +1151,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.Photo().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.Photo().supersample(clip, 2)
         ```
         """
 
@@ -1165,7 +1165,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.UpConv7AnimeStyleArt().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.UpConv7AnimeStyleArt().supersample(clip, 2)
         ```
         """
 
@@ -1179,7 +1179,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.UpConv7Photo().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.UpConv7Photo().supersample(clip, 2)
         ```
         """
 
@@ -1193,7 +1193,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.UpResNet10().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.UpResNet10().supersample(clip, 2)
         ```
         """
 
@@ -1207,7 +1207,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.Cunet().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.Cunet().supersample(clip, 2)
         ```
         """
 
@@ -1219,7 +1219,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetArt().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetArt().supersample(clip, 2)
         ```
         """
 
@@ -1233,7 +1233,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetPhoto().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetPhoto().supersample(clip, 2)
         ```
         """
 
@@ -1247,7 +1247,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetPhotoV2().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetPhotoV2().supersample(clip, 2)
         ```
         """
 
@@ -1261,7 +1261,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetArtScan().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetArtScan().supersample(clip, 2)
         ```
         """
 
