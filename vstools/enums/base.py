@@ -200,15 +200,22 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
         """
         Ensure the presence of multiple PropEnums at once.
         """
-        return clip.std.SetFrameProps(
-            **{
-                value.prop_key: value.value
-                for value in (
-                    prop_enum if isinstance(prop_enum, PropEnum) else prop_enum.from_video(clip, True, func)
-                    for prop_enum in prop_enums
-                )
-            },
-        )
+        norm_prop_enums = list[PropEnum]()
+        exceptions = list[Exception]()
+
+        for prop_enum in prop_enums:
+            if isinstance(prop_enum, PropEnum):
+                norm_prop_enums.append(prop_enum)
+            else:
+                try:
+                    prop_enum = prop_enum.from_video(clip, True, func)
+                except Exception as e:
+                    exceptions.append(e)
+
+        if exceptions:
+            raise ExceptionGroup("Some props were missing:", exceptions)
+
+        return clip.std.SetFrameProps(**{value.prop_key: value.value for value in (norm_prop_enums)})
 
 
 def _base_from_video[PropEnumT: PropEnum](
