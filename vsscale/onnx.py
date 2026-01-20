@@ -448,21 +448,19 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         return self.vsmlrt.inference(clip, self.model, overlaps, tilesize, self.backend, **kwargs)
 
     def _pick_precision[IntT: int](self, fp16: IntT, fp32: IntT) -> IntT:
-        from vsmlrt import Backend
-
         precision = (
             fp16
             if (isinstance(self.backend, _SupportsFP16) and self.backend.fp16)
             and isinstance(
                 self.backend,
                 (
-                    Backend.TRT,
-                    Backend.TRT_RTX,
-                    Backend.ORT_CPU,
-                    Backend.ORT_CUDA,
-                    Backend.ORT_DML,
-                    Backend.ORT_COREML,
-                    Backend.NCNN_VK,
+                    self.vsmlrt.Backend.TRT,
+                    self.vsmlrt.Backend.TRT_RTX,
+                    self.vsmlrt.Backend.ORT_CPU,
+                    self.vsmlrt.Backend.ORT_CUDA,
+                    self.vsmlrt.Backend.ORT_DML,
+                    self.vsmlrt.Backend.ORT_COREML,
+                    self.vsmlrt.Backend.NCNN_VK,
                 ),
             )
             else fp32
