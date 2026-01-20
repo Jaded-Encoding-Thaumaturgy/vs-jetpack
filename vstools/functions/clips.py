@@ -305,6 +305,34 @@ def finalize_output[**P](
     return _wrapper
 
 
+@overload
+def initialize_clip(
+    clip: vs.VideoNode,
+    bits: int | None = None,
+    matrix: MatrixLike | None = None,
+    transfer: TransferLike | None = None,
+    primaries: PrimariesLike | None = None,
+    chroma_location: ChromaLocationLike | None = None,
+    color_range: ColorRangeLike | None = None,
+    field_based: FieldBasedLike | None = None,
+    strict: Literal[False] = False,
+    dither_type: DitherType = DitherType.RANDOM,
+    *,
+    func: FuncExcept | None = None,
+) -> vs.VideoNode: ...
+
+
+@overload
+def initialize_clip(
+    clip: vs.VideoNode,
+    bits: int | None = None,
+    *,
+    strict: Literal[True],
+    dither_type: DitherType = DitherType.RANDOM,
+    func: FuncExcept | None = None,
+) -> vs.VideoNode: ...
+
+
 def initialize_clip(
     clip: vs.VideoNode,
     bits: int | None = None,
@@ -320,9 +348,20 @@ def initialize_clip(
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
     """
-    Initialize a clip with default props.
+    Initialize a clip with default properties or ensure their existence.
 
     It is HIGHLY recommended to always use this function at the beginning of your scripts!
+
+    This function operates in two modes defined by the `strict` parameter:
+
+    - `strict=False`: Sets missing properties. It attempts to read existing props.
+
+          * If missing, it uses the manually provided arguments.
+          * If those are None, it guesses based on resolution or video format.
+
+    - `strict=True`: Validates that the input clip has all relevant frame properties
+     (Matrix, Transfer, Primaries, ChromaLocation, ColorRange, FieldBased) already set.
+     If any are missing, it raises an exception. Manual property arguments are not accepted.
 
     Args:
         clip: Clip to initialize.
@@ -332,25 +371,19 @@ def initialize_clip(
                - If None, 16 if bit depth is lower than it, else leave untouched.
                - If positive integer, dither to that bitdepth.
 
-        matrix: Matrix property to set. If None, tries to get the Matrix from existing props. If no props are set or
-            Matrix=2, guess from the video resolution.
-        transfer: Transfer property to set. If None, tries to get the Transfer from existing props. If no props are set
-            or Transfer=2, guess from the video resolution.
-        primaries: Primaries property to set. If None, tries to get the Primaries from existing props. If no props are
-            set or Primaries=2, guess from the video resolution.
-        chroma_location: ChromaLocation prop to set. If None, tries to get the ChromaLocation from existing props. If no
-            props are set, guess from the video resolution.
-        color_range: ColorRange prop to set. If None, tries to get the ColorRange from existing props. If no props are
-            set, assume Limited Range.
-        field_based: FieldBased prop to set. If None, tries to get the FieldBased from existing props. If no props are
-            set, assume PROGRESSIVE.
-        strict: Whether to be strict about existing properties. If True, throws an exception if certain frame properties
-            are not found.
+        matrix: Matrix property to set. Ignored if `strict=True`.
+        transfer: Transfer property to set. Ignored if `strict=True`.
+        primaries: Primaries property to set. Ignored if `strict=True`.
+        chroma_location: ChromaLocation prop to set. Ignored if `strict=True`.
+        color_range: ColorRange prop to set. Ignored if `strict=True`.
+        field_based: FieldBased prop to set. Ignored if `strict=True`.
+        strict: Whether to strictly validate existing properties.
+            If True, arguments for specific properties (e.g. `matrix`) are not accepted.
         dither_type: Dithering used for the bitdepth conversion.
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Returns:
-        Clip with relevant frame properties set, and optionally dithered up to 16 bits by default.
+        Clip with relevant frame properties set/validated, and optionally dithered to 16-bit (or target `bits`).
     """
     func = func or initialize_clip
 
