@@ -127,6 +127,8 @@ def _normalize_git_version(raw: str) -> Version:
 def _check_vsmlrt_script_version(cls: type[BaseOnnxScaler]) -> None:
     try:
         import vsmlrt
+
+        cls.vsmlrt = vsmlrt  # pyright: ignore[reportAttributeAccessIssue]
     except ImportError:
         raise CustomImportError(cls, "vsmlrt") from None
 
@@ -219,6 +221,8 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         def __new__(cls, *args: Any, **kwargs: Any) -> Self:
             _check_vsmlrt_script_version(cls)
             return super().__new__(cls, *args, **kwargs)
+    else:
+        import vsmlrt
 
     def __init__(
         self,
@@ -261,14 +265,12 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         fp16 = self.kwargs.pop("fp16", True)
         default_args = {"fp16": fp16, "output_format": int(fp16), "use_cuda_graph": True, "use_cublas": True}
 
-        from vsmlrt import backendT
-
         if backend is None:
             self.backend = autoselect_backend(**default_args | self.kwargs)
         elif isinstance(backend, type):
             self.backend = backend(**_clean_keywords(default_args | self.kwargs, backend))
         elif isinstance(backend, str):
-            backends_map = {b.__name__.lower(): b for b in get_args(backendT)}
+            backends_map = {b.__name__.lower(): b for b in get_args(self.vsmlrt.backendT)}
 
             try:
                 backend_t = backends_map[backend.lower().strip()]
@@ -332,7 +334,6 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         Returns:
             The scaled clip.
         """
-        from vsmlrt import Backend
 
         width, height = self._wh_norm(clip, width, height)
 
@@ -359,7 +360,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         else:
             _log.debug("%s: Variable resolution clip detected...", self.scale)
 
-            if not isinstance(self.backend, (Backend.TRT, Backend.TRT_RTX)):
+            if not isinstance(self.backend, (self.vsmlrt.Backend.TRT, self.vsmlrt.Backend.TRT_RTX)):
                 raise CustomValueError(
                     "Variable resolution clips can only be processed with TRT Backend!", self.__class__, self.backend
                 )
@@ -393,8 +394,6 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         Reimplementation of vsmlrt.calc_tilesize helper function
         """
 
-        from vsmlrt import calc_tilesize
-
         kwargs = {
             "tiles": self.tiles,
             "tilesize": self.tilesize,
@@ -405,7 +404,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             "overlap_h": self.overlap_h,
         } | kwargs
 
-        return calc_tilesize(**kwargs)
+        return self.vsmlrt.calc_tilesize(**kwargs)
 
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         """
@@ -430,8 +429,6 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         Runs inference on the given video clip using the configured model and backend.
         """
 
-        from vsmlrt import inference
-
         tilesize, overlaps = self.calc_tilesize(clip)
 
         _log.debug("%s: Passing clip to inference: %r", self.inference, clip.format)
@@ -440,24 +437,22 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         _log.debug("%s: Passing overlaps: %s", self.inference, overlaps)
         _log.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
 
-        return inference(clip, self.model, overlaps, tilesize, self.backend, **kwargs)
+        return self.vsmlrt.inference(clip, self.model, overlaps, tilesize, self.backend, **kwargs)
 
     def _pick_precision[IntT: int](self, fp16: IntT, fp32: IntT) -> IntT:
-        from vsmlrt import Backend
-
         precision = (
             fp16
             if (isinstance(self.backend, _SupportsFP16) and self.backend.fp16)
             and isinstance(
                 self.backend,
                 (
-                    Backend.TRT,
-                    Backend.TRT_RTX,
-                    Backend.ORT_CPU,
-                    Backend.ORT_CUDA,
-                    Backend.ORT_DML,
-                    Backend.ORT_COREML,
-                    Backend.NCNN_VK,
+                    self.vsmlrt.Backend.TRT,
+                    self.vsmlrt.Backend.TRT_RTX,
+                    self.vsmlrt.Backend.ORT_CPU,
+                    self.vsmlrt.Backend.ORT_CUDA,
+                    self.vsmlrt.Backend.ORT_DML,
+                    self.vsmlrt.Backend.ORT_COREML,
+                    self.vsmlrt.Backend.NCNN_VK,
                 ),
             )
             else fp32
@@ -518,7 +513,7 @@ class GenericOnnxScaler(BaseOnnxScaler, partial_abstract=True):
 
 
 class BaseArtCNN(BaseOnnxScaler):
-    _model: ClassVar[int]
+    _model: ClassVar[str]
     _static_kernel_radius = 2
 
     def __init__(
@@ -550,10 +545,10 @@ class BaseArtCNN(BaseOnnxScaler):
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
         """
-        from vsmlrt import ArtCNNModel, models_path
+        model = self._model if hasattr(self, "_model") else self.__class__.__name__
 
         super().__init__(
-            (SPath(models_path) / "ArtCNN" / f"{ArtCNNModel(self._model).name}.onnx").to_str(),
+            (SPath(self.vsmlrt.models_path) / "ArtCNN" / f"ArtCNN_{model}.onnx").to_str(),
             backend,
             tiles,
             tilesize,
@@ -614,8 +609,6 @@ class BaseArtCNNChroma(BaseArtCNN):
         return super().postprocess_clip(clip, input_clip, **kwargs)
 
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        from vsmlrt import flexible_inference
-
         tilesize, overlaps = self.calc_tilesize(clip)
 
         _log.debug("%s: Passing clip to inference: %s", self.inference, clip.format)
@@ -624,7 +617,7 @@ class BaseArtCNNChroma(BaseArtCNN):
         _log.debug("%s: Passing overlaps: %s", self.inference, overlaps)
         _log.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
 
-        u, v = flexible_inference(clip, self.model, overlaps, tilesize, self.backend, **kwargs)
+        u, v = self.vsmlrt.flexible_inference(clip, self.model, overlaps, tilesize, self.backend, **kwargs)
 
         _log.debug("%s: Inferenced clip: %s", self.inference, u.format)
         _log.debug("%s: Inferenced clip: %s", self.inference, v.format)
@@ -648,11 +641,11 @@ class ArtCNN(BaseArtCNNLuma):
     ```py
     from vsscale import ArtCNN
 
-    doubled = ArtCNN().scale(clip, clip.width * 2, clip.height * 2)
+    doubled = ArtCNN().supersample(clip, 2)
     ```
     """
 
-    _model = 7
+    _model = "R8F64"
 
     class C4F16(BaseArtCNNLuma):
         """
@@ -665,11 +658,9 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F16().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F16().supersample(clip, 2)
         ```
         """
-
-        _model = 10
 
     class C4F16_DN(BaseArtCNNLuma):  # noqa: N801
         """
@@ -679,11 +670,9 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F16_DN().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F16_DN().supersample(clip, 2)
         ```
         """
-
-        _model = 13
 
     class C4F16_DS(BaseArtCNNLuma):  # noqa: N801
         """
@@ -693,11 +682,9 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F16_DS().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F16_DS().supersample(clip, 2)
         ```
         """
-
-        _model = 11
 
     class C4F32(BaseArtCNNLuma):
         """
@@ -709,11 +696,9 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F32().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F32().supersample(clip, 2)
         ```
         """
-
-        _model = 0
 
     @deprecated(
         "This model is no longer maintained and has been deprecated. Please use R8F64_Chroma instead.",
@@ -733,8 +718,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 4
-
     class C4F32_DN(BaseArtCNNLuma):  # noqa: N801
         """
         The same as C4F32 but intended to also denoise. Works well on noisy sources when you don't want any sharpening.
@@ -743,11 +726,9 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F32_DN().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F32_DN().supersample(clip, 2)
         ```
         """
-
-        _model = 14
 
     class C4F32_DS(BaseArtCNNLuma):  # noqa: N801
         """
@@ -757,11 +738,9 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C4F32_DS().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C4F32_DS().supersample(clip, 2)
         ```
         """
-
-        _model = 1
 
     @deprecated(
         "This model is no longer maintained and has been deprecated. Please use R8F64 instead.",
@@ -779,11 +758,9 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C16F64().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C16F64().supersample(clip, 2)
         ```
         """
-
-        _model = 2
 
     @deprecated(
         "This model is no longer maintained and has been deprecated. Please use R8F64_Chroma instead.",
@@ -803,8 +780,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 5
-
     @deprecated(
         "This model is no longer maintained and has been deprecated. Please use R8F64 instead.",
         category=DeprecationWarning,
@@ -817,11 +792,9 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.C16F64_DS().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.C16F64_DS().supersample(clip, 2)
         ```
         """
-
-        _model = 3
 
     class R8F64(BaseArtCNNLuma):
         """
@@ -831,11 +804,21 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.R8F64().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.R8F64().supersample(clip, 2)
         ```
         """
 
-        _model = 7
+    class R8F64_DS(BaseArtCNNLuma):  # noqa: N801
+        """
+        The same as R8F64 but intended to also denoise and sharpen.
+
+        Example usage:
+        ```py
+        from vsscale import ArtCNN
+
+        doubled = ArtCNN.R8F64_DS().supersample(clip, 2)
+        ```
+        """
 
     class R8F64_Chroma(BaseArtCNNChroma):  # noqa: N801
         """
@@ -851,21 +834,19 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 9
-
-    class R8F64_DS(BaseArtCNNLuma):  # noqa: N801
+    class R8F64_Chroma_DN(BaseArtCNNChroma):  # noqa: N801
         """
-        The same as R8F64 but intended to also denoise and sharpen.
+        Noise-focused variant of R8F64_Chroma.
+
+        Trained for noisy or heavily compressed sources, aggressively removing chroma noise and artifacts.
 
         Example usage:
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.R8F64_DS().scale(clip, clip.width * 2, clip.height * 2)
+        chroma_upscaled = ArtCNN.R8F64_Chroma_DN().scale(clip)
         ```
         """
-
-        _model = 8
 
     class R8F64_JPEG420(BaseArtCNN, BaseOnnxScalerRGB):  # noqa: N801
         """
@@ -879,8 +860,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 15
-
     class R8F64_JPEG444(BaseArtCNN, BaseOnnxScalerRGB):  # noqa: N801
         """
         1x RGB model meant to clean JPEG artifacts.
@@ -893,8 +872,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-        _model = 16
-
     class R16F96(BaseArtCNNLuma):
         """
         The biggest model. Can compete with or outperform Waifu2x Cunet.
@@ -905,17 +882,21 @@ class ArtCNN(BaseArtCNNLuma):
         ```py
         from vsscale import ArtCNN
 
-        doubled = ArtCNN.R16F96().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = ArtCNN.R16F96().supersample(clip, 2)
         ```
         """
 
-        _model = 6
-
+    @deprecated(
+        "This model is no longer maintained and has been deprecated. Please use R8F64_Chroma instead.",
+        category=DeprecationWarning,
+    )
     class R16F96_Chroma(BaseArtCNNChroma):  # noqa: N801
         """
         The biggest and fancy chroma model. Shows almost biblical results on the right sources.
 
         These don't double the input clip and rather just try to enhance the chroma using luma information.
+
+        ONNX file available at https://github.com/Artoriuz/ArtCNN/tree/d8f0297f11b1bc71f5f33e19f5ed6dfff904e758/ONNX
 
         Example usage:
         ```py
@@ -924,8 +905,6 @@ class ArtCNN(BaseArtCNNLuma):
         chroma_upscaled = ArtCNN.R16F96_Chroma().scale(clip)
         ```
         """
-
-        _model = 12
 
 
 class BaseWaifu2x(BaseOnnxScaler):
@@ -988,17 +967,14 @@ class BaseWaifu2x(BaseOnnxScaler):
         )
 
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        from vsmlrt import Waifu2x as mlrt_Waifu2x
-        from vsmlrt import Waifu2xModel
-
-        return mlrt_Waifu2x(
+        return self.vsmlrt.Waifu2x(
             clip,
             self.noise,
             self.scale_w2x,
             self.tiles,
             self.tilesize,
             self.overlap,
-            Waifu2xModel(self._model),
+            self.vsmlrt.Waifu2xModel(self._model),
             self.backend,
             **kwargs,
         )
@@ -1080,7 +1056,7 @@ class Waifu2x(_Waifu2xCunet):
     ```py
     from vsscale import Waifu2x
 
-    doubled = Waifu2x().scale(clip, clip.width * 2, clip.height * 2)
+    doubled = Waifu2x().supersample(clip, 2)
     ```
     """
 
@@ -1092,7 +1068,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.AnimeStyleArt().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.AnimeStyleArt().supersample(clip, 2)
         ```
         """
 
@@ -1106,7 +1082,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.AnimeStyleArtRGB().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.AnimeStyleArtRGB().supersample(clip, 2)
         ```
         """
 
@@ -1120,7 +1096,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.Photo().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.Photo().supersample(clip, 2)
         ```
         """
 
@@ -1134,7 +1110,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.UpConv7AnimeStyleArt().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.UpConv7AnimeStyleArt().supersample(clip, 2)
         ```
         """
 
@@ -1148,7 +1124,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.UpConv7Photo().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.UpConv7Photo().supersample(clip, 2)
         ```
         """
 
@@ -1162,7 +1138,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.UpResNet10().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.UpResNet10().supersample(clip, 2)
         ```
         """
 
@@ -1176,7 +1152,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.Cunet().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.Cunet().supersample(clip, 2)
         ```
         """
 
@@ -1188,7 +1164,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetArt().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetArt().supersample(clip, 2)
         ```
         """
 
@@ -1202,7 +1178,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetPhoto().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetPhoto().supersample(clip, 2)
         ```
         """
 
@@ -1216,7 +1192,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetPhotoV2().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetPhotoV2().supersample(clip, 2)
         ```
         """
 
@@ -1230,7 +1206,7 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.SwinUnetArtScan().scale(clip, clip.width * 2, clip.height * 2)
+        doubled = Waifu2x.SwinUnetArtScan().supersample(clip, 2)
         ```
         """
 
@@ -1275,8 +1251,6 @@ class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
         """
-        from vsmlrt import Backend
-
         self.strength = strength
 
         super().__init__(
@@ -1293,7 +1267,7 @@ class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
             **kwargs,
         )
 
-        if isinstance(self.backend, Backend.TRT) and not self.backend.force_fp16:
+        if isinstance(self.backend, self.vsmlrt.Backend.TRT) and not self.backend.force_fp16:
             self.backend.custom_args.extend(["--precisionConstraints=obey", "--layerPrecisions=Conv_123:fp32"])
 
     def scale(
@@ -1317,8 +1291,6 @@ class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
         return BaseOnnxScalerRGB.preprocess_clip(self, clip, **kwargs)
 
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        from vsmlrt import DPIRModel, inference, models_path
-
         # Normalizing the strength clip
         strength_fmt = clip.format.replace(color_family=vs.GRAY)
 
@@ -1331,7 +1303,9 @@ class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
 
         # Get model name
         self.model = (
-            SPath(models_path) / "dpir" / f"{DPIRModel(self._model[clip.format.color_family != vs.GRAY]).name}.onnx"
+            SPath(self.vsmlrt.models_path)
+            / "dpir"
+            / f"{self.vsmlrt.DPIRModel(self._model[clip.format.color_family != vs.GRAY]).name}.onnx"
         ).to_str()
 
         # Basic inference args
@@ -1346,12 +1320,19 @@ class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
         padding = padder.mod_padding(clip, self.multiple, 0)
 
         if not any(padding) or kwargs.pop("no_pad", False):
-            return inference([clip, self.strength], self.model, overlaps, tilesize, self.backend, **kwargs)
+            return self.vsmlrt.inference([clip, self.strength], self.model, overlaps, tilesize, self.backend, **kwargs)
 
         clip = padder.MIRROR(clip, *padding)
         strength = padder.MIRROR(self.strength, *padding)
 
-        return inference([clip, strength], self.model, overlaps, tilesize, self.backend, **kwargs).std.Crop(*padding)
+        return self.vsmlrt.inference(
+            [clip, strength],
+            self.model,
+            overlaps,
+            tilesize,
+            self.backend,
+            **kwargs,
+        ).std.Crop(*padding)
 
 
 class DPIR(BaseDPIR):
