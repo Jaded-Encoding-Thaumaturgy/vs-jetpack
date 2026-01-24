@@ -22,7 +22,6 @@ from vsjetpack import deprecated
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vsmasktools import Morpho
 from vstools import (
-    ColorRange,
     Matrix,
     OutdatedPluginError,
     ProcessVariableResClip,
