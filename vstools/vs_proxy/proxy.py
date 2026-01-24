@@ -9,7 +9,7 @@ from sys import modules
 from sys import path as sys_path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any
-from weakref import ReferenceType
+from weakref import ReferenceType, WeakKeyDictionary, WeakSet
 from weakref import ref as weakref_ref
 
 from jetpytools import CustomRuntimeError, CustomValueError
@@ -785,21 +785,20 @@ def register_on_creation(callback: Callable[..., None], strict: bool = False) ->
     """
     Register a callback on every core creation.
     """
-
-    core_on_creation_callbacks.update({id(callback): weakref_ref(callback)})
+    core_on_creation_callbacks.add(callback)
 
     def has_env() -> bool:
         try:
-            return bool(get_current_environment())
+            return not not get_current_environment()  # noqa: SIM208
         except RuntimeError:
             return False
 
-    if not strict and has_policy() and has_env() and core.active:
+    # If a core is already active, the catch-up logic is triggered immediately.
+    # By accessing 'core.core_id', we trigger '_get_core_with_cb', which will execute any registered callbacks
+    # that haven't been run for the current core instance yet.
+    if has_policy() and has_env() and core.active:
         with get_current_environment().use():
-            try:
-                callback(core.core_id)
-            except TypeError:
-                callback()
+            core.core_id
 
 
 def unregister_on_creation(callback: Callable[..., None]) -> None:
@@ -807,7 +806,7 @@ def unregister_on_creation(callback: Callable[..., None]) -> None:
     Unregister this callback from every core creation.
     """
 
-    core_on_creation_callbacks.pop(id(callback), None)
+    core_on_creation_callbacks.discard(callback)
 
 
 def clear_cache() -> None:
@@ -940,15 +939,16 @@ def _get_core(self: VSCoreProxy) -> Core | None:
     return None
 
 
-if TYPE_CHECKING:
-    core_on_creation_callbacks = dict[int, ReferenceType[Callable[..., None]]]()
-else:
-    core_on_creation_callbacks = {}
-
-core_on_creation_callbacks_cores = set[int]()
+core_on_creation_callbacks = WeakSet[Callable[..., None]]()
+core_on_creation_callbacks_cores = WeakKeyDictionary[Core, WeakSet[Callable[..., None]]]()
 
 
 def _get_core_with_cb(self: VSCoreProxy | None = None) -> Core:
+    """
+    Retrieve the VapourSynth core and ensure all "on_creation" callbacks have been run.
+
+    This makes sure callbacks are executed when a new core is created.
+    """
     vs_core = _get_core(self) if self else None
 
     if not vs_core:
@@ -956,20 +956,26 @@ def _get_core_with_cb(self: VSCoreProxy | None = None) -> Core:
 
         vs_core = vapoursynth.core.core
 
-    if (core_id := id(vs_core)) not in core_on_creation_callbacks_cores:
-        for cb_id in list(core_on_creation_callbacks.keys()):
-            callback_ref = core_on_creation_callbacks.get(cb_id)
+    # Map each core to the callbacks already run for it.
+    # Weak references allow automatic cleanup when objects are destroyed.
+    if vs_core not in core_on_creation_callbacks_cores:
+        core_on_creation_callbacks_cores[vs_core] = WeakSet()
 
-            if callback_ref and (callback := callback_ref()):
-                try:
-                    callback(core_id)
-                except TypeError:
-                    callback()
-            else:
-                # remove dead references
-                core_on_creation_callbacks.pop(cb_id, None)
+    run_cbs = core_on_creation_callbacks_cores[vs_core]
+    core_id = id(vs_core)
 
-        core_on_creation_callbacks_cores.add(id(vs_core))
+    # Run callbacks that have not yet been called for this core.
+    for callback in list(core_on_creation_callbacks):
+        if callback in run_cbs:
+            continue
+
+        try:
+            callback(core_id)
+        except TypeError:
+            callback()
+
+        # Remember that this callback was run for this core.
+        run_cbs.add(callback)
 
     return vs_core
 
@@ -1196,6 +1202,6 @@ def _check_environment() -> None:
             raise ValueError("The environment has already been destroyed.")
 
 
-_objproxies = {}  # type: ignore[var-annotated]
+_objproxies = WeakKeyDictionary[VSCoreProxy, dict[str, CoreProxy]]()
 
 core = VSCoreProxy()
