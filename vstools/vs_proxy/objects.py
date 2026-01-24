@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import weakref
 from abc import ABC, ABCMeta
 from collections.abc import Callable, Mapping, MutableMapping, MutableSequence, MutableSet
 from enum import Flag
@@ -112,8 +113,14 @@ def _register_vs_del(obj: VSObject | VSObjectMeta) -> None:
         if not hasattr(obj, "__dict__"):
             prefix = _get_mangle_name(obj.__class__.__name__)
 
+    obj_ref = weakref.ref(obj)
+
     def del_register(core_id: int) -> None:
         def vsdel_partial_register() -> None:
+            if (obj := obj_ref()) is None:
+                log.log(5, "Dead object, skipping cleanup.")
+                return
+
             getattr(obj, del_method)(core_id)
             log.log(
                 5,
