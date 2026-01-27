@@ -11,6 +11,7 @@ from jetpytools import CustomIndexError, FuncExcept, mod_x, normalize_seq
 
 from vsdenoise import Prefilter
 from vsexprtools import norm_expr
+from vsjetpack import deprecated
 from vskernels import BSpline, Lanczos, Mitchell, Scaler
 from vsmasktools import Morpho
 from vsrgtools import gauss_blur, repair
@@ -192,6 +193,7 @@ def dehalo_alpha(
     return out
 
 
+@deprecated("AlphaBlur is deprecated.", category=PendingDeprecationWarning)
 class AlphaBlur:
     """
     A Gaussian blur approximation inspired by Dehalo_Alpha.
