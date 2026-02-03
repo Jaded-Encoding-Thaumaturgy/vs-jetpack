@@ -353,10 +353,10 @@ class MatrixEdgeDetect(EdgeDetect):
         return self.matrices
 
     def _get_divisors(self) -> Sequence[float]:
-        return self.divisors if self.divisors else [0.0] * len(self._get_matrices())
+        return self.divisors or [0.0] * len(self._get_matrices())
 
     def _get_mode_types(self) -> Sequence[str]:
-        return self.mode_types if self.mode_types else ["s"] * len(self._get_matrices())
+        return self.mode_types or ["s"] * len(self._get_matrices())
 
 
 class EdgeMasksEdgeDetect(MatrixEdgeDetect):

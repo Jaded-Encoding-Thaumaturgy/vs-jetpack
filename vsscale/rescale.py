@@ -487,7 +487,7 @@ class Rescale(RescaleBase):
         scaler = Scaler.ensure_obj(scaler)
         scale_kwargs = scaler.kwargs if clip else self.descale_args.kwargs(self.doubled) | scaler.kwargs
 
-        clip = clip if clip else self.doubled
+        clip = clip or self.doubled
 
         line_mask = Kirsch.edgemask(clip, **kwargs).std.Maximum().std.Minimum()
         line_mask = scaler.scale(

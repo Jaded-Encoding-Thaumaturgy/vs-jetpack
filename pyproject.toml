@@ -62,7 +62,7 @@ dev = [
     "mypy~=1.19.0",
     "pytest>=9.0.0, <10.0.0",
     "pytest-cov>=6.2.1, <8.0.0",
-    "ruff~=0.14.0",
+    "ruff~=0.15.0",
     "scipy-stubs>=1.16.0.0",
     "types-psutil>=7.0.0.20250801",
     # Needed for the folder "scripts"

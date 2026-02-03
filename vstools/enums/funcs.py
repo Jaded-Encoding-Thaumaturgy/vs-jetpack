@@ -73,7 +73,7 @@ class ConvMode(CustomStrEnum):
 
     @property
     def is_two_dim(self) -> bool:
-        return self in ["s"]
+        return self == "s"
 
     @property
     def is_spatial(self) -> bool:
@@ -81,7 +81,7 @@ class ConvMode(CustomStrEnum):
 
     @property
     def is_temporal(self) -> bool:
-        return self in ["t"]
+        return self == "t"
 
 
 type OnePassConvMode = Literal[ConvMode.SQUARE, ConvMode.HORIZONTAL, ConvMode.VERTICAL, ConvMode.TEMPORAL]
