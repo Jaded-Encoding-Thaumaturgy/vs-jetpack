@@ -384,6 +384,7 @@ def depth(
     return DitherType.from_param(dither_type, depth).apply(clip, new_format, range_in, range_out, force_fmtc)
 
 
+@deprecated("This function is deprecated and will be removed in a future version.", category=DeprecationWarning)
 def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) -> tuple[vs.VideoNode, int]:
     """
     Expected output bitdepth for a clip.
