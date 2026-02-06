@@ -7,6 +7,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterator, Mapping, Sequence
 from functools import cache
+from logging import getLogger
 from typing import TYPE_CHECKING, Any, Literal, Self, overload
 
 from jetpytools import (
@@ -27,6 +28,9 @@ from vsjetpack import require_jet_dependency
 from vstools import Planes, check_progressive, core, flatten, vs
 
 __all__ = ["DFTTest", "SLocationLike"]
+
+
+logger = getLogger(__name__)
 
 
 class _BackendBase(CustomEnum):
@@ -54,7 +58,9 @@ class _BackendBase(CustomEnum):
 
         for member in list(self.__class__.__members__.values())[1:]:
             if hasattr(core, member.value):
-                return self.__class__(member.value)
+                backend = self.__class__(member.value)
+                logger.debug("%s: Auto selecting 'DFTTest.Backend.%s'", _BackendBase.resolve, backend.name)
+                return backend
 
         raise CustomRuntimeError(
             "No compatible plugin found. Please install one from: "

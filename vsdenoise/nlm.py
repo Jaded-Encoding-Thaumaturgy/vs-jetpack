@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Callable, Sequence
+from logging import getLogger
 from typing import Any
 
 from jetpytools import CustomIntEnum, CustomRuntimeError, CustomStrEnum, normalize_seq, to_arr
@@ -13,6 +14,8 @@ from jetpytools import CustomIntEnum, CustomRuntimeError, CustomStrEnum, normali
 from vstools import Planes, core, join, normalize_planes, vs
 
 __all__ = ["nl_means"]
+
+logger = getLogger(__name__)
 
 
 class NLMeans[**P, R]:
@@ -93,12 +96,15 @@ class NLMeans[**P, R]:
 
             # Fallback selection based on available plugins
             if hasattr(core, "nlm_cuda"):
+                logger.debug("%s: Auto selecting 'NLMeans.Backend.CUDA'", NLMeans.Backend.NLMeans)
                 return NLMeans.Backend.CUDA.NLMeans(clip, *args, **kwargs)
 
             if hasattr(core, "knlm"):
+                logger.debug("%s: Auto selecting KNLMeansCL auto 'device_type'", NLMeans.Backend.NLMeans)
                 return clip.knlm.KNLMeansCL(*args, **kwargs | {"device_type": "auto"})
 
             if hasattr(core, "nlm_ispc"):
+                logger.debug("%s: Auto selecting 'NLMeans.Backend.ISPC", NLMeans.Backend.NLMeans)
                 return NLMeans.Backend.ISPC.NLMeans(clip, *args, **kwargs)
 
             raise CustomRuntimeError(

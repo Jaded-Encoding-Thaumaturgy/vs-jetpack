@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from functools import cache
+from logging import getLogger
 from types import MappingProxyType
 from typing import Any
 
@@ -33,6 +34,8 @@ from vstools import (
 )
 
 __all__ = ["bm3d", "wnnm"]
+
+logger = getLogger(__name__)
 
 
 def wnnm(
@@ -208,11 +211,14 @@ class BM3D[**P, R]:
                     return False
 
             if is_preview() and hasattr(core, "bm3dcuda"):
+                logger.debug("%s: Auto selecting 'BM3D.Backend.CUDA'", BM3D.Backend.resolve)
                 return BM3D.Backend.CUDA
 
             for member in list(BM3D.Backend.__members__.values())[1:]:
                 if hasattr(core, member.value):
-                    return BM3D.Backend(member.value)
+                    backend = BM3D.Backend(member.value)
+                    logger.debug("%s: Auto selecting 'BM3D.Backend.%s'", BM3D.Backend.resolve, backend.name)
+                    return backend
 
             raise CustomRuntimeError(
                 "No compatible plugin found. Please install one from: "
