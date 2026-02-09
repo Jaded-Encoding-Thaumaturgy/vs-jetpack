@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 from vsexprtools import norm_expr
 from vsrgtools import gauss_blur
-from vstools import Planes, core, depth, join, normalize_param_planes, split, vs
+from vstools import Planes, core, join, normalize_param_planes, split, vs
 
 __all__ = ["f3k_deband", "mdb_bilateral", "pfdeband", "placebo_deband"]
 
