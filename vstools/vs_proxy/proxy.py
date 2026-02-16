@@ -868,9 +868,9 @@ class PluginProxy(PluginProxyBase):
 
         vs_core = proxy_utils.get_vs_core(core)
 
-        plugin = getattr(vs_core, namespace)
+        plugin: Plugin = getattr(vs_core, namespace)
 
-        if name in dir(plugin):
+        if name in (f.name for f in plugin.functions()):
             return FunctionProxy(self, name)
 
         return getattr(plugin, name)
@@ -887,7 +887,7 @@ class CoreProxy(CoreProxyBase):
 
         core = proxy_utils.get_vs_core(self)
 
-        if name in dir(core):
+        if name in (p.namespace for p in core.plugins()):
             return PluginProxy(self, name)
 
         return getattr(core, name)
