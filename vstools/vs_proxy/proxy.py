@@ -1059,9 +1059,7 @@ class VSCoreProxy(CoreProxyBase):
     @function_guard
     @plugin_guard
     def __getattr__(self, name: str) -> Plugin:
-        core_proxy = CoreProxy(_get_core_with_cb(self), self, False)
-        plugin_proxy = PluginProxy(core_proxy, name)
-        return plugin_proxy
+        return CoreProxy(_get_core_with_cb(self), self, False).__getattr__(name)
 
     def __setattr__(self, name: str, value: Any) -> None:
         return setattr(_get_core_with_cb(self), name, value)
