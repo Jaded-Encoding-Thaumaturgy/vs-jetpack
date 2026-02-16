@@ -390,6 +390,7 @@ from .enums import (
     YUV444PS,
     PresetVideoFormat,
 )
+from .exception import function_guard, plugin_guard
 
 __all__ = [
     "AUDIO",
@@ -844,6 +845,8 @@ class FunctionProxy(FunctionProxyBase):
     def __init__(self, plugin: PluginProxy, func_name: str) -> None:
         self.__dict__["func_ref"] = (plugin, func_name)
 
+    @function_guard
+    @plugin_guard
     def __getattr__(self, name: str) -> Function:
         if name == "__isabstractmethod__":
             return False  # type: ignore[return-value]
@@ -852,6 +855,7 @@ class FunctionProxy(FunctionProxyBase):
 
         return getattr(function, name)
 
+    @function_guard
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return proxy_utils.get_vs_function(self)(*args, **kwargs)
 
@@ -860,6 +864,8 @@ class PluginProxy(PluginProxyBase):
     def __init__(self, core: CoreProxy, namespace: str) -> None:
         self.__dict__["plugin_ref"] = (core, namespace)
 
+    @function_guard
+    @plugin_guard
     def __getattr__(self, name: str) -> Function:
         core, namespace = proxy_utils.get_core(self)
 
@@ -881,6 +887,7 @@ class CoreProxy(CoreProxyBase):
         self.lazy = lazy
         self.__dict__["vs_core_ref"] = (core and weakref_ref(core), vs_proxy)
 
+    @plugin_guard
     def __getattr__(self, name: str) -> Plugin:
         if self.lazy and name not in Core.__dict__:
             return PluginProxy(self, name)
@@ -1049,8 +1056,12 @@ class VSCoreProxy(CoreProxyBase):
         object.__setattr__(self, "_own_core", core is not None)
         object.__setattr__(self, "_core", core and weakref_ref(core))
 
+    @function_guard
+    @plugin_guard
     def __getattr__(self, name: str) -> Plugin:
-        return getattr(_get_core_with_cb(self), name)
+        core_proxy = CoreProxy(_get_core_with_cb(self), self, False)
+        plugin_proxy = PluginProxy(core_proxy, name)
+        return plugin_proxy
 
     def __setattr__(self, name: str, value: Any) -> None:
         return setattr(_get_core_with_cb(self), name, value)
