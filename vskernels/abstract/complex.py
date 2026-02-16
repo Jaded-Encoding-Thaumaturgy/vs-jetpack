@@ -406,23 +406,23 @@ class KeepArScaler(Scaler):
 
         if keep_ar:
             src_sar = Sar.from_clip(clip) if sar is True else sar
+            if sar_scale is not False:
+                src_sar *= sar_scale
 
-            src_dar = Dar.from_res(clip.width, clip.height, src_sar)
-            out_dar = Dar.from_res(width, height, sar_scale)
-
-            src_dar, out_dar = float(src_dar), float(out_dar)
+            src_dar = Dar.from_res(clip.width, clip.height)
+            out_dar = Dar.from_res(width, height, src_sar)
 
             if src_dar != out_dar:
-                if src_dar < out_dar:
+                if src_dar > out_dar:
                     src_shift, src_window = "src_left", "src_width"
-                    fix_crop = clip.width - (clip.height * src_dar)
+                    fix_crop = clip.width - (clip.height * out_dar)
                 else:
                     src_shift, src_window = "src_top", "src_height"
-                    fix_crop = clip.height - (clip.width / src_dar)
+                    fix_crop = clip.height - (clip.width / out_dar)
 
-                fix_shift = fix_crop / 2
+                fix_crop = float(fix_crop)
 
-                kwargs[src_shift] += fix_shift
+                kwargs[src_shift] += fix_crop / 2
                 kwargs[src_window] -= fix_crop
 
         out_shift = (kwargs.pop("src_top"), kwargs.pop("src_left"))
