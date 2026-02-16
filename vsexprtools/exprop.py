@@ -79,29 +79,24 @@ class ExprToken(CustomStrEnum):
         Returns:
             The value corresponding to the symbolic token.
         """
-        if self is ExprToken.PlaneMin:
-            return get_lowest_value(clip, chroma, range_in)
-
-        if self is ExprToken.PlaneMax:
-            return get_peak_value(clip, chroma, range_in)
-
-        if self is ExprToken.MaskMax:
-            return get_peak_value(clip, range_in=ColorRange.FULL)
-
-        if self is ExprToken.Neutral:
-            return get_neutral_value(clip)
-
-        if self is ExprToken.RangeMin:
-            return get_lowest_value(clip, chroma, ColorRange.FULL)
-
-        if self is ExprToken.RangeMax:
-            return get_peak_value(clip, chroma, ColorRange.FULL)
-
-        if self is ExprToken.RangeSize:
-            val = get_peak_value(clip, range_in=ColorRange.FULL)
-            return val if clip.format.sample_type is vs.FLOAT else val + 1
-
-        raise NotImplementedError
+        match self:
+            case ExprToken.PlaneMin:
+                return get_lowest_value(clip, chroma, range_in)
+            case ExprToken.PlaneMax:
+                return get_peak_value(clip, chroma, range_in)
+            case ExprToken.MaskMax:
+                return get_peak_value(clip, range_in=ColorRange.FULL)
+            case ExprToken.Neutral:
+                return get_neutral_value(clip)
+            case ExprToken.RangeMin:
+                return get_lowest_value(clip, chroma, ColorRange.FULL)
+            case ExprToken.RangeMax:
+                return get_peak_value(clip, chroma, ColorRange.FULL)
+            case ExprToken.RangeSize:
+                val = get_peak_value(clip, range_in=ColorRange.FULL)
+                return val if clip.format.sample_type is vs.FLOAT else val + 1
+            case _:
+                raise NotImplementedError
 
     def __getitem__(self, i: SupportsIndex | slice[SupportsIndex | None, SupportsIndex, SupportsIndex | None]) -> str:
         """
