@@ -1050,10 +1050,10 @@ class VSCoreProxy(CoreProxyBase):
         object.__setattr__(self, "_core", core and weakref_ref(core))
 
     def __getattr__(self, name: str) -> Plugin:
-        return getattr(_get_core_with_cb(self), name)
+        return getattr(self.core, name)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        return setattr(_get_core_with_cb(self), name, value)
+        return setattr(self.core, name, value)
 
     @property
     def env(self) -> EnvironmentProxy:
