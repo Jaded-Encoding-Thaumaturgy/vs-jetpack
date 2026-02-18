@@ -87,12 +87,10 @@ class VideoPackets(list[int]):
         if out_file is None:
             out_file = src_file.with_stem(src_file.stem + "_packets").with_suffix(".txt")
 
-        cache_file = _get_packet_storage().get_file(out_file, ext=".txt")
-
-        if cache_file.exists() and cache_file.stat().st_size:
-            return cls.from_file(out_file, func=func)
-
         out_file = _get_packet_storage().get_file(out_file, ext=".txt")
+
+        if out_file.exists() and out_file.stat().st_size:
+            return cls.from_file(out_file.absolute(), func=func)
 
         if not which("ffprobe"):
             raise DependencyNotFoundError(func, "ffprobe", "Could not find {package}! Make sure it's in your PATH!")
