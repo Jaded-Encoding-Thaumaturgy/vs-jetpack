@@ -87,8 +87,10 @@ class VideoPackets(list[int]):
         if out_file is None:
             out_file = src_file.with_stem(src_file.stem + "_packets").with_suffix(".txt")
 
-        if SPath(out_file).exists() and video_packets := cls.from_file(out_file, func=func):
-            return video_packets
+        cache_file = _get_packet_storage().get_file(out_file, ext=".txt")
+
+        if cache_file.exists() and cache_file.stat().st_size:
+            return cls.from_file(out_file, func=func)
 
         out_file = _get_packet_storage().get_file(out_file, ext=".txt")
 
