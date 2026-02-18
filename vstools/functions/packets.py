@@ -87,7 +87,7 @@ class VideoPackets(list[int]):
         if out_file is None:
             out_file = src_file.with_stem(src_file.stem + "_packets").with_suffix(".txt")
 
-        if video_packets := cls.from_file(out_file, func=func):
+        if SPath(out_file).exists() and video_packets := cls.from_file(out_file, func=func):
             return video_packets
 
         out_file = _get_packet_storage().get_file(out_file, ext=".txt")
@@ -162,8 +162,9 @@ class VideoPackets(list[int]):
         if not file.exists():
             raise FileWasNotFoundError("File not found!", func)
 
-        if file.stat().st_size:
+        if not file.stat().st_size:
             file.unlink()
+            raise CustomValueError("Packet file is empty!", func)
 
         with file.open("r+") as f:
             return cls(map(int, f.readlines()))
@@ -172,7 +173,7 @@ class VideoPackets(list[int]):
     def from_clip(
         cls,
         clip: vs.VideoNode,
-        out_file: SPathLike,
+        out_file: SPathLike | None = None,
         src_file: SPathLike | None = None,
         offset: int = 0,
         *,
@@ -190,8 +191,6 @@ class VideoPackets(list[int]):
         from ..utils import get_clip_filepath
 
         func = func or cls.from_video
-
-        out_file = SPath(str(out_file)).stem + f"_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}"
 
         return cls.from_video(get_clip_filepath(clip, src_file, func=func), out_file, offset, func=func)
 
