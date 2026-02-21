@@ -860,7 +860,7 @@ class QTempGaussMC(VSObject):
         return BlurMatrix.custom(_get_weights(tr), ConvMode.TEMPORAL)([clip, *degrained], func=self._binomial_degrain)
 
     def _apply_prefilter(self) -> None:
-        self.draft = Catrom().bob(self.clip, tff=self.tff) if self.tff.is_inter else self.clip
+        self.draft = Catrom().bob(self.clip, tff=self.tff) if self.tff.is_inter and not self.is_repair else self.clip
 
         if self.is_repair:
             search = BlurMatrix.BINOMIAL()(self.draft, mode=ConvMode.VERTICAL, func=self._apply_prefilter)
@@ -946,7 +946,7 @@ class QTempGaussMC(VSObject):
         else:
             denoised = self.denoise_func(self.draft, tr=self.denoise_tr)
 
-        if self.tff.is_inter:
+        if self.tff.is_inter and not self.is_repair:
             denoised = reinterlace(denoised, self.tff, self._apply_denoise)
 
         if self.denoise_mode == self.NoiseProcessMode.DENOISE:
@@ -957,7 +957,7 @@ class QTempGaussMC(VSObject):
         if no_restore:
             return
 
-        if self.tff.is_inter:
+        if self.tff.is_inter and not self.is_repair:
             match self.denoise_deint:
                 case self.NoiseDeintMode.WEAVE:
                     new_noise = self.noise.std.SeparateFields(self.tff.is_tff).std.DoubleWeave(self.tff.is_tff)
@@ -1279,7 +1279,7 @@ class QTempGaussMC(VSObject):
         self.tff = FieldBased.from_param_or_video(tff, self.clip, True, func)
         self.is_repair = func == self.repair
 
-        if not self.tff.is_inter and func is not self.deshimmer:
+        if not self.tff.is_inter and func != self.deshimmer:
             raise UnsupportedFieldBasedError("This method is incompatible with progressive video!", func)
 
         self._apply_prefilter()
