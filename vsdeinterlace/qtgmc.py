@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from math import factorial
 from typing import Any, Literal, Protocol, Self, TypedDict
-from warnings import deprecated, warn
+from warnings import warn
 
 from jetpytools import CustomIntEnum, CustomValueError, FuncExcept, fallback, normalize_seq
 
@@ -21,6 +21,7 @@ from vsdenoise import (
     refine_blksize,
 )
 from vsexprtools import norm_expr
+from vsjetpack import deprecated
 from vskernels import Bobber, BobberLike, Catrom
 from vsmasktools import Coordinates, Morpho
 from vsrgtools import BlurMatrix, gauss_blur, median_blur, remove_grain, repair, unsharpen
@@ -176,6 +177,28 @@ class QTempGaussMC(VSObject):
 
     motion_blur_output: vs.VideoNode
     """Output of the motion blur stage."""
+
+    # TODO: Remove (deprecated usage compat)
+    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
+    class InputType(CustomIntEnum):
+        """
+        Processing routine to use for the input.
+        """
+
+        INTERLACE = 0
+        """
+        Deinterlace interlaced input.
+        """
+
+        PROGRESSIVE = 1
+        """
+        Deshimmer general progressive material that contains less severe problems.
+        """
+
+        REPAIR = 2
+        """
+        Repair badly deinterlaced material with considerable horizontal artifacts.
+        """
 
     class SearchPostProcess(CustomIntEnum):
         """
@@ -333,28 +356,6 @@ class QTempGaussMC(VSObject):
         Restore source fields after final temporal smooth. True lossless but less stable.
         """
 
-    # TODO: Remove (deprecated usage compat)
-    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
-    class InputType(CustomIntEnum):
-        """
-        Processing routine to use for the input.
-        """
-
-        INTERLACE = 0
-        """
-        Deinterlace interlaced input.
-        """
-
-        PROGRESSIVE = 1
-        """
-        Deshimmer general progressive material that contains less severe problems.
-        """
-
-        REPAIR = 2
-        """
-        Repair badly deinterlaced material with considerable horizontal artifacts.
-        """
-
     def __init__(self, **kwargs: Any) -> None:
         """
         Args:
@@ -365,7 +366,14 @@ class QTempGaussMC(VSObject):
         """
         # TODO: Remove (deprecated usage compat)
         self.compat_clip = kwargs.pop("clip", None)
-        self.compat_input_type = kwargs.pop("input_type", self.InputType.INTERLACE)
+        self.compat_input_type = kwargs.pop("input_type", None)
+
+        if self.compat_clip:
+            warn(
+                "Passing an input clip to class initialization is deprecated and will be removed in a future version."
+                "Pass the input clip to an individual method instead.",
+                DeprecationWarning,
+            )
 
         # Set default parameters for all the stages in this exact order
         self._settings_methods = (
@@ -1306,12 +1314,6 @@ class QTempGaussMC(VSObject):
         func = self.deinterlace
 
         if self.compat_clip:
-            warn(
-                "Passing an input clip to class initialization is deprecated and will be removed in a future version."
-                "Pass the input clip to an individual method instead.",
-                DeprecationWarning,
-            )
-
             clip = self.compat_clip
 
             if self.compat_input_type == self.InputType.REPAIR:
@@ -1321,7 +1323,6 @@ class QTempGaussMC(VSObject):
                 tff = FieldBased.PROGRESSIVE
 
         assert clip
-
         return self._run_process(clip, tff, func)
 
     def bob(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
