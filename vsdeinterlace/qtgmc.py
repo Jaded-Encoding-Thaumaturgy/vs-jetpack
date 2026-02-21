@@ -369,11 +369,12 @@ class QTempGaussMC(VSObject):
 
         self.compat_clip = kwargs.pop("clip", next(args_it, None))
         self.compat_input_type = kwargs.pop("input_type", next(args_it, None))
+        self.compat_tff = kwargs.pop("tff", next(args_it, None))
 
-        if self.compat_clip:
+        if any((self.compat_clip, self.compat_input_type is not None, self.compat_tff is not None)):
             warn(
-                "Passing an input clip to class initialization is deprecated and will be removed in a future version."
-                "Pass the input clip to an individual method instead.",
+                "Passing a clip, input type, or field order to class initialization is deprecated"
+                "and will be removed in a future version.",
                 DeprecationWarning,
             )
 
@@ -1257,9 +1258,9 @@ class QTempGaussMC(VSObject):
 
     def _run_process(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None, func: FuncExcept) -> vs.VideoNode:
         attrs = (
-            "clip",
             "tff",
             "is_repair",
+            "clip",
             "draft",
             "input",
             "bobbed",
@@ -1313,6 +1314,9 @@ class QTempGaussMC(VSObject):
             Deinterlaced clip.
         """
         # TODO: Remove (deprecated usage compat)
+        if self.compat_tff is not None:
+            tff = self.compat_tff
+
         func = self.deinterlace
 
         if self.compat_clip:
