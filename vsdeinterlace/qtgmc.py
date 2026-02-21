@@ -356,7 +356,7 @@ class QTempGaussMC(VSObject):
         Restore source fields after final temporal smooth. True lossless but less stable.
         """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         Args:
             **kwargs: Additional arguments to be passed to the parameter stage methods.
@@ -365,8 +365,10 @@ class QTempGaussMC(VSObject):
                 Example for passing tr=1 to the prefilter stage: `prefilter_tr=1`.
         """
         # TODO: Remove (deprecated usage compat)
-        self.compat_clip = kwargs.pop("clip", None)
-        self.compat_input_type = kwargs.pop("input_type", None)
+        args_it = iter(args)
+
+        self.compat_clip = kwargs.pop("clip", next(args_it, None))
+        self.compat_input_type = kwargs.pop("input_type", next(args_it, None))
 
         if self.compat_clip:
             warn(
@@ -1275,7 +1277,7 @@ class QTempGaussMC(VSObject):
 
         self.clip = clip
         self.tff = FieldBased.from_param_or_video(tff, self.clip, True, func)
-        self.is_repair = func is self.repair
+        self.is_repair = func == self.repair
 
         if not self.tff.is_inter and func is not self.deshimmer:
             raise UnsupportedFieldBasedError("This method is incompatible with progressive video!", func)
@@ -1299,7 +1301,7 @@ class QTempGaussMC(VSObject):
         finally:
             self.motion_blur_fps_divisor = orig
 
-    def deinterlace(self, clip: vs.VideoNode | None, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
+    def deinterlace(self, clip: vs.VideoNode | None = None, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
         """
         Deinterlace interlaced input. Motion blur stage FPS divisor is respected.
 
