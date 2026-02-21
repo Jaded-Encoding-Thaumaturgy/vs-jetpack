@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from math import factorial
 from typing import Any, Literal, Protocol, Self, TypedDict
+from warnings import deprecated, warn
 
 from jetpytools import CustomIntEnum, CustomValueError, FuncExcept, fallback, normalize_seq
 
@@ -332,6 +333,28 @@ class QTempGaussMC(VSObject):
         Restore source fields after final temporal smooth. True lossless but less stable.
         """
 
+    # TODO: Remove (deprecated usage compat)
+    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
+    class InputType(CustomIntEnum):
+        """
+        Processing routine to use for the input.
+        """
+
+        INTERLACE = 0
+        """
+        Deinterlace interlaced input.
+        """
+
+        PROGRESSIVE = 1
+        """
+        Deshimmer general progressive material that contains less severe problems.
+        """
+
+        REPAIR = 2
+        """
+        Repair badly deinterlaced material with considerable horizontal artifacts.
+        """
+
     def __init__(self, **kwargs: Any) -> None:
         """
         Args:
@@ -340,6 +363,10 @@ class QTempGaussMC(VSObject):
 
                 Example for passing tr=1 to the prefilter stage: `prefilter_tr=1`.
         """
+        # TODO: Remove (deprecated usage compat)
+        self.compat_clip = kwargs.pop("clip", None)
+        self.compat_input_type = kwargs.pop("input_type", self.InputType.INTERLACE)
+
         # Set default parameters for all the stages in this exact order
         self._settings_methods = (
             self.prefilter,
@@ -1218,7 +1245,7 @@ class QTempGaussMC(VSObject):
 
         self.motion_blur_output = blurred
 
-    def _process(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None, func: FuncExcept) -> vs.VideoNode:
+    def _run_process(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None, func: FuncExcept) -> vs.VideoNode:
         attrs = (
             "clip",
             "tff",
@@ -1264,7 +1291,7 @@ class QTempGaussMC(VSObject):
         finally:
             self.motion_blur_fps_divisor = orig
 
-    def deinterlace(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
+    def deinterlace(self, clip: vs.VideoNode | None, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
         """
         Deinterlace interlaced input. Motion blur stage FPS divisor is respected.
 
@@ -1275,7 +1302,27 @@ class QTempGaussMC(VSObject):
         Returns:
             Deinterlaced clip.
         """
-        return self._process(clip, tff, self.deinterlace)
+        # TODO: Remove (deprecated usage compat)
+        func = self.deinterlace
+
+        if self.compat_clip:
+            warn(
+                "Passing an input clip to class initialization is deprecated and will be removed in a future version."
+                "Pass the input clip to an individual method instead.",
+                DeprecationWarning,
+            )
+
+            clip = self.compat_clip
+
+            if self.compat_input_type == self.InputType.REPAIR:
+                func = self.repair
+            elif self.compat_input_type == self.InputType.PROGRESSIVE:
+                func = self.deshimmer
+                tff = FieldBased.PROGRESSIVE
+
+        assert clip
+
+        return self._run_process(clip, tff, func)
 
     def bob(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
         """
@@ -1289,7 +1336,7 @@ class QTempGaussMC(VSObject):
             Bobbed clip.
         """
         with self._disable_fps_divisor():
-            return self._process(clip, tff, self.bob)
+            return self._run_process(clip, tff, self.bob)
 
     def repair(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
         """
@@ -1302,7 +1349,7 @@ class QTempGaussMC(VSObject):
         Returns:
             Repaired clip.
         """
-        return self._process(clip, tff, self.repair)
+        return self._run_process(clip, tff, self.repair)
 
     def deshimmer(self, clip: vs.VideoNode) -> vs.VideoNode:
         """
@@ -1314,4 +1361,4 @@ class QTempGaussMC(VSObject):
         Returns:
             Deshimmered clip.
         """
-        return self._process(clip, FieldBased.PROGRESSIVE, self.deshimmer)
+        return self._run_process(clip, FieldBased.PROGRESSIVE, self.deshimmer)
