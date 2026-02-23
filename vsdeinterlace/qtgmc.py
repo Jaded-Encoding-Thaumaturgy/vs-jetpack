@@ -397,7 +397,7 @@ class QTempGaussMC(VSObject):
             method(**{k.removeprefix(prefix): kwargs.pop(k) for k in tuple(kwargs) if k.startswith(prefix)})
 
         if kwargs:
-            raise CustomValueError("Unknown arguments were passed", self.__class__, kwargs)
+            raise CustomValueError("Unknown arguments were passed.", self.__class__, kwargs)
 
     def prefilter(
         self,
@@ -1325,7 +1325,9 @@ class QTempGaussMC(VSObject):
             func = self.deshimmer
             tff = FieldBased.PROGRESSIVE
 
-        assert clip
+        if not clip:
+            raise CustomValueError("No input clip was passed.", self.deinterlace)
+
         return self._run_process(clip, tff, func)
 
     def bob(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
