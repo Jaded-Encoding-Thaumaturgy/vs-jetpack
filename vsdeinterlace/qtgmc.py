@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Iterator, Mapping
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from copy import deepcopy
 from math import factorial
 from typing import Any, Literal, Protocol, Self, TypedDict
@@ -1271,7 +1271,7 @@ class QTempGaussMC(VSObject):
         )
 
         for attr in attrs:
-            if hasattr(self, attr):
+            with suppress(AttributeError):
                 delattr(self, attr)
 
         self.clip = clip
@@ -1311,19 +1311,19 @@ class QTempGaussMC(VSObject):
         Returns:
             Deinterlaced clip.
         """
-        if self.compat_tff is not None:
-            tff = self.compat_tff
-
         func = self.deinterlace
 
         if self.compat_clip:
             clip = self.compat_clip
 
-            if self.compat_input_type == self.InputType.REPAIR:
-                func = self.repair
-            elif self.compat_input_type == self.InputType.PROGRESSIVE:
-                func = self.deshimmer
-                tff = FieldBased.PROGRESSIVE
+        if self.compat_tff is not None:
+            tff = self.compat_tff
+
+        if self.compat_input_type == self.InputType.REPAIR:
+            func = self.repair
+        elif self.compat_input_type == self.InputType.PROGRESSIVE:
+            func = self.deshimmer
+            tff = FieldBased.PROGRESSIVE
 
         assert clip
         return self._run_process(clip, tff, func)
