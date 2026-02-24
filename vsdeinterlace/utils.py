@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from jetpytools import FuncExcept
 
-from vstools import FieldBased, FieldBasedLike, core, vs
+from vstools import Field, FieldBased, FieldBasedLike, FieldLike, core, vs
 
 __all__ = ["dmetrics", "get_field_difference", "reinterlace", "reweave", "telecine_patterns", "weave"]
 
@@ -59,7 +59,7 @@ def get_field_difference(
     )
 
 
-def weave(clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: FuncExcept | None = None) -> vs.VideoNode:
+def weave(clip: vs.VideoNode, tff: FieldLike | bool | None = None, func: FuncExcept | None = None) -> vs.VideoNode:
     """
     Recombine fields into frames using DoubleWeave.
 
@@ -73,13 +73,11 @@ def weave(clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: Fu
     """
     func = func or weave
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
-
-    return clip.std.DoubleWeave(tff)[::2]
+    return clip.std.DoubleWeave(Field.from_param_or_video(tff, clip, True, func).value)[::2]
 
 
 def reweave(
-    clipa: vs.VideoNode, clipb: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: FuncExcept | None = None
+    clipa: vs.VideoNode, clipb: vs.VideoNode, tff: FieldLike | bool | None = None, func: FuncExcept | None = None
 ) -> vs.VideoNode:
     """
     Interleave two clips and weave them into full frames.
@@ -98,15 +96,13 @@ def reweave(
     return weave(core.std.Interleave([clipa, clipb]).std.SelectEvery(4, (0, 1, 3, 2)), tff, func)
 
 
-def reinterlace(
-    clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: FuncExcept | None = None
-) -> vs.VideoNode:
+def reinterlace(clip: vs.VideoNode, tff: FieldBasedLike | bool, func: FuncExcept | None = None) -> vs.VideoNode:
     """
     Reinterlace a progressive clip by separating and weaving fields.
 
     Args:
         clip: Input clip.
-        tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
+        tff: Field order (top-field-first).
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Returns:
@@ -114,7 +110,7 @@ def reinterlace(
     """
     func = func or reinterlace
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
+    tff = FieldBased.from_param(tff, func).is_tff
 
     return weave(clip.std.SeparateFields(tff).std.SelectEvery(4, (0, 3)), tff, func)
 
