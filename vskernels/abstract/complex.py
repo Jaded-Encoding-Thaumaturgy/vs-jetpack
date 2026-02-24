@@ -409,7 +409,7 @@ class KeepArScaler(Scaler):
             if sar_scale is not False:
                 src_sar *= sar_scale
 
-            src_dar = Dar.from_res(clip.width, clip.height)
+            src_dar = Dar.from_clip(clip, False)
             out_dar = Dar.from_res(width, height, src_sar)
 
             if src_dar != out_dar:
