@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
 from fractions import Fraction
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, Protocol, Self, cast, runtime_checkable
 
 from jetpytools import CustomNotImplementedError, CustomValueError, fallback, normalize_seq
 
@@ -34,7 +34,21 @@ __all__ = [
     "SangNom",
     "SuperSampler",
     "SuperSamplerProcess",
+    "SupportsBobDeinterlace",
 ]
+
+
+@runtime_checkable
+class SupportsBobDeinterlace(Protocol):
+    """
+    Protocol for classes that support bob deinterlacing.
+    """
+
+    __slots__ = ()
+
+    def deinterlace(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode: ...
+
+    def bob(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode: ...
 
 
 class DeinterlacerKwargs(UserDict[str, Any]):
