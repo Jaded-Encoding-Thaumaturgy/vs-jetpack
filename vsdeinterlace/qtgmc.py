@@ -148,6 +148,9 @@ class QTempGaussMC(VSObject):
         ```
     """
 
+    mv: MVTools
+    """MVTools instance used during processing."""
+
     clip: vs.VideoNode
     """Clip to process."""
 
@@ -1258,6 +1261,7 @@ class QTempGaussMC(VSObject):
         attrs = (
             "tff",
             "is_repair",
+            "mv",
             "clip",
             "draft",
             "input",
