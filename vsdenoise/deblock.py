@@ -13,6 +13,7 @@ from vsrgtools import MeanMode, gauss_blur, repair
 from vsscale import DPIR
 from vstools import (
     FieldBased,
+    FieldBasedLike,
     FrameRangeN,
     FrameRangesN,
     Planes,
@@ -254,7 +255,7 @@ def deblock_qed(
     if fieldbased.is_inter:
         from vsdeinterlace import weave
 
-        deblocked = weave(Box().scale(deblocked, height=clip.height // 2), fieldbased, deblock_qed)
+        deblocked = weave(Box().scale(deblocked, height=clip.height // 2), fieldbased.is_tff, deblock_qed)
 
     return deblocked
 
@@ -262,7 +263,7 @@ def deblock_qed(
 def mpeg2stinx(
     clip: vs.VideoNode,
     bobber: Deinterlacer = NNEDI3(),
-    tff: bool = True,
+    tff: FieldBasedLike | bool = True,
     mask: bool = True,
     radius: int | tuple[int, int] = 2,
     limit: float | None = 1.0,
@@ -285,6 +286,8 @@ def mpeg2stinx(
         Clip with cross-field noise reduced.
     """
     from vsdeinterlace import weave
+
+    tff = FieldBased.from_param(tff, mpeg2stinx).is_tff
 
     def _crossfield_repair(clip: vs.VideoNode, bobbed: vs.VideoNode) -> vs.VideoNode:
         clip = core.std.Interleave([clip, clip])
