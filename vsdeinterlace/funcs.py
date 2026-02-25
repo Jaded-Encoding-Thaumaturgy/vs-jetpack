@@ -197,12 +197,12 @@ class FixInterlacedFades(CustomIntEnum):
             )
             clipb, prop_name, expr_color = None, "Average", color
 
-        for i in func.norm_planes:
+        for i in func.planes:
             fields = fields.std.PlaneStats(clipb, i, f"P{i}")
 
         props_clip = core.akarin.PropExpr(
             [func.work_clip, fields[::2], fields[1::2]],
-            lambda: {f"f{f}Avg{i}": f"{c}.P{i}{prop_name}" for f, c in zip("tb", "yz") for i in func.norm_planes},
+            lambda: {f"f{f}Avg{i}": f"{c}.P{i}{prop_name}" for f, c in zip("tb", "yz") for i in func.planes},
         )
         expr_clips.insert(0, props_clip)
 
@@ -215,7 +215,7 @@ class FixInterlacedFades(CustomIntEnum):
             expr_clips,
             expr,
             planes,
-            i=func.norm_planes,
+            i=func.planes,
             color=expr_color,
             expr_mode="+ 2 /" if self == self.AVERAGE else "min",
             func=self.__class__,

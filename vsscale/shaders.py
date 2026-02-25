@@ -6,7 +6,7 @@ from typing import Any
 from jetpytools import SPath, SPathLike
 
 from vskernels import Catrom, KernelLike, ScalerLike
-from vstools import core, depth, join, vs
+from vstools import FunctionUtil, core, join, vs
 
 from .generic import BaseGenericScaler
 
@@ -47,7 +47,8 @@ class PlaceboShader(BaseGenericScaler):
 
         kwargs = self.kwargs | kwargs
 
-        output = depth(clip, 16)
+        func_util = FunctionUtil(clip, self.__class__, None, (vs.GRAY, vs.YUV), 16)
+        output = func_util.work_clip
 
         # Add fake chroma planes
         if output.format.num_planes == 1:

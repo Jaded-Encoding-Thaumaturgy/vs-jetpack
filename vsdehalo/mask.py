@@ -414,7 +414,7 @@ def fine_dehalo(
                     func=func_util.func,
                     **kwargs,
                 ),
-                tff=any(p in func_util.norm_planes for p in [1, 2]),
+                tff=any(p in func_util.planes for p in [1, 2]),
             ),
             rfactor=pre_ss,
             mod=1,

@@ -1092,6 +1092,8 @@ class MVTools(VSObject):
         """
         Creates a mask clip from motion vectors data.
 
+        The processing is always done at 8-bits <https://github.com/dubhater/vapoursynth-mvtools/issues/16>.
+
         Args:
             clip: The clip to process. If None, the [clip][vsdenoise.MVTools.clip] attribute is used.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
