@@ -723,7 +723,7 @@ class ComplexDescaler(LinearDescaler):
                 fields[1::2],
                 **de_kwargs_bf | {"src_top": de_kwargs_bf.get("src_top", 0.0) - field_shift},
             )
-            descaled = reweave(descaled_tf, descaled_bf, field_based.is_tff)
+            descaled = reweave(descaled_tf, descaled_bf, field_based.field)
         else:
             shift = _descale_shift_norm(shift, True, self.descale)
 

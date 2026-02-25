@@ -981,7 +981,7 @@ class QTempGaussMC(VSObject):
                     gen_noise = norm_expr(
                         [noise_max, noise_min, gen_noise], "x y - z * range_size / y +", func=self._apply_denoise
                     )
-                    new_noise = reweave(noise_source, gen_noise, self.tff.is_tff, self._apply_denoise)
+                    new_noise = reweave(noise_source, gen_noise, self.tff.field, self._apply_denoise)
 
             self.noise = FieldBased.PROGRESSIVE.apply(new_noise)
 
@@ -1097,7 +1097,7 @@ class QTempGaussMC(VSObject):
             fields_src = core.std.SelectEvery(fields_src, 4, (0, 3))
         fields_flt = clip.std.SeparateFields(self.tff.is_tff).std.SelectEvery(4, (1, 2))
 
-        woven = reweave(fields_src, fields_flt, self.tff.is_tff, self._apply_lossless)
+        woven = reweave(fields_src, fields_flt, self.tff.field, self._apply_lossless)
 
         if self.lossless_anti_comb:
             median_diff = woven.std.MakeDiff(median_blur(woven, mode=ConvMode.VERTICAL, func=self._apply_lossless))
@@ -1111,7 +1111,7 @@ class QTempGaussMC(VSObject):
             processed_diff = repair.Mode.MINMAX_SQUARE1(
                 processed_diff, remove_grain.Mode.MINMAX_AROUND2(processed_diff)
             )
-            woven = reweave(fields_src, fields_flt.std.MakeDiff(processed_diff), self.tff.is_tff, self._apply_lossless)
+            woven = reweave(fields_src, fields_flt.std.MakeDiff(processed_diff), self.tff.field, self._apply_lossless)
 
         return FieldBased.PROGRESSIVE.apply(woven)
 
