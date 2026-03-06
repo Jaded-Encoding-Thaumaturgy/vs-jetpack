@@ -28,6 +28,7 @@ from jetpytools import (
     CustomValueError,
     FuncExcept,
     classproperty,
+    complex_hash,
     fallback,
     get_subclasses,
     normalize_seq,
@@ -345,6 +346,15 @@ class BaseScaler(VSObjectABC, metaclass=BaseScalerMeta, abstract=True):
             **kwargs: Keyword arguments that configure the internal scaling behavior.
         """
         self.kwargs = kwargs
+
+    def __hash__(self) -> int:
+        return complex_hash.hash(
+            self.__class__.__name__,
+            *((k, v) for k, v in self.__dict__.items() if not k.startswith("__")),
+        )
+
+    def __eq__(self, value: object) -> bool:
+        return hash(self) == hash(value) if isinstance(value, BaseScaler) else NotImplemented
 
     def __str__(self) -> str:
         """

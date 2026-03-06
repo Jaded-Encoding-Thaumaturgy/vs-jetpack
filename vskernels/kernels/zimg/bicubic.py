@@ -4,7 +4,7 @@ from collections.abc import Callable
 from math import sqrt
 from typing import Any, overload
 
-from jetpytools import CustomValueError
+from jetpytools import CustomValueError, complex_hash
 
 from vstools import core, vs
 
@@ -51,6 +51,10 @@ class Bicubic(ZimgComplexKernel):
         self.b = b
         self.c = c
         super().__init__(**kwargs)
+
+    def __hash__(self) -> int:
+        # Remove the class name
+        return complex_hash.hash(*((k, v) for k, v in self.__dict__.items() if not k.startswith("__")))
 
     def get_params_args(
         self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any
