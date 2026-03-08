@@ -10,7 +10,7 @@ from vstools import PackageStorage
 
 @pytest.fixture(scope="session")
 def storage(request: pytest.FixtureRequest) -> Iterator[PackageStorage]:
-    storage = PackageStorage(cwd=PurePath(__file__).parent)
+    storage = PackageStorage(cwd=PurePath(__file__).parent, package_name=__name__)
     yield storage
     storage.folder.parent.rmdirs()
 
@@ -35,6 +35,6 @@ def test_package_storage_get_file(storage: PackageStorage) -> None:
 
 def test_package_storage_default_folder(storage: PackageStorage) -> None:
     # Have `cwd` be a file just to pretend it's the result of `get_script_path()`.
-    storage = PackageStorage(cwd=PurePath(__file__))
+    storage = PackageStorage(cwd=PurePath(__file__), package_name=__name__)
 
     assert storage.folder.is_dir()

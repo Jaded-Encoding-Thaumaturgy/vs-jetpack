@@ -420,7 +420,7 @@ class ExternalIndexer(Indexer):
         current_indxer = SPath(self._bin_path).name
         filename = "_".join([file_hash, vid_name, current_indxer])
 
-        return self.get_idx_file_path(PackageStorage(folder).get_file(filename))
+        return self.get_idx_file_path(PackageStorage(folder, package_name=__name__).get_file(filename))
 
     @inject_self
     def source(

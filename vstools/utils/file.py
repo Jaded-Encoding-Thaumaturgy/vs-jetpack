@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from jetpytools import CustomRuntimeError, SPath, SPathLike, get_script_path
+from jetpytools import SPath, SPathLike, get_script_path
 
 __all__ = ["PackageStorage"]
 
@@ -8,21 +8,7 @@ __all__ = ["PackageStorage"]
 class PackageStorage:
     BASE_FOLDER = SPath(".vsjet")
 
-    def __init__(self, cwd: SPathLike | None = None, *, mode: int = 0o777, package_name: str | None = None) -> None:
-        if not package_name:
-            from inspect import getmodule, stack
-
-            frame = stack()[1]
-            module = getmodule(frame[0])
-
-            if module:
-                package_name = module.__name__
-
-            del frame, module
-
-        if not package_name:
-            raise CustomRuntimeError("Can't determine package name!")
-
+    def __init__(self, cwd: SPathLike | None = None, *, package_name: str, mode: int = 0o777) -> None:
         package_name = package_name.strip(".").split(".")[0]
 
         if not cwd:
