@@ -66,7 +66,7 @@ class RescaleBase(VSObjectABC):
         self._chroma = chroma
         self._kernel = ComplexKernel.ensure_obj(kernel, self.__class__)
         self._upscaler = Scaler.ensure_obj(upscaler, self.__class__)
-        self._downscaler = Scaler.ensure_obj(downscaler or Hermite(linear=True), self.__class__)
+        self._downscaler = Scaler.ensure_obj(downscaler or Hermite(linear=True), self.__class__)  # type: ignore[call-arg]
         self._field_based = FieldBased.from_param_with_fallback(field_based)
         self._border_handling = BorderHandling.from_param(border_handling, self.__class__)
         self.__add_props = kwargs.get("_add_props")
@@ -330,7 +330,7 @@ class Rescale(RescaleBase):
             clip,
             kernel,
             upscaler,
-            downscaler or Hermite(linear=True),
+            downscaler or Hermite(linear=True),  # type: ignore[call-arg]
             field_based,
             border_handling,
             **kwargs,
