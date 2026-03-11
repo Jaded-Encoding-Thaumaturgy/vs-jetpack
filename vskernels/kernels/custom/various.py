@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from math import cos, exp, log, pi, sin, sqrt
 from typing import Any
 
@@ -22,6 +23,7 @@ __all__ = [
     "Hann",
     "Sinc",
     "Welch",
+    "WindowedSinc",
 ]
 
 
@@ -145,9 +147,26 @@ class Box(CustomComplexKernel):
         return 1.0 if x >= -0.5 and x < 0.5 else 0.0
 
 
-class BlackMan(CustomComplexTapsKernel):
+class WindowedSinc(CustomComplexTapsKernel):
+    """Base class for windowed-sinc kernels."""
+
+    def __init__(self, taps: float = 3, **kwargs: Any) -> None:
+        super().__init__(taps, **kwargs)
+
+    def kernel(self, *, x: float) -> float:
+        x = abs(x)
+        if x >= self.kernel_radius:
+            return 0.0
+
+        return sinc(x) * self._win_coef(x)
+
+    @abstractmethod
+    def _win_coef(self, x: float) -> float: ...
+
+
+class BlackMan(WindowedSinc):
     """
-    Blackman resizer.
+    Blackman windowed-sinc resizer.
     """
 
     def __init__(self, taps: float = 4, **kwargs: Any) -> None:
@@ -158,16 +177,10 @@ class BlackMan(CustomComplexTapsKernel):
 
         return 0.42 + 0.50 * cos(w_x) + 0.08 * cos(w_x * 2)
 
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
-
-        return sinc(x) * self._win_coef(x)
-
 
 class BlackManMinLobe(BlackMan):
     """
-    Blackmanminlobe resizer.
+    Blackmanminlobe windowed-sinc resizer.
     """
 
     def _win_coef(self, x: float) -> float:
@@ -176,7 +189,7 @@ class BlackManMinLobe(BlackMan):
         return 0.355768 + 0.487396 * cos(w_x) + 0.144232 * cos(w_x * 2) + 0.012604 * cos(w_x * 3)
 
 
-class Sinc(CustomComplexTapsKernel):
+class Sinc(WindowedSinc):
     """
     Sinc resizer.
     """
@@ -184,71 +197,55 @@ class Sinc(CustomComplexTapsKernel):
     def __init__(self, taps: float = 4, **kwargs: Any) -> None:
         super().__init__(taps, **kwargs)
 
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
-
-        return sinc(x)
+    def _win_coef(self, x: float) -> float:
+        return 1.0
 
 
-class Hann(CustomComplexTapsKernel):
+class Hann(WindowedSinc):
     """
-    Hann kernel.
+    Hann windowed-sinc kernel.
     """
 
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
-
-        return 0.5 + 0.5 * cos(pi * x)
+    def _win_coef(self, x: float) -> float:
+        return 0.5 + 0.5 * cos(pi * x / self.kernel_radius)
 
 
-class Hamming(CustomComplexTapsKernel):
+class Hamming(WindowedSinc):
     """
-    Hamming kernel.
+    Hamming windowed-sinc kernel.
     """
 
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
-
-        return 0.54 + 0.46 * cos(pi * x)
+    def _win_coef(self, x: float) -> float:
+        return 0.54 + 0.46 * cos(pi * x / self.kernel_radius)
 
 
-class Welch(CustomComplexTapsKernel):
+class Welch(WindowedSinc):
     """
-    Welch kernel.
+    Welch windowed-sinc kernel.
     """
 
-    def kernel(self, *, x: float) -> float:
-        if abs(x) >= 1.0:
-            return 0.0
-
+    def _win_coef(self, x: float) -> float:
+        x /= self.kernel_radius
         return 1.0 - x * x
 
 
-class Cosine(CustomComplexTapsKernel):
+class Cosine(WindowedSinc):
     """
-    Cosine kernel.
+    Cosine windowed-sinc kernel.
     """
 
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
-
-        cosine = cos(pi * x)
-
+    def _win_coef(self, x: float) -> float:
+        cosine = cos(pi * x / self.kernel_radius)
         return 0.34 + cosine * (0.5 + cosine * 0.16)
 
 
-class Bohman(CustomComplexTapsKernel):
+class Bohman(WindowedSinc):
     """
-    Bohman kernel.
+    Bohman windowed-sinc kernel.
     """
 
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
+    def _win_coef(self, x: float) -> float:
+        x /= self.kernel_radius
 
         cosine = cos(pi * x)
         sine = sqrt(1.0 - cosine * cosine)
