@@ -94,7 +94,7 @@ def wnnm(
 
     func = FunctionUtil(clip, wnnm, planes, bitdepth=32)
 
-    sigma = func.norm_seq(sigma, 0)
+    sigma = normalize_param_planes(clip, sigma, planes, 0)
 
     if ref is not None:
         ref = depth(ref, 32)
@@ -718,7 +718,7 @@ def bm3d(
             col_fam=vs.RGB,
         )
 
-        return depth(denoised, clip)
+        return denoised
 
     preclip = depth(clip, 32)
     prepre = depth(pre, 32) if pre else pre
@@ -747,7 +747,7 @@ def bm3d(
 
         denoised = _bm3d_wolfram(preclip, prepre, preref, chroma=True)
 
-        return depth(denoised, clip)
+        return denoised
 
     # GRAY or subsampled YUV
     if backend == BM3D.Backend.OLD:
@@ -756,4 +756,4 @@ def bm3d(
 
     denoised = _bm3d_wolfram(preclip, prepre, preref)
 
-    return depth(denoised, clip)
+    return denoised
