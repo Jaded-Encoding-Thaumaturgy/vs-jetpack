@@ -6,12 +6,7 @@ from vstools import Matrix, Primaries, Transfer, finalize_clip, get_prop, initia
 class TestClips(TestCase):
     def test_finalize_clip(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=1920, height=1080)
-        clip = finalize_clip(clip, clamp_tv_range=True)
-        assert clip.format
-        self.assertEqual(clip.format.bits_per_sample, 10)
-
-        clip = vs.core.std.BlankClip(format=vs.YUV420P8, width=1920, height=1080)
-        clip = finalize_clip(clip, clamp_tv_range=False)
+        clip = finalize_clip(clip)
         assert clip.format
         self.assertEqual(clip.format.bits_per_sample, 10)
 
