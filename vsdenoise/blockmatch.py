@@ -176,6 +176,11 @@ class BM3D[**P, R]:
         GPU implementation using Intel SYCL.
         """
 
+        METAL = "bm3dmetal"
+        """
+        GPU implementation using Apple Metal.
+        """
+
         CPU = "bm3dcpu"
         """
         Optimized CPU implementation using AVX and AVX2 intrinsics.
