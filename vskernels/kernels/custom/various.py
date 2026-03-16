@@ -10,8 +10,8 @@ from ...abstract import CustomComplexKernel, CustomComplexTapsKernel
 from ..zimg import Bilinear, Lanczos, Point
 
 __all__ = [
-    "BlackMan",
-    "BlackManMinLobe",
+    "Blackman",
+    "BlackmanMinLobe",
     "Bohman",
     "Box",
     "Cosine",
@@ -223,7 +223,7 @@ class WindowedSinc(CustomComplexTapsKernel):
         return sinc(x) * self.window(x, self.kernel_radius)
 
 
-class BlackMan(WindowedSinc):
+class Blackman(WindowedSinc):
     """
     Blackman windowed-sinc resizer.
 
@@ -234,7 +234,7 @@ class BlackMan(WindowedSinc):
         super().__init__(taps, blackman_window, **kwargs)
 
 
-class BlackManMinLobe(WindowedSinc):
+class BlackmanMinLobe(WindowedSinc):
     """
     Blackmanminlobe windowed-sinc resizer.
 
