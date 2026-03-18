@@ -3,7 +3,7 @@ from collections.abc import Callable, Mapping
 from copy import copy
 from functools import wraps
 from inspect import getmodule, isclass
-from logging import INFO, Formatter, LogRecord, basicConfig, getLogger
+from logging import INFO, Formatter, LogRecord, getLogger
 from types import ModuleType
 from typing import Any, Literal
 
@@ -100,14 +100,23 @@ _JETPACK_MODULES = (
 
 
 @require_jet_dependency("rich")
-def setup_logging(level: str | int = INFO, **kwargs: Any) -> None:
+def setup_logging(level: str | int = INFO) -> None:
     """
     Configure global logging.
 
     Args:
         level: Log level. Defaults to INFO.
-        kwargs: Arguments forwarded to logging.basicConfig
     """
+
+    root = getLogger()
+    root.setLevel(level)
+
+    if root.hasHandlers():
+        # vsjetpack modules are already handled
+        for module in _JETPACK_MODULES:
+            getLogger(module).setLevel(level)
+        return
+
     from rich.console import Console
     from rich.logging import RichHandler
     from rich.text import Text
@@ -134,15 +143,8 @@ def setup_logging(level: str | int = INFO, **kwargs: Any) -> None:
     )
     handler.setFormatter(Formatter("{name}: {message}", style="{"))
 
-    for module in _JETPACK_MODULES:
-        logger = getLogger(module)
-        logger.setLevel(level)
-        logger.propagate = False
-
-        if not logger.hasHandlers():
-            logger.addHandler(handler)
-
-    basicConfig(level=level, **kwargs)
+    root.setLevel(level)
+    root.addHandler(handler)
 
 
 def _transform_record_args[T](args: Mapping[T, object]) -> dict[T, object]:
