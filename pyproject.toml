@@ -202,12 +202,18 @@ docstring-code-format = true
 exclude = ["stubs/vspreview", "stubs/dfttest2.pyi", "stubs/vsmlrt.pyi"]
 extend-select = [
     "E",
+    "YTT",
+    "ASYNC",
     "C4",
     "I",
+    "LOG",
+    "G",
     "PYI",
     "Q",
+    "RSE",
     "SIM",
     "N",
+    "PERF",
     "W",
     "UP",
     "FURB",
