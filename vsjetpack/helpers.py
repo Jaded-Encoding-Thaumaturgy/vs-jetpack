@@ -75,7 +75,7 @@ def require_jet_dependency[**P, R](
                     )
 
                     raise exc from None
-            raise
+                raise
 
         return wrapper
 
