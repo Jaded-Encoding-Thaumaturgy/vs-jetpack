@@ -60,8 +60,6 @@ Tracker = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/issues"
 [dependency-groups]
 dev = [
     "mypy~=1.19.0",
-    "pytest>=9.0.0, <10.0.0",
-    "pytest-cov>=6.2.1, <8.0.0",
     "ruff~=0.15.0",
     "prek>=0.3.6",
     "scipy-stubs>=1.16.0.0",
@@ -70,7 +68,9 @@ dev = [
     "mkdocs-gen-files==0.6.0",
     "vstransitions==0.1.4",
     "orderedsets",
+    { include-group = "test" },
 ]
+test = ["pytest>=9.0.0, <10.0.0", "pytest-cov>=6.2.1, <8.0.0"]
 doc = [
     "orderedsets",
     "griffe-inherited-docstrings==1.1.2",

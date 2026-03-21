@@ -1730,6 +1730,10 @@ doc = [
     { name = "vspreview" },
     { name = "vstransitions" },
 ]
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1768,6 +1772,10 @@ doc = [
     { name = "orderedsets" },
     { name = "vspreview", specifier = ">=0.18.1" },
     { name = "vstransitions", specifier = "==0.1.4" },
+]
+test = [
+    { name = "pytest", specifier = ">=9.0.0,<10.0.0" },
+    { name = "pytest-cov", specifier = ">=6.2.1,<8.0.0" },
 ]
 
 [[package]]
