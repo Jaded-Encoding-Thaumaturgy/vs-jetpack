@@ -7,7 +7,7 @@ A6 = "x[-1,1]"
 A7 = "x[0,1]"
 A8 = "x[1,1]"
 c = "x"
-PIXELS = " ".join([A1, A2, A3, A4, A5, A6, A7, A8])
+PIXELS = f"{A1} {A2} {A3} {A4} {A5} {A6} {A7} {A8}"
 
 
 def aka_remove_grain_expr_1() -> str:
