@@ -87,8 +87,8 @@ class TitleAudios(VSObjectABC, Sequence[vs.AudioNode]):
         if i not in self.cache:
             raise KeyError
 
-        if _anode := self.cache[i]:
-            return _anode
+        if anode_ := self.cache[i]:
+            return anode_
 
         asd = self.title._audios[i]
 
