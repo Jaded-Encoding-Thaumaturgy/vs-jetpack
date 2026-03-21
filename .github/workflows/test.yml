@@ -20,6 +20,9 @@ on:
 permissions:
   contents: read
 
+env:
+  UV_NO_SYNC: "1"
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -57,7 +60,7 @@ jobs:
           vszip-version: ${{ matrix.vszip-version }}
 
       - name: Install dependencies
-        run: uv sync --all-extras --locked
+        run: uv sync --locked --all-extras --group test --no-dev
 
       - name: Run tests
         run: uv run pytest --cov-report=term-missing:skip-covered --cov=vskernels --cov=vstools --cov=vsexprtools tests
