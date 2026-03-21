@@ -264,7 +264,7 @@ class AlphaBlur:
 
             return join([processed, *chroma], clip.format.color_family)
 
-        return join([self._function(*values) for values in zip(split(work_clip), rxs, rys)])
+        return join(list(map(self._function, split(work_clip), rxs, rys)))
 
     def _function(
         self,

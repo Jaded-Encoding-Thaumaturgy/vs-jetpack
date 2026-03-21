@@ -403,7 +403,7 @@ class InlineExprWrapper(VSObject):
         Returns:
             Sequence of [ClipVar][vsexprtools.inline.helpers.ClipVar] objects.
         """
-        return tuple(ClipVar(char, clip) for char, clip in zip(ExprVars.cycle(), self._nodes))
+        return tuple(map(ClipVar, ExprVars.cycle(), self._nodes))
 
     @property
     def out(self) -> ComputedVar:

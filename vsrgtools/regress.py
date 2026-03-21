@@ -245,7 +245,7 @@ def regression(
         for cov_xy, var_y in zip(cov_xys, var_ys)
     ]
 
-    return [RegressClips(s, i, c) for s, i, c in zip(slopes, intercepts, corrs)]
+    return list(map(RegressClips, slopes, intercepts, corrs))
 
 
 def reconstruct(
@@ -672,7 +672,7 @@ class ChromaReconstruct(VSObjectABC):
         luma_fixup = core.std.MakeDiff(luma_base, self._demangled_luma)
 
         chroma_fixup = [reconstruct(luma_fixup, r, radius, mean, func=func, **kwargs) for r in self._rchroma]
-        return [core.std.MergeDiff(chroma_dm, fixup) for chroma_dm, fixup in zip(self._demangled_chroma, chroma_fixup)]
+        return list(map(core.std.MergeDiff, self._demangled_chroma, chroma_fixup))
 
     @cachedproperty
     def ss_shift(self) -> SubsampledShift:
