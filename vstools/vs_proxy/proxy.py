@@ -798,7 +798,7 @@ def register_on_creation(callback: Callable[..., None], strict: bool = False) ->
     # that haven't been run for the current core instance yet.
     if has_policy() and has_env() and core.active:
         with get_current_environment().use():
-            core.core_id
+            _get_core_with_cb(core)
 
 
 def unregister_on_creation(callback: Callable[..., None]) -> None:
