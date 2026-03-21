@@ -378,8 +378,7 @@ class SplitHelper:
 
         if f == t:
             return None
-        else:
-            return vnode[f:t]
+        return vnode[f:t]
 
     @staticmethod
     def _cut_fz_a(title: Title, anode: vs.AudioNode, start: int, end: int) -> vs.AudioNode | None:
@@ -395,5 +394,4 @@ class SplitHelper:
 
         if samples_start == samples_end:
             return None
-        else:
-            return anode[samples_start:samples_end]
+        return anode[samples_start:samples_end]

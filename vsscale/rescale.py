@@ -89,8 +89,7 @@ class RescaleBase(VSObjectABC):
                 clip = self._field_based.apply(clip)
                 clip = function(self, clip)
                 return FieldBased.PROGRESSIVE.apply(clip)
-            else:
-                return function(self, clip)
+            return function(self, clip)
 
         return wrap
 

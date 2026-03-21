@@ -352,9 +352,7 @@ def sbr(
         if isinstance(blur, BlurMatrix):
             return blur(radius, mode=mode)(clip, planes, **kwargs)
 
-        blurred = blur(clip) if callable(blur) else blur
-
-        return blurred
+        return blur(clip) if callable(blur) else blur
 
     planes = normalize_planes(clip, planes)
 

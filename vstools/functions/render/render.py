@@ -259,13 +259,12 @@ def clip_async_render[T](
                 raise CustomValueError(
                     "You cannot have y4m=True when rendering a variable resolution clip!", clip_async_render
                 )
-            else:
-                UnsupportedColorFamilyError.check(
-                    rend_clip,
-                    (vs.YUV, vs.GRAY),
-                    clip_async_render,
-                    message="Can only render to y4m clips with {correct} color family, not {wrong}!",
-                )
+            UnsupportedColorFamilyError.check(
+                rend_clip,
+                (vs.YUV, vs.GRAY),
+                clip_async_render,
+                message="Can only render to y4m clips with {correct} color family, not {wrong}!",
+            )
 
         if progress is None:
             rend_clip.output(outfile, y4m, None, prefetch, backlog)

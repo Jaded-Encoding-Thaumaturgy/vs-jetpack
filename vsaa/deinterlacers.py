@@ -68,6 +68,7 @@ class DeinterlacerKwargs(UserDict[str, Any]):
         if not hasattr(self.deinterlacer, key):
             return super().__setitem__(key, value)
         setattr(self.deinterlacer, key, value)
+        return None
 
 
 @dataclass(kw_only=True)

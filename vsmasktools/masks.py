@@ -185,8 +185,4 @@ def stabilize_mask(
     radius_blur = radius * 2 + 1
     blurred = kernel(radius_blur, mode=ConvMode.TEMPORAL)(median, planes, scenechange=True, func=func)
 
-    binarized = blurred.std.Binarize(
-        scale_mask(1.0 / (radius_blur - clamp(brz, 0, radius_blur)), 32, clip), planes=planes
-    )
-
-    return binarized
+    return blurred.std.Binarize(scale_mask(1.0 / (radius_blur - clamp(brz, 0, radius_blur)), 32, clip), planes=planes)

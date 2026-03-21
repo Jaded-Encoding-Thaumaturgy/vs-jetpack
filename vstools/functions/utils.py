@@ -718,8 +718,7 @@ def join(
             return clips[0]
         if n_clips in (2, 3, 4):
             return join(*clips, family=family, prop_src=prop_src)
-        else:
-            raise CustomIndexError("Too many or not enough clips/planes passed!", join, n_clips)
+        raise CustomIndexError("Too many or not enough clips/planes passed!", join, n_clips)
 
     if not isinstance(plane1_or_family, vs.VideoNode):
         raise CustomTypeError(func=join)

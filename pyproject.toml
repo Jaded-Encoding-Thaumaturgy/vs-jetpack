@@ -211,6 +211,7 @@ extend-select = [
     "PYI",
     "Q",
     "RSE",
+    "RET",
     "SIM",
     "N",
     "PERF",

@@ -64,7 +64,7 @@ class CustomExprError(VSObject, CustomRuntimeError, metaclass=_CustomExprErrorMe
             _color_tag("    Boundary type:", "\033[1;37m") + f" {('Clamped edges', 'Mirrored edges')[self.boundary]}",
         ]
 
-        out = (
+        return (
             f"{func_header}\n    {self.message!s}\n\n"
             + "\n".join(clips_info)
             + "\n\n"
@@ -72,5 +72,3 @@ class CustomExprError(VSObject, CustomRuntimeError, metaclass=_CustomExprErrorMe
             + "\n\n"
             + "\n".join(args_infos)
         )
-
-        return out

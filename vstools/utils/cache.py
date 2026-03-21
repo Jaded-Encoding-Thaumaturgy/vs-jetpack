@@ -26,7 +26,7 @@ __all__ = [
 class ClipsCache(VSObjectABC, UserDict[vs.VideoNode, vs.VideoNode]):
     def __delitem__(self, key: vs.VideoNode) -> None:
         if key not in self:
-            return
+            return None
 
         return super().__delitem__(key)
 
@@ -132,7 +132,7 @@ class ClipFramesCache(NodeFramesCache[vs.VideoNode, vs.VideoFrame]): ...
 class NodesPropsCache[NodeT: vs.RawNode](LRUCache[tuple[NodeT, int], MutableMapping[str, "_PropValue"]]):
     def __delitem__(self, key: tuple[NodeT, int]) -> None:
         if key not in self:
-            return
+            return None
 
         return super().__delitem__(key)
 

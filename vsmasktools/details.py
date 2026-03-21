@@ -34,9 +34,7 @@ def detail_mask(
     mask = ExprOp.MAX.combine(range_mask, edges)
 
     mask = remove_grain(mask, 22)
-    mask = remove_grain(mask, 11)
-
-    return mask
+    return remove_grain(mask, 11)
 
 
 @limiter

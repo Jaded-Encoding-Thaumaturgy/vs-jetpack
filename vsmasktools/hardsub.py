@@ -323,9 +323,7 @@ class HardsubSign(HardsubMask):
         hsmf = Morpho.binarize(hsmf, self.thr)
         hsmf = Morpho.minimum(hsmf, iterations=self.minimum, func=self.__class__)
         hsmf = Morpho.expand(hsmf, self.expand, mode=self.expand_mode, func=self.__class__)
-        hsmf = Morpho.inflate(hsmf, iterations=self.inflate, func=self.__class__)
-
-        return hsmf
+        return Morpho.inflate(hsmf, iterations=self.inflate, func=self.__class__)
 
 
 class HardsubLine(HardsubMask):
@@ -481,9 +479,7 @@ class HardsubASS(HardsubMask):
         mask = mask.std.BinarizeMask(1)
 
         mask = iterate(mask, core.lazy.std.Maximum, 3)
-        mask = iterate(mask, core.lazy.std.Inflate, 3)
-
-        return mask
+        return iterate(mask, core.lazy.std.Inflate, 3)
 
 
 def bounded_dehardsub(

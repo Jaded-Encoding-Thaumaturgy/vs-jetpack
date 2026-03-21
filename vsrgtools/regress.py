@@ -672,11 +672,7 @@ class ChromaReconstruct(VSObjectABC):
         luma_fixup = core.std.MakeDiff(luma_base, self._demangled_luma)
 
         chroma_fixup = [reconstruct(luma_fixup, r, radius, mean, func=func, **kwargs) for r in self._rchroma]
-        recons = [
-            core.std.MergeDiff(chroma_dm, fixup) for chroma_dm, fixup in zip(self._demangled_chroma, chroma_fixup)
-        ]
-
-        return recons
+        return [core.std.MergeDiff(chroma_dm, fixup) for chroma_dm, fixup in zip(self._demangled_chroma, chroma_fixup)]
 
     @cachedproperty
     def ss_shift(self) -> SubsampledShift:

@@ -809,9 +809,9 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
 
         if not (conv_len := len(convolution)) % 2:
             raise CustomValueError("Convolution length must be odd!", cls.convolution, matrix)
-        elif conv_len < 3:
+        if conv_len < 3:
             raise CustomValueError("You must pass at least 3 convolution items!", cls.convolution, matrix)
-        elif mode == ConvMode.SQUARE and conv_len != isqrt(conv_len) ** 2:
+        if mode == ConvMode.SQUARE and conv_len != isqrt(conv_len) ** 2:
             raise CustomValueError(
                 "With square mode, convolution must represent a horizontal*vertical square (radius*radius n items)!",
                 cls.convolution,
@@ -967,7 +967,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
             An [ExprList][vsexprtools.ExprList] representing the arctangent expression.
         """
         # Using domain reduction when |x| > 1
-        expr = ExprList(
+        return ExprList(
             [
                 ExprList([c, cls.DUP, "__atanvar!", cls.ABS, 1, cls.GT]),
                 ExprList(
@@ -989,8 +989,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
                 cls.TERN,
             ]
         )
-
-        return expr
 
     @classmethod
     def atanf(cls, c: SupportsString = "", n: int = 10) -> ExprList:

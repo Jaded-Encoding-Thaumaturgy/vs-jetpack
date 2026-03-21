@@ -375,9 +375,7 @@ class Morpho:
         func = func or self.closing
 
         dilated = self.dilation(clip, radius, thr, iterations, coords, multiply, planes, func=func, **kwargs)
-        eroded = self.erosion(dilated, radius, thr, iterations, coords, multiply, planes, func=func, **kwargs)
-
-        return eroded
+        return self.erosion(dilated, radius, thr, iterations, coords, multiply, planes, func=func, **kwargs)
 
     @inject_self
     def opening(
@@ -412,9 +410,7 @@ class Morpho:
         func = func or self.opening
 
         eroded = self.erosion(clip, radius, thr, iterations, coords, multiply, planes, func=func, **kwargs)
-        dilated = self.dilation(eroded, radius, thr, iterations, coords, multiply, planes, func=func, **kwargs)
-
-        return dilated
+        return self.dilation(eroded, radius, thr, iterations, coords, multiply, planes, func=func, **kwargs)
 
     @inject_self
     def gradient(

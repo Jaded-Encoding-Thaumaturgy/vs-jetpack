@@ -61,10 +61,9 @@ class IsoFile:
         fullvts = core.dvdsrc2.FullVts(str(self.iso_path), vts=title_set_nr)
         if apply_rff:
             return fullvts
-        else:
-            staff = dvdsrc_extract_data(fullvts)
+        staff = dvdsrc_extract_data(fullvts)
 
-            return apply_rff_video(fullvts, staff.rff, staff.tff, staff.prog, staff.progseq)
+        return apply_rff_video(fullvts, staff.rff, staff.tff, staff.prog, staff.progseq)
 
     def get_title(self, title_nr: int = 1, angle_nr: int | None = None, rff_mode: int = 0) -> Title:
         """

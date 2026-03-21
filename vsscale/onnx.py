@@ -1071,9 +1071,7 @@ class _Waifu2xCunet(BaseWaifu2x, BaseOnnxScalerRGB):
         with padder.ctx(4, 4) as pad:
             padded = pad.MIRROR(clip)
             scaled = super().inference(padded, **kwargs)
-            cropped = pad.CROP(scaled)
-
-        return cropped
+            return pad.CROP(scaled)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         # Cunet model also has a tint issue but it is not constant

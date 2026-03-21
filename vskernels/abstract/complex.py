@@ -482,9 +482,7 @@ class KeepArScaler(Scaler):
             clip, width, height, shift, self.kernel_radius, **kwargs
         )
 
-        scaled = super().scale(padded, width, height, shift, **kwargs)
-
-        return scaled
+        return super().scale(padded, width, height, shift, **kwargs)
 
 
 class ComplexScaler(KeepArScaler, LinearScaler):
@@ -793,14 +791,13 @@ class ComplexDescaler(LinearDescaler):
 
         if field_based.is_inter:
             raise NotImplementedError
-        else:
-            shift = _descale_shift_norm(shift, True, self.rescale)
+        shift = _descale_shift_norm(shift, True, self.rescale)
 
-            kwargs, shift = sample_grid_model.for_src(clip, width, height, shift, **kwargs)
+        kwargs, shift = sample_grid_model.for_src(clip, width, height, shift, **kwargs)
 
-            rescaled = super().rescale(
-                clip, **self.get_rescale_args(clip, shift, *de_base_args, **kwargs), linear=linear, sigmoid=sigmoid
-            )
+        rescaled = super().rescale(
+            clip, **self.get_rescale_args(clip, shift, *de_base_args, **kwargs), linear=linear, sigmoid=sigmoid
+        )
 
         return depth(rescaled, bits)
 

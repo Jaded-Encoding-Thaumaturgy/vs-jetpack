@@ -229,6 +229,7 @@ class FixBorderBrightness(VSObject):
 
                 for k in range(*_normalize_slice(rows, length, self.__class__).indices(length)):
                     self._tofix_rows[p_i][k] = value
+        return None
 
     def fix_column(self, num: int, value: float, plane_index: int = 0) -> None:
         """

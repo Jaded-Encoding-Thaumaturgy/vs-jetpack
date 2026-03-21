@@ -111,7 +111,7 @@ class D2VWitch(ExternalIndexer):
 
                 if ffile_idx < file_idx:
                     continue
-                elif ffile_idx > file_idx:
+                if ffile_idx > file_idx:
                     break
 
                 frame_data.append(

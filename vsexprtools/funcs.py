@@ -271,8 +271,7 @@ def norm_expr(
                 split_planes=split_planes,
                 **kwargs,
             )
-        else:
-            nexpr = tuple(to_arr(x) for x in expr)
+        nexpr = tuple(to_arr(x) for x in expr)
     elif isinstance(expr, Sequence):
         nexpr = (to_arr(expr),)
     else:
