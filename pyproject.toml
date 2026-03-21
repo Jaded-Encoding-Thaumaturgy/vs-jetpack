@@ -63,6 +63,7 @@ dev = [
     "pytest>=9.0.0, <10.0.0",
     "pytest-cov>=6.2.1, <8.0.0",
     "ruff~=0.15.0",
+    "prek>=0.3.6",
     "scipy-stubs>=1.16.0.0",
     "types-psutil>=7.0.0.20250801",
     # Needed for the folder "scripts"
@@ -153,6 +154,25 @@ pythonpath = "."
 [tool.mypy]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
 
+files = [
+    "scripts",
+    "stubs",
+    "tests",
+    "vsaa",
+    "vsdeband",
+    "vsdehalo",
+    "vsdeinterlace",
+    "vsdenoise",
+    "vsexprtools",
+    "vsjetpack",
+    "vskernels",
+    "vsmasktools",
+    "vsrgtools",
+    "vsscale",
+    "vssource",
+    "vstools",
+]
+
 exclude_gitignore = true
 
 # Flags changed by --strict
@@ -171,6 +191,7 @@ show_column_numbers = true
 pretty = true
 color_output = true
 error_summary = true
+fixed_format_cache = true
 
 [tool.ruff]
 line-length = 120
