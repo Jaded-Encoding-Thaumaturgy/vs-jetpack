@@ -98,9 +98,8 @@ class MagDirection(IntFlag):
         # In Python <3.11, composite flags are included in MagDirection's
         # collection and iteration interfaces.
         primary_flags = [flag for flag in MagDirection if flag != 0 and flag & (flag - 1) == 0]
-        assert len(matrices) == len(primary_flags) and self
 
-        return [matrix for flag, matrix in zip(primary_flags, matrices) if self & flag]
+        return [matrix for flag, matrix in zip(primary_flags, matrices, strict=True) if self & flag]
 
 
 def _base_from_param[EdgeDetectT: EdgeDetect](

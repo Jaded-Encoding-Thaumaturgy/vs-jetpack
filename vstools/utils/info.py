@@ -136,8 +136,6 @@ def get_plane_sizes(frame: vs.VideoNode | vs.VideoFrame, /, index: int) -> tuple
     Get the size of a given clip's plane using the index.
     """
 
-    assert frame.format and frame.width
-
     width, height = frame.width, frame.height
 
     if index != 0:

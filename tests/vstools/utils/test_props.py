@@ -84,7 +84,7 @@ def test_get_prop_func() -> None:
 
 
 @pytest.mark.parametrize(
-    "prop_name, prop_type, expected",
+    ("prop_name", "prop_type", "expected"),
     [
         ("__IntProp", int, 123),
         ("__FloatProp", float, 123),
@@ -97,7 +97,7 @@ def test_get_prop_cast_int_success(prop_name: str, prop_type: type, expected: An
 
 
 @pytest.mark.parametrize(
-    "prop_name, prop_type, expected",
+    ("prop_name", "prop_type", "expected"),
     [
         ("__IntProp", int, 123.0),
         ("__FloatProp", float, 123.456),
@@ -110,7 +110,7 @@ def test_get_prop_cast_float_success(prop_name: str, prop_type: type, expected: 
 
 
 @pytest.mark.parametrize(
-    "prop_name, prop_type",
+    ("prop_name", "prop_type"),
     [
         ("__StrProp", str),
         ("__IntProp", int),
@@ -127,7 +127,7 @@ def test_get_prop_cast_bool(prop_name: str, prop_type: type[Any]) -> None:
 
 
 @pytest.mark.parametrize(
-    "prop_name, prop_type, expected",
+    ("prop_name", "prop_type", "expected"),
     [
         ("__StrProp", str, "test string"),
         ("__IntProp", int, "123"),
@@ -143,7 +143,7 @@ def test_get_prop_cast_str(prop_name: str, prop_type: type[Any], expected: str) 
 
 
 @pytest.mark.parametrize(
-    "prop_name, prop_type, cast, expected",
+    ("prop_name", "prop_type", "cast", "expected"),
     [
         ("__StrProp", str, lambda x: bytes(x, "utf-8"), b"test string"),
         ("__BytesProp", bytes, bytes, b"test bytes"),
