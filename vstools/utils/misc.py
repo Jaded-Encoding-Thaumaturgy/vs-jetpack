@@ -3,9 +3,11 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import AbstractContextManager
 from fractions import Fraction
+from itertools import chain, count
+from logging import getLogger
 from math import floor
 from types import TracebackType
-from typing import Any, Self, overload
+from typing import Any, Protocol, Self, overload
 
 from jetpytools import MISSING, CustomValueError, MissingT, normalize_seq, to_arr
 from jetpytools import flatten as jetp_flatten
@@ -29,6 +31,8 @@ __all__ = [
     "padder_ctx",
     "set_output",
 ]
+
+logger = getLogger(__name__)
 
 
 def change_fps(clip: vs.VideoNode, fps: Fraction) -> vs.VideoNode:
@@ -445,86 +449,119 @@ class padder:
         return padding, tuple(x * crop_scale[0 if i < 2 else 1] for x, i in enumerate(padding))  # type: ignore
 
 
-@overload
-def set_output(node: vs.VideoNode, index: int = ..., /, *, alpha: vs.VideoNode | None = ..., **kwargs: Any) -> None: ...
+class SetOuptutFunction[**P](Protocol):
+    """Protocol for functions that set VapourSynth outputs."""
+
+    def __call__(
+        self,
+        node: vs.VideoNode | VideoNodeIterable | AudioNodeIterable | RawNodeIterable,
+        index_or_name: int | str | None = None,
+        /,
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> None: ...
 
 
-@overload
-def set_output(
-    node: vs.VideoNode, name: str | bool | None = ..., /, *, alpha: vs.VideoNode | None = ..., **kwargs: Any
-) -> None: ...
+class SetOutput[**P]:
+    """
+    Class decorator that wraps the [set_output][vstools.utils.misc.set_output] function
+    and extends its functionality.
+
+    It is not meant to be used directly.
+    """
+
+    def __init__(self, func: SetOuptutFunction[P]) -> None:
+        self._default_implementation = func
+        self._func = func
+
+    def __call__(
+        self,
+        node: vs.VideoNode | VideoNodeIterable | AudioNodeIterable | RawNodeIterable,
+        index_or_name: int | str | None = None,
+        /,
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> None:
+        return self._func(node, index_or_name, *args, **kwargs)
+
+    def __matmul__(self, other: SetOuptutFunction[P]) -> Self:
+        self._func = other
+        return self
+
+    def register(self, func: SetOuptutFunction[P]) -> None:
+        """
+        Register a custom function for setting outputs.
+
+        Args:
+            func: The function to be registered and used for subsequent calls.
+        """
+        self @= func
+
+    def unregister(self, func: SetOuptutFunction[P]) -> None:
+        """
+        Unregister the current function and restore the default implementation.
+
+        Args:
+            func: The function expected to be currently registered.
+                A warning is logged if it does not match the active function.
+        """
+        current = self._func
+        self._func = self._default_implementation
+
+        if func is not current:
+            logger.warning(
+                "Attempted to unregister %r, but the registered function was %r",
+                getattr(func, "__qualname__", repr(func)),
+                current,
+            )
+
+    def reset_default(self) -> None:
+        """
+        Reset the active function to the default implementation.
+        """
+        self._func = self._default_implementation
 
 
-@overload
-def set_output(
-    node: vs.VideoNode,
-    index: int = ...,
-    name: str | bool | None = ...,
-    /,
-    alpha: vs.VideoNode | None = ...,
-    **kwargs: Any,
-) -> None: ...
-
-
-@overload
-def set_output(
-    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable, index: int | Sequence[int] = ..., /, **kwargs: Any
-) -> None: ...
-
-
-@overload
-def set_output(
-    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable, name: str | bool | None = ..., /, **kwargs: Any
-) -> None: ...
-
-
-@overload
-def set_output(
-    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable,
-    index: int | Sequence[int] = ...,
-    name: str | bool | None = ...,
-    /,
-    **kwargs: Any,
-) -> None: ...
-
-
+@SetOutput
 def set_output(
     node: vs.VideoNode | VideoNodeIterable | AudioNodeIterable | RawNodeIterable,
-    index_or_name: int | Sequence[int] | str | bool | None = None,
-    name: str | bool | None = None,
+    index: int | str | None = None,
     /,
-    alpha: vs.VideoNode | None = None,
+    *args: Any,
     **kwargs: Any,
 ) -> None:
     """
-    Wrapper around vspreview.set_output if available, falling back to basic VapourSynth output.
+    Set VapourSynth outputs for one or multiple nodes.
+
+    This function represents the default implementation for setting outputs.
+    Note that previewers and other tools may register a different function to handle output setting,
+    so the logic here only reflects the default state.
 
     Args:
-        node: Output node(s).
-        index_or_name: Index number or name, defaults to current maximum index number + 1.
-        name: Node's display name, defaults to variable name if True.
-        alpha: Optional alpha planes node.
-        **kwargs: Extra arguments passed through to vspreview.set_output.
+        node: Node or iterable of nodes.
+        index: Starting index.
+            In the default implementation, if a single index is provided and there are multiple nodes,
+            subsequent nodes will be assigned to consecutive indices.
+            If None, nodes are assigned starting from the first available output index.
     """
-    try:
-        from vspreview import set_output as vsp_set_output
+    if isinstance(index, str):
+        logger.warning("set_output(): Named outputs are not supported in the default implementation!")
+        index = None
 
-    except ModuleNotFoundError:
-        index = None if isinstance(index_or_name, (str, bool)) else index_or_name
+    nodes = list[vs.RawNode](flatten(node))
+    indices_seq = to_arr(index) if index is not None else [max(vs.get_outputs(), default=-1) + 1]
+    indices = chain(indices_seq, count(indices_seq[-1] + 1))
 
-        outputs = vs.get_outputs()
-        nodes = list(flatten(node))
-        indices = to_arr(index) if index is not None else [max(outputs, default=-1) + 1]
+    alpha, alt_output = kwargs.pop("alpha", None), kwargs.pop("alt_output", 0)
 
-        while len(indices) < len(nodes):
-            indices.append(indices[-1] + 1)
+    if args or kwargs:
+        logger.warning("set_output(): Got unexpected arguments: %s, %s", args, kwargs)
 
-        for idx, n in zip(indices[: len(nodes)], nodes):
+    for idx, n in zip(indices, nodes):
+        if isinstance(n, vs.VideoNode):
+            n.set_output(idx, alpha, alt_output)
+        else:
             n.set_output(idx)
-    else:
-        kwargs.setdefault("frame_depth", 2)
-
-        return vsp_set_output(node, index_or_name, name, alpha=alpha, **kwargs)  # type: ignore[arg-type]
 
 
 def normalize_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:
