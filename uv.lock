@@ -1707,8 +1707,6 @@ dev = [
     { name = "mypy" },
     { name = "orderedsets" },
     { name = "prek" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "ruff" },
     { name = "scipy-stubs" },
     { name = "types-psutil" },
@@ -1726,6 +1724,10 @@ doc = [
     { name = "orderedsets" },
     { name = "vspreview" },
     { name = "vstransitions" },
+]
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
 ]
 
 [package.metadata]
@@ -1746,8 +1748,6 @@ dev = [
     { name = "mypy", specifier = "~=1.19.0" },
     { name = "orderedsets" },
     { name = "prek", specifier = ">=0.3.6" },
-    { name = "pytest", specifier = ">=9.0.0,<10.0.0" },
-    { name = "pytest-cov", specifier = ">=6.2.1,<8.0.0" },
     { name = "ruff", specifier = "~=0.15.0" },
     { name = "scipy-stubs", specifier = ">=1.16.0.0" },
     { name = "types-psutil", specifier = ">=7.0.0.20250801" },
@@ -1765,6 +1765,10 @@ doc = [
     { name = "orderedsets" },
     { name = "vspreview", specifier = ">=0.18.1" },
     { name = "vstransitions", specifier = "==0.1.4" },
+]
+test = [
+    { name = "pytest", specifier = ">=9.0.0,<10.0.0" },
+    { name = "pytest-cov", specifier = ">=6.2.1,<8.0.0" },
 ]
 
 [[package]]
