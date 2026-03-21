@@ -4,6 +4,7 @@ This module implements utilities for correcting dirty or damaged borders.
 
 from __future__ import annotations
 
+from collections import UserDict
 from typing import TYPE_CHECKING, Any, SupportsIndex
 
 from jetpytools import CustomOverflowError, CustomTypeError, FuncExcept, normalize_seq
@@ -58,7 +59,7 @@ def _is_slice_none(index: SupportsIndex | slice | None) -> TypeIs[NoneSlice]:
     return index is None or index == slice(None, None, None)
 
 
-class _BorderDict(dict[int, float]):
+class _BorderDict(UserDict[int, float]):
     def __init__(self, length: int) -> None:
         self.length = length
         super().__init__()

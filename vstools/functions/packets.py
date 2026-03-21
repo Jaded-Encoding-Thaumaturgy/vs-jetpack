@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import UserList
 from functools import cache
 from io import TextIOWrapper
 from itertools import pairwise
@@ -38,7 +39,7 @@ class ScenePacketStats(TypedDict):
     """The minimum packet size for the scene."""
 
 
-class VideoPackets(list[int]):
+class VideoPackets(UserList[int]):
     """
     A class representing video packet sizes for each frame in a video.
 

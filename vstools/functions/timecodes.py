@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from abc import abstractmethod
+from collections import UserDict, UserList
 from collections.abc import Iterable
 from dataclasses import dataclass
 from fractions import Fraction
@@ -72,7 +73,7 @@ class FrameDur:
         return float(self.to_fraction())
 
 
-class Timecodes(list[FrameDur]):
+class Timecodes(UserList[FrameDur]):
     """
     A list of frame durations, together representing a (possibly variable) frame rate.
     """
@@ -363,7 +364,7 @@ class Timecodes(list[FrameDur]):
         out_path.write_text("\n".join([*out_text, ""]))
 
 
-class Keyframes(list[int]):
+class Keyframes(UserList[int]):
     """
     Class representing keyframes, or scenechanges.
 
@@ -376,7 +377,7 @@ class Keyframes(list[int]):
     WWXD: ClassVar = SceneChangeMode.WWXD
     SCXVID: ClassVar = SceneChangeMode.SCXVID
 
-    class _Scenes(dict[int, range]):
+    class _Scenes(UserDict[int, range]):
         __slots__ = ("indices",)
 
         def __init__(self, kf: Keyframes) -> None:

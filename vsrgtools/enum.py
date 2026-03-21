@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import UserList
 from collections.abc import Iterable
 from enum import auto
 from math import ceil, exp, pi, sqrt
@@ -13,7 +14,7 @@ from vstools import ConvMode, Planes, core, shift_clip_multi, vs
 __all__ = ["BlurMatrix", "BlurMatrixBase"]
 
 
-class BlurMatrixBase[Nb: float | int](list[Nb]):
+class BlurMatrixBase[Nb: float | int](UserList[Nb]):
     """
     Represents a convolution kernel (matrix) for spatial or temporal filtering.
 
