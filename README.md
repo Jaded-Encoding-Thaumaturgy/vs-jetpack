@@ -2,9 +2,7 @@
 
 [![Documentation](https://img.shields.io/badge/API%20Docs-purple)](https://jaded-encoding-thaumaturgy.github.io/vs-jetpack/) [![Coverage Status](https://coveralls.io/repos/github/Jaded-Encoding-Thaumaturgy/vs-jetpack/badge.svg?branch=main)](https://coveralls.io/github/Jaded-Encoding-Thaumaturgy/vs-jetpack?branch=main) [![PyPI Version](https://img.shields.io/pypi/v/vsjetpack)](https://pypi.org/project/vsjetpack/)
 
-Full suite of filters, wrappers, and helper functions for filtering video using VapourSynth
-
-`vs-jetpack` provides a collection of Python modules for filtering video using VapourSynth.
+`vs-jetpack` provides a collection of Python modules for filtering video using [VapourSynth](https://github.com/vapoursynth/vapoursynth).
 These include modules for scaling, masking, denoising, debanding, dehaloing, deinterlacing,
 and antialiasing, as well as general utility functions.
 
