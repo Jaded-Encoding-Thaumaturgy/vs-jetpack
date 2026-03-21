@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import operator
 from collections.abc import Mapping
 from dataclasses import dataclass
 from fractions import Fraction
@@ -65,7 +66,7 @@ class Region(CustomEnum):
 
         diffs = [(r, abs(float(key) - float(r.framerate))) for r in Region]
 
-        diffs.sort(key=lambda x: x[1])
+        diffs.sort(key=operator.itemgetter(1))
 
         return diffs[0][0]
 
