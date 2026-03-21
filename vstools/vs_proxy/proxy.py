@@ -1176,7 +1176,7 @@ class VSCoreProxy(CoreProxyBase):
             threads = ceil(cpu_count() * threads)
 
         if isinstance(threads, int):
-            threads = range(0, threads)
+            threads = range(threads)
         elif isinstance(threads, tuple):
             threads = range(*threads)
 
