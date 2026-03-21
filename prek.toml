@@ -1,0 +1,35 @@
+default_install_hook_types = ["pre-commit", "pre-push"]
+
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "ruff-format"
+name = "ruff format"
+language = "system"
+entry = "uv run --locked ruff format"
+types = ["python"]
+stages = ["pre-commit"]
+require_serial = true
+priority = 0
+
+[[repos.hooks]]
+id = "ruff-check"
+name = "ruff check --fix"
+language = "system"
+entry = "uv run --locked ruff check --fix"
+types = ["python"]
+stages = ["pre-commit"]
+require_serial = true
+priority = 10
+
+[[repos.hooks]]
+id = "mypy"
+name = "mypy"
+language = "system"
+entry = "uv run --locked mypy"
+pass_filenames = false
+always_run = true
+stages = ["pre-push"]
+require_serial = true
+priority = 10
