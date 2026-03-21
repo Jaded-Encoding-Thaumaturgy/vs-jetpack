@@ -589,9 +589,10 @@ def _is_base_scaler_like(obj: Any, base_scaler: type[BaseScaler]) -> bool:
     if isinstance(obj, str):
         try:
             base_scaler.from_param(obj)
-            return True
         except base_scaler._err_class:
             pass
+        else:
+            return True
 
     return False
 
@@ -651,9 +652,10 @@ def is_noscale_like[ScalerT: Scaler](obj: Any, specializer: type[ScalerT] = Scal
     if isinstance(obj, str):
         try:
             NoScale.from_param(obj)
-            return True
         except NoScale._err_class:
             return False
+        else:
+            return True
 
     if isinstance(obj, GenericAlias):
         obj = get_origin(obj)
