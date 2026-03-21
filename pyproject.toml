@@ -222,6 +222,8 @@ extend-select = [
     "FURB",
     "RUF",
 ]
+preview = true
+ignore = ["RUF067", "B010", "B009", "BLE001"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.*" = ["F401", "F403"]
