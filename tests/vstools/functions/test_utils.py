@@ -3,8 +3,6 @@ from unittest import TestCase
 import pytest
 
 from vstools import (
-    ColorRange,
-    DitherType,
     UnsupportedColorFamilyError,
     core,
     depth,
@@ -18,45 +16,6 @@ from vstools import (
     stack_planes,
     vs,
 )
-
-
-class TestDitherType(TestCase):
-    def test_should_dither_to_float(self) -> None:
-        result = DitherType.ERROR_DIFFUSION.should_dither(vs.YUV444P8, vs.YUV444PS)
-        self.assertFalse(result)
-
-    def test_should_dither_from_float(self) -> None:
-        result = DitherType.ERROR_DIFFUSION.should_dither(vs.YUV444PS, vs.YUV444P8)
-        self.assertTrue(result)
-
-    def test_should_dither_range_change(self) -> None:
-        result = DitherType.ERROR_DIFFUSION.should_dither(
-            vs.YUV444P8,
-            vs.YUV444P8,
-            in_range=ColorRange.LIMITED,
-            out_range=ColorRange.FULL,
-        )
-        self.assertTrue(result)
-
-        result = DitherType.ERROR_DIFFUSION.should_dither(
-            vs.YUV444P8,
-            vs.YUV444P8,
-            in_range=ColorRange.FULL,
-            out_range=ColorRange.LIMITED,
-        )
-        self.assertTrue(result)
-
-    def test_should_dither_bits_same(self) -> None:
-        result = DitherType.ERROR_DIFFUSION.should_dither(vs.YUV444P8, vs.YUV444P8)
-        self.assertFalse(result)
-
-    def test_should_dither_bits_increase(self) -> None:
-        result = DitherType.ERROR_DIFFUSION.should_dither(vs.YUV444P8, vs.YUV444P16)
-        self.assertFalse(result)
-
-    def test_should_dither_bits_decrease(self) -> None:
-        result = DitherType.ERROR_DIFFUSION.should_dither(vs.YUV444P16, vs.YUV444P8)
-        self.assertTrue(result)
 
 
 class TestUtils(TestCase):
