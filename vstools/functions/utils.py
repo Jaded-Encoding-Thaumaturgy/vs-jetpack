@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import operator
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from enum import EnumMeta
 from functools import partial, reduce, wraps
 from types import NoneType
 from typing import Any, Literal, Self, SupportsIndex, overload
@@ -18,8 +17,6 @@ from jetpytools import (
     normalize_seq,
     to_arr,
 )
-
-from vsjetpack import deprecated
 
 from ..enums import ColorRange, ColorRangeLike, Matrix
 from ..exceptions import ClipLengthError, UnsupportedColorFamilyError
@@ -83,20 +80,7 @@ Variables to access clips in Expr.
 """
 
 
-class _EnumDeprecationWarning(DeprecationWarning): ...
-
-
-class _DitherTypeMeta(EnumMeta):
-    @property
-    @deprecated(
-        '"AUTO" member is deprecated and will be removed in a future version. Please use RANDOM instead',
-        category=_EnumDeprecationWarning,
-    )
-    def AUTO(cls) -> Literal[DitherType.RANDOM]:  # noqa: N802
-        return DitherType.RANDOM
-
-
-class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
+class DitherType(CustomStrEnum):
     """
     Enum for `zimg_dither_type_e` and fmtc `dmode`.
     """
@@ -206,119 +190,6 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
             DitherType.OSTROMOUKHOV,
             DitherType.QUASIRANDOM,
         )
-
-    @overload
-    @staticmethod
-    def should_dither(
-        in_fmt: VideoFormatLike | HoldsVideoFormat,
-        out_fmt: VideoFormatLike | HoldsVideoFormat,
-        /,
-        in_range: ColorRangeLike | None = None,
-        out_range: ColorRangeLike | None = None,
-    ) -> bool:
-        """
-        Automatically determines whether dithering is needed for a given depth/range/sample type conversion.
-
-        Args:
-            in_fmt: Input clip, frame or video format.
-            out_fmt: Output clip, frame or video format.
-            in_range: Input color range.
-            out_range: Output color range.
-
-        Returns:
-            Whether the clip should be dithered.
-        """
-
-    @overload
-    @staticmethod
-    def should_dither(
-        in_bits: int,
-        out_bits: int,
-        /,
-        in_range: ColorRangeLike | None = None,
-        out_range: ColorRangeLike | None = None,
-        in_sample_type: vs.SampleType | None = None,
-        out_sample_type: vs.SampleType | None = None,
-    ) -> bool:
-        """
-        Automatically determines whether dithering is needed for a given depth/range/sample type conversion.
-
-        Args:
-            in_bits: Input bitdepth.
-            out_bits: Output bitdepth.
-            in_range: Input color range.
-            out_range: Output color range.
-            in_sample_type: Input sample type.
-            out_sample_type: Output sample type.
-
-        Returns:
-            Whether the clip should be dithered.
-        """
-
-    @staticmethod
-    @deprecated("should_dither is deprecated and will be removed in a future version.", category=DeprecationWarning)
-    def should_dither(
-        in_bits_or_fmt: int | VideoFormatLike | HoldsVideoFormat,
-        out_bits_or_fmt: int | VideoFormatLike | HoldsVideoFormat,
-        /,
-        in_range: ColorRangeLike | None = None,
-        out_range: ColorRangeLike | None = None,
-        in_sample_type: vs.SampleType | None = None,
-        out_sample_type: vs.SampleType | None = None,
-    ) -> bool:
-        """
-        Automatically determines whether dithering is needed for a given depth/range/sample type conversion.
-
-        If an input range is specified, an output range *should* be specified, otherwise it assumes a range conversion.
-
-        For an explanation of when dithering is needed:
-
-        - Dithering is NEVER needed if the conversion results in a float sample type.
-        - Dithering is ALWAYS needed for a range conversion (i.e. full to limited or vice-versa).
-        - Dithering is ALWAYS needed to convert a float sample type to an integer sample type.
-        - Dithering is needed when upsampling full range content except when one depth is a multiple of the other,
-            when the upsampling is a simple integer multiplication, e.g. for 8 -> 16: (0-255) * 257 -> (0-65535).
-        - Dithering is needed when downsampling limited or full range.
-
-        Dithering is theoretically needed when converting from an integer depth greater than 10 to half float,
-        despite the higher bit depth, but zimg's internal resampler currently does not dither for float output.
-
-        Args:
-            in_bits_or_fmt: Input bitdepth, clip, frame or video format.
-            out_bits_or_fmt: Output bitdepth, clip, frame or video format.
-            in_range: Input color range.
-            out_range: Output color range.
-            in_sample_type: Input sample type.
-            out_sample_type: Output sample type.
-
-        Returns:
-            Whether the clip should be dithered.
-        """
-        in_fmt = get_video_format(in_bits_or_fmt, sample_type=in_sample_type)
-        out_fmt = get_video_format(out_bits_or_fmt, sample_type=out_sample_type)
-
-        in_range = ColorRange.from_param_with_fallback(in_range)
-        out_range = ColorRange.from_param_with_fallback(out_range)
-
-        if out_fmt.sample_type is vs.FLOAT:
-            return False
-
-        if in_fmt.sample_type is vs.FLOAT:
-            return True
-
-        if in_range != out_range:
-            return True
-
-        in_bits = in_fmt.bits_per_sample
-        out_bits = out_fmt.bits_per_sample
-
-        if in_bits == out_bits:
-            return False
-
-        if in_bits > out_bits:
-            return True
-
-        return in_range == ColorRange.FULL and bool(out_bits % in_bits)
 
 
 def depth(

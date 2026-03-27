@@ -4,15 +4,14 @@ This module implements functions based on the famous dehalo_alpha.
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator
 from typing import Any, TypeGuard
 
 from jetpytools import CustomIndexError, FuncExcept, mod_x, normalize_seq
 
 from vsdenoise import Prefilter
 from vsexprtools import norm_expr
-from vsjetpack import deprecated
-from vskernels import BSpline, Lanczos, Mitchell, Scaler
+from vskernels import Lanczos, Mitchell, Scaler
 from vsmasktools import Morpho
 from vsrgtools import gauss_blur, repair
 from vstools import (
@@ -21,15 +20,12 @@ from vstools import (
     VSFunctionPlanesArgs,
     check_progressive,
     core,
-    join,
     limiter,
-    normalize_planes,
     scale_delta,
-    split,
     vs,
 )
 
-__all__ = ["AlphaBlur", "dehalo_alpha"]
+__all__ = ["dehalo_alpha"]
 
 
 type IterArr[T] = T | list[T] | tuple[T | list[T], ...]
@@ -191,96 +187,6 @@ def dehalo_alpha(
         out = out.std.ClipToProp(mask, f"DehaloAlphaMask_{i}")
 
     return out
-
-
-@deprecated("AlphaBlur is deprecated.", category=PendingDeprecationWarning)
-class AlphaBlur:
-    """
-    A Gaussian blur approximation inspired by Dehalo_Alpha.
-
-    The blur radius roughly corresponds to a Gaussian sigma as follows:
-        - Radius 1.5 ≈ sigma 1.0
-        - Radius 2.0 ≈ sigma 1.4
-        - Radius 3.0 ≈ sigma 2.0
-        - Radius 4.0 ≈ sigma 2.75
-    """
-
-    __slots__ = ("_downscaler", "_func", "_rx", "_ry", "_upscaler")
-
-    def __init__(
-        self,
-        rx: float | Sequence[float] = 2.0,
-        ry: float | Sequence[float] | None = None,
-        func: FuncExcept | None = None,
-        **kwargs: Any,
-    ) -> None:
-        """
-        Initializes an AlphaBlur instance.
-
-        Args:
-            rx: Horizontal radius for halo removal.
-            ry: Vertical radius for halo removal. Defaults to `rx` if not set.
-            func: An optional function to use for error handling.
-            **kwargs: Optional keyword arguments:
-
-                   - downscaler: Custom downscaler Scaler object.
-                   - upscaler: Custom upscaler Scaler object.
-        """
-        self._rx = rx
-        self._ry = self._rx if ry is None else ry
-        self._func = func or self
-        self._downscaler = Scaler.ensure_obj(kwargs.get("downscaler", Mitchell), self._func)
-        self._upscaler = Scaler.ensure_obj(kwargs.get("upscaler", BSpline), self._func)
-
-    def __call__(self, clip: vs.VideoNode, planes: Planes = None, **kwargs: Any) -> vs.VideoNode:
-        """
-        Applies the Gaussian blur approximation to the input clip.
-
-        Args:
-            clip: Source clip.
-            planes: Which planes to process. Default to all.
-
-        Raises:
-            CustomIndexError: If any of the radius values (`rx` or `ry`) are less than 1.0.
-
-        Returns:
-            Blurred clip.
-        """
-        planes = normalize_planes(clip, planes)
-
-        work_clip, *chroma = split(clip) if planes == [0] else (clip,)
-
-        rxs = normalize_seq(self._rx, work_clip.format.num_planes)
-        rys = normalize_seq(self._ry, work_clip.format.num_planes)
-
-        if any(x < 1 for x in (*rxs, *rys)):
-            raise CustomIndexError("rx, and ry must all be greater than 1.0!", self._func)
-
-        if (len(set(rxs)) == len(set(rys)) == 1) or planes == [0] or work_clip.format.num_planes == 1:
-            processed = self._function(clip, rxs[0], rys[0])
-
-            if not chroma:
-                return processed
-
-            return join([processed, *chroma], clip.format.color_family)
-
-        return join([self._function(*values) for values in zip(split(work_clip), rxs, rys)])
-
-    def _function(
-        self,
-        clip: vs.VideoNode,
-        rx: float,
-        ry: float,
-    ) -> vs.VideoNode:
-        return self._upscaler.scale(
-            self._downscaler.scale(
-                clip,
-                mod_x(clip.width / rx, 2**clip.format.subsampling_w),
-                mod_x(clip.height / ry, 2**clip.format.subsampling_h),
-            ),
-            clip.width,
-            clip.height,
-        )
 
 
 # HELPER FUNCTIONS BELOW #
