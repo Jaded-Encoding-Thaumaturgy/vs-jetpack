@@ -9,7 +9,7 @@ from vstools import Planes, normalize_param_planes, vs
 
 from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
 
-__all__ = ["clense", "remove_grain", "removegrain", "repair", "vertical_cleaner"]
+__all__ = ["clense", "remove_grain", "repair", "vertical_cleaner"]
 
 
 class Repair[**P, R]:
@@ -670,6 +670,3 @@ def vertical_cleaner(
         return clip
 
     return clip.zsmooth.VerticalCleaner(mode)
-
-
-removegrain = remove_grain  # TODO: remove

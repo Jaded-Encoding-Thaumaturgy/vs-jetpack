@@ -3,14 +3,13 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, SupportsFloat, cast
 
-from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomStrEnum, fallback, normalize_seq
+from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomStrEnum, normalize_seq
 
 from vsaa import BWDIF, NNEDI3, Deinterlacer
 from vsexprtools import norm_expr
-from vsjetpack import deprecated
 from vskernels import Box, Point
-from vsmasktools import FDoG, MaskLike, Morpho, adg_mask, normalize_mask, strength_zones_mask
-from vsrgtools import MeanMode, gauss_blur, repair
+from vsmasktools import Morpho, strength_zones_mask
+from vsrgtools import MeanMode, repair
 from vsscale import DPIR
 from vstools import (
     FieldBased,
@@ -21,7 +20,6 @@ from vstools import (
     UnsupportedColorFamilyError,
     check_progressive,
     core,
-    depth,
     get_y,
     join,
     normalize_param_planes,
@@ -33,7 +31,7 @@ from vstools import (
     vs,
 )
 
-__all__ = ["deblock_qed", "dpir", "dpir_mask", "mpeg2stinx"]
+__all__ = ["deblock_qed", "dpir", "mpeg2stinx"]
 
 _StrengthT = SupportsFloat | vs.VideoNode | None
 
@@ -161,42 +159,6 @@ class dpir(CustomStrEnum):  # noqa: N801
             out = join({None: clip, tuple(planes): dpired}, clip.format.color_family, prop_src=clip)
 
         return out
-
-
-@deprecated(
-    "dpir_mask is deprecated and will be removed in a future version.",
-    category=DeprecationWarning,
-)
-def dpir_mask(
-    clip: vs.VideoNode,
-    low: float = 5,
-    high: float = 10,
-    lines: float | None = None,
-    luma_scaling: float = 12,
-    linemask: MaskLike | bool = True,
-    relative: bool = False,
-) -> vs.VideoNode:
-    y = depth(get_y(clip), 32)
-
-    if linemask is True:
-        linemask = FDoG
-
-    mask = adg_mask(y, luma_scaling, relative, func=dpir_mask)
-
-    if relative:
-        mask = gauss_blur(mask, 1.5)
-
-    mask = norm_expr(mask, f"{high} x {low} * -", func=dpir_mask)
-
-    if linemask:
-        lines = fallback(lines, high)
-        linemask = normalize_mask(linemask, y)
-
-        lines_clip = mask.std.BlankClip(color=lines)
-
-        mask = mask.std.MaskedMerge(lines_clip, linemask)
-
-    return mask
 
 
 def deblock_qed(
