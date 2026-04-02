@@ -367,6 +367,7 @@ dependencies = [
     { name = "griffecli" },
     { name = "griffelib" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/04/56/28a0accac339c164b52a92c6cfc45a903acc0c174caa5c1713803467b533/griffe-2.0.0.tar.gz", hash = "sha256:c68979cd8395422083a51ea7cf02f9c119d889646d99b7b656ee43725de1b80f", size = 293906, upload-time = "2026-03-23T21:06:53.402Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8b/94/ee21d41e7eb4f823b94603b9d40f86d3c7fde80eacc2c3c71845476dddaa/griffe-2.0.0-py3-none-any.whl", hash = "sha256:5418081135a391c3e6e757a7f3f156f1a1a746cc7b4023868ff7d5e2f9a980aa", size = 5214, upload-time = "2026-02-09T19:09:44.105Z" },
 ]
@@ -391,6 +392,7 @@ dependencies = [
     { name = "colorama" },
     { name = "griffelib" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/a4/f8/2e129fd4a86e52e58eefe664de05e7d502decf766e7316cc9e70fdec3e18/griffecli-2.0.0.tar.gz", hash = "sha256:312fa5ebb4ce6afc786356e2d0ce85b06c1c20d45abc42d74f0cda65e159f6ef", size = 56213, upload-time = "2026-03-23T21:06:54.8Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e6/ed/d93f7a447bbf7a935d8868e9617cbe1cadf9ee9ee6bd275d3040fbf93d60/griffecli-2.0.0-py3-none-any.whl", hash = "sha256:9f7cd9ee9b21d55e91689358978d2385ae65c22f307a63fb3269acf3f21e643d", size = 9345, upload-time = "2026-02-09T19:09:42.554Z" },
 ]
@@ -399,6 +401,7 @@ wheels = [
 name = "griffelib"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ad/06/eccbd311c9e2b3ca45dbc063b93134c57a1ccc7607c5e545264ad092c4a9/griffelib-2.0.0.tar.gz", hash = "sha256:e504d637a089f5cab9b5daf18f7645970509bf4f53eda8d79ed71cce8bd97934", size = 166312, upload-time = "2026-03-23T21:06:55.954Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4d/51/c936033e16d12b627ea334aaaaf42229c37620d0f15593456ab69ab48161/griffelib-2.0.0-py3-none-any.whl", hash = "sha256:01284878c966508b6d6f1dbff9b6fa607bc062d8261c5c7253cb285b06422a7f", size = 142004, upload-time = "2026-02-09T19:09:40.561Z" },
 ]
@@ -431,14 +434,14 @@ wheels = [
 
 [[package]]
 name = "jetpytools"
-version = "2.2.5"
+version = "2.2.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/d7/bc9af7784e52e7c755707b6495d8256ea434663c6f1615dd65ddf94e198d/jetpytools-2.2.5.tar.gz", hash = "sha256:e6c2cf2edc3e148b8ab76c01a98ac8e2f13734aa726fafd041f5a5468b48b4c4", size = 28216, upload-time = "2026-01-23T18:19:58.292Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6e/cb/897da3c1442beccf3269da64c576bbd4c0e041585e935778220603a2effd/jetpytools-2.2.6.tar.gz", hash = "sha256:6180736ea31cad431aa8972c9c6c434d59206903e87b9976247c2f64acab722a", size = 28553, upload-time = "2026-03-10T15:18:38.472Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b0/60/8b78677077292be302ac84284987565a804ad25420cb08474b7405a70670/jetpytools-2.2.5-py3-none-any.whl", hash = "sha256:5fec12c798d12e7f4c3b7e4916303d382b82293e71d6f9aba59e729e00626bc4", size = 32333, upload-time = "2026-01-23T18:19:56.932Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/b6/312c3af823e95353e0c5192a36a86c5fe44edde46a1e8c9ed945d8f4bf7a/jetpytools-2.2.6-py3-none-any.whl", hash = "sha256:12314ee3b016b172c72d007c3823265deb462021bfd41eaee332b4928c44a838", size = 32714, upload-time = "2026-03-10T15:18:28.439Z" },
 ]
 
 [[package]]
