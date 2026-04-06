@@ -10,7 +10,7 @@ from typing import Any, TypeGuard
 from jetpytools import CustomIndexError, FuncExcept, mod_x, normalize_seq
 
 from vsdenoise import Prefilter
-from vsexprtools import norm_expr
+from vsexprtools import ExprOp, norm_expr
 from vsjetpack import deprecated
 from vskernels import BSpline, Lanczos, Mitchell, Scaler
 from vsmasktools import Morpho
@@ -170,7 +170,7 @@ def dehalo_alpha(
             inpand = sser_ref_i.scale(Morpho.minimum(dehalo, planes=planes), ss_width, ss_height)
             expand = sser_ref_i.scale(Morpho.maximum(dehalo, planes=planes), ss_width, ss_height)
             dehalo = sser_i.scale(
-                norm_expr([clip_ss, inpand, expand], "x y z clip", planes, func=util.func),
+                ExprOp.CLAMP(clip_ss, inpand, expand, planes=planes),
                 work_clip.width,
                 work_clip.height,
             )

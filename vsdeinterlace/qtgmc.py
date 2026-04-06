@@ -20,7 +20,7 @@ from vsdenoise import (
     prefilter_to_full_range,
     refine_blksize,
 )
-from vsexprtools import norm_expr
+from vsexprtools import ExprOp, norm_expr
 from vsjetpack import deprecated
 from vskernels import Bobber, BobberLike, Catrom
 from vsmasktools import Coordinates, Morpho
@@ -1179,7 +1179,7 @@ class QTempGaussMC(VSObject):
                     expand = Morpho.maximum(
                         self.bobbed, iterations=self.sharpen_limit_radius, func=self._apply_sharpen_limit
                     )
-                    clip = norm_expr([clip, inpand, expand], "x y z clip", func=self._apply_sharpen_limit)
+                    clip = ExprOp.CLAMP(clip, inpand, expand)
             elif self.sharpen_limit_mode in (
                 self.SharpenLimitMode.TEMPORAL_PRESMOOTH,
                 self.SharpenLimitMode.TEMPORAL_POSTSMOOTH,
