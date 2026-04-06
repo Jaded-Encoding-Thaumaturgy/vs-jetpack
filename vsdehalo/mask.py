@@ -453,7 +453,6 @@ def fine_dehalo2(
     mask_radius: int = 2,
     brightstr: float = 1.0,
     darkstr: float = 1.0,
-    dark: bool | None = True,
     *,
     attach_masks: bool = False,
 ) -> vs.VideoNode:
@@ -467,7 +466,6 @@ def fine_dehalo2(
         mask_radius: Radius for mask growing.
         brightstr: Strength factor for bright halos.
         darkstr: Strength factor for dark halos.
-        dark: Whether to filter for dark or bright haloing. None for disable merging with source clip.
         attach_masks: Stores the masks as frame properties in the output clip.
             The prop names are `FineDehalo2MaskV` and `FineDehalo2MaskH`.
 
@@ -518,9 +516,6 @@ def fine_dehalo2(
     for fix, mask in [(fix_h, mask_v), (fix_v, mask_h)]:
         if mask:
             dehaloed = dehaloed.std.MaskedMerge(fix, mask)
-
-    if dark is not None:
-        dehaloed = norm_expr([work_clip, dehaloed], f"x y {'max' if dark else 'min'}")
 
     if darkstr != brightstr != 1.0:
         dehaloed = norm_expr(
