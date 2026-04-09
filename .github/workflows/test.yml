@@ -20,6 +20,9 @@ on:
 permissions:
   contents: read
 
+env:
+  UV_NO_SYNC: "1"
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -51,7 +54,7 @@ jobs:
           akarin-version: 6d7c733b3014a42be75299427b5c35f56f02a47a
 
       - name: Install dependencies
-        run: uv sync --all-extras --locked
+        run: uv sync --locked --all-extras --group test --no-dev
 
       - name: Run tests
         run: uv run pytest --cov-report=term-missing:skip-covered --cov=vskernels --cov=vstools --cov=vsexprtools tests

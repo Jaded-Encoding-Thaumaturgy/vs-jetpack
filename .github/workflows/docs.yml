@@ -39,7 +39,7 @@ jobs:
           vapoursynth-version: ${{ env.VAPOURSYNTH_VERSION }}
 
       - name: Install dependencies
-        run: uv sync --group doc
+        run: uv sync --group doc --no-dev
 
       - name: Restore build cache
         uses: actions/cache/restore@v4
@@ -50,7 +50,7 @@ jobs:
             mkdocs-material-
 
       - name: Build
-        run: uv run mkdocs build
+        run: uv run --no-sync mkdocs build
 
       - uses: actions/upload-pages-artifact@v4
         with:
