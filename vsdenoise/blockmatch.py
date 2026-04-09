@@ -604,133 +604,54 @@ def bm3d(
     matrix_rgb2opp = kwargs.pop("matrix_rgb2opp", BM3D.matrix_rgb2opp)
     matrix_opp2rgb = kwargs.pop("matrix_rgb2opp", BM3D.matrix_opp2rgb)
 
-    if backend != BM3D.Backend.OLD and profile == BM3D.Profile.VERY_NOISY:
-        raise UnsupportedProfileError("The VERY_NOISY profile is only supported with BM3D.Backend.OLD.", func)
+    plugins_args = dict[str, Any](
+        nsigma=nsigma,
+        refine=refine,
+        profile=profile,
+        radius_basic=radius_basic,
+        radius_final=radius_final,
+        nbasic_args=nbasic_args,
+        nfinal_args=nfinal_args,
+    )
 
-    def _bm3d_wolfram(
-        preclip: vs.VideoNode,
-        pre: vs.VideoNode | None,
-        ref: vs.VideoNode | None,
-        chroma: bool = False,
-    ) -> vs.VideoNode:
-        """
-        Internal function for WolframRhodium implementation.
-        """
+    if backend != BM3D.Backend.OLD:
+        plugins_args["backend"] = backend
 
-        if not ref:
-            b_args = _clean_keywords(profile.basic_args(radius_basic), backend.plugin.BM3Dv2) | nbasic_args | kwargs
-            b_args.update(chroma=chroma)
+        if profile == BM3D.Profile.VERY_NOISY:
+            raise UnsupportedProfileError("The VERY_NOISY profile is only supported with BM3D.Backend.OLD.", func)
 
-            basic = backend.plugin.BM3Dv2(preclip, pre, nsigma, **b_args)
-        else:
-            basic = ref
-
-        if not refine:
-            final = basic
-        else:
-            f_args = _clean_keywords(profile.final_args(radius_final), backend.plugin.BM3Dv2) | nfinal_args | kwargs
-            f_args.update(chroma=chroma)
-
-            final = basic
-
-            for _ in range(refine):
-                final = backend.plugin.BM3Dv2(preclip, final, nsigma, **f_args)
-
-        return final
-
-    def _bm3d_mawen(
-        preclip: vs.VideoNode,
-        pre: vs.VideoNode | None,
-        ref: vs.VideoNode | None,
-    ) -> vs.VideoNode:
-        """
-        Internal function for mawen1250 implementation.
-        """
-
-        preclip = (
-            core.bm3d.RGB2OPP(preclip, preclip.format.sample_type)
-            if preclip.format.color_family != vs.GRAY
-            else depth(preclip, range_out=ColorRange.FULL)
-        )
-
-        if pre:
-            pre = (
-                core.bm3d.RGB2OPP(pre, pre.format.sample_type)
-                if pre.format.color_family != vs.GRAY
-                else depth(pre, range_out=ColorRange.FULL)
-            )
-
-        if ref:
-            ref = (
-                core.bm3d.RGB2OPP(ref, ref.format.sample_type)
-                if ref.format.color_family != vs.GRAY
-                else depth(ref, range_out=ColorRange.FULL)
-            )
-
-        if not ref:
-            b_args = profile.basic_args(radius_basic) | nbasic_args | kwargs
-            r = b_args["radius"]
-
-            if r > 0:
-                basic = core.bm3d.VBasic(preclip, pre, profile, nsigma, matrix=100, **b_args).bm3d.VAggregate(
-                    r, preclip.format.sample_type
-                )
-            else:
-                basic = core.bm3d.Basic(preclip, pre, profile, nsigma, matrix=100, **b_args)
-        else:
-            basic = ref
-
-        if not refine:
-            final = basic
-        else:
-            f_args = profile.final_args(radius_final) | nfinal_args | kwargs
-            r = f_args["radius"]
-
-            final = basic
-
-            for _ in range(refine):
-                if r > 0:
-                    final = core.bm3d.VFinal(preclip, final, profile, nsigma, matrix=100, **f_args).bm3d.VAggregate(
-                        r, preclip.format.sample_type
-                    )
-                else:
-                    final = core.bm3d.Final(preclip, final, profile, nsigma, matrix=100, **f_args)
-
-        if 0 in nsigma:
-            final = join({p: preclip if s == 0 else final for p, s in zip(range(3), nsigma)}, vs.YUV)
-
-        return (
-            core.bm3d.OPP2RGB(final, preclip.format.sample_type)
-            if preclip.format.color_family != vs.GRAY
-            else depth(final, range_out=preclip)
-        )
-
+    # RGB input
+    # OLD backend needs RGB to convert to OPP so we can just pass it directly
+    # BM3D CUDA and others need manual conversion to OPP -> actual denoise processing -> RGB back
     if clip.format.color_family == vs.RGB:
         if backend == BM3D.Backend.OLD:
-            return _bm3d_mawen(clip, pre, ref)
+            return _bm3d_mawen(clip, pre, ref, **plugins_args, **kwargs)
+        else:
+            coefs = list(interleave_arr(matrix_rgb2opp, [0, 0, 0], 3))
 
-        coefs = list(interleave_arr(matrix_rgb2opp, [0, 0, 0], 3))
+            clip_opp = core.fmtc.matrix(clip, coef=coefs, col_fam=vs.YUV, bits=32)
+            pre_opp = core.fmtc.matrix(pre, coef=coefs, col_fam=vs.YUV, bits=32) if pre else pre
+            ref_opp = core.fmtc.matrix(ref, coef=coefs, col_fam=vs.YUV, bits=32) if ref else ref
 
-        clip_opp = core.fmtc.matrix(clip, coef=coefs, col_fam=vs.YUV, bits=32)
-        pre_opp = core.fmtc.matrix(pre, coef=coefs, col_fam=vs.YUV, bits=32) if pre else pre
-        ref_opp = core.fmtc.matrix(ref, coef=coefs, col_fam=vs.YUV, bits=32) if ref else ref
+            denoised = _bm3d_wolfram(clip_opp, pre_opp, ref_opp, **plugins_args, chroma=False, **kwargs)
 
-        denoised = _bm3d_wolfram(clip_opp, pre_opp, ref_opp)
+            denoised = core.fmtc.matrix(
+                denoised,
+                coef=list(interleave_arr(matrix_opp2rgb, [0, 0, 0], 3)),
+                col_fam=vs.RGB,
+            )
 
-        denoised = core.fmtc.matrix(
-            denoised,
-            coef=list(interleave_arr(matrix_opp2rgb, [0, 0, 0], 3)),
-            col_fam=vs.RGB,
-        )
+            return depth(denoised, clip)
 
-        return depth(denoised, clip)
-
+    # BM3D CUDA and others require YUVXXX and GRAY 32 bits input
     preclip = depth(clip, 32)
     prepre = depth(pre, 32) if pre else pre
     preref = depth(ref, 32) if ref else ref
 
     # YUV444 path
-    if clip.format.color_family == vs.YUV and {clip.format.subsampling_w, clip.format.subsampling_h} == {0}:
+    # OLD backend needs RGB. We can safely convert from YUV444 without subsampling madness
+    # BM3D CUDA and others natively accept YUV444 with chroma=True
+    if clip.format.color_family == vs.YUV and clip.format.subsampling_w == clip.format.subsampling_h == 0:
         if backend == BM3D.Backend.OLD:
             point = Point()
 
@@ -748,17 +669,139 @@ def bm3d(
                 **kwargs,
             )
 
-            return point.resample(denoised, clip, clip)
+            final = point.resample(denoised, clip, clip)
 
-        denoised = _bm3d_wolfram(preclip, prepre, preref, chroma=True)
+            if 0 in nsigma:
+                final = join({p: clip if s == 0 else final for p, s in zip(range(3), nsigma)}, vs.YUV)
 
-        return depth(denoised, clip)
+            return final
+        else:
+            denoised = _bm3d_wolfram(preclip, prepre, preref, **plugins_args, chroma=True, **kwargs)
+            return depth(denoised, clip)
 
     # GRAY or subsampled YUV
+    # OLD backend will error if clip is subsampled. It only accepts GRAY at this point
+    # BM3D CUDA and others will denoise separately each plane
     if backend == BM3D.Backend.OLD:
         # Will error if clip is subsampled.
-        return _bm3d_mawen(clip, pre, ref)
+        return _bm3d_mawen(clip, pre, ref, **plugins_args)
+    else:
+        denoised = _bm3d_wolfram(preclip, prepre, preref, **plugins_args, chroma=False, **kwargs)
+        return depth(denoised, clip)
 
-    denoised = _bm3d_wolfram(preclip, prepre, preref)
 
-    return depth(denoised, clip)
+def _bm3d_mawen(
+    preclip: vs.VideoNode,
+    pre: vs.VideoNode | None,
+    ref: vs.VideoNode | None,
+    nsigma: list[float],
+    refine: int,
+    profile: BM3D.Profile,
+    radius_basic: int | None,
+    radius_final: int | None,
+    nbasic_args: dict[str, Any],
+    nfinal_args: dict[str, Any],
+    **kwargs: Any,
+) -> vs.VideoNode:
+    """
+    Internal function for mawen1250 implementation.
+    """
+
+    preclip = (
+        core.bm3d.RGB2OPP(preclip, preclip.format.sample_type)
+        if preclip.format.color_family != vs.GRAY
+        else depth(preclip, range_out=ColorRange.FULL)
+    )
+
+    if pre:
+        pre = (
+            core.bm3d.RGB2OPP(pre, pre.format.sample_type)
+            if pre.format.color_family != vs.GRAY
+            else depth(pre, range_out=ColorRange.FULL)
+        )
+
+    if ref:
+        ref = (
+            core.bm3d.RGB2OPP(ref, ref.format.sample_type)
+            if ref.format.color_family != vs.GRAY
+            else depth(ref, range_out=ColorRange.FULL)
+        )
+
+    if not ref:
+        b_args = profile.basic_args(radius_basic) | nbasic_args | kwargs
+        r = b_args["radius"]
+
+        if r > 0:
+            basic = core.bm3d.VBasic(preclip, pre, profile, nsigma, matrix=100, **b_args).bm3d.VAggregate(
+                r, preclip.format.sample_type
+            )
+        else:
+            basic = core.bm3d.Basic(preclip, pre, profile, nsigma, matrix=100, **b_args)
+    else:
+        basic = ref
+
+    if not refine:
+        final = basic
+    else:
+        f_args = profile.final_args(radius_final) | nfinal_args | kwargs
+        r = f_args["radius"]
+
+        final = basic
+
+        for _ in range(refine):
+            if r > 0:
+                final = core.bm3d.VFinal(preclip, final, profile, nsigma, matrix=100, **f_args).bm3d.VAggregate(
+                    r, preclip.format.sample_type
+                )
+            else:
+                final = core.bm3d.Final(preclip, final, profile, nsigma, matrix=100, **f_args)
+
+    if 0 in nsigma:
+        final = join({p: preclip if s == 0 else final for p, s in zip(range(3), nsigma)}, vs.YUV)
+
+    return (
+        core.bm3d.OPP2RGB(final, preclip.format.sample_type)
+        if preclip.format.color_family != vs.GRAY
+        else depth(final, range_out=preclip)
+    )
+
+
+def _bm3d_wolfram(
+    preclip: vs.VideoNode,
+    pre: vs.VideoNode | None,
+    ref: vs.VideoNode | None,
+    nsigma: list[float],
+    refine: int,
+    profile: BM3D.Profile,
+    radius_basic: int | None,
+    radius_final: int | None,
+    backend: BM3D.Backend,
+    nbasic_args: dict[str, Any],
+    nfinal_args: dict[str, Any],
+    chroma: bool = False,
+    **kwargs: Any,
+) -> vs.VideoNode:
+    """
+    Internal function for WolframRhodium implementation.
+    """
+
+    if not ref:
+        b_args = _clean_keywords(profile.basic_args(radius_basic), backend.plugin.BM3Dv2) | nbasic_args | kwargs
+        b_args.update(chroma=chroma)
+
+        basic = backend.plugin.BM3Dv2(preclip, pre, nsigma, **b_args)
+    else:
+        basic = ref
+
+    if not refine:
+        final = basic
+    else:
+        f_args = _clean_keywords(profile.final_args(radius_final), backend.plugin.BM3Dv2) | nfinal_args | kwargs
+        f_args.update(chroma=chroma)
+
+        final = basic
+
+        for _ in range(refine):
+            final = backend.plugin.BM3Dv2(preclip, final, nsigma, **f_args)
+
+    return final
