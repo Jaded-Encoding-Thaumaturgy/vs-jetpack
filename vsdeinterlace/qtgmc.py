@@ -138,7 +138,7 @@ class QTempGaussMC(VSObject):
 
     Examples:
         - ...
-        - Passing a progressive input to reduce shimmering (equivalent to `InputType=2, ProgSADMask=12`):
+        - Passing a badly deinterlaced input to reduce shimmering (equivalent to `InputType=2, ProgSADMask=12`):
         ```python
         clip = QTempGaussMC().basic(mask_args={"ml": 12}).repair(clip)
         ```
