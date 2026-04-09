@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from math import cos, exp, log, pi, sin, sqrt
 from typing import Any
 
@@ -9,8 +10,8 @@ from ...abstract import CustomComplexKernel, CustomComplexTapsKernel
 from ..zimg import Bilinear, Lanczos, Point
 
 __all__ = [
-    "BlackMan",
-    "BlackManMinLobe",
+    "Blackman",
+    "BlackmanMinLobe",
     "Bohman",
     "Box",
     "Cosine",
@@ -22,6 +23,7 @@ __all__ = [
     "Hann",
     "Sinc",
     "Welch",
+    "WindowedSinc",
 ]
 
 
@@ -145,112 +147,165 @@ class Box(CustomComplexKernel):
         return 1.0 if x >= -0.5 and x < 0.5 else 0.0
 
 
-class BlackMan(CustomComplexTapsKernel):
+def noop_window(x: float, radius: int) -> float:
+    return 1.0
+
+
+def blackman_window(x: float, radius: int) -> float:
+    w_x = x * (pi / radius)
+    return 0.42 + 0.50 * cos(w_x) + 0.08 * cos(w_x * 2)
+
+
+def blackman_minlobe_window(x: float, radius: int) -> float:
+    w_x = x * (pi / radius)
+    return 0.355768 + 0.487396 * cos(w_x) + 0.144232 * cos(w_x * 2) + 0.012604 * cos(w_x * 3)
+
+
+def hann_window(x: float, radius: int) -> float:
+    return 0.5 + 0.5 * cos(pi * x / radius)
+
+
+def hamming_window(x: float, radius: int) -> float:
+    return 0.54 + 0.46 * cos(pi * x / radius)
+
+
+def welch_window(x: float, radius: int) -> float:
+    x /= radius
+    return 1.0 - x * x
+
+
+def cosine_window(x: float, radius: int) -> float:
+    cosine = cos(pi * x / radius)
+    return 0.34 + cosine * (0.5 + cosine * 0.16)
+
+
+def bohman_window(x: float, radius: int) -> float:
+    x /= radius
+
+    cosine = cos(pi * x)
+    sine = sqrt(1.0 - cosine * cosine)
+
+    return (1.0 - x) * cosine + (1.0 / pi) * sine
+
+
+class WindowedSinc(CustomComplexTapsKernel):
+    """Generic windowed-sinc kernel."""
+
+    def __init__(
+        self,
+        taps: float = 3,
+        window: Callable[[float, int], float] | None = None,
+        cutoff: float | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Evaluates as `sinc(x) * window(abs(x), kernel_radius)` inside the kernel radius and `0` outside it.
+
+        Passing `window=None` produces a plain truncated sinc.
+
+        Args:
+            taps: Determines the radius of the kernel.
+            window: A function `(abs(distance), radius) -> coefficient` to shape the sinc wave.
+                Defaults to a plain truncated sinc if omitted.
+            cutoff: Optional float support bound.
+                Samples beyond this evaluate to 0, even if they fall within the `taps` radius.
+            **kwargs: Keyword arguments that configure the internal scaling behavior.
+        """
+        self.window = window or noop_window
+        self.cutoff = cutoff
+        super().__init__(taps, **kwargs)
+
+    def kernel(self, *, x: float) -> float:
+        x = abs(x)
+        if x >= self.kernel_radius or (self.cutoff is not None and x >= self.cutoff):
+            return 0.0
+
+        return sinc(x) * self.window(x, self.kernel_radius)
+
+
+class Blackman(WindowedSinc):
     """
-    Blackman resizer.
+    Blackman windowed-sinc resizer.
+
+    This is equivalent to `WindowedSinc(taps, window=blackman_window)`.
     """
 
     def __init__(self, taps: float = 4, **kwargs: Any) -> None:
-        super().__init__(taps, **kwargs)
-
-    def _win_coef(self, x: float) -> float:
-        w_x = x * (pi / self.kernel_radius)
-
-        return 0.42 + 0.50 * cos(w_x) + 0.08 * cos(w_x * 2)
-
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
-
-        return sinc(x) * self._win_coef(x)
+        super().__init__(taps, blackman_window, **kwargs)
 
 
-class BlackManMinLobe(BlackMan):
+class BlackmanMinLobe(WindowedSinc):
     """
-    Blackmanminlobe resizer.
-    """
+    Blackmanminlobe windowed-sinc resizer.
 
-    def _win_coef(self, x: float) -> float:
-        w_x = x * (pi / self.kernel_radius)
-
-        return 0.355768 + 0.487396 * cos(w_x) + 0.144232 * cos(w_x * 2) + 0.012604 * cos(w_x * 3)
-
-
-class Sinc(CustomComplexTapsKernel):
-    """
-    Sinc resizer.
+    This is equivalent to `WindowedSinc(taps, window=blackman_minlobe_window)`.
     """
 
     def __init__(self, taps: float = 4, **kwargs: Any) -> None:
-        super().__init__(taps, **kwargs)
-
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
-
-        return sinc(x)
+        super().__init__(taps, blackman_minlobe_window, **kwargs)
 
 
-class Hann(CustomComplexTapsKernel):
+class Sinc(WindowedSinc):
     """
-    Hann kernel.
+    Plain truncated sinc resizer.
+
+    This is equivalent to `WindowedSinc(taps)` with the default no-op window.
     """
 
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
-
-        return 0.5 + 0.5 * cos(pi * x)
+    def __init__(self, taps: float = 4, **kwargs: Any) -> None:
+        super().__init__(taps, noop_window, **kwargs)
 
 
-class Hamming(CustomComplexTapsKernel):
+class Hann(WindowedSinc):
     """
-    Hamming kernel.
-    """
+    Hann windowed-sinc kernel.
 
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
-
-        return 0.54 + 0.46 * cos(pi * x)
-
-
-class Welch(CustomComplexTapsKernel):
-    """
-    Welch kernel.
+    This is equivalent to `WindowedSinc(taps, window=hann_window)`.
     """
 
-    def kernel(self, *, x: float) -> float:
-        if abs(x) >= 1.0:
-            return 0.0
-
-        return 1.0 - x * x
+    def __init__(self, taps: float = 3, **kwargs: Any) -> None:
+        super().__init__(taps, hann_window, **kwargs)
 
 
-class Cosine(CustomComplexTapsKernel):
+class Hamming(WindowedSinc):
     """
-    Cosine kernel.
-    """
+    Hamming windowed-sinc kernel.
 
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
-
-        cosine = cos(pi * x)
-
-        return 0.34 + cosine * (0.5 + cosine * 0.16)
-
-
-class Bohman(CustomComplexTapsKernel):
-    """
-    Bohman kernel.
+    This is equivalent to `WindowedSinc(taps, window=hamming_window)`.
     """
 
-    def kernel(self, *, x: float) -> float:
-        if x >= self.kernel_radius:
-            return 0.0
+    def __init__(self, taps: float = 3, **kwargs: Any) -> None:
+        super().__init__(taps, hamming_window, **kwargs)
 
-        cosine = cos(pi * x)
-        sine = sqrt(1.0 - cosine * cosine)
 
-        return (1.0 - x) * cosine + (1.0 / pi) * sine
+class Welch(WindowedSinc):
+    """
+    Welch windowed-sinc kernel.
+
+    This is equivalent to `WindowedSinc(taps, window=welch_window)`.
+    """
+
+    def __init__(self, taps: float = 3, **kwargs: Any) -> None:
+        super().__init__(taps, welch_window, **kwargs)
+
+
+class Cosine(WindowedSinc):
+    """
+    Cosine windowed-sinc kernel.
+
+    This is equivalent to `WindowedSinc(taps, window=cosine_window)`.
+    """
+
+    def __init__(self, taps: float = 3, **kwargs: Any) -> None:
+        super().__init__(taps, cosine_window, **kwargs)
+
+
+class Bohman(WindowedSinc):
+    """
+    Bohman windowed-sinc kernel.
+
+    This is equivalent to `WindowedSinc(taps, window=bohman_window)`.
+    """
+
+    def __init__(self, taps: float = 3, **kwargs: Any) -> None:
+        super().__init__(taps, bohman_window, **kwargs)
