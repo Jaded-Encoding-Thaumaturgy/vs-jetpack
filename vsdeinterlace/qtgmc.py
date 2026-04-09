@@ -3,7 +3,6 @@ from contextlib import contextmanager, suppress
 from copy import deepcopy
 from math import factorial
 from typing import Any, Literal, Protocol, Self, TypedDict
-from warnings import warn
 
 from jetpytools import CustomIntEnum, CustomValueError, FuncExcept, fallback, normalize_seq
 
@@ -21,7 +20,6 @@ from vsdenoise import (
     refine_blksize,
 )
 from vsexprtools import norm_expr
-from vsjetpack import deprecated
 from vskernels import Bobber, BobberLike, Catrom
 from vsmasktools import Coordinates, Morpho
 from vsrgtools import BlurMatrix, gauss_blur, median_blur, remove_grain, repair, unsharpen
@@ -181,27 +179,6 @@ class QTempGaussMC(VSObject):
     motion_blur_output: vs.VideoNode
     """Output of the motion blur stage."""
 
-    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
-    class InputType(CustomIntEnum):
-        """
-        Processing routine to use for the input.
-        """
-
-        INTERLACE = 0
-        """
-        Deinterlace interlaced input.
-        """
-
-        PROGRESSIVE = 1
-        """
-        Deshimmer general progressive material that contains less severe problems.
-        """
-
-        REPAIR = 2
-        """
-        Repair badly deinterlaced material with considerable horizontal artifacts.
-        """
-
     class SearchPostProcess(CustomIntEnum):
         """
         Prefiltering to apply in order to assist with motion search.
@@ -358,7 +335,7 @@ class QTempGaussMC(VSObject):
         Restore source fields after final temporal smooth. True lossless but less stable.
         """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """
         Args:
             **kwargs: Additional arguments to be passed to the parameter stage methods.
@@ -366,18 +343,6 @@ class QTempGaussMC(VSObject):
 
                 Example for passing tr=1 to the prefilter stage: `prefilter_tr=1`.
         """
-        args_it = iter(args)
-
-        self.compat_clip = kwargs.pop("clip", next(args_it, None))
-        self.compat_input_type = kwargs.pop("input_type", next(args_it, None))
-        self.compat_tff = kwargs.pop("tff", next(args_it, None))
-
-        if any((self.compat_clip, self.compat_input_type is not None, self.compat_tff is not None)):
-            warn(
-                "Passing a clip, input type, or field order to class initialization is deprecated"
-                "and will be removed in a future version.",
-                DeprecationWarning,
-            )
 
         # Set default parameters for all the stages in this exact order
         self._settings_methods = (
@@ -1304,7 +1269,7 @@ class QTempGaussMC(VSObject):
         finally:
             self.motion_blur_fps_divisor = orig
 
-    def deinterlace(self, clip: vs.VideoNode | None = None, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
+    def deinterlace(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
         """
         Deinterlace interlaced input. Motion blur stage FPS divisor is respected.
 
@@ -1315,24 +1280,7 @@ class QTempGaussMC(VSObject):
         Returns:
             Deinterlaced clip.
         """
-        func = self.deinterlace
-
-        if self.compat_clip:
-            clip = self.compat_clip
-
-        if self.compat_tff is not None:
-            tff = self.compat_tff
-
-        if self.compat_input_type == self.InputType.REPAIR:
-            func = self.repair
-        elif self.compat_input_type == self.InputType.PROGRESSIVE:
-            func = self.deshimmer
-            tff = FieldBased.PROGRESSIVE
-
-        if not clip:
-            raise CustomValueError("No input clip was passed.", self.deinterlace)
-
-        return self._run_process(clip, tff, func)
+        return self._run_process(clip, tff, self.deinterlace)
 
     def bob(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
         """

@@ -15,7 +15,7 @@ from vsjetpack import is_from_vs_module
 
 from .proxy import core, register_on_creation, register_on_destroy
 
-__all__ = ["VSDebug", "VSObject", "VSObjectABC", "VSObjectABCMeta", "VSObjectMeta", "vs_object"]
+__all__ = ["VSDebug", "VSObject", "VSObjectABC", "VSObjectABCMeta", "VSObjectMeta"]
 
 
 log = getLogger(__name__)
@@ -276,7 +276,3 @@ class VSDebug(Singleton, init=True):
     @staticmethod
     def _print_core_destroy(_: int, core_id: int) -> None:
         VSDebug._print_func(f"Core destroyed with id: {core_id}")
-
-
-vs_object = VSObject
-"""Deprecated alias for VSObject"""
