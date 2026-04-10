@@ -560,12 +560,14 @@ DISABLE_LIBRARY_UNLOADING: Literal[CoreCreationFlags.DISABLE_LIBRARY_UNLOADING]
 
 # Vapoursynth constants from vsconstants.pyd
 
-class ColorRange(IntEnum):
+class Range(IntEnum):
     RANGE_FULL = ...
     RANGE_LIMITED = ...
 
-RANGE_FULL: Literal[ColorRange.RANGE_FULL]
-RANGE_LIMITED: Literal[ColorRange.RANGE_LIMITED]
+RANGE_FULL: Literal[Range.RANGE_FULL]
+RANGE_LIMITED: Literal[Range.RANGE_LIMITED]
+
+ColorRange = Range  # deprecated
 
 class ChromaLocation(IntEnum):
     CHROMA_LEFT = ...

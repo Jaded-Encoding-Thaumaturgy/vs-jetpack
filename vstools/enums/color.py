@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping
 from typing import Any
 
@@ -17,6 +18,8 @@ __all__ = [
     "MatrixLike",
     "Primaries",
     "PrimariesLike",
+    "Range",
+    "RangeLike",
     "Transfer",
     "TransferLike",
 ]
@@ -643,19 +646,19 @@ class Primaries(PropEnum):
         return _base_from_video(cls, src, UndefinedPrimariesError, strict, func)
 
 
-class ColorRange(PropEnum):
+class Range(PropEnum):
     """
     Pixel Range ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Equations E-10 through E-20.
     """
 
-    LIMITED = 1
+    LIMITED = 0 if vs.__version__ >= (74, 0) else 1
     """
     Studio (TV) legal range, 16-235 in 8 bits.
 
     This is primarily used with YUV integer formats.
     """
 
-    FULL = 0
+    FULL = 1 if vs.__version__ >= (74, 0) else 0
     """
     Full (PC) dynamic range, 0-255 in 8 bits.
 
@@ -666,22 +669,28 @@ class ColorRange(PropEnum):
     @property
     def is_limited(self) -> bool:
         """
-        Check if ColorRange is limited.
+        Check if Range is limited.
         """
-        return bool(self.value)
+        return self is Range.LIMITED
 
     @property
     def is_full(self) -> bool:
         """
-        Check if ColorRange is full.
+        Check if Range is full.
         """
-        return not self.value
+        return self is Range.FULL
 
     @property
     def value_vs(self) -> int:
         """
         VapourSynth (props) value.
         """
+        if vs.__version__ >= (74, 0):
+            warnings.warn(
+                "Starting from R74, VS props values and Zimg (resize plugin) values are the same",
+                SyntaxWarning,
+            )
+
         return self.value
 
     @property
@@ -689,6 +698,13 @@ class ColorRange(PropEnum):
         """
         zimg (resize plugin) value.
         """
+        if vs.__version__ >= (74, 0):
+            warnings.warn(
+                "Starting from R74, VS props values and Zimg (resize plugin) values are the same",
+                SyntaxWarning,
+            )
+            return self.value
+
         return ~self.value + 2
 
     @classmethod
@@ -727,6 +743,10 @@ class ColorRange(PropEnum):
         return _base_from_video(cls, src, UndefinedColorRangeError, strict, func)
 
 
+ColorRange = Range
+"""Deprecated alias"""
+
+
 type MatrixLike = int | vs.MatrixCoefficients | Matrix | HoldsPropValue
 """Type alias for values that can be used to initialize a [Matrix][vstools.Matrix]."""
 
@@ -736,9 +756,12 @@ type TransferLike = int | vs.TransferCharacteristics | Transfer | HoldsPropValue
 type PrimariesLike = int | vs.ColorPrimaries | Primaries | HoldsPropValue
 """Type alias for values that can be used to initialize a [Primaries][vstools.Primaries]."""
 
-type ColorRangeLike = int | vs.ColorRange | ColorRange | HoldsPropValue
-"""Type alias for values that can be used to initialize a [ColorRange][vstools.ColorRange]."""
+type RangeLike = int | vs.Range | Range | HoldsPropValue
+"""Type alias for values that can be used to initialize a [Range][vstools.Range]."""
+
+ColorRangeLike = RangeLike  # deprecated
+"""Deprecated alias"""
 
 
 def _norm_props_enums(kwargs: dict[str, Any]) -> dict[str, Any]:
-    return {key: (value.value_zimg if isinstance(value, ColorRange) else value) for key, value in kwargs.items()}
+    return {key: (value.value_zimg if isinstance(value, Range) else value) for key, value in kwargs.items()}
