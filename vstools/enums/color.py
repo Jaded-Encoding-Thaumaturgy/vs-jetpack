@@ -4,7 +4,7 @@ import warnings
 from collections.abc import Mapping
 from typing import Any
 
-from jetpytools import FuncExcept
+from jetpytools import FuncExcept, classproperty
 
 from ..exceptions import UndefinedMatrixError, UndefinedPrimariesError, UndefinedRangeError, UndefinedTransferError
 from ..types import HoldsPropValue
@@ -706,6 +706,14 @@ class Range(PropEnum):
             return self.value
 
         return ~self.value + 2
+
+    @classproperty
+    @classmethod
+    def prop_key(cls: type[PropEnum]) -> str:
+        """
+        The key used in props to store the enum.
+        """
+        return "_Range" if vs.__version__ >= (74, 0) else "_ColorRange"
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Range:
