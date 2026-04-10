@@ -38,7 +38,6 @@ from jetpytools import cachedproperty as jetpytools_cachedproperty
 from vsjetpack import TypeIs
 from vstools import (
     ChromaLocation,
-    ColorRange,
     FieldBased,
     FieldBasedLike,
     HoldsVideoFormat,
@@ -47,6 +46,7 @@ from vstools import (
     Primaries,
     PrimariesLike,
     PropEnum,
+    Range,
     Transfer,
     TransferLike,
     VideoFormatLike,
@@ -168,8 +168,8 @@ def _resolve_video_spec_args(clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any
         "transfer_in": Transfer,
         "primaries": Primaries,
         "primaries_in": Primaries,
-        "range": ColorRange,
-        "range_in": ColorRange,
+        "range": Range,
+        "range_in": Range,
         "chromaloc": ChromaLocation,
         "chromaloc_in": ChromaLocation,
     }
@@ -522,7 +522,10 @@ class Scaler(BaseScaler):
         """
         width, height = self._wh_norm(clip, width, height)
 
-        scale_args = _norm_props_enums(self.get_scale_args(clip, shift, width, height, **kwargs))
+        scale_args = self.get_scale_args(clip, shift, width, height, **kwargs)
+
+        if vs.__version__ < (74, 0):
+            scale_args = _norm_props_enums(scale_args)
 
         logger.debug("%s: Passing clip: %r; arguments: %s", self.scale, clip, scale_args)
 
@@ -630,7 +633,10 @@ class Descaler(BaseScaler):
         """
         width, height = self._wh_norm(clip, width, height)
 
-        descale_args = _norm_props_enums(self.get_descale_args(clip, shift, width, height, **kwargs))
+        descale_args = self.get_descale_args(clip, shift, width, height, **kwargs)
+
+        if vs.__version__ < (74, 0):
+            descale_args = _norm_props_enums(descale_args)
 
         logger.debug("%s: Passing clip: %r; arguments: %s", self.descale, clip, descale_args)
 
@@ -662,7 +668,10 @@ class Descaler(BaseScaler):
         """
         width, height = self._wh_norm(clip, width, height)
 
-        rescale_args = _norm_props_enums(self.get_rescale_args(clip, shift, width, height, **kwargs))
+        rescale_args = self.get_rescale_args(clip, shift, width, height, **kwargs)
+
+        if vs.__version__ < (74, 0):
+            rescale_args = _norm_props_enums(rescale_args)
 
         logger.debug("%s: Passing clip: %r; arguments: %s", self.rescale, clip, rescale_args)
 
@@ -767,11 +776,12 @@ class Resampler(BaseScaler):
             The resampled clip.
         """
 
-        resample_args = _norm_props_enums(
-            self.get_resample_args(
-                clip, format, matrix, matrix_in, transfer, transfer_in, primaries, primaries_in, **kwargs
-            )
+        resample_args = self.get_resample_args(
+            clip, format, matrix, matrix_in, transfer, transfer_in, primaries, primaries_in, **kwargs
         )
+
+        if vs.__version__ < (74, 0):
+            resample_args = _norm_props_enums(resample_args)
 
         logger.debug("%s: Passing clip: %r; arguments: %s", self.resample, clip, resample_args)
 

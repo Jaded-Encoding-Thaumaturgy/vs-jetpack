@@ -22,11 +22,11 @@ from vsjetpack import deprecated
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vsmasktools import Morpho
 from vstools import (
-    ColorRange,
     Matrix,
     MatrixLike,
     OutdatedPluginError,
     ProcessVariableResClip,
+    Range,
     check_variable_resolution,
     core,
     depth,
@@ -490,7 +490,7 @@ class BaseOnnxScalerRGB(BaseOnnxScaler):
                 dict[str, Any](
                     format=input_clip,
                     matrix=Matrix.from_video(input_clip, func=self.__class__),
-                    range=ColorRange.from_video(input_clip, func=self.__class__),
+                    range=Range.from_video(input_clip, func=self.__class__),
                 )
                 | kwargs
             )
@@ -1341,7 +1341,7 @@ class BaseDPIR(BaseOnnxScaler):
                 dict[str, Any](
                     format=input_clip,
                     matrix=Matrix.from_video(input_clip, func=self.__class__),
-                    range=ColorRange.from_video(input_clip, func=self.__class__),
+                    range=Range.from_video(input_clip, func=self.__class__),
                 )
                 | kwargs
             )

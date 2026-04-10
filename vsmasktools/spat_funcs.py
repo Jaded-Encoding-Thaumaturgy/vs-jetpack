@@ -8,8 +8,8 @@ from jetpytools import FuncExcept, StrList, fallback, to_arr
 from vsexprtools import ExprOp, ExprVars, norm_expr
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
-    ColorRange,
     DitherType,
+    Range,
     depth,
     get_peak_value,
     get_sample_type,
@@ -173,7 +173,7 @@ def flat_mask(src: vs.VideoNode, radius: int = 5, thr: float = 0.011, gauss: boo
 
     mask = mask.vszip.AdaptiveBinarize(blur, int(scale_value(thr, 32, blur)))
 
-    return depth(mask, luma, dither_type=DitherType.NONE, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
+    return depth(mask, luma, dither_type=DitherType.NONE, range_in=Range.FULL, range_out=Range.FULL)
 
 
 def texture_mask(
@@ -187,7 +187,7 @@ def texture_mask(
 ) -> vs.VideoNode:
     levels = [x for x, _ in points]
     points_ = [scale_value(x, 8, clip) for _, x in points]
-    thr = scale_value(thr, 8, 32, ColorRange.FULL)
+    thr = scale_value(thr, 8, 32, Range.FULL)
 
     qm, peak = len(points), get_peak_value(clip)
 

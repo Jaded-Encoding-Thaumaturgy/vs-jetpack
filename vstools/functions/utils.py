@@ -21,7 +21,7 @@ from jetpytools import (
 
 from vsjetpack import deprecated
 
-from ..enums import ColorRange, ColorRangeLike, Matrix
+from ..enums import Matrix, Range, RangeLike
 from ..exceptions import ClipLengthError, UnsupportedColorFamilyError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterable
 from ..utils import flatten, get_depth, get_lowest_value, get_peak_value, get_video_format
@@ -169,8 +169,8 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
         self,
         clip: vs.VideoNode,
         out_fmt: vs.VideoFormat,
-        range_in: ColorRangeLike | None,
-        range_out: ColorRangeLike | None,
+        range_in: RangeLike | None,
+        range_out: RangeLike | None,
         force_fmtc: bool,
     ) -> vs.VideoNode:
         """
@@ -179,11 +179,11 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
         fmt = get_video_format(clip)
 
         if range_in is not None:
-            clip = ColorRange.ensure_presence(clip, range_in)
-            range_in = ColorRange.from_param(range_in).value_zimg
+            clip = Range.ensure_presence(clip, range_in)
+            range_in = Range.from_param(range_in).value_zimg
 
         if range_out is not None:
-            range_out = ColorRange.from_param(range_out).value_zimg
+            range_out = Range.from_param(range_out).value_zimg
 
         if not (self.is_fmtc or force_fmtc):
             return clip.resize.Point(format=out_fmt, dither_type=self.value.lower(), range_in=range_in, range=range_out)
@@ -213,8 +213,8 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
         in_fmt: VideoFormatLike | HoldsVideoFormat,
         out_fmt: VideoFormatLike | HoldsVideoFormat,
         /,
-        in_range: ColorRangeLike | None = None,
-        out_range: ColorRangeLike | None = None,
+        in_range: RangeLike | None = None,
+        out_range: RangeLike | None = None,
     ) -> bool:
         """
         Automatically determines whether dithering is needed for a given depth/range/sample type conversion.
@@ -235,8 +235,8 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
         in_bits: int,
         out_bits: int,
         /,
-        in_range: ColorRangeLike | None = None,
-        out_range: ColorRangeLike | None = None,
+        in_range: RangeLike | None = None,
+        out_range: RangeLike | None = None,
         in_sample_type: vs.SampleType | None = None,
         out_sample_type: vs.SampleType | None = None,
     ) -> bool:
@@ -261,8 +261,8 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
         in_bits_or_fmt: int | VideoFormatLike | HoldsVideoFormat,
         out_bits_or_fmt: int | VideoFormatLike | HoldsVideoFormat,
         /,
-        in_range: ColorRangeLike | None = None,
-        out_range: ColorRangeLike | None = None,
+        in_range: RangeLike | None = None,
+        out_range: RangeLike | None = None,
         in_sample_type: vs.SampleType | None = None,
         out_sample_type: vs.SampleType | None = None,
     ) -> bool:
@@ -297,8 +297,8 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
         in_fmt = get_video_format(in_bits_or_fmt, sample_type=in_sample_type)
         out_fmt = get_video_format(out_bits_or_fmt, sample_type=out_sample_type)
 
-        in_range = ColorRange.from_param_with_fallback(in_range)
-        out_range = ColorRange.from_param_with_fallback(out_range)
+        in_range = Range.from_param_with_fallback(in_range)
+        out_range = Range.from_param_with_fallback(out_range)
 
         if out_fmt.sample_type is vs.FLOAT:
             return False
@@ -318,7 +318,7 @@ class DitherType(CustomStrEnum, metaclass=_DitherTypeMeta):
         if in_bits > out_bits:
             return True
 
-        return in_range == ColorRange.FULL and bool(out_bits % in_bits)
+        return in_range == Range.FULL and bool(out_bits % in_bits)
 
 
 def depth(
@@ -327,8 +327,8 @@ def depth(
     /,
     sample_type: int | vs.SampleType | None = None,
     *,
-    range_in: ColorRangeLike | None = None,
-    range_out: ColorRangeLike | None = None,
+    range_in: RangeLike | None = None,
+    range_out: RangeLike | None = None,
     dither_type: str | DitherType = DitherType.RANDOM,
     force_fmtc: bool = False,
 ) -> vs.VideoNode:

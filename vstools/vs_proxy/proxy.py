@@ -117,7 +117,6 @@ from vapoursynth import (
     ChromaLocation,
     ColorFamily,
     ColorPrimaries,
-    ColorRange,
     Core,
     CoreCreationFlags,
     Environment,
@@ -162,6 +161,13 @@ from vapoursynth import (
     register_policy,
     unregister_on_destroy,
 )
+
+if __version__ >= (74, 0):
+    from vapoursynth import Range
+else:
+    from vapoursynth import ColorRange
+    from vapoursynth import ColorRange as Range
+
 from vapoursynth import __file__ as vs_file
 from vapoursynth import __pyx_capi__ as pyx_capi  # type: ignore[attr-defined]
 from vapoursynth import _construct_parameter as construct_parameter
@@ -734,6 +740,7 @@ __all__ = [
     "MessageType",
     "Plugin",
     "PresetVideoFormat",
+    "Range",
     "RawFrame",
     "RawNode",
     "SampleType",

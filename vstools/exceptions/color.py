@@ -17,10 +17,12 @@ __all__ = [
     "UndefinedColorRangeError",
     "UndefinedMatrixError",
     "UndefinedPrimariesError",
+    "UndefinedRangeError",
     "UndefinedTransferError",
     "UnsupportedColorRangeError",
     "UnsupportedMatrixError",
     "UnsupportedPrimariesError",
+    "UnsupportedRangeError",
     "UnsupportedTransferError",
 ]
 
@@ -178,16 +180,22 @@ class InvalidPrimariesError(CustomValueError):
 
 
 ########################################################
-# ColorRange
+# Range
 
 
-class UndefinedColorRangeError(CustomValueError):
+class UndefinedRangeError(CustomValueError):
     """
     Raised when a undefined color range value is passed.
     """
 
 
-class UnsupportedColorRangeError(CustomValueError):
+UndefinedColorRangeError = UndefinedRangeError
+
+
+class UnsupportedRangeError(CustomValueError):
     """
     Raised when a unsupported color range value is passed.
     """
+
+
+UnsupportedColorRangeError = UnsupportedRangeError

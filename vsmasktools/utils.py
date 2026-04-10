@@ -9,10 +9,10 @@ from vsexprtools import ExprOp, norm_expr
 from vskernels import Bilinear, Kernel, KernelLike
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
-    ColorRange,
     FrameRangeN,
     FrameRangesN,
     Planes,
+    Range,
     check_ref_clip,
     core,
     depth,
@@ -114,7 +114,7 @@ def region_rel_mask(
     if replace_in is None:
         replace_in = "x"
     if replace_out is None:
-        replace_out = get_lowest_values(clip, ColorRange.FULL)
+        replace_out = get_lowest_values(clip, Range.FULL)
 
     lefts, rights, tops, bottoms = list[int](), list[int](), list[int](), list[int]()
 
@@ -227,7 +227,7 @@ def squaremask(
         raise CustomValueError("mask exceeds clip size!", func)
 
     base_clip = vs.core.std.BlankClip(
-        clip, None, None, mask_format, 1, color=get_lowest_values(mask_format, ColorRange.FULL), keep=True
+        clip, None, None, mask_format, 1, color=get_lowest_values(mask_format, Range.FULL), keep=True
     )
 
     replaces = ("mask_max", "x") if not invert else ("x", "mask_max")
@@ -406,7 +406,7 @@ def normalize_mask(
     else:
         cmask = mask
 
-    return depth(cmask, clip, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
+    return depth(cmask, clip, range_in=Range.FULL, range_out=Range.FULL)
 
 
 class RektPartial[**P, R]:

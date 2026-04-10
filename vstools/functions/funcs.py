@@ -7,14 +7,14 @@ from jetpytools import FuncExcept, cachedproperty, normalize_seq, to_arr
 from ..enums import (
     ChromaLocation,
     ChromaLocationLike,
-    ColorRange,
-    ColorRangeLike,
     FieldBased,
     FieldBasedLike,
     Matrix,
     MatrixLike,
     Primaries,
     PrimariesLike,
+    Range,
+    RangeLike,
     Transfer,
     TransferLike,
 )
@@ -64,7 +64,7 @@ class FunctionUtil(VSObject, list[int]):
         matrix: MatrixLike | None = None,
         transfer: TransferLike | None = None,
         primaries: PrimariesLike | None = None,
-        range_in: ColorRangeLike | None = None,
+        range_in: RangeLike | None = None,
         chromaloc: ChromaLocationLike | None = None,
         order: FieldBasedLike | None = None,
     ) -> None:
@@ -120,7 +120,7 @@ class FunctionUtil(VSObject, list[int]):
         self._matrix = Matrix.from_param_with_fallback(matrix)
         self._transfer = Transfer.from_param_with_fallback(transfer)
         self._primaries = Primaries.from_param_with_fallback(primaries)
-        self._range_in = ColorRange.from_param_with_fallback(range_in)
+        self._range_in = Range.from_param_with_fallback(range_in)
         self._chromaloc = ChromaLocation.from_param_with_fallback(chromaloc)
         self._order = FieldBased.from_param_with_fallback(order)
 
@@ -224,12 +224,12 @@ class FunctionUtil(VSObject, list[int]):
         return Primaries.from_param_or_video(self._primaries, self.clip, True, self.func)
 
     @cachedproperty
-    def color_range(self) -> ColorRange:
+    def color_range(self) -> Range:
         """
-        Get the clip's color range.
+        Get the clip's range.
         """
 
-        return ColorRange.from_param_or_video(self._range_in, self.clip, True, self.func)
+        return Range.from_param_or_video(self._range_in, self.clip, True, self.func)
 
     @cachedproperty
     def chromaloc(self) -> ChromaLocation:

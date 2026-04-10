@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from vstools import ColorRange, Matrix, Primaries, Transfer, vs
+from vstools import Matrix, Primaries, Range, Transfer, vs
 
 
 class TestMatrix(TestCase):
@@ -239,51 +239,55 @@ class TestPrimaries(TestCase):
         self.assertEqual(result, Primaries.BT470_BG)
 
 
-class TestColorRange(TestCase):
+class TestRange(TestCase):
     def test_from_res_rgb(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.RGB24)
-        result = ColorRange.from_res(clip)
-        self.assertEqual(result, ColorRange.FULL)
+        result = Range.from_res(clip)
+        self.assertEqual(result, Range.FULL)
 
     def test_from_res_yuv(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8)
-        result = ColorRange.from_res(clip)
-        self.assertEqual(result, ColorRange.LIMITED)
+        result = Range.from_res(clip)
+        self.assertEqual(result, Range.LIMITED)
 
     def test_from_video_property(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8)
-        clip = vs.core.std.SetFrameProp(clip, "_ColorRange", ColorRange.FULL)
-        result = ColorRange.from_video(clip)
-        self.assertEqual(result, ColorRange.FULL)
+        if vs.__version__ >= (74, 0):
+            clip = vs.core.std.SetFrameProp(clip, "_Range", Range.FULL)
+        else:
+            clip = vs.core.std.SetFrameProp(clip, "_ColorRange", Range.FULL)
+        result = Range.from_video(clip)
+        self.assertEqual(result, Range.FULL)
 
     def test_apply(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8)
-        clip = ColorRange.FULL.apply(clip)
-        result = ColorRange.from_video(clip)
-        self.assertEqual(result, ColorRange.FULL)
+        clip = Range.FULL.apply(clip)
+        result = Range.from_video(clip)
+        self.assertEqual(result, Range.FULL)
 
     def test_from_video_rgb(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.RGB24)
-        result = ColorRange.from_video(clip)
-        self.assertEqual(result, ColorRange.FULL)
+        result = Range.from_video(clip)
+        self.assertEqual(result, Range.FULL)
 
     def test_from_video_yuv(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8)
-        result = ColorRange.from_video(clip)
-        self.assertEqual(result, ColorRange.LIMITED)
+        result = Range.from_video(clip)
+        self.assertEqual(result, Range.LIMITED)
 
     def test_value_vs(self) -> None:
-        self.assertEqual(ColorRange.LIMITED.value_vs, 1)
-        self.assertEqual(ColorRange.FULL.value_vs, 0)
+        if vs.__version__ < (74, 0):
+            self.assertEqual(Range.LIMITED.value_vs, 1)
+            self.assertEqual(Range.FULL.value_vs, 0)
 
     def test_value_zimg(self) -> None:
-        self.assertEqual(ColorRange.LIMITED.value_zimg, 0)
-        self.assertEqual(ColorRange.FULL.value_zimg, 1)
+        self.assertEqual(Range.LIMITED.value_zimg, 0)
+        self.assertEqual(Range.FULL.value_zimg, 1)
 
     def test_value_is_limited(self) -> None:
-        self.assertTrue(ColorRange.LIMITED.is_limited)
-        self.assertFalse(ColorRange.FULL.is_limited)
+        self.assertTrue(Range.LIMITED.is_limited)
+        self.assertFalse(Range.FULL.is_limited)
 
     def test_value_is_full(self) -> None:
-        self.assertFalse(ColorRange.LIMITED.is_full)
-        self.assertTrue(ColorRange.FULL.is_full)
+        self.assertFalse(Range.LIMITED.is_full)
+        self.assertTrue(Range.FULL.is_full)

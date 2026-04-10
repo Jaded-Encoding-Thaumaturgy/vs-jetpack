@@ -12,9 +12,9 @@ from vsjetpack import TypeVar
 from vskernels import BicubicAuto, Lanczos, LeftShift, Scaler, ScalerLike, ScalerSpecializer, TopShift
 from vsrgtools import BlurMatrix
 from vstools import (
-    ColorRange,
     ConvMode,
     Planes,
+    Range,
     UnsupportedColorFamilyError,
     check_variable_resolution,
     core,
@@ -538,14 +538,14 @@ def _apply_grainer(
         lo, hi = protect_edges
 
         if lo is True:
-            lo = get_lowest_values(clip, ColorRange.from_video(clip))
+            lo = get_lowest_values(clip, Range.from_video(clip))
         elif lo is False:
-            lo = get_lowest_values(clip, ColorRange.FULL)
+            lo = get_lowest_values(clip, Range.FULL)
 
         if hi is True:
-            hi = get_peak_values(clip, ColorRange.from_video(clip))
+            hi = get_peak_values(clip, Range.from_video(clip))
         elif hi is False:
-            hi = get_peak_values(clip, ColorRange.FULL)
+            hi = get_peak_values(clip, Range.FULL)
 
         grained = _protect_pixel_range(clip, grained, to_arr(lo), to_arr(hi), protect_edges_blend, planes, func)
 

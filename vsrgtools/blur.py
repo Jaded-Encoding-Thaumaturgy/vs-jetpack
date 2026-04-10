@@ -10,10 +10,10 @@ from jetpytools import CustomIntEnum, CustomStrEnum, CustomValueError, FuncExcep
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Gaussian, Point, Scaler, ScalerLike
 from vstools import (
-    ColorRange,
     ConvMode,
     OneDimConvMode,
     Planes,
+    Range,
     SpatialConvMode,
     TempConvMode,
     VSFunctionNoArgs,
@@ -679,7 +679,7 @@ def guided_filter(
     thr = normalize_seq(thr, clip.format.num_planes)
 
     size = normalize_seq(
-        [220, 225, 225] if ColorRange.from_video(clip, func=guided_filter).is_full else 256, clip.format.num_planes
+        [220, 225, 225] if Range.from_video(clip, func=guided_filter).is_full else 256, clip.format.num_planes
     )
 
     thr = [t / s for t, s in zip(thr, size)]

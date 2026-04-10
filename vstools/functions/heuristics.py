@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Literal, overload
 
-from ..enums import ChromaLocation, ColorRange, Matrix, Primaries, PropEnum, Transfer
+from ..enums import ChromaLocation, Matrix, Primaries, PropEnum, Range, Transfer
 from ..vs_proxy import vs
 
 __all__ = ["video_heuristics"]
@@ -68,7 +68,7 @@ def video_heuristics(
     }
 
     if fmt.color_family != vs.RGB:
-        prop_enums["range"] = ColorRange
+        prop_enums["range"] = Range
 
     if fmt.subsampling_h == fmt.subsampling_w != 0:
         prop_enums["chromaloc"] = ChromaLocation

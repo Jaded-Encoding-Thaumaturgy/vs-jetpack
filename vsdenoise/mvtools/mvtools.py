@@ -8,10 +8,10 @@ from typing import Any, Literal, NamedTuple, overload
 from jetpytools import KwargsNotNone, fallback, normalize_seq
 
 from vstools import (
-    ColorRange,
     DitherType,
     Field,
     Planes,
+    Range,
     UnsupportedColorFamilyError,
     VSFunctionNoArgs,
     VSObject,
@@ -1126,7 +1126,7 @@ class MVTools(VSObject):
 
         mask_clip = core.mv.Mask(depth(clip, 8), vect, **mask_args)
 
-        return depth(mask_clip, clip, dither_type=DitherType.NONE, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
+        return depth(mask_clip, clip, dither_type=DitherType.NONE, range_in=Range.FULL, range_out=Range.FULL)
 
     def sc_detection(
         self,

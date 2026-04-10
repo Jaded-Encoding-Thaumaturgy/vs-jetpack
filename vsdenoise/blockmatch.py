@@ -20,9 +20,9 @@ from jetpytools import (
 from vsexprtools import norm_expr
 from vskernels import Point
 from vstools import (
-    ColorRange,
     FunctionUtil,
     Planes,
+    Range,
     check_progressive,
     check_ref_clip,
     core,
@@ -710,21 +710,21 @@ def _bm3d_mawen(
     preclip = (
         core.bm3d.RGB2OPP(preclip, preclip.format.sample_type)
         if preclip.format.color_family != vs.GRAY
-        else depth(preclip, range_out=ColorRange.FULL)
+        else depth(preclip, range_out=Range.FULL)
     )
 
     if pre:
         pre = (
             core.bm3d.RGB2OPP(pre, pre.format.sample_type)
             if pre.format.color_family != vs.GRAY
-            else depth(pre, range_out=ColorRange.FULL)
+            else depth(pre, range_out=Range.FULL)
         )
 
     if ref:
         ref = (
             core.bm3d.RGB2OPP(ref, ref.format.sample_type)
             if ref.format.color_family != vs.GRAY
-            else depth(ref, range_out=ColorRange.FULL)
+            else depth(ref, range_out=Range.FULL)
         )
 
     if not ref:
