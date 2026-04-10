@@ -6,7 +6,7 @@ from typing import Any, SupportsFloat, cast
 from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomStrEnum, fallback, normalize_seq
 
 from vsaa import BWDIF, NNEDI3, Deinterlacer
-from vsexprtools import norm_expr
+from vsexprtools import ExprOp, norm_expr
 from vsjetpack import deprecated
 from vskernels import Box, Point
 from vsmasktools import FDoG, MaskLike, Morpho, adg_mask, normalize_mask, strength_zones_mask
@@ -304,7 +304,7 @@ def mpeg2stinx(
                 Morpho.inpand(bobbed, sw, sh, func=mpeg2stinx),
                 Morpho.expand(bobbed, sw, sh, func=mpeg2stinx),
             )
-            repaired = norm_expr([clip, inpand, expand], "x y z clip", func=mpeg2stinx)
+            repaired = ExprOp.CLAMP(clip, inpand, expand)
 
         return weave(repaired.std.SeparateFields(tff.is_tff).std.SelectEvery(4, (2, 1)), tff.field, func=mpeg2stinx)
 
