@@ -152,8 +152,6 @@ class BM3D[**P, R]:
         Automatically selects the best available backend.
 
         Selection priority: "CUDA_RTC" → "CUDA" → "HIP" → "SYCL" → "CPU" → "OLD".
-
-        When the filter chain is executed within vspreview, the priority of "cuda_rtc" and "cuda" is reversed.
         """
 
         CUDA_RTC = "bm3dcuda_rtc"
@@ -194,7 +192,7 @@ class BM3D[**P, R]:
         @cache
         def resolve(self) -> BM3D.Backend:
             """
-            Resolves the appropriate BM3D backend to use based on availability and context.
+            Resolves the appropriate BM3D backend to use.
 
             If the current instance is not [AUTO][vsdenoise.blockmatch.BM3D.Backend.AUTO], it returns itself.
             Otherwise, it attempts to select the best available backend.
@@ -207,17 +205,6 @@ class BM3D[**P, R]:
             """
             if self is not BM3D.Backend.AUTO:
                 return self
-
-            try:
-                from vspreview.api import is_preview
-            except ImportError:
-
-                def is_preview() -> bool:
-                    return False
-
-            if is_preview() and hasattr(core, "bm3dcuda"):
-                logger.debug("%s: Auto selecting 'BM3D.Backend.CUDA'", BM3D.Backend.resolve)
-                return BM3D.Backend.CUDA
 
             for member in list(BM3D.Backend.__members__.values())[1:]:
                 if hasattr(core, member.value):
