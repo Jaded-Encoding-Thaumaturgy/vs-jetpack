@@ -21,12 +21,12 @@ from jetpytools import (
 
 from vstools import (
     ChromaLocation,
-    ColorRangeLike,
     FieldBasedLike,
     MatrixLike,
     MissingT,
     PackageStorage,
     PrimariesLike,
+    RangeLike,
     TransferLike,
     core,
     initialize_clip,
@@ -179,7 +179,7 @@ class Indexer(ABC):
         transfer: TransferLike | None = None,
         primaries: PrimariesLike | None = None,
         chroma_location: ChromaLocation | None = None,
-        color_range: ColorRangeLike | None = None,
+        color_range: RangeLike | None = None,
         field_based: FieldBasedLike | None = None,
     ) -> vs.VideoNode:
         clips = list(clips)
@@ -198,7 +198,7 @@ class Indexer(ABC):
         transfer: TransferLike | None = None,
         primaries: PrimariesLike | None = None,
         chroma_location: ChromaLocation | None = None,
-        color_range: ColorRangeLike | None = None,
+        color_range: RangeLike | None = None,
         field_based: FieldBasedLike | None = None,
         idx_props: bool = True,
         ref: vs.VideoNode | None = None,
@@ -432,7 +432,7 @@ class ExternalIndexer(Indexer):
         transfer: TransferLike | None = None,
         primaries: PrimariesLike | None = None,
         chroma_location: ChromaLocation | None = None,
-        color_range: ColorRangeLike | None = None,
+        color_range: RangeLike | None = None,
         field_based: FieldBasedLike | None = None,
         idx_props: bool = True,
         **kwargs: Any,

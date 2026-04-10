@@ -20,12 +20,12 @@ from vskernels import (
 from vskernels.types import LeftShift, TopShift
 from vsmasktools import Kirsch, based_diff_mask, region_rel_mask, stabilize_mask
 from vstools import (
-    ColorRange,
     DitherType,
     FieldBased,
     FieldBasedLike,
     FrameRangeN,
     FrameRangesN,
+    Range,
     VSObjectABC,
     core,
     depth,
@@ -396,7 +396,7 @@ class Rescale(RescaleBase):
     def line_mask(self) -> vs.VideoNode:
         """Gets the lineart mask to be applied on the upscaled clip."""
         lm = self._line_mask or core.std.BlankClip(
-            self._clipy, color=get_peak_value(self._clipy, False, ColorRange.FULL), keep=True
+            self._clipy, color=get_peak_value(self._clipy, False, Range.FULL), keep=True
         )
 
         if self._border_handling:
@@ -418,7 +418,7 @@ class Rescale(RescaleBase):
     def line_mask(self, mask: vs.VideoNode | None) -> None:
         if mask is not None:
             self._line_mask = depth(
-                mask, self._clipy, dither_type=DitherType.NONE, range_in=ColorRange.FULL, range_out=ColorRange.FULL
+                mask, self._clipy, dither_type=DitherType.NONE, range_in=Range.FULL, range_out=Range.FULL
             )
         else:
             self._line_mask = None
@@ -441,7 +441,7 @@ class Rescale(RescaleBase):
     def credit_mask(self, mask: vs.VideoNode | None) -> None:
         if mask is not None:
             self._credit_mask = depth(
-                mask, self._clipy, dither_type=DitherType.NONE, range_in=ColorRange.FULL, range_out=ColorRange.FULL
+                mask, self._clipy, dither_type=DitherType.NONE, range_in=Range.FULL, range_out=Range.FULL
             )
         else:
             self._credit_mask = None
@@ -461,9 +461,7 @@ class Rescale(RescaleBase):
     @ignore_mask.setter
     def ignore_mask(self, mask: vs.VideoNode | None) -> None:
         if mask is not None:
-            self._ignore_mask = depth(
-                mask, 8, dither_type=DitherType.NONE, range_in=ColorRange.FULL, range_out=ColorRange.FULL
-            )
+            self._ignore_mask = depth(mask, 8, dither_type=DitherType.NONE, range_in=Range.FULL, range_out=Range.FULL)
         else:
             self._ignore_mask = None
 

@@ -11,8 +11,6 @@ from jetpytools import CustomValueError, FuncExcept, StrictRange
 from ..enums import (
     ChromaLocation,
     ChromaLocationLike,
-    ColorRange,
-    ColorRangeLike,
     FieldBased,
     FieldBasedLike,
     Matrix,
@@ -20,6 +18,8 @@ from ..enums import (
     Primaries,
     PrimariesLike,
     PropEnum,
+    Range,
+    RangeLike,
     Transfer,
     TransferLike,
 )
@@ -313,7 +313,7 @@ def initialize_clip(
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
     chroma_location: ChromaLocationLike | None = None,
-    color_range: ColorRangeLike | None = None,
+    color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: Literal[False] = False,
     dither_type: DitherType = DitherType.RANDOM,
@@ -340,7 +340,7 @@ def initialize_clip(
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
     chroma_location: ChromaLocationLike | None = None,
-    color_range: ColorRangeLike | None = None,
+    color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
     dither_type: DitherType = DitherType.RANDOM,
@@ -360,7 +360,7 @@ def initialize_clip(
           * If those are None, it guesses based on resolution or video format.
 
     - `strict=True`: Validates that the input clip has all relevant frame properties
-     (Matrix, Transfer, Primaries, ChromaLocation, ColorRange, FieldBased) already set.
+     (Matrix, Transfer, Primaries, ChromaLocation, Range, FieldBased) already set.
      If any are missing, it raises an exception. Manual property arguments are not accepted.
 
     Args:
@@ -375,7 +375,7 @@ def initialize_clip(
         transfer: Transfer property to set. Ignored if `strict=True`.
         primaries: Primaries property to set. Ignored if `strict=True`.
         chroma_location: ChromaLocation prop to set. Ignored if `strict=True`.
-        color_range: ColorRange prop to set. Ignored if `strict=True`.
+        color_range: Range prop to set. Ignored if `strict=True`.
         field_based: FieldBased prop to set. Ignored if `strict=True`.
         strict: Whether to strictly validate existing properties.
             If True, arguments for specific properties (e.g. `matrix`) are not accepted.
@@ -392,7 +392,7 @@ def initialize_clip(
         (Transfer, transfer),
         (Primaries, primaries),
         (ChromaLocation, chroma_location),
-        (ColorRange, color_range),
+        (Range, color_range),
         (FieldBased, field_based),
     ]
 
@@ -424,7 +424,7 @@ def initialize_input[**P](
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
     chroma_location: ChromaLocationLike | None = None,
-    color_range: ColorRangeLike | None = None,
+    color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
     dither_type: DitherType = DitherType.RANDOM,
@@ -440,7 +440,7 @@ def initialize_input[**P](
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
     chroma_location: ChromaLocationLike | None = None,
-    color_range: ColorRangeLike | None = None,
+    color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
@@ -456,7 +456,7 @@ def initialize_input[**P](
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
     chroma_location: ChromaLocationLike | None = None,
-    color_range: ColorRangeLike | None = None,
+    color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
     dither_type: DitherType = DitherType.RANDOM,

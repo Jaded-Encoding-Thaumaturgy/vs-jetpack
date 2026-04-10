@@ -100,7 +100,7 @@ def inline_expr(
     - Example (advanced): [prefilter_to_full_range][vsdenoise.prefilter_to_full_range] implemented with `inline_expr`
         ```py
         from vsexprtools import inline_expr
-        from vstools import ColorRange, vs
+        from vstools import Range, vs
 
 
         def pf_full(clip: vs.VideoNode, slope: float = 2.0, smooth: float = 0.0625) -> vs.VideoNode:
@@ -128,7 +128,7 @@ def inline_expr(
                 # Assign the processed luma to the Y plane
                 ie.out.y = weight_mul
 
-                if ColorRange.from_video(clip).is_full or clip.format.sample_type is vs.FLOAT:
+                if Range.from_video(clip).is_full or clip.format.sample_type is vs.FLOAT:
                     ie.out.uv = x
                 else:
                     # Scale chroma values from limited to full range:
@@ -141,7 +141,7 @@ def inline_expr(
                     ie.out.uv = ie.op.round(chroma_expanded)
 
             # Final output is flagged as full-range video
-            return ColorRange.FULL.apply(ie.clip)
+            return Range.FULL.apply(ie.clip)
         ```
 
     - Example (complex): Unsharp mask implemented in [inline_expr][vsexprtools.inline_expr].

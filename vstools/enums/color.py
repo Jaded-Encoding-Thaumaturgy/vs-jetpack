@@ -6,7 +6,7 @@ from typing import Any
 
 from jetpytools import FuncExcept
 
-from ..exceptions import UndefinedColorRangeError, UndefinedMatrixError, UndefinedPrimariesError, UndefinedTransferError
+from ..exceptions import UndefinedMatrixError, UndefinedPrimariesError, UndefinedRangeError, UndefinedTransferError
 from ..types import HoldsPropValue
 from ..vs_proxy import vs
 from .base import PropEnum, _base_from_video
@@ -708,7 +708,7 @@ class Range(PropEnum):
         return ~self.value + 2
 
     @classmethod
-    def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> ColorRange:
+    def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Range:
         """
         Guess the color range from the frame resolution.
         """
@@ -724,23 +724,23 @@ class Range(PropEnum):
     @classmethod
     def from_video(
         cls, src: vs.VideoNode | vs.VideoFrame | Mapping[str, Any], strict: bool = False, func: FuncExcept | None = None
-    ) -> ColorRange:
+    ) -> Range:
         """
         Try to obtain the color range of a clip from the frame props or fallback to clip's resolution
         if the prop is undefined, strict=False and src is a clip.
 
         Args:
             src: Input clip, frame, or props.
-            strict: Be strict about the frame props. Sets the ColorRange as MISSING if prop is not there.
+            strict: Be strict about the frame props. Sets the Range as MISSING if prop is not there.
             func: Function returned for custom error handling.
 
         Returns:
-            ColorRange object.
+            Range object.
 
         Raises:
-            UndefinedColorRangeError: If the color range is undefined or can not be determined from the frameprops.
+            UndefinedRangeError: If the color range is undefined or can not be determined from the frameprops.
         """
-        return _base_from_video(cls, src, UndefinedColorRangeError, strict, func)
+        return _base_from_video(cls, src, UndefinedRangeError, strict, func)
 
 
 ColorRange = Range

@@ -16,10 +16,10 @@ if TYPE_CHECKING:
     from vssource import IndexerLike
 
 from vstools import (
-    ColorRange,
     FrameRangeN,
     FrameRangesN,
     Matrix,
+    Range,
     VSFunctionNoArgs,
     VSObjectABC,
     core,
@@ -96,7 +96,7 @@ class CustomMaskFromClipsAndRanges(VSObjectABC, GeneralMask):
 
         for maskclip, mask_ranges in zip(self.clips, self.frame_ranges(ref)):
             maskclip = Point().resample(
-                maskclip.std.AssumeFPS(ref), mask, matrix, range_in=ColorRange.FULL, range=ColorRange.FULL
+                maskclip.std.AssumeFPS(ref), mask, matrix, range_in=Range.FULL, range=Range.FULL
             )
             maskclip = self.processing(maskclip)
             maskclip = vs.core.std.Loop(maskclip, mask.num_frames)
@@ -400,7 +400,7 @@ class HardsubLine(HardsubMask):
         mask = iterate(mask, core.std.Maximum, expand_n)
         mask = box_blur(mask.std.Inflate().std.Inflate())
 
-        return depth(mask, clip, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
+        return depth(mask, clip, range_in=Range.FULL, range_out=Range.FULL)
 
 
 class HardsubLineFade(HardsubLine):

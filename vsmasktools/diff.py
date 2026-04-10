@@ -8,7 +8,7 @@ from vsexprtools import ExprOp, norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike
 from vsrgtools import bilateral, remove_grain
 from vsrgtools.rgtools import RemoveGrain
-from vstools import ColorRange, VSFunctionNoArgs, depth, get_w, get_y, insert_clip, vs
+from vstools import Range, VSFunctionNoArgs, depth, get_w, get_y, insert_clip, vs
 
 from .edge import EdgeDetect, EdgeDetectLike, ExLaplacian4
 from .morpho import Morpho
@@ -196,7 +196,7 @@ def based_diff_mask(
     mask = ExprOp.mae(dst_fmt)(
         (Bilinear().resample(c, dst_fmt) for c in [clip, ref]), format=diff_fmt, split_planes=True
     )
-    mask = ColorRange.FULL.apply(mask)
+    mask = Range.FULL.apply(mask)
 
     if postfilter:
         if isinstance(postfilter, int):

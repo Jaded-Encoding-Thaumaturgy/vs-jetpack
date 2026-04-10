@@ -9,11 +9,11 @@ from jetpytools import CustomTypeError, inject_self, normalize_seq
 from vsexprtools import ExprOp
 from vsrgtools import box_blur
 from vstools import (
-    ColorRange,
     FrameRangeN,
     FrameRangesN,
     FramesLengthError,
     Position,
+    Range,
     Size,
     depth,
     limiter,
@@ -131,14 +131,12 @@ class DeferredMask(GeneralMask):
                 elif rf < 0:
                     rf = ref.num_frames - 1 + rf
 
-                mask = depth(
-                    self._mask(clip[rf], ref[rf], **kwargs), clip, range_out=ColorRange.FULL, range_in=ColorRange.FULL
-                )
+                mask = depth(self._mask(clip[rf], ref[rf], **kwargs), clip, range_out=Range.FULL, range_in=Range.FULL)
                 mask = vs.core.std.Loop(mask, hm.num_frames)
 
                 hm = replace_ranges(hm, ExprOp.MAX.combine(hm, mask), ran)
         else:
-            hm = depth(self._mask(clip, ref, **kwargs), clip, range_out=ColorRange.FULL, range_in=ColorRange.FULL)
+            hm = depth(self._mask(clip, ref, **kwargs), clip, range_out=Range.FULL, range_in=Range.FULL)
 
         if self.bound:
             bm = self.bound.get_mask(hm, **kwargs)

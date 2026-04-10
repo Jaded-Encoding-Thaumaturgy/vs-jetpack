@@ -20,11 +20,11 @@ from jetpytools import (
 )
 
 from vstools import (
-    ColorRange,
-    ColorRangeLike,
     ConvMode,
     HoldsVideoFormat,
     Planes,
+    Range,
+    RangeLike,
     VideoFormatLike,
     VideoNodeIterable,
     flatten,
@@ -67,7 +67,7 @@ class ExprToken(CustomStrEnum):
     """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
     @cache
-    def get_value(self, clip: vs.VideoNode, chroma: bool = False, range_in: ColorRangeLike | None = None) -> float:
+    def get_value(self, clip: vs.VideoNode, chroma: bool = False, range_in: RangeLike | None = None) -> float:
         """
         Resolves the numeric value represented by this token based on the input clip and range.
 
@@ -85,15 +85,15 @@ class ExprToken(CustomStrEnum):
             case ExprToken.PlaneMax:
                 return get_peak_value(clip, chroma, range_in)
             case ExprToken.MaskMax:
-                return get_peak_value(clip, range_in=ColorRange.FULL)
+                return get_peak_value(clip, range_in=Range.FULL)
             case ExprToken.Neutral:
                 return get_neutral_value(clip)
             case ExprToken.RangeMin:
-                return get_lowest_value(clip, chroma, ColorRange.FULL)
+                return get_lowest_value(clip, chroma, Range.FULL)
             case ExprToken.RangeMax:
-                return get_peak_value(clip, chroma, ColorRange.FULL)
+                return get_peak_value(clip, chroma, Range.FULL)
             case ExprToken.RangeSize:
-                val = get_peak_value(clip, range_in=ColorRange.FULL)
+                val = get_peak_value(clip, range_in=Range.FULL)
                 return val if clip.format.sample_type is vs.FLOAT else val + 1
             case _:
                 raise NotImplementedError

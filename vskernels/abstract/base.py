@@ -38,7 +38,6 @@ from jetpytools import cachedproperty as jetpytools_cachedproperty
 from vsjetpack import TypeIs
 from vstools import (
     ChromaLocation,
-    ColorRange,
     FieldBased,
     FieldBasedLike,
     HoldsVideoFormat,
@@ -47,6 +46,7 @@ from vstools import (
     Primaries,
     PrimariesLike,
     PropEnum,
+    Range,
     Transfer,
     TransferLike,
     VideoFormatLike,
@@ -168,8 +168,8 @@ def _resolve_video_spec_args(clip: vs.VideoNode, **kwargs: Any) -> dict[str, Any
         "transfer_in": Transfer,
         "primaries": Primaries,
         "primaries_in": Primaries,
-        "range": ColorRange,
-        "range_in": ColorRange,
+        "range": Range,
+        "range_in": Range,
         "chromaloc": ChromaLocation,
         "chromaloc_in": ChromaLocation,
     }

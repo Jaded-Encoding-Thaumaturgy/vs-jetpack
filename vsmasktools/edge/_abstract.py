@@ -14,9 +14,9 @@ from jetpytools import FuncExcept, get_subclasses, inject_kwargs_params, inject_
 
 from vsexprtools import ExprList, ExprOp, norm_expr
 from vstools import (
-    ColorRange,
     ConvMode,
     Planes,
+    Range,
     core,
     depth,
     get_peak_value,
@@ -261,7 +261,7 @@ class EdgeDetect(ABC):
         lthr = [scale_mask(lt, 32, mask) for lt in to_arr(lthr)]
         hthr = [scale_mask(ht, 32, mask) for ht in to_arr(hthr)]
 
-        peak = get_peak_value(mask, range_in=ColorRange.FULL)
+        peak = get_peak_value(mask, range_in=Range.FULL)
 
         thr_expr = ExprList(["x"])
 
@@ -304,7 +304,7 @@ class EdgeDetect(ABC):
     ) -> vs.VideoNode: ...
 
     def _preprocess(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        return ColorRange.FULL.apply(clip)
+        return Range.FULL.apply(clip)
 
     def _postprocess(self, clip: vs.VideoNode, input_bits: vs.VideoNode) -> vs.VideoNode:
         return clip

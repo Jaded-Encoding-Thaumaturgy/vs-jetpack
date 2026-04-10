@@ -22,9 +22,9 @@ from jetpytools import (
 from vsexprtools import norm_expr
 from vsrgtools import bilateral, flux_smooth, gauss_blur, min_blur
 from vstools import (
-    ColorRange,
     MissingT,
     Planes,
+    Range,
     UnsupportedColorFamilyError,
     get_peak_value,
     get_y,
@@ -600,7 +600,7 @@ def prefilter_to_full_range(
     if smooth < 0 or not 0 <= slope <= (1 + 2 * smooth) / smooth:
         raise CustomValueError("Curve parameters out of range", func, (slope, smooth))
 
-    clip_range = ColorRange.from_video(clip, func=func)
+    clip_range = Range.from_video(clip, func=func)
 
     curve = (slope - 1) * smooth
     luma_expr = (
@@ -611,4 +611,4 @@ def prefilter_to_full_range(
 
     planes = 0 if clip_range.is_full or clip.format.sample_type is vs.FLOAT else None
 
-    return ColorRange.FULL.apply(norm_expr(clip, (luma_expr, chroma_expr), planes, k=curve, c=smooth, func=func))
+    return Range.FULL.apply(norm_expr(clip, (luma_expr, chroma_expr), planes, k=curve, c=smooth, func=func))
