@@ -2,11 +2,6 @@ version = 1
 revision = 3
 requires-python = ">=3.12"
 
-[options]
-
-[options.exclude-newer-package]
-vapoursynth = "2026-04-01T22:00:00Z"
-
 [[package]]
 name = "babel"
 version = "2.18.0"
