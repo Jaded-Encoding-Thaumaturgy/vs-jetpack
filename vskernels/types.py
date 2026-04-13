@@ -86,7 +86,7 @@ class BorderHandling(CustomIntEnum):
             case _:
                 assert_never(self)
 
-        shift = tuple(s + c for s, c in zip(shift, (top, left)))  # type: ignore
+        shift = tuple(s + c for s, c in zip(shift, (top, left)))  # pyright: ignore[reportAssignmentType]
 
         return padded, shift
 
