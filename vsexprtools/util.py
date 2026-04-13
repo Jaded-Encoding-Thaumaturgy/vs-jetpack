@@ -117,7 +117,8 @@ class ExprVars(Sequence[str], Iterator[str]):
         return var
 
     def __getitem__(
-        self, index: SupportsIndex | slice[SupportsIndex | None, SupportsIndex, SupportsIndex | None]
+        self,
+        index: SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None],
     ) -> str:
         indices = range(self.start, self.stop, self.step)
 

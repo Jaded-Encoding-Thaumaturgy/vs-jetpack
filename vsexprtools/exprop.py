@@ -98,7 +98,9 @@ class ExprToken(CustomStrEnum):
             case _:
                 raise NotImplementedError
 
-    def __getitem__(self, i: SupportsIndex | slice[SupportsIndex | None, SupportsIndex, SupportsIndex | None]) -> str:
+    def __getitem__(
+        self, i: SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]
+    ) -> str:
         """
         Returns a version of the token specific to a clip index.
 
@@ -112,7 +114,9 @@ class ExprToken(CustomStrEnum):
             An string with an index-specific suffix for use in expressions.
         """
 
-        def validate_index(idx: SupportsIndex) -> SupportsIndex:
+        def validate_index(idx: SupportsIndex | None) -> SupportsIndex:
+            if idx is None:
+                raise CustomIndexError("The idx can't be None", self, idx)
             if idx.__index__() > 25:
                 raise CustomIndexError("Only an index up to 25 is supported", self, idx)
             return idx
