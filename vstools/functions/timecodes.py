@@ -441,7 +441,7 @@ class Keyframes(list[int]):
     def from_clip(
         cls,
         clip: vs.VideoNode,
-        mode: SceneChangeMode | int = WWXD,
+        mode: SceneChangeMode | int = SCXVID,
         height: int | Literal[False] = 360,
         **kwargs: Any,
     ) -> Self:
@@ -458,7 +458,7 @@ class Keyframes(list[int]):
         self,
         clip: vs.VideoNode,
         *,
-        mode: SceneChangeMode | int = WWXD,
+        mode: SceneChangeMode | int = SCXVID,
         height: int | Literal[False] = 360,
         prop_key: str = next(iter(SceneChangeMode.SCXVID.prop_keys)),
         scene_idx_prop: bool = False,
