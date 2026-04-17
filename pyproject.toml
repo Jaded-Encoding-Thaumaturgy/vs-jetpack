@@ -42,14 +42,67 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "VapourSynth>=69",
+    "VapourSynth>=74",
     "jetpytools~=2.2.1",
     "numpy>=2.0.0",
     "typing_extensions>=4.15.0; python_version<'3.13'",
 ]
 
 [project.optional-dependencies]
-full = ["scipy>=1.16.0", "rich>=14.0.0", "psutil>=7.0.0"]
+full = [
+    # Python Packages
+    "scipy>=1.16.0",
+    "rich>=14.0.0",
+    "psutil>=7.0.0",
+
+    # VapourSynth plugins
+    # "vapoursynth-akarin",
+    "vapoursynth-resize2>=0.4.2",
+    # "vszip",
+    "vapoursynth-zsmooth>=0.15.4",
+    "vapoursynth-bestsource>=17.0",
+    # "vscarefulsource",
+    "vapoursynth-d2vsource>=1.4",
+    "vapoursynth-dvdsrc2>=3.0",
+    # "vapoursynth-ffms2",
+    # "vapoursynth-imwri",
+    # "lsmas",
+    # "adaptivegrain"
+    "vapoursynth-awarp>=3.0",
+    "vapoursynth-bilateralgpu>=14",
+    # "bm3d",
+    # "bm3dcuda",
+    # "bm3dmetal",
+    # "vapoursynth-bwdif",
+    # "dctfilter",
+    "vapoursynth-deblock>=8.0",
+    "vapoursynth-descale>=12",
+    # "dfttest",
+    # "dfttest2",
+    "vapoursynth-dmetrics>=2.0",
+    "vapoursynth-edgemasks>=4.0",
+    # "eedi2",
+    "vapoursynth-eedi3>=9.0",
+    "vapoursynth-fmtconv>=31",
+    "vapoursynth-hysteresis>=1.1.3",
+    "vapoursynth-knlmeanscl>=1.2",
+    "vapoursynth-manipmv>=1.3.0",
+    "vapoursynth-mvtools>=26",
+    # "nlm-cuda",
+    # "nlm-ispc",
+    # "placebo",
+    "vapoursynth-sangnom>=43",
+    "vapoursynth-scxvid>=3.0",
+    "vapoursynth-sneedif>=4.2",
+    "vapoursynth-subtext>=6.0",
+    "vapoursynth-vivtc>=2.0",
+    # "vs-mlrt",
+    "vsnoise>=1.1",
+    # "wnnm",
+    # "vapoursynth-wwxd",
+    # "znedi3",
+]
+recommended = []
 
 [project.urls]
 Documentation = "https://jaded-encoding-thaumaturgy.github.io/vs-jetpack/"
