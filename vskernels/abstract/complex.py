@@ -24,7 +24,6 @@ from vstools import (
     FieldBasedLike,
     Sar,
     depth,
-    expect_bits,
     get_video_format,
     split,
     vs,
