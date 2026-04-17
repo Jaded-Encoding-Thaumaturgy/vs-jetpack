@@ -1235,10 +1235,6 @@ class VideoNode(RawNode):
     sub: Final[_sub._VideoNode_bound.Plugin]
     """A subtitling filter based on libass and FFmpeg."""
 # </attribute/VideoNode_bound/sub>
-# <attribute/VideoNode_bound/tcanny>
-    tcanny: Final[_tcanny._VideoNode_bound.Plugin]
-    """Build an edge map using canny edge detection"""
-# </attribute/VideoNode_bound/tcanny>
 # <attribute/VideoNode_bound/text>
     text: Final[_text._VideoNode_bound.Plugin]
     """VapourSynth Text"""
@@ -1516,10 +1512,6 @@ class Core:
     sub: Final[_sub._Core_bound.Plugin]
     """A subtitling filter based on libass and FFmpeg."""
 # </attribute/Core_bound/sub>
-# <attribute/Core_bound/tcanny>
-    tcanny: Final[_tcanny._Core_bound.Plugin]
-    """Build an edge map using canny edge detection"""
-# </attribute/Core_bound/tcanny>
 # <attribute/Core_bound/text>
     text: Final[_text._Core_bound.Plugin]
     """VapourSynth Text"""
@@ -2911,20 +2903,6 @@ class _sub:
             def TextFile(self, file: _AnyStr, charset: _AnyStr | None = None, scale: _FloatLike | None = None, debuglevel: _IntLike | None = None, fontdir: _AnyStr | None = None, linespacing: _FloatLike | None = None, margins: _IntLike | _SequenceLike[_IntLike] | None = None, sar: _FloatLike | None = None, style: _AnyStr | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/sub>
-
-# <implementation/tcanny>
-class _tcanny:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def TCanny(self, clip: VideoNode, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigma_v: _FloatLike | _SequenceLike[_FloatLike] | None = None, t_h: _FloatLike | None = None, t_l: _FloatLike | None = None, mode: _IntLike | None = None, op: _IntLike | None = None, scale: _FloatLike | None = None, opt: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def TCanny(self, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigma_v: _FloatLike | _SequenceLike[_FloatLike] | None = None, t_h: _FloatLike | None = None, t_l: _FloatLike | None = None, mode: _IntLike | None = None, op: _IntLike | None = None, scale: _FloatLike | None = None, opt: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
-
-# </implementation/tcanny>
 
 # <implementation/text>
 class _text:

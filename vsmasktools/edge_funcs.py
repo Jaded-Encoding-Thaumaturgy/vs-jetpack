@@ -102,9 +102,10 @@ def tcanny_retinex(
 
     msrcp = retinex(blur, sigma, upper_thr=thr, fast=True, func=tcanny_retinex)
 
-    tcunnied = msrcp.tcanny.TCanny(mode=1, sigma=1)
+    msrcp_blurred = gauss_blur(msrcp, 1)
+    gradient = Prewitt.edgemask(msrcp_blurred, multi=0.5)
 
-    return Morpho.minimum(tcunnied, coords=Coordinates.CORNERS)
+    return Morpho.minimum(gradient, coords=Coordinates.CORNERS)
 
 
 def limited_linemask(
