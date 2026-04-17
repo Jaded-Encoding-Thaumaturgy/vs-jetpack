@@ -24,7 +24,6 @@ from vstools import (
     FieldBasedLike,
     Sar,
     depth,
-    expect_bits,
     get_video_format,
     split,
     vs,
@@ -683,8 +682,7 @@ class ComplexDescaler(LinearDescaler):
 
         field_based = FieldBased.from_param_or_video(field_based, clip)
 
-        input_clip = clip
-        clip = depth(clip, 32, vs.FLOAT)
+        clip = depth(clip, 32)
 
         de_base_args = (width, height // (1 + field_based.is_inter))
         kwargs.update(
@@ -731,7 +729,7 @@ class ComplexDescaler(LinearDescaler):
 
             descaled = super().descale(clip, **self.get_descale_args(clip, shift, *de_base_args, **kwargs))
 
-        return depth(descaled, input_clip)
+        return descaled
 
     def rescale(
         self,
@@ -782,7 +780,7 @@ class ComplexDescaler(LinearDescaler):
 
         field_based = FieldBased.from_param_or_video(field_based, clip)
 
-        clip, bits = expect_bits(clip, 32)
+        clip = depth(clip, 32)
 
         de_base_args = (width, height // (1 + field_based.is_inter))
         kwargs.update(
@@ -802,7 +800,7 @@ class ComplexDescaler(LinearDescaler):
                 clip, **self.get_rescale_args(clip, shift, *de_base_args, **kwargs), linear=linear, sigmoid=sigmoid
             )
 
-        return depth(rescaled, bits)
+        return rescaled
 
 
 class ComplexKernel(Kernel, ComplexDescaler, ComplexScaler):

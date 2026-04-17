@@ -94,7 +94,7 @@ def wnnm(
 
     func = FunctionUtil(clip, wnnm, planes, bitdepth=32)
 
-    sigma = func.norm_seq(sigma, 0)
+    sigma = normalize_param_planes(clip, sigma, planes, 0)
 
     if ref is not None:
         ref = depth(ref, 32)
@@ -622,13 +622,11 @@ def bm3d(
 
             denoised = _bm3d_wolfram(clip_opp, pre_opp, ref_opp, **plugins_args, chroma=False, **kwargs)
 
-            denoised = core.fmtc.matrix(
+            return core.fmtc.matrix(
                 denoised,
                 coef=list(interleave_arr(matrix_opp2rgb, [0, 0, 0], 3)),
                 col_fam=vs.RGB,
             )
-
-            return depth(denoised, clip)
 
     # BM3D CUDA and others require YUVXXX and GRAY 32 bits input
     preclip = depth(clip, 32)
@@ -663,8 +661,7 @@ def bm3d(
 
             return final
         else:
-            denoised = _bm3d_wolfram(preclip, prepre, preref, **plugins_args, chroma=True, **kwargs)
-            return depth(denoised, clip)
+            return _bm3d_wolfram(preclip, prepre, preref, **plugins_args, chroma=True, **kwargs)
 
     # GRAY or subsampled YUV
     # OLD backend will error if clip is subsampled. It only accepts GRAY at this point
@@ -673,8 +670,7 @@ def bm3d(
         # Will error if clip is subsampled.
         return _bm3d_mawen(clip, pre, ref, **plugins_args)
     else:
-        denoised = _bm3d_wolfram(preclip, prepre, preref, **plugins_args, chroma=False, **kwargs)
-        return depth(denoised, clip)
+        return _bm3d_wolfram(preclip, prepre, preref, **plugins_args, chroma=False, **kwargs)
 
 
 def _bm3d_mawen(
