@@ -99,8 +99,12 @@ full = [
     # "vs-mlrt",
     "vsnoise>=1.2",
     "vapoursynth-wnnm>=3",
-    # "vapoursynth-wwxd",
     "vapoursynth-znedi3>=2.1",
+
+    # Not on PyPI -> Deprecate
+    # "vapoursynth-imwri",
+    # "lsmas",
+    # "vapoursynth-wwxd",
 ]
 recommended = []
 
