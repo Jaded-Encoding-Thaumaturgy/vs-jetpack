@@ -353,7 +353,7 @@ def prop_compare_cb(
         clip = (
             vs.core.std.BlankClip(None, 1, 1, vs.GRAY8 if bool_check else vs.GRAYS, length=src.num_frames)
             .std.CopyFrameProps(src)
-            .akarin.Expr(
+            .cranexpr.Expr(
                 f"x.{prop}" if bool_check else f"x.{prop} {ref} {_operators[op][1]}"  # type: ignore[index]
             )
         )

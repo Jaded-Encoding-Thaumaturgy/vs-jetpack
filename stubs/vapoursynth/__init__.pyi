@@ -1119,6 +1119,10 @@ class VideoNode(RawNode):
     bwdif: Final[_bwdif._VideoNode_bound.Plugin]
     """BobWeaver Deinterlacing Filter"""
 # </attribute/VideoNode_bound/bwdif>
+# <attribute/VideoNode_bound/cranexpr>
+    cranexpr: Final[_cranexpr._VideoNode_bound.Plugin]
+    """Cranelift Expr"""
+# </attribute/VideoNode_bound/cranexpr>
 # <attribute/VideoNode_bound/cs>
     cs: Final[_cs._VideoNode_bound.Plugin]
     """carefulsource"""
@@ -1384,6 +1388,10 @@ class Core:
     bwdif: Final[_bwdif._Core_bound.Plugin]
     """BobWeaver Deinterlacing Filter"""
 # </attribute/Core_bound/bwdif>
+# <attribute/Core_bound/cranexpr>
+    cranexpr: Final[_cranexpr._Core_bound.Plugin]
+    """Cranelift Expr"""
+# </attribute/Core_bound/cranexpr>
 # <attribute/Core_bound/cs>
     cs: Final[_cs._Core_bound.Plugin]
     """carefulsource"""
@@ -1795,6 +1803,20 @@ class _bwdif:
             def Bwdif(self, field: _IntLike, edeint: VideoNode | None = None, opt: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/bwdif>
+
+# <implementation/cranexpr>
+class _cranexpr:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def Expr(self, clips: VideoNode | _SequenceLike[VideoNode], expr: _AnyStr | _SequenceLike[_AnyStr], format: _IntLike | None = None, boundary: _IntLike | None = None) -> VideoNode: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def Expr(self, expr: _AnyStr | _SequenceLike[_AnyStr], format: _IntLike | None = None, boundary: _IntLike | None = None) -> VideoNode: ...
+
+# </implementation/cranexpr>
 
 # <implementation/cs>
 class _cs:

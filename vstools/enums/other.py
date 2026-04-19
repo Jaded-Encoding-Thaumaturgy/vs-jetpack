@@ -201,9 +201,9 @@ class SceneChangeMode(CustomIntEnum):
         blank = clip.std.BlankClip(1, 1, vs.GRAY8, keep=True)
 
         if len(stats_clip) > 1:
-            return merge_clip_props(blank, *stats_clip).akarin.Expr(expr)
+            return merge_clip_props(blank, *stats_clip).cranexpr.Expr(expr)
 
-        return blank.std.CopyFrameProps(stats_clip[0]).akarin.Expr(expr)
+        return blank.std.CopyFrameProps(stats_clip[0]).cranexpr.Expr(expr)
 
     @property
     def prop_keys(self) -> Iterator[str]:

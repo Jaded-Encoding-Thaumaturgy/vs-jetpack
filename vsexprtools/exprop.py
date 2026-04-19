@@ -35,7 +35,7 @@ from vstools import (
     vs,
 )
 
-from .util import ExprVars, _get_akarin_expr_version
+from .util import ExprVars
 
 __all__ = ["ExprList", "ExprOp", "ExprToken", "TupleExprList"]
 
@@ -153,7 +153,6 @@ class ExprList(StrList):
         *clips: VideoNodeIterable,
         planes: Planes = None,
         format: HoldsVideoFormat | VideoFormatLike | None = None,
-        opt: bool = False,
         boundary: bool = True,
         func: FuncExcept | None = None,
         split_planes: bool = False,
@@ -166,7 +165,6 @@ class ExprList(StrList):
             clips: Input clip(s).
             planes: Plane to process, defaults to all.
             format: Output format, defaults to the first clip format.
-            opt: Forces integer evaluation as much as possible.
             boundary: Specifies the default boundary condition for relative pixel accesses:
 
                    - `True` (default): Mirrored edges.
@@ -180,7 +178,7 @@ class ExprList(StrList):
         """
         from .funcs import norm_expr
 
-        return norm_expr(clips, self, planes, format, opt, boundary, func, split_planes, **kwargs)
+        return norm_expr(clips, self, planes, format, boundary, func, split_planes, **kwargs)
 
 
 class TupleExprList(tuple[ExprList, ...]):
@@ -193,7 +191,6 @@ class TupleExprList(tuple[ExprList, ...]):
         *clips: VideoNodeIterable,
         planes: Planes = None,
         format: HoldsVideoFormat | VideoFormatLike | None = None,
-        opt: bool = False,
         boundary: bool = True,
         func: FuncExcept | None = None,
         split_planes: bool = False,
@@ -208,7 +205,6 @@ class TupleExprList(tuple[ExprList, ...]):
             clips: Input clip(s).
             planes: Plane to process, defaults to all.
             format: Output format, defaults to the first clip format.
-            opt: Forces integer evaluation as much as possible.
             boundary: Specifies the default boundary condition for relative pixel accesses:
 
                    - `True` (default): Mirrored edges.
@@ -233,7 +229,6 @@ class TupleExprList(tuple[ExprList, ...]):
                 clip,
                 planes=planes,
                 format=format,
-                opt=opt,
                 boundary=boundary,
                 func=func,
                 split_planes=split_planes,
@@ -401,9 +396,7 @@ class ExprOpExtraMeta(EnumMeta):
     @property
     def _extra_op_names_(cls) -> tuple[str, ...]:
         return (
-            "SGN",
             "NEG",
-            "TAN",
             "ATAN",
             "ASIN",
             "ACOS",
@@ -425,7 +418,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         Format strings can include placeholders for dynamic substitution (e.g., `{N:d}`, `{name:s}`).
     """
 
-    # 0 Argument (akarin)
+    # 0 Argument (cranexpr)
     N = "N", 0
     """Current frame number."""
 
@@ -472,9 +465,15 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     DUPN = "dup{N:d}", 1
     """Duplicate the top N items on the stack."""
 
-    # 1 Argument (akarin)
-    TRUNC = "trunc", 1
-    """Truncate to integer (toward zero)."""
+    # 1 Argument (cranexpr)
+    SGN = "sgn", 1
+    """Sign function: -1, 0, or 1 depending on value."""
+
+    TAN = "tan", 1
+    """Tangent (radians)."""
+
+    # TRUNC = "trunc", 1
+    # """Truncate to integer (toward zero)."""
 
     ROUND = "round", 1
     """Round to nearest integer."""
@@ -580,15 +579,9 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     ABS_PIX = "{x:d} {y:d} {char:s}[]", 3
     """Get value of absolute pixel at coordinates ({x},{y}) on clip `{char}`."""
 
-    # Not Implemented in akarin or std
-    SGN = "sgn", 1
-    """Sign function: -1, 0, or 1 depending on value."""
-
+    # Not Implemented in cranexpr or std
     NEG = "neg", 1
     """Negation (multiply by -1)."""
-
-    TAN = "tan", 1
-    """Tangent (radians)."""
 
     ATAN = "atan", 1
     """Arctangent."""
@@ -621,7 +614,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         """
         Check if the operator is an 'extra' operator.
 
-        Extra operators are not natively supported by VapourSynth's `std.Expr` or `akarin.Expr`
+        Extra operators are not natively supported by VapourSynth's `std.Expr` or `cranexpr.Expr`
         and require conversion to a valid equivalent expression.
 
         Returns:
@@ -631,9 +624,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
 
     def convert_extra(  # type: ignore[misc]
         self: Literal[
-            ExprOp.SGN,
             ExprOp.NEG,
-            ExprOp.TAN,
             ExprOp.ATAN,
             ExprOp.ASIN,
             ExprOp.ACOS,
@@ -645,7 +636,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         degree: int | None = None,
     ) -> str:
         """
-        Converts an 'extra' operator into a valid `akarin.Expr` expression string.
+        Converts an 'extra' operator into a valid `cranexpr.Expr` expression string.
 
         Args:
             degree: If calling from POLYVAL, the degree of the polynomial.
@@ -661,12 +652,8 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
             raise CustomValueError
 
         match self:
-            case ExprOp.SGN:
-                return "dup 0 > swap 0 < -"
             case ExprOp.NEG:
                 return "-1 *"
-            case ExprOp.TAN:
-                return "dup sin swap cos /"
             case ExprOp.ATAN:
                 return self.atan().to_str()
             case ExprOp.ASIN:
@@ -678,8 +665,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
             case ExprOp.MMG:
                 return self.masked_merge().to_str()
             case ExprOp.LERP:
-                if bytes(self, "utf-8") in _get_akarin_expr_version()["expr_features"]:
-                    return str(self)
                 return "dup 1 - swap2 * swap2 * -"
             case ExprOp.POLYVAL:
                 assert degree is not None
@@ -977,7 +962,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
                 ExprList(
                     [
                         "__atanvar@",
-                        cls.SGN.convert_extra(),
+                        cls.SGN,
                         cls.PI,
                         cls.MUL,
                         2,
@@ -1080,9 +1065,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         """
         if len(coeffs) < 1:
             raise CustomValueError("You must provide at least one coefficient.", cls.polyval, coeffs)
-
-        if b"polyval" in _get_akarin_expr_version()["expr_features"]:
-            return ExprList([*coeffs, c, ExprOp.POLYVAL(len(coeffs) - 1)])
 
         stack_len = len(coeffs) + 1
 
