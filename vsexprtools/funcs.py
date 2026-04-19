@@ -141,9 +141,13 @@ def combine_expr(
 
     args = zip(prefixes, evars, suffixes)
 
-    has_op = (n >= operator.n_op) or any(x is not None for x in (suffix, prefix, expr_suffix, expr_prefix))
+    # Only an operator with 2 arguments can be duplicated
+    if operator.n_op == 2:
+        has_op = (n >= operator.n_op) or any(x is not None for x in (suffix, prefix, expr_suffix, expr_prefix))
 
-    operators = operator * max(n - 1, int(has_op))
+        operators = operator * max(n - 1, int(has_op))
+    else:
+        operators = operator
 
     return ExprList([to_arr(expr_prefix), args, operators, to_arr(expr_suffix)])
 
