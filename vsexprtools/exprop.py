@@ -472,8 +472,8 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     TAN = "tan", 1
     """Tangent (radians)."""
 
-    # TRUNC = "trunc", 1
-    # """Truncate to integer (toward zero)."""
+    TRUNC = "trunc", 1
+    """Truncate to integer (toward zero)."""
 
     ROUND = "round", 1
     """Round to nearest integer."""
