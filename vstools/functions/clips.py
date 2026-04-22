@@ -325,7 +325,7 @@ def initialize_clip(
 @overload
 def initialize_clip(
     clip: vs.VideoNode,
-    bits: int | None = None,
+    bits: int | None = 32,
     *,
     strict: Literal[True],
     dither_type: DitherType = DitherType.RANDOM,
@@ -335,7 +335,7 @@ def initialize_clip(
 
 def initialize_clip(
     clip: vs.VideoNode,
-    bits: int | None = None,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
