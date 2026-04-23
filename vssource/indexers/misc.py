@@ -142,6 +142,10 @@ class LSMAS(CacheIndexer):
     _ext = ".lwi"
 
 
+@deprecated(
+    "CarefulSource is deprecated and will be removed in a future version. Use BestSource or ZipSource instead.",
+    category=DeprecationWarning,
+)
 class CarefulSource(Indexer):
     """
     CarefulSource indexer
@@ -152,7 +156,7 @@ class CarefulSource(Indexer):
 
 # Image indexers
 @deprecated(
-    "IMWRI is deprecated and will be removed in a future version. Use BestSource, CarefulSource or ZipSource instead.",
+    "IMWRI is deprecated and will be removed in a future version. Use BestSource or ZipSource instead.",
     category=DeprecationWarning,
 )
 class IMWRI(Indexer):

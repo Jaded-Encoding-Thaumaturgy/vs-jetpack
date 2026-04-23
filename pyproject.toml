@@ -61,7 +61,6 @@ full = [
     "vapoursynth-vszip>=13.0.0",
     "vapoursynth-zsmooth>=0.15.4",
     "vapoursynth-bestsource>=17.0",
-    # "vscarefulsource",
     "vapoursynth-d2vsource>=1.4",
     "vapoursynth-dvdsrc2>=3.0",
     # "vapoursynth-ffms2",
@@ -102,6 +101,7 @@ full = [
     "vapoursynth-znedi3>=2.1",
 
     # Not on PyPI -> Deprecate
+    # "vscarefulsource",
     # "vapoursynth-imwri",
     # "lsmas",
     # "vapoursynth-wwxd",
