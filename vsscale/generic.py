@@ -138,7 +138,7 @@ class GenericScaler(BaseGenericScaler, partial_abstract=True):
     ) -> vs.VideoNode:
         width, height = self._wh_norm(clip, width, height)
 
-        if shift != (0, 0):
+        if any(shift):
             output = self.func(clip, width, height, shift, **kwargs)
         else:
             output = self.func(clip, width, height, **kwargs)

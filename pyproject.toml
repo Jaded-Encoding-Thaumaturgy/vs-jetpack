@@ -59,7 +59,7 @@ Tracker = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/issues"
 
 [dependency-groups]
 dev = [
-    "mypy~=1.20.0",
+    "mypy~=2.0.0",
     "pytest>=9.0.0, <10.0.0",
     "pytest-cov>=6.2.1, <8.0.0",
     "ruff~=0.15.0",
@@ -184,8 +184,7 @@ extra_checks = false
 # Misc
 warn_unreachable = true
 
-allow_redefinition_new = true
-local_partial_types = true
+allow_redefinition = true
 implicit_reexport = false
 strict = true
 
