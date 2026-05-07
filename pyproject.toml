@@ -87,7 +87,6 @@ doc = [
     "ruff~=0.15.0",
 
     # Additional packages to be documented.
-    "vspreview>=0.18.1",
     "vstransitions==0.1.4",
 ]
 
@@ -201,7 +200,7 @@ line-length = 120
 docstring-code-format = true
 
 [tool.ruff.lint]
-exclude = ["stubs/vspreview", "stubs/dfttest2.pyi", "stubs/vsmlrt.pyi"]
+exclude = ["stubs/dfttest2.pyi", "stubs/vsmlrt.pyi"]
 extend-select = [
     "E",
     "C4",
