@@ -76,7 +76,7 @@ basic = [
 source = [
     "vapoursynth-d2vsource>=1.4",
     "vapoursynth-dvdsrc2>=3.0",
-    # "vapoursynth-ffms2",
+    "vapoursynth-ffms2>=5.2.0",
 ]
 kernels = [
     "vapoursynth-resize2>=0.4.2",
@@ -199,6 +199,7 @@ doc = [
 
 [tool.uv.sources]
 vapoursynth-dfttest2-cuda = { index = "vs-wheels" }
+vapoursynth-ffms2 = { index = "vs-wheels" }
 vapoursynth-fmtconv = { index = "vs-wheels" }
 
 [[tool.uv.index]]

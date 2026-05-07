@@ -1678,6 +1678,23 @@ wheels = [
 ]
 
 [[package]]
+name = "vapoursynth-ffms2"
+version = "5.2.0"
+source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
+dependencies = [
+    { name = "vapoursynth" },
+]
+sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.0/vapoursynth_ffms2-5.2.0.tar.gz", hash = "sha256:2dd705f50cc1c7501ee9bdae53b3f05b2561747af5b54e2083fb5933df6038f4" }
+wheels = [
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.0/vapoursynth_ffms2-5.2.0-py3-none-macosx_13_0_arm64.whl", hash = "sha256:e0f5f7915c860e9768ae6af20d9abdae1dd53aeb8b0481704d654a4fcf70e304" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.0/vapoursynth_ffms2-5.2.0-py3-none-macosx_13_0_x86_64.whl", hash = "sha256:fd91c61f065834189f70cccf10342eeca379ab5efc511608b1cacc46c807201b" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.0/vapoursynth_ffms2-5.2.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:1e1cb0efae3c88c1e1201d642b1a1c4401729ddd5a18f4bc620f7498e30c685b" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.0/vapoursynth_ffms2-5.2.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:1f5a810001f2f53e04e54055f989411957a245d19f17ead2bd4656a510930e92" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.0/vapoursynth_ffms2-5.2.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:93ff02349ece38ad2c8a9ec97aeac02cd0e81969d107be7d77b1fe87ddf39869" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.0/vapoursynth_ffms2-5.2.0-py3-none-win_amd64.whl", hash = "sha256:47d64863597d999f07d700056ce8c01a5df99d5deba39e9ea05a82f70b634abb" },
+]
+
+[[package]]
 name = "vapoursynth-fmtconv"
 version = "31"
 source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
@@ -1995,6 +2012,7 @@ aa = [
     { name = "vapoursynth-dvdsrc2" },
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
+    { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-resize2" },
@@ -2046,6 +2064,7 @@ deband = [
     { name = "vapoursynth-dvdsrc2" },
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
+    { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-manipmv" },
@@ -2084,6 +2103,7 @@ dehalo = [
     { name = "vapoursynth-dvdsrc2" },
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
+    { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-manipmv" },
@@ -2122,6 +2142,7 @@ deinterlace = [
     { name = "vapoursynth-dvdsrc2" },
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
+    { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-manipmv" },
@@ -2160,6 +2181,7 @@ denoise = [
     { name = "vapoursynth-dvdsrc2" },
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
+    { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-manipmv" },
@@ -2208,6 +2230,7 @@ full = [
     { name = "vapoursynth-dvdsrc2" },
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
+    { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-knlmeanscl" },
@@ -2250,6 +2273,7 @@ full-amd = [
     { name = "vapoursynth-dvdsrc2" },
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
+    { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-knlmeanscl" },
@@ -2294,6 +2318,7 @@ full-nvidia = [
     { name = "vapoursynth-dvdsrc2" },
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
+    { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-knlmeanscl" },
@@ -2331,6 +2356,7 @@ mask = [
     { name = "vapoursynth-descale" },
     { name = "vapoursynth-dvdsrc2" },
     { name = "vapoursynth-edgemasks" },
+    { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-resize2" },
@@ -2374,6 +2400,7 @@ scale = [
     { name = "vapoursynth-descale" },
     { name = "vapoursynth-dvdsrc2" },
     { name = "vapoursynth-edgemasks" },
+    { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-resize2" },
@@ -2386,6 +2413,7 @@ scale = [
 source = [
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dvdsrc2" },
+    { name = "vapoursynth-ffms2" },
 ]
 
 [package.dev-dependencies]
@@ -2628,6 +2656,17 @@ requires-dist = [
     { name = "vapoursynth-eedi3", marker = "extra == 'full'", specifier = ">=9.0" },
     { name = "vapoursynth-eedi3", marker = "extra == 'full-amd'", specifier = ">=9.0" },
     { name = "vapoursynth-eedi3", marker = "extra == 'full-nvidia'", specifier = ">=9.0" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'aa'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'deband'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'dehalo'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'deinterlace'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'denoise'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'full'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'full-amd'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'full-nvidia'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'mask'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'scale'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'source'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-fmtconv", marker = "extra == 'aa'", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-fmtconv", marker = "extra == 'basic'", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-fmtconv", marker = "extra == 'deband'", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
