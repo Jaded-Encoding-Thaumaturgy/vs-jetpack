@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Protocol, Self, cast, runtime_checkable
 
 from jetpytools import CustomNotImplementedError, CustomValueError, fallback, normalize_seq
 
-from vsjetpack import TypeVar
+from vsjetpack import TypeVar, deprecated
 from vskernels import (
     Bobber,
     Catrom,
@@ -483,6 +483,7 @@ class NNEDI3(SuperSampler):
         return self._deinterlacer_function(clip, field, dh, **self.get_deint_args(clip=clip, **kwargs))
 
 
+@deprecated("EEDI2 is deprecated and will be removed in the next version.", category=DeprecationWarning)
 @dataclass
 class EEDI2(SuperSampler):
     """
