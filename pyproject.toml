@@ -119,7 +119,7 @@ denoise = [
     "vapoursynth-manipmv>=1.3.0",
     "vapoursynth-mvtools>=26",
     "vapoursynth-nlm-ispc>=3",
-    "vapoursynth-wnnm>=3",
+    "vapoursynth-wnnm>=3 ; platform_system == 'Linux' or platform_system == 'Windows'",
 ]
 dehalo = ["vsjetpack[denoise]"]
 deinterlace = [
