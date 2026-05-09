@@ -36,8 +36,9 @@ Most extras are hierarchical. For example, `denoise` includes all plugins from `
 | **`denoise`**     | Denoising            | `bm3d`, `dctfilter`, `dfttest2`, `deblock`, `mvtools`, `nlm-ispc`, `wnnm` (+ `aa`)   |
 | **`deband`**      | Debanding            | `vsnoise` (+ `denoise`)                                                              |
 | **`deinterlace`** | Deinterlacing        | `dmetrics`, `vivtc` (+ `denoise`)                                                    |
-| **`nvidia`**      | NVIDIA GPU (CUDA)    | `bm3dcuda`, `bilateralgpu`, `nlm-cuda`, `dfttest2-[nvrtc,cuda]`                      |
-| **`amd`**         | AMD/Generic GPU      | `bm3dhip`, `knlmeanscl`, `dfttest2-[hiprtc,hipfft]`                                  |
+| **`cl`**          | Open CL              | `knlmeanscl`,                                                                        |
+| **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `nlm-cuda`, `dfttest2-[nvrtc,cuda]`                      |
+| **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]` (+ `cl`)                                       |
 | **`full`**        | All CPU-based extras | `basic`, `source`, `kernels`, `rg`, `mask`, `aa`, `denoise`, `deband`, `deinterlace` |
 | **`full-nvidia`** | Full + NVIDIA GPU    | `full`, `nvidia`                                                                     |
 | **`full-amd`**    | Full + AMD GPU       | `full`, `amd`                                                                        |
@@ -55,24 +56,24 @@ Most extras are hierarchical. For example, `denoise` includes all plugins from `
 
 Not all extras have prebuilt wheels on every platform:
 
-| Extra        | Windows x64 | Linux (glibc) | Linux (musl) | macOS (Intel/ARM) |
-| :----------- | :---------: | :-----------: | :----------: | :---------------: |
-| `basic` [^1] |     ✅      |      ✅       |      ✅      |        ✅         |
-| `source`     |     ✅      |      ✅       |      ✅      |        ✅         |
-| `kernels`    |     ✅      |      ✅       |      ✅      |        ✅         |
-| `rg`         |     ✅      |      ✅       |      ✅      |        ✅         |
-| `mask`       |     ✅      |      ✅       |      ✅      |        ✅         |
-| `aa`         |     ✅      |      ✅       |      ✅      |        ✅         |
-| `denoise`    |     ✅      |    ⚠️ [^2]    |      ❌      |      ⚠️ [^4]      |
-| `cl`         |     ✅      |      ✅       |      ❌      |        ✅         |
-| `nvidia`     |     ✅      |    ⚠️ [^3]    |      ❌      |        ❌         |
-| `amd`        |     ✅      |      ✅       |      ❌      |        ❌         |
-| `full`       |     ✅      |    ⚠️ [^2]    |      ❌      |        ❌         |
+| Extra         | Windows x64 | Linux (glibc 2.35+) | Linux (musl 1.2+) | macOS (Intel/ARM) 15.0+ |
+| :------------ | :---------: | :-----------------: | :---------------: | :---------------------: |
+| `basic`       |     ✅      |         ✅          |        ✅         |           ✅            |
+| `source`      |     ✅      |         ✅          |      ❌[^1]       |         ⚠️[^1]          |
+| `kernels`     |     ✅      |         ✅          |        ✅         |           ✅            |
+| `rg`          |     ✅      |         ✅          |        ✅         |           ✅            |
+| `mask`        |     ✅      |         ✅          |      ❌[^1]       |           ✅            |
+| `aa`          |     ✅      |         ✅          |      ❌[^1]       |           ✅            |
+| `denoise`     |     ✅      |         ✅          |        ❌         |         ⚠️[^2]          |
+| `deband`      |     ✅      |         ✅          |        ❌         |           ✅            |
+| `deinterlace` |     ✅      |         ✅          |        ❌         |           ✅            |
+| `cl`          |     ✅      |         ✅          |        ❌         |           ✅            |
+| `nvidia`      |     ✅      |       ⚠️[^3]        |        ❌         |           ❌            |
+| `amd`         |     ✅      |         ✅          |        ❌         |           ❌            |
+| `full`        |     ✅      |         ✅          |        ❌         |           ⚠️            |
 
-[^1]: Will be merged into the hard requirements in the next version.
+[^1]: `dvdsrc2` isn't available on musl and macOS.
 
-[^2]: Requires Glibc 2.34+ for `nlm-ispc`.
+[^2]: `wnnm` isn't available on macOS.
 
 [^3]: Requires Glibc 2.39+ for `bilateralgpu`.
-
-[^4]: `wnnm` isn't available on macOS.
