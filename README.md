@@ -25,23 +25,23 @@ Most of these plugins are now available as Python packages on PyPI and can be in
 
 Most extras are hierarchical. For example, `denoise` includes all plugins from `aa`, which in turn includes `mask`, and so on.
 
-| Extra             | Purpose              | Included Plugins / Packages                                                          |
-| :---------------- | :------------------- | :----------------------------------------------------------------------------------- |
-| **`basic`**       | Essential plugins    | `akarin`, `fmtconv`, `vszip`, `bestsource`, `scxvid`, `scipy`, `rich`, `psutil`      |
-| **`source`**      | Clip Indexing        | `ffms2`, `d2vsource`, `dvdsrc2`                                                      |
-| **`kernels`**     | Resizing             | `resize2`, `descale`, `vs-placebo`                                                   |
-| **`rg`**          | Repair & Smoothing   | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                             |
-| **`mask`**        | Masking              | `adaptivegrain`, `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)             |
-| **`aa`**          | Anti-aliasing        | `bwdif`, `eedi3`, `sangnom`, `sneedif`, `znedi3` (+ `mask`)                          |
-| **`denoise`**     | Denoising            | `bm3d`, `dctfilter`, `dfttest2`, `deblock`, `mvtools`, `nlm-ispc`, `wnnm` (+ `aa`)   |
-| **`deband`**      | Debanding            | `vsnoise` (+ `denoise`)                                                              |
-| **`deinterlace`** | Deinterlacing        | `dmetrics`, `vivtc` (+ `denoise`)                                                    |
-| **`cl`**          | Open CL              | `knlmeanscl`,                                                                        |
-| **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `nlm-cuda`, `dfttest2-[nvrtc,cuda]`                      |
-| **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]` (+ `cl`)                                       |
-| **`full`**        | All CPU-based extras | `basic`, `source`, `kernels`, `rg`, `mask`, `aa`, `denoise`, `deband`, `deinterlace` |
-| **`full-nvidia`** | Full + NVIDIA GPU    | `full`, `nvidia`                                                                     |
-| **`full-amd`**    | Full + AMD GPU       | `full`, `amd`                                                                        |
+| Extra             | Purpose              | Included Plugins / Packages                                                        |
+| :---------------- | :------------------- | :--------------------------------------------------------------------------------- |
+| **`basic`**       | Essential plugins    | `akarin`, `fmtconv`, `vszip`, `bestsource`, `scxvid`, `scipy`, `rich`, `psutil`    |
+| **`source`**      | Clip Indexing        | `ffms2`, `d2vsource`, `dvdsrc2`                                                    |
+| **`kernels`**     | Resizing             | `resize2`, `descale`, `vs-placebo`                                                 |
+| **`rg`**          | Repair & Smoothing   | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                           |
+| **`mask`**        | Masking              | `adaptivegrain`, `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)           |
+| **`aa`**          | Anti-aliasing        | `bwdif`, `eedi3`, `sangnom`, `sneedif`, `znedi3` (+ `mask`)                        |
+| **`denoise`**     | Denoising            | `bm3d`, `dctfilter`, `dfttest2`, `deblock`, `mvtools`, `nlm-ispc`, `wnnm` (+ `aa`) |
+| **`deband`**      | Debanding            | `vsnoise` (+ `denoise`)                                                            |
+| **`deinterlace`** | Deinterlacing        | `dmetrics`, `vivtc` (+ `denoise`)                                                  |
+| **`full`**        | All CPU-based extras | Everything above                                                                   |
+| **`cl`**          | Open CL              | `knlmeanscl`,                                                                      |
+| **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `nlm-cuda`, `dfttest2-[nvrtc,cuda]`                    |
+| **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]` (+ `cl`)                                     |
+| **`full-nvidia`** | Full + NVIDIA GPU    | `full`, `nvidia`                                                                   |
+| **`full-amd`**    | Full + AMD GPU       | `full`, `amd`                                                                      |
 
 > [!IMPORTANT]
 > Some plugins distribute their wheels through our custom package index instead of PyPI.
