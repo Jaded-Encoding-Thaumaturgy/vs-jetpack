@@ -1857,15 +1857,20 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-sneedif"
-version = "4.2"
+version = "4.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/2e/83c58af281aee0479ad948f837288685b3d9270bc4fc8ddf9e8422002cc3/vapoursynth_sneedif-4.2.tar.gz", hash = "sha256:923a613d3fe48f18453ccd2674ee54d2fdb192bcac1f0be4e4bedf1a377e9d88", size = 12918296, upload-time = "2026-04-12T21:00:12.297Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/85/d0/6169c36fc41d498483db7a0e7b49c6b8f3029027f71cdff3066be2a90c16/vapoursynth_sneedif-4.3.tar.gz", hash = "sha256:5c90b0a5b06fe4617e07804d63e87d51a522ab8c6f7143d2ea0df2b6748c76fd", size = 12700286, upload-time = "2026-05-09T21:59:42.054Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/49/2b/2eeef0cd9d865699f5e3f4673e7a8b6043a8fefd0dcda6f4b18cb306a494/vapoursynth_sneedif-4.2-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4f28fe880abd1e6dc43c8e5a5374c1425b536c237520f7067799057c6e047d24", size = 12901186, upload-time = "2026-04-12T21:00:07.172Z" },
-    { url = "https://files.pythonhosted.org/packages/1d/16/df4c4afba138df4d238135a9050b96c0ea18224d6c408f6fd8bec035c751/vapoursynth_sneedif-4.2-py3-none-win_amd64.whl", hash = "sha256:b8261a714e1af4a930133a3af7882aec97dd4c033e6ec1ce352f32368ad759bb", size = 13277412, upload-time = "2026-04-12T21:00:09.866Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/0b/b986c26275e82d1dcb767eb89fc3bd3c6ad1b3f90b65227365fde278d02c/vapoursynth_sneedif-4.3-py3-none-macosx_15_0_arm64.whl", hash = "sha256:33869d1ef7429433a52f25c4d8f0320e7770c759655f548858da03cca064159d", size = 12795642, upload-time = "2026-05-09T21:59:24.274Z" },
+    { url = "https://files.pythonhosted.org/packages/19/fd/0d90aa1680933400d60259907fa3f03fc484b0b442974105e87013a6b03b/vapoursynth_sneedif-4.3-py3-none-macosx_15_0_x86_64.whl", hash = "sha256:0c713b5cdb01c72603cc45688d8465b08f023e1f49af2917156dbd815ee43dcc", size = 12802766, upload-time = "2026-05-09T21:59:26.506Z" },
+    { url = "https://files.pythonhosted.org/packages/72/de/4361ecb5378c0296808e5f35d9a87bc02f0aff2a012551b809ee1edcdc7d/vapoursynth_sneedif-4.3-py3-none-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f5cf1f7b8b66de3cfd5753d95d6f7b84e6902e62721e9652d73e522cac3ed370", size = 12860770, upload-time = "2026-05-09T21:59:28.979Z" },
+    { url = "https://files.pythonhosted.org/packages/64/36/f9a85b375793e6ee931cce6fc122761578cbdb407ef1b80f5d942ca14789/vapoursynth_sneedif-4.3-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:32fc26ddf742c530fb6703d7c57ed55fd98f302736b5b791f338e7de3e5619e0", size = 12878705, upload-time = "2026-05-09T21:59:31.516Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/46/98ac91855b15c19eeaf20039f8ae66a9795e03d93b26c6c10cbc317c68f6/vapoursynth_sneedif-4.3-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:59e696012902a5b2b754a3e3445226a067571e96ba3533ff655d7008cb735523", size = 13815780, upload-time = "2026-05-09T21:59:34.238Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/84/623b9c84acd8b9f57ca048495770051adf61f113c80efa89697183aeedb1/vapoursynth_sneedif-4.3-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:a8592737050d8a3abfbcdc96815139e410cd83ffefc4942042f56a490d52b451", size = 13880159, upload-time = "2026-05-09T21:59:37.013Z" },
+    { url = "https://files.pythonhosted.org/packages/73/3e/8d61fcd5b50938cec18b6743984ebb871be57fc81e0f343f9ab5799dfc8a/vapoursynth_sneedif-4.3-py3-none-win_amd64.whl", hash = "sha256:86df0708848e255ea816d2955882a7f1165c797800e2f5635847fccd3a31b852", size = 13263768, upload-time = "2026-05-09T21:59:39.477Z" },
 ]
 
 [[package]]
@@ -2895,15 +2900,20 @@ test = [
 
 [[package]]
 name = "vsnoise"
-version = "1.2"
+version = "1.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d8/86/3b4855b8912bf4c6df02702fb8338c680963921fc2728eb6684ee54b3d04/vsnoise-1.2.tar.gz", hash = "sha256:8b261f1ab3e12048fcf8536278193c6a0d841b166efe8b58828ede2912ff29dd", size = 280179, upload-time = "2026-04-17T21:09:09.272Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3d/0c/4d3beef2d8b936776bbcbfd24aafba01147ebd64d4a2413c2e75bf453e9c/vsnoise-1.2.1.tar.gz", hash = "sha256:11e967bf80cb3ef27d72ffef91490726917456ff06ec8136b9ea03b386beb2f5", size = 275813, upload-time = "2026-05-09T19:29:31.36Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/fe/ecf1a3369d3eaa89bfc3ed9f38253f67c34957c3af5c1b02fd1d68f0854e/vsnoise-1.2-py3-none-manylinux_2_42_x86_64.whl", hash = "sha256:0bd968a3856e6a95196f63f48152e0378518b53fc862529e7f4a9ceb8558504e", size = 37527, upload-time = "2026-04-17T21:09:06.76Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/5f/1d61e568029efc494ffb64feed987051a33bb66deeb152e7ad5a61f35648/vsnoise-1.2-py3-none-win_amd64.whl", hash = "sha256:2f9ac1bb1d87b41f5e154a8ee02225d1f469b884402f9ab94af78449f516dc80", size = 32587, upload-time = "2026-04-17T21:09:07.957Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/5b/41c55a938ab519ae112a36793876a4613e8f8c946c450ab8494050b1ed04/vsnoise-1.2.1-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:7cf2bb2572fee77eb1387adf2d54433032a61bd2b3b2c0a647759150b1c99f9e", size = 36787, upload-time = "2026-05-09T19:29:21.21Z" },
+    { url = "https://files.pythonhosted.org/packages/53/6c/c7a2245f40b738784d6eb828ddb85f4acf6823c631286e2c3e55b0114ccb/vsnoise-1.2.1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:57c27748ba34f4b4466e747c8fe76a759e402b363748b9cd197b506a01ad3bc7", size = 32601, upload-time = "2026-05-09T19:29:22.728Z" },
+    { url = "https://files.pythonhosted.org/packages/cf/b3/ddec7481b9b354c1a4fb2bd4eb52770f18dbaad11efedda9f4343e00454b/vsnoise-1.2.1-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a6f5a2c9dce26e363c701ff086ad1a6d0baf3df5e2092578f96991fd6a823e1b", size = 183479, upload-time = "2026-05-09T19:29:23.991Z" },
+    { url = "https://files.pythonhosted.org/packages/09/4b/1cfe5b86378bcec55636409687f678d6e4bdb2a12d3c43573b1e0e01ef63/vsnoise-1.2.1-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9aea4d9dcd5ce0be0952c72d59db849849893badbc9ea8c53ec692915175653c", size = 198685, upload-time = "2026-05-09T19:29:25.602Z" },
+    { url = "https://files.pythonhosted.org/packages/31/84/324036c8b37d1a4e20f814fbcda4d8ecac8e9e06c8d7d68ffdd8fa630d2f/vsnoise-1.2.1-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:734f07ff5b4a9af08b9973ed096f2f01c180190898a07ac03d4a701538f01f14", size = 1014069, upload-time = "2026-05-09T19:29:27.021Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/46/beb85c5c7a731767ce13b50ed78a1fbdffe721dbfde08d8eb63efc2ca2f0/vsnoise-1.2.1-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:88a5f7384df67e513251cf117a94294a561af9503ac0b9a52c34dc43502e44d4", size = 1069267, upload-time = "2026-05-09T19:29:28.649Z" },
+    { url = "https://files.pythonhosted.org/packages/46/52/69c04600285321c33f66d73b13b803d95e954e4b787325cf651deb22be0e/vsnoise-1.2.1-py3-none-win_amd64.whl", hash = "sha256:b94177e4b1550dc0b5694a33b57610434142fdb587847be6c687bc67ccd151bb", size = 33424, upload-time = "2026-05-09T19:29:29.97Z" },
 ]
 
 [[package]]
