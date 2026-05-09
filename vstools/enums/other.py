@@ -6,6 +6,8 @@ from typing import Literal, Self
 
 from jetpytools import CustomIntEnum, CustomRuntimeError, Sentinel, SentinelT
 
+from vsjetpack import deprecated
+
 from ..types import HoldsPropValue
 from ..vs_proxy import vs
 
@@ -123,6 +125,7 @@ class Sar(Fraction):
         return vs.core.std.SetFrameProps(clip, _SARNum=self.numerator, _SARDen=self.denominator)
 
 
+@deprecated("SceneChangeMode is deprecated and will be removed in a future version.", category=DeprecationWarning)
 class SceneChangeMode(CustomIntEnum):
     """
     Enum for various scene change modes.

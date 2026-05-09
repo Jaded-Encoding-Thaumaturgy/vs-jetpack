@@ -1,3 +1,8 @@
+
+[build-system]
+requires = ["hatchling>=1.27.0", "versioningit"]
+build-backend = "hatchling.build"
+
 [project]
 name = "vsjetpack"
 dynamic = ["version"]
@@ -42,14 +47,11 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "VapourSynth>=69",
+    "vapoursynth>=73",
     "jetpytools~=2.2.1",
     "numpy>=2.0.0",
     "typing_extensions>=4.15.0; python_version<'3.13'",
 ]
-
-[project.optional-dependencies]
-full = ["scipy>=1.16.0", "rich>=14.0.0", "psutil>=7.0.0"]
 
 [project.urls]
 Documentation = "https://jaded-encoding-thaumaturgy.github.io/vs-jetpack/"
@@ -57,11 +59,114 @@ Documentation = "https://jaded-encoding-thaumaturgy.github.io/vs-jetpack/"
 Tracker = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/issues"
 "Contact" = "https://discord.gg/XTpc6Fa9eB"
 
+[project.optional-dependencies]
+basic = [
+    # Python Packages
+    "scipy>=1.16.0",
+    "rich>=14.0.0",
+    "psutil>=7.0.0",
+
+    # VapourSynth plugins
+    "vapoursynth-akarin>=1.3.0",
+    "vapoursynth-fmtconv>=31",
+    "vapoursynth-vszip>=13.0.0",
+    "vapoursynth-bestsource>=17.0",
+    "vapoursynth-scxvid>=3.0",
+]
+source = [
+    "vapoursynth-d2vsource>=1.4",
+    "vapoursynth-dvdsrc2>=3.0",
+    "vapoursynth-ffms2>=5.2.0",
+]
+kernels = [
+    "vapoursynth-resize2>=0.4.2",
+    "vapoursynth-descale>=12",
+    "vs-placebo>=2.0.2",
+]
+expr = ["vsjetpack[basic]"]
+rg = [
+    "vsjetpack[kernels]",
+    "vsjetpack[expr]",
+    "vapoursynth-awarp>=3.0",
+    "vapoursynth-zsmooth>=0.15.4",
+]
+mask = [
+    "vsjetpack[source]",
+    "vsjetpack[rg]",
+    "vapoursynth-adaptivegrain>=0.5.0",
+    "vapoursynth-edgemasks>=4.0",
+    "vapoursynth-hysteresis>=1.1.3",
+    "vapoursynth-subtext>=6.0",
+]
+scale = ["vsjetpack[mask]"]
+aa = [
+    "vsjetpack[scale]",
+    "vapoursynth-bwdif>=5.0",
+    "vapoursynth-eedi3>=9.0",
+    "vapoursynth-sangnom>=43",
+    "vapoursynth-sneedif>=4.2",
+    "vapoursynth-znedi3>=2.1",
+]
+denoise = [
+    "vsjetpack[aa]",
+    "vapoursynth-bm3d>=10.0",
+    "vapoursynth-bm3dcpu>=2.16.4 ; platform_machine == 'x86_64' and (platform_system == 'Linux' or platform_system == 'Windows')",
+    # "bm3dmetal ; platform_system == 'Darwin",
+    "vapoursynth-dctfilter>=3.1",
+    "dfttest2[gcc]>=10 ; platform_machine != 'x86_64'",
+    "dfttest2[cpu]>=10 ; platform_machine == 'x86_64'",
+    "vapoursynth-deblock>=8.0",
+    "vapoursynth-manipmv>=1.3.0",
+    "vapoursynth-mvtools>=26",
+    "vapoursynth-nlm-ispc>=3",
+    "vapoursynth-wnnm>=3",
+]
+dehalo = ["vsjetpack[denoise]"]
+deinterlace = [
+    "vsjetpack[denoise]",
+    "vapoursynth-dmetrics>=2.0",
+    "vapoursynth-vivtc>=2.0",
+]
+deband = ["vsjetpack[denoise]", "vsnoise>=1.2"]
+cl = ["vapoursynth-knlmeanscl>=1.2"]
+nvidia = [
+    "dfttest2[cufft,nvrtc]>=10",
+    "vapoursynth-dfttest2-cuda>=10", # Explicitly specify this one so it's properly resolved through uv --index
+    "vapoursynth-bm3dcuda>=2.16",
+    "vapoursynth-bilateralgpu>=14",
+    "vapoursynth-nlm-cuda>=4",
+]
+amd = [
+    "vsjetpack[cl]",
+    "dfttest2[hipfft,hiprtc]>=10",
+    "vapoursynth-bm3dhip>=2.16",
+]
+full = [
+    "vsjetpack[basic]",
+    "vsjetpack[source]",
+    "vsjetpack[kernels]",
+    "vsjetpack[expr]",
+    "vsjetpack[rg]",
+    "vsjetpack[mask]",
+    "vsjetpack[scale]",
+    "vsjetpack[aa]",
+    "vsjetpack[denoise]",
+    "vsjetpack[dehalo]",
+    "vsjetpack[deinterlace]",
+    "vsjetpack[deband]",
+
+    "vsjetpack[cl]",
+    # "dfttest",
+    # "eedi2",
+    # "vs-mlrt",
+]
+
+full-nvidia = ["vsjetpack[full]", "vsjetpack[nvidia]"]
+full-amd = ["vsjetpack[full]", "vsjetpack[amd]"]
+
 [dependency-groups]
 dev = [
     "mypy~=2.0.0",
-    "pytest>=9.0.0, <10.0.0",
-    "pytest-cov>=6.2.1, <8.0.0",
     "ruff~=0.15.0",
     "prek>=0.3.6",
     "scipy-stubs>=1.16.0.0",
@@ -90,9 +195,15 @@ doc = [
     "vstransitions==0.1.4",
 ]
 
-[build-system]
-requires = ["hatchling>=1.27.0", "versioningit"]
-build-backend = "hatchling.build"
+[tool.uv.sources]
+vapoursynth-dfttest2-cuda = { index = "vs-wheels" }
+vapoursynth-ffms2 = { index = "vs-wheels" }
+vapoursynth-fmtconv = { index = "vs-wheels" }
+
+[[tool.uv.index]]
+name = "vs-wheels"
+url = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple"
+explicit = true
 
 [tool.hatch.build]
 artifacts = ["vsjetpack/_version.py"]

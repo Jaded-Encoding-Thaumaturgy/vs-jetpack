@@ -8,7 +8,7 @@ from typing import Any
 
 from jetpytools import CustomIntEnum, SPathLike
 
-from vsjetpack import require_jet_dependency
+from vsjetpack import deprecated, require_jet_dependency
 from vstools import core, vs
 
 from .base import CacheIndexer, Indexer
@@ -123,6 +123,10 @@ class FFMS2(CacheIndexer):
     _ext = ".ffindex"
 
 
+@deprecated(
+    "LSMAS is deprecated and will be removed in a future version. Use BestSource or FFMS2 instead.",
+    category=DeprecationWarning,
+)
 class LSMAS(CacheIndexer):
     """
     [L-SMASH-Works](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works) indexer.
@@ -138,6 +142,10 @@ class LSMAS(CacheIndexer):
     _ext = ".lwi"
 
 
+@deprecated(
+    "CarefulSource is deprecated and will be removed in a future version. Use BestSource or ZipSource instead.",
+    category=DeprecationWarning,
+)
 class CarefulSource(Indexer):
     """
     CarefulSource indexer
@@ -147,6 +155,10 @@ class CarefulSource(Indexer):
 
 
 # Image indexers
+@deprecated(
+    "IMWRI is deprecated and will be removed in a future version. Use BestSource or ZipSource instead.",
+    category=DeprecationWarning,
+)
 class IMWRI(Indexer):
     """
     ImageMagick Writer-Reader indexer

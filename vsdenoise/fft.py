@@ -735,7 +735,7 @@ class DFTTest:
 
         OLD = "dfttest"
         """
-        Legacy DFTTest implementation by HolyWu.
+        (Deprecated) Legacy DFTTest implementation by HolyWu.
         """
 
         @overload
