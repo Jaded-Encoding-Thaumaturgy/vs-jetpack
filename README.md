@@ -18,7 +18,7 @@ If you're looking for workflow recommendations, the JET Encoding Guide is availa
 
 ## Installation
 
-`vsjetpack` relies on several VapourSynth plugins to function.
+`vsjetpack` relies on a number of VapourSynth plugins to function.
 Most of these plugins are now available as Python packages on PyPI and can be installed automatically using **extras**:
 
 ### Breakdown
@@ -36,7 +36,7 @@ Most extras are hierarchical. For example, `denoise` includes all plugins from `
 | **`denoise`**     | Denoising            | `bm3d`, `dctfilter`, `dfttest2`, `deblock`, `mvtools`, `nlm-ispc`, `wnnm` (+ `aa`) |
 | **`deband`**      | Debanding            | `vsnoise` (+ `denoise`)                                                            |
 | **`deinterlace`** | Deinterlacing        | `dmetrics`, `vivtc` (+ `denoise`)                                                  |
-| **`full`**        | All CPU-based extras | Everything above                                                                   |
+| **`full`**        | All CPU-based extras | All of the above                                                                   |
 | **`cl`**          | Open CL              | `knlmeanscl`,                                                                      |
 | **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `nlm-cuda`, `dfttest2-[nvrtc,cuda]`                    |
 | **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]` (+ `cl`)                                     |
@@ -69,6 +69,11 @@ Not all extras have prebuilt wheels on every platform:
 | `cl`          |     ✅      |         ✅          |        ❌         |           ✅            |
 | `nvidia`      |     ✅      |       ⚠️[^3]        |        ❌         |           ❌            |
 | `amd`         |     ✅      |         ✅          |        ❌         |           ❌            |
+
+> [!TIP]
+> If a plugin is unavailable for your platform, you may need to build it manually.
+>
+> Refer to the plugin repository for platform-specific build instructions.
 
 [^1]: `dvdsrc2` isn't available on musl and macOS.
 
