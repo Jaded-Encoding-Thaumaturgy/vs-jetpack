@@ -157,14 +157,10 @@ full = [
     "vsjetpack[deinterlace]",
     "vsjetpack[deband]",
 
-    "vsjetpack[cl]",
     # "dfttest",
     # "eedi2",
     # "vs-mlrt",
 ]
-
-full-nvidia = ["vsjetpack[full]", "vsjetpack[nvidia]"]
-full-amd = ["vsjetpack[full]", "vsjetpack[amd]"]
 
 [dependency-groups]
 dev = [

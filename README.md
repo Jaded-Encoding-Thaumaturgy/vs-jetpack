@@ -40,8 +40,6 @@ Most extras are hierarchical. For example, `denoise` includes all plugins from `
 | **`cl`**          | Open CL              | `knlmeanscl`,                                                                      |
 | **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `nlm-cuda`, `dfttest2-[nvrtc,cuda]`                    |
 | **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]` (+ `cl`)                                     |
-| **`full-nvidia`** | Full + NVIDIA GPU    | `full`, `nvidia`                                                                   |
-| **`full-amd`**    | Full + AMD GPU       | `full`, `amd`                                                                      |
 
 > [!IMPORTANT]
 > Some plugins distribute their wheels through our custom package index instead of PyPI.
@@ -67,10 +65,10 @@ Not all extras have prebuilt wheels on every platform:
 | `denoise`     |     ✅      |         ✅          |        ❌         |         ⚠️[^2]          |
 | `deband`      |     ✅      |         ✅          |        ❌         |           ✅            |
 | `deinterlace` |     ✅      |         ✅          |        ❌         |           ✅            |
+| `full`        |     ✅      |         ✅          |        ❌         |           ⚠️            |
 | `cl`          |     ✅      |         ✅          |        ❌         |           ✅            |
 | `nvidia`      |     ✅      |       ⚠️[^3]        |        ❌         |           ❌            |
 | `amd`         |     ✅      |         ✅          |        ❌         |           ❌            |
-| `full`        |     ✅      |         ✅          |        ❌         |           ⚠️            |
 
 [^1]: `dvdsrc2` isn't available on musl and macOS.
 
