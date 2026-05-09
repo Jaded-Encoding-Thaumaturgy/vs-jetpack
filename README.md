@@ -27,8 +27,8 @@ Most extras are hierarchical. For example, `denoise` includes all plugins from `
 
 | Extra             | Purpose              | Included Plugins / Packages                                                        |
 | :---------------- | :------------------- | :--------------------------------------------------------------------------------- |
-| **`basic`**       | Essential plugins    | `akarin`, `fmtconv`, `vszip`, `bestsource`, `scxvid`, `scipy`, `rich`, `psutil`    |
-| **`source`**      | Clip Indexing        | `ffms2`, `d2vsource`, `dvdsrc2`                                                    |
+| **`basic`**       | Essential plugins    | `akarin`, `fmtconv`, `vszip`, `scxvid`, `scipy`, `rich`, `psutil`                  |
+| **`source`**      | Clip Indexing        | `bestsource`, `ffms2`, `d2vsource`, `dvdsrc2`                                      |
 | **`kernels`**     | Resizing             | `resize2`, `descale`, `vs-placebo`                                                 |
 | **`rg`**          | Repair & Smoothing   | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                           |
 | **`mask`**        | Masking              | `adaptivegrain`, `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)           |
