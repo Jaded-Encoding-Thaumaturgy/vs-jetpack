@@ -74,11 +74,13 @@ basic = [
     "vapoursynth-scxvid>=3.0",
 ]
 source = [
+    "vsjetpack[basic]",
     "vapoursynth-d2vsource>=1.4",
     "vapoursynth-dvdsrc2>=3.0",
     "vapoursynth-ffms2>=5.2.0",
 ]
 kernels = [
+    "vsjetpack[basic]",
     "vapoursynth-resize2>=0.4.2",
     "vapoursynth-descale>=12",
     "vs-placebo>=2.0.2",
