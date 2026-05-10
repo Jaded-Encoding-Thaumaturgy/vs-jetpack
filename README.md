@@ -47,7 +47,7 @@ Most extras are hierarchical. For example, `denoise` includes all plugins from `
 > Add `--extra-index-url` to ensure pip can locate all required packages:
 >
 > ```bash
-> pip install vsjetpack[basic,source,denoise] --extra-index-url https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple
+> pip install vsjetpack[full,nvidia] --extra-index-url https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple
 > ```
 >
 > For more information, [click here](https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels).
