@@ -164,7 +164,7 @@ full = [
 
 [dependency-groups]
 dev = [
-    "mypy~=2.0.0",
+    "mypy~=2.1.0",
     "ruff~=0.15.0",
     "prek>=0.3.6",
     "scipy-stubs>=1.16.0.0",
