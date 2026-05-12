@@ -70,15 +70,17 @@ basic = [
     "vapoursynth-akarin>=1.3.0",
     "vapoursynth-fmtconv>=31",
     "vapoursynth-vszip>=13.0.0",
-    "vapoursynth-bestsource>=17.0",
     "vapoursynth-scxvid>=3.0",
 ]
 source = [
+    "vsjetpack[basic]",
+    "vapoursynth-bestsource>=17.0",
     "vapoursynth-d2vsource>=1.4",
-    "vapoursynth-dvdsrc2>=3.0",
+    "vapoursynth-dvdsrc2>=3.0 ; platform_machine == 'x86_64' and (platform_system == 'Linux' or platform_system == 'Windows')",
     "vapoursynth-ffms2>=5.2.0",
 ]
 kernels = [
+    "vsjetpack[basic]",
     "vapoursynth-resize2>=0.4.2",
     "vapoursynth-descale>=12",
     "vs-placebo>=2.0.2",
@@ -119,7 +121,7 @@ denoise = [
     "vapoursynth-manipmv>=1.3.0",
     "vapoursynth-mvtools>=26",
     "vapoursynth-nlm-ispc>=3",
-    "vapoursynth-wnnm>=3",
+    "vapoursynth-wnnm>=3 ; platform_system == 'Linux' or platform_system == 'Windows'",
 ]
 dehalo = ["vsjetpack[denoise]"]
 deinterlace = [
@@ -155,14 +157,10 @@ full = [
     "vsjetpack[deinterlace]",
     "vsjetpack[deband]",
 
-    "vsjetpack[cl]",
     # "dfttest",
     # "eedi2",
     # "vs-mlrt",
 ]
-
-full-nvidia = ["vsjetpack[full]", "vsjetpack[nvidia]"]
-full-amd = ["vsjetpack[full]", "vsjetpack[amd]"]
 
 [dependency-groups]
 dev = [
