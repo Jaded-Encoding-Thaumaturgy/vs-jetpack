@@ -25,11 +25,11 @@ class SplitTitle:
     audios: list[vs.AudioNode | None]
     chapters: list[int]
 
-    _title: Title
+    title: Title
     _split_chpts: tuple[int, int]  # inclusive inclusive
 
     def ac3(self, outfile: str, audio_i: int = 0) -> float:
-        return SplitHelper.split_range_ac3(self._title, *self._split_chpts, audio_i, outfile)
+        return SplitHelper.split_range_ac3(self.title, *self._split_chpts, audio_i, outfile)
 
     def __repr__(self) -> str:
         if self.video is None:
@@ -70,7 +70,7 @@ class TitleAudios(VSObjectABC, Sequence[vs.AudioNode]):
     def __init__(self, title: Title) -> None:
         self.title = title
 
-        self.cache = dict[int, vs.AudioNode | None](dict.fromkeys(range(len(self.title._audios))))
+        self.cache = dict[int, vs.AudioNode | None](dict.fromkeys(range(len(self.title.audios_str))))
 
     @overload
     def __getitem__(self, key: SupportsIndex) -> vs.AudioNode: ...
@@ -90,10 +90,10 @@ class TitleAudios(VSObjectABC, Sequence[vs.AudioNode]):
         if _anode := self.cache[i]:
             return _anode
 
-        asd = self.title._audios[i]
+        asd = self.title.audios_str[i]
 
         anode: vs.AudioNode
-        args = (str(self.title._core.iso_path), self.title._vts, i, self.title._dvdsrc_ranges)
+        args = (str(self.title.core.iso_path), self.title.vts, i, self.title.dvdsrc_ranges)
         if asd.startswith("ac3"):
             anode = vs.core.dvdsrc2.FullVtsAc3(*args)
         elif asd.startswith("lpcm"):
@@ -127,15 +127,15 @@ class Title:
     # only for reference for gui or sth
     cell_changes: list[int]
 
-    _core: IsoFile
-    _title: int
-    _vts: int
-    _vobidcellids_to_take: list[tuple[int, int]]
-    _dvdsrc_ranges: list[int]
-    _absolute_time: list[float]
-    _duration_times: list[float]
-    _audios: list[str]
-    _patched_end_chapter: int | None
+    core: IsoFile
+    title: int
+    vts: int
+    vobidcellids_to_take: list[tuple[int, int]]
+    dvdsrc_ranges: list[int]
+    absolute_time: list[float]
+    duration_times: list[float]
+    audios_str: list[str]
+    patched_end_chapter: int | None
 
     def __post_init__(self) -> None:
         self.audios = TitleAudios(self)
@@ -207,7 +207,7 @@ class Title:
         return self.split_at([start, end + 1], audio)[1]
 
     def preview(self, split: SplitTitle | Sequence[SplitTitle] | None = None) -> None:
-        set_output(self.video, f"title v{self._title}")
+        set_output(self.video, f"title v{self.title}")
 
         if split is not None:
             split = to_arr(split)
@@ -223,10 +223,10 @@ class Title:
                             set_output(audio, f"split {i} - {j}")
 
     def dump_ac3(self, a: str, audio_i: int = 0, only_calc_delay: bool = False) -> float:
-        if not self._audios[audio_i].startswith("ac3"):
+        if not self.audios_str[audio_i].startswith("ac3"):
             raise CustomValueError(f"Audio at {audio_i} is not ac3", self.dump_ac3)
 
-        nd = vs.core.dvdsrc2.RawAc3(str(self._core.iso_path), self._vts, audio_i, self._dvdsrc_ranges)
+        nd = vs.core.dvdsrc2.RawAc3(str(self.core.iso_path), self.vts, audio_i, self.dvdsrc_ranges)
 
         if not only_calc_delay:
             with open(a, "wb") as wrt:
@@ -237,13 +237,13 @@ class Title:
     def __repr__(self) -> str:
         chapters = [*self.chapters]
         chapter_lengths = [
-            (self._absolute_time[chapters[i + 1] - 1] + self._duration_times[chapters[i + 1] - 1])
-            - self._absolute_time[chapters[i]]
+            (self.absolute_time[chapters[i + 1] - 1] + self.duration_times[chapters[i + 1] - 1])
+            - self.absolute_time[chapters[i]]
             for i in range(len(self.chapters) - 1)
         ]
 
         chapter_lengths_str = [str(datetime.timedelta(seconds=x)) for x in chapter_lengths]
-        timestrings = [str(datetime.timedelta(seconds=self._absolute_time[x])) for x in self.chapters[:-1]]
+        timestrings = [str(datetime.timedelta(seconds=self.absolute_time[x])) for x in self.chapters[:-1]]
 
         to_print = "Chapters:\n"
         for i in range(len(timestrings)):
@@ -252,15 +252,15 @@ class Title:
             if i == 0:
                 to_print += " (faked)"
 
-            if self._patched_end_chapter is not None and i == len(timestrings) - 1:
-                delta = self.chapters[i] - self._patched_end_chapter
-                to_print += f" (originally {self._patched_end_chapter} delta {delta})"
+            if self.patched_end_chapter is not None and i == len(timestrings) - 1:
+                delta = self.chapters[i] - self.patched_end_chapter
+                to_print += f" (originally {self.patched_end_chapter} delta {delta})"
 
             to_print += "\n"
 
         to_print += f"\ncellchange: {self.cell_changes}\n"
         to_print += "\nAudios: (fz)\n"
-        for i, a in enumerate(self._audios):
+        for i, a in enumerate(self.audios_str):
             to_print += f"{i} {a}\n"
 
         return to_print.strip()
@@ -269,12 +269,12 @@ class Title:
 class SplitHelper:
     @staticmethod
     def split_range_ac3(title: Title, f: int, t: int, audio_i: int, outfile: str) -> float:
-        nd = vs.core.dvdsrc2.RawAc3(str(title._core.iso_path), title._vts, audio_i, title._dvdsrc_ranges)
+        nd = vs.core.dvdsrc2.RawAc3(str(title.core.iso_path), title.vts, audio_i, title.dvdsrc_ranges)
 
         start, _ = (get_prop(nd, f"Stuff_{x}_PTS", int) for x in ("Start", "End"))
 
-        raw_start = title._absolute_time[title.chapters[f - 1]] * PCR_CLOCK
-        raw_end = (title._absolute_time[title.chapters[t]] + title._duration_times[title.chapters[t]]) * PCR_CLOCK
+        raw_start = title.absolute_time[title.chapters[f - 1]] * PCR_CLOCK
+        raw_end = (title.absolute_time[title.chapters[t]] + title.duration_times[title.chapters[t]]) * PCR_CLOCK
 
         start_pts = raw_start + start
         end_pts = start_pts + (raw_end - raw_start)
@@ -385,9 +385,9 @@ class SplitHelper:
     def _cut_fz_a(title: Title, anode: vs.AudioNode, start: int, end: int) -> vs.AudioNode | None:
         chapter_idxs = [title.chapters[i] for i in (start, end)]
         timecodes = [
-            title._absolute_time[i]
-            if i != len(title._absolute_time)
-            else title._absolute_time[i - 1] + title._duration_times[i - 1]
+            title.absolute_time[i]
+            if i != len(title.absolute_time)
+            else title.absolute_time[i - 1] + title.duration_times[i - 1]
             for i in chapter_idxs
         ]
 
