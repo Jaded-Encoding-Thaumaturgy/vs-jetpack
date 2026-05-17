@@ -19,7 +19,6 @@ from jetpytools import (
     check_perms,
     classproperty,
     fallback,
-    inject_self,
 )
 
 from ..enums import Matrix
@@ -432,34 +431,6 @@ class Keyframes(list[int]):
         out_path.unlink(True)
         out_path.touch()
         out_path.write_text("\n".join(out_text))
-
-    @inject_self.with_args(_dummy=True)
-    def to_clip(
-        self,
-        clip: vs.VideoNode,
-        *,
-        height: int | Literal[False] = 360,
-        prop_key: str = "_SceneChangePrev",
-        scene_idx_prop: bool = False,
-    ) -> vs.VideoNode:
-        propset_clip = clip.std.SetFrameProp(prop_key, 1)
-
-        if self._dummy:
-            prop_clip = self._prepare_clip(clip, height)
-
-            out = replace_ranges(clip, propset_clip, lambda f: bool(f.props["_SceneChangePrev"]), prop_src=prop_clip)
-        else:
-            out = replace_ranges(clip, propset_clip, self)
-
-        if not scene_idx_prop:
-            return out
-
-        def _add_scene_idx(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-            f = f.copy()
-            f.props["_SceneIdx"] = self.scenes.indices[n]
-            return f
-
-        return out.std.ModifyFrame(out, _add_scene_idx)
 
     @classmethod
     def from_clip(cls, clip: vs.VideoNode, height: int | Literal[False] = 360, **kwargs: Any) -> Self:
