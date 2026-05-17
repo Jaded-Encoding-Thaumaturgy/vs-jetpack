@@ -392,139 +392,6 @@ class Keyframes(list[int]):
 
         self.scenes = self.__class__._Scenes(self)
 
-    @staticmethod
-    def _get_unique_path(clip: vs.VideoNode, key: str) -> SPath:
-        key = SPath(str(key)).stem + f"_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}"
-
-        return _get_keyframes_storage().get_file(key, ext=".txt")
-
-    @classmethod
-    def unique(cls, clip: vs.VideoNode, key: str, **kwargs: Any) -> Self:
-        """
-        Get the keyframes from a clip and write them to a file.
-
-        This method tries to generate a unique filename based on the clip's
-        properties and the `key` prefix. If a file with that name exists and is
-        not empty, the keyframes are loaded from the file. Otherwise, they are
-        detected from the clip and then written to the file.
-
-        Example:
-            When working on a TV series, the episode number can be a convenient key
-            (e.g. `"01"` for episode 1, `"02"` for episode 2, etc.):
-            ```py
-            keyframes = Keyframes.unique(clip, "01")
-            ```
-
-        Args:
-            clip: The clip to get keyframes from.
-            key: A prefix for the filename.
-            **kwargs: Additional keyword arguments passed to
-                [vstools.Keyframes.from_file][] or [vstools.Keyframes.from_clip][].
-
-        Returns:
-            An instance of [vstools.Keyframes][] containing the keyframes.
-        """
-        file = cls._get_unique_path(clip, key)
-
-        if file.exists():
-            if file.stat().st_size > 0:
-                return cls.from_file(file, **kwargs)
-
-            file.unlink()
-
-        keyframes = cls.from_clip(clip, **kwargs)
-        keyframes.to_file(file, force=True)
-
-        return keyframes
-
-    @classmethod
-    def from_clip(
-        cls,
-        clip: vs.VideoNode,
-        mode: SceneChangeMode | int = SCXVID,
-        height: int | Literal[False] = 360,
-        **kwargs: Any,
-    ) -> Self:
-        mode = SceneChangeMode(mode)
-
-        clip = mode.prepare_clip(clip, height)
-
-        frames = clip_async_render(clip, None, "Detecting scene changes...", mode.lambda_cb(), **kwargs)
-
-        return cls(Sentinel.filter(frames))
-
-    @inject_self.with_args(_dummy=True)
-    def to_clip(
-        self,
-        clip: vs.VideoNode,
-        *,
-        mode: SceneChangeMode | int = SCXVID,
-        height: int | Literal[False] = 360,
-        prop_key: str = next(iter(SceneChangeMode.SCXVID.prop_keys)),
-        scene_idx_prop: bool = False,
-    ) -> vs.VideoNode:
-        from .ranges import replace_ranges
-
-        propset_clip = clip.std.SetFrameProp(prop_key, True)
-
-        if self._dummy:
-            mode = SceneChangeMode(mode)
-
-            prop_clip = mode.prepare_clip(clip, height)
-
-            out = replace_ranges(clip, propset_clip, lambda f: bool(f[0][0, 0]), prop_src=prop_clip)
-        else:
-            out = replace_ranges(clip, propset_clip, self)
-
-        if not scene_idx_prop:
-            return out
-
-        def _add_scene_idx(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-            f = f.copy()
-
-            f.props._SceneIdx = self.scenes.indices[n]
-
-            return f
-
-        return out.std.ModifyFrame(out, _add_scene_idx)
-
-    @classmethod
-    def from_file(cls, file: FilePathType, **kwargs: Any) -> Self:
-        file = SPath(str(file)).resolve()
-
-        if not file.exists():
-            raise FileNotFoundError
-
-        if file.stat().st_size <= 0:
-            raise OSError("File is empty!")
-
-        lines = [line.strip() for line in file.read_lines("utf-8") if line and not line.startswith("#")]
-
-        if not lines:
-            raise ValueError("No keyframe could be found!")
-
-        kf_type: int | None = None
-
-        line = lines[0].lower()
-
-        if line.startswith("fps"):
-            kf_type = Keyframes.XVID
-        elif line.startswith(("i", "b", "p", "n")):
-            kf_type = Keyframes.V1
-
-        if kf_type is None:
-            raise ValueError("Could not determine keyframe file type!")
-
-        if kf_type == Keyframes.V1:
-            return cls(i for i, line in enumerate(lines) if line.startswith("i"))
-
-        if kf_type == Keyframes.XVID:
-            split_lines = [line.split(" ") for line in lines]
-
-            return cls(int(n) for n, t, *_ in split_lines if t.lower() == "i")
-
-        raise ValueError("Invalid keyframe file type!")
-
     def to_file(
         self,
         out: FilePathType,
@@ -569,6 +436,94 @@ class Keyframes(list[int]):
         out_path.touch()
         out_path.write_text("\n".join(out_text))
 
+    @inject_self.with_args(_dummy=True)
+    def to_clip(
+        self,
+        clip: vs.VideoNode,
+        *,
+        mode: SceneChangeMode | int = SCXVID,
+        height: int | Literal[False] = 360,
+        prop_key: str = next(iter(SceneChangeMode.SCXVID.prop_keys)),
+        scene_idx_prop: bool = False,
+    ) -> vs.VideoNode:
+        from .ranges import replace_ranges
+
+        propset_clip = clip.std.SetFrameProp(prop_key, True)
+
+        if self._dummy:
+            mode = SceneChangeMode(mode)
+
+            prop_clip = mode.prepare_clip(clip, height)
+
+            out = replace_ranges(clip, propset_clip, lambda f: bool(f[0][0, 0]), prop_src=prop_clip)
+        else:
+            out = replace_ranges(clip, propset_clip, self)
+
+        if not scene_idx_prop:
+            return out
+
+        def _add_scene_idx(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
+            f = f.copy()
+
+            f.props._SceneIdx = self.scenes.indices[n]
+
+            return f
+
+        return out.std.ModifyFrame(out, _add_scene_idx)
+
+    @classmethod
+    def from_clip(
+        cls,
+        clip: vs.VideoNode,
+        mode: SceneChangeMode | int = SCXVID,
+        height: int | Literal[False] = 360,
+        **kwargs: Any,
+    ) -> Self:
+        mode = SceneChangeMode(mode)
+
+        clip = mode.prepare_clip(clip, height)
+
+        frames = clip_async_render(clip, None, "Detecting scene changes...", mode.lambda_cb(), **kwargs)
+
+        return cls(Sentinel.filter(frames))
+
+    @classmethod
+    def from_file(cls, file: FilePathType, **kwargs: Any) -> Self:
+        file = SPath(str(file)).resolve()
+
+        if not file.exists():
+            raise FileNotFoundError
+
+        if file.stat().st_size <= 0:
+            raise OSError("File is empty!")
+
+        lines = [line.strip() for line in file.read_lines("utf-8") if line and not line.startswith("#")]
+
+        if not lines:
+            raise ValueError("No keyframe could be found!")
+
+        kf_type: int | None = None
+
+        line = lines[0].lower()
+
+        if line.startswith("fps"):
+            kf_type = Keyframes.XVID
+        elif line.startswith(("i", "b", "p", "n")):
+            kf_type = Keyframes.V1
+
+        if kf_type is None:
+            raise ValueError("Could not determine keyframe file type!")
+
+        if kf_type == Keyframes.V1:
+            return cls(i for i, line in enumerate(lines) if line.startswith("i"))
+
+        if kf_type == Keyframes.XVID:
+            split_lines = [line.split(" ") for line in lines]
+
+            return cls(int(n) for n, t, *_ in split_lines if t.lower() == "i")
+
+        raise ValueError("Invalid keyframe file type!")
+
     @classmethod
     def from_param(cls, clip: vs.VideoNode, param: Self | str) -> Self:
         if isinstance(param, str):
@@ -578,6 +533,45 @@ class Keyframes(list[int]):
             return param
 
         return cls(param)
+
+    @classmethod
+    def unique(cls, clip: vs.VideoNode, key: str, **kwargs: Any) -> Self:
+        """
+        Get the keyframes from a clip and write them to a file.
+
+        This method tries to generate a unique filename based on the clip's
+        properties and the `key` prefix. If a file with that name exists and is
+        not empty, the keyframes are loaded from the file. Otherwise, they are
+        detected from the clip and then written to the file.
+
+        Example:
+            When working on a TV series, the episode number can be a convenient key
+            (e.g. `"01"` for episode 1, `"02"` for episode 2, etc.):
+            ```py
+            keyframes = Keyframes.unique(clip, "01")
+            ```
+
+        Args:
+            clip: The clip to get keyframes from.
+            key: A prefix for the filename.
+            **kwargs: Additional keyword arguments passed to
+                [vstools.Keyframes.from_file][] or [vstools.Keyframes.from_clip][].
+
+        Returns:
+            An instance of [vstools.Keyframes][] containing the keyframes.
+        """
+        file = cls._get_unique_path(clip, key)
+
+        if file.exists():
+            if file.stat().st_size > 0:
+                return cls.from_file(file, **kwargs)
+
+            file.unlink()
+
+        keyframes = cls.from_clip(clip, **kwargs)
+        keyframes.to_file(file, force=True)
+
+        return keyframes
 
 
 class SceneBasedDynamicCache(DynamicClipsCache[int]):
