@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING, SupportsIndex, overload
 
 from jetpytools import CustomValueError, to_arr
 
-from vstools import VSObjectABC, get_prop, set_output, vs
+from vstools import VSObjectABC, get_prop, vs
 
 from .utils import AC3_FRAME_LENGTH, PCR_CLOCK, absolute_time_from_timecode
 
 if TYPE_CHECKING:
-    from .IsoFile import IsoFile
+    from .IsoFile import IsoFile, SetOuput
 
 __all__ = ["Title"]
 
@@ -136,6 +136,7 @@ class Title:
     duration_times: list[float]
     audios_str: list[str]
     patched_end_chapter: int | None
+    set_output: SetOuput
 
     def __post_init__(self) -> None:
         self.audios = TitleAudios(self)
@@ -207,20 +208,20 @@ class Title:
         return self.split_at([start, end + 1], audio)[1]
 
     def preview(self, split: SplitTitle | Sequence[SplitTitle] | None = None) -> None:
-        set_output(self.video, f"title v{self.title}")
+        self.set_output(self.video, f"title v{self.title}")
 
         if split is not None:
             split = to_arr(split)
 
             for i, s in enumerate(split):
                 if s.video:
-                    set_output(s.video, f"split {i}")
+                    self.set_output(s.video, f"split {i}")
 
             for i, s in enumerate(split):
                 if len(s.audios) >= 1:
                     for j, audio in enumerate(s.audios):
                         if audio:
-                            set_output(audio, f"split {i} - {j}")
+                            self.set_output(audio, f"split {i} - {j}")
 
     def dump_ac3(self, a: str, audio_i: int = 0, only_calc_delay: bool = False) -> float:
         if not self.audios_str[audio_i].startswith("ac3"):
