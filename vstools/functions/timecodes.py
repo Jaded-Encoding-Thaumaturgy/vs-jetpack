@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from abc import abstractmethod
 from collections.abc import Iterable
@@ -387,7 +388,7 @@ class Keyframes(list[int]):
 
     def to_file(
         self,
-        out: FilePathType,
+        out: str | os.PathLike[str],
         fmt: Literal["v1", "xvid"] = "v1",
         func: FuncExcept | None = None,
         header: bool = True,
@@ -395,7 +396,7 @@ class Keyframes(list[int]):
     ) -> None:
         func = func or self.to_file
 
-        out_path = Path(str(out)).resolve()
+        out_path = Path(out).resolve()
 
         if out_path.exists():
             if not force and out_path.stat().st_size > 0:
@@ -446,8 +447,8 @@ class Keyframes(list[int]):
         return cls(Sentinel.filter(frames))
 
     @classmethod
-    def from_file(cls, file: FilePathType, **kwargs: Any) -> Self:
-        file = SPath(str(file)).resolve()
+    def from_file(cls, file: str | os.PathLike[str], **kwargs: Any) -> Self:
+        file = SPath(file).resolve()
 
         if not file.exists():
             raise FileNotFoundError
