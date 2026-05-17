@@ -13,7 +13,7 @@ from vstools import core, vs
 
 from .base import CacheIndexer, Indexer
 
-__all__ = ["FFMS2", "IMWRI", "LSMAS", "BestSource", "CarefulSource", "ZipSource"]
+__all__ = ["FFMS2", "LSMAS", "BestSource", "CarefulSource", "ZipSource"]
 
 
 # Video indexers
@@ -152,19 +152,6 @@ class CarefulSource(Indexer):
     """
 
     _source_func = core.lazy.cs.ImageSource
-
-
-# Image indexers
-@deprecated(
-    "IMWRI is deprecated and will be removed in a future version. Use BestSource or ZipSource instead.",
-    category=DeprecationWarning,
-)
-class IMWRI(Indexer):
-    """
-    ImageMagick Writer-Reader indexer
-    """
-
-    _source_func = core.lazy.imwri.Read
 
 
 class ZipSource(Indexer):
