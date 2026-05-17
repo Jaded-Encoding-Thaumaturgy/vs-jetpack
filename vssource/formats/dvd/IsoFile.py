@@ -6,7 +6,7 @@ from fractions import Fraction
 from itertools import count
 from typing import cast
 
-from jetpytools import CustomValueError, DependencyNotFoundError, SPath
+from jetpytools import CustomValueError, SPath
 
 from vstools import core, get_prop, vs
 
@@ -35,15 +35,7 @@ class IsoFile:
     vts: list[IFOX]
     title_count: int
 
-    def __init__(
-        self,
-        path: SPath | str,
-    ):
-        if not hasattr(core, "dvdsrc2"):
-            raise DependencyNotFoundError(
-                self.__class__, "", "dvdsrc2 is needed for {cfunc} to work!", cfunc=self.__class__
-            )
-
+    def __init__(self, path: SPath | str):
         self.iso_path = SPath(path).absolute()
 
         if not self.iso_path.exists():
