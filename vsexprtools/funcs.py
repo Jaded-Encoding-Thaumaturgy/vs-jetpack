@@ -50,12 +50,11 @@ def expr_func(
     clips: vs.VideoNode | Sequence[vs.VideoNode],
     expr: str | Sequence[str],
     format: HoldsVideoFormat | VideoFormatLike | None = None,
-    opt: bool = False,
     boundary: bool = True,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
     """
-    Calls `akarin.Expr` plugin.
+    Calls `cranexpr.Expr` plugin.
 
     For a higher-level function, see [norm_expr][vsexprtools.norm_expr].
 
@@ -66,7 +65,6 @@ def expr_func(
         clips: Input clip(s). Supports constant format clips, or one variable resolution clip.
         expr: Expression to be evaluated.
         format: Output format, defaults to the first clip format.
-        opt: Forces integer evaluation as much as possible.
         boundary: Specifies the default boundary condition for relative pixel accesses:
 
                - `True` (default): Mirrored edges.
@@ -89,16 +87,16 @@ def expr_func(
     _log.debug("expr_func (%s): %s", func, _LazyLogExpr(expr))
 
     try:
-        return core.akarin.Expr(clips, expr, fmt, opt, boundary)
+        return core.cranexpr.Expr(clips, expr, fmt, boundary)
     except AttributeError as e:
         raise CustomRuntimeError(e)
     except vs.Error as e:
         if len(clips) == 1 and 0 in (clips[0].width, clips[0].height):
             return ProcessVariableResClip.from_func(
-                clips[0], lambda clip: core.akarin.Expr(clip, expr, fmt, opt, boundary)
+                clips[0], lambda clip: core.cranexpr.Expr(clip, expr, fmt, boundary)
             )
 
-        raise CustomExprError(e, func, clips, expr, fmt, opt, boundary) from e
+        raise CustomExprError(e, func, clips, expr, fmt, boundary) from e
 
 
 def _combine_norm__ix(ffix: SupportsString | Iterable[SupportsString] | None, n_clips: int) -> list[SupportsString]:
@@ -218,7 +216,6 @@ def norm_expr(
     expr: ExprLike,
     planes: Planes = None,
     format: HoldsVideoFormat | VideoFormatLike | None = None,
-    opt: bool = False,
     boundary: bool = True,
     func: FuncExcept | None = None,
     split_planes: bool = False,
@@ -244,7 +241,6 @@ def norm_expr(
                 within this tuple.
         planes: Plane to process, defaults to all.
         format: Output format, defaults to the first clip format.
-        opt: Forces integer evaluation as much as possible.
         boundary: Specifies the default boundary condition for relative pixel accesses:
 
                - `True` (default): Mirrored edges.
@@ -269,7 +265,6 @@ def norm_expr(
                 clips,
                 planes=planes,
                 format=format,
-                opt=opt,
                 boundary=boundary,
                 func=func,
                 split_planes=split_planes,
@@ -292,7 +287,7 @@ def norm_expr(
         bitdepth_aware_tokenize_expr(clips, e, bool(is_chroma)) for is_chroma, e in enumerate(normalized_expr)
     ]
 
-    return expr_func(clips, tokenized_expr, format, opt, boundary, func)
+    return expr_func(clips, tokenized_expr, format, boundary, func)
 
 
 def extra_op_tokenize_expr(expr: str) -> str:

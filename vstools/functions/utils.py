@@ -950,7 +950,7 @@ def stack_planes(
                 value += 0.5
 
             planes[1:] = [
-                p.std.PlaneStats().akarin.Expr(f"x {value} x.PlaneStats{plane_stats} - +") for p in planes[1:]
+                p.std.PlaneStats().cranexpr.Expr(f"x {value} x.PlaneStats{plane_stats} - +") for p in planes[1:]
             ]
             return planes
 

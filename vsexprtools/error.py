@@ -31,14 +31,12 @@ class CustomExprError(VSObject, CustomRuntimeError, metaclass=_CustomExprErrorMe
         clips: vs.VideoNode | Sequence[vs.VideoNode],
         expr: str | Sequence[str],
         fmt: SupportsInt | None,
-        opt: bool,
         boundary: bool,
         **kwargs: Any,
     ) -> None:
         self.clips = to_arr(clips)
         self.expr = to_arr(expr)
         self.fmt = fmt
-        self.opt = opt
         self.boundary = boundary
         super().__init__(message, func, self.expr, **kwargs)
 
@@ -60,7 +58,6 @@ class CustomExprError(VSObject, CustomRuntimeError, metaclass=_CustomExprErrorMe
             _color_tag("Flags:", "\033[0;33m"),
             _color_tag("    Format:", "\033[1;37m")
             + f" {get_video_format(self.fmt) if self.fmt is not None else None!r}",
-            _color_tag("    Integer evaluation:", "\033[1;37m") + f" {self.opt}",
             _color_tag("    Boundary type:", "\033[1;37m") + f" {('Clamped edges', 'Mirrored edges')[self.boundary]}",
         ]
 
