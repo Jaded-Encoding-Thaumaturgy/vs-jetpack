@@ -1,5 +1,6 @@
 # noqa: N999
 
+import os
 import warnings
 from datetime import timedelta
 from fractions import Fraction
@@ -35,7 +36,7 @@ class IsoFile:
     vts: list[IFOX]
     title_count: int
 
-    def __init__(self, path: SPath | str):
+    def __init__(self, path: os.PathLike[str] | str) -> None:
         self.iso_path = SPath(path).absolute()
 
         if not self.iso_path.exists():
