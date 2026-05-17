@@ -158,7 +158,6 @@ full = [
     "vsjetpack[deband]",
 
     # "dfttest",
-    # "eedi2",
     # "vs-mlrt",
 ]
 

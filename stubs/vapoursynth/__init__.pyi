@@ -1252,10 +1252,6 @@ class VideoNode(RawNode):
     edgemasks: Final[_edgemasks._VideoNode_bound.Plugin]
     """Creates an edge mask using various operators"""
 # </attribute/VideoNode_bound/edgemasks>
-# <attribute/VideoNode_bound/eedi2>
-    eedi2: Final[_eedi2._VideoNode_bound.Plugin]
-    """EEDI2"""
-# </attribute/VideoNode_bound/eedi2>
 # <attribute/VideoNode_bound/eedi3m>
     eedi3m: Final[_eedi3m._VideoNode_bound.Plugin]
     """Enhanced Edge Directed Interpolation 3"""
@@ -1530,10 +1526,6 @@ class Core:
     edgemasks: Final[_edgemasks._Core_bound.Plugin]
     """Creates an edge mask using various operators"""
 # </attribute/Core_bound/edgemasks>
-# <attribute/Core_bound/eedi2>
-    eedi2: Final[_eedi2._Core_bound.Plugin]
-    """EEDI2"""
-# </attribute/Core_bound/eedi2>
 # <attribute/Core_bound/eedi3m>
     eedi3m: Final[_eedi3m._Core_bound.Plugin]
     """Enhanced Edge Directed Interpolation 3"""
@@ -2185,20 +2177,6 @@ class _edgemasks:
             def Tritical(self, /, planes: _IntLike | _SequenceLike[_IntLike] | None = None, scale: _FloatLike | _SequenceLike[_FloatLike] | None = None, opt: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/edgemasks>
-
-# <implementation/eedi2>
-class _eedi2:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def EEDI2(self, /, clip: VideoNode, field: _IntLike, mthresh: _IntLike | None = None, lthresh: _IntLike | None = None, vthresh: _IntLike | None = None, estr: _IntLike | None = None, dstr: _IntLike | None = None, maxd: _IntLike | None = None, map: _IntLike | None = None, nt: _IntLike | None = None, pp: _IntLike | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def EEDI2(self, /, field: _IntLike, mthresh: _IntLike | None = None, lthresh: _IntLike | None = None, vthresh: _IntLike | None = None, estr: _IntLike | None = None, dstr: _IntLike | None = None, maxd: _IntLike | None = None, map: _IntLike | None = None, nt: _IntLike | None = None, pp: _IntLike | None = None) -> VideoNode: ...
-
-# </implementation/eedi2>
 
 # <implementation/eedi3m>
 class _eedi3m:
