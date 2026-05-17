@@ -365,7 +365,7 @@ class Timecodes(list[FrameDur]):
 
 class Keyframes(list[int]):
     """
-    Class representing keyframes, or scenechanges using the vapoursynth-scxvid plugin.
+    Class representing keyframes, or scenechanges.
 
     They follow the convention of signaling the start of the new scene.
     """
@@ -434,13 +434,25 @@ class Keyframes(list[int]):
         out_path.write_text("\n".join(out_text))
 
     @classmethod
-    def from_clip(cls, clip: vs.VideoNode, height: int | Literal[False] = 360, **kwargs: Any) -> Self:
-        clip = cls._prepare_clip(clip, height)
+    def from_clip(cls, clip: vs.VideoNode, prop_key: str = "_SceneChangePrev", **kwargs: Any) -> Self:
+        """
+        Create a Keyframes object from a clip by checking the "_SceneChangePrev" property.
+
+        Assumes that the clip has already been processed by scxvid.Scxvid or similar.
+
+        Args:
+            clip: Clip to get keyframes from.
+            prop_key: Property key to use for detecting scene changes.
+            **kwargs: Additional keyword arguments to pass to clip_async_render.
+
+        Returns:
+            Keyframes from the clip.
+        """
         frames = clip_async_render(
             clip,
             None,
             "Detecting scene changes...",
-            lambda n, f: Sentinel.check(n, bool(f.props["_SceneChangePrev"])),
+            lambda n, f: Sentinel.check(n, bool(f.props[prop_key])),
             **kwargs,
         )
 
@@ -480,9 +492,11 @@ class Keyframes(list[int]):
         return cls(param)
 
     @classmethod
-    def unique(cls, clip: vs.VideoNode, key: str, **kwargs: Any) -> Self:
+    def unique(cls, clip: vs.VideoNode, key: str, prop_key: str = "_SceneChangePrev", **kwargs: Any) -> Self:
         """
         Get the keyframes from a clip and write them to a file.
+
+        Assumes that the clip has already been processed by scxvid.Scxvid or similar.
 
         This method tries to generate a unique filename based on the clip's
         properties and the `key` prefix. If a file with that name exists and is
@@ -499,6 +513,7 @@ class Keyframes(list[int]):
         Args:
             clip: The clip to get keyframes from.
             key: A prefix for the filename.
+            prop_key: Property key to use for detecting scene changes.
             **kwargs: Additional keyword arguments passed to
                 [vstools.Keyframes.from_file][] or [vstools.Keyframes.from_clip][].
 
@@ -513,7 +528,7 @@ class Keyframes(list[int]):
 
             file.unlink()
 
-        keyframes = cls.from_clip(clip, **kwargs)
+        keyframes = cls.from_clip(clip, prop_key, **kwargs)
         keyframes.to_file(file, force=True)
 
         return keyframes
@@ -523,15 +538,6 @@ class Keyframes(list[int]):
         key = SPath(key).stem + f"_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}"
 
         return _get_keyframes_storage().get_file(key, ext=".txt")
-
-    @staticmethod
-    def _prepare_clip(clip: vs.VideoNode, height: int | Literal[False] = 360) -> vs.VideoNode:
-        if height:
-            clip = clip.resize.Bilinear(get_w(height, clip), height, vs.YUV420P8)
-        elif clip.format.id != vs.YUV420P8:
-            clip = clip.resize.Bilinear(format=vs.YUV420P8)
-
-        return clip.scxvid.Scxvid()
 
 
 class SceneBasedDynamicCache(DynamicClipsCache[int]):
