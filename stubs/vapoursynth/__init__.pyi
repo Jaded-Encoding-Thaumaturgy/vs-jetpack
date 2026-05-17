@@ -1542,10 +1542,6 @@ class Core:
     knlm: Final[_knlm._Core_bound.Plugin]
     """KNLMeansCL for VapourSynth"""
 # </attribute/Core_bound/knlm>
-# <attribute/Core_bound/lsmas>
-    lsmas: Final[_lsmas._Core_bound.Plugin]
-    """LSMASHSource for VapourSynth"""
-# </attribute/Core_bound/lsmas>
 # <attribute/Core_bound/manipmv>
     manipmv: Final[_manipmv._Core_bound.Plugin]
     """Manipulate Motion Vectors"""
@@ -2274,17 +2270,6 @@ class _knlm:
             def KNLMeansCL(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_type: _AnyStr | None = None, device_id: _IntLike | None = None, ocl_x: _IntLike | None = None, ocl_y: _IntLike | None = None, ocl_r: _IntLike | None = None, info: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/knlm>
-
-# <implementation/lsmas>
-class _lsmas:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def LWLibavSource(self, /, source: _AnyStr, stream_index: _IntLike | None = None, cache: _IntLike | None = None, cachefile: _AnyStr | None = None, threads: _IntLike | None = None, seek_mode: _IntLike | None = None, seek_threshold: _IntLike | None = None, dr: _IntLike | None = None, fpsnum: _IntLike | None = None, fpsden: _IntLike | None = None, variable: _IntLike | None = None, format: _AnyStr | None = None, decoder: _AnyStr | None = None, prefer_hw: _IntLike | None = None, repeat: _IntLike | None = None, dominance: _IntLike | None = None, ff_loglevel: _IntLike | None = None, cachedir: _AnyStr | None = None, ff_options: _AnyStr | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def LibavSMASHSource(self, /, source: _AnyStr, track: _IntLike | None = None, threads: _IntLike | None = None, seek_mode: _IntLike | None = None, seek_threshold: _IntLike | None = None, dr: _IntLike | None = None, fpsnum: _IntLike | None = None, fpsden: _IntLike | None = None, variable: _IntLike | None = None, format: _AnyStr | None = None, decoder: _AnyStr | None = None, prefer_hw: _IntLike | None = None, ff_loglevel: _IntLike | None = None, ff_options: _AnyStr | None = None) -> VideoNode: ...
-
-# </implementation/lsmas>
 
 # <implementation/manipmv>
 class _manipmv:

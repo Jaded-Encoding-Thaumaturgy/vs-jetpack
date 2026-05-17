@@ -13,7 +13,7 @@ from vstools import core, vs
 
 from .base import CacheIndexer, Indexer
 
-__all__ = ["FFMS2", "LSMAS", "BestSource", "CarefulSource", "ZipSource"]
+__all__ = ["FFMS2", "BestSource", "CarefulSource", "ZipSource"]
 
 
 # Video indexers
@@ -121,25 +121,6 @@ class FFMS2(CacheIndexer):
     _source_func = core.lazy.ffms2.Source
     _cache_arg_name = "cachefile"
     _ext = ".ffindex"
-
-
-@deprecated(
-    "LSMAS is deprecated and will be removed in a future version. Use BestSource or FFMS2 instead.",
-    category=DeprecationWarning,
-)
-class LSMAS(CacheIndexer):
-    """
-    [L-SMASH-Works](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works) indexer.
-
-    Unlike the plugin's default behavior, the indexer cache file will be stored in `.vsjet/vssource`
-    next to the script file.
-
-    When `cachefile=None`, the behavior falls back to the default cache handling defined by the plugin itself.
-    """
-
-    _source_func = core.lazy.lsmas.LWLibavSource
-    _cache_arg_name = "cachefile"
-    _ext = ".lwi"
 
 
 @deprecated(
