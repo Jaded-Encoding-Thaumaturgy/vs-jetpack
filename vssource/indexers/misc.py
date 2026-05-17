@@ -8,12 +8,12 @@ from typing import Any
 
 from jetpytools import CustomIntEnum, SPathLike
 
-from vsjetpack import deprecated, require_jet_dependency
+from vsjetpack import require_jet_dependency
 from vstools import core, vs
 
 from .base import CacheIndexer, Indexer
 
-__all__ = ["FFMS2", "BestSource", "CarefulSource", "ZipSource"]
+__all__ = ["FFMS2", "BestSource", "ZipSource"]
 
 
 # Video indexers
@@ -121,18 +121,6 @@ class FFMS2(CacheIndexer):
     _source_func = core.lazy.ffms2.Source
     _cache_arg_name = "cachefile"
     _ext = ".ffindex"
-
-
-@deprecated(
-    "CarefulSource is deprecated and will be removed in a future version. Use BestSource or ZipSource instead.",
-    category=DeprecationWarning,
-)
-class CarefulSource(Indexer):
-    """
-    CarefulSource indexer
-    """
-
-    _source_func = core.lazy.cs.ImageSource
 
 
 class ZipSource(Indexer):
