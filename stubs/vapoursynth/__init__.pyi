@@ -1264,10 +1264,6 @@ class VideoNode(RawNode):
     hysteresis: Final[_hysteresis._VideoNode_bound.Plugin]
     """Hysteresis filter."""
 # </attribute/VideoNode_bound/hysteresis>
-# <attribute/VideoNode_bound/imwri>
-    imwri: Final[_imwri._VideoNode_bound.Plugin]
-    """VapourSynth ImageMagick 7 HDRI Writer/Reader"""
-# </attribute/VideoNode_bound/imwri>
 # <attribute/VideoNode_bound/knlm>
     knlm: Final[_knlm._VideoNode_bound.Plugin]
     """KNLMeansCL for VapourSynth"""
@@ -1542,10 +1538,6 @@ class Core:
     hysteresis: Final[_hysteresis._Core_bound.Plugin]
     """Hysteresis filter."""
 # </attribute/Core_bound/hysteresis>
-# <attribute/Core_bound/imwri>
-    imwri: Final[_imwri._Core_bound.Plugin]
-    """VapourSynth ImageMagick 7 HDRI Writer/Reader"""
-# </attribute/Core_bound/imwri>
 # <attribute/Core_bound/knlm>
     knlm: Final[_knlm._Core_bound.Plugin]
     """KNLMeansCL for VapourSynth"""
@@ -2268,22 +2260,6 @@ class _hysteresis:
             def Hysteresis(self, /, clipb: VideoNode, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
 
 # </implementation/hysteresis>
-
-# <implementation/imwri>
-class _imwri:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Read(self, /, filename: _AnyStr | _SequenceLike[_AnyStr], firstnum: _IntLike | None = None, mismatch: _IntLike | None = None, alpha: _IntLike | None = None, float_output: _IntLike | None = None, embed_icc: _IntLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def Write(self, /, clip: VideoNode, imgformat: _AnyStr, filename: _AnyStr, firstnum: _IntLike | None = None, quality: _IntLike | None = None, dither: _IntLike | None = None, compression_type: _AnyStr | None = None, overwrite: _IntLike | None = None, alpha: VideoNode | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Write(self, /, imgformat: _AnyStr, filename: _AnyStr, firstnum: _IntLike | None = None, quality: _IntLike | None = None, dither: _IntLike | None = None, compression_type: _AnyStr | None = None, overwrite: _IntLike | None = None, alpha: VideoNode | None = None) -> VideoNode: ...
-
-# </implementation/imwri>
 
 # <implementation/knlm>
 class _knlm:
