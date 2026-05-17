@@ -24,7 +24,7 @@ from jetpytools import (
 
 from ..enums import Matrix
 from ..exceptions import FramesLengthError, UnsupportedTimecodeVersionError
-from ..utils import DynamicClipsCache, PackageStorage, get_w
+from ..utils import DynamicClipsCache, PackageStorage
 from ..vs_proxy import VSObject, vs
 from .ranges import replace_ranges
 from .render import clip_async_render, clip_data_gather
@@ -379,11 +379,8 @@ class Keyframes(list[int]):
 
             self.indices = LinearRangeLut(self)
 
-    def __init__(self, iterable: Iterable[int] = [], *, _dummy: bool = False) -> None:
+    def __init__(self, iterable: Iterable[int] = []) -> None:
         super().__init__(sorted(iterable))
-
-        self._dummy = _dummy
-
         self.scenes = self.__class__._Scenes(self)
 
     def to_file(
