@@ -1212,10 +1212,6 @@ class VideoNode(RawNode):
     bwdif: Final[_bwdif._VideoNode_bound.Plugin]
     """BobWeaver Deinterlacing Filter"""
 # </attribute/VideoNode_bound/bwdif>
-# <attribute/VideoNode_bound/cs>
-    cs: Final[_cs._VideoNode_bound.Plugin]
-    """carefulsource"""
-# </attribute/VideoNode_bound/cs>
 # <attribute/VideoNode_bound/dctf>
     dctf: Final[_dctf._VideoNode_bound.Plugin]
     """DCT/IDCT Frequency Suppressor"""
@@ -1478,10 +1474,6 @@ class Core:
     bwdif: Final[_bwdif._Core_bound.Plugin]
     """BobWeaver Deinterlacing Filter"""
 # </attribute/Core_bound/bwdif>
-# <attribute/Core_bound/cs>
-    cs: Final[_cs._Core_bound.Plugin]
-    """carefulsource"""
-# </attribute/Core_bound/cs>
 # <attribute/Core_bound/dctf>
     dctf: Final[_dctf._Core_bound.Plugin]
     """DCT/IDCT Frequency Suppressor"""
@@ -1877,22 +1869,6 @@ class _bwdif:
             def Bwdif(self, /, field: _IntLike, edeint: VideoNode | None = None, opt: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/bwdif>
-
-# <implementation/cs>
-class _cs:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def ConvertColor(self, /, clip: VideoNode, output_profile: _AnyStr, input_profile: _AnyStr | None = None, float_output: _IntLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def ImageSource(self, /, source: _AnyStr, subsampling_pad: _IntLike | None = None, jpeg_rgb: _IntLike | None = None, jpeg_fancy_upsampling: _IntLike | None = None, jpeg_cmyk_profile: _AnyStr | None = None, jpeg_cmyk_target_profile: _AnyStr | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def ConvertColor(self, /, output_profile: _AnyStr, input_profile: _AnyStr | None = None, float_output: _IntLike | None = None) -> VideoNode: ...
-
-# </implementation/cs>
 
 # <implementation/dctf>
 class _dctf:
