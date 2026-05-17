@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
 from pathlib import Path
-from typing import Any, ClassVar, Literal, NamedTuple, Self, cast, overload
+from typing import Any, Literal, NamedTuple, Self, cast, overload
 
 from jetpytools import (
     CustomValueError,
@@ -22,9 +22,9 @@ from jetpytools import (
     inject_self,
 )
 
-from ..enums import Matrix, SceneChangeMode
+from ..enums import Matrix
 from ..exceptions import FramesLengthError, UnsupportedTimecodeVersionError
-from ..utils import DynamicClipsCache, PackageStorage
+from ..utils import DynamicClipsCache, PackageStorage, get_w
 from ..vs_proxy import VSObject, vs
 from .ranges import replace_ranges
 from .render import clip_async_render, clip_data_gather
@@ -365,16 +365,13 @@ class Timecodes(list[FrameDur]):
 
 class Keyframes(list[int]):
     """
-    Class representing keyframes, or scenechanges.
+    Class representing keyframes, or scenechanges using the vapoursynth-scxvid plugin.
 
     They follow the convention of signaling the start of the new scene.
     """
 
     V1 = 1
     XVID = -1
-
-    WWXD: ClassVar = SceneChangeMode.WWXD
-    SCXVID: ClassVar = SceneChangeMode.SCXVID
 
     class _Scenes(dict[int, range]):
         __slots__ = ("indices",)
@@ -441,21 +438,16 @@ class Keyframes(list[int]):
         self,
         clip: vs.VideoNode,
         *,
-        mode: SceneChangeMode | int = SCXVID,
         height: int | Literal[False] = 360,
-        prop_key: str = next(iter(SceneChangeMode.SCXVID.prop_keys)),
+        prop_key: str = "_SceneChangePrev",
         scene_idx_prop: bool = False,
     ) -> vs.VideoNode:
-        from .ranges import replace_ranges
-
-        propset_clip = clip.std.SetFrameProp(prop_key, True)
+        propset_clip = clip.std.SetFrameProp(prop_key, 1)
 
         if self._dummy:
-            mode = SceneChangeMode(mode)
+            prop_clip = self._prepare_clip(clip, height)
 
-            prop_clip = mode.prepare_clip(clip, height)
-
-            out = replace_ranges(clip, propset_clip, lambda f: bool(f[0][0, 0]), prop_src=prop_clip)
+            out = replace_ranges(clip, propset_clip, lambda f: bool(f.props["_SceneChangePrev"]), prop_src=prop_clip)
         else:
             out = replace_ranges(clip, propset_clip, self)
 
@@ -472,18 +464,15 @@ class Keyframes(list[int]):
         return out.std.ModifyFrame(out, _add_scene_idx)
 
     @classmethod
-    def from_clip(
-        cls,
-        clip: vs.VideoNode,
-        mode: SceneChangeMode | int = SCXVID,
-        height: int | Literal[False] = 360,
-        **kwargs: Any,
-    ) -> Self:
-        mode = SceneChangeMode(mode)
-
-        clip = mode.prepare_clip(clip, height)
-
-        frames = clip_async_render(clip, None, "Detecting scene changes...", mode.lambda_cb(), **kwargs)
+    def from_clip(cls, clip: vs.VideoNode, height: int | Literal[False] = 360, **kwargs: Any) -> Self:
+        clip = cls._prepare_clip(clip, height)
+        frames = clip_async_render(
+            clip,
+            None,
+            "Detecting scene changes...",
+            lambda n, f: Sentinel.check(n, bool(f.props["_SceneChangePrev"])),
+            **kwargs,
+        )
 
         return cls(Sentinel.filter(frames))
 
@@ -572,6 +561,21 @@ class Keyframes(list[int]):
         keyframes.to_file(file, force=True)
 
         return keyframes
+
+    @staticmethod
+    def _get_unique_path(clip: vs.VideoNode, key: str) -> SPath:
+        key = SPath(key).stem + f"_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}"
+
+        return _get_keyframes_storage().get_file(key, ext=".txt")
+
+    @staticmethod
+    def _prepare_clip(clip: vs.VideoNode, height: int | Literal[False] = 360) -> vs.VideoNode:
+        if height:
+            clip = clip.resize.Bilinear(get_w(height, clip), height, vs.YUV420P8)
+        elif clip.format.id != vs.YUV420P8:
+            clip = clip.resize.Bilinear(format=vs.YUV420P8)
+
+        return clip.scxvid.Scxvid()
 
 
 class SceneBasedDynamicCache(DynamicClipsCache[int]):
