@@ -12,11 +12,11 @@ Previewing a title and dumping AC3 audio:
 
 ```py
 from vssource import IsoFile
-from vstools import set_output
+from vsview import set_output
 
 # Create an IsoFile object from a DVD ISO or folder path
 # This will automatically detect and use the best available indexer
-iso = IsoFile("./DVD_VIDEOS/Suzumiya_2009_DVD/KABA_6001.ISO")
+iso = IsoFile("./DVD_VIDEOS/Suzumiya_2009_DVD/KABA_6001.ISO", set_output)
 
 # Get a Title object representing the first title on the DVD
 # Titles are 1-indexed
