@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Protocol, Self, cast, runtime_checkable
 
 from jetpytools import CustomNotImplementedError, CustomValueError, fallback, normalize_seq
 
-from vsjetpack import TypeVar, deprecated
+from vsjetpack import TypeVar
 from vskernels import (
     Bobber,
     Catrom,
@@ -26,7 +26,6 @@ from vstools import ChromaLocation, FieldBased, FieldBasedLike, VSFunctionAllArg
 
 __all__ = [
     "BWDIF",
-    "EEDI2",
     "EEDI3",
     "NNEDI3",
     "AntiAliaser",
@@ -481,113 +480,6 @@ class NNEDI3(SuperSampler):
         field = tff + double_rate * 2
 
         return self._deinterlacer_function(clip, field, dh, **self.get_deint_args(clip=clip, **kwargs))
-
-
-@deprecated("EEDI2 is deprecated and will be removed in the next version.", category=DeprecationWarning)
-@dataclass
-class EEDI2(SuperSampler):
-    """
-    Enhanced Edge Directed Interpolation (2nd gen.)
-    """
-
-    mthresh: int = 10
-    """
-    Controls the edge magnitude threshold used in edge detection for building the initial edge map.
-    Its range is from 0 to 255, with lower values detecting weaker edges.
-    """
-
-    lthresh: int = 20
-    """
-    Controls the Laplacian threshold used in edge detection.
-    Its range is from 0 to 510, with lower values detecting weaker lines.
-    """
-
-    vthresh: int = 20
-    """
-    Controls the variance threshold used in edge detection.
-    Its range is from 0 to a large number, with lower values detecting weaker edges.
-    """
-
-    estr: int = 2
-    """
-    Defines the required number of edge pixels (<=) in a 3x3 area, in which the center pixel
-    has been detected as an edge pixel, for the center pixel to be removed from the edge map.
-    """
-
-    dstr: int = 4
-    """
-    Defines the required number of edge pixels (>=) in a 3x3 area, in which the center pixel
-    has not been detected as an edge pixel, for the center pixel to be added to the edge map.
-    """
-
-    maxd: int = 24
-    """
-    Sets the maximum pixel search distance for determining the interpolation direction.
-    Larger values allow the algorithm to connect edges and lines with smaller slopes but may introduce artifacts.
-    In some cases, using a smaller `maxd` value can yield better results than a larger one.
-    The maximum possible value for `maxd` is 29.
-    """
-
-    map: int = 0
-    """
-    Allows one of three possible maps to be shown:
-    - 0 = no map
-    - 1 = edge map (Edge pixels will be set to 255 and non-edge pixels will be set to 0)
-    - 2 = original scale direction map
-    - 3 = 2x scale direction map
-    """
-
-    nt: int = 50
-    """
-    Defines the noise threshold between pixels in the sliding vectors.
-    This value is used to determine initial starting conditions.
-    Lower values typically reduce artifacts but may degrade edge reconstruction,
-    while higher values can enhance edge reconstruction at the cost of introducing more artifacts.
-    The valid range is from 0 to 256.
-    """
-
-    pp: int = 1
-    """
-    Enables two optional post-processing modes designed to reduce artifacts by identifying problem areas
-    and applying simple vertical linear interpolation in those areas.
-    While these modes can improve results, they may slow down processing and slightly reduce edge sharpness.
-    - 0 = No post-processing
-    - 1 = Check for spatial consistency of final interpolation directions
-    - 2 = Check for junctions and corners
-    - 3 = Apply both checks from 1 and 2
-    """
-
-    @Scaler.cachedproperty
-    def kernel_radius(self) -> int:
-        return self.maxd
-
-    def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
-        return {
-            "mthresh": self.mthresh,
-            "lthresh": self.lthresh,
-            "vthresh": self.vthresh,
-            "estr": self.estr,
-            "dstr": self.dstr,
-            "maxd": self.maxd,
-            "map": self.map,
-            "nt": self.nt,
-            "pp": self.pp,
-        } | kwargs
-
-    @property
-    def _deinterlacer_function(self) -> VSFunctionAllArgs:
-        return core.lazy.eedi2.EEDI2
-
-    def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
-        field = tff + double_rate * 2
-
-        if not dh:
-            clip = clip.std.SeparateFields(tff)
-
-            if not double_rate:
-                clip = clip[::2]
-
-        return self._deinterlacer_function(clip, field, **self.get_deint_args(**kwargs))
 
 
 @dataclass
