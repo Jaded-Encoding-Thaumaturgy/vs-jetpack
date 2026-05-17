@@ -370,9 +370,6 @@ class Keyframes(list[int]):
     They follow the convention of signaling the start of the new scene.
     """
 
-    V1 = 1
-    XVID = -1
-
     class _Scenes(dict[int, range]):
         __slots__ = ("indices",)
 
@@ -392,7 +389,7 @@ class Keyframes(list[int]):
     def to_file(
         self,
         out: FilePathType,
-        format: int = V1,
+        fmt: Literal["v1", "xvid"] = "v1",
         func: FuncExcept | None = None,
         header: bool = True,
         force: bool = False,
@@ -411,23 +408,26 @@ class Keyframes(list[int]):
 
         check_perms(out_path, "w+", func=func)
 
-        if format == Keyframes.V1:
-            out_text = [*(["# keyframe format v1", "fps 0", ""] if header else []), *(f"{n} I -1" for n in self), ""]
-        elif format == Keyframes.XVID:
-            lut_self = set(self)
-            out_text = list[str]()
+        match fmt:
+            case "v1":
+                out_text = list[str]()
+                if header:
+                    out_text.extend(["# keyframe format v1", "fps 0", ""])
+                out_text.extend(f"{n} I -1" for n in self)
+                out_text.append("")
+            case "xvid":
+                lut_self = set(self)
+                out_text = list[str]()
 
-            if header:
-                out_text.extend(["# XviD 2pass stat file", ""])
+                if header:
+                    out_text.extend(["# XviD 2pass stat file", ""])
 
-            for i in range(max(self)):
-                if i in lut_self:
-                    out_text.append("i")
-                    lut_self.remove(i)
-                else:
-                    out_text.append("b")
-        else:
-            raise NotImplementedError
+                for i in range(max(self)):
+                    if i in lut_self:
+                        out_text.append("i")
+                        lut_self.remove(i)
+                    else:
+                        out_text.append("b")
 
         out_path.unlink(True)
         out_path.touch()
@@ -456,9 +456,7 @@ class Keyframes(list[int]):
 
         def _add_scene_idx(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
             f = f.copy()
-
-            f.props._SceneIdx = self.scenes.indices[n]
-
+            f.props["_SceneIdx"] = self.scenes.indices[n]
             return f
 
         return out.std.ModifyFrame(out, _add_scene_idx)
@@ -483,35 +481,21 @@ class Keyframes(list[int]):
         if not file.exists():
             raise FileNotFoundError
 
-        if file.stat().st_size <= 0:
-            raise OSError("File is empty!")
-
         lines = [line.strip() for line in file.read_lines("utf-8") if line and not line.startswith("#")]
 
         if not lines:
             raise ValueError("No keyframe could be found!")
 
-        kf_type: int | None = None
-
-        line = lines[0].lower()
-
-        if line.startswith("fps"):
-            kf_type = Keyframes.XVID
-        elif line.startswith(("i", "b", "p", "n")):
-            kf_type = Keyframes.V1
-
-        if kf_type is None:
-            raise ValueError("Could not determine keyframe file type!")
-
-        if kf_type == Keyframes.V1:
-            return cls(i for i, line in enumerate(lines) if line.startswith("i"))
-
-        if kf_type == Keyframes.XVID:
-            split_lines = [line.split(" ") for line in lines]
-
-            return cls(int(n) for n, t, *_ in split_lines if t.lower() == "i")
-
-        raise ValueError("Invalid keyframe file type!")
+        match lines[0].lower():
+            # XVID
+            case line if line.startswith("fps"):
+                split_lines = [line.split(" ") for line in lines]
+                return cls(int(n) for n, t, *_ in split_lines if t.lower() == "i")
+            # V1
+            case line if line.startswith(("i", "b", "p", "n")):
+                return cls(i for i, line in enumerate(lines) if line.startswith("i"))
+            case _:
+                raise ValueError("Could not determine keyframe file type!")
 
     @classmethod
     def from_param(cls, clip: vs.VideoNode, param: Self | str) -> Self:
