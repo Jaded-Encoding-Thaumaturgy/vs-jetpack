@@ -15,11 +15,11 @@ from jetpytools import (
     FilePathType,
     FuncExcept,
     LinearRangeLut,
-    Sentinel,
     SPath,
     check_perms,
     classproperty,
     fallback,
+    to_arr,
 )
 
 from ..enums import Matrix
@@ -431,29 +431,36 @@ class Keyframes(list[int]):
         out_path.write_text("\n".join(out_text))
 
     @classmethod
-    def from_clip(cls, clip: vs.VideoNode, prop_key: str = "_SceneChangePrev", **kwargs: Any) -> Self:
+    def from_clip(cls, clip: vs.VideoNode, prop_key: str | Iterable[str] | None = None, **kwargs: Any) -> Self:
         """
-        Create a Keyframes object from a clip by checking the "_SceneChangePrev" property.
+        Create a Keyframes object from a clip by checking frame props.
 
         Assumes that the clip has already been processed by scxvid.Scxvid or similar.
 
         Args:
             clip: Clip to get keyframes from.
-            prop_key: Property key to use for detecting scene changes.
+            prop_key: Additional props key(s) to use for detecting scene changes.
             **kwargs: Additional keyword arguments to pass to clip_async_render.
 
         Returns:
             Keyframes from the clip.
         """
-        frames = clip_async_render(
-            clip,
-            None,
-            "Detecting scene changes...",
-            lambda n, f: Sentinel.check(n, bool(f.props[prop_key])),
-            **kwargs,
-        )
+        props_key = to_arr(prop_key) if prop_key else []
 
-        return cls(Sentinel.filter(frames))
+        def check_props(n: int, f: vs.VideoFrame) -> int:
+            if f.props.get("_SceneChangePrev"):
+                return n
+
+            if f.props.get("_SceneChangeNext"):
+                return n + 1
+
+            for key in props_key:
+                if f.props.get(key):
+                    return n
+            return -1
+
+        frames = clip_async_render(clip, None, "Detecting scene changes...", check_props, **kwargs)
+        return cls(f for f in frames if f >= 0)
 
     @classmethod
     def from_file(cls, file: str | os.PathLike[str], **kwargs: Any) -> Self:
