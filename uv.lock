@@ -1636,7 +1636,7 @@ name = "vapoursynth-dvdsrc2"
 version = "3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "vapoursynth" },
+    { name = "vapoursynth", marker = "platform_machine == 'x86_64'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6d/0e/7f5e65ac53d7d0cf5808ea84afed06377e1cf8d796e388297f71081f61e3/vapoursynth_dvdsrc2-3.0.tar.gz", hash = "sha256:c0c98f51b3d2f975ffab3ede4423df98b1b5ffa63264c91e2d5b9778a0860092", size = 38860, upload-time = "2026-04-10T21:35:50.314Z" }
 wheels = [
@@ -1844,22 +1844,6 @@ wheels = [
 ]
 
 [[package]]
-name = "vapoursynth-scxvid"
-version = "3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/81/50/37c8017a9323b1e5ac2161847116dbfcd7dba37c196e75aa8fb88deedf69/vapoursynth_scxvid-3.0.tar.gz", hash = "sha256:3cf7883bebe1cd5e789486573c20e9117245a67f79d9a836e095410fdfda79f2", size = 12480, upload-time = "2026-04-17T10:18:41.479Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d6/cd/5b452762d2c4d2b465390bc577ea6f9898dd943585a57b01628ab818b50d/vapoursynth_scxvid-3.0-py3-none-macosx_15_0_arm64.whl", hash = "sha256:e1caa4f3e7ddae47d87c599189592a7d4cdc58c9287a2616137a43b29931fb6b", size = 184825, upload-time = "2026-04-17T10:18:34.348Z" },
-    { url = "https://files.pythonhosted.org/packages/11/ef/d12776b69c94edfab49962cfff8e9baee89efd9a08f6fccf52541ae03934/vapoursynth_scxvid-3.0-py3-none-macosx_15_0_x86_64.whl", hash = "sha256:4b46d3fb3375d2ac4f278a9b4d803a8b7f60f2c8a512246872839f6733d03875", size = 202540, upload-time = "2026-04-17T10:18:35.88Z" },
-    { url = "https://files.pythonhosted.org/packages/5d/91/1d999b446055da6fa05b037633b06b8216b744f9c28d15f7822ba2c041b4/vapoursynth_scxvid-3.0-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:418b3bd372a014c90a97c3eef3988a05072f333375eacc2ab31fc2b3b8013511", size = 267301, upload-time = "2026-04-17T10:18:37.204Z" },
-    { url = "https://files.pythonhosted.org/packages/af/b2/b25f6f3fb3208f4aac9a82eb13a5f48c33c2733a86669f19dcbeb5ff673e/vapoursynth_scxvid-3.0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3d62210c4c5ae824936fc0cc42281ca7623d5556a0e6d98e70517cd348642e82", size = 302223, upload-time = "2026-04-17T10:18:38.773Z" },
-    { url = "https://files.pythonhosted.org/packages/fb/d4/171716109d1792be750a04ba8878f4d9f90e8c4c5da940708afa27f541de/vapoursynth_scxvid-3.0-py3-none-win_amd64.whl", hash = "sha256:f16612fd3dc1bc90980584be1dfc6fa3391f8e54c5a7b2978ee46165113fe212", size = 595356, upload-time = "2026-04-17T10:18:40.16Z" },
-]
-
-[[package]]
 name = "vapoursynth-sneedif"
 version = "4.3"
 source = { registry = "https://pypi.org/simple" }
@@ -2026,7 +2010,6 @@ aa = [
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-sneedif" },
     { name = "vapoursynth-subtext" },
     { name = "vapoursynth-vszip" },
@@ -2045,7 +2028,6 @@ basic = [
     { name = "scipy" },
     { name = "vapoursynth-akarin" },
     { name = "vapoursynth-fmtconv" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-vszip" },
 ]
 cl = [
@@ -2080,7 +2062,6 @@ deband = [
     { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-sneedif" },
     { name = "vapoursynth-subtext" },
     { name = "vapoursynth-vszip" },
@@ -2119,7 +2100,6 @@ dehalo = [
     { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-sneedif" },
     { name = "vapoursynth-subtext" },
     { name = "vapoursynth-vszip" },
@@ -2158,7 +2138,6 @@ deinterlace = [
     { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-sneedif" },
     { name = "vapoursynth-subtext" },
     { name = "vapoursynth-vivtc" },
@@ -2197,7 +2176,6 @@ denoise = [
     { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-sneedif" },
     { name = "vapoursynth-subtext" },
     { name = "vapoursynth-vszip" },
@@ -2212,7 +2190,6 @@ expr = [
     { name = "scipy" },
     { name = "vapoursynth-akarin" },
     { name = "vapoursynth-fmtconv" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-vszip" },
 ]
 full = [
@@ -2245,7 +2222,6 @@ full = [
     { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-sneedif" },
     { name = "vapoursynth-subtext" },
     { name = "vapoursynth-vivtc" },
@@ -2264,7 +2240,6 @@ kernels = [
     { name = "vapoursynth-descale" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-resize2" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-vszip" },
     { name = "vs-placebo" },
 ]
@@ -2284,7 +2259,6 @@ mask = [
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-resize2" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-subtext" },
     { name = "vapoursynth-vszip" },
     { name = "vapoursynth-zsmooth" },
@@ -2306,7 +2280,6 @@ rg = [
     { name = "vapoursynth-descale" },
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-resize2" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-vszip" },
     { name = "vapoursynth-zsmooth" },
     { name = "vs-placebo" },
@@ -2327,7 +2300,6 @@ scale = [
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-resize2" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-subtext" },
     { name = "vapoursynth-vszip" },
     { name = "vapoursynth-zsmooth" },
@@ -2343,7 +2315,6 @@ source = [
     { name = "vapoursynth-dvdsrc2", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-fmtconv" },
-    { name = "vapoursynth-scxvid" },
     { name = "vapoursynth-vszip" },
 ]
 
@@ -2611,19 +2582,6 @@ requires-dist = [
     { name = "vapoursynth-sangnom", marker = "extra == 'deinterlace'", specifier = ">=43" },
     { name = "vapoursynth-sangnom", marker = "extra == 'denoise'", specifier = ">=43" },
     { name = "vapoursynth-sangnom", marker = "extra == 'full'", specifier = ">=43" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'aa'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'basic'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'deband'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'dehalo'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'deinterlace'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'denoise'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'expr'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'full'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'kernels'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'mask'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'rg'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'scale'", specifier = ">=3.0" },
-    { name = "vapoursynth-scxvid", marker = "extra == 'source'", specifier = ">=3.0" },
     { name = "vapoursynth-sneedif", marker = "extra == 'aa'", specifier = ">=4.2" },
     { name = "vapoursynth-sneedif", marker = "extra == 'deband'", specifier = ">=4.2" },
     { name = "vapoursynth-sneedif", marker = "extra == 'dehalo'", specifier = ">=4.2" },

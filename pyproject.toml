@@ -70,7 +70,6 @@ basic = [
     "vapoursynth-akarin>=1.4.1",
     "vapoursynth-fmtconv>=31",
     "vapoursynth-vszip>=14.0.0",
-    "vapoursynth-scxvid>=3.0",
 ]
 source = [
     "vsjetpack[basic]",

@@ -1300,10 +1300,6 @@ class VideoNode(RawNode):
     sangnom: Final[_sangnom._VideoNode_bound.Plugin]
     """VapourSynth Single Field Deinterlacer"""
 # </attribute/VideoNode_bound/sangnom>
-# <attribute/VideoNode_bound/scxvid>
-    scxvid: Final[_scxvid._VideoNode_bound.Plugin]
-    """VapourSynth Scxvid Plugin"""
-# </attribute/VideoNode_bound/scxvid>
 # <attribute/VideoNode_bound/sneedif>
     sneedif: Final[_sneedif._VideoNode_bound.Plugin]
     """Setsugen No Ensemble of Edge Directed Interpolation Functions"""
@@ -1570,10 +1566,6 @@ class Core:
     sangnom: Final[_sangnom._Core_bound.Plugin]
     """VapourSynth Single Field Deinterlacer"""
 # </attribute/Core_bound/sangnom>
-# <attribute/Core_bound/scxvid>
-    scxvid: Final[_scxvid._Core_bound.Plugin]
-    """VapourSynth Scxvid Plugin"""
-# </attribute/Core_bound/scxvid>
 # <attribute/Core_bound/sneedif>
     sneedif: Final[_sneedif._Core_bound.Plugin]
     """Setsugen No Ensemble of Edge Directed Interpolation Functions"""
@@ -1971,7 +1963,6 @@ class _descale:
             def Spline64(self, /, width: _IntLike, height: _IntLike, blur: _FloatLike | None = None, post_conv: _FloatLike | _SequenceLike[_FloatLike] | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, border_handling: _IntLike | None = None, ignore_mask: VideoNode | None = None, force: _IntLike | None = None, force_h: _IntLike | None = None, force_v: _IntLike | None = None, opt: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/descale>
-
 
 # <implementation/dfttest>
 class _dfttest:
@@ -2540,20 +2531,6 @@ class _sangnom:
             def SangNom(self, /, order: _IntLike | None = None, dh: _IntLike | None = None, aa: _IntLike | _SequenceLike[_IntLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
 
 # </implementation/sangnom>
-
-# <implementation/scxvid>
-class _scxvid:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Scxvid(self, /, clip: VideoNode, log: _AnyStr | None = None, use_slices: _IntLike | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Scxvid(self, /, log: _AnyStr | None = None, use_slices: _IntLike | None = None) -> VideoNode: ...
-
-# </implementation/scxvid>
 
 # <implementation/sneedif>
 _ReturnDict_sneedif_DeviceInfo = TypedDict("_ReturnDict_sneedif_DeviceInfo", {"name": _AnyStr, "vendor": _AnyStr, "profile": _AnyStr, "version": _AnyStr, "max_compute_units": int, "max_work_group_size": int, "max_work_item_sizes": _IntLike | list[_IntLike], "image2D_max_width": int, "image2D_max_height": int, "image_support": int, "global_memory_cache_type": _AnyStr, "global_memory_cache": int, "global_memory_size": int, "max_constant_buffer_size": int, "max_constant_arguments": int, "local_memory_type": _AnyStr, "local_memory_size": int, "available": int, "compiler_available": int, "linker_available": int, "opencl_c_version": _AnyStr, "image_max_buffer_size": int})

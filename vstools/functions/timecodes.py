@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from abc import abstractmethod
 from collections.abc import Iterable
@@ -7,22 +8,21 @@ from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
 from pathlib import Path
-from typing import Any, ClassVar, Literal, NamedTuple, Self, cast, overload
+from typing import Any, Literal, NamedTuple, Self, cast, overload
 
 from jetpytools import (
     CustomValueError,
     FilePathType,
     FuncExcept,
     LinearRangeLut,
-    Sentinel,
     SPath,
     check_perms,
     classproperty,
     fallback,
-    inject_self,
+    to_arr,
 )
 
-from ..enums import Matrix, SceneChangeMode
+from ..enums import Matrix
 from ..exceptions import FramesLengthError, UnsupportedTimecodeVersionError
 from ..utils import DynamicClipsCache, PackageStorage
 from ..vs_proxy import VSObject, vs
@@ -370,12 +370,6 @@ class Keyframes(list[int]):
     They follow the convention of signaling the start of the new scene.
     """
 
-    V1 = 1
-    XVID = -1
-
-    WWXD: ClassVar = SceneChangeMode.WWXD
-    SCXVID: ClassVar = SceneChangeMode.SCXVID
-
     class _Scenes(dict[int, range]):
         __slots__ = ("indices",)
 
@@ -385,23 +379,128 @@ class Keyframes(list[int]):
 
             self.indices = LinearRangeLut(self)
 
-    def __init__(self, iterable: Iterable[int] = [], *, _dummy: bool = False) -> None:
+    def __init__(self, iterable: Iterable[int] = []) -> None:
         super().__init__(sorted(iterable))
-
-        self._dummy = _dummy
-
         self.scenes = self.__class__._Scenes(self)
 
-    @staticmethod
-    def _get_unique_path(clip: vs.VideoNode, key: str) -> SPath:
-        key = SPath(str(key)).stem + f"_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}"
+    def to_file(
+        self,
+        out: str | os.PathLike[str],
+        fmt: Literal["v1", "xvid"] = "v1",
+        func: FuncExcept | None = None,
+        header: bool = True,
+        force: bool = False,
+    ) -> None:
+        func = func or self.to_file
 
-        return _get_keyframes_storage().get_file(key, ext=".txt")
+        out_path = Path(out).resolve()
+
+        if out_path.exists():
+            if not force and out_path.stat().st_size > 0:
+                return
+
+            out_path.unlink()
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+
+        check_perms(out_path, "w+", func=func)
+
+        match fmt:
+            case "v1":
+                out_text = list[str]()
+                if header:
+                    out_text.extend(["# keyframe format v1", "fps 0", ""])
+                out_text.extend(f"{n} I -1" for n in self)
+                out_text.append("")
+            case "xvid":
+                lut_self = set(self)
+                out_text = list[str]()
+
+                if header:
+                    out_text.extend(["# XviD 2pass stat file", ""])
+
+                for i in range(max(self)):
+                    if i in lut_self:
+                        out_text.append("i")
+                        lut_self.remove(i)
+                    else:
+                        out_text.append("b")
+
+        out_path.unlink(True)
+        out_path.touch()
+        out_path.write_text("\n".join(out_text))
 
     @classmethod
-    def unique(cls, clip: vs.VideoNode, key: str, **kwargs: Any) -> Self:
+    def from_clip(cls, clip: vs.VideoNode, prop_key: str | Iterable[str] | None = None, **kwargs: Any) -> Self:
+        """
+        Create a Keyframes object from a clip by checking frame props.
+
+        Assumes that the clip has already been processed by scxvid.Scxvid or similar.
+
+        Args:
+            clip: Clip to get keyframes from.
+            prop_key: Additional props key(s) to use for detecting scene changes.
+            **kwargs: Additional keyword arguments to pass to clip_async_render.
+
+        Returns:
+            Keyframes from the clip.
+        """
+        props_key = to_arr(prop_key) if prop_key else []
+
+        def check_props(n: int, f: vs.VideoFrame) -> int:
+            if f.props.get("_SceneChangePrev"):
+                return n
+
+            if f.props.get("_SceneChangeNext"):
+                return n + 1
+
+            for key in props_key:
+                if f.props.get(key):
+                    return n
+            return -1
+
+        frames = clip_async_render(clip, None, "Detecting scene changes...", check_props, **kwargs)
+        return cls(f for f in frames if f >= 0)
+
+    @classmethod
+    def from_file(cls, file: str | os.PathLike[str], **kwargs: Any) -> Self:
+        file = SPath(file).resolve()
+
+        if not file.exists():
+            raise FileNotFoundError
+
+        lines = [line.strip() for line in file.read_lines("utf-8") if line and not line.startswith("#")]
+
+        if not lines:
+            raise ValueError("No keyframe could be found!")
+
+        match lines[0].lower():
+            # XVID
+            case line if line.startswith("fps"):
+                split_lines = [line.split(" ") for line in lines]
+                return cls(int(n) for n, t, *_ in split_lines if t.lower() == "i")
+            # V1
+            case line if line.startswith(("i", "b", "p", "n")):
+                return cls(i for i, line in enumerate(lines) if line.startswith("i"))
+            case _:
+                raise ValueError("Could not determine keyframe file type!")
+
+    @classmethod
+    def from_param(cls, clip: vs.VideoNode, param: Self | str) -> Self:
+        if isinstance(param, str):
+            return cls.unique(clip, param)
+
+        if isinstance(param, cls):
+            return param
+
+        return cls(param)
+
+    @classmethod
+    def unique(cls, clip: vs.VideoNode, key: str, prop_key: str = "_SceneChangePrev", **kwargs: Any) -> Self:
         """
         Get the keyframes from a clip and write them to a file.
+
+        Assumes that the clip has already been processed by scxvid.Scxvid or similar.
 
         This method tries to generate a unique filename based on the clip's
         properties and the `key` prefix. If a file with that name exists and is
@@ -418,6 +517,7 @@ class Keyframes(list[int]):
         Args:
             clip: The clip to get keyframes from.
             key: A prefix for the filename.
+            prop_key: Property key to use for detecting scene changes.
             **kwargs: Additional keyword arguments passed to
                 [vstools.Keyframes.from_file][] or [vstools.Keyframes.from_clip][].
 
@@ -432,152 +532,16 @@ class Keyframes(list[int]):
 
             file.unlink()
 
-        keyframes = cls.from_clip(clip, **kwargs)
+        keyframes = cls.from_clip(clip, prop_key, **kwargs)
         keyframes.to_file(file, force=True)
 
         return keyframes
 
-    @classmethod
-    def from_clip(
-        cls,
-        clip: vs.VideoNode,
-        mode: SceneChangeMode | int = SCXVID,
-        height: int | Literal[False] = 360,
-        **kwargs: Any,
-    ) -> Self:
-        mode = SceneChangeMode(mode)
+    @staticmethod
+    def _get_unique_path(clip: vs.VideoNode, key: str) -> SPath:
+        key = SPath(key).stem + f"_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}"
 
-        clip = mode.prepare_clip(clip, height)
-
-        frames = clip_async_render(clip, None, "Detecting scene changes...", mode.lambda_cb(), **kwargs)
-
-        return cls(Sentinel.filter(frames))
-
-    @inject_self.with_args(_dummy=True)
-    def to_clip(
-        self,
-        clip: vs.VideoNode,
-        *,
-        mode: SceneChangeMode | int = SCXVID,
-        height: int | Literal[False] = 360,
-        prop_key: str = next(iter(SceneChangeMode.SCXVID.prop_keys)),
-        scene_idx_prop: bool = False,
-    ) -> vs.VideoNode:
-        from .ranges import replace_ranges
-
-        propset_clip = clip.std.SetFrameProp(prop_key, True)
-
-        if self._dummy:
-            mode = SceneChangeMode(mode)
-
-            prop_clip = mode.prepare_clip(clip, height)
-
-            out = replace_ranges(clip, propset_clip, lambda f: bool(f[0][0, 0]), prop_src=prop_clip)
-        else:
-            out = replace_ranges(clip, propset_clip, self)
-
-        if not scene_idx_prop:
-            return out
-
-        def _add_scene_idx(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-            f = f.copy()
-
-            f.props._SceneIdx = self.scenes.indices[n]
-
-            return f
-
-        return out.std.ModifyFrame(out, _add_scene_idx)
-
-    @classmethod
-    def from_file(cls, file: FilePathType, **kwargs: Any) -> Self:
-        file = SPath(str(file)).resolve()
-
-        if not file.exists():
-            raise FileNotFoundError
-
-        if file.stat().st_size <= 0:
-            raise OSError("File is empty!")
-
-        lines = [line.strip() for line in file.read_lines("utf-8") if line and not line.startswith("#")]
-
-        if not lines:
-            raise ValueError("No keyframe could be found!")
-
-        kf_type: int | None = None
-
-        line = lines[0].lower()
-
-        if line.startswith("fps"):
-            kf_type = Keyframes.XVID
-        elif line.startswith(("i", "b", "p", "n")):
-            kf_type = Keyframes.V1
-
-        if kf_type is None:
-            raise ValueError("Could not determine keyframe file type!")
-
-        if kf_type == Keyframes.V1:
-            return cls(i for i, line in enumerate(lines) if line.startswith("i"))
-
-        if kf_type == Keyframes.XVID:
-            split_lines = [line.split(" ") for line in lines]
-
-            return cls(int(n) for n, t, *_ in split_lines if t.lower() == "i")
-
-        raise ValueError("Invalid keyframe file type!")
-
-    def to_file(
-        self,
-        out: FilePathType,
-        format: int = V1,
-        func: FuncExcept | None = None,
-        header: bool = True,
-        force: bool = False,
-    ) -> None:
-        func = func or self.to_file
-
-        out_path = Path(str(out)).resolve()
-
-        if out_path.exists():
-            if not force and out_path.stat().st_size > 0:
-                return
-
-            out_path.unlink()
-
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-
-        check_perms(out_path, "w+", func=func)
-
-        if format == Keyframes.V1:
-            out_text = [*(["# keyframe format v1", "fps 0", ""] if header else []), *(f"{n} I -1" for n in self), ""]
-        elif format == Keyframes.XVID:
-            lut_self = set(self)
-            out_text = list[str]()
-
-            if header:
-                out_text.extend(["# XviD 2pass stat file", ""])
-
-            for i in range(max(self)):
-                if i in lut_self:
-                    out_text.append("i")
-                    lut_self.remove(i)
-                else:
-                    out_text.append("b")
-        else:
-            raise NotImplementedError
-
-        out_path.unlink(True)
-        out_path.touch()
-        out_path.write_text("\n".join(out_text))
-
-    @classmethod
-    def from_param(cls, clip: vs.VideoNode, param: Self | str) -> Self:
-        if isinstance(param, str):
-            return cls.unique(clip, param)
-
-        if isinstance(param, cls):
-            return param
-
-        return cls(param)
+        return _get_keyframes_storage().get_file(key, ext=".txt")
 
 
 class SceneBasedDynamicCache(DynamicClipsCache[int]):
