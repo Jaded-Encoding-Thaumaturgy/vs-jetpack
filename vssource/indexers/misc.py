@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from logging import INFO, Handler, Logger, LogRecord, getLogger
 from typing import Any
@@ -131,7 +131,7 @@ class ZipSource(Indexer):
 
 
 @contextmanager
-def _bs_pretty_progress() -> Iterator[None]:
+def _bs_pretty_progress() -> Generator[None]:
     from rich.console import Console
     from rich.progress import BarColumn, Progress, TaskID, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 
@@ -145,7 +145,7 @@ def _bs_pretty_progress() -> Iterator[None]:
             self.task_id = task_id
 
         @contextmanager
-        def with_logger(self, logger: Logger) -> Iterator[None]:
+        def with_logger(self, logger: Logger) -> Generator[None]:
             logger.addHandler(self)
 
             try:

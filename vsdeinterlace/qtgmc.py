@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Generator, Iterable, Mapping
 from contextlib import contextmanager, suppress
 from copy import deepcopy
 from math import factorial
@@ -1260,7 +1260,7 @@ class QTempGaussMC(VSObject):
         return self.motion_blur_output
 
     @contextmanager
-    def _disable_fps_divisor(self) -> Iterator[None]:
+    def _disable_fps_divisor(self) -> Generator[None]:
         orig = self.motion_blur_fps_divisor
         self.motion_blur_fps_divisor = 1
 
