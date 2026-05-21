@@ -4,11 +4,14 @@ import re
 from collections.abc import Generator
 from contextlib import contextmanager
 from logging import INFO, Handler, Logger, LogRecord, getLogger
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from jetpytools import CustomIntEnum, SPathLike
 
 from vstools import core, vs
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 from .base import CacheIndexer, Indexer
 
@@ -71,7 +74,7 @@ class BestSource(CacheIndexer):
         cachemode: int = CacheMode.ABSOLUTE,
         rff: int | None = True,
         showprogress: int | None = True,
-        show_pretty_progress: int | None = False,
+        show_pretty_progress: int | Console | None = False,
         **kwargs: Any,
     ) -> None:
         """
@@ -100,8 +103,10 @@ class BestSource(CacheIndexer):
         if kwargs["cachemode"] <= cls.CacheMode.CACHE_PATH_WRITE and cls._cache_arg_name not in kwargs:
             kwargs[cls._cache_arg_name] = None
 
-        if kwargs.pop("show_pretty_progress"):
-            with _bs_pretty_progress():
+        if p := kwargs.pop("show_pretty_progress"):
+            from rich.console import Console
+
+            with _bs_pretty_progress(p if isinstance(p, Console) else None):
                 return super().source_func(path, **kwargs)
 
         return super().source_func(path, **kwargs)
@@ -131,7 +136,7 @@ class ZipSource(Indexer):
 
 
 @contextmanager
-def _bs_pretty_progress() -> Generator[None]:
+def _bs_pretty_progress(console: Console | None = None) -> Generator[None]:
     from rich.console import Console
     from rich.progress import BarColumn, Progress, TaskID, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 
@@ -173,7 +178,7 @@ def _bs_pretty_progress() -> Generator[None]:
         TextColumn("{task.percentage:>3.0f}%"),
         TimeElapsedColumn(),
         TimeRemainingColumn(),
-        console=Console(stderr=True),
+        console=console or Console(stderr=True),
         transient=True,
     )
 
