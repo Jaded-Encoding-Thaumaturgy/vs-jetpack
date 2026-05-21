@@ -10,8 +10,6 @@ from typing import Any, BinaryIO, Literal, Protocol, overload
 
 from jetpytools import CustomRuntimeError, CustomValueError, Sentinel, SentinelT, SPathLike, fallback
 
-from vsjetpack import require_jet_dependency
-
 from ...exceptions import UnsupportedColorFamilyError
 from ...utils import get_prop
 from ...vs_proxy import vs
@@ -57,7 +55,6 @@ def clip_async_render[T](
 ) -> list[T]: ...
 
 
-@require_jet_dependency("rich")
 def clip_async_render[T](
     clip: vs.VideoNode,
     outfile: BinaryIO | SPathLike | None = None,

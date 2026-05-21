@@ -8,7 +8,6 @@ from typing import Any
 
 from jetpytools import CustomIntEnum, SPathLike
 
-from vsjetpack import require_jet_dependency
 from vstools import core, vs
 
 from .base import CacheIndexer, Indexer
@@ -132,7 +131,6 @@ class ZipSource(Indexer):
 
 
 @contextmanager
-@require_jet_dependency("rich")
 def _bs_pretty_progress() -> Iterator[None]:
     from rich.console import Console
     from rich.progress import BarColumn, Progress, TaskID, TextColumn, TimeElapsedColumn, TimeRemainingColumn

@@ -55,9 +55,7 @@ def lazy_load(name: str, package: str | None = None, exc: Callable[[], Exception
     return module
 
 
-def require_jet_dependency[**P, R](
-    *name: Literal["scipy", "rich", "psutil"],
-) -> Callable[[Callable[P, R]], Callable[P, R]]:
+def require_jet_dependency[**P, R](*name: Literal["scipy", "psutil"]) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """Decorator that raises DependencyNotFoundError when a specific package is missing."""
 
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
@@ -99,7 +97,6 @@ _JETPACK_MODULES = (
 )
 
 
-@require_jet_dependency("rich")
 def setup_logging(level: str | int = INFO) -> None:
     """
     Configure global logging.
