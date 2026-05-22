@@ -6,6 +6,7 @@ from collections.abc import Callable, Iterable, Sequence
 from itertools import groupby
 from logging import getLogger
 from math import ceil
+from types import NotImplementedType
 from typing import Any, SupportsIndex
 
 from jetpytools import CustomIndexError, CustomRuntimeError, FuncExcept, StrList, SupportsString, normalize_seq, to_arr
@@ -26,6 +27,8 @@ from vstools import (
 
 if sys.version_info >= (3, 14):
     from string.templatelib import Template
+else:
+    Template = NotImplementedType
 
 from .error import CustomExprError
 from .exprop import ExprList, ExprOp, ExprOpBase, TupleExprList
