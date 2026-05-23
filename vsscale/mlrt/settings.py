@@ -53,7 +53,9 @@ def get_cache(thing: str, *, local: bool = False) -> Path:
 def get_onnx_folder(*, local: bool = False) -> Path:
     r"""
     Linux: ~/.cache/vsscale/onnx
+
     macOS: ~/Library/Caches/vsscale/onnx
+
     Windows: ...\AppData\Local\vsjet\vsscale\Cache\onnx
     """
     return get_cache("onnx", local=local) / "onnx"
@@ -63,7 +65,9 @@ def get_onnx_folder(*, local: bool = False) -> Path:
 def get_engines_folder(*, local: bool = False) -> Path:
     r"""
     Linux: ~/.cache/vsscale/engines
+
     macOS: ~/Library/Caches/vsscale/engines
+
     Windows: ...\AppData\Local\vsjet\vsscale\Cache\engines
     """
     return get_cache("engine", local=local) / "engines"
