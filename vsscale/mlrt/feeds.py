@@ -36,7 +36,6 @@ class Feed(ABC):
 
     display_name: ClassVar[str]
     base_url: ClassVar[str]
-    available: ClassVar[bool] = True
     _registry: ClassVar[dict[str, type[Feed]]] = {}
 
     def __init_subclass__(cls) -> None:
@@ -109,9 +108,5 @@ class Waifu2XFeed(Feed):
 
 class DPIRFeed(Feed):
     display_name = "DPIR"
-    available = False
-
-    async def releases(self, session: niquests.AsyncSession) -> list[Release]:
-        raise NotImplementedError(
-            "DPIR models are .pth format and require conversion to ONNX. This feed is not yet available."
-        )
+    repo = "Jaded-Encoding-Thaumaturgy/KAIR"
+    base_url = f"https://api.github.com/repos/{repo}/releases?per_page=100&page={{page}}"
