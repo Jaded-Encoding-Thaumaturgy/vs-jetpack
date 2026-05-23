@@ -21,6 +21,7 @@ class Asset:
     name: str
     url: URL
     size: int
+    sha256: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,9 +79,14 @@ class Feed(ABC):
                 continue
 
             onnx_assets = [
-                Asset(name=a["name"], url=URL(a["browser_download_url"]), size=a["size"])
+                Asset(
+                    name=a["name"],
+                    url=URL(a["browser_download_url"]),
+                    size=a["size"],
+                    sha256=a["digest"].removeprefix("sha256:"),
+                )
                 for a in raw_assets
-                if a["name"].endswith(".onnx")
+                if a["name"].endswith(".onnx") and a.get("digest")
             ]
 
             if onnx_assets:

@@ -1,13 +1,14 @@
+import hashlib
 import os
 import shutil
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from pathlib import Path
 from types import TracebackType
 from typing import Annotated, Self
 
 import anyio
+import anyio.to_thread
 import cyclopts
 import humanize
 import niquests
@@ -299,8 +300,7 @@ async def _select_assets(release: Release) -> list[Asset]:
 
 
 async def _download_assets(feed: Feed, release: Release, assets: Sequence[Asset], *, local: bool = False) -> None:
-    dest_folder = get_onnx_folder(local=local) / feed.display_name.lower() / release.tag
-    dest_folder.mkdir(parents=True, exist_ok=True)
+    dest_folder = anyio.Path(get_onnx_folder(local=local) / feed.display_name.lower() / release.tag)
 
     console.print(f"[bold]Downloading to:[/bold] [cyan]{dest_folder}[/cyan]")
 
@@ -309,6 +309,7 @@ async def _download_assets(feed: Feed, release: Release, assets: Sequence[Asset]
         pool_maxsize=MAX_CONCURRENCY,
         disable_http3=True,
     ) as session:
+        await dest_folder.mkdir(parents=True, exist_ok=True)
         downloader = _AssetDownloader(feed, dest_folder, session)
         await downloader.download(assets)
 
@@ -336,7 +337,7 @@ class _AsyncProgress(Progress):
 @dataclass
 class _AssetDownloader:
     feed: Feed
-    dest_folder: Path
+    dest_folder: anyio.Path
     session: niquests.AsyncSession
 
     def __post_init__(self) -> None:
@@ -360,10 +361,14 @@ class _AssetDownloader:
     async def _download_asset(self, asset: Asset) -> None:
         dest_path = self.dest_folder / asset.name
 
-        if dest_path.exists() and dest_path.stat().st_size == asset.size:
-            self.progress.console.print(f"  [dim]⏭ {asset.name} (already downloaded)[/dim]")
-            self.skipped.add(asset)
-            return
+        if await dest_path.exists():
+            data = await dest_path.read_bytes()
+            hash_val = await anyio.to_thread.run_sync(lambda: hashlib.sha256(data).hexdigest())
+
+            if hash_val == asset.sha256:
+                self.progress.console.print(f"  [dim]⏭ {asset.name} (already downloaded)[/dim]")
+                self.skipped.add(asset)
+                return
 
         async with self.limiter, _delete_on_error(dest_path):
             task = self.progress.add_task("download", filename=asset.name, total=asset.size)
@@ -380,7 +385,7 @@ class _AssetDownloader:
 
 
 @asynccontextmanager
-async def _delete_on_error(dest_path: Path) -> AsyncGenerator[None]:
+async def _delete_on_error(dest_path: anyio.Path) -> AsyncGenerator[None]:
     try:
         yield
     except Exception:
