@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import warnings
 import zlib
 from collections.abc import Sequence
@@ -103,7 +104,15 @@ class TensorRT(Backend):
     def get_identity(self, network_path: Path, channels: int, tilesize: Shape) -> int:
         checksum = zlib.crc32(network_path.read_bytes())
 
-        device_name = self.plugin.DeviceProperties(self.device_id)["name"].decode().replace(" ", "-")
+        command = [
+            "nvidia-smi",
+            "-i",
+            str(self.device_id),
+            "--query-gpu=name,driver_version",
+            "--format=csv,noheader,nounits",
+        ]
+        res = subprocess.run(command, capture_output=True, text=True, check=True)
+        device = [d.strip().replace(" ", "_") for d in res.stdout.split(",")]
 
         components = (
             str(self),
@@ -112,7 +121,7 @@ class TensorRT(Backend):
             f"{checksum:x}",
             str(channels),
             str(tilesize),
-            device_name,
+            *device,
         )
         return zlib.crc32(bytes("|".join(components), "utf-8"))
 
