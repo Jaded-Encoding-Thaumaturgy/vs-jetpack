@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import os
-import re
 from abc import abstractmethod
 from collections.abc import Iterable
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, Self, cast, overload
+from typing import Any, Literal, Self, cast, overload
 
 from jetpytools import (
     CustomValueError,
@@ -17,19 +16,17 @@ from jetpytools import (
     LinearRangeLut,
     SPath,
     check_perms,
-    classproperty,
     fallback,
     to_arr,
 )
 
-from ..enums import Matrix
 from ..exceptions import FramesLengthError, UnsupportedTimecodeVersionError
 from ..utils import DynamicClipsCache, PackageStorage
 from ..vs_proxy import VSObject, vs
 from .ranges import replace_ranges
 from .render import clip_async_render, clip_data_gather
 
-__all__ = ["Keyframes", "LWIndex", "Timecodes"]
+__all__ = ["Keyframes", "Timecodes"]
 
 
 @cache
@@ -602,109 +599,3 @@ class SceneAverageStats(SceneBasedDynamicCache):
 
     def get_clip(self, key: int) -> vs.VideoNode:
         return self.clip.std.SetFrameProps(**dict(zip(self.prop_keys, self.scene_avgs[key])))
-
-
-@dataclass
-class LWIndex:
-    stream_info: StreamInfo
-    frame_data: list[Frame]
-    keyframes: Keyframes
-
-    class Regex:
-        @classproperty
-        @classmethod
-        def frame_first(cls) -> re.Pattern[str]:
-            return re.compile(
-                r"Index=(?P<Index>-?[0-9]+),POS=(?P<POS>-?[0-9]+),PTS=(?P<PTS>-?[0-9]+),"
-                r"DTS=(?P<DTS>-?[0-9]+),EDI=(?P<EDI>-?[0-9]+)"
-            )
-
-        @classproperty
-        @classmethod
-        def frame_second(cls) -> re.Pattern[str]:
-            return re.compile(
-                r"Key=(?P<Key>-?[0-9]+),Pic=(?P<Pic>-?[0-9]+),POC=(?P<POC>-?[0-9]+),"
-                r"Repeat=(?P<Repeat>-?[0-9]+),Field=(?P<Field>-?[0-9]+)"
-            )
-
-        @classproperty
-        @classmethod
-        def streaminfo(cls) -> re.Pattern[str]:
-            return re.compile(
-                r"Codec=(?P<Codec>[0-9]+),TimeBase=(?P<TimeBase>[0-9\/]+),Width=(?P<Width>[0-9]+),"
-                r"Height=(?P<Height>[0-9]+),Format=(?P<Format>[0-9a-zA-Z]+),ColorSpace=(?P<ColorSpace>[0-9]+)"
-            )
-
-    class StreamInfo(NamedTuple):
-        codec: int
-        timebase: Fraction
-        width: int
-        height: int
-        format: str
-        colorspace: Matrix
-
-    class Frame(NamedTuple):
-        idx: int
-        pos: int
-        pts: int
-        dts: int
-        edi: int
-        key: int
-        pic: int
-        poc: int
-        repeat: int
-        field: int
-
-    @classmethod
-    def from_file(
-        cls, file: FilePathType, ref_or_length: int | vs.VideoNode | None = None, *, func: FuncExcept | None = None
-    ) -> LWIndex:
-        func = func or cls.from_file
-
-        file = Path(str(file)).resolve()
-
-        length = ref_or_length.num_frames if isinstance(ref_or_length, vs.VideoNode) else ref_or_length
-
-        data = file.read_text("latin1").splitlines()
-
-        indexstart, indexend = data.index("</StreamInfo>") + 1, data.index("</LibavReaderIndex>")
-
-        if length and (idxlen := ((indexend - indexstart) // 2)) != length:
-            raise FramesLengthError(
-                func, "", "index file length mismatch with specified length!", reason={"index": idxlen, "clip": length}
-            )
-
-        sinfomatch = LWIndex.Regex.streaminfo.match(data[indexstart - 2])
-
-        assert sinfomatch
-
-        timebase_num, timebase_den = [int(i) for i in sinfomatch.group("TimeBase").split("/")]
-
-        streaminfo = LWIndex.StreamInfo(
-            int(sinfomatch.group("Codec")),
-            Fraction(timebase_num, timebase_den),
-            int(sinfomatch.group("Width")),
-            int(sinfomatch.group("Height")),
-            sinfomatch.group("Format"),
-            Matrix(int(sinfomatch.group("ColorSpace"))),
-        )
-
-        frames = list[LWIndex.Frame]()
-
-        for i in range(indexstart, indexend, 2):
-            match_first = LWIndex.Regex.frame_first.match(data[i])
-            match_second = LWIndex.Regex.frame_second.match(data[i + 1])
-
-            for match, keys in [
-                (match_first, ["Index", "POS", "PTS", "DTS", "EDI"]),
-                (match_second, ["Key", "Pic", "POC", "Repeat", "Field"]),
-            ]:
-                assert match
-
-                frames.append(LWIndex.Frame(*(int(match.group(x)) for x in keys)))
-
-        frames = sorted(frames, key=lambda x: x.pts)
-
-        keyframes = Keyframes(i for i, f in enumerate(frames) if f.key)
-
-        return LWIndex(streaminfo, frames, keyframes)
