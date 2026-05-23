@@ -48,6 +48,7 @@ class TensorRT(Backend):
 
     # Model Precision & Data Types
     fp16: bool = False
+    bf16: bool = False
     tf32: bool = False
 
     # Input Shapes & Optimization Profiles
@@ -70,6 +71,10 @@ class TensorRT(Backend):
 
     # Miscellaneous & Custom Settings
     custom_args: Sequence[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.fp16 and self.bf16:
+            raise ValueError("TensorRT does not support both fp16 and bf16")
 
     if TYPE_CHECKING:
         import tensorrt as trt
@@ -118,6 +123,8 @@ class TensorRT(Backend):
         """
         if self.fp16:
             network_path = self._convert_onnx_fp16(network_path)
+        elif self.bf16:
+            network_path = self._convert_onnx_bf16(network_path)
 
         dirname = get_engines_folder()
         dirname.mkdir(parents=True, exist_ok=True)
@@ -275,6 +282,39 @@ class TensorRT(Backend):
         onnx.save(model, fp16_path)
 
         return fp16_path
+
+    def _convert_onnx_bf16(self, network_path: Path) -> Path:
+        checksum = zlib.crc32(network_path.read_bytes())
+        dirname = network_path.parent
+        get_onnx_folder().mkdir(parents=True, exist_ok=True)
+
+        bf16_path = dirname / f"{network_path.stem}_{checksum:x}_bf16_io.onnx"
+
+        if bf16_path.is_file() and bf16_path.stat().st_size >= 1024:
+            return bf16_path
+
+        logger.info(f"Converting ONNX graph metadata to BFloat16 for: {network_path.name}")
+        model = onnx.load(network_path)
+        graph = model.graph
+
+        for tensor in graph.input:
+            if tensor.type.tensor_type.elem_type == onnx.TensorProto.FLOAT:
+                tensor.type.tensor_type.elem_type = onnx.TensorProto.BFLOAT16
+
+        for tensor in graph.output:
+            if tensor.type.tensor_type.elem_type == onnx.TensorProto.FLOAT:
+                tensor.type.tensor_type.elem_type = onnx.TensorProto.BFLOAT16
+
+        for tensor in graph.value_info:
+            if tensor.type.tensor_type.elem_type == onnx.TensorProto.FLOAT:
+                tensor.type.tensor_type.elem_type = onnx.TensorProto.BFLOAT16
+
+        for initializer in graph.initializer:
+            if initializer.data_type == onnx.TensorProto.FLOAT:
+                initializer.data_type = onnx.TensorProto.BFLOAT16
+
+        onnx.save(model, bf16_path)
+        return bf16_path
 
 
 @dataclass(kw_only=True, frozen=True)
