@@ -342,7 +342,15 @@ module = "tensorrt.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "tensorrt_bindings.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "tensorrt_rtx.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tensorrt_rtx_bindings.*"
 ignore_missing_imports = true
 
 [tool.ruff]
@@ -352,7 +360,16 @@ line-length = 120
 docstring-code-format = true
 
 [tool.ruff.lint]
-exclude = ["stubs/dfttest2.pyi", "stubs/vsmlrt.pyi"]
+exclude = [
+    "stubs/dfttest2.pyi",
+    "stubs/vsmlrt.pyi",
+    "stubs/tensorrt",
+    "stubs/tensorrt_bindings",
+    "stubs/tensorrt_libs",
+    "stubs/tensorrt_rtx",
+    "stubs/tensorrt_rtx_bindings",
+    "stubs/tensorrt_rtx_libs",
+]
 extend-select = [
     "E",
     "C4",
