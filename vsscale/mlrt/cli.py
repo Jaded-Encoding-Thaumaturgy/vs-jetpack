@@ -210,14 +210,7 @@ def _find_feed(name: str) -> Feed:
         console.print(f"[yellow]Available models: {', '.join(Feed.all_feeds)}[/yellow]")
         raise SystemExit(1)
 
-    feed_cls = Feed.all_feeds[matched_key]
-
-    if not feed_cls.available:
-        console.print(f"[yellow]{matched_key} models are not yet available for download.[/yellow]")
-        console.print("[dim]This feed requires model format conversion and is still being implemented.[/dim]")
-        raise SystemExit(0)
-
-    return feed_cls()
+    return Feed.all_feeds[matched_key]()
 
 
 async def _fetch_releases(feed: Feed) -> list[Release]:
@@ -252,14 +245,7 @@ async def _fetch_releases(feed: Feed) -> list[Release]:
 
 
 async def _select_model() -> Feed:
-    choices = [
-        quest.Choice(
-            title=f"{name}" + ("" if cls.available else " (not yet available)"),
-            value=name,
-            disabled=None if cls.available else "requires format conversion",
-        )
-        for name, cls in Feed.all_feeds.items()
-    ]
+    choices = [quest.Choice(title=f"{name}", value=name) for name, _ in Feed.all_feeds.items()]
 
     selected = await quest.select("Select an ONNX model to download:", choices=choices, qmark="📦").ask_async()
 
