@@ -1103,57 +1103,15 @@ class Waifu2x(_Waifu2xCunet):
     ```
     """
 
-    class AnimeStyleArt(BaseWaifu2x):
+    class UpConv7Art(BaseWaifu2x, BaseOnnxScalerRGB):
         """
-        Waifu2x model for anime-style art.
+        UpConv7 model variant optimized for anime-style art.
 
         Example usage:
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.AnimeStyleArt().supersample(clip, 2)
-        ```
-        """
-
-        _model = 0
-
-    class AnimeStyleArtRGB(BaseWaifu2x, BaseOnnxScalerRGB):
-        """
-        RGB version of the anime-style model.
-
-        Example usage:
-        ```py
-        from vsscale import Waifu2x
-
-        doubled = Waifu2x.AnimeStyleArtRGB().supersample(clip, 2)
-        ```
-        """
-
-        _model = 1
-
-    class Photo(BaseWaifu2x, BaseOnnxScalerRGB):
-        """
-        Waifu2x model trained on real-world photographic images.
-
-        Example usage:
-        ```py
-        from vsscale import Waifu2x
-
-        doubled = Waifu2x.Photo().supersample(clip, 2)
-        ```
-        """
-
-        _model = 2
-
-    class UpConv7AnimeStyleArt(BaseWaifu2x, BaseOnnxScalerRGB):
-        """
-        UpConv7 model variant optimized for anime-style images.
-
-        Example usage:
-        ```py
-        from vsscale import Waifu2x
-
-        doubled = Waifu2x.UpConv7AnimeStyleArt().supersample(clip, 2)
+        doubled = Waifu2x.UpConv7Art().supersample(clip, 2)
         ```
         """
 
@@ -1172,20 +1130,6 @@ class Waifu2x(_Waifu2xCunet):
         """
 
         _model = 4
-
-    class UpResNet10(BaseWaifu2x, BaseOnnxScalerRGB):
-        """
-        UpResNet10 model offering a balance of speed and quality.
-
-        Example usage:
-        ```py
-        from vsscale import Waifu2x
-
-        doubled = Waifu2x.UpResNet10().supersample(clip, 2)
-        ```
-        """
-
-        _model = 5
 
     class Cunet(_Waifu2xCunet):
         """
@@ -1226,20 +1170,6 @@ class Waifu2x(_Waifu2xCunet):
         """
 
         _model = 8
-
-    class SwinUnetPhotoV2(BaseWaifu2x, BaseOnnxScalerRGB):
-        """
-        Improved Swin-Unet model for photos (v2).
-
-        Example usage:
-        ```py
-        from vsscale import Waifu2x
-
-        doubled = Waifu2x.SwinUnetPhotoV2().supersample(clip, 2)
-        ```
-        """
-
-        _model = 9
 
     class SwinUnetArtScan(BaseWaifu2x, BaseOnnxScalerRGB):
         """
