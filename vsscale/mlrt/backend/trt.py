@@ -48,6 +48,7 @@ class TensorRT(Backend):
 
     # Model Precision & Data Types
     fp16: bool = False
+    fp16_node_block_list: Sequence[str] | None = None
     bf16: bool = False
     tf32: bool = False
 
@@ -262,22 +263,29 @@ class TensorRT(Backend):
         config.add_optimization_profile(profile)
 
     def _convert_onnx_fp16(self, network_path: Path) -> Path:
+        suffix = "fp16" if not self.fp16_node_block_list else f"fp16_block_{'_'.join(self.fp16_node_block_list)}"
+
         checksum = zlib.crc32(network_path.read_bytes())
         dirname = network_path.parent
 
         get_onnx_folder().mkdir(parents=True, exist_ok=True)
 
-        suffix = "_fp16_io"
-        fp16_path = dirname / f"{network_path.stem}_{checksum:x}{suffix}.onnx"
+        fp16_path = dirname / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
 
         if fp16_path.is_file() and fp16_path.stat().st_size >= 1024:
             return fp16_path
+
+        logger.info(f"Converting ONNX graph metadata to Float16 for: {network_path.name}")
 
         model = onnx.load(network_path)
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning, module=r"onnxconverter_common.*float16")
-            model = onnxcc.convert_float_to_float16(model, keep_io_types=False)
+            model = onnxcc.convert_float_to_float16(
+                model,
+                keep_io_types=False,
+                node_block_list=self.fp16_node_block_list,
+            )
 
         onnx.save(model, fp16_path)
 
