@@ -265,7 +265,10 @@ class CacheIndexer(Indexer):
 
         source_file = SPath(source_path).absolute()
         hashed_path = blake2s(source_file.to_str().encode("utf-8"), digest_size=4).hexdigest()
-        cache_filename = f"{source_file.name}_{hashed_path}.{ext.lstrip('.')}"
+        cache_filename = f"{source_file.name}_{hashed_path}"
+
+        if ext:
+            cache_filename = f"{cache_filename}.{ext.lstrip('.')}"
 
         storage = _get_indexer_cache_storage()
         return storage.get_file(cache_filename)
