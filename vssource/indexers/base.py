@@ -106,19 +106,6 @@ class Indexer(ABC):
         self.force = force
         self.indexer_kwargs = kwargs
 
-    def file_corrupted(self, index_path: SPathLike) -> None:
-        err_msg = f'Index file "{index_path}" is corrupted! Delete it and retry.'
-        index_path = SPath(index_path).absolute()
-
-        if self.force:
-            try:
-                index_path.unlink()
-                log.warning("%s: Corrupted index file deleted: %r", str(self.__class__), index_path)
-            except OSError:
-                raise CustomRuntimeError(err_msg, self.__class__)
-        else:
-            raise CustomRuntimeError(err_msg, self.__class__)
-
     @classmethod
     def from_param(
         cls, indexer: str | type[Self] | Self | None = None, /, func_except: FuncExcept | None = None
@@ -263,7 +250,7 @@ class CacheIndexer(Indexer):
     def get_cache_path(source_path: SPathLike, ext: str | None = None) -> SPath:
         from hashlib import blake2s
 
-        source_file = SPath(source_path).absolute()
+        source_file = SPath(source_path).resolve()
         hashed_path = blake2s(source_file.to_str().encode("utf-8"), digest_size=4).hexdigest()
         cache_filename = f"{source_file.name}_{hashed_path}"
 
@@ -380,6 +367,15 @@ class ExternalIndexer(Indexer):
 
     def get_idx_file_path(self, path: SPath) -> SPath:
         return path.with_suffix(f".{self.ext}")
+
+    def file_corrupted(self, index_path: SPath) -> None:
+        if self.force:
+            try:
+                index_path.unlink()
+            except OSError:
+                raise CustomRuntimeError("Index file corrupted, tried to delete it and failed.", self.__class__)
+        else:
+            raise CustomRuntimeError("Index file corrupted! Delete it and retry.", self.__class__)
 
     def index(
         self,

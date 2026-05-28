@@ -126,17 +126,6 @@ class FFMS2(CacheIndexer):
     _cache_arg_name = "cachefile"
     _ext = ".ffindex"
 
-    @classmethod
-    def source_func(cls, path: SPathLike, **kwargs: Any) -> vs.VideoNode:
-        try:
-            return super().source_func(path, **kwargs)
-        except Exception as e:
-            if "The index does not match the source file" in str(e):
-                cache_path = kwargs.get(cls._cache_arg_name) or cls.get_cache_path(path, cls._ext)
-                cls().file_corrupted(cache_path)
-                return super().source_func(path, **kwargs)
-            raise
-
 
 class ZipSource(Indexer):
     """
