@@ -25,7 +25,6 @@ class _CallbackModifyFrame(Protocol):
 @dataclass
 class AsyncRenderConf:
     n: int = 2
-    one_pix_frame: bool = False
     parallel_input: bool = False
 
 
@@ -115,9 +114,6 @@ def clip_async_render[T](
     else:
         async_conf = False if async_requests.n <= 1 else async_requests
 
-    if async_conf and async_conf.one_pix_frame and y4m:
-        raise CustomValueError("You cannot have y4m=True and one_pix_frame in AsyncRenderConf!")
-
     num_frames = len(clip)
 
     pr_update: Callable[[], None]
@@ -170,9 +166,6 @@ def clip_async_render[T](
 
             return _cb
 
-        if async_conf and async_conf.one_pix_frame and (clip.width != clip.height != 1):
-            clip = clip.std.CropAbs(1, 1)
-
         if not async_conf or async_conf.n == 1:
             blankclip = clip.std.BlankClip(keep=True)
 
@@ -191,9 +184,7 @@ def clip_async_render[T](
 
             blankclip = clip.std.BlankClip(length=chunk, keep=True)
 
-            stack = async_conf.parallel_input and not async_conf.one_pix_frame
-
-            if stack:
+            if async_conf.parallel_input:
                 rend_clip = vs.core.std.StackHorizontal(
                     [
                         blankclip.std.ModifyFrame(clip[chunk * i : chunk * (i + 1)], get_callback(chunk * i))
@@ -218,7 +209,7 @@ def clip_async_render[T](
 
             if cl != clip.num_frames:
                 rend_rest = blankclip[: clip.num_frames - cl].std.ModifyFrame(clip[cl:], get_callback(cl))
-                rend_clip = vs.core.std.Splice([rend_clip, rend_rest], stack)
+                rend_clip = vs.core.std.Splice([rend_clip, rend_rest], async_conf.parallel_input)
     else:
         rend_clip = clip
 
@@ -416,7 +407,7 @@ def find_prop(
 
     prop_src, callback = prop_compare_cb(src, prop, op, ref, return_frame_n=True)
 
-    aconf = AsyncRenderConf(async_requests, (prop_src.width, prop_src.height) == (1, 1), False)
+    aconf = AsyncRenderConf(async_requests, False)
 
     frames = clip_data_gather(prop_src, f"Searching {prop} {op} {ref}...", callback, aconf)
 
