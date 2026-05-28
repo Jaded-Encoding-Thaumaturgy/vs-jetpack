@@ -340,41 +340,22 @@ def prop_compare_cb(
     | tuple[vs.VideoNode, Callable[[int, vs.VideoFrame], int | SentinelT]]
 ):
     bool_check = isinstance(ref, bool)
-    one_pix = hasattr(vs.core, "akarin") and not (callable(op) or " " in prop)
     assert (op is None) if bool_check else (op is not None)
 
     if isinstance(op, str):
         assert op in _operators
 
-    if one_pix:
-        clip = (
-            vs.core.std.BlankClip(None, 1, 1, vs.GRAY8 if bool_check else vs.GRAYS, length=src.num_frames)
-            .std.CopyFrameProps(src)
-            .akarin.Expr(
-                f"x.{prop}" if bool_check else f"x.{prop} {ref} {_operators[op][1]}"  # type: ignore[index]
-            )
-        )
-        src = clip
+    op_ = _operators[op][0] if isinstance(op, str) else op
 
-        def _cb_one_px_return_frame_n(n: int, f: vs.VideoFrame) -> int | SentinelT:
-            return Sentinel.check(n, bool(f[0][0, 0]))
+    def _cb_return_frame_n(n: int, f: vs.VideoFrame) -> int | SentinelT:
+        assert op_
+        return Sentinel.check(n, op_(get_prop(f, prop, (float, bool)), ref))
 
-        def _cb_one_px_not_return_frame_n(n: int, f: vs.VideoFrame) -> bool:
-            return bool(f[0][0, 0])
+    def _cb_not_return_frame_n(n: int, f: vs.VideoFrame) -> bool:
+        assert op_
+        return op_(get_prop(f, prop, (float, bool)), ref)
 
-        callback = _cb_one_px_return_frame_n if return_frame_n else _cb_one_px_not_return_frame_n
-    else:
-        op_ = _operators[op][0] if isinstance(op, str) else op
-
-        def _cb_return_frame_n(n: int, f: vs.VideoFrame) -> int | SentinelT:
-            assert op_
-            return Sentinel.check(n, op_(get_prop(f, prop, (float, bool)), ref))
-
-        def _cb_not_return_frame_n(n: int, f: vs.VideoFrame) -> bool:
-            assert op_
-            return op_(get_prop(f, prop, (float, bool)), ref)
-
-        callback = _cb_return_frame_n if return_frame_n else _cb_not_return_frame_n
+    callback = _cb_return_frame_n if return_frame_n else _cb_not_return_frame_n
 
     return src, callback
 
