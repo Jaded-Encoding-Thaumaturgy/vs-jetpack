@@ -457,7 +457,7 @@ class Keyframes(list[int]):
             return -1
 
         frames = clip_async_render(clip, None, "Detecting scene changes...", check_props, **kwargs)
-        return cls(f for f in frames if f >= 0)
+        return cls(f for f in set(frames) if f >= 0)
 
     @classmethod
     def from_file(cls, file: str | os.PathLike[str]) -> Self:
