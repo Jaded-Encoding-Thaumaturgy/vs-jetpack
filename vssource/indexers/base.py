@@ -6,6 +6,7 @@ from functools import cache
 from logging import getLogger
 from os import name as os_name
 from typing import Any, ClassVar, Literal, Protocol, Self
+from hashlib import blake2s
 
 from jetpytools import (
     MISSING,
@@ -247,17 +248,21 @@ class CacheIndexer(Indexer):
     _ext: ClassVar[str | None]
 
     @staticmethod
-    def get_cache_path(file_name: SPathLike, ext: str | None = None) -> SPath:
+    def get_cache_path(source_path: SPathLike, ext: str | None = None) -> SPath:
         storage = _get_indexer_cache_storage()
 
-        return storage.get_file(file_name, ext=ext)
+        source_file = SPath(source_path).absolute()
+        hashed_path = blake2s(source_file.to_str().encode("utf-8"), digest_size=6).hexdigest()
+        cache_filename = f"{source_file.name}_{hashed_path}"
+
+        return storage.get_file(cache_filename, ext=ext)
 
     @classmethod
     def source_func(cls, path: SPathLike, **kwargs: Any) -> vs.VideoNode:
         path = SPath(path)
 
         if cls._cache_arg_name not in kwargs:
-            kwargs[cls._cache_arg_name] = cls.get_cache_path(path.name, cls._ext)
+            kwargs[cls._cache_arg_name] = cls.get_cache_path(path, cls._ext)
 
         return super().source_func(path, **kwargs)
 
