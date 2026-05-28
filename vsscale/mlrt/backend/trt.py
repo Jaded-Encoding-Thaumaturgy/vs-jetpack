@@ -4,7 +4,7 @@ import subprocess
 import warnings
 import zlib
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from importlib.util import find_spec
 from logging import getLogger
 from pathlib import Path
@@ -70,9 +70,6 @@ class TensorRT(Backend):
     max_num_tactics: int | None = None
     tiling_optimization_level: trt.TilingOptimizationLevel | trt_rtx.TilingOptimizationLevel | int = 0
     l2_limit_for_tiling: int = -1
-
-    # Miscellaneous & Custom Settings
-    custom_args: Sequence[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if self.fp16 and self.bf16:
@@ -272,14 +269,11 @@ class TensorRT(Backend):
         config.add_optimization_profile(profile)
 
     def _convert_onnx_fp16(self, network_path: Path) -> Path:
-        suffix = "fp16" if not self.fp16_node_block_list else f"fp16_block_{'_'.join(self.fp16_node_block_list)}"
-
-        checksum = zlib.crc32(network_path.read_bytes())
-        dirname = network_path.parent
-
         get_onnx_folder().mkdir(parents=True, exist_ok=True)
 
-        fp16_path = dirname / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
+        suffix = "fp16" if not self.fp16_node_block_list else f"fp16_block_{'_'.join(self.fp16_node_block_list)}"
+        checksum = zlib.crc32(network_path.read_bytes())
+        fp16_path = network_path.parent / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
 
         if fp16_path.is_file() and fp16_path.stat().st_size >= 1024:
             return fp16_path
@@ -301,11 +295,10 @@ class TensorRT(Backend):
         return fp16_path
 
     def _convert_onnx_bf16(self, network_path: Path) -> Path:
-        checksum = zlib.crc32(network_path.read_bytes())
-        dirname = network_path.parent
         get_onnx_folder().mkdir(parents=True, exist_ok=True)
 
-        bf16_path = dirname / f"{network_path.stem}_{checksum:x}_bf16_io.onnx"
+        checksum = zlib.crc32(network_path.read_bytes())
+        bf16_path = network_path.parent / f"{network_path.stem}_{checksum:x}_bf16_io.onnx"
 
         if bf16_path.is_file() and bf16_path.stat().st_size >= 1024:
             return bf16_path
