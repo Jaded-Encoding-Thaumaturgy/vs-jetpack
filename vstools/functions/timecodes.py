@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Literal, Self, cast, overload
 
 from jetpytools import (
+    CustomRuntimeError,
     CustomValueError,
     FilePathType,
     FuncExcept,
@@ -17,7 +18,6 @@ from jetpytools import (
     SPath,
     check_perms,
     fallback,
-    to_arr,
 )
 
 from ..exceptions import FramesLengthError, UnsupportedTimecodeVersionError
@@ -428,7 +428,7 @@ class Keyframes(list[int]):
         out_path.write_text("\n".join(out_text))
 
     @classmethod
-    def from_clip(cls, clip: vs.VideoNode, prop_key: str | Iterable[str] | None = None, **kwargs: Any) -> Self:
+    def from_clip(cls, clip: vs.VideoNode, **kwargs: Any) -> Self:
         """
         Create a Keyframes object from a clip by checking frame props.
 
@@ -436,31 +436,31 @@ class Keyframes(list[int]):
 
         Args:
             clip: Clip to get keyframes from.
-            prop_key: Additional props key(s) to use for detecting scene changes.
             **kwargs: Additional keyword arguments to pass to clip_async_render.
 
         Returns:
             Keyframes from the clip.
         """
-        props_key = to_arr(prop_key) if prop_key else []
 
         def check_props(n: int, f: vs.VideoFrame) -> int:
-            if f.props.get("_SceneChangePrev"):
+            sc_next = f.props.get("_SceneChangeNext")
+            sc_prev = f.props.get("_SceneChangePrev")
+
+            if sc_next is None and sc_prev is None:
+                raise CustomRuntimeError("No scenechange props are present!", cls)
+
+            if sc_next:
+                return n + 1
+            if sc_prev:
                 return n
 
-            if f.props.get("_SceneChangeNext"):
-                return n + 1
-
-            for key in props_key:
-                if f.props.get(key):
-                    return n
             return -1
 
         frames = clip_async_render(clip, None, "Detecting scene changes...", check_props, **kwargs)
         return cls(f for f in frames if f >= 0)
 
     @classmethod
-    def from_file(cls, file: str | os.PathLike[str], **kwargs: Any) -> Self:
+    def from_file(cls, file: str | os.PathLike[str]) -> Self:
         file = SPath(file).resolve()
 
         if not file.exists():
@@ -493,7 +493,7 @@ class Keyframes(list[int]):
         return cls(param)
 
     @classmethod
-    def unique(cls, clip: vs.VideoNode, key: str, prop_key: str = "_SceneChangePrev", **kwargs: Any) -> Self:
+    def unique(cls, clip: vs.VideoNode, key: str, **kwargs: Any) -> Self:
         """
         Get the keyframes from a clip and write them to a file.
 
@@ -514,7 +514,6 @@ class Keyframes(list[int]):
         Args:
             clip: The clip to get keyframes from.
             key: A prefix for the filename.
-            prop_key: Property key to use for detecting scene changes.
             **kwargs: Additional keyword arguments passed to
                 [vstools.Keyframes.from_file][] or [vstools.Keyframes.from_clip][].
 
@@ -529,7 +528,7 @@ class Keyframes(list[int]):
 
             file.unlink()
 
-        keyframes = cls.from_clip(clip, prop_key, **kwargs)
+        keyframes = cls.from_clip(clip, **kwargs)
         keyframes.to_file(file, force=True)
 
         return keyframes
