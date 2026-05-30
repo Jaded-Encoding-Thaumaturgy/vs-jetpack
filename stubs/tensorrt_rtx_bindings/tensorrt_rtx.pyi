@@ -9,11 +9,12 @@ __all__: list[str] = [
     "APILanguage",
     "ActivationType",
     "AllocatorFlag",
+    "AttentionIOForm",
     "AttentionNormalizationOp",
     "BoundingBoxFormat",
     "Builder",
     "BuilderFlag",
-    "CalibrationAlgoType",
+    "CausalMaskKind",
     "CollectiveOperation",
     "ComputeCapability",
     "CudaGraphStrategy",
@@ -43,11 +44,6 @@ __all__: list[str] = [
     "GatherMode",
     "HardwareCompatibilityLevel",
     "IActivationLayer",
-    "IAlgorithm",
-    "IAlgorithmContext",
-    "IAlgorithmIOInfo",
-    "IAlgorithmSelector",
-    "IAlgorithmVariant",
     "IAssertionLayer",
     "IAttention",
     "IAttentionBoundaryLayer",
@@ -83,11 +79,6 @@ __all__: list[str] = [
     "IIfConditionalBoundaryLayer",
     "IIfConditionalInputLayer",
     "IIfConditionalOutputLayer",
-    "IInt8Calibrator",
-    "IInt8EntropyCalibrator",
-    "IInt8EntropyCalibrator2",
-    "IInt8LegacyCalibrator",
-    "IInt8MinMaxCalibrator",
     "IIteratorLayer",
     "IKVCacheUpdateLayer",
     "ILRNLayer",
@@ -150,7 +141,6 @@ __all__: list[str] = [
     "ISliceLayer",
     "ISoftMaxLayer",
     "ISqueezeLayer",
-    "IStreamReader",
     "IStreamReaderV2",
     "IStreamWriter",
     "ITensor",
@@ -191,7 +181,6 @@ __all__: list[str] = [
     "PreviewFeature",
     "Profiler",
     "ProfilingVerbosity",
-    "QuantizationFlag",
     "ReduceOperation",
     "Refitter",
     "ResizeCoordinateTransformation",
@@ -360,6 +349,41 @@ class AllocatorFlag:
     @property
     def value(self) -> int: ...
 
+class AttentionIOForm:
+    """
+
+        The layout of the input/output tensors in an Attention or KVCacheUpdate layer.
+
+        - PADDED_BHND: All batches padded to maximum length. Shape is [batch_size, num_heads, num_tokens, head_dim].
+        - PACKED_NHD: All batches concatenated without padding. Shape is [total_tokens, num_heads, head_dim].
+          When used, a corresponding cumulative lengths tensor (query_lengths / key_value_lengths / update_lengths) must be provided.
+
+
+    Members:
+
+      PADDED_BHND : All batches padded to the maximum length. Shape is [batch_size, num_heads, num_tokens, head_dim].
+
+      PACKED_NHD : All batches concatenated without padding. Shape is [total_tokens, num_heads, head_dim]. Requires a cumulative lengths tensor.
+    """
+
+    PACKED_NHD: typing.ClassVar[AttentionIOForm]  # value = <AttentionIOForm.PACKED_NHD: 1>
+    PADDED_BHND: typing.ClassVar[AttentionIOForm]  # value = <AttentionIOForm.PADDED_BHND: 0>
+    __members__: typing.ClassVar[
+        dict[str, AttentionIOForm]
+    ]  # value = {'PADDED_BHND': <AttentionIOForm.PADDED_BHND: 0>, 'PACKED_NHD': <AttentionIOForm.PACKED_NHD: 1>}
+    def __eq__(self, other: object) -> builtins.bool: ...
+    def __getstate__(self) -> int: ...
+    def __hash__(self) -> int: ...
+    def __index__(self) -> int: ...
+    def __init__(self, value: typing.SupportsInt) -> None: ...
+    def __int__(self) -> int: ...
+    def __ne__(self, other: object) -> builtins.bool: ...
+    def __setstate__(self, state: typing.SupportsInt) -> None: ...
+    @property
+    def name(self) -> str: ...
+    @property
+    def value(self) -> int: ...
+
 class AttentionNormalizationOp:
     """
     The normalization operations that may be performed by an Attention layer
@@ -425,9 +449,6 @@ class Builder:
 
     Builds an :class:`ICudaEngine` from a :class:`INetworkDefinition` .
 
-    :ivar platform_has_tf32: :class:`builtins.bool` Whether the platform has tf32 support.
-    :ivar platform_has_fast_fp16: :class:`builtins.bool` Whether the platform has fast native fp16.
-    :ivar platform_has_fast_int8: :class:`builtins.bool` Whether the platform has fast native int8.
     :ivar max_DLA_batch_size: :class:`int` The maximum batch size DLA can support. For any tensor the total volume of index dimensions combined(dimensions other than CHW) with the requested batch size should not exceed the value returned by this function.
     :ivar num_DLA_cores: :class:`int` The number of DLA engines available to this builder.
     :ivar error_recorder: :class:`IErrorRecorder` Application-implemented error reporting interface for TensorRT objects.
@@ -546,15 +567,6 @@ class BuilderFlag:
 
     Members:
 
-      FP16 : Enable FP16 layer selection.
-                    [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
-
-      BF16 : Enable BF16 layer selection.
-                   [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
-
-      INT8 : Enable Int8 layer selection.
-                   [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
-
       DEBUG : Enable debugging of layers via synchronizing after every layer
 
       GPU_FALLBACK : Enable layers marked to execute on GPU if layer cannot execute on DLA
@@ -572,31 +584,16 @@ class BuilderFlag:
       SAFETY_SCOPE : Change the allowed parameters in the EngineCapability.STANDARD flow to match the restrictions that EngineCapability.SAFETY check against for DeviceType.GPU and EngineCapability.DLA_STANDALONE check against the DeviceType.DLA case. This flag is forced to true if EngineCapability.SAFETY at build time if it is unset.
                    [DEPRECATED] Deprecated in TensorRT 10.16. In EngineCapability.STANDARD flow, safety restrictions are no longer supported. In EngineCapability.SAFETY and EngineCapability.DLA_STANDALONE flows, restrictions are enforced natively. This flag is retained for API compatibility but is ignored.
 
-      OBEY_PRECISION_CONSTRAINTS : Require that layers execute in specified precisions. Build fails otherwise.
-                   [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
-
-      PREFER_PRECISION_CONSTRAINTS : Prefer that layers execute in specified precisions. Fall back (with warning) to another precision if build would otherwise fail.
-                   [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
-
       DIRECT_IO : Require that no reformats be inserted between a layer and a network I/O tensor for which ``ITensor.allowed_formats`` was set. Build fails if a reformat is required for functional correctness.
                    [DEPRECATED] Deprecated in TensorRT 10.7.)
-
-      REJECT_EMPTY_ALGORITHMS : [DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead. Fail if IAlgorithmSelector.select_algorithms returns an empty set of algorithms.
 
       VERSION_COMPATIBLE : Restrict to lean runtime operators to provide version forward compatibility for the plan files.
 
       EXCLUDE_LEAN_RUNTIME : Exclude lean runtime from the plan.
 
-      FP8 : Enable plugins with FP8 input/output
-        [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
-
       ERROR_ON_TIMING_CACHE_MISS : Emit error when a tactic being timed is not present in the timing cache.
 
       DISABLE_COMPILATION_CACHE : Disable caching JIT compilation results during engine build.
-
-      WEIGHTLESS : Strip the perf-irrelevant weights from the plan file, update them later using refitting for better file size.
-                   [DEPRECATED] Deprecated in TensorRT 10.0.
-
 
       STRIP_PLAN : Strip the refittable weights from the engine plan file.
 
@@ -604,17 +601,11 @@ class BuilderFlag:
 
       WEIGHT_STREAMING : Enable building with the ability to stream varying amounts of weights during Runtime. This decreases GPU memory of TRT at the expense of performance.
 
-      INT4 : Enable plugins with INT4 input/output
-                   [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
-
       REFIT_INDIVIDUAL : Create a refittable engine and allows the users to specify which weights are refittable and which are not.
 
       STRICT_NANS : Disable floating-point optimizations: 0*x => 0, x-x => 0, or x/x => 1. These identities are not true when x is a NaN or Inf, and thus might hide propagation or generation of NaNs.
 
       MONITOR_MEMORY : Enable memory monitor during build time.
-
-      FP4 : Enable plugins with FP4 input/output
-                   [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
 
       DISTRIBUTIVE_INDEPENDENCE : Enable distributive independence.
 
@@ -626,40 +617,30 @@ class BuilderFlag:
         runtime allocation. If such operations are present, the engine build will fail with an error message.
     """
 
-    BF16: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.BF16: 17>
     DEBUG: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.DEBUG: 2>
     DIRECT_IO: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.DIRECT_IO: 11>
-    DISABLE_COMPILATION_CACHE: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.DISABLE_COMPILATION_CACHE: 18>
+    DISABLE_COMPILATION_CACHE: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.DISABLE_COMPILATION_CACHE: 17>
     DISABLE_TIMING_CACHE: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.DISABLE_TIMING_CACHE: 5>
-    DISTRIBUTIVE_INDEPENDENCE: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.DISTRIBUTIVE_INDEPENDENCE: 28>
-    EDITABLE_TIMING_CACHE: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.EDITABLE_TIMING_CACHE: 27>
-    ERROR_ON_TIMING_CACHE_MISS: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.ERROR_ON_TIMING_CACHE_MISS: 16>
-    EXCLUDE_LEAN_RUNTIME: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.EXCLUDE_LEAN_RUNTIME: 14>
-    FP16: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.FP16: 0>
-    FP4: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.FP4: 26>
-    FP8: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.FP8: 15>
+    DISTRIBUTIVE_INDEPENDENCE: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.DISTRIBUTIVE_INDEPENDENCE: 27>
+    EDITABLE_TIMING_CACHE: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.EDITABLE_TIMING_CACHE: 26>
+    ERROR_ON_TIMING_CACHE_MISS: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.ERROR_ON_TIMING_CACHE_MISS: 15>
+    EXCLUDE_LEAN_RUNTIME: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.EXCLUDE_LEAN_RUNTIME: 13>
     GPU_FALLBACK: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.GPU_FALLBACK: 3>
-    INT4: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.INT4: 22>
-    INT8: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.INT8: 1>
-    MONITOR_MEMORY: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.MONITOR_MEMORY: 25>
-    OBEY_PRECISION_CONSTRAINTS: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.OBEY_PRECISION_CONSTRAINTS: 9>
-    PREFER_PRECISION_CONSTRAINTS: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.PREFER_PRECISION_CONSTRAINTS: 10>
+    MONITOR_MEMORY: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.MONITOR_MEMORY: 24>
     REFIT: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.REFIT: 4>
-    REFIT_IDENTICAL: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.REFIT_IDENTICAL: 20>
-    REFIT_INDIVIDUAL: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.REFIT_INDIVIDUAL: 23>
-    REJECT_EMPTY_ALGORITHMS: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.REJECT_EMPTY_ALGORITHMS: 12>
-    REQUIRE_USER_ALLOCATION: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.REQUIRE_USER_ALLOCATION: 29>
+    REFIT_IDENTICAL: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.REFIT_IDENTICAL: 19>
+    REFIT_INDIVIDUAL: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.REFIT_INDIVIDUAL: 22>
+    REQUIRE_USER_ALLOCATION: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.REQUIRE_USER_ALLOCATION: 28>
     SAFETY_SCOPE: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.SAFETY_SCOPE: 8>
     SPARSE_WEIGHTS: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.SPARSE_WEIGHTS: 7>
-    STRICT_NANS: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.STRICT_NANS: 24>
-    STRIP_PLAN: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.WEIGHTLESS: 19>
+    STRICT_NANS: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.STRICT_NANS: 23>
+    STRIP_PLAN: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.STRIP_PLAN: 18>
     TF32: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.TF32: 6>
-    VERSION_COMPATIBLE: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.VERSION_COMPATIBLE: 13>
-    WEIGHTLESS: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.WEIGHTLESS: 19>
-    WEIGHT_STREAMING: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.WEIGHT_STREAMING: 21>
+    VERSION_COMPATIBLE: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.VERSION_COMPATIBLE: 12>
+    WEIGHT_STREAMING: typing.ClassVar[BuilderFlag]  # value = <BuilderFlag.WEIGHT_STREAMING: 20>
     __members__: typing.ClassVar[
         dict[str, BuilderFlag]
-    ]  # value = {'FP16': <BuilderFlag.FP16: 0>, 'BF16': <BuilderFlag.BF16: 17>, 'INT8': <BuilderFlag.INT8: 1>, 'DEBUG': <BuilderFlag.DEBUG: 2>, 'GPU_FALLBACK': <BuilderFlag.GPU_FALLBACK: 3>, 'REFIT': <BuilderFlag.REFIT: 4>, 'DISABLE_TIMING_CACHE': <BuilderFlag.DISABLE_TIMING_CACHE: 5>, 'EDITABLE_TIMING_CACHE': <BuilderFlag.EDITABLE_TIMING_CACHE: 27>, 'TF32': <BuilderFlag.TF32: 6>, 'SPARSE_WEIGHTS': <BuilderFlag.SPARSE_WEIGHTS: 7>, 'SAFETY_SCOPE': <BuilderFlag.SAFETY_SCOPE: 8>, 'OBEY_PRECISION_CONSTRAINTS': <BuilderFlag.OBEY_PRECISION_CONSTRAINTS: 9>, 'PREFER_PRECISION_CONSTRAINTS': <BuilderFlag.PREFER_PRECISION_CONSTRAINTS: 10>, 'DIRECT_IO': <BuilderFlag.DIRECT_IO: 11>, 'REJECT_EMPTY_ALGORITHMS': <BuilderFlag.REJECT_EMPTY_ALGORITHMS: 12>, 'VERSION_COMPATIBLE': <BuilderFlag.VERSION_COMPATIBLE: 13>, 'EXCLUDE_LEAN_RUNTIME': <BuilderFlag.EXCLUDE_LEAN_RUNTIME: 14>, 'FP8': <BuilderFlag.FP8: 15>, 'ERROR_ON_TIMING_CACHE_MISS': <BuilderFlag.ERROR_ON_TIMING_CACHE_MISS: 16>, 'DISABLE_COMPILATION_CACHE': <BuilderFlag.DISABLE_COMPILATION_CACHE: 18>, 'WEIGHTLESS': <BuilderFlag.WEIGHTLESS: 19>, 'STRIP_PLAN': <BuilderFlag.WEIGHTLESS: 19>, 'REFIT_IDENTICAL': <BuilderFlag.REFIT_IDENTICAL: 20>, 'WEIGHT_STREAMING': <BuilderFlag.WEIGHT_STREAMING: 21>, 'INT4': <BuilderFlag.INT4: 22>, 'REFIT_INDIVIDUAL': <BuilderFlag.REFIT_INDIVIDUAL: 23>, 'STRICT_NANS': <BuilderFlag.STRICT_NANS: 24>, 'MONITOR_MEMORY': <BuilderFlag.MONITOR_MEMORY: 25>, 'FP4': <BuilderFlag.FP4: 26>, 'DISTRIBUTIVE_INDEPENDENCE': <BuilderFlag.DISTRIBUTIVE_INDEPENDENCE: 28>, 'REQUIRE_USER_ALLOCATION': <BuilderFlag.REQUIRE_USER_ALLOCATION: 29>}
+    ]  # value = {'DEBUG': <BuilderFlag.DEBUG: 2>, 'GPU_FALLBACK': <BuilderFlag.GPU_FALLBACK: 3>, 'REFIT': <BuilderFlag.REFIT: 4>, 'DISABLE_TIMING_CACHE': <BuilderFlag.DISABLE_TIMING_CACHE: 5>, 'EDITABLE_TIMING_CACHE': <BuilderFlag.EDITABLE_TIMING_CACHE: 26>, 'TF32': <BuilderFlag.TF32: 6>, 'SPARSE_WEIGHTS': <BuilderFlag.SPARSE_WEIGHTS: 7>, 'SAFETY_SCOPE': <BuilderFlag.SAFETY_SCOPE: 8>, 'DIRECT_IO': <BuilderFlag.DIRECT_IO: 11>, 'VERSION_COMPATIBLE': <BuilderFlag.VERSION_COMPATIBLE: 12>, 'EXCLUDE_LEAN_RUNTIME': <BuilderFlag.EXCLUDE_LEAN_RUNTIME: 13>, 'ERROR_ON_TIMING_CACHE_MISS': <BuilderFlag.ERROR_ON_TIMING_CACHE_MISS: 15>, 'DISABLE_COMPILATION_CACHE': <BuilderFlag.DISABLE_COMPILATION_CACHE: 17>, 'STRIP_PLAN': <BuilderFlag.STRIP_PLAN: 18>, 'REFIT_IDENTICAL': <BuilderFlag.REFIT_IDENTICAL: 19>, 'WEIGHT_STREAMING': <BuilderFlag.WEIGHT_STREAMING: 20>, 'REFIT_INDIVIDUAL': <BuilderFlag.REFIT_INDIVIDUAL: 22>, 'STRICT_NANS': <BuilderFlag.STRICT_NANS: 23>, 'MONITOR_MEMORY': <BuilderFlag.MONITOR_MEMORY: 24>, 'DISTRIBUTIVE_INDEPENDENCE': <BuilderFlag.DISTRIBUTIVE_INDEPENDENCE: 27>, 'REQUIRE_USER_ALLOCATION': <BuilderFlag.REQUIRE_USER_ALLOCATION: 28>}
     def __eq__(self, other: object) -> builtins.bool: ...
     def __ge__(self, other: typing.Any) -> builtins.bool: ...
     def __getstate__(self) -> int: ...
@@ -677,34 +658,32 @@ class BuilderFlag:
     @property
     def value(self) -> int: ...
 
-class CalibrationAlgoType:
+class CausalMaskKind:
     """
 
-        [DEPRECATED] Deprecated in TensorRT 10.1. Superseded by explicit quantization.
+        The causal mask alignment orientation for the attention.
 
-        Version of calibration algorithm to use.
+        When s_q == s_kv, both UPPER_LEFT and LOWER_RIGHT produce identical triangular masks.
+        When s_q != s_kv (e.g., during LLM generation where s_q=1 and s_kv grows):
+        - UPPER_LEFT: Diagonal anchored at top-left corner (j <= i). Query tokens attend only to the earliest cache positions.
+        - LOWER_RIGHT: Diagonal anchored at bottom-right corner (j <= i + (s_kv - s_q)). Query tokens attend to all preceding context, which is the correct behavior for autoregressive generation.
 
 
     Members:
 
-      LEGACY_CALIBRATION
+      NONE : No causal masking applied.
 
-      ENTROPY_CALIBRATION
+      UPPER_LEFT : Diagonal anchored at top-left corner (legacy default when causal=true).
 
-      ENTROPY_CALIBRATION_2
-
-      MINMAX_CALIBRATION
+      LOWER_RIGHT : Diagonal anchored at bottom-right corner (decode-aligned semantics).
     """
 
-    ENTROPY_CALIBRATION: typing.ClassVar[CalibrationAlgoType]  # value = <CalibrationAlgoType.ENTROPY_CALIBRATION: 1>
-    ENTROPY_CALIBRATION_2: typing.ClassVar[
-        CalibrationAlgoType
-    ]  # value = <CalibrationAlgoType.ENTROPY_CALIBRATION_2: 2>
-    LEGACY_CALIBRATION: typing.ClassVar[CalibrationAlgoType]  # value = <CalibrationAlgoType.LEGACY_CALIBRATION: 0>
-    MINMAX_CALIBRATION: typing.ClassVar[CalibrationAlgoType]  # value = <CalibrationAlgoType.MINMAX_CALIBRATION: 3>
+    LOWER_RIGHT: typing.ClassVar[CausalMaskKind]  # value = <CausalMaskKind.LOWER_RIGHT: 2>
+    NONE: typing.ClassVar[CausalMaskKind]  # value = <CausalMaskKind.NONE: 0>
+    UPPER_LEFT: typing.ClassVar[CausalMaskKind]  # value = <CausalMaskKind.UPPER_LEFT: 1>
     __members__: typing.ClassVar[
-        dict[str, CalibrationAlgoType]
-    ]  # value = {'LEGACY_CALIBRATION': <CalibrationAlgoType.LEGACY_CALIBRATION: 0>, 'ENTROPY_CALIBRATION': <CalibrationAlgoType.ENTROPY_CALIBRATION: 1>, 'ENTROPY_CALIBRATION_2': <CalibrationAlgoType.ENTROPY_CALIBRATION_2: 2>, 'MINMAX_CALIBRATION': <CalibrationAlgoType.MINMAX_CALIBRATION: 3>}
+        dict[str, CausalMaskKind]
+    ]  # value = {'NONE': <CausalMaskKind.NONE: 0>, 'UPPER_LEFT': <CausalMaskKind.UPPER_LEFT: 1>, 'LOWER_RIGHT': <CausalMaskKind.LOWER_RIGHT: 2>}
     def __eq__(self, other: object) -> builtins.bool: ...
     def __getstate__(self) -> int: ...
     def __hash__(self) -> int: ...
@@ -733,16 +712,25 @@ class CollectiveOperation:
       REDUCE : Reduce collective operation
 
       REDUCE_SCATTER : Reduce scatter collective operation
+
+      ALL_TO_ALL : All-to-all collective operation
+
+      GATHER : Gather collective operation
+
+      SCATTER : Scatter collective operation
     """
 
     ALL_GATHER: typing.ClassVar[CollectiveOperation]  # value = <CollectiveOperation.ALL_GATHER: 1>
     ALL_REDUCE: typing.ClassVar[CollectiveOperation]  # value = <CollectiveOperation.ALL_REDUCE: 0>
+    ALL_TO_ALL: typing.ClassVar[CollectiveOperation]  # value = <CollectiveOperation.ALL_TO_ALL: 5>
     BROADCAST: typing.ClassVar[CollectiveOperation]  # value = <CollectiveOperation.BROADCAST: 2>
+    GATHER: typing.ClassVar[CollectiveOperation]  # value = <CollectiveOperation.GATHER: 6>
     REDUCE: typing.ClassVar[CollectiveOperation]  # value = <CollectiveOperation.REDUCE: 3>
     REDUCE_SCATTER: typing.ClassVar[CollectiveOperation]  # value = <CollectiveOperation.REDUCE_SCATTER: 4>
+    SCATTER: typing.ClassVar[CollectiveOperation]  # value = <CollectiveOperation.SCATTER: 7>
     __members__: typing.ClassVar[
         dict[str, CollectiveOperation]
-    ]  # value = {'ALL_REDUCE': <CollectiveOperation.ALL_REDUCE: 0>, 'ALL_GATHER': <CollectiveOperation.ALL_GATHER: 1>, 'BROADCAST': <CollectiveOperation.BROADCAST: 2>, 'REDUCE': <CollectiveOperation.REDUCE: 3>, 'REDUCE_SCATTER': <CollectiveOperation.REDUCE_SCATTER: 4>}
+    ]  # value = {'ALL_REDUCE': <CollectiveOperation.ALL_REDUCE: 0>, 'ALL_GATHER': <CollectiveOperation.ALL_GATHER: 1>, 'BROADCAST': <CollectiveOperation.BROADCAST: 2>, 'REDUCE': <CollectiveOperation.REDUCE: 3>, 'REDUCE_SCATTER': <CollectiveOperation.REDUCE_SCATTER: 4>, 'ALL_TO_ALL': <CollectiveOperation.ALL_TO_ALL: 5>, 'GATHER': <CollectiveOperation.GATHER: 6>, 'SCATTER': <CollectiveOperation.SCATTER: 7>}
     def __eq__(self, other: object) -> builtins.bool: ...
     def __getstate__(self) -> int: ...
     def __hash__(self) -> int: ...
@@ -790,18 +778,23 @@ class ComputeCapability:
 
       SM120 :
         Target NVIDIA Blackwell GPU architecture (SM 12.0).
+
+
+      SM121 :
+        Target NVIDIA GB10 GPU (SM 12.1).
     """
 
     CURRENT: typing.ClassVar[ComputeCapability]  # value = <ComputeCapability.CURRENT: 1>
     NONE: typing.ClassVar[ComputeCapability]  # value = <ComputeCapability.NONE: 0>
     SM120: typing.ClassVar[ComputeCapability]  # value = <ComputeCapability.SM120: 120>
+    SM121: typing.ClassVar[ComputeCapability]  # value = <ComputeCapability.SM121: 121>
     SM75: typing.ClassVar[ComputeCapability]  # value = <ComputeCapability.SM75: 75>
     SM80: typing.ClassVar[ComputeCapability]  # value = <ComputeCapability.SM80: 80>
     SM86: typing.ClassVar[ComputeCapability]  # value = <ComputeCapability.SM86: 86>
     SM89: typing.ClassVar[ComputeCapability]  # value = <ComputeCapability.SM89: 89>
     __members__: typing.ClassVar[
         dict[str, ComputeCapability]
-    ]  # value = {'NONE': <ComputeCapability.NONE: 0>, 'CURRENT': <ComputeCapability.CURRENT: 1>, 'SM75': <ComputeCapability.SM75: 75>, 'SM80': <ComputeCapability.SM80: 80>, 'SM86': <ComputeCapability.SM86: 86>, 'SM89': <ComputeCapability.SM89: 89>, 'SM120': <ComputeCapability.SM120: 120>}
+    ]  # value = {'NONE': <ComputeCapability.NONE: 0>, 'CURRENT': <ComputeCapability.CURRENT: 1>, 'SM75': <ComputeCapability.SM75: 75>, 'SM80': <ComputeCapability.SM80: 80>, 'SM86': <ComputeCapability.SM86: 86>, 'SM89': <ComputeCapability.SM89: 89>, 'SM120': <ComputeCapability.SM120: 120>, 'SM121': <ComputeCapability.SM121: 121>}
     def __eq__(self, other: object) -> builtins.bool: ...
     def __getstate__(self) -> int: ...
     def __hash__(self) -> int: ...
@@ -1823,163 +1816,6 @@ class IActivationLayer(ILayer):
     @beta.setter
     def beta(self, arg1: typing.SupportsFloat) -> None: ...
 
-class IAlgorithm:
-    """
-
-        [DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead.
-        Application-implemented interface for selecting and reporting the tactic selection of a layer.
-        Tactic Selection is a step performed by the builder for deciding best algorithms for a layer.
-
-    :ivar algorithm_variant: :class:`IAlgorithmVariant&`  the algorithm variant.
-    :ivar timing_msec: :class:`float` The time in milliseconds to execute the algorithm.
-    :ivar workspace_size: :class:`int` The size of the GPU temporary memory in bytes which the algorithm uses at execution time.
-    """
-    def get_algorithm_io_info(self, index: typing.SupportsInt) -> IAlgorithmIOInfo:
-        """
-        [DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead.
-        A single call for both inputs and outputs. Incremental numbers assigned to indices of inputs and the outputs.
-
-        :arg index: Index of the input or output of the algorithm. Incremental numbers assigned to indices of inputs and the outputs.
-
-        :returns: A :class:`IAlgorithmIOInfo&`
-        """
-    @property
-    def algorithm_variant(self) -> IAlgorithmVariant: ...
-    @property
-    def timing_msec(self) -> float: ...
-    @property
-    def workspace_size(self) -> int: ...
-
-class IAlgorithmContext:
-    """
-
-    [DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead.
-    Describes the context and requirements, that could be fulfilled by one or
-    more instances of IAlgorithm.
-    see IAlgorithm
-
-    :ivar name: :class:`str` name of the algorithm node.
-    :ivar num_inputs: :class:`int`  number of inputs of the algorithm.
-    :ivar num_outputs: :class:`int` number of outputs of the algorithm.
-    """
-    def get_shape(self, index: typing.SupportsInt) -> list[Dims]:
-        """
-        [DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead.
-        Get the minimum / optimum / maximum dimensions for a dynamic input tensor.
-
-        :arg index: Index of the input or output of the algorithm. Incremental numbers assigned to indices of inputs and the outputs.
-
-        :returns: A `List[Dims]` of length 3, containing the minimum, optimum, and maximum shapes, in that order. If the shapes have not been set yet, an empty list is returned.`
-        """
-    @property
-    def name(self) -> str: ...
-    @property
-    def num_inputs(self) -> int: ...
-    @property
-    def num_outputs(self) -> int: ...
-
-class IAlgorithmIOInfo:
-    """
-
-    [DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead.
-    This class carries information about input or output of the algorithm.
-    IAlgorithmIOInfo for all the input and output along with IAlgorithmVariant denotes the variation of algorithm
-    and can be used to select or reproduce an algorithm using IAlgorithmSelector.select_algorithms().
-
-    :ivar dtype: :class:`DataType`  DataType of the input/output of algorithm.
-    :ivar strides: :class:`Dims` strides of the input/output tensor of algorithm.
-    :ivar vectorized_dim: :class:`int` the index of the vectorized dimension or -1 for non-vectorized formats.
-    :ivar components_per_element: :class:`int` the number of components per element. This is always 1 for non-vectorized formats.
-    """
-    @property
-    def components_per_element(self) -> int: ...
-    @property
-    def dtype(self) -> DataType: ...
-    @property
-    def strides(self) -> Dims: ...
-    @property
-    def vectorized_dim(self) -> int: ...
-
-class IAlgorithmSelector:
-    """
-
-    [DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead.
-    Interface implemented by application for selecting and reporting algorithms of a layer provided by the
-    builder.
-    note A layer in context of algorithm selection may be different from ILayer in INetworkDefiniton.
-    For example, an algorithm might be implementing a conglomeration of multiple ILayers in INetworkDefinition.
-
-    To implement a custom algorithm selector, ensure that you explicitly instantiate the base class in :func:`__init__` :
-    ::
-
-        class MyAlgoSelector(trt.IAlgorithmSelector):
-            def __init__(self):
-                trt.IAlgorithmSelector.__init__(self)
-
-    """
-    def __init__(self) -> None: ...
-    def report_algorithms(
-        self, contexts: collections.abc.Sequence[IAlgorithmContext], choices: collections.abc.Sequence[IAlgorithm]
-    ) -> None:
-        """
-        [DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead.
-        Called by TensorRT to report choices it made.
-
-        Note: For a given optimization profile, this call comes after all calls to select_algorithms.
-        choices[i] is the choice that TensorRT made for algoContexts[i], for i in [0, num_algorithms-1]
-
-        For example, a possible implementation may look like this:
-        ::
-
-            def report_algorithms(self, contexts, choices):
-                # Prints the time of the chosen algorithm by TRT from the
-                # selection list passed in by select_algorithms
-                for choice in choices:
-                    print(choice.timing_msec)
-
-        :arg contexts: The list of all algorithm contexts.
-        :arg choices: The list of algorithm choices made by TensorRT corresponding to each context.
-        """
-    def select_algorithms(self, context: IAlgorithmContext, choices: collections.abc.Sequence[IAlgorithm]) -> list[int]:
-        """
-        [DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead.
-        Select Algorithms for a layer from the given list of algorithm choices.
-
-        Note: TRT uses its default algorithm selection to choose from the list returned by the user.
-        If the returned list is empty, TRT’s default algorithm selection is used unless strict type constraints are set.
-        The list of choices is valid only for this specific algorithm context.
-
-        For example, the simplest implementation looks like this:
-        ::
-
-            def select_algorithms(self, context, choices):
-                assert len(choices) > 0
-                return list(range(len(choices)))
-
-        :arg context: The context for which the algorithm choices are valid.
-        :arg choices: The list of algorithm choices to select for implementation of this layer.
-
-        :returns: A :class:`List[int]` indicating the indices from the choices vector that TensorRT should choose from.
-        """
-
-class IAlgorithmVariant:
-    """
-
-    [DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead.
-    provides a unique 128-bit identifier, which along with the input and output information
-    denotes the variation of algorithm and can be used to select or reproduce an algorithm,
-    using IAlgorithmSelector.select_algorithms()
-    see IAlgorithmIOInfo, IAlgorithm, IAlgorithmSelector.select_algorithms()
-    note A single implementation can have multiple tactics.
-
-    :ivar implementation: :class:`int` implementation of the algorithm.
-    :ivar tactic: :class:`int`  tactic of the algorithm.
-    """
-    @property
-    def implementation(self) -> int: ...
-    @property
-    def tactic(self) -> int: ...
-
 class IAssertionLayer(ILayer):
     """
 
@@ -2000,7 +1836,8 @@ class IAttention:
     :ivar mask: :class:`ITensor` The mask tensor for attention. Cannot be set together with causal attention.
     :ivar norm_op: :class:`AttentionNormalizationOp` The normalization operation for the attention layer. Default to AttentionNormalizationOp::kSOFTMAX.
     :ivar decomposable: :class:`builtins.bool` Specifies whether decomposition into primitive ops is allowed when no attention fusion is supported. Default to False.
-    :ivar causal: :class:`builtins.bool` Specifies whether the attention will run a causal inference. Cannot be used together with mask.
+    :ivar causal: :class:`builtins.bool` (Deprecated) Specifies whether the attention will run a causal inference. Cannot be used together with mask. Superseded by causal_kind.
+    :ivar causal_kind: :class:`CausalMaskKind` The causal mask alignment orientation for the attention. Cannot be used together with mask. Default to CausalMaskKind.NONE.
     :ivar name: :class:`str` The name of the attention.
     :ivar metadata: :class:`str` The metadata of the attention.
     :ivar normalization_quantize_scale: :class:`ITensor` The quantization scale for the attention normalization output.
@@ -2008,16 +1845,25 @@ class IAttention:
     :ivar num_inputs: :class:`int` The number of inputs of the attention.
     :ivar num_outputs: :class:`int` The number of outputs of the attention.
     :ivar num_ranks: :class:`int` The number of ranks for multi-device attention execution (default: 1).
+    :ivar query_form: :class:`AttentionIOForm` The layout of the query tensor. Default is AttentionIOForm.PADDED_BHND.
+    :ivar key_value_form: :class:`AttentionIOForm` The layout of the key and value tensors. Default is AttentionIOForm.PADDED_BHND.
+    :ivar query_lengths: :class:`ITensor` Optional 1D INT32 tensor of cumulative query token counts with shape [batch_size + 1]. Must be set when query_form is PACKED_NHD. Ignored when query_form is PADDED_BHND. Set to None to clear.
+    :ivar key_value_lengths: :class:`ITensor` Optional 1D INT32 tensor specifying key-value lengths. When key_value_form is PADDED_BHND, a per-batch lengths tensor of shape [batch_size]. When key_value_form is PACKED_NHD, cumulative token counts of shape [batch_size + 1] (required). Set to None to clear.
     """
 
     causal: builtins.bool
+    causal_kind: CausalMaskKind
     decomposable: builtins.bool
+    key_value_form: AttentionIOForm
+    key_value_lengths: ITensor
     mask: ITensor
     metadata: str
     name: str
     norm_op: AttentionNormalizationOp
     normalization_quantize_scale: ITensor
     normalization_quantize_to_type: DataType
+    query_form: AttentionIOForm
+    query_lengths: ITensor
     def get_input(self, index: typing.SupportsInt) -> ITensor:
         """
         Get the input tensor specified by the given index.
@@ -2092,7 +1938,6 @@ class IBuilderConfig:
 
 
     :ivar avg_timing_iterations: :class:`int` The number of averaging iterations used when timing layers. When timing layers, the builder minimizes over a set of average times for layer execution. This parameter controls the number of iterations used in averaging. By default the number of averaging iterations is 1.
-    :ivar int8_calibrator: :class:`IInt8Calibrator` [DEPRECATED] Deprecated in TensorRT 10.1. Superseded by explicit quantization. Int8 Calibration interface. The calibrator is to minimize the information loss during the INT8 quantization process.
     :ivar flags: :class:`int` The build mode flags to turn on builder options for this network. The flags are listed in the BuilderFlags enum. The flags set configuration options to build the network. This should be in integer consisting of one or more :class:`BuilderFlag` s, combined via binary OR. For example, ``1 << BuilderFlag.FP16 | 1 << BuilderFlag.DEBUG``.
     :ivar profile_stream: :class:`int` The handle for the CUDA stream that is used to profile this network.
     :ivar num_optimization_profiles: :class:`int` The number of optimization profiles.
@@ -2100,7 +1945,6 @@ class IBuilderConfig:
     :ivar DLA_core: :class:`int` The DLA core that the engine executes on. Must be between 0 and N-1 where N is the number of available DLA cores.
     :ivar profiling_verbosity: Profiling verbosity in NVTX annotations.
     :ivar engine_capability: The desired engine capability. See :class:`EngineCapability` for details.
-    :ivar algorithm_selector: [DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead. The :class:`IAlgorithmSelector` to use.
     :ivar builder_optimization_level: The builder optimization level which TensorRT should build the engine at. Setting a higher optimization level allows TensorRT to spend longer engine building time searching for more optimization options. The resulting engine may have better performance compared to an engine built with a lower optimization level. The default optimization level is 3. Valid values include integers from 0 to the maximum optimization level, which is currently 5. Setting it to be greater than the maximum level results in identical behavior to the maximum level.
     :ivar max_num_tactics: The maximum number of tactics to time when there is a choice of tactics. Setting a larger number allows TensorRT to spend longer engine building time searching for more optimization options. The resulting engine may have better performance compared to an engine built with a smaller number of tactics. Valid values include integers from -1 to the maximum 32-bit integer. Default value -1 indicates that TensorRT can decide the number of tactics based on its own heuristic.
     :ivar hardware_compatibility_level: Hardware compatibility allows an engine compatible with GPU architectures other than that of the GPU on which the engine was built.
@@ -2314,8 +2158,8 @@ class IBuilderConfig:
         This bitset controls which tactic sources TensorRT is allowed to use for tactic selection.
 
         Multiple tactic sources may be combined with a bitwise OR operation. For example,
-        to enable cublas and cublasLt as tactic sources, use a value of:
-        ``1 << int(trt.TacticSource.CUBLAS) | 1 << int(trt.TacticSource.CUBLAS_LT)``
+        to enable edge mask convolutions and JIT convolutions as tactic sources, use a value of:
+        ``1 << int(trt.TacticSource.EDGE_MASK_CONVOLUTIONS) | 1 << int(trt.TacticSource.JIT_CONVOLUTIONS)``
 
         :arg tactic_sources: The tactic sources to set
 
@@ -2358,7 +2202,7 @@ class IBuilderConfig:
     @property
     def max_aux_streams(self) -> int: ...
     @max_aux_streams.setter
-    def max_aux_streams(self, arg1: typing.SupportsInt) -> None: ...
+    def max_aux_streams(self, arg1: typing.SupportsInt) -> builtins.bool: ...
     @property
     def max_num_tactics(self) -> int: ...
     @max_num_tactics.setter
@@ -2486,10 +2330,8 @@ class ICudaEngine:
     The engine can be indexed with ``[]`` . When indexed in this way with an integer, it will return the corresponding binding name. When indexed with a string, it will return the corresponding binding index.
 
     :ivar num_io_tensors: :class:`int` The number of IO tensors.
-    :ivar has_implicit_batch_dimension: :class:`builtins.bool` [DEPRECATED] Deprecated in TensorRT 10.0. Always flase since the implicit batch dimensions support has been removed.
     :ivar num_layers: :class:`int` The number of layers in the network. The number of layers in the network is not necessarily the number in the original :class:`INetworkDefinition`, as layers may be combined or eliminated as the :class:`ICudaEngine` is optimized. This value can be useful when building per-layer tables, such as when aggregating profiling data over a number of executions.
     :ivar max_workspace_size: :class:`int` The amount of workspace the :class:`ICudaEngine` uses. The workspace size will be no greater than the value provided to the :class:`Builder` when the :class:`ICudaEngine` was built, and will typically be smaller. Workspace will be allocated for each :class:`IExecutionContext` .
-    :ivar device_memory_size: :class:`int` The amount of device memory required by an :class:`IExecutionContext` .
     :ivar device_memory_size_v2: :class:`int` The amount of device memory required by an :class:`IExecutionContext`. The return value depends on the weight streaming budget if enabled.
     :ivar refittable: :class:`builtins.bool` Whether the engine can be refit.
     :ivar name: :class:`str` The name of the network associated with the engine. The name is set during network creation and is retrieved after building or deserialization.
@@ -2500,8 +2342,6 @@ class ICudaEngine:
     :ivar profiling_verbosity: The profiling verbosity the builder config was set to when the engine was built.
     :ivar hardware_compatibility_level: The hardware compatibility level of the engine.
     :ivar num_aux_streams: Read-only. The number of auxiliary streams used by this engine, which will be less than or equal to the maximum allowed number of auxiliary streams by setting builder_config.max_aux_streams when the engine is built.
-    :ivar weight_streaming_budget: [DEPRECATED] Deprecated in TensorRT 10.1, superceded by weight_streaming_budget_v2. Set and get the current weight streaming budget for inference. The budget may be set to -1 disabling weight streaming at runtime, 0 (default) enabling TRT to choose to weight stream or not, or a positive value in the inclusive range [minimum_weight_streaming_budget, streamable_weights_size - 1].
-    :ivar minimum_weight_streaming_budget: [DEPRECATED] Deprecated in TensorRT 10.1, superceded by weight_streaming_budget_v2. Returns the minimum weight streaming budget in bytes required to run the network successfully. The engine must have been built with kWEIGHT_STREAMING.
     :ivar streamable_weights_size: Returns the size of the streamable weights in the engine. This may not include all the weights.
     :ivar weight_streaming_budget_v2: Set and get the current weight streaming budget for inference. The budget may be set any non-negative value. A value of 0 streams the most weights. Values equal to streamable_weights_size (default) or larger will disable weight streaming.
     :ivar weight_streaming_scratch_memory_size: The amount of scratch memory required by a TensorRT ExecutionContext to perform inference. This value may change based on the current weight streaming budget. Please use the V2 memory APIs, engine.device_memory_size_v2 and ExecutionContext.set_device_memory() to provide memory which includes the current weight streaming scratch memory. Not specifying these APIs or using the V1 APIs will not include this memory, so TensorRT will resort to allocating itself.
@@ -2761,8 +2601,6 @@ class ICudaEngine:
     def engine_capability(self) -> EngineCapability: ...
     @property
     def hardware_compatibility_level(self) -> ...: ...
-    @property
-    def has_implicit_batch_dimension(self) -> builtins.bool: ...
     @property
     def name(self) -> str: ...
     @property
@@ -3146,7 +2984,6 @@ class IExecutionContext:
     :ivar device_memory: :class:`capsule` The device memory for use by this execution context. The memory must be aligned with cuda memory alignment property (using :func:`cuda.cudart.cudaGetDeviceProperties()`), and its size must be large enough for performing inference with the given network inputs. :func:`engine.device_memory_size` and :func:`engine.get_device_memory_size_for_profile` report upper bounds of the size. Setting memory to nullptr is acceptable if the reported size is 0. If using :func:`execute_async_v3()` to run the network, the memory is in use from the invocation of :func:`execute_async_v3()` until network execution is complete. If using :func:`execute_v2()`, it is in use until :func:`execute_v2()` returns. Releasing or otherwise using the memory for other purposes, including using it in another execution context running in parallel, during this time will result in undefined behavior.
     :ivar active_optimization_profile: :class:`int` The active optimization profile for the context. The selected profile will be used in subsequent calls to :func:`execute_v2()`. Profile 0 is selected by default. This is a readonly property and active optimization profile can be changed with :func:`set_optimization_profile_async()`. Changing this value will invalidate all dynamic bindings for the current execution context, so that they have to be set again using :func:`set_input_shape` before calling either :func:`execute_v2()`.
     :ivar all_binding_shapes_specified: :class:`builtins.bool` Whether all dynamic dimensions of input tensors have been specified by calling :func:`set_input_shape` . Trivially true if network has no dynamically shaped input tensors. Does not work with name-base interfaces eg. :func:`set_input_shape()`. Use :func:`infer_shapes()` instead.
-    :ivar all_shape_inputs_specified: :class:`builtins.bool` Whether values for all input shape tensors have been specified by calling :func:`set_shape_input` . Trivially true if network has no input shape bindings. Does not work with name-base interfaces eg. :func:`set_input_shape()`. Use :func:`infer_shapes()` instead.
     :ivar error_recorder: :class:`IErrorRecorder` Application-implemented error reporting interface for TensorRT objects.
     :ivar enqueue_emits_profile: :class:`builtins.bool` Whether enqueue emits layer timing to the profiler. The default value is :class:`True`. If set to :class:`False`, enqueue will be asynchronous if there is a profiler attached. An extra method :func:`IExecutionContext::report_to_profiler()` needs to be called to obtain the profiling data and report to the profiler attached.
     :ivar persistent_cache_limit: The maximum size of persistent L2 cache that this execution context may use for activation caching. Activation caching is not supported on all architectures - see "How TensorRT uses Memory" in the developer guide for details. The default is 0 Bytes.
@@ -3537,7 +3374,7 @@ class IGpuAllocator(IVersionedInterface):
     """
     Application-implemented class for controlling allocation on the GPU.
 
-    To implement a custom allocator, ensure that you explicitly instantiate the base class in :func:`__init__` :
+    To implement a custom allocator, ensure that you explicitly instantiate the base class in_:func:`__init__` :
     ::
 
         class MyAllocator(trt.IGpuAllocator):
@@ -3622,7 +3459,7 @@ class IGpuAsyncAllocator(IGpuAllocator):
     """
     Application-implemented class for controlling allocation on the GPU.
 
-    To implement a custom allocator, ensure that you explicitly instantiate the base class in :func:`__init__` :
+    To implement a custom allocator, ensure that you explicitly instantiate the base class in_:func:`__init__` :
     ::
 
         class MyAllocator(trt.IGpuAsyncAllocator):
@@ -3813,440 +3650,6 @@ class IIfConditionalOutputLayer(IIfConditionalBoundaryLayer):
     Describes kinds of if-conditional outputs.
     """
 
-class IInt8Calibrator:
-    """
-
-    [DEPRECATED] Deprecated in TensorRT 10.1. Superseded by explicit quantization.
-
-    Application-implemented interface for calibration. Calibration is a step performed by the builder when deciding suitable scale factors for 8-bit inference. It must also provide a method for retrieving representative images which the calibration process can use to examine the distribution of activations. It may optionally implement a method for caching the calibration result for reuse on subsequent runs.
-
-    To implement a custom calibrator, ensure that you explicitly instantiate the base class in :func:`__init__` :
-    ::
-
-        class MyCalibrator(trt.IInt8Calibrator):
-            def __init__(self):
-                trt.IInt8Calibrator.__init__(self)
-
-    :ivar batch_size: :class:`int` The batch size used for calibration batches.
-    :ivar algorithm: :class:`CalibrationAlgoType` The algorithm used by this calibrator.
-    """
-    def __init__(self) -> None: ...
-    def get_algorithm(self) -> CalibrationAlgoType:
-        """
-        Get the algorithm used by this calibrator.
-
-        :returns: The algorithm used by this calibrator.
-        """
-    def get_batch(self, names: collections.abc.Sequence[str]) -> list[int]:
-        """
-        Get a batch of input for calibration. The batch size of the input must match the batch size returned by :func:`get_batch_size` .
-
-        A possible implementation may look like this:
-        ::
-
-            def get_batch(names):
-                try:
-                    # Assume self.batches is a generator that provides batch data.
-                    data = next(self.batches)
-                    # Assume that self.device_input is a device buffer allocated by the constructor.
-                    cuda.memcpy_htod(self.device_input, data)
-                    return [int(self.device_input)]
-                except StopIteration:
-                    # When we're out of batches, we return either [] or None.
-                    # This signals to TensorRT that there is no calibration data remaining.
-                    return None
-
-        :arg names: The names of the network inputs for each object in the bindings array.
-
-        :returns: A :class:`list` of device memory pointers set to the memory containing each network input data, or an empty :class:`list` if there are no more batches for calibration. You can allocate these device buffers with pycuda, for example, and then cast them to :class:`int` to retrieve the pointer.
-        """
-    def get_batch_size(self) -> int:
-        """
-        Get the batch size used for calibration batches.
-
-        :returns: The batch size.
-        """
-    def read_calibration_cache(self) -> collections.abc.Buffer:
-        """
-        Load a calibration cache.
-
-        Calibration is potentially expensive, so it can be useful to generate the calibration data once, then use it on subsequent builds
-        of the network. The cache includes the regression cutoff and quantile values used to generate it, and will not be used if
-        these do not match the settings of the current calibrator. However, the network should also be recalibrated if its structure
-        changes, or the input data set changes, and it is the responsibility of the application to ensure this.
-
-        Reading a cache is just like reading any other file in Python. For example, one possible implementation is:
-        ::
-
-            def read_calibration_cache(self):
-                # If there is a cache, use it instead of calibrating again. Otherwise, implicitly return None.
-                if os.path.exists(self.cache_file):
-                    with open(self.cache_file, "rb") as f:
-                        return f.read()
-
-        :returns: A cache object or None if there is no data.
-        """
-    def write_calibration_cache(self, cache: collections.abc.Buffer) -> None:
-        """
-        Save a calibration cache.
-
-        Writing a cache is just like writing any other buffer in Python. For example, one possible implementation is:
-        ::
-
-            def write_calibration_cache(self, cache):
-                with open(self.cache_file, "wb") as f:
-                    f.write(cache)
-
-        :arg cache: The calibration cache to write.
-        """
-
-class IInt8EntropyCalibrator(IInt8Calibrator):
-    """
-
-    [DEPRECATED] Deprecated in TensorRT 10.1. Superseded by explicit quantization.
-
-    Extends the :class:`IInt8Calibrator` class.
-
-    To implement a custom calibrator, ensure that you explicitly instantiate the base class in :func:`__init__` :
-    ::
-
-        class MyCalibrator(trt.IInt8EntropyCalibrator):
-            def __init__(self):
-                trt.IInt8EntropyCalibrator.__init__(self)
-
-
-    This is the Legacy Entropy calibrator. It is less complicated than the legacy calibrator and produces better results.
-    """
-    def __init__(self) -> None: ...
-    def get_algorithm(self) -> CalibrationAlgoType:
-        """
-        Signals that this is the entropy calibrator.
-
-        :returns: :class:`CalibrationAlgoType.ENTROPY_CALIBRATION`
-        """
-    def get_batch(self, names: collections.abc.Sequence[str]) -> list[int]:
-        """
-        Get a batch of input for calibration. The batch size of the input must match the batch size returned by :func:`get_batch_size` .
-
-        A possible implementation may look like this:
-        ::
-
-            def get_batch(names):
-                try:
-                    # Assume self.batches is a generator that provides batch data.
-                    data = next(self.batches)
-                    # Assume that self.device_input is a device buffer allocated by the constructor.
-                    cuda.memcpy_htod(self.device_input, data)
-                    return [int(self.device_input)]
-                except StopIteration:
-                    # When we're out of batches, we return either [] or None.
-                    # This signals to TensorRT that there is no calibration data remaining.
-                    return None
-
-        :arg names: The names of the network inputs for each object in the bindings array.
-
-        :returns: A :class:`list` of device memory pointers set to the memory containing each network input data, or an empty :class:`list` if there are no more batches for calibration. You can allocate these device buffers with pycuda, for example, and then cast them to :class:`int` to retrieve the pointer.
-        """
-    def get_batch_size(self: IInt8Calibrator) -> int:
-        """
-        Get the batch size used for calibration batches.
-
-        :returns: The batch size.
-        """
-    def read_calibration_cache(self) -> collections.abc.Buffer:
-        """
-        Load a calibration cache.
-
-        Calibration is potentially expensive, so it can be useful to generate the calibration data once, then use it on subsequent builds
-        of the network. The cache includes the regression cutoff and quantile values used to generate it, and will not be used if
-        these do not match the settings of the current calibrator. However, the network should also be recalibrated if its structure
-        changes, or the input data set changes, and it is the responsibility of the application to ensure this.
-
-        Reading a cache is just like reading any other file in Python. For example, one possible implementation is:
-        ::
-
-            def read_calibration_cache(self):
-                # If there is a cache, use it instead of calibrating again. Otherwise, implicitly return None.
-                if os.path.exists(self.cache_file):
-                    with open(self.cache_file, "rb") as f:
-                        return f.read()
-
-        :returns: A cache object or None if there is no data.
-        """
-    def write_calibration_cache(self, cache: collections.abc.Buffer) -> None:
-        """
-        Save a calibration cache.
-
-        Writing a cache is just like writing any other buffer in Python. For example, one possible implementation is:
-        ::
-
-            def write_calibration_cache(self, cache):
-                with open(self.cache_file, "wb") as f:
-                    f.write(cache)
-
-        :arg cache: The calibration cache to write.
-        """
-
-class IInt8EntropyCalibrator2(IInt8Calibrator):
-    """
-
-    [DEPRECATED] Deprecated in TensorRT 10.1. Superseded by explicit quantization.
-
-    Extends the :class:`IInt8Calibrator` class.
-
-    To implement a custom calibrator, ensure that you explicitly instantiate the base class in :func:`__init__` :
-    ::
-
-        class MyCalibrator(trt.IInt8EntropyCalibrator2):
-            def __init__(self):
-                trt.IInt8EntropyCalibrator2.__init__(self)
-
-    This is the preferred calibrator. This is the required calibrator for DLA, as it supports per activation tensor scaling.
-    """
-    def __init__(self) -> None: ...
-    def get_algorithm(self) -> CalibrationAlgoType:
-        """
-        Signals that this is the entropy calibrator 2.
-
-        :returns: :class:`CalibrationAlgoType.ENTROPY_CALIBRATION_2`
-        """
-    def get_batch(self, names: collections.abc.Sequence[str]) -> list[int]:
-        """
-        Get a batch of input for calibration. The batch size of the input must match the batch size returned by :func:`get_batch_size` .
-
-        A possible implementation may look like this:
-        ::
-
-            def get_batch(names):
-                try:
-                    # Assume self.batches is a generator that provides batch data.
-                    data = next(self.batches)
-                    # Assume that self.device_input is a device buffer allocated by the constructor.
-                    cuda.memcpy_htod(self.device_input, data)
-                    return [int(self.device_input)]
-                except StopIteration:
-                    # When we're out of batches, we return either [] or None.
-                    # This signals to TensorRT that there is no calibration data remaining.
-                    return None
-
-        :arg names: The names of the network inputs for each object in the bindings array.
-
-        :returns: A :class:`list` of device memory pointers set to the memory containing each network input data, or an empty :class:`list` if there are no more batches for calibration. You can allocate these device buffers with pycuda, for example, and then cast them to :class:`int` to retrieve the pointer.
-        """
-    def get_batch_size(self: IInt8Calibrator) -> int:
-        """
-        Get the batch size used for calibration batches.
-
-        :returns: The batch size.
-        """
-    def read_calibration_cache(self) -> collections.abc.Buffer:
-        """
-        Load a calibration cache.
-
-        Calibration is potentially expensive, so it can be useful to generate the calibration data once, then use it on subsequent builds
-        of the network. The cache includes the regression cutoff and quantile values used to generate it, and will not be used if
-        these do not match the settings of the current calibrator. However, the network should also be recalibrated if its structure
-        changes, or the input data set changes, and it is the responsibility of the application to ensure this.
-
-        Reading a cache is just like reading any other file in Python. For example, one possible implementation is:
-        ::
-
-            def read_calibration_cache(self):
-                # If there is a cache, use it instead of calibrating again. Otherwise, implicitly return None.
-                if os.path.exists(self.cache_file):
-                    with open(self.cache_file, "rb") as f:
-                        return f.read()
-
-        :returns: A cache object or None if there is no data.
-        """
-    def write_calibration_cache(self, cache: collections.abc.Buffer) -> None:
-        """
-        Save a calibration cache.
-
-        Writing a cache is just like writing any other buffer in Python. For example, one possible implementation is:
-        ::
-
-            def write_calibration_cache(self, cache):
-                with open(self.cache_file, "wb") as f:
-                    f.write(cache)
-
-        :arg cache: The calibration cache to write.
-        """
-
-class IInt8LegacyCalibrator(IInt8Calibrator):
-    """
-
-    [DEPRECATED] Deprecated in TensorRT 10.1. Superseded by explicit quantization.
-
-    Extends the :class:`IInt8Calibrator` class.
-    This calibrator requires user parameterization, and is provided as a fallback option if the other calibrators yield poor results.
-
-    To implement a custom calibrator, ensure that you explicitly instantiate the base class in :func:`__init__` :
-    ::
-
-        class MyCalibrator(trt.IInt8LegacyCalibrator):
-            def __init__(self):
-                trt.IInt8LegacyCalibrator.__init__(self)
-
-    :ivar quantile: :class:`float` The quantile (between 0 and 1) that will be used to select the region maximum when the quantile method is in use. See the user guide for more details on how the quantile is used.
-    :ivar regression_cutoff: :class:`float` The fraction (between 0 and 1) of the maximum used to define the regression cutoff when using regression to determine the region maximum. See the user guide for more details on how the regression cutoff is used
-    """
-    def __init__(self) -> None: ...
-    def get_algorithm(self) -> CalibrationAlgoType:
-        """
-        Signals that this is the legacy calibrator.
-
-        :returns: :class:`CalibrationAlgoType.LEGACY_CALIBRATION`
-        """
-    def get_batch(self, names: collections.abc.Sequence[str]) -> list[int]:
-        """
-        Get a batch of input for calibration. The batch size of the input must match the batch size returned by :func:`get_batch_size` .
-
-        A possible implementation may look like this:
-        ::
-
-            def get_batch(names):
-                try:
-                    # Assume self.batches is a generator that provides batch data.
-                    data = next(self.batches)
-                    # Assume that self.device_input is a device buffer allocated by the constructor.
-                    cuda.memcpy_htod(self.device_input, data)
-                    return [int(self.device_input)]
-                except StopIteration:
-                    # When we're out of batches, we return either [] or None.
-                    # This signals to TensorRT that there is no calibration data remaining.
-                    return None
-
-        :arg names: The names of the network inputs for each object in the bindings array.
-
-        :returns: A :class:`list` of device memory pointers set to the memory containing each network input data, or an empty :class:`list` if there are no more batches for calibration. You can allocate these device buffers with pycuda, for example, and then cast them to :class:`int` to retrieve the pointer.
-        """
-    def get_batch_size(self: IInt8Calibrator) -> int:
-        """
-        Get the batch size used for calibration batches.
-
-        :returns: The batch size.
-        """
-    def read_calibration_cache(self) -> collections.abc.Buffer:
-        """
-        Load a calibration cache.
-
-        Calibration is potentially expensive, so it can be useful to generate the calibration data once, then use it on subsequent builds
-        of the network. The cache includes the regression cutoff and quantile values used to generate it, and will not be used if
-        these do not match the settings of the current calibrator. However, the network should also be recalibrated if its structure
-        changes, or the input data set changes, and it is the responsibility of the application to ensure this.
-
-        Reading a cache is just like reading any other file in Python. For example, one possible implementation is:
-        ::
-
-            def read_calibration_cache(self):
-                # If there is a cache, use it instead of calibrating again. Otherwise, implicitly return None.
-                if os.path.exists(self.cache_file):
-                    with open(self.cache_file, "rb") as f:
-                        return f.read()
-
-        :returns: A cache object or None if there is no data.
-        """
-    def write_calibration_cache(self, cache: collections.abc.Buffer) -> None:
-        """
-        Save a calibration cache.
-
-        Writing a cache is just like writing any other buffer in Python. For example, one possible implementation is:
-        ::
-
-            def write_calibration_cache(self, cache):
-                with open(self.cache_file, "wb") as f:
-                    f.write(cache)
-
-        :arg cache: The calibration cache to write.
-        """
-
-class IInt8MinMaxCalibrator(IInt8Calibrator):
-    """
-
-    [DEPRECATED] Deprecated in TensorRT 10.1. Superseded by explicit quantization.
-
-    Extends the :class:`IInt8Calibrator` class.
-
-    To implement a custom calibrator, ensure that you explicitly instantiate the base class in :func:`__init__` :
-    ::
-
-        class MyCalibrator(trt.IInt8MinMaxCalibrator):
-            def __init__(self):
-                trt.IInt8MinMaxCalibrator.__init__(self)
-
-    This is the preferred calibrator for NLP tasks for all backends. It supports per activation tensor scaling.
-    """
-    def __init__(self) -> None: ...
-    def get_algorithm(self) -> CalibrationAlgoType:
-        """
-        Signals that this is the minmax calibrator.
-
-        :returns: :class:`CalibrationAlgoType.MINMAX_CALIBRATION`
-        """
-    def get_batch(self, names: collections.abc.Sequence[str]) -> list[int]:
-        """
-        Get a batch of input for calibration. The batch size of the input must match the batch size returned by :func:`get_batch_size` .
-
-        A possible implementation may look like this:
-        ::
-
-            def get_batch(names):
-                try:
-                    # Assume self.batches is a generator that provides batch data.
-                    data = next(self.batches)
-                    # Assume that self.device_input is a device buffer allocated by the constructor.
-                    cuda.memcpy_htod(self.device_input, data)
-                    return [int(self.device_input)]
-                except StopIteration:
-                    # When we're out of batches, we return either [] or None.
-                    # This signals to TensorRT that there is no calibration data remaining.
-                    return None
-
-        :arg names: The names of the network inputs for each object in the bindings array.
-
-        :returns: A :class:`list` of device memory pointers set to the memory containing each network input data, or an empty :class:`list` if there are no more batches for calibration. You can allocate these device buffers with pycuda, for example, and then cast them to :class:`int` to retrieve the pointer.
-        """
-    def get_batch_size(self: IInt8Calibrator) -> int:
-        """
-        Get the batch size used for calibration batches.
-
-        :returns: The batch size.
-        """
-    def read_calibration_cache(self) -> collections.abc.Buffer:
-        """
-        Load a calibration cache.
-
-        Calibration is potentially expensive, so it can be useful to generate the calibration data once, then use it on subsequent builds
-        of the network. The cache includes the regression cutoff and quantile values used to generate it, and will not be used if
-        these do not match the settings of the current calibrator. However, the network should also be recalibrated if its structure
-        changes, or the input data set changes, and it is the responsibility of the application to ensure this.
-
-        Reading a cache is just like reading any other file in Python. For example, one possible implementation is:
-        ::
-
-            def read_calibration_cache(self):
-                # If there is a cache, use it instead of calibrating again. Otherwise, implicitly return None.
-                if os.path.exists(self.cache_file):
-                    with open(self.cache_file, "rb") as f:
-                        return f.read()
-
-        :returns: A cache object or None if there is no data.
-        """
-    def write_calibration_cache(self, cache: collections.abc.Buffer) -> None:
-        """
-        Save a calibration cache.
-
-        Writing a cache is just like writing any other buffer in Python. For example, one possible implementation is:
-        ::
-
-            def write_calibration_cache(self, cache):
-                with open(self.cache_file, "wb") as f:
-                    f.write(cache)
-
-        :arg cache: The calibration cache to write.
-        """
-
 class IIteratorLayer(ILoopBoundaryLayer):
     """
 
@@ -4275,9 +3678,13 @@ class IKVCacheUpdateLayer(ILayer):
     Separate KVCacheUpdate layers should be used for K and V.
 
     :ivar cache_mode: :class:`KVCacheMode` The mode of the KVCacheUpdate layer.
+    :ivar update_form: :class:`AttentionIOForm` The layout of the update tensor. Default is AttentionIOForm.PADDED_BHND. When set to PACKED_NHD, the update tensor has shape [total_tokens, num_heads, head_dim] and update_lengths must be provided.
+    :ivar update_lengths: :class:`ITensor` Optional 1D INT32 tensor of cumulative token counts with shape [batch_size + 1]. Only valid when update_form is PACKED_NHD (required in that case; ignored when update_form is PADDED_BHND). Set to None to clear.
     """
 
     cache_mode: KVCacheMode
+    update_form: AttentionIOForm
+    update_lengths: ITensor
     def set_input(self, index: typing.SupportsInt, tensor: ITensor) -> None:
         """
         Sets the input tensor specified by the given index.
@@ -4290,6 +3697,7 @@ class IKVCacheUpdateLayer(ILayer):
             0     cache.
             1     update.
             2     write_indices.
+            3     update_lengths (optional; use the update_lengths property instead).
         =====   ==================================================================================
 
         :arg index: The index of the input tensor.
@@ -4334,13 +3742,11 @@ class ILayer:
     :ivar type: :class:`LayerType` The type of the layer.
     :ivar num_inputs: :class:`int` The number of inputs of the layer.
     :ivar num_outputs: :class:`int` The number of outputs of the layer.
-    :ivar precision: :class:`DataType` The computation precision.
-    :ivar precision_is_set: :class:`builtins.bool` Whether the precision is set or not.
+
     """
 
     metadata: str
     name: str
-    precision: DataType
     def get_input(self, index: typing.SupportsInt) -> ITensor:
         """
         Get the layer input corresponding to the given index.
@@ -4365,44 +3771,12 @@ class ILayer:
 
         :returns: The output precision. Default : DataType.FLOAT.
         """
-    def output_type_is_set(self, index: typing.SupportsInt) -> builtins.bool:
-        """
-        [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
-        Whether the output type has been set for this layer.
-
-        :arg index: The index of the output.
-
-        :returns: Whether the output type has been explicitly set.
-        """
-    def reset_output_type(self, index: typing.SupportsInt) -> None:
-        """
-        [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
-        Reset output type of this layer.
-
-        :arg index: The index of the output.
-        """
-    def reset_precision(self) -> None:
-        """
-        [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
-        Reset the computation precision of the layer.
-        """
     def set_input(self, index: typing.SupportsInt, tensor: ITensor) -> None:
         """
         Set the layer input corresponding to the given index.
 
         :arg index: The index of the input tensor.
         :arg tensor: The input tensor.
-        """
-    def set_output_type(self, index: typing.SupportsInt, dtype: DataType) -> None:
-        """
-        [DEPRECATED] Deprecated in TensorRT 10.12. Superseded by strong typing.
-        Constraint layer to generate output data with given type.
-        Note that this method cannot be used to set the data type
-        of the second output tensor of the topK layer. The data
-        type of the second output tensor of the topK layer is always :class:`int32` .
-
-        :arg index: The index of the output tensor to set the type.
-        :arg dtype: DataType of the output.
         """
     @property
     def num_inputs(self) -> int: ...
@@ -4423,8 +3797,6 @@ class ILayer:
     @num_ranks.setter
     def num_ranks(self, arg1: typing.SupportsInt) -> None: ...
     @property
-    def precision_is_set(self) -> builtins.bool: ...
-    @property
     def type(self) -> LayerType: ...
 
 class ILogger:
@@ -4432,7 +3804,7 @@ class ILogger:
 
     Abstract base Logger class for the :class:`Builder`, :class:`ICudaEngine` and :class:`Runtime` .
 
-    To implement a custom logger, ensure that you explicitly instantiate the base class in :func:`__init__` :
+    To implement a custom logger, ensure that you explicitly instantiate the base class in_:func:`__init__` :
     ::
 
         class MyLogger(trt.ILogger):
@@ -4665,7 +4037,7 @@ class IMatrixMultiplyLayer(ILayer):
 class IMoELayer(ILayer):
     """
 
-    A MoE layer in :class:`INetworkDefinition`.
+    A MoE layer in_:class:`INetworkDefinition`.
 
     :ivar activation_type: :class:`MoEActType` Specifies the activation type for the MoE layer.
     :ivar quantization_to_type: :class:`DataType` Specifies the quantization type for the MoE layer.
@@ -4886,6 +4258,26 @@ class INetworkDefinition:
         self, query: ITensor, key: ITensor, value: ITensor, norm_op: AttentionNormalizationOp, causal: builtins.bool
     ) -> IAttention:
         """
+        Add an attention to the network. Deprecated, use add_attention_v2 instead.
+        See :class:`IAttention` for more information.
+
+        :arg query: The 4d query input tensor to the attention.
+        :arg key: The 4d key input tensor to the attention.
+        :arg value: The 4d value input tensor to the attention.
+        :arg normOp: The normalization operation to perform.
+        :arg causal: The boolean that specifies whether an attention will run causal inference.
+
+        :returns: The new Attention, or :class:`None` if it could not be created.
+        """
+    def add_attention_v2(
+        self,
+        query: ITensor,
+        key: ITensor,
+        value: ITensor,
+        norm_op: AttentionNormalizationOp,
+        causal_kind: CausalMaskKind,
+    ) -> IAttention:
+        """
         Add an attention to the network.
         See :class:`IAttention` for more information.
 
@@ -4893,7 +4285,7 @@ class INetworkDefinition:
         :arg key: The 4d key input tensor to the attention.
         :arg value: The 4d value input tensor to the attention.
         :arg normOp: The normalization operation to perform.
-        :arg causal: The boolean that specifies whether an attention will run casual inference.
+        :arg causal_kind: The :class:`CausalMaskKind` that specifies the causal mask alignment orientation.
 
         :returns: The new Attention, or :class:`None` if it could not be created.
         """
@@ -4986,9 +4378,9 @@ class INetworkDefinition:
         Add a dequantization layer to the network.
         See :class:`IDequantizeLayer` for more information.
 
-        :arg input: A tensor to quantize.
+        :arg input: A tensor to dequantize.
         :arg scale: A tensor with the scale coefficients.
-        :arg output_type: The datatype of the output tensor. Specifying output_type is optional (default value tensorrt.float32).
+        :arg output_type: The datatype of the output tensor.
 
         :returns: The new dequantization layer, or :class:`None` if it could not be created.
         """
@@ -5079,14 +4471,14 @@ class INetworkDefinition:
 
         :returns: The new element-wise layer, or :class:`None` if it could not be created.
         """
-    def add_fill(self, shape: Dims, op: FillOperation, output_type: DataType) -> IFillLayer:
+    def add_fill(self, shape: Dims, op: FillOperation, output_type: DataType = ...) -> IFillLayer:
         """
         Add a fill layer.
         See :class:`IFillLayer` for more information.
 
         :arg dimensions: The output tensor dimensions.
         :arg op: The fill operation that the layer applies.
-        :arg output_type: The datatype of the output tensor. Specifying output_type is optional (default value tensorrt.float32).
+        :arg output_type: The datatype of the output tensor. Default value tensorrt.float32.
 
         :returns: The new fill layer, or :class:`None` if it could not be created.
         """
@@ -5378,7 +4770,7 @@ class INetworkDefinition:
 
         :arg input: A tensor to quantize.
         :arg scale: A tensor with the scale coefficients.
-        :arg output_type: The datatype of the output tensor. Specifying output_type is optional (default value tensorrt.int8).
+        :arg output_type: The datatype of the output tensor.
 
         :returns: The new quantization layer, or :class:`None` if it could not be created.
         """
@@ -5841,10 +5233,8 @@ class INormalizationLayer(ILayer):
     :ivar epsilon: :class:`float` The epsilon value used for the normalization calculation. Default: 1e-5F.
     :ivar axes: :class:`int` The reduction axes for the normalization calculation.
     :ivar num_groups: :class:`int` The number of groups to split the channels into for the normalization calculation. Default: 1.
-    :ivar compute_precision: :class:`DataType` The datatype used for the compute precision of this layer. By default TensorRT will run the normalization computation in DataType.kFLOAT32 even in mixed precision mode regardless of any set builder flags to avoid overflow errors. ILayer.precision and ILayer.set_output_type can still be set to control input and output types of this layer. Only DataType.kFLOAT32 and DataType.kHALF are valid for this member. Default: Datatype.FLOAT.
-    """
 
-    compute_precision: DataType
+    """
     @property
     def axes(self) -> int: ...
     @axes.setter
@@ -5986,7 +5376,7 @@ class IOutputAllocator:
 
     Application-implemented class for controlling output tensor allocation.
 
-    To implement a custom output allocator, ensure that you explicitly instantiate the base class in :func:`__init__` :
+    To implement a custom output allocator, ensure that you explicitly instantiate the base class in_:func:`__init__` :
     ::
 
         class MyOutputAllocator(trt.IOutputAllocator):
@@ -6157,7 +5547,7 @@ class IPluginRegistry:
         :arg: resource: A plugin resource object. The object will only need to be valid until this method returns, as only a clone of this object will be registered by TRT. Cannot be null.
         """
     @typing.overload
-    def deregister_creator(self, creator: IPluginCreator) -> builtins.bool:
+    def deregister_creator(self, creator: IPluginCreatorInterface) -> builtins.bool:
         """
         Deregister a previously registered plugin creator inheriting from IPluginCreator.
 
@@ -6200,20 +5590,6 @@ class IPluginRegistry:
 
         :returns: An :class:`IPluginCreator` .
         """
-    def get_plugin_creator(self, type: str, version: str, plugin_namespace: str = "") -> IPluginCreator:
-        """
-        Return plugin creator based on type, version and namespace
-
-        .. warning::
-            Returns None if a plugin creator with matching name, version, and namespace is found, but is not a
-            descendent of IPluginCreator
-
-        :arg type: The type of the plugin.
-        :arg version: The version of the plugin.
-        :arg plugin_namespace: The namespace of the plugin.
-
-        :returns: An :class:`IPluginCreator` .
-        """
     def load_library(self, plugin_path: str) -> types.CapsuleType:
         """
         Load and register a shared library of plugins.
@@ -6223,7 +5599,7 @@ class IPluginRegistry:
         :returns: The loaded plugin library handle. The call will fail and return None if any of the plugins are already registered.
         """
     @typing.overload
-    def register_creator(self, creator: IPluginCreator, plugin_namespace: str = "") -> builtins.bool:
+    def register_creator(self, creator: IPluginCreatorInterface, plugin_namespace: str = "") -> builtins.bool:
         """
         Register a plugin creator implementing IPluginCreator.
 
@@ -6253,8 +5629,6 @@ class IPluginRegistry:
     def all_creators(self) -> list[typing.Any]: ...
     @property
     def all_creators_recursive(self) -> list[typing.Any]: ...
-    @property
-    def plugin_creator_list(self) -> list[IPluginCreator]: ...
 
 class IPluginResource(IVersionedInterface):
     """
@@ -6465,7 +5839,7 @@ class IPluginV2DynamicExt(IPluginV2DynamicExtBase, IPluginV2):
         .. warning::
             This `configure_plugin()` method is not available to be called from Python on C++-based plugins
 
-        :arg in: The input tensors attributes that are used for configuration.
+        :arg in_: The input tensors attributes that are used for configuration.
         :arg out: The output tensors attributes that are used for configuration.
         """
     def destroy(self) -> None:
@@ -6806,7 +6180,7 @@ class IPluginV3OneBuild(IPluginCapability, IVersionedInterface):
         .. warning::
             This `configure_plugin()` method is not available to be called from Python on C++-based plugins
 
-        :arg in: The input tensors attributes that are used for configuration.
+        :arg in_: The input tensors attributes that are used for configuration.
         :arg out: The output tensors attributes that are used for configuration.
         """
     def get_output_data_types(self: IPluginV3, input_types: collections.abc.Sequence[DataType]) -> list[DataType]:
@@ -7028,7 +6402,7 @@ class IPluginV3OneRuntime(IPluginCapability, IVersionedInterface):
         .. warning::
             This `on_shape_change()` method is not available to be called from Python on C++-based plugins
 
-        :arg in: The input tensors attributes that are used for configuration.
+        :arg in_: The input tensors attributes that are used for configuration.
         :arg out: The output tensors attributes that are used for configuration.
         """
     def set_tactic(self: IPluginV3, tactic: typing.SupportsInt) -> None:
@@ -7100,7 +6474,7 @@ class IProfiler:
 
     Abstract base Profiler class.
 
-    To implement a custom profiler, ensure that you explicitly instantiate the base class in :func:`__init__` :
+    To implement a custom profiler, ensure that you explicitly instantiate the base class in_:func:`__init__` :
     ::
 
         class MyProfiler(trt.IProfiler):
@@ -7377,7 +6751,7 @@ class IReverseSequenceLayer(ILayer):
 class IRotaryEmbeddingLayer(ILayer):
     """
 
-    A RotaryEmbedding layer in :class:`INetworkDefinition`.
+    A RotaryEmbedding layer in_:class:`INetworkDefinition`.
 
     :ivar interleaved: :class:`builtins.bool` Specifies whether the input tensor is in interleaved format, i.e., whether the 2-d vectors rotated are taken from adjacent 2 elements in the hidden dimension.
     :ivar rotary_embedding_dim: :class:`int` Specifies the hidden dimension that participates in RoPE.
@@ -7516,7 +6890,7 @@ class IScaleLayer(ILayer):
 class IScatterLayer(ILayer):
     """
 
-    A Scatter layer as in :class:`INetworkDefinition`.
+    A Scatter layer as in_:class:`INetworkDefinition`.
     :ivar axis: axis to scatter on when using Scatter Element mode (ignored in ND mode)
     :ivar mode: :class:`ScatterMode` The operation mode of the scatter.
     """
@@ -7775,41 +7149,14 @@ class ISqueezeLayer(ILayer):
         :arg tensor: The input tensor.
         """
 
-class IStreamReader:
-    """
-
-    Application-implemented class for reading data from a stream.
-
-    To implement a custom stream reader, ensure that you explicitly instantiate the base class in :func:`__init__` :
-    ::
-
-        class MyStreamReader(trt.IStreamReader):
-            def __init__(self):
-                trt.IStreamReader.__init__(self)
-
-            def read(self, size: int) -> bytes: ...  # Your implementation here
-
-    """
-    def __init__(self) -> None: ...
-    def read(self, destination: types.CapsuleType, size: typing.SupportsInt) -> int:
-        """
-        A callback implemented by the application to read a particular chunk of memory.
-
-        If an allocation request cannot be satisfied, ``0`` should be returned.
-
-        :arg size: The number of bytes required.
-
-        :returns: A buffer containing the bytes read.
-        """
-
 class IStreamReaderV2:
     """
 
     Application-implemented class for asynchronously reading data from a stream. Implementation does not need to be
-    asynchronous or use the provided cuda stream. Python users are unlikely to see performance gains over IStreamReader
-    or deserialization from a glob.
+    asynchronous or use the provided cuda stream. Python users are unlikely to see performance gains over
+    deserialization from host memory.
 
-    To implement a custom stream reader, ensure that you explicitly instantiate the base class in :func:`__init__` :
+    To implement a custom stream reader, ensure that you explicitly instantiate the base class in_:func:`__init__` :
     ::
         class MyStreamReader(trt.IStreamReaderV2):
             def __init__(self):
@@ -7857,7 +7204,7 @@ class IStreamWriter:
 
     Application-implemented class for writing data to a stream.
 
-    To implement a custom stream writer, ensure that you explicitly instantiate the base class in :func:`__init__` :
+    To implement a custom stream writer, ensure that you explicitly instantiate the base class in_:func:`__init__` :
     ::
 
         class MyStreamWriter(trt.IStreamWriter):
@@ -7893,12 +7240,11 @@ class ITensor:
     :ivar location: :class:`TensorLocation` The storage location of a tensor.
     :ivar is_network_input: :class:`builtins.bool` Whether the tensor is a network input.
     :ivar is_network_output: :class:`builtins.bool` Whether the tensor is a network output.
-    :ivar dynamic_range: :class:`Tuple[float, float]` [DEPRECATED] Deprecated in TensorRT 10.1. Superseded by explicit quantization. A tuple containing the [minimum, maximum] of the dynamic range, or :class:`None` if the range was not set.
+
     :ivar is_shape: :class:`builtins.bool` Whether the tensor is a shape tensor.
     :ivar allowed_formats: :class:`int32` The allowed set of TensorFormat candidates. This should be an integer consisting of one or more :class:`TensorFormat` s, combined via bitwise OR after bit shifting. For example, ``1 << int(TensorFormat.CHW4) | 1 << int(TensorFormat.CHW32)``.
     """
 
-    dtype: DataType
     name: str
     shape: Dims
     def get_dimension_name(self, index: typing.SupportsInt) -> str:
@@ -7928,6 +7274,8 @@ class ITensor:
     def allowed_formats(self) -> int: ...
     @allowed_formats.setter
     def allowed_formats(self, arg1: typing.SupportsInt) -> None: ...
+    @property
+    def dtype(self) -> DataType: ...
     @property
     def is_execution_tensor(self) -> builtins.bool: ...
     @property
@@ -8552,7 +7900,6 @@ class MemoryPoolType:
       WORKSPACE :
         WORKSPACE is used by TensorRT to store intermediate buffers within an operation.
         This defaults to max device memory. Set to a smaller value to restrict tactics that use over the threshold en masse.
-        For more targeted removal of tactics use the IAlgorithmSelector interface ([DEPRECATED] Deprecated in TensorRT 10.8. Please use editable mode in ITimingCache instead).
 
 
       DLA_MANAGED_SRAM :
@@ -8645,24 +7992,19 @@ class MoEActType:
 
 class NetworkDefinitionCreationFlag:
     """
-    List of immutable network properties expressed at network creation time. For example, to enable strongly typed mode, pass a value of ``1 << int(NetworkDefinitionCreationFlag.STRONGLY_TYPED)`` to :func:`create_network`
+    List of immutable network properties expressed at network creation time.
 
     Members:
 
-      EXPLICIT_BATCH : [DEPRECATED] Ignored because networks are always "explicit batch" in TensorRT 10.0.
-
-      STRONGLY_TYPED : Specify that every tensor in the network has a data type defined in the network following only type inference rules and the inputs/operator annotations. Setting layer precision and layer output types is not allowed, and the network output types will be inferred based on the input types and the type inference rules
+      STRONGLY_TYPED : [DEPRECATED] Deprecated in TensorRT 11.0. Strongly typed mode is always enabled. This flag is retained for API compatibility but is ignored.
     """
 
-    EXPLICIT_BATCH: typing.ClassVar[
-        NetworkDefinitionCreationFlag
-    ]  # value = <NetworkDefinitionCreationFlag.EXPLICIT_BATCH: 0>
     STRONGLY_TYPED: typing.ClassVar[
         NetworkDefinitionCreationFlag
-    ]  # value = <NetworkDefinitionCreationFlag.STRONGLY_TYPED: 1>
+    ]  # value = <NetworkDefinitionCreationFlag.STRONGLY_TYPED: 0>
     __members__: typing.ClassVar[
         dict[str, NetworkDefinitionCreationFlag]
-    ]  # value = {'EXPLICIT_BATCH': <NetworkDefinitionCreationFlag.EXPLICIT_BATCH: 0>, 'STRONGLY_TYPED': <NetworkDefinitionCreationFlag.STRONGLY_TYPED: 1>}
+    ]  # value = {'STRONGLY_TYPED': <NetworkDefinitionCreationFlag.STRONGLY_TYPED: 0>}
     def __eq__(self, other: object) -> builtins.bool: ...
     def __ge__(self, other: typing.Any) -> builtins.bool: ...
     def __getstate__(self) -> int: ...
@@ -8897,7 +8239,7 @@ class OnnxParser:
         """
     def load_model_proto(self, model: collections.abc.Buffer, path: str = None) -> builtins.bool:
         """
-        Load a serialized ONNX model into the parser. Unlike the parse(), parse_from_file(), or parse_with_weight_descriptors()
+        Load a serialized ONNX model into the parser. Unlike the parse() or parse_from_file()
         functions, this function does not immediately convert the model into a TensorRT INetworkDefinition. Using this function
         allows users to provide their own initializers for the ONNX model through the load_initializer() function.
 
@@ -8932,16 +8274,6 @@ class OnnxParser:
         Begin the parsing and conversion process of the loaded ONNX model into a TensorRT INetworkDefinition.
 
         :returns: true if the model was parsed successfully.
-        """
-    def parse_with_weight_descriptors(self, model: collections.abc.Buffer) -> builtins.bool:
-        """
-        [DEPRECATED] Deprecated in TensorRT 10.13. See load_initializers.
-
-        Parse a serialized ONNX model into the TensorRT network with consideration of user provided weights.
-
-        :arg model: The serialized ONNX model.
-
-        :returns: true if the model was parsed successfully
         """
     def set_builder_config(self, builder_config: IBuilderConfig) -> builtins.bool:
         """
@@ -9604,14 +8936,9 @@ class PreviewFeature:
 
         List of Preview Features that can be enabled. Preview Features have been fully tested but are not yet as stable as other features in TensorRT.
         They are provided as opt-in features for at least one release.
-        For example, to enable faster dynamic shapes, call :func:`set_preview_feature` with ``PreviewFeature.PROFILE_SHARING_0806``
 
 
     Members:
-
-      PROFILE_SHARING_0806 :
-        [DEPRECATED] Allows optimization profiles to be shared across execution contexts. The default value for this flag is on in TensorRT 10.0. Turning if off is deprecated.
-
 
       ALIASED_PLUGIN_IO_10_03 :
         Allows plugin I/O to be aliased when using IPluginV3OneBuildV2.
@@ -9619,21 +8946,15 @@ class PreviewFeature:
 
       RUNTIME_ACTIVATION_RESIZE_10_10 :
         Allow update_device_memory_size_for_shapes to resize runner internal activation memory by changing the allocation algorithm. Using this feature can reduce runtime memory requirement when the actual input tensor shapes are smaller than the maximum input tensor dimensions.
-
-
-      MULTIDEVICE_RUNTIME_10_16 :
-        Allow using multi-device mode in the builder. This enables running inference on multiple GPUs on supported platforms.
     """
 
-    ALIASED_PLUGIN_IO_10_03: typing.ClassVar[PreviewFeature]  # value = <PreviewFeature.ALIASED_PLUGIN_IO_10_03: 1>
-    MULTIDEVICE_RUNTIME_10_16: typing.ClassVar[PreviewFeature]  # value = <PreviewFeature.MULTIDEVICE_RUNTIME_10_16: 3>
-    PROFILE_SHARING_0806: typing.ClassVar[PreviewFeature]  # value = <PreviewFeature.PROFILE_SHARING_0806: 0>
+    ALIASED_PLUGIN_IO_10_03: typing.ClassVar[PreviewFeature]  # value = <PreviewFeature.ALIASED_PLUGIN_IO_10_03: 0>
     RUNTIME_ACTIVATION_RESIZE_10_10: typing.ClassVar[
         PreviewFeature
-    ]  # value = <PreviewFeature.RUNTIME_ACTIVATION_RESIZE_10_10: 2>
+    ]  # value = <PreviewFeature.RUNTIME_ACTIVATION_RESIZE_10_10: 1>
     __members__: typing.ClassVar[
         dict[str, PreviewFeature]
-    ]  # value = {'PROFILE_SHARING_0806': <PreviewFeature.PROFILE_SHARING_0806: 0>, 'ALIASED_PLUGIN_IO_10_03': <PreviewFeature.ALIASED_PLUGIN_IO_10_03: 1>, 'RUNTIME_ACTIVATION_RESIZE_10_10': <PreviewFeature.RUNTIME_ACTIVATION_RESIZE_10_10: 2>, 'MULTIDEVICE_RUNTIME_10_16': <PreviewFeature.MULTIDEVICE_RUNTIME_10_16: 3>}
+    ]  # value = {'ALIASED_PLUGIN_IO_10_03': <PreviewFeature.ALIASED_PLUGIN_IO_10_03: 0>, 'RUNTIME_ACTIVATION_RESIZE_10_10': <PreviewFeature.RUNTIME_ACTIVATION_RESIZE_10_10: 1>}
     def __eq__(self, other: object) -> builtins.bool: ...
     def __getstate__(self) -> int: ...
     def __hash__(self) -> int: ...
@@ -9688,36 +9009,6 @@ class ProfilingVerbosity:
     def __index__(self) -> int: ...
     def __init__(self, value: typing.SupportsInt) -> None: ...
     def __int__(self) -> int: ...
-    def __ne__(self, other: object) -> builtins.bool: ...
-    def __setstate__(self, state: typing.SupportsInt) -> None: ...
-    @property
-    def name(self) -> str: ...
-    @property
-    def value(self) -> int: ...
-
-class QuantizationFlag:
-    """
-    List of valid flags for quantizing the network to int8.
-
-    Members:
-
-      CALIBRATE_BEFORE_FUSION : Run int8 calibration pass before layer fusion. Only valid for IInt8LegacyCalibrator and IInt8EntropyCalibrator. We always run int8 calibration pass before layer fusion for IInt8MinMaxCalibrator and IInt8EntropyCalibrator2. Disabled by default.
-    """
-
-    CALIBRATE_BEFORE_FUSION: typing.ClassVar[QuantizationFlag]  # value = <QuantizationFlag.CALIBRATE_BEFORE_FUSION: 0>
-    __members__: typing.ClassVar[
-        dict[str, QuantizationFlag]
-    ]  # value = {'CALIBRATE_BEFORE_FUSION': <QuantizationFlag.CALIBRATE_BEFORE_FUSION: 0>}
-    def __eq__(self, other: object) -> builtins.bool: ...
-    def __ge__(self, other: typing.Any) -> builtins.bool: ...
-    def __getstate__(self) -> int: ...
-    def __gt__(self, other: typing.Any) -> builtins.bool: ...
-    def __hash__(self) -> int: ...
-    def __index__(self) -> int: ...
-    def __init__(self, value: typing.SupportsInt) -> None: ...
-    def __int__(self) -> int: ...
-    def __le__(self, other: typing.Any) -> builtins.bool: ...
-    def __lt__(self, other: typing.Any) -> builtins.bool: ...
     def __ne__(self, other: object) -> builtins.bool: ...
     def __setstate__(self, state: typing.SupportsInt) -> None: ...
     @property
@@ -10373,23 +9664,6 @@ class TacticSource:
 
     Members:
 
-      CUBLAS :
-            Enables cuBLAS tactics. Disabled by default.
-            [DEPRECATED] Deprecated in TensorRT 10.0.
-            **NOTE:** Disabling CUBLAS tactic source will cause the cuBLAS handle passed to plugins in attachToContext to be null.
-
-
-      CUBLAS_LT :
-            Enables cuBLAS LT tactics. Disabled by default.
-            [DEPRECATED] Deprecated in TensorRT 9.0.
-
-
-      CUDNN :
-            Enables cuDNN tactics. Disabled by default.
-            [DEPRECATED] Deprecated in TensorRT 10.0.
-            **NOTE:** Disabling CUDNN tactic source will cause the cuDNN handle passed to plugins in attachToContext to be null.
-
-
       EDGE_MASK_CONVOLUTIONS :
             Enables convolution tactics implemented with edge mask tables. These tactics tradeoff memory for performance
             by consuming additional memory space proportional to the input size. Enabled by default.
@@ -10401,14 +9675,11 @@ class TacticSource:
 
     """
 
-    CUBLAS: typing.ClassVar[TacticSource]  # value = <TacticSource.CUBLAS: 0>
-    CUBLAS_LT: typing.ClassVar[TacticSource]  # value = <TacticSource.CUBLAS_LT: 1>
-    CUDNN: typing.ClassVar[TacticSource]  # value = <TacticSource.CUDNN: 2>
-    EDGE_MASK_CONVOLUTIONS: typing.ClassVar[TacticSource]  # value = <TacticSource.EDGE_MASK_CONVOLUTIONS: 3>
-    JIT_CONVOLUTIONS: typing.ClassVar[TacticSource]  # value = <TacticSource.JIT_CONVOLUTIONS: 4>
+    EDGE_MASK_CONVOLUTIONS: typing.ClassVar[TacticSource]  # value = <TacticSource.EDGE_MASK_CONVOLUTIONS: 0>
+    JIT_CONVOLUTIONS: typing.ClassVar[TacticSource]  # value = <TacticSource.JIT_CONVOLUTIONS: 1>
     __members__: typing.ClassVar[
         dict[str, TacticSource]
-    ]  # value = {'CUBLAS': <TacticSource.CUBLAS: 0>, 'CUBLAS_LT': <TacticSource.CUBLAS_LT: 1>, 'CUDNN': <TacticSource.CUDNN: 2>, 'EDGE_MASK_CONVOLUTIONS': <TacticSource.EDGE_MASK_CONVOLUTIONS: 3>, 'JIT_CONVOLUTIONS': <TacticSource.JIT_CONVOLUTIONS: 4>}
+    ]  # value = {'EDGE_MASK_CONVOLUTIONS': <TacticSource.EDGE_MASK_CONVOLUTIONS: 0>, 'JIT_CONVOLUTIONS': <TacticSource.JIT_CONVOLUTIONS: 1>}
     def __eq__(self, other: object) -> builtins.bool: ...
     def __ge__(self, other: typing.Any) -> builtins.bool: ...
     def __getstate__(self) -> int: ...

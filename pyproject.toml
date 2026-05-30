@@ -141,19 +141,19 @@ deband = ["vsjetpack[denoise]", "vsnoise>=1.2"]
 cl = ["vapoursynth-knlmeanscl>=1.2"]
 nvidia = [
     "dfttest2[cufft,nvrtc]>=10",
-    "vapoursynth-dfttest2-cuda>=10",                     # Explicitly specify this one so it's properly resolved through uv --index
+    "vapoursynth-dfttest2-cuda>=10",          # Explicitly specify this one so it's properly resolved through uv --index
     "vapoursynth-bm3dcuda>=2.16",
     "vapoursynth-bilateralgpu>=14",
     "vapoursynth-nlm-cuda>=4",
     "onnx>=1.21.0",
     "onnxconverter-common>=1.16.0",
     "packaging>=26.0",
-    "tensorrt-cu13             >=10.16.1.11,<10.16.2.0",
-    "tensorrt-cu13-bindings    >=10.16.1.11,<10.16.2.0", # Explicitly specify this one so it's properly resolved through uv --index
-    "tensorrt-cu13-libs        >=10.16.1.11,<10.16.2.0", # Explicitly specify this one so it's properly resolved through uv --index
-    "tensorrt-rtx-cu13         >=1.4.0.76,  <1.4.1.0",
-    "tensorrt-rtx-cu13-bindings>=1.4.0.76,  <1.4.1.0",   # Explicitly specify this one so it's properly resolved through uv --index
-    "tensorrt-rtx-cu13-libs    >=1.4.0.76,  <1.4.1.0",   # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-cu13             >=10.16.1.11",
+    "tensorrt-cu13-bindings    >=10.16.1.11", # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-cu13-libs        >=10.16.1.11", # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-rtx-cu13         >=1.4.0.76",
+    "tensorrt-rtx-cu13-bindings>=1.4.0.76",   # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-rtx-cu13-libs    >=1.4.0.76",   # Explicitly specify this one so it's properly resolved through uv --index
 ]
 amd = [
     "vsjetpack[cl]",
@@ -190,6 +190,7 @@ dev = [
     "vstransitions==0.1.4",
     "orderedsets",
     "pybind11-stubgen>=2.5.5",
+    "vsstubs>=2.1.0",
     { include-group = "test" },
 ]
 test = ["pytest>=9.0.0, <10.0.0", "pytest-cov>=6.2.1, <8.0.0"]
@@ -215,7 +216,10 @@ vapoursynth-dfttest2-cuda = { index = "vs-wheels" }
 vapoursynth-ffms2 = { index = "vs-wheels" }
 vapoursynth-fmtconv = { index = "vs-wheels" }
 tensorrt-cu13 = { index = "nvidia" }
-tensorrt-cu13-bindings = { index = "nvidia" }
+tensorrt-cu13-bindings = [
+    { index = "nvidia", marker = "python_version < '3.14'" },
+    { index = "vs-wheels", marker = "python_version == '3.14'" },
+]
 tensorrt-cu13-libs = { index = "nvidia" }
 tensorrt-rtx-cu13 = { index = "nvidia" }
 tensorrt-rtx-cu13-bindings = { index = "nvidia" }
