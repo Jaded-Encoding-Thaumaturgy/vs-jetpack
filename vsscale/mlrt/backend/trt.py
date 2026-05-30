@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import warnings
 import zlib
@@ -9,16 +10,16 @@ from importlib.util import find_spec
 from logging import getLogger
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, SupportsInt
 
 import onnx
 import onnxconverter_common as onnxcc
-from jetpytools import cachedproperty
+from jetpytools import cachedproperty, copy_signature, to_arr
 from packaging.version import Version
 
 if TYPE_CHECKING:
-    import tensorrt as trt
-    import tensorrt_rtx as trt_rtx
+    import tensorrt
+    import tensorrt_rtx
 
 from vstools import core, vs
 
@@ -45,7 +46,8 @@ class TensorRT(Backend):
     # Hardware & Runtime Execution
     device_id: int = 0
     num_streams: int = 1
-    use_cuda_graph: bool = False
+    use_cuda_graph: bool = True
+    verbosity: SupportsInt | tensorrt.ILogger.Severity | tensorrt_rtx.ILogger.Severity = 2
 
     # Model Precision & Data Types
     fp16: bool = False
@@ -68,7 +70,7 @@ class TensorRT(Backend):
     builder_optimization_level: int = 3
     max_aux_streams: int | None = None
     max_num_tactics: int | None = None
-    tiling_optimization_level: trt.TilingOptimizationLevel | trt_rtx.TilingOptimizationLevel | int = 0
+    tiling_optimization_level: tensorrt.TilingOptimizationLevel | tensorrt_rtx.TilingOptimizationLevel | int = 0
     l2_limit_for_tiling: int = -1
 
     def __post_init__(self) -> None:
@@ -93,10 +95,35 @@ class TensorRT(Backend):
         return Version(self.trt.__version__).release[:3]  # type: ignore[return-value]
 
     @property
-    def logger(self) -> trt.ILogger:
+    def logger(self) -> tensorrt.ILogger:
         from ._trt import Logger
 
         return Logger(logger)
+
+    @copy_signature(Backend.inference)
+    def inference(
+        self,
+        clips: vs.VideoNode | Sequence[vs.VideoNode],
+        network_path: str | os.PathLike[str],
+        /,
+        overlap: tuple[int, int],
+        tilesize: tuple[int, int],
+        *,
+        flexible: bool = False,
+        **kwargs: Any,
+    ) -> vs.VideoNode | list[vs.VideoNode]:
+        channels = sum(clip.format.num_planes for clip in to_arr(clips))
+        engine_path = self.build_engine(Path(network_path), channels, tilesize)
+
+        return super().inference(clips, engine_path, overlap, tilesize, flexible=flexible, **kwargs)
+
+    def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
+        return {
+            "device_id": self.device_id,
+            "use_cuda_graph": self.use_cuda_graph,
+            "num_streams": self.num_streams,
+            "verbosity": self.verbosity,
+        }
 
     def get_identity(self, network_path: Path, channels: int, tilesize: Shape) -> int:
         checksum = zlib.crc32(network_path.read_bytes())
@@ -354,7 +381,7 @@ class RTX(TensorRT):
             raise ModuleNotFoundError("The 'tensorrt_rtx' dependency is not installed.") from None
 
     @property
-    def logger(self) -> trt_rtx.ILogger:  # type: ignore[override]
+    def logger(self) -> tensorrt_rtx.ILogger:  # type: ignore[override]
         from ._trt_rtx import Logger
 
         return Logger(logger)
