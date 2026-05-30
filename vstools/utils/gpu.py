@@ -2,7 +2,7 @@ __all__ = ["get_nvidia_version", "is_gpu_available"]
 
 
 def _str_to_ver(string: str) -> tuple[int, int]:
-    return tuple(int(x) for x in string.strip().split(".", 2))  # type: ignore
+    return tuple(int(x) for x in string.split(" ", 1)[0].split(".", 2))  # type: ignore
 
 
 def get_nvidia_version() -> tuple[int, int] | None:
@@ -17,7 +17,7 @@ def get_nvidia_version() -> tuple[int, int] | None:
         pass
     else:
         if not smi.returncode:
-            return _str_to_ver(smi.stdout.splitlines()[5].decode().split(":")[-1])
+            return _str_to_ver(smi.stdout.splitlines()[5].decode().split(":")[-1].strip())
 
     return None
 
