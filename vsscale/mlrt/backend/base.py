@@ -17,7 +17,6 @@ logger = getLogger(__name__)
 @dataclass(kw_only=True, frozen=True)
 class Backend:
     plugin: ClassVar[vs.Plugin]
-    supports_onnx_serialization: ClassVar[bool] = True
     flexible_output_prop: ClassVar[str] = "MlrtFlexible"
 
     class OutputFormat(IntEnum):

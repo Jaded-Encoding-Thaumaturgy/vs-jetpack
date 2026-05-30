@@ -41,7 +41,6 @@ class TensorRT(Backend):
     """Base TensorRT backend configuration."""
 
     plugin: ClassVar[vs.Plugin]
-    supports_onnx_serialization = False
 
     # Hardware & Runtime Execution
     device_id: int = 0
