@@ -57,17 +57,17 @@ Not all extras have prebuilt wheels on every platform:
 | Extra         | Windows x64 | Linux (glibc 2.35+) | Linux (musl 1.2+) | macOS (Intel/ARM) 15.0+ |
 | :------------ | :---------: | :-----------------: | :---------------: | :---------------------: |
 | `basic`       |     ✅      |         ✅          |        ✅         |           ✅            |
-| `source`      |     ✅      |         ✅          |      ❌[^1]       |         ⚠️[^1]          |
+| `source`      |     ✅      |         ✅          |        ✅         |           ✅            |
 | `kernels`     |     ✅      |         ✅          |        ✅         |           ✅            |
 | `rg`          |     ✅      |         ✅          |        ✅         |           ✅            |
-| `mask`        |     ✅      |         ✅          |      ❌[^1]       |           ✅            |
-| `aa`          |     ✅      |         ✅          |      ❌[^1]       |           ✅            |
-| `denoise`     |     ✅      |         ✅          |        ❌         |         ⚠️[^2]          |
+| `mask`        |     ✅      |         ✅          |        ✅         |           ✅            |
+| `aa`          |     ✅      |         ✅          |        ✅         |           ✅            |
+| `denoise`     |     ✅      |         ✅          |        ❌         |         ⚠️[^1]          |
 | `deband`      |     ✅      |         ✅          |        ❌         |           ✅            |
 | `deinterlace` |     ✅      |         ✅          |        ❌         |           ✅            |
 | `full`        |     ✅      |         ✅          |        ❌         |           ⚠️            |
 | `cl`          |     ✅      |         ✅          |        ❌         |           ✅            |
-| `nvidia`      |     ✅      |       ⚠️[^3]        |        ❌         |           ❌            |
+| `nvidia`      |     ✅      |       ⚠️[^2]        |        ❌         |           ❌            |
 | `amd`         |     ✅      |         ✅          |        ❌         |           ❌            |
 
 > [!TIP]
@@ -75,8 +75,6 @@ Not all extras have prebuilt wheels on every platform:
 >
 > Refer to the plugin repository for platform-specific build instructions.
 
-[^1]: `dvdsrc2` isn't available on musl and macOS.
+[^1]: `wnnm` isn't available on macOS.
 
-[^2]: `wnnm` isn't available on macOS.
-
-[^3]: Requires Glibc 2.39+ for `bilateralgpu`.
+[^2]: Requires Glibc 2.39+ for `bilateralgpu`.

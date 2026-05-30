@@ -72,7 +72,7 @@ source = [
     "vsjetpack[basic]",
     "vapoursynth-bestsource>=17.0",
     "vapoursynth-d2vsource>=1.4",
-    "vapoursynth-dvdsrc2>=3.0 ; platform_machine == 'x86_64' and (platform_system == 'Linux' or platform_system == 'Windows')",
+    "vapoursynth-dvdsrc2>=3.0",
     "vapoursynth-ffms2>=5.2.0",
 ]
 kernels = [
