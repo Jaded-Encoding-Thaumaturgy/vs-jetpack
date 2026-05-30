@@ -2,7 +2,7 @@ import os
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 from jetpytools import copy_signature
 
@@ -14,8 +14,6 @@ from .base import Backend
 @dataclass(kw_only=True, frozen=True)
 class MIGX(Backend):
     """MIGraphX backend for AMD GPUs."""
-
-    supports_onnx_serialization: ClassVar[bool] = False
 
     # Hardware & Runtime Execution
     device_id: int = 0
