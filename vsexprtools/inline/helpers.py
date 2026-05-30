@@ -295,7 +295,7 @@ class ExprVar(ABC):
             return self.as_var()
         return op.add(self, other)
 
-    def __iadd__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
+    def __iadd__(self, other: ExprVarLike) -> ComputedVar:
         if other == 0:
             return self.as_var()
         return op.add(self, other)
@@ -308,7 +308,7 @@ class ExprVar(ABC):
     def __sub__(self, other: ExprVarLike) -> ComputedVar:
         return op.sub(self, other)
 
-    def __isub__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
+    def __isub__(self, other: ExprVarLike) -> ComputedVar:
         return op.sub(self, other)
 
     def __rsub__(self, other: ExprVarLike) -> ComputedVar:
@@ -317,7 +317,7 @@ class ExprVar(ABC):
     def __mul__(self, other: ExprVarLike) -> ComputedVar:
         return op.mul(self, other)
 
-    def __imul__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
+    def __imul__(self, other: ExprVarLike) -> ComputedVar:
         return op.mul(self, other)
 
     def __rmul__(self, other: ExprVarLike) -> ComputedVar:
@@ -329,13 +329,13 @@ class ExprVar(ABC):
     def __rtruediv__(self, other: ExprVarLike) -> ComputedVar:
         return op.div(other, self)
 
-    def __itruediv__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
+    def __itruediv__(self, other: ExprVarLike) -> ComputedVar:
         return op.div(self, other)
 
     def __floordiv__(self, other: ExprVarLike) -> ComputedVar:
         return op.floor(op.div(self, other))
 
-    def __ifloordiv__(self, other: ExprVarLike) -> ComputedVar:  # noqa: PYI034
+    def __ifloordiv__(self, other: ExprVarLike) -> ComputedVar:
         return op.floor(op.div(self, other))
 
     def __rfloordiv__(self, other: ExprVarLike) -> ComputedVar:
