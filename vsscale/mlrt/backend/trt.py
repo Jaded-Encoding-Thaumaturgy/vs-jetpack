@@ -187,7 +187,7 @@ class TensorRT(Backend):
     ) -> None:
         trt_logger = self.logger
         builder = self.trt.Builder(trt_logger)
-        network = builder.create_network(1 << self.trt.NetworkDefinitionCreationFlag.STRONGLY_TYPED.value)
+        network = builder.create_network()
         parser = self.trt.OnnxParser(network, trt_logger)
 
         if not parser.parse_from_file(str(network_path)):
