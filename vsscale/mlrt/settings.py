@@ -1,5 +1,4 @@
 import os
-import sys
 import tomllib
 from functools import cache
 from pathlib import Path
@@ -11,7 +10,7 @@ from vstools import PackageStorage
 APP_AUTHOR = "vsjet"
 APP_NAME = "vsscale"
 TRUTHY = frozenset({"1", "true", "yes", "on"})
-ENV_KEYS = ("VSSCALE_LOCAL", "VSSCALE_{}_LOCAL")
+ENV_KEYS = ("VSSCALE_GLOBAL", "VSSCALE_{}_GLOBAL")
 TOML_CONFIG = ("vsjet.toml", "pyproject.toml")
 TOML_KEYS: tuple[list[str], ...] = (["vsscale"], ["tool", "vsscale"])
 
@@ -27,11 +26,8 @@ def get_local_cache() -> Path:
 
 
 @cache
-def get_cache(thing: str, *, local: bool = False) -> Path:
-    if local or is_local_in_env(thing):
-        return get_local_cache()
-
-    if running_via_cli():
+def get_cache(thing: str, *, global_: bool = False) -> Path:
+    if global_ or is_global_in_env(thing):
         return get_global_cache()
 
     for config_file, keys in zip(TOML_CONFIG, TOML_KEYS):
@@ -43,14 +39,14 @@ def get_cache(thing: str, *, local: bool = False) -> Path:
             for key in keys:
                 config = config.get(key, {})
 
-            if config.get("local", False):
-                return get_local_cache()
+            if config.get("global", False):
+                return get_global_cache()
 
-    return get_global_cache()
+    return get_local_cache()
 
 
 @cache
-def get_onnx_folder(*, local: bool = False) -> Path:
+def get_onnx_folder(*, global_: bool = False) -> Path:
     r"""
     Linux: ~/.cache/vsscale/onnx
 
@@ -58,11 +54,11 @@ def get_onnx_folder(*, local: bool = False) -> Path:
 
     Windows: ...\AppData\Local\vsjet\vsscale\Cache\onnx
     """
-    return get_cache("onnx", local=local) / "onnx"
+    return get_cache("onnx", global_=global_) / "onnx"
 
 
 @cache
-def get_engines_folder(*, local: bool = False) -> Path:
+def get_engines_folder(*, global_: bool = False) -> Path:
     r"""
     Linux: ~/.cache/vsscale/engines
 
@@ -70,16 +66,8 @@ def get_engines_folder(*, local: bool = False) -> Path:
 
     Windows: ...\AppData\Local\vsjet\vsscale\Cache\engines
     """
-    return get_cache("engine", local=local) / "engines"
+    return get_cache("engine", global_=global_) / "engines"
 
 
-def is_local_in_env(filetype: str) -> bool:
+def is_global_in_env(filetype: str) -> bool:
     return any(env.lower() in TRUTHY for env in (os.getenv(k.format(filetype), "") for k in ENV_KEYS))
-
-
-def running_via_cli() -> bool:
-    if Path(sys.argv[0]).stem == "vsscale":
-        return True
-
-    main_mod = sys.modules.get("__main__")
-    return bool(main_mod and main_mod.__package__ == "vsscale")
