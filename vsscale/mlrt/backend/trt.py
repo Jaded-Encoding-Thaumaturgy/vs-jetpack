@@ -276,6 +276,14 @@ class TensorRT(Backend):
         opt_shapes = self.trt.Dims(self.opt_shapes or tilesize)
         max_shapes = self.trt.Dims(self.max_shapes or tilesize)
 
+        input_names = [network.get_input(i).name for i in range(network.num_inputs)]
+        if input_name not in input_names:
+            logger.debug("input_name %r isn't in the input network", input_name)
+            if network.num_inputs == 1:
+                input_name = input_names[0]
+            else:
+                raise ValueError(f"Input name '{input_name}' not found in network inputs: {input_names}")
+
         if self.static_shape:
             shape = self.trt.Dims((1, channels, opt_shapes[1], opt_shapes[0]))
 
