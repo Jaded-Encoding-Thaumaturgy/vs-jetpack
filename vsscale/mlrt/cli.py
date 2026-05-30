@@ -10,10 +10,12 @@ from typing import Annotated, Self
 import anyio
 import anyio.to_thread
 import cyclopts
+import cyclopts.help
 import humanize
 import niquests
 import questionary as quest
-from rich.console import Console
+from cyclopts.help import HelpPanel
+from rich.console import Console, ConsoleOptions
 from rich.pretty import pretty_repr
 from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TransferSpeedColumn
 
@@ -44,23 +46,31 @@ app.command(onnx_app)
 app.command(engine_app)
 
 
-@onnx_app.command
+def _custom_help_formatter(console: Console, options: ConsoleOptions, panel: HelpPanel) -> None:
+    for i, entry in enumerate(panel.entries):
+        if "--onnx" in entry.positive_names:
+            clean_names = tuple(name for name in entry.positive_names if name != "--onnx")
+            panel.entries[i] = entry.copy(positive_names=clean_names)  # type: ignore[no-untyped-call]
+    cyclopts.help.DefaultFormatter()(console, options, panel)
+
+
+@onnx_app.command(help_formatter=_custom_help_formatter)
 async def download(
-    *onnx: str,
+    *onnx: Annotated[str, cyclopts.Parameter(name="--onnx")],
     latest: Annotated[
         bool,
         cyclopts.Parameter(
             negative=(),
             show_default=False,
-            env_var=["VSSCALE_ONNX_DOWNLOAD_LATEST", "VSSCALE_LOCAL"],
+            env_var=["VSSCALE_ONNX_DOWNLOAD_LATEST", "VSSCALE_LATEST"],
         ),
     ] = False,
-    local: Annotated[
+    global_: Annotated[
         bool,
         cyclopts.Parameter(
             negative=(),
             show_default=False,
-            env_var=["VSSCALE_ONNX_DOWNLOAD_LOCAL", "VSSCALE_LOCAL"],
+            env_var=["VSSCALE_ONNX_DOWNLOAD_GLOBAL", "VSSCALE_GLOBAL"],
         ),
     ] = False,
 ) -> None:
@@ -73,11 +83,14 @@ async def download(
       - Pinned version:     vsscale onnx download ArtCNN==v1.6.2
       - Latest release:     vsscale onnx download ArtCNN --latest
 
+    If a `vsjet.toml` or a `pyproject.toml` file is detected with a valid configuration,
+    the interactive mode may be partially or fully skipped.
+
     Args:
         onnx: The ONNX model(s) to download. Possible choices: "ArtCNN", "DPIR", "Waifu2X".
             Use '==' syntax to pin a version (e.g. ArtCNN==v1.6.2).
         latest: Whether to automatically download all models from the latest release.
-        local: Wthether to download models to the current local folder.
+        global_: Whether to download models to the global folder.
     """
     if not onnx:
         # Fully interactive: pick model, then tag, then assets
@@ -85,7 +98,7 @@ async def download(
         releases = await _fetch_releases(feed)
         release = await _select_tag(releases)
         assets = await _select_assets(release)
-        return await _download_assets(feed, release, assets, local=local)
+        return await _download_assets(feed, release, assets, global_=global_)
 
     for spec in onnx:
         model_name, pinned_version = _parse_model_spec(spec)
@@ -111,20 +124,20 @@ async def download(
             release = await _select_tag(releases)
             assets = await _select_assets(release)
 
-        await _download_assets(feed, release, assets, local=local)
+        await _download_assets(feed, release, assets, global_=global_)
         console.print()
 
 
-@engine_app.command(help="List built TensorRT engines.")
-@onnx_app.command(help="List downloaded ONNX models.")
+@engine_app.command(help="List built TensorRT engines.", help_formatter=_custom_help_formatter)
+@onnx_app.command(help="List downloaded ONNX models.", help_formatter=_custom_help_formatter)
 def show(
-    *onnx: str,
-    local: Annotated[
+    *onnx: Annotated[str, cyclopts.Parameter(name="--onnx")],
+    global_: Annotated[
         bool,
         cyclopts.Parameter(
             negative=(),
             show_default=False,
-            env_var=["VSSCALE_SHOW_LOCAL", "VSSCALE_LOCAL"],
+            env_var=["VSSCALE_SHOW_GLOBAL", "VSSCALE_GLOBAL"],
         ),
     ] = False,
 ) -> None:
@@ -134,15 +147,16 @@ def show(
     Args:
         onnx: The model(s) to show. Supports specifying version pin (e.g. ArtCNN==v1.6.2).
             If not specified, all files are listed.
+        global_: Whether to show models in the global folder.
     """
     (cmd, *_), _, _ = app.parse_commands()
 
     match cmd:
         case "onnx":
-            folder = get_onnx_folder(local=local)
+            folder = get_onnx_folder(global_=global_)
             ext = [".onnx"]
         case "engine":
-            folder = get_engines_folder(local=local)
+            folder = get_engines_folder(global_=global_)
             ext = [".mxr", ".engine", ".cache"]
         case _:
             raise ValueError
@@ -160,11 +174,14 @@ def show(
         print(folder_repr)
 
 
-@engine_app.command(help="Clear built TensorRT engine files.")
-@onnx_app.command(help="Clear downloaded ONNX models.")
+@engine_app.command(help="Clear built TensorRT engine files.", help_formatter=_custom_help_formatter)
+@onnx_app.command(help="Clear downloaded ONNX models.", help_formatter=_custom_help_formatter)
 def clear(
-    *onnx: str,
-    local: Annotated[bool, cyclopts.Parameter(negative=(), show_default=False)] = False,
+    *onnx: Annotated[str, cyclopts.Parameter(name="--onnx")],
+    global_: Annotated[
+        bool,
+        cyclopts.Parameter(negative=(), show_default=False, env_var=["VSSCALE_CLEAR_GLOBAL", "VSSCALE_GLOBAL"]),
+    ] = False,
 ) -> None:
     """
     Delete downloaded ONNX models or built TensorRT engines.
@@ -174,14 +191,15 @@ def clear(
     Args:
         onnx: Specific model namespace(s) or model-version specification(s) to clear
             (e.g., "ArtCNN" or "ArtCNN==v1.6.2"). If omitted, all files will be deleted.
+        global_: Whether to clear files in the global folder.
     """
     (cmd, *_), _, _ = app.parse_commands()
 
     match cmd:
         case "onnx":
-            folder = get_onnx_folder(local=local)
+            folder = get_onnx_folder(global_=global_)
         case "engine":
-            folder = get_engines_folder(local=local)
+            folder = get_engines_folder(global_=global_)
         case _:
             raise ValueError
 
@@ -285,8 +303,8 @@ async def _select_assets(release: Release) -> list[Asset]:
     return selected
 
 
-async def _download_assets(feed: Feed, release: Release, assets: Sequence[Asset], *, local: bool = False) -> None:
-    dest_folder = anyio.Path(get_onnx_folder(local=local) / feed.display_name.lower() / release.tag)
+async def _download_assets(feed: Feed, release: Release, assets: Sequence[Asset], *, global_: bool = False) -> None:
+    dest_folder = anyio.Path(get_onnx_folder(global_=global_) / feed.display_name.lower() / release.tag)
 
     console.print(f"[bold]Downloading to:[/bold] [cyan]{dest_folder}[/cyan]")
 
