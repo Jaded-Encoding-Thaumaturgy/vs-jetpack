@@ -96,7 +96,9 @@ class TensorRT(Backend):
         bindings_version = Version(self.trt.__version__)
 
         if plugin_version.release[:3] != (version := bindings_version.release[:3]):
-            raise RuntimeError
+            raise RuntimeError(
+                f"TensorRT plugin version {plugin_version} does not match TensorRT bindings version {bindings_version}"
+            )
 
         return version  # type: ignore[return-value]
 
