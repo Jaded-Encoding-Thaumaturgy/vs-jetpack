@@ -312,10 +312,11 @@ class TensorRT(Backend):
         config.add_optimization_profile(profile)
 
     def _convert_onnx_fp16(self, network_path: Path) -> Path:
-        get_onnx_folder().mkdir(parents=True, exist_ok=True)
+        network = network_path.read_bytes()
 
+        get_onnx_folder().mkdir(parents=True, exist_ok=True)
         suffix = "fp16" if not self.fp16_node_block_list else f"fp16_block_{'_'.join(self.fp16_node_block_list)}"
-        checksum = zlib.crc32(network_path.read_bytes())
+        checksum = zlib.crc32(network)
         fp16_path = network_path.parent / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
 
         if fp16_path.is_file() and fp16_path.stat().st_size >= 1024:
@@ -323,7 +324,7 @@ class TensorRT(Backend):
 
         logger.info(f"Converting ONNX graph metadata to Float16 for: {network_path.name}")
 
-        model = onnx.load(network_path)
+        model = onnx.load_model_from_string(network)
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning, module=r"onnxconverter_common.*float16")
@@ -333,21 +334,22 @@ class TensorRT(Backend):
                 node_block_list=self.fp16_node_block_list,
             )
 
-        onnx.save(model, fp16_path)
+        onnx.save_model(model, fp16_path)
 
         return fp16_path
 
     def _convert_onnx_bf16(self, network_path: Path) -> Path:
-        get_onnx_folder().mkdir(parents=True, exist_ok=True)
+        network = network_path.read_bytes()
 
-        checksum = zlib.crc32(network_path.read_bytes())
+        get_onnx_folder().mkdir(parents=True, exist_ok=True)
+        checksum = zlib.crc32(network)
         bf16_path = network_path.parent / f"{network_path.stem}_{checksum:x}_bf16_io.onnx"
 
         if bf16_path.is_file() and bf16_path.stat().st_size >= 1024:
             return bf16_path
 
         logger.info(f"Converting ONNX graph metadata to BFloat16 for: {network_path.name}")
-        model = onnx.load(network_path)
+        model = onnx.load_model_from_string(network)
         graph = model.graph
 
         for tensor in graph.input:
@@ -366,7 +368,7 @@ class TensorRT(Backend):
             if initializer.data_type == onnx.TensorProto.FLOAT:
                 initializer.data_type = onnx.TensorProto.BFLOAT16
 
-        onnx.save(model, bf16_path)
+        onnx.save_model(model, bf16_path)
         return bf16_path
 
 
