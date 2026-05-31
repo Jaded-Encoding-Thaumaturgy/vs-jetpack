@@ -13,7 +13,7 @@ from .base import Backend
 class NCNN(Backend): ...
 
 
-@dataclass(kw_only=True, init=False, frozen=True)
+@dataclass(kw_only=True, frozen=True)
 class VK(NCNN):
     """NCNN Vulkan backend."""
 
@@ -22,7 +22,7 @@ class VK(NCNN):
     num_streams: int = 1
 
     # Model Precision & Data Types
-    fp16: bool
+    fp16: bool = False
     fp16_blacklist_ops: Sequence[str] | None
     output_format: Backend.OutputFormat | None = None
 
