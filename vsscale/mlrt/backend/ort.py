@@ -28,7 +28,7 @@ class ORT(Backend):
     # Model Precision & Data Types
     fp16: bool
     fp16_blacklist_ops: Sequence[str] | None
-    output_format: Backend.OutputFormat | None = None
+    output_format: Backend.OutputFormat | None
 
     # Specify __init__ here to set arguments order for subclasses
     def __init__(
