@@ -22,7 +22,7 @@ from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, Trans
 from vsjetpack import __version__
 
 from .feeds import Asset, Feed, Release
-from .settings import TOML_CONFIG, TOML_KEYS, get_engines_folder, get_onnx_folder
+from .settings import TOML_CONFIG, TOML_KEYS, get_artifacts_folder, get_onnx_folder
 
 MAX_CONCURRENCY = os.cpu_count() or 4
 
@@ -31,7 +31,7 @@ console = Console(stderr=True)
 app = cyclopts.App(
     name="vsscale",
     version=__version__,
-    help="CLI utility for managing machine learning models and TensorRT/MIGraphX engines for VapourSynth.",
+    help="CLI utility for managing machine learning models and TensorRT/MIGraphX artifacts for VapourSynth.",
     help_on_error=True,
     console=console,
     config=[
@@ -41,9 +41,9 @@ app = cyclopts.App(
     ],
 )
 onnx_app = cyclopts.App(name="onnx", help="Manage downloaded ONNX models.")
-engine_app = cyclopts.App(name="engine", help="Manage built TensorRT engines.")
+artifact_app = cyclopts.App(name="artifact", help="Manage built TensorRT and MIGraphxX artifacts.")
 app.command(onnx_app)
-app.command(engine_app)
+app.command(artifact_app)
 
 
 def _custom_help_formatter(console: Console, options: ConsoleOptions, panel: HelpPanel) -> None:
@@ -128,7 +128,7 @@ async def download(
         console.print()
 
 
-@engine_app.command(help="List built TensorRT engines.", help_formatter=_custom_help_formatter)
+@artifact_app.command(help="List built TensorRT & MIGraphxX artifacts.", help_formatter=_custom_help_formatter)
 @onnx_app.command(help="List downloaded ONNX models.", help_formatter=_custom_help_formatter)
 def show(
     *onnx: Annotated[str, cyclopts.Parameter(name="--onnx")],
@@ -142,7 +142,7 @@ def show(
     ] = False,
 ) -> None:
     """
-    List downloaded ONNX models or built TensorRT engines.
+    List downloaded ONNX models or built TensorRT & MIGraphxX artifacts.
 
     Args:
         onnx: The model(s) to show. Supports specifying version pin (e.g. ArtCNN==v1.6.2).
@@ -155,8 +155,8 @@ def show(
         case "onnx":
             folder = get_onnx_folder(global_=global_)
             ext = [".onnx"]
-        case "engine":
-            folder = get_engines_folder(global_=global_)
+        case "artifact":
+            folder = get_artifacts_folder(global_=global_)
             ext = [".mxr", ".engine", ".cache"]
         case _:
             raise ValueError
@@ -174,7 +174,7 @@ def show(
         print(folder_repr)
 
 
-@engine_app.command(help="Clear built TensorRT engine files.", help_formatter=_custom_help_formatter)
+@artifact_app.command(help="Clear built TensorRT & MIGraphxX artifacts.", help_formatter=_custom_help_formatter)
 @onnx_app.command(help="Clear downloaded ONNX models.", help_formatter=_custom_help_formatter)
 def clear(
     *onnx: Annotated[str, cyclopts.Parameter(name="--onnx")],
@@ -184,7 +184,7 @@ def clear(
     ] = False,
 ) -> None:
     """
-    Delete downloaded ONNX models or built TensorRT engines.
+    Delete downloaded ONNX models or built TensorRT & MIGraphxX artifacts.
 
     If no model specs are provided, the entire directory is cleared.
 
@@ -198,8 +198,8 @@ def clear(
     match cmd:
         case "onnx":
             folder = get_onnx_folder(global_=global_)
-        case "engine":
-            folder = get_engines_folder(global_=global_)
+        case "artifact":
+            folder = get_artifacts_folder(global_=global_)
         case _:
             raise ValueError
 
