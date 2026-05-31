@@ -157,13 +157,17 @@ class CoreML(ORT):
 
     provider = "COREML"
 
+    class Provider(IntEnum):
+        NEURAL_NETWORK = 0
+        ML_PROGRAM = 1
+
     # Hardware & Runtime Execution
     ml_program: int
 
     def __init__(
         self,
         *,
-        ml_program: int = 0,
+        ml_program: int = Provider.NEURAL_NETWORK,
         fp16: bool = False,
         fp16_blacklist_ops: Sequence[str] | None = None,
         output_format: Backend.OutputFormat | None = None,
