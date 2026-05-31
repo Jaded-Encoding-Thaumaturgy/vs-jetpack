@@ -23,7 +23,7 @@ class OV(Backend):
     @property
     def device(self) -> str:
         if type(self) is OV:
-            raise NotImplementedError
+            raise NotImplementedError("OV is an abstract class")
         return self.__class__.__name__
 
     @property

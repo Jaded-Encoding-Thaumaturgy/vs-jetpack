@@ -62,12 +62,14 @@ class MIGX(Backend):
 
         p = subprocess.run(["cat", "/opt/rocm/.info/version"], capture_output=True, text=True)
         if p.returncode != 0:
-            raise RuntimeError
+            raise RuntimeError(f"Failed to get MIGraphx driver version\n\n{p.stderr}\n\n{p.stdout}")
 
         migraphx_driver_version = Version(p.stdout)
 
         if plugin_version.release[:3] != (version := migraphx_driver_version.release[:3]):
-            raise RuntimeError
+            raise RuntimeError(
+                f"MIGraphx plugin version {plugin_version} does not match driver version {migraphx_driver_version}"
+            )
 
         return version  # type: ignore[return-value]
 
