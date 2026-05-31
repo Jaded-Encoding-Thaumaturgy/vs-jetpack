@@ -65,7 +65,7 @@ __all__ = [
 ]
 
 
-_log = getLogger(__name__)
+logger = getLogger(__name__)
 
 
 @runtime_checkable
@@ -345,19 +345,19 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         self.max_instances = max_instances
 
-        _log.debug("%s: Using '%s' backend", self, self.backend.__class__.__name__)
+        logger.debug("%s: Using '%s' backend", self, self.backend.__class__.__name__)
 
-        if _log.isEnabledFor(DEBUG):
+        if logger.isEnabledFor(DEBUG):
             valid_fields = _get_backend_fields(self.backend)
 
             for k, v in asdict(self.backend).items():
                 if v != (v_default := valid_fields[k].default) != DATACLASSES_MISSING:
-                    _log.debug(f"{self}: {k}={v!r}, default is {v_default!r}")
+                    logger.debug(f"{self}: {k}={v!r}, default is {v_default!r}")
 
-        _log.debug("%s: User tiles: %s", self, self.tiles)
-        _log.debug("%s: User tilesize: %s", self, self.tilesize)
-        _log.debug("%s: User overlap: %s", self, (self.overlap_w, self.overlap_h))
-        _log.debug("%s: User multiple: %s", self, self.multiple)
+        logger.debug("%s: User tiles: %s", self, self.tiles)
+        logger.debug("%s: User tilesize: %s", self, self.tilesize)
+        logger.debug("%s: User overlap: %s", self, (self.overlap_w, self.overlap_h))
+        logger.debug("%s: User multiple: %s", self, self.multiple)
 
     def scale(
         self,
@@ -397,36 +397,38 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
                     ckwargs[k.removeprefix(prefix)] = kwargs.pop(k)
                     break
 
-        _log.debug("%s: Preprocess kwargs: %s", self.scale, preprocess_kwargs)
-        _log.debug("%s: Postprocess kwargs: %s", self.scale, postprocess_kwargs)
-        _log.debug("%s: Inference kwargs: %s", self.scale, inference_kwargs)
+        logger.debug("%s: Preprocess kwargs: %s", self.scale, preprocess_kwargs)
+        logger.debug("%s: Postprocess kwargs: %s", self.scale, postprocess_kwargs)
+        logger.debug("%s: Inference kwargs: %s", self.scale, inference_kwargs)
 
         wclip = self.preprocess_clip(clip, **preprocess_kwargs)
 
         if 0 not in {clip.width, clip.height}:
             scaled = self.inference(wclip, **inference_kwargs)
         else:
-            _log.debug("%s: Variable resolution clip detected...", self.scale)
+            logger.debug("%s: Variable resolution clip detected...", self.scale)
 
             if not isinstance(self.backend, (self.vsmlrt.Backend.TRT, self.vsmlrt.Backend.TRT_RTX)):
                 raise CustomValueError(
                     "Variable resolution clips can only be processed with TRT Backend!", self.__class__, self.backend
                 )
 
-            _log.warning("%s: Variable resolution clip detected!", self.scale)
+            logger.warning("%s: Variable resolution clip detected!", self.scale)
 
             if self.backend.static_shape:
-                _log.warning("%s: static_shape is True, setting it to False...", self.scale)
+                logger.warning("%s: static_shape is True, setting it to False...", self.scale)
                 self.backend.static_shape = False
 
             if not self.backend.max_shapes:
-                _log.warning(
+                logger.warning(
                     "%s: max_shapes is None, setting it to (1936, 1088). You may want to adjust it...", self.scale
                 )
                 self.backend.max_shapes = (1936, 1088)
 
             if not self.backend.opt_shapes:
-                _log.warning("%s: opt_shapes is None, setting it to (64, 64). You may want to adjust it...", self.scale)
+                logger.warning(
+                    "%s: opt_shapes is None, setting it to (64, 64). You may want to adjust it...", self.scale
+                )
                 self.backend.opt_shapes = (64, 64)
 
             scaled = ProcessVariableResClip.from_func(
@@ -458,11 +460,11 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         """
         Performs preprocessing on the clip prior to inference.
         """
-        _log.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
+        logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
 
         clip = depth(clip, self._pick_precision(16, 32), vs.FLOAT, **kwargs)
 
-        _log.debug("%s: After pp; Clip format is %r", self.preprocess_clip, clip.format)
+        logger.debug("%s: After pp; Clip format is %r", self.preprocess_clip, clip.format)
 
         return limiter(clip, func=self.__class__)
 
@@ -470,12 +472,12 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         """
         Handles postprocessing of the model's output after inference.
         """
-        _log.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
-        _log.debug("%s: Before pp; Clip format is %r", self.postprocess_clip, clip.format)
+        logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
+        logger.debug("%s: Before pp; Clip format is %r", self.postprocess_clip, clip.format)
 
         clip = depth(clip, input_clip, **kwargs)
 
-        _log.debug("%s: After pp; Clip format is %r", self.postprocess_clip, clip.format)
+        logger.debug("%s: After pp; Clip format is %r", self.postprocess_clip, clip.format)
 
         return clip
 
@@ -486,11 +488,11 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         tilesize, overlaps = self.calc_tilesize(clip)
 
-        _log.debug("%s: Passing clip to inference: %r", self.inference, clip.format)
-        _log.debug("%s: Passing model: %s", self.inference, self.model)
-        _log.debug("%s: Passing tiles size: %s", self.inference, tilesize)
-        _log.debug("%s: Passing overlaps: %s", self.inference, overlaps)
-        _log.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
+        logger.debug("%s: Passing clip to inference: %r", self.inference, clip.format)
+        logger.debug("%s: Passing model: %s", self.inference, self.model)
+        logger.debug("%s: Passing tiles size: %s", self.inference, tilesize)
+        logger.debug("%s: Passing overlaps: %s", self.inference, overlaps)
+        logger.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
 
         return self.vsmlrt.inference(clip, self.model, overlaps, tilesize, self.backend, **kwargs)
 
@@ -513,7 +515,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             else fp32
         )
 
-        _log.debug(
+        logger.debug(
             "%s: Selecting precision: %r",
             self._pick_precision,
             get_video_format(precision) if precision > 32 else precision,
@@ -660,11 +662,11 @@ class BaseArtCNNChroma(BaseArtCNN):
         if clip.format.subsampling_h != 0 or clip.format.subsampling_w != 0:
             chroma_scaler = Kernel.ensure_obj(kwargs.pop("chroma_scaler", Bilinear))
 
-            _log.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
+            logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
 
             clip = chroma_scaler.resample(clip, format, **kwargs)
 
-            _log.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
+            logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
 
             return norm_expr(clip, ("x 0 1 clamp", "x 0.5 + 0 1 clamp"), func=self.__class__)
 
@@ -677,16 +679,16 @@ class BaseArtCNNChroma(BaseArtCNN):
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         tilesize, overlaps = self.calc_tilesize(clip)
 
-        _log.debug("%s: Passing clip to inference: %s", self.inference, clip.format)
-        _log.debug("%s: Passing model: %s", self.inference, self.model)
-        _log.debug("%s: Passing tiles size: %s", self.inference, tilesize)
-        _log.debug("%s: Passing overlaps: %s", self.inference, overlaps)
-        _log.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
+        logger.debug("%s: Passing clip to inference: %s", self.inference, clip.format)
+        logger.debug("%s: Passing model: %s", self.inference, self.model)
+        logger.debug("%s: Passing tiles size: %s", self.inference, tilesize)
+        logger.debug("%s: Passing overlaps: %s", self.inference, overlaps)
+        logger.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
 
         u, v = self.vsmlrt.flexible_inference(clip, self.model, overlaps, tilesize, self.backend, **kwargs)
 
-        _log.debug("%s: Inferenced clip: %s", self.inference, u.format)
-        _log.debug("%s: Inferenced clip: %s", self.inference, v.format)
+        logger.debug("%s: Inferenced clip: %s", self.inference, u.format)
+        logger.debug("%s: Inferenced clip: %s", self.inference, v.format)
 
         return core.std.ShufflePlanes([clip, u, v], [0, 0, 0], vs.YUV, clip)
 
@@ -1336,7 +1338,7 @@ class BaseDPIR(BaseOnnxScaler):
         else:
             self.strength = clip.std.BlankClip(format=strength_fmt, color=float(self.strength) / 255, keep=True)
 
-        _log.debug("%s: Passing strength clip format: %s", self.inference, self.strength.format)
+        logger.debug("%s: Passing strength clip format: %s", self.inference, self.strength.format)
 
         # Get model name
         self.model = (
@@ -1348,10 +1350,10 @@ class BaseDPIR(BaseOnnxScaler):
         # Basic inference args
         tilesize, overlaps = self.calc_tilesize(clip)
 
-        _log.debug("%s: Passing model: %s", self.inference, self.model)
-        _log.debug("%s: Passing tiles size: %s", self.inference, tilesize)
-        _log.debug("%s: Passing overlaps: %s", self.inference, overlaps)
-        _log.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
+        logger.debug("%s: Passing model: %s", self.inference, self.model)
+        logger.debug("%s: Passing tiles size: %s", self.inference, tilesize)
+        logger.debug("%s: Passing overlaps: %s", self.inference, overlaps)
+        logger.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
 
         # Padding
         padding = padder.mod_padding(clip, self.multiple, 0)
