@@ -21,7 +21,7 @@ from jetpytools import (
 from ..enums import Matrix, Range, RangeLike
 from ..exceptions import ClipLengthError, UnsupportedColorFamilyError
 from ..types import HoldsVideoFormat, Planes, VideoFormatLike, VideoNodeIterable
-from ..utils import flatten, get_depth, get_lowest_value, get_peak_value, get_video_format
+from ..utils import flatten, get_lowest_value, get_peak_value, get_video_format
 from ..vs_proxy import core, vs
 
 __all__ = [
