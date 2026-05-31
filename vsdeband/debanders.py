@@ -465,11 +465,7 @@ def pfdeband(
     Returns:
         Debanded clip.
     """
-    clip, bits = expect_bits(clip, 16)
-
     blur = prefilter(clip, planes=planes)
     smooth = debander(blur, radius, thr, planes=planes)
     limit = core.vszip.LimitFilter(smooth, blur, ref, dark_thr, bright_thr, elast, planes)
-    merge = norm_expr([clip, blur, limit], "z x y - +", planes, func=pfdeband)
-
-    return depth(merge, bits)
+    return norm_expr([clip, blur, limit], "z x y - +", planes, func=pfdeband)
