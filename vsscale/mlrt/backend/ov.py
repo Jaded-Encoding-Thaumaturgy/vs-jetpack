@@ -11,12 +11,15 @@ type Shape = tuple[int, int]
 
 @dataclass(kw_only=True, frozen=True)
 class OV(Backend):
+    """Base OpenVINO backend configuration."""
+
     plugin = core.lazy.ov
 
     custom_config: Mapping[str, Any] = field(default_factory=dict[str, Any])
     """
-    https://docs.openvino.ai/2026/api/c_cpp_api/group__ov__runtime__cpu__prop__cpp__api.html
+    Extra OpenVINO runtime configuration keys merged into the device configuration passed to `core.ov.Model`.
 
+    https://docs.openvino.ai/2026/api/c_cpp_api/group__ov__runtime__cpu__prop__cpp__api.html
     https://docs.openvino.ai/2026/api/c_cpp_api/group__ov__runtime__cpp__prop__api.html
     """
 
@@ -36,17 +39,23 @@ class OV(Backend):
 
 @dataclass(kw_only=True, frozen=True)
 class CPU(OV):
-    """OpenVINO backend for CPUs."""
+    """OpenVINO CPU backend."""
 
     # Hardware & Runtime Execution
     num_streams: int = 1
+    """Number of OpenVINO inference streams."""
     num_threads: int = 0
+    """Maximum CPU inference threads. `0` lets OpenVINO choose."""
     bind_thread: bool = True
+    """Enable OpenVINO CPU thread pinning."""
 
     # Model Precision & Data Types
     fp16: bool = False
+    """Request FP16 inference precision."""
     bf16: bool = False
+    """Request BF16 inference precision."""
     fp16_blacklist_ops: Sequence[str] | None = None
+    """ONNX node or op names to keep in FP32 during FP16 conversion."""
 
     def __post_init__(self) -> None:
         if self.fp16 and self.bf16:
@@ -64,15 +73,19 @@ class CPU(OV):
 
 @dataclass(kw_only=True, frozen=True)
 class GPU(OV):
-    """OpenVINO backend for GPUs."""
+    """OpenVINO GPU backend."""
 
     # Hardware & Runtime Execution
     device_id: int = 0
+    """OpenVINO GPU device index."""
     num_streams: int = 1
+    """Number of OpenVINO inference streams."""
 
     # Model Precision & Data Types
     fp16: bool = False
+    """Request FP16 inference precision."""
     fp16_blacklist_ops: Sequence[str] | None = None
+    """ONNX node or op names to keep in FP32 during FP16 conversion."""
 
     @property
     def config(self) -> dict[str, Any]:
@@ -87,4 +100,4 @@ class GPU(OV):
 
 @dataclass(kw_only=True, frozen=True)
 class NPU(OV):
-    """OpenVINO backend for Intel NPUs."""
+    """OpenVINO NPU backend for Intel neural processing units."""
