@@ -58,15 +58,15 @@ def get_onnx_folder(*, global_: bool = False) -> Path:
 
 
 @cache
-def get_engines_folder(*, global_: bool = False) -> Path:
+def get_artifacts_folder(*, global_: bool = False) -> Path:
     r"""
-    Linux: ~/.cache/vsscale/engines
+    Linux: ~/.cache/vsscale/artifact
 
-    macOS: ~/Library/Caches/vsscale/engines
+    macOS: ~/Library/Caches/vsscale/artifact
 
-    Windows: ...\AppData\Local\vsjet\vsscale\Cache\engines
+    Windows: ...\AppData\Local\vsjet\vsscale\Cache\artifact
     """
-    return get_cache("engine", global_=global_) / "engines"
+    return get_cache("artifact", global_=global_) / "artifact"
 
 
 def is_global_in_env(filetype: str) -> bool:

@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 from vstools import core, vs
 
-from ..settings import get_engines_folder, get_onnx_folder
+from ..settings import get_artifacts_folder, get_onnx_folder
 from .base import Backend
 
 type Shape = tuple[int, int]
@@ -159,7 +159,7 @@ class TensorRT(Backend):
         elif self.bf16:
             network_path = self._convert_onnx_bf16(network_path)
 
-        dirname = get_engines_folder()
+        dirname = get_artifacts_folder()
         dirname.mkdir(parents=True, exist_ok=True)
         identity = self.get_identity(network_path, channels, tilesize)
         engine_path = dirname / f"{identity}.engine"
