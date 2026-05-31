@@ -4,12 +4,9 @@ This module implements scalers for ONNX models.
 
 from __future__ import annotations
 
-import platform
-import re
 from abc import ABC
 from dataclasses import MISSING as DATACLASSES_MISSING
-from dataclasses import Field, asdict, fields, replace
-from functools import cache
+from dataclasses import asdict, replace
 from logging import DEBUG, getLogger
 from typing import (
     TYPE_CHECKING,
@@ -17,17 +14,12 @@ from typing import (
     ClassVar,
     Literal,
     Protocol,
-    Self,
     SupportsFloat,
-    cast,
     get_args,
     runtime_checkable,
 )
 
-from jetpytools import CustomImportError, CustomValueError, SPath, SPathLike
-
-if TYPE_CHECKING:
-    from packaging.version import Version
+from jetpytools import CustomValueError, SPath, SPathLike
 
 from vsexprtools import norm_expr
 from vsjetpack import deprecated
@@ -36,7 +28,6 @@ from vsmasktools import Morpho
 from vstools import (
     Matrix,
     MatrixLike,
-    OutdatedPluginError,
     ProcessVariableResClip,
     Range,
     check_variable_resolution,
@@ -52,17 +43,11 @@ from vstools import (
 )
 
 from .generic import BaseGenericScaler
-from .helpers import get_gpu
+from .mlrt import Backend
 
-__all__ = [
-    "DPIR",
-    "ArtCNN",
-    "BackendLike",
-    "BaseOnnxScaler",
-    "GenericOnnxScaler",
-    "Waifu2x",
-    "autoselect_backend",
-]
+type BackendLike = type[Backend] | Backend
+
+__all__ = ["DPIR", "ArtCNN", "BaseOnnxScaler", "GenericOnnxScaler", "Waifu2x"]
 
 
 logger = getLogger(__name__)
@@ -73,204 +58,10 @@ class _SupportsFP16(Protocol):
     fp16: bool
 
 
-def _clean_keywords(kwargs: dict[str, Any], backend: Any) -> dict[str, Any]:
-    valid_fields = _get_backend_fields(backend)
-    return {k: v for k, v in kwargs.items() if k in valid_fields}
-
-
-def _get_backend_fields(backend: Any) -> dict[str, Field[Any]]:
-    return {f.name: f for f in fields(backend)}
-
-
-if TYPE_CHECKING:
-    from vsmlrt import backendT as Backend
-
-    BackendLike = Backend | type[Backend] | str
-    """
-    Type alias for anything that can resolve to a Backend from vs-mlrt.
-
-    This includes:
-
-    - A string identifier.
-    - A class type subclassing `Backend`.
-    - An instance of a `Backend`.
-    """
-else:
-    BackendLike = Any
-
-
-def _normalize_git_version(raw: str) -> Version:
-    from packaging.version import Version
-
-    raw = raw.strip().lstrip("v")
-
-    matched = re.match(r"(?P<tag>[0-9A-Za-z.\-_]+?)(?:-(?P<count>\d+)-g(?P<hash>[0-9a-f]+))?$", raw)
-
-    if not matched:
-        raise ValueError(f"Unrecognized git-describe string: {raw!r}")
-
-    tag = matched.group("tag")
-    count = int(matched.group("count") or 0)
-
-    tag_parts = tag.split(".", 2)
-    numeric_parts = list[str]()
-    suffix_parts = list[str]()
-
-    for part in tag_parts:
-        if part.isdigit():
-            numeric_parts.append(part)
-        else:
-            suffix_parts.append(part)
-
-    base_version = ".".join(numeric_parts)
-    normalized = base_version if count == 0 else f"{base_version}.post{count}"
-
-    local_segments = list[str]()
-
-    if suffix_parts:
-        local_segments.append(".".join(suffix_parts))
-
-    if local_segments:
-        normalized += "+" + ".".join(local_segments)
-
-    return Version(normalized)
-
-
-@cache
-def _check_vsmlrt_script_version(cls: type[BaseOnnxScaler]) -> None:
-    try:
-        import vsmlrt
-
-        cls.vsmlrt = vsmlrt  # pyright: ignore[reportAttributeAccessIssue]
-    except ImportError:
-        raise CustomImportError(cls, "vsmlrt") from None
-
-    from packaging.version import Version
-
-    if (current_version := Version(vsmlrt.__version__)) < Version(cls._REQUIRED_VSMLRT_SCRIPT_VERSION):
-        raise CustomImportError(
-            cls,
-            "vsmlrt",
-            f"Detected vs-mlrt version {current_version} is older than {cls._REQUIRED_VSMLRT_SCRIPT_VERSION}. "
-            "Please update to a more recent version.",
-        )
-
-
-@cache
-def _check_vsmlrt_plugin_version(backend_name: str, cls: type[BaseOnnxScaler]) -> None:
-    bname = backend_name.lower().split("_", 1)
-    plugin_name = "trt_rtx" if bname == ["trt", "rtx"] else bname[0]
-
-    current_version = _normalize_git_version(getattr(core, plugin_name).Version()["version"].decode())
-
-    from packaging.version import Version
-
-    if current_version < Version(cls._REQUIRED_VSMLRT_PLUGIN_VERSION):
-        raise OutdatedPluginError(
-            cls,
-            plugin_name,
-            f"The plugin '{plugin_name}' version is older than {cls._REQUIRED_VSMLRT_PLUGIN_VERSION}. "
-            "Please update to a more recent version.",
-        )
-
-
-def autoselect_backend(**kwargs: Any) -> Backend:
-    """
-    Try to select the best backend for the current system.
-
-    If the system has an NVIDIA GPU: TRT > TRT_RTX > DirectML (D3D12) > NCNN (Vulkan) > CUDA (ORT) > OpenVINO GPU.
-    Else: DirectML (D3D12) > MIGraphX > NCNN (Vulkan) > CPU (ORT) > CPU OpenVINO
-
-    Args:
-        **kwargs: Additional arguments to pass to the backend.
-
-    Returns:
-        The selected backend.
-    """
-
-    from vsmlrt import Backend
-
-    backend: Any
-
-    device_id = kwargs.get("device_id", 0)
-    gpu = get_gpu(device_id)
-    vendor = (
-        cast(str | None, gpu.vendor)
-        if gpu
-        else "apple"
-        # macOS x86_64 is unsupported
-        if platform.system().lower() == "darwin" and platform.machine() == "x86_64"
-        else None
-    )
-
-    match vendor:
-        # Windows & Linux
-        case "nvidia":
-            if hasattr(core, "trt"):
-                backend = Backend.TRT
-            elif hasattr(core, "trt_rtx"):
-                backend = Backend.TRT_RTX
-            elif platform.system().lower() == "windows" and hasattr(core, "ort"):
-                backend = Backend.ORT_DML
-            elif hasattr(core, "ort"):
-                backend = Backend.ORT_CUDA
-            elif hasattr(core, "ncnn"):
-                backend = Backend.NCNN_VK
-            else:
-                backend = Backend.OV_CPU
-        # Windows & Linux
-        case "amd":
-            if platform.system().lower() == "windows" and hasattr(core, "ort"):
-                backend = Backend.ORT_DML
-            elif hasattr(core, "migx"):
-                backend = Backend.MIGX
-            elif hasattr(core, "ncnn"):
-                backend = Backend.NCNN_VK
-            else:
-                backend = Backend.OV_CPU
-        # Windows & Linux
-        case "intel":
-            # device-smi can't detect Intel NPUs in 0.5.6
-            # https://github.com/ModelCloud/Device-SMI#roadmap
-            if hasattr(core, "ov"):
-                backend = Backend.OV_GPU
-            elif platform.system().lower() == "windows" and hasattr(core, "ort"):
-                backend = Backend.ORT_DML
-            elif hasattr(core, "ncnn"):
-                backend = Backend.NCNN_VK
-            else:
-                backend = Backend.OV_CPU
-        # macOS ARM64 & x86_64
-        case "apple":
-            if hasattr(core, "ncnn"):
-                backend = Backend.NCNN_VK
-            elif hasattr(core, "ort"):
-                backend = Backend.ORT_COREML
-            else:
-                backend = Backend.OV_CPU
-        case _:
-            backend = Backend.OV_CPU
-
-    del gpu
-
-    return backend(**_clean_keywords(kwargs, backend))
-
-
 class BaseOnnxScaler(BaseGenericScaler, ABC):
     """
     Abstract generic scaler class for an ONNX model.
     """
-
-    _REQUIRED_VSMLRT_SCRIPT_VERSION = "3.22.36"
-    _REQUIRED_VSMLRT_PLUGIN_VERSION = "15.14"
-
-    if not TYPE_CHECKING:
-
-        def __new__(cls, *args: Any, **kwargs: Any) -> Self:
-            _check_vsmlrt_script_version(cls)
-            return super().__new__(cls, *args, **kwargs)
-    else:
-        import vsmlrt
 
     def __init__(
         self,
