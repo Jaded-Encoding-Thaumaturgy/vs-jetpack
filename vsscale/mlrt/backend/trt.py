@@ -12,8 +12,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, SupportsInt
 
-import onnx
-import onnxconverter_common as onnxcc
 from jetpytools import cachedproperty, copy_signature, to_arr
 from packaging.version import Version
 
@@ -341,6 +339,9 @@ class TensorRT(Backend):
         config.add_optimization_profile(profile)
 
     def _convert_onnx_fp16(self, network_path: Path) -> Path:
+        import onnx
+        import onnxconverter_common as onnxcc
+
         network = network_path.read_bytes()
 
         get_onnx_folder().mkdir(parents=True, exist_ok=True)
@@ -368,6 +369,8 @@ class TensorRT(Backend):
         return fp16_path
 
     def _convert_onnx_bf16(self, network_path: Path) -> Path:
+        import onnx
+
         network = network_path.read_bytes()
 
         get_onnx_folder().mkdir(parents=True, exist_ok=True)
