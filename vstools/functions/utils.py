@@ -28,7 +28,6 @@ __all__ = [
     "EXPR_VARS",
     "DitherType",
     "depth",
-    "expect_bits",
     "flatten_vnodes",
     "frame2clip",
     "get_b",
@@ -244,29 +243,6 @@ def depth(
     new_format = in_fmt.replace(bits_per_sample=out_fmt.bits_per_sample, sample_type=out_fmt.sample_type)
 
     return DitherType.from_param(dither_type, depth).apply(clip, new_format, range_in, range_out, force_fmtc)
-
-
-@deprecated("This function is deprecated and will be removed in a future version.", category=DeprecationWarning)
-def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) -> tuple[vs.VideoNode, int]:
-    """
-    Expected output bitdepth for a clip.
-
-    This function is meant to be used when a clip may not match the expected input bitdepth.
-    Both the dithered clip and the original bitdepth are returned.
-
-    Args:
-        clip: Input clip.
-        expected_depth: Expected bitdepth. Default: 16.
-
-    Returns:
-        Tuple containing the clip dithered to the expected depth and the original bitdepth.
-    """
-    bits = get_depth(clip)
-
-    if bits != expected_depth:
-        clip = depth(clip, expected_depth, **kwargs)
-
-    return clip, bits
 
 
 _f2c_cache = WeakValueDictionary[int, vs.VideoNode]()
