@@ -38,39 +38,61 @@ logger = getLogger(__name__)
 
 @dataclass(kw_only=True, frozen=True)
 class TensorRT(Backend):
-    """Base TensorRT backend configuration."""
+    """
+    Base TensorRT engine-building backend configuration.
+    """
 
     plugin: ClassVar[vs.Plugin]
 
     # Hardware & Runtime Execution
     device_id: int = 0
+    """CUDA device index."""
     num_streams: int = 1
+    """Number of parallel plugin inference streams."""
     use_cuda_graph: bool = True
+    """Enable CUDA graph execution for compatible engines to improve performance and reduce CPU overhead."""
     verbosity: SupportsInt | tensorrt.ILogger.Severity | tensorrt_rtx.ILogger.Severity = 2
+    """TensorRT/plugin logging severity."""
 
     # Model Precision & Data Types
     fp16: bool = False
+    """Convert the ONNX model to FP16 before building."""
     fp16_node_block_list: Sequence[str] | None = None
+    """Node names to keep out of FP16 conversion."""
     bf16: bool = False
+    """Convert the ONNX model to BF16 before building."""
     tf32: bool = False
+    """Allow TensorRT TF32 tactics."""
 
     # Input Shapes & Optimization Profiles
     static_shape: bool = True
+    """Build a fixed-shape engine when true."""
     min_shapes: Shape = (0, 0)
+    """Minimum dynamic input tile size as `(width, height)`."""
     opt_shapes: Shape | None = None
+    """Optimal input tile size as `(width, height)`. Defaults to the inference tile size."""
     max_shapes: Shape | None = None
+    """Maximum dynamic input tile size as `(width, height)`. Defaults to the inference tile size."""
 
     # Builder Tactics & Kernel Selection (Libraries)
     edge_mask_convolutions: bool = True
+    """Enable TensorRT edge-mask convolution tactics."""
     jit_convolutions: bool = True
+    """Enable TensorRT JIT convolution tactics."""
 
     # Builder Tuning & Optimization Levels
     workspace: int | None = None
+    """Workspace memory pool limit in bytes."""
     builder_optimization_level: int = 3
+    """TensorRT builder optimization level."""
     max_aux_streams: int | None = None
+    """Maximum auxiliary streams used by TensorRT kernels."""
     max_num_tactics: int | None = None
+    """Maximum number of tactics considered per layer."""
     tiling_optimization_level: tensorrt.TilingOptimizationLevel | tensorrt_rtx.TilingOptimizationLevel | int = 0
+    """TensorRT tiling optimization search level."""
     l2_limit_for_tiling: int = -1
+    """L2 cache usage hint for tiling optimization."""
 
     def __post_init__(self) -> None:
         if self.fp16 and self.bf16:
@@ -159,9 +181,16 @@ class TensorRT(Backend):
 
     def build_engine(self, network_path: Path, channels: int, tilesize: Shape, input_name: str = "input") -> Path:
         """
-        Build or retrieve a cached TensorRT RTX engine.
+        Build or retrieve a cached TensorRT engine.
 
-        Returns the path to the serialized engine file.
+        Args:
+            network_path: Path to the ONNX model.
+            channels: Number of model input channels.
+            tilesize: Inference tile size as `(width, height)`.
+            input_name: Name of the model input tensor.
+
+        Returns:
+            Path to the serialized engine file.
         """
         if self.fp16:
             network_path = self._convert_onnx_fp16(network_path)
@@ -374,14 +403,14 @@ class TensorRT(Backend):
 
 @dataclass(kw_only=True, frozen=True)
 class TRT(TensorRT):
-    """TensorRT backend for Nvidia GPUs."""
+    """TensorRT backend for Nvidia GPUs using the `core.trt` plugin."""
 
     plugin = core.lazy.trt
 
 
 @dataclass(kw_only=True, frozen=True)
 class RTX(TensorRT):
-    """TensorRT RTX backend for Nvidia RTX GPUs."""
+    """TensorRT RTX backend for Nvidia RTX GPUs using the `core.trt_rtx` plugin."""
 
     plugin = core.lazy.trt_rtx
 

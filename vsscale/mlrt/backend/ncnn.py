@@ -10,7 +10,8 @@ from .base import Backend
 
 
 @dataclass(kw_only=True, frozen=True)
-class NCNN(Backend): ...
+class NCNN(Backend):
+    """Base class for NCNN-backed inference configurations."""
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -19,12 +20,17 @@ class VK(NCNN):
 
     # Hardware & Runtime Execution
     device_id: int = 0
+    """Vulkan device index used by NCNN."""
     num_streams: int = 1
+    """Number of parallel NCNN inference streams."""
 
     # Model Precision & Data Types
     fp16: bool = False
+    """Enable NCNN FP16 storage/arithmetic where supported."""
     fp16_blacklist_ops: Sequence[str] | None
+    """ONNX node or op names to keep in FP32 during FP16 conversion."""
     output_format: Backend.OutputFormat | None = None
+    """Requested output precision. Defaults to FP16 when `fp16` is enabled, otherwise FP32."""
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
         return {

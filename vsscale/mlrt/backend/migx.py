@@ -25,33 +25,49 @@ logger = getLogger(__name__)
 
 @dataclass(kw_only=True, frozen=True)
 class MIGX(Backend):
-    """MIGraphX backend for AMD GPUs."""
+    """
+    MIGraphX backend for AMD GPUs.
+
+    The ONNX model is compiled to an MXR program with `migraphx-driver`
+    and cached before execution through `core.migx.Model`.
+    """
 
     plugin = core.lazy.migx
 
     # Hardware & Runtime Execution
     device_id: int = 0
+    """AMD GPU device index."""
     num_streams: int = 1
+    """Number of parallel MIGraphX inference streams."""
 
     # Model Precision & Data Types
     fp16: bool = False
+    """Compile the program for FP16 where supported."""
     bf16: bool = False
+    """Compile the program for BF16 where supported."""
 
     # Input Shapes & Optimization Profiles
     opt_shapes: Shape | None = None
+    """Optimization input tile size as `(width, height)`. Defaults to the inference tile size."""
 
     # Builder Tuning & Optimization Levels
     fast_math: bool = True
+    """Keep MIGraphX fast math optimizations enabled."""
     exhaustive_tune: bool = False
+    """Enable exhaustive tuning during compilation."""
 
     # Miscellaneous & Custom Settings
     custom_env: Mapping[str, str] = field(default_factory=dict[str, str])
     """
+    Extra environment variables for `migraphx-driver`.
+
     https://rocm.docs.amd.com/projects/AMDMIGraphX/en/latest/reference/MIGraphX-dev-env-vars.html
     https://rocm.docs.amd.com/projects/MIOpen/en/latest/reference/env_variables.html
     """
     custom_args: Sequence[str] = field(default_factory=list[str])
     """
+    Additional command-line arguments appended to `migraphx-driver compile`.
+
     migraph-driver compile --help
     """
 
