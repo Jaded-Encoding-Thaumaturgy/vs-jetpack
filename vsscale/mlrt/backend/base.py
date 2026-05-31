@@ -123,12 +123,13 @@ class Backend:
         return {}
 
     @classmethod
-    def autoselect(cls, device_id: int = 0) -> Backend:
+    def autoselect(cls, device_id: int = 0, **kwargs: Any) -> Backend:
         """
         Try to select the best backend for the current system.
 
         Args:
             device_id: The GPU device id.
+            **kwargs: Additional arguments to pass to the backend.
 
         Returns:
             The selected backend.
@@ -195,4 +196,4 @@ class Backend:
 
         del gpu
 
-        return backend  # type: ignore[return-value]
+        return backend(**kwargs)
