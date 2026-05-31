@@ -1,6 +1,7 @@
+from _typeshed import Incomplete
+
 from . import utils as utils
 from .metadata_props import add_metadata_props as add_metadata_props
-from _typeshed import Incomplete
 
 DEFAULT_OPSET_NUMBER: int
 OPSET_TO_IR_VERSION: Incomplete

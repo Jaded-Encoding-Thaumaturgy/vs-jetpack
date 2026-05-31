@@ -1,10 +1,20 @@
+from _typeshed import Incomplete
+
 from . import onnx_ops as onnx_ops
-from .data_types import BooleanTensorType as BooleanTensorType, Complex128TensorType as Complex128TensorType, Complex64TensorType as Complex64TensorType, DoubleTensorType as DoubleTensorType, FloatTensorType as FloatTensorType, Int32TensorType as Int32TensorType, Int64TensorType as Int64TensorType, StringTensorType as StringTensorType
-from .onnx_ex import OPSET_TO_IR_VERSION as OPSET_TO_IR_VERSION, get_maximum_opset_supported as get_maximum_opset_supported
+from .data_types import BooleanTensorType as BooleanTensorType
+from .data_types import Complex64TensorType as Complex64TensorType
+from .data_types import Complex128TensorType as Complex128TensorType
+from .data_types import DoubleTensorType as DoubleTensorType
+from .data_types import FloatTensorType as FloatTensorType
+from .data_types import Int32TensorType as Int32TensorType
+from .data_types import Int64TensorType as Int64TensorType
+from .data_types import StringTensorType as StringTensorType
+from .onnx_ex import OPSET_TO_IR_VERSION as OPSET_TO_IR_VERSION
+from .onnx_ex import get_maximum_opset_supported as get_maximum_opset_supported
 from .oopb import OnnxOperatorBuilder as OnnxOperatorBuilder
 from .registration import register_converter as register_converter
-from .topology import Topology as Topology, convert_topology as convert_topology
-from _typeshed import Incomplete
+from .topology import Topology as Topology
+from .topology import convert_topology as convert_topology
 
 class GraphFunctionType:
     D = DoubleTensorType
