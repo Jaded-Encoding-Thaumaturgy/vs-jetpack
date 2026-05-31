@@ -91,7 +91,14 @@ class TensorRT(Backend):
 
     @property
     def version(self) -> tuple[int, int, int]:
-        return Version(self.trt.__version__).release[:3]  # type: ignore[return-value]
+        v = int(self.plugin.Version()["tensorrt_version_build"])
+        plugin_version = Version(f"{v // 10000}.{v // 100 % 100}.{v % 100}")
+        bindings_version = Version(self.trt.__version__)
+
+        if plugin_version.release[:3] != (version := bindings_version.release[:3]):
+            raise RuntimeError
+
+        return version  # type: ignore[return-value]
 
     @property
     def logger(self) -> tensorrt.ILogger:
