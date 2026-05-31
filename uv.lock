@@ -9,10 +9,13 @@ resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'AMD64'",
     "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
     "python_full_version >= '3.15' and platform_machine == 's390x'",
-    "python_full_version == '3.14.*' and platform_machine != 's390x' and platform_machine != 'x86_64'",
+    "python_full_version == '3.14.*' and platform_machine == 'AMD64'",
+    "python_full_version == '3.14.*' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
     "python_full_version == '3.14.*' and platform_machine == 's390x'",
-    "python_full_version == '3.13.*' and platform_machine != 's390x' and platform_machine != 'x86_64'",
-    "python_full_version < '3.13' and platform_machine != 's390x' and platform_machine != 'x86_64'",
+    "python_full_version == '3.13.*' and platform_machine == 'AMD64'",
+    "python_full_version == '3.13.*' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
+    "python_full_version < '3.13' and platform_machine == 'AMD64'",
+    "python_full_version < '3.13' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
     "python_full_version == '3.13.*' and platform_machine == 's390x'",
     "python_full_version < '3.13' and platform_machine == 's390x'",
 ]
@@ -331,6 +334,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/34/07/bf61d13de86d96a4c
 wheels = [
     { url = "https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl", hash = "sha256:617795392c4113a2c2cc7af716f20244900e87f23daa05442d1268d81472a592", size = 219020, upload-time = "2026-05-25T15:29:09.646Z" },
 ]
+
+[[package]]
+name = "device-smi"
+version = "0.5.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/f3/2bdbcbf01fc58f5c9e7b9ddf3a4677912a3e9cbad051fcfa559f2ff1ab8f/device_smi-0.5.6.tar.gz", hash = "sha256:1481d2cccc7405c3f255eb0a91a44e90ae1e6c4d1470d010b94fb8e2b291b057", size = 18888, upload-time = "2026-04-23T04:14:55.121Z" }
 
 [[package]]
 name = "dfttest2"
@@ -2510,8 +2519,10 @@ dependencies = [
 aa = [
     { name = "anyio" },
     { name = "cyclopts" },
+    { name = "device-smi" },
     { name = "humanize" },
     { name = "niquests" },
+    { name = "packaging" },
     { name = "platformdirs" },
     { name = "questionary" },
     { name = "scipy" },
@@ -2545,10 +2556,12 @@ cl = [
 deband = [
     { name = "anyio" },
     { name = "cyclopts" },
+    { name = "device-smi" },
     { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
     { name = "dfttest2", extra = ["gcc"] },
     { name = "humanize" },
     { name = "niquests" },
+    { name = "packaging" },
     { name = "platformdirs" },
     { name = "questionary" },
     { name = "scipy" },
@@ -2583,10 +2596,12 @@ deband = [
 dehalo = [
     { name = "anyio" },
     { name = "cyclopts" },
+    { name = "device-smi" },
     { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
     { name = "dfttest2", extra = ["gcc"] },
     { name = "humanize" },
     { name = "niquests" },
+    { name = "packaging" },
     { name = "platformdirs" },
     { name = "questionary" },
     { name = "scipy" },
@@ -2620,10 +2635,12 @@ dehalo = [
 deinterlace = [
     { name = "anyio" },
     { name = "cyclopts" },
+    { name = "device-smi" },
     { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
     { name = "dfttest2", extra = ["gcc"] },
     { name = "humanize" },
     { name = "niquests" },
+    { name = "packaging" },
     { name = "platformdirs" },
     { name = "questionary" },
     { name = "scipy" },
@@ -2659,10 +2676,12 @@ deinterlace = [
 denoise = [
     { name = "anyio" },
     { name = "cyclopts" },
+    { name = "device-smi" },
     { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
     { name = "dfttest2", extra = ["gcc"] },
     { name = "humanize" },
     { name = "niquests" },
+    { name = "packaging" },
     { name = "platformdirs" },
     { name = "questionary" },
     { name = "scipy" },
@@ -2696,10 +2715,12 @@ denoise = [
 full = [
     { name = "anyio" },
     { name = "cyclopts" },
+    { name = "device-smi" },
     { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
     { name = "dfttest2", extra = ["gcc"] },
     { name = "humanize" },
     { name = "niquests" },
+    { name = "packaging" },
     { name = "platformdirs" },
     { name = "questionary" },
     { name = "scipy" },
@@ -2758,7 +2779,6 @@ nvidia = [
     { name = "dfttest2", extra = ["cufft", "nvrtc"] },
     { name = "onnx" },
     { name = "onnxconverter-common" },
-    { name = "packaging" },
     { name = "tensorrt-cu13", marker = "python_full_version < '3.14'" },
     { name = "tensorrt-cu13-bindings", marker = "python_full_version < '3.14'" },
     { name = "tensorrt-cu13-libs", marker = "python_full_version < '3.14'" },
@@ -2781,8 +2801,10 @@ rg = [
 scale = [
     { name = "anyio" },
     { name = "cyclopts" },
+    { name = "device-smi" },
     { name = "humanize" },
     { name = "niquests" },
+    { name = "packaging" },
     { name = "platformdirs" },
     { name = "questionary" },
     { name = "scipy" },
@@ -2855,6 +2877,13 @@ requires-dist = [
     { name = "cyclopts", marker = "extra == 'denoise'", specifier = ">=4.15.0" },
     { name = "cyclopts", marker = "extra == 'full'", specifier = ">=4.15.0" },
     { name = "cyclopts", marker = "extra == 'scale'", specifier = ">=4.15.0" },
+    { name = "device-smi", marker = "extra == 'aa'", specifier = ">=0.5.6" },
+    { name = "device-smi", marker = "extra == 'deband'", specifier = ">=0.5.6" },
+    { name = "device-smi", marker = "extra == 'dehalo'", specifier = ">=0.5.6" },
+    { name = "device-smi", marker = "extra == 'deinterlace'", specifier = ">=0.5.6" },
+    { name = "device-smi", marker = "extra == 'denoise'", specifier = ">=0.5.6" },
+    { name = "device-smi", marker = "extra == 'full'", specifier = ">=0.5.6" },
+    { name = "device-smi", marker = "extra == 'scale'", specifier = ">=0.5.6" },
     { name = "dfttest2", extras = ["cpu"], marker = "(platform_machine == 'AMD64' and extra == 'deband') or (platform_machine == 'x86_64' and extra == 'deband')", specifier = ">=10" },
     { name = "dfttest2", extras = ["cpu"], marker = "(platform_machine == 'AMD64' and extra == 'dehalo') or (platform_machine == 'x86_64' and extra == 'dehalo')", specifier = ">=10" },
     { name = "dfttest2", extras = ["cpu"], marker = "(platform_machine == 'AMD64' and extra == 'deinterlace') or (platform_machine == 'x86_64' and extra == 'deinterlace')", specifier = ">=10" },
@@ -2885,7 +2914,13 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.0.0" },
     { name = "onnx", marker = "extra == 'nvidia'", specifier = ">=1.21.0" },
     { name = "onnxconverter-common", marker = "extra == 'nvidia'", specifier = ">=1.16.0" },
-    { name = "packaging", marker = "extra == 'nvidia'", specifier = ">=26.0" },
+    { name = "packaging", marker = "extra == 'aa'", specifier = ">=26.0" },
+    { name = "packaging", marker = "extra == 'deband'", specifier = ">=26.0" },
+    { name = "packaging", marker = "extra == 'dehalo'", specifier = ">=26.0" },
+    { name = "packaging", marker = "extra == 'deinterlace'", specifier = ">=26.0" },
+    { name = "packaging", marker = "extra == 'denoise'", specifier = ">=26.0" },
+    { name = "packaging", marker = "extra == 'full'", specifier = ">=26.0" },
+    { name = "packaging", marker = "extra == 'scale'", specifier = ">=26.0" },
     { name = "platformdirs", marker = "extra == 'aa'", specifier = ">=4.9.6" },
     { name = "platformdirs", marker = "extra == 'deband'", specifier = ">=4.9.6" },
     { name = "platformdirs", marker = "extra == 'dehalo'", specifier = ">=4.9.6" },

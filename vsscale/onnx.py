@@ -4,13 +4,25 @@ This module implements scalers for ONNX models.
 
 from __future__ import annotations
 
+import platform
 import re
 from abc import ABC
 from dataclasses import MISSING as DATACLASSES_MISSING
 from dataclasses import Field, asdict, fields, replace
 from functools import cache
 from logging import DEBUG, getLogger
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, Self, SupportsFloat, get_args, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+    Protocol,
+    Self,
+    SupportsFloat,
+    cast,
+    get_args,
+    runtime_checkable,
+)
 
 from jetpytools import CustomImportError, CustomValueError, SPath, SPathLike
 
@@ -31,7 +43,6 @@ from vstools import (
     core,
     depth,
     get_color_family,
-    get_nvidia_version,
     get_video_format,
     get_y,
     join,
@@ -41,6 +52,7 @@ from vstools import (
 )
 
 from .generic import BaseGenericScaler
+from .helpers import get_gpu
 
 __all__ = [
     "DPIR",
@@ -175,36 +187,71 @@ def autoselect_backend(**kwargs: Any) -> Backend:
     Returns:
         The selected backend.
     """
-    from os import name
 
     from vsmlrt import Backend
 
     backend: Any
 
-    if get_nvidia_version():
-        if hasattr(core, "trt"):
-            backend = Backend.TRT
-        elif hasattr(core, "trt_rtx"):
-            backend = Backend.TRT_RTX
-        elif hasattr(core, "ort") and name == "nt":
-            backend = Backend.ORT_DML
-        elif hasattr(core, "ncnn"):
-            backend = Backend.NCNN_VK
-        elif hasattr(core, "ort"):
-            backend = Backend.ORT_CUDA
-        else:
-            backend = Backend.OV_GPU
-    else:
-        if hasattr(core, "ort") and name == "nt":
-            backend = Backend.ORT_DML
-        elif hasattr(core, "migx"):
-            backend = Backend.MIGX
-        elif hasattr(core, "ncnn"):
-            backend = Backend.NCNN_VK
-        elif hasattr(core, "ort"):
-            backend = Backend.ORT_CPU
-        else:
+    device_id = kwargs.get("device_id", 0)
+    gpu = get_gpu(device_id)
+    vendor = (
+        cast(str | None, gpu.vendor)
+        if gpu
+        else "apple"
+        # macOS x86_64 is unsupported
+        if platform.system().lower() == "darwin" and platform.machine() == "x86_64"
+        else None
+    )
+
+    match vendor:
+        # Windows & Linux
+        case "nvidia":
+            if hasattr(core, "trt"):
+                backend = Backend.TRT
+            elif hasattr(core, "trt_rtx"):
+                backend = Backend.TRT_RTX
+            elif platform.system().lower() == "windows" and hasattr(core, "ort"):
+                backend = Backend.ORT_DML
+            elif hasattr(core, "ort"):
+                backend = Backend.ORT_CUDA
+            elif hasattr(core, "ncnn"):
+                backend = Backend.NCNN_VK
+            else:
+                backend = Backend.OV_CPU
+        # Windows & Linux
+        case "amd":
+            if platform.system().lower() == "windows" and hasattr(core, "ort"):
+                backend = Backend.ORT_DML
+            elif hasattr(core, "migx"):
+                backend = Backend.MIGX
+            elif hasattr(core, "ncnn"):
+                backend = Backend.NCNN_VK
+            else:
+                backend = Backend.OV_CPU
+        # Windows & Linux
+        case "intel":
+            # device-smi can't detect Intel NPUs in 0.5.6
+            # https://github.com/ModelCloud/Device-SMI#roadmap
+            if hasattr(core, "ov"):
+                backend = Backend.OV_GPU
+            elif platform.system().lower() == "windows" and hasattr(core, "ort"):
+                backend = Backend.ORT_DML
+            elif hasattr(core, "ncnn"):
+                backend = Backend.NCNN_VK
+            else:
+                backend = Backend.OV_CPU
+        # macOS ARM64 & x86_64
+        case "apple":
+            if hasattr(core, "ncnn"):
+                backend = Backend.NCNN_VK
+            elif hasattr(core, "ort"):
+                backend = Backend.ORT_COREML
+            else:
+                backend = Backend.OV_CPU
+        case _:
             backend = Backend.OV_CPU
+
+    del gpu
 
     return backend(**_clean_keywords(kwargs, backend))
 
@@ -1241,6 +1288,7 @@ class BaseDPIR(BaseOnnxScaler):
         )
 
         if isinstance(self.backend, self.vsmlrt.Backend.TRT) and not self.backend.force_fp16:
+            # fp16_node_block_list=["Conv_123"]
             self.backend.custom_args.extend(["--precisionConstraints=obey", "--layerPrecisions=Conv_123:fp32"])
 
     def scale(
