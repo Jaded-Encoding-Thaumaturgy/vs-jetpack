@@ -1,5 +1,6 @@
-from .pytracing import TracingObject as TracingObject
 from _typeshed import Incomplete
+
+from .pytracing import TracingObject as TracingObject
 
 needed_types: Incomplete
 const_dir: Incomplete

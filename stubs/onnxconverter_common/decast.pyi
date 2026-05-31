@@ -1,4 +1,5 @@
-from .optimizer import LinkedNode as LinkedNode, Solution as Solution
+from .optimizer import LinkedNode as LinkedNode
+from .optimizer import Solution as Solution
 
 def remove_cast(lnodes, op_set): ...
 def decast(origin_model, oplist): ...

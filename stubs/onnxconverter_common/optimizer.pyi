@@ -1,6 +1,9 @@
-from ._opt_const_folding import OnnxGraphContext as OnnxGraphContext, const_folding_optimizer as const_folding_optimizer, reserve_node_for_embedded_graph as reserve_node_for_embedded_graph
 from _typeshed import Incomplete
 from onnx import onnx_pb as onnx_proto
+
+from ._opt_const_folding import OnnxGraphContext as OnnxGraphContext
+from ._opt_const_folding import const_folding_optimizer as const_folding_optimizer
+from ._opt_const_folding import reserve_node_for_embedded_graph as reserve_node_for_embedded_graph
 
 class LinkedNode:
     reserved_names_in_graph: Incomplete

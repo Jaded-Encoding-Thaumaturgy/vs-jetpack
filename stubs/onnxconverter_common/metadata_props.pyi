@@ -1,5 +1,6 @@
-from .case_insensitive_dict import CaseInsensitiveDict as CaseInsensitiveDict
 from _typeshed import Incomplete
+
+from .case_insensitive_dict import CaseInsensitiveDict as CaseInsensitiveDict
 
 KNOWN_METADATA_PROPS: Incomplete
 

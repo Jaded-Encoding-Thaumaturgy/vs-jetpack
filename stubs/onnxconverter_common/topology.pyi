@@ -1,11 +1,19 @@
-from .container import ModelComponentContainer as ModelComponentContainer
-from .data_types import FloatType as FloatType, Int64Type as Int64Type, StringType as StringType, TensorType as TensorType
-from .interface import OperatorBase as OperatorBase, ScopeBase as ScopeBase
-from .onnx_ex import get_maximum_opset_supported as get_maximum_opset_supported, make_model_ex as make_model_ex
-from .optimizer import optimize_onnx as optimize_onnx
-from .registration import get_converter as get_converter, get_shape_calculator as get_shape_calculator
-from _typeshed import Incomplete
 from collections.abc import Generator
+
+from _typeshed import Incomplete
+
+from .container import ModelComponentContainer as ModelComponentContainer
+from .data_types import FloatType as FloatType
+from .data_types import Int64Type as Int64Type
+from .data_types import StringType as StringType
+from .data_types import TensorType as TensorType
+from .interface import OperatorBase as OperatorBase
+from .interface import ScopeBase as ScopeBase
+from .onnx_ex import get_maximum_opset_supported as get_maximum_opset_supported
+from .onnx_ex import make_model_ex as make_model_ex
+from .optimizer import optimize_onnx as optimize_onnx
+from .registration import get_converter as get_converter
+from .registration import get_shape_calculator as get_shape_calculator
 
 class Variable:
     raw_name: Incomplete
