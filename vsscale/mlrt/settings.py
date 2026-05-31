@@ -4,6 +4,7 @@ from functools import cache
 from pathlib import Path
 
 import platformdirs
+from jetpytools import FileNotExistsError
 
 from vstools import PackageStorage
 
@@ -71,3 +72,17 @@ def get_artifacts_folder(*, global_: bool = False) -> Path:
 
 def is_global_in_env(filetype: str) -> bool:
     return any(env.lower() in TRUTHY for env in (os.getenv(k.format(filetype), "") for k in ENV_KEYS))
+
+
+def get_model_folder(provider: str, version: str | None = None) -> Path:
+    folder = get_onnx_folder() / provider.lower()
+
+    if version is None:
+        return sorted(folder.glob("*"), reverse=True)[0]
+
+    folder /= version
+
+    if not folder.exists():
+        raise FileNotExistsError("The folder doesn't exist", get_model_folder)
+
+    return folder
