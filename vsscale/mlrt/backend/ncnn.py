@@ -25,7 +25,7 @@ class VK(NCNN):
     """Number of parallel NCNN inference streams."""
 
     # Model Precision & Data Types
-    fp16: bool = False
+    fp16: bool = True
     """Enable NCNN FP16 storage/arithmetic where supported."""
     fp16_blacklist_ops: Sequence[str] | None
     """ONNX node or op names to keep in FP32 during FP16 conversion."""

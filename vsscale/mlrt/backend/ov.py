@@ -50,7 +50,7 @@ class CPU(OV):
     """Enable OpenVINO CPU thread pinning."""
 
     # Model Precision & Data Types
-    fp16: bool = False
+    fp16: bool = True
     """Request FP16 inference precision."""
     bf16: bool = False
     """Request BF16 inference precision."""
@@ -82,7 +82,7 @@ class GPU(OV):
     """Number of OpenVINO inference streams."""
 
     # Model Precision & Data Types
-    fp16: bool = False
+    fp16: bool = True
     """Request FP16 inference precision."""
     fp16_blacklist_ops: Sequence[str] | None = None
     """ONNX node or op names to keep in FP32 during FP16 conversion."""

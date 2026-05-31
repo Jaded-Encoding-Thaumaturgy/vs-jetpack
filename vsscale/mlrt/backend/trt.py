@@ -53,7 +53,7 @@ class TensorRT(Backend):
     """TensorRT/plugin logging severity."""
 
     # Model Precision & Data Types
-    fp16: bool = False
+    fp16: bool = True
     """Convert the ONNX model to FP16 before building."""
     fp16_node_block_list: Sequence[str] | None = None
     """Node names to keep out of FP16 conversion."""

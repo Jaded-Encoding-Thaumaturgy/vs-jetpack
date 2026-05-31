@@ -41,7 +41,7 @@ class MIGX(Backend):
     """Number of parallel MIGraphX inference streams."""
 
     # Model Precision & Data Types
-    fp16: bool = False
+    fp16: bool = True
     """Compile the program for FP16 where supported."""
     bf16: bool = False
     """Compile the program for BF16 where supported."""
