@@ -1,20 +1,27 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
-from functools import partial
+from functools import cache, partial
+from logging import getLogger
 from math import ceil, floor
 from types import NoneType
-from typing import Any, NamedTuple, Self, overload
+from typing import TYPE_CHECKING, Any, NamedTuple, Self, overload
 
 from jetpytools import CustomTypeError, FuncExcept, mod2, mod_x
 
 from vskernels import MixedScalerProcess, SampleGridModel, Scaler, ScalerLike, is_scaler_like
 from vstools import FunctionUtil, Planes, VSFunctionNoArgs, get_w, vs
 
+if TYPE_CHECKING:
+    from device_smi import Device  # type: ignore[import-untyped]
+
 from .various import ComplexSuperSamplerProcess
 
 __all__ = ["CropAbs", "CropRel", "ScalingArgs", "pre_ss", "scale_var_clip"]
+
+logger = getLogger(__name__)
 
 
 def scale_var_clip(
@@ -438,3 +445,26 @@ def pre_ss(
         return pre_ss(clip, sp=sp(function=function), rfactor=rfactor, mod=mod, planes=planes, func=func)
 
     raise CustomTypeError
+
+
+@cache
+def get_gpu(device_id: int = 0) -> Device | None:
+    """
+    Return the GPU available for the requested device id.
+    """
+    try:
+        from device_smi import Device
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", module=r"device_smi.*")
+            return Device(f"gpu:{device_id}")
+    except Exception as e:
+        logger.debug(e)
+        return None
+
+
+def is_gpu_available(device_id: int = 0) -> bool:
+    """
+    Check if a GPU is available for the requested device id.
+    """
+    return get_gpu(device_id) is not None
