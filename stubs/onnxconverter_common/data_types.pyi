@@ -41,7 +41,9 @@ class BooleanTensorType(TensorType):
 
 class FloatTensorType(TensorType):
     color_space: Incomplete
-    def __init__(self, shape=None, color_space=None, doc_string: str = "", denotation=None, channel_denotations=None) -> None: ...
+    def __init__(
+        self, shape=None, color_space=None, doc_string: str = "", denotation=None, channel_denotations=None
+    ) -> None: ...
 
 class DoubleTensorType(TensorType):
     color_space: Incomplete

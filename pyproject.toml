@@ -340,7 +340,13 @@ files = [
 ]
 
 exclude_gitignore = true
-exclude = ["stubs/onnxconverter_common", "stubs/tensorrt"]
+exclude = [
+    "stubs/onnxconverter_common",
+    "stubs/tensorrt",
+    "stubs/tensorrt_bindings",
+    "stubs/tensorrt_rtx",
+    "stubs/tensorrt_rtx_bindings",
+]
 
 # Flags changed by --strict
 warn_return_any = false
@@ -386,16 +392,7 @@ line-length = 120
 docstring-code-format = true
 
 [tool.ruff.lint]
-exclude = [
-    "stubs/dfttest2.pyi",
-    "stubs/vsmlrt.pyi",
-    "stubs/tensorrt",
-    "stubs/tensorrt_bindings",
-    "stubs/tensorrt_libs",
-    "stubs/tensorrt_rtx",
-    "stubs/tensorrt_rtx_bindings",
-    "stubs/tensorrt_rtx_libs",
-]
+exclude = ["stubs/dfttest2.pyi", "stubs/vsmlrt.pyi"]
 extend-select = [
     "E",
     "C4",
@@ -412,3 +409,4 @@ extend-select = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.*" = ["F401", "F403"]
+"stubs/*" = ["PYI021", "E501", "N801", "N802", "N803", "RUF002"]
