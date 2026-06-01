@@ -1759,6 +1759,10 @@ class VideoNode(RawNode):
     bm3d: Final[_bm3d._VideoNode_bound.Plugin]
     """Implementation of BM3D denoising filter for VapourSynth."""
 # </attribute/VideoNode_bound/bm3d>
+# <attribute/VideoNode_bound/bm3dcpu>
+    bm3dcpu: Final[_bm3dcpu._VideoNode_bound.Plugin]
+    """BM3D algorithm implemented in AVX and AVX2 intrinsics"""
+# </attribute/VideoNode_bound/bm3dcpu>
 # <attribute/VideoNode_bound/bm3dcuda>
     bm3dcuda: Final[_bm3dcuda._VideoNode_bound.Plugin]
     """BM3D algorithm implemented in CUDA"""
@@ -1787,6 +1791,10 @@ class VideoNode(RawNode):
     descale: Final[_descale._VideoNode_bound.Plugin]
     """Undo linear interpolation"""
 # </attribute/VideoNode_bound/descale>
+# <attribute/VideoNode_bound/dfttest2_cpu>
+    dfttest2_cpu: Final[_dfttest2_cpu._VideoNode_bound.Plugin]
+    """DFTTest2 (CPU)"""
+# </attribute/VideoNode_bound/dfttest2_cpu>
 # <attribute/VideoNode_bound/dfttest2_cuda>
     dfttest2_cuda: Final[_dfttest2_cuda._VideoNode_bound.Plugin]
     """DFTTest2 (CUDA)"""
@@ -2037,6 +2045,10 @@ class Core:
     bm3d: Final[_bm3d._Core_bound.Plugin]
     """Implementation of BM3D denoising filter for VapourSynth."""
 # </attribute/Core_bound/bm3d>
+# <attribute/Core_bound/bm3dcpu>
+    bm3dcpu: Final[_bm3dcpu._Core_bound.Plugin]
+    """BM3D algorithm implemented in AVX and AVX2 intrinsics"""
+# </attribute/Core_bound/bm3dcpu>
 # <attribute/Core_bound/bm3dcuda>
     bm3dcuda: Final[_bm3dcuda._Core_bound.Plugin]
     """BM3D algorithm implemented in CUDA"""
@@ -2073,6 +2085,10 @@ class Core:
     descale: Final[_descale._Core_bound.Plugin]
     """Undo linear interpolation"""
 # </attribute/Core_bound/descale>
+# <attribute/Core_bound/dfttest2_cpu>
+    dfttest2_cpu: Final[_dfttest2_cpu._Core_bound.Plugin]
+    """DFTTest2 (CPU)"""
+# </attribute/Core_bound/dfttest2_cpu>
 # <attribute/Core_bound/dfttest2_cuda>
     dfttest2_cuda: Final[_dfttest2_cuda._Core_bound.Plugin]
     """DFTTest2 (CUDA)"""
@@ -2381,6 +2397,28 @@ class _bm3d:
 
 # </implementation/bm3d>
 
+# <implementation/bm3dcpu>
+class _bm3dcpu:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def BM3D(self, /, clip: VideoNode, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, chroma: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
+            @_Wrapper.Function
+            def BM3Dv2(self, /, clip: VideoNode, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, chroma: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
+            @_Wrapper.Function
+            def VAggregate(self, /, clip: VideoNode, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def BM3D(self, /, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, chroma: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
+            @_Wrapper.Function
+            def BM3Dv2(self, /, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, chroma: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
+            @_Wrapper.Function
+            def VAggregate(self, /, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
+
+# </implementation/bm3dcpu>
+
 # <implementation/bm3dcuda>
 class _bm3dcuda:
     class _Core_bound:
@@ -2592,6 +2630,24 @@ class _descale:
             def Spline64(self, /, width: _IntLike, height: _IntLike, blur: _FloatLike | None = None, post_conv: _FloatLike | _SequenceLike[_FloatLike] | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, border_handling: _IntLike | None = None, ignore_mask: VideoNode | None = None, force: _IntLike | None = None, force_h: _IntLike | None = None, force_v: _IntLike | None = None, opt: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/descale>
+
+# <implementation/dfttest2_cpu>
+class _dfttest2_cpu:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def DFTTest(self, /, clip: VideoNode, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, opt: _IntLike | None = None) -> Any: ...
+            @_Wrapper.Function
+            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
+            @_Wrapper.Function
+            def Version(self, /) -> Any: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def DFTTest(self, /, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, opt: _IntLike | None = None) -> Any: ...
+
+# </implementation/dfttest2_cpu>
 
 # <implementation/dfttest2_cuda>
 class _dfttest2_cuda:
