@@ -268,6 +268,7 @@ def finalize_output[**P](
     bits: int | None = 10,
     clamp_tv_range: bool = False,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[P, vs.VideoNode]: ...
 
 
@@ -277,6 +278,7 @@ def finalize_output[**P](
     bits: int | None = 10,
     clamp_tv_range: bool = False,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
 
@@ -287,17 +289,20 @@ def finalize_output[**P](
     bits: int | None = 10,
     clamp_tv_range: bool = False,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
     """
     Decorator implementation of [finalize_clip][vstools.finalize_clip].
     """
 
+    final_args = dict[str, Any](bits=bits, clamp_tv_range=clamp_tv_range, func=func, **kwargs)
+
     if function is None:
-        return partial(finalize_output, bits=bits, clamp_tv_range=clamp_tv_range, func=func)
+        return partial(finalize_output, **final_args)
 
     @wraps(function)
     def _wrapper(*args: P.args, **kwargs: P.kwargs) -> vs.VideoNode:
-        return finalize_clip(function(*args, **kwargs), bits, clamp_tv_range, func=func)
+        return finalize_clip(function(*args, **kwargs), **final_args)
 
     return _wrapper
 
@@ -455,21 +460,6 @@ def initialize_input[**P](
     Initializes the first clip found in this order: positional arguments -> keyword arguments -> default arguments.
     """
 
-    if function is None:
-        return partial(
-            initialize_input,
-            bits=bits,
-            matrix=matrix,
-            transfer=transfer,
-            primaries=primaries,
-            chroma_location=chroma_location,
-            color_range=color_range,
-            field_based=field_based,
-            strict=strict,
-            func=func,
-            **kwargs,
-        )
-
     init_args = dict[str, Any](
         bits=bits,
         matrix=matrix,
@@ -482,6 +472,9 @@ def initialize_input[**P](
         func=func,
         **kwargs,
     )
+
+    if function is None:
+        return partial(initialize_input, **init_args)
 
     @wraps(function)
     def _wrapper(*args: P.args, **kwargs: P.kwargs) -> vs.VideoNode:
