@@ -4,8 +4,10 @@ requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'x86_64'",
     "python_full_version < '3.15' and platform_machine == 'x86_64'",
-    "python_full_version >= '3.15' and platform_machine != 'x86_64'",
-    "python_full_version < '3.15' and platform_machine != 'x86_64'",
+    "python_full_version >= '3.15' and platform_machine == 'AMD64'",
+    "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 'x86_64'",
+    "python_full_version < '3.15' and platform_machine == 'AMD64'",
+    "python_full_version < '3.15' and platform_machine != 'AMD64' and platform_machine != 'x86_64'",
 ]
 
 [[package]]
@@ -277,13 +279,13 @@ wheels = [
 
 [package.optional-dependencies]
 cpu = [
-    { name = "vapoursynth-dfttest2-cpu", marker = "platform_machine == 'x86_64'" },
+    { name = "vapoursynth-dfttest2-cpu", marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
 ]
 cufft = [
     { name = "vapoursynth-dfttest2-cuda" },
 ]
 gcc = [
-    { name = "vapoursynth-dfttest2-gcc", marker = "platform_machine != 'x86_64'" },
+    { name = "vapoursynth-dfttest2-gcc" },
 ]
 hipfft = [
     { name = "vapoursynth-dfttest2-hip" },
@@ -1406,7 +1408,7 @@ name = "vapoursynth-bm3dcpu"
 version = "2.16.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "vapoursynth", marker = "platform_machine == 'x86_64'" },
+    { name = "vapoursynth", marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6c/90/da89cc4172e45ae623051daf1ad8c56866026496a74b5a76fa23c43861b5/vapoursynth_bm3dcpu-2.16.5.tar.gz", hash = "sha256:1f70527ea5ee7a6c3f395401356222a573fda01288c6fe1e10e03feebefecd51", size = 625985, upload-time = "2026-05-16T17:32:39.874Z" }
 wheels = [
@@ -1535,7 +1537,7 @@ name = "vapoursynth-dfttest2-cpu"
 version = "10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "vapoursynth", marker = "platform_machine == 'x86_64'" },
+    { name = "vapoursynth", marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0c/a5/7a9a25df7ade343fddb30807f9359da9d1d449c30a5bfad0c5f6b90ff491/vapoursynth_dfttest2_cpu-10.tar.gz", hash = "sha256:066966d383e3dd3c686028787530f2b9afffc87f100784793e7f8bf86ffae59b", size = 903075, upload-time = "2026-05-03T21:38:30.341Z" }
 wheels = [
@@ -1564,7 +1566,7 @@ name = "vapoursynth-dfttest2-gcc"
 version = "10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "vapoursynth", marker = "platform_machine != 'x86_64'" },
+    { name = "vapoursynth" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/97/5b/ed0ddcd181c2a61ad2ad42f5a593f63e0bacf234ea0693bb24dde2ed7c71/vapoursynth_dfttest2_gcc-10.tar.gz", hash = "sha256:602a265b4cb818cab1370d682d742072a88dba45f45714fdfae76d3d9dc70e9b", size = 903218, upload-time = "2026-05-03T19:19:26.688Z" }
 wheels = [
@@ -2037,15 +2039,14 @@ cl = [
     { name = "vapoursynth-knlmeanscl" },
 ]
 deband = [
-    { name = "dfttest2" },
-    { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'x86_64'" },
-    { name = "dfttest2", extra = ["gcc"], marker = "platform_machine != 'x86_64'" },
+    { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
+    { name = "dfttest2", extra = ["gcc"] },
     { name = "scipy" },
     { name = "vapoursynth-adaptivegrain" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
+    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dctfilter" },
@@ -2070,15 +2071,14 @@ deband = [
     { name = "vsnoise" },
 ]
 dehalo = [
-    { name = "dfttest2" },
-    { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'x86_64'" },
-    { name = "dfttest2", extra = ["gcc"], marker = "platform_machine != 'x86_64'" },
+    { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
+    { name = "dfttest2", extra = ["gcc"] },
     { name = "scipy" },
     { name = "vapoursynth-adaptivegrain" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
+    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dctfilter" },
@@ -2102,15 +2102,14 @@ dehalo = [
     { name = "vs-placebo" },
 ]
 deinterlace = [
-    { name = "dfttest2" },
-    { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'x86_64'" },
-    { name = "dfttest2", extra = ["gcc"], marker = "platform_machine != 'x86_64'" },
+    { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
+    { name = "dfttest2", extra = ["gcc"] },
     { name = "scipy" },
     { name = "vapoursynth-adaptivegrain" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
+    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dctfilter" },
@@ -2136,15 +2135,14 @@ deinterlace = [
     { name = "vs-placebo" },
 ]
 denoise = [
-    { name = "dfttest2" },
-    { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'x86_64'" },
-    { name = "dfttest2", extra = ["gcc"], marker = "platform_machine != 'x86_64'" },
+    { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
+    { name = "dfttest2", extra = ["gcc"] },
     { name = "scipy" },
     { name = "vapoursynth-adaptivegrain" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
+    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dctfilter" },
@@ -2168,15 +2166,14 @@ denoise = [
     { name = "vs-placebo" },
 ]
 full = [
-    { name = "dfttest2" },
-    { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'x86_64'" },
-    { name = "dfttest2", extra = ["gcc"], marker = "platform_machine != 'x86_64'" },
+    { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
+    { name = "dfttest2", extra = ["gcc"] },
     { name = "scipy" },
     { name = "vapoursynth-adaptivegrain" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
+    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dctfilter" },
@@ -2293,17 +2290,17 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "dfttest2", extras = ["cpu"], marker = "platform_machine == 'x86_64' and extra == 'deband'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["cpu"], marker = "platform_machine == 'x86_64' and extra == 'dehalo'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["cpu"], marker = "platform_machine == 'x86_64' and extra == 'deinterlace'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["cpu"], marker = "platform_machine == 'x86_64' and extra == 'denoise'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["cpu"], marker = "platform_machine == 'x86_64' and extra == 'full'", specifier = ">=10" },
+    { name = "dfttest2", extras = ["cpu"], marker = "(platform_machine == 'AMD64' and extra == 'deband') or (platform_machine == 'x86_64' and extra == 'deband')", specifier = ">=10" },
+    { name = "dfttest2", extras = ["cpu"], marker = "(platform_machine == 'AMD64' and extra == 'dehalo') or (platform_machine == 'x86_64' and extra == 'dehalo')", specifier = ">=10" },
+    { name = "dfttest2", extras = ["cpu"], marker = "(platform_machine == 'AMD64' and extra == 'deinterlace') or (platform_machine == 'x86_64' and extra == 'deinterlace')", specifier = ">=10" },
+    { name = "dfttest2", extras = ["cpu"], marker = "(platform_machine == 'AMD64' and extra == 'denoise') or (platform_machine == 'x86_64' and extra == 'denoise')", specifier = ">=10" },
+    { name = "dfttest2", extras = ["cpu"], marker = "(platform_machine == 'AMD64' and extra == 'full') or (platform_machine == 'x86_64' and extra == 'full')", specifier = ">=10" },
     { name = "dfttest2", extras = ["cufft", "nvrtc"], marker = "extra == 'nvidia'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["gcc"], marker = "platform_machine != 'x86_64' and extra == 'deband'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["gcc"], marker = "platform_machine != 'x86_64' and extra == 'dehalo'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["gcc"], marker = "platform_machine != 'x86_64' and extra == 'deinterlace'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["gcc"], marker = "platform_machine != 'x86_64' and extra == 'denoise'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["gcc"], marker = "platform_machine != 'x86_64' and extra == 'full'", specifier = ">=10" },
+    { name = "dfttest2", extras = ["gcc"], marker = "extra == 'deband'", specifier = ">=10" },
+    { name = "dfttest2", extras = ["gcc"], marker = "extra == 'dehalo'", specifier = ">=10" },
+    { name = "dfttest2", extras = ["gcc"], marker = "extra == 'deinterlace'", specifier = ">=10" },
+    { name = "dfttest2", extras = ["gcc"], marker = "extra == 'denoise'", specifier = ">=10" },
+    { name = "dfttest2", extras = ["gcc"], marker = "extra == 'full'", specifier = ">=10" },
     { name = "dfttest2", extras = ["hipfft", "hiprtc"], marker = "extra == 'amd'", specifier = ">=10" },
     { name = "jetpytools", specifier = "~=2.2.1" },
     { name = "numpy", specifier = ">=2.0.0" },
@@ -2353,11 +2350,11 @@ requires-dist = [
     { name = "vapoursynth-bm3d", marker = "extra == 'deinterlace'", specifier = ">=10.0" },
     { name = "vapoursynth-bm3d", marker = "extra == 'denoise'", specifier = ">=10.0" },
     { name = "vapoursynth-bm3d", marker = "extra == 'full'", specifier = ">=10.0" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'deband') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'deband')", specifier = ">=2.16.4" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'dehalo') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'dehalo')", specifier = ">=2.16.4" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'deinterlace') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'deinterlace')", specifier = ">=2.16.4" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'denoise') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'denoise')", specifier = ">=2.16.4" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'full') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'full')", specifier = ">=2.16.4" },
+    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'deband') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'deband') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'deband') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'deband')", specifier = ">=2.16.4" },
+    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'dehalo') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'dehalo') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'dehalo') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'dehalo')", specifier = ">=2.16.4" },
+    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'deinterlace') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'deinterlace') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'deinterlace') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'deinterlace')", specifier = ">=2.16.4" },
+    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'denoise') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'denoise') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'denoise') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'denoise')", specifier = ">=2.16.4" },
+    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'full') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'full') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'full') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'full')", specifier = ">=2.16.4" },
     { name = "vapoursynth-bm3dcuda", marker = "extra == 'nvidia'", specifier = ">=2.16" },
     { name = "vapoursynth-bm3dhip", marker = "extra == 'amd'", specifier = ">=2.16" },
     { name = "vapoursynth-bwdif", marker = "extra == 'aa'", specifier = ">=5.0" },
