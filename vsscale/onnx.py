@@ -4,25 +4,16 @@ This module implements scalers for ONNX models.
 
 from __future__ import annotations
 
+import dataclasses
+import math
+import re
 from abc import ABC
-from dataclasses import MISSING as DATACLASSES_MISSING
-from dataclasses import asdict, replace
-from logging import DEBUG, getLogger
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Literal,
-    Protocol,
-    SupportsFloat,
-    get_args,
-    runtime_checkable,
-)
+from logging import getLogger
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat
 
-from jetpytools import CustomValueError, SPath, SPathLike
+from jetpytools import CustomValueError, FileNotExistsError, SPath, SPathLike
 
 from vsexprtools import norm_expr
-from vsjetpack import deprecated
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vsmasktools import Morpho
 from vstools import (
@@ -43,7 +34,7 @@ from vstools import (
 )
 
 from .generic import BaseGenericScaler
-from .mlrt import Backend
+from .mlrt import Backend, get_model_folder
 
 type BackendLike = type[Backend] | Backend
 
@@ -51,11 +42,6 @@ __all__ = ["DPIR", "ArtCNN", "BaseOnnxScaler", "GenericOnnxScaler", "Waifu2x"]
 
 
 logger = getLogger(__name__)
-
-
-@runtime_checkable
-class _SupportsFP16(Protocol):
-    fp16: bool
 
 
 class BaseOnnxScaler(BaseGenericScaler, ABC):
@@ -69,7 +55,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         backend: BackendLike | None = None,
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
-        overlap: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] = 0,
         multiple: int = 1,
         max_instances: int = 2,
         *,
@@ -94,57 +80,36 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
-            **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
+            **kwargs: Additional arguments.
         """
         super().__init__(kernel=kernel, scaler=scaler, shifter=shifter, **kwargs)
 
         if model is not None:
-            self.model = str(SPath(model).resolve())
-
-        fp16 = self.kwargs.pop("fp16", True)
-        default_args = {"fp16": fp16, "output_format": int(fp16), "use_cuda_graph": True, "use_cublas": True}
+            self.model = SPath(model).resolve()
 
         if backend is None:
-            self.backend = autoselect_backend(**default_args | self.kwargs)
+            self.backend = Backend.autoselect(**self.kwargs)
         elif isinstance(backend, type):
-            self.backend = backend(**_clean_keywords(default_args | self.kwargs, backend))
-        elif isinstance(backend, str):
-            backends_map = {b.__name__.lower(): b for b in get_args(self.vsmlrt.backendT)}
-
-            try:
-                backend_t = backends_map[backend.lower().strip()]
-            except KeyError:
-                raise CustomValueError("Unknown backend!", self.__class__, backend)
-
-            self.backend = backend_t(**_clean_keywords(default_args | self.kwargs, backend_t))
+            self.backend = backend(**self.kwargs)
+        elif self.kwargs:
+            self.backend = dataclasses.replace(backend, **self.kwargs)
         else:
-            self.backend = replace(backend, **_clean_keywords(self.kwargs, backend))
-
-        _check_vsmlrt_plugin_version(self.backend.__class__.__name__, self.__class__)
+            self.backend = backend
 
         self.tiles = tiles
         self.tilesize = tilesize
         self.overlap = overlap
         self.multiple = multiple
 
-        if self.overlap is None:
-            self.overlap_w = self.overlap_h = 8
-        elif isinstance(self.overlap, int):
+        if isinstance(self.overlap, int):
             self.overlap_w = self.overlap_h = self.overlap
         else:
             self.overlap_w, self.overlap_h = self.overlap
 
         self.max_instances = max_instances
 
-        logger.debug("%s: Using '%s' backend", self, self.backend.__class__.__name__)
-
-        if logger.isEnabledFor(DEBUG):
-            valid_fields = _get_backend_fields(self.backend)
-
-            for k, v in asdict(self.backend).items():
-                if v != (v_default := valid_fields[k].default) != DATACLASSES_MISSING:
-                    logger.debug(f"{self}: {k}={v!r}, default is {v_default!r}")
-
+        logger.info("%s: Using '%s' backend", self, self.backend.__class__.__name__)
+        logger.debug("%s: %s", self, self.backend)
         logger.debug("%s: User tiles: %s", self, self.tiles)
         logger.debug("%s: User tilesize: %s", self, self.tilesize)
         logger.debug("%s: User overlap: %s", self, (self.overlap_w, self.overlap_h))
@@ -199,28 +164,8 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         else:
             logger.debug("%s: Variable resolution clip detected...", self.scale)
 
-            if not isinstance(self.backend, (self.vsmlrt.Backend.TRT, self.vsmlrt.Backend.TRT_RTX)):
-                raise CustomValueError(
-                    "Variable resolution clips can only be processed with TRT Backend!", self.__class__, self.backend
-                )
-
-            logger.warning("%s: Variable resolution clip detected!", self.scale)
-
-            if self.backend.static_shape:
-                logger.warning("%s: static_shape is True, setting it to False...", self.scale)
-                self.backend.static_shape = False
-
-            if not self.backend.max_shapes:
-                logger.warning(
-                    "%s: max_shapes is None, setting it to (1936, 1088). You may want to adjust it...", self.scale
-                )
-                self.backend.max_shapes = (1936, 1088)
-
-            if not self.backend.opt_shapes:
-                logger.warning(
-                    "%s: opt_shapes is None, setting it to (64, 64). You may want to adjust it...", self.scale
-                )
-                self.backend.opt_shapes = (64, 64)
+            if not isinstance(self.backend, (Backend.TRT, Backend.TRT.RTX)) or self.backend.static_shape:
+                raise CustomValueError("Only TRT backends support static_shape=False", self.__class__, self.backend)
 
             scaled = ProcessVariableResClip.from_func(
                 wclip, lambda c: self.inference(c, **inference_kwargs), False, wclip.format, self.max_instances
@@ -230,22 +175,41 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         return self._finish_scale(scaled, clip, width, height, shift, **kwargs)
 
-    def calc_tilesize(self, clip: vs.VideoNode, **kwargs: Any) -> tuple[tuple[int, int], tuple[int, int]]:
+    def calc_tilesize(self, clip: vs.VideoNode) -> tuple[tuple[int, int], tuple[int, int]]:
         """
         Reimplementation of vsmlrt.calc_tilesize helper function
         """
 
-        kwargs = {
-            "tiles": self.tiles,
-            "tilesize": self.tilesize,
-            "width": clip.width,
-            "height": clip.height,
-            "multiple": self.multiple,
-            "overlap_w": self.overlap_w,
-            "overlap_h": self.overlap_h,
-        } | kwargs
+        def calc_size(dimension: int, tiles: int, overlap: int, multiple: int) -> int:
+            return math.ceil((dimension + 2 * overlap * (tiles - 1)) / (tiles * multiple)) * multiple
 
-        return self.vsmlrt.calc_tilesize(**kwargs)
+        overlap_w = self.overlap_w
+        overlap_h = self.overlap_h
+
+        if isinstance(self.tilesize, tuple):
+            tile_w, tile_h = self.tilesize
+        elif isinstance(self.tilesize, int):
+            tile_w, tile_h = self.tilesize, self.tilesize
+        else:
+            if self.tiles is None:
+                overlap_w = 0
+                overlap_h = 0
+                tile_w = clip.width
+                tile_h = clip.height
+            elif isinstance(self.tiles, int):
+                tile_w = calc_size(clip.width, self.tiles, self.overlap_w, self.multiple)
+                tile_h = calc_size(clip.height, self.tiles, self.overlap_h, self.multiple)
+            else:
+                tile_w = calc_size(clip.width, self.tiles[0], self.overlap_w, self.multiple)
+                tile_h = calc_size(clip.height, self.tiles[1], self.overlap_h, self.multiple)
+
+            if tile_w % self.multiple != 0 or tile_h % self.multiple != 0:
+                raise CustomValueError(
+                    f"Tile size ({tile_w}, {tile_h}) must be divisible by {self.multiple}",
+                    self.__class__,
+                )
+
+        return (tile_w, tile_h), (overlap_w, overlap_h)
 
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         """
@@ -285,24 +249,13 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         logger.debug("%s: Passing overlaps: %s", self.inference, overlaps)
         logger.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
 
-        return self.vsmlrt.inference(clip, self.model, overlaps, tilesize, self.backend, **kwargs)
+        return self.backend.inference(clip, self.model, overlaps, tilesize, flexible=False, **kwargs)
 
     def _pick_precision[IntT: int](self, fp16: IntT, fp32: IntT) -> IntT:
         precision = (
             fp16
-            if (isinstance(self.backend, _SupportsFP16) and self.backend.fp16)
-            and isinstance(
-                self.backend,
-                (
-                    self.vsmlrt.Backend.TRT,
-                    self.vsmlrt.Backend.TRT_RTX,
-                    self.vsmlrt.Backend.ORT_CPU,
-                    self.vsmlrt.Backend.ORT_CUDA,
-                    self.vsmlrt.Backend.ORT_DML,
-                    self.vsmlrt.Backend.ORT_COREML,
-                    self.vsmlrt.Backend.NCNN_VK,
-                ),
-            )
+            if isinstance(self.backend, (Backend.ORT, Backend.NCNN.VK, Backend.TRT, Backend.TRT.RTX))
+            and self.backend.fp16
             else fp32
         )
 
@@ -364,7 +317,7 @@ class BaseArtCNN(BaseOnnxScaler):
         backend: BackendLike | None = None,
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
-        overlap: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] = 8,
         max_instances: int = 2,
         *,
         kernel: KernelLike = Catrom,
@@ -386,12 +339,12 @@ class BaseArtCNN(BaseOnnxScaler):
             kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
-            **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
+            **kwargs: Additional arguments.
         """
         model = self._model if hasattr(self, "_model") else self.__class__.__name__
 
         super().__init__(
-            (SPath(self.vsmlrt.models_path) / "ArtCNN" / f"ArtCNN_{model}.onnx").to_str(),
+            get_model_folder("ArtCNN") / f"ArtCNN_{model}.onnx",
             backend,
             tiles,
             tilesize,
@@ -476,7 +429,7 @@ class BaseArtCNNChroma(BaseArtCNN):
         logger.debug("%s: Passing overlaps: %s", self.inference, overlaps)
         logger.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
 
-        u, v = self.vsmlrt.flexible_inference(clip, self.model, overlaps, tilesize, self.backend, **kwargs)
+        u, v = self.backend.inference(clip, self.model, overlaps, tilesize, flexible=True, **kwargs)
 
         logger.debug("%s: Inferenced clip: %s", self.inference, u.format)
         logger.debug("%s: Inferenced clip: %s", self.inference, v.format)
@@ -511,10 +464,6 @@ class BaseArtCNNChroma(BaseArtCNN):
 class ArtCNN(BaseArtCNNLuma):
     """
     Super-Resolution Convolutional Neural Networks optimised for anime.
-
-    A quick reminder that vs-mlrt does not ship these in the base package.
-    You will have to grab the extended models pack or get it from the repo itself.
-    (And create an "ArtCNN" folder in your models folder yourself)
 
     <https://github.com/Artoriuz/ArtCNN/releases/latest>
 
@@ -583,24 +532,6 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-    @deprecated(
-        "This model is no longer maintained and has been deprecated. Please use R8F64_Chroma instead.",
-        category=DeprecationWarning,
-    )
-    class C4F32_Chroma(BaseArtCNNChroma):  # noqa: N801
-        """
-        The smaller of the chroma models.
-
-        These don't double the input clip and rather just try to enhance the chroma using luma information.
-
-        Example usage:
-        ```py
-        from vsscale import ArtCNN
-
-        chroma_upscaled = ArtCNN.C4F32_Chroma().scale(clip)
-        ```
-        """
-
     class C4F32_DN(BaseArtCNNLuma):  # noqa: N801
         """
         The same as C4F32 but intended to also denoise. Works well on noisy sources when you don't want any sharpening.
@@ -622,60 +553,6 @@ class ArtCNN(BaseArtCNNLuma):
         from vsscale import ArtCNN
 
         doubled = ArtCNN.C4F32_DS().supersample(clip, 2)
-        ```
-        """
-
-    @deprecated(
-        "This model is no longer maintained and has been deprecated. Please use R8F64 instead.",
-        category=DeprecationWarning,
-    )
-    class C16F64(BaseArtCNNLuma):
-        """
-        Very fast and good enough for AA purposes but the onnx variant is officially deprecated.
-
-        This has 16 internal convolution layers with 64 filters each.
-
-        ONNX files available at https://github.com/Artoriuz/ArtCNN/tree/388b91797ff2e675fd03065953cc1147d6f972c2/ONNX
-
-        Example usage:
-        ```py
-        from vsscale import ArtCNN
-
-        doubled = ArtCNN.C16F64().supersample(clip, 2)
-        ```
-        """
-
-    @deprecated(
-        "This model is no longer maintained and has been deprecated. Please use R8F64_Chroma instead.",
-        category=DeprecationWarning,
-    )
-    class C16F64_Chroma(BaseArtCNNChroma):  # noqa: N801
-        """
-        The bigger of the old chroma models.
-
-        These don't double the input clip and rather just try to enhance the chroma using luma information.
-
-        Example usage:
-        ```py
-        from vsscale import ArtCNN
-
-        chroma_upscaled = ArtCNN.C16F64_Chroma().scale(clip)
-        ```
-        """
-
-    @deprecated(
-        "This model is no longer maintained and has been deprecated. Please use R8F64 instead.",
-        category=DeprecationWarning,
-    )
-    class C16F64_DS(BaseArtCNNLuma):  # noqa: N801
-        """
-        The same as C16F64 but intended to also denoise and sharpen.
-
-        Example usage:
-        ```py
-        from vsscale import ArtCNN
-
-        doubled = ArtCNN.C16F64_DS().supersample(clip, 2)
         ```
         """
 
@@ -769,35 +646,16 @@ class ArtCNN(BaseArtCNNLuma):
         ```
         """
 
-    @deprecated(
-        "This model is no longer maintained and has been deprecated. Please use R8F64_Chroma instead.",
-        category=DeprecationWarning,
-    )
-    class R16F96_Chroma(BaseArtCNNChroma):  # noqa: N801
-        """
-        The biggest and fancy chroma model. Shows almost biblical results on the right sources.
 
-        These don't double the input clip and rather just try to enhance the chroma using luma information.
-
-        ONNX file available at https://github.com/Artoriuz/ArtCNN/tree/d8f0297f11b1bc71f5f33e19f5ed6dfff904e758/ONNX
-
-        Example usage:
-        ```py
-        from vsscale import ArtCNN
-
-        chroma_upscaled = ArtCNN.R16F96_Chroma().scale(clip)
-        ```
-        """
-
-
-class BaseWaifu2x(BaseOnnxScaler):
+class BaseWaifu2x(BaseOnnxScalerRGB):
     scale_w2x: Literal[1, 2, 4]
     """Upscaling factor."""
 
     noise: Literal[-1, 0, 1, 2, 3]
     """Noise reduction level"""
 
-    _model: ClassVar[int]
+    _model: ClassVar[str]
+
     _static_kernel_radius = 2
 
     def __init__(
@@ -807,7 +665,7 @@ class BaseWaifu2x(BaseOnnxScaler):
         backend: BackendLike | None = None,
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
-        overlap: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] = 4,
         max_instances: int = 2,
         *,
         kernel: KernelLike = Catrom,
@@ -831,41 +689,48 @@ class BaseWaifu2x(BaseOnnxScaler):
             kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
-            **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
+            **kwargs: Additional arguments.
         """
         self.scale_w2x = scale
         self.noise = noise
+        model_name = self._model if hasattr(self, "_model") else self.__class__.__name__
+        model_name = re.sub(r"(?<!^)(?=[A-Z])", "_", model_name).lower()  # CamelCase -> snake_case
+
+        if self.scale_w2x > 1:
+            model_name += f"_scale{self.scale_w2x}x"
+
+        if self.noise >= 0:
+            model_name += f"_noise{self.noise}"
+
+        model = get_model_folder("Waifu2x") / f"{model_name}.onnx"
+
+        if not model.exists():
+            raise FileNotExistsError(
+                "The specified model does not exist. Run `vsscale onnx show waifu2x` to see the available models.",
+                self.__class__,
+            )
+
         super().__init__(
-            None,
+            model,
             backend,
             tiles,
             tilesize,
             overlap,
-            1,
-            max_instances,
+            max_instances=max_instances,
             kernel=kernel,
             scaler=scaler,
             shifter=shifter,
             **kwargs,
         )
 
-    def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        return self.vsmlrt.Waifu2x(
-            clip,
-            self.noise,
-            self.scale_w2x,
-            self.tiles,
-            self.tilesize,
-            self.overlap,
-            self.vsmlrt.Waifu2xModel(self._model),
-            self.backend,
-            **kwargs,
-        )
 
-
-class _Waifu2xCunet(BaseWaifu2x, BaseOnnxScalerRGB):
-    _model = 6
+class _Waifu2xCunet(BaseWaifu2x):
     _static_kernel_radius = 16
+
+    if not TYPE_CHECKING:
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs, multiple=4)
 
     if TYPE_CHECKING:
 
@@ -943,35 +808,9 @@ class Waifu2x(_Waifu2xCunet):
     ```
     """
 
-    class UpConv7Art(BaseWaifu2x, BaseOnnxScalerRGB):
-        """
-        UpConv7 model variant optimized for anime-style art.
+    _model = "CunetArt"
 
-        Example usage:
-        ```py
-        from vsscale import Waifu2x
-
-        doubled = Waifu2x.UpConv7Art().supersample(clip, 2)
-        ```
-        """
-
-        _model = 3
-
-    class UpConv7Photo(BaseWaifu2x, BaseOnnxScalerRGB):
-        """
-        UpConv7 model variant optimized for photographic images.
-
-        Example usage:
-        ```py
-        from vsscale import Waifu2x
-
-        doubled = Waifu2x.UpConv7Photo().supersample(clip, 2)
-        ```
-        """
-
-        _model = 4
-
-    class Cunet(_Waifu2xCunet):
+    class CunetArt(_Waifu2xCunet):
         """
         CUNet (Compact U-Net) model for anime art.
 
@@ -979,11 +818,13 @@ class Waifu2x(_Waifu2xCunet):
         ```py
         from vsscale import Waifu2x
 
-        doubled = Waifu2x.Cunet().supersample(clip, 2)
+        doubled = Waifu2x.CunetArt().supersample(clip, 2)
         ```
         """
 
-    class SwinUnetArt(BaseWaifu2x, BaseOnnxScalerRGB):
+    Cunet = CunetArt
+
+    class SwinUnetArt(BaseWaifu2x):
         """
         Swin-Unet-based model trained on anime-style images.
 
@@ -995,9 +836,7 @@ class Waifu2x(_Waifu2xCunet):
         ```
         """
 
-        _model = 7
-
-    class SwinUnetPhoto(BaseWaifu2x, BaseOnnxScalerRGB):
+    class SwinUnetPhoto(BaseWaifu2x):
         """
         Swin-Unet model trained on photographic content.
 
@@ -1009,9 +848,7 @@ class Waifu2x(_Waifu2xCunet):
         ```
         """
 
-        _model = 8
-
-    class SwinUnetArtScan(BaseWaifu2x, BaseOnnxScalerRGB):
+    class SwinUnetArtScan(BaseWaifu2x):
         """
         Swin-Unet model trained on anime scans.
 
@@ -1023,15 +860,9 @@ class Waifu2x(_Waifu2xCunet):
         ```
         """
 
-        _model = 10
-
-
-type _DPIRGrayModel = int
-type _DPIRColorModel = int
-
 
 class BaseDPIR(BaseOnnxScaler):
-    _model: ClassVar[tuple[_DPIRGrayModel, _DPIRColorModel]]
+    _kind: ClassVar[str] = ""
     _static_kernel_radius = 8
 
     def __init__(
@@ -1040,7 +871,7 @@ class BaseDPIR(BaseOnnxScaler):
         backend: BackendLike | None = None,
         tiles: int | tuple[int, int] | None = None,
         tilesize: int | tuple[int, int] | None = None,
-        overlap: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] = 16,
         *,
         kernel: KernelLike = Catrom,
         scaler: ScalerLike | None = None,
@@ -1062,7 +893,7 @@ class BaseDPIR(BaseOnnxScaler):
             kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
-            **kwargs: Additional arguments to pass to the backend. See the vsmlrt backend's docstring for more details.
+            **kwargs: Additional arguments.
         """
         self.strength = strength
 
@@ -1071,7 +902,7 @@ class BaseDPIR(BaseOnnxScaler):
             backend,
             tiles,
             tilesize,
-            16 if overlap is None else overlap,
+            overlap,
             8,
             -1,
             kernel=kernel,
@@ -1080,9 +911,11 @@ class BaseDPIR(BaseOnnxScaler):
             **kwargs,
         )
 
-        if isinstance(self.backend, self.vsmlrt.Backend.TRT) and not self.backend.force_fp16:
-            # fp16_node_block_list=["Conv_123"]
-            self.backend.custom_args.extend(["--precisionConstraints=obey", "--layerPrecisions=Conv_123:fp32"])
+        if isinstance(
+            self.backend, (Backend.TRT, Backend.TRT.RTX, Backend.ORT, Backend.NCNN.VK, Backend.OV.CPU, Backend.OV.GPU)
+        ):
+            bl = set(self.backend.fp16_blacklist_ops or []).union(["Conv_123"])
+            self.backend = dataclasses.replace(self.backend, fp16_blacklist_ops=bl)
 
     def scale(
         self,
@@ -1132,11 +965,16 @@ class BaseDPIR(BaseOnnxScaler):
         logger.debug("%s: Passing strength clip format: %s", self.inference, self.strength.format)
 
         # Get model name
-        self.model = (
-            SPath(self.vsmlrt.models_path)
-            / "dpir"
-            / f"{self.vsmlrt.DPIRModel(self._model[clip.format.color_family != vs.GRAY]).name}.onnx"
-        ).to_str()
+        model = "drunet"
+        if self._kind:
+            model += f"_{self._kind}"
+
+        if clip.format.color_family == vs.GRAY:
+            model += "_gray"
+        else:
+            model += "_color"
+
+        model = get_model_folder("DPIR") / f"{model}.onnx"
 
         # Basic inference args
         tilesize, overlaps = self.calc_tilesize(clip)
@@ -1150,19 +988,12 @@ class BaseDPIR(BaseOnnxScaler):
         padding = padder.mod_padding(clip, self.multiple, 0)
 
         if not any(padding) or kwargs.pop("no_pad", False):
-            return self.vsmlrt.inference([clip, self.strength], self.model, overlaps, tilesize, self.backend, **kwargs)
+            return self.backend.inference([clip, self.strength], model, overlaps, tilesize, **kwargs)
 
         clip = padder.MIRROR(clip, *padding)
         strength = padder.MIRROR(self.strength, *padding)
 
-        return self.vsmlrt.inference(
-            [clip, strength],
-            self.model,
-            overlaps,
-            tilesize,
-            self.backend,
-            **kwargs,
-        ).std.Crop(*padding)
+        return self.backend.inference([clip, strength], self.model, overlaps, tilesize, **kwargs).std.Crop(*padding)
 
 
 class DPIR(BaseDPIR):
@@ -1170,18 +1001,14 @@ class DPIR(BaseDPIR):
     Deep Plug-and-Play Image Restoration.
     """
 
-    _model = (2, 3)
-
     class DrunetDenoise(BaseDPIR):
         """
         DPIR model for denoising.
         """
-
-        _model = (0, 1)
 
     class DrunetDeblock(BaseDPIR):
         """
         DPIR model for deblocking.
         """
 
-        _model = (2, 3)
+        _kind = "deblocking"
