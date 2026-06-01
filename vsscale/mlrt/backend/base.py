@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import IntEnum
 from logging import getLogger
-from typing import Any, ClassVar, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast, overload
 
 from vstools import core, vs
 
@@ -33,6 +33,13 @@ class Backend:
 
         FP32 = 0
         FP16 = 1
+
+    if TYPE_CHECKING:
+        from .migx import MIGX
+        from .ncnn import NCNN
+        from .ort import ORT
+        from .ov import OV
+        from .trt import TRT
 
     @overload
     def inference(
@@ -134,7 +141,6 @@ class Backend:
         Returns:
             The selected backend.
         """
-        from . import Backend
 
         gpu = get_gpu(device_id)
         vendor = (
@@ -197,3 +203,17 @@ class Backend:
         del gpu
 
         return backend(**kwargs)
+
+
+if not TYPE_CHECKING:
+    from .migx import MIGX
+    from .ncnn import NCNN
+    from .ort import ORT
+    from .ov import OV
+    from .trt import TRT
+
+    Backend.MIGX = MIGX
+    Backend.NCNN = NCNN
+    Backend.ORT = ORT
+    Backend.OV = OV
+    Backend.TRT = TRT

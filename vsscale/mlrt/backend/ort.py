@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from jetpytools import fallback
 
@@ -24,6 +24,9 @@ class ORT(Backend):
         WARNING = 2
         ERROR = 3
         FATAL = 4
+
+    if TYPE_CHECKING:
+        from .ort import CPU, CUDA, DML, CoreML
 
     # Hardware & Runtime Execution
     num_streams: int
@@ -227,3 +230,10 @@ class CoreML(ORT):
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
         return super().get_args(clips) | {"ml_program": self.ml_program}
+
+
+if not TYPE_CHECKING:
+    ORT.CPU = CPU
+    ORT.CUDA = CUDA
+    ORT.DML = DML
+    ORT.CoreML = CoreML
