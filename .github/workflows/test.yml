@@ -37,7 +37,11 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --locked --no-dev --group test --extra basic --extra kernels --extra expr --extra rg
+        run: >-
+          uv sync --locked
+          --no-dev
+          --group test
+          --extra basic --extra kernels --extra expr --extra rg --extra denoise
 
       - name: Run tests
         run: uv run pytest --cov-report=term-missing:skip-covered --cov=vskernels --cov=vstools --cov=vsexprtools tests
