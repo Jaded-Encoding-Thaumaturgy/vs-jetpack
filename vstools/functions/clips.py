@@ -253,6 +253,9 @@ def finalize_clip(
     if bits:
         clip = depth(clip, bits, **kwargs)
 
+    if clip.format.sample_type is vs.FLOAT or clip.format.bits_per_sample > 16:
+        raise CustomValueError("Unsuitable output format!", func, clip.format)
+
     return limiter(clip, tv_range=clamp_tv_range, func=func)
 
 
