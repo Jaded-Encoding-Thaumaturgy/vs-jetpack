@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 
 from jetpytools import fallback
 
-from vstools import vs
+from vstools import core, vs
 
 from .base import Backend
 
@@ -13,6 +13,8 @@ from .base import Backend
 @dataclass(kw_only=True, init=False, unsafe_hash=True, frozen=True)
 class ORT(Backend):
     """Base ONNX Runtime backend configuration."""
+
+    plugin = core.lazy.ort
 
     provider: ClassVar[str]
 
