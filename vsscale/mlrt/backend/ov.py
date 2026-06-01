@@ -1,6 +1,6 @@
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 
 from vstools import core, vs
 
@@ -15,6 +15,8 @@ class OV(Backend):
 
     plugin = core.lazy.ov
 
+    device: ClassVar[str]
+
     custom_config: Mapping[str, Any] = field(default_factory=dict[str, Any])
     """
     Extra OpenVINO runtime configuration keys merged into the device configuration passed to `core.ov.Model`.
@@ -22,12 +24,6 @@ class OV(Backend):
     https://docs.openvino.ai/2026/api/c_cpp_api/group__ov__runtime__cpu__prop__cpp__api.html
     https://docs.openvino.ai/2026/api/c_cpp_api/group__ov__runtime__cpp__prop__api.html
     """
-
-    @property
-    def device(self) -> str:
-        if type(self) is OV:
-            raise NotImplementedError("OV is an abstract class")
-        return self.__class__.__name__
 
     @property
     def config(self) -> Mapping[str, Any]:
@@ -40,6 +36,8 @@ class OV(Backend):
 @dataclass(kw_only=True, frozen=True)
 class OV_CPU(OV):  # noqa: N801
     """OpenVINO CPU backend."""
+
+    device = "CPU"
 
     # Hardware & Runtime Execution
     num_streams: int = 1
@@ -75,6 +73,8 @@ class OV_CPU(OV):  # noqa: N801
 class OV_GPU(OV):  # noqa: N801
     """OpenVINO GPU backend."""
 
+    device = "GPU"
+
     # Hardware & Runtime Execution
     device_id: int = 0
     """OpenVINO GPU device index."""
@@ -101,6 +101,8 @@ class OV_GPU(OV):  # noqa: N801
 @dataclass(kw_only=True, frozen=True)
 class OV_NPU(OV):  # noqa: N801
     """OpenVINO NPU backend for Intel neural processing units."""
+
+    device = "NPU"
 
 
 class OVConfig:
