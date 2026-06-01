@@ -5,7 +5,7 @@ import subprocess
 import warnings
 import zlib
 from collections.abc import Collection, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from importlib.util import find_spec
 from logging import getLogger
 from pathlib import Path
@@ -61,6 +61,8 @@ class TRT(Backend):
     """Convert the ONNX model to BF16 before building."""
     tf32: bool = False
     """Allow TensorRT TF32 tactics."""
+    strict_nans: bool = False
+    """Disable float optimizations (0*x => 0, x-x => 0, x/x => 1) to preserve NaN/Inf propagation."""
 
     # Input Shapes & Optimization Profiles
     static_shape: bool = True
@@ -77,6 +79,8 @@ class TRT(Backend):
     """Enable TensorRT edge-mask convolution tactics."""
     jit_convolutions: bool = True
     """Enable TensorRT JIT convolution tactics."""
+    sparse_weights: bool = False
+    """Allow the builder to exploit structured sparsity in weights."""
 
     # Builder Tuning & Optimization Levels
     workspace: int | None = None
@@ -91,6 +95,18 @@ class TRT(Backend):
     """TensorRT tiling optimization search level."""
     l2_limit_for_tiling: int = -1
     """L2 cache usage hint for tiling optimization."""
+    avg_timing_iterations: int = 1
+    """Number of averaging iterations when timing tactics. Higher values produce more stable tactic selection."""
+    tactic_dram: int | None = None
+    """DRAM limit in bytes for the optimizer during tactic selection. Prevents OOM on memory-constrained systems."""
+    weight_streaming: bool = False
+    """Stream weights from host to device to reduce GPU memory at the cost of performance."""
+
+    # Build Process
+    force_rebuild: bool = field(default=False, repr=False)
+    """Force a full engine rebuild, ignoring any cached engine."""
+    max_threads: int | None = field(default=None, repr=False)
+    """Maximum number of builder threads. Limits CPU usage during engine build."""
 
     def __post_init__(self) -> None:
         if self.fp16 and self.bf16:
@@ -204,7 +220,7 @@ class TRT(Backend):
         identity = self.get_identity(network_path, channels, tilesize)
         engine_path = dirname / f"{identity}.engine"
 
-        if engine_path.is_file() and engine_path.stat().st_size >= 1024:
+        if not self.force_rebuild and engine_path.is_file() and engine_path.stat().st_size >= 1024:
             return engine_path
 
         self.build(
@@ -227,6 +243,10 @@ class TRT(Backend):
     ) -> None:
         trt_logger = self.logger
         builder = self.trt.Builder(trt_logger)
+
+        if self.max_threads is not None:
+            builder.max_threads = self.max_threads
+
         network = builder.create_network()
         parser = self.trt.OnnxParser(network, trt_logger)
 
@@ -268,8 +288,20 @@ class TRT(Backend):
         if self.workspace is not None:
             config.set_memory_pool_limit(self.trt.MemoryPoolType.WORKSPACE, self.workspace)
 
+        if self.tactic_dram is not None:
+            config.set_memory_pool_limit(self.trt.MemoryPoolType.TACTIC_DRAM, self.tactic_dram)
+
         if not self.tf32:
             config.flags &= ~(1 << self.trt.BuilderFlag.TF32.value)
+
+        if self.sparse_weights:
+            config.flags |= 1 << self.trt.BuilderFlag.SPARSE_WEIGHTS.value
+
+        if self.strict_nans:
+            config.flags |= 1 << self.trt.BuilderFlag.STRICT_NANS.value
+
+        if self.weight_streaming:
+            config.flags |= 1 << self.trt.BuilderFlag.WEIGHT_STREAMING.value
 
         self.configure_tactic_sources(config)
         self.configure_optimization_settings(config)
@@ -291,6 +323,7 @@ class TRT(Backend):
 
     def configure_optimization_settings(self, config: trt.IBuilderConfig) -> None:
         config.builder_optimization_level = self.builder_optimization_level
+        config.avg_timing_iterations = self.avg_timing_iterations
 
         if self.max_aux_streams is not None:
             config.max_aux_streams = self.max_aux_streams
