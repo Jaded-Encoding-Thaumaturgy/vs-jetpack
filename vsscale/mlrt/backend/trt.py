@@ -35,10 +35,10 @@ logger = getLogger(__name__)
 
 
 @dataclass(kw_only=True, frozen=True)
-class TensorRT(Backend):
-    """
-    Base TensorRT engine-building backend configuration.
-    """
+class TRT(Backend):
+    """TensorRT backend for Nvidia GPUs using the `core.trt` plugin."""
+
+    plugin = core.lazy.trt
 
     plugin: ClassVar[vs.Plugin]
 
@@ -409,17 +409,7 @@ class TensorRT(Backend):
 
 
 @dataclass(kw_only=True, frozen=True)
-class TRT(TensorRT):
-    """TensorRT backend for Nvidia GPUs using the `core.trt` plugin."""
-
-    plugin = core.lazy.trt
-
-    if TYPE_CHECKING:
-        from .trt import RTX
-
-
-@dataclass(kw_only=True, frozen=True)
-class RTX(TensorRT):
+class TRT_RTX(TRT):  # noqa: N801
     """TensorRT RTX backend for Nvidia RTX GPUs using the `core.trt_rtx` plugin."""
 
     plugin = core.lazy.trt_rtx
@@ -442,7 +432,3 @@ class RTX(TensorRT):
         from ._trt_rtx import Logger
 
         return Logger(logger)
-
-
-if not TYPE_CHECKING:
-    TRT.RTX = RTX

@@ -164,7 +164,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         else:
             logger.debug("%s: Variable resolution clip detected...", self.scale)
 
-            if not isinstance(self.backend, (Backend.TRT, Backend.TRT.RTX)) or self.backend.static_shape:
+            if not isinstance(self.backend, Backend.TRT) or self.backend.static_shape:
                 raise CustomValueError("Only TRT backends support static_shape=False", self.__class__, self.backend)
 
             scaled = ProcessVariableResClip.from_func(
@@ -254,8 +254,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
     def _pick_precision[IntT: int](self, fp16: IntT, fp32: IntT) -> IntT:
         precision = (
             fp16
-            if isinstance(self.backend, (Backend.ORT, Backend.NCNN.VK, Backend.TRT, Backend.TRT.RTX))
-            and self.backend.fp16
+            if isinstance(self.backend, (Backend.ORT, Backend.NCNN, Backend.TRT, Backend.TRT)) and self.backend.fp16
             else fp32
         )
 
@@ -911,9 +910,7 @@ class BaseDPIR(BaseOnnxScaler):
             **kwargs,
         )
 
-        if isinstance(
-            self.backend, (Backend.TRT, Backend.TRT.RTX, Backend.ORT, Backend.NCNN.VK, Backend.OV.CPU, Backend.OV.GPU)
-        ):
+        if isinstance(self.backend, (Backend.TRT, Backend.ORT, Backend.NCNN, Backend.OV_CPU, Backend.OV_GPU)):
             bl = set(self.backend.fp16_blacklist_ops or []).union(["Conv_123"])
             self.backend = dataclasses.replace(self.backend, fp16_blacklist_ops=bl)
 
