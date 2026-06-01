@@ -392,7 +392,11 @@ line-length = 120
 docstring-code-format = true
 
 [tool.ruff.lint]
-exclude = ["stubs/dfttest2.pyi", "stubs/vsmlrt.pyi"]
+exclude = [
+    "stubs/dfttest2.pyi",
+    "stubs/vsmlrt.pyi",
+    "stubs/onnxconverter_common/**",
+]
 extend-select = [
     "E",
     "C4",
