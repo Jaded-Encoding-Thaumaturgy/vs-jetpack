@@ -204,12 +204,12 @@ def clear(
             raise ValueError
 
     if not onnx:
-        return shutil.rmtree(folder, ignore_errors=True)
+        return shutil.rmtree(folder, ignore_errors=False)
 
     for spec in onnx:
         model_name, pinned_version = _parse_model_spec(spec)
         spec_folder = folder / model_name / (pinned_version or "")
-        shutil.rmtree(spec_folder, ignore_errors=True)
+        shutil.rmtree(spec_folder, ignore_errors=False)
 
 
 def _parse_model_spec(spec: str) -> tuple[str, str | None]:
