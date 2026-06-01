@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     import tensorrt
     import tensorrt_rtx
 
-from vstools import core, vs
+from vstools import core, depth, vs
 
 from ..settings import get_artifacts_folder, get_onnx_folder
 from .base import Backend
@@ -140,8 +140,12 @@ class TensorRT(Backend):
         flexible: bool = False,
         **kwargs: Any,
     ) -> vs.VideoNode | list[vs.VideoNode]:
-        channels = sum(clip.format.num_planes for clip in to_arr(clips))
+        clips = to_arr(clips)
+        channels = sum(clip.format.num_planes for clip in clips)
         engine_path = self.build_engine(Path(network_path), channels, tilesize)
+
+        if self.fp16 or self.bf16:
+            clips = [depth(c, 16, sample_type=vs.SampleType.FLOAT) for c in clips]
 
         return super().inference(clips, engine_path, overlap, tilesize, flexible=flexible, **kwargs)
 
