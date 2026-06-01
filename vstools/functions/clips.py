@@ -27,7 +27,7 @@ from ..exceptions import FramesLengthError
 from ..types import HoldsVideoFormat, VideoFormatLike
 from ..utils import DynamicClipsCache
 from ..vs_proxy import vs
-from .utils import DitherType, depth, limiter
+from .utils import depth, limiter
 
 __all__ = [
     "ProcessVariableClip",
@@ -234,7 +234,6 @@ def finalize_clip(
     clip: vs.VideoNode,
     bits: VideoFormatLike | HoldsVideoFormat | int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     *,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
@@ -245,19 +244,15 @@ def finalize_clip(
         clip: Clip to output.
         bits: Bitdepth to output to.
         clamp_tv_range: Whether to clamp to tv range.
-        dither_type: Dithering used for the bitdepth conversion.
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Returns:
         Dithered down and optionally clamped clip.
     """
     if bits:
-        clip = depth(clip, bits, dither_type=dither_type)
+        clip = depth(clip, bits)
 
-    if clamp_tv_range:
-        clip = limiter(clip, tv_range=clamp_tv_range)
-
-    return clip
+    return limiter(clip, tv_range=clamp_tv_range, func=func)
 
 
 @overload
@@ -267,7 +262,6 @@ def finalize_output[**P](
     *,
     bits: int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[P, vs.VideoNode]: ...
 
@@ -277,7 +271,6 @@ def finalize_output[**P](
     *,
     bits: int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
@@ -288,7 +281,6 @@ def finalize_output[**P](
     *,
     bits: int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
     """
@@ -296,11 +288,11 @@ def finalize_output[**P](
     """
 
     if function is None:
-        return partial(finalize_output, bits=bits, clamp_tv_range=clamp_tv_range, dither_type=dither_type, func=func)
+        return partial(finalize_output, bits=bits, clamp_tv_range=clamp_tv_range, func=func)
 
     @wraps(function)
     def _wrapper(*args: P.args, **kwargs: P.kwargs) -> vs.VideoNode:
-        return finalize_clip(function(*args, **kwargs), bits, clamp_tv_range, dither_type, func=func)
+        return finalize_clip(function(*args, **kwargs), bits, clamp_tv_range, func=func)
 
     return _wrapper
 
@@ -316,7 +308,6 @@ def initialize_clip(
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: Literal[False] = False,
-    dither_type: DitherType = DitherType.RANDOM,
     *,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode: ...
@@ -328,7 +319,6 @@ def initialize_clip(
     bits: int | None = 32,
     *,
     strict: Literal[True],
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode: ...
 
@@ -343,7 +333,6 @@ def initialize_clip(
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     *,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
@@ -374,7 +363,6 @@ def initialize_clip(
         field_based: FieldBased prop to set. Ignored if `strict=True`.
         strict: Whether to strictly validate existing properties.
             If True, arguments for specific properties (e.g. `matrix`) are not accepted.
-        dither_type: Dithering used for the bitdepth conversion.
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Returns:
@@ -401,7 +389,7 @@ def initialize_clip(
 
     clip = PropEnum.ensure_presences(clip, to_ensure_presence, func)
 
-    return depth(clip, bits, dither_type=dither_type)
+    return depth(clip, bits)
 
 
 @overload
@@ -417,7 +405,6 @@ def initialize_input[**P](
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[P, vs.VideoNode]: ...
 
@@ -432,7 +419,6 @@ def initialize_input[**P](
     chroma_location: ChromaLocationLike | None = None,
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
@@ -449,7 +435,6 @@ def initialize_input[**P](
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
 ) -> Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
     """
@@ -469,7 +454,6 @@ def initialize_input[**P](
             color_range=color_range,
             field_based=field_based,
             strict=strict,
-            dither_type=dither_type,
             func=func,
         )
 
@@ -482,7 +466,6 @@ def initialize_input[**P](
         color_range=color_range,
         field_based=field_based,
         strict=strict,
-        dither_type=dither_type,
         func=func,
     )
 
