@@ -4,7 +4,7 @@ import os
 import subprocess
 import warnings
 import zlib
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from importlib.util import find_spec
 from logging import getLogger
@@ -55,7 +55,7 @@ class TensorRT(Backend):
     # Model Precision & Data Types
     fp16: bool = True
     """Convert the ONNX model to FP16 before building."""
-    fp16_blacklist_ops: Sequence[str] | None = None
+    fp16_blacklist_ops: Collection[str] | None = None
     """ONNX node or op names to keep in FP32 during FP16 conversion."""
     bf16: bool = False
     """Convert the ONNX model to BF16 before building."""

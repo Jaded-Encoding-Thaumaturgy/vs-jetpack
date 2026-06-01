@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -34,7 +34,7 @@ class ORT(Backend):
 
     # Model Precision & Data Types
     fp16: bool
-    fp16_blacklist_ops: Sequence[str] | None
+    fp16_blacklist_ops: Collection[str] | None
     output_format: Backend.OutputFormat | None
 
     # Specify __init__ here to set arguments order for subclasses
@@ -44,7 +44,7 @@ class ORT(Backend):
         num_streams: int = 1,
         verbosity: int = Verbosity.WARNING,
         fp16: bool = True,
-        fp16_blacklist_ops: Sequence[str] | None = None,
+        fp16_blacklist_ops: Collection[str] | None = None,
         output_format: Backend.OutputFormat | None = None,
     ) -> None:
         """
@@ -108,7 +108,7 @@ class CUDA(ORT):
         cudnn_benchmark: bool = True,
         use_cuda_graph: bool = False,
         fp16: bool = True,
-        fp16_blacklist_ops: Sequence[str] | None = None,
+        fp16_blacklist_ops: Collection[str] | None = None,
         output_format: Backend.OutputFormat | None = None,
         tf32: bool = False,
         prefer_nhwc: bool = False,
@@ -166,7 +166,7 @@ class DML(ORT):
         *,
         device_id: int = 0,
         fp16: bool = True,
-        fp16_blacklist_ops: Sequence[str] | None = None,
+        fp16_blacklist_ops: Collection[str] | None = None,
         output_format: Backend.OutputFormat | None = None,
         num_streams: int = 1,
         verbosity: int = 2,
@@ -214,7 +214,7 @@ class CoreML(ORT):
         *,
         ml_program: int = Provider.NEURAL_NETWORK,
         fp16: bool = True,
-        fp16_blacklist_ops: Sequence[str] | None = None,
+        fp16_blacklist_ops: Collection[str] | None = None,
         output_format: Backend.OutputFormat | None = None,
         num_streams: int = 1,
         verbosity: int = 2,
