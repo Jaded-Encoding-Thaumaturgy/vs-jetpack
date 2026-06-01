@@ -59,7 +59,8 @@ Not all extras have prebuilt wheels on every platform:
 | `kernels`     |     ✅      |         ✅          |        ✅         |           ✅            |
 | `rg`          |     ✅      |         ✅          |        ✅         |           ✅            |
 | `mask`        |     ✅      |         ✅          |        ✅         |           ✅            |
-| `aa`          |     ✅      |         ✅          |        ✅         |           ✅            |
+| `scale`       |     ✅      |         ✅          |        ❌         |           ✅            |
+| `aa`          |     ✅      |         ✅          |        ❌         |           ✅            |
 | `denoise`     |     ✅      |         ✅          |        ❌         |         ⚠️[^1]          |
 | `deband`      |     ✅      |         ✅          |        ❌         |           ✅            |
 | `deinterlace` |     ✅      |         ✅          |        ❌         |           ✅            |
