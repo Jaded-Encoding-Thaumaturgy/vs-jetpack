@@ -246,6 +246,7 @@ def finalize_clip(
         bits: Bitdepth to output to.
         clamp_tv_range: Whether to clamp to tv range.
         func: Function returned for custom error handling. This should only be set by VS package developers.
+        **kwargs: Additional arguments passed to [depth][vstools.utils.depth].
 
     Returns:
         Converted and optionally clamped clip.
@@ -361,7 +362,7 @@ def initialize_clip(
 
     Args:
         clip: Clip to initialize.
-        bits: Bitdepth to convert to. If None, no conversion is done. Default to 32.
+        bits: Bitdepth to convert to. If None, no conversion is done. Defaults to 32.
         matrix: Matrix property to set. Ignored if `strict=True`.
         transfer: Transfer property to set. Ignored if `strict=True`.
         primaries: Primaries property to set. Ignored if `strict=True`.
@@ -371,6 +372,7 @@ def initialize_clip(
         strict: Whether to strictly validate existing properties.
             If True, arguments for specific properties (e.g. `matrix`) are not accepted.
         func: Function returned for custom error handling. This should only be set by VS package developers.
+        **kwargs: Additional arguments passed to [depth][vstools.utils.depth].
 
     Returns:
         Clip with relevant frame properties set/validated, and optionally converted to 32-bit (or target `bits`).
