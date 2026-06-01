@@ -34,7 +34,7 @@ class OV(Backend):
         return self.custom_config
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
-        return {"device": self.device, "fp16": False, "config": lambda: self.config}
+        return {"device": self.device, "fp16": False, "config": OVConfig(self.config)}
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -101,3 +101,17 @@ class GPU(OV):
 @dataclass(kw_only=True, frozen=True)
 class NPU(OV):
     """OpenVINO NPU backend for Intel neural processing units."""
+
+
+class OVConfig:
+    def __init__(self, config: Mapping[str, Any]) -> None:
+        self.config = config
+
+    def __call__(self) -> Mapping[str, Any]:
+        return self.config
+
+    def __str__(self) -> str:
+        return f"OVConfig({self.config!s})"
+
+    def __repr__(self) -> str:
+        return f"OVConfig({self.config!r})"
