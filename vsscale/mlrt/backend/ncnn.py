@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -30,7 +30,7 @@ class VK(NCNN):
     # Model Precision & Data Types
     fp16: bool = True
     """Enable NCNN FP16 storage/arithmetic where supported."""
-    fp16_blacklist_ops: Sequence[str] | None = None
+    fp16_blacklist_ops: Collection[str] | None = None
     """ONNX node or op names to keep in FP32 during FP16 conversion."""
     output_format: Backend.OutputFormat | None = None
     """Requested output precision. Defaults to FP16 when `fp16` is enabled, otherwise FP32."""

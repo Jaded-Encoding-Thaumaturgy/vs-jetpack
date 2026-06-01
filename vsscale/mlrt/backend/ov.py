@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -57,7 +57,7 @@ class CPU(OV):
     """Request FP16 inference precision."""
     bf16: bool = False
     """Request BF16 inference precision."""
-    fp16_blacklist_ops: Sequence[str] | None = None
+    fp16_blacklist_ops: Collection[str] | None = None
     """ONNX node or op names to keep in FP32 during FP16 conversion."""
 
     def __post_init__(self) -> None:
@@ -87,7 +87,7 @@ class GPU(OV):
     # Model Precision & Data Types
     fp16: bool = True
     """Request FP16 inference precision."""
-    fp16_blacklist_ops: Sequence[str] | None = None
+    fp16_blacklist_ops: Collection[str] | None = None
     """ONNX node or op names to keep in FP32 during FP16 conversion."""
 
     @property
