@@ -236,6 +236,7 @@ def finalize_clip(
     clamp_tv_range: bool = False,
     *,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Finalize a clip for output to the encoder.
@@ -250,7 +251,7 @@ def finalize_clip(
         Dithered down and optionally clamped clip.
     """
     if bits:
-        clip = depth(clip, bits)
+        clip = depth(clip, bits, **kwargs)
 
     return limiter(clip, tv_range=clamp_tv_range, func=func)
 
@@ -310,6 +311,7 @@ def initialize_clip(
     strict: Literal[False] = False,
     *,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode: ...
 
 
@@ -320,6 +322,7 @@ def initialize_clip(
     *,
     strict: Literal[True],
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode: ...
 
 
@@ -335,6 +338,7 @@ def initialize_clip(
     strict: bool = False,
     *,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Initialize a clip with default properties or ensure their existence.
@@ -389,7 +393,7 @@ def initialize_clip(
 
     clip = PropEnum.ensure_presences(clip, to_ensure_presence, func)
 
-    return depth(clip, bits)
+    return depth(clip, bits, **kwargs)
 
 
 @overload
@@ -406,6 +410,7 @@ def initialize_input[**P](
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[P, vs.VideoNode]: ...
 
 
@@ -420,6 +425,7 @@ def initialize_input[**P](
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
 
@@ -436,6 +442,7 @@ def initialize_input[**P](
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
     """
     Decorator implementation of [initialize_clip][vstools.initialize_clip].
@@ -455,6 +462,7 @@ def initialize_input[**P](
             field_based=field_based,
             strict=strict,
             func=func,
+            **kwargs,
         )
 
     init_args = dict[str, Any](
@@ -467,6 +475,7 @@ def initialize_input[**P](
         field_based=field_based,
         strict=strict,
         func=func,
+        **kwargs,
     )
 
     @wraps(function)
