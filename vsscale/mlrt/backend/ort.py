@@ -1,7 +1,7 @@
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 from jetpytools import fallback
 
@@ -24,9 +24,6 @@ class ORT(Backend):
         WARNING = 2
         ERROR = 3
         FATAL = 4
-
-    if TYPE_CHECKING:
-        from .ort import CPU, CUDA, DML, CoreML
 
     # Hardware & Runtime Execution
     num_streams: int
@@ -76,14 +73,14 @@ class ORT(Backend):
 
 
 @dataclass(kw_only=True, init=False, unsafe_hash=True, frozen=True)
-class CPU(ORT):
+class ORT_CPU(ORT):  # noqa: N801
     """ONNX Runtime CPU execution provider."""
 
     provider = "CPU"
 
 
 @dataclass(kw_only=True, init=False, unsafe_hash=True, frozen=True)
-class CUDA(ORT):
+class ORT_CUDA(ORT):  # noqa: N801
     """ONNX Runtime CUDA execution provider for Nvidia GPUs."""
 
     provider = "CUDA"
@@ -153,7 +150,7 @@ class CUDA(ORT):
 
 
 @dataclass(kw_only=True, init=False, unsafe_hash=True, frozen=True)
-class DML(ORT):
+class ORT_DML(ORT):  # noqa: N801
     """ONNX Runtime DirectML execution provider for D3D12 devices."""
 
     provider = "DML"
@@ -196,7 +193,7 @@ class DML(ORT):
 
 
 @dataclass(kw_only=True, init=False, unsafe_hash=True, frozen=True)
-class CoreML(ORT):
+class ORT_COREML(ORT):  # noqa: N801
     """ONNX Runtime Core ML execution provider."""
 
     provider = "COREML"
@@ -219,7 +216,7 @@ class CoreML(ORT):
         num_streams: int = 1,
         verbosity: int = 2,
     ) -> None:
-        object.__setattr__(self, "ml_program", CoreML.Provider(ml_program))
+        object.__setattr__(self, "ml_program", ORT_COREML.Provider(ml_program))
         super().__init__(
             num_streams=num_streams,
             verbosity=verbosity,
@@ -230,10 +227,3 @@ class CoreML(ORT):
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
         return super().get_args(clips) | {"ml_program": self.ml_program}
-
-
-if not TYPE_CHECKING:
-    ORT.CPU = CPU
-    ORT.CUDA = CUDA
-    ORT.DML = DML
-    ORT.CoreML = CoreML

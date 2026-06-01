@@ -12,6 +12,9 @@ from vstools import core, vs
 
 from ...helpers import get_gpu
 
+if TYPE_CHECKING:
+    from . import migx, ncnn, ort, ov, trt
+
 type Shape = tuple[int, int]
 
 logger = getLogger(__name__)
@@ -35,11 +38,20 @@ class Backend:
         FP16 = 1
 
     if TYPE_CHECKING:
-        from .migx import MIGX
-        from .ncnn import NCNN
-        from .ort import ORT
-        from .ov import OV
-        from .trt import TRT
+        MIGX = migx.MIGX
+        NCNN = ncnn.NCNN
+        NCNN_VK = ncnn.NCNN
+        ORT = ort.ORT
+        ORT_CPU = ort.ORT_CPU
+        ORT_CUDA = ort.ORT_CUDA
+        ORT_DML = ort.ORT_DML
+        ORT_COREML = ort.ORT_COREML
+        OV = ov.OV
+        OV_CPU = ov.OV_CPU
+        OV_GPU = ov.OV_GPU
+        OV_NPU = ov.OV_NPU
+        TRT = trt.TRT
+        TRT_RTX = trt.TRT_RTX
 
     @overload
     def inference(
@@ -158,47 +170,47 @@ class Backend:
                 if hasattr(core, "trt"):
                     backend = Backend.TRT
                 elif hasattr(core, "trt_rtx"):
-                    backend = Backend.TRT.RTX
+                    backend = Backend.TRT_RTX
                 elif platform.system().lower() == "windows" and hasattr(core, "ort"):
-                    backend = Backend.ORT.DML
+                    backend = Backend.ORT_DML
                 elif hasattr(core, "ort"):
-                    backend = Backend.ORT.CUDA
+                    backend = Backend.ORT_CUDA
                 elif hasattr(core, "ncnn"):
-                    backend = Backend.NCNN.VK
+                    backend = Backend.NCNN
                 else:
-                    backend = Backend.OV.CPU
+                    backend = Backend.OV_CPU
             # Windows & Linux
             case "amd":
                 if platform.system().lower() == "windows" and hasattr(core, "ort"):
-                    backend = Backend.ORT.DML
+                    backend = Backend.ORT_DML
                 elif hasattr(core, "migx"):
                     backend = Backend.MIGX
                 elif hasattr(core, "ncnn"):
-                    backend = Backend.NCNN.VK
+                    backend = Backend.NCNN_VK
                 else:
-                    backend = Backend.OV.CPU
+                    backend = Backend.OV_CPU
             # Windows & Linux
             case "intel":
                 # device-smi can't detect Intel NPUs in 0.5.6
                 # https://github.com/ModelCloud/Device-SMI#roadmap
                 if hasattr(core, "ov"):
-                    backend = Backend.OV.GPU
+                    backend = Backend.OV_GPU
                 elif platform.system().lower() == "windows" and hasattr(core, "ort"):
-                    backend = Backend.ORT.DML
+                    backend = Backend.ORT_DML
                 elif hasattr(core, "ncnn"):
-                    backend = Backend.NCNN.VK
+                    backend = Backend.NCNN_VK
                 else:
-                    backend = Backend.OV.CPU
+                    backend = Backend.OV_CPU
             # macOS ARM64 & x86_64
             case "apple":
                 if hasattr(core, "ncnn"):
-                    backend = Backend.NCNN.VK
+                    backend = Backend.NCNN_VK
                 elif hasattr(core, "ort"):
-                    backend = Backend.ORT.CoreML
+                    backend = Backend.ORT_COREML
                 else:
-                    backend = Backend.OV.CPU
+                    backend = Backend.OV_CPU
             case _:
-                backend = Backend.OV.CPU
+                backend = Backend.OV_CPU
 
         del gpu
 
@@ -206,14 +218,17 @@ class Backend:
 
 
 if not TYPE_CHECKING:
-    from .migx import MIGX
-    from .ncnn import NCNN
-    from .ort import ORT
-    from .ov import OV
-    from .trt import TRT
+    from . import migx, ncnn, ort, ov, trt
 
-    Backend.MIGX = MIGX
-    Backend.NCNN = NCNN
-    Backend.ORT = ORT
-    Backend.OV = OV
-    Backend.TRT = TRT
+    Backend.MIGX = migx.MIGX
+    Backend.NCNN = ncnn.NCNN
+    Backend.NCNN_VK = Backend.NCNN
+    Backend.ORT_CPU = ort.ORT_CPU
+    Backend.ORT_CUDA = ort.ORT_CUDA
+    Backend.ORT_DML = ort.ORT_DML
+    Backend.ORT_COREML = ort.ORT_COREML
+    Backend.OV_CPU = ov.OV_CPU
+    Backend.OV_GPU = ov.OV_GPU
+    Backend.OV_NPU = ov.OV_NPU
+    Backend.TRT = trt.TRT
+    Backend.TRT_RTX = trt.TRT_RTX
