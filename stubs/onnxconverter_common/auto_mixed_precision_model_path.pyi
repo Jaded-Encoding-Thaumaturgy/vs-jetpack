@@ -2,7 +2,18 @@ from onnxconverter_common import float16 as float16
 
 from .auto_mixed_precision import SegmentList as SegmentList
 
-def auto_convert_mixed_precision_model_path(source_model_path, input_feed, target_model_path, provider, location=None, customized_validate_func=None, rtol=None, atol=None, keep_io_types: bool = True, verbose: bool = False) -> None: ...
+def auto_convert_mixed_precision_model_path(
+    source_model_path,
+    input_feed,
+    target_model_path,
+    provider,
+    location=None,
+    customized_validate_func=None,
+    rtol=None,
+    atol=None,
+    keep_io_types: bool = True,
+    verbose: bool = False,
+) -> None: ...
 def generate_temp_filename(target_model_path): ...
 def inference(model_path, input_feed, providers=None): ...
 def save_model(model, model_path, location=None) -> None: ...

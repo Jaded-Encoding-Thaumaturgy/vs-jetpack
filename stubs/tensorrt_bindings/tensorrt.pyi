@@ -2134,10 +2134,7 @@ class ICudaEngine:
         :returns: The :class:`IEngineInspector`.
         """
     @typing.overload
-    def create_execution_context(
-        self,
-        strategy: ExecutionContextAllocationStrategy = ...,
-    ) -> IExecutionContext:
+    def create_execution_context(self, strategy: ExecutionContextAllocationStrategy = ...) -> IExecutionContext:
         """
         Create an :class:`IExecutionContext` and specify the device memory allocation strategy.
 
@@ -2367,7 +2364,7 @@ class ICudaEngine:
     @property
     def engine_capability(self) -> EngineCapability: ...
     @property
-    def hardware_compatibility_level(self) -> ...: ...
+    def hardware_compatibility_level(self) -> HardwareCompatibilityLevel: ...
     @property
     def name(self) -> str: ...
     @property
@@ -2379,7 +2376,7 @@ class ICudaEngine:
     @property
     def num_optimization_profiles(self) -> int: ...
     @property
-    def profiling_verbosity(self) -> ...: ...
+    def profiling_verbosity(self) -> ProfilingVerbosity: ...
     @property
     def refittable(self) -> builtins.bool: ...
     @property
@@ -2437,7 +2434,13 @@ class IDebugListener:
     """
     def __init__(self) -> None: ...
     def process_debug_tensor(
-        self, addr: types.CapsuleType, location: ..., type: DataType, shape: Dims, name: str, stream: typing.SupportsInt
+        self,
+        addr: types.CapsuleType,
+        location: TensorLocation,
+        type: DataType,
+        shape: Dims,
+        name: str,
+        stream: typing.SupportsInt,
     ) -> None:
         """
         User implemented callback function that is called when value of a debug tensor is updated and the debug state of the tensor is set to true. Content in the given address is only guaranteed to be valid for the duration of the callback.
@@ -2762,9 +2765,9 @@ class IExecutionContext:
     enqueue_emits_profile: builtins.bool
     error_recorder: IErrorRecorder
     name: str
-    nvtx_verbosity: ...
+    nvtx_verbosity: ProfilingVerbosity
     profiler: IProfiler
-    temporary_allocator: ...
+    temporary_allocator: IGpuAllocator
     unfused_tensors_debug_state: builtins.bool
     @staticmethod
     def __enter__(this): ...
@@ -3008,7 +3011,7 @@ class IExecutionContext:
     @property
     def all_binding_shapes_specified(self) -> builtins.bool: ...
     @property
-    def engine(self) -> ...: ...
+    def engine(self) -> ICudaEngine: ...
     @property
     def persistent_cache_limit(self) -> int: ...
     @persistent_cache_limit.setter
@@ -3119,7 +3122,7 @@ class IGatherLayer(ILayer):
     :ivar mode: :class:`GatherMode` The gather mode.
     """
 
-    mode: ...
+    mode: GatherMode
     @property
     def axis(self) -> int: ...
     @axis.setter
@@ -3460,7 +3463,7 @@ class IIfConditionalBoundaryLayer(ILayer):
     :ivar conditional: :class:`IIfConditional` associated with this boundary layer.
     """
     @property
-    def conditional(self) -> ...: ...
+    def conditional(self) -> IIfConditional: ...
 
 class IIfConditionalInputLayer(IIfConditionalBoundaryLayer):
     """
@@ -3789,7 +3792,7 @@ class ILoopBoundaryLayer(ILayer):
     :ivar loop: :class:`ILoop` associated with this boundary layer.
     """
     @property
-    def loop(self) -> ...: ...
+    def loop(self) -> ILoop: ...
 
 class ILoopOutputLayer(ILoopBoundaryLayer):
     """
@@ -4042,7 +4045,7 @@ class INetworkDefinition:
     :flags: :int: A bitset of the ``NetworkDefinitionCreationFlag`` s set for this network.
     """
 
-    error_recorder: ...
+    error_recorder: IErrorRecorder
     name: str
     @staticmethod
     def __enter__(this): ...
@@ -4903,7 +4906,7 @@ class INetworkDefinition:
 
         :arg name: The name of the weights to check.
         """
-    def get_flag(self, flag: ...) -> builtins.bool:
+    def get_flag(self, flag: NetworkDefinitionCreationFlag) -> builtins.bool:
         """
         Returns true if the specified ``NetworkDefinitionCreationFlag`` is set.
 
@@ -5049,7 +5052,7 @@ class INetworkDefinition:
         :arg name: The weight to unmark.
         """
     @property
-    def builder(self) -> ...:
+    def builder(self) -> Builder:
         """
         The builder from which this INetworkDefinition was created.
 
@@ -5371,7 +5374,7 @@ class IPluginCreatorV3One(IPluginCreatorInterface, IVersionedInterface):
     plugin_namespace: str
     plugin_version: str
     def __init__(self) -> None: ...
-    def create_plugin(self, name: str, field_collection: PluginFieldCollection_, phase: ...) -> IPluginV3:
+    def create_plugin(self, name: str, field_collection: PluginFieldCollection_, phase: TensorRTPhase) -> IPluginV3:
         """
         Creates a new plugin.
 
@@ -5388,7 +5391,12 @@ class IPluginCreatorV3Quick(IPluginCreatorInterface, IVersionedInterface):
     plugin_version: str
     def __init__(self) -> None: ...
     def create_plugin(
-        self, name: str, namespace: str, field_collection: PluginFieldCollection_, phase: ..., quickPluginType: ...
+        self,
+        name: str,
+        namespace: str,
+        field_collection: PluginFieldCollection_,
+        phase: TensorRTPhase,
+        quickPluginType: QuickPluginCreationRequest,
     ) -> IPluginV3: ...
 
 class IPluginRegistry:
@@ -5403,7 +5411,7 @@ class IPluginRegistry:
     :ivar parent_search_enabled: builtins.bool variable indicating whether parent search is enabled. Default is True.
     """
 
-    error_recorder: ...
+    error_recorder: IErrorRecorder
     parent_search_enabled: builtins.bool
     def acquire_plugin_resource(self, key: str, resource: IPluginResource) -> IPluginResource:
         """
@@ -5523,9 +5531,9 @@ class IPluginResourceContext:
     There is no public way to construct an IPluginResourceContext. It appears as an argument to trt.IPluginV3OneRuntime.attach_to_context().
     """
     @property
-    def error_recorder(self) -> ...: ...
+    def error_recorder(self) -> IErrorRecorder: ...
     @property
-    def gpu_allocator(self) -> ...: ...
+    def gpu_allocator(self) -> IGpuAllocator: ...
 
 class IPluginV2:
     """
@@ -5557,7 +5565,7 @@ class IPluginV2:
         input_shapes: collections.abc.Sequence[Dims],
         output_shapes: collections.abc.Sequence[Dims],
         dtype: DataType,
-        format: ...,
+        format: TensorFormat,
         max_batch_size: typing.SupportsInt,
     ) -> None:
         """
@@ -5628,7 +5636,7 @@ class IPluginV2:
         .. warning::
             This API only applies when called on a C++ plugin from a Python program.
         """
-    def supports_format(self, dtype: DataType, format: ...) -> builtins.bool:
+    def supports_format(self, dtype: DataType, format: TensorFormat) -> builtins.bool:
         """
         Check format support.
 
@@ -5855,8 +5863,7 @@ class IPluginV2DynamicExt(IPluginV2DynamicExtBase, IPluginV2):
             When implementing a Python-based plugin, implementing this method is optional. The default behavior is equivalent to `pass`.
         """
 
-class IPluginV2DynamicExtBase(IPluginV2):
-    ...
+class IPluginV2DynamicExtBase(IPluginV2): ...
 
 class IPluginV2Ext(IPluginV2):
     """
@@ -5894,7 +5901,7 @@ class IPluginV2Ext(IPluginV2):
         output_types: collections.abc.Sequence[DataType],
         input_is_broadcasted: collections.abc.Sequence[builtins.bool],
         output_is_broacasted: collections.abc.Sequence[builtins.bool],
-        format: ...,
+        format: TensorFormat,
         max_batch_size: typing.SupportsInt,
     ) -> None:
         """
@@ -5978,7 +5985,7 @@ class IPluginV3(IVersionedInterface):
         .. note::
             Implementing this method is optional. The default behavior is a `pass`.
         """
-    def get_capability_interface(self, type: ...) -> typing.Any:
+    def get_capability_interface(self, type: PluginCapabilityType) -> typing.Any:
         """
         Return a plugin object implementing the specified PluginCapabilityType.
 
@@ -6195,7 +6202,7 @@ class IPluginV3OneRuntime(IPluginCapability, IVersionedInterface):
     def __init__(self) -> None: ...
     @typing.overload
     def __init__(self, arg0: IPluginV3OneRuntime) -> None: ...
-    def attach_to_context(self: IPluginV3, resource_context: ...) -> IPluginV3:
+    def attach_to_context(self: IPluginV3, resource_context: IPluginResourceContext) -> IPluginV3:
         """
         Clone the plugin, attach the cloned plugin object to a execution context and grant the cloned plugin access to some context resources.
 
@@ -6660,10 +6667,7 @@ class IRuntimeConfig:
 
         :returns: The execution context allocation strategy.
         """
-    def set_execution_context_allocation_strategy(
-        self,
-        strategy: ExecutionContextAllocationStrategy = ...,
-    ) -> None:
+    def set_execution_context_allocation_strategy(self, strategy: ExecutionContextAllocationStrategy = ...) -> None:
         """
         Set the execution context allocation strategy.
 
@@ -6877,7 +6881,7 @@ class ISliceLayer(ILayer):
     """
 
     axes: Dims
-    mode: ...
+    mode: SampleMode
     shape: Dims
     start: Dims
     stride: Dims
@@ -7085,7 +7089,7 @@ class ITensor:
     """
 
     broadcast_across_batch: builtins.bool
-    location: ...
+    location: TensorLocation
     name: str
     shape: Dims
     def get_dimension_name(self, index: typing.SupportsInt) -> str:
@@ -7367,13 +7371,13 @@ class KVCacheMode:
     def value(self) -> int: ...
 
 class KernelLaunchParams:
-    block_x: ...
-    block_y: ...
-    block_z: ...
-    grid_x: ...
-    grid_y: ...
-    grid_z: ...
-    shared_mem: ...
+    block_x: ISymExpr
+    block_y: ISymExpr
+    block_z: ISymExpr
+    grid_x: ISymExpr
+    grid_y: ISymExpr
+    grid_z: ISymExpr
+    shared_mem: ISymExpr
 
 class LayerInformationFormat:
     """
@@ -8010,19 +8014,19 @@ class OnnxParser:
         """
         Clear errors from prior calls to :func:`parse`
         """
-    def clear_flag(self, flag: ...) -> None:
+    def clear_flag(self, flag: OnnxParserFlag) -> None:
         """
         Clears the parser flag from the enabled flags.
 
         :arg flag: The flag to clear.
         """
-    def get_error(self, index: typing.SupportsInt) -> ...:
+    def get_error(self, index: typing.SupportsInt) -> ParserError:
         """
         Get an error that occurred during prior calls to :func:`parse`
 
         :arg index: Index of the error
         """
-    def get_flag(self, flag: ...) -> builtins.bool:
+    def get_flag(self, flag: OnnxParserFlag) -> builtins.bool:
         """
         Check if a build mode flag is set.
 
@@ -8097,7 +8101,7 @@ class OnnxParser:
 
         :returns: true if the initializer was successfully loaded
         """
-    def load_model_proto(self, model: collections.abc.Buffer, path: str = None) -> builtins.bool:
+    def load_model_proto(self, model: collections.abc.Buffer, path: str | None = None) -> builtins.bool:
         """
         Load a serialized ONNX model into the parser. Unlike the parse() or parse_from_file()
         functions, this function does not immediately convert the model into a TensorRT INetworkDefinition. Using this function
@@ -8112,7 +8116,7 @@ class OnnxParser:
 
         :returns: true if the model was loaded successfully
         """
-    def parse(self, model: collections.abc.Buffer, path: str = None) -> builtins.bool:
+    def parse(self, model: collections.abc.Buffer, path: str | None = None) -> builtins.bool:
         """
         Parse a serialized ONNX model into the TensorRT network.
 
@@ -8143,13 +8147,13 @@ class OnnxParser:
 
         :returns: true if the BuilderConfig was set successfully, false otherwise.
         """
-    def set_flag(self, flag: ...) -> None:
+    def set_flag(self, flag: OnnxParserFlag) -> None:
         """
         Add the input parser flag to the already enabled flags.
 
         :arg flag: The flag to set.
         """
-    def supports_model_v2(self, model: collections.abc.Buffer, path: str = None) -> builtins.bool:
+    def supports_model_v2(self, model: collections.abc.Buffer, path: str | None = None) -> builtins.bool:
         """
         Check whether TensorRT supports a particular ONNX model.
         Query each subgraph with num_subgraphs, is_subgraph_supported, get_subgraph_nodes.
@@ -8280,7 +8284,7 @@ class OnnxParserRefitter:
 
         :returns: true if the initializer was successfully loaded.
         """
-    def load_model_proto(self, model: collections.abc.Buffer, path: str = None) -> builtins.bool:
+    def load_model_proto(self, model: collections.abc.Buffer, path: str | None = None) -> builtins.bool:
         """
         Load a serialized ONNX model into the refitter. Unlike the refit() or refit_from_file()
         functions, this function does not immediately begin the refit process. Using this function
@@ -8295,7 +8299,7 @@ class OnnxParserRefitter:
 
         :returns: true if the model was loaded successfully.
         """
-    def refit_from_bytes(self, model: collections.abc.Buffer, path: str = None) -> builtins.bool:
+    def refit_from_bytes(self, model: collections.abc.Buffer, path: str | None = None) -> builtins.bool:
         """
         Load a serialized ONNX model from memory and perform weight refit.
 
@@ -8566,12 +8570,7 @@ class PluginField:
     @typing.overload
     def __init__(self, name: FallbackString = "") -> None: ...
     @typing.overload
-    def __init__(
-        self,
-        name: FallbackString,
-        data: collections.abc.Buffer,
-        type: PluginFieldType = ...,
-    ) -> None: ...
+    def __init__(self, name: FallbackString, data: collections.abc.Buffer, type: PluginFieldType = ...) -> None: ...
     @property
     def data(self) -> numpy.ndarray: ...
     @data.setter
@@ -8606,7 +8605,7 @@ class PluginFieldCollection:
         Retrieve list elements using a slice object
         """
     @typing.overload
-    def __getitem__(self, arg0: typing.SupportsInt) -> ...: ...
+    def __getitem__(self, arg0: typing.SupportsInt) -> PluginField: ...
     @typing.overload
     def __init__(self) -> None: ...
     @typing.overload
@@ -8616,16 +8615,16 @@ class PluginFieldCollection:
         """
     @typing.overload
     def __init__(self, arg0: collections.abc.Iterable) -> None: ...
-    def __iter__(self) -> collections.abc.Iterator[...]: ...
+    def __iter__(self) -> collections.abc.Iterator[PluginField]: ...
     def __len__(self) -> int: ...
     @typing.overload
-    def __setitem__(self, arg0: typing.SupportsInt, arg1: ...) -> None: ...
+    def __setitem__(self, arg0: typing.SupportsInt, arg1: PluginField) -> None: ...
     @typing.overload
     def __setitem__(self, arg0: slice, arg1: PluginFieldCollection) -> None:
         """
         Assign list elements using a slice object
         """
-    def append(self, x: ...) -> None:
+    def append(self, x: PluginField) -> None:
         """
         Add an item to the end of the list
         """
@@ -8643,17 +8642,17 @@ class PluginFieldCollection:
         """
         Extend the list by appending all the items in the given list
         """
-    def insert(self, i: typing.SupportsInt, x: ...) -> None:
+    def insert(self, i: typing.SupportsInt, x: PluginField) -> None:
         """
         Insert an item at a given position.
         """
     @typing.overload
-    def pop(self) -> ...:
+    def pop(self) -> PluginField:
         """
         Remove and return the last item
         """
     @typing.overload
-    def pop(self, i: typing.SupportsInt) -> ...:
+    def pop(self, i: typing.SupportsInt) -> PluginField:
         """
         Remove and return the item at index ``i``
         """
@@ -8751,7 +8750,7 @@ class PluginTensorDesc:
     """
 
     dims: Dims
-    format: ...
+    format: TensorFormat
     type: DataType
     def __init__(self) -> None: ...
     @property
@@ -10193,7 +10192,7 @@ class WeightsRole:
     @property
     def value(self) -> int: ...
 
-def get_builder_plugin_registry(arg0: ...) -> IPluginRegistry:
+def get_builder_plugin_registry(arg0: EngineCapability) -> IPluginRegistry:
     """
     Return the plugin registry used for building engines for the specified runtime
     """
@@ -10203,7 +10202,7 @@ def get_nv_onnx_parser_version() -> int:
     :returns: The Onnx Parser version
     """
 
-def get_plugin_registry() -> ...:
+def get_plugin_registry() -> IPluginRegistry:
     """
     Return the plugin registry for standard runtime
     """
@@ -10218,7 +10217,6 @@ def init_libnvinfer_plugins(logger: types.CapsuleType, namespace: str) -> builti
     :arg namespace: Namespace used to register all the plugins in this library.
     """
 
-type _plugin_registry = None
 bfloat16: DataType  # value = <DataType.BF16: 7>
 bool: DataType  # value = <DataType.BOOL: 4>
 e8m0: DataType  # value = <DataType.E8M0: 11>
