@@ -53,6 +53,10 @@ dependencies = [
     "rich>=15.0.0",
     "psutil>=7.0.0",
     "typing_extensions>=4.15.0; python_version<'3.13'",
+    # VapourSynth plugins
+    "vapoursynth-akarin>=1.4.1",
+    "vapoursynth-fmtconv>=31",
+    "vapoursynth-vszip>=14.0.0",
 ]
 
 [project.urls]
@@ -62,12 +66,7 @@ Tracker = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/issues"
 "Contact" = "https://discord.gg/XTpc6Fa9eB"
 
 [project.optional-dependencies]
-basic = [
-    # VapourSynth plugins
-    "vapoursynth-akarin>=1.4.1",
-    "vapoursynth-fmtconv>=31",
-    "vapoursynth-vszip>=14.0.0",
-]
+basic = []
 source = [
     "vsjetpack[basic]",
     "vapoursynth-bestsource>=17.0",

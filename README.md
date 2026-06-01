@@ -27,7 +27,6 @@ Most extras are hierarchical. For example, `denoise` includes all plugins from `
 
 | Extra             | Purpose              | Included Plugins / Packages                                                        |
 | :---------------- | :------------------- | :--------------------------------------------------------------------------------- |
-| **`basic`**       | Essential plugins    | `akarin`, `fmtconv`, `vszip`, `scxvid`, `scipy`, `rich`, `psutil`                  |
 | **`source`**      | Clip Indexing        | `bestsource`, `ffms2`, `d2vsource`, `dvdsrc2`                                      |
 | **`kernels`**     | Resizing             | `resize2`, `descale`, `vs-placebo`                                                 |
 | **`rg`**          | Repair & Smoothing   | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                           |
@@ -56,7 +55,6 @@ Not all extras have prebuilt wheels on every platform:
 
 | Extra         | Windows x64 | Linux (glibc 2.35+) | Linux (musl 1.2+) | macOS (Intel/ARM) 15.0+ |
 | :------------ | :---------: | :-----------------: | :---------------: | :---------------------: |
-| `basic`       |     ✅      |         ✅          |        ✅         |           ✅            |
 | `source`      |     ✅      |         ✅          |        ✅         |           ✅            |
 | `kernels`     |     ✅      |         ✅          |        ✅         |           ✅            |
 | `rg`          |     ✅      |         ✅          |        ✅         |           ✅            |
