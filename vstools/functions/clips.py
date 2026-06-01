@@ -248,7 +248,7 @@ def finalize_clip(
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Returns:
-        Dithered down and optionally clamped clip.
+        Converted and optionally clamped clip.
     """
     if bits:
         clip = depth(clip, bits, **kwargs)
@@ -358,7 +358,7 @@ def initialize_clip(
 
     Args:
         clip: Clip to initialize.
-        bits: Bits to dither to. If None, no dithering is applied. Default to 32.
+        bits: Bitdepth to convert to. If None, no conversion is done. Default to 32.
         matrix: Matrix property to set. Ignored if `strict=True`.
         transfer: Transfer property to set. Ignored if `strict=True`.
         primaries: Primaries property to set. Ignored if `strict=True`.
@@ -370,7 +370,7 @@ def initialize_clip(
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Returns:
-        Clip with relevant frame properties set/validated, and optionally dithered to 32-bit (or target `bits`).
+        Clip with relevant frame properties set/validated, and optionally converted to 32-bit (or target `bits`).
     """
     func = func or initialize_clip
 
