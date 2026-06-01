@@ -25,9 +25,9 @@ from ..enums import (
 )
 from ..exceptions import FramesLengthError
 from ..types import HoldsVideoFormat, VideoFormatLike
-from ..utils import DynamicClipsCache, get_depth
+from ..utils import DynamicClipsCache
 from ..vs_proxy import vs
-from .utils import DitherType, depth, limiter
+from .utils import depth, limiter
 
 __all__ = [
     "ProcessVariableClip",
@@ -234,9 +234,9 @@ def finalize_clip(
     clip: vs.VideoNode,
     bits: VideoFormatLike | HoldsVideoFormat | int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     *,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Finalize a clip for output to the encoder.
@@ -245,19 +245,19 @@ def finalize_clip(
         clip: Clip to output.
         bits: Bitdepth to output to.
         clamp_tv_range: Whether to clamp to tv range.
-        dither_type: Dithering used for the bitdepth conversion.
         func: Function returned for custom error handling. This should only be set by VS package developers.
+        **kwargs: Additional arguments passed to [depth][vstools.utils.depth].
 
     Returns:
-        Dithered down and optionally clamped clip.
+        Converted and optionally clamped clip.
     """
     if bits:
-        clip = depth(clip, bits, dither_type=dither_type)
+        clip = depth(clip, bits, **kwargs)
 
-    if clamp_tv_range:
-        clip = limiter(clip, tv_range=clamp_tv_range)
+    if clip.format.sample_type is vs.FLOAT or clip.format.bits_per_sample > 16:
+        raise CustomValueError("Unsuitable output format!", func, clip.format)
 
-    return clip
+    return limiter(clip, tv_range=clamp_tv_range, func=func)
 
 
 @overload
@@ -267,8 +267,8 @@ def finalize_output[**P](
     *,
     bits: int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[P, vs.VideoNode]: ...
 
 
@@ -277,8 +277,8 @@ def finalize_output[**P](
     *,
     bits: int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
 
@@ -288,19 +288,21 @@ def finalize_output[**P](
     *,
     bits: int | None = 10,
     clamp_tv_range: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
     """
     Decorator implementation of [finalize_clip][vstools.finalize_clip].
     """
 
+    final_args = dict[str, Any](bits=bits, clamp_tv_range=clamp_tv_range, func=func, **kwargs)
+
     if function is None:
-        return partial(finalize_output, bits=bits, clamp_tv_range=clamp_tv_range, dither_type=dither_type, func=func)
+        return partial(finalize_output, **final_args)
 
     @wraps(function)
     def _wrapper(*args: P.args, **kwargs: P.kwargs) -> vs.VideoNode:
-        return finalize_clip(function(*args, **kwargs), bits, clamp_tv_range, dither_type, func=func)
+        return finalize_clip(function(*args, **kwargs), **final_args)
 
     return _wrapper
 
@@ -308,7 +310,7 @@ def finalize_output[**P](
 @overload
 def initialize_clip(
     clip: vs.VideoNode,
-    bits: int | None = None,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -316,26 +318,26 @@ def initialize_clip(
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: Literal[False] = False,
-    dither_type: DitherType = DitherType.RANDOM,
     *,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode: ...
 
 
 @overload
 def initialize_clip(
     clip: vs.VideoNode,
-    bits: int | None = None,
+    bits: int | None = 32,
     *,
     strict: Literal[True],
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode: ...
 
 
 def initialize_clip(
     clip: vs.VideoNode,
-    bits: int | None = None,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -343,9 +345,9 @@ def initialize_clip(
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     *,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> vs.VideoNode:
     """
     Initialize a clip with default properties or ensure their existence.
@@ -365,12 +367,7 @@ def initialize_clip(
 
     Args:
         clip: Clip to initialize.
-        bits: Bits to dither to.
-
-               - If 0, no dithering is applied.
-               - If None, 16 if bit depth is lower than it, else leave untouched.
-               - If positive integer, dither to that bitdepth.
-
+        bits: Bitdepth to convert to. If None, no conversion is done. Defaults to 32.
         matrix: Matrix property to set. Ignored if `strict=True`.
         transfer: Transfer property to set. Ignored if `strict=True`.
         primaries: Primaries property to set. Ignored if `strict=True`.
@@ -379,11 +376,11 @@ def initialize_clip(
         field_based: FieldBased prop to set. Ignored if `strict=True`.
         strict: Whether to strictly validate existing properties.
             If True, arguments for specific properties (e.g. `matrix`) are not accepted.
-        dither_type: Dithering used for the bitdepth conversion.
         func: Function returned for custom error handling. This should only be set by VS package developers.
+        **kwargs: Additional arguments passed to [depth][vstools.utils.depth].
 
     Returns:
-        Clip with relevant frame properties set/validated, and optionally dithered to 16-bit (or target `bits`).
+        Clip with relevant frame properties set/validated, and optionally converted to 32-bit (or target `bits`).
     """
     func = func or initialize_clip
 
@@ -406,12 +403,7 @@ def initialize_clip(
 
     clip = PropEnum.ensure_presences(clip, to_ensure_presence, func)
 
-    if bits is None:
-        bits = max(get_depth(clip), 16)
-    elif bits <= 0:
-        return clip
-
-    return depth(clip, bits, dither_type=dither_type)
+    return depth(clip, bits, **kwargs)
 
 
 @overload
@@ -419,7 +411,7 @@ def initialize_input[**P](
     function: Callable[P, vs.VideoNode],
     /,
     *,
-    bits: int | None = 16,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -427,23 +419,23 @@ def initialize_input[**P](
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[P, vs.VideoNode]: ...
 
 
 @overload
 def initialize_input[**P](
     *,
-    bits: int | None = 16,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
     chroma_location: ChromaLocationLike | None = None,
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]: ...
 
 
@@ -451,7 +443,7 @@ def initialize_input[**P](
     function: Callable[P, vs.VideoNode] | None = None,
     /,
     *,
-    bits: int | None = 16,
+    bits: int | None = 32,
     matrix: MatrixLike | None = None,
     transfer: TransferLike | None = None,
     primaries: PrimariesLike | None = None,
@@ -459,29 +451,14 @@ def initialize_input[**P](
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
     strict: bool = False,
-    dither_type: DitherType = DitherType.RANDOM,
     func: FuncExcept | None = None,
+    **kwargs: Any,
 ) -> Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
     """
     Decorator implementation of [initialize_clip][vstools.initialize_clip].
 
-    Initializes the first clip found in this order: positional arguments -> keyword arguments ->  default arguments.
+    Initializes the first clip found in this order: positional arguments -> keyword arguments -> default arguments.
     """
-
-    if function is None:
-        return partial(
-            initialize_input,
-            bits=bits,
-            matrix=matrix,
-            transfer=transfer,
-            primaries=primaries,
-            chroma_location=chroma_location,
-            color_range=color_range,
-            field_based=field_based,
-            strict=strict,
-            dither_type=dither_type,
-            func=func,
-        )
 
     init_args = dict[str, Any](
         bits=bits,
@@ -492,9 +469,12 @@ def initialize_input[**P](
         color_range=color_range,
         field_based=field_based,
         strict=strict,
-        dither_type=dither_type,
         func=func,
+        **kwargs,
     )
+
+    if function is None:
+        return partial(initialize_input, **init_args)
 
     @wraps(function)
     def _wrapper(*args: P.args, **kwargs: P.kwargs) -> vs.VideoNode:
