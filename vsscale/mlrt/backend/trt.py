@@ -55,8 +55,8 @@ class TensorRT(Backend):
     # Model Precision & Data Types
     fp16: bool = True
     """Convert the ONNX model to FP16 before building."""
-    fp16_node_block_list: Sequence[str] | None = None
-    """Node names to keep out of FP16 conversion."""
+    fp16_blacklist_ops: Sequence[str] | None = None
+    """ONNX node or op names to keep in FP32 during FP16 conversion."""
     bf16: bool = False
     """Convert the ONNX model to BF16 before building."""
     tf32: bool = False
@@ -349,7 +349,7 @@ class TensorRT(Backend):
         network = network_path.read_bytes()
 
         get_onnx_folder().mkdir(parents=True, exist_ok=True)
-        suffix = "fp16" if not self.fp16_node_block_list else f"fp16_block_{'_'.join(self.fp16_node_block_list)}"
+        suffix = "fp16" if not self.fp16_blacklist_ops else f"fp16_block_{'_'.join(self.fp16_blacklist_ops)}"
         checksum = zlib.crc32(network)
         fp16_path = network_path.parent / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
 
@@ -365,7 +365,7 @@ class TensorRT(Backend):
             model = onnxcc.convert_float_to_float16(
                 model,
                 keep_io_types=False,
-                node_block_list=self.fp16_node_block_list,
+                node_block_list=self.fp16_blacklist_ops,
             )
 
         onnx.save_model(model, fp16_path)
