@@ -414,6 +414,9 @@ class TRT(TensorRT):
 
     plugin = core.lazy.trt
 
+    if TYPE_CHECKING:
+        from .trt import RTX
+
 
 @dataclass(kw_only=True, frozen=True)
 class RTX(TensorRT):
@@ -439,3 +442,7 @@ class RTX(TensorRT):
         from ._trt_rtx import Logger
 
         return Logger(logger)
+
+
+if not TYPE_CHECKING:
+    TRT.RTX = RTX

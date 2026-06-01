@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from jetpytools import fallback
 
@@ -12,6 +12,9 @@ from .base import Backend
 @dataclass(kw_only=True, frozen=True)
 class NCNN(Backend):
     """Base class for NCNN-backed inference configurations."""
+
+    if TYPE_CHECKING:
+        from .ncnn import VK
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -39,3 +42,7 @@ class VK(NCNN):
             "device_id": self.device_id,
             "num_streams": self.num_streams,
         }
+
+
+if not TYPE_CHECKING:
+    NCNN.VK = VK

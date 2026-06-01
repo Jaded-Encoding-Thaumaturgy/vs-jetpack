@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from vstools import core, vs
 
@@ -14,6 +14,9 @@ class OV(Backend):
     """Base OpenVINO backend configuration."""
 
     plugin = core.lazy.ov
+
+    if TYPE_CHECKING:
+        from .ov import CPU, GPU, NPU
 
     custom_config: Mapping[str, Any] = field(default_factory=dict[str, Any])
     """
@@ -101,6 +104,12 @@ class GPU(OV):
 @dataclass(kw_only=True, frozen=True)
 class NPU(OV):
     """OpenVINO NPU backend for Intel neural processing units."""
+
+
+if not TYPE_CHECKING:
+    OV.CPU = CPU
+    OV.GPU = GPU
+    OV.NPU = NPU
 
 
 class OVConfig:
