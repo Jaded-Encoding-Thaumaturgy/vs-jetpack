@@ -1,6 +1,6 @@
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 from vstools import core, vs
 
@@ -103,6 +103,8 @@ class OV_NPU(OV):  # noqa: N801
     """OpenVINO NPU backend for Intel neural processing units."""
 
     device = "NPU"
+
+    fp16: Literal[True] = True
 
 
 class OVConfig:
