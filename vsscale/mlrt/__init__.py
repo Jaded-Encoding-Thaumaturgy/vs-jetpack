@@ -74,6 +74,18 @@ The library parses configurations from `vsjet.toml` or `pyproject.toml` in the w
   latest = true
   ```
 
+- When using the ArtCNN, Waifu2x or DPIR classes,
+  you can automatically download the models if they're not downloaded yet
+  by adding the `auto = true` flag in the `download` section:
+
+  **pyproject.toml**:
+  ```toml
+  [tool.vsscale.onnx.download]
+  provider = ["ArtCNN==v1.6.2", "DPIR==20210902", "Waifu2x==20250502-2"]
+  auto = true
+  ```
+
+
 #### Environment Variables:
 - `VSSCALE_GLOBAL` / `VSSCALE_ONNX_GLOBAL` / `VSSCALE_ARTIFACT_GLOBAL`:
   Set to `true` to force global storage.

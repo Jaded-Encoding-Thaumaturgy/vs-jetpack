@@ -36,8 +36,8 @@ app = cyclopts.App(
     console=console,
     config=[
         cyclopts.config.Env("VSSCALE_"),
-        cyclopts.config.Toml(TOML_CONFIG[0], root_keys=TOML_KEYS[0]),
-        cyclopts.config.Toml(TOML_CONFIG[1], root_keys=TOML_KEYS[1]),
+        cyclopts.config.Toml(TOML_CONFIG[0], root_keys=TOML_KEYS[0], allow_unknown=True),
+        cyclopts.config.Toml(TOML_CONFIG[1], root_keys=TOML_KEYS[1], allow_unknown=True),
     ],
 )
 onnx_app = cyclopts.App(name="onnx", help="Manage downloaded ONNX models.")
