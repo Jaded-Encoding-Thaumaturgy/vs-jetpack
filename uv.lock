@@ -2889,6 +2889,7 @@ mask = [
 ]
 nvidia = [
     { name = "dfttest2", extra = ["cufft", "nvrtc"] },
+    { name = "ml-dtypes" },
     { name = "onnx" },
     { name = "onnxconverter-common" },
     { name = "tensorrt-cu13", marker = "python_full_version < '3.14'" },
@@ -3020,6 +3021,7 @@ requires-dist = [
     { name = "humanize", marker = "extra == 'full'", specifier = ">=4.15.0" },
     { name = "humanize", marker = "extra == 'scale'", specifier = ">=4.15.0" },
     { name = "jetpytools", specifier = "~=2.2.1" },
+    { name = "ml-dtypes", marker = "extra == 'nvidia'", specifier = ">=0.5.4" },
     { name = "niquests", marker = "extra == 'aa'", specifier = ">=3.18.8" },
     { name = "niquests", marker = "extra == 'deband'", specifier = ">=3.18.8" },
     { name = "niquests", marker = "extra == 'dehalo'", specifier = ">=3.18.8" },

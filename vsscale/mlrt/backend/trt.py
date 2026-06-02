@@ -423,6 +423,7 @@ class TRT(Backend):
         return fp16_path
 
     def _convert_onnx_bf16(self, network_path: Path) -> Path:
+        import ml_dtypes
         import onnx
 
         network = network_path.read_bytes()
@@ -434,7 +435,7 @@ class TRT(Backend):
         if bf16_path.is_file() and bf16_path.stat().st_size >= 1024:
             return bf16_path
 
-        logger.info(f"Converting ONNX graph metadata to BFloat16 for: {network_path.name}")
+        logger.info(f"Converting ONNX graph metadata and initializers to BFloat16 for: {network_path.name}")
         model = onnx.load_model_from_string(network)
         graph = model.graph
 
@@ -450,9 +451,11 @@ class TRT(Backend):
             if tensor.type.tensor_type.elem_type == onnx.TensorProto.FLOAT:
                 tensor.type.tensor_type.elem_type = onnx.TensorProto.BFLOAT16
 
-        for initializer in graph.initializer:
+        for i, initializer in enumerate(graph.initializer):
             if initializer.data_type == onnx.TensorProto.FLOAT:
-                initializer.data_type = onnx.TensorProto.BFLOAT16
+                arr_bf16 = onnx.numpy_helper.to_array(initializer).astype(ml_dtypes.bfloat16)
+                new_tensor = onnx.numpy_helper.from_array(arr_bf16, name=initializer.name)
+                graph.initializer[i].CopyFrom(new_tensor)
 
         onnx.save_model(model, bf16_path)
         return bf16_path
