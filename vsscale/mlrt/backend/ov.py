@@ -1,8 +1,11 @@
+import os
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
-from vstools import core, vs
+from jetpytools import copy_signature, to_arr
+
+from vstools import core, depth, vs
 
 from .base import Backend
 
@@ -24,6 +27,28 @@ class OV(Backend):
     https://docs.openvino.ai/2026/api/c_cpp_api/group__ov__runtime__cpu__prop__cpp__api.html
     https://docs.openvino.ai/2026/api/c_cpp_api/group__ov__runtime__cpp__prop__api.html
     """
+
+    @copy_signature(Backend.inference)
+    def inference(
+        self,
+        clips: vs.VideoNode | Sequence[vs.VideoNode],
+        network_path: str | os.PathLike[str],
+        /,
+        overlap: tuple[int, int],
+        tilesize: tuple[int, int],
+        *,
+        flexible: bool = False,
+        **kwargs: Any,
+    ) -> vs.VideoNode | list[vs.VideoNode]:
+        return super().inference(
+            # OV Plugin only accepts fp32
+            [depth(c, 32) for c in to_arr(clips)],
+            network_path,
+            overlap,
+            tilesize,
+            flexible=flexible,
+            **kwargs,
+        )
 
     @property
     def config(self) -> Mapping[str, Any]:
@@ -103,6 +128,8 @@ class OV_NPU(OV):  # noqa: N801
     """OpenVINO NPU backend for Intel neural processing units."""
 
     device = "NPU"
+
+    fp16: Literal[True] = True
 
 
 class OVConfig:

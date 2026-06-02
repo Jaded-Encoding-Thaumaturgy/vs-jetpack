@@ -6,11 +6,11 @@ from jetpytools import fallback
 
 from vstools import core, vs
 
-from .base import Backend
+from .base import Backend, BackendAutoConvertFloat
 
 
 @dataclass(kw_only=True, frozen=True)
-class NCNN(Backend):
+class NCNN(BackendAutoConvertFloat):
     """NCNN Vulkan backend."""
 
     plugin = core.lazy.ncnn

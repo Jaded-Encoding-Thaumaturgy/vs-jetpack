@@ -19,9 +19,7 @@ from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vsmasktools import Morpho
 from vstools import (
     Matrix,
-    MatrixLike,
     ProcessVariableResClip,
-    Range,
     check_variable_resolution,
     core,
     depth,
@@ -79,7 +77,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             overlap: The size of overlap between tiles.
             multiple: Multiple of the tiles.
             max_instances: Maximum instances to spawn when scaling a variable resolution clip.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments.
@@ -233,13 +231,6 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         """
         Handles postprocessing of the model's output after inference.
         """
-        logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
-        logger.debug("%s: Before pp; Clip format is %r", self.postprocess_clip, clip.format)
-
-        clip = depth(clip, input_clip, **kwargs)
-
-        logger.debug("%s: After pp; Clip format is %r", self.postprocess_clip, clip.format)
-
         return clip
 
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
@@ -283,16 +274,21 @@ class BaseOnnxScalerRGB(BaseOnnxScaler):
         return limiter(clip, func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        if get_video_format(clip) != get_video_format(input_clip):
-            kwargs = (
-                dict[str, Any](
-                    format=input_clip,
-                    matrix=Matrix.from_video(input_clip, func=self.__class__),
-                    range=Range.from_video(input_clip, func=self.__class__),
-                )
-                | kwargs
-            )
-            clip = self.kernel.resample(clip, **kwargs)
+        logger.debug("%s.post: Before pp; Clip format is %r", self, clip.format)
+
+        # Basically everything except color_family
+        out_fmt = input_clip.format.replace(
+            sample_type=clip.format.sample_type,
+            bits_per_sample=clip.format.bits_per_sample,
+            subsampling_w=0,
+            subsampling_h=0,
+        )
+
+        # Resamples only for color_family changes e.g. RGB -> YUV
+        if clip.format != out_fmt:
+            clip = self.kernel.resample(clip, out_fmt, input_clip, range=input_clip, **kwargs)
+
+        logger.debug("%s.post: After pp; Clip format is %r", self, clip.format)
 
         return clip
 
@@ -341,7 +337,7 @@ class BaseArtCNN(BaseOnnxScaler):
             tilesize: The size of each tile when splitting the image (if tiles are enabled).
             overlap: The size of overlap between tiles.
             max_instances: Maximum instances to spawn when scaling a variable resolution clip.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments.
@@ -374,31 +370,15 @@ class BaseArtCNNLuma(BaseArtCNN):
         width: int,
         height: int,
         shift: tuple[float, float] = (0, 0),
-        matrix: MatrixLike | None = None,
         copy_props: bool = False,
     ) -> vs.VideoNode:
-        # Changes compared to BaseGenericScaler are:
-        # - extract luma if input clip is luma only is removed  since this is a no op here
-        # - Chroma planes are scaled accordingly with the artcnn'd luma,
-        #   avoiding getting a luma plane when passing a YUV clip.
-
-        if (clip.width, clip.height) != (width, height):
-            clip = self.scaler.scale(clip, width, height)
-
         if input_clip.format.color_family == vs.YUV:
             scaled_chroma = self.scaler.scale(input_clip, clip.width, clip.height)
             clip = join(clip, scaled_chroma, prop_src=scaled_chroma)
 
-        if shift != (0, 0):
-            clip = self.shifter.shift(clip, shift)
+            logger.debug("%s: Chroma planes has been scaled accordingly", self)
 
-        if clip.format.id != input_clip.format.id:
-            clip = self.kernel.resample(clip, input_clip, matrix)
-
-        if copy_props:
-            return vs.core.std.CopyFrameProps(clip, input_clip)
-
-        return clip
+        return super()._finish_scale(clip, input_clip, width, height, shift, copy_props)
 
 
 class BaseArtCNNChroma(BaseArtCNN):
@@ -440,30 +420,6 @@ class BaseArtCNNChroma(BaseArtCNN):
         logger.debug("%s: Inferenced clip: %s", self.inference, v.format)
 
         return core.std.ShufflePlanes([clip, u, v], [0, 0, 0], vs.YUV, clip)
-
-    def _finish_scale(
-        self,
-        clip: vs.VideoNode,
-        input_clip: vs.VideoNode,
-        width: int,
-        height: int,
-        shift: tuple[float, float] = (0, 0),
-        matrix: MatrixLike | None = None,
-        copy_props: bool = False,
-    ) -> vs.VideoNode:
-        if (clip.width, clip.height) != (width, height):
-            clip = self.scaler.scale(clip, width, height)
-
-        if shift != (0, 0):
-            clip = self.shifter.shift(clip, shift)
-
-        if clip.format.id != input_clip.format.replace(subsampling_w=0, subsampling_h=0).id:
-            clip = self.kernel.resample(clip, input_clip, matrix)
-
-        if copy_props:
-            return vs.core.std.CopyFrameProps(clip, input_clip)
-
-        return clip
 
 
 class ArtCNN(BaseArtCNNLuma):
@@ -691,7 +647,7 @@ class BaseWaifu2x(BaseOnnxScalerRGB):
             tilesize: The size of each tile when splitting the image (if tiles are enabled).
             overlap: The size of overlap between tiles.
             max_instances: Maximum instances to spawn when scaling a variable resolution clip.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments.
@@ -856,7 +812,7 @@ class Waifu2x(_Waifu2xCunet):
         """
 
 
-class BaseDPIR(BaseOnnxScaler):
+class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
     _kind: ClassVar[str] = ""
     _static_kernel_radius = 8
 
@@ -885,7 +841,7 @@ class BaseDPIR(BaseOnnxScaler):
                 model's behavior may vary when they are used.
             tilesize: The size of each tile when splitting the image (if tiles are enabled).
             overlap: The size of overlap between tiles.
-            kernel: Base kernel to be used for certain scaling/shifting/resampling operations. Defaults to Catrom.
+            kernel: Base kernel to be used for certain scaling/shifting operations. Defaults to Catrom.
             scaler: Scaler used for scaling operations. Defaults to kernel.
             shifter: Kernel used for shifting operations. Defaults to kernel.
             **kwargs: Additional arguments.
@@ -925,26 +881,11 @@ class BaseDPIR(BaseOnnxScaler):
         return super().scale(clip, width, height, shift, copy_props=copy_props, **kwargs)
 
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        if get_color_family(clip) == vs.GRAY:
-            return super().preprocess_clip(clip, **kwargs)
-
-        clip = self.kernel.resample(clip, self._pick_precision(vs.RGBH, vs.RGBS), Matrix.RGB, **kwargs)
-
-        return limiter(clip, func=self.__class__)
-
-    def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        if get_video_format(clip) != get_video_format(input_clip):
-            kwargs = (
-                dict[str, Any](
-                    format=input_clip,
-                    matrix=Matrix.from_video(input_clip, func=self.__class__),
-                    range=Range.from_video(input_clip, func=self.__class__),
-                )
-                | kwargs
-            )
-            clip = self.kernel.resample(clip, **kwargs)
-
-        return clip
+        return (
+            BaseOnnxScaler.preprocess_clip(self, clip, **kwargs)
+            if get_color_family(clip) == vs.GRAY
+            else BaseOnnxScalerRGB.preprocess_clip(self, clip, **kwargs)
+        )
 
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         # Normalizing the strength clip

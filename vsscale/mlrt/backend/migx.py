@@ -12,10 +12,10 @@ from typing import Any
 from jetpytools import CustomRuntimeError, copy_signature, to_arr
 from packaging.version import Version
 
-from vstools import core, vs
+from vstools import core, depth, vs
 
 from ..settings import get_artifacts_folder
-from .base import Backend
+from .base import BackendAutoConvertFloat
 
 type Shape = tuple[int, int]
 
@@ -24,7 +24,7 @@ logger = getLogger(__name__)
 
 
 @dataclass(kw_only=True, frozen=True)
-class MIGX(Backend):
+class MIGX(BackendAutoConvertFloat):
     """
     MIGraphX backend for AMD GPUs.
 
@@ -89,7 +89,7 @@ class MIGX(Backend):
 
         return version  # type: ignore[return-value]
 
-    @copy_signature(Backend.inference)
+    @copy_signature(BackendAutoConvertFloat.inference)
     def inference(
         self,
         clips: vs.VideoNode | Sequence[vs.VideoNode],
@@ -104,6 +104,13 @@ class MIGX(Backend):
         network_path = Path(network_path)
         channels = sum(clip.format.num_planes for clip in to_arr(clips))
         program_path = self.build_program(network_path, channels, tilesize)
+
+        if self.fp16:
+            # Clips must be in fp16 format is fp16 is enabled,
+            # otherwise the MIGX plugin errors out.
+            clips = [depth(c, 16, sample_type=vs.SampleType.FLOAT) for c in clips]
+        else:
+            clips = [depth(c, 32) for c in clips]
 
         return super().inference(clips, program_path, overlap, tilesize, flexible=flexible, **kwargs)
 
