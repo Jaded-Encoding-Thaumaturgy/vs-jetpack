@@ -96,6 +96,10 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         else:
             self.backend = backend
 
+        if isinstance(self.backend, Backend.ORT) and self.backend.fp16:
+            bl = set(self.backend.fp16_blacklist_ops or []).union(["ConstantOfShape", "Resize"])
+            self.backend = dataclasses.replace(self.backend, fp16_blacklist_ops=bl)
+
         self.tiles = tiles
         self.tilesize = tilesize
         self.overlap = overlap
