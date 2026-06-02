@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from enum import IntEnum
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, getLogger
 from typing import Any, ClassVar
 
 from jetpytools import fallback
@@ -8,6 +11,8 @@ from jetpytools import fallback
 from vstools import core, vs
 
 from .base import Backend, BackendAutoConvertFloat
+
+logger = getLogger(__name__)
 
 
 @dataclass(kw_only=True, init=False, unsafe_hash=True, frozen=True)
@@ -25,6 +30,17 @@ class ORT(BackendAutoConvertFloat):
         ERROR = 3
         FATAL = 4
 
+        @classmethod
+        def from_logging(cls, level: int) -> ORT.Verbosity:
+            mapping = {
+                DEBUG: cls.VERBOSE,
+                INFO: cls.INFO,
+                WARNING: cls.WARNING,
+                ERROR: cls.ERROR,
+                CRITICAL: cls.FATAL,
+            }
+            return mapping[level]
+
     # Hardware & Runtime Execution
     num_streams: int
     verbosity: int
@@ -39,7 +55,7 @@ class ORT(BackendAutoConvertFloat):
         self,
         *,
         num_streams: int = 1,
-        verbosity: int = Verbosity.WARNING,
+        verbosity: int | None = None,
         fp16: bool = True,
         fp16_blacklist_ops: Collection[str] | None = None,
         output_format: Backend.OutputFormat | None = None,
@@ -57,7 +73,9 @@ class ORT(BackendAutoConvertFloat):
         object.__setattr__(self, "fp16", fp16)
         object.__setattr__(self, "fp16_blacklist_ops", fp16_blacklist_ops)
         object.__setattr__(self, "num_streams", num_streams)
-        object.__setattr__(self, "verbosity", verbosity)
+        object.__setattr__(
+            self, "verbosity", ORT.Verbosity.from_logging(logger.level) if verbosity is None else verbosity
+        )
         object.__setattr__(self, "output_format", output_format)
         super().__init__()
 
@@ -100,7 +118,7 @@ class ORT_CUDA(ORT):  # noqa: N801
         self,
         *,
         num_streams: int = 1,
-        verbosity: int = 2,
+        verbosity: int | None = None,
         device_id: int = 0,
         cudnn_benchmark: bool = True,
         use_cuda_graph: bool = False,
@@ -166,7 +184,7 @@ class ORT_DML(ORT):  # noqa: N801
         fp16_blacklist_ops: Collection[str] | None = None,
         output_format: Backend.OutputFormat | None = None,
         num_streams: int = 1,
-        verbosity: int = 2,
+        verbosity: int | None = None,
     ) -> None:
         """
         Initialize the backend.
@@ -214,7 +232,7 @@ class ORT_COREML(ORT):  # noqa: N801
         fp16_blacklist_ops: Collection[str] | None = None,
         output_format: Backend.OutputFormat | None = None,
         num_streams: int = 1,
-        verbosity: int = 2,
+        verbosity: int | None = None,
     ) -> None:
         object.__setattr__(self, "ml_program", ORT_COREML.Provider(ml_program))
         super().__init__(
