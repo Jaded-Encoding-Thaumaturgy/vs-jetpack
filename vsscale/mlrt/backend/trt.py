@@ -7,7 +7,7 @@ import zlib
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass, field
 from importlib.util import find_spec
-from logging import getLogger
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, getLogger
 from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, SupportsInt
@@ -29,6 +29,8 @@ type Shape = tuple[int, int]
 
 logger = getLogger(__name__)
 
+LOGGING_VERBOSITY_MAP = {DEBUG: 0, INFO: 1, WARNING: 2, ERROR: 3, CRITICAL: 4}
+
 # https://docs.nvidia.com/deeplearning/tensorrt/latest/
 # https://docs.nvidia.com/deeplearning/tensorrt/latest/_static/python-api/index.html
 # https://docs.nvidia.com/deeplearning/tensorrt/latest/_static/c-api/index.html
@@ -49,7 +51,9 @@ class TRT(Backend):
     """Number of parallel plugin inference streams."""
     use_cuda_graph: bool = True
     """Enable CUDA graph execution for compatible engines to improve performance and reduce CPU overhead."""
-    verbosity: SupportsInt | tensorrt.ILogger.Severity | tensorrt_rtx.ILogger.Severity = 2
+    verbosity: SupportsInt | tensorrt.ILogger.Severity | tensorrt_rtx.ILogger.Severity | None = field(
+        default=None, repr=False
+    )
     """TensorRT/plugin logging severity."""
 
     # Model Precision & Data Types
@@ -91,7 +95,7 @@ class TRT(Backend):
     """Maximum auxiliary streams used by TensorRT kernels."""
     max_num_tactics: int | None = None
     """Maximum number of tactics considered per layer."""
-    tiling_optimization_level: tensorrt.TilingOptimizationLevel | tensorrt_rtx.TilingOptimizationLevel | int = 0
+    tiling_optimization_level: SupportsInt | tensorrt.TilingOptimizationLevel | tensorrt_rtx.TilingOptimizationLevel = 0
     """TensorRT tiling optimization search level."""
     l2_limit_for_tiling: int = -1
     """L2 cache usage hint for tiling optimization."""
@@ -114,6 +118,9 @@ class TRT(Backend):
 
         if self.fp16 and self.bf16:
             raise ValueError("TensorRT backends does not support both fp16 and bf16")
+
+        if self.verbosity is None:
+            object.__setattr__(self, "verbosity", LOGGING_VERBOSITY_MAP.get(logger.level, 2))
 
     if TYPE_CHECKING:
         import tensorrt as trt
@@ -338,7 +345,7 @@ class TRT(Backend):
         if self.max_num_tactics is not None:
             config.max_num_tactics = self.max_num_tactics
 
-        if self.tiling_optimization_level != 0:
+        if int(self.tiling_optimization_level) != 0:
             config.tiling_optimization_level = self.trt.TilingOptimizationLevel(self.tiling_optimization_level)
             config.l2_limit_for_tiling = self.l2_limit_for_tiling
 
