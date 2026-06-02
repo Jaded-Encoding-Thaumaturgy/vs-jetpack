@@ -223,10 +223,12 @@ if not TYPE_CHECKING:
     Backend.MIGX = migx.MIGX
     Backend.NCNN = ncnn.NCNN
     Backend.NCNN_VK = Backend.NCNN
+    Backend.ORT = ort.ORT
     Backend.ORT_CPU = ort.ORT_CPU
     Backend.ORT_CUDA = ort.ORT_CUDA
     Backend.ORT_DML = ort.ORT_DML
     Backend.ORT_COREML = ort.ORT_COREML
+    Backend.OV = ov.OV
     Backend.OV_CPU = ov.OV_CPU
     Backend.OV_GPU = ov.OV_GPU
     Backend.OV_NPU = ov.OV_NPU
