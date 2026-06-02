@@ -39,7 +39,7 @@ class ORT(BackendAutoConvertFloat):
                 ERROR: cls.ERROR,
                 CRITICAL: cls.FATAL,
             }
-            return mapping[level]
+            return mapping.get(level, cls.WARNING)
 
     # Hardware & Runtime Execution
     num_streams: int
@@ -74,7 +74,9 @@ class ORT(BackendAutoConvertFloat):
         object.__setattr__(self, "fp16_blacklist_ops", fp16_blacklist_ops)
         object.__setattr__(self, "num_streams", num_streams)
         object.__setattr__(
-            self, "verbosity", ORT.Verbosity.from_logging(logger.level) if verbosity is None else verbosity
+            self,
+            "verbosity",
+            ORT.Verbosity.from_logging(logger.getEffectiveLevel()) if verbosity is None else verbosity,
         )
         object.__setattr__(self, "output_format", output_format)
         super().__init__()

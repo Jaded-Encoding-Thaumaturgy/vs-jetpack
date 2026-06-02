@@ -120,7 +120,7 @@ class TRT(Backend):
             raise ValueError("TensorRT backends do not support both fp16 and bf16")
 
         if self.verbosity is None:
-            object.__setattr__(self, "verbosity", LOGGING_VERBOSITY_MAP.get(logger.level, 2))
+            object.__setattr__(self, "verbosity", LOGGING_VERBOSITY_MAP.get(logger.getEffectiveLevel(), 2))
 
     if TYPE_CHECKING:
         import tensorrt as trt
