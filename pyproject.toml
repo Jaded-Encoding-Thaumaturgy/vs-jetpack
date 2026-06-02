@@ -66,7 +66,7 @@ Tracker = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/issues"
 "Contact" = "https://discord.gg/XTpc6Fa9eB"
 
 [project.scripts]
-vsscale = "vsscale.mlrt.cli:app"
+vsscale = "vsscale.mlrt.cli:app.meta"
 
 [project.optional-dependencies]
 basic = []

@@ -46,6 +46,16 @@ app.command(onnx_app)
 app.command(artifact_app)
 
 
+@app.meta.default
+def meta_main(
+    *tokens: Annotated[str, cyclopts.Parameter(show=False)],
+    no_config: Annotated[bool, cyclopts.Parameter(negative=(), show_default=False)] = False,
+) -> None:
+    if no_config:
+        app.config = None
+    app(tokens)
+
+
 def _custom_help_formatter(console: Console, options: ConsoleOptions, panel: HelpPanel) -> None:
     for i, entry in enumerate(panel.entries):
         if "--onnx" in entry.positive_names:
