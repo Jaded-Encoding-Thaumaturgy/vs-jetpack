@@ -22,7 +22,7 @@ from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, Trans
 from vsjetpack import __version__
 
 from .feeds import Asset, Feed, Release
-from .settings import TOML_CONFIG, TOML_KEYS, get_artifacts_folder, get_onnx_folder
+from .settings import TOML_CONFIG, TOML_KEYS, get_artifacts_folder, get_provider_folder
 
 MAX_CONCURRENCY = os.cpu_count() or 4
 
@@ -65,15 +65,15 @@ def meta_main(
 
 def _custom_help_formatter(console: Console, options: ConsoleOptions, panel: HelpPanel) -> None:
     for i, entry in enumerate(panel.entries):
-        if "--onnx" in entry.positive_names:
-            clean_names = tuple(name for name in entry.positive_names if name != "--onnx")
+        if "--provider" in entry.positive_names:
+            clean_names = tuple(name for name in entry.positive_names if name != "--provider")
             panel.entries[i] = entry.copy(positive_names=clean_names)  # type: ignore[no-untyped-call]
     cyclopts.help.DefaultFormatter()(console, options, panel)
 
 
 @onnx_app.command(help_formatter=_custom_help_formatter)
 async def download(
-    *onnx: Annotated[str, cyclopts.Parameter(name="--onnx")],
+    *provider: Annotated[str, cyclopts.Parameter(name="--provider")],
     latest: Annotated[
         bool,
         cyclopts.Parameter(
@@ -104,12 +104,12 @@ async def download(
     the interactive mode may be partially or fully skipped.
 
     Args:
-        onnx: The ONNX model(s) to download. Possible choices: "ArtCNN", "DPIR", "Waifu2X".
+        provider: The ONNX model(s) to download. Possible choices: "ArtCNN", "DPIR", "Waifu2X".
             Use '==' syntax to pin a version (e.g. ArtCNN==v1.6.2).
         latest: Whether to automatically download all models from the latest release.
         global_: Whether to download models to the global folder.
     """
-    if not onnx:
+    if not provider:
         # Fully interactive: pick model, then tag, then assets
         feed = await _select_model()
         releases = await _fetch_releases(feed)
@@ -117,7 +117,7 @@ async def download(
         assets = await _select_assets(release)
         return await _download_assets(feed, release, assets, global_=global_)
 
-    for spec in onnx:
+    for spec in provider:
         model_name, pinned_version = _parse_model_spec(spec)
         feed = _find_feed(model_name)
 
@@ -148,7 +148,7 @@ async def download(
 @artifact_app.command(help="List built TensorRT & MIGraphxX artifacts.", help_formatter=_custom_help_formatter)
 @onnx_app.command(help="List downloaded ONNX models.", help_formatter=_custom_help_formatter)
 def show(
-    *onnx: Annotated[str, cyclopts.Parameter(name="--onnx")],
+    *provider: Annotated[str, cyclopts.Parameter(name="--provider")],
     global_: Annotated[
         bool,
         cyclopts.Parameter(
@@ -162,15 +162,15 @@ def show(
     List downloaded ONNX models or built TensorRT & MIGraphxX artifacts.
 
     Args:
-        onnx: The model(s) to show. Supports specifying version pin (e.g. ArtCNN==v1.6.2).
+        provider: The provider(s) to show. Supports specifying version pin (e.g. ArtCNN==v1.6.2).
             If not specified, all files are listed.
         global_: Whether to show models in the global folder.
     """
     (cmd, *_), _, _ = app.parse_commands()
 
     match cmd:
-        case "onnx":
-            folder = get_onnx_folder(global_=global_)
+        case "provider":
+            folder = get_provider_folder(global_=global_)
             ext = [".onnx"]
         case "artifact":
             folder = get_artifacts_folder(global_=global_)
@@ -178,11 +178,11 @@ def show(
         case _:
             raise ValueError
 
-    if not onnx:
+    if not provider:
         files = (f for f in folder.glob("**/*", case_sensitive=False) if f.suffix in ext)
         return print(pretty_repr(sorted(files, reverse=True)))
 
-    for spec in onnx:
+    for spec in provider:
         model_name, pinned_version = _parse_model_spec(spec)
         spec_folder = folder / model_name / (pinned_version or "")
 
@@ -194,7 +194,7 @@ def show(
 @artifact_app.command(help="Clear built TensorRT & MIGraphxX artifacts.", help_formatter=_custom_help_formatter)
 @onnx_app.command(help="Clear downloaded ONNX models.", help_formatter=_custom_help_formatter)
 def clear(
-    *onnx: Annotated[str, cyclopts.Parameter(name="--onnx")],
+    *provider: Annotated[str, cyclopts.Parameter(name="--provider")],
     global_: Annotated[
         bool,
         cyclopts.Parameter(negative=(), show_default=False, env_var=["VSSCALE_CLEAR_GLOBAL", "VSSCALE_GLOBAL"]),
@@ -206,24 +206,24 @@ def clear(
     If no model specs are provided, the entire directory is cleared.
 
     Args:
-        onnx: Specific model namespace(s) or model-version specification(s) to clear
+        provider: Specific model namespace(s) or model-version specification(s) to clear
             (e.g., "ArtCNN" or "ArtCNN==v1.6.2"). If omitted, all files will be deleted.
         global_: Whether to clear files in the global folder.
     """
     (cmd, *_), _, _ = app.parse_commands()
 
     match cmd:
-        case "onnx":
-            folder = get_onnx_folder(global_=global_)
+        case "provider":
+            folder = get_provider_folder(global_=global_)
         case "artifact":
             folder = get_artifacts_folder(global_=global_)
         case _:
             raise ValueError
 
-    if not onnx:
+    if not provider:
         return shutil.rmtree(folder, ignore_errors=False)
 
-    for spec in onnx:
+    for spec in provider:
         model_name, pinned_version = _parse_model_spec(spec)
         spec_folder = folder / model_name / (pinned_version or "")
         shutil.rmtree(spec_folder, ignore_errors=False)
@@ -282,7 +282,7 @@ async def _fetch_releases(feed: Feed) -> list[Release]:
 async def _select_model() -> Feed:
     choices = [quest.Choice(title=f"{name}", value=name) for name, _ in Feed.all_feeds.items()]
 
-    selected = await quest.select("Select an ONNX model to download:", choices=choices, qmark="📦").ask_async()
+    selected = await quest.select("Select an ONNX provider to download:", choices=choices, qmark="📦").ask_async()
 
     if selected is None:
         raise SystemExit(0)
@@ -321,7 +321,7 @@ async def _select_assets(release: Release) -> list[Asset]:
 
 
 async def _download_assets(feed: Feed, release: Release, assets: Sequence[Asset], *, global_: bool = False) -> None:
-    dest_folder = anyio.Path(get_onnx_folder(global_=global_) / feed.display_name.lower() / release.tag)
+    dest_folder = anyio.Path(get_provider_folder(global_=global_) / feed.display_name.lower() / release.tag)
 
     console.print(f"[bold]Downloading to:[/bold] [cyan]{dest_folder}[/cyan]")
 

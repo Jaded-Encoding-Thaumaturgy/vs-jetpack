@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 from vstools import core, depth, vs
 
-from ..settings import get_artifacts_folder, get_onnx_folder
+from ..settings import get_artifacts_folder, get_provider_folder
 from .base import Backend
 
 type Shape = tuple[int, int]
@@ -382,7 +382,7 @@ class TRT(Backend):
 
         network = network_path.read_bytes()
 
-        get_onnx_folder().mkdir(parents=True, exist_ok=True)
+        get_provider_folder().mkdir(parents=True, exist_ok=True)
         suffix = "fp16" if not self.fp16_blacklist_ops else f"fp16_block_{'_'.join(self.fp16_blacklist_ops)}"
         checksum = zlib.crc32(network)
         fp16_path = network_path.parent / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
@@ -420,7 +420,7 @@ class TRT(Backend):
 
         network = network_path.read_bytes()
 
-        get_onnx_folder().mkdir(parents=True, exist_ok=True)
+        get_provider_folder().mkdir(parents=True, exist_ok=True)
         checksum = zlib.crc32(network)
         bf16_path = network_path.parent / f"{network_path.stem}_{checksum:x}_bf16_io.onnx"
 

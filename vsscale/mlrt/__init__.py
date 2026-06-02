@@ -12,16 +12,16 @@ The CLI tool `vsscale` provides commands to manage models (ONNX) and built engin
 #### Commands:
 - **Download ONNX models**:
   ```bash
-  # Interactive mode (prompts for model, version/tag, and assets)
+  # Interactive mode (prompts for provider, version/tag, and assets)
   vsscale onnx download
 
-  # Download a specific model namespace (e.g., ArtCNN)
+  # Download a specific provider (e.g., ArtCNN)
   vsscale onnx download ArtCNN
 
-  # Download a specific version of a model
+  # Download a specific version of a provider
   vsscale onnx download ArtCNN==v1.6.2
 
-  # Download the latest release of a model automatically
+  # Download the latest release of a provider automatically
   vsscale onnx download ArtCNN --latest
   ```
 - **List files**:
@@ -70,7 +70,7 @@ The library parses configurations from `vsjet.toml` or `pyproject.toml` in the w
   [tool.vsscale.onnx.download]
   # This tells the CLI to automatically download the latest release
   # of each model when using `vsscale onnx download` without any arguments.
-  onnx = ["ArtCNN", "DPIR", "Waifu2x"]
+  provider = ["ArtCNN", "DPIR", "Waifu2x"]
   latest = true
   ```
 
@@ -145,7 +145,7 @@ from .settings import (
     get_global_cache,
     get_local_cache,
     get_model_folder,
-    get_onnx_folder,
+    get_provider_folder,
 )
 
 __all__ = [
@@ -154,5 +154,5 @@ __all__ = [
     "get_global_cache",
     "get_local_cache",
     "get_model_folder",
-    "get_onnx_folder",
+    "get_provider_folder",
 ]
