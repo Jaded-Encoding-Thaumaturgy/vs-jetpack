@@ -959,7 +959,7 @@ class BaseDPIR(BaseOnnxScaler):
         else:
             self.strength = clip.std.BlankClip(format=strength_fmt, color=float(self.strength) / 255, keep=True)
 
-        logger.debug("%s: Passing strength clip format: %s", self.inference, self.strength.format)
+        logger.debug("%s: Passing strength clip format: %r", self.inference, self.strength.format)
 
         # Get model name
         model = "drunet"
@@ -976,7 +976,7 @@ class BaseDPIR(BaseOnnxScaler):
         # Basic inference args
         tilesize, overlaps = self.calc_tilesize(clip)
 
-        logger.debug("%s: Passing model: %s", self.inference, self.model)
+        logger.debug("%s: Passing model: %s", self.inference, model)
         logger.debug("%s: Passing tiles size: %s", self.inference, tilesize)
         logger.debug("%s: Passing overlaps: %s", self.inference, overlaps)
         logger.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
