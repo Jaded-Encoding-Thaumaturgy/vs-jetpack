@@ -73,14 +73,17 @@ class OV_CPU(OV):  # noqa: N801
     """Enable OpenVINO CPU thread pinning."""
 
     # Model Precision & Data Types
-    fp16: bool = True
-    """Request FP16 inference precision."""
-    bf16: bool = False
-    """Request BF16 inference precision."""
+    fp16: bool | None = None
+    """Request FP16 inference precision. Default to True."""
+    bf16: bool | None = None
+    """Request BF16 inference precision. Default to False."""
     fp16_blacklist_ops: Collection[str] | None = None
     """ONNX node or op names to keep in FP32 during FP16 conversion."""
 
     def __post_init__(self) -> None:
+        if self.fp16 is self.bf16 is None:
+            object.__setattr__(self, "fp16", True)
+
         if self.fp16 and self.bf16:
             raise ValueError("ORT CPU does not support both fp16 and bf16")
 

@@ -58,11 +58,11 @@ class TRT(Backend):
 
     # Model Precision & Data Types
     fp16: bool | None = None
-    """Convert the ONNX model to FP16 before building. Default to True"""
+    """Convert the ONNX model to FP16 before building. Default to True."""
     fp16_blacklist_ops: Collection[str] | None = None
     """ONNX node or op names to keep in FP32 during FP16 conversion."""
     bf16: bool | None = None
-    """Convert the ONNX model to BF16 before building. Default to False"""
+    """Convert the ONNX model to BF16 before building. Default to False."""
     tf32: bool = False
     """Allow TensorRT TF32 tactics."""
     strict_nans: bool = False
@@ -113,11 +113,11 @@ class TRT(Backend):
     """Maximum number of builder threads. Limits CPU usage during engine build."""
 
     def __post_init__(self) -> None:
-        if self.fp16 is None and self.bf16 is None:
+        if self.fp16 is self.bf16 is None:
             object.__setattr__(self, "fp16", True)
 
         if self.fp16 and self.bf16:
-            raise ValueError("TensorRT backends does not support both fp16 and bf16")
+            raise ValueError("TensorRT backends do not support both fp16 and bf16")
 
         if self.verbosity is None:
             object.__setattr__(self, "verbosity", LOGGING_VERBOSITY_MAP.get(logger.level, 2))

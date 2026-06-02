@@ -30,7 +30,7 @@ class ORT(BackendAutoConvertFloat):
     verbosity: int
 
     # Model Precision & Data Types
-    fp16: bool
+    fp16: bool | None
     fp16_blacklist_ops: Collection[str] | None
     output_format: Backend.OutputFormat | None
 

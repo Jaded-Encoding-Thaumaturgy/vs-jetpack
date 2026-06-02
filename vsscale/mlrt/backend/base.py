@@ -220,7 +220,7 @@ class Backend:
 
 
 class BackendAutoConvertFloat(Backend):
-    fp16: bool
+    fp16: bool | None
 
     @copy_signature(Backend.inference)
     def inference(

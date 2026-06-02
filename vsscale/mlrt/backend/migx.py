@@ -41,10 +41,10 @@ class MIGX(BackendAutoConvertFloat):
     """Number of parallel MIGraphX inference streams."""
 
     # Model Precision & Data Types
-    fp16: bool = True
-    """Compile the program for FP16 where supported."""
-    bf16: bool = False
-    """Compile the program for BF16 where supported."""
+    fp16: bool | None = None
+    """Compile the program for FP16 where supported. Default to True"""
+    bf16: bool | None = None
+    """Compile the program for BF16 where supported. Default to False."""
 
     # Input Shapes & Optimization Profiles
     opt_shapes: Shape | None = None
@@ -70,6 +70,13 @@ class MIGX(BackendAutoConvertFloat):
 
     migraph-driver compile --help
     """
+
+    def __post_init__(self) -> None:
+        if self.fp16 is self.bf16 is None:
+            object.__setattr__(self, "fp16", True)
+
+        if self.fp16 and self.bf16:
+            raise ValueError("MIGX backend does not support both fp16 and bf16")
 
     @property
     def version(self) -> tuple[int, int, int]:
