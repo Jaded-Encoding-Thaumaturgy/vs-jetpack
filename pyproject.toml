@@ -218,7 +218,8 @@ doc = [
 ]
 
 [tool.vsscale.onnx.download]
-onnx = ["ArtCNN==v1.6.2", "DPIR==20210902", "Waifu2x==20250502-2"]
+provider = ["ArtCNN==v1.6.2", "DPIR==20210902", "Waifu2x==20250502-2"]
+auto = true
 
 [tool.uv.sources]
 vapoursynth-dfttest2-cuda = { index = "vs-wheels" }

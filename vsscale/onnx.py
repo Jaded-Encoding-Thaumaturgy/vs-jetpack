@@ -9,9 +9,10 @@ import math
 import re
 from abc import ABC
 from logging import getLogger
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat
 
-from jetpytools import CustomValueError, FileNotExistsError, SPath, SPathLike
+from jetpytools import CustomRuntimeError, CustomValueError, FileNotExistsError, FuncExcept, SPath, SPathLike
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
@@ -35,6 +36,7 @@ from vstools import (
 
 from .generic import BaseGenericScaler
 from .mlrt import Backend, get_model_folder
+from .mlrt.settings import get_toml_config
 
 type BackendLike = type[Backend] | Backend
 
@@ -347,7 +349,7 @@ class BaseArtCNN(BaseOnnxScaler):
         model = self._model if hasattr(self, "_model") else self.__class__.__name__
 
         super().__init__(
-            get_model_folder("ArtCNN") / f"ArtCNN_{model}.onnx",
+            _get_onnx_model("ArtCNN", f"ArtCNN_{model}", func=self.__class__),
             backend,
             tiles,
             tilesize,
@@ -705,16 +707,8 @@ class BaseWaifu2x(BaseOnnxScalerRGB):
         if self.noise >= 0:
             model_name += f"_noise{self.noise}"
 
-        model = get_model_folder("Waifu2x") / f"{model_name}.onnx"
-
-        if not model.exists():
-            raise FileNotExistsError(
-                "The specified model does not exist. Run `vsscale onnx show waifu2x` to see the available models.",
-                self.__class__,
-            )
-
         super().__init__(
-            model,
+            _get_onnx_model("Waifu2x", model_name, func=self.__class__),
             backend,
             tiles,
             tilesize,
@@ -964,16 +958,16 @@ class BaseDPIR(BaseOnnxScaler):
         logger.debug("%s: Passing strength clip format: %r", self.inference, self.strength.format)
 
         # Get model name
-        model = "drunet"
+        model_name = "drunet"
         if self._kind:
-            model += f"_{self._kind}"
+            model_name += f"_{self._kind}"
 
         if clip.format.color_family == vs.GRAY:
-            model += "_gray"
+            model_name += "_gray"
         else:
-            model += "_color"
+            model_name += "_color"
 
-        model = get_model_folder("DPIR") / f"{model}.onnx"
+        model = _get_onnx_model("DPIR", model_name, func=self.__class__)
 
         # Basic inference args
         tilesize, overlaps = self.calc_tilesize(clip)
@@ -1011,3 +1005,40 @@ class DPIR(BaseDPIR):
         """
 
         _kind = "deblocking"
+
+
+def _get_onnx_model(
+    provider: str,
+    model_name: str,
+    *,
+    auto_download: bool | None = None,
+    func: FuncExcept | None = None,
+) -> Path:
+    try:
+        return get_model_folder(provider) / f"{model_name}.onnx"
+    except FileNotExistsError:
+        logger.debug("%r does not exist", model_name)
+
+    conf = get_toml_config()
+    dconf = conf.get("onnx", {}).get("download", {})
+
+    if dconf.get("auto", auto_download):
+        from rich.logging import RichHandler
+
+        from .mlrt.cli import app
+
+        logger.info("Auto-downloading %r from provider %r", model_name, provider)
+
+        user_provider = next((p for p in dconf.get("provider", []) if p.lower().startswith(provider.lower())), None)
+        console = next((h.console for h in logger.handlers if isinstance(h, RichHandler)), None)
+
+        app(["onnx", "download", user_provider or provider, "--latest"], console=console, result_action="return_value")
+
+        if (path := get_model_folder(provider) / f"{model_name}.onnx").exists():
+            return path
+
+    raise CustomRuntimeError(
+        f"The specified model {model_name} does not exist. "
+        "Run `vsscale onnx download --help` to see the available models.",
+        func,
+    )
