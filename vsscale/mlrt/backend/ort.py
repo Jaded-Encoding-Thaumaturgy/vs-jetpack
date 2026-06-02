@@ -7,11 +7,11 @@ from jetpytools import fallback
 
 from vstools import core, vs
 
-from .base import Backend
+from .base import Backend, BackendAutoConvertFloat
 
 
 @dataclass(kw_only=True, init=False, unsafe_hash=True, frozen=True)
-class ORT(Backend):
+class ORT(BackendAutoConvertFloat):
     """Base ONNX Runtime backend configuration."""
 
     plugin = core.lazy.ort

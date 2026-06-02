@@ -53,12 +53,12 @@ class TRT(Backend):
     """TensorRT/plugin logging severity."""
 
     # Model Precision & Data Types
-    fp16: bool = True
-    """Convert the ONNX model to FP16 before building."""
+    fp16: bool | None = None
+    """Convert the ONNX model to FP16 before building. Default to True"""
     fp16_blacklist_ops: Collection[str] | None = None
     """ONNX node or op names to keep in FP32 during FP16 conversion."""
-    bf16: bool = False
-    """Convert the ONNX model to BF16 before building."""
+    bf16: bool | None = None
+    """Convert the ONNX model to BF16 before building. Default to False"""
     tf32: bool = False
     """Allow TensorRT TF32 tactics."""
     strict_nans: bool = False
@@ -109,8 +109,11 @@ class TRT(Backend):
     """Maximum number of builder threads. Limits CPU usage during engine build."""
 
     def __post_init__(self) -> None:
+        if self.fp16 is None and self.bf16 is None:
+            object.__setattr__(self, "fp16", True)
+
         if self.fp16 and self.bf16:
-            raise ValueError("TensorRT does not support both fp16 and bf16")
+            raise ValueError("TensorRT backends does not support both fp16 and bf16")
 
     if TYPE_CHECKING:
         import tensorrt as trt
@@ -161,7 +164,11 @@ class TRT(Backend):
         engine_path = self.build_engine(Path(network_path), channels, tilesize)
 
         if self.fp16 or self.bf16:
+            # Clips must be in fp16 format is fp16 or bf16 mode is enabled,
+            # otherwise the TRT plugins error out.
             clips = [depth(c, 16, sample_type=vs.SampleType.FLOAT) for c in clips]
+        else:
+            clips = [depth(c, 32) for c in clips]
 
         return super().inference(clips, engine_path, overlap, tilesize, flexible=flexible, **kwargs)
 

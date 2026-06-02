@@ -8,7 +8,9 @@ from enum import IntEnum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast, overload
 
-from vstools import core, vs
+from jetpytools import copy_signature, to_arr
+
+from vstools import core, depth, vs
 
 from ...helpers import get_gpu
 
@@ -215,6 +217,28 @@ class Backend:
         del gpu
 
         return backend(**kwargs)
+
+
+class BackendAutoConvertFloat(Backend):
+    fp16: bool
+
+    @copy_signature(Backend.inference)
+    def inference(
+        self,
+        clips: vs.VideoNode | Sequence[vs.VideoNode],
+        network_path: str | os.PathLike[str],
+        /,
+        overlap: tuple[int, int],
+        tilesize: tuple[int, int],
+        *,
+        flexible: bool = False,
+        **kwargs: Any,
+    ) -> vs.VideoNode | list[vs.VideoNode]:
+        clips = [
+            depth(c, 16 if self.fp16 else 32, sample_type=vs.FLOAT) if c.format.sample_type != vs.FLOAT else c
+            for c in to_arr(clips)
+        ]
+        return super().inference(clips, network_path, overlap, tilesize, flexible=flexible, **kwargs)
 
 
 if not TYPE_CHECKING:
