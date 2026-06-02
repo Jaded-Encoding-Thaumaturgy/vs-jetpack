@@ -377,6 +377,7 @@ class TRT(Backend):
 
     def _convert_onnx_fp16(self, network_path: Path) -> Path:
         import onnx
+        import onnx.helper as onnxh
         import onnxconverter_common as onnxcc
 
         network = network_path.read_bytes()
@@ -392,6 +393,15 @@ class TRT(Backend):
         logger.info(f"Converting ONNX graph metadata to Float16 for: {network_path.name}")
 
         model = onnx.load_model_from_string(network)
+
+        # Inject default value attribute to ConstantOfShape nodes if missing to ensure they get converted to Float16
+        for node in model.graph.node:
+            if node.op_type != "ConstantOfShape":
+                continue
+            if not any(attr.name == "value" for attr in node.attribute):
+                node.attribute.append(
+                    onnxh.make_attribute("value", onnxh.make_tensor("value", onnx.TensorProto.FLOAT, [1], [0.0]))
+                )
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning, module=r"onnxconverter_common.*float16")
