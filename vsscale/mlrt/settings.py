@@ -47,15 +47,15 @@ def get_cache(thing: str, *, global_: bool = False) -> Path:
 
 
 @cache
-def get_onnx_folder(*, global_: bool = False) -> Path:
+def get_provider_folder(*, global_: bool = False) -> Path:
     r"""
-    Linux: ~/.cache/vsscale/onnx
+    Linux: ~/.cache/vsscale/provider
 
-    macOS: ~/Library/Caches/vsscale/onnx
+    macOS: ~/Library/Caches/vsscale/provider
 
-    Windows: ...\AppData\Local\vsjet\vsscale\Cache\onnx
+    Windows: ...\AppData\Local\vsjet\vsscale\Cache\provider
     """
-    return get_cache("onnx", global_=global_) / "onnx"
+    return get_cache("provider", global_=global_) / "provider"
 
 
 @cache
