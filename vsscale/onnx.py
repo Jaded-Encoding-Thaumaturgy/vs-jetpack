@@ -757,11 +757,8 @@ class _Waifu2xCunet(BaseWaifu2x):
                     and `_final_scale` methods. Use the prefix `preprocess_` or `postprocess_` to pass an argument to
                     the respective method. Use the prefix `inference_` to pass an argument to the inference method.
 
-                    Additional Notes for the Cunet model:
+                    Additional note for the Cunet model:
 
-                       - The model can cause artifacts around the image edges.
-                       To mitigate this, mirrored padding is applied to the image before inference.
-                       This behavior can be disabled by setting `inference_no_pad=True`.
                        - A tint issue is also present but it is not constant. It leaves flat areas alone but tints
                        detailed areas.
                        This behavior can be disabled with `postprocess_no_tint_fix=True`
@@ -772,11 +769,12 @@ class _Waifu2xCunet(BaseWaifu2x):
             ...
 
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        # Cunet model ruins image borders, so we need to pad it before upscale and crop it after.
-        if kwargs.pop("no_pad", False):
+        if kwargs.pop("no_pad", False) or (not clip.width % self.overlap_w and not clip.height % self.overlap_h):
+            logger.debug("%s: Skipping padding for clip %r", self, clip)
             return super().inference(clip, **kwargs)
 
-        with padder.ctx(4, 4) as pad:
+        logger.debug("%s: Padding clip %r", self, clip)
+        with padder.ctx(4, 0) as pad:
             padded = pad.MIRROR(clip)
             scaled = super().inference(padded, **kwargs)
             cropped = pad.CROP(scaled)
