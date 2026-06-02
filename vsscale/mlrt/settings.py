@@ -75,10 +75,15 @@ def is_global_in_env(filetype: str) -> bool:
 
 
 def get_model_folder(provider: str, version: str | None = None) -> Path:
-    folder = get_onnx_folder() / provider.lower()
+    folder = get_provider_folder() / provider.lower()
 
     if version is None:
-        return sorted(folder.glob("*"), reverse=True)[0]
+        latest = sorted(folder.glob("*"), reverse=True)
+
+        if not latest:
+            raise FileNotExistsError("The folder doesn't exist", get_model_folder)
+
+        return latest[0]
 
     folder /= version
 
