@@ -49,7 +49,14 @@ app.command(artifact_app)
 @app.meta.default
 def meta_main(
     *tokens: Annotated[str, cyclopts.Parameter(show=False)],
-    no_config: Annotated[bool, cyclopts.Parameter(negative=(), show_default=False)] = False,
+    no_config: Annotated[
+        bool,
+        cyclopts.Parameter(
+            negative=(),
+            show_default=False,
+            help="Ignore TOML configuration files and environment variables.",
+        ),
+    ] = False,
 ) -> None:
     if no_config:
         app.config = None
