@@ -373,7 +373,7 @@ class BaseArtCNNLuma(BaseArtCNN):
         copy_props: bool = False,
     ) -> vs.VideoNode:
         if input_clip.format.color_family == vs.YUV:
-            scaled_chroma = self.scaler.scale(input_clip, clip.width, clip.height)
+            scaled_chroma = self.scaler.scale(depth(input_clip, clip), clip.width, clip.height)
             clip = join(clip, scaled_chroma, prop_src=scaled_chroma)
 
             logger.debug("%s: Chroma planes has been scaled accordingly", self)
