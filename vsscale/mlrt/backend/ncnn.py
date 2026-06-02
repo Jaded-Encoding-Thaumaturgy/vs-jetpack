@@ -4,7 +4,7 @@ from typing import Any
 
 from jetpytools import fallback
 
-from vstools import vs
+from vstools import core, vs
 
 from .base import Backend
 
@@ -12,6 +12,8 @@ from .base import Backend
 @dataclass(kw_only=True, frozen=True)
 class NCNN(Backend):
     """NCNN Vulkan backend."""
+
+    plugin = core.lazy.ncnn
 
     # Hardware & Runtime Execution
     device_id: int = 0
