@@ -2,6 +2,7 @@ import os
 import tomllib
 from functools import cache
 from pathlib import Path
+from typing import Any
 
 import platformdirs
 from jetpytools import FileNotExistsError
@@ -14,6 +15,20 @@ TRUTHY = frozenset({"1", "true", "yes", "on"})
 ENV_KEYS = ("VSSCALE_GLOBAL", "VSSCALE_{}_GLOBAL")
 TOML_CONFIG = ("vsjet.toml", "pyproject.toml")
 TOML_KEYS: tuple[list[str], ...] = (["vsscale"], ["tool", "vsscale"])
+
+
+def get_toml_config() -> dict[str, Any]:
+    for config_file, keys in zip(TOML_CONFIG, TOML_KEYS):
+        file = Path(config_file).expanduser().resolve().absolute()
+        if file.exists():
+            with file.open("rb") as f:
+                config = tomllib.load(f)
+
+            for key in keys:
+                config = config.get(key, {})
+            return config
+
+    return {}
 
 
 @cache
@@ -31,17 +46,8 @@ def get_cache(thing: str, *, global_: bool = False) -> Path:
     if global_ or is_global_in_env(thing):
         return get_global_cache()
 
-    for config_file, keys in zip(TOML_CONFIG, TOML_KEYS):
-        file = Path(config_file).expanduser().resolve().absolute()
-        if file.exists():
-            with file.open("rb") as f:
-                config = tomllib.load(f)
-
-            for key in keys:
-                config = config.get(key, {})
-
-            if config.get("global", False):
-                return get_global_cache()
+    if get_toml_config().get("global", False):
+        return get_global_cache()
 
     return get_local_cache()
 
