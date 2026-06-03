@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import warnings
 import zlib
 from collections.abc import Collection, Sequence
@@ -204,6 +205,7 @@ class TRT(Backend):
         components = (
             str(self),
             str(self.version),
+            str(sys.version_info[:2]),
             network_path.name,
             f"{checksum:x}",
             str(channels),
