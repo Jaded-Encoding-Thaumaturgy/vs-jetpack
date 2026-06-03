@@ -85,13 +85,13 @@ class OV_CPU(OV):  # noqa: N801
             object.__setattr__(self, "fp16", True)
 
         if self.fp16 and self.bf16:
-            raise CustomValueError("ORT CPU does not support both fp16 and bf16")
+            raise CustomValueError("OV CPU does not support both fp16 and bf16")
 
     @property
     def config(self) -> Mapping[str, Any]:
         return dict(super().config) | {
             "NUM_STREAMS": self.num_streams,
-            "INFERENCE_NUM_THREADS": self.num_streams,
+            "INFERENCE_NUM_THREADS": self.num_threads,
             "ENABLE_CPU_PINNING": {False: "NO", True: "YES"}[self.bind_thread],
             "INFERENCE_PRECISION_HINT": "f16" if self.fp16 else "bf16" if self.bf16 else "f32",
         }

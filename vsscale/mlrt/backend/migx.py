@@ -144,7 +144,7 @@ class MIGX(BackendAutoConvertFloat):
         if rocm_path := os.getenv("ROCM_PATH"):
             migraph_driver = f"{rocm_path}/bin/migraphx-driver"
         else:
-            migraph_driver = shutil.which("migraph-driver") or "migraph-driver"
+            migraph_driver = shutil.which("migraphx-driver") or "migraphx-driver"
 
         dirname = get_artifacts_folder()
         dirname.mkdir(parents=True, exist_ok=True)
