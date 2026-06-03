@@ -147,7 +147,7 @@ cl = [
 ]
 nvidia = [
     "dfttest2[cufft,nvrtc]>=10",
-    "vapoursynth-dfttest2-cuda>=10",                                    # Explicitly specify this one so it's properly resolved through uv --index
+    "vapoursynth-dfttest2-cuda>=10",          # Explicitly specify this one so it's properly resolved through uv --index
     "vapoursynth-bm3dcuda>=2.16",
     "vapoursynth-bilateralgpu>=14",
     "vapoursynth-nlm-cuda>=4",
@@ -157,12 +157,12 @@ nvidia = [
     "onnx>=1.21.0",
     "onnxconverter-common>=1.16.0",
     "ml-dtypes>=0.5.4",
-    "tensorrt-cu13             >=11.0.0.114 ; python_version < '3.14'",
-    "tensorrt-cu13-bindings    >=11.0.0.114 ; python_version < '3.14'", # Explicitly specify this one so it's properly resolved through uv --index
-    "tensorrt-cu13-libs        >=11.0.0.114 ; python_version < '3.14'", # Explicitly specify this one so it's properly resolved through uv --index
-    "tensorrt-rtx-cu13         >=1.5.0.114 ; python_version < '3.14'",
-    "tensorrt-rtx-cu13-bindings>=1.5.0.114 ; python_version < '3.14'",  # Explicitly specify this one so it's properly resolved through uv --index
-    "tensorrt-rtx-cu13-libs    >=1.5.0.114 ; python_version < '3.14'",  # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-cu13             >=11.0.0.114",
+    "tensorrt-cu13-bindings    >=11.0.0.114", # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-cu13-libs        >=11.0.0.114", # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-rtx-cu13         >=1.5.0.114",
+    "tensorrt-rtx-cu13-bindings>=1.5.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-rtx-cu13-libs    >=1.5.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
 ]
 amd = [
     "vsjetpack[cl]",
@@ -233,7 +233,10 @@ tensorrt-cu13-bindings = [
 ]
 tensorrt-cu13-libs = { index = "nvidia" }
 tensorrt-rtx-cu13 = { index = "nvidia" }
-tensorrt-rtx-cu13-bindings = { index = "nvidia" }
+tensorrt-rtx-cu13-bindings = [
+    { index = "nvidia", marker = "python_version < '3.14'" },
+    { index = "vs-wheels", marker = "python_version == '3.14'" },
+]
 tensorrt-rtx-cu13-libs = { index = "nvidia" }
 vapoursynth-mlrt-ov = { index = "testpypi" }
 vapoursynth-mlrt-ort = { index = "testpypi" }

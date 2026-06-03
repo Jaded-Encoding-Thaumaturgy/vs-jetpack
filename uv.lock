@@ -1656,15 +1656,45 @@ name = "tensorrt-cu13"
 version = "11.0.0.114"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
-    { name = "tensorrt-cu13-bindings", marker = "python_full_version < '3.14'" },
-    { name = "tensorrt-cu13-libs", marker = "python_full_version < '3.14'" },
+    { name = "tensorrt-cu13-bindings", version = "11.0.0.114", source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }, marker = "python_full_version == '3.14.*'" },
+    { name = "tensorrt-cu13-bindings", version = "11.0.0.114", source = { registry = "https://pypi.nvidia.com/" }, marker = "python_full_version < '3.14'" },
+    { name = "tensorrt-cu13-bindings", version = "11.0.0.114", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.15'" },
+    { name = "tensorrt-cu13-libs" },
 ]
 sdist = { url = "https://pypi.nvidia.com/tensorrt-cu13/tensorrt_cu13-11.0.0.114.tar.gz", hash = "sha256:9fce1a9b7f531fc3fd9b85d588b7826dff580a5129c3b5fc8e33fab4c01ddb38" }
 
 [[package]]
 name = "tensorrt-cu13-bindings"
 version = "11.0.0.114"
+source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
+resolution-markers = [
+    "python_full_version == '3.14.*' and platform_machine == 'x86_64'",
+    "python_full_version == '3.14.*' and platform_machine == 'AMD64'",
+    "python_full_version == '3.14.*' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
+    "python_full_version == '3.14.*' and platform_machine == 's390x'",
+]
+dependencies = [
+    { name = "tensorrt-cu13-libs", marker = "python_full_version == '3.14.*'" },
+]
+wheels = [
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/tensorrt-cu13_bindings-11.0.0.114/tensorrt_cu13_bindings-11.0.0.114-cp314-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:399e1a4a85d6218b00069c54c3b8ef3165f25129a93d1b9c86e5db9d0c454523" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/tensorrt-cu13_bindings-11.0.0.114/tensorrt_cu13_bindings-11.0.0.114-cp314-none-win_amd64.whl", hash = "sha256:3aad30772b7c70586a8694885e5d9f4537090b0f22d879a31fb4857c839030c3" },
+]
+
+[[package]]
+name = "tensorrt-cu13-bindings"
+version = "11.0.0.114"
 source = { registry = "https://pypi.nvidia.com/" }
+resolution-markers = [
+    "python_full_version == '3.13.*' and platform_machine == 'x86_64'",
+    "python_full_version < '3.13' and platform_machine == 'x86_64'",
+    "python_full_version == '3.13.*' and platform_machine == 'AMD64'",
+    "python_full_version == '3.13.*' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
+    "python_full_version < '3.13' and platform_machine == 'AMD64'",
+    "python_full_version < '3.13' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
+    "python_full_version == '3.13.*' and platform_machine == 's390x'",
+    "python_full_version < '3.13' and platform_machine == 's390x'",
+]
 wheels = [
     { url = "https://pypi.nvidia.com/tensorrt-cu13-bindings/tensorrt_cu13_bindings-11.0.0.114-cp312-none-manylinux_2_28_x86_64.whl", hash = "sha256:9ad9c94e15899660e4d755339733655c7e61bc3ee1fb68f9c44d21217e2dacd9" },
     { url = "https://pypi.nvidia.com/tensorrt-cu13-bindings/tensorrt_cu13_bindings-11.0.0.114-cp312-none-manylinux_2_35_aarch64.whl", hash = "sha256:62588fb86e656279cbbfe37f5330aaa38a31540f7adc322cb0b227d1c7ef7625" },
@@ -1672,6 +1702,25 @@ wheels = [
     { url = "https://pypi.nvidia.com/tensorrt-cu13-bindings/tensorrt_cu13_bindings-11.0.0.114-cp313-none-manylinux_2_28_x86_64.whl", hash = "sha256:9e69f5d6377612f182b0d73042df9d46bdc3eb47285f709e9ca4bd16eddcb36f" },
     { url = "https://pypi.nvidia.com/tensorrt-cu13-bindings/tensorrt_cu13_bindings-11.0.0.114-cp313-none-manylinux_2_35_aarch64.whl", hash = "sha256:1ae4aada2954ca10a25c344932e92ff2e937ea600953bc31ea9e327ed57e798d" },
     { url = "https://pypi.nvidia.com/tensorrt-cu13-bindings/tensorrt_cu13_bindings-11.0.0.114-cp313-none-win_amd64.whl", hash = "sha256:78f3e2aa550454430aaa435270659952c4c14538999adc3c916ab91ea42a6380" },
+]
+
+[[package]]
+name = "tensorrt-cu13-bindings"
+version = "11.0.0.114"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.15' and platform_machine == 'x86_64'",
+    "python_full_version >= '3.15' and platform_machine == 'AMD64'",
+    "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
+    "python_full_version >= '3.15' and platform_machine == 's390x'",
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6d/32/f995b44dd5870350888cbc95c87f0db8ccb7b2f6414c6f3be10cf2a60bfd/tensorrt_cu13_bindings-11.0.0.114-cp312-none-manylinux_2_28_x86_64.whl", hash = "sha256:9ad9c94e15899660e4d755339733655c7e61bc3ee1fb68f9c44d21217e2dacd9", size = 1237406, upload-time = "2026-05-27T18:18:54.763Z" },
+    { url = "https://files.pythonhosted.org/packages/87/1b/708e9b05bb67bd4ba7232339c1c452ca79d6e8c541d65df5bf49b8684a42/tensorrt_cu13_bindings-11.0.0.114-cp312-none-manylinux_2_35_aarch64.whl", hash = "sha256:62588fb86e656279cbbfe37f5330aaa38a31540f7adc322cb0b227d1c7ef7625", size = 1212981, upload-time = "2026-05-27T18:20:25.105Z" },
+    { url = "https://files.pythonhosted.org/packages/b0/57/e0b8b2cafb43d9d4f92eca31bb2403eb05618824862396a755dc219d0f3c/tensorrt_cu13_bindings-11.0.0.114-cp312-none-win_amd64.whl", hash = "sha256:72647fb19037c7363b778906235a904f428692a060a5dd09bce7e11d05745b68", size = 884627, upload-time = "2026-05-27T18:23:52.156Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/91/3f91d107584ca7c55563912b84b36e8a75626e6b3dfdbf94f9d73fd94bd3/tensorrt_cu13_bindings-11.0.0.114-cp313-none-manylinux_2_28_x86_64.whl", hash = "sha256:9e69f5d6377612f182b0d73042df9d46bdc3eb47285f709e9ca4bd16eddcb36f", size = 1237739, upload-time = "2026-05-27T18:22:02.474Z" },
+    { url = "https://files.pythonhosted.org/packages/21/20/88be78976ac002fa43a45b8215ad5d6c123b412a07d94023f166c4ae4e47/tensorrt_cu13_bindings-11.0.0.114-cp313-none-manylinux_2_35_aarch64.whl", hash = "sha256:1ae4aada2954ca10a25c344932e92ff2e937ea600953bc31ea9e327ed57e798d", size = 1212648, upload-time = "2026-05-27T18:18:26.067Z" },
+    { url = "https://files.pythonhosted.org/packages/3e/09/e1536fc6c5afdaecb14c9544f4f83c61187564bc57cf9c6a84f45619f151/tensorrt_cu13_bindings-11.0.0.114-cp313-none-win_amd64.whl", hash = "sha256:78f3e2aa550454430aaa435270659952c4c14538999adc3c916ab91ea42a6380", size = 884586, upload-time = "2026-05-27T18:22:41.867Z" },
 ]
 
 [[package]]
@@ -1689,20 +1738,67 @@ name = "tensorrt-rtx-cu13"
 version = "1.5.0.114"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
-    { name = "tensorrt-rtx-cu13-bindings", marker = "python_full_version < '3.14'" },
-    { name = "tensorrt-rtx-cu13-libs", marker = "python_full_version < '3.14'" },
+    { name = "tensorrt-rtx-cu13-bindings", version = "1.5.0.114", source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }, marker = "python_full_version == '3.14.*'" },
+    { name = "tensorrt-rtx-cu13-bindings", version = "1.5.0.114", source = { registry = "https://pypi.nvidia.com/" }, marker = "python_full_version < '3.14'" },
+    { name = "tensorrt-rtx-cu13-bindings", version = "1.5.0.114", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.15'" },
+    { name = "tensorrt-rtx-cu13-libs" },
 ]
 sdist = { url = "https://pypi.nvidia.com/tensorrt-rtx-cu13/tensorrt_rtx_cu13-1.5.0.114.tar.gz", hash = "sha256:bc6dcef205dd462c949d4e930696ee8e62fa0f98276e822df00d7cc063947738" }
 
 [[package]]
 name = "tensorrt-rtx-cu13-bindings"
 version = "1.5.0.114"
+source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
+resolution-markers = [
+    "python_full_version == '3.14.*' and platform_machine == 'x86_64'",
+    "python_full_version == '3.14.*' and platform_machine == 'AMD64'",
+    "python_full_version == '3.14.*' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
+    "python_full_version == '3.14.*' and platform_machine == 's390x'",
+]
+dependencies = [
+    { name = "tensorrt-rtx-cu13-libs", marker = "python_full_version == '3.14.*'" },
+]
+wheels = [
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/tensorrt-rtx-cu13_bindings-1.5.0.114/tensorrt_rtx_cu13_bindings-1.5.0.114-cp314-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:834450ebdc6134aba3340b88ccf1425841ef99dfa683591e7519c476eec4d9d1" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/tensorrt-rtx-cu13_bindings-1.5.0.114/tensorrt_rtx_cu13_bindings-1.5.0.114-cp314-none-win_amd64.whl", hash = "sha256:6e8b2ad61912139c4ffb4ea2476fd40b871e41ec709f0b4253c4b2f23054e258" },
+]
+
+[[package]]
+name = "tensorrt-rtx-cu13-bindings"
+version = "1.5.0.114"
 source = { registry = "https://pypi.nvidia.com/" }
+resolution-markers = [
+    "python_full_version == '3.13.*' and platform_machine == 'x86_64'",
+    "python_full_version < '3.13' and platform_machine == 'x86_64'",
+    "python_full_version == '3.13.*' and platform_machine == 'AMD64'",
+    "python_full_version == '3.13.*' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
+    "python_full_version < '3.13' and platform_machine == 'AMD64'",
+    "python_full_version < '3.13' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
+    "python_full_version == '3.13.*' and platform_machine == 's390x'",
+    "python_full_version < '3.13' and platform_machine == 's390x'",
+]
 wheels = [
     { url = "https://pypi.nvidia.com/tensorrt-rtx-cu13-bindings/tensorrt_rtx_cu13_bindings-1.5.0.114-cp312-none-manylinux_2_28_x86_64.whl", hash = "sha256:23a58107225db12e7d7ca32f09bb31b3d7065672e07afb6f2873189371b32253" },
     { url = "https://pypi.nvidia.com/tensorrt-rtx-cu13-bindings/tensorrt_rtx_cu13_bindings-1.5.0.114-cp312-none-win_amd64.whl", hash = "sha256:1a99a6e81e65cc70235f7abf0b88548552752c498f5a4b316af739915c5b0a5a" },
     { url = "https://pypi.nvidia.com/tensorrt-rtx-cu13-bindings/tensorrt_rtx_cu13_bindings-1.5.0.114-cp313-none-manylinux_2_28_x86_64.whl", hash = "sha256:6f821c9536112a7409ed0355878daffd464fb6b9c24e9907600ed67279d10a21" },
     { url = "https://pypi.nvidia.com/tensorrt-rtx-cu13-bindings/tensorrt_rtx_cu13_bindings-1.5.0.114-cp313-none-win_amd64.whl", hash = "sha256:e9d7a36cf1210675ec970efcea8b92a1cee862955c87dbdb7b8649764bbdf8e9" },
+]
+
+[[package]]
+name = "tensorrt-rtx-cu13-bindings"
+version = "1.5.0.114"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.15' and platform_machine == 'x86_64'",
+    "python_full_version >= '3.15' and platform_machine == 'AMD64'",
+    "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 's390x' and platform_machine != 'x86_64'",
+    "python_full_version >= '3.15' and platform_machine == 's390x'",
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a8/39/43e3f84cd77d455d3eb88621739b280662437739b1f656141758dd89ee05/tensorrt_rtx_cu13_bindings-1.5.0.114-cp312-none-manylinux_2_28_x86_64.whl", hash = "sha256:23a58107225db12e7d7ca32f09bb31b3d7065672e07afb6f2873189371b32253", size = 1194369, upload-time = "2026-05-27T02:01:14.242Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/e0/9b4a87741db9a2014f7c21d40fb1fe9f877b86c7b88ad1ec7f162367de34/tensorrt_rtx_cu13_bindings-1.5.0.114-cp312-none-win_amd64.whl", hash = "sha256:1a99a6e81e65cc70235f7abf0b88548552752c498f5a4b316af739915c5b0a5a", size = 861111, upload-time = "2026-05-27T02:04:08.765Z" },
+    { url = "https://files.pythonhosted.org/packages/60/c3/83f64dccd7a2119e23a5547990dd9409dfeb3a76cffba8c95003ee8cdfce/tensorrt_rtx_cu13_bindings-1.5.0.114-cp313-none-manylinux_2_28_x86_64.whl", hash = "sha256:6f821c9536112a7409ed0355878daffd464fb6b9c24e9907600ed67279d10a21", size = 1195513, upload-time = "2026-05-27T02:00:14.471Z" },
+    { url = "https://files.pythonhosted.org/packages/71/03/c3c9c9a77fc48ad3420e4150ae8b290193395f09daf8bc13b2a7bd338bc0/tensorrt_rtx_cu13_bindings-1.5.0.114-cp313-none-win_amd64.whl", hash = "sha256:e9d7a36cf1210675ec970efcea8b92a1cee862955c87dbdb7b8649764bbdf8e9", size = 861067, upload-time = "2026-05-27T02:01:36.621Z" },
 ]
 
 [[package]]
@@ -2892,12 +2988,16 @@ nvidia = [
     { name = "ml-dtypes" },
     { name = "onnx" },
     { name = "onnxconverter-common" },
-    { name = "tensorrt-cu13", marker = "python_full_version < '3.14'" },
-    { name = "tensorrt-cu13-bindings", marker = "python_full_version < '3.14'" },
-    { name = "tensorrt-cu13-libs", marker = "python_full_version < '3.14'" },
-    { name = "tensorrt-rtx-cu13", marker = "python_full_version < '3.14'" },
-    { name = "tensorrt-rtx-cu13-bindings", marker = "python_full_version < '3.14'" },
-    { name = "tensorrt-rtx-cu13-libs", marker = "python_full_version < '3.14'" },
+    { name = "tensorrt-cu13" },
+    { name = "tensorrt-cu13-bindings", version = "11.0.0.114", source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }, marker = "python_full_version == '3.14.*'" },
+    { name = "tensorrt-cu13-bindings", version = "11.0.0.114", source = { registry = "https://pypi.nvidia.com/" }, marker = "python_full_version < '3.14'" },
+    { name = "tensorrt-cu13-bindings", version = "11.0.0.114", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.15'" },
+    { name = "tensorrt-cu13-libs" },
+    { name = "tensorrt-rtx-cu13" },
+    { name = "tensorrt-rtx-cu13-bindings", version = "1.5.0.114", source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }, marker = "python_full_version == '3.14.*'" },
+    { name = "tensorrt-rtx-cu13-bindings", version = "1.5.0.114", source = { registry = "https://pypi.nvidia.com/" }, marker = "python_full_version < '3.14'" },
+    { name = "tensorrt-rtx-cu13-bindings", version = "1.5.0.114", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.15'" },
+    { name = "tensorrt-rtx-cu13-libs" },
     { name = "vapoursynth-bilateralgpu" },
     { name = "vapoursynth-bm3dcuda" },
     { name = "vapoursynth-dfttest2-cuda" },
@@ -3064,12 +3164,16 @@ requires-dist = [
     { name = "scipy", marker = "extra == 'mask'", specifier = ">=1.17.0" },
     { name = "scipy", marker = "extra == 'rg'", specifier = ">=1.17.0" },
     { name = "scipy", marker = "extra == 'scale'", specifier = ">=1.17.0" },
-    { name = "tensorrt-cu13", marker = "python_full_version < '3.14' and extra == 'nvidia'", specifier = ">=11.0.0.114", index = "https://pypi.nvidia.com/" },
+    { name = "tensorrt-cu13", marker = "extra == 'nvidia'", specifier = ">=11.0.0.114", index = "https://pypi.nvidia.com/" },
+    { name = "tensorrt-cu13-bindings", marker = "python_full_version == '3.14.*' and extra == 'nvidia'", specifier = ">=11.0.0.114", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "tensorrt-cu13-bindings", marker = "python_full_version < '3.14' and extra == 'nvidia'", specifier = ">=11.0.0.114", index = "https://pypi.nvidia.com/" },
-    { name = "tensorrt-cu13-libs", marker = "python_full_version < '3.14' and extra == 'nvidia'", specifier = ">=11.0.0.114", index = "https://pypi.nvidia.com/" },
-    { name = "tensorrt-rtx-cu13", marker = "python_full_version < '3.14' and extra == 'nvidia'", specifier = ">=1.5.0.114", index = "https://pypi.nvidia.com/" },
+    { name = "tensorrt-cu13-bindings", marker = "python_full_version >= '3.15' and extra == 'nvidia'", specifier = ">=11.0.0.114" },
+    { name = "tensorrt-cu13-libs", marker = "extra == 'nvidia'", specifier = ">=11.0.0.114", index = "https://pypi.nvidia.com/" },
+    { name = "tensorrt-rtx-cu13", marker = "extra == 'nvidia'", specifier = ">=1.5.0.114", index = "https://pypi.nvidia.com/" },
+    { name = "tensorrt-rtx-cu13-bindings", marker = "python_full_version == '3.14.*' and extra == 'nvidia'", specifier = ">=1.5.0.114", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "tensorrt-rtx-cu13-bindings", marker = "python_full_version < '3.14' and extra == 'nvidia'", specifier = ">=1.5.0.114", index = "https://pypi.nvidia.com/" },
-    { name = "tensorrt-rtx-cu13-libs", marker = "python_full_version < '3.14' and extra == 'nvidia'", specifier = ">=1.5.0.114", index = "https://pypi.nvidia.com/" },
+    { name = "tensorrt-rtx-cu13-bindings", marker = "python_full_version >= '3.15' and extra == 'nvidia'", specifier = ">=1.5.0.114" },
+    { name = "tensorrt-rtx-cu13-libs", marker = "extra == 'nvidia'", specifier = ">=1.5.0.114", index = "https://pypi.nvidia.com/" },
     { name = "typing-extensions", marker = "python_full_version < '3.13'", specifier = ">=4.15.0" },
     { name = "vapoursynth", specifier = ">=75" },
     { name = "vapoursynth-adaptivegrain", marker = "extra == 'aa'", specifier = ">=0.5.0" },
