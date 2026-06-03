@@ -244,7 +244,7 @@ def vfm(
             vfm, clip, postprocess, message="The post-processed clip must be the same framerate as the input clip!"
         )
 
-        fieldmatch = core.akarin.Select([fieldmatch, postprocess], fieldmatch, "x._Combed")
+        fieldmatch = core.cranexpr.Select([fieldmatch, postprocess], fieldmatch, "x._Combed")
 
     return fieldmatch
 
