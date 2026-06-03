@@ -402,7 +402,7 @@ class TRT(Backend):
         get_provider_folder().mkdir(parents=True, exist_ok=True)
         suffix = "fp16" if not self.fp16_blacklist_ops else f"fp16_block_{'_'.join(self.fp16_blacklist_ops)}"
         checksum = zlib.crc32(network)
-        fp16_path = network_path.parent / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
+        fp16_path = get_provider_folder() / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
 
         if fp16_path.is_file() and fp16_path.stat().st_size >= 1024:
             return fp16_path
@@ -440,7 +440,7 @@ class TRT(Backend):
 
         get_provider_folder().mkdir(parents=True, exist_ok=True)
         checksum = zlib.crc32(network)
-        bf16_path = network_path.parent / f"{network_path.stem}_{checksum:x}_bf16_io.onnx"
+        bf16_path = get_provider_folder() / f"{network_path.stem}_{checksum:x}_bf16_io.onnx"
 
         if bf16_path.is_file() and bf16_path.stat().st_size >= 1024:
             return bf16_path
