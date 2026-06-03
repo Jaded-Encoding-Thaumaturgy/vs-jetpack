@@ -3,7 +3,7 @@ from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Literal
 
-from jetpytools import copy_signature, to_arr
+from jetpytools import CustomValueError, copy_signature, to_arr
 
 from vstools import core, depth, vs
 
@@ -85,7 +85,7 @@ class OV_CPU(OV):  # noqa: N801
             object.__setattr__(self, "fp16", True)
 
         if self.fp16 and self.bf16:
-            raise ValueError("ORT CPU does not support both fp16 and bf16")
+            raise CustomValueError("ORT CPU does not support both fp16 and bf16")
 
     @property
     def config(self) -> Mapping[str, Any]:

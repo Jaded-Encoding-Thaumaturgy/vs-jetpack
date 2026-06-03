@@ -13,7 +13,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, SupportsInt
 
-from jetpytools import cachedproperty, classproperty, copy_signature, to_arr
+from jetpytools import CustomRuntimeError, CustomValueError, cachedproperty, classproperty, copy_signature, to_arr
 from packaging.version import Version
 
 if TYPE_CHECKING:
@@ -118,7 +118,7 @@ class TRT(Backend):
             object.__setattr__(self, "fp16", True)
 
         if self.fp16 and self.bf16:
-            raise ValueError("TensorRT backends do not support both fp16 and bf16")
+            raise CustomValueError("TensorRT backends do not support both fp16 and bf16")
 
         if self.verbosity is None:
             object.__setattr__(self, "verbosity", LOGGING_VERBOSITY_MAP.get(logger.getEffectiveLevel(), 2))
@@ -143,7 +143,7 @@ class TRT(Backend):
         bindings_version = Version(self.trt.__version__)
 
         if plugin_version.release[:3] != (version := bindings_version.release[:3]):
-            raise RuntimeError(
+            raise CustomRuntimeError(
                 f"TensorRT plugin version {plugin_version} does not match TensorRT bindings version {bindings_version}"
             )
 
@@ -269,7 +269,7 @@ class TRT(Backend):
 
         if not parser.parse_from_file(str(network_path)):
             errors = [str(parser.get_error(i)) for i in range(parser.num_errors)]
-            raise RuntimeError(f"Failed to parse ONNX model: {network_path}\n" + "\n".join(errors))
+            raise CustomRuntimeError(f"Failed to parse ONNX model: {network_path}\n" + "\n".join(errors))
 
         config = builder.create_builder_config()
 
@@ -291,7 +291,7 @@ class TRT(Backend):
         serialized = builder.build_serialized_network(network, config)
 
         if not serialized:
-            raise RuntimeError(f"TensorRT engine build failed for {network_path}")
+            raise CustomRuntimeError(f"TensorRT engine build failed for {network_path}")
 
         engine_path.write_bytes(serialized)
 
@@ -371,7 +371,7 @@ class TRT(Backend):
             if network.num_inputs == 1:
                 input_name = input_names[0]
             else:
-                raise ValueError(f"Input name '{input_name}' not found in network inputs: {input_names}")
+                raise CustomValueError(f"Input name '{input_name}' not found in network inputs: {input_names}")
 
         if self.static_shape:
             shape = self.trt.Dims((1, channels, opt_shapes[1], opt_shapes[0]))

@@ -9,7 +9,7 @@ from logging import getLogger
 from pathlib import Path
 from typing import Any
 
-from jetpytools import CustomRuntimeError, copy_signature, to_arr
+from jetpytools import CustomRuntimeError, CustomValueError, copy_signature, to_arr
 from packaging.version import Version
 
 from vstools import core, depth, vs
@@ -76,7 +76,7 @@ class MIGX(BackendAutoConvertFloat):
             object.__setattr__(self, "fp16", True)
 
         if self.fp16 and self.bf16:
-            raise ValueError("MIGX backend does not support both fp16 and bf16")
+            raise CustomValueError("MIGX backend does not support both fp16 and bf16")
 
     @property
     def version(self) -> tuple[int, int, int]:
@@ -85,12 +85,12 @@ class MIGX(BackendAutoConvertFloat):
 
         p = subprocess.run(["cat", "/opt/rocm/.info/version"], capture_output=True, text=True)
         if p.returncode != 0:
-            raise RuntimeError(f"Failed to get MIGraphx driver version\n\n{p.stderr}\n\n{p.stdout}")
+            raise CustomRuntimeError(f"Failed to get MIGraphx driver version\n\n{p.stderr}\n\n{p.stdout}")
 
         migraphx_driver_version = Version(p.stdout)
 
         if plugin_version.release[:3] != (version := migraphx_driver_version.release[:3]):
-            raise RuntimeError(
+            raise CustomRuntimeError(
                 f"MIGraphx plugin version {plugin_version} does not match driver version {migraphx_driver_version}"
             )
 
