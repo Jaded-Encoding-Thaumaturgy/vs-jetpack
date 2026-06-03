@@ -148,7 +148,6 @@ async def download(
 @artifact_app.command(help="List built TensorRT & MIGraphxX artifacts.", help_formatter=_custom_help_formatter)
 @onnx_app.command(help="List downloaded ONNX models.", help_formatter=_custom_help_formatter)
 def show(
-    *provider: Annotated[str, cyclopts.Parameter(name="--provider")],
     global_: Annotated[
         bool,
         cyclopts.Parameter(
@@ -162,8 +161,6 @@ def show(
     List downloaded ONNX models or built TensorRT & MIGraphxX artifacts.
 
     Args:
-        provider: The provider(s) to show. Supports specifying version pin (e.g. ArtCNN==v1.6.2).
-            If not specified, all files are listed.
         global_: Whether to show models in the global folder.
     """
     (cmd, *_), _, _ = app.parse_commands()
@@ -178,23 +175,13 @@ def show(
         case _:
             raise ValueError
 
-    if not provider:
-        files = (f for f in folder.glob("**/*", case_sensitive=False) if f.suffix in ext)
-        return print(pretty_repr(sorted(files, reverse=True)))
-
-    for spec in provider:
-        model_name, pinned_version = _parse_model_spec(spec)
-        spec_folder = folder / model_name / (pinned_version or "")
-
-        files = (f for f in spec_folder.glob("**/*", case_sensitive=False) if f.suffix in ext)
-        folder_repr = pretty_repr(sorted(files, reverse=True))
-        print(folder_repr)
+    files = (f for f in folder.glob("**/*", case_sensitive=False) if f.suffix in ext)
+    return print(pretty_repr(sorted(files, reverse=True)))
 
 
 @artifact_app.command(help="Clear built TensorRT & MIGraphxX artifacts.", help_formatter=_custom_help_formatter)
 @onnx_app.command(help="Clear downloaded ONNX models.", help_formatter=_custom_help_formatter)
 def clear(
-    *provider: Annotated[str, cyclopts.Parameter(name="--provider")],
     global_: Annotated[
         bool,
         cyclopts.Parameter(negative=(), show_default=False, env_var=["VSSCALE_CLEAR_GLOBAL", "VSSCALE_GLOBAL"]),
@@ -206,8 +193,6 @@ def clear(
     If no model specs are provided, the entire directory is cleared.
 
     Args:
-        provider: Specific model namespace(s) or model-version specification(s) to clear
-            (e.g., "ArtCNN" or "ArtCNN==v1.6.2"). If omitted, all files will be deleted.
         global_: Whether to clear files in the global folder.
     """
     (cmd, *_), _, _ = app.parse_commands()
@@ -220,13 +205,7 @@ def clear(
         case _:
             raise ValueError
 
-    if not provider:
-        return shutil.rmtree(folder, ignore_errors=False)
-
-    for spec in provider:
-        model_name, pinned_version = _parse_model_spec(spec)
-        spec_folder = folder / model_name / (pinned_version or "")
-        shutil.rmtree(spec_folder, ignore_errors=False)
+    return shutil.rmtree(folder, ignore_errors=True)
 
 
 def _parse_model_spec(spec: str) -> tuple[str, str | None]:
