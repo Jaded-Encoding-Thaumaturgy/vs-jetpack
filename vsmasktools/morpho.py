@@ -511,9 +511,9 @@ class Morpho:
 
     @copy_signature(top_hat)
     @inject_self
-    def white_hate(self, *args: Any, **kwargs: Any) -> vs.VideoNode:
+    def white_hat(self, *args: Any, **kwargs: Any) -> vs.VideoNode:
         """Alias for [top_hat][vsmasktools.Morpho.top_hat]."""
-        return self.top_hat(*args, **{"func": self.white_hate} | kwargs)
+        return self.top_hat(*args, **{"func": self.white_hat} | kwargs)
 
     @inject_self
     def bottom_hat(

@@ -26,35 +26,18 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        vapoursynth-version: [73]
-        python-version: ["3.12", "3.14"]
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
-      - name: Set up VapourSynth ${{ matrix.vapoursynth-version }}
-        uses: Jaded-Encoding-Thaumaturgy/setup-vapoursynth@v1
-        with:
-          vapoursynth-version: ${{ matrix.vapoursynth-version }}
-          python-version: ${{ matrix.python-version }}
-
-      - name: Set up akarin
-        uses: ./.github/actions/setup-akarin
-        with:
-          akarin-version: 6d7c733b3014a42be75299427b5c35f56f02a47a
-
       - name: Install dependencies
-        run: uv sync --locked --all-extras --group test --no-dev
+        run: uv sync --locked --no-dev --group test --extra basic --extra kernels --extra expr --extra rg
 
       - name: Run tests
         run: uv run pytest --cov-report=term-missing:skip-covered --cov=vskernels --cov=vstools --cov=vsexprtools tests

@@ -1,19 +1,21 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from logging import INFO, Handler, Logger, LogRecord, getLogger
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from jetpytools import CustomIntEnum, SPathLike
 
-from vsjetpack import require_jet_dependency
 from vstools import core, vs
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 from .base import CacheIndexer, Indexer
 
-__all__ = ["FFMS2", "IMWRI", "LSMAS", "BestSource", "CarefulSource", "ZipSource"]
+__all__ = ["FFMS2", "BestSource", "ZipSource"]
 
 
 # Video indexers
@@ -72,7 +74,7 @@ class BestSource(CacheIndexer):
         cachemode: int = CacheMode.ABSOLUTE,
         rff: int | None = True,
         showprogress: int | None = True,
-        show_pretty_progress: int | None = False,
+        show_pretty_progress: int | Console | None = False,
         **kwargs: Any,
     ) -> None:
         """
@@ -101,8 +103,10 @@ class BestSource(CacheIndexer):
         if kwargs["cachemode"] <= cls.CacheMode.CACHE_PATH_WRITE and cls._cache_arg_name not in kwargs:
             kwargs[cls._cache_arg_name] = None
 
-        if kwargs.pop("show_pretty_progress"):
-            with _bs_pretty_progress():
+        if p := kwargs.pop("show_pretty_progress"):
+            from rich.console import Console
+
+            with _bs_pretty_progress(p if isinstance(p, Console) else None):
                 return super().source_func(path, **kwargs)
 
         return super().source_func(path, **kwargs)
@@ -123,38 +127,6 @@ class FFMS2(CacheIndexer):
     _ext = ".ffindex"
 
 
-class LSMAS(CacheIndexer):
-    """
-    [L-SMASH-Works](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works) indexer.
-
-    Unlike the plugin's default behavior, the indexer cache file will be stored in `.vsjet/vssource`
-    next to the script file.
-
-    When `cachefile=None`, the behavior falls back to the default cache handling defined by the plugin itself.
-    """
-
-    _source_func = core.lazy.lsmas.LWLibavSource
-    _cache_arg_name = "cachefile"
-    _ext = ".lwi"
-
-
-class CarefulSource(Indexer):
-    """
-    CarefulSource indexer
-    """
-
-    _source_func = core.lazy.cs.ImageSource
-
-
-# Image indexers
-class IMWRI(Indexer):
-    """
-    ImageMagick Writer-Reader indexer
-    """
-
-    _source_func = core.lazy.imwri.Read
-
-
 class ZipSource(Indexer):
     """
     vszip image reader indexer
@@ -164,8 +136,7 @@ class ZipSource(Indexer):
 
 
 @contextmanager
-@require_jet_dependency("rich")
-def _bs_pretty_progress() -> Iterator[None]:
+def _bs_pretty_progress(console: Console | None = None) -> Generator[None]:
     from rich.console import Console
     from rich.progress import BarColumn, Progress, TaskID, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 
@@ -179,7 +150,7 @@ def _bs_pretty_progress() -> Iterator[None]:
             self.task_id = task_id
 
         @contextmanager
-        def with_logger(self, logger: Logger) -> Iterator[None]:
+        def with_logger(self, logger: Logger) -> Generator[None]:
             logger.addHandler(self)
 
             try:
@@ -207,7 +178,7 @@ def _bs_pretty_progress() -> Iterator[None]:
         TextColumn("{task.percentage:>3.0f}%"),
         TimeElapsedColumn(),
         TimeRemainingColumn(),
-        console=Console(stderr=True),
+        console=console or Console(stderr=True),
         transient=True,
     )
 

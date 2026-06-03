@@ -9,7 +9,6 @@ from typing import Any
 
 import jetpytools
 import mkdocs_gen_files
-import vspreview
 import vstransitions
 from orderedsets import FrozenOrderedSet
 
@@ -39,7 +38,6 @@ MODULES = [
     vsjetpack,
     vskernels,
     vsmasktools,
-    vspreview,
     vsrgtools,
     vsscale,
     vssource,
@@ -48,11 +46,11 @@ MODULES = [
 ]
 
 # Excluded submodules.
-EXCLUDE = [FrozenOrderedSet(path.split(".")) for path in {"vspreview"}]
+EXCLUDE = [FrozenOrderedSet(path.split(".")) for path in set[str]()]
 
 # Explicitly included submodules that would otherwise not have been processed.
 # vsmasktools.edge submodules are `_` prefixed, so include the overarching module.
-INCLUDE = [FrozenOrderedSet(path.split(".")) for path in {"vsmasktools.edge", "vspreview.api"}]
+INCLUDE = [FrozenOrderedSet(path.split(".")) for path in {"vsmasktools.edge"}]
 
 
 def is_excluded(s: Iterable[Any]) -> bool:

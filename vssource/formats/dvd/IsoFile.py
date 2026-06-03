@@ -1,12 +1,15 @@
 # noqa: N999
+from __future__ import annotations
 
+import os
 import warnings
+from collections.abc import Callable
 from datetime import timedelta
 from fractions import Fraction
 from itertools import count
-from typing import cast
+from typing import Any, cast
 
-from jetpytools import CustomValueError, DependencyNotFoundError, SPath
+from jetpytools import CustomValueError, SPath
 
 from vstools import core, get_prop, vs
 
@@ -27,6 +30,8 @@ from .parsedvd import (
 from .title import Title
 from .utils import absolute_time_from_timecode
 
+type SetOuput = Callable[[vs.RawNode, str], Any]
+
 __all__ = ["IsoFile"]
 
 
@@ -34,20 +39,18 @@ class IsoFile:
     ifo0: IFO0
     vts: list[IFOX]
     title_count: int
+    set_output: SetOuput
 
-    def __init__(
-        self,
-        path: SPath | str,
-    ):
-        if not hasattr(core, "dvdsrc2"):
-            raise DependencyNotFoundError(
-                self.__class__, "", "dvdsrc2 is needed for {cfunc} to work!", cfunc=self.__class__
-            )
-
+    def __init__(self, path: os.PathLike[str] | str, set_output: SetOuput | None = None) -> None:
         self.iso_path = SPath(path).absolute()
 
         if not self.iso_path.exists():
             raise CustomValueError('"path" needs to point to a .ISO or a dir root of DVD!', str(path), self.__class__)
+
+        if set_output is None:
+            self.set_output = lambda node, _: node.set_output(max(vs.get_outputs(), default=-1) + 1)
+        else:
+            self.set_output = set_output
 
         def _getifo(i: int) -> bytes:
             return cast(bytes, core.dvdsrc2.Ifo(str(self.iso_path), i))
@@ -262,6 +265,7 @@ class IsoFile:
             durationcodesf,
             audios,
             patched_end_chapter,
+            self.set_output,
         )
 
     def __repr__(self) -> str:

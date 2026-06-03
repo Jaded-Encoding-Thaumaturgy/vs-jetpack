@@ -6,6 +6,7 @@ from collections.abc import Callable, Iterable, Sequence
 from itertools import groupby
 from logging import getLogger
 from math import ceil
+from types import NotImplementedType
 from typing import Any, SupportsIndex
 
 from jetpytools import CustomIndexError, CustomRuntimeError, FuncExcept, StrList, SupportsString, normalize_seq, to_arr
@@ -26,6 +27,8 @@ from vstools import (
 
 if sys.version_info >= (3, 14):
     from string.templatelib import Template
+else:
+    Template = NotImplementedType
 
 from .error import CustomExprError
 from .exprop import ExprList, ExprOp, ExprOpBase, TupleExprList
@@ -139,9 +142,13 @@ def combine_expr(
 
     args = zip(prefixes, evars, suffixes)
 
-    has_op = (n >= operator.n_op) or any(x is not None for x in (suffix, prefix, expr_suffix, expr_prefix))
+    # Only an operator with 2 arguments can be duplicated
+    if operator.n_op == 2:
+        has_op = (n >= operator.n_op) or any(x is not None for x in (suffix, prefix, expr_suffix, expr_prefix))
 
-    operators = operator * max(n - 1, int(has_op))
+        operators = operator * max(n - 1, int(has_op))
+    else:
+        operators = operator
 
     return ExprList([to_arr(expr_prefix), args, operators, to_arr(expr_suffix)])
 

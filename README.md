@@ -1,54 +1,78 @@
 # vs-jetpack
 
-[![Documentation](https://img.shields.io/badge/API%20Docs-purple)](https://jaded-encoding-thaumaturgy.github.io/vs-jetpack/) [![Coverage Status](https://coveralls.io/repos/github/Jaded-Encoding-Thaumaturgy/vs-jetpack/badge.svg?branch=main)](https://coveralls.io/github/Jaded-Encoding-Thaumaturgy/vs-jetpack?branch=main) [![PyPI Version](https://img.shields.io/pypi/v/vsjetpack)](https://pypi.org/project/vsjetpack/)
+[![Documentation](https://img.shields.io/badge/API%20Docs-purple)](https://jaded-encoding-thaumaturgy.github.io/vs-jetpack/)
+[![Coverage Status](https://coveralls.io/repos/github/Jaded-Encoding-Thaumaturgy/vs-jetpack/badge.svg?branch=main)](https://coveralls.io/github/Jaded-Encoding-Thaumaturgy/vs-jetpack?branch=main)
+[![PyPI Version](https://img.shields.io/pypi/v/vsjetpack)](https://pypi.org/project/vsjetpack/)
 
 `vs-jetpack` provides a collection of Python modules for filtering video using [VapourSynth](https://github.com/vapoursynth/vapoursynth).
 These include modules for scaling, masking, denoising, debanding, dehaloing, deinterlacing,
 and antialiasing, as well as general utility functions.
 
-For support you can check out the [JET Discord server](https://discord.gg/XTpc6Fa9eB). <br><br>
+For support you can check out the [JET Discord server](https://discord.gg/XTpc6Fa9eB).
 
 ## Documentation
 
 You can find the full API reference on the project's documentation [site](https://jaded-encoding-thaumaturgy.github.io/vs-jetpack/api/vstools/).
 
-If you're looking for workflow recommendations, the JET Encoding Guide is available [here](https://github.com/Jaded-Encoding-Thaumaturgy/JET-guide). <br><br>
+If you're looking for workflow recommendations, the JET Encoding Guide is available [here](https://github.com/Jaded-Encoding-Thaumaturgy/JET-guide).
 
-## How to install
+## Installation
 
-`vsjetpack` is distributed via **PyPI**, and the latest stable release can be installed using:
+`vsjetpack` relies on a number of VapourSynth plugins to function.
+Most of these plugins are now available as Python packages on PyPI and can be installed automatically using **extras**:
 
-```sh
-pip install vsjetpack
-```
+### Breakdown
 
-As of version **1.0.0**, prebuilt wheels are also provided in the [**GitHub Releases**](https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/releases).
-<br><br>
+Most extras are hierarchical. For example, `denoise` includes all plugins from `aa`, which in turn includes `mask`, and so on.
 
-## Dependencies
+| Extra             | Purpose              | Included Plugins / Packages                                                        |
+| :---------------- | :------------------- | :--------------------------------------------------------------------------------- |
+| **`source`**      | Clip Indexing        | `bestsource`, `ffms2`, `d2vsource`, `dvdsrc2`                                      |
+| **`kernels`**     | Resizing             | `resize2`, `descale`, `vs-placebo`                                                 |
+| **`rg`**          | Repair & Smoothing   | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                           |
+| **`mask`**        | Masking              | `adaptivegrain`, `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)           |
+| **`aa`**          | Anti-aliasing        | `bwdif`, `eedi3`, `sangnom`, `sneedif`, `znedi3` (+ `mask`)                        |
+| **`denoise`**     | Denoising            | `bm3d`, `dctfilter`, `dfttest2`, `deblock`, `mvtools`, `nlm-ispc`, `wnnm` (+ `aa`) |
+| **`deband`**      | Debanding            | `vsnoise` (+ `denoise`)                                                            |
+| **`deinterlace`** | Deinterlacing        | `dmetrics`, `vivtc` (+ `denoise`)                                                  |
+| **`full`**        | All CPU-based extras | All of the above                                                                   |
+| **`cl`**          | Open CL              | `knlmeanscl`,                                                                      |
+| **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `nlm-cuda`, `dfttest2-[nvrtc,cuda]`                    |
+| **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]` (+ `cl`)                                     |
 
-Note that `vsjetpack` only provides Python functions, many of them wrapping or combining existing plugins.
-You will need to install these plugins separately, for example using [vsrepo](https://github.com/vapoursynth/vsrepo).
+> [!IMPORTANT]
+> Some plugins distribute their wheels through our custom package index instead of PyPI.
+>
+> Add `--extra-index-url` to ensure pip can locate all required packages:
+>
+> ```bash
+> pip install vsjetpack[full,nvidia] --extra-index-url https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple
+> ```
+>
+> For more information, [click here](https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels).
 
-| **Essential**                                                                          | **Source filters**                                                    | **Optional**                                                                 |                                                                              |
-| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -----------------------------------------------------------------------------|
-| [akarin](https://github.com/Jaded-Encoding-Thaumaturgy/akarin-vapoursynth-plugin) [^1] | [bestsource](https://github.com/vapoursynth/bestsource)               | [adaptivegrain](https://github.com/kageru/adaptivegrain)                     | [knlmeanscl](https://github.com/Khanattila/KNLMeansCL)                       |
-| [resize2](https://github.com/Jaded-Encoding-Thaumaturgy/vapoursynth-resize2) [^1]      | [carefulsource](https://github.com/wwww-wwww/carefulsource)           | [awarp](https://github.com/HolyWu/VapourSynth-AWarp)                         | [manipmv](https://github.com/Mikewando/manipulate-motion-vectors)            |
-| [vszip](https://github.com/dnjulek/vapoursynth-zip)                                    | [d2vsource](https://github.com/dwbuiten/d2vsource)                    | [bilateralgpu](https://github.com/WolframRhodium/VapourSynth-BilateralGPU)   | [mvtools](https://github.com/dubhater/vapoursynth-mvtools)                   |
-| [zsmooth](https://github.com/adworacz/zsmooth)                                         | [dvdsrc2](https://github.com/jsaowji/dvdsrc2)                         | [bm3d](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D)       | [nlm-cuda](https://github.com/AmusementClub/vs-nlm-cuda)                     |
-|                                                                                        | [ffms2](https://github.com/FFMS/ffms2)                                | [bm3dcuda](https://github.com/WolframRhodium/VapourSynth-BM3DCUDA)           | [nlm-ispc](https://github.com/AmusementClub/vs-nlm-ispc)                     |
-|                                                                                        | [imwri](https://github.com/vapoursynth/vs-imwri)                      | [bm3dmetal](https://github.com/Sunflower-Dolls/Vapoursynth-BM3DMETAL)        | [placebo](https://github.com/sgt0/vs-placebo)                                |
-|                                                                                        | [lsmas](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works) | [bwdif](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-Bwdif)     | [sangnom](https://github.com/dubhater/vapoursynth-sangnom)                   |
-|                                                                                        |                                                                       | [dctfilter](https://github.com/AmusementClub/VapourSynth-DCTFilter)          | [scxvid](https://github.com/dubhater/vapoursynth-scxvid)                     |
-|                                                                                        |                                                                       | [deblock](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-Deblock) | [sneedif](https://github.com/Jaded-Encoding-Thaumaturgy/vapoursynth-SNEEDIF) |
-|                                                                                        |                                                                       | [descale](https://github.com/Jaded-Encoding-Thaumaturgy/vapoursynth-descale) | [sub](https://github.com/vapoursynth/subtext)                                |
-|                                                                                        |                                                                       | [dfttest](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-DFTTest) | [tcanny](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-TCanny)   |
-|                                                                                        |                                                                       | [dfttest2](https://github.com/AmusementClub/vs-dfttest2)                     | [tedgemask](https://github.com/dubhater/vapoursynth-tedgemask)               |
-|                                                                                        |                                                                       | [dmetrics](https://github.com/vapoursynth/dmetrics)                          | [vivtc](https://github.com/vapoursynth/vivtc)                                |
-|                                                                                        |                                                                       | [edgemasks](https://github.com/HolyWu/VapourSynth-EdgeMasks)                 | [vs-mlrt](https://github.com/AmusementClub/vs-mlrt)                          |
-|                                                                                        |                                                                       | [eedi2](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI2)     | [vs-noise](https://github.com/wwww-wwww/vs-noise)                            |
-|                                                                                        |                                                                       | [eedi3](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI3)     | [wnnm](https://github.com/AmusementClub/VapourSynth-WNNM)                    |
-|                                                                                        |                                                                       | [fmtconv](https://gitlab.com/EleonoreMizo/fmtconv/)                          | [wwxd](https://github.com/dubhater/vapoursynth-wwxd)                         |
-|                                                                                        |                                                                       | [hysteresis](https://github.com/sgt0/vapoursynth-hysteresis)                 | [znedi3](https://github.com/sekrit-twc/znedi3)                               |
+Not all extras have prebuilt wheels on every platform:
 
-[^1]: Can be considered mandatory
+| Extra         | Windows x64 | Linux (glibc 2.35+) | Linux (musl 1.2+) | macOS (Intel/ARM) 15.0+ |
+| :------------ | :---------: | :-----------------: | :---------------: | :---------------------: |
+| `source`      |     ✅      |         ✅          |        ✅         |           ✅            |
+| `kernels`     |     ✅      |         ✅          |        ✅         |           ✅            |
+| `rg`          |     ✅      |         ✅          |        ✅         |           ✅            |
+| `mask`        |     ✅      |         ✅          |        ✅         |           ✅            |
+| `aa`          |     ✅      |         ✅          |        ✅         |           ✅            |
+| `denoise`     |     ✅      |         ✅          |        ❌         |         ⚠️[^1]          |
+| `deband`      |     ✅      |         ✅          |        ❌         |           ✅            |
+| `deinterlace` |     ✅      |         ✅          |        ❌         |           ✅            |
+| `full`        |     ✅      |         ✅          |        ❌         |           ⚠️            |
+| `cl`          |     ✅      |         ✅          |        ❌         |           ✅            |
+| `nvidia`      |     ✅      |       ⚠️[^2]        |        ❌         |           ❌            |
+| `amd`         |     ✅      |         ✅          |        ❌         |           ❌            |
+
+> [!TIP]
+> If a plugin is unavailable for your platform, you may need to build it manually.
+>
+> Refer to the plugin repository for platform-specific build instructions.
+
+[^1]: `wnnm` isn't available on macOS.
+
+[^2]: Requires Glibc 2.39+ for `bilateralgpu`.

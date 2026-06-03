@@ -47,6 +47,7 @@ from vstools import (
     PrimariesLike,
     PropEnum,
     Range,
+    RangeLike,
     Transfer,
     TransferLike,
     VideoFormatLike,
@@ -748,6 +749,10 @@ class Resampler(BaseScaler):
         transfer_in: TransferLike | None = None,
         primaries: PrimariesLike | None = None,
         primaries_in: PrimariesLike | None = None,
+        range: RangeLike | None = None,
+        range_in: RangeLike | None = None,
+        chromaloc: ChromaLocation | None = None,
+        chromaloc_in: ChromaLocation | None = None,
         **kwargs: Any,
     ) -> vs.VideoNode:
         """
@@ -768,8 +773,12 @@ class Resampler(BaseScaler):
             matrix_in: An optional input matrix for color transformations.
             transfer: An optional color transformation transfer to apply.
             transfer_in: An optional input transfer for color transformations.
-            primaries: Optional color transformation primaries to apply.
-            primaries_in: Optional input primaries for color transformations.
+            primaries: An optional color transformation primaries to apply.
+            primaries_in: An optional input primaries for color transformations.
+            range: An optional range transformation to apply.
+            range_in: An optional input range for color transformations.
+            chromaloc: An optional chroma location transformation to apply.
+            chromaloc_in: An optional input chroma location for subsampling purposes.
             **kwargs: Additional keyword arguments passed to the `resample_function`.
 
         Returns:
@@ -777,7 +786,19 @@ class Resampler(BaseScaler):
         """
 
         resample_args = self.get_resample_args(
-            clip, format, matrix, matrix_in, transfer, transfer_in, primaries, primaries_in, **kwargs
+            clip,
+            format,
+            matrix,
+            matrix_in,
+            transfer,
+            transfer_in,
+            primaries,
+            primaries_in,
+            range,
+            range_in,
+            chromaloc,
+            chromaloc_in,
+            **kwargs,
         )
 
         if vs.__version__ < (74, 0):
@@ -797,6 +818,10 @@ class Resampler(BaseScaler):
         transfer_in: TransferLike | None = None,
         primaries: PrimariesLike | None = None,
         primaries_in: PrimariesLike | None = None,
+        range: RangeLike | None = None,
+        range_in: RangeLike | None = None,
+        chromaloc: ChromaLocation | None = None,
+        chromaloc_in: ChromaLocation | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """
@@ -815,6 +840,10 @@ class Resampler(BaseScaler):
             transfer_in: The input transfer for color transformation.
             primaries: The primaries for color transformation.
             primaries_in: The input primaries for color transformation.
+            range: The range for color transformation.
+            range_in: The range input range for color transformation.
+            chromaloc: The chroma location to apply.
+            chromaloc_in: The chroma location input for subsampling purposes.
             **kwargs: Additional keyword arguments for resampling.
 
         Returns:
@@ -831,6 +860,10 @@ class Resampler(BaseScaler):
                     "transfer_in": Transfer.from_param_with_fallback(transfer_in),
                     "primaries": Primaries.from_param_with_fallback(primaries),
                     "primaries_in": Primaries.from_param_with_fallback(primaries_in),
+                    "range": Range.from_param_with_fallback(range),
+                    "range_in": Range.from_param_with_fallback(range_in),
+                    "chromaloc": ChromaLocation.from_param_with_fallback(chromaloc),
+                    "chromaloc_in": ChromaLocation.from_param_with_fallback(chromaloc_in),
                 }
                 | self.kwargs
                 | kwargs
@@ -1051,6 +1084,10 @@ class Kernel(Scaler, Descaler, Resampler):
         transfer_in: TransferLike | None = None,
         primaries: PrimariesLike | None = None,
         primaries_in: PrimariesLike | None = None,
+        range: RangeLike | None = None,
+        range_in: RangeLike | None = None,
+        chromaloc: ChromaLocation | None = None,
+        chromaloc_in: ChromaLocation | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """
@@ -1069,6 +1106,10 @@ class Kernel(Scaler, Descaler, Resampler):
             transfer_in: Source color transfer.
             primaries: Target color primaries.
             primaries_in: Source color primaries.
+            range: Target color range.
+            range_in: Source color range.
+            chromaloc: Target chroma location.
+            chromaloc_in: Source chroma location.
             **kwargs: Additional arguments to pass to the resample function.
 
         Returns:
@@ -1082,6 +1123,10 @@ class Kernel(Scaler, Descaler, Resampler):
             "transfer_in": Transfer.from_param_with_fallback(transfer_in),
             "primaries": Primaries.from_param_with_fallback(primaries),
             "primaries_in": Primaries.from_param_with_fallback(primaries_in),
+            "range": Range.from_param_with_fallback(range),
+            "range_in": Range.from_param_with_fallback(range_in),
+            "chromaloc": ChromaLocation.from_param_with_fallback(chromaloc),
+            "chromaloc_in": ChromaLocation.from_param_with_fallback(chromaloc_in),
         } | self.get_params_args(False, clip, **kwargs)
 
 

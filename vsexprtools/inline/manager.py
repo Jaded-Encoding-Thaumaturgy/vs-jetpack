@@ -5,7 +5,7 @@ using standard Python syntax.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Generator, Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from functools import cache
 from inspect import currentframe
@@ -32,7 +32,7 @@ def inline_expr(
     *,
     enable_polyfills: bool = False,
     **kwargs: Any,
-) -> Iterator[InlineExprWrapper]:
+) -> Generator[InlineExprWrapper]:
     """
     A context manager for building and evaluating VapourSynth expressions in a Pythonic way.
 

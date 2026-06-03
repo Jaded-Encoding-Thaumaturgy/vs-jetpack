@@ -1,35 +1,32 @@
 from __future__ import annotations
 
-import re
+import os
 from abc import abstractmethod
 from collections.abc import Iterable
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
 from pathlib import Path
-from typing import Any, ClassVar, Literal, NamedTuple, Self, cast, overload
+from typing import Any, Literal, Self, cast, overload
 
 from jetpytools import (
+    CustomRuntimeError,
     CustomValueError,
     FilePathType,
     FuncExcept,
     LinearRangeLut,
-    Sentinel,
     SPath,
     check_perms,
-    classproperty,
     fallback,
-    inject_self,
 )
 
-from ..enums import Matrix, SceneChangeMode
 from ..exceptions import FramesLengthError, UnsupportedTimecodeVersionError
 from ..utils import DynamicClipsCache, PackageStorage
 from ..vs_proxy import VSObject, vs
 from .ranges import replace_ranges
 from .render import clip_async_render, clip_data_gather
 
-__all__ = ["Keyframes", "LWIndex", "Timecodes"]
+__all__ = ["Keyframes", "Timecodes"]
 
 
 @cache
@@ -370,12 +367,6 @@ class Keyframes(list[int]):
     They follow the convention of signaling the start of the new scene.
     """
 
-    V1 = 1
-    XVID = -1
-
-    WWXD: ClassVar = SceneChangeMode.WWXD
-    SCXVID: ClassVar = SceneChangeMode.SCXVID
-
     class _Scenes(dict[int, range]):
         __slots__ = ("indices",)
 
@@ -385,23 +376,128 @@ class Keyframes(list[int]):
 
             self.indices = LinearRangeLut(self)
 
-    def __init__(self, iterable: Iterable[int] = [], *, _dummy: bool = False) -> None:
+    def __init__(self, iterable: Iterable[int] = []) -> None:
         super().__init__(sorted(iterable))
-
-        self._dummy = _dummy
-
         self.scenes = self.__class__._Scenes(self)
 
-    @staticmethod
-    def _get_unique_path(clip: vs.VideoNode, key: str) -> SPath:
-        key = SPath(str(key)).stem + f"_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}"
+    def to_file(
+        self,
+        out: str | os.PathLike[str],
+        fmt: Literal["v1", "xvid"] = "v1",
+        func: FuncExcept | None = None,
+        header: bool = True,
+        force: bool = False,
+    ) -> None:
+        func = func or self.to_file
 
-        return _get_keyframes_storage().get_file(key, ext=".txt")
+        out_path = Path(out).resolve()
+
+        if out_path.exists():
+            if not force and out_path.stat().st_size > 0:
+                return
+
+            out_path.unlink()
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+
+        check_perms(out_path, "w+", func=func)
+
+        match fmt:
+            case "v1":
+                out_text = list[str]()
+                if header:
+                    out_text.extend(["# keyframe format v1", "fps 0", ""])
+                out_text.extend(f"{n} I -1" for n in self)
+                out_text.append("")
+            case "xvid":
+                lut_self = set(self)
+                out_text = list[str]()
+
+                if header:
+                    out_text.extend(["# XviD 2pass stat file", ""])
+
+                for i in range(max(self)):
+                    if i in lut_self:
+                        out_text.append("i")
+                        lut_self.remove(i)
+                    else:
+                        out_text.append("b")
+
+        out_path.unlink(True)
+        out_path.touch()
+        out_path.write_text("\n".join(out_text))
+
+    @classmethod
+    def from_clip(cls, clip: vs.VideoNode, **kwargs: Any) -> Self:
+        """
+        Create a Keyframes object from a clip by checking frame props.
+
+        Assumes that the clip has already been processed by scxvid.Scxvid or similar.
+
+        Args:
+            clip: Clip to get keyframes from.
+            **kwargs: Additional keyword arguments to pass to clip_async_render.
+
+        Returns:
+            Keyframes from the clip.
+        """
+
+        def check_props(n: int, f: vs.VideoFrame) -> int:
+            sc_next = f.props.get("_SceneChangeNext")
+            sc_prev = f.props.get("_SceneChangePrev")
+
+            if sc_next is None and sc_prev is None:
+                raise CustomRuntimeError("No scenechange props are present!", cls)
+
+            if sc_next:
+                return n + 1
+            if sc_prev:
+                return n
+
+            return -1
+
+        frames = clip_async_render(clip, None, "Detecting scene changes...", check_props, **kwargs)
+        return cls(f for f in set(frames) if f >= 0)
+
+    @classmethod
+    def from_file(cls, file: str | os.PathLike[str]) -> Self:
+        file = SPath(file).resolve()
+
+        if not file.exists():
+            raise FileNotFoundError
+
+        lines = [line.strip() for line in file.read_lines("utf-8") if line and not line.startswith("#")]
+
+        if not lines:
+            raise ValueError("No keyframe could be found!")
+
+        match lines[0].lower():
+            # XVID
+            case line if line.startswith("fps"):
+                split_lines = [line.split(" ") for line in lines]
+                return cls(int(n) for n, t, *_ in split_lines if t.lower() == "i")
+            # V1
+            case line if line.startswith(("i", "b", "p", "n")):
+                return cls(i for i, line in enumerate(lines) if line.startswith("i"))
+            case _:
+                raise ValueError("Could not determine keyframe file type!")
+
+    @classmethod
+    def from_param(cls, clip: vs.VideoNode, param: Self | str) -> Self:
+        if isinstance(param, str):
+            return cls.unique(clip, param)
+
+        if isinstance(param, cls):
+            return param
+
+        return cls(param)
 
     @classmethod
     def unique(cls, clip: vs.VideoNode, key: str, **kwargs: Any) -> Self:
         """
         Get the keyframes from a clip and write them to a file.
+
+        Assumes that the clip has already been processed by scxvid.Scxvid or similar.
 
         This method tries to generate a unique filename based on the clip's
         properties and the `key` prefix. If a file with that name exists and is
@@ -437,147 +533,11 @@ class Keyframes(list[int]):
 
         return keyframes
 
-    @classmethod
-    def from_clip(
-        cls,
-        clip: vs.VideoNode,
-        mode: SceneChangeMode | int = WWXD,
-        height: int | Literal[False] = 360,
-        **kwargs: Any,
-    ) -> Self:
-        mode = SceneChangeMode(mode)
+    @staticmethod
+    def _get_unique_path(clip: vs.VideoNode, key: str) -> SPath:
+        key = SPath(key).stem + f"_{clip.num_frames}_{clip.fps_num}_{clip.fps_den}"
 
-        clip = mode.prepare_clip(clip, height)
-
-        frames = clip_async_render(clip, None, "Detecting scene changes...", mode.lambda_cb(), **kwargs)
-
-        return cls(Sentinel.filter(frames))
-
-    @inject_self.with_args(_dummy=True)
-    def to_clip(
-        self,
-        clip: vs.VideoNode,
-        *,
-        mode: SceneChangeMode | int = WWXD,
-        height: int | Literal[False] = 360,
-        prop_key: str = next(iter(SceneChangeMode.SCXVID.prop_keys)),
-        scene_idx_prop: bool = False,
-    ) -> vs.VideoNode:
-        from .ranges import replace_ranges
-
-        propset_clip = clip.std.SetFrameProp(prop_key, True)
-
-        if self._dummy:
-            mode = SceneChangeMode(mode)
-
-            prop_clip = mode.prepare_clip(clip, height)
-
-            out = replace_ranges(clip, propset_clip, lambda f: bool(f[0][0, 0]), prop_src=prop_clip)
-        else:
-            out = replace_ranges(clip, propset_clip, self)
-
-        if not scene_idx_prop:
-            return out
-
-        def _add_scene_idx(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-            f = f.copy()
-
-            f.props._SceneIdx = self.scenes.indices[n]
-
-            return f
-
-        return out.std.ModifyFrame(out, _add_scene_idx)
-
-    @classmethod
-    def from_file(cls, file: FilePathType, **kwargs: Any) -> Self:
-        file = SPath(str(file)).resolve()
-
-        if not file.exists():
-            raise FileNotFoundError
-
-        if file.stat().st_size <= 0:
-            raise OSError("File is empty!")
-
-        lines = [line.strip() for line in file.read_lines("utf-8") if line and not line.startswith("#")]
-
-        if not lines:
-            raise ValueError("No keyframe could be found!")
-
-        kf_type: int | None = None
-
-        line = lines[0].lower()
-
-        if line.startswith("fps"):
-            kf_type = Keyframes.XVID
-        elif line.startswith(("i", "b", "p", "n")):
-            kf_type = Keyframes.V1
-
-        if kf_type is None:
-            raise ValueError("Could not determine keyframe file type!")
-
-        if kf_type == Keyframes.V1:
-            return cls(i for i, line in enumerate(lines) if line.startswith("i"))
-
-        if kf_type == Keyframes.XVID:
-            split_lines = [line.split(" ") for line in lines]
-
-            return cls(int(n) for n, t, *_ in split_lines if t.lower() == "i")
-
-        raise ValueError("Invalid keyframe file type!")
-
-    def to_file(
-        self,
-        out: FilePathType,
-        format: int = V1,
-        func: FuncExcept | None = None,
-        header: bool = True,
-        force: bool = False,
-    ) -> None:
-        func = func or self.to_file
-
-        out_path = Path(str(out)).resolve()
-
-        if out_path.exists():
-            if not force and out_path.stat().st_size > 0:
-                return
-
-            out_path.unlink()
-
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-
-        check_perms(out_path, "w+", func=func)
-
-        if format == Keyframes.V1:
-            out_text = [*(["# keyframe format v1", "fps 0", ""] if header else []), *(f"{n} I -1" for n in self), ""]
-        elif format == Keyframes.XVID:
-            lut_self = set(self)
-            out_text = list[str]()
-
-            if header:
-                out_text.extend(["# XviD 2pass stat file", ""])
-
-            for i in range(max(self)):
-                if i in lut_self:
-                    out_text.append("i")
-                    lut_self.remove(i)
-                else:
-                    out_text.append("b")
-        else:
-            raise NotImplementedError
-
-        out_path.unlink(True)
-        out_path.touch()
-        out_path.write_text("\n".join(out_text))
-
-    @classmethod
-    def from_param(cls, clip: vs.VideoNode, param: Self | str) -> Self:
-        if isinstance(param, str):
-            return cls.unique(clip, param)
-
-        if isinstance(param, cls):
-            return param
-
-        return cls(param)
+        return _get_keyframes_storage().get_file(key, ext=".txt")
 
 
 class SceneBasedDynamicCache(DynamicClipsCache[int]):
@@ -638,109 +598,3 @@ class SceneAverageStats(SceneBasedDynamicCache):
 
     def get_clip(self, key: int) -> vs.VideoNode:
         return self.clip.std.SetFrameProps(**dict(zip(self.prop_keys, self.scene_avgs[key])))
-
-
-@dataclass
-class LWIndex:
-    stream_info: StreamInfo
-    frame_data: list[Frame]
-    keyframes: Keyframes
-
-    class Regex:
-        @classproperty
-        @classmethod
-        def frame_first(cls) -> re.Pattern[str]:
-            return re.compile(
-                r"Index=(?P<Index>-?[0-9]+),POS=(?P<POS>-?[0-9]+),PTS=(?P<PTS>-?[0-9]+),"
-                r"DTS=(?P<DTS>-?[0-9]+),EDI=(?P<EDI>-?[0-9]+)"
-            )
-
-        @classproperty
-        @classmethod
-        def frame_second(cls) -> re.Pattern[str]:
-            return re.compile(
-                r"Key=(?P<Key>-?[0-9]+),Pic=(?P<Pic>-?[0-9]+),POC=(?P<POC>-?[0-9]+),"
-                r"Repeat=(?P<Repeat>-?[0-9]+),Field=(?P<Field>-?[0-9]+)"
-            )
-
-        @classproperty
-        @classmethod
-        def streaminfo(cls) -> re.Pattern[str]:
-            return re.compile(
-                r"Codec=(?P<Codec>[0-9]+),TimeBase=(?P<TimeBase>[0-9\/]+),Width=(?P<Width>[0-9]+),"
-                r"Height=(?P<Height>[0-9]+),Format=(?P<Format>[0-9a-zA-Z]+),ColorSpace=(?P<ColorSpace>[0-9]+)"
-            )
-
-    class StreamInfo(NamedTuple):
-        codec: int
-        timebase: Fraction
-        width: int
-        height: int
-        format: str
-        colorspace: Matrix
-
-    class Frame(NamedTuple):
-        idx: int
-        pos: int
-        pts: int
-        dts: int
-        edi: int
-        key: int
-        pic: int
-        poc: int
-        repeat: int
-        field: int
-
-    @classmethod
-    def from_file(
-        cls, file: FilePathType, ref_or_length: int | vs.VideoNode | None = None, *, func: FuncExcept | None = None
-    ) -> LWIndex:
-        func = func or cls.from_file
-
-        file = Path(str(file)).resolve()
-
-        length = ref_or_length.num_frames if isinstance(ref_or_length, vs.VideoNode) else ref_or_length
-
-        data = file.read_text("latin1").splitlines()
-
-        indexstart, indexend = data.index("</StreamInfo>") + 1, data.index("</LibavReaderIndex>")
-
-        if length and (idxlen := ((indexend - indexstart) // 2)) != length:
-            raise FramesLengthError(
-                func, "", "index file length mismatch with specified length!", reason={"index": idxlen, "clip": length}
-            )
-
-        sinfomatch = LWIndex.Regex.streaminfo.match(data[indexstart - 2])
-
-        assert sinfomatch
-
-        timebase_num, timebase_den = [int(i) for i in sinfomatch.group("TimeBase").split("/")]
-
-        streaminfo = LWIndex.StreamInfo(
-            int(sinfomatch.group("Codec")),
-            Fraction(timebase_num, timebase_den),
-            int(sinfomatch.group("Width")),
-            int(sinfomatch.group("Height")),
-            sinfomatch.group("Format"),
-            Matrix(int(sinfomatch.group("ColorSpace"))),
-        )
-
-        frames = list[LWIndex.Frame]()
-
-        for i in range(indexstart, indexend, 2):
-            match_first = LWIndex.Regex.frame_first.match(data[i])
-            match_second = LWIndex.Regex.frame_second.match(data[i + 1])
-
-            for match, keys in [
-                (match_first, ["Index", "POS", "PTS", "DTS", "EDI"]),
-                (match_second, ["Key", "Pic", "POC", "Repeat", "Field"]),
-            ]:
-                assert match
-
-                frames.append(LWIndex.Frame(*(int(match.group(x)) for x in keys)))
-
-        frames = sorted(frames, key=lambda x: x.pts)
-
-        keyframes = Keyframes(i for i, f in enumerate(frames) if f.key)
-
-        return LWIndex(streaminfo, frames, keyframes)

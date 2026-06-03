@@ -503,7 +503,7 @@ class Rescale(RescaleBase):
         thr: float = 0.216,
         expand: int = 4,
         ranges: FrameRangeN | FrameRangesN | None = None,
-        stabilize: bool = True,
+        stabilize: bool = False,
         scenechanges: Iterable[int] | None = None,
         **kwargs: Any,
     ) -> vs.VideoNode:

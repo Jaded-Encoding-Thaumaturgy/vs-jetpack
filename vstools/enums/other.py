@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
 from fractions import Fraction
 from typing import Literal, Self
-
-from jetpytools import CustomIntEnum, CustomRuntimeError, Sentinel, SentinelT
 
 from ..types import HoldsPropValue
 from ..vs_proxy import vs
 
-__all__ = ["Dar", "Sar", "SceneChangeMode"]
+__all__ = ["Dar", "Sar"]
 
 
 class Dar(Fraction):
@@ -121,122 +118,3 @@ class Sar(Fraction):
         """
 
         return vs.core.std.SetFrameProps(clip, _SARNum=self.numerator, _SARDen=self.denominator)
-
-
-class SceneChangeMode(CustomIntEnum):
-    """
-    Enum for various scene change modes.
-    """
-
-    WWXD = 1
-    """
-    Get the scene changes using the vapoursynth-wwxd plugin <https://github.com/dubhater/vapoursynth-wwxd>.
-    """
-
-    SCXVID = 2
-    """
-    Get the scene changes using the vapoursynth-scxvid plugin <https://github.com/dubhater/vapoursynth-scxvid>.
-    """
-
-    WWXD_SCXVID_UNION = 3  # WWXD | SCXVID
-    """
-    Get every scene change detected by both wwxd or scxvid.
-    """
-
-    WWXD_SCXVID_INTERSECTION = 0  # WWXD & SCXVID
-    """
-    Only get the scene changes if both wwxd and scxvid mark a frame as being a scene change.
-    """
-
-    @property
-    def is_WWXD(self) -> bool:  # noqa: N802
-        """
-        Check whether a mode that uses wwxd is used.
-        """
-        return self in (
-            SceneChangeMode.WWXD,
-            SceneChangeMode.WWXD_SCXVID_UNION,
-            SceneChangeMode.WWXD_SCXVID_INTERSECTION,
-        )
-
-    @property
-    def is_SCXVID(self) -> bool:  # noqa: N802
-        """
-        Check whether a mode that uses scxvid is used.
-        """
-        return self in (
-            SceneChangeMode.SCXVID,
-            SceneChangeMode.WWXD_SCXVID_UNION,
-            SceneChangeMode.WWXD_SCXVID_INTERSECTION,
-        )
-
-    def ensure_presence(self, clip: vs.VideoNode) -> vs.VideoNode:
-        """
-        Ensures all the frame properties necessary for scene change detection are created.
-        """
-        from ..utils import merge_clip_props
-
-        stats_clip = list[vs.VideoNode]()
-
-        if self.is_SCXVID:
-            if not hasattr(vs.core, "scxvid"):
-                raise CustomRuntimeError(
-                    "You are missing scxvid!\n\tDownload it from https://github.com/dubhater/vapoursynth-scxvid",
-                    self.ensure_presence,
-                )
-            stats_clip.append(clip.scxvid.Scxvid())
-
-        if self.is_WWXD:
-            if not hasattr(vs.core, "wwxd"):
-                raise CustomRuntimeError(
-                    "You are missing wwxd!\n\tDownload it from https://github.com/dubhater/vapoursynth-wwxd",
-                    self.ensure_presence,
-                )
-            stats_clip.append(clip.wwxd.WWXD())
-
-        keys = tuple(self.prop_keys)
-
-        expr = " ".join([f"x.{k}" for k in keys]) + (" and" * (len(keys) - 1))
-
-        blank = clip.std.BlankClip(1, 1, vs.GRAY8, keep=True)
-
-        if len(stats_clip) > 1:
-            return merge_clip_props(blank, *stats_clip).cranexpr.Expr(expr)
-
-        return blank.std.CopyFrameProps(stats_clip[0]).cranexpr.Expr(expr)
-
-    @property
-    def prop_keys(self) -> Iterator[str]:
-        if self.is_WWXD:
-            yield "Scenechange"
-
-        if self.is_SCXVID:
-            yield "_SceneChangePrev"
-
-    def lambda_cb(self) -> Callable[[int, vs.VideoFrame], SentinelT | int]:
-        return lambda n, f: Sentinel.check(n, bool(f[0][0, 0]))
-
-    def prepare_clip(self, clip: vs.VideoNode, height: int | Literal[False] = 360) -> vs.VideoNode:
-        """
-        Prepare a clip for scene change metric calculations.
-
-        The clip will always be resampled to YUV420 8bit if it's not already,
-        as that's what the plugins support.
-
-        Args:
-            clip: Clip to process.
-            height: Output height of the clip. Smaller frame sizes are faster to process, but may miss more scene
-                changes or introduce more false positives. Width is automatically calculated. `False` means no resizing
-                operation is performed. Default: 360.
-
-        Returns:
-            A prepared clip for performing scene change metric calculations on.
-        """
-        from ..utils import get_w
-
-        if height:
-            clip = clip.resize.Bilinear(get_w(height, clip), height, vs.YUV420P8)
-        elif not clip.format or (clip.format and clip.format.id != vs.YUV420P8):
-            clip = clip.resize.Bilinear(format=vs.YUV420P8)
-
-        return self.ensure_presence(clip)

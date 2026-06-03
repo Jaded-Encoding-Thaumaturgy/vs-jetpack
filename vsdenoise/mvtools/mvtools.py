@@ -10,6 +10,7 @@ from jetpytools import KwargsNotNone, fallback, normalize_seq
 from vstools import (
     DitherType,
     Field,
+    FieldLike,
     Planes,
     Range,
     UnsupportedColorFamilyError,
@@ -140,7 +141,7 @@ class MVTools(VSObject):
         pad: int | tuple[int | None, int | None] | None = None,
         pel: int | None = None,
         chroma: bool | None = None,
-        field: Field | None = None,
+        field: FieldLike | None = None,
         *,
         super_args: Mapping[str, Any] | None = None,
         analyze_args: Mapping[str, Any] | None = None,
@@ -1091,6 +1092,8 @@ class MVTools(VSObject):
     ) -> vs.VideoNode:
         """
         Creates a mask clip from motion vectors data.
+
+        The processing is always done at 8-bits <https://github.com/dubhater/vapoursynth-mvtools/issues/16>.
 
         Args:
             clip: The clip to process. If None, the [clip][vsdenoise.MVTools.clip] attribute is used.

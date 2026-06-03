@@ -215,7 +215,7 @@ class NoScale(ScalerSpecializer[_ScalerWithCatromDefaultT]):
                 (width, height),
             )
 
-        if shift == (0, 0) and not kwargs and not self.kwargs:
+        if not any(shift) and not kwargs and not self.kwargs:
             return clip
 
         return super().scale(clip, width, height, shift, **kwargs)

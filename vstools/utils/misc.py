@@ -10,6 +10,8 @@ from typing import Any, Self, overload
 from jetpytools import MISSING, CustomValueError, MissingT, normalize_seq, to_arr
 from jetpytools import flatten as jetp_flatten
 
+from vsjetpack import deprecated
+
 from ..enums import Align, Matrix
 from ..types import AudioNodeIterable, Planes, RawNodeIterable, VideoNodeIterable
 from ..vs_proxy import core, vs
@@ -445,49 +447,11 @@ class padder:
         return padding, tuple(x * crop_scale[0 if i < 2 else 1] for x, i in enumerate(padding))  # type: ignore
 
 
-@overload
-def set_output(node: vs.VideoNode, index: int = ..., /, *, alpha: vs.VideoNode | None = ..., **kwargs: Any) -> None: ...
-
-
-@overload
-def set_output(
-    node: vs.VideoNode, name: str | bool | None = ..., /, *, alpha: vs.VideoNode | None = ..., **kwargs: Any
-) -> None: ...
-
-
-@overload
-def set_output(
-    node: vs.VideoNode,
-    index: int = ...,
-    name: str | bool | None = ...,
-    /,
-    alpha: vs.VideoNode | None = ...,
-    **kwargs: Any,
-) -> None: ...
-
-
-@overload
-def set_output(
-    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable, index: int | Sequence[int] = ..., /, **kwargs: Any
-) -> None: ...
-
-
-@overload
-def set_output(
-    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable, name: str | bool | None = ..., /, **kwargs: Any
-) -> None: ...
-
-
-@overload
-def set_output(
-    node: VideoNodeIterable | AudioNodeIterable | RawNodeIterable,
-    index: int | Sequence[int] = ...,
-    name: str | bool | None = ...,
-    /,
-    **kwargs: Any,
-) -> None: ...
-
-
+@deprecated(
+    "`set_output` is deprecated and will be removed in a future version. "
+    "Use the corresponding function in your previewer instead.",
+    category=DeprecationWarning,
+)
 def set_output(
     node: vs.VideoNode | VideoNodeIterable | AudioNodeIterable | RawNodeIterable,
     index_or_name: int | Sequence[int] | str | bool | None = None,
@@ -507,7 +471,7 @@ def set_output(
         **kwargs: Extra arguments passed through to vspreview.set_output.
     """
     try:
-        from vspreview import set_output as vsp_set_output
+        from vspreview import set_output as vsp_set_output  # type: ignore[import-not-found]
 
     except ModuleNotFoundError:
         index = None if isinstance(index_or_name, (str, bool)) else index_or_name
@@ -524,7 +488,7 @@ def set_output(
     else:
         kwargs.setdefault("frame_depth", 2)
 
-        return vsp_set_output(node, index_or_name, name, alpha=alpha, **kwargs)  # type: ignore[arg-type]
+        return vsp_set_output(node, index_or_name, name, alpha=alpha, **kwargs)
 
 
 def normalize_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:
