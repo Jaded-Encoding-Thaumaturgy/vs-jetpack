@@ -389,5 +389,5 @@ async def _delete_on_error(dest_path: anyio.Path) -> AsyncGenerator[None]:
     try:
         yield
     except Exception:
-        shutil.rmtree(dest_path, ignore_errors=True)
+        await dest_path.unlink(missing_ok=True)
         raise
