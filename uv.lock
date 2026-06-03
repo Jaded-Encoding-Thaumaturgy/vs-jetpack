@@ -1471,17 +1471,17 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-cranexpr"
-version = "0.8.0"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7c/4e/6cd5667c8a08ff3f575d7559de7801e9ffb917b61edd088e0f6be6681ba3/vapoursynth_cranexpr-0.8.0.tar.gz", hash = "sha256:6c9887cb311df0b16357b5f5818f7910164a5473047eb9f1dc6e6d6f3b70d4be", size = 98577, upload-time = "2026-05-25T19:57:11.595Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ce/45/eb78a1752d0658788f0815ba83cc5e393d296ff7f0ec53240cfb8c6a9669/vapoursynth_cranexpr-0.9.0.tar.gz", hash = "sha256:4569edcfb15e04ebb20f6cc9f289250358849a275cc524fe82870212cfb7c939", size = 100729, upload-time = "2026-06-03T20:11:01.485Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d2/ad/03042e7c54b86074af679732e13bd6be12a52edcc61029e99fa6a428e105/vapoursynth_cranexpr-0.8.0-py3-none-macosx_13_0_arm64.whl", hash = "sha256:808b98c6a9fb33436992387bc0617fccb33e82d81f3492fd4a2f0b92e34b1cb8", size = 1056716, upload-time = "2026-05-25T19:57:05.107Z" },
-    { url = "https://files.pythonhosted.org/packages/fa/33/13d3c4d08c00a4bbd5afb7119cc6b5bd016f9dc2537ee2c982976a5c20ef/vapoursynth_cranexpr-0.8.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:4bbf19edff0e9db264adeb6b16bd9bf0385f88456205adbc0a1e701080927347", size = 1113104, upload-time = "2026-05-25T19:57:06.822Z" },
-    { url = "https://files.pythonhosted.org/packages/35/a0/78c6b1f3739188a0c37a1f787ebbd56f7f438ca4f2a6e185f8cb5185ff81/vapoursynth_cranexpr-0.8.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:d0d2a0980f2af8e945e4a2fa1ec9aa68e6b39b0e41c6ac41d56479acf945215a", size = 5135384, upload-time = "2026-05-25T19:57:08.227Z" },
-    { url = "https://files.pythonhosted.org/packages/be/76/1d81f91195846d6241ce4431aa6ecf0ed39cd8e2fc54c4e5d2199eb60fd8/vapoursynth_cranexpr-0.8.0-py3-none-win_amd64.whl", hash = "sha256:62fb7165bfbd9e24ba325149e5424c79e698167b380627baaba07a18448a9b98", size = 4785082, upload-time = "2026-05-25T19:57:09.785Z" },
+    { url = "https://files.pythonhosted.org/packages/18/a7/025ed7fc6152aa26e0185d97a1fbf32adc301dcf2e1290f4360499061f38/vapoursynth_cranexpr-0.9.0-py3-none-macosx_13_0_arm64.whl", hash = "sha256:92c7ec3a5ff2cd74bc484c4b38c4c3bb3ac82f846733d73537ee616cfbab9765", size = 1063951, upload-time = "2026-06-03T20:10:55.368Z" },
+    { url = "https://files.pythonhosted.org/packages/b9/28/76a8006ffd906791d95e70893db96b95d1cb2008014e67b4789aa7c53385/vapoursynth_cranexpr-0.9.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:d575dd370667150cf3d6c298905ac1e738a86aece977e35ca3726fc6fc2bbd52", size = 1122468, upload-time = "2026-06-03T20:10:56.795Z" },
+    { url = "https://files.pythonhosted.org/packages/3e/e3/54216aed3f05a272451ca48c5e496f10dafdc41f7da8e0ed02c3a5c65213/vapoursynth_cranexpr-0.9.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:312cc888fe692b92671fcd003d9a60c60984fcfbe5f2de2394f22d0eca1bd0dd", size = 5162187, upload-time = "2026-06-03T20:10:58.243Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/37/f345dc277ad701f8d2ef1a730a6bab7499f59bc522624171c07e701e6b91/vapoursynth_cranexpr-0.9.0-py3-none-win_amd64.whl", hash = "sha256:15e0949d0f6a52b056f715dc6d17352a96a898a7efaeb4d86bec63710b51409d", size = 4811500, upload-time = "2026-06-03T20:10:59.879Z" },
 ]
 
 [[package]]
@@ -2386,7 +2386,7 @@ requires-dist = [
     { name = "vapoursynth-bwdif", marker = "extra == 'deinterlace'", specifier = ">=5.0" },
     { name = "vapoursynth-bwdif", marker = "extra == 'denoise'", specifier = ">=5.0" },
     { name = "vapoursynth-bwdif", marker = "extra == 'full'", specifier = ">=5.0" },
-    { name = "vapoursynth-cranexpr", specifier = ">=0.8.0" },
+    { name = "vapoursynth-cranexpr", specifier = "~=0.9.0" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'aa'", specifier = ">=1.4" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'deband'", specifier = ">=1.4" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'dehalo'", specifier = ">=1.4" },
