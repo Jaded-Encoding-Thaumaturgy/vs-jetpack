@@ -461,14 +461,14 @@ wheels = [
 
 [[package]]
 name = "jetpytools"
-version = "2.2.7"
+version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/13/bb/6c57b9a53f8bc6c4c01c00fe76109f665d55218e581bc987cd00e201e42a/jetpytools-2.2.7.tar.gz", hash = "sha256:4063155f3e33283273a899d9b2c80104c6cf0c365abc3aa8c95c9dfd901fa6ec", size = 28601, upload-time = "2026-04-02T14:45:05.133Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/08/54e39ffd47142e3710c557c3c4f7929f7d1b359d5d347ecf90acddf1bb15/jetpytools-3.0.0.tar.gz", hash = "sha256:762f802fbf9cb1c18d630c645c74e94575460a4c76e095e27a84749a03a209fd", size = 28354, upload-time = "2026-06-03T23:38:28.247Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/c4/b4211e4657995b9c0382eb87767afdf6ab476a3ab2ed5a68689886d8c734/jetpytools-2.2.7-py3-none-any.whl", hash = "sha256:fff4257dc64c3a65e00de6632c8468c9dffb15bef6e0d3973eca80a121417da7", size = 32752, upload-time = "2026-04-02T14:45:03.715Z" },
+    { url = "https://files.pythonhosted.org/packages/5d/5f/5be75df735848b817b043c3358d951a0156dfff98e2044deb3e4cd9dc4c0/jetpytools-3.0.0-py3-none-any.whl", hash = "sha256:0d254c79c462ce7976d2d9eb2f83dad754312bbd1f8ee14b989c95b27260a4f6", size = 32593, upload-time = "2026-06-03T23:38:27.026Z" },
 ]
 
 [[package]]
@@ -3120,7 +3120,7 @@ requires-dist = [
     { name = "humanize", marker = "extra == 'denoise'", specifier = ">=4.15.0" },
     { name = "humanize", marker = "extra == 'full'", specifier = ">=4.15.0" },
     { name = "humanize", marker = "extra == 'scale'", specifier = ">=4.15.0" },
-    { name = "jetpytools", specifier = "~=2.2.1" },
+    { name = "jetpytools", specifier = ">=3.0.0,<4.0.0" },
     { name = "ml-dtypes", marker = "extra == 'nvidia'", specifier = ">=0.5.4" },
     { name = "niquests", marker = "extra == 'aa'", specifier = ">=3.18.8" },
     { name = "niquests", marker = "extra == 'deband'", specifier = ">=3.18.8" },
