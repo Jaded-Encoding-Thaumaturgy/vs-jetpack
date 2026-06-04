@@ -2423,16 +2423,16 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-mlrt-ort-cuda"
-version = "15.16.dev0"
+version = "15.16.dev1"
 source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-cuda-v15.16.dev0/vapoursynth_mlrt_ort_cuda-15.16.dev0.tar.gz", hash = "sha256:5f6196338549263a27492cbf5e698388b060d81cf953a366fa07402deab38c6e" }
+sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-ort-cuda-v15.16.dev1/vapoursynth_mlrt_ort_cuda-15.16.dev1.tar.gz", hash = "sha256:20d3aa7fb01345c80b67e80842c8b042bd5a97c624d011dff31376952aff91ce" }
 wheels = [
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-cuda-v15.16.dev0/vapoursynth_mlrt_ort_cuda-15.16.dev0-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c751ea83ae06d3cef2a713915cac057d5d21355f1de39fe365f2d6a5ab87de03" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-cuda-v15.16.dev0/vapoursynth_mlrt_ort_cuda-15.16.dev0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:7c283585dc42275f1b493077140b441776f2f9c8e5d90a835176c2f22830d09d" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-cuda-v15.16.dev0/vapoursynth_mlrt_ort_cuda-15.16.dev0-py3-none-win_amd64.whl", hash = "sha256:e400e57d475479ff79da5cf1a47e7b72bc4f9acbe7a203b51d9a6e343c8180f3" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-ort-cuda-v15.16.dev1/vapoursynth_mlrt_ort_cuda-15.16.dev1-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:0ecedc0fb727b29bc21c067939f986e5d1f65cb09591d561c1720db8a68ce019" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-ort-cuda-v15.16.dev1/vapoursynth_mlrt_ort_cuda-15.16.dev1-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:57ef06713f9f1e50e5b2cd95330a9d333a4483cb630a95fc5795d6ed1719d1d8" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-ort-cuda-v15.16.dev1/vapoursynth_mlrt_ort_cuda-15.16.dev1-py3-none-win_amd64.whl", hash = "sha256:8dd8f08ddc42ac33a89a2aa6d5b73033cd4a48a12063890d31a164a20c933669" },
 ]
 
 [[package]]
@@ -2453,30 +2453,32 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-mlrt-trt"
-version = "15.16.dev0"
+version = "15.16.dev1"
 source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
 dependencies = [
+    { name = "tensorrt-cu13-libs", marker = "sys_platform == 'linux'" },
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.dev0/vapoursynth_mlrt_trt-15.16.dev0.tar.gz", hash = "sha256:4b14d6a09fa31899806f9ccc6d874cdc3c82e79a1efb9520f0df74aa7b5084d0" }
+sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.dev1/vapoursynth_mlrt_trt-15.16.dev1.tar.gz", hash = "sha256:0508c18dacf977a862f48c689ef502ea32f8d6b6e908056f3e9c86d319e8959c" }
 wheels = [
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.dev0/vapoursynth_mlrt_trt-15.16.dev0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ad488b3035df3a9e869bf06ed1cb8125392054fda58dbe2e7280070cda977027" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.dev0/vapoursynth_mlrt_trt-15.16.dev0-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:a354d268b8ba69977d40370e6c0529a2771623d7b5427a7cce0f51116217baab" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.dev0/vapoursynth_mlrt_trt-15.16.dev0-py3-none-win_amd64.whl", hash = "sha256:e25b73557c2cdb1cfa9ba9e0d6936fb6774d2dd5515365bb484ca88596934bfa" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.dev1/vapoursynth_mlrt_trt-15.16.dev1-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a931dada3ca2181d6de28299d9a020df88fe388875013f0dc2b123528673e43d" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.dev1/vapoursynth_mlrt_trt-15.16.dev1-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:e7a29d93ec8ca2c640c3a254104426952917262fc2f87fff4a6e4a0b15e94cba" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.dev1/vapoursynth_mlrt_trt-15.16.dev1-py3-none-win_amd64.whl", hash = "sha256:1fdd5ed6af21ce4dc32ce2ece9bf2346d7e4cbc1cdb61344f0066c27bdb7eabb" },
 ]
 
 [[package]]
 name = "vapoursynth-mlrt-trt-rtx"
-version = "15.16.dev0"
+version = "15.16.dev1"
 source = { registry = "https://test.pypi.org/simple/" }
 dependencies = [
+    { name = "tensorrt-rtx-cu13-libs", marker = "sys_platform == 'linux'" },
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://test-files.pythonhosted.org/packages/48/44/fe32c48f006725eb55670440cafdeb7ddfdf42ca628f1fe48383c666309a/vapoursynth_mlrt_trt_rtx-15.16.dev0.tar.gz", hash = "sha256:f580ecb0981f126f52b4cbb3c6cc15dc65771f963012ffeae11c4abc1657d7b6", size = 674941, upload-time = "2026-06-01T01:29:28.932Z" }
+sdist = { url = "https://test-files.pythonhosted.org/packages/ee/45/accfc2568f2a88197e6dd17672f9e09161730a76661bd503da1c6ced92e1/vapoursynth_mlrt_trt_rtx-15.16.dev1.tar.gz", hash = "sha256:f5064194e7184ef42f76b7b561c8d6b8fd12b2f205b5965a03682ccbe954425f", size = 674799, upload-time = "2026-06-04T01:18:47.712Z" }
 wheels = [
-    { url = "https://test-files.pythonhosted.org/packages/80/64/25abd56752e01fd20ac51cf2e854d66784659a3da602e2914737a9ec18bc/vapoursynth_mlrt_trt_rtx-15.16.dev0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0416158fa66f75123f7b92f6be946f7fbc04a212189ea1e0a36866bd0fa0844d", size = 87590629, upload-time = "2026-06-01T01:29:17.896Z" },
-    { url = "https://test-files.pythonhosted.org/packages/fd/e3/4bfb724dfb79f2ffe722a3dc03f5b2910269433a45a5c7a87bf779d12d28/vapoursynth_mlrt_trt_rtx-15.16.dev0-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:afa2e0ae77854f6bc3843c6b53f940e224ebf9633ffc0ad3a7d524db18027abc", size = 83923334, upload-time = "2026-06-01T01:29:21.815Z" },
-    { url = "https://test-files.pythonhosted.org/packages/26/5c/7f77d0cb8050a0ddca5795d2574ba67732fcc3328ceb263b82149d1e875e/vapoursynth_mlrt_trt_rtx-15.16.dev0-py3-none-win_amd64.whl", hash = "sha256:41602dfbb16db1310ed62ec100d38021dfd39ab02e3e9137983c7463452f67d9", size = 83983053, upload-time = "2026-06-01T01:29:25.797Z" },
+    { url = "https://test-files.pythonhosted.org/packages/dd/80/c3759e5ed4be22ee88daae7096c6288e0c84960788f4cc147c86e21fd81f/vapoursynth_mlrt_trt_rtx-15.16.dev1-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:21a24bcc2eb24e0701cce8ec4c6a706ad36afb4a376d277a06313ede1f24cf66", size = 274928, upload-time = "2026-06-04T01:18:41.12Z" },
+    { url = "https://test-files.pythonhosted.org/packages/b6/c1/c40fe23a30385c0af36adf0c4ef246cc0951dd192046b96e3fadcec808ce/vapoursynth_mlrt_trt_rtx-15.16.dev1-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:220efb4306218fdcbcc1efa42936af9bb41d2d09515d4353e11147426fbc8178", size = 281804, upload-time = "2026-06-04T01:18:42.664Z" },
+    { url = "https://test-files.pythonhosted.org/packages/21/5b/e6c955fc1c6c7fdb24fc0abfde7c150e6ed81fd3576f462ec96d8bdb325a/vapoursynth_mlrt_trt_rtx-15.16.dev1-py3-none-win_amd64.whl", hash = "sha256:0c29f1b5ef69757af8abdad12b80eed9e779fe23f0355cffd6467bf32cd8e4a9", size = 83983094, upload-time = "2026-06-04T01:18:45.088Z" },
 ]
 
 [[package]]
@@ -3307,7 +3309,7 @@ requires-dist = [
     { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'cl'", specifier = "==15.16.dev2", index = "https://test.pypi.org/simple/" },
     { name = "vapoursynth-mlrt-ort", marker = "extra == 'amd'", specifier = "==15.16.dev0", index = "https://test.pypi.org/simple/" },
     { name = "vapoursynth-mlrt-ort", marker = "extra == 'cl'", specifier = "==15.16.dev0", index = "https://test.pypi.org/simple/" },
-    { name = "vapoursynth-mlrt-ort-cuda", marker = "extra == 'nvidia'", specifier = "==15.16.dev0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-mlrt-ort-cuda", marker = "extra == 'nvidia'", specifier = "==15.16.dev1", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'aa'", specifier = "==15.16.dev1", index = "https://test.pypi.org/simple/" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'deband'", specifier = "==15.16.dev1", index = "https://test.pypi.org/simple/" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'dehalo'", specifier = "==15.16.dev1", index = "https://test.pypi.org/simple/" },
@@ -3315,8 +3317,8 @@ requires-dist = [
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'denoise'", specifier = "==15.16.dev1", index = "https://test.pypi.org/simple/" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'full'", specifier = "==15.16.dev1", index = "https://test.pypi.org/simple/" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'scale'", specifier = "==15.16.dev1", index = "https://test.pypi.org/simple/" },
-    { name = "vapoursynth-mlrt-trt", marker = "extra == 'nvidia'", specifier = "==15.16.dev0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-mlrt-trt-rtx", marker = "extra == 'nvidia'", specifier = "==15.16.dev0", index = "https://test.pypi.org/simple/" },
+    { name = "vapoursynth-mlrt-trt", marker = "extra == 'nvidia'", specifier = "==15.16.dev1", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-mlrt-trt-rtx", marker = "extra == 'nvidia'", specifier = "==15.16.dev1", index = "https://test.pypi.org/simple/" },
     { name = "vapoursynth-mvtools", marker = "extra == 'deband'", specifier = ">=26" },
     { name = "vapoursynth-mvtools", marker = "extra == 'dehalo'", specifier = ">=26" },
     { name = "vapoursynth-mvtools", marker = "extra == 'deinterlace'", specifier = ">=26" },

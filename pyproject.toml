@@ -1,4 +1,3 @@
-
 [build-system]
 requires = ["hatchling>=1.27.0", "versioningit"]
 build-backend = "hatchling.build"
@@ -147,19 +146,19 @@ cl = [
 ]
 nvidia = [
     "dfttest2[cufft,nvrtc]>=10",
-    "vapoursynth-dfttest2-cuda>=10",          # Explicitly specify this one so it's properly resolved through uv --index
+    "vapoursynth-dfttest2-cuda>=10",  # Explicitly specify this one so it's properly resolved through uv --index
     "vapoursynth-bm3dcuda>=2.16",
     "vapoursynth-bilateralgpu>=14",
     "vapoursynth-nlm-cuda>=4",
-    "vapoursynth-mlrt-trt==15.16.dev0",
-    "vapoursynth-mlrt-trt-rtx==15.16.dev0",
-    "vapoursynth-mlrt-ort-cuda==15.16.dev0",
+    "vapoursynth-mlrt-trt==15.16.dev1",
+    "vapoursynth-mlrt-trt-rtx==15.16.dev1",
+    "vapoursynth-mlrt-ort-cuda==15.16.dev1",
     "onnx>=1.21.0",
     "onnxconverter-common>=1.16.0",
     "ml-dtypes>=0.5.4",
     "tensorrt-cu13             >=11.0.0.114",
-    "tensorrt-cu13-bindings    >=11.0.0.114", # Explicitly specify this one so it's properly resolved through uv --index
-    "tensorrt-cu13-libs        >=11.0.0.114", # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-cu13-bindings    >=11.0.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-cu13-libs        >=11.0.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
     "tensorrt-rtx-cu13         >=1.5.0.114",
     "tensorrt-rtx-cu13-bindings>=1.5.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
     "tensorrt-rtx-cu13-libs    >=1.5.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
@@ -351,7 +350,7 @@ exclude = [
     "stubs/tensorrt_bindings",
     "stubs/tensorrt_rtx",
     "stubs/tensorrt_rtx_bindings",
-    "vsscale/mlrt/backend",        # https://github.com/python/mypy/pull/20521
+    "vsscale/mlrt/backend",  # https://github.com/python/mypy/pull/20521
 ]
 
 # Flags changed by --strict
