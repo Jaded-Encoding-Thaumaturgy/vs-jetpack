@@ -54,7 +54,6 @@ dependencies = [
     "psutil>=7.0.0",
     "typing_extensions>=4.15.0; python_version<'3.13'",
     # VapourSynth plugins
-    "vapoursynth-akarin>=1.4.1",
     "vapoursynth-cranexpr~=0.9.0",
     "vapoursynth-fmtconv>=31",
     "vapoursynth-vszip>=14.0.0",
