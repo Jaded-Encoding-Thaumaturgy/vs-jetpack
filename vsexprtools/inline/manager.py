@@ -40,7 +40,7 @@ def inline_expr(
     operators and syntax, abstracting away the underlying RPN (Reverse Polish Notation) string.
 
     - <https://www.vapoursynth.com/doc/functions/video/expr.html>
-    - <https://github.com/AkarinVS/vapoursynth-plugin/wiki/Expr>
+    - <https://github.com/sgt0/cranexpr/blob/main/README.md>
 
     The context manager is initialized with one or more VapourSynth clips and yields a
     [InlineExprWrapper][vsexprtools.inline.manager.InlineExprWrapper] object containing clip variables and operators.

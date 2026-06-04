@@ -551,7 +551,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     SWAPN = "swap{N:d}", 2
     """Swap the top N values (custom depth)."""
 
-    # 2 Argument (akarin)
+    # 2 Argument (cranexpr)
     MOD = "%", 2
     """Modulo operation (remainder)."""
 
@@ -568,7 +568,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     TERN = "?", 3
     """Ternary operation: cond ? if_true : if_false."""
 
-    # 3 Argument (akarin)
+    # 3 Argument (cranexpr)
     CLAMP = "clamp", 3
     """Clamp a value between min and max."""
 
@@ -598,7 +598,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     MMG = "mmg", 3
     """MaskedMerge implementation from std lib."""
 
-    # Implemented in akarin v0.96g but closed source and only available on Windows.
     LERP = "lerp", 3
     """Linear interpolation of a value between two border values."""
 

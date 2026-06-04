@@ -9,7 +9,7 @@ from math import ceil
 from types import NotImplementedType
 from typing import Any, SupportsIndex
 
-from jetpytools import CustomIndexError, CustomRuntimeError, FuncExcept, StrList, SupportsString, normalize_seq, to_arr
+from jetpytools import CustomIndexError, FuncExcept, StrList, SupportsString, normalize_seq, to_arr
 
 from vstools import (
     EXPR_VARS,
@@ -75,7 +75,6 @@ def expr_func(
         func: Function returned for custom error handling. This should only be set by VS package developers.
 
     Raises:
-        CustomRuntimeError: If `akarin` plugin is not found.
         CustomExprError: If the expression could not be evaluated.
 
     Returns:
@@ -91,8 +90,6 @@ def expr_func(
 
     try:
         return core.cranexpr.Expr(clips, expr, fmt, boundary)
-    except AttributeError as e:
-        raise CustomRuntimeError(e)
     except vs.Error as e:
         if len(clips) == 1 and 0 in (clips[0].width, clips[0].height):
             return ProcessVariableResClip.from_func(
