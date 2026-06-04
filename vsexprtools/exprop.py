@@ -613,7 +613,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         """
         Check if the operator is an 'extra' operator.
 
-        Extra operators are not natively supported by VapourSynth's `std.Expr` or `cranexpr.Expr`
+        Extra operators are not natively supported by `cranexpr.Expr`
         and require conversion to a valid equivalent expression.
 
         Returns:
