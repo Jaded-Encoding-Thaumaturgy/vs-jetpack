@@ -198,9 +198,9 @@ class FixInterlacedFades(CustomIntEnum):
         for i in func.norm_planes:
             fields = fields.std.PlaneStats(clipb, i, f"P{i}")
 
-        props_clip = core.akarin.PropExpr(
-            [func.work_clip, fields[::2], fields[1::2]],
-            lambda: {f"f{f}Avg{i}": f"{c}.P{i}{prop_name}" for f, c in zip("tb", "yz") for i in func.norm_planes},
+        props_clip = core.cranexpr.PropExpr(
+            [clip, fields[::2], fields[1::2]],
+            **{f"f{f}Avg{i}": f"{c}.P{i}{prop_name}" for f, c in zip("tb", "yz") for i in func.norm_planes},
         )
         expr_clips.insert(0, props_clip)
 
