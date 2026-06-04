@@ -137,22 +137,6 @@ class _VSCallback(Protocol):
 
 # Known callback signatures
 # _VSCallback_{plugin_namespace}_{Function_name}_{parameter_name}
-class _VSCallback_akarin_PropExpr_dict(Protocol):
-    def __call__(
-        self,
-    ) -> Mapping[
-        str,
-        _IntLike
-        | _FloatLike
-        | _AnyStr
-        | _SupportsIter[_IntLike]
-        | _SupportsIter[_AnyStr]
-        | _SupportsIter[_FloatLike]
-        | _GetItemIterable[_IntLike]
-        | _GetItemIterable[_FloatLike]
-        | _GetItemIterable[_AnyStr],
-    ]: ...
-
 class _VSCallback_descale_Decustom_custom_kernel(Protocol):
     def __call__(self, *, x: float) -> _FloatLike: ...
 
@@ -1176,10 +1160,6 @@ class VideoNode(RawNode):
     adg: Final[_adg._VideoNode_bound.Plugin]
     """Adaptive grain"""
 # </attribute/VideoNode_bound/adg>
-# <attribute/VideoNode_bound/akarin>
-    akarin: Final[_akarin._VideoNode_bound.Plugin]
-    """Akarin's Experimental Filters"""
-# </attribute/VideoNode_bound/akarin>
 # <attribute/VideoNode_bound/awarp>
     awarp: Final[_awarp._VideoNode_bound.Plugin]
     """AWarp filter from AWarpSharp2"""
@@ -1434,10 +1414,6 @@ class Core:
     adg: Final[_adg._Core_bound.Plugin]
     """Adaptive grain"""
 # </attribute/Core_bound/adg>
-# <attribute/Core_bound/akarin>
-    akarin: Final[_akarin._Core_bound.Plugin]
-    """Akarin's Experimental Filters"""
-# </attribute/Core_bound/akarin>
 # <attribute/Core_bound/awarp>
     awarp: Final[_awarp._Core_bound.Plugin]
     """AWarp filter from AWarpSharp2"""
@@ -1638,44 +1614,6 @@ class _adg:
             def Mask(self, /, luma_scaling: _FloatLike | None = None) -> VideoNode: ...
 
 # </implementation/adg>
-
-# <implementation/akarin>
-_ReturnDict_akarin_Version = TypedDict("_ReturnDict_akarin_Version", {"version": _AnyStr, "expr_backend": _AnyStr, "expr_features": _AnyStr | list[_AnyStr], "select_features": _AnyStr | list[_AnyStr], "text_features": _AnyStr | list[_AnyStr], "tmpl_features": _AnyStr | list[_AnyStr]})
-
-class _akarin:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Cambi(self, /, clip: VideoNode, window_size: _IntLike | None = None, topk: _FloatLike | None = None, tvi_threshold: _FloatLike | None = None, scores: _IntLike | None = None, scaling: _FloatLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def Expr(self, /, clips: VideoNode | _SequenceLike[VideoNode], expr: _AnyStr | _SequenceLike[_AnyStr], format: _IntLike | None = None, opt: _IntLike | None = None, boundary: _IntLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def PropExpr(self, /, clips: VideoNode | _SequenceLike[VideoNode], dict: _VSCallback_akarin_PropExpr_dict) -> VideoNode: ...
-            @_Wrapper.Function
-            def Select(self, /, clip_src: VideoNode | _SequenceLike[VideoNode], prop_src: VideoNode | _SequenceLike[VideoNode], expr: _AnyStr | _SequenceLike[_AnyStr]) -> VideoNode: ...
-            @_Wrapper.Function
-            def Text(self, /, clips: VideoNode | _SequenceLike[VideoNode], text: _AnyStr, alignment: _IntLike | None = None, scale: _IntLike | None = None, prop: _AnyStr | None = None, strict: _IntLike | None = None, vspipe: _IntLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def Tmpl(self, /, clips: VideoNode | _SequenceLike[VideoNode], prop: _AnyStr | _SequenceLike[_AnyStr], text: _AnyStr | _SequenceLike[_AnyStr]) -> VideoNode: ...
-            @_Wrapper.Function
-            def Version(self, /) -> _ReturnDict_akarin_Version: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Cambi(self, /, window_size: _IntLike | None = None, topk: _FloatLike | None = None, tvi_threshold: _FloatLike | None = None, scores: _IntLike | None = None, scaling: _FloatLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def Expr(self, /, expr: _AnyStr | _SequenceLike[_AnyStr], format: _IntLike | None = None, opt: _IntLike | None = None, boundary: _IntLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def PropExpr(self, /, dict: _VSCallback_akarin_PropExpr_dict) -> VideoNode: ...
-            @_Wrapper.Function
-            def Select(self, /, prop_src: VideoNode | _SequenceLike[VideoNode], expr: _AnyStr | _SequenceLike[_AnyStr]) -> VideoNode: ...
-            @_Wrapper.Function
-            def Text(self, /, text: _AnyStr, alignment: _IntLike | None = None, scale: _IntLike | None = None, prop: _AnyStr | None = None, strict: _IntLike | None = None, vspipe: _IntLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def Tmpl(self, /, prop: _AnyStr | _SequenceLike[_AnyStr], text: _AnyStr | _SequenceLike[_AnyStr]) -> VideoNode: ...
-
-# </implementation/akarin>
 
 # <implementation/awarp>
 class _awarp:
