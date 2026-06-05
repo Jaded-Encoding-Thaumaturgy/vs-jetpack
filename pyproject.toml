@@ -108,7 +108,7 @@ scale = [
     "niquests>=3.18.8",
     "packaging>=26.0",
     "platformdirs>=4.9.6",
-    "vapoursynth-mlrt-ov==15.16.dev1",
+    "vapoursynth-mlrt-ov>=15.16",
 ]
 aa = [
     "vsjetpack[scale]",
@@ -140,34 +140,37 @@ deinterlace = [
 ]
 deband = ["vsjetpack[denoise]", "vsnoise>=1.2"]
 cl = [
-    "vapoursynth-mlrt-ort==15.16.dev0",
-    "vapoursynth-mlrt-ncnn==15.16.dev2",
+    "vapoursynth-mlrt-ort>=15.16",
+    "vapoursynth-mlrt-ncnn>=15.16",
     "vapoursynth-knlmeanscl>=1.2",
 ]
 nvidia = [
+    "onnx>=1.21.0",
+    "onnxconverter-common>=1.16.0",
+    "ml-dtypes>=0.5.4",
+    # Vapoursynth plugins
     "dfttest2[cufft,nvrtc]>=10",
     "vapoursynth-dfttest2-cuda>=10",  # Explicitly specify this one so it's properly resolved through uv --index
     "vapoursynth-bm3dcuda>=2.16",
     "vapoursynth-bilateralgpu>=14",
     "vapoursynth-nlm-cuda>=4",
-    "vapoursynth-mlrt-trt==15.16.dev1",
-    "vapoursynth-mlrt-trt-rtx==15.16.dev1",
-    "vapoursynth-mlrt-ort-cuda==15.16.dev1",
-    "onnx>=1.21.0",
-    "onnxconverter-common>=1.16.0",
-    "ml-dtypes>=0.5.4",
-    "tensorrt-cu13             >=11.0.0.114",
-    "tensorrt-cu13-bindings    >=11.0.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
-    "tensorrt-cu13-libs        >=11.0.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
-    "tensorrt-rtx-cu13         >=1.5.0.114",
-    "tensorrt-rtx-cu13-bindings>=1.5.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
-    "tensorrt-rtx-cu13-libs    >=1.5.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
+    "vapoursynth-mlrt-ort-cuda>=15.16.post1",
+    # These MLRT TensorRT backends are built against specific TensorRT/TensorRT RTX versions
+    # and must stay compatible with the runtime libraries installed below
+    "vapoursynth-mlrt-trt       ==15.16.post1",
+    "vapoursynth-mlrt-trt-rtx   ==15.16",
+    "tensorrt-cu13              ==11.0.0.114",
+    "tensorrt-cu13-bindings     ==11.0.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-cu13-libs         ==11.0.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-rtx-cu13          ==1.5.0.114",
+    "tensorrt-rtx-cu13-bindings ==1.5.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-rtx-cu13-libs     ==1.5.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
 ]
 amd = [
     "vsjetpack[cl]",
     "dfttest2[hipfft,hiprtc]>=10",
     "vapoursynth-bm3dhip>=2.16",
-    "vapoursynth-mlrt-migx==15.16.dev0 ; platform_system == 'Linux'",
+    "vapoursynth-mlrt-migx>=15.16 ; platform_system == 'Linux'",
 ]
 full = [
     "vsjetpack[basic]",
@@ -225,6 +228,8 @@ auto = true
 vapoursynth-dfttest2-cuda = { index = "vs-wheels" }
 vapoursynth-ffms2 = { index = "vs-wheels" }
 vapoursynth-fmtconv = { index = "vs-wheels" }
+vapoursynth-mlrt-ort-cuda = { index = "vs-wheels" }
+vapoursynth-mlrt-trt = { index = "vs-wheels" }
 tensorrt-cu13 = { index = "nvidia" }
 tensorrt-cu13-bindings = [
     { index = "nvidia", marker = "python_version < '3.14'" },
@@ -237,13 +242,6 @@ tensorrt-rtx-cu13-bindings = [
     { index = "vs-wheels", marker = "python_version == '3.14'" },
 ]
 tensorrt-rtx-cu13-libs = { index = "nvidia" }
-vapoursynth-mlrt-ov = { index = "testpypi" }
-vapoursynth-mlrt-ort = { index = "testpypi" }
-vapoursynth-mlrt-ort-cuda = { index = "vs-wheels" }
-vapoursynth-mlrt-ncnn = { index = "testpypi" }
-vapoursynth-mlrt-migx = { index = "testpypi" }
-vapoursynth-mlrt-trt = { index = "vs-wheels" }
-vapoursynth-mlrt-trt-rtx = { index = "testpypi" }
 
 [[tool.uv.index]]
 # Not exactly necessary since nvidia wheels are also published on pypi as wheel stub (generic sdist)
@@ -256,11 +254,6 @@ explicit = true
 [[tool.uv.index]]
 name = "vs-wheels"
 url = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple"
-explicit = true
-
-[[tool.uv.index]]
-name = "testpypi"
-url = "https://test.pypi.org/simple/"
 explicit = true
 
 [tool.hatch.build]
