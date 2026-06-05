@@ -326,7 +326,7 @@ class padder:
                         ?
                     ?
                 ?
-            """.format(left=l_, right=r_ - 1, top=t_, bottom=b_ - 1)  # noqa: UP032
+            """.format(left=l_, right=r_ - 1, top=t_, bottom=b_ - 1)
                 for l_, r_, t_, b_ in pads
             ]
         )
