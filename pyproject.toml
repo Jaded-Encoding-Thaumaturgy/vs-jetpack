@@ -1,4 +1,3 @@
-
 [build-system]
 requires = ["hatchling>=1.27.0", "versioningit"]
 build-backend = "hatchling.build"
@@ -48,7 +47,7 @@ classifiers = [
 ]
 dependencies = [
     "vapoursynth>=75",
-    "jetpytools~=2.2.1",
+    "jetpytools>=3.0.0,<4.0.0",
     "numpy>=2.0.0",
     "rich>=15.0.0",
     "psutil>=7.0.0",
@@ -64,6 +63,9 @@ Documentation = "https://jaded-encoding-thaumaturgy.github.io/vs-jetpack/"
 "Source Code" = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack"
 Tracker = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/issues"
 "Contact" = "https://discord.gg/XTpc6Fa9eB"
+
+[project.scripts]
+vsscale = "vsscale.mlrt.cli:app.meta"
 
 [project.optional-dependencies]
 basic = []
@@ -96,7 +98,18 @@ mask = [
     "vapoursynth-hysteresis>=1.1.3",
     "vapoursynth-subtext>=6.0",
 ]
-scale = ["vsjetpack[mask]"]
+scale = [
+    "vsjetpack[mask]",
+    "anyio>=4.13.0",
+    "cyclopts>=4.15.0",
+    "device-smi>=0.5.6",
+    "humanize>=4.15.0",
+    "questionary>=2.1.0",
+    "niquests>=3.18.8",
+    "packaging>=26.0",
+    "platformdirs>=4.9.6",
+    "vapoursynth-mlrt-ov>=15.16",
+]
 aa = [
     "vsjetpack[scale]",
     "vapoursynth-bwdif>=5.0",
@@ -126,18 +139,38 @@ deinterlace = [
     "vapoursynth-vivtc>=2.0",
 ]
 deband = ["vsjetpack[denoise]", "vsnoise>=1.2"]
-cl = ["vapoursynth-knlmeanscl>=1.2"]
+cl = [
+    "vapoursynth-mlrt-ort>=15.16",
+    "vapoursynth-mlrt-ncnn>=15.16",
+    "vapoursynth-knlmeanscl>=1.2",
+]
 nvidia = [
+    "onnx>=1.21.0",
+    "onnxconverter-common>=1.16.0",
+    "ml-dtypes>=0.5.4",
+    # Vapoursynth plugins
     "dfttest2[cufft,nvrtc]>=10",
-    "vapoursynth-dfttest2-cuda>=10", # Explicitly specify this one so it's properly resolved through uv --index
+    "vapoursynth-dfttest2-cuda>=10",  # Explicitly specify this one so it's properly resolved through uv --index
     "vapoursynth-bm3dcuda>=2.16",
     "vapoursynth-bilateralgpu>=14",
     "vapoursynth-nlm-cuda>=4",
+    "vapoursynth-mlrt-ort-cuda>=15.16.post1",
+    # These MLRT TensorRT backends are built against specific TensorRT/TensorRT RTX versions
+    # and must stay compatible with the runtime libraries installed below
+    "vapoursynth-mlrt-trt       ==15.16.post1",
+    "vapoursynth-mlrt-trt-rtx   ==15.16",
+    "tensorrt-cu13              ==11.0.0.114",
+    "tensorrt-cu13-bindings     ==11.0.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-cu13-libs         ==11.0.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-rtx-cu13          ==1.5.0.114",
+    "tensorrt-rtx-cu13-bindings ==1.5.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
+    "tensorrt-rtx-cu13-libs     ==1.5.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
 ]
 amd = [
     "vsjetpack[cl]",
     "dfttest2[hipfft,hiprtc]>=10",
     "vapoursynth-bm3dhip>=2.16",
+    "vapoursynth-mlrt-migx>=15.16 ; platform_system == 'Linux'",
 ]
 full = [
     "vsjetpack[basic]",
@@ -152,9 +185,6 @@ full = [
     "vsjetpack[dehalo]",
     "vsjetpack[deinterlace]",
     "vsjetpack[deband]",
-
-    # "dfttest",
-    # "vs-mlrt",
 ]
 
 [dependency-groups]
@@ -168,6 +198,8 @@ dev = [
     "mkdocs-gen-files==0.6.1",
     "vstransitions==0.1.4",
     "orderedsets",
+    "pybind11-stubgen>=2.5.5",
+    "vsstubs>=2.1.1",
     { include-group = "test" },
 ]
 test = ["pytest>=9.0.0, <10.0.0", "pytest-cov>=6.2.1, <8.0.0"]
@@ -188,10 +220,36 @@ doc = [
     "vstransitions==0.1.4",
 ]
 
+[tool.vsscale.onnx.download]
+provider = ["ArtCNN==v1.6.2", "DPIR==20210902", "Waifu2x==20250502-2"]
+auto = true
+
 [tool.uv.sources]
 vapoursynth-dfttest2-cuda = { index = "vs-wheels" }
 vapoursynth-ffms2 = { index = "vs-wheels" }
 vapoursynth-fmtconv = { index = "vs-wheels" }
+vapoursynth-mlrt-ort-cuda = { index = "vs-wheels" }
+vapoursynth-mlrt-trt = { index = "vs-wheels" }
+tensorrt-cu13 = { index = "nvidia" }
+tensorrt-cu13-bindings = [
+    { index = "nvidia", marker = "python_version < '3.14'" },
+    { index = "vs-wheels", marker = "python_version == '3.14'" },
+]
+tensorrt-cu13-libs = { index = "nvidia" }
+tensorrt-rtx-cu13 = { index = "nvidia" }
+tensorrt-rtx-cu13-bindings = [
+    { index = "nvidia", marker = "python_version < '3.14'" },
+    { index = "vs-wheels", marker = "python_version == '3.14'" },
+]
+tensorrt-rtx-cu13-libs = { index = "nvidia" }
+
+[[tool.uv.index]]
+# Not exactly necessary since nvidia wheels are also published on pypi as wheel stub (generic sdist)
+# but we skip pypi entirely with this and uv reports a actual progress bar instead of a generic "Building..."
+# since it's technically building the wheel stub (just a sdist)
+name = "nvidia"
+url = "https://pypi.nvidia.com/"
+explicit = true
 
 [[tool.uv.index]]
 name = "vs-wheels"
@@ -279,6 +337,14 @@ files = [
 ]
 
 exclude_gitignore = true
+exclude = [
+    "stubs/onnxconverter_common",
+    "stubs/tensorrt",
+    "stubs/tensorrt_bindings",
+    "stubs/tensorrt_rtx",
+    "stubs/tensorrt_rtx_bindings",
+    "vsscale/mlrt/backend",  # https://github.com/python/mypy/pull/20521
+]
 
 # Flags changed by --strict
 warn_return_any = false
@@ -297,6 +363,31 @@ color_output = true
 error_summary = true
 fixed_format_cache = true
 
+[[tool.mypy.overrides]]
+module = "onnxconverter_common.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tensorrt.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tensorrt_bindings.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tensorrt_rtx.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tensorrt_rtx_bindings.*"
+ignore_missing_imports = true
+
+# https://github.com/python/mypy/pull/20521
+[[tool.mypy.overrides]]
+module = ["vsscale.mlrt.backend.*"]
+follow_imports = "skip"
+
 [tool.ruff]
 line-length = 120
 
@@ -304,7 +395,11 @@ line-length = 120
 docstring-code-format = true
 
 [tool.ruff.lint]
-exclude = ["stubs/dfttest2.pyi", "stubs/vsmlrt.pyi"]
+exclude = [
+    "stubs/dfttest2.pyi",
+    "stubs/vsmlrt.pyi",
+    "stubs/onnxconverter_common/**",
+]
 extend-select = [
     "E",
     "C4",
@@ -321,3 +416,4 @@ extend-select = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.*" = ["F401", "F403"]
+"stubs/*" = ["PYI021", "E501", "N801", "N802", "N803", "RUF002"]
