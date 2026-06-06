@@ -40,10 +40,7 @@ from vstools import (
 from .helpers import BottomCrop, CropRel, LeftCrop, RightCrop, ScalingArgs, TopCrop
 from .onnx import ArtCNN
 
-__all__ = [
-    "Rescale",
-    "RescaleBase",
-]
+__all__ = ["Rescale", "RescaleBase"]
 
 
 class RescaleBase(VSObjectABC):
@@ -139,7 +136,7 @@ class RescaleBase(VSObjectABC):
 
     @_add_props
     def _generate_doubled(self, clip: vs.VideoNode) -> vs.VideoNode:
-        return depth(self._upscaler.supersample(clip, 2), 32)
+        return self._upscaler.supersample(clip, 2)
 
     @_add_props
     def _generate_upscale(self, clip: vs.VideoNode) -> vs.VideoNode:
@@ -151,7 +148,7 @@ class RescaleBase(VSObjectABC):
         lambda self: cachedproperty.clear_cache(self, ["descale", "rescale", "doubled", "upscale"]),
     )
     """
-    Gets the descaled clip.
+    Gets the descaled clip as GRAYS format.
     """
 
     rescale = cachedproperty[vs.VideoNode, vs.VideoNode](
@@ -160,7 +157,7 @@ class RescaleBase(VSObjectABC):
         lambda self: cachedproperty.clear_cache(self, "rescale"),
     )
     """
-    Gets the rescaled clip.
+    Gets the rescaled clip as GRAYS format.
     """
 
     doubled = cachedproperty[vs.VideoNode, vs.VideoNode](
@@ -169,7 +166,7 @@ class RescaleBase(VSObjectABC):
         lambda self: cachedproperty.clear_cache(self, ["doubled", "upscale"]),
     )
     """
-    Gets the doubled clip.
+    Gets the doubled clip as GRAYS format.
     """
 
     upscale = cachedproperty[vs.VideoNode, vs.VideoNode](
@@ -180,7 +177,7 @@ class RescaleBase(VSObjectABC):
         lambda self: cachedproperty.clear_cache(self, "upscale"),
     )
     """
-    Returns the upscaled clip
+    Returns the upscaled clip as FLOATS sample type.
     """
 
 
