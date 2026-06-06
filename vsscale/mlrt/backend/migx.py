@@ -12,7 +12,7 @@ from typing import Any
 from jetpytools import CustomRuntimeError, CustomValueError, copy_signature, to_arr
 from packaging.version import Version
 
-from vstools import core, depth, vs
+from vstools import UnsupportedSampleTypeError, core, depth, vs
 
 from ..settings import get_artifacts_folder
 from .base import BackendAutoConvertFloat
@@ -107,9 +107,13 @@ class MIGX(BackendAutoConvertFloat):
         flexible: bool = False,
         **kwargs: Any,
     ) -> vs.VideoNode | list[vs.VideoNode]:
-        network_path = Path(network_path)
-        channels = sum(clip.format.num_planes for clip in to_arr(clips))
-        program_path = self.build_program(network_path, channels, tilesize)
+        UnsupportedSampleTypeError.check(clips, vs.FLOAT, self.__class__)
+
+        clips = to_arr(clips)
+        channels = sum(c.format.num_planes for c in clips)
+        bitdepth = max(c.format.bits_per_sample for c in clips)
+
+        program_path = self.build_program(Path(network_path), channels, tilesize)
 
         if self.fp16:
             # Clips must be in fp16 format is fp16 is enabled,
@@ -118,7 +122,13 @@ class MIGX(BackendAutoConvertFloat):
         else:
             clips = [depth(c, 32) for c in clips]
 
-        return super().inference(clips, program_path, overlap, tilesize, flexible=flexible, **kwargs)
+        res = super().inference(clips, program_path, overlap, tilesize, flexible=flexible, **kwargs)
+
+        return (
+            depth(res, bitdepth, sample_type=vs.FLOAT)
+            if isinstance(res, vs.VideoNode)
+            else [depth(r, bitdepth, sample_type=vs.FLOAT) for r in res]
+        )
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
         return {"device_id": self.device_id, "num_streams": self.num_streams}
