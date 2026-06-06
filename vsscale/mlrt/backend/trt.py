@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     import tensorrt
     import tensorrt_rtx
 
-from vstools import core, depth, vs
+from vstools import UnsupportedSampleTypeError, core, depth, vs
 
 from ..settings import get_artifacts_folder, get_provider_folder
 from .base import Backend
@@ -168,8 +168,12 @@ class TRT(Backend):
         flexible: bool = False,
         **kwargs: Any,
     ) -> vs.VideoNode | list[vs.VideoNode]:
+        UnsupportedSampleTypeError.check(clips, vs.FLOAT, self.__class__)
+
         clips = to_arr(clips)
-        channels = sum(clip.format.num_planes for clip in clips)
+        channels = sum(c.format.num_planes for c in clips)
+        bitdepth = max(c.format.bits_per_sample for c in clips)
+
         engine_path = self.build_engine(Path(network_path), channels, tilesize)
 
         if self.fp16 or self.bf16:
@@ -179,7 +183,13 @@ class TRT(Backend):
         else:
             clips = [depth(c, 32) for c in clips]
 
-        return super().inference(clips, engine_path, overlap, tilesize, flexible=flexible, **kwargs)
+        res = super().inference(clips, engine_path, overlap, tilesize, flexible=flexible, **kwargs)
+
+        return (
+            depth(res, bitdepth, sample_type=vs.FLOAT)
+            if isinstance(res, vs.VideoNode)
+            else [depth(r, bitdepth, sample_type=vs.FLOAT) for r in res]
+        )
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
         return {
