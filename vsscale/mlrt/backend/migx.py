@@ -79,22 +79,21 @@ class MIGX(BackendAutoConvertFloat):
             raise CustomValueError("MIGX backend does not support both fp16 and bf16")
 
     @property
-    def version(self) -> tuple[int, int, int]:
-        v = int(self.plugin.Version()["migraphx_version_build"])
-        plugin_version = Version(f"{v // 10000}.{v // 100 % 100}.{v % 100}")
+    def version(self) -> tuple[int, int]:
+        version_info = self.plugin.Version()
 
-        p = subprocess.run(["cat", "/opt/rocm/.info/version"], capture_output=True, text=True)
-        if p.returncode != 0:
-            raise CustomRuntimeError(f"Failed to get MIGraphx driver version\n\n{p.stderr}\n\n{p.stdout}")
+        v_run = int(version_info["hip_runtime_version"])
+        run_version = Version(f"{v_run // 10000000}.{(v_run % 10000000) // 100000}.{v_run % 100000}")
 
-        migraphx_driver_version = Version(p.stdout)
+        v_build = int(version_info["hip_runtime_version_build"])
+        build_version = Version(f"{v_build // 10000000}.{(v_build % 10000000) // 100000}.{v_build % 100000}")
 
-        if plugin_version.release[:3] != (version := migraphx_driver_version.release[:3]):
+        if build_version.release[:2] != run_version.release[:2]:
             raise CustomRuntimeError(
-                f"MIGraphx plugin version {plugin_version} does not match driver version {migraphx_driver_version}"
+                f"MIGraphx plugin build version {build_version} does not match runtime version {run_version}"
             )
 
-        return version  # type: ignore[return-value]
+        return run_version.release[0], run_version.release[1]
 
     @copy_signature(BackendAutoConvertFloat.inference)
     def inference(
@@ -128,7 +127,7 @@ class MIGX(BackendAutoConvertFloat):
         checksum = zlib.crc32(network_path.read_bytes())
 
         device_props = self.plugin.DeviceProperties(self.device_id)
-        device = [device_props["name"].decode().replace(" ", "-"), device_props["driver_version"].decode()]
+        device = [device_props["name"].decode().replace(" ", "-"), device_props["driver_version"]]
 
         components = (
             str(self),
@@ -136,8 +135,9 @@ class MIGX(BackendAutoConvertFloat):
             network_path.name,
             f"{checksum:x}",
             str(tilesize),
-            *device,
+            *map(str, device),
         )
+        logger.debug("%s: Identity %r", self.get_identity, components)
         return zlib.crc32(bytes("|".join(components), "utf-8"))
 
     def build_program(self, network_path: Path, channels: int, tilesize: Shape, input_name: str = "input") -> Path:
@@ -175,6 +175,9 @@ class MIGX(BackendAutoConvertFloat):
             command.append("--exhaustive-tune")
 
         command.extend(self.custom_args)
+
+        logger.debug("%s: Calling migraphx-driver with the command:", self)
+        logger.debug(command)
 
         try:
             subprocess.run(command, env=os.environ | self.custom_env, check=True, stdout=sys.stderr)
