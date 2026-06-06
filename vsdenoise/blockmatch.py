@@ -92,12 +92,10 @@ def wnnm(
     """
     assert check_progressive(clip, wnnm)
 
-    func = FunctionUtil(clip, wnnm, planes, bitdepth=32)
-
+    func = FunctionUtil(clip, wnnm, planes)
     sigma = func.norm_seq(sigma, 0)
 
     if ref is not None:
-        ref = depth(ref, 32)
         ref = get_y(ref) if func.luma_only else ref
 
     dkwargs = dict[str, Any](radius=tr, rclip=ref) | kwargs
