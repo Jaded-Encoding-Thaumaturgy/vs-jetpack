@@ -151,7 +151,7 @@ class BM3D[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Selection priority: "CUDA_RTC" → "CUDA" → "HIP" → "SYCL" → "CPU" → "OLD".
+        Selection priority: "CUDA_RTC" → "CUDA" → "HIP" → "SYCL" → "METAL" → "CPU" → "OLD".
         """
 
         CUDA_RTC = "bm3dcuda_rtc"
@@ -212,11 +212,7 @@ class BM3D[**P, R]:
                     logger.debug("%s: Auto selecting 'BM3D.Backend.%s'", BM3D.Backend.resolve, backend.name)
                     return backend
 
-            raise CustomRuntimeError(
-                "No compatible plugin found. Please install one from: "
-                "https://github.com/WolframRhodium/VapourSynth-BM3DCUDA "
-                "or https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D/"
-            )
+            raise CustomRuntimeError("No available BM3D plugin found. Please install one.")
 
         @property
         def plugin(self) -> vs.Plugin:

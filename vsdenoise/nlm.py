@@ -107,11 +107,7 @@ class NLMeans[**P, R]:
                 logger.debug("%s: Auto selecting 'NLMeans.Backend.ISPC", NLMeans.Backend.NLMeans)
                 return NLMeans.Backend.ISPC.NLMeans(clip, *args, **kwargs)
 
-            raise CustomRuntimeError(
-                "No compatible plugin found. Please install one from: "
-                "https://github.com/AmusementClub/vs-nlm-cuda, https://github.com/AmusementClub/vs-nlm-ispc "
-                "or https://github.com/Khanattila/KNLMeansCL"
-            )
+            raise CustomRuntimeError("No available NLMeans plugin found. Please install one.")
 
     class WeightMode(CustomIntEnum):
         """
