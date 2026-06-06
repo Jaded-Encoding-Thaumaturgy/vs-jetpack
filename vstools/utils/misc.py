@@ -503,8 +503,6 @@ def normalize_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:
         Sorted list of planes.
     """
 
-    assert clip.format
-
     planes = list(range(clip.format.num_planes)) if planes is None or planes == 4 else to_arr(planes)
 
     return sorted(set(planes).intersection(range(clip.format.num_planes)))
