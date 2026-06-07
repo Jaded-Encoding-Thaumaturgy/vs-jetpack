@@ -154,7 +154,10 @@ class dre_edgemask(CustomEnum):  # noqa: N801
         if self is dre_edgemask.CLAHE:
             limit, tile = kwargs.get("limit", 0.0305), kwargs.get("tile", 5)
 
-            return depth(depth(clip, 16).vszip.CLAHE(int(scale_delta(limit, 32, 16)), tile), clip)
+            return depth(
+                depth(clip, min(clip.format.bits_per_sample, 16)).vszip.CLAHE(int(scale_delta(limit, 32, 16)), tile),
+                clip,
+            )
 
         raise CustomNotImplementedError
 
