@@ -347,6 +347,8 @@ class HardsubLine(HardsubMask):
         refframes: int | list[int | None] | None = None,
     ) -> None:
         """
+        Initialize the class.
+
         Args:
             ranges: The frame ranges that the mask should be applied to.
             bound: An optional bounding box that defines the area of the frame where the mask will be applied. If None,
