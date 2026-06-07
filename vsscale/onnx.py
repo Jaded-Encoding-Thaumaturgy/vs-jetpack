@@ -14,15 +14,14 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat
 
 from jetpytools import CustomRuntimeError, CustomValueError, FileNotExistsError, FuncExcept, SPath, SPathLike
 
-from vsexprtools import norm_expr
+from vsexprtools import ExprOp, combine_expr, norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
-from vsmasktools import Morpho
 from vstools import (
+    ConvMode,
     Matrix,
     ProcessVariableResClip,
     check_variable_resolution,
     core,
-    depth,
     get_color_family,
     get_y,
     join,
@@ -715,10 +714,11 @@ class _Waifu2xCunet(BaseWaifu2x):
         if kwargs.pop("no_tint_fix", False):
             return super().postprocess_clip(clip, input_clip, **kwargs)
 
-        clip = depth(clip, 32)
-
+        maximum_expr = combine_expr(ExprOp.matrix("x", 1, ConvMode.SQUARE, [(0, 0)])[0])
         tint_fix = norm_expr(
-            [clip, Morpho.maximum(clip)], "x 0.5 255 / + y min", func="Waifu2x." + self.__class__.__name__
+            clip,
+            ["x 0.5 255 / +", maximum_expr, ExprOp.MIN],
+            func="Waifu2x." + self.__class__.__name__,
         )
         return super().postprocess_clip(tint_fix, input_clip, **kwargs)
 
