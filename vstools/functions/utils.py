@@ -164,10 +164,10 @@ class DitherType(CustomStrEnum):
 
         if range_in is not None:
             clip = Range.ensure_presence(clip, range_in)
-            range_in = Range.from_param(range_in).value_zimg
+            range_in = Range.from_param(range_in)
 
         if range_out is not None:
-            range_out = Range.from_param(range_out).value_zimg
+            range_out = Range.from_param(range_out)
 
         if not (self.is_fmtc or force_fmtc):
             return clip.resize.Point(format=out_fmt, dither_type=self.value.lower(), range_in=range_in, range=range_out)
