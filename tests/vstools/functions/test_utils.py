@@ -103,7 +103,12 @@ class TestUtils(TestCase):
         self.assertEqual(result.format.name, "Gray8")
 
 
-formats = [fmt for fmt in vs.PresetVideoFormat if fmt]
+# Remove 32-bit integer formats since resize doesn't support the conversion to it.
+formats = [
+    fmt
+    for fmt in vs.PresetVideoFormat
+    if fmt and ((f := vs.core.get_video_format(fmt)) and f.bits_per_sample != 32 and f.sample_type == vs.INTEGER)
+]
 
 
 @pytest.mark.parametrize(
