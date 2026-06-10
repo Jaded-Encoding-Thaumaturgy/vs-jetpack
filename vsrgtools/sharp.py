@@ -326,4 +326,7 @@ def fast_line_darken(
         thin = norm_expr([Morpho.maximum(luma), diff], "x y neutral - {strength} 1 + * +", strength=strength)
         sharp = thin.std.MaskedMerge(sharp, linemask)
 
-    return join(sharp, clip)
+    if clip.format.color_family is vs.YUV:
+        sharp = join(sharp, clip)
+
+    return sharp
