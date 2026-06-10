@@ -20,14 +20,11 @@ from jetpytools import (
 from vsexprtools import norm_expr
 from vskernels import Point
 from vstools import (
-    FunctionUtil,
     Planes,
     Range,
-    check_progressive,
     check_ref_clip,
     core,
     depth,
-    get_y,
     join,
     normalize_param_planes,
     vs,
@@ -90,32 +87,23 @@ def wnnm(
     Returns:
         Denoised clip.
     """
-    assert check_progressive(clip, wnnm)
 
-    func = FunctionUtil(clip, wnnm, planes, bitdepth=32)
-
-    sigma = func.norm_seq(sigma, 0)
-
-    if ref is not None:
-        ref = depth(ref, 32)
-        ref = get_y(ref) if func.luma_only else ref
+    sigma = normalize_param_planes(clip, sigma, planes, 0)
 
     dkwargs = dict[str, Any](radius=tr, rclip=ref) | kwargs
 
-    previous = func.work_clip
-    denoised = core.wnnm.WNNM(func.work_clip, sigma, **dkwargs)
+    previous = clip
+    denoised = core.wnnm.WNNM(clip, sigma, **dkwargs)
 
     for i in range(refine):
         if i == 0:
             previous = denoised
         else:
-            previous = norm_expr(
-                [func.work_clip, previous, denoised], f"x y - {merge_factor} * z +", planes, func=func.func
-            )
+            previous = norm_expr([clip, previous, denoised], f"x y - {merge_factor} * z +", planes, func=wnnm)
 
         denoised = core.wnnm.WNNM(previous, sigma, **dkwargs)
 
-    return func.return_clip(denoised)
+    return denoised
 
 
 def _clean_keywords(kwargs: dict[str, Any], function: vs.Function) -> dict[str, Any]:
