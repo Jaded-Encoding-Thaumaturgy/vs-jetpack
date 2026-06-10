@@ -190,7 +190,7 @@ class FixInterlacedFades(CustomStrEnum):
 
         if isinstance(color, vs.VideoNode):
             check_ref_clip(color, clip, self.__class__)
-            if color.num_frames:
+            if color.num_frames > 1:
                 raise CustomValueError("`color` must be a single frame clip!", self.__class__, color.num_frames)
 
             expr_clips.append(color)
