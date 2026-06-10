@@ -121,7 +121,7 @@ def based_aa(
 
     if mask is not False and not isinstance(mask, vs.VideoNode):
         mask = EdgeDetect.ensure_obj(mask, based_aa).edgemask(luma)
-        mask = mask.std.BinarizeMask(scale_mask(mask_thr, 8, luma))
+        mask = mask.std.BinarizeMask(scale_mask(mask_thr, 8, clip))
         mask = box_blur(mask.std.Maximum())
 
         if show_mask:
@@ -149,8 +149,8 @@ def based_aa(
     if callable(prefilter):
         ss_clip = prefilter(luma)
     elif isinstance(prefilter, vs.VideoNode):
-        FormatsMismatchError.check(based_aa, luma, prefilter)
-        ss_clip = prefilter
+        UnsupportedColorFamilyError.check(prefilter, (vs.YUV, vs.GRAY), based_aa)
+        ss_clip = get_y(prefilter)
     else:
         ss_clip = luma
 
