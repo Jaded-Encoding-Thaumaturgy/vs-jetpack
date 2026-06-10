@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from functools import partial
 from typing import Any, Literal, overload
 
-from jetpytools import CustomEnum, CustomIntEnum, CustomValueError
+from jetpytools import CustomEnum, CustomStrEnum, CustomValueError
 
 from vsdenoise import MotionVectors, MVTools, MVToolsPreset, prefilter_to_full_range, refine_blksize
 from vsexprtools import norm_expr
@@ -141,17 +141,17 @@ class InterpolateOverlay(CustomEnum):
         return (fixed, mv) if export_globals else fixed
 
 
-class FixInterlacedFades(CustomIntEnum):
+class FixInterlacedFades(CustomStrEnum):
     """
     Enum for mathematically decombing fades that were applied *after* telecine.
     """
 
-    AVERAGE = 0
+    AVERAGE = "+ 2 /"
     """
     Adjust the average of each field to `color`.
     """
 
-    MATCH = 1
+    MATCH = "min"
     """
     Match to the field closest to `color`.
     """
@@ -221,7 +221,7 @@ class FixInterlacedFades(CustomIntEnum):
             planes,
             i=planes,
             color=expr_color,
-            expr_mode="+ 2 /" if self == self.AVERAGE else "min",
+            expr_mode=self.value,
             func=self.__class__,
         )
 
