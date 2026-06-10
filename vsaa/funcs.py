@@ -12,7 +12,6 @@ from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
 from vsscale import ArtCNN
 from vstools import (
     ConvMode,
-    FormatsMismatchError,
     FunctionUtil,
     Planes,
     UnsupportedColorFamilyError,
