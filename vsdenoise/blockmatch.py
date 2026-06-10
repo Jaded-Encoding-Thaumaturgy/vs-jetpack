@@ -72,34 +72,34 @@ def wnnm(
             The valid range is [0, +inf), though practical values usually fall between **0.35 and 1.0**.
             Values above 4.0 are rarely useful.
         block_size: The size of a block is block_size x block_size (the 1st and the 2nd dimension), valid range [1,64].
-                    A block is the basic processing unit of WNNM, representing a local patch.
-                    Generally, larger block will be slower, especially in the DCT/IDCT part. While at the same time,
-                    larger block_size allows you to set larger block_step, resulting in less block to be processed.
-                    8 is a well-balanced value, both for quality and speed.
+            A block is the basic processing unit of WNNM, representing a local patch.
+            Generally, larger block will be slower, especially in the DCT/IDCT part. While at the same time,
+            larger block_size allows you to set larger block_step, resulting in less block to be processed.
+            8 is a well-balanced value, both for quality and speed.
         block_step: Sliding step to process every next reference block, valid range [1,block_size].
-                    Total number of reference blocks to be processed can be calculated approximately by
-                    (width / block_step) * (height / block_step).
-                    Smaller step results in processing more reference blocks, and is slower.
+            Total number of reference blocks to be processed can be calculated approximately by
+            (width / block_step) * (height / block_step).
+            Smaller step results in processing more reference blocks, and is slower.
         group_size: Maximum number of similar blocks in each group (the 3rd dimension), valid range [1,256].
-                    Larger value allows more blocks in a single group. Thus, the sparsity in a transformed group raises,
-                    the filtering will be stronger, and also slower in the DCT/IDCT part.
-                    When set to 1, no block-matching will be performed and each group only consists of the
-                    reference block.
+            Larger value allows more blocks in a single group. Thus, the sparsity in a transformed group raises,
+            the filtering will be stronger, and also slower in the DCT/IDCT part.
+            When set to 1, no block-matching will be performed and each group only consists of the
+            reference block.
         bm_range: Length of the side of the search neighborhood for block-matching, valid range [1, +inf).
-                    The size of search window is (bm_range * 2 + 1) x (bm_range * 2 + 1).
-                    Larger is slower, with more chances to find similar patches.
+            The size of search window is (bm_range * 2 + 1) x (bm_range * 2 + 1).
+            Larger is slower, with more chances to find similar patches.
         tr: The temporal radius for denoising, valid range [1, 16].
             For each processed frame, (radius * 2 + 1) frames will be requested,
             Increasing radius only increases tiny computational cost in block-matching and aggregation,
             and will not affect collaborative filtering, but the memory consumption can grow quadratically.
             Thus, feel free to use large radius as long as your RAM is large enough.
         ps_num: The number of matched locations used for predictive search, valid range [1, group_size].
-                Larger value increases the possibility to match more similar blocks,
-                with tiny increasing in computational cost.
+            Larger value increases the possibility to match more similar blocks,
+            with tiny increasing in computational cost.
         ps_range: Length of the side of the search neighborhood for predictive-search block-matching,
-                  valid range [1, +inf)
+            valid range [1, +inf)
         residual: Whether to center blocks before collaborative filtering. Default: False.
-        adaptive_aggregation:
+        adaptive_aggregation: Whether to aggregate blocks adaptively. Default: True.
         ref: Reference clip for block matching. Must be of the same dimensions and format as `clip`.
         refine: Number of additional refinement iterations to perform.
 
