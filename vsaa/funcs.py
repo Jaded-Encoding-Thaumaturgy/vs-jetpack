@@ -15,7 +15,10 @@ from vstools import (
     FormatsMismatchError,
     FunctionUtil,
     Planes,
+    UnsupportedColorFamilyError,
     VSFunctionNoArgs,
+    get_y,
+    join,
     scale_mask,
     vs,
 )
@@ -109,14 +112,16 @@ def based_aa(
         CustomValueError: If rfactor is not above 0.0, or invalid prefilter/postfilter is passed.
     """
 
-    func = FunctionUtil(clip, based_aa, 0, (vs.YUV, vs.GRAY))
+    UnsupportedColorFamilyError.check(clip, (vs.YUV, vs.GRAY), based_aa)
 
     if rfactor <= 0.0:
         raise CustomValueError("rfactor must be greater than 0!", based_aa, rfactor)
 
+    luma = get_y(clip)
+
     if mask is not False and not isinstance(mask, vs.VideoNode):
-        mask = EdgeDetect.ensure_obj(mask, based_aa).edgemask(func.work_clip, 0)
-        mask = mask.std.BinarizeMask(scale_mask(mask_thr, 8, func.work_clip))
+        mask = EdgeDetect.ensure_obj(mask, based_aa).edgemask(luma)
+        mask = mask.std.BinarizeMask(scale_mask(mask_thr, 8, luma))
         mask = box_blur(mask.std.Maximum())
 
         if show_mask:
@@ -126,15 +131,12 @@ def based_aa(
         supersampler = downscaler = NoScale[Catrom]()
         rfactor = pscale = 1.0
 
-    aaw, aah = [round(dimension * rfactor) for dimension in (func.work_clip.width, func.work_clip.height)]
+    aaw, aah = [round(dimension * rfactor) for dimension in (clip.width, clip.height)]
 
     if downscaler is None:
         downscaler = (
             Box
-            if (
-                max(aaw, func.work_clip.width) % min(aaw, func.work_clip.width) == 0
-                and max(aah, func.work_clip.height) % min(aah, func.work_clip.height) == 0
-            )
+            if (max(aaw, clip.width) % min(aaw, clip.width) == 0 and max(aah, clip.height) % min(aah, clip.height) == 0)
             else Catrom
         )
 
@@ -145,12 +147,12 @@ def based_aa(
         downscaler, supersampler = supersampler, downscaler
 
     if callable(prefilter):
-        ss_clip = prefilter(func.work_clip)
+        ss_clip = prefilter(luma)
     elif isinstance(prefilter, vs.VideoNode):
-        FormatsMismatchError.check(based_aa, func.work_clip, prefilter)
+        FormatsMismatchError.check(based_aa, luma, prefilter)
         ss_clip = prefilter
     else:
-        ss_clip = func.work_clip
+        ss_clip = luma
 
     ss = supersampler.scale(ss_clip, aaw, aah)
 
@@ -169,20 +171,22 @@ def based_aa(
         aa_kwargs.update(mclip=mclip)
 
     aa = antialiaser.antialias(ss, **aa_kwargs)
-
-    aa = downscaler.scale(aa, func.work_clip.width, func.work_clip.height)
+    aa = downscaler.scale(aa, clip.width, clip.height)
 
     if pscale != 1.0:
-        no_aa = downscaler.scale(ss, func.work_clip.width, func.work_clip.height)
-        aa = norm_expr([ss_clip, aa, no_aa], "x z x - {pscale} * + y z - +", pscale=pscale, func=func.func)
+        no_aa = downscaler.scale(ss, clip.width, clip.height)
+        aa = norm_expr([ss_clip, aa, no_aa], "x z x - {pscale} * + y z - +", pscale=pscale, func=based_aa)
 
     if callable(postfilter):
         aa = postfilter(aa)
     elif postfilter is not False:
         postfilter_args = {"sigmaS": 2, "sigmaR": 1 / 255} | fallback(postfilter, {})
-        aa = MeanMode.MEDIAN(aa, ss_clip, bilateral(aa, func.work_clip, **postfilter_args))
+        aa = MeanMode.MEDIAN(aa, ss_clip, bilateral(aa, luma, **postfilter_args))
 
     if mask:
-        aa = func.work_clip.std.MaskedMerge(aa, mask)
+        aa = luma.std.MaskedMerge(aa, mask)
 
-    return func.return_clip(aa)
+    if clip.format.color_family is vs.YUV:
+        aa = join(aa, clip)
+
+    return aa
