@@ -14,13 +14,17 @@ if TYPE_CHECKING:
 from vsjetpack import require_jet_dependency
 from vstools import (
     ConvMode,
-    FunctionUtil,
     Planes,
+    UnsupportedColorFamilyError,
     VSFunctionNoArgs,
     VSFunctionPlanesArgs,
     check_ref_clip,
     get_peak_value,
+    get_y,
+    join,
     limiter,
+    normalize_param_planes,
+    normalize_planes,
     scale_delta,
     scale_mask,
     scale_value,
@@ -114,10 +118,8 @@ def awarpsharp(
     """
     from vsmasktools import Sobel, normalize_mask
 
-    func = FunctionUtil(clip, awarpsharp, planes)
-
-    thresh = scale_mask(thresh, 8, func.work_clip)
-    mask_first_plane = fallback(mask_first_plane, func.work_clip.format.color_family == vs.YUV)
+    thresh = scale_mask(thresh, 8, clip)
+    mask_first_plane = fallback(mask_first_plane, clip.format.color_family is vs.YUV)
     mask_planes = 0 if mask_first_plane else planes
 
     if mask is None:
@@ -125,15 +127,13 @@ def awarpsharp(
 
     kwargs = {"clamp": (0, thresh)} | kwargs
 
-    mask = normalize_mask(mask, func.work_clip, func.work_clip, func=func.func, planes=mask_planes, **kwargs)
+    mask = normalize_mask(mask, clip, clip, planes=mask_planes, func=awarpsharp, **kwargs)
 
     if blur is not False:
         blur_fn = partial(box_blur, radius=2, passes=blur, planes=planes) if isinstance(blur, int) else blur
         mask = blur_fn(mask, planes=mask_planes)
 
-    warp = func.work_clip.awarp.AWarp(mask, depth_h, depth_v, mask_first_plane, planes)
-
-    return func.return_clip(warp)
+    return clip.awarp.AWarp(mask, depth_h, depth_v, mask_first_plane, planes)
 
 
 @require_jet_dependency("scipy")
@@ -178,32 +178,32 @@ def fine_sharp(
     Returns:
         Sharpened clip.
     """
-    func = FunctionUtil(clip, fine_sharp, planes)
+
+    planes = normalize_planes(clip, planes)
 
     if cstr is None:
-        from numpy import asarray
         from scipy import interpolate
 
         cs = interpolate.CubicSpline(
             (0, 0.5, 1.0, 2.0, 2.5, 3.0, 3.5, 4.0, 8.0, 255.0), (0, 0.1, 0.6, 0.9, 1.0, 1.09, 1.15, 1.19, 1.249, 1.5)
         )
-        cstr = float(cs(asarray(sstr)))
+        cstr = cs(sstr).item(0)
 
     if ldmp is None:
         ldmp = sstr + 0.1
 
     if mode == 0:
-        blurred = median_blur(BlurMatrix.BINOMIAL()(func.work_clip, planes), planes=planes)
+        blurred = median_blur(BlurMatrix.BINOMIAL()(clip, planes), planes=planes)
     elif mode == 1:
-        blurred = BlurMatrix.BINOMIAL()(median_blur(func.work_clip, planes=planes), planes)
+        blurred = BlurMatrix.BINOMIAL()(median_blur(clip, planes=planes), planes)
     else:
         raise NotImplementedError
 
-    sharp = func.work_clip
+    sharp = clip
 
     if sstr:
         sharp = norm_expr(
-            [func.work_clip, blurred],
+            [clip, blurred],
             "x y = x dup x y - range_size 256 / / dup dup dup abs {lstr} / {pstr} pow "
             "swap3 abs {hdmp} + / swap dup * dup {ldmp} + / * * {sstr} * + ?",
             planes,
@@ -212,19 +212,19 @@ def fine_sharp(
             sstr=scale_delta(sstr, 8, clip),
             ldmp=ldmp,
             hdmp=hdmp,
-            func=func.func,
+            func=fine_sharp,
         )
 
     if cstr:
-        diff = norm_expr([func.work_clip, sharp], "x y - {cstr} * neutral +", planes, cstr=cstr, func=func.func)
+        diff = norm_expr([clip, sharp], "x y - {cstr} * neutral +", planes, cstr=cstr, func=fine_sharp)
         sharp = sharp.std.MergeDiff(BlurMatrix.BINOMIAL()(diff, planes))
 
     if xstr:
-        xysharp = norm_expr([sharp, box_blur(sharp, planes=planes)], "x x y - 9.9 * +", planes, func=func.func)
+        xysharp = norm_expr([sharp, box_blur(sharp, planes=planes)], "x x y - 9.9 * +", planes, func=fine_sharp)
         rpsharp = repair(xysharp, sharp, 12, planes)
-        sharp = sharp.std.Merge(rpsharp, func.norm_seq(xstr, 0))
+        sharp = sharp.std.Merge(rpsharp, normalize_param_planes(clip, xstr, planes, 0))
 
-    return func.return_clip(sharp)
+    return sharp
 
 
 def soothe(
@@ -307,22 +307,26 @@ def fast_line_darken(
     """
     from vsmasktools import Morpho
 
-    func = FunctionUtil(clip, fast_line_darken, 0, vs.YUV)
+    UnsupportedColorFamilyError.check(clip, (vs.YUV, vs.GRAY), fast_line_darken)
 
     strength /= 128
-    cap = scale_value(luma_cap, 8, func.work_clip)
-    thr = scale_delta(threshold, 8, func.work_clip)
+    cap = scale_value(luma_cap, 8, clip)
+    thr = scale_delta(threshold, 8, clip)
     thinning /= 16
 
-    max_thr = scale_delta(get_peak_value(func.work_clip) / (protection + 1), func.work_clip, 32)
+    max_thr = scale_delta(get_peak_value(clip) / (protection + 1), clip, 32)
 
-    closing = limiter(Morpho.minimum(Morpho.maximum(func.work_clip, max_thr)), max_val=cap)
-    thick = norm_expr([func.work_clip, closing], "y x {thr} + > x y - {strength} * x + x ?", thr=thr, strength=strength)
+    luma = get_y(clip)
+    closing = limiter(Morpho.minimum(Morpho.maximum(luma, max_thr)), max_val=cap)
+    sharp = norm_expr([luma, closing], "y x {thr} + > x y - {strength} * x + x ?", thr=thr, strength=strength)
 
-    if not thinning:
-        return func.return_clip(thick)
+    if thinning:
+        diff = norm_expr([luma, closing], "y x {thr} + > x y - neutral + neutral ?", thr=thr)
+        linemask = BlurMatrix.MEAN()(norm_expr(Morpho.minimum(diff), "x neutral - {thn} * plane_max +", thn=thinning))
+        thin = norm_expr([Morpho.maximum(luma), diff], "x y neutral - {strength} 1 + * +", strength=strength)
+        sharp = thin.std.MaskedMerge(sharp, linemask)
 
-    diff = norm_expr([func.work_clip, closing], "y x {thr} + > x y - neutral + neutral ?", thr=thr)
-    linemask = BlurMatrix.MEAN()(norm_expr(Morpho.minimum(diff), "x neutral - {thn} * plane_max +", thn=thinning))
-    thin = norm_expr([Morpho.maximum(func.work_clip), diff], "x y neutral - {strength} 1 + * +", strength=strength)
-    return func.return_clip(thin.std.MaskedMerge(thick, linemask))
+    if clip.format.color_family is vs.YUV:
+        sharp = join(sharp, clip)
+
+    return sharp
