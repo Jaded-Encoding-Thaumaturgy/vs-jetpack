@@ -42,14 +42,14 @@ def detail_mask(
 @limiter
 def detail_mask_neo(
     clip: vs.VideoNode,
-    sigma: float = 1.0,
-    detail_brz: float = 0.05,
+    sigma: float = 5.0,
+    detail_brz: float = 0.005,
     lines_brz: float = 0.08,
     edgemask: MaskLike = Prewitt,
     rg_mode: RemoveGrain.Mode = remove_grain.Mode.MINMAX_MEDIAN_OPP,
 ) -> vs.VideoNode:
     clip_y = get_y(clip)
-    blur_pf = gauss_blur(clip_y, sigma * 0.75)
+    blur_pf = gauss_blur(clip_y, sigma)
 
     blur_pref = bilateral(clip_y, blur_pf, sigma)
     blur_pref_diff = ExprOp.SUB.combine(blur_pref, clip_y).std.Deflate()
