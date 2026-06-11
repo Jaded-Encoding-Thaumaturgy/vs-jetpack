@@ -11,7 +11,6 @@ from vsexprtools import norm_expr
 if TYPE_CHECKING:
     from vsmasktools import MaskLike
 
-from vsjetpack import require_jet_dependency
 from vstools import (
     ConvMode,
     Planes,
@@ -136,7 +135,6 @@ def awarpsharp(
     return clip.awarp.AWarp(mask, depth_h, depth_v, mask_first_plane, planes)
 
 
-@require_jet_dependency("scipy")
 def fine_sharp(
     clip: vs.VideoNode,
     mode: int = 0,
