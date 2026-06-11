@@ -70,7 +70,7 @@ def detail_mask_neo(
     return remove_grain(merged, rg_mode)
 
 
-@limiter
+@deprecated("simple_detail_mask is deprecated. Use detail_mask instead.", category=DeprecationWarning)
 def simple_detail_mask(
     clip: vs.VideoNode, sigma: float | None = None, rad: int = 3, brz_a: float = 0.025, brz_b: float = 0.045
 ) -> vs.VideoNode:
