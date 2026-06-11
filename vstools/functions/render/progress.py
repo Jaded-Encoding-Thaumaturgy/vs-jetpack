@@ -59,20 +59,26 @@ class RenderProgressCTX:
 
 
 @overload
-def get_render_progress() -> Progress: ...
-
-
+def get_render_progress(*, console: Console | None = None, **kwargs: Any) -> Progress: ...
 @overload
-def get_render_progress(title: str, total: int) -> RenderProgressCTX: ...
-
-
-def get_render_progress(title: str | None = None, total: int | None = None) -> RenderProgressCTX | Progress:
+def get_render_progress(
+    title: str,
+    total: int,
+    console: Console = ...,
+    **kwargs: Any,
+) -> RenderProgressCTX: ...
+def get_render_progress(
+    title: str | None = None,
+    total: int | None = None,
+    console: Console | None = None,
+    **kwargs: Any,
+) -> RenderProgressCTX | Progress:
     """
     Return render progress.
     """
 
     if title and total:
-        progress = get_render_progress()
+        progress = get_render_progress(console=console, **kwargs)
 
         return RenderProgressCTX(progress, progress.add_task(title, True, total))
 
@@ -84,5 +90,6 @@ def get_render_progress(title: str | None = None, total: int | None = None) -> R
         FPSColumn(),
         TimeElapsedColumn(),
         TimeRemainingColumn(),
-        console=Console(stderr=True),
+        console=console or Console(stderr=True),
+        **kwargs,
     )
