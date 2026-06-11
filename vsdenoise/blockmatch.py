@@ -38,16 +38,16 @@ logger = getLogger(__name__)
 def wnnm(
     clip: vs.VideoNode,
     sigma: float | Sequence[float] = 3.0,
-    block_size: int = 8,
-    block_step: int = 8,
-    group_size: int = 8,
-    bm_range: int = 7,
-    tr: int = 0,
-    ps_num: int = 2,
-    ps_range: int = 4,
-    residual: bool = False,
-    adaptive_aggregation: bool = True,
+    tr: int | None = None,
     ref: vs.VideoNode | None = None,
+    block_size: int | None = None,
+    block_step: int | None = None,
+    group_size: int | None = None,
+    bm_range: int | None = None,
+    ps_num: int | None = None,
+    ps_range: int | None = None,
+    residual: bool | None = None,
+    adaptive_aggregation: bool | None = None,
     refine: int = 0,
     merge_factor: float = 0.1,
     planes: Planes = None,
@@ -71,6 +71,12 @@ def wnnm(
             Accepts either a single float (applied to all planes) or a per-plane sequence.
             The valid range is [0, +inf), though practical values usually fall between **0.35 and 1.0**.
             Values above 4.0 are rarely useful.
+        tr: The temporal radius for denoising, valid range [1, 16].
+            For each processed frame, (radius * 2 + 1) frames will be requested,
+            Increasing radius only increases tiny computational cost in block-matching and aggregation,
+            and will not affect collaborative filtering, but the memory consumption can grow quadratically.
+            Thus, feel free to use large radius as long as your RAM is large enough.
+        ref: Reference clip for block matching. Must be of the same dimensions and format as `clip`.
         block_size: The size of a block is block_size x block_size (the 1st and the 2nd dimension), valid range [1,64].
             A block is the basic processing unit of WNNM, representing a local patch.
             Generally, larger block will be slower, especially in the DCT/IDCT part. While at the same time,
@@ -88,11 +94,6 @@ def wnnm(
         bm_range: Length of the side of the search neighborhood for block-matching, valid range [1, +inf).
             The size of search window is (bm_range * 2 + 1) x (bm_range * 2 + 1).
             Larger is slower, with more chances to find similar patches.
-        tr: The temporal radius for denoising, valid range [1, 16].
-            For each processed frame, (radius * 2 + 1) frames will be requested,
-            Increasing radius only increases tiny computational cost in block-matching and aggregation,
-            and will not affect collaborative filtering, but the memory consumption can grow quadratically.
-            Thus, feel free to use large radius as long as your RAM is large enough.
         ps_num: The number of matched locations used for predictive search, valid range [1, group_size].
             Larger value increases the possibility to match more similar blocks,
             with tiny increasing in computational cost.
@@ -100,7 +101,6 @@ def wnnm(
             valid range [1, +inf)
         residual: Whether to center blocks before collaborative filtering. Default: False.
         adaptive_aggregation: Whether to aggregate blocks adaptively. Default: True.
-        ref: Reference clip for block matching. Must be of the same dimensions and format as `clip`.
         refine: Number of additional refinement iterations to perform.
 
             A value of 0 corresponds to a single WNNM pass (equivalent to `num_iterations=1`
