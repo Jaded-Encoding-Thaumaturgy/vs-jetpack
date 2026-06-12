@@ -20,14 +20,11 @@ from jetpytools import (
 from vsexprtools import norm_expr
 from vskernels import Point
 from vstools import (
-    FunctionUtil,
     Planes,
     Range,
-    check_progressive,
     check_ref_clip,
     core,
     depth,
-    get_y,
     join,
     normalize_param_planes,
     vs,
@@ -41,35 +38,69 @@ logger = getLogger(__name__)
 def wnnm(
     clip: vs.VideoNode,
     sigma: float | Sequence[float] = 3.0,
-    tr: int = 0,
-    refine: int = 0,
+    tr: int | None = None,
     ref: vs.VideoNode | None = None,
+    block_size: int | None = None,
+    block_step: int | None = None,
+    group_size: int | None = None,
+    bm_range: int | None = None,
+    ps_num: int | None = None,
+    ps_range: int | None = None,
+    residual: bool | None = None,
+    adaptive_aggregation: bool | None = None,
+    refine: int = 0,
     merge_factor: float = 0.1,
     planes: Planes = None,
-    **kwargs: Any,
 ) -> vs.VideoNode:
     """
-    Weighted Nuclear Norm Minimization Denoise algorithm.
+    WNNM is a denoising algorithm based on block-matching and weighted nuclear norm minimization.
 
-    Block matching, popularized by BM3D, finds similar blocks and stacks them together in a 3-D group.
+    Block matching, which is popularized by BM3D, finds similar blocks and then stacks together in a 3-D group.
     The similarity between these blocks allows details to be preserved during denoising.
 
-    In contrast to BM3D, which denoises the 3-D group via frequency domain filtering,
-    WNNM (Weighted Nuclear Norm Minimization) uses a low-rank matrix approximation approach.
-    Because of this, WNNM tends to exhibit fewer blocking and ringing artifacts than BM3D,
-    at the cost of much higher computational complexity.
-    This stage is analogous to the "collaborative filtering" step in BM3D.
+    In contrast to BM3D, which denoises the 3-D group based on frequency domain filtering,
+    WNNM utilizes weighted nuclear norm minimization, a kind of low rank matrix approximation.
+    Because of this, WNNM exhibits less blocking and ringing artifact compared to BM3D,
+    but the computational complexity is much higher. This stage is called collaborative filtering in BM3D.
 
     For more information, see the [WNNM README](https://github.com/WolframRhodium/VapourSynth-WNNM).
 
     Args:
-        clip: Clip to process.
-        sigma: Denoising strength, controlling how aggressively noise is suppressed.
-            Larger values remove more noise but may smooth fine details.
-
+        clip: The input clip. Must be of 32 bit float format. Each plane is denoised separately.
+        sigma: Denoising strength of each plane. Larger values remove more noise but may smooth fine details.
             Accepts either a single float (applied to all planes) or a per-plane sequence.
             The valid range is [0, +inf), though practical values usually fall between **0.35 and 1.0**.
             Values above 4.0 are rarely useful.
+        tr: The temporal radius for denoising, valid range [1, 16].
+            For each processed frame, (radius * 2 + 1) frames will be requested,
+            Increasing radius only increases tiny computational cost in block-matching and aggregation,
+            and will not affect collaborative filtering, but the memory consumption can grow quadratically.
+            Thus, feel free to use large radius as long as your RAM is large enough.
+        ref: Reference clip for block matching. Must be of the same dimensions and format as `clip`.
+        block_size: The size of a block is block_size x block_size (the 1st and the 2nd dimension), valid range [1,64].
+            A block is the basic processing unit of WNNM, representing a local patch.
+            Generally, larger block will be slower, especially in the DCT/IDCT part. While at the same time,
+            larger block_size allows you to set larger block_step, resulting in less block to be processed.
+            8 is a well-balanced value, both for quality and speed.
+        block_step: Sliding step to process every next reference block, valid range [1,block_size].
+            Total number of reference blocks to be processed can be calculated approximately by
+            (width / block_step) * (height / block_step).
+            Smaller step results in processing more reference blocks, and is slower.
+        group_size: Maximum number of similar blocks in each group (the 3rd dimension), valid range [1,256].
+            Larger value allows more blocks in a single group. Thus, the sparsity in a transformed group raises,
+            the filtering will be stronger, and also slower in the DCT/IDCT part.
+            When set to 1, no block-matching will be performed and each group only consists of the
+            reference block.
+        bm_range: Length of the side of the search neighborhood for block-matching, valid range [1, +inf).
+            The size of search window is (bm_range * 2 + 1) x (bm_range * 2 + 1).
+            Larger is slower, with more chances to find similar patches.
+        ps_num: The number of matched locations used for predictive search, valid range [1, group_size].
+            Larger value increases the possibility to match more similar blocks,
+            with tiny increasing in computational cost.
+        ps_range: Length of the side of the search neighborhood for predictive-search block-matching,
+            valid range [1, +inf)
+        residual: Whether to center blocks before collaborative filtering. Default: False.
+        adaptive_aggregation: Whether to aggregate blocks adaptively. Default: True.
         refine: Number of additional refinement iterations to perform.
 
             A value of 0 corresponds to a single WNNM pass (equivalent to `num_iterations=1`
@@ -77,45 +108,40 @@ def wnnm(
             Each increment adds another iterative regularization step using the previously denoised result.
 
             Valid range is [0, +inf).
-        tr: Temporal radius (in frames) used for motion-compensated denoising.
-
-               - `tr=0`: purely spatial denoising.
-               - `tr>0`: includes `tr` frames before and after the current one, improving temporal stability
-                but significantly increasing computation time and memory usage.
-        ref: Reference clip. Must be the same dimensions and format as the input clip.
         merge_factor: Blend factor for merging the last and current iteration during iterative regularization.
         planes: Which planes to process. Default to all.
-        **kwargs: Additional arguments to be passed to the plugin.
 
     Returns:
         Denoised clip.
     """
-    assert check_progressive(clip, wnnm)
 
-    func = FunctionUtil(clip, wnnm, planes, bitdepth=32)
+    sigma = normalize_param_planes(clip, sigma, planes, 0)
+    kwargs = dict[str, Any](
+        sigma=sigma,
+        block_size=block_size,
+        block_step=block_step,
+        group_size=group_size,
+        bm_range=bm_range,
+        radius=tr,
+        ps_num=ps_num,
+        ps_range=ps_range,
+        residual=residual,
+        adaptive_aggregation=adaptive_aggregation,
+        rclip=ref,
+    )
 
-    sigma = func.norm_seq(sigma, 0)
-
-    if ref is not None:
-        ref = depth(ref, 32)
-        ref = get_y(ref) if func.luma_only else ref
-
-    dkwargs = dict[str, Any](radius=tr, rclip=ref) | kwargs
-
-    previous = func.work_clip
-    denoised = core.wnnm.WNNM(func.work_clip, sigma, **dkwargs)
+    previous = clip
+    denoised = core.wnnm.WNNM(clip, **kwargs)
 
     for i in range(refine):
         if i == 0:
             previous = denoised
         else:
-            previous = norm_expr(
-                [func.work_clip, previous, denoised], f"x y - {merge_factor} * z +", planes, func=func.func
-            )
+            previous = norm_expr([clip, previous, denoised], f"x y - {merge_factor} * z +", planes, func=wnnm)
 
-        denoised = core.wnnm.WNNM(previous, sigma, **dkwargs)
+        denoised = core.wnnm.WNNM(previous, **kwargs)
 
-    return func.return_clip(denoised)
+    return denoised
 
 
 def _clean_keywords(kwargs: dict[str, Any], function: vs.Function) -> dict[str, Any]:
