@@ -362,19 +362,11 @@ class BaseArtCNNChroma(BaseArtCNN):
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         assert clip.format.color_family == vs.YUV
 
-        fmt = clip.format.replace(subsampling_h=0, subsampling_w=0)
-
-        if clip.format.subsampling_h == clip.format.subsampling_w == 0:
-            return norm_expr(
-                clip,
-                "x plane_min - plane_max plane_min - / 0 1 clamp",
-                format=fmt,
-                func=self.__class__,
-            )
-
-        logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
-        clip = Kernel.ensure_obj(kwargs.pop("chroma_scaler", Bilinear)).resample(clip, fmt, **kwargs)
-        logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
+        if (clip.format.subsampling_h, clip.format.subsampling_w) != (0, 0):
+            logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
+            fmt = clip.format.replace(subsampling_h=0, subsampling_w=0)
+            clip = Kernel.ensure_obj(kwargs.pop("chroma_scaler", Bilinear)).resample(clip, fmt, **kwargs)
+            logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
 
         return norm_expr(clip, ("x 0 1 clamp", "x 0.5 + 0 1 clamp"), func=self.__class__)
 
