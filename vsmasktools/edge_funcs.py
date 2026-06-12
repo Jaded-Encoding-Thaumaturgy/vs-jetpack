@@ -95,6 +95,7 @@ def luma_credit_mask(
     return credit_mask
 
 
+@limiter(mask=True)
 def tcanny_retinex(
     clip: vs.VideoNode, thr: float, sigma: Sequence[float] = [50, 200, 350], blur_sigma: float = 1.0
 ) -> vs.VideoNode:
