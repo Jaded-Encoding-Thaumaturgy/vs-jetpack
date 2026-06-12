@@ -319,7 +319,7 @@ class HardsubSign(HardsubMask):
 
         hsmf = ExprOp.MAX(hsmf, split_planes=True)
 
-        hsmf = Morpho.binarize(hsmf, self.thr)
+        hsmf = Morpho.binarize_mask(hsmf, self.thr)
         hsmf = Morpho.minimum(hsmf, iterations=self.minimum, func=self.__class__)
         hsmf = Morpho.expand(hsmf, self.expand, mode=self.expand_mode, func=self.__class__)
         hsmf = Morpho.inflate(hsmf, iterations=self.inflate, func=self.__class__)

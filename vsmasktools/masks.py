@@ -23,7 +23,6 @@ from vstools import (
     limiter,
     normalize_ranges,
     replace_ranges,
-    scale_mask,
     split,
     vs,
 )
@@ -185,8 +184,6 @@ def stabilize_mask(
     radius_blur = radius * 2 + 1
     blurred = kernel(radius_blur, mode=ConvMode.TEMPORAL)(median, planes, scenechange=True, func=func)
 
-    binarized = blurred.std.Binarize(
-        scale_mask(1.0 / (radius_blur - clamp(brz, 0, radius_blur)), 32, clip), planes=planes
-    )
+    binarized = Morpho.binarize_mask(blurred, 1.0 / (radius_blur - clamp(brz, 0, radius_blur)), planes=planes)
 
     return binarized

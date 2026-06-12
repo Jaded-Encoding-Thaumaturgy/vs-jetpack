@@ -196,7 +196,7 @@ def texture_mask(
     emask = Prewitt.edgemask(clip)
 
     rm_txt = ExprOp.MIN(
-        rmask, (Morpho.minimum(Morpho.binarize(emask, thr, 1.0, 0), iterations=it) for thr, it in stages)
+        rmask, (Morpho.minimum(Morpho.binarize_mask(emask, thr, 1.0, 0), iterations=it) for thr, it in stages)
     )
 
     expr = [f"x {points_[0]} < x {points_[-1]} > or 0"]

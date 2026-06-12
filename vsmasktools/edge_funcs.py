@@ -51,7 +51,7 @@ def ringing_mask(
     light = norm_expr(edgemask, f"x {thlimi} - {thma - thmi} / {ExprToken.RangeMax} *", func=ringing_mask)
 
     shrink = Morpho.dilation(light, rad)
-    shrink = Morpho.binarize(shrink, brz)
+    shrink = Morpho.binarize_mask(shrink, brz)
     shrink = Morpho.erosion(shrink, 2)
     shrink = blur_kernel(shrink, passes=2)
 
