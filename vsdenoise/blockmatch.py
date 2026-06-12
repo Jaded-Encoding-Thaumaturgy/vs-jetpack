@@ -22,7 +22,6 @@ from vskernels import Point
 from vstools import (
     Planes,
     Range,
-    check_ref_clip,
     core,
     depth,
     join,
@@ -591,17 +590,7 @@ def bm3d(
     Returns:
         Denoised clip.
     """
-
     func = kwargs.pop("func", None) or bm3d
-
-    if ref and pre:
-        raise CustomValueError("You cannot specify both 'pre' and 'ref' at the same time.", func)
-
-    if pre is not None:
-        pre = check_ref_clip(clip, pre, func)
-
-    if ref is not None:
-        ref = check_ref_clip(clip, ref, func)
 
     radius_basic, radius_final = normalize_seq(tr, 2)
     nsigma = normalize_param_planes(clip, sigma, planes, 0)
@@ -623,45 +612,27 @@ def bm3d(
         nfinal_args=nfinal_args,
     )
 
-    if backend != BM3D.Backend.OLD:
-        plugins_args["backend"] = backend
+    if ref and pre:
+        raise CustomValueError("You cannot specify both 'pre' and 'ref' at the same time.", func)
 
+    if backend != BM3D.Backend.OLD:
         if profile == BM3D.Profile.VERY_NOISY:
             raise UnsupportedProfileError("The VERY_NOISY profile is only supported with BM3D.Backend.OLD.", func)
+        if (
+            clip.format.bits_per_sample != 32
+            or (ref and ref.format.bits_per_sample != 32)
+            or (pre and pre.format.bits_per_sample != 32)
+        ):
+            raise CustomRuntimeError(f"The backend {backend} only supports 32 bit float input.")
 
-    # RGB input
-    # OLD backend needs RGB to convert to OPP so we can just pass it directly
-    # BM3D CUDA and others need manual conversion to OPP -> actual denoise processing -> RGB back
-    if clip.format.color_family == vs.RGB:
-        if backend == BM3D.Backend.OLD:
+    match backend, clip.format.color_family:
+        # We can pass directly to OLD backend when it's RGB or GRAY input.
+        case BM3D.Backend.OLD, vs.RGB | vs.GRAY:
             return _bm3d_mawen(clip, pre, ref, **plugins_args, **kwargs)
-        else:
-            coefs = list(interleave_arr(matrix_rgb2opp, [0, 0, 0], 3))
 
-            clip_opp = core.fmtc.matrix(clip, coef=coefs, col_fam=vs.YUV, bits=32)
-            pre_opp = core.fmtc.matrix(pre, coef=coefs, col_fam=vs.YUV, bits=32) if pre else pre
-            ref_opp = core.fmtc.matrix(ref, coef=coefs, col_fam=vs.YUV, bits=32) if ref else ref
-
-            denoised = _bm3d_wolfram(clip_opp, pre_opp, ref_opp, **plugins_args, chroma=False, **kwargs)
-
-            denoised = core.fmtc.matrix(
-                denoised,
-                coef=list(interleave_arr(matrix_opp2rgb, [0, 0, 0], 3)),
-                col_fam=vs.RGB,
-            )
-
-            return depth(denoised, clip)
-
-    # BM3D CUDA and others require YUVXXX and GRAY 32 bits input
-    preclip = depth(clip, 32)
-    prepre = depth(pre, 32) if pre else pre
-    preref = depth(ref, 32) if ref else ref
-
-    # YUV444 path
-    # OLD backend needs RGB. We can safely convert from YUV444 without subsampling madness
-    # BM3D CUDA and others natively accept YUV444 with chroma=True
-    if clip.format.color_family == vs.YUV and clip.format.subsampling_w == clip.format.subsampling_h == 0:
-        if backend == BM3D.Backend.OLD:
+        # When input is YUV444, we convert to RGB and call the function again.
+        # Convert back to YUV after processing.
+        case BM3D.Backend.OLD, vs.YUV if clip.format.subsampling_w == clip.format.subsampling_h == 0:
             point = Point()
 
             denoised = bm3d(
@@ -682,21 +653,33 @@ def bm3d(
 
             if 0 in nsigma:
                 final = join({p: clip if s == 0 else final for p, s in zip(range(3), nsigma)}, vs.YUV)
-
             return final
-        else:
-            denoised = _bm3d_wolfram(preclip, prepre, preref, **plugins_args, chroma=True, **kwargs)
-            return depth(denoised, clip)
 
-    # GRAY or subsampled YUV
-    # OLD backend will error if clip is subsampled. It only accepts GRAY at this point
-    # BM3D CUDA and others will denoise separately each plane
-    if backend == BM3D.Backend.OLD:
-        # Will error if clip is subsampled.
-        return _bm3d_mawen(clip, pre, ref, **plugins_args)
-    else:
-        denoised = _bm3d_wolfram(preclip, prepre, preref, **plugins_args, chroma=False, **kwargs)
-        return depth(denoised, clip)
+        # When input is RGB, BM3D CUDA and others need manual conversion to OPP.
+        # Convert back to RGB after processing.
+        case _, vs.RGB:
+            coefs = list(interleave_arr(matrix_rgb2opp, [0, 0, 0], 3))
+
+            clip_opp = core.fmtc.matrix(clip, coef=coefs, col_fam=vs.YUV, bits=32)
+            pre_opp = core.fmtc.matrix(pre, coef=coefs, col_fam=vs.YUV, bits=32) if pre else pre
+            ref_opp = core.fmtc.matrix(ref, coef=coefs, col_fam=vs.YUV, bits=32) if ref else ref
+
+            denoised = _bm3d_wolfram(clip_opp, pre_opp, ref_opp, **plugins_args, backend=backend, **kwargs)
+            return core.fmtc.matrix(denoised, coef=list(interleave_arr(matrix_opp2rgb, [0, 0, 0], 3)), col_fam=vs.RGB)
+
+        # YUVXXX and GRAY inputs.
+        # `chroma=True` when YUV444, otherwise it's False.
+        case _, _:
+            return _bm3d_wolfram(
+                clip,
+                pre,
+                ref,
+                **plugins_args,
+                backend=backend,
+                chroma=clip.format.subsampling_w == clip.format.subsampling_h == 0
+                and clip.format.color_family == vs.YUV,
+                **kwargs,
+            )
 
 
 def _bm3d_mawen(

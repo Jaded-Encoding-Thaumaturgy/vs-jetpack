@@ -5,7 +5,7 @@ from typing import Any, ClassVar, Literal
 
 from jetpytools import CustomValueError, copy_signature, to_arr
 
-from vstools import core, depth, vs
+from vstools import UnsupportedSampleTypeError, core, depth, vs
 
 from .base import Backend
 
@@ -40,14 +40,25 @@ class OV(Backend):
         flexible: bool = False,
         **kwargs: Any,
     ) -> vs.VideoNode | list[vs.VideoNode]:
-        return super().inference(
+        UnsupportedSampleTypeError.check(clips, vs.FLOAT, self.__class__)
+
+        clips = to_arr(clips)
+        bitdepth = max(c.format.bits_per_sample for c in clips)
+
+        res = super().inference(
             # OV Plugin only accepts fp32
-            [depth(c, 32) for c in to_arr(clips)],
+            [depth(c, 32) for c in clips],
             network_path,
             overlap,
             tilesize,
             flexible=flexible,
             **kwargs,
+        )
+
+        return (
+            depth(res, bitdepth, sample_type=vs.FLOAT)
+            if isinstance(res, vs.VideoNode)
+            else [depth(r, bitdepth, sample_type=vs.FLOAT) for r in res]
         )
 
     @property

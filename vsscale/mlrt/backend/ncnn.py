@@ -2,11 +2,9 @@ from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from jetpytools import fallback
-
 from vstools import core, vs
 
-from .base import Backend, BackendAutoConvertFloat
+from .base import BackendAutoConvertFloat
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -26,13 +24,10 @@ class NCNN(BackendAutoConvertFloat):
     """Enable NCNN FP16 storage/arithmetic where supported."""
     fp16_blacklist_ops: Collection[str] | None = None
     """ONNX node or op names to keep in FP32 during FP16 conversion."""
-    output_format: Backend.OutputFormat | None = None
-    """Requested output precision. Defaults to FP16 when `fp16` is enabled, otherwise FP32."""
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
-        return {
+        return super().get_args(clips) | {
             "fp16": self.fp16,
-            "output_format": int(fallback(self.output_format, self.fp16)),
             "device_id": self.device_id,
             "num_streams": self.num_streams,
         }

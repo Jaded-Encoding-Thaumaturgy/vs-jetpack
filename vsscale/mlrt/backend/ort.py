@@ -6,11 +6,9 @@ from enum import IntEnum
 from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, getLogger
 from typing import Any, ClassVar
 
-from jetpytools import fallback
-
 from vstools import core, vs
 
-from .base import Backend, BackendAutoConvertFloat
+from .base import BackendAutoConvertFloat
 
 logger = getLogger(__name__)
 
@@ -48,7 +46,6 @@ class ORT(BackendAutoConvertFloat):
     # Model Precision & Data Types
     fp16: bool | None
     fp16_blacklist_ops: Collection[str] | None
-    output_format: Backend.OutputFormat | None
 
     # Specify __init__ here to set arguments order for subclasses
     def __init__(
@@ -58,7 +55,6 @@ class ORT(BackendAutoConvertFloat):
         verbosity: int | None = None,
         fp16: bool = True,
         fp16_blacklist_ops: Collection[str] | None = None,
-        output_format: Backend.OutputFormat | None = None,
     ) -> None:
         """
         Initialize the backend.
@@ -68,7 +64,6 @@ class ORT(BackendAutoConvertFloat):
             verbosity: ONNX Runtime logging verbosity.
             fp16: Convert model execution to FP16 where supported.
             fp16_blacklist_ops: ONNX node or op names to keep in FP32 during FP16 conversion.
-            output_format: Requested output precision. Defaults to FP16 when `fp16` is enabled, otherwise FP32.
         """
         object.__setattr__(self, "fp16", fp16)
         object.__setattr__(self, "fp16_blacklist_ops", fp16_blacklist_ops)
@@ -78,13 +73,11 @@ class ORT(BackendAutoConvertFloat):
             "verbosity",
             ORT.Verbosity.from_logging(logger.getEffectiveLevel()) if verbosity is None else verbosity,
         )
-        object.__setattr__(self, "output_format", output_format)
         super().__init__()
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
-        return {
+        return super().get_args(clips) | {
             "fp16": self.fp16,
-            "output_format": int(fallback(self.output_format, self.fp16)),
             "provider": self.provider,
             "num_streams": self.num_streams,
             "verbosity": self.verbosity,
@@ -126,7 +119,6 @@ class ORT_CUDA(ORT):  # noqa: N801
         use_cuda_graph: bool = False,
         fp16: bool = True,
         fp16_blacklist_ops: Collection[str] | None = None,
-        output_format: Backend.OutputFormat | None = None,
         tf32: bool = False,
         prefer_nhwc: bool = False,
     ) -> None:
@@ -142,7 +134,6 @@ class ORT_CUDA(ORT):  # noqa: N801
                 for compatible models.
             fp16: Convert model execution to FP16 where supported.
             fp16_blacklist_ops: ONNX node or op names to keep in FP32 during FP16 conversion.
-            output_format: Requested output precision. Defaults to FP16 when `fp16` is enabled, otherwise FP32.
             tf32: Allow TensorFloat-32 math on supported Nvidia GPUs.
             prefer_nhwc: Prefer NHWC layout where ONNX Runtime supports it.
         """
@@ -151,13 +142,7 @@ class ORT_CUDA(ORT):  # noqa: N801
         object.__setattr__(self, "use_cuda_graph", use_cuda_graph)
         object.__setattr__(self, "prefer_nhwc", prefer_nhwc)
         object.__setattr__(self, "tf32", tf32)
-        super().__init__(
-            num_streams=num_streams,
-            verbosity=verbosity,
-            fp16=fp16,
-            fp16_blacklist_ops=fp16_blacklist_ops,
-            output_format=output_format,
-        )
+        super().__init__(num_streams=num_streams, verbosity=verbosity, fp16=fp16, fp16_blacklist_ops=fp16_blacklist_ops)
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
         return super().get_args(clips) | {
@@ -184,7 +169,6 @@ class ORT_DML(ORT):  # noqa: N801
         device_id: int = 0,
         fp16: bool = True,
         fp16_blacklist_ops: Collection[str] | None = None,
-        output_format: Backend.OutputFormat | None = None,
         num_streams: int = 1,
         verbosity: int | None = None,
     ) -> None:
@@ -197,16 +181,9 @@ class ORT_DML(ORT):  # noqa: N801
             verbosity: ONNX Runtime logging verbosity.
             fp16: Convert model execution to FP16 where supported.
             fp16_blacklist_ops: ONNX node or op names to keep in FP32 during FP16 conversion.
-            output_format: Requested output precision. Defaults to FP16 when `fp16` is enabled, otherwise FP32.
         """
         object.__setattr__(self, "device_id", device_id)
-        super().__init__(
-            num_streams=num_streams,
-            verbosity=verbosity,
-            fp16=fp16,
-            fp16_blacklist_ops=fp16_blacklist_ops,
-            output_format=output_format,
-        )
+        super().__init__(num_streams=num_streams, verbosity=verbosity, fp16=fp16, fp16_blacklist_ops=fp16_blacklist_ops)
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
         return super().get_args(clips) | {"device_id": self.device_id}
@@ -232,18 +209,11 @@ class ORT_COREML(ORT):  # noqa: N801
         ml_program: int = Provider.NEURAL_NETWORK,
         fp16: bool = True,
         fp16_blacklist_ops: Collection[str] | None = None,
-        output_format: Backend.OutputFormat | None = None,
         num_streams: int = 1,
         verbosity: int | None = None,
     ) -> None:
         object.__setattr__(self, "ml_program", ORT_COREML.Provider(ml_program))
-        super().__init__(
-            num_streams=num_streams,
-            verbosity=verbosity,
-            fp16=fp16,
-            fp16_blacklist_ops=fp16_blacklist_ops,
-            output_format=output_format,
-        )
+        super().__init__(num_streams=num_streams, verbosity=verbosity, fp16=fp16, fp16_blacklist_ops=fp16_blacklist_ops)
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
         return super().get_args(clips) | {"ml_program": self.ml_program}

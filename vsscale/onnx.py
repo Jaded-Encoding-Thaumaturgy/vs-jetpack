@@ -14,17 +14,15 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat
 
 from jetpytools import CustomRuntimeError, CustomValueError, FileNotExistsError, FuncExcept, SPath, SPathLike
 
-from vsexprtools import norm_expr
+from vsexprtools import ExprOp, combine_expr, norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
-from vsmasktools import Morpho
 from vstools import (
+    ConvMode,
     Matrix,
     ProcessVariableResClip,
     check_variable_resolution,
     core,
-    depth,
     get_color_family,
-    get_video_format,
     get_y,
     join,
     limiter,
@@ -142,6 +140,8 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         Returns:
             The scaled clip.
         """
+        if clip.format.sample_type != vs.SampleType.FLOAT:
+            raise CustomRuntimeError("Only FLOAT formats are supported.", self.scale)
 
         width, height = self._wh_norm(clip, width, height)
 
@@ -219,12 +219,6 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
         """
         Performs preprocessing on the clip prior to inference.
         """
-        logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
-
-        clip = depth(clip, self._pick_precision(16, 32), vs.FLOAT, **kwargs)
-
-        logger.debug("%s: After pp; Clip format is %r", self.preprocess_clip, clip.format)
-
         return limiter(clip, func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
@@ -248,21 +242,6 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         return self.backend.inference(clip, self.model, overlaps, tilesize, flexible=False, **kwargs)
 
-    def _pick_precision[IntT: int](self, fp16: IntT, fp32: IntT) -> IntT:
-        precision = (
-            fp16
-            if isinstance(self.backend, (Backend.ORT, Backend.NCNN, Backend.TRT, Backend.TRT)) and self.backend.fp16
-            else fp32
-        )
-
-        logger.debug(
-            "%s: Selecting precision: %r",
-            self._pick_precision,
-            get_video_format(precision) if precision > 32 else precision,
-        )
-
-        return precision
-
 
 class BaseOnnxScalerRGB(BaseOnnxScaler):
     """
@@ -270,20 +249,18 @@ class BaseOnnxScalerRGB(BaseOnnxScaler):
     """
 
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        clip = self.kernel.resample(clip, self._pick_precision(vs.RGBH, vs.RGBS), Matrix.RGB, **kwargs)
+        clip = self.kernel.resample(
+            clip,
+            clip.format.replace(color_family=vs.ColorFamily.RGB, subsampling_w=0, subsampling_h=0),
+            Matrix.RGB,
+            **kwargs,
+        )
         return limiter(clip, func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         logger.debug("%s.post: Before pp; Clip format is %r", self, clip.format)
 
-        # Basically everything except color_family
-        out_fmt = input_clip.format.replace(
-            sample_type=clip.format.sample_type,
-            bits_per_sample=clip.format.bits_per_sample,
-            subsampling_w=0,
-            subsampling_h=0,
-        )
-
+        out_fmt = input_clip.format.replace(subsampling_w=0, subsampling_h=0)
         # Resamples only for color_family changes e.g. RGB -> YUV
         if clip.format != out_fmt:
             clip = self.kernel.resample(clip, out_fmt, input_clip, range=input_clip, **kwargs)
@@ -373,7 +350,7 @@ class BaseArtCNNLuma(BaseArtCNN):
         copy_props: bool = False,
     ) -> vs.VideoNode:
         if input_clip.format.color_family == vs.YUV:
-            scaled_chroma = self.scaler.scale(depth(input_clip, clip), clip.width, clip.height)
+            scaled_chroma = self.scaler.scale(input_clip, clip.width, clip.height)
             clip = join(clip, scaled_chroma, prop_src=scaled_chroma)
 
             logger.debug("%s: Chroma planes has been scaled accordingly", self)
@@ -385,21 +362,21 @@ class BaseArtCNNChroma(BaseArtCNN):
     def preprocess_clip(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         assert clip.format.color_family == vs.YUV
 
-        bits = self._pick_precision(16, 32)
-        format = clip.format.replace(subsampling_h=0, subsampling_w=0, sample_type=vs.FLOAT, bits_per_sample=bits)
+        fmt = clip.format.replace(subsampling_h=0, subsampling_w=0)
 
-        if clip.format.subsampling_h != 0 or clip.format.subsampling_w != 0:
-            chroma_scaler = Kernel.ensure_obj(kwargs.pop("chroma_scaler", Bilinear))
+        if clip.format.subsampling_h == clip.format.subsampling_w == 0:
+            return norm_expr(
+                clip,
+                "x plane_min - plane_max plane_min - / 0 1 clamp",
+                format=fmt,
+                func=self.__class__,
+            )
 
-            logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
+        logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
+        clip = Kernel.ensure_obj(kwargs.pop("chroma_scaler", Bilinear)).resample(clip, fmt, **kwargs)
+        logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
 
-            clip = chroma_scaler.resample(clip, format, **kwargs)
-
-            logger.debug("%s: Before pp; Clip format is %r", self.preprocess_clip, clip.format)
-
-            return norm_expr(clip, ("x 0 1 clamp", "x 0.5 + 0 1 clamp"), func=self.__class__)
-
-        return norm_expr(clip, "x plane_min - plane_max plane_min - / 0 1 clamp", format=format, func=self.__class__)
+        return norm_expr(clip, ("x 0 1 clamp", "x 0.5 + 0 1 clamp"), func=self.__class__)
 
     def postprocess_clip(self, clip: vs.VideoNode, input_clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         clip = norm_expr(clip, "x 0.5 -", [1, 2], func=self.__class__)
@@ -408,16 +385,16 @@ class BaseArtCNNChroma(BaseArtCNN):
     def inference(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         tilesize, overlaps = self.calc_tilesize(clip)
 
-        logger.debug("%s: Passing clip to inference: %s", self.inference, clip.format)
-        logger.debug("%s: Passing model: %s", self.inference, self.model)
-        logger.debug("%s: Passing tiles size: %s", self.inference, tilesize)
-        logger.debug("%s: Passing overlaps: %s", self.inference, overlaps)
-        logger.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
+        logger.debug("%s: Passing clip to inference: %r", self.inference, clip.format)
+        logger.debug("%s: Passing model: %r", self.inference, self.model)
+        logger.debug("%s: Passing tiles size: %r", self.inference, tilesize)
+        logger.debug("%s: Passing overlaps: %r", self.inference, overlaps)
+        logger.debug("%s: Passing extra kwargs: %r", self.inference, kwargs)
 
         u, v = self.backend.inference(clip, self.model, overlaps, tilesize, flexible=True, **kwargs)
 
-        logger.debug("%s: Inferenced clip: %s", self.inference, u.format)
-        logger.debug("%s: Inferenced clip: %s", self.inference, v.format)
+        logger.debug("%s: Inferenced clip: %r", self.inference, u.format)
+        logger.debug("%s: Inferenced clip: %r", self.inference, v.format)
 
         return core.std.ShufflePlanes([clip, u, v], [0, 0, 0], vs.YUV, clip)
 
@@ -737,10 +714,11 @@ class _Waifu2xCunet(BaseWaifu2x):
         if kwargs.pop("no_tint_fix", False):
             return super().postprocess_clip(clip, input_clip, **kwargs)
 
-        clip = depth(clip, 32)
-
+        maximum_expr = combine_expr(ExprOp.matrix("x", 1, ConvMode.SQUARE, [(0, 0)])[0])
         tint_fix = norm_expr(
-            [clip, Morpho.maximum(clip)], "x 0.5 255 / + y min", func="Waifu2x." + self.__class__.__name__
+            clip,
+            ["x 0.5 255 / +", maximum_expr, ExprOp.MIN],
+            func="Waifu2x." + self.__class__.__name__,
         )
         return super().postprocess_clip(tint_fix, input_clip, **kwargs)
 

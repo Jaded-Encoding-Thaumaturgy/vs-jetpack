@@ -4,13 +4,12 @@ import os
 import platform
 from collections.abc import Sequence
 from dataclasses import dataclass
-from enum import IntEnum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast, overload
 
-from jetpytools import copy_signature, to_arr
+from jetpytools import to_arr
 
-from vstools import core, depth, vs
+from vstools import UnsupportedSampleTypeError, core, vs
 
 from ...helpers import get_gpu
 
@@ -30,14 +29,6 @@ class Backend:
 
     plugin: ClassVar[vs.Plugin]
     flexible_output_prop: ClassVar[str] = "MlrtFlexible"
-
-    class OutputFormat(IntEnum):
-        """
-        Output format for the backend plugin.
-        """
-
-        FP32 = 0
-        FP16 = 1
 
     if TYPE_CHECKING:
         MIGX = migx.MIGX
@@ -119,6 +110,8 @@ class Backend:
         Returns:
             A single output clip, or a list of output clips when `flexible` is enabled.
         """
+        UnsupportedSampleTypeError.check(clips, vs.FLOAT, self.__class__)
+
         args = self.get_args(clips)
 
         if flexible:
@@ -220,25 +213,8 @@ class Backend:
 
 
 class BackendAutoConvertFloat(Backend):
-    fp16: bool | None
-
-    @copy_signature(Backend.inference)
-    def inference(
-        self,
-        clips: vs.VideoNode | Sequence[vs.VideoNode],
-        network_path: str | os.PathLike[str],
-        /,
-        overlap: tuple[int, int],
-        tilesize: tuple[int, int],
-        *,
-        flexible: bool = False,
-        **kwargs: Any,
-    ) -> vs.VideoNode | list[vs.VideoNode]:
-        clips = [
-            depth(c, 16 if self.fp16 else 32, sample_type=vs.FLOAT) if c.format.sample_type != vs.FLOAT else c
-            for c in to_arr(clips)
-        ]
-        return super().inference(clips, network_path, overlap, tilesize, flexible=flexible, **kwargs)
+    def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
+        return {"output_format": max(c.format.bits_per_sample for c in to_arr(clips)) == 16}
 
 
 if not TYPE_CHECKING:
