@@ -133,7 +133,7 @@ def dehalo_alpha(
                     Morpho.gradient(work_clip, planes=planes, func=util.func),
                     Morpho.gradient(dehalo, planes=planes, func=util.func),
                 ],
-                "x 0 = x y - dup x / ? mask_max * {lowsens} - x range_size + range_size 2 * / {highsens} + *",
+                "x 0 = 0 x y - x / ? mask_max * {lowsens} - x range_size + range_size 2 * / {highsens} + *",
                 planes,
                 func=util.func,
                 lowsens=(scale_delta(x, 8, clip) for x in lowsens_i),
