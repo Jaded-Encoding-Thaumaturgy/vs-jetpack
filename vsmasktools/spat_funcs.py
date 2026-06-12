@@ -14,6 +14,7 @@ from vstools import (
     get_peak_value,
     get_sample_type,
     get_y,
+    limiter,
     plane,
     scale_mask,
     scale_value,
@@ -100,6 +101,7 @@ def adg_mask(
     return scaled_clips[0]
 
 
+@limiter(mask=True)
 def retinex(
     clip: vs.VideoNode,
     sigma: Sequence[float] = [25, 80, 250],
