@@ -213,11 +213,25 @@ class FineDehalo[**P, R]:
             shrink = norm_expr(shrink, "x 4 *", planes, func=func)
             shrink = Morpho.inpand(shrink, rx, ry, XxpandMode.ELLIPSE, planes=planes, func=func)
 
+			# In float space is possible that the mask values went outside the 0-1 range,
+            # the blur executed afterwards will not work as expected if we allow those values
+            # because we could have, near edges, extreme positive and negative values which
+			# will not "smooth" properly
+            shrink = norm_expr(shrink, "x 0 mask_max clip", planes, func=func)
+
             # This mask is almost binary, which will produce distinct
             # discontinuities once applied. Then we have to smooth it.
             shrink = box_blur(shrink, passes=2, planes=planes)
 
             # Final mask building #
+
+            # Ensure all intermediary masks used to build the main mask are in legal range
+            large  = norm_expr(large,  "x 0 mask_max clip", planes, func=func)
+            strong = norm_expr(strong, "x 0 mask_max clip", planes, func=func)
+
+            # This is not strictly necessary, but lets normalize all other masks for output
+            edges = norm_expr(edges, "x 0 mask_max clip", planes, func=func)
+            light = norm_expr(light, "x 0 mask_max clip", planes, func=func)
 
             # Previous mask may be a bit weak on the pure edge side, so we ensure
             # that the main edges are really excluded. We do not want them to be
