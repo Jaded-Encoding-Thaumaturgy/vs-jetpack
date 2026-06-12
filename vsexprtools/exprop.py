@@ -860,7 +860,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
                 out.append(multiply, cls.MUL)
 
             if clamp:
-                out.append(cls.clamp(ExprToken.RangeMin, ExprToken.RangeMax))
+                out.append(cls.clamp(0, ExprToken.MaskMax))
 
         return output
 

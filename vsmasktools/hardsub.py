@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from jetpytools import CustomOverflowError, FileNotExistsError, FilePathType, fallback, iterate
 
-from vsexprtools import ExprOp, ExprToken, expr_func, norm_expr
+from vsexprtools import ExprOp, expr_func, norm_expr
 from vskernels import Point
 from vsrgtools import box_blur, median_blur
 
@@ -261,9 +261,7 @@ class HardsubSignFades(HardsubMask):
 
         highpass = scale_mask(self.highpass, 32, clip)
 
-        mask = median_blur(
-            norm_expr([clipedge, refedge], f"x y - {highpass} < 0 {ExprToken.RangeMax} ?", func=self.__class__)
-        )
+        mask = median_blur(norm_expr([clipedge, refedge], f"x y - {highpass} < 0 mask_max ?", func=self.__class__))
 
         return max_planes(Morpho.inflate(Morpho.expand(mask, self.expand, mode=self.expand_mode), iterations=4))
 
