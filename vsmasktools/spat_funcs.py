@@ -15,6 +15,7 @@ from vstools import (
     get_sample_type,
     get_y,
     plane,
+    scale_mask,
     scale_value,
     vs,
 )
@@ -169,7 +170,7 @@ def flat_mask(src: vs.VideoNode, radius: int = 5, thr: float = 0.011, gauss: boo
 
     blur, mask = depth(blur, 8), depth(luma, 8)
 
-    mask = mask.vszip.AdaptiveBinarize(blur, int(scale_value(thr, 32, blur)))
+    mask = mask.vszip.AdaptiveBinarize(blur, scale_value(thr, 32, blur))
 
     return depth(mask, luma, dither_type=DitherType.NONE, range_in=Range.FULL, range_out=Range.FULL)
 
@@ -184,8 +185,8 @@ def texture_mask(
     points: list[tuple[bool, float]] = [(False, 1.75), (True, 2.5), (True, 5), (False, 10)],
 ) -> vs.VideoNode:
     levels = [x for x, _ in points]
-    points_ = [scale_value(x, 8, clip) for _, x in points]
-    thr = scale_value(thr, 8, 32, Range.FULL)
+    points_ = [scale_mask(x, 8, clip) for _, x in points]
+    thr = scale_mask(thr, 8, 32)
 
     qm, peak = len(points), get_peak_value(clip)
 

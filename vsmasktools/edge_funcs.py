@@ -86,7 +86,7 @@ def luma_credit_mask(
 
     edge_mask = normalize_mask(edgemask, y, **kwargs)
 
-    credit_mask = norm_expr([edge_mask, y], f"y {scale_mask(thr, 32, y)} > y 0 ? x min", func=ringing_mask)
+    credit_mask = norm_expr([edge_mask, y], f"y {scale_value(thr, 32, y)} > y 0 ? x min", func=luma_credit_mask)
 
     if not draft:
         credit_mask = Morpho.maximum(credit_mask, iterations=4)
@@ -154,7 +154,7 @@ class dre_edgemask(CustomEnum):  # noqa: N801
         if self is dre_edgemask.CLAHE:
             limit, tile = kwargs.get("limit", 0.0305), kwargs.get("tile", 5)
 
-            return depth(depth(clip, 16).vszip.CLAHE(int(scale_delta(limit, 32, 16)), tile), clip)
+            return depth(depth(clip, 16).vszip.CLAHE(scale_delta(limit, 32, 16), tile), clip)
 
         raise CustomNotImplementedError
 
