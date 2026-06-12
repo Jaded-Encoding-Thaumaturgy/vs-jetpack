@@ -210,7 +210,7 @@ class FineDehalo[**P, R]:
             # end up with large areas of dark grey after shrinking. To avoid this,
             # we amplify and saturate the mask here (actually we could even
             # binarize it).
-            shrink = norm_expr(shrink, "x 4 *", planes, func=func)
+            shrink = Morpho.binarize_mask(shrink, 0.25, planes=planes)
             shrink = Morpho.inpand(shrink, rx, ry, XxpandMode.ELLIPSE, planes=planes, func=func)
 
             # This mask is almost binary, which will produce distinct
