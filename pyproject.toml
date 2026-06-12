@@ -75,6 +75,7 @@ source = [
     "vapoursynth-d2vsource>=1.4",
     "vapoursynth-dvdsrc2>=3.0",
     "vapoursynth-ffms2>=5.2.0",
+    "vapoursynth-lsmas>=1282.0.0",
 ]
 kernels = [
     "vsjetpack[basic]",
@@ -228,6 +229,7 @@ auto = true
 vapoursynth-dfttest2-cuda = { index = "vs-wheels" }
 vapoursynth-ffms2 = { index = "vs-wheels" }
 vapoursynth-fmtconv = { index = "vs-wheels" }
+vapoursynth-lsmas = { index = "vs-wheels" }
 vapoursynth-mlrt-ort-cuda = { index = "vs-wheels" }
 vapoursynth-mlrt-trt = { index = "vs-wheels" }
 tensorrt-cu13 = { index = "nvidia" }
