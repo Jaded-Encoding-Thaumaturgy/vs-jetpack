@@ -41,7 +41,7 @@ def detail_mask(
     return mask
 
 
-@limiter
+@limiter(mask=True)
 def detail_mask_neo(
     clip: vs.VideoNode,
     sigma: float = 5.0,

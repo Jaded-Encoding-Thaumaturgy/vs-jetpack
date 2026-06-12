@@ -5,12 +5,11 @@ from jetpytools import iterate
 from vsexprtools import ExprOp, norm_expr
 from vsmasktools import Morpho, XxpandMode
 from vsrgtools import BlurMatrix, box_blur, gauss_blur
-from vstools import ConvMode, core, get_y, limiter, shift_clip_multi, split, vs
+from vstools import ConvMode, core, get_y, shift_clip_multi, split, vs
 
 __all__ = ["descale_detail_mask", "descale_error_mask"]
 
 
-@limiter
 def descale_detail_mask(
     clip: vs.VideoNode, rescaled: vs.VideoNode, thr: float = 0.05, inflate: int = 2, xxpand: tuple[int, int] = (4, 0)
 ) -> vs.VideoNode:
@@ -47,7 +46,6 @@ def descale_detail_mask(
     return mask
 
 
-@limiter
 def descale_error_mask(
     clip: vs.VideoNode,
     rescaled: vs.VideoNode,

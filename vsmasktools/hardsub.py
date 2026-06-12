@@ -313,7 +313,6 @@ class HardsubSign(HardsubMask):
         self.expand_mode = expand_mode
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
-    @limiter(mask=True)
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         hsmf = norm_expr([clip, ref], "x y - abs", func=self.__class__)
         hsmf = core.resize.Bilinear(hsmf, format=clip.format.replace(subsampling_w=0, subsampling_h=0))
@@ -476,7 +475,6 @@ class HardsubASS(HardsubMask):
         self.fontdir = fontdir
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
-    @limiter(mask=True)
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         mask = core.sub.TextFile(ref, self.filename, fontdir=self.fontdir, blend=False).std.PropToClip("_Alpha")
 
