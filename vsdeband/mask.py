@@ -3,11 +3,12 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from vsrgtools import gauss_blur, remove_grain
-from vstools import get_y, vs
+from vstools import get_y, limiter, vs
 
 __all__ = ["deband_detail_mask"]
 
 
+@limiter(mask=True)
 def deband_detail_mask(
     clip: vs.VideoNode,
     sigma: float = 1.0,
