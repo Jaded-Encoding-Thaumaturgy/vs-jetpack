@@ -20,7 +20,7 @@ from vstools import (
     vs,
 )
 
-from .edge import MinMax
+from .edge import MinMax, Prewitt
 from .morpho import Morpho
 
 __all__ = ["adg_mask", "flat_mask", "retinex", "texture_mask"]
@@ -191,8 +191,7 @@ def texture_mask(
     qm, peak = len(points), get_peak_value(clip)
 
     rmask = MinMax(rady, fallback(radc, rady)).edgemask(clip, lthr=0)
-
-    emask = clip.std.Prewitt()
+    emask = Prewitt.edgemask(clip)
 
     rm_txt = ExprOp.MIN(
         rmask, (Morpho.minimum(Morpho.binarize(emask, thr, 1.0, 0), iterations=it) for thr, it in stages)
