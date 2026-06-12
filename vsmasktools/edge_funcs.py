@@ -5,7 +5,7 @@ from typing import Any, Literal, cast, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError
 
-from vsexprtools import ExprOp, ExprToken, norm_expr
+from vsexprtools import ExprOp, ExprToken, combine, norm_expr
 from vsrgtools import BlurMatrix, gauss_blur
 from vstools import (
     ConvMode,
@@ -118,10 +118,14 @@ def limited_linemask(
 ) -> vs.VideoNode:
     clip_y = plane(clip, 0)
 
-    return ExprOp.ADD(
-        (normalize_mask(edge, clip_y, **kwargs) for edge in edgemasks),
-        (tcanny_retinex(clip_y, s) for s in sigmas),
-        (multi_detail_mask(clip_y, s) for s in detail_sigmas),
+    return combine(
+        (
+            (normalize_mask(edge, clip_y, **kwargs) for edge in edgemasks),
+            (tcanny_retinex(clip_y, s) for s in sigmas),
+            (multi_detail_mask(clip_y, s) for s in detail_sigmas),
+        ),
+        operator=ExprOp.ADD,
+        expr_suffix=ExprOp.clamp(0, ExprToken.MaskMax),
     )
 
 
