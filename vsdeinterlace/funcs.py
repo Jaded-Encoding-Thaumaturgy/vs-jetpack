@@ -255,7 +255,7 @@ def vinverse(
     expr = "y z - {sstr} * D1! x y - D2! D1@ abs D2@ abs < D1@ D2@ ? D3! D1@ D2@ xor D3@ {scl} * D3@ ? y +"
 
     if amnt is not None:
-        expr += " x {amnt} - x {amnt} + clip"
+        expr += " x {amnt} - x {amnt} + clamp"
         amnt = scale_delta(amnt, 8, clip)
 
     return norm_expr([clip, blurred, blurred2], expr, planes, sstr=contra_str, amnt=amnt, scl=scl, func=vinverse)

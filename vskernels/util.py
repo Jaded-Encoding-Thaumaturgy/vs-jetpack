@@ -374,7 +374,7 @@ class LinearLightProcessing(VSObject):
 
             wclip = norm_expr(
                 wclip,
-                "{center} 1 {slope} / 1 x 0 max 1 min {scale} * {offset} + / 1 - log * -",
+                "{center} 1 {slope} / 1 x 0 1 clamp {scale} * {offset} + / 1 - log * -",
                 center=self.ll._scenter,
                 slope=self.ll._sslope,
                 scale=self.ll._sscale,
@@ -414,7 +414,7 @@ class LinearLightProcessing(VSObject):
 
             processed = norm_expr(
                 self._linear,
-                "1 1 {slope} {center} x 0 max 1 min - * exp + / {offset} - {scale} /",
+                "1 1 {slope} {center} x 0 1 clamp - * exp + / {offset} - {scale} /",
                 slope=self.ll._sslope,
                 center=self.ll._scenter,
                 offset=self.ll._soffset,

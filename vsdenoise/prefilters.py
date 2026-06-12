@@ -604,7 +604,7 @@ def prefilter_to_full_range(
 
     curve = (slope - 1) * smooth
     luma_expr = (
-        "x plane_min - plane_max plane_min - / 0 1 clip LUMA! "
+        "x plane_min - plane_max plane_min - / 0 1 clamp LUMA! "
         "{k} 1 {c} + dup {c} * LUMA@ {c} + / - * LUMA@ 1 {k} - * + range_max *"
     )
     chroma_expr = "x neutral - plane_max plane_min - / 0.5 + range_max *"

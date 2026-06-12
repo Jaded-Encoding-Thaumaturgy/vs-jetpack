@@ -117,7 +117,7 @@ class ClampScaler(GenericScaler):
         merge_weight = self.strength / 100
 
         if self.limit is True:
-            expression = "x {merge_weight} * y {ref_weight} * + a {undershoot} - z {overshoot} + clip"
+            expression = "x {merge_weight} * y {ref_weight} * + a {undershoot} - z {overshoot} + clamp"
 
             merged = norm_expr(
                 [base, smooth, smooth.std.Maximum(), smooth.std.Minimum()],
