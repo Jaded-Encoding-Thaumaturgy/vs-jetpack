@@ -60,7 +60,11 @@ def ringing_mask(
 
     mask = norm_expr([expand, strong, shrink], "x y z max -", func=ringing_mask)
 
-    return ExprOp.convolution("x", blur_kernel, premultiply=2, multiply=2, clamp=True)(mask)
+    return norm_expr(
+        mask,
+        [ExprOp.convolution("x", blur_kernel, premultiply=2, multiply=2)[0], ExprOp.clamp(0, ExprToken.MaskMax)],
+        func=ringing_mask,
+    )
 
 
 def luma_mask(clip: vs.VideoNode, thr_lo: float, thr_hi: float, invert: bool = True) -> vs.VideoNode:
