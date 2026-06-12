@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import operator
 from collections import deque
 from collections.abc import Callable
@@ -10,9 +11,8 @@ from typing import Any, BinaryIO, Literal, Protocol, overload
 
 from jetpytools import CustomRuntimeError, CustomValueError, Sentinel, SentinelT, SPathLike, fallback
 
-from ...exceptions import UnsupportedColorFamilyError
 from ...utils import get_prop
-from ...vs_proxy import vs
+from ...vs_proxy import core, vs
 from ..ranges import normalize_list_to_ranges, replace_ranges
 
 __all__ = ["AsyncRenderConf", "clip_async_render", "clip_data_gather", "find_prop", "find_prop_rfs", "prop_compare_cb"]
@@ -22,10 +22,111 @@ class _CallbackModifyFrame(Protocol):
     def __call__(self, n: int, f: vs.VideoFrame) -> vs.VideoFrame: ...
 
 
-@dataclass
+@dataclass(frozen=True)
 class AsyncRenderConf:
+    """
+    Configuration for asynchronous/non-consecutive frame requests during clip rendering.
+
+    This configuration allows splitting the rendering workload into multiple chunks or steps
+    to speed up processing by requesting frames out of order or in parallel.
+    """
+
     n: int = 2
+    """
+    The number of chunks or step size to use for parallelizing requests.
+    Must be greater than 1.
+    """
     parallel_input: bool = False
+    """
+    If True, uses `core.std.StackHorizontal` on chunk boundaries to request frames
+    in parallel across the chunks.
+    If False, requests frames with a step of `n` inside a single `ModifyFrame` call.
+    """
+
+    def __post_init__(self) -> None:
+        if self.n < 2:
+            raise CustomValueError("AsyncRenderConf.n must be greater than 1")
+
+    def get_clip[T](
+        self,
+        clip: vs.VideoNode,
+        callback: Callable[[int, vs.VideoFrame], T],
+        result: dict[int, T],
+        progress_up: Callable[[int], None] | None,
+    ) -> vs.VideoNode:
+        """
+        Set up the rendering pipeline using the configured asynchronous request method.
+
+        Args:
+            clip: The clip to render.
+            callback: The callback function to execute on each frame.
+            result: A dictionary to store the callback results, mapped by frame index.
+            progress_up: An optional progress callback that receives the frame index.
+
+        Returns:
+            A `VideoNode` that, when rendered, triggers the callback for each frame.
+        """
+        chunk = floor(clip.num_frames / self.n)
+        cl = chunk * self.n
+
+        blankclip = clip.std.BlankClip(length=chunk, keep=True)
+
+        if self.parallel_input:
+            rend_clip = core.std.StackHorizontal(
+                [
+                    blankclip.std.ModifyFrame(
+                        clip[chunk * i : chunk * (i + 1)],
+                        _get_render_callback(callback, result, progress_up, chunk * i),
+                    )
+                    for i in range(self.n)
+                ]
+            )
+        else:
+            cb = _get_render_callback(callback, result, progress_up)
+            indices = [range(i, cl, self.n) for i in range(self.n)]
+
+            def _var(n: int, f: list[vs.VideoFrame]) -> vs.VideoFrame:
+                for idx, fi in enumerate(f):
+                    cb(indices[idx][n], fi)
+
+                return f[0]
+
+            rend_clip = blankclip.std.ModifyFrame([clip[i :: self.n] for i in range(self.n)], _var)
+
+        if cl != clip.num_frames:
+            rend_rest = (
+                clip[cl:]
+                .std.BlankClip(keep=True)
+                .std.ModifyFrame(clip[cl:], _get_render_callback(callback, result, progress_up, cl))
+            )
+            rend_clip = core.std.Splice([rend_clip, rend_rest], self.parallel_input)
+
+        return rend_clip
+
+
+def _get_render_callback[T](
+    callback: Callable[[int, vs.VideoFrame], T],
+    result: dict[int, T],
+    progress_up: Callable[[int], None] | None,
+    shift: int = 0,
+) -> _CallbackModifyFrame:
+    if shift:
+
+        def cb(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
+            real_n = n + shift
+            result[real_n] = callback(real_n, f)
+            if progress_up:
+                progress_up(real_n)
+            return f
+    else:
+
+        def cb(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
+            result[n] = callback(n, f)
+            if progress_up:
+                progress_up(n)
+            return f
+
+    return cb
 
 
 @overload
@@ -34,10 +135,9 @@ def clip_async_render(  # pyright: ignore[reportOverlappingOverload]
     outfile: BinaryIO | SPathLike | None = None,
     progress: str | Callable[[int, int], None] | None = None,
     callback: None = None,
-    prefetch: int = 0,
-    backlog: int = -1,
-    y4m: bool | None = None,
-    async_requests: int | bool | AsyncRenderConf = False,
+    prefetch: int | None = None,
+    backlog: int | None = None,
+    y4m: bool = False,
 ) -> None: ...
 
 
@@ -47,10 +147,10 @@ def clip_async_render[T](
     outfile: BinaryIO | SPathLike | None = None,
     progress: str | Callable[[int, int], None] | None = None,
     callback: Callable[[int, vs.VideoFrame], T] = ...,
-    prefetch: int = 0,
-    backlog: int = -1,
-    y4m: bool | None = None,
-    async_requests: int | bool | AsyncRenderConf = False,
+    prefetch: int | None = None,
+    backlog: int | None = None,
+    y4m: bool = False,
+    async_requests: int | Literal[False] | AsyncRenderConf = False,
 ) -> list[T]: ...
 
 
@@ -59,13 +159,13 @@ def clip_async_render[T](
     outfile: BinaryIO | SPathLike | None = None,
     progress: str | Callable[[int, int], None] | None = None,
     callback: Callable[[int, vs.VideoFrame], T] | None = None,
-    prefetch: int = 0,
-    backlog: int = -1,
-    y4m: bool | None = None,
-    async_requests: int | bool | AsyncRenderConf = False,
+    prefetch: int | None = None,
+    backlog: int | None = None,
+    y4m: bool = False,
+    async_requests: int | Literal[False] | AsyncRenderConf = False,
 ) -> list[T] | None:
     """
-    Iterate over an entire clip and optionally write results to a file.
+    Iterate over an entire clip and optionally write results to a file or gather data.
 
     This is mostly useful for metric gathering that must be performed before any other processing.
     This could be for example gathering scenechanges, per-frame heuristics, etc.
@@ -88,190 +188,81 @@ def clip_async_render[T](
     Args:
         clip: Clip to render.
         outfile: Optional binary output or path to write to.
-        progress: A message to display during rendering. This is shown alongside the progress.
-        callback: Callback function. Must accept `n` and `f` (like a frameeval would) and return some value.
-            This function is used to determine what information gets returned per frame. Default: None.
-        prefetch: The amount of frames to prefetch. 0 means automatically determine. Default: 0.
-        backlog: How many frames to hold. Useful for if your write of callback is slower than your frame rendering.
-        y4m: Whether to add YUV4MPEG2 headers to the rendered output. If None, automatically determine. Default: None.
-        async_requests: Whether to render frames non-consecutively. If int, determines the number of requests. Default:
-            False.
+        progress: Progress reporting configuration. Can be:
+
+               - `str`: A description message displayed next to the rendering progress bar.
+               - `Callable[[int, int], None]`: A custom progress callback function
+                 that receives the current frame index and total frames `(current_frame, total_frames)`.
+               - `None`: Disables progress reporting completely.
+        callback: Callback function invoked for every frame during rendering.
+            Must accept `n` and `f` (like a frameeval would) and return some value of type `T`.
+            The returned values are collected in order of frame index and returned as a `list[T]`.
+            Only active when `outfile` is not provided.
+        prefetch: Defines how many frames are rendered concurrently.
+        backlog: Defines how many unconsumed frames vapoursynth buffers at most
+            before it stops rendering additional frames.
+        y4m: Whether to add YUV4MPEG2 headers to the rendered output.
+        async_requests: Whether to render frames non-consecutively. If int, determines the number of requests.
     """
     if isinstance(outfile, (str, PathLike)) and outfile is not None:
         with open(outfile, "wb") as f:
-            return clip_async_render(clip, f, progress, callback, prefetch, backlog, y4m, async_requests)
+            return clip_async_render(clip, f, progress, callback, prefetch, backlog, y4m, async_requests)  # type: ignore[misc,arg-type]
 
-    result = dict[int, T]()
     async_conf: AsyncRenderConf | Literal[False]
 
-    if async_requests is True:
-        async_conf = AsyncRenderConf(1)
-    elif isinstance(async_requests, int):
-        if isinstance(async_requests, int) and async_requests <= 1:
-            async_conf = False
-        else:
-            async_conf = AsyncRenderConf(async_requests)
+    if isinstance(async_requests, AsyncRenderConf):
+        async_conf = async_requests
+    elif async_requests is False:
+        async_conf = False
     else:
-        async_conf = False if async_requests.n <= 1 else async_requests
+        async_conf = AsyncRenderConf(async_requests)
 
-    num_frames = len(clip)
+    if async_conf and (not callback or outfile):
+        raise CustomValueError(
+            "You cannot use async requests without a callback and with an outfile", clip_async_render
+        )
 
-    pr_update: Callable[[], None]
-    pr_update_custom: Callable[[int, int], None]
+    if not progress:
+        pr_ctx = contextlib.nullcontext()
+        pr_up = lambda *_: None  # noqa: E731
+    elif callable(progress):
+        pr_ctx = contextlib.nullcontext()
+        pr_up = progress
+    else:
+        from .progress import get_render_progress
 
-    if callback:
+        pr_ctx = get_render_progress()
+        task = pr_ctx.add_task(progress)
+        pr_up = lambda *_: pr_ctx.advance(task)  # noqa: E731
 
-        def get_callback(shift: int = 0) -> _CallbackModifyFrame:
-            if shift:
-                if outfile is None and progress is not None:
-                    if isinstance(progress, str):
+    total_frames = clip.num_frames
 
-                        def _cb(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-                            n += shift
-                            result[n] = callback(n, f)
-                            pr_update()
-                            return f
-                    else:
-
-                        def _cb(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-                            n += shift
-                            result[n] = callback(n, f)
-                            pr_update_custom(n, num_frames)
-                            return f
-                else:
-
-                    def _cb(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-                        n += shift
-                        result[n] = callback(n, f)
-                        return f
-            else:
-                if outfile is None and progress is not None:
-                    if isinstance(progress, str):
-
-                        def _cb(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-                            result[n] = callback(n, f)
-                            pr_update()
-                            return f
-                    else:
-
-                        def _cb(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-                            result[n] = callback(n, f)
-                            pr_update_custom(n, num_frames)
-                            return f
-                else:
-
-                    def _cb(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-                        result[n] = callback(n, f)
-                        return f
-
-            return _cb
-
-        if not async_conf or async_conf.n == 1:
-            blankclip = clip.std.BlankClip(keep=True)
-
-            cb = get_callback()
-
-            if async_conf:
-                rend_clip = blankclip.std.FrameEval(lambda n: blankclip.std.ModifyFrame(clip, cb))
-            else:
-                rend_clip = blankclip.std.ModifyFrame(clip, cb)
+    with pr_ctx:
+        if outfile:
+            clip.output(outfile, y4m, pr_up, prefetch or 0, fallback(backlog, -1))
+        elif not callback:
+            for i, _ in enumerate(clip.frames(prefetch, backlog, True)):
+                pr_up(i, total_frames)
         else:
-            if outfile:
-                raise CustomValueError("You cannot have and output file with multi async request!", clip_async_render)
+            result = dict[int, T]()
 
-            chunk = floor(clip.num_frames / async_conf.n)
-            cl = chunk * async_conf.n
-
-            blankclip = clip.std.BlankClip(length=chunk, keep=True)
-
-            if async_conf.parallel_input:
-                rend_clip = vs.core.std.StackHorizontal(
-                    [
-                        blankclip.std.ModifyFrame(clip[chunk * i : chunk * (i + 1)], get_callback(chunk * i))
-                        for i in range(async_conf.n)
-                    ]
+            if not async_conf:
+                clip = core.std.ModifyFrame(
+                    clip.std.BlankClip(keep=True),
+                    clip,
+                    _get_render_callback(callback, result, lambda n: pr_up(n, total_frames)),
                 )
             else:
-                cb = get_callback()
+                clip = async_conf.get_clip(clip, callback, result, lambda n: pr_up(n, total_frames))
 
-                clip_indices = list(range(cl))
-                range_indices = list(range(async_conf.n))
+            deque(clip.frames(prefetch, backlog, True), 0)
 
-                indices = [clip_indices[i :: async_conf.n] for i in range_indices]
-
-                def _var(n: int, f: list[vs.VideoFrame]) -> vs.VideoFrame:
-                    for i, fi in zip(range_indices, f):
-                        cb(indices[i][n], fi)
-
-                    return f[0]
-
-                rend_clip = blankclip.std.ModifyFrame([clip[i :: async_conf.n] for i in range_indices], _var)
-
-            if cl != clip.num_frames:
-                rend_rest = blankclip[: clip.num_frames - cl].std.ModifyFrame(clip[cl:], get_callback(cl))
-                rend_clip = vs.core.std.Splice([rend_clip, rend_rest], async_conf.parallel_input)
-    else:
-        rend_clip = clip
-
-    if outfile is None:
-        if y4m:
-            raise CustomValueError("You cannot have y4m=False without any output file!", clip_async_render)
-
-        clip_it = rend_clip.frames(prefetch, backlog, True)
-
-        if progress is None:
-            deque(clip_it, 0)
-        elif isinstance(progress, str):
-            from .progress import get_render_progress
-
-            with get_render_progress(progress, clip.num_frames) as pr:
-                if callback:
-                    pr_update = pr.update
-                    deque(clip_it, 0)
-                else:
-                    for _ in clip_it:
-                        pr.update()
-        else:
-            if callback:
-                pr_update_custom = progress
-                deque(clip_it, 0)
-            else:
-                for i, _ in enumerate(clip_it):
-                    progress(i, num_frames)
-
-    else:
-        y4m = fallback(y4m, bool(rend_clip.format and (rend_clip.format.color_family is vs.YUV)))
-
-        if y4m:
-            if rend_clip.format is None:
-                raise CustomValueError(
-                    "You cannot have y4m=True when rendering a variable resolution clip!", clip_async_render
+            try:
+                return [result[i] for i in range(total_frames)]
+            except KeyError:
+                raise CustomRuntimeError(
+                    "There was an error with the rendering and one frame request was rejected!", clip_async_render
                 )
-            else:
-                UnsupportedColorFamilyError.check(
-                    rend_clip,
-                    (vs.YUV, vs.GRAY),
-                    clip_async_render,
-                    message="Can only render to y4m clips with {correct} color family, not {wrong}!",
-                )
-
-        if progress is None:
-            rend_clip.output(outfile, y4m, None, prefetch, backlog)
-        elif isinstance(progress, str):
-            from .progress import get_render_progress
-
-            with get_render_progress(progress, clip.num_frames) as pr:
-                rend_clip.output(outfile, y4m, pr.update, prefetch, backlog)
-        else:
-            rend_clip.output(outfile, y4m, progress, prefetch, backlog)
-
-    if callback:
-        try:
-            return [result[i] for i in range(clip.num_frames)]
-        except KeyError:
-            raise CustomRuntimeError(
-                "There was an error with the rendering and one frame request was rejected!", clip_async_render
-            )
 
     return None
 

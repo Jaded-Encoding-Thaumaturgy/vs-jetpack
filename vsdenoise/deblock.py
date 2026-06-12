@@ -281,7 +281,7 @@ def mpeg2stinx(
         diff = MeanMode.MINIMUM([diff.std.SelectEvery(4, (0, 1)), diff.std.SelectEvery(4, (2, 3))], func=mpeg2stinx)
         diff = weave(Morpho.expand(diff, sw=2, sh=1), tff.field, mpeg2stinx)
 
-        return norm_expr([flt, src, diff], "z {limit} * LIM! x y LIM@ - y LIM@ + clip", limit=limit, func=mpeg2stinx)
+        return norm_expr([flt, src, diff], "z {limit} * LIM! x y LIM@ - y LIM@ + clamp", limit=limit, func=mpeg2stinx)
 
     def _bobfunc(clip: vs.VideoNode) -> vs.VideoNode:
         bobbed = bobber.bob(clip)

@@ -32,7 +32,7 @@ from vstools import (
     limiter,
     normalize_ranges,
     replace_ranges,
-    scale_delta,
+    scale_mask,
     scale_value,
     vs,
 )
@@ -175,7 +175,7 @@ class HardsubMask(DeferredMask):
         dehardsub_masks = list[vs.VideoNode]()
         partials = [*partials, ref]
 
-        thr = scale_value(self.bin_thr, 32, masks[-1])
+        thr = scale_mask(self.bin_thr, 32, masks[-1])
 
         for p in partials:
             masks.append(ExprOp.SUB.combine(masks[-1], self.get_mask(p, ref)))
@@ -259,7 +259,7 @@ class HardsubSignFades(HardsubMask):
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         clipedge, refedge = (box_blur(normalize_mask(self.edgemask, x, **kwargs)) for x in (clip, ref))
 
-        highpass = scale_delta(self.highpass, 32, clip)
+        highpass = scale_mask(self.highpass, 32, clip)
 
         mask = median_blur(
             norm_expr([clipedge, refedge], f"x y - {highpass} < 0 {ExprToken.RangeMax} ?", func=self.__class__)
@@ -313,7 +313,6 @@ class HardsubSign(HardsubMask):
         self.expand_mode = expand_mode
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
-    @limiter(mask=True)
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         hsmf = norm_expr([clip, ref], "x y - abs", func=self.__class__)
         hsmf = core.resize.Bilinear(hsmf, format=clip.format.replace(subsampling_w=0, subsampling_h=0))
@@ -476,7 +475,6 @@ class HardsubASS(HardsubMask):
         self.fontdir = fontdir
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
-    @limiter(mask=True)
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         mask = core.sub.TextFile(ref, self.filename, fontdir=self.fontdir, blend=False).std.PropToClip("_Alpha")
 

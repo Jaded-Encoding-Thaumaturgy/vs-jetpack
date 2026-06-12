@@ -239,7 +239,7 @@ class FineDehalo[**P, R]:
             # Smooth again and amplify to grow the mask a bit, otherwise the halo
             # parts sticking to the edges could be missed.
             # Also clamp to legal ranges
-            mask = norm_expr(box_blur(mask, planes=planes), "x 2 * 0 mask_max clip", planes, func=func)
+            mask = norm_expr(box_blur(mask, planes=planes), "x 2 * 0 mask_max clamp", planes, func=func)
 
             self._edges = edges
             self._strong = strong

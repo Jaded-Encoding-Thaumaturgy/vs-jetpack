@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from functools import partial
 from typing import Any, Literal, overload
 
-from jetpytools import CustomEnum, CustomIntEnum
+from jetpytools import CustomEnum, CustomStrEnum, CustomValueError
 
 from vsdenoise import MotionVectors, MVTools, MVToolsPreset, prefilter_to_full_range, refine_blksize
 from vsexprtools import norm_expr
@@ -12,11 +12,12 @@ from vsrgtools import BlurMatrix, sbr
 from vstools import (
     ConvMode,
     FormatsMismatchError,
-    FunctionUtil,
     Planes,
+    UnsupportedSampleTypeError,
     VSFunctionKwArgs,
     check_ref_clip,
     core,
+    normalize_planes,
     scale_delta,
     vs,
 )
@@ -140,17 +141,17 @@ class InterpolateOverlay(CustomEnum):
         return (fixed, mv) if export_globals else fixed
 
 
-class FixInterlacedFades(CustomIntEnum):
+class FixInterlacedFades(CustomStrEnum):
     """
     Enum for mathematically decombing fades that were applied *after* telecine.
     """
 
-    AVERAGE = 0
+    AVERAGE = "+ 2 /"
     """
     Adjust the average of each field to `color`.
     """
 
-    MATCH = 1
+    MATCH = "min"
     """
     Match to the field closest to `color`.
     """
@@ -179,13 +180,18 @@ class FixInterlacedFades(CustomIntEnum):
             Clip with fades to/from `color` accurately deinterlaced.
                 Frames that don't contain such fades may be damaged.
         """
-        func = FunctionUtil(clip, self.__class__, planes, vs.YUV, 32)
+        expr_color: float | Sequence[float] | str
 
+        UnsupportedSampleTypeError.check(clip, vs.FLOAT, self.__class__)
+
+        planes = normalize_planes(clip, planes)
         expr_clips = list[vs.VideoNode]()
-        fields = func.work_clip.std.SeparateFields(tff=True)
+        fields = clip.std.SeparateFields(tff=True)
 
         if isinstance(color, vs.VideoNode):
-            check_ref_clip(color, func.work_clip, self.__class__)
+            check_ref_clip(color, clip, self.__class__)
+            if color.num_frames > 1:
+                raise CustomValueError("`color` must be a single frame clip!", self.__class__, color.num_frames)
 
             expr_clips.append(color)
             clipb, prop_name, expr_color = color.std.SeparateFields(tff=True), "Diff", "y"
@@ -195,12 +201,12 @@ class FixInterlacedFades(CustomIntEnum):
             )
             clipb, prop_name, expr_color = None, "Average", color
 
-        for i in func.norm_planes:
+        for i in planes:
             fields = fields.std.PlaneStats(clipb, i, f"P{i}")
 
         props_clip = core.akarin.PropExpr(
-            [func.work_clip, fields[::2], fields[1::2]],
-            lambda: {f"f{f}Avg{i}": f"{c}.P{i}{prop_name}" for f, c in zip("tb", "yz") for i in func.norm_planes},
+            [clip, fields[::2], fields[1::2]],
+            lambda: {f"f{f}Avg{i}": f"{c}.P{i}{prop_name}" for f, c in zip("tb", "yz") for i in planes},
         )
         expr_clips.insert(0, props_clip)
 
@@ -209,17 +215,15 @@ class FixInterlacedFades(CustomIntEnum):
             "AVG@ x {color} - x.ftAvg{i} x.fbAvg{i} {expr_mode} AVG@ / * {color} + x ?"
         )
 
-        fix = norm_expr(
+        return norm_expr(
             expr_clips,
             expr,
             planes,
-            i=func.norm_planes,
+            i=planes,
             color=expr_color,
-            expr_mode="+ 2 /" if self == self.AVERAGE else "min",
+            expr_mode=self.value,
             func=self.__class__,
         )
-
-        return func.return_clip(fix)
 
 
 def vinverse(
@@ -251,7 +255,7 @@ def vinverse(
     expr = "y z - {sstr} * D1! x y - D2! D1@ abs D2@ abs < D1@ D2@ ? D3! D1@ D2@ xor D3@ {scl} * D3@ ? y +"
 
     if amnt is not None:
-        expr += " x {amnt} - x {amnt} + clip"
+        expr += " x {amnt} - x {amnt} + clamp"
         amnt = scale_delta(amnt, 8, clip)
 
     return norm_expr([clip, blurred, blurred2], expr, planes, sstr=contra_str, amnt=amnt, scl=scl, func=vinverse)

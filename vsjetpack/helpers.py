@@ -1,15 +1,14 @@
 import sys
 from collections.abc import Callable, Mapping
 from copy import copy
-from functools import wraps
 from inspect import getmodule, isclass
 from logging import INFO, Formatter, LogRecord, getLogger
 from types import ModuleType
-from typing import Any, Literal
+from typing import Any
 
-from jetpytools import DependencyNotFoundError, norm_func_name
+from jetpytools import norm_func_name
 
-__all__ = ["is_from_vs_module", "lazy_load", "require_jet_dependency", "setup_logging"]
+__all__ = ["is_from_vs_module", "lazy_load", "setup_logging"]
 
 
 _vs_module: ModuleType | None = None
@@ -53,31 +52,6 @@ def lazy_load(name: str, package: str | None = None, exc: Callable[[], Exception
     loader.exec_module(module)
 
     return module
-
-
-def require_jet_dependency[**P, R](*name: Literal["scipy", "psutil"]) -> Callable[[Callable[P, R]], Callable[P, R]]:
-    """Decorator that raises DependencyNotFoundError when a specific package is missing."""
-
-    def decorator(func: Callable[P, R]) -> Callable[P, R]:
-        @wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            try:
-                return func(*args, **kwargs)
-            except ImportError as e:
-                if e.name in name:
-                    exc = DependencyNotFoundError(
-                        func,
-                        e.name,
-                        "Missing dependency '{package}' for function '{func_name}'. Please install vsjetpack[full]",
-                        func_name=func,
-                    )
-
-                    raise exc from None
-                raise
-
-        return wrapper
-
-    return decorator
 
 
 _JETPACK_MODULES = (

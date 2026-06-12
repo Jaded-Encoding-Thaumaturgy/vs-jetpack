@@ -24,7 +24,6 @@ from jetpytools import (
     fallback,
 )
 
-from vsjetpack import require_jet_dependency
 from vstools import Planes, check_progressive, core, flatten, vs
 
 __all__ = ["DFTTest", "SLocationLike"]
@@ -444,7 +443,6 @@ class DFTTest:
 
             return cls(location)
 
-        @require_jet_dependency("scipy")
         def interpolate(
             self, method: InterMode = InterMode.LINEAR, res: int = 20, digits: int = 3
         ) -> DFTTest.SLocation:

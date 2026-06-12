@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Generator
-from contextlib import contextmanager
-from logging import INFO, Handler, Logger, LogRecord, getLogger
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable, Generator
+from contextlib import contextmanager, nullcontext
+from logging import Handler, Logger, LogRecord, getLogger
+from typing import TYPE_CHECKING, Any, Literal, override
 
 from jetpytools import CustomIntEnum, SPathLike
 
@@ -12,10 +12,36 @@ from vstools import core, vs
 
 if TYPE_CHECKING:
     from rich.console import Console
+    from rich.progress import Progress
 
 from .base import CacheIndexer, Indexer
 
 __all__ = ["FFMS2", "BestSource", "ZipSource"]
+
+
+class _ProgressFromLogHandler(Handler):
+    def __init__(self, cb: Callable[[float], Any]) -> None:
+        super().__init__()
+        self.cb = cb
+        self.progress_re = re.compile(r"progress\s+(\d+(?:\.\d+)?)%")
+
+    @override
+    def emit(self, record: LogRecord) -> None:
+        try:
+            m = self.progress_re.search(record.getMessage())
+            if m:
+                self.cb(float(m.group(1)))
+                return
+        except Exception:
+            self.handleError(record)
+
+    @contextmanager
+    def with_logger(self, logger: Logger) -> Generator[None]:
+        logger.addHandler(self)
+        try:
+            yield
+        finally:
+            logger.removeHandler(self)
 
 
 # Video indexers
@@ -74,7 +100,7 @@ class BestSource(CacheIndexer):
         cachemode: int = CacheMode.ABSOLUTE,
         rff: int | None = True,
         showprogress: int | None = True,
-        show_pretty_progress: int | Console | None = False,
+        show_pretty_progress: bool | Callable[[float], None] | None = False,
         **kwargs: Any,
     ) -> None:
         """
@@ -103,13 +129,49 @@ class BestSource(CacheIndexer):
         if kwargs["cachemode"] <= cls.CacheMode.CACHE_PATH_WRITE and cls._cache_arg_name not in kwargs:
             kwargs[cls._cache_arg_name] = None
 
-        if p := kwargs.pop("show_pretty_progress"):
-            from rich.console import Console
+        if not (p := kwargs.pop("show_pretty_progress")):
+            return super().source_func(path, **kwargs)
 
-            with _bs_pretty_progress(p if isinstance(p, Console) else None):
-                return super().source_func(path, **kwargs)
+        with cls.pretty_progress(p):
+            return super().source_func(path, **kwargs)
 
-        return super().source_func(path, **kwargs)
+    @classmethod
+    @contextmanager
+    def pretty_progress(cls, progress: Literal[True] | Callable[[float], None]) -> Generator[None]:
+        if callable(progress):
+            pr_ctx = nullcontext()
+            cb = progress
+        else:
+            pr_ctx = cls.get_progress()
+            task_id = pr_ctx.add_task("Indexing with BestSource...", total=100.0, visible=False)
+            cb = lambda pct: pr_ctx.update(task_id, completed=pct, visible=True)  # noqa: E731
+
+        handler = _ProgressFromLogHandler(cb)
+
+        vs_logger = getLogger("vapoursynth")
+        vs_logger.propagate = False
+
+        try:
+            with pr_ctx, handler.with_logger(vs_logger):
+                yield
+                cb(100.0)
+        finally:
+            vs_logger.propagate = True
+
+    @staticmethod
+    def get_progress(*, console: Console | None = None) -> Progress:
+        from rich.console import Console
+        from rich.progress import BarColumn, Progress, TextColumn, TimeElapsedColumn, TimeRemainingColumn
+
+        return Progress(
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("{task.percentage:>3.0f}%"),
+            TimeElapsedColumn(),
+            TimeRemainingColumn(),
+            console=console or Console(stderr=True),
+            transient=True,
+        )
 
 
 class FFMS2(CacheIndexer):
@@ -133,60 +195,3 @@ class ZipSource(Indexer):
     """
 
     _source_func = core.lazy.vszip.ImageRead
-
-
-@contextmanager
-def _bs_pretty_progress(console: Console | None = None) -> Generator[None]:
-    from rich.console import Console
-    from rich.progress import BarColumn, Progress, TaskID, TextColumn, TimeElapsedColumn, TimeRemainingColumn
-
-    progress_re = re.compile(r"progress\s+(\d+(?:\.\d+)?)%")
-
-    class ProgressFromLogHandler(Handler):
-        def __init__(self, progress: Progress, task_id: TaskID, *args: Any, **kwargs: Any) -> None:
-            super().__init__(*args, **kwargs)
-            self.setLevel(kwargs.get("level", INFO))
-            self.progress = progress
-            self.task_id = task_id
-
-        @contextmanager
-        def with_logger(self, logger: Logger) -> Generator[None]:
-            logger.addHandler(self)
-
-            try:
-                yield
-            finally:
-                logger.removeHandler(self)
-
-        def emit(self, record: LogRecord) -> None:
-            try:
-                m = progress_re.search(record.getMessage())
-                if m:
-                    pct = float(m.group(1))
-
-                    self.progress.update(self.task_id, completed=pct, visible=True)
-                    return
-            except Exception:
-                self.handleError(record)
-
-    vs_logger = getLogger("vapoursynth")
-    vs_logger.propagate = False
-
-    progress = Progress(
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TextColumn("{task.percentage:>3.0f}%"),
-        TimeElapsedColumn(),
-        TimeRemainingColumn(),
-        console=console or Console(stderr=True),
-        transient=True,
-    )
-
-    task_id = progress.add_task("Indexing with BestSource...", total=100, visible=False)
-
-    try:
-        with progress, ProgressFromLogHandler(progress=progress, task_id=task_id, level=INFO).with_logger(vs_logger):
-            yield
-            progress.update(task_id, visible=True)
-    finally:
-        vs_logger.propagate = True
