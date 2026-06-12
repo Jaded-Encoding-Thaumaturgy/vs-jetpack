@@ -2361,6 +2361,23 @@ wheels = [
 ]
 
 [[package]]
+name = "vapoursynth-lsmas"
+version = "1282.0.0"
+source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
+dependencies = [
+    { name = "vapoursynth" },
+]
+sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0.tar.gz", hash = "sha256:142ed08e66d62689ec862d86d665f2ccab9ebfdc8cc285a648bce3f992482a86" }
+wheels = [
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-macosx_15_0_arm64.whl", hash = "sha256:fc4a620cad730ec6669c5f9ea55bdf5bcb86189045182447746a19d9655098fe" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:a92b186536a0ff3ed0c25857d8ea31165657ed7818936f4c028b8342afda3c31" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:65579fe22f51221a3a0897302f6a8e4971641e4b326f51aa13b9329574dc30bc" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:809d6a37e9e37403b99b1e6da7100d4749a82f1f4817031f63535fe0774c05b8" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:b1db1047ba624e99aea92aadd9bb67d02c73ca797e53877177d405f4fd140fc2" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-win_amd64.whl", hash = "sha256:48a2b01f36106d0cbba1aab1582de770b3da648716c9180ca2a11582d1013262" },
+]
+
+[[package]]
 name = "vapoursynth-manipmv"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2737,6 +2754,7 @@ aa = [
     { name = "vapoursynth-eedi3" },
     { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-hysteresis" },
+    { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
@@ -2786,6 +2804,7 @@ deband = [
     { name = "vapoursynth-eedi3" },
     { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-hysteresis" },
+    { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-manipmv" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-mvtools" },
@@ -2827,6 +2846,7 @@ dehalo = [
     { name = "vapoursynth-eedi3" },
     { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-hysteresis" },
+    { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-manipmv" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-mvtools" },
@@ -2868,6 +2888,7 @@ deinterlace = [
     { name = "vapoursynth-eedi3" },
     { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-hysteresis" },
+    { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-manipmv" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-mvtools" },
@@ -2909,6 +2930,7 @@ denoise = [
     { name = "vapoursynth-eedi3" },
     { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-hysteresis" },
+    { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-manipmv" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-mvtools" },
@@ -2950,6 +2972,7 @@ full = [
     { name = "vapoursynth-eedi3" },
     { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-hysteresis" },
+    { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-manipmv" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-mvtools" },
@@ -2981,6 +3004,7 @@ mask = [
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-hysteresis" },
+    { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-subtext" },
     { name = "vapoursynth-zsmooth" },
@@ -3036,6 +3060,7 @@ scale = [
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-ffms2" },
     { name = "vapoursynth-hysteresis" },
+    { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-subtext" },
@@ -3047,6 +3072,7 @@ source = [
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dvdsrc2" },
     { name = "vapoursynth-ffms2" },
+    { name = "vapoursynth-lsmas" },
 ]
 
 [package.dev-dependencies]
@@ -3300,6 +3326,15 @@ requires-dist = [
     { name = "vapoursynth-hysteresis", marker = "extra == 'scale'", specifier = ">=1.1.3" },
     { name = "vapoursynth-knlmeanscl", marker = "extra == 'amd'", specifier = ">=1.2" },
     { name = "vapoursynth-knlmeanscl", marker = "extra == 'cl'", specifier = ">=1.2" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'aa'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'deband'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'dehalo'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'deinterlace'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'denoise'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'full'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'mask'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'scale'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'source'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-manipmv", marker = "extra == 'deband'", specifier = ">=1.3.0" },
     { name = "vapoursynth-manipmv", marker = "extra == 'dehalo'", specifier = ">=1.3.0" },
     { name = "vapoursynth-manipmv", marker = "extra == 'deinterlace'", specifier = ">=1.3.0" },

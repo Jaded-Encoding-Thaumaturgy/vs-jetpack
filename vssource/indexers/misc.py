@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, override
 
 from jetpytools import CustomIntEnum, SPathLike
 
+from vsjetpack import deprecated
 from vstools import core, vs
 
 if TYPE_CHECKING:
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 
 from .base import CacheIndexer, Indexer
 
-__all__ = ["FFMS2", "BestSource", "ZipSource"]
+__all__ = ["FFMS2", "LSMAS", "BestSource", "ZipSource"]
 
 
 class _ProgressFromLogHandler(Handler):
@@ -187,6 +188,27 @@ class FFMS2(CacheIndexer):
     _source_func = core.lazy.ffms2.Source
     _cache_arg_name = "cachefile"
     _ext = ".ffindex"
+
+
+@deprecated(
+    "LSMAS is deprecated and will be removed in a future version once FFMS2 fully supports common formats. "
+    "BestSource generally provides the fastest seeking, FFMS2 the fastest indexing, "
+    "and LSMAS may still be preferable for some formats such as .m2ts.",
+    category=PendingDeprecationWarning,
+)
+class LSMAS(CacheIndexer):
+    """
+    [L-SMASH-Works](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works) indexer.
+
+    Unlike the plugin's default behavior, the indexer cache file will be stored in `.vsjet/vssource`
+    next to the script file.
+
+    When `cachefile=None`, the behavior falls back to the default cache handling defined by the plugin itself.
+    """
+
+    _source_func = core.lazy.lsmas.LWLibavSource
+    _cache_arg_name = "cachefile"
+    _ext = ".lwi"
 
 
 class ZipSource(Indexer):
