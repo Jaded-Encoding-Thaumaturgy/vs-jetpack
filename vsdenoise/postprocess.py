@@ -4,7 +4,7 @@ from typing import Any
 
 from jetpytools import CustomIndexError
 
-from vsexprtools import ExprOp, ExprToken, norm_expr
+from vsexprtools import ExprOp, norm_expr
 from vsmasktools import EdgeDetect, EdgeDetectLike, FDoG, range_mask
 from vsrgtools import bilateral, box_blur, gauss_blur
 from vstools import (
@@ -116,7 +116,7 @@ def decrease_size(
 
         mask = norm_expr(
             mask_planes,
-            f"x y max z max {pm_min} < 0 {ExprToken.RangeMax} ? a max {pm_max} < 0 {ExprToken.RangeMax} ?",
+            f"x y max z max {pm_min} < 0 mask_max ? a max {pm_max} < 0 mask_max ?",
             func=decrease_size,
         )
 
@@ -133,8 +133,7 @@ def decrease_size(
 
     mask = norm_expr(
         [pre, mask],
-        f"x {ExprOp.clamp(minf, maxf)} {minf} - {maxf} {minf} - / {1 / gamma} "
-        f"pow {ExprOp.clamp(0, 1)} {ExprToken.RangeMax} * y -",
+        f"x {ExprOp.clamp(minf, maxf)} {minf} - {maxf} {minf} - / {1 / gamma} pow {ExprOp.clamp(0, 1)} mask_max * y -",
         planes,
         func=decrease_size,
     )

@@ -381,7 +381,7 @@ class Rescale(RescaleBase):
                 pre_y.std.BlankClip(length=1, keep=True),
                 *self._crop,
                 replace_in=0,
-                replace_out=ExprToken.RangeMax,
+                replace_out=ExprToken.MaskMax,
                 func=self.__class__,
             )
 
@@ -403,7 +403,7 @@ class Rescale(RescaleBase):
                 self._kernel.kernel_radius,
                 self._kernel.kernel_radius,
                 self._kernel.kernel_radius,
-                replace_out=ExprToken.RangeMax,
+                replace_out=ExprToken.MaskMax,
                 func=self.__class__,
             )
 
