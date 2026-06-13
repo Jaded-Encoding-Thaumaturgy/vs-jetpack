@@ -769,7 +769,3 @@ type RangeLike = int | vs.Range | Range | HoldsPropValue
 
 ColorRangeLike = RangeLike  # deprecated
 """Deprecated alias"""
-
-
-def _norm_props_enums(kwargs: dict[str, Any]) -> dict[str, Any]:
-    return {key: (value.value_zimg if isinstance(value, Range) else value) for key, value in kwargs.items()}
