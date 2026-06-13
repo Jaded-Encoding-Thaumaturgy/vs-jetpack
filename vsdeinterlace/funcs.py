@@ -206,7 +206,7 @@ class FixInterlacedFades(CustomStrEnum):
 
         props_clip = core.cranexpr.PropExpr(
             [clip, fields[::2], fields[1::2]],
-            lambda: {f"f{f}Avg{i}": f"{c}.P{i}{prop_name}" for f, c in zip("tb", "yz") for i in planes},
+            **{f"f{f}Avg{i}": f"{c}.P{i}{prop_name}" for f, c in zip("tb", "yz") for i in planes},
         )
         expr_clips.insert(0, props_clip)
 
