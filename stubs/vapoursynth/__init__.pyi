@@ -137,6 +137,22 @@ class _VSCallback(Protocol):
 
 # Known callback signatures
 # _VSCallback_{plugin_namespace}_{Function_name}_{parameter_name}
+class _VSCallback_akarin_PropExpr_dict(Protocol):
+    def __call__(
+        self,
+    ) -> Mapping[
+        str,
+        _IntLike
+        | _FloatLike
+        | _AnyStr
+        | _SupportsIter[_IntLike]
+        | _SupportsIter[_AnyStr]
+        | _SupportsIter[_FloatLike]
+        | _GetItemIterable[_IntLike]
+        | _GetItemIterable[_FloatLike]
+        | _GetItemIterable[_AnyStr],
+    ]: ...
+
 class _VSCallback_descale_Decustom_custom_kernel(Protocol):
     def __call__(self, *, x: float) -> _FloatLike: ...
 
