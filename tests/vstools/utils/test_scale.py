@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from vstools import ColorRange, scale_value, vs
+from vstools import Range, scale_value, vs
 
 
 class TestScale(TestCase):
@@ -70,27 +70,27 @@ class TestScale(TestCase):
         self.assertEqual(result, 235)
 
     def test_scale_value_to_limited(self) -> None:
-        result = scale_value(0, 8, 8, ColorRange.FULL, ColorRange.LIMITED)
+        result = scale_value(0, 8, 8, Range.FULL, Range.LIMITED)
         self.assertEqual(result, 16)
 
-        result = scale_value(24, 8, 8, ColorRange.FULL, ColorRange.LIMITED)
+        result = scale_value(24, 8, 8, Range.FULL, Range.LIMITED)
         self.assertEqual(result, 37)
 
-        result = scale_value(64, 8, 8, ColorRange.FULL, ColorRange.LIMITED)
+        result = scale_value(64, 8, 8, Range.FULL, Range.LIMITED)
         self.assertEqual(result, 71)
 
-        result = scale_value(255, 8, 8, ColorRange.FULL, ColorRange.LIMITED)
+        result = scale_value(255, 8, 8, Range.FULL, Range.LIMITED)
         self.assertEqual(result, 235)
 
     def test_scale_value_from_limited(self) -> None:
-        result = scale_value(0, 8, 8, ColorRange.LIMITED, ColorRange.FULL)
+        result = scale_value(0, 8, 8, Range.LIMITED, Range.FULL)
         self.assertEqual(result, 0)
 
-        result = scale_value(24, 8, 8, ColorRange.LIMITED, ColorRange.FULL)
+        result = scale_value(24, 8, 8, Range.LIMITED, Range.FULL)
         self.assertEqual(result, 9)
 
-        result = scale_value(64, 8, 8, ColorRange.LIMITED, ColorRange.FULL)
+        result = scale_value(64, 8, 8, Range.LIMITED, Range.FULL)
         self.assertEqual(result, 56)
 
-        result = scale_value(235, 8, 8, ColorRange.LIMITED, ColorRange.FULL)
+        result = scale_value(235, 8, 8, Range.LIMITED, Range.FULL)
         self.assertEqual(result, 255)

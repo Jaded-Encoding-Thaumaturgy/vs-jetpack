@@ -8,7 +8,7 @@ import pytest
 from vsdenoise import prefilter_to_full_range
 from vsexprtools import inline_expr, norm_expr
 from vsmasktools import Sobel
-from vstools import ColorRange, ConvMode, core, get_video_format, vs
+from vstools import ConvMode, Range, core, get_video_format, vs
 
 
 def _spawn_random(amount: int, format: int = vs.RGB24, length: int | None = None) -> list[vs.VideoNode]:
@@ -72,14 +72,14 @@ def test_inline_expr_advanced(format: int) -> None:
 
             ie.out.y = weight_mul
 
-            if ColorRange.from_video(clip).is_full or clip.format.sample_type is vs.FLOAT:
+            if Range.from_video(clip).is_full or clip.format.sample_type is vs.FLOAT:
                 ie.out.uv = x
             else:
                 chroma_expanded = ((x - x.Neutral) / (x.PlaneMax - x.PlaneMin) + 0.5) * x.RangeMax
 
                 ie.out.uv = ie.op.round(chroma_expanded)
 
-        return ColorRange.FULL.apply(ie.clip)
+        return Range.FULL.apply(ie.clip)
 
     clip, *_ = _spawn_random(1, format)
 

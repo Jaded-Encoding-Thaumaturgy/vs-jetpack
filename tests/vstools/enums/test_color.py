@@ -252,10 +252,7 @@ class TestRange(TestCase):
 
     def test_from_video_property(self) -> None:
         clip = vs.core.std.BlankClip(format=vs.YUV420P8)
-        if vs.__version__ >= (74, 0):
-            clip = vs.core.std.SetFrameProp(clip, "_Range", Range.FULL)
-        else:
-            clip = vs.core.std.SetFrameProp(clip, "_ColorRange", Range.FULL)
+        clip = vs.core.std.SetFrameProp(clip, "_Range", Range.FULL)
         result = Range.from_video(clip)
         self.assertEqual(result, Range.FULL)
 
@@ -274,15 +271,6 @@ class TestRange(TestCase):
         clip = vs.core.std.BlankClip(format=vs.YUV420P8)
         result = Range.from_video(clip)
         self.assertEqual(result, Range.LIMITED)
-
-    def test_value_vs(self) -> None:
-        if vs.__version__ < (74, 0):
-            self.assertEqual(Range.LIMITED.value_vs, 1)
-            self.assertEqual(Range.FULL.value_vs, 0)
-
-    def test_value_zimg(self) -> None:
-        self.assertEqual(Range.LIMITED.value_zimg, 0)
-        self.assertEqual(Range.FULL.value_zimg, 1)
 
     def test_value_is_limited(self) -> None:
         self.assertTrue(Range.LIMITED.is_limited)
