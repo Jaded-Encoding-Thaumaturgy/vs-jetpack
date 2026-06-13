@@ -1,8 +1,6 @@
 from vstools import core, video_heuristics, vs
 
-clip = core.std.BlankClip(None, 640, 360, vs.YUV420P16).std.SetFrameProps(
-    _Matrix=vs.MATRIX_BT709, _ColorRange=vs.RANGE_FULL
-)
+clip = core.std.BlankClip(None, 640, 360, vs.YUV420P16).std.SetFrameProps(_Matrix=vs.MATRIX_BT709, _Range=vs.RANGE_FULL)
 
 
 def test_video_heuristics_props_none() -> None:
