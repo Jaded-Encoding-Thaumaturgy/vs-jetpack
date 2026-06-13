@@ -2082,24 +2082,6 @@ wheels = [
 ]
 
 [[package]]
-name = "vapoursynth-dctfilter"
-version = "3.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/de/16/2e49529672feb2a7d68d2483e6aaba1ad65fbbbc5103f6cb06501590ba40/vapoursynth_dctfilter-3.2.tar.gz", hash = "sha256:e37f81e26ee16e5fa30b1846c7b114adaf7f643b9eb178f037154fa5671cecda", size = 7070, upload-time = "2026-05-04T15:27:08.368Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2b/91/abd73a5478027f9e5890a80170fcb060c2b4bfdc98babf27fce9b79b4c82/vapoursynth_dctfilter-3.2-py3-none-macosx_15_0_arm64.whl", hash = "sha256:50fafe4a779b15511e7a745845b7dd132e5c812026bc5ef3dda06b06cb9ef3dc", size = 376499, upload-time = "2026-05-04T15:26:54.449Z" },
-    { url = "https://files.pythonhosted.org/packages/7b/67/53c09d259455351a418ef9f9efbcb8497221e8b86af3a120241565e18b16/vapoursynth_dctfilter-3.2-py3-none-macosx_15_0_x86_64.whl", hash = "sha256:92b22823ec09fa44f5b6531d1967d3f471466db20d82f4c9af61221d53000165", size = 1294271, upload-time = "2026-05-04T15:26:56.365Z" },
-    { url = "https://files.pythonhosted.org/packages/de/d0/fe5817cd382ce4dc5030d2b5abefa5fadbdfaba750d3b0c08613b616072d/vapoursynth_dctfilter-3.2-py3-none-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dd4836bf628c7d9bb255a2ef35552cd822c808570b7a21685ec27b41c889d537", size = 627545, upload-time = "2026-05-04T15:26:58.859Z" },
-    { url = "https://files.pythonhosted.org/packages/55/3e/35f43bf629c1b01627d2376c4b8bc0281e1998b351995a2bf0a8246e1a45/vapoursynth_dctfilter-3.2-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1d5ac651341ee4826c79aebe62e0ed7abf8871d2df60e731751cf961a7225e30", size = 1122264, upload-time = "2026-05-04T15:27:00.58Z" },
-    { url = "https://files.pythonhosted.org/packages/9a/8c/8e2e86ca03b08905945796ecf7dad09b7f10391a928856512002b8361795/vapoursynth_dctfilter-3.2-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:4552473b76726e9c502b2516f28aae6f1124691aff704cf2c19c5800fe7ae6b5", size = 1747697, upload-time = "2026-05-04T15:27:02.396Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/bb/245112e7f55abbe166fbdd6f4d51b1a683dd0b56b02a5b066cdafbcfcaff/vapoursynth_dctfilter-3.2-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:9b7a184559cd50ffd567dede1f987c7093906b10105ceada7188093f1a9d8613", size = 1926076, upload-time = "2026-05-04T15:27:04.379Z" },
-    { url = "https://files.pythonhosted.org/packages/87/41/01818b4ccf327e35bc0d7fe1dab60ff8deb7506c0570ca37598436560867/vapoursynth_dctfilter-3.2-py3-none-win_amd64.whl", hash = "sha256:4a04502160631a7646b1f1158fba12c4b344739bafa5e46165c7e1dfd95a25f9", size = 1822493, upload-time = "2026-05-04T15:27:06.935Z" },
-]
-
-[[package]]
 name = "vapoursynth-deblock"
 version = "8.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2683,20 +2665,20 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-zsmooth"
-version = "0.15.5"
+version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/97/48/8b35a6804d816610ceffdc2391d98f5630300cc9d6a9cc7e824740094ea0/vapoursynth_zsmooth-0.15.5.tar.gz", hash = "sha256:7c3b0c496f5af9e84db351575e86ab12004f5c929ce18a3681450dff6be929c7", size = 106950, upload-time = "2026-05-01T00:40:43.809Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/80/710b0c98818ea68f45339cb1ebfc513babcafb369f36207c6769dceecc2b/vapoursynth_zsmooth-0.16.0.tar.gz", hash = "sha256:5e25975c6e01f5e4f0ec06f830bdd77a4cdaf080141032627101e09918759f03", size = 118989, upload-time = "2026-06-13T00:44:17.118Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/b1/36fa181d4a279c49e3152014032ea3ff1744582eb26fbae436dc9a1b0579/vapoursynth_zsmooth-0.15.5-py3-none-macosx_11_0_arm64.whl", hash = "sha256:1a9f17879e7cd529d3a315256fda74429baf916d04b239232be7beb9e5f08615", size = 623413, upload-time = "2026-05-01T00:40:31.603Z" },
-    { url = "https://files.pythonhosted.org/packages/f2/37/933b7f6df164816d8c990ee8415003233251d4511857be263c9d42b37f6b/vapoursynth_zsmooth-0.15.5-py3-none-macosx_11_0_x86_64.whl", hash = "sha256:cd928cd905579600f61828369ba26a655b4ac109ead5d8aa6c5061424e756372", size = 2223559, upload-time = "2026-05-01T00:40:33.101Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/29/ad576280401e28ffafca0f22a67aff7962d046da63f47df7e72623c782d8/vapoursynth_zsmooth-0.15.5-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:e3e886a36e022bb3fa1b7a5ad87997df926b9527e1ada3f11c0f7170c7e53f37", size = 1606065, upload-time = "2026-05-01T00:40:34.771Z" },
-    { url = "https://files.pythonhosted.org/packages/89/9c/beb6b37075b804b6b4688cf969450ad20e89b2d5d06b51ea0095809f11ea/vapoursynth_zsmooth-0.15.5-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:a6697fbcee6d11086ca36a7bf73b01917e9891cf59dd318ec0c397dbbfdf7b4e", size = 6940759, upload-time = "2026-05-01T00:40:36.416Z" },
-    { url = "https://files.pythonhosted.org/packages/0d/ab/2d3fae9fcad1d1c6284ac45c61300e08c634a34917358bcb7598cd8212fd/vapoursynth_zsmooth-0.15.5-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:107851d3fec64e1d363f336a3afdb689137448feb5d5585b8808b7c91240af1d", size = 1605957, upload-time = "2026-05-01T00:40:38.384Z" },
-    { url = "https://files.pythonhosted.org/packages/fc/ea/5045f680dbb7253e3c36aa5f66031349741999dfe273b7a8533ba87c69ff/vapoursynth_zsmooth-0.15.5-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:af5aaee5d7c7ca3dbf68c72cca8ebd1de60d74bf1fd20c4afe57d39ffeafe00f", size = 6940383, upload-time = "2026-05-01T00:40:40.397Z" },
-    { url = "https://files.pythonhosted.org/packages/d3/76/c49065f9978a31e1ec5fd94944cca564cf5fcb9685ba63741fbae66abf0f/vapoursynth_zsmooth-0.15.5-py3-none-win_amd64.whl", hash = "sha256:9dc464bf39439a16250d5ab7795eb78590d4e9d85fa1568507dca84389d992b9", size = 6676287, upload-time = "2026-05-01T00:40:42.205Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/ac/6404d719c058020b36b098b0765925f5e8331d431daf788e2b435906faf6/vapoursynth_zsmooth-0.16.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:69b17a4b5bd2a4ec1178cab28041a1631e288ab2e5cf881dddd87884891bf9f0", size = 1231737, upload-time = "2026-06-13T00:44:04.638Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/91/f06c5751b0e44423ea6c104343611a4db67a9bb37e4db6f568df5d074966/vapoursynth_zsmooth-0.16.0-py3-none-macosx_11_0_x86_64.whl", hash = "sha256:f7d73666ea8585981ec51b8681548f3a5014295481107245047d9bbbff5d60a0", size = 2877272, upload-time = "2026-06-13T00:44:06.396Z" },
+    { url = "https://files.pythonhosted.org/packages/79/f9/30da2f0070b127f50a0b1e89b3da8a8762b1461e62b3c7847415752cf3ab/vapoursynth_zsmooth-0.16.0-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:518fc5b49373b49aa98adc33d393232b1617bd0a9184dbbdd4eb330ad296d574", size = 2290110, upload-time = "2026-06-13T00:44:07.888Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/f6/731ca09a571eb03e2b9d6ab638ce016086ceeaa16cf7f5dcc05babd0a5cd/vapoursynth_zsmooth-0.16.0-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:d1ba5fcc6428e4ac63974ca4e0978cf586b4a1d9e1beb930cb925d7b98d7e78b", size = 10540725, upload-time = "2026-06-13T00:44:09.549Z" },
+    { url = "https://files.pythonhosted.org/packages/81/3e/4cb5a6f3b3491861276ad20acf6ce23940dcbce0af2d1bffff0855ab63e1/vapoursynth_zsmooth-0.16.0-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:48598729fe3bc471a30d56621d7de003f2549e94da14d221cca2a530a1d1ed57", size = 2290811, upload-time = "2026-06-13T00:44:11.447Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/c4/31bc2366028b4dc3abfda26ae2d3c85d71552f9186434a832145daa27436/vapoursynth_zsmooth-0.16.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:6d8b76f9b28292028ca170785e53a92523c5f8c696cac95418471ee65cb3a209", size = 10542515, upload-time = "2026-06-13T00:44:13.064Z" },
+    { url = "https://files.pythonhosted.org/packages/5b/67/f76fe88e0bac8716f203334410ca2d54d7ae9340db4c4e1f8d3c236a7379/vapoursynth_zsmooth-0.16.0-py3-none-win_amd64.whl", hash = "sha256:ee2c95deb1d1caffc53c591f439531f08d02953bf9d72207a00f1e7faf5fb8d0", size = 10272411, upload-time = "2026-06-13T00:44:15.254Z" },
 ]
 
 [[package]]
@@ -2796,7 +2778,6 @@ deband = [
     { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
-    { name = "vapoursynth-dctfilter" },
     { name = "vapoursynth-deblock" },
     { name = "vapoursynth-descale" },
     { name = "vapoursynth-dvdsrc2" },
@@ -2838,7 +2819,6 @@ dehalo = [
     { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
-    { name = "vapoursynth-dctfilter" },
     { name = "vapoursynth-deblock" },
     { name = "vapoursynth-descale" },
     { name = "vapoursynth-dvdsrc2" },
@@ -2879,7 +2859,6 @@ deinterlace = [
     { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
-    { name = "vapoursynth-dctfilter" },
     { name = "vapoursynth-deblock" },
     { name = "vapoursynth-descale" },
     { name = "vapoursynth-dmetrics" },
@@ -2922,7 +2901,6 @@ denoise = [
     { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
-    { name = "vapoursynth-dctfilter" },
     { name = "vapoursynth-deblock" },
     { name = "vapoursynth-descale" },
     { name = "vapoursynth-dvdsrc2" },
@@ -2963,7 +2941,6 @@ full = [
     { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
-    { name = "vapoursynth-dctfilter" },
     { name = "vapoursynth-deblock" },
     { name = "vapoursynth-descale" },
     { name = "vapoursynth-dmetrics" },
@@ -3260,11 +3237,6 @@ requires-dist = [
     { name = "vapoursynth-d2vsource", marker = "extra == 'mask'", specifier = ">=1.4" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'scale'", specifier = ">=1.4" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'source'", specifier = ">=1.4" },
-    { name = "vapoursynth-dctfilter", marker = "extra == 'deband'", specifier = ">=3.1" },
-    { name = "vapoursynth-dctfilter", marker = "extra == 'dehalo'", specifier = ">=3.1" },
-    { name = "vapoursynth-dctfilter", marker = "extra == 'deinterlace'", specifier = ">=3.1" },
-    { name = "vapoursynth-dctfilter", marker = "extra == 'denoise'", specifier = ">=3.1" },
-    { name = "vapoursynth-dctfilter", marker = "extra == 'full'", specifier = ">=3.1" },
     { name = "vapoursynth-deblock", marker = "extra == 'deband'", specifier = ">=8.0" },
     { name = "vapoursynth-deblock", marker = "extra == 'dehalo'", specifier = ">=8.0" },
     { name = "vapoursynth-deblock", marker = "extra == 'deinterlace'", specifier = ">=8.0" },
@@ -3410,15 +3382,15 @@ requires-dist = [
     { name = "vapoursynth-znedi3", marker = "extra == 'deinterlace'", specifier = ">=2.1" },
     { name = "vapoursynth-znedi3", marker = "extra == 'denoise'", specifier = ">=2.1" },
     { name = "vapoursynth-znedi3", marker = "extra == 'full'", specifier = ">=2.1" },
-    { name = "vapoursynth-zsmooth", marker = "extra == 'aa'", specifier = ">=0.15.4" },
-    { name = "vapoursynth-zsmooth", marker = "extra == 'deband'", specifier = ">=0.15.4" },
-    { name = "vapoursynth-zsmooth", marker = "extra == 'dehalo'", specifier = ">=0.15.4" },
-    { name = "vapoursynth-zsmooth", marker = "extra == 'deinterlace'", specifier = ">=0.15.4" },
-    { name = "vapoursynth-zsmooth", marker = "extra == 'denoise'", specifier = ">=0.15.4" },
-    { name = "vapoursynth-zsmooth", marker = "extra == 'full'", specifier = ">=0.15.4" },
-    { name = "vapoursynth-zsmooth", marker = "extra == 'mask'", specifier = ">=0.15.4" },
-    { name = "vapoursynth-zsmooth", marker = "extra == 'rg'", specifier = ">=0.15.4" },
-    { name = "vapoursynth-zsmooth", marker = "extra == 'scale'", specifier = ">=0.15.4" },
+    { name = "vapoursynth-zsmooth", marker = "extra == 'aa'", specifier = ">=0.16.0" },
+    { name = "vapoursynth-zsmooth", marker = "extra == 'deband'", specifier = ">=0.16.0" },
+    { name = "vapoursynth-zsmooth", marker = "extra == 'dehalo'", specifier = ">=0.16.0" },
+    { name = "vapoursynth-zsmooth", marker = "extra == 'deinterlace'", specifier = ">=0.16.0" },
+    { name = "vapoursynth-zsmooth", marker = "extra == 'denoise'", specifier = ">=0.16.0" },
+    { name = "vapoursynth-zsmooth", marker = "extra == 'full'", specifier = ">=0.16.0" },
+    { name = "vapoursynth-zsmooth", marker = "extra == 'mask'", specifier = ">=0.16.0" },
+    { name = "vapoursynth-zsmooth", marker = "extra == 'rg'", specifier = ">=0.16.0" },
+    { name = "vapoursynth-zsmooth", marker = "extra == 'scale'", specifier = ">=0.16.0" },
     { name = "vs-placebo", marker = "extra == 'aa'", specifier = ">=2.0.2" },
     { name = "vs-placebo", marker = "extra == 'deband'", specifier = ">=2.0.2" },
     { name = "vs-placebo", marker = "extra == 'dehalo'", specifier = ">=2.0.2" },
