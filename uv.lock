@@ -20,6 +20,13 @@ resolution-markers = [
     "python_full_version < '3.13' and platform_machine == 's390x'",
 ]
 
+[manifest]
+
+[[manifest.dependency-metadata]]
+name = "vstransitions"
+version = "0.1.4"
+requires-dist = ["vapoursynth"]
+
 [[package]]
 name = "annotated-doc"
 version = "0.0.4"
@@ -41,13 +48,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/19/14/2c5dd9f512b66549a
 wheels = [
     { url = "https://files.pythonhosted.org/packages/da/42/e921fccf5015463e32a3cf6ee7f980a6ed0f395ceeaa45060b61d86486c2/anyio-4.13.0-py3-none-any.whl", hash = "sha256:08b310f9e24a9594186fd75b4f73f4a4152069e3853f1ed8bfbf58369f4ad708", size = 114353, upload-time = "2026-03-24T12:59:08.246Z" },
 ]
-
-[manifest]
-
-[[manifest.dependency-metadata]]
-name = "vstransitions"
-version = "0.1.4"
-requires-dist = ["vapoursynth"]
 
 [[package]]
 name = "ast-serialize"
@@ -2057,17 +2057,18 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-cranexpr"
-version = "0.9.0"
+version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ce/45/eb78a1752d0658788f0815ba83cc5e393d296ff7f0ec53240cfb8c6a9669/vapoursynth_cranexpr-0.9.0.tar.gz", hash = "sha256:4569edcfb15e04ebb20f6cc9f289250358849a275cc524fe82870212cfb7c939", size = 100729, upload-time = "2026-06-03T20:11:01.485Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2f/ec/c5e89faf421486f0fe1dfd07af9da67d22f2cfe314a12bc58c71b95295e8/vapoursynth_cranexpr-0.10.0.tar.gz", hash = "sha256:070e72fce59f477e8824d6f8618e156efff70918c31b449918dbf745cd4f42c6", size = 100917, upload-time = "2026-06-06T16:20:42.196Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/18/a7/025ed7fc6152aa26e0185d97a1fbf32adc301dcf2e1290f4360499061f38/vapoursynth_cranexpr-0.9.0-py3-none-macosx_13_0_arm64.whl", hash = "sha256:92c7ec3a5ff2cd74bc484c4b38c4c3bb3ac82f846733d73537ee616cfbab9765", size = 1063951, upload-time = "2026-06-03T20:10:55.368Z" },
-    { url = "https://files.pythonhosted.org/packages/b9/28/76a8006ffd906791d95e70893db96b95d1cb2008014e67b4789aa7c53385/vapoursynth_cranexpr-0.9.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:d575dd370667150cf3d6c298905ac1e738a86aece977e35ca3726fc6fc2bbd52", size = 1122468, upload-time = "2026-06-03T20:10:56.795Z" },
-    { url = "https://files.pythonhosted.org/packages/3e/e3/54216aed3f05a272451ca48c5e496f10dafdc41f7da8e0ed02c3a5c65213/vapoursynth_cranexpr-0.9.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:312cc888fe692b92671fcd003d9a60c60984fcfbe5f2de2394f22d0eca1bd0dd", size = 5162187, upload-time = "2026-06-03T20:10:58.243Z" },
-    { url = "https://files.pythonhosted.org/packages/ad/37/f345dc277ad701f8d2ef1a730a6bab7499f59bc522624171c07e701e6b91/vapoursynth_cranexpr-0.9.0-py3-none-win_amd64.whl", hash = "sha256:15e0949d0f6a52b056f715dc6d17352a96a898a7efaeb4d86bec63710b51409d", size = 4811500, upload-time = "2026-06-03T20:10:59.879Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/11/942d9f01a64d4bb109ac438896d8dfeafdd9402922cb073994b147597215/vapoursynth_cranexpr-0.10.0-py3-none-macosx_13_0_arm64.whl", hash = "sha256:1a4d350b74aa1e4f0c7becde15282323d5c55e5cc44a020442e14fc886850bb5", size = 1063730, upload-time = "2026-06-06T16:20:33.298Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/e8/a1ad80722a85e219f0bf643e648a038942ecd238554d5cf6afcd071ff0ed/vapoursynth_cranexpr-0.10.0-py3-none-macosx_13_0_x86_64.whl", hash = "sha256:23247c1e04dd24b39564657e6ae9e8cf4cf6dd06cdedfb69dd38275db365b238", size = 3291880, upload-time = "2026-06-06T16:20:35.023Z" },
+    { url = "https://files.pythonhosted.org/packages/8d/5d/7516ce7e6d03c0e65fa5a2e80a5b730ca109ce6527be05642b2de8a4d53d/vapoursynth_cranexpr-0.10.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:fbdced87f527731c9fb60e11412eafb2376f9093f0730024b5a808b084fc671f", size = 1122831, upload-time = "2026-06-06T16:20:36.524Z" },
+    { url = "https://files.pythonhosted.org/packages/68/7c/53dc828cff490d31765a6bdc75eeb097e63f90a99c6da37cb78f761a415c/vapoursynth_cranexpr-0.10.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:665aa75aac285309f312329599b0bd59b15437dbfd2cec8d9f01c6f6f5062e0d", size = 5162524, upload-time = "2026-06-06T16:20:38.364Z" },
+    { url = "https://files.pythonhosted.org/packages/5d/e0/b7384f510319737561d593a9312fb4150bcbd4cf6f50eb1f1a3788176fa8/vapoursynth_cranexpr-0.10.0-py3-none-win_amd64.whl", hash = "sha256:1fbec25232a294af8596a71e1a48f574e7dfe8561b4e55a61bee34f97f8586e5", size = 4811253, upload-time = "2026-06-06T16:20:40.397Z" },
 ]
 
 [[package]]
@@ -3255,7 +3256,7 @@ requires-dist = [
     { name = "vapoursynth-bwdif", marker = "extra == 'deinterlace'", specifier = ">=5.0" },
     { name = "vapoursynth-bwdif", marker = "extra == 'denoise'", specifier = ">=5.0" },
     { name = "vapoursynth-bwdif", marker = "extra == 'full'", specifier = ">=5.0" },
-    { name = "vapoursynth-cranexpr", specifier = "~=0.9.0" },
+    { name = "vapoursynth-cranexpr", specifier = "~=0.10.0" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'aa'", specifier = ">=1.4" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'deband'", specifier = ">=1.4" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'dehalo'", specifier = ">=1.4" },
