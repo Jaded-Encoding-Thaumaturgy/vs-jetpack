@@ -2048,6 +2048,19 @@ wheels = [
 ]
 
 [[package]]
+name = "vapoursynth-bm3dmetal"
+version = "4.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "vapoursynth" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2f/c0/f8b1f2924cc039d6f4558de62e4a532b486a2b9beeefa649ca237c3c5403/vapoursynth_bm3dmetal-4.0.0.tar.gz", hash = "sha256:69486b6992d944d029c2268c3472f137d7183aabf0c71c387a27907a26f89de3", size = 33195, upload-time = "2026-06-07T06:15:35.517Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ae/af/fff409c6801f9ab684bef895694ab709edfdf6a52e16b2713b4bf9104226/vapoursynth_bm3dmetal-4.0.0-py3-none-macosx_12_0_arm64.whl", hash = "sha256:c332b3d1ecb7a15d8ffe4e09dd27f86bf8ec1d08eb67cd4fb42ae130e26e1b21", size = 46759, upload-time = "2026-06-07T06:15:33.102Z" },
+    { url = "https://files.pythonhosted.org/packages/07/f6/69558b5f20340c89803205f223a0c7a3939cc8ea0b654faac4218b603687/vapoursynth_bm3dmetal-4.0.0-py3-none-macosx_12_0_x86_64.whl", hash = "sha256:57bb9cb70fb3d9767b931cb59dd7d74546ba3a65c853e9c25a7a2e8135f98778", size = 46547, upload-time = "2026-06-07T06:15:34.319Z" },
+]
+
+[[package]]
 name = "vapoursynth-bwdif"
 version = "5.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2794,6 +2807,7 @@ deband = [
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
     { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
+    { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin'" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dctfilter" },
@@ -2836,6 +2850,7 @@ dehalo = [
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
     { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
+    { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin'" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dctfilter" },
@@ -2877,6 +2892,7 @@ deinterlace = [
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
     { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
+    { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin'" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dctfilter" },
@@ -2920,6 +2936,7 @@ denoise = [
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
     { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
+    { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin'" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dctfilter" },
@@ -2961,6 +2978,7 @@ full = [
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
     { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
+    { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin'" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
     { name = "vapoursynth-dctfilter" },
@@ -3245,6 +3263,11 @@ requires-dist = [
     { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'full') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'full') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'full') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'full')", specifier = ">=2.16.4" },
     { name = "vapoursynth-bm3dcuda", marker = "extra == 'nvidia'", specifier = ">=2.16" },
     { name = "vapoursynth-bm3dhip", marker = "extra == 'amd'", specifier = ">=2.16" },
+    { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin' and extra == 'deband'", specifier = ">=4.0.0" },
+    { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin' and extra == 'dehalo'", specifier = ">=4.0.0" },
+    { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin' and extra == 'deinterlace'", specifier = ">=4.0.0" },
+    { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin' and extra == 'denoise'", specifier = ">=4.0.0" },
+    { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin' and extra == 'full'", specifier = ">=4.0.0" },
     { name = "vapoursynth-bwdif", marker = "extra == 'aa'", specifier = ">=5.0" },
     { name = "vapoursynth-bwdif", marker = "extra == 'deband'", specifier = ">=5.0" },
     { name = "vapoursynth-bwdif", marker = "extra == 'dehalo'", specifier = ">=5.0" },
