@@ -1779,10 +1779,6 @@ class VideoNode(RawNode):
     bwdif: Final[_bwdif._VideoNode_bound.Plugin]
     """BobWeaver Deinterlacing Filter"""
 # </attribute/VideoNode_bound/bwdif>
-# <attribute/VideoNode_bound/dctf>
-    dctf: Final[_dctf._VideoNode_bound.Plugin]
-    """DCT/IDCT Frequency Suppressor"""
-# </attribute/VideoNode_bound/dctf>
 # <attribute/VideoNode_bound/deblock>
     deblock: Final[_deblock._VideoNode_bound.Plugin]
     """It does a deblocking of the picture, using the deblocking filter of h264"""
@@ -2073,10 +2069,6 @@ class Core:
     d2v: Final[_d2v._Core_bound.Plugin]
     """D2V Source"""
 # </attribute/Core_bound/d2v>
-# <attribute/Core_bound/dctf>
-    dctf: Final[_dctf._Core_bound.Plugin]
-    """DCT/IDCT Frequency Suppressor"""
-# </attribute/Core_bound/dctf>
 # <attribute/Core_bound/deblock>
     deblock: Final[_deblock._Core_bound.Plugin]
     """It does a deblocking of the picture, using the deblocking filter of h264"""
@@ -2532,20 +2524,6 @@ class _d2v:
             def Source(self, /, input: _AnyStr, threads: _IntLike | None = None, nocrop: _IntLike | None = None, rff: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/d2v>
-
-# <implementation/dctf>
-class _dctf:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def DCTFilter(self, /, clip: VideoNode, factors: _FloatLike | _SequenceLike[_FloatLike], planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def DCTFilter(self, /, factors: _FloatLike | _SequenceLike[_FloatLike], planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
-
-# </implementation/dctf>
 
 # <implementation/deblock>
 class _deblock:
@@ -3894,6 +3872,10 @@ class _zsmooth:
             @_Wrapper.Function
             def Clense(self, /, clip: VideoNode, previous: VideoNode | None = None, next: VideoNode | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
+            def Cnr4(self, /, clip: VideoNode, mode: _AnyStr | None = None, tmode: _IntLike | None = None, radius: _IntLike | None = None, l_sense: _IntLike | None = None, l_str: _IntLike | None = None, u_sense: _IntLike | None = None, u_str: _IntLike | None = None, v_sense: _IntLike | None = None, v_str: _IntLike | None = None, scenechange: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def DCTFilter(self, /, clip: VideoNode, factors: _FloatLike | _SequenceLike[_FloatLike], planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
             def DegrainMedian(self, /, clip: VideoNode, limit: _FloatLike | _SequenceLike[_FloatLike] | None = None, mode: _IntLike | _SequenceLike[_IntLike] | None = None, interlaced: _IntLike | None = None, norow: _IntLike | None = None, scalep: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def FluxSmoothST(self, /, clip: VideoNode, temporal_threshold: _FloatLike | _SequenceLike[_FloatLike] | None = None, spatial_threshold: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, scalep: _IntLike | None = None) -> VideoNode: ...
@@ -3930,6 +3912,10 @@ class _zsmooth:
             def CCD(self, /, threshold: _FloatLike | None = None, temporal_radius: _IntLike | None = None, points: _IntLike | _SequenceLike[_IntLike] | None = None, scale: _FloatLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def Clense(self, /, previous: VideoNode | None = None, next: VideoNode | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def Cnr4(self, /, mode: _AnyStr | None = None, tmode: _IntLike | None = None, radius: _IntLike | None = None, l_sense: _IntLike | None = None, l_str: _IntLike | None = None, u_sense: _IntLike | None = None, u_str: _IntLike | None = None, v_sense: _IntLike | None = None, v_str: _IntLike | None = None, scenechange: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def DCTFilter(self, /, factors: _FloatLike | _SequenceLike[_FloatLike], planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def DegrainMedian(self, /, limit: _FloatLike | _SequenceLike[_FloatLike] | None = None, mode: _IntLike | _SequenceLike[_IntLike] | None = None, interlaced: _IntLike | None = None, norow: _IntLike | None = None, scalep: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function

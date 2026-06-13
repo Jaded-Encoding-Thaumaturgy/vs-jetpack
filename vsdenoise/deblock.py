@@ -210,7 +210,7 @@ def deblock_qed(
     )
 
     strong_diff = norm_expr([clip, strong, mask], "z x y - 1.01 * neutral + neutral ?", planes_pp, func=deblock_qed)
-    strong_pp = strong_diff.dctf.DCTFilter([1, 1, 0, 0, 0, 0, 0, 0], planes_pp)
+    strong_pp = core.zsmooth.DCTFilter(strong_diff, [1, 1, 0, 0, 0, 0, 0, 0], planes_pp)
     deblocked = norm_expr([clip, normal, strong_pp, mask], "a y x z neutral - - ?", planes_pp, func=deblock_qed)
 
     if clip.format.color_family is not vs.GRAY:
