@@ -326,7 +326,7 @@ class padder:
                         ?
                     ?
                 ?
-            """.format(left=l_, right=r_ - 1, top=t_, bottom=b_ - 1)  # noqa: UP032
+            """.format(left=l_, right=r_ - 1, top=t_, bottom=b_ - 1)
                 for l_, r_, t_, b_ in pads
             ]
         )
@@ -502,8 +502,6 @@ def normalize_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:
     Returns:
         Sorted list of planes.
     """
-
-    assert clip.format
 
     planes = list(range(clip.format.num_planes)) if planes is None or planes == 4 else to_arr(planes)
 

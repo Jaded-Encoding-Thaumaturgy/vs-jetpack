@@ -5,7 +5,7 @@ from typing import Any, Literal, cast, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError
 
-from vsexprtools import ExprOp, ExprToken, norm_expr
+from vsexprtools import ExprOp, ExprToken, combine, norm_expr
 from vsrgtools import BlurMatrix, gauss_blur
 from vstools import (
     ConvMode,
@@ -48,19 +48,23 @@ def ringing_mask(
     edgemask = normalize_mask(credit_mask, plane(clip, 0), **kwargs)
     edgemask = limiter(edgemask, mask=True, func=ringing_mask)
 
-    light = norm_expr(edgemask, f"x {thlimi} - {thma - thmi} / {ExprToken.RangeMax} *", func=ringing_mask)
+    light = norm_expr(edgemask, f"x {thlimi} - {thma - thmi} / mask_mask *", func=ringing_mask)
 
     shrink = Morpho.dilation(light, rad)
-    shrink = Morpho.binarize(shrink, brz)
+    shrink = Morpho.binarize_mask(shrink, brz)
     shrink = Morpho.erosion(shrink, 2)
     shrink = blur_kernel(shrink, passes=2)
 
-    strong = norm_expr(edgemask, f"x {thmi} - {thlima - thlimi} / {ExprToken.RangeMax} *", func=ringing_mask)
+    strong = norm_expr(edgemask, f"x {thmi} - {thlima - thlimi} / mask_max *", func=ringing_mask)
     expand = Morpho.dilation(strong, iterations=rad)
 
     mask = norm_expr([expand, strong, shrink], "x y z max -", func=ringing_mask)
 
-    return ExprOp.convolution("x", blur_kernel, premultiply=2, multiply=2, clamp=True)(mask)
+    return norm_expr(
+        mask,
+        [ExprOp.convolution("x", blur_kernel, premultiply=2, multiply=2)[0], ExprOp.clamp(0, ExprToken.MaskMax)],
+        func=ringing_mask,
+    )
 
 
 def luma_mask(clip: vs.VideoNode, thr_lo: float, thr_hi: float, invert: bool = True) -> vs.VideoNode:
@@ -86,7 +90,7 @@ def luma_credit_mask(
 
     edge_mask = normalize_mask(edgemask, y, **kwargs)
 
-    credit_mask = norm_expr([edge_mask, y], f"y {scale_mask(thr, 32, y)} > y 0 ? x min", func=ringing_mask)
+    credit_mask = norm_expr([edge_mask, y], f"y {scale_value(thr, 32, y)} > y 0 ? x min", func=luma_credit_mask)
 
     if not draft:
         credit_mask = Morpho.maximum(credit_mask, iterations=4)
@@ -95,6 +99,7 @@ def luma_credit_mask(
     return credit_mask
 
 
+@limiter(mask=True)
 def tcanny_retinex(
     clip: vs.VideoNode, thr: float, sigma: Sequence[float] = [50, 200, 350], blur_sigma: float = 1.0
 ) -> vs.VideoNode:
@@ -117,10 +122,14 @@ def limited_linemask(
 ) -> vs.VideoNode:
     clip_y = plane(clip, 0)
 
-    return ExprOp.ADD(
-        (normalize_mask(edge, clip_y, **kwargs) for edge in edgemasks),
-        (tcanny_retinex(clip_y, s) for s in sigmas),
-        (multi_detail_mask(clip_y, s) for s in detail_sigmas),
+    return combine(
+        (
+            (normalize_mask(edge, clip_y, **kwargs) for edge in edgemasks),
+            (tcanny_retinex(clip_y, s) for s in sigmas),
+            (multi_detail_mask(clip_y, s) for s in detail_sigmas),
+        ),
+        operator=ExprOp.ADD,
+        expr_suffix=ExprOp.clamp(0, ExprToken.MaskMax),
     )
 
 
@@ -154,7 +163,10 @@ class dre_edgemask(CustomEnum):  # noqa: N801
         if self is dre_edgemask.CLAHE:
             limit, tile = kwargs.get("limit", 0.0305), kwargs.get("tile", 5)
 
-            return depth(depth(clip, 16).vszip.CLAHE(int(scale_delta(limit, 32, 16)), tile), clip)
+            return depth(
+                depth(clip, min(clip.format.bits_per_sample, 16)).vszip.CLAHE(scale_delta(limit, 32, 16), tile),
+                clip,
+            )
 
         raise CustomNotImplementedError
 

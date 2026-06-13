@@ -7,7 +7,7 @@ from typing import Any, Literal, Self, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError, CustomValueError, FuncExcept, fallback, iterate, to_arr
 
-from vsexprtools import ExprList, ExprOp, ExprToken, ExprVars
+from vsexprtools import ExprList, ExprOp, ExprVars
 from vstools import ConvMode, Planes, core, shift_clip_multi, vs
 
 __all__ = ["BlurMatrix", "BlurMatrixBase"]
@@ -204,9 +204,6 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
 
         if multiply := expr_kwargs.get("multiply", None):
             expr.append(multiply, ExprOp.MUL)
-
-        if expr_kwargs.get("clamp", False):
-            expr.append(ExprOp.clamp(ExprToken.RangeMin, ExprToken.RangeMax))
 
         out = iterate(clip, lambda x: expr(shift_clip_multi(x, (-r, r)), planes=planes, **kwargs), passes)
 

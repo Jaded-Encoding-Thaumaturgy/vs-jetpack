@@ -256,7 +256,6 @@ class Operators(metaclass=SingletonMeta):
         mode: OnePassConvMode = ConvMode.SQUARE,
         premultiply: ExprVarLike | None = None,
         multiply: ExprVarLike | None = None,
-        clamp: bool = False,
     ) -> ComputedVar:
         """
         Convenience method wrapping [ExprOp.convolution][vsexprtools.ExprOp.convolution].
@@ -272,14 +271,11 @@ class Operators(metaclass=SingletonMeta):
             mode: The convolution shape.
             premultiply: Optional scalar to multiply the result before normalization.
             multiply: Optional scalar to multiply the result at the end.
-            clamp: If True, clamps the final result to [RangeMin, RangeMax].
 
         Returns:
             A `ComputedVar` representing the expression-based convolution.
         """
-        convo, *_ = ExprOp.convolution(
-            var, flatten(matrix), bias, divisor, saturate, mode, premultiply, multiply, clamp
-        )
+        convo, *_ = ExprOp.convolution(var, flatten(matrix), bias, divisor, saturate, mode, premultiply, multiply)
         return ComputedVar(convo.to_str())
 
 

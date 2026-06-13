@@ -14,13 +14,13 @@ from vstools import (
     get_peak_value,
     get_sample_type,
     get_y,
-    limiter,
     plane,
+    scale_mask,
     scale_value,
     vs,
 )
 
-from .edge import MinMax
+from .edge import MinMax, Prewitt
 from .morpho import Morpho
 
 __all__ = ["adg_mask", "flat_mask", "retinex", "texture_mask"]
@@ -100,7 +100,6 @@ def adg_mask(
     return scaled_clips[0]
 
 
-@limiter
 def retinex(
     clip: vs.VideoNode,
     sigma: Sequence[float] = [25, 80, 250],
@@ -171,7 +170,7 @@ def flat_mask(src: vs.VideoNode, radius: int = 5, thr: float = 0.011, gauss: boo
 
     blur, mask = depth(blur, 8), depth(luma, 8)
 
-    mask = mask.vszip.AdaptiveBinarize(blur, int(scale_value(thr, 32, blur)))
+    mask = mask.vszip.AdaptiveBinarize(blur, scale_value(thr, 32, blur))
 
     return depth(mask, luma, dither_type=DitherType.NONE, range_in=Range.FULL, range_out=Range.FULL)
 
@@ -186,17 +185,16 @@ def texture_mask(
     points: list[tuple[bool, float]] = [(False, 1.75), (True, 2.5), (True, 5), (False, 10)],
 ) -> vs.VideoNode:
     levels = [x for x, _ in points]
-    points_ = [scale_value(x, 8, clip) for _, x in points]
-    thr = scale_value(thr, 8, 32, Range.FULL)
+    points_ = [scale_mask(x, 8, clip) for _, x in points]
+    thr = scale_mask(thr, 8, 32)
 
     qm, peak = len(points), get_peak_value(clip)
 
     rmask = MinMax(rady, fallback(radc, rady)).edgemask(clip, lthr=0)
-
-    emask = clip.std.Prewitt()
+    emask = Prewitt.edgemask(clip)
 
     rm_txt = ExprOp.MIN(
-        rmask, (Morpho.minimum(Morpho.binarize(emask, thr, 1.0, 0), iterations=it) for thr, it in stages)
+        rmask, (Morpho.minimum(Morpho.binarize_mask(emask, thr, 1.0, 0), iterations=it) for thr, it in stages)
     )
 
     expr = [f"x {points_[0]} < x {points_[-1]} > or 0"]

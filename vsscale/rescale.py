@@ -40,10 +40,7 @@ from vstools import (
 from .helpers import BottomCrop, CropRel, LeftCrop, RightCrop, ScalingArgs, TopCrop
 from .onnx import ArtCNN
 
-__all__ = [
-    "Rescale",
-    "RescaleBase",
-]
+__all__ = ["Rescale", "RescaleBase"]
 
 
 class RescaleBase(VSObjectABC):
@@ -65,7 +62,7 @@ class RescaleBase(VSObjectABC):
         border_handling: int = BorderHandling.MIRROR,
         **kwargs: Any,
     ) -> None:
-        self._clipy, *chroma = split(clip)
+        self._clipy, *chroma = split(depth(clip, 32))
         self._chroma = chroma
 
         self._kernel = ComplexKernel.ensure_obj(kernel)
@@ -151,7 +148,7 @@ class RescaleBase(VSObjectABC):
         lambda self: cachedproperty.clear_cache(self, ["descale", "rescale", "doubled", "upscale"]),
     )
     """
-    Gets the descaled clip.
+    Gets the descaled clip as GRAYS format.
     """
 
     rescale = cachedproperty[vs.VideoNode, vs.VideoNode](
@@ -160,7 +157,7 @@ class RescaleBase(VSObjectABC):
         lambda self: cachedproperty.clear_cache(self, "rescale"),
     )
     """
-    Gets the rescaled clip.
+    Gets the rescaled clip as GRAYS format.
     """
 
     doubled = cachedproperty[vs.VideoNode, vs.VideoNode](
@@ -169,7 +166,7 @@ class RescaleBase(VSObjectABC):
         lambda self: cachedproperty.clear_cache(self, ["doubled", "upscale"]),
     )
     """
-    Gets the doubled clip.
+    Gets the doubled clip as GRAYS format.
     """
 
     upscale = cachedproperty[vs.VideoNode, vs.VideoNode](
@@ -180,7 +177,7 @@ class RescaleBase(VSObjectABC):
         lambda self: cachedproperty.clear_cache(self, "upscale"),
     )
     """
-    Returns the upscaled clip
+    Returns the upscaled clip as FLOATS sample type.
     """
 
 
@@ -384,7 +381,7 @@ class Rescale(RescaleBase):
                 pre_y.std.BlankClip(length=1, keep=True),
                 *self._crop,
                 replace_in=0,
-                replace_out=ExprToken.RangeMax,
+                replace_out=ExprToken.MaskMax,
                 func=self.__class__,
             )
 
@@ -406,7 +403,7 @@ class Rescale(RescaleBase):
                 self._kernel.kernel_radius,
                 self._kernel.kernel_radius,
                 self._kernel.kernel_radius,
-                replace_out=ExprToken.RangeMax,
+                replace_out=ExprToken.MaskMax,
                 func=self.__class__,
             )
 

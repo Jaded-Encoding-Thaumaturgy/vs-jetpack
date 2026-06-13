@@ -769,7 +769,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         mode: ConvMode = ConvMode.SQUARE,
         premultiply: SupportsString | None = None,
         multiply: SupportsString | None = None,
-        clamp: bool = False,
     ) -> TupleExprList:
         """
         Builds an expression that performs a weighted convolution-like operation.
@@ -785,7 +784,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
             mode: The convolution shape.
             premultiply: Optional scalar to multiply the result before normalization.
             multiply: Optional scalar to multiply the result at the end.
-            clamp: If True, clamps the final result to [RangeMin, RangeMax].
 
         Returns:
             A [TupleExprList][vsexprtools.TupleExprList] representing the expression-based convolution.
@@ -842,9 +840,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
 
             if multiply is not None and multiply != 1.0:
                 out.append(multiply, cls.MUL)
-
-            if clamp:
-                out.append(cls.clamp(ExprToken.RangeMin, ExprToken.RangeMax))
 
         return output
 
@@ -1045,7 +1040,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         Returns:
             An [ExprList][vsexprtools.ExprList] representing the MaskedMerge expression.
         """
-        return ExprList([c_a, c_b, [mask, ExprToken.RangeMax, ExprToken.RangeMin, cls.SUB, cls.DIV], cls.LERP])
+        return ExprList([c_a, c_b, [mask, ExprToken.MaskMax, cls.DIV], cls.LERP])
 
     @classmethod
     def polyval(cls, c: SupportsString, *coeffs: SupportsString) -> ExprList:

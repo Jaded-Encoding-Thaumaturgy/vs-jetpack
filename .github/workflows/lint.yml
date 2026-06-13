@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@v8.2.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
@@ -47,7 +47,7 @@ jobs:
 
       - name: Running mypy
         if: success() || (failure() && (steps.ruff_check.conclusion == 'failure' || steps.ruff_format.conclusion == 'failure'))
-        run: uv run --no-sync mypy .
+        run: uv run --with onnx --no-sync mypy .
 
       - name: Post webhook for failure
         if: failure()

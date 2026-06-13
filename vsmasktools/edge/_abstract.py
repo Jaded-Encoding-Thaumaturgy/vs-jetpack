@@ -266,13 +266,13 @@ class EdgeDetect(ABC):
         thr_expr = ExprList(["x"])
 
         if lthr == hthr:
-            thr_expr.append("{hthr} >= range_max 0 ?")
+            thr_expr.append("{hthr} >= mask_max 0 ?")
         elif any(lt > 0 for lt in lthr) and any(ht < peak for ht in hthr):
-            thr_expr.append("{hthr} >", "range_max", ["x {lthr} < 0 x ?"], "?")
+            thr_expr.append("{hthr} >", "mask_max", ["x {lthr} < 0 x ?"], "?")
         elif any(lt > 0 for lt in lthr):
             thr_expr.append("{lthr} < 0 x ?")
         elif any(ht < peak for ht in hthr):
-            thr_expr.append("{hthr} > range_max x ?")
+            thr_expr.append("{hthr} > mask_max x ?")
 
         if clamp is True and mask.format.sample_type == vs.FLOAT:
             clamp = [(0, 1)]

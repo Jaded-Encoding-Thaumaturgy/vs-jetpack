@@ -15,21 +15,8 @@ from vsdenoise import Prefilter, PrefilterLike, frequency_merge, nl_means
 from vsexprtools import norm_expr
 from vskernels import Catrom, Scaler, ScalerLike
 from vsmasktools import Morpho, Prewitt
-from vsrgtools import (
-    contrasharpening_dehalo,
-    gauss_blur,
-    median_blur,
-    repair,
-)
-from vstools import (
-    FunctionUtil,
-    Planes,
-    check_progressive,
-    check_ref_clip,
-    core,
-    scale_mask,
-    vs,
-)
+from vsrgtools import contrasharpening_dehalo, gauss_blur, median_blur, repair
+from vstools import FunctionUtil, Planes, check_progressive, check_ref_clip, core, scale_mask, vs
 
 __all__ = ["hq_dering", "smooth_dering", "vine_dehalo"]
 
@@ -152,7 +139,7 @@ def hq_dering(
                     Morpho.inflate(fmask, planes=planes, func=func.func), ceil(minp / 2), planes=planes, func=func.func
                 )
 
-            ringmask = norm_expr([omask, imask], "x mask_max y - * mask_max / 0 mask_max clip", planes, func=func.func)
+            ringmask = norm_expr([omask, imask], "x mask_max y - * mask_max / 0 mask_max clamp", planes, func=func.func)
 
     dering = func.work_clip.std.MaskedMerge(limited, ringmask, planes)
 

@@ -121,4 +121,4 @@ def contrasharpening_median(
     else:
         raise CustomValueError("Invalid mode or function passed!", contrasharpening_median)
 
-    return norm_expr([flt, src, repaired], "x dup + z - x y min x y max clip", planes, func=contrasharpening_median)
+    return norm_expr([flt, src, repaired], "x dup + z - x y min x y max clamp", planes, func=contrasharpening_median)

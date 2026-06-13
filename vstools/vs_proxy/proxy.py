@@ -175,7 +175,6 @@ from vapoursynth import _construct_type as construct_type
 from vapoursynth import _try_enable_introspection as try_enable_introspection
 
 import __main__
-from vsjetpack import require_jet_dependency
 
 from .enums import (
     GRAY8,
@@ -1135,7 +1134,6 @@ class VSCoreProxy(CoreProxyBase):
         _check_environment()
         unregister_on_destroy(callback)
 
-    @require_jet_dependency("psutil")
     def set_affinity(
         self,
         threads: int | float | range | tuple[int, int] | list[int] | None = None,  # noqa: PYI041

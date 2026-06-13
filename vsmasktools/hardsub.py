@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from jetpytools import CustomOverflowError, FileNotExistsError, FilePathType, fallback, iterate
 
-from vsexprtools import ExprOp, ExprToken, expr_func, norm_expr
+from vsexprtools import ExprOp, expr_func, norm_expr
 from vskernels import Point
 from vsrgtools import box_blur, median_blur
 
@@ -32,7 +32,7 @@ from vstools import (
     limiter,
     normalize_ranges,
     replace_ranges,
-    scale_delta,
+    scale_mask,
     scale_value,
     vs,
 )
@@ -175,7 +175,7 @@ class HardsubMask(DeferredMask):
         dehardsub_masks = list[vs.VideoNode]()
         partials = [*partials, ref]
 
-        thr = scale_value(self.bin_thr, 32, masks[-1])
+        thr = scale_mask(self.bin_thr, 32, masks[-1])
 
         for p in partials:
             masks.append(ExprOp.SUB.combine(masks[-1], self.get_mask(p, ref)))
@@ -259,11 +259,9 @@ class HardsubSignFades(HardsubMask):
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         clipedge, refedge = (box_blur(normalize_mask(self.edgemask, x, **kwargs)) for x in (clip, ref))
 
-        highpass = scale_delta(self.highpass, 32, clip)
+        highpass = scale_mask(self.highpass, 32, clip)
 
-        mask = median_blur(
-            norm_expr([clipedge, refedge], f"x y - {highpass} < 0 {ExprToken.RangeMax} ?", func=self.__class__)
-        )
+        mask = median_blur(norm_expr([clipedge, refedge], f"x y - {highpass} < 0 mask_max ?", func=self.__class__))
 
         return max_planes(Morpho.inflate(Morpho.expand(mask, self.expand, mode=self.expand_mode), iterations=4))
 
@@ -313,14 +311,13 @@ class HardsubSign(HardsubMask):
         self.expand_mode = expand_mode
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
-    @limiter(mask=True)
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         hsmf = norm_expr([clip, ref], "x y - abs", func=self.__class__)
         hsmf = core.resize.Bilinear(hsmf, format=clip.format.replace(subsampling_w=0, subsampling_h=0))
 
         hsmf = ExprOp.MAX(hsmf, split_planes=True)
 
-        hsmf = Morpho.binarize(hsmf, self.thr)
+        hsmf = Morpho.binarize_mask(hsmf, self.thr)
         hsmf = Morpho.minimum(hsmf, iterations=self.minimum, func=self.__class__)
         hsmf = Morpho.expand(hsmf, self.expand, mode=self.expand_mode, func=self.__class__)
         hsmf = Morpho.inflate(hsmf, iterations=self.inflate, func=self.__class__)
@@ -347,6 +344,8 @@ class HardsubLine(HardsubMask):
         refframes: int | list[int | None] | None = None,
     ) -> None:
         """
+        Initialize the class.
+
         Args:
             ranges: The frame ranges that the mask should be applied to.
             bound: An optional bounding box that defines the area of the frame where the mask will be applied. If None,
@@ -474,7 +473,6 @@ class HardsubASS(HardsubMask):
         self.fontdir = fontdir
         super().__init__(ranges, bound, blur=blur, refframes=refframes)
 
-    @limiter(mask=True)
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         mask = core.sub.TextFile(ref, self.filename, fontdir=self.fontdir, blend=False).std.PropToClip("_Alpha")
 

@@ -164,10 +164,10 @@ class DitherType(CustomStrEnum):
 
         if range_in is not None:
             clip = Range.ensure_presence(clip, range_in)
-            range_in = Range.from_param(range_in).value_zimg
+            range_in = Range.from_param(range_in)
 
         if range_out is not None:
-            range_out = Range.from_param(range_out).value_zimg
+            range_out = Range.from_param(range_out)
 
         if not (self.is_fmtc or force_fmtc):
             return clip.resize.Point(format=out_fmt, dither_type=self.value.lower(), range_in=range_in, range=range_out)
@@ -807,8 +807,12 @@ def stack_planes(
     if clip.format.color_family is vs.GRAY:
         return clip
 
-    if clip.format.sample_type is vs.FLOAT:
-        clip = depth(clip, 32)
+    # std.PlaneStats and text.Text don't support fp16.
+    # Upconversion from fp16 to fp32.
+    if clip.format.sample_type is vs.FLOAT and (isinstance(offset_chroma, (str, float)) or write_plane_name):
+        clip, bits = expect_bits(clip, 32)
+    else:
+        bits = clip.format.bits_per_sample
 
     if clip.format.color_family is vs.YUV:
         if clip.format.sample_type is vs.FLOAT and shift_float_chroma:
@@ -858,12 +862,10 @@ def stack_planes(
     if mode == "v":
         org = [org]
 
-    stacked = stack_clips(org)
+    # If the source clip was fp16, this will be converted back to fp16 here.
+    stacked = depth(stack_clips(org), bits)
 
-    if clip.format.color_family == vs.RGB:
-        return core.std.RemoveFrameProps(stacked, Matrix.prop_key)
-
-    return stacked
+    return core.std.RemoveFrameProps(stacked, Matrix.prop_key) if clip.format.color_family == vs.RGB else stacked
 
 
 @overload
@@ -1021,7 +1023,8 @@ def limiter[**P](
     if not (min_val == max_val is None):
         from ..utils import get_lowest_values, get_peak_values
 
-        min_val = normalize_seq(min_val or get_lowest_values(clip, clip), clip.format.num_planes)
-        max_val = normalize_seq(max_val or get_peak_values(clip, clip), clip.format.num_planes)
+        range_in = Range.LIMITED if tv_range else Range.FULL
+        min_val = normalize_seq(min_val or get_lowest_values(clip, range_in, mask=mask), clip.format.num_planes)
+        max_val = normalize_seq(max_val or get_peak_values(clip, range_in, mask=mask), clip.format.num_planes)
 
     return clip.vszip.Limiter(min_val, max_val, tv_range, mask, planes)
