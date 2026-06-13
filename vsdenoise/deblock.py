@@ -167,6 +167,7 @@ def deblock_qed(
     alpha: tuple[int | None, int | None] = (1, 1),
     beta: tuple[int | None, int | None] = (2, 2),
     chroma_mode: int = 0,
+    interlaced: bool = False,
     planes: Planes = None,
 ) -> vs.VideoNode:
     """
@@ -185,16 +186,16 @@ def deblock_qed(
                - 1 = Directly use chroma deblock from the normal deblock.
                - 2 = Directly use chroma deblock from the strong deblock.
 
+        interlaced: Enable interlaced processing, input is expected to be separated fields.
         planes: Planes to process.
 
     Returns:
         Deblocked clip
     """
-    fieldbased = FieldBased.from_video(clip, func=deblock_qed)
     planes_pp = 0 if chroma_mode else planes
 
-    if fieldbased.is_inter:
-        clip = Point().scale(clip.std.SeparateFields(fieldbased.is_tff), height=clip.height)
+    if interlaced:
+        clip = Point().scale(clip, height=clip.height * 2)
 
     normal, strong = (
         clip.deblock.Deblock(quant[0], alpha[0], beta[0], planes),
@@ -219,10 +220,8 @@ def deblock_qed(
         if chroma_mode == 2:
             deblocked = join(deblocked, strong)
 
-    if fieldbased.is_inter:
-        from vsdeinterlace import weave
-
-        deblocked = weave(Box().scale(deblocked, height=clip.height // 2), fieldbased.field, deblock_qed)
+    if interlaced:
+        deblocked = Box().scale(deblocked, height=clip.height)
 
     return deblocked
 
