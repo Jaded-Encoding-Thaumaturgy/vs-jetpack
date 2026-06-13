@@ -16,6 +16,7 @@ from vstools import (
     Planes,
     UnsupportedColorFamilyError,
     VSFunctionNoArgs,
+    check_ref_clip,
     get_y,
     join,
     scale_mask,
@@ -148,7 +149,7 @@ def based_aa(
     if callable(prefilter):
         ss_clip = prefilter(luma)
     elif isinstance(prefilter, vs.VideoNode):
-        UnsupportedColorFamilyError.check(prefilter, (vs.YUV, vs.GRAY), based_aa)
+        check_ref_clip(prefilter, clip, based_aa)
         ss_clip = get_y(prefilter)
     else:
         ss_clip = luma
