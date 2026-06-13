@@ -651,14 +651,14 @@ class Range(PropEnum):
     Pixel Range ([ITU-T H.265](https://www.itu.int/rec/T-REC-H.265) Equations E-10 through E-20.
     """
 
-    LIMITED = 0 if vs.__version__ >= (74, 0) else 1
+    LIMITED = 0
     """
     Studio (TV) legal range, 16-235 in 8 bits.
 
     This is primarily used with YUV integer formats.
     """
 
-    FULL = 1 if vs.__version__ >= (74, 0) else 0
+    FULL = 1
     """
     Full (PC) dynamic range, 0-255 in 8 bits.
 
@@ -713,7 +713,7 @@ class Range(PropEnum):
         """
         The key used in props to store the enum.
         """
-        return "_Range" if vs.__version__ >= (74, 0) else "_ColorRange"
+        return "_Range"
 
     @classmethod
     def from_res(cls, frame: vs.VideoNode | vs.VideoFrame) -> Range:
