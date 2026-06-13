@@ -1056,7 +1056,7 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
         Returns:
             An [ExprList][vsexprtools.ExprList] representing the MaskedMerge expression.
         """
-        return ExprList([c_a, c_b, [mask, ExprToken.MaskMax, 0, cls.SUB, cls.DIV], cls.LERP])
+        return ExprList([c_a, c_b, [mask, ExprToken.MaskMax, cls.DIV], cls.LERP])
 
     @classmethod
     def polyval(cls, c: SupportsString, *coeffs: SupportsString) -> ExprList:
