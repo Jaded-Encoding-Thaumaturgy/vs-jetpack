@@ -11,11 +11,11 @@ val = "x"
 PIXELS = " ".join([A1, A2, A3, A4, A5, A6, A7, A8])
 
 
-def aka_repair_expr_1_4(m: int) -> str:
+def repair_expr_1_4(m: int) -> str:
     return f"{PIXELS} y sort9 dup{9 - m} max_val! dup{m - 1} min_val! drop9 x min_val@ max_val@ clamp"
 
 
-def aka_repair_expr_5() -> str:
+def repair_expr_5() -> str:
     return (
         f"x y {A1} {A8} min min y {A1} {A8} max max clamp clamp1! "
         f"x y {A2} {A7} min min y {A2} {A7} max max clamp clamp2! "
@@ -30,7 +30,7 @@ def aka_repair_expr_5() -> str:
     )
 
 
-def aka_repair_expr_6() -> str:
+def repair_expr_6() -> str:
     return (
         f"y {A1} {A8} min min mil1! "
         f"y {A1} {A8} max max mal1! "
@@ -57,7 +57,7 @@ def aka_repair_expr_6() -> str:
     )
 
 
-def aka_repair_expr_7() -> str:
+def repair_expr_7() -> str:
     return (
         f"y {A1} {A8} min min mil1! "
         f"y {A1} {A8} max max mal1! "
@@ -85,7 +85,7 @@ def aka_repair_expr_7() -> str:
     )
 
 
-def aka_repair_expr_8() -> str:
+def repair_expr_8() -> str:
     return (
         f"y {A1} {A8} min min mil1! "
         f"y {A1} {A8} max max mal1! "
@@ -112,7 +112,7 @@ def aka_repair_expr_8() -> str:
     )
 
 
-def aka_repair_expr_9() -> str:
+def repair_expr_9() -> str:
     return (
         f"y {A1} {A8} min min mil1! "
         f"y {A1} {A8} max max mal1! "
@@ -132,7 +132,7 @@ def aka_repair_expr_9() -> str:
     )
 
 
-def aka_repair_expr_10() -> str:
+def repair_expr_10() -> str:
     return (
         f"x {A1} - abs d1! "
         f"x {A2} - abs d2! "
@@ -149,11 +149,11 @@ def aka_repair_expr_10() -> str:
     )
 
 
-def aka_repair_expr_11_14(m: int) -> str:
+def repair_expr_11_14(m: int) -> str:
     return f"{PIXELS} sort8 dup{8 - m} max_val! dup{m - 1} min_val! drop8 x y min_val@ min y max_val@ max clamp"
 
 
-def aka_repair_expr_15() -> str:
+def repair_expr_15() -> str:
     return (
         f"{A1} {A8} min mil1! "
         f"{A1} {A8} max mal1! "
@@ -179,7 +179,7 @@ def aka_repair_expr_15() -> str:
     )
 
 
-def aka_repair_expr_16() -> str:
+def repair_expr_16() -> str:
     return (
         f"{A1} {A8} min mil1! "
         f"{A1} {A8} max mal1! "
@@ -205,7 +205,7 @@ def aka_repair_expr_16() -> str:
     )
 
 
-def aka_repair_expr_17() -> str:
+def repair_expr_17() -> str:
     return (
         f"{A1} {A8} min mil1! "
         f"{A1} {A8} max mal1! "
@@ -221,7 +221,7 @@ def aka_repair_expr_17() -> str:
     )
 
 
-def aka_repair_expr_18() -> str:
+def repair_expr_18() -> str:
     return (
         f"y {A1} - abs y {A8} - abs max d1! "
         f"y {A2} - abs y {A7} - abs max d2! "
@@ -235,7 +235,7 @@ def aka_repair_expr_18() -> str:
     )
 
 
-def aka_repair_expr_19() -> str:
+def repair_expr_19() -> str:
     return (
         f"y {A1} - abs y {A2} - abs y {A3} - abs y {A4} - abs y {A5} - abs y {A6} - abs y {A7} - abs y {A8} - abs "
         "min min min min min min min mindiff! "
@@ -243,7 +243,7 @@ def aka_repair_expr_19() -> str:
     )
 
 
-def aka_repair_expr_20() -> str:
+def repair_expr_20() -> str:
     return (
         f"y {A1} - abs d1! "
         f"y {A2} - abs d2! "
@@ -270,7 +270,7 @@ def aka_repair_expr_20() -> str:
     )
 
 
-def aka_repair_expr_21() -> str:
+def repair_expr_21() -> str:
     return (
         f"{A1} {A8} max y - y {A1} {A8} min - max {A2} {A7} max y - y {A2} {A7} min - max "
         f"{A3} {A6} max y - y {A3} {A6} min - max {A4} {A5} max y - y {A4} {A5} min - max min min min u! "
@@ -278,7 +278,7 @@ def aka_repair_expr_21() -> str:
     )
 
 
-def aka_repair_expr_22() -> str:
+def repair_expr_22() -> str:
     return (
         f"x {A1} - abs x {A2} - abs x {A3} - abs x {A4} - abs x {A5} - abs x {A6} - abs x {A7} - abs x {A8} - abs "
         "min min min min min min min mindiff! "
@@ -286,7 +286,7 @@ def aka_repair_expr_22() -> str:
     )
 
 
-def aka_repair_expr_23() -> str:
+def repair_expr_23() -> str:
     return (
         f"x {A1} - abs d1! "
         f"x {A2} - abs d2! "
@@ -313,7 +313,7 @@ def aka_repair_expr_23() -> str:
     )
 
 
-def aka_repair_expr_24() -> str:
+def repair_expr_24() -> str:
     return (
         f"{A1} {A8} max x - x {A1} {A8} min - max {A2} {A7} max x - x {A2} {A7} min - max "
         f"{A3} {A6} max x - x {A3} {A6} min - max {A4} {A5} max x - x {A4} {A5} min - max min min min u! "
@@ -321,7 +321,7 @@ def aka_repair_expr_24() -> str:
     )
 
 
-def aka_repair_expr_26() -> str:
+def repair_expr_26() -> str:
     return (
         f"{A1} {A2} min mil1! "
         f"{A1} {A2} max mal1! "
@@ -347,7 +347,7 @@ def aka_repair_expr_26() -> str:
     )
 
 
-def aka_repair_expr_27() -> str:
+def repair_expr_27() -> str:
     return (
         f"{A1} {A8} min mil1! "
         f"{A1} {A8} max mal1! "
@@ -383,7 +383,7 @@ def aka_repair_expr_27() -> str:
     )
 
 
-def aka_repair_expr_28() -> str:
+def repair_expr_28() -> str:
     return (
         f"{A1} {A2} min mil1! "
         f"{A1} {A2} max mal1! "

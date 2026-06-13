@@ -816,7 +816,7 @@ def stack_planes(
 
     if clip.format.color_family is vs.YUV:
         if clip.format.sample_type is vs.FLOAT and shift_float_chroma:
-            clip = core.std.Expr(clip, ["", "x 0.5 +"])
+            clip = core.cranexpr.Expr(clip, ["", "x 0.5 +"])
 
         def offset_uv_planes(value: float, plane_stats: str) -> list[vs.VideoNode]:
             planes = split(clip)
@@ -825,7 +825,7 @@ def stack_planes(
                 value += 0.5
 
             planes[1:] = [
-                p.std.PlaneStats().akarin.Expr(f"x {value} x.PlaneStats{plane_stats} - +") for p in planes[1:]
+                p.std.PlaneStats().cranexpr.Expr(f"x {value} x.PlaneStats{plane_stats} - +") for p in planes[1:]
             ]
             return planes
 
@@ -837,7 +837,7 @@ def stack_planes(
             case False:
                 planes = split(clip)
             case _:
-                planes = split(core.std.Expr(clip, ["", f"x {offset_chroma} +"]))
+                planes = split(core.cranexpr.Expr(clip, ["", f"x {offset_chroma} +"]))
     else:
         planes = split(clip)
 

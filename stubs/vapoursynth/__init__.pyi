@@ -1779,6 +1779,10 @@ class VideoNode(RawNode):
     bwdif: Final[_bwdif._VideoNode_bound.Plugin]
     """BobWeaver Deinterlacing Filter"""
 # </attribute/VideoNode_bound/bwdif>
+# <attribute/VideoNode_bound/cranexpr>
+    cranexpr: Final[_cranexpr._VideoNode_bound.Plugin]
+    """Cranelift Expr"""
+# </attribute/VideoNode_bound/cranexpr>
 # <attribute/VideoNode_bound/dctf>
     dctf: Final[_dctf._VideoNode_bound.Plugin]
     """DCT/IDCT Frequency Suppressor"""
@@ -2069,6 +2073,10 @@ class Core:
     bwdif: Final[_bwdif._Core_bound.Plugin]
     """BobWeaver Deinterlacing Filter"""
 # </attribute/Core_bound/bwdif>
+# <attribute/Core_bound/cranexpr>
+    cranexpr: Final[_cranexpr._Core_bound.Plugin]
+    """Cranelift Expr"""
+# </attribute/Core_bound/cranexpr>
 # <attribute/Core_bound/d2v>
     d2v: Final[_d2v._Core_bound.Plugin]
     """D2V Source"""
@@ -2523,6 +2531,28 @@ class _bwdif:
             def Bwdif(self, /, field: _IntLike, edeint: VideoNode | None = None, opt: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/bwdif>
+
+# <implementation/cranexpr>
+class _cranexpr:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def Expr(self, /, clips: VideoNode | _SequenceLike[VideoNode], expr: _AnyStr | _SequenceLike[_AnyStr], format: _IntLike | None = None, boundary: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def PropExpr(self, /, clips: VideoNode | _SequenceLike[VideoNode], **kwargs: Any) -> VideoNode: ...
+            @_Wrapper.Function
+            def Select(self, /, clip_src: VideoNode | _SequenceLike[VideoNode], prop_src: VideoNode | _SequenceLike[VideoNode], expr: _AnyStr | _SequenceLike[_AnyStr]) -> VideoNode: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def Expr(self, /, expr: _AnyStr | _SequenceLike[_AnyStr], format: _IntLike | None = None, boundary: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def PropExpr(self, /, **kwargs: Any) -> VideoNode: ...
+            @_Wrapper.Function
+            def Select(self, /, prop_src: VideoNode | _SequenceLike[VideoNode], expr: _AnyStr | _SequenceLike[_AnyStr]) -> VideoNode: ...
+
+# </implementation/cranexpr>
 
 # <implementation/d2v>
 class _d2v:

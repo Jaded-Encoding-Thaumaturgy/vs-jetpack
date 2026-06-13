@@ -128,11 +128,11 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
         if use_std and not expr_kwargs and kwargs.keys() <= {"scenechange"}:
             return iterate(clip[0], core.std.AverageFrames, passes, self, divisor, planes=planes, **kwargs)
 
-        return self._averageframes_akarin(
+        return self._averageframes_expr(
             clip[0], planes, bias, divisor, saturate, passes, expr_kwargs, func=func, **kwargs
         )
 
-    def _averageframes_akarin(self, *args: Any, **kwargs: Any) -> vs.VideoNode:
+    def _averageframes_expr(self, *args: Any, **kwargs: Any) -> vs.VideoNode:
         clip, planes, bias, divisor, saturate, passes, expr_kwargs = args
 
         r = len(self) // 2

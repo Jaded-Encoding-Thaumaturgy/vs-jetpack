@@ -54,8 +54,8 @@ def get_field_difference(
 
     stats = clip.std.SeparateFields(tff).std.PlaneStats()
 
-    return core.akarin.PropExpr(
-        [clip, stats[::2], stats[1::2]], lambda: {"FieldDifference": "y.PlaneStatsAverage z.PlaneStatsAverage - abs"}
+    return core.cranexpr.PropExpr(
+        [clip, stats[::2], stats[1::2]], FieldDifference="y.PlaneStatsAverage z.PlaneStatsAverage - abs"
     )
 
 
