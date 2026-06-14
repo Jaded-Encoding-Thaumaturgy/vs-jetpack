@@ -222,6 +222,8 @@ def clip_async_render[T](
             "You cannot use async requests without a callback and with an outfile", clip_async_render
         )
 
+    total_frames = clip.num_frames
+
     if not progress:
         pr_ctx = contextlib.nullcontext()
         pr_up = lambda *_: None  # noqa: E731
@@ -233,9 +235,7 @@ def clip_async_render[T](
 
         pr_ctx = get_render_progress()
         task = pr_ctx.add_task(progress)
-        pr_up = lambda *_: pr_ctx.advance(task)  # noqa: E731
-
-    total_frames = clip.num_frames
+        pr_up = lambda n, total: pr_ctx.update(task, total=total, completed=n)  # noqa: E731
 
     with pr_ctx:
         if outfile:
