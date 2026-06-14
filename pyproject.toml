@@ -226,15 +226,11 @@ auto = true
 [tool.uv.sources]
 vapoursynth-ffms2 = { index = "vs-wheels" }
 vapoursynth-fmtconv = { index = "vs-wheels" }
-tensorrt-cu13 = { index = "nvidia" }
 tensorrt-cu13-bindings = [
-    { index = "nvidia", marker = "python_version < '3.14'" },
     { index = "vs-wheels", marker = "python_version == '3.14'" },
 ]
 tensorrt-cu13-libs = { index = "nvidia" }
-tensorrt-rtx-cu13 = { index = "nvidia" }
 tensorrt-rtx-cu13-bindings = [
-    { index = "nvidia", marker = "python_version < '3.14'" },
     { index = "vs-wheels", marker = "python_version == '3.14'" },
 ]
 tensorrt-rtx-cu13-libs = { index = "nvidia" }
