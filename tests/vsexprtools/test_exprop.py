@@ -8,9 +8,9 @@ from jetpytools import clamp
 
 from vsexprtools import ExprOp, ExprToken, expr_func, norm_expr
 from vsexprtools.util import _get_akarin_expr_version
-from vstools import ColorRange, core, get_lowest_value, get_peak_value, vs
+from vstools import Range, core, get_lowest_value, get_peak_value, vs
 
-clip_yuv_limited = ColorRange.LIMITED.apply(core.std.BlankClip(width=2, height=2, format=vs.YUV420P8))
+clip_yuv_limited = Range.LIMITED.apply(core.std.BlankClip(width=2, height=2, format=vs.YUV420P8))
 
 
 @pytest.mark.parametrize(
@@ -24,7 +24,7 @@ clip_yuv_limited = ColorRange.LIMITED.apply(core.std.BlankClip(width=2, height=2
         (ExprToken.RangeSize, None, 256),
     ],
 )
-def test_expr_token_get_value_limited(token: ExprToken, range_in: ColorRange | None, expected: float) -> None:
+def test_expr_token_get_value_limited(token: ExprToken, range_in: Range | None, expected: float) -> None:
     assert token.get_value(clip_yuv_limited, None, range_in) == expected
 
 
@@ -36,7 +36,7 @@ def test_expr_token_get_value_limited(token: ExprToken, range_in: ColorRange | N
     ],
 )
 def test_expr_token_get_value_limited_with_chroma(
-    token: ExprToken, chroma: bool, range_in: ColorRange | None, expected: float
+    token: ExprToken, chroma: bool, range_in: Range | None, expected: float
 ) -> None:
     assert token.get_value(clip_yuv_limited, chroma, range_in) == expected
 
@@ -301,8 +301,8 @@ def test_expr_op_str_polyval(input_clip: vs.VideoNode, coeffs: Sequence[float], 
             if expr.format.sample_type == vs.INTEGER:
                 clamped = clamp(
                     expected,
-                    get_lowest_value(input_clip, range_in=ColorRange.FULL),
-                    get_peak_value(input_clip, range_in=ColorRange.FULL),
+                    get_lowest_value(input_clip, range_in=Range.FULL),
+                    get_peak_value(input_clip, range_in=Range.FULL),
                 )
                 assert f_expr[i][0, 0] == round(clamped)
             else:

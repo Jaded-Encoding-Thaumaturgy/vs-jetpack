@@ -59,7 +59,6 @@ from vstools import (
     split,
     vs,
 )
-from vstools.enums.color import _norm_props_enums
 
 from ..exceptions import (
     UnknownDescalerError,
@@ -525,9 +524,6 @@ class Scaler(BaseScaler):
 
         scale_args = self.get_scale_args(clip, shift, width, height, **kwargs)
 
-        if vs.__version__ < (74, 0):
-            scale_args = _norm_props_enums(scale_args)
-
         logger.debug("%s: Passing clip: %r; arguments: %s", self.scale, clip, scale_args)
 
         return self.scale_function(clip, **scale_args)
@@ -636,9 +632,6 @@ class Descaler(BaseScaler):
 
         descale_args = self.get_descale_args(clip, shift, width, height, **kwargs)
 
-        if vs.__version__ < (74, 0):
-            descale_args = _norm_props_enums(descale_args)
-
         logger.debug("%s: Passing clip: %r; arguments: %s", self.descale, clip, descale_args)
 
         return self.descale_function(clip, **descale_args)
@@ -670,9 +663,6 @@ class Descaler(BaseScaler):
         width, height = self._wh_norm(clip, width, height)
 
         rescale_args = self.get_rescale_args(clip, shift, width, height, **kwargs)
-
-        if vs.__version__ < (74, 0):
-            rescale_args = _norm_props_enums(rescale_args)
 
         logger.debug("%s: Passing clip: %r; arguments: %s", self.rescale, clip, rescale_args)
 
@@ -800,9 +790,6 @@ class Resampler(BaseScaler):
             chromaloc_in,
             **kwargs,
         )
-
-        if vs.__version__ < (74, 0):
-            resample_args = _norm_props_enums(resample_args)
 
         logger.debug("%s: Passing clip: %r; arguments: %s", self.resample, clip, resample_args)
 
