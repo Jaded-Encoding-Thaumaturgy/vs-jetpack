@@ -222,19 +222,19 @@ class FineDehalo[**P, R]:
             # Previous mask may be a bit weak on the pure edge side, so we ensure
             # that the main edges are really excluded. We do not want them to be
             # smoothed by the halo removal.
-            shr_med = (
-                norm_expr([strong, shrink], tuple("x y max" * ex for ex in exclude), planes, func=func)
-                if any(exclude)
-                else strong
-            )
 
             # Subtracts masks and amplifies the difference to be sure we get 255
             # on the areas to be processed.
-            mask = norm_expr([large, shr_med], "x y - 2 *", planes, func=func)
 
             # If edge processing is required, adds the edgemask
-            if any(edgeproc):
-                mask = norm_expr([mask, strong], "x y {edgeproc} 0.66 * * +", planes, func=func, edgeproc=edgeproc)
+            mask = norm_expr(
+                [strong, shrink, large],
+                "{edgeproc} not z {exclude} x y max x ? - 2 * dup x {edgeproc} 2 3 / * * + ?",
+                planes,
+                exclude=(int(x) for x in exclude),
+                edgeproc=edgeproc,
+                func=func,
+            )
 
             # Smooth again and amplify to grow the mask a bit, otherwise the halo
             # parts sticking to the edges could be missed.
@@ -246,7 +246,6 @@ class FineDehalo[**P, R]:
             self._large = large
             self._light = light
             self._shrink = shrink
-            self._shr_med = shr_med
             self._main = mask
 
         def __getitem__(self, index: str) -> vs.VideoNode:
@@ -282,10 +281,6 @@ class FineDehalo[**P, R]:
         @property
         def SHRINK(self) -> vs.VideoNode:  # noqa: N802
             return self._shrink
-
-        @property
-        def SHRINK_EDGES_EXCL(self) -> vs.VideoNode:  # noqa: N802
-            return self._shr_med
 
         @property
         def MAIN(self) -> vs.VideoNode:  # noqa: N802
