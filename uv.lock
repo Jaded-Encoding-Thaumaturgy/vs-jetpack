@@ -1064,6 +1064,95 @@ wheels = [
 ]
 
 [[package]]
+name = "nvidia-cublas"
+version = "13.5.1.27"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nvidia-cuda-nvrtc" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9c/da/45f78bb61f93a467ccaccf2eafbf23483bdcb29d3c5d16f8cb918be1aea0/nvidia_cublas-13.5.1.27-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:bc355b10e35b01cf88e8dcc0fbe0fd1ef86a05fddae78a44dc133d7e63eaf973", size = 515580892, upload-time = "2026-05-26T16:43:17.967Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/0d/cc77458e8fb0634597e3994650c2853ee785f2fc61bf370bbb304021cca1/nvidia_cublas-13.5.1.27-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:db3a1f0c8bc24945a4d195ba199d83f27e650ffdfc0c32e6b8362c314f14d553", size = 407748877, upload-time = "2026-05-26T16:44:19.938Z" },
+    { url = "https://files.pythonhosted.org/packages/99/73/2c08fc3802d72931af348e8f1cf3a0b013e5dd91a6dcc235af8f52cfcb87/nvidia_cublas-13.5.1.27-py3-none-win_amd64.whl", hash = "sha256:234a2e89682080421431d2f2ea422fc2ad7d0b462336ccdfde76c559c906c670", size = 391875500, upload-time = "2026-05-26T17:06:29.178Z" },
+]
+
+[[package]]
+name = "nvidia-cuda-cupti"
+version = "13.3.35"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0d/e9/ae7406999b5bb1dc8dc5fd618ae1c55e6b6e0151358a3c80091c2e677e23/nvidia_cuda_cupti-13.3.35-py3-none-manylinux_2_25_aarch64.whl", hash = "sha256:99a61919e4917a81cd083bb7082291ebb58c8f9dd42da036c78cefdb3acc7323", size = 11822734, upload-time = "2026-05-26T16:32:30.677Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/86/99ac757b96255b1446bf307e1396567fd355b5ebe89ca04d01fa0a6bb704/nvidia_cuda_cupti-13.3.35-py3-none-manylinux_2_25_x86_64.whl", hash = "sha256:50eaf329ee2b5830a51d078c24375cba791570779b953580b259ec0cf0cdbdc0", size = 12043152, upload-time = "2026-05-26T16:33:03.563Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/6d/24bed209821e93b4e566c0f98803362f0441628c642aed5e18cc1052df74/nvidia_cuda_cupti-13.3.35-py3-none-win_amd64.whl", hash = "sha256:1363b54afb034cb571fcc7a1e5ace039f7ec6ad62032b3944e5e8c019c5cd9dc", size = 8218981, upload-time = "2026-05-26T17:00:37.229Z" },
+]
+
+[[package]]
+name = "nvidia-cuda-nvrtc"
+version = "13.3.33"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8b/2c/86916c8a34dcdb0c3ddd1c0e30545041bd781184e437b9cb76fcda70560b/nvidia_cuda_nvrtc-13.3.33-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:82530788b8c6164a54d3fd9ae8bcca8893d397c4aeb998861982a03bbe41e204", size = 51110910, upload-time = "2026-05-26T16:38:16.116Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/b6/60a3641111d39ebfcfcd8b8bfd0290d7623c4b8b5f90952c2d84776f8ca4/nvidia_cuda_nvrtc-13.3.33-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:7b05ecda494c6dabc44231a608b060a71008a730d9dfda932cc508e6d29159e0", size = 49260054, upload-time = "2026-05-26T16:37:51.177Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/42/edce72f2c5a0f587168109c867f25f4a9a6cd7289ecf0d68ed2b1070f273/nvidia_cuda_nvrtc-13.3.33-py3-none-win_amd64.whl", hash = "sha256:7d2af818851c0c224d5f92221e9226e51ee23c236df4b51f9194563979c888be", size = 45319163, upload-time = "2026-05-26T17:02:49.217Z" },
+]
+
+[[package]]
+name = "nvidia-cuda-runtime"
+version = "13.3.29"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5f/e5/c1a221c8e6fecd071b80ea44c20fc253ae24f56e15e3f77cfbc3fb76e724/nvidia_cuda_runtime-13.3.29-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:73291e19c9dd919c140c91bda2f80b0eca487da5ee30a086ef7bc4918ecb90ea", size = 2356574, upload-time = "2026-05-26T16:29:56.333Z" },
+    { url = "https://files.pythonhosted.org/packages/97/be/5699b6e642b372f7d24c59c2f41383e2696825e20bab85f7399c7c6a56f7/nvidia_cuda_runtime-13.3.29-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:e04420616e72f563167a7733272992d7e6df6dc5cb54b2f94f9f1520ea9e30c1", size = 2339786, upload-time = "2026-05-26T16:30:21.584Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/27/b53a5e0397842a5c11f0e1a39d4e5b2f22638a4126e83b3c4e196f62c969/nvidia_cuda_runtime-13.3.29-py3-none-win_amd64.whl", hash = "sha256:0667ec61c3d897388efa305ed4f7609ace88849a753ba9c6311d06dca55fff4f", size = 2630354, upload-time = "2026-05-26T17:00:05.389Z" },
+]
+
+[[package]]
+name = "nvidia-cudnn-cu13"
+version = "9.23.1.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nvidia-cublas" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d8/d0/42f53b5293649a5e03f433d1ff9dedd611c868aacbcb424ea3bb3804fe32/nvidia_cudnn_cu13-9.23.1.3-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:55e98d0e423849622fdf3f2f50d8b19d7ad84e8cd77c92cdd8bd2ebad1e54aa1", size = 616921399, upload-time = "2026-06-09T19:39:40.981Z" },
+    { url = "https://files.pythonhosted.org/packages/f2/06/efb57adc1ba8a4ae87cb16dee02359806c162b34b68283c83756863b2459/nvidia_cudnn_cu13-9.23.1.3-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:5f81cb3b05dbee0082e29aa33bcb82fd789b678fcf2cc5118bcfcd7cb74be142", size = 518552029, upload-time = "2026-06-09T19:42:05.4Z" },
+    { url = "https://files.pythonhosted.org/packages/97/50/91c029c2347eabe24e76db6de94b8293ef2d4240ea5de752c9698fa46d0b/nvidia_cudnn_cu13-9.23.1.3-py3-none-win_amd64.whl", hash = "sha256:662722e88ac6ca34297ecae15f5b159605db7df53ea49b0c1c2225f8736048dd", size = 403264766, upload-time = "2026-06-09T19:45:25.358Z" },
+]
+
+[[package]]
+name = "nvidia-cufft"
+version = "12.3.0.29"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nvidia-nvjitlink" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f9/bc/543e6dfbcb659ed07a94a72d8925c8b5688dabc1f616ab2f6575483a3cb6/nvidia_cufft-12.3.0.29-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:3c268ec73fdbfd22e42913dcef6e49e0c305ab09cd9848268a841cbe9f33f748", size = 184700143, upload-time = "2026-05-26T16:45:25.443Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/00/fab4a29fa1d7eb43bc6b94de4e86312c5e425d5582e58b9641300b9dffc7/nvidia_cufft-12.3.0.29-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:edb25c0626bd202ee5acc035b5dd361a3b89ed3b75a81a52df72c89150cb57c2", size = 184730406, upload-time = "2026-05-26T16:46:18.193Z" },
+    { url = "https://files.pythonhosted.org/packages/94/64/8e9d808720559d3cbfcd1d1bc8a2e6f55deb29d692513d5a93c8d417b7e5/nvidia_cufft-12.3.0.29-py3-none-win_amd64.whl", hash = "sha256:510036a2bbab5c83ae93dc5c907c3a49d3518e3066ac3a2052ff0f7f9b27dfc4", size = 183939745, upload-time = "2026-05-26T17:07:22.091Z" },
+]
+
+[[package]]
+name = "nvidia-curand"
+version = "10.4.3.29"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e4/41/5ea46629297898aae20d01a64159ae7dc8d898a73aef5cbb118ae2c4e140/nvidia_curand-10.4.3.29-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:63899de834d1b84b32ad60d34cb4d246bea998ddadbc85f8e1dd937dd3718d61", size = 62481952, upload-time = "2026-05-26T16:47:48.914Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/49/4ca4ce4a9334c9a1ef68ab85b358f019bf85e8c3f51c2471d4cc257a273d/nvidia_curand-10.4.3.29-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:1859bf37a62754d2c65001393096ca79de399f995971fa7826d0adfd88c3cf7b", size = 60023614, upload-time = "2026-05-26T16:48:21.947Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/eb/63f7710fc84837e0118002bc29671542807921aef3a0c710da83a5e7e711/nvidia_curand-10.4.3.29-py3-none-win_amd64.whl", hash = "sha256:34b18d5a2a8e5db4c3846475ae4eef0cacdf3ac5e9c501f3a4efb422f137a74e", size = 55429221, upload-time = "2026-05-26T17:07:57.617Z" },
+]
+
+[[package]]
+name = "nvidia-nvjitlink"
+version = "13.3.33"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f0/ee/580ca6f29dcab0221db8706badca1bbbb084f1975c4d4e83329c3a7e31f0/nvidia_nvjitlink-13.3.33-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:26a6de7fb4c8fdaa7703d3dad720d6d427ddfea5c48a528fd97c11733ad830e5", size = 40742423, upload-time = "2026-05-26T16:54:51.613Z" },
+    { url = "https://files.pythonhosted.org/packages/69/30/45414e35ff2eee7db3da037e5707037ccf9d2b5218ffbdb055ea4d5aa98a/nvidia_nvjitlink-13.3.33-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:ce48b37dfeb3cb1eae4cf85adacb47d7a6539ea2272870c9a3628ce275c2037e", size = 39168635, upload-time = "2026-05-26T16:54:13.906Z" },
+    { url = "https://files.pythonhosted.org/packages/67/f2/ec9c05a108095828dfc58840978c627b3c313fdf2a567c6de9ffbbb46901/nvidia_nvjitlink-13.3.33-py3-none-win_amd64.whl", hash = "sha256:4297ee49639b4f2e07255a1d69b3acc7ab2d011bb892b403e91ac98368962e3b", size = 37766359, upload-time = "2026-05-26T17:11:28.96Z" },
+]
+
+[[package]]
 name = "onnx"
 version = "1.21.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2147,16 +2236,17 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-dfttest2-cuda"
-version = "10.3.post1"
-source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
+version = "10.5"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "nvidia-cufft" },
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-dfttest2_cuda-v10.3.post1/vapoursynth_dfttest2_cuda-10.3.post1.tar.gz", hash = "sha256:6d140661d182ca00331a6ffd90d5fe3966be03a94acc5785aefa97b3fd3fe03c" }
+sdist = { url = "https://files.pythonhosted.org/packages/a2/df/a2e6c0b8a4ced75b377643f0f258f5b4feee94096e8193b3b59cdef0b6ea/vapoursynth_dfttest2_cuda-10.5.tar.gz", hash = "sha256:0da7e944907dadd400bcb9d3ef1b91d010d0005979c04a8091dfa4ed0cc2193c", size = 904682, upload-time = "2026-06-14T00:45:58.873Z" }
 wheels = [
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-dfttest2_cuda-v10.3.post1/vapoursynth_dfttest2_cuda-10.3.post1-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:22507efe6e1ff3d98982616754e6ad0228038b39fdd6d20ea99c612c707f9618" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-dfttest2_cuda-v10.3.post1/vapoursynth_dfttest2_cuda-10.3.post1-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3ef50dcd76b738dbd3c5df4c31e5731ba99351b81fb1e3d940d36ce8bea8a0c9" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-dfttest2_cuda-v10.3.post1/vapoursynth_dfttest2_cuda-10.3.post1-py3-none-win_amd64.whl", hash = "sha256:42a75c36a3fabcd0fb72eeba52fc2d73691d637e4755d0d26aed5629ae3238ab" },
+    { url = "https://files.pythonhosted.org/packages/f7/ef/cf5c0f23712d746328a74ee5f85d5a4da80ddc1721f0e260df91079a841a/vapoursynth_dfttest2_cuda-10.5-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dfaee90a8e851946498bb4b054b61d6da2aef7037c244240e9a5c2b7f99917bc", size = 43610710, upload-time = "2026-06-14T00:45:50.445Z" },
+    { url = "https://files.pythonhosted.org/packages/94/e2/c1a9d025a6c2cc3d77191e9a78e65ebbdb003a152ee13714e7e32c1d7903/vapoursynth_dfttest2_cuda-10.5-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:54059af8f7d69dbc422697ba675e51dbc27523a3aabfb8250cf6b464412cb6d7", size = 46590521, upload-time = "2026-06-14T00:45:53.496Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/d7/900421739924119fd88b12b9c322f8f58521cca58eaa2067e26a5a42b477/vapoursynth_dfttest2_cuda-10.5-py3-none-win_amd64.whl", hash = "sha256:a53dbdb37717dc616f89e2e54efe32e413e1e1a85d3ae4972e2a59df3fff8bfe", size = 40922069, upload-time = "2026-06-14T00:45:56.381Z" },
 ]
 
 [[package]]
@@ -2357,19 +2447,19 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-lsmas"
-version = "1282.0.0"
-source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
+version = "1282.0.0.post2"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0.tar.gz", hash = "sha256:142ed08e66d62689ec862d86d665f2ccab9ebfdc8cc285a648bce3f992482a86" }
+sdist = { url = "https://files.pythonhosted.org/packages/93/8f/e07735c522b6adec9382f6c69fb57c07c6057d2425b060c6b59b51d1ebfe/vapoursynth_lsmas-1282.0.0.post2.tar.gz", hash = "sha256:f7a782d9cbffebc08cfbbf62fcecbea00bf184b192af51628000af4509721d22", size = 19272273, upload-time = "2026-06-13T22:00:14.895Z" }
 wheels = [
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-macosx_15_0_arm64.whl", hash = "sha256:fc4a620cad730ec6669c5f9ea55bdf5bcb86189045182447746a19d9655098fe" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:a92b186536a0ff3ed0c25857d8ea31165657ed7818936f4c028b8342afda3c31" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:65579fe22f51221a3a0897302f6a8e4971641e4b326f51aa13b9329574dc30bc" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:809d6a37e9e37403b99b1e6da7100d4749a82f1f4817031f63535fe0774c05b8" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:b1db1047ba624e99aea92aadd9bb67d02c73ca797e53877177d405f4fd140fc2" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-lsmas-v1282.0.0/vapoursynth_lsmas-1282.0.0-py3-none-win_amd64.whl", hash = "sha256:48a2b01f36106d0cbba1aab1582de770b3da648716c9180ca2a11582d1013262" },
+    { url = "https://files.pythonhosted.org/packages/98/c3/e8381540be3f1d27ef10df3f9ed95f9c420d592839a87850c05eb78fc00c/vapoursynth_lsmas-1282.0.0.post2-py3-none-macosx_15_0_arm64.whl", hash = "sha256:d5856dfb5186dd047527c368c0d29bc9e374f96727ec51c6cd9e0dc86a42da75", size = 8286916, upload-time = "2026-06-13T22:00:01.5Z" },
+    { url = "https://files.pythonhosted.org/packages/57/3e/fe1890dc258e89a90aade16493f585eb9c8851147781939f2ada66143ce2/vapoursynth_lsmas-1282.0.0.post2-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:1ef3b9d98652340d0a6c0745b14624400a1886c03670ce3b710a0f60faa41bba", size = 9265194, upload-time = "2026-06-13T22:00:03.668Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/63/0166631b4f90d25090a9310f5062d631aecbebe09a1e52075d651ca82c52/vapoursynth_lsmas-1282.0.0.post2-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:9ae5b9f93af007f22557e9fff6b04d049ba101bb91a1b69e9e07f9f5548191ae", size = 9610805, upload-time = "2026-06-13T22:00:05.802Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/ab/a9934579d0801e9dec0161a961206cd79f03ec431ec89979a51bcad96313/vapoursynth_lsmas-1282.0.0.post2-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:27effcac2c0eb398767161add7c809b66f291027fe00f9ad1bd0af57aa8267d1", size = 9399515, upload-time = "2026-06-13T22:00:08.039Z" },
+    { url = "https://files.pythonhosted.org/packages/a0/97/7ee948cf3fb856613614f03dbe67b68f590de610c5256845d05951f89a3d/vapoursynth_lsmas-1282.0.0.post2-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:b96eb9b0d5108cf1a3770550cdc97be4d94337e564c451b1dabbbcc005f8bb0b", size = 9720498, upload-time = "2026-06-13T22:00:10.271Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/ec/8c6d20443f63bcb9571573c7157799fe4f54bf03355efaa15d45de02b5bc/vapoursynth_lsmas-1282.0.0.post2-py3-none-win_amd64.whl", hash = "sha256:cb864c253ab4a05bda76ddc01b51dac338011349f11bb51fa674bb7d239a6766", size = 9873560, upload-time = "2026-06-13T22:00:12.743Z" },
 ]
 
 [[package]]
@@ -2436,16 +2526,23 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-mlrt-ort-cuda"
-version = "15.16.post1"
-source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
+version = "15.16.2"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "nvidia-cublas" },
+    { name = "nvidia-cuda-cupti" },
+    { name = "nvidia-cuda-nvrtc" },
+    { name = "nvidia-cuda-runtime" },
+    { name = "nvidia-cudnn-cu13" },
+    { name = "nvidia-cufft" },
+    { name = "nvidia-curand" },
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-ort-cuda-v15.16.post1/vapoursynth_mlrt_ort_cuda-15.16.post1.tar.gz", hash = "sha256:b7f781673081296e34d66cdde865a64b7554b1205160df9f743b80e86200be04" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/72/b142ace07355f831c5584a379dc71cf0b3318d35d1c95ea4c71d8b3b15d7/vapoursynth_mlrt_ort_cuda-15.16.2.tar.gz", hash = "sha256:48acdccbcaee2e2ea8e0c717beb10ee8bdaa5039256c1fcf73733947b35b92b2", size = 676220, upload-time = "2026-06-14T00:50:42.702Z" }
 wheels = [
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-ort-cuda-v15.16.post1/vapoursynth_mlrt_ort_cuda-15.16.post1-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:52935542ca3178d5851e0e657890f6628dcbffac730ab75f5cbaa5958990cf20" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-ort-cuda-v15.16.post1/vapoursynth_mlrt_ort_cuda-15.16.post1-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b27105d8b2ebb270a1a324c31b1fe4ab0cbd36becce619def8a4cbb7fe672a75" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-ort-cuda-v15.16.post1/vapoursynth_mlrt_ort_cuda-15.16.post1-py3-none-win_amd64.whl", hash = "sha256:f1c4028ebc5a23a2eb03aa898935c37fe8a42d4ec9c4a7a5e90e5c0663643341" },
+    { url = "https://files.pythonhosted.org/packages/16/9a/10759634b35d8c464c397e03a582230138e6701c7aaf1e5df33047d399a1/vapoursynth_mlrt_ort_cuda-15.16.2-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:70e72a855c04541ac60a1faf2a297881b64f1feb3c838d42cc67c2586bc00fa7", size = 92165292, upload-time = "2026-06-14T00:50:26.647Z" },
+    { url = "https://files.pythonhosted.org/packages/27/a6/a6c4cc1af5f2266ddb25b8fb133af658cc4feb7ab9ad75001f9f2d3af8d2/vapoursynth_mlrt_ort_cuda-15.16.2-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:eb8b678a005bef36f0367a7f036543031de370ffd5436a2d6d1217f3ee1bd494", size = 94190334, upload-time = "2026-06-14T00:50:32.758Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/64/0e130ace99a15d1f3223cde0e99129be5f9b9e1b9a20c27b4b397d24bf4d/vapoursynth_mlrt_ort_cuda-15.16.2-py3-none-win_amd64.whl", hash = "sha256:bc1d844f51dee51756ec05205548943651d6891033fb7fd0d14aaed6f4223b72", size = 101036549, upload-time = "2026-06-14T00:50:39.174Z" },
 ]
 
 [[package]]
@@ -2466,32 +2563,32 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-mlrt-trt"
-version = "15.16.post1"
-source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
+version = "15.16.1"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "tensorrt-cu13-libs", marker = "sys_platform == 'linux'" },
+    { name = "tensorrt-cu13-libs" },
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.post1/vapoursynth_mlrt_trt-15.16.post1.tar.gz", hash = "sha256:9e0e4b2e225161cc806870f060695d8afbb81572c300f76e7b07a1d98d81535b" }
+sdist = { url = "https://files.pythonhosted.org/packages/9a/8d/0981a8b189c4531e686f8c24a8fc4d2bd5e9649e197ecff7640a991468d9/vapoursynth_mlrt_trt-15.16.1.tar.gz", hash = "sha256:1deba530300875850e91e90d922a35217d9bab5df6fdda8d077f5c17f61241ff", size = 675068, upload-time = "2026-06-14T00:50:35.167Z" }
 wheels = [
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.post1/vapoursynth_mlrt_trt-15.16.post1-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:edb0fb4a1a9d828cd68a1190b0c22ff01f766cd0940a03fd8636edaabe099de4" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.post1/vapoursynth_mlrt_trt-15.16.post1-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:3a463f94f1531346c76b2a19cd935e5ae890bd9b641c03cdeefee06eea2cc63c" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-mlrt-trt-v15.16.post1/vapoursynth_mlrt_trt-15.16.post1-py3-none-win_amd64.whl", hash = "sha256:b7f6baf334c52ec9588015fad363b1df18ad7f55144881f026957105de546509" },
+    { url = "https://files.pythonhosted.org/packages/6b/06/04c102af3b935de6e9eaadf3ec7cf8f6785f7354742e021763dbceea14a2/vapoursynth_mlrt_trt-15.16.1-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2d78bc30d478de510f350ccfe319fed54127361aaf81b6689fe868d36dfd1a29", size = 273962, upload-time = "2026-06-14T00:50:31.426Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/1d/800817da04bd49a81254cb7f272c60ee10414e5ea79707d7bae6b727e04c/vapoursynth_mlrt_trt-15.16.1-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:8877ec447ffcce2ad8e9fcbea8e3e5d5f3c47cd600d60385bffed3a1d0c93ce1", size = 270622, upload-time = "2026-06-14T00:50:32.617Z" },
+    { url = "https://files.pythonhosted.org/packages/c4/6a/d1c8f0ed3c3cb06b1ce2c701bbcf9e3a272e895851a9f8a9028ae2c2d67a/vapoursynth_mlrt_trt-15.16.1-py3-none-win_amd64.whl", hash = "sha256:5a6c5267a48835e06bd51a4f04a63752684e66e94631b49f7e89c2b4739e4d5f", size = 340159, upload-time = "2026-06-14T00:50:33.9Z" },
 ]
 
 [[package]]
 name = "vapoursynth-mlrt-trt-rtx"
-version = "15.16"
+version = "15.16.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "tensorrt-rtx-cu13-libs", marker = "sys_platform == 'linux'" },
+    { name = "tensorrt-rtx-cu13-libs" },
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/64/75/dd32cbe0061417fbdf7e9eef950ecf96969a85914ed34262e8710544446b/vapoursynth_mlrt_trt_rtx-15.16.tar.gz", hash = "sha256:47efc920d5d629568af1ad7cbc589557f9452c080ae37c1b18a03004fba0a2c9", size = 674616, upload-time = "2026-06-05T15:07:03.079Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/90/1bcdeaebd6287d74abcb691e1e13dbbfb4d24f675f84cb7cd2f1867b6233/vapoursynth_mlrt_trt_rtx-15.16.1.tar.gz", hash = "sha256:730eb034fd814b691dc60e891bd77c328490db7507823f2688d35369282dcdf4", size = 675006, upload-time = "2026-06-14T00:51:27.112Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/47/51/aa23d4aa9af8cd6b32237e359f1de28e8ee0f462842d0d1eb6f351873e88/vapoursynth_mlrt_trt_rtx-15.16-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:cb88a0a403bd66ce44bca659cb606f7f18e1bf2211cc543a95a0da80b4664d48", size = 274851, upload-time = "2026-06-05T15:06:57.272Z" },
-    { url = "https://files.pythonhosted.org/packages/fe/5f/3dd5ee886e09bf474ea3bd6435fbcfb9245961b3fc15b22af982df69a30c/vapoursynth_mlrt_trt_rtx-15.16-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:f79cc383bf0c6bbb89835aa9cf589bbf8fbe47c507dbc42c1bb5a45020198897", size = 281724, upload-time = "2026-06-05T15:06:58.614Z" },
-    { url = "https://files.pythonhosted.org/packages/d4/9f/644586f285d086aa70cbe791311c1bf43183cab2107bc25387d7507c6ff9/vapoursynth_mlrt_trt_rtx-15.16-py3-none-win_amd64.whl", hash = "sha256:b5916c53463aea3974c2b93fcfca888ef75f700730df3c57a0fffe240f64894d", size = 83983048, upload-time = "2026-06-05T15:07:00.599Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/ac/f5a26cf9569e6b43e00ad311ebf5909ed4cec43f2166d4c88c0756de5dd7/vapoursynth_mlrt_trt_rtx-15.16.1-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:911b327dd27f017e16fc653383a795921c67ee1386a7da2ab90a37d1d526ff84", size = 274864, upload-time = "2026-06-14T00:51:23.291Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/fd/955a361a2fc4de49c78ed92c6d467445068aa46394b22b08826693ce69e4/vapoursynth_mlrt_trt_rtx-15.16.1-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:c8b090195300e81f1748649e0b40e36cb3dd37622b69933072798b117feec3fc", size = 281716, upload-time = "2026-06-14T00:51:24.683Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/4c/d857ae0b4f19591ec37275968e1b363455fbeb65a341e705361ed1bffc28/vapoursynth_mlrt_trt_rtx-15.16.1-py3-none-win_amd64.whl", hash = "sha256:22e58f034d495f574e0fdb44a10d0d9fea9bdabb772dcf86aed81c99a7680eb6", size = 341994, upload-time = "2026-06-14T00:51:25.94Z" },
 ]
 
 [[package]]
@@ -3022,7 +3119,6 @@ nvidia = [
     { name = "tensorrt-rtx-cu13-libs" },
     { name = "vapoursynth-bilateralgpu" },
     { name = "vapoursynth-bm3dcuda" },
-    { name = "vapoursynth-dfttest2-cuda" },
     { name = "vapoursynth-mlrt-ort-cuda" },
     { name = "vapoursynth-mlrt-trt" },
     { name = "vapoursynth-mlrt-trt-rtx" },
@@ -3275,7 +3371,6 @@ requires-dist = [
     { name = "vapoursynth-descale", marker = "extra == 'mask'", specifier = ">=12" },
     { name = "vapoursynth-descale", marker = "extra == 'rg'", specifier = ">=12" },
     { name = "vapoursynth-descale", marker = "extra == 'scale'", specifier = ">=12" },
-    { name = "vapoursynth-dfttest2-cuda", marker = "extra == 'nvidia'", specifier = ">=10", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-dmetrics", marker = "extra == 'deinterlace'", specifier = ">=2.0" },
     { name = "vapoursynth-dmetrics", marker = "extra == 'full'", specifier = ">=2.0" },
     { name = "vapoursynth-dvdsrc2", marker = "extra == 'aa'", specifier = ">=3.0" },
@@ -3321,15 +3416,15 @@ requires-dist = [
     { name = "vapoursynth-hysteresis", marker = "extra == 'scale'", specifier = ">=1.1.3" },
     { name = "vapoursynth-knlmeanscl", marker = "extra == 'amd'", specifier = ">=1.2" },
     { name = "vapoursynth-knlmeanscl", marker = "extra == 'cl'", specifier = ">=1.2" },
-    { name = "vapoursynth-lsmas", marker = "extra == 'aa'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-lsmas", marker = "extra == 'deband'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-lsmas", marker = "extra == 'dehalo'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-lsmas", marker = "extra == 'deinterlace'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-lsmas", marker = "extra == 'denoise'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-lsmas", marker = "extra == 'full'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-lsmas", marker = "extra == 'mask'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-lsmas", marker = "extra == 'scale'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-lsmas", marker = "extra == 'source'", specifier = ">=1282.0.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'aa'", specifier = ">=1282.0.0" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'deband'", specifier = ">=1282.0.0" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'dehalo'", specifier = ">=1282.0.0" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'deinterlace'", specifier = ">=1282.0.0" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'denoise'", specifier = ">=1282.0.0" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'full'", specifier = ">=1282.0.0" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'mask'", specifier = ">=1282.0.0" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'scale'", specifier = ">=1282.0.0" },
+    { name = "vapoursynth-lsmas", marker = "extra == 'source'", specifier = ">=1282.0.0" },
     { name = "vapoursynth-manipmv", marker = "extra == 'deband'", specifier = ">=1.3.0" },
     { name = "vapoursynth-manipmv", marker = "extra == 'dehalo'", specifier = ">=1.3.0" },
     { name = "vapoursynth-manipmv", marker = "extra == 'deinterlace'", specifier = ">=1.3.0" },
@@ -3340,7 +3435,7 @@ requires-dist = [
     { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'cl'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ort", marker = "extra == 'amd'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ort", marker = "extra == 'cl'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ort-cuda", marker = "extra == 'nvidia'", specifier = ">=15.16.post1", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-mlrt-ort-cuda", marker = "extra == 'nvidia'", specifier = ">=15.16.2" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'aa'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'deband'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'dehalo'", specifier = ">=15.16" },
@@ -3348,8 +3443,8 @@ requires-dist = [
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'denoise'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'full'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'scale'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-trt", marker = "extra == 'nvidia'", specifier = "==15.16.post1", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-mlrt-trt-rtx", marker = "extra == 'nvidia'", specifier = "==15.16" },
+    { name = "vapoursynth-mlrt-trt", marker = "extra == 'nvidia'", specifier = "==15.16.1" },
+    { name = "vapoursynth-mlrt-trt-rtx", marker = "extra == 'nvidia'", specifier = "==15.16.1" },
     { name = "vapoursynth-mvtools", marker = "extra == 'deband'", specifier = ">=26" },
     { name = "vapoursynth-mvtools", marker = "extra == 'dehalo'", specifier = ">=26" },
     { name = "vapoursynth-mvtools", marker = "extra == 'deinterlace'", specifier = ">=26" },

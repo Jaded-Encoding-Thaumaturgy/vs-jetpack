@@ -150,15 +150,14 @@ nvidia = [
     "ml-dtypes>=0.5.4",
     # Vapoursynth plugins
     "dfttest2[cufft,nvrtc]>=10",
-    "vapoursynth-dfttest2-cuda>=10",  # Explicitly specify this one so it's properly resolved through uv --index
     "vapoursynth-bm3dcuda>=2.16",
     "vapoursynth-bilateralgpu>=14",
     "vapoursynth-nlm-cuda>=4",
-    "vapoursynth-mlrt-ort-cuda>=15.16.post1",
+    "vapoursynth-mlrt-ort-cuda>=15.16.2",
     # These MLRT TensorRT backends are built against specific TensorRT/TensorRT RTX versions
     # and must stay compatible with the runtime libraries installed below
-    "vapoursynth-mlrt-trt       ==15.16.post1",
-    "vapoursynth-mlrt-trt-rtx   ==15.16",
+    "vapoursynth-mlrt-trt       ==15.16.1",
+    "vapoursynth-mlrt-trt-rtx   ==15.16.1",
     "tensorrt-cu13              ==11.0.0.114",
     "tensorrt-cu13-bindings     ==11.0.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
     "tensorrt-cu13-libs         ==11.0.0.114",  # Explicitly specify this one so it's properly resolved through uv --index
@@ -225,12 +224,8 @@ provider = ["ArtCNN==v1.6.2", "DPIR==20210902", "Waifu2x==20250502-2"]
 auto = true
 
 [tool.uv.sources]
-vapoursynth-dfttest2-cuda = { index = "vs-wheels" }
 vapoursynth-ffms2 = { index = "vs-wheels" }
 vapoursynth-fmtconv = { index = "vs-wheels" }
-vapoursynth-lsmas = { index = "vs-wheels" }
-vapoursynth-mlrt-ort-cuda = { index = "vs-wheels" }
-vapoursynth-mlrt-trt = { index = "vs-wheels" }
 tensorrt-cu13 = { index = "nvidia" }
 tensorrt-cu13-bindings = [
     { index = "nvidia", marker = "python_version < '3.14'" },
