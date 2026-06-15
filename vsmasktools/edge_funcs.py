@@ -252,6 +252,6 @@ class dre_edgemask(CustomEnum):  # noqa: N801
         merge = norm_expr([dreluma_edges, Kirsch.edgemask(luma)], "x y + mask_max min", func=self.__class__)
 
         if brz:
-            return Morpho.binarize(merge, brz)
+            return Morpho.binarize_mask(merge, brz)
 
         return merge

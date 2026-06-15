@@ -32,7 +32,7 @@ def descale_detail_mask(
     """
     mask = norm_expr([get_y(clip), get_y(rescaled)], "x y - abs", func=descale_detail_mask)
 
-    mask = Morpho.binarize(mask, thr)
+    mask = Morpho.binarize_mask(mask, thr)
 
     if xxpand[0]:
         mask = iterate(mask, core.std.Maximum if xxpand[0] > 0 else core.std.Minimum, xxpand[0])
@@ -98,17 +98,17 @@ def descale_error_mask(
 
     thrs = [thr] if isinstance(thr, (float, int)) else thr
 
-    error = Morpho.binarize(error, thrs[0])
+    error = Morpho.binarize_mask(error, thrs[0])
 
     for scaled_thr in thrs[1:]:
-        bin2 = Morpho.binarize(error, scaled_thr)
+        bin2 = Morpho.binarize_mask(error, scaled_thr)
         error = bin2.hysteresis.Hysteresis(error)
 
     if exp3:
         error = Morpho.expand(error, exp2, mode=XxpandMode.ELLIPSE, func=descale_error_mask)
 
     if tr:
-        avg = Morpho.binarize(BlurMatrix.MEAN(tr, mode=ConvMode.TEMPORAL)(error), 0.5)
+        avg = Morpho.binarize_mask(BlurMatrix.MEAN(tr, mode=ConvMode.TEMPORAL)(error), 0.5)
 
         error = ExprOp.MIN(error, ExprOp.MAX(shift_clip_multi(ExprOp.MIN(error, avg), (-tr, tr))))
 

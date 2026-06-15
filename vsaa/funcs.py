@@ -7,7 +7,7 @@ from jetpytools import CustomValueError, fallback
 
 from vsexprtools import norm_expr
 from vskernels import Box, Catrom, NoScale, Scaler, ScalerLike, is_noscale_like
-from vsmasktools import EdgeDetect, EdgeDetectLike, Prewitt
+from vsmasktools import EdgeDetect, EdgeDetectLike, Morpho, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
 from vsscale import ArtCNN
 from vstools import (
@@ -121,7 +121,7 @@ def based_aa(
 
     if mask is not False and not isinstance(mask, vs.VideoNode):
         mask = EdgeDetect.ensure_obj(mask, based_aa).edgemask(luma)
-        mask = mask.std.BinarizeMask(scale_mask(mask_thr, 8, clip))
+        mask = Morpho.binarize_mask(mask, scale_mask(mask_thr, 8, 32))
         mask = box_blur(mask.std.Maximum())
 
         if show_mask:

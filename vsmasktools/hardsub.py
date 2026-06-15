@@ -66,7 +66,7 @@ class CustomMaskFromClipsAndRanges(VSObjectABC, GeneralMask):
 
     clips: list[vs.VideoNode] = field(init=False)
 
-    processing: VSFunctionNoArgs = field(default=core.lazy.std.BinarizeMask, kw_only=True)
+    processing: VSFunctionNoArgs = field(default=Morpho.binarize_mask, kw_only=True)
     idx: InitVar[IndexerLike | None] = field(default=None, kw_only=True)
 
     def __post_init__(self, idx: IndexerLike | None) -> None:
@@ -476,8 +476,7 @@ class HardsubASS(HardsubMask):
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         mask = core.sub.TextFile(ref, self.filename, fontdir=self.fontdir, blend=False).std.PropToClip("_Alpha")
 
-        mask = mask.std.BinarizeMask(1)
-
+        mask = Morpho.binarize_mask(mask, 1 / 255)
         mask = iterate(mask, core.lazy.std.Maximum, 3)
         mask = iterate(mask, core.lazy.std.Inflate, 3)
 
