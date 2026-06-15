@@ -16,6 +16,7 @@ from vstools import (
     Range,
     SpatialConvMode,
     TempConvMode,
+    UnsupportedSampleTypeError,
     VSFunctionNoArgs,
     check_ref_clip,
     core,
@@ -667,6 +668,8 @@ def guided_filter(
     downscaler: ScalerLike = Point,
     upscaler: ScalerLike = Bilinear,
 ) -> vs.VideoNode:
+    UnsupportedSampleTypeError.check(clip, vs.FLOAT, guided_filter)
+
     planes = normalize_planes(clip, planes)
 
     downscaler = Scaler.ensure_obj(downscaler, guided_filter)
