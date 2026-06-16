@@ -170,6 +170,7 @@ amd = [
     "dfttest2[hipfft,hiprtc]>=10",
     "vapoursynth-bm3dhip>=2.16",
     "vapoursynth-mlrt-migx>=15.16 ; platform_system == 'Linux'",
+    "vapoursynth-nlm-hip>=2"
 ]
 full = [
     "vsjetpack[basic]",

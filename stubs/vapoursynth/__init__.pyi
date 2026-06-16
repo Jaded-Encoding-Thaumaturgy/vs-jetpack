@@ -1851,6 +1851,10 @@ class VideoNode(RawNode):
     nlm_cuda: Final[_nlm_cuda._VideoNode_bound.Plugin]
     """Non-local means denoise filter implemented in CUDA"""
 # </attribute/VideoNode_bound/nlm_cuda>
+# <attribute/VideoNode_bound/nlm_hip>
+    nlm_hip: Final[_nlm_hip._VideoNode_bound.Plugin]
+    """Non-local means denoise filter implemented in HIP"""
+# </attribute/VideoNode_bound/nlm_hip>
 # <attribute/VideoNode_bound/nlm_ispc>
     nlm_ispc: Final[_nlm_ispc._VideoNode_bound.Plugin]
     """Non-local means denoise filter implemented in ISPC"""
@@ -2153,6 +2157,10 @@ class Core:
     nlm_cuda: Final[_nlm_cuda._Core_bound.Plugin]
     """Non-local means denoise filter implemented in CUDA"""
 # </attribute/Core_bound/nlm_cuda>
+# <attribute/Core_bound/nlm_hip>
+    nlm_hip: Final[_nlm_hip._Core_bound.Plugin]
+    """Non-local means denoise filter implemented in HIP"""
+# </attribute/Core_bound/nlm_hip>
 # <attribute/Core_bound/nlm_ispc>
     nlm_ispc: Final[_nlm_ispc._Core_bound.Plugin]
     """Non-local means denoise filter implemented in ISPC"""
@@ -3099,6 +3107,22 @@ class _nlm_cuda:
             def NLMeans(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> Any: ...
 
 # </implementation/nlm_cuda>
+
+# <implementation/nlm_hip>
+class _nlm_hip:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def Version(self, /) -> VideoNode: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def NLMeans(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+
+# </implementation/nlm_hip>
 
 # <implementation/nlm_ispc>
 class _nlm_ispc:
