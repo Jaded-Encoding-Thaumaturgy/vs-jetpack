@@ -1863,10 +1863,10 @@ wheels = [
 [[package]]
 name = "tensorrt-rtx-cu13-libs"
 version = "1.5.0.114"
-source = { registry = "https://pypi.nvidia.com/" }
+source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://pypi.nvidia.com/tensorrt-rtx-cu13-libs/tensorrt_rtx_cu13_libs-1.5.0.114-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:4d6f534f82b701e66f3a2bdade528e65670add4ad5d3a28cc010a1ae2abc5a60" },
-    { url = "https://pypi.nvidia.com/tensorrt-rtx-cu13-libs/tensorrt_rtx_cu13_libs-1.5.0.114-py3-none-win_amd64.whl", hash = "sha256:b2c6eff5bb6cbf1fa6f630400cff3ad0e75f0a3806cd5e3f51031b050f1d67bf" },
+    { url = "https://files.pythonhosted.org/packages/3f/53/0d0ed9544fb76b88eb19711c9adc2e280790f94f76ecc2371bf9a271dd59/tensorrt_rtx_cu13_libs-1.5.0.114-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:4d6f534f82b701e66f3a2bdade528e65670add4ad5d3a28cc010a1ae2abc5a60", size = 88808916, upload-time = "2026-05-27T01:58:31.473Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/7c/c6ac4faaef1a7c83a4b738d3c7942aba5603f817918974307dc4869808d7/tensorrt_rtx_cu13_libs-1.5.0.114-py3-none-win_amd64.whl", hash = "sha256:b2c6eff5bb6cbf1fa6f630400cff3ad0e75f0a3806cd5e3f51031b050f1d67bf", size = 84577239, upload-time = "2026-05-27T01:58:06.142Z" },
 ]
 
 [[package]]
@@ -3097,7 +3097,6 @@ nvidia = [
     { name = "tensorrt-rtx-cu13" },
     { name = "tensorrt-rtx-cu13-bindings", version = "1.5.0.114", source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }, marker = "python_full_version == '3.14.*'" },
     { name = "tensorrt-rtx-cu13-bindings", version = "1.5.0.114", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version != '3.14.*'" },
-    { name = "tensorrt-rtx-cu13-libs" },
     { name = "vapoursynth-bilateralgpu" },
     { name = "vapoursynth-bm3dcuda" },
     { name = "vapoursynth-mlrt-ort-cuda" },
@@ -3265,14 +3264,13 @@ requires-dist = [
     { name = "scipy", marker = "extra == 'mask'", specifier = ">=1.17.0" },
     { name = "scipy", marker = "extra == 'rg'", specifier = ">=1.17.0" },
     { name = "scipy", marker = "extra == 'scale'", specifier = ">=1.17.0" },
-    { name = "tensorrt-cu13", marker = "extra == 'nvidia'", specifier = "==11.0.0.114" },
-    { name = "tensorrt-cu13-bindings", marker = "python_full_version == '3.14.*' and extra == 'nvidia'", specifier = "==11.0.0.114", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "tensorrt-cu13-bindings", marker = "python_full_version != '3.14.*' and extra == 'nvidia'", specifier = "==11.0.0.114" },
-    { name = "tensorrt-cu13-libs", marker = "extra == 'nvidia'", specifier = "==11.0.0.114", index = "https://pypi.nvidia.com/" },
-    { name = "tensorrt-rtx-cu13", marker = "extra == 'nvidia'", specifier = "==1.5.0.114" },
-    { name = "tensorrt-rtx-cu13-bindings", marker = "python_full_version == '3.14.*' and extra == 'nvidia'", specifier = "==1.5.0.114", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "tensorrt-rtx-cu13-bindings", marker = "python_full_version != '3.14.*' and extra == 'nvidia'", specifier = "==1.5.0.114" },
-    { name = "tensorrt-rtx-cu13-libs", marker = "extra == 'nvidia'", specifier = "==1.5.0.114", index = "https://pypi.nvidia.com/" },
+    { name = "tensorrt-cu13", marker = "extra == 'nvidia'", specifier = ">=11.0.0.114" },
+    { name = "tensorrt-cu13-bindings", marker = "python_full_version == '3.14.*' and extra == 'nvidia'", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "tensorrt-cu13-bindings", marker = "python_full_version != '3.14.*' and extra == 'nvidia'" },
+    { name = "tensorrt-cu13-libs", marker = "extra == 'nvidia'", index = "https://pypi.nvidia.com/" },
+    { name = "tensorrt-rtx-cu13", marker = "extra == 'nvidia'", specifier = ">=1.5.0.114" },
+    { name = "tensorrt-rtx-cu13-bindings", marker = "python_full_version == '3.14.*' and extra == 'nvidia'", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "tensorrt-rtx-cu13-bindings", marker = "python_full_version != '3.14.*' and extra == 'nvidia'" },
     { name = "typing-extensions", marker = "python_full_version < '3.13'", specifier = ">=4.15.0" },
     { name = "vapoursynth", specifier = ">=75" },
     { name = "vapoursynth-adaptivegrain", marker = "extra == 'aa'", specifier = ">=0.5.0" },
@@ -3422,8 +3420,8 @@ requires-dist = [
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'denoise'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'full'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'scale'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-trt", marker = "extra == 'nvidia'", specifier = "==15.16.1" },
-    { name = "vapoursynth-mlrt-trt-rtx", marker = "extra == 'nvidia'", specifier = "==15.16.1" },
+    { name = "vapoursynth-mlrt-trt", marker = "extra == 'nvidia'", specifier = ">=15.16.1" },
+    { name = "vapoursynth-mlrt-trt-rtx", marker = "extra == 'nvidia'", specifier = ">=15.16.1" },
     { name = "vapoursynth-mvtools", marker = "extra == 'deband'", specifier = ">=26" },
     { name = "vapoursynth-mvtools", marker = "extra == 'dehalo'", specifier = ">=26" },
     { name = "vapoursynth-mvtools", marker = "extra == 'deinterlace'", specifier = ">=26" },
