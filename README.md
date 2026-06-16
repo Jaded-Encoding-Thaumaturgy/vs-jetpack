@@ -25,20 +25,20 @@ Most of these plugins are now available as Python packages on PyPI and can be in
 
 Most extras are hierarchical. For example, `denoise` includes all plugins from `aa`, which in turn includes `mask`, and so on.
 
-| Extra             | Purpose              | Included Plugins / Packages                                              |
-| :---------------- | :------------------- | :----------------------------------------------------------------------- |
-| **`source`**      | Clip Indexing        | `bestsource`, `ffms2`, `d2vsource`, `dvdsrc2`                            |
-| **`kernels`**     | Resizing             | `resize2`, `descale`, `vs-placebo`                                       |
-| **`rg`**          | Repair & Smoothing   | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                 |
-| **`mask`**        | Masking              | `adaptivegrain`, `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`) |
-| **`aa`**          | Anti-aliasing        | `bwdif`, `eedi3`, `sangnom`, `sneedif`, `znedi3` (+ `mask`)              |
-| **`denoise`**     | Denoising            | `bm3d`, `dfttest2`, `deblock`, `mvtools`, `nlm-ispc`, `wnnm` (+ `aa`)    |
-| **`deband`**      | Debanding            | `vsnoise` (+ `denoise`)                                                  |
-| **`deinterlace`** | Deinterlacing        | `dmetrics`, `vivtc` (+ `denoise`)                                        |
-| **`full`**        | All CPU-based extras | All of the above                                                         |
-| **`cl`**          | Open CL              | `knlmeanscl`,                                                            |
-| **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `nlm-cuda`, `dfttest2-[nvrtc,cuda]`          |
-| **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]` (+ `cl`)                           |
+| Extra             | Purpose              | Included Plugins / Packages                                                              |
+| :---------------- | :------------------- | :--------------------------------------------------------------------------------------- |
+| **`source`**      | Clip Indexing        | `bestsource`, `ffms2`, `lsmas`, `d2vsource`, `dvdsrc2`                                   |
+| **`kernels`**     | Resizing             | `resize2`, `descale`, `vs-placebo`                                                       |
+| **`rg`**          | Repair & Smoothing   | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                                 |
+| **`mask`**        | Masking              | `adaptivegrain`, `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)                 |
+| **`aa`**          | Anti-aliasing        | `bwdif`, `eedi3`, `sangnom`, `sneedif`, `znedi3` (+ `mask`)                              |
+| **`denoise`**     | Denoising            | `bm3d`, `dfttest2`, `deblock`, `mvtools`, `nlm-ispc`, `wnnm` (+ `aa`)                    |
+| **`deband`**      | Debanding            | `vsnoise` (+ `denoise`)                                                                  |
+| **`deinterlace`** | Deinterlacing        | `dmetrics`, `vivtc` (+ `denoise`)                                                        |
+| **`full`**        | All CPU-based extras | All of the above                                                                         |
+| **`cl`**          | Open CL              | `knlmeanscl`, `ort`, `ncnn`                                                              |
+| **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `nlm-cuda`, `dfttest2-[nvrtc,cuda]`, `ort-cuda`, `trt{-rtx}` |
+| **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]`, `nlm-hip` (+ `cl`)                                |
 
 > [!IMPORTANT]
 > Some plugins distribute their wheels through our custom package index instead of PyPI.
@@ -46,7 +46,25 @@ Most extras are hierarchical. For example, `denoise` includes all plugins from `
 > Add `--extra-index-url` to ensure pip can locate all required packages:
 >
 > ```bash
-> pip install vsjetpack[full,nvidia] --extra-index-url https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple
+> pip install vsjetpack[full] --extra-index-url https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple
+> ```
+>
+> When downloading the `nvidia` extra, you can also add the NVIDIA index:
+>
+> #### Bash
+>
+> ```
+> pip install vsjetpack[full,nvidia] \
+>   --extra-index-url https://pypi.nvidia.com/ \
+>   --extra-index-url https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple
+> ```
+>
+> #### Powershell
+>
+> ```
+> pip install vsjetpack[full,nvidia] `
+>   --extra-index-url https://pypi.nvidia.com/ `
+>   --extra-index-url https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple
 > ```
 >
 > For more information, [click here](https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels).
