@@ -2592,6 +2592,18 @@ wheels = [
 ]
 
 [[package]]
+name = "vapoursynth-nlm-hip"
+version = "2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "vapoursynth" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/20/1272e4ea08c49707b56f5cfacd3a8a8003c828472bcbb197c8001a3ddbfc/vapoursynth_nlm_hip-2-py3-none-manylinux_2_39_x86_64.whl", hash = "sha256:733c83446144aad82496c3f5a221ac6865634f10d4edf672b98284725f36ae07", size = 15147884, upload-time = "2026-06-15T22:28:54.274Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/8a/c868326e565701e762058e31f2d8c8fc9520e51c62e893a57b2542334ee4/vapoursynth_nlm_hip-2-py3-none-win_amd64.whl", hash = "sha256:d14da3bb684d51029b02ed7a48f41cd5e6bb9c9117b6b7b2d210318f0f70f1a4", size = 5851374, upload-time = "2026-06-15T22:28:57.001Z" },
+]
+
+[[package]]
 name = "vapoursynth-nlm-ispc"
 version = "3"
 source = { registry = "https://pypi.org/simple" }
@@ -2833,6 +2845,7 @@ amd = [
     { name = "vapoursynth-mlrt-migx", marker = "sys_platform == 'linux'" },
     { name = "vapoursynth-mlrt-ncnn" },
     { name = "vapoursynth-mlrt-ort" },
+    { name = "vapoursynth-nlm-hip" },
 ]
 cl = [
     { name = "vapoursynth-knlmeanscl" },
@@ -3417,6 +3430,7 @@ requires-dist = [
     { name = "vapoursynth-mvtools", marker = "extra == 'denoise'", specifier = ">=26" },
     { name = "vapoursynth-mvtools", marker = "extra == 'full'", specifier = ">=26" },
     { name = "vapoursynth-nlm-cuda", marker = "extra == 'nvidia'", specifier = ">=4" },
+    { name = "vapoursynth-nlm-hip", marker = "extra == 'amd'", specifier = ">=2" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'deband'", specifier = ">=3" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'dehalo'", specifier = ">=3" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'deinterlace'", specifier = ">=3" },
