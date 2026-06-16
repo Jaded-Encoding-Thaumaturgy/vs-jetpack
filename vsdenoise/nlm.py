@@ -41,7 +41,7 @@ class NLMeans[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Priority: "cuda" -> "accelerator" -> "gpu" -> "cpu" -> "ispc".
+        Priority: "cuda" -> "hip" -> "accelerator" -> "gpu" -> "cpu" -> "ispc".
         """
 
         ACCELERATOR = "accelerator"
@@ -66,7 +66,12 @@ class NLMeans[**P, R]:
 
         CUDA = "cuda"
         """
-        CUDA (GPU-based) implementation.
+        Nvidia CUDA (GPU-based) implementation.
+        """
+
+        HIP = "hip"
+        """
+        AMD HIP (GPU-based) implementation.
         """
 
         def NLMeans(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
@@ -88,6 +93,9 @@ class NLMeans[**P, R]:
             if self == NLMeans.Backend.CUDA:
                 return clip.nlm_cuda.NLMeans(*args, **kwargs)
 
+            if self == NLMeans.Backend.HIP:
+                return clip.nlm_hip.NLMeans(*args, **kwargs)
+
             if self in [NLMeans.Backend.ACCELERATOR, NLMeans.Backend.GPU, NLMeans.Backend.CPU]:
                 return clip.knlm.KNLMeansCL(*args, **kwargs | {"device_type": self.value})
 
@@ -98,6 +106,10 @@ class NLMeans[**P, R]:
             if hasattr(core, "nlm_cuda"):
                 logger.debug("%s: Auto selecting 'NLMeans.Backend.CUDA'", NLMeans.Backend.NLMeans)
                 return NLMeans.Backend.CUDA.NLMeans(clip, *args, **kwargs)
+
+            if hasattr(core, "nlm_hip"):
+                logger.debug("%s: Auto selecting 'NLMeans.Backend.HIP'", NLMeans.Backend.NLMeans)
+                return NLMeans.Backend.HIP.NLMeans(clip, *args, **kwargs)
 
             if hasattr(core, "knlm"):
                 logger.debug("%s: Auto selecting KNLMeansCL auto 'device_type'", NLMeans.Backend.NLMeans)
