@@ -810,13 +810,6 @@ def stack_planes(
     if clip.format.color_family is vs.GRAY:
         return clip
 
-    # std.PlaneStats and text.Text don't support fp16.
-    # Upconversion from fp16 to fp32.
-    if clip.format.sample_type is vs.FLOAT and (isinstance(offset_chroma, (str, float)) or write_plane_name):
-        clip, bits = expect_bits(clip, 32)
-    else:
-        bits = clip.format.bits_per_sample
-
     if clip.format.color_family is vs.YUV:
         if clip.format.sample_type is vs.FLOAT and shift_float_chroma:
             clip = core.std.Expr(clip, ["", "x 0.5 +"])
@@ -865,8 +858,7 @@ def stack_planes(
     if mode == "v":
         org = [org]
 
-    # If the source clip was fp16, this will be converted back to fp16 here.
-    stacked = depth(stack_clips(org), bits)
+    stacked = stack_clips(org)
 
     return core.std.RemoveFrameProps(stacked, Matrix.prop_key) if clip.format.color_family == vs.RGB else stacked
 

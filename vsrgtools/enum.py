@@ -80,15 +80,13 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
 
         expr_kwargs = expr_kwargs or {}
 
-        fp16 = clip[0].format.sample_type == vs.FLOAT and clip[0].format.bits_per_sample == 16
-
         # Spatial mode
         if self.mode.is_spatial:
             if len(clip) > 1:
                 raise CustomValueError("You can't pass multiple clips when using a spatial mode.", func)
 
             # TODO: https://github.com/vapoursynth/vapoursynth/issues/1101
-            if all([not fp16, len(self) <= 25, all(-1023 <= x <= 1023 for x in self), self.mode != ConvMode.SQUARE]):
+            if all([len(self) <= 25, all(-1023 <= x <= 1023 for x in self), self.mode != ConvMode.SQUARE]):
                 return iterate(clip[0], core.std.Convolution, passes, self, bias, divisor, planes, saturate, self.mode)
 
             return iterate(
@@ -103,7 +101,6 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
         # Temporal mode
         use_std = all(
             [
-                not fp16,
                 len(self) <= 31,
                 all(-1023 <= x <= 1023 for x in self),
                 not bias,
