@@ -5,7 +5,7 @@ from jetpytools import clamp, normalize_seq
 from ..enums import Range, RangeLike
 from ..types import HoldsVideoFormat, VideoFormatLike
 from ..vs_proxy import vs
-from .info import get_depth, get_video_format
+from .info import get_color_family, get_depth, get_video_format
 
 __all__ = [
     "get_lowest_value",
@@ -28,7 +28,7 @@ def scale_value(
     range_out: RangeLike | None = None,
     scale_offsets: bool = True,
     chroma: bool = False,
-    family: vs.ColorFamily | None = None,
+    family: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily | None = None,
 ) -> float:
     """
     Converts the value to the specified bit depth, or bit depth of the clip/format specified.
@@ -52,6 +52,7 @@ def scale_value(
 
     in_fmt = get_video_format(input_depth)
     out_fmt = get_video_format(output_depth)
+    family = get_color_family(family) if family is not None else family
 
     if range_in is None:
         if isinstance(input_depth, (vs.VideoNode, vs.VideoFrame)):
@@ -165,7 +166,7 @@ def get_lowest_value(
     clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
     chroma: bool = False,
     range_in: RangeLike | None = None,
-    family: vs.ColorFamily | None = None,
+    family: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily | None = None,
 ) -> float:
     """
     Returns the lowest value for the specified bit depth, or bit depth of the clip/format specified.
@@ -181,6 +182,7 @@ def get_lowest_value(
     """
 
     fmt = get_video_format(clip_or_depth)
+    family = get_color_family(family) if family is not None else family
 
     if is_rgb := vs.RGB in (fmt.color_family, family):
         chroma = False
@@ -205,7 +207,7 @@ def get_lowest_value(
 def get_lowest_values(
     clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
     range_in: RangeLike | None = None,
-    family: vs.ColorFamily | None = None,
+    family: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily | None = None,
     mask: bool = False,
 ) -> list[float]:
     """
@@ -256,7 +258,7 @@ def get_peak_value(
     clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
     chroma: bool = False,
     range_in: RangeLike | None = None,
-    family: vs.ColorFamily | None = None,
+    family: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily | None = None,
 ) -> float:
     """
     Returns the peak value for the specified bit depth, or bit depth of the clip/format specified.
@@ -272,6 +274,7 @@ def get_peak_value(
     """
 
     fmt = get_video_format(clip_or_depth)
+    family = get_color_family(family) if family is not None else family
 
     if is_rgb := vs.RGB in (fmt.color_family, family):
         chroma = False
@@ -296,7 +299,7 @@ def get_peak_value(
 def get_peak_values(
     clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
     range_in: RangeLike | None = None,
-    family: vs.ColorFamily | None = None,
+    family: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily | None = None,
     mask: bool = False,
 ) -> list[float]:
     """
