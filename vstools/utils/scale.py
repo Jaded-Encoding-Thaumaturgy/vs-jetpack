@@ -54,7 +54,7 @@ def scale_value(
     out_fmt = get_video_format(output_depth)
 
     if range_in is None:
-        if isinstance(input_depth, vs.VideoNode):
+        if isinstance(input_depth, (vs.VideoNode, vs.VideoFrame)):
             range_in = Range.from_video(input_depth, func=scale_value)
         elif vs.RGB in (in_fmt.color_family, family):
             range_in = Range.FULL
@@ -64,7 +64,7 @@ def scale_value(
         range_in = Range.from_param(range_in, scale_value)
 
     if range_out is None:
-        if isinstance(output_depth, vs.VideoNode):
+        if isinstance(output_depth, (vs.VideoNode, vs.VideoFrame)):
             range_out = Range.from_video(output_depth, func=scale_value)
         elif vs.RGB in (out_fmt.color_family, family):
             range_out = Range.FULL
@@ -149,10 +149,10 @@ def scale_delta(
     """
 
     if isinstance(input_depth, vs.VideoNode) != isinstance(output_depth, vs.VideoNode):
-        if isinstance(input_depth, vs.VideoNode):
+        if isinstance(input_depth, (vs.VideoNode, vs.VideoFrame)):
             clip_range = Range.from_video(input_depth)
 
-        if isinstance(output_depth, vs.VideoNode):
+        if isinstance(output_depth, (vs.VideoNode, vs.VideoFrame)):
             clip_range = Range.from_video(output_depth)
 
         range_in = clip_range if range_in is None else range_in  # pyright: ignore[reportPossiblyUnboundVariable]
@@ -189,7 +189,7 @@ def get_lowest_value(
         return -0.5 if chroma else 0.0
 
     if range_in is None:
-        if isinstance(clip_or_depth, vs.VideoNode):
+        if isinstance(clip_or_depth, (vs.VideoNode, vs.VideoFrame)):
             range_in = Range.from_video(clip_or_depth, func=get_lowest_value)
         elif is_rgb:
             range_in = Range.FULL
@@ -280,7 +280,7 @@ def get_peak_value(
         return 0.5 if chroma else 1.0
 
     if range_in is None:
-        if isinstance(clip_or_depth, vs.VideoNode):
+        if isinstance(clip_or_depth, (vs.VideoNode, vs.VideoFrame)):
             range_in = Range.from_video(clip_or_depth, func=get_peak_value)
         elif is_rgb:
             range_in = Range.FULL
