@@ -517,7 +517,7 @@ def fine_dehalo2(
         if mask:
             dehaloed = dehaloed.std.MaskedMerge(fix, mask)
 
-    if darkstr != brightstr != 1.0:
+    if darkstr != 1.0 or brightstr != 1.0:
         dehaloed = norm_expr(
             [work_clip, dehaloed],
             "x x y - dup {brightstr} * dup1 {darkstr} * ? -",
