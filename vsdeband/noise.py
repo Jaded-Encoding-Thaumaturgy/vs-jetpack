@@ -444,6 +444,9 @@ class Grainer(AbstractGrainer, CustomEnum, metaclass=EnumABCMeta):
         ) -> vs.VideoNode:
             strength = normalize_param_planes(clip, strength, planes, 0)
 
+            if clip.format.num_planes == 1:
+                return core.noise.Add(clip, strength[0], type=self.value, constant=static, **kwds)
+
             if len(set(strength[1:])) != 1:
                 raise CustomValueError("Inconsistent grain values on chroma planes.", self.name, strength[1:])
 
