@@ -480,6 +480,8 @@ class BM3D[**P, R]:
 
                 if radius:
                     args.update(radius=radius)
+            else:
+                args.update(radius=radius)
 
             return args
 
@@ -733,13 +735,14 @@ def _bm3d_mawen(
 
     if not ref:
         b_args = profile.basic_args(radius_basic) | nbasic_args | kwargs
-        r = b_args["radius"]
+        r = b_args.get("radius", 0)
 
         if r > 0:
             basic = core.bm3d.VBasic(preclip, pre, profile, nsigma, matrix=100, **b_args).bm3d.VAggregate(
                 r, preclip.format.sample_type
             )
         else:
+            b_args.pop("radius", None)
             basic = core.bm3d.Basic(preclip, pre, profile, nsigma, matrix=100, **b_args)
     else:
         basic = ref
@@ -748,7 +751,7 @@ def _bm3d_mawen(
         final = basic
     else:
         f_args = profile.final_args(radius_final) | nfinal_args | kwargs
-        r = f_args["radius"]
+        r = f_args.get("radius", 0)
 
         final = basic
 
@@ -758,6 +761,7 @@ def _bm3d_mawen(
                     r, preclip.format.sample_type
                 )
             else:
+                f_args.pop("radius", None)
                 final = core.bm3d.Final(preclip, final, profile, nsigma, matrix=100, **f_args)
 
     if 0 in nsigma:
