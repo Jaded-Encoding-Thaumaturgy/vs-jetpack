@@ -13,7 +13,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, SupportsInt
 
-from jetpytools import CustomRuntimeError, CustomValueError, cachedproperty, classproperty, copy_signature, to_arr
+from jetpytools import CustomRuntimeError, CustomValueError, cachedproperty, copy_signature, to_arr
 
 if TYPE_CHECKING:
     import tensorrt
@@ -150,9 +150,8 @@ class TRT(Backend):
 
         return version  # type: ignore[return-value]
 
-    @classproperty.cached
-    @classmethod
-    def logger(cls) -> tensorrt.ILogger:
+    @property
+    def logger(self) -> tensorrt.ILogger:
         from ._trt import Logger
 
         return Logger(logger)
@@ -501,9 +500,8 @@ class TRT_RTX(TRT):  # noqa: N801
 
             raise ModuleNotFoundError("The 'tensorrt_rtx' dependency is not installed.") from None
 
-    @classproperty.cached
-    @classmethod
-    def logger(cls) -> tensorrt_rtx.ILogger:  # type: ignore[override]
+    @property
+    def logger(self) -> tensorrt_rtx.ILogger:  # type: ignore[override]
         from ._trt_rtx import Logger
 
         return Logger(logger)
