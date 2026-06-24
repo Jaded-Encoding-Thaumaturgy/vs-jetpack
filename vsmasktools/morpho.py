@@ -761,7 +761,7 @@ class Morpho:
             if multiply is not None:
                 e.append(multiply, ExprOp.MUL)
 
-            if clamp:
+            if clamp and clip.format.sample_type is vs.FLOAT:
                 e.append(ExprOp.clamp())
 
             nexpr[i] = e
