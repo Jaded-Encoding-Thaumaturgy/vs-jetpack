@@ -488,10 +488,9 @@ class MVTools(VSObject):
                 see [SADMode][vsdenoise.SADMode].
             scale_lambda: Whether to scale lambda_ value according to truemotion's default value formula.
         """
-
-        super_clip = self.super(fallback(super, self.search_clip), levels=1)
-
         vectors = fallback(vectors, self.vectors)
+
+        super_clip = self.super(fallback(super, self.search_clip), vectors=vectors, levels=1)
 
         blksize, blksizev = normalize_seq(blksize, 2)
         overlap, overlapv = normalize_seq(overlap, 2)
@@ -628,9 +627,8 @@ class MVTools(VSObject):
         """
 
         clip = fallback(clip, self.clip)
-        super_clip = self.super(fallback(super, clip), levels=1)
-
         vectors = fallback(vectors, self.vectors)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
         vect_b, vect_f = vectors.get_vectors(direction, tr)
 
         thscd1, thscd2 = normalize_thscd(thscd)
@@ -760,9 +758,8 @@ class MVTools(VSObject):
         """
 
         clip = fallback(clip, self.clip)
-        super_clip = self.super(fallback(super, clip), levels=1)
-
         vectors = fallback(vectors, self.vectors)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
         vect_b, vect_f = vectors.get_vectors(direction, tr)
 
         thscd1, thscd2 = normalize_thscd(thscd)
@@ -833,9 +830,8 @@ class MVTools(VSObject):
         """
 
         clip = fallback(clip, self.clip)
-        super_clip = self.super(fallback(super, clip), levels=1)
-
         vectors = fallback(vectors, self.vectors)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
         tr = fallback(tr, vectors.tr)
         vect_b, vect_f = vectors.get_vectors(tr=tr)
 
@@ -903,10 +899,9 @@ class MVTools(VSObject):
             List of the motion interpolated frames if interleave=False else a motion interpolated clip.
         """
         clip = fallback(clip, self.clip)
-
-        super_clip = self.super(fallback(super, clip), levels=1)
-
         vectors = fallback(vectors, self.vectors)
+
+        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
@@ -961,9 +956,8 @@ class MVTools(VSObject):
         """
 
         clip = fallback(clip, self.clip)
-        super_clip = self.super(fallback(super, clip), levels=1)
-
         vectors = fallback(vectors, self.vectors)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
@@ -1017,9 +1011,8 @@ class MVTools(VSObject):
         """
 
         clip = fallback(clip, self.clip)
-        super_clip = self.super(fallback(super, clip), levels=1)
-
         vectors = fallback(vectors, self.vectors)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
@@ -1066,9 +1059,8 @@ class MVTools(VSObject):
         """
 
         clip = fallback(clip, self.clip)
-        super_clip = self.super(fallback(super, clip), levels=1)
-
         vectors = fallback(vectors, self.vectors)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
