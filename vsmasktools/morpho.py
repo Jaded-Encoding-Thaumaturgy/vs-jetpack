@@ -884,11 +884,13 @@ class Morpho:
             else:
                 expr = ExprOp.matrix("x", radius, conv_mode, exclude=[(0, 0)])
 
+            if thr is not None:
+                thr = scale_delta(thr, 32, clip)
+
             for e in expr:
                 e.append(ExprOp.ADD * e.mlength, len(e), ExprOp.DIV, "x", ExprOp.MAX if inflate else ExprOp.MIN)
 
                 if thr is not None:
-                    thr = scale_delta(thr, 32, clip)
                     limit = ["x", thr, ExprOp.ADD, ExprOp.MIN] if inflate else ["x", thr, ExprOp.SUB, ExprOp.MAX]
                     e.append(limit)
 
