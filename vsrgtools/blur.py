@@ -340,7 +340,7 @@ def sbr(
     func = func or sbr
 
     if isinstance(radius, Sequence):
-        return normalize_radius(clip, min_blur, list(radius), planes)
+        return normalize_radius(clip, sbr, list(radius), planes)
 
     def _apply_blur(
         clip: vs.VideoNode, blur: BlurMatrix | Sequence[float] | vs.VideoNode | VSFunctionNoArgs
