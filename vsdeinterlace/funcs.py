@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from functools import partial
-from typing import Any, Literal, overload
+from typing import Literal, overload
 
 from jetpytools import CustomEnum, CustomStrEnum, CustomValueError
 
@@ -51,7 +51,7 @@ class InterpolateOverlay(CustomEnum):
         clip: vs.VideoNode,
         pattern: int,
         vectors: MotionVectors | None = None,
-        preset: Mapping[str, Any] = ...,
+        preset: MVToolsPreset = ...,
         blksize: int | tuple[int, int] = 8,
         overlap: int | tuple[int, int] = 2,
         refine: int = 1,
@@ -65,7 +65,7 @@ class InterpolateOverlay(CustomEnum):
         clip: vs.VideoNode,
         pattern: int,
         vectors: MotionVectors | None = None,
-        preset: Mapping[str, Any] = ...,
+        preset: MVToolsPreset = ...,
         blksize: int | tuple[int, int] = 8,
         overlap: int | tuple[int, int] = 2,
         refine: int = 1,
@@ -80,7 +80,7 @@ class InterpolateOverlay(CustomEnum):
         clip: vs.VideoNode,
         pattern: int,
         vectors: MotionVectors | None = None,
-        preset: Mapping[str, Any] = ...,
+        preset: MVToolsPreset = ...,
         blksize: int | tuple[int, int] = 8,
         overlap: int | tuple[int, int] = 2,
         refine: int = 1,
@@ -93,7 +93,7 @@ class InterpolateOverlay(CustomEnum):
         clip: vs.VideoNode,
         pattern: int,
         vectors: MotionVectors | None = None,
-        preset: Mapping[str, Any] = MVToolsPreset.HQ_COHERENCE,
+        preset: MVToolsPreset = MVToolsPreset.HQ_COHERENCE,
         blksize: int | tuple[int, int] = 8,
         overlap: int | tuple[int, int] = 2,
         refine: int = 1,

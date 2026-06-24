@@ -1,4 +1,4 @@
-from collections.abc import Generator, Iterable, Mapping
+from collections.abc import Generator, Iterable
 from contextlib import contextmanager, suppress
 from copy import deepcopy
 from math import factorial
@@ -416,7 +416,7 @@ class QTempGaussMC(VSObject):
         self,
         *,
         force_tr: int = 0,
-        preset: Mapping[str, Any] = MVToolsPreset.HQ_SAD,
+        preset: MVToolsPreset = MVToolsPreset.HQ_SAD,
         blksize: int | tuple[int, int] = 16,
         overlap: int | tuple[int, int] = 2,
         refine: int = 1,
