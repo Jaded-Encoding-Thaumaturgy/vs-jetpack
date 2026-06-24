@@ -555,7 +555,7 @@ class Morpho:
     @inject_self
     def black_hat(self, *args: Any, **kwargs: Any) -> vs.VideoNode:
         """Alias for [bottom_hat][vsmasktools.Morpho.bottom_hat]."""
-        return self.top_hat(*args, **{"func": self.black_hat} | kwargs)
+        return self.bottom_hat(*args, **{"func": self.black_hat} | kwargs)
 
     @inject_self
     def outer_hat(
