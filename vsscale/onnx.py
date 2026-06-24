@@ -897,7 +897,7 @@ class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
         clip = padder.MIRROR(clip, *padding)
         strength = padder.MIRROR(strength, *padding)
 
-        return self.backend.inference([clip, strength], self.model, overlaps, tilesize, **kwargs).std.Crop(*padding)
+        return self.backend.inference([clip, strength], model, overlaps, tilesize, **kwargs).std.Crop(*padding)
 
 
 class DPIR(BaseDPIR):
