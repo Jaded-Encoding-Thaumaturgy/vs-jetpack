@@ -156,7 +156,7 @@ class dpir(CustomStrEnum):  # noqa: N801
             out = dpired
 
         if planes != normalize_planes(clip, None):
-            out = join({None: clip, tuple(planes): dpired}, clip.format.color_family, prop_src=clip)
+            out = join({None: clip, tuple(planes): out}, clip.format.color_family, prop_src=clip)
 
         return out
 
