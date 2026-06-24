@@ -5,7 +5,7 @@ This module defines the base abstract interfaces for general scaling operations.
 from __future__ import annotations
 
 from collections.abc import Callable
-from functools import cache, wraps
+from functools import wraps
 from inspect import isabstract
 from logging import getLogger
 from math import ceil
@@ -146,7 +146,6 @@ def _base_ensure_obj[BaseScalerT: BaseScaler](
     return cls.from_param(value, func_except)()
 
 
-@cache
 def _is_base_scaler_abstract(cls: type[BaseScaler]) -> bool:
     return cls in abstract_kernels or not hasattr(cls, "kernel_radius") or isabstract(cls)
 

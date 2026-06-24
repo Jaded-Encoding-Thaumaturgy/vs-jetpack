@@ -750,10 +750,11 @@ class ClipVar(VSObjectABC, ExprVar):
         return op.rel_pix(self.char, *index)
 
     @property
-    @cache
     def props(self) -> ClipVarProps:
         """A helper to access frame properties."""
-        return ClipVarProps(self)
+        if not hasattr(self, "_props"):
+            self._props = ClipVarProps(self)
+        return self._props
 
     @property
     def char(self) -> str:
