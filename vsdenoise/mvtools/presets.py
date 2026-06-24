@@ -152,7 +152,6 @@ class ScDetectionArgs(TypedDict, total=False):
 
 class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     search_clip: vs.VideoNode | VSFunctionNoArgs
-    tr: int
     pel: int
     pad: int | tuple[int | None, int | None]
     chroma: bool
@@ -173,7 +172,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
         self,
         *,
         search_clip: vs.VideoNode | VSFunctionNoArgs | None = None,
-        tr: int | None = None,
         pel: int | None = None,
         pad: int | tuple[int | None, int | None] | None = None,
         chroma: bool | None = None,
@@ -192,7 +190,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     ) -> None:
         self._dict = KwargsNotNone(
             search_clip=search_clip,
-            tr=tr,
             pel=pel,
             pad=pad,
             chroma=chroma,
