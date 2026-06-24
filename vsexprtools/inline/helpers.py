@@ -145,13 +145,13 @@ class Operators(metaclass=SingletonMeta):
         """Performs x == y."""
         return ComputedVar([x, y, ExprOp.EQ])
 
-    def gte(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
+    def ge(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
         """Performs x >= y."""
-        return ComputedVar([x, y, ExprOp.GTE])
+        return ComputedVar([x, y, ExprOp.GE])
 
-    def lte(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
+    def le(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
         """Performs x <= y."""
-        return ComputedVar([x, y, ExprOp.LTE])
+        return ComputedVar([x, y, ExprOp.LE])
 
     def and_(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
         """Performs a logical AND."""
@@ -403,14 +403,14 @@ class ExprVar(ABC):
     def __lt__(self, other: ExprVarLike) -> ComputedVar:
         return op.lt(self, other)
 
-    def __lte__(self, other: ExprVarLike) -> ComputedVar:
-        return op.lte(self, other)
+    def __le__(self, other: ExprVarLike) -> ComputedVar:
+        return op.le(self, other)
 
     def __gt__(self, other: ExprVarLike) -> ComputedVar:
         return op.gt(self, other)
 
-    def __gte__(self, other: ExprVarLike) -> ComputedVar:
-        return op.gte(self, other)
+    def __ge__(self, other: ExprVarLike) -> ComputedVar:
+        return op.ge(self, other)
 
     def __bool__(self) -> bool:
         raise NotImplementedError

@@ -531,10 +531,10 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     EQ = "=", 2
     """Equality (x == y)."""
 
-    GTE = ">=", 2
+    GE = ">=", 2
     """Greater than or equal."""
 
-    LTE = "<=", 2
+    LE = "<=", 2
     """Less than or equal."""
 
     AND = "and", 2
