@@ -454,17 +454,14 @@ class Morpho:
             r, conv_mode = radius, ConvMode.SQUARE
 
         if iterations == 1 and conv_mode is not ConvMode.HV:
+            morpho_func = partial(self._morpho_xx_imum, clip, (r, conv_mode), thr, coords, None, True, func=func)
             return norm_expr(
                 clip,
                 "{dilated} {eroded} - {multiply}",
                 planes,
                 func=func,
-                dilated=self._morpho_xx_imum(
-                    clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MAX, func=func
-                )[0].to_str(),
-                eroded=self._morpho_xx_imum(
-                    clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MIN, func=func
-                )[0].to_str(),
+                dilated=morpho_func(op=ExprOp.MAX)[0].to_str(),
+                eroded=morpho_func(op=ExprOp.MIN)[0].to_str(),
                 multiply="" if multiply is None else f"{multiply} *",
             )
 
@@ -600,7 +597,14 @@ class Morpho:
                 "{dilated} {multiply} x -",
                 planes,
                 dilated=self._morpho_xx_imum(
-                    clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MAX, func=func
+                    clip,
+                    (r, conv_mode),
+                    thr,
+                    coords,
+                    None,
+                    True,
+                    op=ExprOp.MAX,
+                    func=func,
                 )[0].to_str(),
                 multiply="" if multiply is None else f"{multiply} *",
             )
@@ -652,7 +656,14 @@ class Morpho:
                 "x {eroded} {multiply} -",
                 planes,
                 eroded=self._morpho_xx_imum(
-                    clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MIN, func=func
+                    clip,
+                    (r, conv_mode),
+                    thr,
+                    coords,
+                    None,
+                    True,
+                    op=ExprOp.MIN,
+                    func=func,
                 )[0].to_str(),
                 multiply="" if multiply is None else f"{multiply} *",
             )
