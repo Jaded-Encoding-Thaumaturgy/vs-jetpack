@@ -21,7 +21,7 @@ jobs:
       PROD: true
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v8.2.0
@@ -33,7 +33,7 @@ jobs:
         run: uv sync --group doc --no-dev
 
       - name: Restore build cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           key: mkdocs-material-${{ hashfiles('.cache/**') }}
           path: .cache
@@ -48,7 +48,7 @@ jobs:
           path: site
 
       - name: Save build cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           key: mkdocs-material-${{ hashfiles('.cache/**') }}
           path: .cache
