@@ -691,10 +691,12 @@ def guided_filter(
             for w, h in [get_plane_sizes(clip, i) for i in range(clip.format.num_planes)]
         ]
 
-    p = g = clip
-    if guidance is not None:
+    p = clip
+    if guidance:
         check_ref_clip(guidance, clip)
         guidance_clip = g = guidance
+    else:
+        guidance_clip = g = clip
 
     radius = normalize_seq(radius, clip.format.num_planes)
 
