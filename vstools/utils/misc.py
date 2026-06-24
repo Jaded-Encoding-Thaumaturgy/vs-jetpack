@@ -59,7 +59,7 @@ def change_fps(clip: vs.VideoNode, fps: Fraction) -> vs.VideoNode:
 
     new_fps_clip = clip.std.BlankClip(length=floor(clip.num_frames * factor), fpsnum=dest_num, fpsden=dest_den)
 
-    return new_fps_clip.std.FrameEval(lambda n: clip[round(n / factor)])
+    return new_fps_clip.std.FrameEval(lambda n: clip[min(round(n / factor), clip.num_frames - 1)])
 
 
 def match_clip(
