@@ -95,7 +95,7 @@ class VideoPackets(list[int]):
         if not which("ffprobe"):
             raise DependencyNotFoundError(func, "ffprobe", "Could not find {package}! Make sure it's in your PATH!")
 
-        proc = Popen(
+        with Popen(
             [
                 "ffprobe",
                 "-hide_banner",
@@ -112,17 +112,21 @@ class VideoPackets(list[int]):
                 src_file.to_str(),
             ],
             stdout=PIPE,
-        )
+        ) as proc:
+            with NamedTemporaryFile("a+", delete=False) as tempfile:
+                assert proc.stdout
 
-        with NamedTemporaryFile("a+", delete=False) as tempfile:
-            assert proc.stdout
+                for line in TextIOWrapper(proc.stdout, "utf-8"):
+                    tempfile.write(line)
 
-            for line in TextIOWrapper(proc.stdout, "utf-8"):
-                tempfile.write(line)
+                tempfile.flush()
 
-            tempfile.flush()
+            proc.wait()
 
         try:
+            if proc.returncode != 0:
+                raise CustomValueError("ffprobe failed to run successfully!", func)
+
             with open(tempfile.name) as f:
                 data = dict(json_load(f))
         finally:
