@@ -444,7 +444,7 @@ class padder:
     ) -> tuple[tuple[int, int, int, int], tuple[int, int, int, int]]:
         sizes, crop_scale = cls._get_sizes_crop_scale(sizes, crop_scale)
         padding = cls.mod_padding(sizes, mod, min, align)
-        return padding, tuple(x * crop_scale[0 if i < 2 else 1] for x, i in enumerate(padding))  # type: ignore
+        return padding, tuple(int(pad * crop_scale[0 if i < 2 else 1]) for i, pad in enumerate(padding))  # type: ignore[return-value]
 
 
 @deprecated(
