@@ -389,8 +389,11 @@ class MVTools(VSObject):
         blksize, blksizev = normalize_seq(blksize, 2)
         overlap, overlapv = normalize_seq(overlap, 2)
 
-        if scale_lambda and lambda_ and blksize:
-            lambda_ = lambda_ * blksize * fallback(blksizev, blksize) // 64
+        eff_blksize = fallback(blksize, self.analyze_args.get("blksize"), default=None)
+        eff_blksizev = fallback(blksizev, self.analyze_args.get("blksizev"), default=None)
+
+        if scale_lambda and lambda_ and eff_blksize:
+            lambda_ = lambda_ * eff_blksize * fallback(eff_blksizev, eff_blksize) // 64
 
         analyze_args = self.analyze_args | KwargsNotNone(
             blksize=blksize,
@@ -495,8 +498,11 @@ class MVTools(VSObject):
         blksize, blksizev = normalize_seq(blksize, 2)
         overlap, overlapv = normalize_seq(overlap, 2)
 
-        if scale_lambda and lambda_ and blksize:
-            lambda_ = lambda_ * blksize * fallback(blksizev, blksize) // 64
+        eff_blksize = fallback(blksize, self.recalculate_args.get("blksize"), default=None)
+        eff_blksizev = fallback(blksizev, self.recalculate_args.get("blksizev"), default=None)
+
+        if scale_lambda and lambda_ and eff_blksize:
+            lambda_ = lambda_ * eff_blksize * fallback(eff_blksizev, eff_blksize) // 64
 
         recalculate_args = self.recalculate_args | KwargsNotNone(
             thsad=thsad,
