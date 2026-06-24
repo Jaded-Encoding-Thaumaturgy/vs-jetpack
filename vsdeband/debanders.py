@@ -272,8 +272,8 @@ def f3k_deband(
         sample_mode.kwargs
         | {
             "random_algo_ref": random_ref,
-            "random_algo_grain": random_ref.sigma,
-            "random_param_ref": random_grain,
+            "random_algo_grain": random_grain,
+            "random_param_ref": random_ref.sigma,
             "random_param_grain": random_grain.sigma,
         }
         | kwargs
