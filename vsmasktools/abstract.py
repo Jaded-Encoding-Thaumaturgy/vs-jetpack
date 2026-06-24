@@ -129,7 +129,7 @@ class DeferredMask(GeneralMask):
                 if rf is None:
                     rf = ref.num_frames - 1
                 elif rf < 0:
-                    rf = ref.num_frames - 1 + rf
+                    rf = ref.num_frames + rf
 
                 mask = depth(self._mask(clip[rf], ref[rf], **kwargs), clip, range_out=Range.FULL, range_in=Range.FULL)
                 mask = vs.core.std.Loop(mask, hm.num_frames)
