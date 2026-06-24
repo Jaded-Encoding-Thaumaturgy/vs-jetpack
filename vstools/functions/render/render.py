@@ -370,7 +370,7 @@ def find_prop(
     op: str | Callable[[float, float], bool] | None,
     ref: float | bool,
     range_length: int = 0,
-    async_requests: int = 1,
+    async_requests: int | Literal[False] = False,
 ) -> list[int] | list[tuple[int, int]]:
     """
     Find specific frame props in the clip and return a list of frame ranges that meets the conditions.
@@ -389,8 +389,7 @@ def find_prop(
         ref: Value to be compared with prop.
         range_length: Amount of frames to finish a sequence, to avoid false negatives. This will create ranges with a
             sequence of start-end tuples.
-        async_requests: Whether to render frames non-consecutively. If int, determines the number of requests. Default:
-            1.
+        async_requests: Whether to render frames non-consecutively.
 
     Returns:
         Frame ranges at the specified conditions.
@@ -398,8 +397,7 @@ def find_prop(
 
     prop_src, callback = prop_compare_cb(src, prop, op, ref, return_frame_n=True)
 
-    aconf = AsyncRenderConf(async_requests, False)
-
+    aconf = False if async_requests is False else AsyncRenderConf(async_requests, False)
     frames = clip_data_gather(prop_src, f"Searching {prop} {op} {ref}...", callback, aconf)
 
     if range_length > 0:
