@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from math import ceil, log
 from typing import Any
 
-from jetpytools import fallback, to_arr
+from jetpytools import CustomValueError, fallback, to_arr
 
 from vsaa import NNEDI3
 from vsdenoise import Prefilter, PrefilterLike, frequency_merge, nl_means
@@ -183,11 +183,13 @@ def vine_dehalo(
     supersampler = Scaler.ensure_obj(supersampler, func.func)
     downscaler = Scaler.ensure_obj(downscaler, func.func)
 
-    sharp = min(max(sharp, 0.0), 1.0)
+    if sharp <= 0.0:
+        raise CustomValueError("sharp must be > 0", func.func)
+
     s = kwargs.pop("s", None)
 
     # Only God knows how these were derived.
-    constants0 = 0.3926327792690057290863679493724 * sharp
+    constants0 = 0.3926327792690057290863679493724 * min(sharp, 1.0)
     constants1 = 18.880334973195822973214959957208
     constants2 = 0.5862453661304626725671053478676
 
