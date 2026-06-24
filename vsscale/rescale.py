@@ -375,7 +375,7 @@ class Rescale(RescaleBase):
         upscale = core.std.CopyFrameProps(core.std.MaskedMerge(self._clipy, upscale, merged_mask), upscale)
 
         if self._crop > (0, 0, 0, 0):
-            pre_y = get_y(self._pre)
+            pre_y = get_y(depth(self._pre, 32))
 
             mask = region_rel_mask(
                 pre_y.std.BlankClip(length=1, keep=True),
