@@ -862,11 +862,11 @@ class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
         strength_fmt = clip.format.replace(color_family=vs.GRAY)
 
         if isinstance(self.strength, vs.VideoNode):
-            self.strength = norm_expr(self.strength, "x 255 /", format=strength_fmt, func=self.__class__)
+            strength = norm_expr(self.strength, "x 255 /", format=strength_fmt, func=self.__class__)
         else:
-            self.strength = clip.std.BlankClip(format=strength_fmt, color=float(self.strength) / 255, keep=True)
+            strength = clip.std.BlankClip(format=strength_fmt, color=float(self.strength) / 255, keep=True)
 
-        logger.debug("%s: Passing strength clip format: %r", self.inference, self.strength.format)
+        logger.debug("%s: Passing strength clip format: %r", self.inference, strength.format)
 
         # Get model name
         model_name = "drunet"
@@ -892,10 +892,10 @@ class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
         padding = padder.mod_padding(clip, self.multiple, 0)
 
         if not any(padding) or kwargs.pop("no_pad", False):
-            return self.backend.inference([clip, self.strength], model, overlaps, tilesize, **kwargs)
+            return self.backend.inference([clip, strength], model, overlaps, tilesize, **kwargs)
 
         clip = padder.MIRROR(clip, *padding)
-        strength = padder.MIRROR(self.strength, *padding)
+        strength = padder.MIRROR(strength, *padding)
 
         return self.backend.inference([clip, strength], self.model, overlaps, tilesize, **kwargs).std.Crop(*padding)
 
