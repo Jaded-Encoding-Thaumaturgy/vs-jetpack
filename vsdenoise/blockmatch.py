@@ -600,7 +600,7 @@ def bm3d(
     nfinal_args = fallback(final_args, {})
 
     matrix_rgb2opp = kwargs.pop("matrix_rgb2opp", BM3D.matrix_rgb2opp)
-    matrix_opp2rgb = kwargs.pop("matrix_rgb2opp", BM3D.matrix_opp2rgb)
+    matrix_opp2rgb = kwargs.pop("matrix_opp2rgb", BM3D.matrix_opp2rgb)
 
     plugins_args = dict[str, Any](
         nsigma=nsigma,
