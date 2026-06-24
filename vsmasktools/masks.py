@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from typing import SupportsFloat
 
-from jetpytools import FuncExcept, clamp, normalize_seq
+from jetpytools import CustomValueError, FuncExcept, normalize_seq
 
 from vsexprtools import ExprOp
 from vsrgtools import BlurMatrix, median_blur
@@ -184,6 +184,9 @@ def stabilize_mask(
     radius_blur = radius * 2 + 1
     blurred = kernel(radius_blur, mode=ConvMode.TEMPORAL)(median, planes, scenechange=True, func=func)
 
-    binarized = Morpho.binarize_mask(blurred, 1.0 / (radius_blur - clamp(brz, 0, radius_blur)), planes=planes)
+    if not 0 <= brz < radius_blur:
+        raise CustomValueError(f"brz must be between 0 and {radius_blur - 1}, got {brz}", func)
+
+    binarized = Morpho.binarize_mask(blurred, 1.0 / (radius_blur - brz), planes=planes)
 
     return binarized
