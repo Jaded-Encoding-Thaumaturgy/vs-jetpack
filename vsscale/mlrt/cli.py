@@ -166,7 +166,7 @@ def show(
     (cmd, *_), _, _ = app.parse_commands()
 
     match cmd:
-        case "provider":
+        case "onnx":
             folder = get_provider_folder(global_=global_)
             ext = [".onnx"]
         case "artifact":
@@ -198,7 +198,7 @@ def clear(
     (cmd, *_), _, _ = app.parse_commands()
 
     match cmd:
-        case "provider":
+        case "onnx":
             folder = get_provider_folder(global_=global_)
         case "artifact":
             folder = get_artifacts_folder(global_=global_)
