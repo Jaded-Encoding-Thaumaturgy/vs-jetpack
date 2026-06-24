@@ -14,7 +14,6 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, SupportsInt
 
 from jetpytools import CustomRuntimeError, CustomValueError, cachedproperty, classproperty, copy_signature, to_arr
-from packaging.version import Version
 
 if TYPE_CHECKING:
     import tensorrt
@@ -138,6 +137,8 @@ class TRT(Backend):
 
     @property
     def version(self) -> tuple[int, int, int]:
+        from packaging.version import Version
+
         v = int(self.plugin.Version()["tensorrt_version_build"])
         plugin_version = Version(f"{v // 10000}.{v // 100 % 100}.{v % 100}")
         bindings_version = Version(self.trt.__version__)

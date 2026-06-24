@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 
 from jetpytools import CustomRuntimeError, CustomValueError, copy_signature, to_arr
-from packaging.version import Version
 
 from vstools import UnsupportedSampleTypeError, core, depth, vs
 
@@ -80,6 +79,8 @@ class MIGX(BackendAutoConvertFloat):
 
     @property
     def version(self) -> tuple[int, int]:
+        from packaging.version import Version
+
         version_info = self.plugin.Version()
 
         v_run = int(version_info["hip_runtime_version"])

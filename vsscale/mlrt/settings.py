@@ -4,7 +4,6 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
-import platformdirs
 from jetpytools import FileNotExistsError
 
 from vstools import PackageStorage
@@ -33,6 +32,8 @@ def get_toml_config() -> dict[str, Any]:
 
 @cache
 def get_global_cache() -> Path:
+    import platformdirs
+
     return platformdirs.user_cache_path(APP_NAME, APP_AUTHOR)
 
 
