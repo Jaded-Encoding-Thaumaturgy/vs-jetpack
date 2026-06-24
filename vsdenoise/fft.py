@@ -35,6 +35,12 @@ logger = getLogger(__name__)
 class _BackendBase(CustomEnum):
     kwargs: dict[str, Any]
 
+    def __eq__(self, other: object) -> bool:
+        return self.name == other.name if isinstance(other, _BackendBase) else super().__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
     def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
         self = self.resolve()
 
@@ -842,7 +848,10 @@ class DFTTest:
             Returns:
                 The configured backend with applied parameters.
             """
-            new_enum = _BackendBase(self.__class__.__name__, DFTTest.Backend.__members__)  # type: ignore
+            new_enum = _BackendBase(  # type: ignore[call-arg]
+                self.__class__.__name__,
+                {name: member.value for name, member in DFTTest.Backend.__members__.items()},
+            )
             member = getattr(new_enum, self.name)
             member.kwargs = kwargs
             return member

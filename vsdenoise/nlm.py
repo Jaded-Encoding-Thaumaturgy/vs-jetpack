@@ -165,7 +165,10 @@ class NLMeans[**P, R]:
             Returns:
                 Config with weight mode and ref.
             """
-            new_enum = CustomIntEnum(self.__class__.__name__, NLMeans.WeightMode.__members__)  # type: ignore
+            new_enum = CustomIntEnum(  # type: ignore[call-overload]
+                self.__class__.__name__,
+                {name: member.value for name, member in NLMeans.WeightMode.__members__.items()},
+            )
             member = getattr(new_enum, self.name)
             member.wref = wref
             return member
