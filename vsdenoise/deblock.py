@@ -194,8 +194,10 @@ def deblock_qed(
     """
     planes_pp = 0 if chroma_mode else planes
 
+    orig_height = clip.height
+
     if interlaced:
-        clip = Point().scale(clip, height=clip.height * 2)
+        clip = Point().scale(clip, height=orig_height * 2)
 
     normal, strong = (
         clip.deblock.Deblock(quant[0], alpha[0], beta[0], planes),
@@ -221,7 +223,7 @@ def deblock_qed(
             deblocked = join(deblocked, strong)
 
     if interlaced:
-        deblocked = Box().scale(deblocked, height=clip.height)
+        deblocked = Box().scale(deblocked, height=orig_height)
 
     return deblocked
 
