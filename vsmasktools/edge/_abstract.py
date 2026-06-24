@@ -601,11 +601,17 @@ class RidgeDetect(MatrixEdgeDetect):
         planes: Planes = None,
         **kwargs: Any,
     ) -> vs.VideoNode:
+        modes = self._get_mode_types()
+
         def _x(c: vs.VideoNode) -> vs.VideoNode:
-            return c.std.Convolution(matrix=self._get_matrices()[0], divisor=self._get_divisors()[0], planes=planes)
+            return c.std.Convolution(
+                matrix=self._get_matrices()[0], divisor=self._get_divisors()[0], mode=modes[0], planes=planes
+            )
 
         def _y(c: vs.VideoNode) -> vs.VideoNode:
-            return c.std.Convolution(matrix=self._get_matrices()[1], divisor=self._get_divisors()[1], planes=planes)
+            return c.std.Convolution(
+                matrix=self._get_matrices()[1], divisor=self._get_divisors()[1], mode=modes[1], planes=planes
+            )
 
         return self._merge_ridge([_x(clip), _y(clip)], multi=multi, planes=planes, **kwargs)
 
@@ -617,9 +623,16 @@ class RidgeDetect(MatrixEdgeDetect):
         planes: Planes = None,
         **kwargs: Any,
     ) -> vs.VideoNode:
-        (xx,) = ExprOp.convolution("x", self._get_matrices()[0], divisor=self._get_divisors()[0], mode=ConvMode.SQUARE)
-        (yy,) = ExprOp.convolution("y", self._get_matrices()[1], divisor=self._get_divisors()[1], mode=ConvMode.SQUARE)
-        (xy,) = ExprOp.convolution("x", self._get_matrices()[1], divisor=self._get_divisors()[1], mode=ConvMode.SQUARE)
+        modes = self._get_mode_types()
+        (xx,) = ExprOp.convolution(
+            "x", self._get_matrices()[0], divisor=self._get_divisors()[0], mode=ConvMode(modes[0])
+        )
+        (yy,) = ExprOp.convolution(
+            "y", self._get_matrices()[1], divisor=self._get_divisors()[1], mode=ConvMode(modes[1])
+        )
+        (xy,) = ExprOp.convolution(
+            "x", self._get_matrices()[1], divisor=self._get_divisors()[1], mode=ConvMode(modes[1])
+        )
 
         expr = [
             xx,
