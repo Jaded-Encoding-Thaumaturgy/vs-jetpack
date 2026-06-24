@@ -66,7 +66,7 @@ class BorderHandling(CustomIntEnum):
         src_width = fallback(kwargs.get("src_width"), clip.width)
         src_height = fallback(kwargs.get("src_height"), clip.height)
 
-        shift = kwargs.pop("src_stop", shift[0]), kwargs.pop("src_left", shift[1])
+        shift = kwargs.pop("src_top", shift[0]), kwargs.pop("src_left", shift[1])
 
         left, right, top, bottom = self.pad_amount(
             clip,
@@ -205,7 +205,7 @@ class SampleGridModel(CustomIntEnum):
             src_width = src_width * (width - 1) / (src_width - 1)
             src_height = src_height * (height - 1) / (src_height - 1)
 
-            shift = kwargs.pop("src_stop", shift[0]), kwargs.pop("src_left", shift[1])
+            shift = kwargs.pop("src_top", shift[0]), kwargs.pop("src_left", shift[1])
 
             kwargs.update(src_width=src_width, src_height=src_height)
             shift_x, shift_y, *_ = tuple(
