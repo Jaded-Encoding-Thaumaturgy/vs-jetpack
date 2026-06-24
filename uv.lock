@@ -361,7 +361,7 @@ cufft = [
     { name = "vapoursynth-dfttest2-cuda" },
 ]
 gcc = [
-    { name = "vapoursynth-dfttest2-gcc" },
+    { name = "vapoursynth-dfttest2-gcc", marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64'" },
 ]
 hipfft = [
     { name = "vapoursynth-dfttest2-hip" },
@@ -2224,7 +2224,7 @@ name = "vapoursynth-dfttest2-gcc"
 version = "10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "vapoursynth" },
+    { name = "vapoursynth", marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/97/5b/ed0ddcd181c2a61ad2ad42f5a593f63e0bacf234ea0693bb24dde2ed7c71/vapoursynth_dfttest2_gcc-10.tar.gz", hash = "sha256:602a265b4cb818cab1370d682d742072a88dba45f45714fdfae76d3d9dc70e9b", size = 903218, upload-time = "2026-05-03T19:19:26.688Z" }
 wheels = [
@@ -2856,8 +2856,9 @@ deband = [
     { name = "anyio" },
     { name = "cyclopts" },
     { name = "device-smi" },
+    { name = "dfttest2" },
     { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
-    { name = "dfttest2", extra = ["gcc"] },
+    { name = "dfttest2", extra = ["gcc"], marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64'" },
     { name = "humanize" },
     { name = "niquests" },
     { name = "packaging" },
@@ -2898,8 +2899,9 @@ dehalo = [
     { name = "anyio" },
     { name = "cyclopts" },
     { name = "device-smi" },
+    { name = "dfttest2" },
     { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
-    { name = "dfttest2", extra = ["gcc"] },
+    { name = "dfttest2", extra = ["gcc"], marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64'" },
     { name = "humanize" },
     { name = "niquests" },
     { name = "packaging" },
@@ -2939,8 +2941,9 @@ deinterlace = [
     { name = "anyio" },
     { name = "cyclopts" },
     { name = "device-smi" },
+    { name = "dfttest2" },
     { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
-    { name = "dfttest2", extra = ["gcc"] },
+    { name = "dfttest2", extra = ["gcc"], marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64'" },
     { name = "humanize" },
     { name = "niquests" },
     { name = "packaging" },
@@ -2982,8 +2985,9 @@ denoise = [
     { name = "anyio" },
     { name = "cyclopts" },
     { name = "device-smi" },
+    { name = "dfttest2" },
     { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
-    { name = "dfttest2", extra = ["gcc"] },
+    { name = "dfttest2", extra = ["gcc"], marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64'" },
     { name = "humanize" },
     { name = "niquests" },
     { name = "packaging" },
@@ -3023,8 +3027,9 @@ full = [
     { name = "anyio" },
     { name = "cyclopts" },
     { name = "device-smi" },
+    { name = "dfttest2" },
     { name = "dfttest2", extra = ["cpu"], marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
-    { name = "dfttest2", extra = ["gcc"] },
+    { name = "dfttest2", extra = ["gcc"], marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64'" },
     { name = "humanize" },
     { name = "niquests" },
     { name = "packaging" },
@@ -3207,11 +3212,11 @@ requires-dist = [
     { name = "dfttest2", extras = ["cpu"], marker = "(platform_machine == 'AMD64' and extra == 'denoise') or (platform_machine == 'x86_64' and extra == 'denoise')", specifier = ">=10" },
     { name = "dfttest2", extras = ["cpu"], marker = "(platform_machine == 'AMD64' and extra == 'full') or (platform_machine == 'x86_64' and extra == 'full')", specifier = ">=10" },
     { name = "dfttest2", extras = ["cufft", "nvrtc"], marker = "extra == 'nvidia'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["gcc"], marker = "extra == 'deband'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["gcc"], marker = "extra == 'dehalo'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["gcc"], marker = "extra == 'deinterlace'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["gcc"], marker = "extra == 'denoise'", specifier = ">=10" },
-    { name = "dfttest2", extras = ["gcc"], marker = "extra == 'full'", specifier = ">=10" },
+    { name = "dfttest2", extras = ["gcc"], marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64' and extra == 'deband'", specifier = ">=10" },
+    { name = "dfttest2", extras = ["gcc"], marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64' and extra == 'dehalo'", specifier = ">=10" },
+    { name = "dfttest2", extras = ["gcc"], marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64' and extra == 'deinterlace'", specifier = ">=10" },
+    { name = "dfttest2", extras = ["gcc"], marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64' and extra == 'denoise'", specifier = ">=10" },
+    { name = "dfttest2", extras = ["gcc"], marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64' and extra == 'full'", specifier = ">=10" },
     { name = "dfttest2", extras = ["hipfft", "hiprtc"], marker = "extra == 'amd'", specifier = ">=10" },
     { name = "humanize", marker = "extra == 'aa'", specifier = ">=4.15.0" },
     { name = "humanize", marker = "extra == 'deband'", specifier = ">=4.15.0" },

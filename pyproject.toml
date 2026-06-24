@@ -124,7 +124,7 @@ denoise = [
     "vapoursynth-bm3d>=10.0",
     "vapoursynth-bm3dcpu>=2.16.4 ; (platform_machine == 'x86_64' or platform_machine == 'AMD64') and (platform_system == 'Linux' or platform_system == 'Windows')",
     "vapoursynth-bm3dmetal>=4.0.0 ; platform_system == 'Darwin'",
-    "dfttest2[gcc]>=10 ; platform_machine != 'x86_64' or platform_machine != 'AMD64'",
+    "dfttest2[gcc]>=10 ; platform_machine != 'x86_64' and platform_machine != 'AMD64'",
     "dfttest2[cpu]>=10 ; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
     "vapoursynth-deblock>=8.0",
     "vapoursynth-manipmv>=1.3.0",
