@@ -105,7 +105,7 @@ def descale_error_mask(
         error = bin2.hysteresis.Hysteresis(error)
 
     if exp3:
-        error = Morpho.expand(error, exp2, mode=XxpandMode.ELLIPSE, func=descale_error_mask)
+        error = Morpho.expand(error, exp3, mode=XxpandMode.ELLIPSE, func=descale_error_mask)
 
     if tr:
         avg = Morpho.binarize_mask(BlurMatrix.MEAN(tr, mode=ConvMode.TEMPORAL)(error), 0.5)
