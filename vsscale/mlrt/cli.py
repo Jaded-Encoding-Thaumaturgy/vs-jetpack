@@ -361,14 +361,10 @@ class _AssetDownloader:
     async def _download_asset(self, asset: Asset) -> None:
         dest_path = self.dest_folder / asset.name
 
-        if await dest_path.exists():
-            data = await dest_path.read_bytes()
-            hash_val = await anyio.to_thread.run_sync(lambda: hashlib.sha256(data).hexdigest())
-
-            if hash_val == asset.sha256:
-                self.progress.console.print(f"  [dim]⏭ {asset.name} (already downloaded)[/dim]")
-                self.skipped.add(asset)
-                return
+        if await dest_path.exists() and await self.calculate_sha256(dest_path) == asset.sha256:
+            self.progress.console.print(f"  [dim]⏭ {asset.name} (already downloaded)[/dim]")
+            self.skipped.add(asset)
+            return
 
         async with self.limiter, _delete_on_error(dest_path):
             task = self.progress.add_task("download", filename=asset.name, total=asset.size)
@@ -381,7 +377,18 @@ class _AssetDownloader:
                     await f.write(chunk)
                     self.progress.update(task, advance=len(chunk))
                 self.progress.update(task, visible=False)
+
+            if (computed_hash := await self.calculate_sha256(dest_path)) != asset.sha256:
+                raise ValueError(
+                    f"Integrity check failed for {asset.name}. Expected sha256: {asset.sha256}, got: {computed_hash}"
+                )
+
             self.downloaded.add(asset)
+
+    @staticmethod
+    async def calculate_sha256(path: anyio.Path) -> str:
+        data = await path.read_bytes()
+        return await anyio.to_thread.run_sync(lambda: hashlib.sha256(data).hexdigest())
 
 
 @asynccontextmanager
