@@ -48,7 +48,7 @@ def ringing_mask(
     edgemask = normalize_mask(credit_mask, plane(clip, 0), **kwargs)
     edgemask = limiter(edgemask, mask=True, func=ringing_mask)
 
-    light = norm_expr(edgemask, f"x {thlimi} - {thma - thmi} / mask_mask *", func=ringing_mask)
+    light = norm_expr(edgemask, f"x {thlimi} - {thma - thmi} / mask_max *", func=ringing_mask)
 
     shrink = Morpho.dilation(light, rad)
     shrink = Morpho.binarize_mask(shrink, brz)
