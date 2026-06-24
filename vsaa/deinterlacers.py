@@ -701,7 +701,7 @@ class EEDI3(SuperSampler):
         return core.lazy.eedi3m.EEDI3
 
     def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
-        return self._deinterlacer_function(clip, tff + double_rate * 2, dh, **kwargs)
+        return self._deinterlacer_function(clip, tff + double_rate * 2, dh, **self.get_deint_args(**kwargs))
 
 
 @dataclass
