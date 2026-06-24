@@ -10,7 +10,7 @@ from enum import IntFlag, auto
 from inspect import isabstract
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
-from jetpytools import FuncExcept, get_subclasses, inject_kwargs_params, inject_self, to_arr
+from jetpytools import CustomValueError, FuncExcept, get_subclasses, inject_kwargs_params, inject_self, to_arr
 
 from vsexprtools import ExprList, ExprOp, norm_expr
 from vstools import (
@@ -432,7 +432,15 @@ class MagnitudeMatrix(MatrixEdgeDetect):
         self.mag_directions = mag_directions
 
     def _get_matrices(self) -> Sequence[Sequence[float]]:
-        return [m for m in self.mag_directions.select_matrices(self.matrices) if m]
+        selected = [m for m in self.mag_directions.select_matrices(self.matrices) if m]
+
+        if not selected:
+            raise CustomValueError(
+                f"Requested direction(s) ({self.mag_directions!r}) resolve to no defined matrices.",
+                self.__class__,
+            )
+
+        return selected
 
 
 class MagnitudeEdgeMasks(EdgeMasksEdgeDetect, MagnitudeMatrix):
