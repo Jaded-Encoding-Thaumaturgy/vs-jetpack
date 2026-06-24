@@ -22,6 +22,7 @@ from vskernels import Point
 from vstools import (
     Planes,
     Range,
+    UnsupportedVideoFormatError,
     core,
     depth,
     join,
@@ -163,6 +164,8 @@ class BM3D[**P, R]:
 
     def __init__(self, bm3d_func: Callable[P, R]) -> None:
         self._func = bm3d_func
+        self.__name__ = bm3d_func.__name__
+        self.__wrapped__ = bm3d_func
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
@@ -654,6 +657,15 @@ def bm3d(
             if 0 in nsigma:
                 final = join({p: clip if s == 0 else final for p, s in zip(range(3), nsigma)}, vs.YUV)
             return final
+
+        # Raise format error if we are on OLD backend and it is subsampled YUV.
+        case BM3D.Backend.OLD, vs.YUV:
+            raise UnsupportedVideoFormatError(
+                func,
+                clip,
+                clip.format.replace(subsampling_w=0, subsampling_h=0),
+                "Subsampled YUV formats are not supported with BM3D.Backend.OLD.",
+            )
 
         # When input is RGB, BM3D CUDA and others need manual conversion to OPP.
         # Convert back to RGB after processing.
