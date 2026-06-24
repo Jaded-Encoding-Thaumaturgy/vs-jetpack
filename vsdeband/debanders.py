@@ -308,7 +308,7 @@ def placebo_deband(
     Debanding wrapper around the `placebo.Deband` filter from the VapourSynth `vs-placebo` plugin.
 
     For full plugin documentation, see:
-    <https://github.com/sgt0/vs-placebo?tab=readme-ov-file#deband>
+    <https://github.com/Lypheo/vs-placebo?tab=readme-ov-file#deband>
 
     Args:
         clip: Input clip.
