@@ -528,4 +528,13 @@ def fine_dehalo2(
 
     out = dehaloed if not chroma else join([dehaloed, *chroma])
 
-    return out if not attach_masks else out.std.SetFrameProps(FineDehalo2MaskV=mask_v, FineDehalo2MaskH=mask_h)
+    if attach_masks:
+        props = dict[str, vs.VideoNode]()
+        if mask_v is not None:
+            props["FineDehalo2MaskV"] = mask_v
+        if mask_h is not None:
+            props["FineDehalo2MaskH"] = mask_h
+        if props:
+            out = out.std.SetFrameProps(**props)
+
+    return out
