@@ -449,7 +449,7 @@ class ExprVar(ABC):
     def __str__(self) -> str: ...
 
     def __hash__(self) -> int:
-        return hash(self)
+        return hash(str(self))
 
     def __eq__(self, value: object) -> bool:
         return str(self) == str(value)
