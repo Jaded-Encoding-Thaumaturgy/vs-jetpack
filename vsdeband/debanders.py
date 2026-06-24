@@ -338,6 +338,15 @@ def placebo_deband(
         for p in planes:
             plane |= pow(2, p)
 
+        logger.debug(
+            "placebo.Deband params: plane=%d, iterations=%d, threshold=%f, radius=%f, grain=%f, %s",
+            plane,
+            iterations,
+            threshold,
+            radius,
+            grain_val,
+            kwargs,
+        )
         return clip.placebo.Deband(plane, iterations, threshold, radius, grain_val, **kwargs)
 
     set_grn = set(ngrain)
