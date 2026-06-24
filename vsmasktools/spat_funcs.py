@@ -185,16 +185,23 @@ def texture_mask(
     points: list[tuple[bool, float]] = [(False, 1.75), (True, 2.5), (True, 5), (False, 10)],
 ) -> vs.VideoNode:
     levels = [x for x, _ in points]
-    points_ = [scale_mask(x, 8, clip) for _, x in points]
+    points_ = [scale_value(x, 8, clip) for _, x in points]
     thr = scale_mask(thr, 8, 32)
 
+    for i in range(len(points_) - 1):
+        if points_[i + 1] <= points_[i]:
+            points_[i + 1] = points_[i] + 1e-4
     qm, peak = len(points), get_peak_value(clip)
 
     rmask = MinMax(rady, fallback(radc, rady)).edgemask(clip, lthr=0)
     emask = Prewitt.edgemask(clip)
 
     rm_txt = ExprOp.MIN(
-        rmask, (Morpho.minimum(Morpho.binarize_mask(emask, thr, 1.0, 0), iterations=it) for thr, it in stages)
+        rmask,
+        (
+            Morpho.minimum(Morpho.binarize_mask(emask, scale_mask(thr, 8, 32), 1.0, 0), iterations=it)
+            for thr, it in stages
+        ),
     )
 
     expr = [f"x {points_[0]} < x {points_[-1]} > or 0"]
