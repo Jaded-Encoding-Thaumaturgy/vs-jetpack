@@ -98,7 +98,7 @@ def strength_zones_mask(
         rng = normalize_ranges(base_clip, rng)
 
         for s, e in rng:
-            e += bool(not replace_ranges.exclusive)
+            e += not replace_ranges.exclusive
             indices[s:e] = [(i, n) for n in range(s, e)]
 
         if isinstance(strength, vs.VideoNode):
