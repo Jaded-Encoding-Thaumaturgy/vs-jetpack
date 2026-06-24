@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 from vsexprtools import norm_expr
 from vsrgtools import gauss_blur
-from vstools import Planes, core, join, normalize_param_planes, split, vs
+from vstools import Planes, core, normalize_param_planes, vs
 
 __all__ = ["f3k_deband", "mdb_bilateral", "pfdeband", "placebo_deband"]
 
@@ -308,7 +308,7 @@ def placebo_deband(
     Debanding wrapper around the `placebo.Deband` filter from the VapourSynth `vs-placebo` plugin.
 
     For full plugin documentation, see:
-    <https://github.com/sgt0/vs-placebo?tab=readme-ov-file#deband>
+    <https://github.com/Lypheo/vs-placebo?tab=readme-ov-file#deband>
 
     Args:
         clip: Input clip.
@@ -338,28 +338,32 @@ def placebo_deband(
         for p in planes:
             plane |= pow(2, p)
 
+        logger.debug(
+            "placebo.Deband params: plane=%d, iterations=%d, threshold=%f, radius=%f, grain=%f, %s",
+            plane,
+            iterations,
+            threshold,
+            radius,
+            grain_val,
+            kwargs,
+        )
         return clip.placebo.Deband(plane, iterations, threshold, radius, grain_val, **kwargs)
 
     set_grn = set(ngrain)
+    set_thr = set(thr)
 
-    if set_grn == {0} or clip.format.num_planes == 1:
-        debs = [_placebo(p, t, ngrain[0], [0]) for p, t in zip(split(clip), thr)]
+    if clip.format.num_planes == 1 or (len(set_thr) == 1 and len(set_grn) == 1):
+        return _placebo(clip, thr[0], ngrain[0], range(clip.format.num_planes))
 
-        if len(debs) == 1:
-            return debs[0]
-
-        return join(debs, clip.format.color_family)
-
-    plane_map = {tuple(i for i in range(clip.format.num_planes) if ngrain[i] == x): x for x in set_grn - {0}}
+    plane_map = {tuple(i for i in range(clip.format.num_planes) if ngrain[i] == x): x for x in set_grn}
 
     debanded = clip
-
     for planes, grain_val in plane_map.items():
         if len({thr[p] for p in planes}) == 1:
             debanded = _placebo(debanded, thr[planes[0]], grain_val, planes)
         else:
             for p in planes:
-                debanded = _placebo(debanded, thr[p], grain_val, planes)
+                debanded = _placebo(debanded, thr[p], grain_val, [p])
 
     return debanded
 
