@@ -540,8 +540,10 @@ class ComplexScaler(KeepArScaler, LinearScaler):
             sample_grid_model=sample_grid_model,
             sar=sar,
             keep_ar=keep_ar,
-            blur=blur,
         )
+
+        if blur is not None:
+            kwargs["blur"] = blur
 
         shift_top, shift_left = shift
 
