@@ -93,11 +93,10 @@ def _add_init_kwargs[BaseScalerT: BaseScaler, **P, R](
     def _wrapped(self: BaseScalerT, *args: P.args, **kwargs: P.kwargs) -> R:
         init_kwargs = {k: self.kwargs.pop(k) for k in self.kwargs.keys() & method.__annotations__.keys()}
 
-        returned = method(self, *args, **init_kwargs | kwargs)  # pyright: ignore[reportCallIssue]
-
-        self.kwargs |= init_kwargs
-
-        return returned
+        try:
+            return method(self, *args, **init_kwargs | kwargs)  # pyright: ignore[reportCallIssue]
+        finally:
+            self.kwargs |= init_kwargs
 
     setattr(_wrapped, "__has_init_kwargs__", True)
 
