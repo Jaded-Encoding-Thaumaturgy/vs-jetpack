@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import warnings
 from functools import cache
 from io import TextIOWrapper
-from itertools import pairwise
+from itertools import chain, pairwise
 from typing import Any, Self, TypedDict
-from warnings import warn
 
 from jetpytools import CustomValueError, DependencyNotFoundError, FileWasNotFoundError, FuncExcept, SPath, SPathLike
 
@@ -211,19 +211,17 @@ class VideoPackets(list[int]):
 
         stats = list[ScenePacketStats]()
 
-        try:
-            for start, end in pairwise(keyframes):
-                pkt_scenes = self[start:end]
+        scene_pairs = chain(pairwise(keyframes), [(keyframes[-1], len(self))])
 
-                stats.append(
-                    ScenePacketStats(
-                        PktSceneAvgSize=sum(pkt_scenes) / len(pkt_scenes),
-                        PktSceneMaxSize=max(pkt_scenes),
-                        PktSceneMinSize=min(pkt_scenes),
-                    )
+        for start, end in scene_pairs:
+            pkt_scenes = self[start:end]
+            stats.append(
+                ScenePacketStats(
+                    PktSceneAvgSize=sum(pkt_scenes) / len(pkt_scenes),
+                    PktSceneMaxSize=max(pkt_scenes),
+                    PktSceneMinSize=min(pkt_scenes),
                 )
-        except ValueError as e:
-            raise CustomValueError("Some kind of error occurred!", self.get_scenestats, str(e))
+            )
 
         return stats
 
@@ -246,7 +244,7 @@ class VideoPackets(list[int]):
 
         def _set_sizes_props(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
             if (pkt_size := self[n]) < 0:
-                warn(f"{func}: 'Frame {n} bitrate could not be determined!'", UserWarning)
+                warnings.warn(f"{func}: 'Frame {n} bitrate could not be determined!'", UserWarning)
 
             f = f.copy()
             f.props["PktSize"] = pkt_size
@@ -260,15 +258,15 @@ class VideoPackets(list[int]):
 
         def _set_scene_stats(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
             if (pkt_size := self[n]) < 0:
-                warn(f"{func}: 'Frame {n} bitrate could not be determined!'", UserWarning)
+                warnings.warn(f"{func}: 'Frame {n} bitrate could not be determined!'", UserWarning)
 
             f = f.copy()
             pkt: dict[str, Any] = {"PktSize": pkt_size}
 
             try:
                 stats = scenestats[keyframes.scenes.indices[n]]
-            except Exception:
-                warn(f"{func}: 'Could not find stats for a section... (Frame: {n})'")
+            except Exception as e:
+                warnings.warn(f"{func}: 'Could not find stats for a section... (Frame: {n})', error: {e}", UserWarning)
                 pkt = {"PktSize": -1, "PktSceneAvgSize": -1, "PktSceneMaxSize": -1, "PktSceneMinSize": -1}
             else:
                 pkt |= stats
