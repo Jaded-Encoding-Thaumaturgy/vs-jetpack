@@ -131,7 +131,9 @@ def _linearize(
     if sigmoid or linear:
         from ..util import LinearLight
 
-        fmt = obj.kwargs.pop("format", kwargs.pop("format", None))
+        fmt = kwargs.pop("format", None)
+        if fmt is None:
+            fmt = obj.kwargs.get("format")
 
         llargs = dict[str, Any](clip=clip, sigmoid=sigmoid, out_fmt=fmt)
 
