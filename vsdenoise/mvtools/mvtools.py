@@ -659,7 +659,7 @@ class MVTools(VSObject):
 
         comp_clips = [*comp_fwrd, clip, *comp_back]
         cycle = len(comp_clips)
-        offset = (cycle - 1) // 2
+        offset = len(comp_fwrd)
 
         interleaved = core.std.Interleave(comp_clips)
 
@@ -789,7 +789,7 @@ class MVTools(VSObject):
 
         flow_clips = [*flow_fwrd, clip, *flow_back]
         cycle = len(flow_clips)
-        offset = (cycle - 1) // 2
+        offset = len(flow_fwrd)
 
         interleaved = core.std.Interleave(flow_clips)
 
