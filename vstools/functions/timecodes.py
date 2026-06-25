@@ -390,6 +390,9 @@ class Keyframes(list[int]):
     ) -> None:
         func = func or self.to_file
 
+        if not self:
+            raise CustomValueError("Keyframes must be non-empty", func)
+
         out_path = Path(out).resolve()
 
         if out_path.exists():
@@ -416,7 +419,7 @@ class Keyframes(list[int]):
                 if header:
                     out_text.extend(["# XviD 2pass stat file", ""])
 
-                for i in range(max(self)):
+                for i in range(max(self) + 1):
                     if i in lut_self:
                         out_text.append("i")
                         lut_self.remove(i)
