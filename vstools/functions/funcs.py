@@ -173,7 +173,7 @@ class FunctionUtil(VSObject, list[int]):
                 format=clip.format.replace(color_family=vs.RGB, subsampling_h=0, subsampling_w=0),
                 matrix_in=self._matrix,
                 chromaloc_in=self._chromaloc,
-                range_in=self._range_in.value_zimg if self._range_in is not None else None,
+                range_in=self._range_in if self._range_in is not None else None,
             )
 
             InvalidColorspacePathError.check(self.func, clip)
