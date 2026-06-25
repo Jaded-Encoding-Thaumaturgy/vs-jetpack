@@ -453,7 +453,7 @@ class Morpho:
         else:
             r, conv_mode = radius, ConvMode.SQUARE
 
-        if iterations == 1 and conv_mode is not ConvMode.HV:
+        if iterations == 1 and conv_mode is not ConvMode.HV and clip.format.sample_type is vs.FLOAT:
             morpho_func = partial(self._morpho_xx_imum, clip, (r, conv_mode), thr, coords, None, True, func=func)
             return norm_expr(
                 clip,
@@ -591,7 +591,7 @@ class Morpho:
         else:
             r, conv_mode = radius, ConvMode.SQUARE
 
-        if iterations == 1 and conv_mode is not ConvMode.HV:
+        if iterations == 1 and conv_mode is not ConvMode.HV and clip.format.sample_type is vs.FLOAT:
             return norm_expr(
                 clip,
                 "{dilated} {multiply} x -",
@@ -650,7 +650,7 @@ class Morpho:
         else:
             r, conv_mode = radius, ConvMode.SQUARE
 
-        if iterations == 1 and conv_mode is not ConvMode.HV:
+        if iterations == 1 and conv_mode is not ConvMode.HV and clip.format.sample_type is vs.FLOAT:
             return norm_expr(
                 clip,
                 "x {eroded} {multiply} -",
