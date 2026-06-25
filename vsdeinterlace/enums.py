@@ -1,4 +1,4 @@
-from jetpytools import CustomEnum, CustomIntEnum
+from jetpytools import CustomEnum, CustomIndexError, CustomIntEnum
 
 from vstools import core, vs
 
@@ -90,6 +90,7 @@ class IVTCycles(CustomEnum):
         """
         Apply the decimation pattern to a video clip with the given pattern index.
         """
-        assert 0 <= pattern < self.cycle
+        if not 0 <= pattern < self.cycle:
+            raise CustomIndexError("Invalid pattern index", self.__class__, pattern)
 
         return core.std.SelectEvery(clip, self.pattern_length, self.value[pattern])
