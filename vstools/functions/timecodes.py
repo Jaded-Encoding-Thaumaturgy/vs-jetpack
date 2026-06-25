@@ -267,7 +267,7 @@ class Timecodes(list[FrameDur]):
                     continue
 
                 if line.startswith("Assume"):
-                    assume = _norm(timecodes[0][7:])
+                    assume = _norm(line[7:])
                     continue
 
                 starts, ends, fps = line.split(",")
