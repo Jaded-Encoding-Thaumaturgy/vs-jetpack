@@ -6,7 +6,7 @@ aimed at helping at having a common ground between VapourSynth packages, and
 simplify writing them.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .enums import *
 from .exceptions import *
@@ -15,14 +15,21 @@ from .types import *
 from .utils import *
 from .vs_proxy import *
 
+if not TYPE_CHECKING:
 
-def __getattr__(name: str) -> Any:
-    from importlib import import_module
+    def __getattr__(name: str) -> Any:
+        import importlib
+        import warnings
 
-    # TODO: add deprecation warning soon tm
-    try:
-        return getattr(import_module("jetpytools"), name)
-    except AttributeError:
-        ...
+        try:
+            attr = getattr(importlib.import_module("jetpytools"), name)
+            warnings.warn(
+                "Importing 'jetpytools' symbols via 'vstools' is deprecated and will be removed in a future version. "
+                "Import them directly from 'jetpytools' instead.",
+                DeprecationWarning,
+            )
+            return attr
+        except AttributeError:
+            ...
 
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
