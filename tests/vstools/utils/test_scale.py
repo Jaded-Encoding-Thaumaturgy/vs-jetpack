@@ -1,6 +1,8 @@
 from unittest import TestCase
 
-from vstools import Range, scale_value, vs
+import numpy as np
+
+from vstools import Range, scale_delta, scale_mask, scale_value, vs
 
 
 class TestScale(TestCase):
@@ -94,3 +96,28 @@ class TestScale(TestCase):
 
         result = scale_value(235, 8, 8, Range.LIMITED, Range.FULL)
         self.assertEqual(result, 255)
+
+    def test_scale_value_numpy(self) -> None:
+        arr = np.array([0, 24, 64, 255], dtype=np.uint8)
+
+        # Scale 8-bit uint8 array to 10-bit uint16 array
+        res_10 = scale_value(arr, 8, 10)
+        self.assertTrue(np.array_equal(res_10, np.array([0, 96, 256, 1020], dtype=np.uint16)))
+
+        # Scale back to 8-bit uint8 array
+        res_8 = scale_value(res_10, 10, 8)
+        self.assertTrue(np.array_equal(res_8, np.array([0, 24, 64, 255], dtype=np.uint8)))
+
+        # Using numpy arrays as format specification
+        arr_in = np.zeros((10, 10), dtype=np.uint8)
+        arr_out = np.zeros((10, 10), dtype=np.uint16)
+        res_format = scale_value(arr, arr_in, arr_out)
+        self.assertTrue(np.array_equal(res_format, np.array([0, 6144, 16384, 65280], dtype=np.uint16)))
+
+        # Scale mask
+        res_mask = scale_mask(arr, 8, 10)
+        self.assertTrue(np.array_equal(res_mask, np.array([0, 96, 257, 1023], dtype=np.uint16)))
+
+        # Scale delta
+        res_delta = scale_delta(arr, 8, 10)
+        self.assertTrue(np.array_equal(res_delta, np.array([0, 96, 256, 1020], dtype=np.uint16)))

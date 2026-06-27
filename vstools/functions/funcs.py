@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
+from typing import TYPE_CHECKING
 
 from jetpytools import FuncExcept, cachedproperty, normalize_seq, to_arr
 
@@ -23,6 +24,9 @@ from ..types import HoldsVideoFormat, Planes, VideoFormatLike
 from ..utils import check_variable, get_color_family, get_depth, normalize_planes
 from ..vs_proxy import VSObject, vs
 from .utils import depth, join, plane
+
+if TYPE_CHECKING:
+    from ..types import HoldsNumpyFormat
 
 __all__ = ["FunctionUtil"]
 
@@ -56,8 +60,9 @@ class FunctionUtil(VSObject, list[int]):
         planes: Planes = None,
         color_family: VideoFormatLike
         | HoldsVideoFormat
+        | HoldsNumpyFormat
         | vs.ColorFamily
-        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.ColorFamily]
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily]
         | None = None,
         bitdepth: int | range | tuple[int, int] | set[int] | None = None,
         *,
@@ -101,7 +106,7 @@ class FunctionUtil(VSObject, list[int]):
         all_color_family: list[vs.ColorFamily] | None
 
         if color_family is not None:
-            all_color_family = [get_color_family(c) for c in to_arr(color_family)]  # type: ignore[arg-type]
+            all_color_family = [get_color_family(c) for c in to_arr(color_family)]
             if not set(all_color_family) & {vs.YUV, vs.RGB}:
                 planes = 0
         else:

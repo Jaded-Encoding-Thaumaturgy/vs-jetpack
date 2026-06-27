@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any, overload
+
 from jetpytools import clamp, normalize_seq
 
 from ..enums import Range, RangeLike
 from ..types import HoldsVideoFormat, VideoFormatLike
 from ..vs_proxy import vs
 from .info import get_color_family, get_depth, get_video_format
+
+if TYPE_CHECKING:
+    import numpy as np
+    import numpy.typing as npt
+
+    from ..types import HoldsNumpyFormat
 
 __all__ = [
     "get_lowest_value",
@@ -20,21 +28,47 @@ __all__ = [
 ]
 
 
+@overload
 def scale_value(
     value: float,
-    input_depth: int | VideoFormatLike | HoldsVideoFormat,
-    output_depth: int | VideoFormatLike | HoldsVideoFormat,
+    input_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    output_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
     range_in: RangeLike | None = None,
     range_out: RangeLike | None = None,
     scale_offsets: bool = True,
     chroma: bool = False,
-    family: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily | None = None,
-) -> float:
+    family: VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily | None = None,
+) -> float: ...
+
+
+@overload
+def scale_value(
+    value: npt.NDArray[Any],
+    input_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    output_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    range_in: RangeLike | None = None,
+    range_out: RangeLike | None = None,
+    scale_offsets: bool = True,
+    chroma: bool = False,
+    family: VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily | None = None,
+) -> npt.NDArray[Any]: ...
+
+
+def scale_value(
+    value: float | npt.NDArray[Any],
+    input_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    output_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    range_in: RangeLike | None = None,
+    range_out: RangeLike | None = None,
+    scale_offsets: bool = True,
+    chroma: bool = False,
+    family: VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily | None = None,
+) -> float | npt.NDArray[Any]:
     """
     Converts the value to the specified bit depth, or bit depth of the clip/format specified.
 
     Args:
-        value: Value to scale.
+        value: Value to scale. Can be a single float or a NumPy array.
         input_depth: Input bit depth, or clip, frame, format from where to get it.
         output_depth: Output bit depth, or clip, frame, format from where to get it.
         range_in: Color range of the input value
@@ -45,10 +79,26 @@ def scale_value(
         family: Which color family to assume for calculations.
 
     Returns:
-        Scaled value.
+        Scaled value or scaled NumPy array.
     """
+    import numpy as np
 
-    out_value = float(value)
+    def _vs_fmt_to_dtype(
+        fmt: vs.VideoFormat,
+    ) -> np.dtype[np.float32] | np.dtype[np.float16] | np.dtype[np.uint32] | np.dtype[np.uint16] | np.dtype[np.uint8]:
+        match fmt.bits_per_sample, fmt.sample_type:
+            case 32, vs.FLOAT:
+                return np.dtype(np.float32)
+            case 16, vs.FLOAT:
+                return np.dtype(np.float16)
+            case 32, vs.INTEGER:
+                return np.dtype(np.uint32)
+            case bits, vs.INTEGER if bits > 8:
+                return np.dtype(np.uint16)
+            case _:
+                return np.dtype(np.uint8)
+
+    out_value = value.astype(np.float64) if isinstance(value, np.ndarray) else float(value)
 
     in_fmt = get_video_format(input_depth)
     out_fmt = get_video_format(output_depth)
@@ -74,8 +124,8 @@ def scale_value(
     else:
         range_out = Range.from_param(range_out, scale_value)
 
-    if input_depth == output_depth and range_in == range_out and in_fmt.sample_type == out_fmt.sample_type:
-        return out_value
+    if in_fmt == out_fmt and range_in == range_out and in_fmt.sample_type == out_fmt.sample_type:
+        return out_value.astype(_vs_fmt_to_dtype(out_fmt)) if isinstance(out_value, np.ndarray) else out_value
 
     if vs.RGB in (in_fmt.color_family, out_fmt.color_family, family):
         chroma = False
@@ -100,53 +150,95 @@ def scale_value(
             out_value += 16 << (out_fmt.bits_per_sample - 8)
 
     if out_fmt.sample_type is vs.INTEGER:
-        out_value = clamp(round(out_value), 0, get_peak_value(out_fmt, range_in=Range.FULL))
+        peak = get_peak_value(out_fmt, range_in=Range.FULL)
+        if isinstance(out_value, np.ndarray):
+            out_value = out_value.round().clip(0, peak).astype(_vs_fmt_to_dtype(out_fmt))
+        else:
+            out_value = clamp(round(out_value), 0, peak)
+    elif isinstance(out_value, np.ndarray):
+        out_value = out_value.astype(_vs_fmt_to_dtype(out_fmt))
 
     return out_value
 
 
+@overload
 def scale_mask(
     value: float,
     input_depth: int | VideoFormatLike | HoldsVideoFormat,
     output_depth: int | VideoFormatLike | HoldsVideoFormat,
-) -> float:
+) -> float: ...
+
+
+@overload
+def scale_mask(
+    value: npt.NDArray[Any],
+    input_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    output_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+) -> npt.NDArray[Any]: ...
+
+
+def scale_mask(
+    value: float | npt.NDArray[Any],
+    input_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    output_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+) -> float | npt.NDArray[Any]:
     """
     Converts the value to the specified bit depth, or bit depth of the clip/format specified.
     Intended for mask clips which are always full range.
 
     Args:
-        value: Value to scale.
+        value: Value to scale. Can be a single float or a NumPy array.
         input_depth: Input bit depth, or clip, frame, format from where to get it.
         output_depth: Output bit depth, or clip, frame, format from where to get it.
 
     Returns:
-        Scaled value.
+        Scaled value or scaled NumPy array.
     """
 
     return scale_value(value, input_depth, output_depth, Range.FULL, Range.FULL)
 
 
+@overload
 def scale_delta(
     value: float,
-    input_depth: int | VideoFormatLike | HoldsVideoFormat,
-    output_depth: int | VideoFormatLike | HoldsVideoFormat,
+    input_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    output_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
     range_in: RangeLike | None = None,
     range_out: RangeLike | None = None,
-) -> float:
+) -> float: ...
+
+
+@overload
+def scale_delta(
+    value: npt.NDArray[Any],
+    input_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    output_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    range_in: RangeLike | None = None,
+    range_out: RangeLike | None = None,
+) -> npt.NDArray[Any]: ...
+
+
+def scale_delta(
+    value: float | npt.NDArray[Any],
+    input_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    output_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    range_in: RangeLike | None = None,
+    range_out: RangeLike | None = None,
+) -> float | npt.NDArray[Any]:
     """
     Converts the value to the specified bit depth, or bit depth of the clip/format specified.
     Uses the clip's range (if only one clip is passed) for both depths.
     Intended for filter thresholds.
 
     Args:
-        value: Value to scale.
+        value: Value to scale. Can be a single float or a NumPy array.
         input_depth: Input bit depth, or clip, frame, format from where to get it.
         output_depth: Output bit depth, or clip, frame, format from where to get it.
         range_in: Color range of the input value
         range_out: Color range of the desired output.
 
     Returns:
-        Scaled value.
+        Scaled value or scaled NumPy array.
     """
 
     if isinstance(input_depth, vs.VideoNode) != isinstance(output_depth, vs.VideoNode):
@@ -163,10 +255,10 @@ def scale_delta(
 
 
 def get_lowest_value(
-    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
+    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
     chroma: bool = False,
     range_in: RangeLike | None = None,
-    family: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily | None = None,
+    family: VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily | None = None,
 ) -> float:
     """
     Returns the lowest value for the specified bit depth, or bit depth of the clip/format specified.
@@ -205,9 +297,9 @@ def get_lowest_value(
 
 
 def get_lowest_values(
-    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
+    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
     range_in: RangeLike | None = None,
-    family: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily | None = None,
+    family: VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily | None = None,
     mask: bool = False,
 ) -> list[float]:
     """
@@ -225,7 +317,7 @@ def get_lowest_values(
     )
 
 
-def get_neutral_value(clip_or_depth: int | VideoFormatLike | HoldsVideoFormat) -> float:
+def get_neutral_value(clip_or_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat) -> float:
     """
     Returns the neutral point value (e.g. as used by std.MakeDiff) for the specified bit depth,
     or bit depth of the clip/format specified.
@@ -245,7 +337,7 @@ def get_neutral_value(clip_or_depth: int | VideoFormatLike | HoldsVideoFormat) -
     return 1 << (get_depth(fmt) - 1)
 
 
-def get_neutral_values(clip_or_depth: int | VideoFormatLike | HoldsVideoFormat) -> list[float]:
+def get_neutral_values(clip_or_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat) -> list[float]:
     """
     Get the neutral values of all planes of a specified format.
     """
@@ -255,10 +347,10 @@ def get_neutral_values(clip_or_depth: int | VideoFormatLike | HoldsVideoFormat) 
 
 
 def get_peak_value(
-    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
+    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
     chroma: bool = False,
     range_in: RangeLike | None = None,
-    family: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily | None = None,
+    family: VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily | None = None,
 ) -> float:
     """
     Returns the peak value for the specified bit depth, or bit depth of the clip/format specified.
@@ -297,9 +389,9 @@ def get_peak_value(
 
 
 def get_peak_values(
-    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat,
+    clip_or_depth: int | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
     range_in: RangeLike | None = None,
-    family: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily | None = None,
+    family: VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily | None = None,
     mask: bool = False,
 ) -> list[float]:
     """
