@@ -209,6 +209,9 @@ class Backend:
 
         del gpu
 
+        if hasattr(backend, "device_id"):
+            kwargs["device_id"] = device_id
+
         return backend(**kwargs)
 
 
