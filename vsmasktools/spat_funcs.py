@@ -143,7 +143,7 @@ def retinex(
         expr_msr.append("x.PlaneStatsMax 0 <= 1 x x.PlaneStatsMax / 1 + ? ")
         sigma = sigma[:-1]
 
-    expr_msr.extend(ExprOp.ADD * slenm)
+    expr_msr.extend(ExprOp.MUL * slenm)
     expr_msr.append(f"log {slen} /")
 
     msr = norm_expr([luma, *(gauss_blur(luma, i, _fast=fast) for i in sigma)], expr_msr, func=func)
