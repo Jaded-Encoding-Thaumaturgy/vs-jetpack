@@ -129,7 +129,7 @@ def retinex(
     sigma = sorted(sigma)
 
     y = get_y(clip)
-    luma = norm_expr(
+    luma_norm = norm_expr(
         depth(y, 32).std.PlaneStats(),
         "x.PlaneStatsMax x.PlaneStatsMin = 0 x x.PlaneStatsMin - x.PlaneStatsMax x.PlaneStatsMin - / ?",
         func=func,
@@ -151,8 +151,12 @@ def retinex(
     expr_msr.extend(ExprOp.MUL * slenm)
     expr_msr.append(f"log {slen} /")
 
-    msr = norm_expr([luma, *(gauss_blur(luma, i, _fast=fast) for i in sigma)], expr_msr, func=func)
-    msr_stats = msr.vszip.PlaneMinMax(lower_thr, upper_thr)
+    msr = norm_expr([luma_norm, *(gauss_blur(luma_norm, i, _fast=fast) for i in sigma)], expr_msr, func=func)
+    msr_norm_stats = norm_expr(
+        msr.std.PlaneStats(),
+        "x.PlaneStatsMax x.PlaneStatsMin = 0 x x.PlaneStatsMin - x.PlaneStatsMax x.PlaneStatsMin - / ?",
+        func=func,
+    ).vszip.PlaneMinMax(lower_thr, upper_thr)
 
     expr_balance = StrList(["x.psmMax x.psmMin = x x x.psmMin - x.psmMax x.psmMin - / ?"])
 
@@ -160,7 +164,7 @@ def retinex(
         expr_balance.append("{ymax} {ymin} - * {ymin} + round {ymin} {ymax} clamp")
 
     return norm_expr(
-        msr_stats,
+        msr_norm_stats,
         expr_balance,
         format=y,
         ymin=get_lowest_value(y, False, Range.FULL),
