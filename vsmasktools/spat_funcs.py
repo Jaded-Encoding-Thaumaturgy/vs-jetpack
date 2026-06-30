@@ -131,7 +131,7 @@ def retinex(
     y = get_y(clip)
     luma = norm_expr(
         depth(y, 32).std.PlaneStats(),
-        "x x.PlaneStatsMin - x.PlaneStatsMax x.PlaneStatsMin - /",
+        "x.PlaneStatsMax x.PlaneStatsMin = 0 x x.PlaneStatsMin - x.PlaneStatsMax x.PlaneStatsMin - / ?",
         func=func,
     )
 
@@ -149,7 +149,7 @@ def retinex(
     msr = norm_expr([luma, *(gauss_blur(luma, i, _fast=fast) for i in sigma)], expr_msr, func=func)
     msr_stats = msr.vszip.PlaneMinMax(lower_thr, upper_thr)
 
-    expr_balance = StrList(["x x.psmMin - x.psmMax x.psmMin - /"])
+    expr_balance = StrList(["x.psmMax x.psmMin = x x x.psmMin - x.psmMax x.psmMin - / ?"])
 
     if y.format.sample_type is vs.INTEGER:
         expr_balance.append("{ymax} {ymin} - * {ymin} + round {ymin} {ymax} clamp")
