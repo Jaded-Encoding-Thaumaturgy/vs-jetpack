@@ -140,7 +140,12 @@ def retinex(
     expr_msr = StrList([f"{x} 0 <= 1 x {x} / 1 + ? " for x in ExprVars(1, slen + (not fast))])
 
     if fast:
-        expr_msr.append("x.PlaneStatsMax 0 <= 1 x x.PlaneStatsMax / 1 + ? ")
+        norm_avg_expr = (
+            "x.PlaneStatsMax x.PlaneStatsMin = 0 "
+            "x.PlaneStatsAverage x.PlaneStatsMin - x.PlaneStatsMax x.PlaneStatsMin - / ? "
+            "AVG!"
+        )
+        expr_msr.append(f"{norm_avg_expr} AVG@ 0 <= 1 x AVG@ / 1 + ? ")
         sigma = sigma[:-1]
 
     expr_msr.extend(ExprOp.MUL * slenm)
