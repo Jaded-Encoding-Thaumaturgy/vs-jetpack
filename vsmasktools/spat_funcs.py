@@ -11,6 +11,7 @@ from vstools import (
     DitherType,
     Range,
     depth,
+    get_lowest_value,
     get_peak_value,
     get_y,
     plane,
@@ -148,12 +149,19 @@ def retinex(
     msr = norm_expr([luma, *(gauss_blur(luma, i, _fast=fast) for i in sigma)], expr_msr, func=func)
     msr_stats = msr.vszip.PlaneMinMax(lower_thr, upper_thr)
 
-    expr_balance = "x x.psmMin - x.psmMax x.psmMin - /"
+    expr_balance = StrList(["x x.psmMin - x.psmMax x.psmMin - /"])
 
     if y.format.sample_type is vs.INTEGER:
-        expr_balance += "plane_max plane_min - * plane_min + round plane_min plane_max clamp"
+        expr_balance.append("{ymax} {ymin} - * {ymin} + round {ymin} {ymax} clamp")
 
-    return norm_expr(msr_stats, expr_balance, format=y, func=func)
+    return norm_expr(
+        msr_stats,
+        expr_balance,
+        format=y,
+        ymin=get_lowest_value(y, False, Range.FULL),
+        ymax=get_peak_value(y, False, Range.FULL),
+        func=func,
+    )
 
 
 def flat_mask(src: vs.VideoNode, radius: int = 5, thr: float = 0.011, gauss: bool = False) -> vs.VideoNode:
