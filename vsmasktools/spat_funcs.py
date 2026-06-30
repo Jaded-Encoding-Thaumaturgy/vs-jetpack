@@ -12,7 +12,6 @@ from vstools import (
     Range,
     depth,
     get_peak_value,
-    get_sample_type,
     get_y,
     plane,
     scale_mask,
@@ -129,16 +128,11 @@ def retinex(
     sigma = sorted(sigma)
 
     y = get_y(clip)
-
-    y = y.std.PlaneStats()
-    is_float = get_sample_type(y) is vs.FLOAT
-
-    if is_float:
-        luma_float = norm_expr(y, "x x.PlaneStatsMin - x.PlaneStatsMax x.PlaneStatsMin - /", func=func)
-    else:
-        luma_float = norm_expr(
-            y, "1 x.PlaneStatsMax x.PlaneStatsMin - / x x.PlaneStatsMin - *", None, vs.GRAYS, func=func
-        )
+    luma = norm_expr(
+        depth(y, 32).std.PlaneStats(),
+        "x x.PlaneStatsMin - x.PlaneStatsMax x.PlaneStatsMin - /",
+        func=func,
+    )
 
     slen, slenm = len(sigma), len(sigma) - 1
 
@@ -151,16 +145,15 @@ def retinex(
     expr_msr.extend(ExprOp.ADD * slenm)
     expr_msr.append(f"log {slen} /")
 
-    msr = norm_expr([luma_float, *(gauss_blur(luma_float, i, _fast=fast) for i in sigma)], expr_msr, func=func)
-
+    msr = norm_expr([luma, *(gauss_blur(luma, i, _fast=fast) for i in sigma)], expr_msr, func=func)
     msr_stats = msr.vszip.PlaneMinMax(lower_thr, upper_thr)
 
     expr_balance = "x x.psmMin - x.psmMax x.psmMin - /"
 
-    if not is_float:
-        expr_balance = f"{expr_balance} plane_max plane_min - * plane_min + round plane_min plane_max clamp"
+    if y.format.sample_type is vs.INTEGER:
+        expr_balance += "plane_max plane_min - * plane_min + round plane_min plane_max clamp"
 
-    return norm_expr(msr_stats, expr_balance, None, y, func=func)
+    return norm_expr(msr_stats, expr_balance, format=y, func=func)
 
 
 def flat_mask(src: vs.VideoNode, radius: int = 5, thr: float = 0.011, gauss: bool = False) -> vs.VideoNode:
