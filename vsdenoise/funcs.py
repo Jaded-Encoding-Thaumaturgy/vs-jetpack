@@ -216,6 +216,7 @@ def ccd(
     tr: int = 0,
     ref_points: Sequence[bool] = (True, True, False),
     scale: float | None = None,
+    ref: vs.VideoNode | None = None,
     pscale: float = 0.0,
     chroma_upscaler: ScalerLike = Lanczos(
         format=lambda clip: clip.format.replace(color_family=vs.RGB, subsampling_w=0, subsampling_h=0)
@@ -246,6 +247,8 @@ def ccd(
 
                - `1` = 25x25 matrix (original CCD)
                - `2` = 50x50, and so on.
+        ref: Reference clip used for internal calculations.
+            It may use a different subsampling, but all other format properties must match, including width and height.
         pscale: Correction strength for chroma ringing introduced during downscaling.
         chroma_upscaler: Upscaler for converting YUV input to full-resolution RGB before processing.
         chroma_downscaler: Kernel used to downscale the denoised RGB result back to the input format.
@@ -265,21 +268,27 @@ def ccd(
 
     planes = normalize_planes(clip, planes)
 
-    if (clip.format.subsampling_w, clip.format.subsampling_h) == (0, 0):
-        full = clip
-        pscale = 1.0
-    else:
-        full = Scaler.ensure_obj(chroma_upscaler, func).scale(clip, clip.width, clip.height)
+    def convert_to_rgb(c: vs.VideoNode, pscale: float = pscale) -> tuple[vs.VideoNode, float]:
+        if (c.format.subsampling_w, c.format.subsampling_h) == (0, 0):
+            full = c
+            pscale = 1.0
+        else:
+            full = Scaler.ensure_obj(chroma_upscaler, func).scale(c, c.width, c.height)
 
-        if (full.format.subsampling_w, full.format.subsampling_h) != (0, 0):
-            raise CustomRuntimeError("`chroma_upscaler` didn't upscale chroma planes.", func, repr(full))
+            if (full.format.subsampling_w, full.format.subsampling_h) != (0, 0):
+                raise CustomRuntimeError("`chroma_upscaler` didn't upscale chroma planes.", func, repr(full))
 
-    if get_color_family(full) != vs.RGB:
-        rgb = vs.core.resize.Point(full, format=full.format.replace(color_family=vs.RGB))
-    else:
-        rgb = full
+        if get_color_family(full) != vs.RGB:
+            rgb = vs.core.resize.Point(full, format=full.format.replace(color_family=vs.RGB))
+        else:
+            rgb = full
 
-    processed = vs.core.zsmooth.CCD(rgb, thr, tr, ref_points, scale)
+        return rgb, pscale
+
+    rgb, pscale = convert_to_rgb(clip, pscale)
+    rgb_ref, _ = convert_to_rgb(ref) if ref else (None, None)
+
+    processed = vs.core.zsmooth.CCD(rgb, thr, tr, ref_points, scale, rgb_ref)
 
     if clip.format.id != processed.format.id:
         chroma_downscaler = Kernel.ensure_obj(chroma_downscaler, func)
