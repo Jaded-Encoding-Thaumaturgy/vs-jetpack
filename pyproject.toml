@@ -89,7 +89,7 @@ rg = [
     "vsjetpack[expr]",
     "scipy>=1.17.0",
     "vapoursynth-awarp>=3.0",
-    "vapoursynth-zsmooth>=0.16.0",
+    "vapoursynth-zsmooth>=0.18.0",
 ]
 mask = [
     "vsjetpack[source]",
