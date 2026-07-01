@@ -1781,7 +1781,7 @@ class VideoNode(RawNode):
 # </attribute/VideoNode_bound/bwdif>
 # <attribute/VideoNode_bound/deblock>
     deblock: Final[_deblock._VideoNode_bound.Plugin]
-    """It does a deblocking of the picture, using the deblocking filter of h264"""
+    """Reduces the blockiness of the image using the deblocking filter from h264"""
 # </attribute/VideoNode_bound/deblock>
 # <attribute/VideoNode_bound/descale>
     descale: Final[_descale._VideoNode_bound.Plugin]
@@ -1841,7 +1841,7 @@ class VideoNode(RawNode):
 # </attribute/VideoNode_bound/manipmv>
 # <attribute/VideoNode_bound/mv>
     mv: Final[_mv._VideoNode_bound.Plugin]
-    """MVTools v28"""
+    """MVTools v29"""
 # </attribute/VideoNode_bound/mv>
 # <attribute/VideoNode_bound/ncnn>
     ncnn: Final[_ncnn._VideoNode_bound.Plugin]
@@ -2075,7 +2075,7 @@ class Core:
 # </attribute/Core_bound/d2v>
 # <attribute/Core_bound/deblock>
     deblock: Final[_deblock._Core_bound.Plugin]
-    """It does a deblocking of the picture, using the deblocking filter of h264"""
+    """Reduces the blockiness of the image using the deblocking filter from h264"""
 # </attribute/Core_bound/deblock>
 # <attribute/Core_bound/descale>
     descale: Final[_descale._Core_bound.Plugin]
@@ -2147,7 +2147,7 @@ class Core:
 # </attribute/Core_bound/manipmv>
 # <attribute/Core_bound/mv>
     mv: Final[_mv._Core_bound.Plugin]
-    """MVTools v28"""
+    """MVTools v29"""
 # </attribute/Core_bound/mv>
 # <attribute/Core_bound/ncnn>
     ncnn: Final[_ncnn._Core_bound.Plugin]
@@ -2538,12 +2538,12 @@ class _deblock:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def Deblock(self, /, clip: VideoNode, quant: _IntLike | None = None, aoffset: _IntLike | None = None, boffset: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            def Deblock(self, /, clip: VideoNode, quant: _IntLike | None = None, aoffset: _IntLike | None = None, boffset: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, opt: _IntLike | None = None) -> VideoNode: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def Deblock(self, /, quant: _IntLike | None = None, aoffset: _IntLike | None = None, boffset: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            def Deblock(self, /, quant: _IntLike | None = None, aoffset: _IntLike | None = None, boffset: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, opt: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/deblock>
 
@@ -3109,13 +3109,15 @@ class _nlm_cuda:
 # </implementation/nlm_cuda>
 
 # <implementation/nlm_hip>
+_ReturnDict_nlm_hip_Version = TypedDict("_ReturnDict_nlm_hip_Version", {"version": _AnyStr, "hip_version": int})
+
 class _nlm_hip:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
             def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Version(self, /) -> VideoNode: ...
+            def Version(self, /) -> _ReturnDict_nlm_hip_Version: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
@@ -3457,7 +3459,7 @@ class _std:
             @_Wrapper.Function
             def Prewitt(self, /, clip: VideoNode, planes: _IntLike | _SequenceLike[_IntLike] | None = None, scale: _FloatLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def PropToClip(self, /, clip: VideoNode, prop: _AnyStr | None = None) -> VideoNode: ...
+            def PropToClip(self, /, clip: VideoNode, prop: _AnyStr | None = None, index: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def RemoveFrameProps(self, /, clip: VideoNode, props: _AnyStr | _SequenceLike[_AnyStr] | None = None) -> VideoNode: ...
             @_Wrapper.Function
@@ -3598,7 +3600,7 @@ class _std:
             @_Wrapper.Function
             def Prewitt(self, /, planes: _IntLike | _SequenceLike[_IntLike] | None = None, scale: _FloatLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def PropToClip(self, /, prop: _AnyStr | None = None) -> VideoNode: ...
+            def PropToClip(self, /, prop: _AnyStr | None = None, index: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def RemoveFrameProps(self, /, props: _AnyStr | _SequenceLike[_AnyStr] | None = None) -> VideoNode: ...
             @_Wrapper.Function
@@ -3776,6 +3778,8 @@ class _vszip:
             @_Wrapper.Function
             def Bilateral(self, /, clip: VideoNode, ref: VideoNode | None = None, sigmaS: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigmaR: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, algorithm: _IntLike | _SequenceLike[_IntLike] | None = None, PBFICnum: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
+            def BilateralDither(self, /, clip: VideoNode, ref: VideoNode | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, flat: _FloatLike | _SequenceLike[_FloatLike] | None = None, wmin: _FloatLike | _SequenceLike[_FloatLike] | None = None, subspl: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
             def BoxBlur(self, /, clip: VideoNode, planes: _IntLike | _SequenceLike[_IntLike] | None = None, hradius: _IntLike | None = None, hpasses: _IntLike | None = None, vradius: _IntLike | None = None, vpasses: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def CLAHE(self, /, clip: VideoNode, limit: _IntLike | None = None, tiles: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
@@ -3788,13 +3792,21 @@ class _vszip:
             @_Wrapper.Function
             def CombMaskMT(self, /, clip: VideoNode, thY1: _IntLike | None = None, thY2: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
+            def Compress(self, /, clip: VideoNode, codec: _IntLike | None = None, qscale: _IntLike | None = None, quality: _IntLike | None = None, dc_prec: _IntLike | None = None, chroma: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
             def Deband(self, /, clip: VideoNode, range: _IntLike | None = None, thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, grain: _FloatLike | _SequenceLike[_FloatLike] | None = None, sample_mode: _IntLike | None = None, seed: _IntLike | None = None, blur_first: _IntLike | None = None, dynamic_grain: _IntLike | None = None, keep_tv_range: _IntLike | None = None, random_algo_ref: _IntLike | None = None, random_algo_grain: _IntLike | None = None, random_param_ref: _FloatLike | None = None, random_param_grain: _FloatLike | None = None, thr1: _FloatLike | _SequenceLike[_FloatLike] | None = None, thr2: _FloatLike | _SequenceLike[_FloatLike] | None = None, angle_boost: _FloatLike | None = None, max_angle: _FloatLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def EEDI3(self, /, clip: VideoNode, field: _IntLike, dh: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, nrad: _IntLike | None = None, mdis: _IntLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def EEDI3H(self, /, clip: VideoNode, field: _IntLike, dh: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, nrad: _IntLike | None = None, mdis: _IntLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def ImageRead(self, /, path: _AnyStr | _SequenceLike[_AnyStr], validate: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def LimitFilter(self, /, flt: VideoNode, src: VideoNode, ref: VideoNode | None = None, dark_thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, bright_thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, elast: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def Limiter(self, /, clip: VideoNode, min: _FloatLike | _SequenceLike[_FloatLike] | None = None, max: _FloatLike | _SequenceLike[_FloatLike] | None = None, tv_range: _IntLike | None = None, mask: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def MosquitoNR(self, /, clip: VideoNode, strength: _IntLike | _SequenceLike[_IntLike] | None = None, restore: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def PackRGB(self, /, clip: VideoNode) -> VideoNode: ...
             @_Wrapper.Function
@@ -3815,6 +3827,8 @@ class _vszip:
             @_Wrapper.Function
             def Bilateral(self, /, ref: VideoNode | None = None, sigmaS: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigmaR: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, algorithm: _IntLike | _SequenceLike[_IntLike] | None = None, PBFICnum: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
+            def BilateralDither(self, /, ref: VideoNode | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, flat: _FloatLike | _SequenceLike[_FloatLike] | None = None, wmin: _FloatLike | _SequenceLike[_FloatLike] | None = None, subspl: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
             def BoxBlur(self, /, planes: _IntLike | _SequenceLike[_IntLike] | None = None, hradius: _IntLike | None = None, hpasses: _IntLike | None = None, vradius: _IntLike | None = None, vpasses: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def CLAHE(self, /, limit: _IntLike | None = None, tiles: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
@@ -3827,11 +3841,19 @@ class _vszip:
             @_Wrapper.Function
             def CombMaskMT(self, /, thY1: _IntLike | None = None, thY2: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
+            def Compress(self, /, codec: _IntLike | None = None, qscale: _IntLike | None = None, quality: _IntLike | None = None, dc_prec: _IntLike | None = None, chroma: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
             def Deband(self, /, range: _IntLike | None = None, thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, grain: _FloatLike | _SequenceLike[_FloatLike] | None = None, sample_mode: _IntLike | None = None, seed: _IntLike | None = None, blur_first: _IntLike | None = None, dynamic_grain: _IntLike | None = None, keep_tv_range: _IntLike | None = None, random_algo_ref: _IntLike | None = None, random_algo_grain: _IntLike | None = None, random_param_ref: _FloatLike | None = None, random_param_grain: _FloatLike | None = None, thr1: _FloatLike | _SequenceLike[_FloatLike] | None = None, thr2: _FloatLike | _SequenceLike[_FloatLike] | None = None, angle_boost: _FloatLike | None = None, max_angle: _FloatLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def EEDI3(self, /, field: _IntLike, dh: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, nrad: _IntLike | None = None, mdis: _IntLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def EEDI3H(self, /, field: _IntLike, dh: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, nrad: _IntLike | None = None, mdis: _IntLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def LimitFilter(self, /, src: VideoNode, ref: VideoNode | None = None, dark_thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, bright_thr: _FloatLike | _SequenceLike[_FloatLike] | None = None, elast: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def Limiter(self, /, min: _FloatLike | _SequenceLike[_FloatLike] | None = None, max: _FloatLike | _SequenceLike[_FloatLike] | None = None, tv_range: _IntLike | None = None, mask: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def MosquitoNR(self, /, strength: _IntLike | _SequenceLike[_IntLike] | None = None, restore: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def PackRGB(self, /) -> VideoNode: ...
             @_Wrapper.Function
