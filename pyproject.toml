@@ -160,7 +160,7 @@ nvidia = [
     "tensorrt-cu13>=11.0.0.114",
     "tensorrt-rtx-cu13>=1.5.0.114",
     # Explicitly specify these so they're properly resolved through uv --index
-    "tensorrt-cu13-bindings",
+    "nvidia-cudnn-cu13",
     "tensorrt-cu13-libs",
     "tensorrt-rtx-cu13-bindings",
 ]
@@ -226,9 +226,7 @@ auto = true
 [tool.uv.sources]
 vapoursynth-ffms2 = { index = "vs-wheels" }
 vapoursynth-fmtconv = { index = "vs-wheels" }
-tensorrt-cu13-bindings = [
-    { index = "vs-wheels", marker = "python_version == '3.14'" },
-]
+nvidia-cudnn-cu13 = { index = "nvidia" }
 tensorrt-cu13-libs = { index = "nvidia" }
 tensorrt-rtx-cu13-bindings = [
     { index = "vs-wheels", marker = "python_version == '3.14'" },
@@ -243,9 +241,12 @@ url = "https://pypi.nvidia.com/"
 explicit = true
 
 [[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+
+[[tool.uv.index]]
 name = "vs-wheels"
 url = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple"
-explicit = true
 
 [tool.hatch.build]
 artifacts = ["vsjetpack/_version.py"]

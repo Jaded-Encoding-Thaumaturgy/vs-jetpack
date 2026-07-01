@@ -41,6 +41,7 @@ def fix_file(file_path: Path) -> None:
 
     # Fix syntax errors
     content = content.replace("builtins.builtins.bool", "builtins.bool")
+    content = content.replace("_plugin_registry = None", "_plugin_registry: None = ...")
     content = content.replace("channel_axis: typing.SupportsInt", "channel_axis: typing.SupportsInt = ...")
     content = re.sub(r"\bin\s*:", "in_:", content)
     content = fix_cpp_docstring_types(content)
