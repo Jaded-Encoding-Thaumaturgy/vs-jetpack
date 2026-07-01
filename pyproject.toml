@@ -147,6 +147,7 @@ cl = [
 nvidia = [
     "onnx>=1.21.0",
     "onnxconverter-common>=1.16.0",
+    "cuda-python>=13.0.0,<14.0.0",
     "ml-dtypes>=0.5.4",
     # Vapoursynth plugins
     "dfttest2[cufft,nvrtc]>=10",

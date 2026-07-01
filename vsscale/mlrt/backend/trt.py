@@ -5,7 +5,8 @@ import subprocess
 import sys
 import warnings
 import zlib
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Generator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from importlib.util import find_spec
 from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, getLogger
@@ -268,46 +269,47 @@ class TRT(Backend):
         tilesize: Shape,
         input_name: str,
     ) -> None:
-        trt_logger = self.logger
-        builder = self.trt.Builder(trt_logger)
+        with cuda_device(self.device_id):
+            trt_logger = self.logger
+            builder = self.trt.Builder(trt_logger)
 
-        if self.max_threads is not None:
-            builder.max_threads = self.max_threads
+            if self.max_threads is not None:
+                builder.max_threads = self.max_threads
 
-        network = builder.create_network()
-        parser = self.trt.OnnxParser(network, trt_logger)
+            network = builder.create_network()
+            parser = self.trt.OnnxParser(network, trt_logger)
 
-        if not parser.parse_from_file(str(network_path)):
-            errors = [str(parser.get_error(i)) for i in range(parser.num_errors)]
-            raise CustomRuntimeError(f"Failed to parse ONNX model: {network_path}\n" + "\n".join(errors))
+            if not parser.parse_from_file(str(network_path)):
+                errors = [str(parser.get_error(i)) for i in range(parser.num_errors)]
+                raise CustomRuntimeError(f"Failed to parse ONNX model: {network_path}\n" + "\n".join(errors))
 
-        config = builder.create_builder_config()
+            config = builder.create_builder_config()
 
-        # Delegate builder setup
-        self.configure_builder_config(config, network)
-        self.setup_optimization_profile(builder, network, config, channels, input_name, tilesize)
+            # Delegate builder setup
+            self.configure_builder_config(config, network)
+            self.setup_optimization_profile(builder, network, config, channels, input_name, tilesize)
 
-        # Timing Cache
-        timing_cache_path = Path(f"{engine_path}.cache")
-        timing_cache_data = b""
-        if timing_cache_path.exists():
-            timing_cache_data = timing_cache_path.read_bytes()
+            # Timing Cache
+            timing_cache_path = Path(f"{engine_path}.cache")
+            timing_cache_data = b""
+            if timing_cache_path.exists():
+                timing_cache_data = timing_cache_path.read_bytes()
 
-        timing_cache = config.create_timing_cache(timing_cache_data)
-        config.set_timing_cache(timing_cache, ignore_mismatch=True)
+            timing_cache = config.create_timing_cache(timing_cache_data)
+            config.set_timing_cache(timing_cache, ignore_mismatch=True)
 
-        # Build
-        logger.info(f"Building TensorRT {self.__class__.__name__} engine from {network_path}...")
-        serialized = builder.build_serialized_network(network, config)
+            # Build
+            logger.info(f"Building TensorRT {self.__class__.__name__} engine from {network_path}...")
+            serialized = builder.build_serialized_network(network, config)
 
-        if not serialized:
-            raise CustomRuntimeError(f"TensorRT engine build failed for {network_path}")
+            if not serialized:
+                raise CustomRuntimeError(f"TensorRT engine build failed for {network_path}")
 
-        engine_path.write_bytes(serialized)
+            engine_path.write_bytes(serialized)
 
-        # Save Cache
-        updated_cache = config.get_timing_cache()
-        timing_cache_path.write_bytes(updated_cache.serialize())
+            # Save Cache
+            updated_cache = config.get_timing_cache()
+            timing_cache_path.write_bytes(updated_cache.serialize())
 
         logger.info(f"Engine saved to {engine_path}")
 
@@ -505,3 +507,20 @@ class TRT_RTX(TRT):  # noqa: N801
         from ._trt_rtx import Logger
 
         return Logger(logger)
+
+
+@contextmanager
+def cuda_device(id: int) -> Generator[None]:
+    """Set cuda device id within this context."""
+
+    import cuda.core
+
+    current_id = cuda.core.Device().device_id
+    logger.debug("Current cuda device id is %s", current_id)
+    try:
+        cuda.core.Device(id).set_current()
+        logger.debug("Set cuda device id to %s", id)
+        yield
+    finally:
+        cuda.core.Device(current_id).set_current()
+        logger.debug("Restore cuda device id to %s", current_id)
