@@ -816,11 +816,17 @@ def register_on_creation(callback: Callable[[int], None]) -> bool:
     return False
 
 
-def unregister_on_creation(callback: Callable[[int], None]) -> None:
+def unregister_on_creation(callback: Callable[[int], None]) -> bool:
     """
     Unregister this callback from every core creation.
+
+    Returns whether the callback was successfully unregistered.
     """
-    _core_on_creation_callbacks.discard(callback)
+    try:
+        _core_on_creation_callbacks.remove(callback)
+        return True
+    except KeyError:
+        return False
 
 
 @deprecated("This function is deprecated. Use `core.clear_cache()` instead.", category=DeprecationWarning)
