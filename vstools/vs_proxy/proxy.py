@@ -1186,7 +1186,7 @@ class VSCoreProxy(_CoreProxyBase):
         self,
         threads: int | float | range | tuple[int, int] | list[int] | None = None,  # noqa: PYI041
         max_cache: int | None = None,
-        reserve: Iterable[int] = [],
+        reserve: Iterable[int] | None = None,
     ) -> None:
         """
         Configure CPU core affinity and cache settings for VapourSynth.
@@ -1234,7 +1234,7 @@ class VSCoreProxy(_CoreProxyBase):
         elif isinstance(threads, tuple):
             threads = range(*threads)
 
-        threads = list(set(threads) - set(reserve))
+        threads = list(set(threads) - set(reserve or []))
 
         self.core.num_threads = len(threads)
 
