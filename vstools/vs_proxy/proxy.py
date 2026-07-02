@@ -949,28 +949,31 @@ class CoreProxy(_CoreProxyBase):
 
 
 def _find_ref[T](start_data: Any, to_return: tuple[TypeForm[T], ...], it: int = 3) -> T | None:
+    """
+    Recursively search the garbage collector's referents and referrers
+    to locate an active instance of specific types associated with the starting object.
+    """
     if not it:
         return None
 
-    for objects in [gc.get_referents(start_data), gc.get_referrers(start_data)]:
-        for obj in objects:
-            if isinstance(obj, to_return):
-                return obj
+    for obj in chain(gc.get_referents(start_data), gc.get_referrers(start_data)):
+        if isinstance(obj, to_return):  # type: ignore[arg-type]
+            return obj
 
-            if isinstance(obj, dict) and "__name__" in obj:
-                continue
+        if isinstance(obj, dict) and "__name__" in obj:
+            continue
 
-            if isinstance(obj, (Core, _CoreProxy, CoreProxy, _FastManager)):
-                continue
+        if isinstance(obj, (Core, _CoreProxy, CoreProxy, _FastManager)):
+            continue
 
-            for obj_obj in gc.get_referents(obj):
-                if isinstance(obj_obj, to_return):
-                    return obj_obj
+        for obj_obj in gc.get_referents(obj):
+            if isinstance(obj_obj, to_return):  # type: ignore[arg-type]
+                return obj_obj
 
-                value = _find_ref(obj, to_return, it - 1)
+            value = _find_ref(obj, to_return, it - 1)
 
-                if value:
-                    return value
+            if value is not None:
+                return value
 
     return None
 
