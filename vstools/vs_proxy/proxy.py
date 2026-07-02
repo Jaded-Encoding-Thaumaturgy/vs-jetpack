@@ -881,7 +881,12 @@ def get_policy_api() -> EnvironmentPolicyAPI:
     return api
 
 
-def _find_ref[T](start_data: Any, to_return: tuple[TypeForm[T], ...], it: int = 3) -> T | None:
+def _find_ref[T](
+    start_data: Any,
+    to_return: tuple[TypeForm[T], ...],
+    it: int = 3,
+    seen: set[int] | None = None,
+) -> T | None:
     """
     Recursively search the garbage collector's referents and referrers
     to locate an active instance of specific types associated with the starting object.
@@ -889,9 +894,26 @@ def _find_ref[T](start_data: Any, to_return: tuple[TypeForm[T], ...], it: int = 
     if not it:
         return None
 
+    if seen is None:
+        seen = set()
+
+    start_id = id(start_data)
+
+    if start_id in seen:
+        return None
+
+    seen.add(start_id)
+
     for obj in chain(gc.get_referents(start_data), gc.get_referrers(start_data)):
         if isinstance(obj, to_return):  # type: ignore[arg-type]
             return obj
+
+        obj_id = id(obj)
+
+        if obj_id in seen:
+            continue
+
+        seen.add(obj_id)
 
         if isinstance(obj, dict) and "__name__" in obj:
             continue
@@ -899,11 +921,11 @@ def _find_ref[T](start_data: Any, to_return: tuple[TypeForm[T], ...], it: int = 
         if isinstance(obj, (Core, _CoreProxy, CoreProxy, _FastManager)):
             continue
 
-        for obj_obj in gc.get_referents(obj):
-            if isinstance(obj_obj, to_return):  # type: ignore[arg-type]
-                return obj_obj
+        for o in gc.get_referents(obj):
+            if isinstance(o, to_return):  # type: ignore[arg-type]
+                return o
 
-            value = _find_ref(obj, to_return, it - 1)
+            value = _find_ref(o, to_return, it - 1, seen)
 
             if value is not None:
                 return value
