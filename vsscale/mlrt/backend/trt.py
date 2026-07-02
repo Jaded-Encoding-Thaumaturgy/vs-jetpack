@@ -41,9 +41,7 @@ LOGGING_VERBOSITY_MAP = {DEBUG: 0, INFO: 1, WARNING: 2, ERROR: 3, CRITICAL: 4}
 class TRT(Backend):
     """TensorRT backend for Nvidia GPUs using the `core.trt` plugin."""
 
-    plugin = core.lazy.trt
-
-    plugin: ClassVar[vs.Plugin]
+    plugin: ClassVar[vs.Plugin] = core.lazy.trt
 
     # Hardware & Runtime Execution
     device_id: int = 0
@@ -487,7 +485,7 @@ class TRT(Backend):
 class TRT_RTX(TRT):  # noqa: N801
     """TensorRT RTX backend for Nvidia RTX GPUs using the `core.trt_rtx` plugin."""
 
-    plugin = core.lazy.trt_rtx
+    plugin: ClassVar[vs.Plugin] = core.lazy.trt_rtx
 
     if TYPE_CHECKING:
         import tensorrt_rtx as trt
@@ -513,7 +511,7 @@ class TRT_RTX(TRT):  # noqa: N801
 def cuda_device(id: int) -> Generator[None]:
     """Set cuda device id within this context."""
 
-    import cuda.core
+    import cuda.core  # type: ignore[import-untyped]
 
     current_id = cuda.core.Device().device_id
     logger.debug("Current cuda device id is %s", current_id)

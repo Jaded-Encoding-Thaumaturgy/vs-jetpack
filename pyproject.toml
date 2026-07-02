@@ -335,7 +335,6 @@ exclude = [
     "stubs/tensorrt_bindings",
     "stubs/tensorrt_rtx",
     "stubs/tensorrt_rtx_bindings",
-    "vsscale/mlrt/backend",        # https://github.com/python/mypy/pull/20521
 ]
 
 # Flags changed by --strict
@@ -374,11 +373,6 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "tensorrt_rtx_bindings.*"
 ignore_missing_imports = true
-
-# https://github.com/python/mypy/pull/20521
-[[tool.mypy.overrides]]
-module = ["vsscale.mlrt.backend.*"]
-follow_imports = "skip"
 
 [tool.ruff]
 line-length = 120

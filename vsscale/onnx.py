@@ -12,7 +12,15 @@ from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat
 
-from jetpytools import CustomRuntimeError, CustomValueError, FileNotExistsError, FuncExcept, SPath, SPathLike
+from jetpytools import (
+    CustomRuntimeError,
+    CustomTypeError,
+    CustomValueError,
+    FileNotExistsError,
+    FuncExcept,
+    SPath,
+    SPathLike,
+)
 
 from vsexprtools import ExprOp, combine_expr, norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
@@ -32,9 +40,10 @@ from vstools import (
 
 from .generic import BaseGenericScaler
 from .mlrt import Backend, get_model_folder
+from .mlrt.backend.base import Backend as RealBackend
 from .mlrt.settings import get_toml_config
 
-type BackendLike = type[Backend] | Backend
+type BackendLike = type[Backend | RealBackend] | Backend | RealBackend
 
 __all__ = ["DPIR", "ArtCNN", "BaseOnnxScaler", "GenericOnnxScaler", "Waifu2x"]
 
@@ -87,12 +96,14 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
 
         if backend is None:
             self.backend = Backend.autoselect(**self.kwargs)
-        elif isinstance(backend, type):
+        elif isinstance(backend, type) and issubclass(backend, RealBackend):
             self.backend = backend(**self.kwargs)
-        elif self.kwargs:
+        elif self.kwargs and isinstance(backend, RealBackend):
             self.backend = dataclasses.replace(backend, **self.kwargs)
-        else:
+        elif isinstance(backend, RealBackend):
             self.backend = backend
+        else:
+            raise CustomTypeError("Invalid backend")
 
         if isinstance(self.backend, Backend.ORT) and self.backend.fp16:
             bl = set(self.backend.fp16_blacklist_ops or []).union(["ConstantOfShape", "Resize"])
