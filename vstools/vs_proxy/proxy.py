@@ -1194,12 +1194,15 @@ def _core_on_destroy_try() -> None: ...
 
 
 def _check_environment() -> None:
+    def _core_on_destroy_try() -> None: ...
+
     try:
         register_on_destroy(_core_on_destroy_try)
         unregister_on_destroy(_core_on_destroy_try)
     except Exception as e:
-        if isinstance(e, ValueError) or not get_current_environment().active:
-            raise ValueError("The environment has already been destroyed.")
+        if not get_current_environment().active:
+            raise CustomRuntimeError("The current environment is not active.") from e
+        raise
 
 
 _objproxies = WeakKeyDictionary[VSCoreProxy, dict[str, CoreProxy]]()
