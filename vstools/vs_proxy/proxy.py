@@ -790,16 +790,10 @@ def register_on_creation(callback: Callable[..., None], strict: bool = False) ->
     """
     core_on_creation_callbacks.add(callback)
 
-    def has_env() -> bool:
-        try:
-            return not not get_current_environment()  # noqa: SIM208
-        except RuntimeError:
-            return False
-
     # If a core is already active, the catch-up logic is triggered immediately.
     # We trigger '_core_with_cb', which will execute any registered callbacks
     # that haven't been run for the current core instance yet.
-    if has_policy() and has_env() and core.active:
+    if has_policy() and has_environment() and core.active:
         with get_current_environment().use():
             core._core_with_cb
 
@@ -827,6 +821,14 @@ def clear_cache() -> None:
         core.max_cache_size = cache_size
     except Exception:
         ...
+
+
+def has_environment() -> bool:
+    """Check if the current thread is running inside an environment."""
+    try:
+        return not not get_current_environment()  # noqa: SIM208
+    except RuntimeError:
+        return False
 
 
 if TYPE_CHECKING:
