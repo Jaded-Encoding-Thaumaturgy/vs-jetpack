@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import logging
 import weakref
 from abc import ABC, ABCMeta
 from collections.abc import Callable, Mapping, MutableMapping, MutableSequence, MutableSet
 from enum import Flag
 from functools import partial
 from itertools import chain
-from logging import getLogger
 from typing import TYPE_CHECKING, Any, Self
 
 from jetpytools import Singleton, classproperty
@@ -18,7 +18,7 @@ from .proxy import core, register_on_creation, register_on_destroy
 __all__ = ["VSDebug", "VSObject", "VSObjectABC", "VSObjectABCMeta", "VSObjectMeta"]
 
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def _get_mangle_name(name: str) -> str:
@@ -246,8 +246,6 @@ class VSDebug(Singleton, init=True):
                 trying to find the code path that is locking you into a EnvironmentPolicy.
         """
         if use_logging:
-            import logging
-
             VSDebug._print_func = logging.debug
         else:
             VSDebug._print_func = print
@@ -266,7 +264,7 @@ class VSDebug(Singleton, init=True):
     def _print_env_live(core_id: int) -> None:
         VSDebug._print_func(f"New core created with id: {core_id}")
 
-        core.register_on_destroy(VSDebug._print_core_destroy, False)
+        core.register_on_destroy(partial(VSDebug._print_core_destroy, core.env.env_id, core_id))
         register_on_destroy(partial(VSDebug._print_destroy, core.env.env_id, core_id))
 
     @staticmethod

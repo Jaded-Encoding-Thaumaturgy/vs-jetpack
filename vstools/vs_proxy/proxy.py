@@ -1051,7 +1051,7 @@ class VSCoreProxy(_CoreProxyBase):
 
         return _objproxies[self]["lazy"]
 
-    def register_on_destroy(self, callback: Callable[..., None], on_forced: bool = True) -> None:
+    def register_on_destroy(self, callback: Callable[..., None]) -> None:
         """
         Register a callback on this core destroy.
         """
