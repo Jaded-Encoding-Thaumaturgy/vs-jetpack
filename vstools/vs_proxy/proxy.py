@@ -1051,14 +1051,14 @@ class VSCoreProxy(_CoreProxyBase):
 
         return _objproxies[self]["lazy"]
 
-    def register_on_destroy(self, callback: Callable[..., None]) -> None:
+    def register_on_destroy(self, callback: Callable[[], None]) -> None:
         """
         Register a callback on this core destroy.
         """
         _check_environment()
         register_on_destroy(callback)
 
-    def unregister_on_destroy(self, callback: Callable[..., None]) -> None:
+    def unregister_on_destroy(self, callback: Callable[[], None]) -> None:
         """
         Unregister a callback from this core destroy.
         """
