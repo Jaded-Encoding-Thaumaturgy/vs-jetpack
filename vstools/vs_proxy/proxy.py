@@ -781,11 +781,11 @@ if not hasattr(__main__, "__file__") and "__vapoursynth__" not in sys.modules:
     sys.path.append(str(cope.parent))
 
 
-def register_on_creation(callback: Callable[..., None], strict: bool = False) -> None:
+def register_on_creation(callback: Callable[[int], None], strict: bool = False) -> None:
     """
     Register a callback on every core creation.
     """
-    core_on_creation_callbacks.add(callback)
+    _core_on_creation_callbacks.add(callback)
 
     # If a core is already active, the catch-up logic is triggered immediately.
     # We trigger '_core_with_cb', which will execute any registered callbacks
@@ -795,12 +795,11 @@ def register_on_creation(callback: Callable[..., None], strict: bool = False) ->
             core._core_with_cb
 
 
-def unregister_on_creation(callback: Callable[..., None]) -> None:
+def unregister_on_creation(callback: Callable[[int], None]) -> None:
     """
     Unregister this callback from every core creation.
     """
-
-    core_on_creation_callbacks.discard(callback)
+    _core_on_creation_callbacks.discard(callback)
 
 
 @deprecated("This function is deprecated. Use `core.clear_cache()` instead.", category=DeprecationWarning)
@@ -919,10 +918,6 @@ class CoreProxy(_CoreProxyBase):
             self.__dict__["vs_core_ref"] = (vs_core and weakref.ref(vs_core), vs_proxy)
 
         return vs_core or vs_proxy._core_with_cb
-
-
-core_on_creation_callbacks = weakref.WeakSet[Callable[..., None]]()
-core_on_creation_callbacks_cores = weakref.WeakKeyDictionary[Core, weakref.WeakSet[Callable[..., None]]]()
 
 
 def _find_ref(start_data: Any, to_return: type | tuple[type, ...], it: int = 3) -> Any:
@@ -1160,22 +1155,18 @@ class VSCoreProxy(_CoreProxyBase):
 
         # Map each core to the callbacks already run for it.
         # Weak references allow automatic cleanup when objects are destroyed.
-        if vs_core not in core_on_creation_callbacks_cores:
-            core_on_creation_callbacks_cores[vs_core] = weakref.WeakSet()
+        if vs_core not in _core_on_creation_callbacks_cores:
+            _core_on_creation_callbacks_cores[vs_core] = weakref.WeakSet()
 
-        run_cbs = core_on_creation_callbacks_cores[vs_core]
+        run_cbs = _core_on_creation_callbacks_cores[vs_core]
         core_id = id(vs_core)
 
         # Run callbacks that have not yet been called for this core.
-        for callback in list(core_on_creation_callbacks):
+        for callback in list(_core_on_creation_callbacks):
             if callback in run_cbs:
                 continue
 
-            try:
-                callback(core_id)
-            except TypeError:
-                callback()
-
+            callback(core_id)
             # Remember that this callback was run for this core.
             run_cbs.add(callback)
 
@@ -1194,6 +1185,8 @@ def _check_environment() -> None:
         raise
 
 
+_core_on_creation_callbacks = weakref.WeakSet[Callable[[int], None]]()
+_core_on_creation_callbacks_cores = weakref.WeakKeyDictionary[Core, weakref.WeakSet[Callable[[int], None]]]()
 _objproxies = weakref.WeakKeyDictionary[VSCoreProxy, dict[Literal["proxied", "lazy"], CoreProxy]]()
 
 core = VSCoreProxy()
