@@ -171,6 +171,7 @@ from vapoursynth import _construct_type as construct_type
 from vapoursynth import _try_enable_introspection as try_enable_introspection
 
 import __main__
+from vsjetpack import deprecated
 
 from .enums import (
     GRAY8,
@@ -811,6 +812,7 @@ def unregister_on_creation(callback: Callable[..., None]) -> None:
     core_on_creation_callbacks.discard(callback)
 
 
+@deprecated("This function is deprecated. Use `core.clear_cache()` instead.", category=DeprecationWarning)
 def clear_cache() -> None:
     try:
         cache_size = int(core.max_cache_size)
