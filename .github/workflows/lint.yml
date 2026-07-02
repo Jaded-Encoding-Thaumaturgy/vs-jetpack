@@ -47,7 +47,7 @@ jobs:
 
       - name: Running mypy
         if: success() || (failure() && (steps.ruff_check.conclusion == 'failure' || steps.ruff_format.conclusion == 'failure'))
-        run: uv run --with onnx --no-sync mypy .
+        run: uv run --with onnx --with cuda-python --no-sync mypy .
 
       - name: Post webhook for failure
         if: failure()
