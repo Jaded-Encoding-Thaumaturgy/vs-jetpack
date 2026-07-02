@@ -1013,9 +1013,13 @@ class EnvironmentProxy(_EnvironmentProxyBase):
 
     @property
     def data(self) -> EnvironmentData:
-        data = self.env()
-        assert data
-        return data
+        """
+        Retrieve the underlying EnvironmentData object.
+        """
+        if data := self.env():
+            return data
+
+        raise CustomRuntimeError("No environment is currently activated.")
 
     @property
     @deprecated("Accessing this attribute is deprecated. Use vs.get_policy() instead.", category=DeprecationWarning)
