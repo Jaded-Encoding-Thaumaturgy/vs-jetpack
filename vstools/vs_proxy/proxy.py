@@ -766,19 +766,35 @@ __all__ = [
     "vs_file",
 ]
 
+# Compatibility helper designed to fake a standard script execution environment
+# when running in interactive environments (such as Jupyter Notebooks, Python REPL, or IDE interactive windows)
+# or embedded hosts where __main__.__file__ is not defined.
 if not hasattr(__main__, "__file__") and "__vapoursynth__" not in sys.modules:
     import inspect
 
-    first_stack = inspect.stack()[-1]
+    # Walk up the call stack to find the entrypoint frame.
+    frame = inspect.currentframe()
+    try:
+        if frame is not None:
+            while frame.f_back:
+                frame = frame.f_back
+            entry_filename = frame.f_code.co_filename
+        else:
+            entry_filename = ""
+    finally:
+        del frame
 
+    # Create a stub '__vapoursynth__' module to mimic the script execution context
     sys.modules["__vapoursynth__"] = ModuleType("__vapoursynth__")
 
-    cope = (Path.cwd() / first_stack.filename).resolve()
-
-    first_stack = None
-
-    sys.modules["__vapoursynth__"].__file__ = __main__.__file__ = str(cope)
-    sys.path.append(str(cope.parent))
+    if entry_filename:
+        # Resolve the absolute path to the entrypoint script
+        script_path = Path(entry_filename).resolve()
+        # Set the '__file__' attribute to emulate standard script execution
+        sys.modules["__vapoursynth__"].__file__ = __main__.__file__ = str(script_path)
+        # If the file exists on disk, add its directory to sys.path so local imports resolve correctly
+        if script_path.exists():
+            sys.path.append(str(script_path.parent))
 
 
 def register_on_creation(callback: Callable[[int], None], strict: bool = False) -> None:
