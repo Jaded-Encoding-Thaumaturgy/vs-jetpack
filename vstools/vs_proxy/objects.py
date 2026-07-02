@@ -131,7 +131,7 @@ def _register_vs_del(obj: VSObject | VSObjectMeta) -> None:
             )
 
         setattr(obj, prefix + partial_attr, vsdel_partial_register)
-        core.register_on_destroy(vsdel_partial_register)
+        register_on_destroy(vsdel_partial_register)
 
     setattr(obj, prefix + register_attr, del_register)
     register_on_creation(del_register)
@@ -264,7 +264,7 @@ class VSDebug(Singleton, init=True):
     def _print_env_live(core_id: int) -> None:
         VSDebug._print_func(f"New core created with id: {core_id}")
 
-        core.register_on_destroy(partial(VSDebug._print_core_destroy, core.env.env_id, core_id))
+        register_on_destroy(partial(VSDebug._print_core_destroy, core.env.env_id, core_id))
         register_on_destroy(partial(VSDebug._print_destroy, core.env.env_id, core_id))
 
     @staticmethod

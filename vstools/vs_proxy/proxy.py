@@ -1051,18 +1051,12 @@ class VSCoreProxy(_CoreProxyBase):
 
         return _objproxies[self]["lazy"]
 
+    @deprecated("This function is deprecated. Use `vs.register_on_destroy()` instead.", category=DeprecationWarning)
     def register_on_destroy(self, callback: Callable[[], None]) -> None:
-        """
-        Register a callback on this core destroy.
-        """
-        _check_environment()
         register_on_destroy(callback)
 
+    @deprecated("This function is deprecated. Use `vs.unregister_on_destroy()` instead.", category=DeprecationWarning)
     def unregister_on_destroy(self, callback: Callable[[], None]) -> None:
-        """
-        Unregister a callback from this core destroy.
-        """
-        _check_environment()
         unregister_on_destroy(callback)
 
     def set_affinity(
@@ -1171,18 +1165,6 @@ class VSCoreProxy(_CoreProxyBase):
             run_cbs.add(callback)
 
         return vs_core
-
-
-def _check_environment() -> None:
-    def _core_on_destroy_try() -> None: ...
-
-    try:
-        register_on_destroy(_core_on_destroy_try)
-        unregister_on_destroy(_core_on_destroy_try)
-    except Exception as e:
-        if not get_current_environment().active:
-            raise CustomRuntimeError("The current environment is not active.") from e
-        raise
 
 
 _core_on_creation_callbacks = weakref.WeakSet[Callable[[int], None]]()
