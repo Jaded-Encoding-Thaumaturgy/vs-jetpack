@@ -4,6 +4,7 @@ import gc
 import sys
 import weakref
 from collections.abc import Callable, Iterable
+from itertools import chain
 from operator import attrgetter
 from pathlib import Path
 from types import ModuleType
@@ -167,7 +168,7 @@ from vapoursynth import _construct_type as construct_type
 from vapoursynth import _try_enable_introspection as try_enable_introspection
 
 import __main__
-from vsjetpack import deprecated
+from vsjetpack import TypeForm, deprecated
 
 from .enums import (
     GRAY8,
@@ -947,7 +948,7 @@ class CoreProxy(_CoreProxyBase):
         return vs_core or vs_proxy._core_with_cb
 
 
-def _find_ref(start_data: Any, to_return: type | tuple[type, ...], it: int = 3) -> Any:
+def _find_ref[T](start_data: Any, to_return: tuple[TypeForm[T], ...], it: int = 3) -> T | None:
     if not it:
         return None
 
