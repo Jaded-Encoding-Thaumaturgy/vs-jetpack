@@ -797,9 +797,11 @@ if not hasattr(__main__, "__file__") and "__vapoursynth__" not in sys.modules:
             sys.path.append(str(script_path.parent))
 
 
-def register_on_creation(callback: Callable[[int], None], strict: bool = False) -> None:
+def register_on_creation(callback: Callable[[int], None]) -> bool:
     """
     Register a callback on every core creation.
+
+    Returns whether the callback was executed immediately because a core is already active.
     """
     _core_on_creation_callbacks.add(callback)
 
@@ -809,6 +811,9 @@ def register_on_creation(callback: Callable[[int], None], strict: bool = False) 
     if has_policy() and has_environment() and core.active:
         with get_current_environment().use():
             core._core_with_cb
+        return True
+
+    return False
 
 
 def unregister_on_creation(callback: Callable[[int], None]) -> None:

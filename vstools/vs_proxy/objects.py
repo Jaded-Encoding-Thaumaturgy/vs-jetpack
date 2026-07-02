@@ -251,10 +251,10 @@ class VSDebug(Singleton, init=True):
             VSDebug._print_func = print
 
         if env_life:
-            register_on_creation(VSDebug._print_env_live, True)
+            register_on_creation(VSDebug._print_env_live)
 
         if core_fetch:
-            register_on_creation(VSDebug._print_stack, True)
+            register_on_creation(VSDebug._print_stack)
 
     @staticmethod
     def _print_stack(core_id: int) -> None:
