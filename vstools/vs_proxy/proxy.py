@@ -881,6 +881,36 @@ def get_policy_api() -> EnvironmentPolicyAPI:
     return api
 
 
+def _find_ref[T](start_data: Any, to_return: tuple[TypeForm[T], ...], it: int = 3) -> T | None:
+    """
+    Recursively search the garbage collector's referents and referrers
+    to locate an active instance of specific types associated with the starting object.
+    """
+    if not it:
+        return None
+
+    for obj in chain(gc.get_referents(start_data), gc.get_referrers(start_data)):
+        if isinstance(obj, to_return):  # type: ignore[arg-type]
+            return obj
+
+        if isinstance(obj, dict) and "__name__" in obj:
+            continue
+
+        if isinstance(obj, (Core, _CoreProxy, CoreProxy, _FastManager)):
+            continue
+
+        for obj_obj in gc.get_referents(obj):
+            if isinstance(obj_obj, to_return):  # type: ignore[arg-type]
+                return obj_obj
+
+            value = _find_ref(obj, to_return, it - 1)
+
+            if value is not None:
+                return value
+
+    return None
+
+
 if TYPE_CHECKING:
 
     class _FunctionProxyBase(Function): ...
@@ -972,36 +1002,6 @@ class CoreProxy(_CoreProxyBase):
             self.__dict__["vs_core_ref"] = (vs_core and weakref.ref(vs_core), vs_proxy)
 
         return vs_core or vs_proxy._core_with_cb
-
-
-def _find_ref[T](start_data: Any, to_return: tuple[TypeForm[T], ...], it: int = 3) -> T | None:
-    """
-    Recursively search the garbage collector's referents and referrers
-    to locate an active instance of specific types associated with the starting object.
-    """
-    if not it:
-        return None
-
-    for obj in chain(gc.get_referents(start_data), gc.get_referrers(start_data)):
-        if isinstance(obj, to_return):  # type: ignore[arg-type]
-            return obj
-
-        if isinstance(obj, dict) and "__name__" in obj:
-            continue
-
-        if isinstance(obj, (Core, _CoreProxy, CoreProxy, _FastManager)):
-            continue
-
-        for obj_obj in gc.get_referents(obj):
-            if isinstance(obj_obj, to_return):  # type: ignore[arg-type]
-                return obj_obj
-
-            value = _find_ref(obj, to_return, it - 1)
-
-            if value is not None:
-                return value
-
-    return None
 
 
 class EnvironmentProxy(_EnvironmentProxyBase):
