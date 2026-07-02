@@ -1,17 +1,13 @@
 from __future__ import annotations
 
+import gc
+import sys
+import weakref
 from collections.abc import Callable, Iterable
-from gc import get_referents, get_referrers
-from inspect import stack
-from math import ceil
 from operator import attrgetter
 from pathlib import Path
-from sys import modules
-from sys import path as sys_path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any
-from weakref import ReferenceType, WeakKeyDictionary, WeakSet
-from weakref import ref as weakref_ref
+from typing import TYPE_CHECKING, Any, Literal
 
 from jetpytools import CustomRuntimeError, CustomValueError
 from vapoursynth import (
@@ -770,18 +766,19 @@ __all__ = [
     "vs_file",
 ]
 
-if not hasattr(__main__, "__file__") and "__vapoursynth__" not in modules:
-    first_stack = stack()[-1]
+if not hasattr(__main__, "__file__") and "__vapoursynth__" not in sys.modules:
+    import inspect
 
-    modules["__vapoursynth__"] = ModuleType("__vapoursynth__")
+    first_stack = inspect.stack()[-1]
+
+    sys.modules["__vapoursynth__"] = ModuleType("__vapoursynth__")
 
     cope = (Path.cwd() / first_stack.filename).resolve()
 
     first_stack = None
 
-    modules["__vapoursynth__"].__file__ = __main__.__file__ = str(cope)
-
-    sys_path.append(str(cope.parent))
+    sys.modules["__vapoursynth__"].__file__ = __main__.__file__ = str(cope)
+    sys.path.append(str(cope.parent))
 
 
 def register_on_creation(callback: Callable[..., None], strict: bool = False) -> None:
@@ -895,7 +892,7 @@ class PluginProxy(_PluginProxyBase):
 class CoreProxy(_CoreProxyBase):
     def __init__(self, core: Core | None, vs_proxy: VSCoreProxy, lazy: bool) -> None:
         self.lazy = lazy
-        self.__dict__["vs_core_ref"] = (core and weakref_ref(core), vs_proxy)
+        self.__dict__["vs_core_ref"] = (core and weakref.ref(core), vs_proxy)
 
     def __getattr__(self, name: str) -> Plugin:
         if self.lazy and name not in Core.__dict__:
@@ -919,20 +916,20 @@ class CoreProxy(_CoreProxyBase):
                 raise CustomRuntimeError("The VapourSynth core has been freed!", CoreProxy)
 
             vs_core = vs_proxy._core
-            self.__dict__["vs_core_ref"] = (vs_core and weakref_ref(vs_core), vs_proxy)
+            self.__dict__["vs_core_ref"] = (vs_core and weakref.ref(vs_core), vs_proxy)
 
         return vs_core or vs_proxy._core_with_cb
 
 
-core_on_creation_callbacks = WeakSet[Callable[..., None]]()
-core_on_creation_callbacks_cores = WeakKeyDictionary[Core, WeakSet[Callable[..., None]]]()
+core_on_creation_callbacks = weakref.WeakSet[Callable[..., None]]()
+core_on_creation_callbacks_cores = weakref.WeakKeyDictionary[Core, weakref.WeakSet[Callable[..., None]]]()
 
 
 def _find_ref(start_data: Any, to_return: type | tuple[type, ...], it: int = 3) -> Any:
     if not it:
         return None
 
-    for objects in [get_referents(start_data), get_referrers(start_data)]:
+    for objects in [gc.get_referents(start_data), gc.get_referrers(start_data)]:
         for obj in objects:
             if isinstance(obj, to_return):
                 return obj
@@ -943,7 +940,7 @@ def _find_ref(start_data: Any, to_return: type | tuple[type, ...], it: int = 3) 
             if isinstance(obj, (Core, _CoreProxy, CoreProxy, _FastManager)):
                 continue
 
-            for obj_obj in get_referents(obj):
+            for obj_obj in gc.get_referents(obj):
                 if isinstance(obj_obj, to_return):
                     return obj_obj
 
@@ -982,7 +979,7 @@ class EnvironmentProxy(_EnvironmentProxyBase):
 
     @property
     def has_core(self) -> bool:
-        return any(isinstance(ref, (Core, CoreProxy)) for ref in get_referents(self.data))
+        return any(isinstance(ref, (Core, CoreProxy)) for ref in gc.get_referents(self.data))
 
 
 _curr_env_proxy = EnvironmentProxy()
@@ -995,7 +992,7 @@ class VSCoreProxy(_CoreProxyBase):
 
     def __init__(self, core: Core | None = None) -> None:
         object.__setattr__(self, "_own_core", core is not None)
-        object.__setattr__(self, "_core_ref", core and weakref_ref(core))
+        object.__setattr__(self, "_core_ref", core and weakref.ref(core))
 
     def __getattr__(self, name: str) -> Plugin:
         return getattr(self.core, name)
@@ -1104,12 +1101,13 @@ class VSCoreProxy(_CoreProxyBase):
         Raises:
             CustomValueError: If ``threads`` is lower than or equal to 0.
         """
-        from multiprocessing import cpu_count
+        import math
+        import multiprocessing
 
-        from psutil import Process
+        import psutil
 
         if threads is None:
-            threads = cpu_count()
+            threads = multiprocessing.cpu_count()
 
         if isinstance(threads, float):
             if threads <= 0:
@@ -1117,7 +1115,7 @@ class VSCoreProxy(_CoreProxyBase):
                     "When passing a float, `threads` should be greater than 0.", self.set_affinity, threads
                 )
 
-            threads = ceil(cpu_count() * threads)
+            threads = math.ceil(multiprocessing.cpu_count() * threads)
 
         if isinstance(threads, int):
             threads = range(0, threads)
@@ -1128,14 +1126,14 @@ class VSCoreProxy(_CoreProxyBase):
 
         self.core.num_threads = len(threads)
 
-        Process().cpu_affinity(threads)
+        psutil.Process().cpu_affinity(threads)
 
         if max_cache is not None:
             self.core.max_cache_size = max_cache
 
     @property
     def _core(self) -> Core | None:
-        core_ref: ReferenceType[Core] | None = object.__getattribute__(self, "_core_ref")
+        core_ref: weakref.ReferenceType[Core] | None = object.__getattribute__(self, "_core_ref")
         own_core: bool = object.__getattribute__(self, "_own_core")
 
         if core := (core_ref and core_ref()):
@@ -1163,7 +1161,7 @@ class VSCoreProxy(_CoreProxyBase):
         # Map each core to the callbacks already run for it.
         # Weak references allow automatic cleanup when objects are destroyed.
         if vs_core not in core_on_creation_callbacks_cores:
-            core_on_creation_callbacks_cores[vs_core] = WeakSet()
+            core_on_creation_callbacks_cores[vs_core] = weakref.WeakSet()
 
         run_cbs = core_on_creation_callbacks_cores[vs_core]
         core_id = id(vs_core)
@@ -1196,6 +1194,7 @@ def _check_environment() -> None:
         raise
 
 
-_objproxies = WeakKeyDictionary[VSCoreProxy, dict[str, CoreProxy]]()
+_objproxies = weakref.WeakKeyDictionary[VSCoreProxy, dict[Literal["proxied", "lazy"], CoreProxy]]()
 
 core = VSCoreProxy()
+"""The singleton Core object."""
