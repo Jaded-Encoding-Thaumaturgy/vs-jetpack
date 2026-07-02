@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 from fractions import Fraction
 from itertools import chain
 from typing import Any, Literal, NamedTuple, overload
@@ -34,6 +33,20 @@ from .enums import (
     SharpMode,
 )
 from .motion import MotionVectors
+from .types import (
+    AnalyzeArgs,
+    BlockFpsArgs,
+    CompensateArgs,
+    DegrainArgs,
+    FlowArgs,
+    FlowBlurArgs,
+    FlowFpsArgs,
+    FlowInterpolateArgs,
+    MaskArgs,
+    RecalculateArgs,
+    ScDetectionArgs,
+    SuperArgs,
+)
 from .utils import normalize_thscd, planes_to_mvtools
 
 __all__ = ["MVTools"]
@@ -143,18 +156,18 @@ class MVTools(VSObject):
         chroma: bool | None = None,
         field: FieldLike | None = None,
         *,
-        super_args: Mapping[str, Any] | None = None,
-        analyze_args: Mapping[str, Any] | None = None,
-        recalculate_args: Mapping[str, Any] | None = None,
-        compensate_args: Mapping[str, Any] | None = None,
-        flow_args: Mapping[str, Any] | None = None,
-        degrain_args: Mapping[str, Any] | None = None,
-        flow_interpolate_args: Mapping[str, Any] | None = None,
-        flow_fps_args: Mapping[str, Any] | None = None,
-        block_fps_args: Mapping[str, Any] | None = None,
-        flow_blur_args: Mapping[str, Any] | None = None,
-        mask_args: Mapping[str, Any] | None = None,
-        sc_detection_args: Mapping[str, Any] | None = None,
+        super_args: SuperArgs | None = None,
+        analyze_args: AnalyzeArgs | None = None,
+        recalculate_args: RecalculateArgs | None = None,
+        compensate_args: CompensateArgs | None = None,
+        flow_args: FlowArgs | None = None,
+        degrain_args: DegrainArgs | None = None,
+        flow_interpolate_args: FlowInterpolateArgs | None = None,
+        flow_fps_args: FlowFpsArgs | None = None,
+        block_fps_args: BlockFpsArgs | None = None,
+        flow_blur_args: FlowBlurArgs | None = None,
+        mask_args: MaskArgs | None = None,
+        sc_detection_args: ScDetectionArgs | None = None,
     ) -> None:
         """
         MVTools is a collection of functions for motion estimation and compensation in video.
