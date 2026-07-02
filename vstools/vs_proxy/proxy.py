@@ -866,7 +866,7 @@ def get_policy() -> EnvironmentPolicy | VSScriptEnvironmentPolicy | StandaloneEn
     policy = _find_ref(data, (EnvironmentPolicy, VSScriptEnvironmentPolicy, StandaloneEnvironmentPolicy))
 
     if policy is None:
-        raise CustomRuntimeError("No policy is currently registed.")
+        raise CustomRuntimeError("No policy is currently registered.")
 
     return policy  # type: ignore[return-value]
 
@@ -876,7 +876,7 @@ def get_policy_api() -> EnvironmentPolicyAPI:
     api = _find_ref(get_policy(), (EnvironmentPolicyAPI,))
 
     if api is None:
-        raise CustomRuntimeError("No policy API is currently registed.")
+        raise CustomRuntimeError("No policy API is currently registered.")
 
     return api
 
