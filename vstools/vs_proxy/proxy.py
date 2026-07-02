@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable
 from gc import get_referents, get_referrers
 from inspect import stack
 from math import ceil
+from operator import attrgetter
 from pathlib import Path
 from sys import modules
 from sys import path as sys_path
@@ -795,11 +796,11 @@ def register_on_creation(callback: Callable[..., None], strict: bool = False) ->
             return False
 
     # If a core is already active, the catch-up logic is triggered immediately.
-    # By accessing 'core.core_id', we trigger '_get_core_with_cb', which will execute any registered callbacks
+    # We trigger '_core_with_cb', which will execute any registered callbacks
     # that haven't been run for the current core instance yet.
     if has_policy() and has_env() and core.active:
         with get_current_environment().use():
-            _get_core_with_cb(core)
+            core._core_with_cb
 
 
 def unregister_on_creation(callback: Callable[..., None]) -> None:
@@ -828,56 +829,66 @@ def clear_cache() -> None:
 
 if TYPE_CHECKING:
 
-    class FunctionProxyBase(Function): ...
+    class _FunctionProxyBase(Function): ...
 
-    class PluginProxyBase(Plugin): ...
+    class _PluginProxyBase(Plugin): ...
 
-    class CoreProxyBase(_CoreProxy):
-        def __init__(self) -> None: ...
+    class _CoreProxyBase(_CoreProxy): ...
 
-    class EnvironmentProxyBase(Environment):
-        def __init__(self) -> None: ...
+    class _EnvironmentProxyBase(Environment): ...
 else:
-    FunctionProxyBase = PluginProxyBase = CoreProxyBase = EnvironmentProxyBase = object
+    _FunctionProxyBase = _PluginProxyBase = _CoreProxyBase = _EnvironmentProxyBase = object
 
 
-class FunctionProxy(FunctionProxyBase):
+class FunctionProxy(_FunctionProxyBase):
+    if not TYPE_CHECKING:
+        __isabstractmethod__ = False
+
     def __init__(self, plugin: PluginProxy, func_name: str) -> None:
         self.__dict__["func_ref"] = (plugin, func_name)
 
     def __getattr__(self, name: str) -> Function:
-        if name == "__isabstractmethod__":
-            return False  # type: ignore[return-value]
-
-        function = proxy_utils.get_vs_function(self)
-
-        return getattr(function, name)
+        return getattr(self._vs_function, name)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        return proxy_utils.get_vs_function(self)(*args, **kwargs)
+        return self._vs_function(*args, **kwargs)
+
+    @property
+    def _vs_function(self) -> Function:
+        plugin, func_name = self._func_ref
+        core, namespace = plugin._plugin_ref
+        vs_core = core._vs_core_ref
+
+        return attrgetter(f"{namespace}.{func_name}")(vs_core)
+
+    @property
+    def _func_ref(self) -> tuple[PluginProxy, str]:
+        return self.__dict__["func_ref"]
 
 
-class PluginProxy(PluginProxyBase):
+class PluginProxy(_PluginProxyBase):
     def __init__(self, core: CoreProxy, namespace: str) -> None:
         self.__dict__["plugin_ref"] = (core, namespace)
 
     def __getattr__(self, name: str) -> Function:
-        core, namespace = proxy_utils.get_core(self)
+        core, namespace = self._plugin_ref
 
         if core.lazy and name not in Plugin.__dict__:
             return FunctionProxy(self, name)
 
-        vs_core = proxy_utils.get_vs_core(core)
-
-        plugin: Plugin = getattr(vs_core, namespace)
+        plugin: Plugin = getattr(core._vs_core_ref, namespace)
 
         if name in (f.name for f in plugin.functions()):
             return FunctionProxy(self, name)
 
         return getattr(plugin, name)
 
+    @property
+    def _plugin_ref(self) -> tuple[CoreProxy, str]:
+        return self.__dict__["plugin_ref"]
 
-class CoreProxy(CoreProxyBase):
+
+class CoreProxy(_CoreProxyBase):
     def __init__(self, core: Core | None, vs_proxy: VSCoreProxy, lazy: bool) -> None:
         self.lazy = lazy
         self.__dict__["vs_core_ref"] = (core and weakref_ref(core), vs_proxy)
@@ -886,18 +897,16 @@ class CoreProxy(CoreProxyBase):
         if self.lazy and name not in Core.__dict__:
             return PluginProxy(self, name)
 
-        core = proxy_utils.get_vs_core(self)
+        core = self._vs_core_ref
 
         if name in (p.namespace for p in core.plugins()):
             return PluginProxy(self, name)
 
         return getattr(core, name)
 
-
-class proxy_utils:  # noqa: N801
-    @staticmethod
-    def get_vs_core(core: CoreProxy) -> Core:
-        vs_core_ref, vs_proxy = core.__dict__["vs_core_ref"]
+    @property
+    def _vs_core_ref(self) -> Core:
+        vs_core_ref, vs_proxy = self.__dict__["vs_core_ref"]
 
         vs_core = vs_core_ref and vs_core_ref()
 
@@ -905,80 +914,14 @@ class proxy_utils:  # noqa: N801
             if object.__getattribute__(vs_proxy, "_own_core"):
                 raise CustomRuntimeError("The VapourSynth core has been freed!", CoreProxy)
 
-            vs_core = _get_core(vs_proxy)
-            core.__dict__["vs_core_ref"] = (vs_core and weakref_ref(vs_core), vs_proxy)
+            vs_core = vs_proxy._core
+            self.__dict__["vs_core_ref"] = (vs_core and weakref_ref(vs_core), vs_proxy)
 
-        return vs_core or _get_core_with_cb()
-
-    @staticmethod
-    def get_vs_function(func: FunctionProxy) -> Function:
-        plugin, func_name = proxy_utils.get_plugin(func)
-        core, namespace = proxy_utils.get_core(plugin)
-        vs_core = proxy_utils.get_vs_core(core)
-
-        return getattr(getattr(vs_core, namespace), func_name)
-
-    @staticmethod
-    def get_plugin(func: FunctionProxy) -> tuple[PluginProxy, str]:
-        return func.__dict__["func_ref"]
-
-    @staticmethod
-    def get_core(plugin: PluginProxy) -> tuple[CoreProxy, str]:
-        return plugin.__dict__["plugin_ref"]
-
-
-def _get_core(self: VSCoreProxy) -> Core | None:
-    core_ref: ReferenceType[Core] | None = object.__getattribute__(self, "_core")
-    own_core: bool = object.__getattribute__(self, "_own_core")
-
-    if core := (core_ref and core_ref()):
-        return core
-
-    if own_core:
-        raise CustomRuntimeError("The core the proxy made reference to was freed!", "VSCoreProxy")
-
-    return None
+        return vs_core or vs_proxy._core_with_cb
 
 
 core_on_creation_callbacks = WeakSet[Callable[..., None]]()
 core_on_creation_callbacks_cores = WeakKeyDictionary[Core, WeakSet[Callable[..., None]]]()
-
-
-def _get_core_with_cb(self: VSCoreProxy | None = None) -> Core:
-    """
-    Retrieve the VapourSynth core and ensure all "on_creation" callbacks have been run.
-
-    This makes sure callbacks are executed when a new core is created.
-    """
-    vs_core = _get_core(self) if self else None
-
-    if not vs_core:
-        import vapoursynth
-
-        vs_core = vapoursynth.core.core
-
-    # Map each core to the callbacks already run for it.
-    # Weak references allow automatic cleanup when objects are destroyed.
-    if vs_core not in core_on_creation_callbacks_cores:
-        core_on_creation_callbacks_cores[vs_core] = WeakSet()
-
-    run_cbs = core_on_creation_callbacks_cores[vs_core]
-    core_id = id(vs_core)
-
-    # Run callbacks that have not yet been called for this core.
-    for callback in list(core_on_creation_callbacks):
-        if callback in run_cbs:
-            continue
-
-        try:
-            callback(core_id)
-        except TypeError:
-            callback()
-
-        # Remember that this callback was run for this core.
-        run_cbs.add(callback)
-
-    return vs_core
 
 
 def _find_ref(start_data: Any, to_return: type | tuple[type, ...], it: int = 3) -> Any:
@@ -1008,7 +951,7 @@ def _find_ref(start_data: Any, to_return: type | tuple[type, ...], it: int = 3) 
     return None
 
 
-class EnvironmentProxy(EnvironmentProxyBase):
+class EnvironmentProxy(_EnvironmentProxyBase):
     def __getattr__(self, name: str) -> Plugin:
         return getattr(get_current_environment(), name)
 
@@ -1041,14 +984,14 @@ class EnvironmentProxy(EnvironmentProxyBase):
 _curr_env_proxy = EnvironmentProxy()
 
 
-class VSCoreProxy(CoreProxyBase):
+class VSCoreProxy(_CoreProxyBase):
     """
     Class for wrapping a VapourSynth core.
     """
 
     def __init__(self, core: Core | None = None) -> None:
         object.__setattr__(self, "_own_core", core is not None)
-        object.__setattr__(self, "_core", core and weakref_ref(core))
+        object.__setattr__(self, "_core_ref", core and weakref_ref(core))
 
     def __getattr__(self, name: str) -> Plugin:
         return getattr(self.core, name)
@@ -1072,15 +1015,14 @@ class VSCoreProxy(CoreProxyBase):
 
     @property
     def active(self) -> bool:
-        return (has_policy() and self.env.has_core) or (_get_core(self) is not None)
+        return (has_policy() and self.env.has_core) or (self._core is not None)
 
     @property
     def core(self) -> Core:
         """
         The underlying VapourSynth Core instance.
         """
-
-        return _get_core_with_cb(self)
+        return self._core_with_cb
 
     @property
     def proxied(self) -> CoreProxy:
@@ -1093,7 +1035,7 @@ class VSCoreProxy(CoreProxyBase):
             _objproxies[self] = {}
 
         if "proxied" not in _objproxies[self]:
-            _objproxies[self]["proxied"] = CoreProxy(_get_core(self), self, True)
+            _objproxies[self]["proxied"] = CoreProxy(self._core, self, True)
 
         return _objproxies[self]["proxied"]
 
@@ -1117,7 +1059,6 @@ class VSCoreProxy(CoreProxyBase):
         """
         Register a callback on this core destroy.
         """
-
         _check_environment()
         register_on_destroy(callback)
 
@@ -1125,7 +1066,6 @@ class VSCoreProxy(CoreProxyBase):
         """
         Unregister a callback from this core destroy.
         """
-
         _check_environment()
         unregister_on_destroy(callback)
 
@@ -1189,8 +1129,55 @@ class VSCoreProxy(CoreProxyBase):
         if max_cache is not None:
             self.core.max_cache_size = max_cache
 
+    @property
+    def _core(self) -> Core | None:
+        core_ref: ReferenceType[Core] | None = object.__getattribute__(self, "_core_ref")
+        own_core: bool = object.__getattribute__(self, "_own_core")
 
-def _core_on_destroy_try() -> None: ...
+        if core := (core_ref and core_ref()):
+            return core
+
+        if own_core:
+            raise CustomRuntimeError("The core the proxy made reference to was freed!", "VSCoreProxy")
+
+        return None
+
+    @property
+    def _core_with_cb(self) -> Core:
+        """
+        Retrieve the VapourSynth core and ensure all "on_creation" callbacks have been run.
+
+        This makes sure callbacks are executed when a new core is created.
+        """
+        vs_core = self._core
+
+        if not vs_core:
+            import vapoursynth
+
+            vs_core = vapoursynth.core.core
+
+        # Map each core to the callbacks already run for it.
+        # Weak references allow automatic cleanup when objects are destroyed.
+        if vs_core not in core_on_creation_callbacks_cores:
+            core_on_creation_callbacks_cores[vs_core] = WeakSet()
+
+        run_cbs = core_on_creation_callbacks_cores[vs_core]
+        core_id = id(vs_core)
+
+        # Run callbacks that have not yet been called for this core.
+        for callback in list(core_on_creation_callbacks):
+            if callback in run_cbs:
+                continue
+
+            try:
+                callback(core_id)
+            except TypeError:
+                callback()
+
+            # Remember that this callback was run for this core.
+            run_cbs.add(callback)
+
+        return vs_core
 
 
 def _check_environment() -> None:
