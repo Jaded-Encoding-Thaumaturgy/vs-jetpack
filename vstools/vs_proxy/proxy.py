@@ -925,6 +925,12 @@ else:
 
 
 class FunctionProxy(_FunctionProxyBase):
+    """
+    A lazy proxy wrapper for a VapourSynth plugin function.
+
+    Defers lookup and resolution of the underlying function until it is called or its attributes are accessed.
+    """
+
     if not TYPE_CHECKING:
         __isabstractmethod__ = False
 
@@ -951,6 +957,13 @@ class FunctionProxy(_FunctionProxyBase):
 
 
 class PluginProxy(_PluginProxyBase):
+    """
+    A lazy proxy wrapper for a VapourSynth plugin.
+
+    Delegates attribute lookup to return a FunctionProxy
+    or resolve the underlying VapourSynth Plugin's functions dynamically.
+    """
+
     def __init__(self, core: CoreProxy, namespace: str) -> None:
         self.__dict__["plugin_ref"] = (core, namespace)
 
@@ -973,6 +986,13 @@ class PluginProxy(_PluginProxyBase):
 
 
 class CoreProxy(_CoreProxyBase):
+    """
+    A lazy proxy wrapper for the VapourSynth Core.
+
+    Supports deferred, lazy retrieval of plugins and functions
+    to prevent premature core initialization and facilitate safe reference holding.
+    """
+
     def __init__(self, core: Core | None, vs_proxy: VSCoreProxy, lazy: bool) -> None:
         self.lazy = lazy
         self.__dict__["vs_core_ref"] = (core and weakref.ref(core), vs_proxy)
@@ -1005,6 +1025,8 @@ class CoreProxy(_CoreProxyBase):
 
 
 class EnvironmentProxy(_EnvironmentProxyBase):
+    """A proxy wrapper around the active VapourSynth Environment."""
+
     def __getattr__(self, name: str) -> Plugin:
         return getattr(get_current_environment(), name)
 
@@ -1033,10 +1055,12 @@ class EnvironmentProxy(_EnvironmentProxyBase):
 
     @property
     def has_core(self) -> bool:
+        """
+        Check if the active EnvironmentData has an instantiated VapourSynth Core.
+
+        This avoids triggering the lazy creation of the Core.
+        """
         return any(isinstance(ref, (Core, CoreProxy)) for ref in gc.get_referents(self.data))
-
-
-_curr_env_proxy = EnvironmentProxy()
 
 
 class VSCoreProxy(_CoreProxyBase):
@@ -1056,13 +1080,25 @@ class VSCoreProxy(_CoreProxyBase):
 
     @property
     def env(self) -> EnvironmentProxy:
+        """
+        The EnvironmentProxy singleton representing the current environment execution context.
+
+        Raises:
+            CustomRuntimeError: If a policy has not been registered.
+        """
         if not has_policy():
             raise CustomRuntimeError("No policy has been registered!")
 
-        return _curr_env_proxy
+        return _env_proxy
 
     @property
     def core_id(self) -> int:
+        """
+        The unique integer identifier of the active VapourSynth Core.
+
+        Raises:
+            CustomRuntimeError: If the Core has not been instantiated yet.
+        """
         if not self.active:
             raise CustomRuntimeError("Core hasn't been fetched yet!")
 
@@ -1070,6 +1106,12 @@ class VSCoreProxy(_CoreProxyBase):
 
     @property
     def active(self) -> bool:
+        """
+        Check if the VapourSynth Core has already been instantiated.
+
+        A core is active if we have a direct/owned Core instance,
+        or if a registered policy environment exists and already has an initialized Core.
+        """
         return (has_policy() and self.env.has_core) or (self._core is not None)
 
     @property
@@ -1228,6 +1270,7 @@ class VSCoreProxy(_CoreProxyBase):
 
 _core_on_creation_callbacks = weakref.WeakSet[Callable[[int], None]]()
 _core_on_creation_callbacks_cores = weakref.WeakKeyDictionary[Core, weakref.WeakSet[Callable[[int], None]]]()
+_env_proxy = EnvironmentProxy()
 _objproxies = weakref.WeakKeyDictionary[VSCoreProxy, dict[Literal["proxied", "lazy"], CoreProxy]]()
 
 core = VSCoreProxy()
