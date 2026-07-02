@@ -797,8 +797,8 @@ if not hasattr(__main__, "__file__") and "__vapoursynth__" not in sys.modules:
         # Set the '__file__' attribute to emulate standard script execution
         sys.modules["__vapoursynth__"].__file__ = __main__.__file__ = str(script_path)
         # If the file exists on disk, add its directory to sys.path so local imports resolve correctly
-        if script_path.exists():
-            sys.path.append(str(script_path.parent))
+        if script_path.exists() and (p := str(script_path.parent)) not in sys.path:
+            sys.path.append(p)
 
 
 def register_on_creation(callback: Callable[[int], None]) -> bool:
