@@ -756,6 +756,9 @@ __all__ = [
     "get_current_environment",
     "get_output",
     "get_outputs",
+    "get_policy",
+    "get_policy_api",
+    "has_environment",
     "has_policy",
     "pyx_capi",
     "register_on_creation",
@@ -853,6 +856,29 @@ def has_environment() -> bool:
         return not not get_current_environment()  # noqa: SIM208
     except RuntimeError:
         return False
+
+
+def get_policy() -> EnvironmentPolicy | VSScriptEnvironmentPolicy | StandaloneEnvironmentPolicy:
+    """Retrieve the currently active VapourSynth EnvironmentPolicy."""
+    if (data := get_current_environment().env()) is None:
+        raise CustomRuntimeError("No environment is currently activated.")
+
+    policy = _find_ref(data, (EnvironmentPolicy, VSScriptEnvironmentPolicy, StandaloneEnvironmentPolicy))
+
+    if policy is None:
+        raise CustomRuntimeError("No policy is currently registed.")
+
+    return policy  # type: ignore[return-value]
+
+
+def get_policy_api() -> EnvironmentPolicyAPI:
+    """Retrieve the VapourSynth EnvironmentPolicyAPI bound to the currently registered policy."""
+    api = _find_ref(get_policy(), (EnvironmentPolicyAPI,))
+
+    if api is None:
+        raise CustomRuntimeError("No policy API is currently registed.")
+
+    return api
 
 
 if TYPE_CHECKING:
@@ -992,16 +1018,14 @@ class EnvironmentProxy(_EnvironmentProxyBase):
         return data
 
     @property
-    def policy(self) -> EnvironmentPolicy:
-        policy = _find_ref(self.data, (EnvironmentPolicy, VSScriptEnvironmentPolicy, StandaloneEnvironmentPolicy))
-        assert policy is not None
-        return policy
+    @deprecated("Accessing this attribute is deprecated. Use vs.get_policy() instead.", category=DeprecationWarning)
+    def policy(self) -> EnvironmentPolicy | VSScriptEnvironmentPolicy | StandaloneEnvironmentPolicy:
+        return get_policy()
 
     @property
+    @deprecated("Accessing this attribute is deprecated. Use vs.get_policy_api() instead.", category=DeprecationWarning)
     def api(self) -> EnvironmentPolicyAPI:
-        api = _find_ref(self.policy, EnvironmentPolicyAPI)
-        assert api is not None
-        return api
+        return get_policy_api()
 
     @property
     def has_core(self) -> bool:
