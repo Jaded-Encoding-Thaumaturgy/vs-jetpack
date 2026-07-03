@@ -11,7 +11,7 @@ from typing import Any
 
 from jetpytools import CustomRuntimeError, CustomValueError, copy_signature, to_arr
 
-from vstools import UnsupportedSampleTypeError, core, depth, vs
+from vstools import UnsupportedSampleTypeError, core, vs
 
 from ..settings import get_artifacts_folder
 from .base import BackendAutoConvertFloat
@@ -116,24 +116,8 @@ class MIGX(BackendAutoConvertFloat):
 
         clips = to_arr(clips)
         channels = sum(c.format.num_planes for c in clips)
-        bitdepth = max(c.format.bits_per_sample for c in clips)
-
         program_path = self.build_program(Path(network_path), channels, tilesize)
-
-        if self.fp16:
-            # Clips must be in fp16 format is fp16 is enabled,
-            # otherwise the MIGX plugin errors out.
-            clips = [depth(c, 16, sample_type=vs.SampleType.FLOAT) for c in clips]
-        else:
-            clips = [depth(c, 32) for c in clips]
-
-        res = super().inference(clips, program_path, overlap, tilesize, flexible=flexible, **kwargs)
-
-        return (
-            depth(res, bitdepth, sample_type=vs.FLOAT)
-            if isinstance(res, vs.VideoNode)
-            else [depth(r, bitdepth, sample_type=vs.FLOAT) for r in res]
-        )
+        return super().inference(clips, program_path, overlap, tilesize, flexible=flexible, **kwargs)
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
         return {"device_id": self.device_id, "num_streams": self.num_streams}
