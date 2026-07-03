@@ -9,7 +9,7 @@ from functools import partial
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Self
 
-from jetpytools import Singleton, classproperty
+from jetpytools import Singleton, classproperty, to_arr
 
 from vsjetpack import is_from_vs_module
 
@@ -161,7 +161,14 @@ class VSObjectMeta(type):
             mname = _get_mangle_name(name)
 
             original_slots = tuple(namespace.get("__slots__", ()))
-            extra_slots = tuple(f"{mname}{slot}" for slot in _objregisters)
+            extra_slots = [f"{mname}{slot}" for slot in _objregisters]
+
+            # Collect all slots defined in parent classes to check if __weakref__ is already defined
+            all_base_slots = set(chain.from_iterable(to_arr(getattr(base, "__slots__", ())) for base in bases))
+
+            if "__weakref__" not in original_slots and "__weakref__" not in all_base_slots:
+                extra_slots.append("__weakref__")
+
             namespace["__slots__"] = (*extra_slots, *original_slots)
 
             for reg in _clsregisters:
