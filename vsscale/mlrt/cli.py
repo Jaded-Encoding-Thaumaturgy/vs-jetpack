@@ -48,7 +48,7 @@ app.command(artifact_app)
 
 @app.meta.default
 def meta_main(
-    *tokens: Annotated[str, cyclopts.Parameter(show=False)],
+    *tokens: Annotated[str, cyclopts.Parameter(show=False, allow_leading_hyphen=True)],
     no_config: Annotated[
         bool,
         cyclopts.Parameter(
