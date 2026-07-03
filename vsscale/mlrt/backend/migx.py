@@ -70,6 +70,10 @@ class MIGX(BackendAutoConvertFloat):
     migraph-driver compile --help
     """
 
+    # Build Process
+    force_rebuild: bool = field(default=False, repr=False)
+    """Force a full program rebuild, ignoring any cached program."""
+
     def __post_init__(self) -> None:
         if self.fp16 is self.bf16 is None:
             object.__setattr__(self, "fp16", True)
@@ -161,6 +165,9 @@ class MIGX(BackendAutoConvertFloat):
         dirname.mkdir(parents=True, exist_ok=True)
         identity = self.get_identity(network_path, tilesize)
         program_path = dirname / f"{identity}.mxr"
+
+        if not self.force_rebuild and program_path.is_file() and program_path.stat().st_size >= 1024:
+            return program_path
 
         command: list[Any] = [
             migraph_driver,
