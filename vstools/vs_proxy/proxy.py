@@ -805,6 +805,16 @@ def register_on_creation(callback: Callable[[int], None]) -> bool:
     """
     Register a callback on every core creation.
 
+    Note:
+        Callbacks are stored using weak references to prevent memory leaks from dynamic closures and bound methods.
+        If you pass an inline lambda, transient bound method, or dynamically created function,
+        it will be immediately garbage-collected and will not run.
+
+        To prevent this:
+
+        - Use module-level functions (which are strongly referenced by the module).
+        - Keep a strong reference to the callback elsewhere (e.g. store it as an attribute on a persistent object).
+
     Returns whether the callback was executed immediately because a core is already active.
     """
     _core_on_creation_callbacks.add(callback)
@@ -1146,10 +1156,16 @@ class VSCoreProxy(_CoreProxyBase):
     @property
     def proxied(self) -> CoreProxy:
         """
-        Proxied Core where plugins and functions are lazily retrieved,
-        so it's safe to hold a reference of anything from this.
-        """
+        A `CoreProxy` backed by a weak reference to the current ``Core``.
 
+        Plugins and functions are lazily resolved, so it's safe to hold references at class or module level
+        (e.g. ``BlankClip = core.proxied.std.BlankClip``).
+
+        If the underlying ``Core`` is freed and a new one is created, the proxy transparently falls back
+        to the new core on next access.
+
+        Accessing this property *may* trigger core creation if no core exists yet.
+        """
         if self not in _objproxies:
             _objproxies[self] = {}
 
@@ -1161,11 +1177,14 @@ class VSCoreProxy(_CoreProxyBase):
     @property
     def lazy(self) -> CoreProxy:
         """
-        Lazy Core where plugins and functions are lazily retrieved and checked,
-        so it's safe to hold a reference and set default of anything from this,
-        without having to worry of creating a core.
-        """
+        A `CoreProxy` with no initial ``Core`` reference.
 
+        Like ``proxied``, plugins and functions are lazily resolved,
+        but attribute access alone will *never* trigger core creation.
+        A ``Core`` is only instantiated when a resolved function is actually invoked.
+
+        Use this when you need to set class-level defaults.
+        """
         if self not in _objproxies:
             _objproxies[self] = {}
 
