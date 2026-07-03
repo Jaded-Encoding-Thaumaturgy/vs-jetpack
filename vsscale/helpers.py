@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 from .various import ComplexSuperSamplerProcess
 
-__all__ = ["CropAbs", "CropRel", "ScalingArgs", "pre_ss", "scale_var_clip"]
+__all__ = ["CropAbs", "CropRel", "ScalingArgs", "get_gpu", "is_gpu_available", "pre_ss", "scale_var_clip"]
 
 logger = getLogger(__name__)
 
