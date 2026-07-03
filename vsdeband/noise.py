@@ -518,7 +518,7 @@ def _apply_grainer(
         length=clip.num_frames + temporal_rad * 2,
         color=get_neutral_values(clip),
         keep=True,
-    )
+    ).std.CopyFrameProps(clip)
 
     if not planes:
         return clip if not neutral_out else base_clip[temporal_rad:-temporal_rad]
@@ -562,7 +562,9 @@ def _apply_grainer(
                 grained = pp(grained)
 
     if protect_neutral_chroma or luma_scaling is not None:
-        base_clip = clip.std.BlankClip(length=clip.num_frames, color=get_neutral_values(clip), keep=True)
+        base_clip = clip.std.BlankClip(
+            length=clip.num_frames, color=get_neutral_values(clip), keep=True
+        ).std.CopyFrameProps(clip)
 
         if protect_neutral_chroma:
             grained = _protect_neutral_chroma(clip, grained, base_clip, protect_neutral_chroma_blend, planes, func)
