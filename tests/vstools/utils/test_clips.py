@@ -1,4 +1,8 @@
+import pytest
+
 from vstools import Matrix, Primaries, Transfer, finalize_clip, get_prop, initialize_clip, vs
+
+pytestmark = pytest.mark.vpy("initial-core", "reloaded-core")
 
 
 def test_finalize_clip() -> None:

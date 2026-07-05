@@ -1,10 +1,9 @@
-from unittest import TestCase
+from collections.abc import Iterable
 
 import pytest
 
 from vstools import (
     UnsupportedColorFamilyError,
-    core,
     depth,
     get_b,
     get_g,
@@ -116,17 +115,14 @@ def test_plane() -> None:
 
 
 # Remove 32-bit integer formats since resize doesn't support the conversion to it.
-formats = [
-    fmt
-    for fmt in vs.PresetVideoFormat
-    if fmt and ((f := vs.core.get_video_format(fmt)) and f.bits_per_sample != 32 and f.sample_type == vs.INTEGER)
-]
+def get_formats() -> Iterable[vs.PresetVideoFormat]:
+    return (fmt for fmt in vs.PresetVideoFormat if fmt != vs.PresetVideoFormat.NONE and not fmt.name.endswith("32"))
 
 
-@pytest.mark.parametrize(
-    "clip",
-    [core.std.BlankClip(format=fmt) for fmt in formats],
-    ids=[f"{fmt.name}/{fmt}" for fmt in formats],
-)
+@pytest.fixture(params=get_formats(), ids=lambda fmt: f"{fmt.name}")
+def clip(request: pytest.FixtureRequest) -> vs.VideoNode:
+    return vs.core.std.BlankClip(format=request.param)
+
+
 def test_stack_plane(clip: vs.VideoNode) -> None:
     stack_planes(clip)

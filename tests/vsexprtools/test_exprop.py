@@ -10,7 +10,9 @@ from vsexprtools import ExprOp, ExprToken, expr_func, norm_expr
 from vsexprtools.util import _get_akarin_expr_version
 from vstools import Range, core, get_lowest_value, get_peak_value, vs
 
-clip_yuv_limited = Range.LIMITED.apply(core.std.BlankClip(width=2, height=2, format=vs.YUV420P8))
+
+def get_clip_yuv_limited() -> vs.VideoNode:
+    return Range.LIMITED.apply(core.std.BlankClip(width=2, height=2, format=vs.YUV420P8))
 
 
 @pytest.mark.parametrize(
@@ -24,8 +26,9 @@ clip_yuv_limited = Range.LIMITED.apply(core.std.BlankClip(width=2, height=2, for
         (ExprToken.RangeSize, None, 256),
     ],
 )
+@pytest.mark.filterwarnings("ignore:The _ColorRange frame property has been deprecated, use _Range instead")
 def test_expr_token_get_value_limited(token: ExprToken, range_in: Range | None, expected: float) -> None:
-    assert token.get_value(clip_yuv_limited, None, range_in) == expected
+    assert token.get_value(get_clip_yuv_limited(), None, range_in) == expected
 
 
 @pytest.mark.parametrize(
@@ -35,10 +38,11 @@ def test_expr_token_get_value_limited(token: ExprToken, range_in: Range | None, 
         (ExprToken.PlaneMax, True, None, 240),
     ],
 )
+@pytest.mark.filterwarnings("ignore:The _ColorRange frame property has been deprecated, use _Range instead")
 def test_expr_token_get_value_limited_with_chroma(
     token: ExprToken, chroma: bool, range_in: Range | None, expected: float
 ) -> None:
-    assert token.get_value(clip_yuv_limited, chroma, range_in) == expected
+    assert token.get_value(get_clip_yuv_limited(), chroma, range_in) == expected
 
 
 def test_expr_token_getitem() -> None:
@@ -51,101 +55,71 @@ def test_expr_list() -> None: ...
 def test_tuple_expr_list() -> None: ...
 
 
-clip_int8 = core.std.BlankClip(None, 10, 10, vs.YUV420P8, length=10, color=[128, 64, 64], keep=True)
-clip_fp32 = core.std.BlankClip(None, 10, 10, vs.YUV420PS, length=10, color=[0.5, 0.25, 0.25], keep=True)
+def get_clip_int8(color: list[int]) -> vs.VideoNode:
+    return core.std.BlankClip(None, 10, 10, vs.YUV420P8, length=10, color=color, keep=True)
 
 
-@pytest.mark.parametrize(
-    ["clip", "expected"],
-    [
-        (clip_fp32.std.BlankClip(color=[0, 0, 0]), 0),
-        (clip_fp32.std.BlankClip(color=[-0.5, -0.5, -0.5]), -1),
-        (clip_fp32.std.BlankClip(color=[0.5, 0.5, 0.5]), 1),
-    ],
-)
-def test_expr_op_str_sgn(clip: vs.VideoNode, expected: Any) -> None:
+def get_clip_fp32(color: list[float]) -> vs.VideoNode:
+    return core.std.BlankClip(None, 10, 10, vs.YUV420PS, length=10, color=color, keep=True)
+
+
+@pytest.mark.parametrize(["color", "expected"], [([0.0, 0.0, 0.0], 0), ([-0.5, -0.5, -0.5], -1), ([0.5, 0.5, 0.5], 1)])
+def test_expr_op_str_sgn(color: list[float], expected: Any) -> None:
+    clip = get_clip_fp32(color)
     clip = expr_func(clip, f"x {ExprOp.SGN.convert_extra()}")
 
     for f in clip.frames(close=True):
         assert f[0][0, 0] == expected
 
 
-@pytest.mark.parametrize(
-    "input_clip",
-    [
-        clip_fp32.std.BlankClip(color=[0, 0, 0]),
-        clip_fp32.std.BlankClip(color=[-0.5, -0.5, -0.5]),
-        clip_fp32.std.BlankClip(color=[0.5, 0.5, 0.5]),
-    ],
-)
-def test_expr_op_str_neg(input_clip: vs.VideoNode) -> None:
+@pytest.mark.parametrize("color", [[0.0, 0.0, 0.0], [-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]])
+def test_expr_op_str_neg(color: list[float]) -> None:
+    input_clip = get_clip_fp32(color)
     clip = expr_func(input_clip, f"x {ExprOp.NEG.convert_extra()}")
 
     for f, f_in in zip(clip.frames(close=True), input_clip.frames(close=True)):
         assert f[0][0, 0] == -f_in[0][0, 0]
 
 
-@pytest.mark.parametrize(
-    "input_clip",
-    [
-        clip_fp32.std.BlankClip(color=[0, 0, 0]),
-        clip_fp32.std.BlankClip(color=[-0.5, -0.5, -0.5]),
-        clip_fp32.std.BlankClip(color=[0.5, 0.5, 0.5]),
-    ],
-)
-def test_expr_op_str_tan(input_clip: vs.VideoNode) -> None:
+@pytest.mark.parametrize("color", [[0.0, 0.0, 0.0], [-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]])
+def test_expr_op_str_tan(color: list[float]) -> None:
+    input_clip = get_clip_fp32(color)
     clip = expr_func(input_clip, f"x {ExprOp.TAN.convert_extra()}")
 
     for f, f_in in zip(clip.frames(close=True), input_clip.frames(close=True)):
         assert f[0][0, 0] == pytest.approx(math.tan(f_in[0][0, 0]))
 
 
-@pytest.mark.parametrize(
-    "input_clip",
-    [
-        clip_fp32.std.BlankClip(color=[0, 0, 0]),
-        clip_fp32.std.BlankClip(color=[-0.5, -0.5, -0.5]),
-        clip_fp32.std.BlankClip(color=[0.5, 0.5, 0.5]),
-    ],
-)
-def test_expr_op_str_atan(input_clip: vs.VideoNode) -> None:
+@pytest.mark.parametrize("color", [[0.0, 0.0, 0.0], [-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]])
+def test_expr_op_str_atan(color: list[float]) -> None:
+    input_clip = get_clip_fp32(color)
     clip = expr_func(input_clip, f"x {ExprOp.ATAN.convert_extra()}")
 
     for f, f_in in zip(clip.frames(close=True), input_clip.frames(close=True)):
         assert f[0][0, 0] == pytest.approx(math.atan(f_in[0][0, 0]))
 
 
-@pytest.mark.parametrize(
-    "input_clip",
-    [
-        clip_fp32.std.BlankClip(color=[0, 0, 0]),
-        clip_fp32.std.BlankClip(color=[-0.5, -0.5, -0.5]),
-        clip_fp32.std.BlankClip(color=[0.5, 0.5, 0.5]),
-    ],
-)
-def test_expr_op_str_asin(input_clip: vs.VideoNode) -> None:
+@pytest.mark.parametrize("color", [[0.0, 0.0, 0.0], [-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]])
+def test_expr_op_str_asin(color: list[float]) -> None:
+    input_clip = get_clip_fp32(color)
     clip = expr_func(input_clip, f"x {ExprOp.ASIN.convert_extra()}")
 
     for f, f_in in zip(clip.frames(close=True), input_clip.frames(close=True)):
         assert f[0][0, 0] == pytest.approx(math.asin(f_in[0][0, 0]))
 
 
-@pytest.mark.parametrize(
-    "input_clip",
-    [
-        clip_fp32.std.BlankClip(color=[0, 0, 0]),
-        clip_fp32.std.BlankClip(color=[-0.5, -0.5, -0.5]),
-        clip_fp32.std.BlankClip(color=[0.5, 0.5, 0.5]),
-    ],
-)
-def test_expr_op_str_acos(input_clip: vs.VideoNode) -> None:
+@pytest.mark.parametrize("color", [[0.0, 0.0, 0.0], [-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]])
+def test_expr_op_str_acos(color: list[float]) -> None:
+    input_clip = get_clip_fp32(color)
     clip = expr_func(input_clip, f"x {ExprOp.ACOS.convert_extra()}")
 
     for f, f_in in zip(clip.frames(close=True), input_clip.frames(close=True)):
         assert f[0][0, 0] == pytest.approx(math.acos(f_in[0][0, 0]))
 
 
-def test_expr_op_str_ceil(input_clip: vs.VideoNode = clip_fp32) -> None:
+def test_expr_op_str_ceil(input_clip: vs.VideoNode | None = None) -> None:
+    if input_clip is None:
+        input_clip = get_clip_fp32([0.5, 0.25, 0.25])
     clip = expr_func(input_clip, f"x {ExprOp.CEIL.convert_extra()}")
 
     for f, f_in in zip(clip.frames(close=True), input_clip.frames(close=True)):
@@ -153,21 +127,27 @@ def test_expr_op_str_ceil(input_clip: vs.VideoNode = clip_fp32) -> None:
 
 
 @pytest.mark.parametrize(
-    ["clip_a", "clip_b", "mask"],
+    ["is_float", "color_a", "color_b", "color_mask"],
     [
         (
-            clip_fp32.std.BlankClip(color=[0.7451596557797295, -0.0897083306063644, -0.04091666168431174]),
-            clip_fp32.std.BlankClip(color=[0.07807297537748636, -0.1883522041103517, 0.4003913983861609]),
-            clip_fp32.std.BlankClip(color=[0.7994040706646394, 0.41575462854726997, 0.2803351038958446]),
+            True,
+            [0.7451596557797295, -0.0897083306063644, -0.04091666168431174],
+            [0.07807297537748636, -0.1883522041103517, 0.4003913983861609],
+            [0.7994040706646394, 0.41575462854726997, 0.2803351038958446],
         ),
         (
-            clip_int8.std.BlankClip(color=[146, 52, 213]),
-            clip_int8.std.BlankClip(color=[73, 125, 111]),
-            clip_int8.std.BlankClip(color=[17, 213, 77]),
+            False,
+            [146, 52, 213],
+            [73, 125, 111],
+            [17, 213, 77],
         ),
     ],
 )
-def test_expr_op_str_mmg(clip_a: vs.VideoNode, clip_b: vs.VideoNode, mask: vs.VideoNode) -> None:
+def test_expr_op_str_mmg(is_float: bool, color_a: list[Any], color_b: list[Any], color_mask: list[Any]) -> None:
+    get_clip = get_clip_fp32 if is_float else get_clip_int8
+    clip_a = get_clip(color_a)
+    clip_b = get_clip(color_b)
+    mask = get_clip(color_mask)
     expr = norm_expr([clip_a, clip_b, mask], f"x y z {ExprOp.MMG.convert_extra()}")
     std = core.std.MaskedMerge(clip_a, clip_b, mask)
 
@@ -177,22 +157,28 @@ def test_expr_op_str_mmg(clip_a: vs.VideoNode, clip_b: vs.VideoNode, mask: vs.Vi
 
 
 @pytest.mark.parametrize(
-    ["clip_a", "clip_b", "t"],
+    ["is_float", "color_a", "color_b", "t"],
     [
         (
-            clip_fp32.std.BlankClip(color=[0.4376836998088198, -0.19098552065281704, 0.3494137182200806]),
-            clip_fp32.std.BlankClip(color=[0.8609435397529109, -0.2693605227534943, -0.055274461226768934]),
+            True,
+            [0.4376836998088198, -0.19098552065281704, 0.3494137182200806],
+            [0.8609435397529109, -0.2693605227534943, -0.055274461226768934],
             0.595053469921834,
         ),
         (
-            clip_int8.std.BlankClip(color=[25, 196, 106]),
-            clip_int8.std.BlankClip(color=[209, 58, 143]),
+            False,
+            [25, 196, 106],
+            [209, 58, 143],
             0.3852455650184188,
         ),
     ],
 )
 @pytest.mark.parametrize("legacy", (False, True))
-def test_expr_op_str_lerp(clip_a: vs.VideoNode, clip_b: vs.VideoNode, t: float, legacy: bool) -> None:
+def test_expr_op_str_lerp(is_float: bool, color_a: list[Any], color_b: list[Any], t: float, legacy: bool) -> None:
+    get_clip = get_clip_fp32 if is_float else get_clip_int8
+    clip_a = get_clip(color_a)
+    clip_b = get_clip(color_b)
+
     def lerp(x: float, y: float, z: float) -> float:
         return (1 - z) * x + z * y
 
@@ -218,10 +204,10 @@ def test_expr_op_str_lerp(clip_a: vs.VideoNode, clip_b: vs.VideoNode, t: float, 
 
 
 @pytest.mark.parametrize(
-    "input_clip",
+    ["is_float", "color"],
     [
-        clip_fp32.std.BlankClip(color=[0.2024082058502097, 0.11259670650840858, 0.11218903003990488]),
-        clip_int8.std.BlankClip(color=[25, 196, 106]),
+        (True, [0.2024082058502097, 0.11259670650840858, 0.11218903003990488]),
+        (False, [25, 196, 106]),
     ],
 )
 @pytest.mark.parametrize(
@@ -277,7 +263,10 @@ def test_expr_op_str_lerp(clip_a: vs.VideoNode, clip_b: vs.VideoNode, t: float, 
     ],
 )
 @pytest.mark.parametrize("legacy", (False, True))
-def test_expr_op_str_polyval(input_clip: vs.VideoNode, coeffs: Sequence[float], legacy: bool) -> None:
+def test_expr_op_str_polyval(is_float: bool, color: list[Any], coeffs: Sequence[float], legacy: bool) -> None:
+    get_clip = get_clip_fp32 if is_float else get_clip_int8
+    input_clip = get_clip(color)
+
     def polyval(coeffs: Iterable[float], x: float) -> float:
         result = 0
         for coeff in coeffs:
