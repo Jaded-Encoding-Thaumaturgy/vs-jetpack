@@ -1144,7 +1144,7 @@ class VSCoreProxy(_CoreProxyBase):
         A core is active if we have a direct/owned Core instance,
         or if a registered policy environment exists and already has an initialized Core.
         """
-        return (has_policy() and self.env.has_core) or (self._core is not None)
+        return (has_policy() and has_environment() and self.env.has_core) or (self._core is not None)
 
     @property
     def core(self) -> Core:
