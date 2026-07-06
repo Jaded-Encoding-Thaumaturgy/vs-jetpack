@@ -6,7 +6,7 @@ from abc import ABC
 from collections.abc import Sequence
 from dataclasses import dataclass
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast, overload
+from typing import Any, ClassVar, Literal, cast, overload
 
 from jetpytools import to_arr
 
@@ -118,8 +118,8 @@ class Backend:
         """Return backend plugin arguments derived from this configuration."""
         return {}
 
-    @classmethod
-    def autoselect(cls, device_id: int = 0, **kwargs: Any) -> Backend:
+    @staticmethod
+    def autoselect(device_id: int = 0, **kwargs: Any) -> Backend:
         """
         Try to select the best backend for the current system.
 
@@ -224,12 +224,7 @@ class UserBackend(ABC):
     TRT = trt.TRT
     TRT_RTX = trt.TRT_RTX
 
-    if TYPE_CHECKING:
-        plugin = Backend.plugin
-        flexible_output_prop = Backend.flexible_output_prop
-        inference = Backend.inference
-        get_args = Backend.get_args
-        autoselect = Backend.autoselect
+    autoselect = Backend.autoselect
 
 
 UserBackend.register(Backend)

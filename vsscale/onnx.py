@@ -95,7 +95,7 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             self.model = SPath(model).resolve()
 
         if backend is None:
-            self.backend = Backend.autoselect(**self.kwargs)
+            self.backend = RealBackend.autoselect(**self.kwargs)
         elif isinstance(backend, type) and issubclass(backend, RealBackend):
             self.backend = backend(**self.kwargs)
         elif self.kwargs and isinstance(backend, RealBackend):
