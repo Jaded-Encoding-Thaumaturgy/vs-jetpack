@@ -972,11 +972,13 @@ class FunctionProxy(_FunctionProxyBase):
     def __init__(self, plugin: PluginProxy, func_name: str) -> None:
         self.__dict__["func_ref"] = (plugin, func_name)
 
-    def __getattr__(self, name: str) -> Function:
-        return getattr(self._vs_function, name)
+    if not TYPE_CHECKING:
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        return self._vs_function(*args, **kwargs)
+        def __getattr__(self, name: str) -> Any:
+            return getattr(self._vs_function, name)
+
+        def __call__(self, *args: Any, **kwargs: Any) -> Any:
+            return self._vs_function(*args, **kwargs)
 
     @property
     def _vs_function(self) -> Function:
@@ -1002,7 +1004,7 @@ class PluginProxy(_PluginProxyBase):
     def __init__(self, core: CoreProxy, namespace: str) -> None:
         self.__dict__["plugin_ref"] = (core, namespace)
 
-    def __getattr__(self, name: str) -> Function:
+    def __getattr__(self, name: str) -> FunctionProxy:
         core, namespace = self._plugin_ref
 
         if core.lazy and name not in Plugin.__dict__:
@@ -1032,7 +1034,7 @@ class CoreProxy(_CoreProxyBase):
         self.lazy = lazy
         self.__dict__["vs_core_ref"] = (core and weakref.ref(core), vs_proxy)
 
-    def __getattr__(self, name: str) -> Plugin:
+    def __getattr__(self, name: str) -> PluginProxy:
         if self.lazy and name not in Core.__dict__:
             return PluginProxy(self, name)
 
@@ -1062,11 +1064,13 @@ class CoreProxy(_CoreProxyBase):
 class EnvironmentProxy(_EnvironmentProxyBase):
     """A proxy wrapper around the active VapourSynth Environment."""
 
-    def __getattr__(self, name: str) -> Plugin:
-        return getattr(get_current_environment(), name)
+    if not TYPE_CHECKING:
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        return setattr(get_current_environment(), name, value)
+        def __getattr__(self, name: str) -> Any:
+            return getattr(get_current_environment(), name)
+
+        def __setattr__(self, name: str, value: Any) -> None:
+            return setattr(get_current_environment(), name, value)
 
     @property
     def data(self) -> EnvironmentData:
