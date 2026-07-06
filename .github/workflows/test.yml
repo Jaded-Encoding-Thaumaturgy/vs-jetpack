@@ -44,7 +44,7 @@ jobs:
           --extra basic --extra kernels --extra expr --extra rg --extra denoise
 
       - name: Run tests
-        run: uv run pytest --cov-report=term-missing:skip-covered --cov=vskernels --cov=vstools --cov=vsexprtools tests
+        run: uv run coverage run -m pytest tests
 
       - name: Convert coverage report to cobertura
         run: uv run coverage xml
