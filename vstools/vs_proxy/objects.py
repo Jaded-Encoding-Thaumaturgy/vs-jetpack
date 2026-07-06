@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+import logging
 import weakref
 from abc import ABC, ABCMeta
 from collections.abc import Callable, Mapping, MutableMapping, MutableSequence, MutableSet
 from enum import Flag
 from functools import partial
 from itertools import chain
-from logging import getLogger
 from typing import TYPE_CHECKING, Any, Self
 
-from jetpytools import Singleton, classproperty
+from jetpytools import Singleton, classproperty, to_arr
 
 from vsjetpack import is_from_vs_module
 
@@ -18,7 +18,7 @@ from .proxy import core, register_on_creation, register_on_destroy
 __all__ = ["VSDebug", "VSObject", "VSObjectABC", "VSObjectABCMeta", "VSObjectMeta"]
 
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def _get_mangle_name(name: str) -> str:
@@ -131,7 +131,7 @@ def _register_vs_del(obj: VSObject | VSObjectMeta) -> None:
             )
 
         setattr(obj, prefix + partial_attr, vsdel_partial_register)
-        core.register_on_destroy(vsdel_partial_register)
+        register_on_destroy(vsdel_partial_register)
 
     setattr(obj, prefix + register_attr, del_register)
     register_on_creation(del_register)
@@ -161,7 +161,14 @@ class VSObjectMeta(type):
             mname = _get_mangle_name(name)
 
             original_slots = tuple(namespace.get("__slots__", ()))
-            extra_slots = tuple(f"{mname}{slot}" for slot in _objregisters)
+            extra_slots = [f"{mname}{slot}" for slot in _objregisters]
+
+            # Collect all slots defined in parent classes to check if __weakref__ is already defined
+            all_base_slots = set(chain.from_iterable(to_arr(getattr(base, "__slots__", ())) for base in bases))
+
+            if "__weakref__" not in original_slots and "__weakref__" not in all_base_slots:
+                extra_slots.append("__weakref__")
+
             namespace["__slots__"] = (*extra_slots, *original_slots)
 
             for reg in _clsregisters:
@@ -246,17 +253,15 @@ class VSDebug(Singleton, init=True):
                 trying to find the code path that is locking you into a EnvironmentPolicy.
         """
         if use_logging:
-            import logging
-
             VSDebug._print_func = logging.debug
         else:
             VSDebug._print_func = print
 
         if env_life:
-            register_on_creation(VSDebug._print_env_live, True)
+            register_on_creation(VSDebug._print_env_live)
 
         if core_fetch:
-            register_on_creation(VSDebug._print_stack, True)
+            register_on_creation(VSDebug._print_stack)
 
     @staticmethod
     def _print_stack(core_id: int) -> None:
@@ -266,7 +271,7 @@ class VSDebug(Singleton, init=True):
     def _print_env_live(core_id: int) -> None:
         VSDebug._print_func(f"New core created with id: {core_id}")
 
-        core.register_on_destroy(VSDebug._print_core_destroy, False)
+        register_on_destroy(partial(VSDebug._print_core_destroy, core.env.env_id, core_id))
         register_on_destroy(partial(VSDebug._print_destroy, core.env.env_id, core_id))
 
     @staticmethod

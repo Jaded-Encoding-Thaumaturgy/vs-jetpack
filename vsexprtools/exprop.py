@@ -137,7 +137,7 @@ def _cache_clear_expr_token(core_id: int) -> None:
         for token in ExprToken:
             token.get_value.cache_clear()
 
-    vs.core.register_on_destroy(cache_clear)
+    vs.register_on_destroy(cache_clear)
 
 
 vs.register_on_creation(_cache_clear_expr_token)
