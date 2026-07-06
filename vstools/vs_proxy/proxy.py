@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gc
 import sys
+import threading
 import weakref
 from collections.abc import Callable, Iterable
 from itertools import chain
@@ -817,17 +818,18 @@ def register_on_creation(callback: Callable[[int], None]) -> bool:
 
     Returns whether the callback was executed immediately because a core is already active.
     """
-    _core_on_creation_callbacks.add(callback)
+    with _core_on_creation_callbacks_lock:
+        _core_on_creation_callbacks.add(callback)
 
-    # If a core is already active, the catch-up logic is triggered immediately.
-    # We trigger '_core_with_cb', which will execute any registered callbacks
-    # that haven't been run for the current core instance yet.
-    if has_policy() and has_environment() and core.active:
-        with get_current_environment().use():
-            core._core_with_cb
-        return True
+        # If a core is already active, the catch-up logic is triggered immediately.
+        # We trigger '_core_with_cb', which will execute any registered callbacks
+        # that haven't been run for the current core instance yet.
+        if has_policy() and has_environment() and core.active:
+            with get_current_environment().use():
+                core._core_with_cb
+            return True
 
-    return False
+        return False
 
 
 def unregister_on_creation(callback: Callable[[int], None]) -> bool:
@@ -836,11 +838,12 @@ def unregister_on_creation(callback: Callable[[int], None]) -> bool:
 
     Returns whether the callback was successfully unregistered.
     """
-    try:
-        _core_on_creation_callbacks.remove(callback)
-        return True
-    except KeyError:
-        return False
+    with _core_on_creation_callbacks_lock:
+        try:
+            _core_on_creation_callbacks.remove(callback)
+            return True
+        except KeyError:
+            return False
 
 
 @deprecated("This function is deprecated. Use `core.clear_cache()` instead.", category=DeprecationWarning)
@@ -1289,28 +1292,30 @@ class VSCoreProxy(_CoreProxyBase):
 
             vs_core = vapoursynth.core.core
 
-        # Map each core to the callbacks already run for it.
-        # Weak references allow automatic cleanup when objects are destroyed.
-        if vs_core not in _core_on_creation_callbacks_cores:
-            _core_on_creation_callbacks_cores[vs_core] = weakref.WeakSet()
+        with _core_on_creation_callbacks_lock:
+            # Map each core to the callbacks already run for it.
+            # Weak references allow automatic cleanup when objects are destroyed.
+            if vs_core not in _core_on_creation_callbacks_cores:
+                _core_on_creation_callbacks_cores[vs_core] = weakref.WeakSet()
 
-        run_cbs = _core_on_creation_callbacks_cores[vs_core]
-        core_id = id(vs_core)
+            run_cbs = _core_on_creation_callbacks_cores[vs_core]
+            core_id = id(vs_core)
 
-        # Run callbacks that have not yet been called for this core.
-        for callback in list(_core_on_creation_callbacks):
-            if callback in run_cbs:
-                continue
+            # Run callbacks that have not yet been called for this core.
+            for callback in list(_core_on_creation_callbacks):
+                if callback in run_cbs:
+                    continue
 
-            callback(core_id)
-            # Remember that this callback was run for this core.
-            run_cbs.add(callback)
+                callback(core_id)
+                # Remember that this callback was run for this core.
+                run_cbs.add(callback)
 
         return vs_core
 
 
 _core_on_creation_callbacks = weakref.WeakSet[Callable[[int], None]]()
 _core_on_creation_callbacks_cores = weakref.WeakKeyDictionary[Core, weakref.WeakSet[Callable[[int], None]]]()
+_core_on_creation_callbacks_lock = threading.RLock()
 _env_proxy = EnvironmentProxy()
 _objproxies = weakref.WeakKeyDictionary[VSCoreProxy, dict[Literal["proxied", "lazy"], CoreProxy]]()
 
