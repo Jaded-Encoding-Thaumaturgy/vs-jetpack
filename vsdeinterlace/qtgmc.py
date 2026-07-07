@@ -888,11 +888,11 @@ class QTempGaussMC(VSObject):
         )
 
         self.mv = MVTools(self.draft, **{**self.analyze_preset, "search_clip": self.prefilter_output})
-        self.mv.analyze(tr=tr, blksize=blksize, overlap=overlap)
+        self.mv.analyze(tr=tr, blksize=blksize, overlap_div=overlap)
 
         for _ in range(self.analyze_refine):
             blksize = refine_blksize(blksize)
-            self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
+            self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap)
 
     def _apply_denoise(self) -> None:
         self.denoise_output = self.clip
@@ -979,7 +979,6 @@ class QTempGaussMC(VSObject):
 
         if self.is_repair and self.basic_mask_args.get("ml", 0):
             mask = self.mv.mask(
-                self.prefilter_output,
                 direction=MVDirection.BACKWARD,
                 kind=MaskMode.SAD,
                 thscd=self.analyze_thscd,
@@ -1205,7 +1204,6 @@ class QTempGaussMC(VSObject):
 
             if self.motion_blur_mask_args.get("ml", 0):
                 mask = self.mv.mask(
-                    self.prefilter_output,
                     direction=MVDirection.BACKWARD,
                     kind=MaskMode.VECTOR_LENGTH,
                     thscd=self.analyze_thscd,

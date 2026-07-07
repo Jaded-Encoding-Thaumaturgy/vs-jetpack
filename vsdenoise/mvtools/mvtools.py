@@ -22,16 +22,9 @@ from vstools import (
 
 from .enums import MaskMode, MVDirection, PenaltyMode, RFilterMode, SearchMode, SharpMode
 from .motion import MotionVectors
+from .utils import normalize_thscd, refine_blksize
 
 __all__ = ["MVTools"]
-
-
-def _normalize_thscd(
-    thscd: int | tuple[int | None, float | None] | None,
-) -> tuple[int | None, float | None]:
-    if thscd is None:
-        return None, None
-    return thscd if isinstance(thscd, tuple) else (thscd, None)
 
 
 class _SuperConfigKey(NamedTuple):
@@ -202,6 +195,9 @@ class MVTools(VSObject):
         self.mask_args = dict(mask_args) if mask_args else {}
         self.sc_detection_args = dict(sc_detection_args) if sc_detection_args else {}
 
+        self.blksize: tuple[int, int] = tuple(normalize_seq(self.analyze_args.get("blksize", 16), 2))
+        self.overlap_div: tuple[int, int] = tuple(normalize_seq(self.analyze_args.get("overlap_div", 2), 2))
+
     def super(
         self,
         clip: vs.VideoNode | None = None,
@@ -238,38 +234,23 @@ class MVTools(VSObject):
         Returns:
             The original clip with the super clip attached as a frame property.
         """
-
         clip = fallback(clip, self.clip)
+        overlap = refine_blksize(self.blksize, self.overlap_div)
         vectors = fallback(vectors, self.vectors)
 
-        blksize = vectors.blksize
-        overlap = vectors.overlap
-
-        if blksize is None:
-            blksize_h = fallback(self.analyze_args.get("blksize"), self.recalculate_args.get("blksize"), 16)
-            blksize_v = fallback(self.analyze_args.get("blksizev"), self.recalculate_args.get("blksizev"), blksize_h)
-            blksize = (blksize_h, blksize_v)
-        else:
-            blksize = normalize_seq(blksize, 2)
-
-        if overlap is None:
-            overlap_div_h = fallback(self.analyze_args.get("overlap"), self.recalculate_args.get("overlap"), 2)
-            overlap_div_v = fallback(
-                self.analyze_args.get("overlapv"), self.recalculate_args.get("overlapv"), overlap_div_h
-            )
-            exact_overlap_h = blksize[0] // overlap_div_h if overlap_div_h else 0
-            exact_overlap_v = blksize[1] // overlap_div_v if overlap_div_v else 0
-            overlap = (exact_overlap_h, exact_overlap_v)
-        else:
-            overlap = normalize_seq(overlap, 2)
+        # if vectors.scaled:
+        #     hpad, vpad = vectors.analysis_data["Analysis_Padding"]
+        # else:
+        #     hpad, vpad = self.pad
+        hpad, vpad = self.pad
 
         if callable(pelclip):
             pelclip = pelclip(clip)
 
         super_args = KwargsNotNone(
-            blksize=tuple(blksize),
-            overlap=tuple(overlap),
-            pad=(fallback(self.pad[0], 16), fallback(self.pad[1], 16)),
+            blksize=self.blksize,
+            overlap=overlap,
+            pad=(fallback(hpad, 16), fallback(vpad, 16)),
             pel=fallback(self.pel, 2),
             sharp=sharp if sharp is not None else self.super_args.get("sharp", 2),
             rfilter=fallback(rfilter, self.super_args.get("rfilter"), 2),
@@ -283,7 +264,7 @@ class MVTools(VSObject):
         super: vs.VideoNode | None = None,
         tr: int = 1,
         delta: int | Sequence[int] | None = None,
-        blksize: int | tuple[int | None, int | None] | None = None,
+        blksize: int | tuple[int, int] | None = None,
         levels: int | None = None,
         search: SearchMode | None = None,
         searchparam: int | None = None,
@@ -295,7 +276,7 @@ class MVTools(VSObject):
         pnew: int | None = None,
         pzero: int | None = None,
         pglobal: int | None = None,
-        overlap: int | tuple[int | None, int | None] | None = None,
+        overlap_div: int | tuple[int, int] | None = None,
         badsad: int | None = None,
         badrange: int | None = None,
         meander: bool | None = None,
@@ -346,10 +327,8 @@ class MVTools(VSObject):
                 values discourage using zero motion.
             pglobal: Penalty multiplier (relative to 256) applied to the SAD cost when using the global motion
                 predictor.
-            overlap: Block overlap value. Can be a single integer for both dimensions or a tuple of (horizontal,
-                vertical) overlap values. Each value must be even and less than its corresponding block size dimension.
-            divide: Whether to divide each block into 4 subblocks during post-processing. This may improve accuracy at
-                the cost of performance.
+            overlap_div: Divisor for the block overlap.
+                Can be a single integer for both dimensions or a tuple of (horizontal, vertical) overlap divisors.
             badsad: SAD threshold above which a wider secondary search will be performed to find better motion vectors.
                 Higher values mean fewer blocks will trigger the secondary search.
             badrange: Search radius for the secondary search when a block's SAD exceeds badsad.
@@ -363,29 +342,15 @@ class MVTools(VSObject):
             A [MotionVectors][vsdenoise.MotionVectors] object containing the analyzed motion vectors for each frame.
             These vectors describe the estimated motion between frames and can be used for motion compensation.
         """
-        # Resolve effective block size
-        blksize, blksizev = normalize_seq(blksize, 2)
-        eff_blksize_h = fallback(blksize, self.analyze_args.get("blksize"), 16)
-        eff_blksize_v = fallback(blksizev, self.analyze_args.get("blksizev"), eff_blksize_h)
-
-        # Resolve effective overlap divisor
-        overlap, overlapv = normalize_seq(overlap, 2)
-        eff_overlap_div_h = fallback(overlap, self.analyze_args.get("overlap"), 2)
-        eff_overlap_div_v = fallback(overlapv, self.analyze_args.get("overlapv"), eff_overlap_div_h)
-
-        # Calculate exact overlap in pixels
-        exact_overlap_h = eff_blksize_h // eff_overlap_div_h if eff_overlap_div_h else 0
-        exact_overlap_v = eff_blksize_v // eff_overlap_div_v if eff_overlap_div_v else 0
-
-        # Store block size and exact overlap in vectors object
-        self.vectors.blksize = (eff_blksize_h, eff_blksize_v)
-        self.vectors.overlap = (exact_overlap_h, exact_overlap_v)
+        nblksize = cast(tuple[int, int], tuple(normalize_seq(fallback(blksize, self.blksize), 2)))
+        noverlap_div = cast(tuple[int, int], tuple(normalize_seq(fallback(overlap_div, self.overlap_div), 2)))
+        noverlap = refine_blksize(nblksize, noverlap_div)
 
         super_clip = self.super(fallback(super, self.search_clip), onelevel=False)
 
         analyze_args = KwargsNotNone(
-            blksize=[eff_blksize_h, eff_blksize_v],
-            overlap=[exact_overlap_h, exact_overlap_v],
+            blksize=nblksize,
+            overlap=noverlap,
             levels=levels,
             search=fallback(search, self.analyze_args.get("search"), default=None),
             searchparam=fallback(searchparam, self.analyze_args.get("searchparam"), default=None),
@@ -425,12 +390,12 @@ class MVTools(VSObject):
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
         thsad: int | None = None,
-        blksize: int | tuple[int | None, int | None] | None = None,
+        blksize: int | tuple[int, int] | None = None,
         search: SearchMode | None = None,
         searchparam: int | None = None,
         mvlambda: int | None = None,
         pnew: int | None = None,
-        overlap: int | tuple[int | None, int | None] | None = None,
+        overlap_div: int | tuple[int, int] | None = None,
         meander: bool | None = None,
         dct: bool | None = None,
     ) -> None:
@@ -462,40 +427,25 @@ class MVTools(VSObject):
                 motion between blocks. Too high values may cause the algorithm to miss the optimal vectors.
             pnew: Penalty multiplier (relative to 256) applied to the SAD cost when evaluating new candidate vectors.
                 Higher values make the search more conservative.
-            overlap: Block overlap value. Can be a single integer for both dimensions or a tuple of (horizontal,
-                vertical) overlap values. Each value must be even and less than its corresponding block size dimension.
-            divide: Whether to divide each block into 4 subblocks during post-processing. This may improve accuracy at
-                the cost of performance.
+            overlap_div: Divisor for the block overlap.
+                Can be a single integer for both dimensions or a tuple of (horizontal, vertical) overlap divisors.
             meander: Whether to use a meandering scan pattern when processing blocks. If True, alternates between left-
                 to-right and right-to-left scanning between rows to improve motion coherence.
             dct: Whether to use Sum of Absolute Transformed Differences (SATD) instead of SAD for luma comparison.
         """
         vectors = fallback(vectors, self.vectors)
-
-        # Resolve effective block size
-        blksize, blksizev = normalize_seq(blksize, 2)
-        eff_blksize_h = fallback(blksize, self.recalculate_args.get("blksize"), 8)
-        eff_blksize_v = fallback(blksizev, self.recalculate_args.get("blksizev"), eff_blksize_h)
-
-        # Resolve effective overlap divisor
-        overlap, overlapv = normalize_seq(overlap, 2)
-        eff_overlap_div_h = fallback(overlap, self.recalculate_args.get("overlap"), 2)
-        eff_overlap_div_v = fallback(overlapv, self.recalculate_args.get("overlapv"), eff_overlap_div_h)
-
-        # Calculate exact overlap in pixels
-        exact_overlap_h = eff_blksize_h // eff_overlap_div_h if eff_overlap_div_h else 0
-        exact_overlap_v = eff_blksize_v // eff_overlap_div_v if eff_overlap_div_v else 0
-
-        # Update block size and overlap in vectors object
-        vectors.blksize = (eff_blksize_h, eff_blksize_v)
-        vectors.overlap = (exact_overlap_h, exact_overlap_v)
+        blksize = fallback(blksize, self.recalculate_args.get("blksize"), self.blksize)
+        overlap_div = fallback(overlap_div, self.recalculate_args.get("overlap_div"), self.overlap_div)
+        nblksize = cast(tuple[int, int], tuple(normalize_seq(blksize, 2)))
+        noverlap_div = cast(tuple[int, int], tuple(normalize_seq(overlap_div, 2)))
+        noverlap = refine_blksize(nblksize, noverlap_div)
 
         super_clip = self.super(fallback(super, self.search_clip), vectors=vectors, onelevel=True)
 
         recalculate_args = KwargsNotNone(
             thsad=fallback(thsad, self.recalculate_args.get("thsad"), default=None),
-            blksize=[eff_blksize_h, eff_blksize_v],
-            overlap=[exact_overlap_h, exact_overlap_v],
+            blksize=nblksize,
+            overlap=noverlap,
             search=fallback(search, self.recalculate_args.get("search"), default=None),
             searchparam=fallback(searchparam, self.recalculate_args.get("searchparam"), default=None),
             mvlambda=fallback(mvlambda, self.recalculate_args.get("mvlambda"), default=None),
@@ -619,7 +569,7 @@ class MVTools(VSObject):
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
         vect_b, vect_f = vectors.get_vectors(direction, tr, delta)
 
-        thscd1, thscd2 = _normalize_thscd(thscd)
+        thscd1, thscd2 = normalize_thscd(thscd)
 
         compensate_args = self.compensate_args | KwargsNotNone(
             thsad=thsad,
@@ -748,7 +698,7 @@ class MVTools(VSObject):
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
         vect_b, vect_f = vectors.get_vectors(direction, tr, delta)
 
-        thscd1, thscd2 = _normalize_thscd(thscd)
+        thscd1, thscd2 = normalize_thscd(thscd)
 
         flow_args = self.flow_args | KwargsNotNone(
             time=time,
@@ -828,7 +778,7 @@ class MVTools(VSObject):
 
         vect_b, vect_f = vectors.get_vectors(tr=None, delta=deltas)
 
-        thscd1, thscd2 = _normalize_thscd(thscd)
+        thscd1, thscd2 = normalize_thscd(thscd)
 
         thsad_val, thsadc_val = normalize_seq(thsad, 2)
         thsad_list = [thsad_val] if thsadc_val is None else [thsad_val, thsadc_val]
@@ -897,7 +847,7 @@ class MVTools(VSObject):
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
-        thscd1, thscd2 = _normalize_thscd(thscd)
+        thscd1, thscd2 = normalize_thscd(thscd)
 
         flow_interpolate_args = self.flow_interpolate_args | KwargsNotNone(
             time=time, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
@@ -953,7 +903,7 @@ class MVTools(VSObject):
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
-        thscd1, thscd2 = _normalize_thscd(thscd)
+        thscd1, thscd2 = normalize_thscd(thscd)
 
         flow_fps_args: dict[str, Any] = KwargsNotNone(
             extramask=extramask, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
@@ -1001,7 +951,7 @@ class MVTools(VSObject):
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
-        thscd1, thscd2 = _normalize_thscd(thscd)
+        thscd1, thscd2 = normalize_thscd(thscd)
 
         flow_blur_args = self.flow_blur_args | KwargsNotNone(blur=blur, prec=prec, thscd1=thscd1, thscd2=thscd2)
 
@@ -1048,7 +998,7 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         vect = vectors.get_vector(direction, delta)
 
-        thscd1, thscd2 = _normalize_thscd(thscd)
+        thscd1, thscd2 = normalize_thscd(thscd)
 
         match kind:
             case MaskMode.VECTOR_LENGTH:
@@ -1089,7 +1039,7 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
 
-        thscd1, thscd2 = _normalize_thscd(thscd)
+        thscd1, thscd2 = normalize_thscd(thscd)
 
         sc_detection_args = self.sc_detection_args | KwargsNotNone(thscd1=thscd1, thscd2=thscd2)
 

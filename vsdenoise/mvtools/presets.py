@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
-from typing import Any, Self, TypedDict
+from typing import Any, Required, Self, TypedDict
 
 from jetpytools import KwargsNotNone, classproperty
 
@@ -34,9 +34,9 @@ class SuperArgs(TypedDict, total=False):
 
 
 class AnalyzeArgs(TypedDict, total=False):
-    blksize: int | None
-    blksizev: int | None
-    onelevel: bool | None
+    blksize: Required[int | tuple[int, int]]
+    overlap_div: Required[int | tuple[int, int]]
+    levels: int | None
     search: SearchMode | None
     searchparam: int | None
     pelsearch: int | None
@@ -47,9 +47,6 @@ class AnalyzeArgs(TypedDict, total=False):
     pnew: int | None
     pzero: int | None
     pglobal: int | None
-    overlap: int | None
-    overlapv: int | None
-    divide: bool | None
     badsad: int | None
     badrange: int | None
     meander: bool | None
@@ -58,16 +55,13 @@ class AnalyzeArgs(TypedDict, total=False):
 
 
 class RecalculateArgs(TypedDict, total=False):
+    blksize: Required[int | tuple[int, int]]
+    overlap_div: Required[int | tuple[int, int]]
     thsad: int | None
-    blksize: int | None
-    blksizev: int | None
     search: SearchMode | None
     searchparam: int | None
     mvlambda: int | None
     pnew: int | None
-    overlap: int | None
-    overlapv: int | None
-    divide: bool | None
     meander: bool | None
     dct: bool | None
 
@@ -76,20 +70,20 @@ class CompensateArgs(TypedDict, total=False):
     thsad: int | None
     time: float | None
     thscd1: int | None
-    thscd2: int | None
+    thscd2: float | None
 
 
 class FlowArgs(TypedDict, total=False):
     time: float | None
     thscd1: int | None
-    thscd2: int | None
+    thscd2: float | None
 
 
 class DegrainArgs(TypedDict, total=False):
     thsad: int | tuple[int, int] | None
     limit: int | tuple[int, int] | None
     thscd1: int | None
-    thscd2: int | None
+    thscd2: float | None
 
 
 class FlowInterpolateArgs(TypedDict, total=False):
@@ -97,7 +91,7 @@ class FlowInterpolateArgs(TypedDict, total=False):
     ml: float | None
     blend: bool | None
     thscd1: int | None
-    thscd2: int | None
+    thscd2: float | None
 
 
 class FlowFpsArgs(TypedDict, total=False):
@@ -105,7 +99,7 @@ class FlowFpsArgs(TypedDict, total=False):
     ml: float | None
     blend: bool | None
     thscd1: int | None
-    thscd2: int | None
+    thscd2: float | None
     num: int
     den: int
 
@@ -114,7 +108,7 @@ class FlowBlurArgs(TypedDict, total=False):
     blur: float | None
     prec: int | None
     thscd1: int | None
-    thscd2: int | None
+    thscd2: float | None
 
 
 class MaskArgs(TypedDict, total=False):
@@ -124,12 +118,12 @@ class MaskArgs(TypedDict, total=False):
     time: float | None
     scval: float | None
     thscd1: int | None
-    thscd2: int | None
+    thscd2: float | None
 
 
 class ScDetectionArgs(TypedDict, total=False):
     thscd1: int | None
-    thscd2: int | None
+    thscd2: float | None
 
 
 class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
@@ -225,8 +219,8 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_COHERENCE(cls) -> Self:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(blksize=16, overlap=2),
-            recalculate_args=RecalculateArgs(blksize=8, overlap=2, dct=True),
+            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2),
+            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, dct=True),
         )
 
     @classproperty
@@ -234,6 +228,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_SAD(cls) -> Self:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(blksize=16, overlap=2, mvlambda=0),
-            recalculate_args=RecalculateArgs(blksize=8, overlap=2, dct=True, mvlambda=0),
+            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, mvlambda=0),
+            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, dct=True, mvlambda=0),
         )

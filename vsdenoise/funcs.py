@@ -146,11 +146,11 @@ def mc_degrain(
     mfilter = mfilter(mv.clip) if callable(mfilter) else fallback(mfilter, mv.clip)
 
     if not vectors:
-        mv.analyze(tr=tr, delta=delta, blksize=blksize, overlap=overlap)
+        mv.analyze(tr=tr, delta=delta, blksize=blksize, overlap_div=overlap)
 
         for _ in range(refine):
             blksize = refine_blksize(blksize)
-            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
+            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap)
 
     den = mv.degrain(mfilter, super=mv.clip, tr=tr, delta=delta, thsad=thsad, limit=limit, thscd=thscd, planes=planes)
 
