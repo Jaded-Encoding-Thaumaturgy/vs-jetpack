@@ -282,7 +282,7 @@ class MVTools(VSObject):
         badrange: int | None = None,
         meander: bool | None = None,
         trymany: bool | None = None,
-        dct: bool | None = None,
+        satd: bool | None = None,
     ) -> None:
         """
         Analyze motion vectors in a clip using block matching.
@@ -337,7 +337,7 @@ class MVTools(VSObject):
                 to-right and right-to-left scanning between rows to improve motion coherence.
             trymany: Whether to test multiple predictor vectors during the search process at coarser levels. Enabling
                 this can find better vectors but increases processing time.
-            dct: Whether to use Sum of Absolute Transformed Differences (SATD) instead of SAD for luma comparison.
+            satd: Whether to use Sum of Absolute Transformed Differences (SATD) instead of SAD for luma comparison.
 
         Returns:
             A [MotionVectors][vsdenoise.MotionVectors] object containing the analyzed motion vectors for each frame.
@@ -368,7 +368,7 @@ class MVTools(VSObject):
             badrange=fallback(badrange, self.analyze_args.get("badrange"), default=None),
             meander=fallback(meander, self.analyze_args.get("meander"), default=None),
             trymany=fallback(trymany, self.analyze_args.get("trymany"), default=None),
-            satd=fallback(dct, self.analyze_args.get("dct"), default=None),
+            satd=fallback(satd, self.analyze_args.get("satd"), default=None),
             fields=self.fields,
             tff=self.tff,
         )
@@ -406,7 +406,7 @@ class MVTools(VSObject):
         pnew: int | None = None,
         overlap_div: int | tuple[int, int] | None = None,
         meander: bool | None = None,
-        dct: bool | None = None,
+        satd: bool | None = None,
     ) -> None:
         """
         Refines and recalculates motion vectors that were previously estimated,
@@ -440,7 +440,7 @@ class MVTools(VSObject):
                 Can be a single integer for both dimensions or a tuple of (horizontal, vertical) overlap divisors.
             meander: Whether to use a meandering scan pattern when processing blocks. If True, alternates between left-
                 to-right and right-to-left scanning between rows to improve motion coherence.
-            dct: Whether to use Sum of Absolute Transformed Differences (SATD) instead of SAD for luma comparison.
+            satd: Whether to use Sum of Absolute Transformed Differences (SATD) instead of SAD for luma comparison.
         """
         vectors = fallback(vectors, self.vectors)
         blksize = fallback(blksize, self.recalculate_args.get("blksize"), self.blksize)
@@ -461,7 +461,7 @@ class MVTools(VSObject):
             chroma=fallback(self.chroma, True),
             pnew=fallback(pnew, self.recalculate_args.get("pnew"), default=None),
             meander=fallback(meander, self.recalculate_args.get("meander"), default=None),
-            satd=fallback(dct, self.recalculate_args.get("dct"), default=None),
+            satd=fallback(satd, self.recalculate_args.get("satd"), default=None),
             fields=self.fields,
             tff=self.tff,
         )
