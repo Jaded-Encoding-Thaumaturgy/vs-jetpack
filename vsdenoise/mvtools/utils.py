@@ -4,7 +4,7 @@ from jetpytools import CustomValueError, normalize_seq
 
 from vstools import Planes, normalize_planes, vs
 
-__all__ = ["normalize_thscd", "planes_to_mvtools", "refine_blksize"]
+__all__ = ["planes_to_mvtools", "refine_blksize"]
 
 
 def planes_to_mvtools(clip: vs.VideoNode, planes: Planes) -> int:
@@ -38,31 +38,6 @@ def planes_to_mvtools(clip: vs.VideoNode, planes: Planes) -> int:
         return 4
 
     raise CustomValueError("Invalid planes specified!", planes_to_mvtools)
-
-
-def normalize_thscd(
-    thscd: int | tuple[int | None, float | None] | None, scale: bool = True
-) -> tuple[int | None, int | None]:
-    """
-    Normalize and scale the thscd parameter.
-
-    Args:
-        thscd: thscd value to scale and/or normalize.
-        scale: Whether to scale thscd2 from 0-100 percentage threshold to 0-255.
-
-    Returns:
-        Scaled and/or normalized thscd tuple.
-    """
-
-    thscd1, thscd2 = thscd if isinstance(thscd, tuple) else (thscd, None)
-
-    if scale and thscd2 is not None:
-        thscd2 = round(thscd2 / 100 * 255)
-
-    if isinstance(thscd2, float):
-        thscd2 = int(thscd2)
-
-    return (thscd1, thscd2)
 
 
 def refine_blksize(blksize: int | tuple[int, int], divisor: int | tuple[int, int] = (2, 2)) -> tuple[int, int]:

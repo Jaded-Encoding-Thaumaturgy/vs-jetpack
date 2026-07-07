@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from fractions import Fraction
 from itertools import chain
 from typing import Any, Literal, NamedTuple, overload
@@ -8,79 +8,60 @@ from typing import Any, Literal, NamedTuple, overload
 from jetpytools import KwargsNotNone, fallback, normalize_seq
 
 from vstools import (
-    DitherType,
     Field,
     FieldLike,
     Planes,
-    Range,
     UnsupportedColorFamilyError,
     VSFunctionNoArgs,
     VSObject,
     core,
-    depth,
+    normalize_planes,
     scale_delta,
     vs,
 )
 
-from .enums import (
-    FlowMode,
-    MaskMode,
-    MotionMode,
-    MVDirection,
-    PenaltyMode,
-    RFilterMode,
-    SADMode,
-    SearchMode,
-    SharpMode,
-)
+from .enums import MaskMode, MVDirection, PenaltyMode, RFilterMode, SearchMode, SharpMode
 from .motion import MotionVectors
-from .utils import normalize_thscd, planes_to_mvtools
 
 __all__ = ["MVTools"]
 
 
+def _normalize_thscd(
+    thscd: int | tuple[int | None, float | None] | None,
+) -> tuple[int | None, float | None]:
+    if thscd is None:
+        return None, None
+    return thscd if isinstance(thscd, tuple) else (thscd, None)
+
+
 class _SuperConfigKey(NamedTuple):
-    levels: int
+    onelevel: bool
     args: tuple[tuple[str, Any], ...]
 
 
 class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
-    def get_cached_super(self, clip: vs.VideoNode, levels: int, **args: Any) -> vs.VideoNode:
+    def get_cached_super(self, clip: vs.VideoNode, onelevel: bool, **args: Any) -> vs.VideoNode:
         args_key = tuple(sorted(args.items()))
-        key = _SuperConfigKey(levels, args_key)
+        key = _SuperConfigKey(onelevel, args_key)
 
-        # Check if there is a cached level 0 clip with same args
-        if (key0 := _SuperConfigKey(0, args_key)) in self:
-            return self[key0]
+        # Check if there is a cached onelevel=False (hierarchical) clip with same args
+        if (key_hierarchical := _SuperConfigKey(False, args_key)) in self:
+            return self[key_hierarchical]
 
-        # If not cached, compute or re use higher level compatible clip
         if key not in self:
-            if levels == 0:
-                self[key] = super_clip = core.mv.Super(clip, levels=levels, **args)
-                return super_clip
-
-            # gather candidates with >= requested level and same args
-            candidates = sorted(
-                (k for k in self if k.levels >= levels and k.args == args_key), key=lambda k: k.levels, reverse=True
-            )
-
-            if candidates:
-                return self[candidates[0]]
-
-            # If still no match, create a new clip
-            self[key] = core.mv.Super(clip, levels=levels, **args)
+            self[key] = core.mvu.Super(clip, onelevel=onelevel, **args)
 
         return self[key]
 
 
 class _ClipSuperCache(VSObject, dict[vs.VideoNode, _SuperConfigCache]):
-    def get_cached_super(self, clip: vs.VideoNode, levels: int, **args: Any) -> vs.VideoNode:
+    def get_cached_super(self, clip: vs.VideoNode, onelevel: bool, **args: Any) -> vs.VideoNode:
         cache = self.get(clip)
 
         if cache is None:
             self[clip] = cache = _SuperConfigCache()
 
-        return cache.get_cached_super(clip, levels, **args)
+        return cache.get_cached_super(clip, onelevel, **args)
 
 
 _super_clip_cache = _ClipSuperCache()
@@ -115,9 +96,6 @@ class MVTools(VSObject):
     flow_fps_args: dict[str, Any]
     """Arguments passed to every [MVTools.flow_fps][vsdenoise.MVTools.flow_fps] call."""
 
-    block_fps_args: dict[str, Any]
-    """Arguments passed to every [MVTools.block_fps][vsdenoise.MVTools.block_fps] call."""
-
     flow_blur_args: dict[str, Any]
     """Arguments passed to every [MVTools.flow_blur][vsdenoise.MVTools.flow_blur] call."""
 
@@ -151,7 +129,6 @@ class MVTools(VSObject):
         degrain_args: Mapping[str, Any] | None = None,
         flow_interpolate_args: Mapping[str, Any] | None = None,
         flow_fps_args: Mapping[str, Any] | None = None,
-        block_fps_args: Mapping[str, Any] | None = None,
         flow_blur_args: Mapping[str, Any] | None = None,
         mask_args: Mapping[str, Any] | None = None,
         sc_detection_args: Mapping[str, Any] | None = None,
@@ -193,7 +170,6 @@ class MVTools(VSObject):
             flow_interpolate_args: Arguments passed to every
                 [MVTools.flow_interpolate][vsdenoise.MVTools.flow_interpolate] call.
             flow_fps_args: Arguments passed to every [MVTools.flow_fps][vsdenoise.MVTools.flow_fps] call.
-            block_fps_args: Arguments passed to every [MVTools.block_fps][vsdenoise.MVTools.block_fps] call.
             flow_blur_args: Arguments passed to every [MVTools.flow_blur][vsdenoise.MVTools.flow_blur] call.
             mask_args: Arguments passed to every [MVTools.mask][vsdenoise.MVTools.mask] call.
             sc_detection_args: Arguments passed to every [MVTools.sc_detection][vsdenoise.MVTools.sc_detection] call.
@@ -222,7 +198,6 @@ class MVTools(VSObject):
         self.flow_args = dict(flow_args) if flow_args else {}
         self.flow_interpolate_args = dict(flow_interpolate_args) if flow_interpolate_args else {}
         self.flow_fps_args = dict(flow_fps_args) if flow_fps_args else {}
-        self.block_fps_args = dict(block_fps_args) if block_fps_args else {}
         self.flow_blur_args = dict(flow_blur_args) if flow_blur_args else {}
         self.mask_args = dict(mask_args) if mask_args else {}
         self.sc_detection_args = dict(sc_detection_args) if sc_detection_args else {}
@@ -231,7 +206,7 @@ class MVTools(VSObject):
         self,
         clip: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        levels: int | None = None,
+        onelevel: bool | None = None,
         sharp: SharpMode | None = None,
         rfilter: RFilterMode | None = None,
         pelclip: vs.VideoNode | VSFunctionNoArgs | None = None,
@@ -248,10 +223,10 @@ class MVTools(VSObject):
         Args:
             clip: The clip to process. If None, the [clip][vsdenoise.MVTools.clip] attribute is used.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            levels: The number of hierarchical levels in super clip frames.
-                More levels are needed for [analyze][vsdenoise.MVTools.analyze] to get better vectors,
-                but fewer levels are needed for the actual motion compensation.
-                0 = auto, all possible levels are produced.
+            onelevel: Generate only one hierarchical level.
+                Only [analyze][vsdenoise.MVTools.analyze] uses more than one level,
+                so if the super clip is only passed to other functions set it to True
+                to save memory and a small speedup.
             sharp: Subpixel interpolation method if pel is 2 or 4.
                 For more information, see [SharpMode][vsdenoise.SharpMode].
             rfilter: Hierarchical levels smoothing and reducing (halving) filter. For more information, see
@@ -265,56 +240,67 @@ class MVTools(VSObject):
         """
 
         clip = fallback(clip, self.clip)
-
         vectors = fallback(vectors, self.vectors)
 
-        if vectors.scaled:
-            hpad, vpad = vectors.analysis_data["Analysis_Padding"]
+        blksize = vectors.blksize
+        overlap = vectors.overlap
+
+        if blksize is None:
+            blksize_h = fallback(self.analyze_args.get("blksize"), self.recalculate_args.get("blksize"), 16)
+            blksize_v = fallback(self.analyze_args.get("blksizev"), self.recalculate_args.get("blksizev"), blksize_h)
+            blksize = (blksize_h, blksize_v)
         else:
-            hpad, vpad = self.pad
+            blksize = normalize_seq(blksize, 2)
+
+        if overlap is None:
+            overlap_div_h = fallback(self.analyze_args.get("overlap"), self.recalculate_args.get("overlap"), 2)
+            overlap_div_v = fallback(
+                self.analyze_args.get("overlapv"), self.recalculate_args.get("overlapv"), overlap_div_h
+            )
+            exact_overlap_h = blksize[0] // overlap_div_h if overlap_div_h else 0
+            exact_overlap_v = blksize[1] // overlap_div_v if overlap_div_v else 0
+            overlap = (exact_overlap_h, exact_overlap_v)
+        else:
+            overlap = normalize_seq(overlap, 2)
 
         if callable(pelclip):
             pelclip = pelclip(clip)
 
-        super_args = {
-            "hpad": fallback(hpad, 16),
-            "vpad": fallback(vpad, 16),
-            "pel": fallback(self.pel, 2),
-            "chroma": fallback(self.chroma, True),
-            "sharp": fallback(sharp, self.super_args.get("sharp"), 2),
-            "rfilter": fallback(rfilter, self.super_args.get("rfilter"), 2),
-            "pelclip": fallback(pelclip, default=self.super_args.get("pelclip")),
-        }
-
-        return _super_clip_cache.get_cached_super(
-            clip, fallback(levels, self.super_args.get("levels"), 0), **super_args
+        super_args = KwargsNotNone(
+            blksize=tuple(blksize),
+            overlap=tuple(overlap),
+            pad=(fallback(self.pad[0], 16), fallback(self.pad[1], 16)),
+            pel=fallback(self.pel, 2),
+            sharp=sharp if sharp is not None else self.super_args.get("sharp", 2),
+            rfilter=fallback(rfilter, self.super_args.get("rfilter"), 2),
+            pelclip=pelclip if pelclip is not None else self.super_args.get("pelclip"),
         )
+
+        return _super_clip_cache.get_cached_super(clip, bool(onelevel), **super_args)
 
     def analyze(
         self,
         super: vs.VideoNode | None = None,
         tr: int = 1,
+        delta: int | Sequence[int] | None = None,
         blksize: int | tuple[int | None, int | None] | None = None,
         levels: int | None = None,
         search: SearchMode | None = None,
         searchparam: int | None = None,
         pelsearch: int | None = None,
-        lambda_: int | None = None,
-        truemotion: MotionMode | None = None,
+        mvlambda: int | None = None,
         lsad: int | None = None,
         plevel: PenaltyMode | None = None,
-        global_: bool | None = None,
+        globalmv: bool | None = None,
         pnew: int | None = None,
         pzero: int | None = None,
         pglobal: int | None = None,
         overlap: int | tuple[int | None, int | None] | None = None,
-        divide: bool | None = None,
         badsad: int | None = None,
         badrange: int | None = None,
         meander: bool | None = None,
         trymany: bool | None = None,
-        dct: SADMode | None = None,
-        scale_lambda: bool = True,
+        dct: bool | None = None,
     ) -> None:
         """
         Analyze motion vectors in a clip using block matching.
@@ -337,24 +323,22 @@ class MVTools(VSObject):
                 If None, super will be obtained from clip.
             tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
                 Default: 1.
+            delta: Specific delta(s) of motion vectors to use.
             blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
             levels: Number of levels used in hierarchical motion vector analysis. A positive value specifies how many
                 levels to use. A negative or zero value specifies how many coarse levels to skip. Lower values generally
                 give better results since vectors of any length can be found. Sometimes adding more levels can help
                 prevent false vectors in CGI or similar content.
             search: Search algorithm to use at the finest level. See [SearchMode][vsdenoise.SearchMode] for options.
-            searchparam: Additional parameter for the search algorithm. For NSTEP, this is the step size. For
-                EXHAUSTIVE, EXHAUSTIVE_H, EXHAUSTIVE_V, HEXAGON and UMH, this is the search radius.
-            lambda_: Controls the coherence of the motion vector field. Higher values enforce more coherent/smooth
+            searchparam: Search radius/step for the chosen.
+            mvlambda: Controls the coherence of the motion vector field. Higher values enforce more coherent/smooth
                 motion between blocks. Too high values may cause the algorithm to miss the optimal vectors.
-            truemotion: Preset that controls the default values of motion estimation parameters to optimize for true
-                motion. For more information, see [MotionMode][vsdenoise.MotionMode].
-            lsad: SAD limit for lambda. When the SAD value of a vector predictor (formed from neighboring blocks)
-                exceeds this limit, the local lambda value is decreased. This helps prevent the use of bad predictors,
+            lsad: SAD limit for mvlambda. When the SAD value of a vector predictor (formed from neighboring blocks)
+                exceeds this limit, the local mvlambda value is decreased. This helps prevent the use of bad predictors,
                 but reduces motion coherence between blocks.
-            plevel: Controls how the penalty factor (lambda) scales with hierarchical levels. For more information, see
-                [PenaltyMode][vsdenoise.PenaltyMode].
-            global_: Whether to estimate global motion at each level and use it as an additional predictor. This can
+            plevel: Controls how the penalty factor (mvlambda) scales with hierarchical levels.
+                For more information, see [PenaltyMode][vsdenoise.PenaltyMode].
+            globalmv: Whether to estimate global motion at each level and use it as an additional predictor. This can
                 help with camera motion.
             pnew: Penalty multiplier (relative to 256) applied to the SAD cost when evaluating new candidate vectors.
                 Higher values make the search more conservative.
@@ -373,65 +357,68 @@ class MVTools(VSObject):
                 to-right and right-to-left scanning between rows to improve motion coherence.
             trymany: Whether to test multiple predictor vectors during the search process at coarser levels. Enabling
                 this can find better vectors but increases processing time.
-            dct: SAD calculation mode using block DCT (frequency spectrum) for comparing blocks. For more information,
-                see [SADMode][vsdenoise.SADMode].
-            scale_lambda: Whether to scale lambda_ value according to truemotion's default value formula.
+            dct: Whether to use Sum of Absolute Transformed Differences (SATD) instead of SAD for luma comparison.
 
         Returns:
             A [MotionVectors][vsdenoise.MotionVectors] object containing the analyzed motion vectors for each frame.
             These vectors describe the estimated motion between frames and can be used for motion compensation.
         """
-
-        super_clip = self.super(
-            fallback(super, self.search_clip), levels=fallback(levels, self.analyze_args.get("levels"), 0)
-        )
-
+        # Resolve effective block size
         blksize, blksizev = normalize_seq(blksize, 2)
+        eff_blksize_h = fallback(blksize, self.analyze_args.get("blksize"), 16)
+        eff_blksize_v = fallback(blksizev, self.analyze_args.get("blksizev"), eff_blksize_h)
+
+        # Resolve effective overlap divisor
         overlap, overlapv = normalize_seq(overlap, 2)
+        eff_overlap_div_h = fallback(overlap, self.analyze_args.get("overlap"), 2)
+        eff_overlap_div_v = fallback(overlapv, self.analyze_args.get("overlapv"), eff_overlap_div_h)
 
-        eff_blksize = fallback(blksize, self.analyze_args.get("blksize"), default=None)
-        eff_blksizev = fallback(blksizev, self.analyze_args.get("blksizev"), default=None)
+        # Calculate exact overlap in pixels
+        exact_overlap_h = eff_blksize_h // eff_overlap_div_h if eff_overlap_div_h else 0
+        exact_overlap_v = eff_blksize_v // eff_overlap_div_v if eff_overlap_div_v else 0
 
-        if scale_lambda and lambda_ and eff_blksize:
-            lambda_ = lambda_ * eff_blksize * fallback(eff_blksizev, eff_blksize) // 64
+        # Store block size and exact overlap in vectors object
+        self.vectors.blksize = (eff_blksize_h, eff_blksize_v)
+        self.vectors.overlap = (exact_overlap_h, exact_overlap_v)
 
-        analyze_args = self.analyze_args | KwargsNotNone(
-            blksize=blksize,
-            blksizev=blksizev,
+        super_clip = self.super(fallback(super, self.search_clip), onelevel=False)
+
+        analyze_args = KwargsNotNone(
+            blksize=[eff_blksize_h, eff_blksize_v],
+            overlap=[exact_overlap_h, exact_overlap_v],
             levels=levels,
-            search=search,
-            searchparam=searchparam,
-            pelsearch=pelsearch,
-            lambda_=lambda_,
-            chroma=self.chroma,
-            truemotion=truemotion,
-            lsad=lsad,
-            plevel=plevel,
-            global_=global_,
-            pnew=pnew,
-            pzero=pzero,
-            pglobal=pglobal,
-            overlap=overlap,
-            overlapv=overlapv,
-            divide=divide,
-            badsad=badsad,
-            badrange=badrange,
-            meander=meander,
-            trymany=trymany,
-            dct=dct,
+            search=fallback(search, self.analyze_args.get("search"), default=None),
+            searchparam=fallback(searchparam, self.analyze_args.get("searchparam"), default=None),
+            pelsearch=fallback(pelsearch, self.analyze_args.get("pelsearch"), default=None),
+            mvlambda=fallback(mvlambda, self.analyze_args.get("mvlambda"), default=None),
+            chroma=fallback(self.chroma, True),
+            lsad=fallback(lsad, self.analyze_args.get("lsad"), default=None),
+            plevel=fallback(plevel, self.analyze_args.get("plevel"), default=None),
+            globalmv=fallback(globalmv, self.analyze_args.get("globalmv"), default=None),
+            pnew=fallback(pnew, self.analyze_args.get("pnew"), default=None),
+            pzero=fallback(pzero, self.analyze_args.get("pzero"), default=None),
+            pglobal=fallback(pglobal, self.analyze_args.get("pglobal"), default=None),
+            badsad=fallback(badsad, self.analyze_args.get("badsad"), default=None),
+            badrange=fallback(badrange, self.analyze_args.get("badrange"), default=None),
+            meander=fallback(meander, self.analyze_args.get("meander"), default=None),
+            trymany=fallback(trymany, self.analyze_args.get("trymany"), default=None),
+            satd=fallback(dct, self.analyze_args.get("dct"), default=None),
             fields=self.fields,
             tff=self.tff,
         )
 
         self.vectors.clear()
 
-        for delta in range(1, tr + 1):
+        deltas = ([delta] if isinstance(delta, int) else delta) if delta is not None else range(1, tr + 1)
+
+        for d in deltas:
+            # Scaled delta for interlaced fields
+            plugin_delta = d * 2 if self.fields else d
+
             for direction in MVDirection:
-                self.vectors.set_vector(
-                    core.mv.Analyse(super_clip, isb=direction is MVDirection.BACKWARD, delta=delta, **analyze_args),
-                    direction,
-                    delta,
-                )
+                actual_delta = plugin_delta if direction is MVDirection.BACKWARD else -plugin_delta
+
+                self.vectors.set_vector(core.mvu.Analyse(super_clip, delta=actual_delta, **analyze_args), direction, d)
 
     def recalculate(
         self,
@@ -441,14 +428,11 @@ class MVTools(VSObject):
         blksize: int | tuple[int | None, int | None] | None = None,
         search: SearchMode | None = None,
         searchparam: int | None = None,
-        lambda_: int | None = None,
-        truemotion: MotionMode | None = None,
+        mvlambda: int | None = None,
         pnew: int | None = None,
         overlap: int | tuple[int | None, int | None] | None = None,
-        divide: bool | None = None,
         meander: bool | None = None,
-        dct: SADMode | None = None,
-        scale_lambda: bool = True,
+        dct: bool | None = None,
     ) -> None:
         """
         Refines and recalculates motion vectors that were previously estimated,
@@ -473,12 +457,9 @@ class MVTools(VSObject):
             blksize: Size of blocks for motion estimation. Can be an int or tuple of (width, height). Larger blocks are
                 less sensitive to noise and faster to process, but will produce less accurate vectors.
             search: Search algorithm to use at the finest level. See [SearchMode][vsdenoise.SearchMode] for options.
-            searchparam: Additional parameter for the search algorithm. For NSTEP, this is the step size. For
-                EXHAUSTIVE, EXHAUSTIVE_H, EXHAUSTIVE_V, HEXAGON and UMH, this is the search radius.
-            lambda_: Controls the coherence of the motion vector field. Higher values enforce more coherent/smooth
+            searchparam: Search radius/step for the chosen.
+            mvlambda: Controls the coherence of the motion vector field. Higher values enforce more coherent/smooth
                 motion between blocks. Too high values may cause the algorithm to miss the optimal vectors.
-            truemotion: Preset that controls the default values of motion estimation parameters to optimize for true
-                motion. For more information, see [MotionMode][vsdenoise.MotionMode].
             pnew: Penalty multiplier (relative to 256) applied to the SAD cost when evaluating new candidate vectors.
                 Higher values make the search more conservative.
             overlap: Block overlap value. Can be a single integer for both dimensions or a tuple of (horizontal,
@@ -487,51 +468,53 @@ class MVTools(VSObject):
                 the cost of performance.
             meander: Whether to use a meandering scan pattern when processing blocks. If True, alternates between left-
                 to-right and right-to-left scanning between rows to improve motion coherence.
-            dct: SAD calculation mode using block DCT (frequency spectrum) for comparing blocks. For more information,
-                see [SADMode][vsdenoise.SADMode].
-            scale_lambda: Whether to scale lambda_ value according to truemotion's default value formula.
+            dct: Whether to use Sum of Absolute Transformed Differences (SATD) instead of SAD for luma comparison.
         """
         vectors = fallback(vectors, self.vectors)
 
-        super_clip = self.super(fallback(super, self.search_clip), vectors=vectors, levels=1)
-
+        # Resolve effective block size
         blksize, blksizev = normalize_seq(blksize, 2)
+        eff_blksize_h = fallback(blksize, self.recalculate_args.get("blksize"), 8)
+        eff_blksize_v = fallback(blksizev, self.recalculate_args.get("blksizev"), eff_blksize_h)
+
+        # Resolve effective overlap divisor
         overlap, overlapv = normalize_seq(overlap, 2)
+        eff_overlap_div_h = fallback(overlap, self.recalculate_args.get("overlap"), 2)
+        eff_overlap_div_v = fallback(overlapv, self.recalculate_args.get("overlapv"), eff_overlap_div_h)
 
-        eff_blksize = fallback(blksize, self.recalculate_args.get("blksize"), default=None)
-        eff_blksizev = fallback(blksizev, self.recalculate_args.get("blksizev"), default=None)
+        # Calculate exact overlap in pixels
+        exact_overlap_h = eff_blksize_h // eff_overlap_div_h if eff_overlap_div_h else 0
+        exact_overlap_v = eff_blksize_v // eff_overlap_div_v if eff_overlap_div_v else 0
 
-        if scale_lambda and lambda_ and eff_blksize:
-            lambda_ = lambda_ * eff_blksize * fallback(eff_blksizev, eff_blksize) // 64
+        # Update block size and overlap in vectors object
+        vectors.blksize = (eff_blksize_h, eff_blksize_v)
+        vectors.overlap = (exact_overlap_h, exact_overlap_v)
 
-        recalculate_args = self.recalculate_args | KwargsNotNone(
-            thsad=thsad,
-            blksize=blksize,
-            blksizev=blksizev,
-            search=search,
-            searchparam=searchparam,
-            lambda_=lambda_,
-            chroma=self.chroma,
-            truemotion=truemotion,
-            pnew=pnew,
-            overlap=overlap,
-            overlapv=overlapv,
-            divide=divide,
-            meander=meander,
-            dct=dct,
+        super_clip = self.super(fallback(super, self.search_clip), vectors=vectors, onelevel=True)
+
+        recalculate_args = KwargsNotNone(
+            thsad=fallback(thsad, self.recalculate_args.get("thsad"), default=None),
+            blksize=[eff_blksize_h, eff_blksize_v],
+            overlap=[exact_overlap_h, exact_overlap_v],
+            search=fallback(search, self.recalculate_args.get("search"), default=None),
+            searchparam=fallback(searchparam, self.recalculate_args.get("searchparam"), default=None),
+            mvlambda=fallback(mvlambda, self.recalculate_args.get("mvlambda"), default=None),
+            chroma=fallback(self.chroma, True),
+            pnew=fallback(pnew, self.recalculate_args.get("pnew"), default=None),
+            meander=fallback(meander, self.recalculate_args.get("meander"), default=None),
+            satd=fallback(dct, self.recalculate_args.get("dct"), default=None),
             fields=self.fields,
             tff=self.tff,
         )
 
-        del vectors.analysis_data
-
-        for delta in range(1, vectors.tr + 1):
+        for d in vectors.deltas:
             for direction in MVDirection:
-                vectors.set_vector(
-                    core.mv.Recalculate(super_clip, vectors.get_vector(direction, delta), **recalculate_args),
-                    direction,
-                    delta,
-                )
+                if d in vectors[direction]:
+                    vectors.set_vector(
+                        core.mvu.Recalculate(super_clip, vectors.get_vector(direction, d), **recalculate_args),  # type: ignore[arg-type]
+                        direction,
+                        d,
+                    )
 
     @overload
     def compensate(
@@ -541,7 +524,7 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
-        scbehavior: bool | None = None,
+        delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
         time: float | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
@@ -557,7 +540,7 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
-        scbehavior: bool | None = None,
+        delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
         time: float | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
@@ -574,7 +557,7 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
-        scbehavior: bool | None = None,
+        delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
         time: float | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
@@ -590,7 +573,7 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
-        scbehavior: bool | None = None,
+        delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
         time: float | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
@@ -611,8 +594,7 @@ class MVTools(VSObject):
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
             direction: Motion vector direction to use.
             tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
-            scbehavior: Whether to keep the current frame on scene changes. If True, the frame is left unchanged. If
-                False, the reference frame is copied.
+            delta: Specific delta(s) of motion vectors to use.
             thsad: SAD threshold for safe compensation. If block SAD is above thsad, the source block is used instead of
                 the compensated block.
             time: Time position between frames as a percentage (0.0-100.0). Controls the interpolation position between
@@ -634,13 +616,12 @@ class MVTools(VSObject):
 
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
-        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
-        vect_b, vect_f = vectors.get_vectors(direction, tr)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
+        vect_b, vect_f = vectors.get_vectors(direction, tr, delta)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1, thscd2 = _normalize_thscd(thscd)
 
         compensate_args = self.compensate_args | KwargsNotNone(
-            scbehavior=scbehavior,
             thsad=thsad,
             time=time,
             thscd1=thscd1,
@@ -650,8 +631,8 @@ class MVTools(VSObject):
         )
 
         comp_back, comp_fwrd = [
-            [core.mv.Compensate(clip, super_clip, vectors=vect, **compensate_args) for vect in vectors]
-            for vectors in (reversed(vect_b), vect_f)
+            [core.mvu.Compensate(clip, super_clip, vectors=vect, **compensate_args) for vect in vectors_list]
+            for vectors_list in (reversed(vect_b), vect_f)
         ]
 
         if not interleave:
@@ -676,8 +657,8 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
+        delta: int | Sequence[int] | None = None,
         time: float | None = None,
-        mode: FlowMode | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
         interleave: Literal[True] = True,
         temporal_func: None = None,
@@ -691,8 +672,8 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
+        delta: int | Sequence[int] | None = None,
         time: float | None = None,
-        mode: FlowMode | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
         interleave: Literal[True] = True,
         *,
@@ -707,8 +688,8 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
+        delta: int | Sequence[int] | None = None,
         time: float | None = None,
-        mode: FlowMode | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
         *,
         interleave: Literal[False],
@@ -722,8 +703,8 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
+        delta: int | Sequence[int] | None = None,
         time: float | None = None,
-        mode: FlowMode | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
         interleave: bool = True,
         temporal_func: VSFunctionNoArgs | None = None,
@@ -743,11 +724,10 @@ class MVTools(VSObject):
                 If None, super will be obtained from clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
             direction: Motion vector direction to use.
+            delta: Specific delta(s) of motion vectors to use.
             tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
             time: Time position between frames as a percentage (0.0-100.0). Controls the interpolation position between
                 frames.
-            mode: Method for positioning pixels during motion compensation.
-                See [FlowMode][vsdenoise.FlowMode] for options.
             thscd: Scene change detection thresholds:
 
                    - First value: SAD threshold for considering a block changed between frames.
@@ -765,14 +745,13 @@ class MVTools(VSObject):
 
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
-        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
-        vect_b, vect_f = vectors.get_vectors(direction, tr)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
+        vect_b, vect_f = vectors.get_vectors(direction, tr, delta)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1, thscd2 = _normalize_thscd(thscd)
 
         flow_args = self.flow_args | KwargsNotNone(
             time=time,
-            mode=mode,
             thscd1=thscd1,
             thscd2=thscd2,
             fields=self.fields,
@@ -780,8 +759,8 @@ class MVTools(VSObject):
         )
 
         flow_back, flow_fwrd = [
-            [core.mv.Flow(clip, super_clip, vectors=vect, **flow_args) for vect in vectors]
-            for vectors in (reversed(vect_b), vect_f)
+            [core.mvu.Flow(clip, super_clip, vectors=vect, **flow_args) for vect in vectors_list]
+            for vectors_list in (reversed(vect_b), vect_f)
         ]
 
         if not interleave:
@@ -804,6 +783,7 @@ class MVTools(VSObject):
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
         tr: int | None = None,
+        delta: int | Sequence[int] | None = None,
         thsad: int | tuple[int | None, int | None] | None = None,
         limit: float | tuple[float | None, float | None] | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
@@ -821,6 +801,7 @@ class MVTools(VSObject):
                 If None, super will be obtained from clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
             tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
+            delta: Specific delta(s) of motion vectors to use.
             thsad: Defines the soft threshold of block sum absolute differences. Blocks with SAD above this threshold
                 have zero weight for averaging (denoising). Blocks with low SAD have highest weight. The remaining
                 weight is taken from pixels of source clip.
@@ -837,34 +818,40 @@ class MVTools(VSObject):
 
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
-        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
-        tr = fallback(tr, vectors.tr)
-        vect_b, vect_f = vectors.get_vectors(tr=tr)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        if delta is not None:
+            deltas = [delta] if isinstance(delta, int) else list(delta)
+        else:
+            tr_val = fallback(tr, vectors.tr)
+            deltas = range(1, tr_val + 1)
 
-        thsad, thsadc = normalize_seq(thsad, 2)
+        vect_b, vect_f = vectors.get_vectors(tr=None, delta=deltas)
+
+        thscd1, thscd2 = _normalize_thscd(thscd)
+
+        thsad_val, thsadc_val = normalize_seq(thsad, 2)
+        thsad_list = [thsad_val] if thsadc_val is None else [thsad_val, thsadc_val]
+
         nlimit, nlimitc = normalize_seq(limit, 2)
+        nlimit = scale_delta(nlimit, 8, clip) if nlimit is not None else float("inf")
 
-        if nlimit is not None:
-            nlimit = scale_delta(nlimit, 8, clip)
+        nlimitc = scale_delta(nlimitc, 8, clip) if nlimitc is not None else nlimit
+        limit_list = [nlimit, nlimitc]
 
-        if nlimitc is not None:
-            nlimitc = scale_delta(nlimitc, 8, clip)
+        planes_list = list(normalize_planes(clip, planes))
 
         degrain_args = self.degrain_args | KwargsNotNone(
-            thsad=thsad,
-            thsadc=thsadc,
-            plane=planes_to_mvtools(clip, planes),
-            limit=nlimit,
-            limitc=nlimitc,
+            thsad=thsad_list,
+            planes=planes_list,
+            limit=limit_list,
             thscd1=thscd1,
             thscd2=thscd2,
         )
 
-        return getattr(core.mv, f"Degrain{tr}")(
-            clip, super_clip, *chain.from_iterable(zip(vect_b, vect_f)), **degrain_args
-        )
+        vects_combined = list(chain.from_iterable(zip(vect_b, vect_f)))
+
+        return core.mvu.Degrain(clip, super_clip, vects_combined, **degrain_args)
 
     def flow_interpolate(
         self,
@@ -907,16 +894,16 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
 
-        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1, thscd2 = _normalize_thscd(thscd)
 
         flow_interpolate_args = self.flow_interpolate_args | KwargsNotNone(
             time=time, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
         )
 
-        interpolated = core.mv.FlowInter(clip, super_clip, vect_b[0], vect_f[0], **flow_interpolate_args)
+        interpolated = core.mvu.FlowInter(clip, super_clip, [vect_b[0], vect_f[0]], **flow_interpolate_args)
 
         if interleave:
             interpolated = core.std.Interleave([clip, interpolated])
@@ -929,7 +916,7 @@ class MVTools(VSObject):
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
         fps: Fraction | None = None,
-        mask: int | None = None,
+        extramask: bool | None = None,
         ml: float | None = None,
         blend: bool | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
@@ -947,7 +934,7 @@ class MVTools(VSObject):
                 If None, super will be obtained from clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
             fps: Target output framerate as a Fraction.
-            mask: Processing mask mode for handling occlusions and motion failures.
+            extramask: Whether to generate an extra mask for occlusion handling.
             ml: Mask scale parameter that controls occlusion mask strength. Higher values produce weaker occlusion
                 masks. Used in MakeVectorOcclusionMaskTime for modes 3-5. Used in MakeSADMaskTime for modes 6-8.
             blend: Whether to blend frames at scene changes. If True, frames will be blended. If False, frames will be
@@ -963,74 +950,19 @@ class MVTools(VSObject):
 
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
-        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1, thscd2 = _normalize_thscd(thscd)
 
-        flow_fps_args: dict[str, Any] = KwargsNotNone(mask=mask, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2)
+        flow_fps_args: dict[str, Any] = KwargsNotNone(
+            extramask=extramask, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
+        )
 
         if fps is not None:
             flow_fps_args.update(num=fps.numerator, den=fps.denominator)
 
-        flow_fps_args = self.flow_fps_args | flow_fps_args
-
-        return core.mv.FlowFPS(clip, super_clip, vect_b[0], vect_f[0], **flow_fps_args)
-
-    def block_fps(
-        self,
-        clip: vs.VideoNode | None = None,
-        super: vs.VideoNode | None = None,
-        vectors: MotionVectors | None = None,
-        fps: Fraction | None = None,
-        mode: int | None = None,
-        ml: float | None = None,
-        blend: bool | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
-    ) -> vs.VideoNode:
-        """
-        Changes the framerate of the clip by interpolating frames between existing frames
-        using block-based motion compensation.
-
-        Uses both backward and forward motion vectors to estimate motion and create frames at any time position between
-        the current and next frame. Occlusion masks are used to handle areas where motion estimation fails, and time
-        weighting ensures smooth blending between frames to minimize artifacts.
-
-        Args:
-            clip: The clip to process.
-            super: The multilevel super clip prepared by [super][vsdenoise.MVTools.super].
-                If None, super will be obtained from clip.
-            vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            fps: Target output framerate as a Fraction.
-            mode: Processing mask mode for handling occlusions and motion failures.
-            ml: Mask scale parameter that controls occlusion mask strength. Higher values produce weaker occlusion
-                masks. Used in MakeVectorOcclusionMaskTime for modes 3-5. Used in MakeSADMaskTime for modes 6-8.
-            blend: Whether to blend frames at scene changes. If True, frames will be blended. If False, frames will be
-                copied.
-            thscd: Scene change detection thresholds:
-
-                   - First value: SAD threshold for considering a block changed between frames.
-                   - Second value: Percentage of changed blocks needed to trigger a scene change.
-
-        Returns:
-            Clip with its framerate resampled.
-        """
-
-        clip = fallback(clip, self.clip)
-        vectors = fallback(vectors, self.vectors)
-        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
-        vect_b, vect_f = vectors.get_vectors(tr=1)
-
-        thscd1, thscd2 = normalize_thscd(thscd)
-
-        block_fps_args: dict[str, Any] = KwargsNotNone(mode=mode, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2)
-
-        if fps is not None:
-            block_fps_args.update(num=fps.numerator, den=fps.denominator)
-
-        block_fps_args = self.block_fps_args | block_fps_args
-
-        return core.mv.BlockFPS(clip, super_clip, vect_b[0], vect_f[0], **block_fps_args)
+        return core.mvu.FlowFPS(clip, super_clip, [vect_b[0], vect_f[0]], **self.flow_fps_args | flow_fps_args)
 
     def flow_blur(
         self,
@@ -1066,14 +998,14 @@ class MVTools(VSObject):
 
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
-        super_clip = self.super(fallback(super, clip), vectors=vectors, levels=1)
+        super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1, thscd2 = _normalize_thscd(thscd)
 
         flow_blur_args = self.flow_blur_args | KwargsNotNone(blur=blur, prec=prec, thscd1=thscd1, thscd2=thscd2)
 
-        return core.mv.FlowBlur(clip, super_clip, vect_b[0], vect_f[0], **flow_blur_args)
+        return core.mvu.FlowBlur(clip, super_clip, [vect_b[0], vect_f[0]], **flow_blur_args)
 
     def mask(
         self,
@@ -1083,15 +1015,13 @@ class MVTools(VSObject):
         delta: int = 1,
         ml: float | None = None,
         gamma: float | None = None,
-        kind: MaskMode | None = None,
+        kind: MaskMode = MaskMode.VECTOR_LENGTH,
         time: float | None = None,
-        ysc: int | None = None,
+        scval: float | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
     ) -> vs.VideoNode:
         """
         Creates a mask clip from motion vectors data.
-
-        The processing is always done at 8-bits <https://github.com/dubhater/vapoursynth-mvtools/issues/16>.
 
         Args:
             clip: The clip to process. If None, the [clip][vsdenoise.MVTools.clip] attribute is used.
@@ -1104,7 +1034,7 @@ class MVTools(VSObject):
                 quadratic relation.
             kind: Type of mask to generate. See [MaskMode][vsdenoise.MaskMode] for options.
             time: Time position between frames as a percentage (0.0-100.0).
-            ysc: Value assigned to the mask on scene changes.
+            scval: Value assigned to the mask on scene changes.
             thscd: Scene change detection thresholds:
 
                    - First value: SAD threshold for considering a block changed between frames.
@@ -1115,19 +1045,23 @@ class MVTools(VSObject):
         """
 
         clip = fallback(clip, self.clip)
-
         vectors = fallback(vectors, self.vectors)
         vect = vectors.get_vector(direction, delta)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1, thscd2 = _normalize_thscd(thscd)
 
-        mask_args = self.mask_args | KwargsNotNone(
-            ml=ml, gamma=gamma, kind=kind, time=time, ysc=ysc, thscd1=thscd1, thscd2=thscd2
+        match kind:
+            case MaskMode.VECTOR_LENGTH:
+                mask_func = core.mvu.VectorLengthMask
+            case MaskMode.SAD:
+                mask_func = core.mvu.SADMask
+            case MaskMode.OCCLUSION:
+                mask_func = core.mvu.OcclusionMask
+
+        return mask_func(
+            vect,
+            **self.mask_args | KwargsNotNone(ml=ml, gamma=gamma, time=time, scval=scval, thscd1=thscd1, thscd2=thscd2),
         )
-
-        mask_clip = core.mv.Mask(depth(clip, 8), vect, **mask_args)
-
-        return depth(mask_clip, clip, dither_type=DitherType.NONE, range_in=Range.FULL, range_out=Range.FULL)
 
     def sc_detection(
         self,
@@ -1153,15 +1087,14 @@ class MVTools(VSObject):
         """
 
         clip = fallback(clip, self.clip)
-
         vectors = fallback(vectors, self.vectors)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1, thscd2 = _normalize_thscd(thscd)
 
         sc_detection_args = self.sc_detection_args | KwargsNotNone(thscd1=thscd1, thscd2=thscd2)
 
         detect = clip
         for direction in MVDirection:
-            detect = core.mv.SCDetection(detect, vectors.get_vector(direction, delta), **sc_detection_args)
+            detect = core.mvu.SCDetection(detect, vectors.get_vector(direction, delta), **sc_detection_args)
 
         return detect

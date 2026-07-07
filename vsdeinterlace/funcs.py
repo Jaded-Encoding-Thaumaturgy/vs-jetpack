@@ -130,11 +130,11 @@ class InterpolateOverlay(CustomEnum):
         )
 
         if not vectors:
-            mv.analyze(tr=1, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+            mv.analyze(tr=1, blksize=blksize, overlap=overlap)
 
             for _ in range(refine):
                 blksize = refine_blksize(blksize)
-                mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+                mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
         fixed = core.std.SelectEvery(mv.flow_fps(fps=clip.fps * 4), 40, sorted(offsets))
 

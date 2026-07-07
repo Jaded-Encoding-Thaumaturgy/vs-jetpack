@@ -74,7 +74,6 @@ class QTGMCArgs:
         Arguments available when passing to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate].
         """
 
-        scbehavior: bool | None
         thsad: int | None
         time: float | None
 
@@ -100,7 +99,7 @@ class QTGMCArgs:
         ml: float | None
         gamma: float | None
         time: float | None
-        ysc: int | None
+        scval: float | None
 
     class Blur(TypedDict, total=False):
         """
@@ -889,11 +888,11 @@ class QTempGaussMC(VSObject):
         )
 
         self.mv = MVTools(self.draft, **{**self.analyze_preset, "search_clip": self.prefilter_output})
-        self.mv.analyze(tr=tr, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+        self.mv.analyze(tr=tr, blksize=blksize, overlap=overlap)
 
         for _ in range(self.analyze_refine):
             blksize = refine_blksize(blksize)
-            self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+            self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
     def _apply_denoise(self) -> None:
         self.denoise_output = self.clip
@@ -1208,7 +1207,7 @@ class QTempGaussMC(VSObject):
                 mask = self.mv.mask(
                     self.prefilter_output,
                     direction=MVDirection.BACKWARD,
-                    kind=MaskMode.MOTION,
+                    kind=MaskMode.VECTOR_LENGTH,
                     thscd=self.analyze_thscd,
                     **self.motion_blur_mask_args,
                 )

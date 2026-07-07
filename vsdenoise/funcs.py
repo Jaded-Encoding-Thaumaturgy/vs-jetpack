@@ -18,11 +18,7 @@ from vstools import Planes, VSFunctionNoArgs, check_ref_clip, get_color_family, 
 from .mvtools import MotionVectors, MVTools, MVToolsPreset, refine_blksize
 from .prefilters import PrefilterLike
 
-__all__ = [
-    "ccd",
-    "mc_clamp",
-    "mc_degrain",
-]
+__all__ = ["ccd", "mc_clamp", "mc_degrain"]
 
 
 @overload
@@ -33,6 +29,7 @@ def mc_degrain(
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: MVToolsPreset = ...,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
     overlap: int | tuple[int, int] = 2,
     refine: int = 1,
@@ -53,6 +50,7 @@ def mc_degrain(
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: MVToolsPreset = ...,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
     overlap: int | tuple[int, int] = 2,
     refine: int = 1,
@@ -74,6 +72,7 @@ def mc_degrain(
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: MVToolsPreset = ...,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
     overlap: int | tuple[int, int] = 2,
     refine: int = 1,
@@ -93,6 +92,7 @@ def mc_degrain(
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: MVToolsPreset = MVToolsPreset.HQ_SAD,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
     overlap: int | tuple[int, int] = 2,
     refine: int = 1,
@@ -116,6 +116,7 @@ def mc_degrain(
         mfilter: Filter or clip to use where degrain couldn't find a matching block.
         preset: MVTools preset defining base values for the MVTools object. Default is HQ_SAD.
         tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
+        delta: Specific delta(s) of motion vectors to use.
         blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
         overlap: The blksize divisor for block overlap. Larger overlapping reduces blocking artifacts.
         refine: Number of times to recalculate motion vectors with halved block size.
@@ -145,13 +146,13 @@ def mc_degrain(
     mfilter = mfilter(mv.clip) if callable(mfilter) else fallback(mfilter, mv.clip)
 
     if not vectors:
-        mv.analyze(tr=tr, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+        mv.analyze(tr=tr, delta=delta, blksize=blksize, overlap=overlap)
 
         for _ in range(refine):
             blksize = refine_blksize(blksize)
-            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
-    den = mv.degrain(mfilter, mv.clip, None, tr, thsad, limit, thscd, planes)
+    den = mv.degrain(mfilter, super=mv.clip, tr=tr, delta=delta, thsad=thsad, limit=limit, thscd=thscd, planes=planes)
 
     return (den, mv) if export_globals else den
 

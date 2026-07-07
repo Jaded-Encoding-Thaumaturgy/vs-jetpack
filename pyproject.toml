@@ -125,7 +125,7 @@ denoise = [
     "vapoursynth-deblock>=8.0",
     "vapoursynth-fmtconv>=31",
     "vapoursynth-manipmv>=1.3.0",
-    "vapoursynth-mvtools>=26",
+    "vapoursynth-mvutensils>=2",
     "vapoursynth-nlm-ispc>=3",
 ]
 dehalo = ["vsjetpack[denoise]"]

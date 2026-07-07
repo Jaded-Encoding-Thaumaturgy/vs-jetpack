@@ -8,11 +8,10 @@ from jetpytools import KwargsNotNone, classproperty
 from vstools import VSFunctionNoArgs, VSObjectABC, vs
 
 from ..prefilters import prefilter_to_full_range
-from .enums import FlowMode, MaskMode, MotionMode, PenaltyMode, RFilterMode, SADMode, SearchMode, SharpMode
+from .enums import MaskMode, PenaltyMode, RFilterMode, SearchMode, SharpMode
 
 __all__ = [
     "AnalyzeArgs",
-    "BlockFpsArgs",
     "CompensateArgs",
     "DegrainArgs",
     "FlowArgs",
@@ -28,7 +27,7 @@ __all__ = [
 
 
 class SuperArgs(TypedDict, total=False):
-    levels: int | None
+    onelevel: bool | None
     sharp: SharpMode | None
     rfilter: RFilterMode | None
     pelclip: vs.VideoNode | VSFunctionNoArgs | None
@@ -37,15 +36,14 @@ class SuperArgs(TypedDict, total=False):
 class AnalyzeArgs(TypedDict, total=False):
     blksize: int | None
     blksizev: int | None
-    levels: int | None
+    onelevel: bool | None
     search: SearchMode | None
     searchparam: int | None
     pelsearch: int | None
-    lambda_: int | None
-    truemotion: MotionMode | None
+    mvlambda: int | None
     lsad: int | None
     plevel: PenaltyMode | None
-    global_: bool | None
+    globalmv: bool | None
     pnew: int | None
     pzero: int | None
     pglobal: int | None
@@ -56,7 +54,7 @@ class AnalyzeArgs(TypedDict, total=False):
     badrange: int | None
     meander: bool | None
     trymany: bool | None
-    dct: SADMode | None
+    dct: bool | None
 
 
 class RecalculateArgs(TypedDict, total=False):
@@ -65,18 +63,16 @@ class RecalculateArgs(TypedDict, total=False):
     blksizev: int | None
     search: SearchMode | None
     searchparam: int | None
-    lambda_: int | None
-    truemotion: MotionMode | None
+    mvlambda: int | None
     pnew: int | None
     overlap: int | None
     overlapv: int | None
     divide: bool | None
     meander: bool | None
-    dct: SADMode | None
+    dct: bool | None
 
 
 class CompensateArgs(TypedDict, total=False):
-    scbehavior: bool | None
     thsad: int | None
     time: float | None
     thscd1: int | None
@@ -85,19 +81,15 @@ class CompensateArgs(TypedDict, total=False):
 
 class FlowArgs(TypedDict, total=False):
     time: float | None
-    mode: FlowMode | None
     thscd1: int | None
     thscd2: int | None
 
 
 class DegrainArgs(TypedDict, total=False):
-    thsad: int | None
-    thsadc: int | None
-    limit: int | None
-    limitc: int | None
+    thsad: int | tuple[int, int] | None
+    limit: int | tuple[int, int] | None
     thscd1: int | None
     thscd2: int | None
-    plane: int | None
 
 
 class FlowInterpolateArgs(TypedDict, total=False):
@@ -109,17 +101,7 @@ class FlowInterpolateArgs(TypedDict, total=False):
 
 
 class FlowFpsArgs(TypedDict, total=False):
-    mask: int | None
-    ml: float | None
-    blend: bool | None
-    thscd1: int | None
-    thscd2: int | None
-    num: int
-    den: int
-
-
-class BlockFpsArgs(TypedDict, total=False):
-    mode: int | None
+    extramask: bool | None
     ml: float | None
     blend: bool | None
     thscd1: int | None
@@ -140,7 +122,7 @@ class MaskArgs(TypedDict, total=False):
     gamma: float | None
     kind: MaskMode | None
     time: float | None
-    ysc: int | None
+    scval: float | None
     thscd1: int | None
     thscd2: int | None
 
@@ -164,7 +146,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     degrain_args: DegrainArgs
     flow_interpolate_args: FlowInterpolateArgs
     flow_fps_args: FlowFpsArgs
-    block_fps_args: BlockFpsArgs
     flow_blur_args: FlowBlurArgs
     mask_args: MaskArgs
     sc_detection_args: ScDetectionArgs
@@ -185,7 +166,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
         degrain_args: DegrainArgs | None = None,
         flow_interpolate_args: FlowInterpolateArgs | None = None,
         flow_fps_args: FlowFpsArgs | None = None,
-        block_fps_args: BlockFpsArgs | None = None,
         flow_blur_args: FlowBlurArgs | None = None,
         mask_args: MaskArgs | None = None,
         sc_detection_args: ScDetectionArgs | None = None,
@@ -204,7 +184,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
             degrain_args=degrain_args,
             flow_interpolate_args=flow_interpolate_args,
             flow_fps_args=flow_fps_args,
-            block_fps_args=block_fps_args,
             flow_blur_args=flow_blur_args,
             mask_args=mask_args,
             sc_detection_args=sc_detection_args,
@@ -246,15 +225,8 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_COHERENCE(cls) -> Self:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(
-                blksize=16,
-                overlap=8,
-            ),
-            recalculate_args=RecalculateArgs(
-                blksize=8,
-                overlap=4,
-                dct=SADMode.SATD,
-            ),
+            analyze_args=AnalyzeArgs(blksize=16, overlap=2),
+            recalculate_args=RecalculateArgs(blksize=8, overlap=2, dct=True),
         )
 
     @classproperty
@@ -262,15 +234,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_SAD(cls) -> Self:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(
-                blksize=16,
-                overlap=8,
-                truemotion=MotionMode.SAD,
-            ),
-            recalculate_args=RecalculateArgs(
-                blksize=8,
-                overlap=4,
-                dct=SADMode.SATD,
-                truemotion=MotionMode.SAD,
-            ),
+            analyze_args=AnalyzeArgs(blksize=16, overlap=2, mvlambda=0),
+            recalculate_args=RecalculateArgs(blksize=8, overlap=2, dct=True, mvlambda=0),
         )

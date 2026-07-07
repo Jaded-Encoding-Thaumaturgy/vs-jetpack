@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Sequence
 from types import MappingProxyType
 from typing import Any, Literal
 
-from jetpytools import CustomRuntimeError, cachedproperty, fallback, normalize_seq
+from jetpytools import CustomRuntimeError, cachedproperty, fallback
 
-from vstools import VSObject, get_props, vs
+from vstools import VSObject, vs
 
 from .enums import MVDirection
 
@@ -22,8 +23,13 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
     Contains both backward and forward motion vectors.
     """
 
+    blksize: tuple[int, int] | None
+    overlap: tuple[int, int] | None
+
     def __init__(self) -> None:
         super().__init__(None, {w: {} for w in MVDirection})
+        self.blksize = None
+        self.overlap = None
 
     def clear(self) -> None:
         """
@@ -59,11 +65,9 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
             A single motion vector VideoNode
         """
 
-        if delta > self.tr:
+        if delta not in self[direction]:
             raise CustomRuntimeError(
-                "Tried to get a motion vector delta larger than what exists!",
-                self.get_vector,
-                f"{delta} > {self.tr}",
+                "Tried to get a motion vector delta that does not exist!", self.get_vector, f"{delta}"
             )
 
         return self[direction][delta]
@@ -72,6 +76,7 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
         self,
         direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
+        delta: int | Sequence[int] | None = None,
     ) -> tuple[list[vs.VideoNode], list[vs.VideoNode]]:
         """
         Get the backward and forward vectors.
@@ -79,53 +84,34 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
         Args:
             direction: Motion vector direction to get.
             tr: The number of frames to get the vectors for.
+            delta: Specific delta(s) of motion vectors to retrieve.
 
         Returns:
             A tuple containing two lists of motion vectors.
             The first list contains backward vectors and the second contains forward vectors.
         """
-
-        tr = fallback(tr, self.tr)
-
-        if tr > self.tr:
-            raise CustomRuntimeError(
-                "Tried to obtain more motion vectors than what exist!", self.get_vectors, f"{tr} > {self.tr}"
-            )
+        if delta is not None:
+            deltas = [delta] if isinstance(delta, int) else list(delta)
+        else:
+            tr = fallback(tr, self.tr)
+            deltas = range(1, tr + 1)
 
         vectors_backward = list[vs.VideoNode]()
         vectors_forward = list[vs.VideoNode]()
 
-        for delta in range(1, tr + 1):
-            if direction in [MVDirection.BACKWARD, MVDirection.BOTH]:
-                vectors_backward.append(self[MVDirection.BACKWARD][delta])
-            if direction in [MVDirection.FORWARD, MVDirection.BOTH]:
-                vectors_forward.append(self[MVDirection.FORWARD][delta])
+        for d in deltas:
+            if direction in [MVDirection.BACKWARD, MVDirection.BOTH] and d in self[MVDirection.BACKWARD]:
+                vectors_backward.append(self[MVDirection.BACKWARD][d])
+            if direction in [MVDirection.FORWARD, MVDirection.BOTH] and d in self[MVDirection.FORWARD]:
+                vectors_forward.append(self[MVDirection.FORWARD][d])
 
         return (vectors_backward, vectors_forward)
 
     @cachedproperty
     def analysis_data(self) -> MappingProxyType[str, Any]:
         """Mapping containing motion vector analysis data."""
-
-        vect = self.get_vector(MVDirection.BACKWARD, 1).manipmv.ExpandAnalysisData()
-
-        props_list = (
-            "Analysis_BlockSize",
-            "Analysis_Pel",
-            "Analysis_LevelCount",
-            "Analysis_CpuFlags",
-            "Analysis_MotionFlags",
-            "Analysis_FrameSize",
-            "Analysis_Overlap",
-            "Analysis_BlockCount",
-            "Analysis_BitsPerSample",
-            "Analysis_ChromaRatio",
-            "Analysis_Padding",
-        )
-
-        return MappingProxyType(
-            get_props(vect, props_list, (int, list), func=self.__class__.__name__ + ".analysis_data")
-        )
+        with self.get_vector(MVDirection.BACKWARD, 1).get_frame(0) as fr:
+            return MappingProxyType({key: fr.props[key] for key in fr.props if key.startswith("MVUtensils")})
 
     @analysis_data.deleter  # type: ignore[no-redef]
     def analysis_data(self) -> None:
@@ -139,38 +125,7 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
         Args:
             scale: Factor to scale motion vectors by.
         """
-
-        supported_blksize = (
-            (4, 4),
-            (8, 4),
-            (8, 8),
-            (16, 2),
-            (16, 8),
-            (16, 16),
-            (32, 16),
-            (32, 32),
-            (64, 32),
-            (64, 64),
-            (128, 64),
-            (128, 128),
-        )
-
-        scalex, scaley = normalize_seq(scale, 2)
-
-        if scalex > 1 or scaley > 1:
-            blksizex, blksizev = self.analysis_data["Analysis_BlockSize"]
-
-            scaled_blksize = (blksizex * scalex, blksizev * scaley)
-
-            if strict and scaled_blksize not in supported_blksize:
-                raise CustomRuntimeError("Unsupported block size!", self.scale_vectors, scaled_blksize)
-
-            del self.analysis_data
-            cachedproperty.update_cache(self, "scaled", True)
-
-            for delta in range(1, self.tr + 1):
-                for direction in MVDirection:
-                    self[direction][delta] = self[direction][delta].manipmv.ScaleVect(scalex, scaley)
+        raise NotImplementedError("scale_vectors is not supported with MVUtensils.")
 
     def show_vector(
         self,
@@ -192,10 +147,7 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
         Returns:
             Clip with motion vectors overlaid.
         """
-
-        vect = self.get_vector(direction, delta)
-
-        return clip.manipmv.ShowVect(vect, scenechange)
+        raise NotImplementedError("show_vector is not supported with MVUtensils.")
 
     @cachedproperty
     def scaled(self) -> bool:
@@ -204,9 +156,13 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
         return False
 
     @property
+    def deltas(self) -> list[int]:
+        """List of active deltas."""
+        return sorted(set(self[MVDirection.BACKWARD].keys()) | set(self[MVDirection.FORWARD].keys()))
+
+    @property
     def tr(self) -> int:
         """
         Temporal radius of the motion vectors.
         """
-
-        return max(len(self[MVDirection.BACKWARD]), len(self[MVDirection.FORWARD]))
+        return max(self.deltas) if self.deltas else 0
