@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Required, Self, TypedDict
 
 from jetpytools import KwargsNotNone, classproperty
@@ -84,6 +84,7 @@ class DegrainArgs(TypedDict, total=False):
     limit: int | tuple[int, int] | None
     thscd1: int | None
     thscd2: float | None
+    weights: Sequence[int] | None
 
 
 class FlowInterpolateArgs(TypedDict, total=False):

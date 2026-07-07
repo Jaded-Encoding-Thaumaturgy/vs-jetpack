@@ -749,6 +749,7 @@ class MVTools(VSObject):
         delta: int | Sequence[int] | None = None,
         thsad: int | tuple[int, int] | None = None,
         limit: float | tuple[float, float] | None = None,
+        weights: Sequence[int] | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
         planes: Planes = None,
     ) -> vs.VideoNode:
@@ -769,6 +770,8 @@ class MVTools(VSObject):
                 have zero weight for averaging (denoising). Blocks with low SAD have highest weight. The remaining
                 weight is taken from pixels of source clip.
             limit: Maximum allowed change in pixel values (8 bits scale).
+            weights: Optional per-frame bias applied on top of the SAD-derived weights. Given in temporal order:
+                `[bw_radius, ..., bw_1, centre, fw_1, ..., fw_radius]` (exactly `2 * radius + 1` non-negative values).
             thscd: Scene change detection thresholds:
 
                    - First value: SAD threshold for considering a block changed between frames.
@@ -809,6 +812,7 @@ class MVTools(VSObject):
             limit=limit_list,
             thscd1=thscd1,
             thscd2=thscd2,
+            weights=weights,
         )
 
         vects_combined = list(chain.from_iterable(zip(vect_b, vect_f)))
