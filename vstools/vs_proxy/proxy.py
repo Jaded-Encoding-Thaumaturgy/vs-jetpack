@@ -864,7 +864,7 @@ def clear_cache() -> None:
 
 
 def has_environment() -> bool:
-    """Check if the current thread is running inside an environment."""
+    """Check if the current context is running inside an environment."""
     try:
         return not not get_current_environment()  # noqa: SIM208
     except RuntimeError:
