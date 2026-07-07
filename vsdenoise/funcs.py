@@ -11,6 +11,7 @@ from jetpytools import MISSING, CustomRuntimeError, FuncExcept, KwargsNotNone, M
 
 from vsexprtools import ExprOp, ExprVars, combine_expr, norm_expr
 from vskernels import Catrom, Kernel, KernelLike, Lanczos, Scaler, ScalerLike
+from vsscale import pscale_blend
 from vstools import Planes, VSFunctionNoArgs, check_ref_clip, get_color_family, join, normalize_planes, scale_delta, vs
 
 from .mvtools import MotionVectors, MVTools, MVToolsPreset, refine_blksize
@@ -294,9 +295,7 @@ def ccd(
         chroma_downscaler = Kernel.ensure_obj(chroma_downscaler, func)
         out = chroma_downscaler.resample(processed, clip, clip)
 
-        if pscale != 1.0:
-            no_denoise = chroma_downscaler.resample(rgb, clip, clip)
-            out = norm_expr([clip, out, no_denoise], f"x z x - {pscale} * + y z - +", planes=planes, func=func)
+        out = pscale_blend(clip, out, lambda: chroma_downscaler.resample(rgb, clip, clip), pscale, planes, func)
     else:
         out = processed
 
