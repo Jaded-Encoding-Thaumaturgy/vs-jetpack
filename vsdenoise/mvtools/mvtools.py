@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from fractions import Fraction
 from itertools import chain
-from typing import Any, Literal, NamedTuple, overload
+from typing import Any, Literal, NamedTuple, cast, overload
 
 from jetpytools import KwargsNotNone, fallback, normalize_seq
 
@@ -374,16 +374,24 @@ class MVTools(VSObject):
 
         self.vectors.clear()
 
-        deltas = ([delta] if isinstance(delta, int) else delta) if delta is not None else range(1, tr + 1)
+        if delta is None:
+            vects = core.mvu.AnalyseMany(super_clip, radius=tr, delta=2 if self.fields else 1, **analyze_args)
+            for i, d in enumerate(range(1, tr + 1)):
+                self.vectors.set_vector(vects[i * 2], MVDirection.BACKWARD, d)
+                self.vectors.set_vector(vects[i * 2 + 1], MVDirection.FORWARD, d)
+        else:
+            deltas = [delta] if isinstance(delta, int) else delta
 
-        for d in deltas:
-            # Scaled delta for interlaced fields
-            plugin_delta = d * 2 if self.fields else d
+            for d in deltas:
+                # Scaled delta for interlaced fields
+                plugin_delta = d * 2 if self.fields else d
 
-            for direction in MVDirection:
-                actual_delta = plugin_delta if direction is MVDirection.BACKWARD else -plugin_delta
+                for direction in MVDirection:
+                    actual_delta = plugin_delta if direction is MVDirection.BACKWARD else -plugin_delta
 
-                self.vectors.set_vector(core.mvu.Analyse(super_clip, delta=actual_delta, **analyze_args), direction, d)
+                    self.vectors.set_vector(
+                        core.mvu.Analyse(super_clip, delta=actual_delta, **analyze_args), direction, d
+                    )
 
     def recalculate(
         self,
@@ -456,15 +464,19 @@ class MVTools(VSObject):
             fields=self.fields,
             tff=self.tff,
         )
+        vects = list[vs.VideoNode]()
+        keys = list[tuple[MVDirection, int]]()
 
         for d in vectors.deltas:
             for direction in MVDirection:
                 if d in vectors[direction]:
-                    vectors.set_vector(
-                        core.mvu.Recalculate(super_clip, vectors.get_vector(direction, d), **recalculate_args),  # type: ignore[arg-type]
-                        direction,
-                        d,
-                    )
+                    vects.append(vectors.get_vector(direction, d))
+                    keys.append((direction, d))
+
+        recalculated = cast(list[vs.VideoNode], core.mvu.Recalculate(super_clip, vects, **recalculate_args))
+
+        for (direction, d), vect in zip(keys, recalculated):
+            vectors.set_vector(vect, direction, d)
 
     @overload
     def compensate(
