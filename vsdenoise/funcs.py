@@ -10,6 +10,7 @@ from typing import Any, Literal, overload
 from jetpytools import MISSING, CustomRuntimeError, FuncExcept, KwargsNotNone, MissingT, fallback, normalize_seq
 
 from vsexprtools import ExprOp, ExprVars, combine_expr, norm_expr
+from vsjetpack import deprecated
 from vskernels import Catrom, Kernel, KernelLike, Lanczos, Scaler, ScalerLike
 from vsscale import pscale_blend
 from vstools import Planes, VSFunctionNoArgs, check_ref_clip, get_color_family, join, normalize_planes, scale_delta, vs
@@ -211,6 +212,11 @@ def mc_clamp(
     )
 
 
+@deprecated(
+    "This function is deprecated and will be removed in a future version. "
+    "Use `zsmooth.CCD` directly instead, which supports YUV inputs as of version 0.19.0.",
+    category=DeprecationWarning,
+)
 def ccd(
     clip: vs.VideoNode,
     thr: float = 4,
@@ -262,7 +268,7 @@ def ccd(
     Returns:
         Denoised clip.
     """
-    func = func or ccd
+    func = func or ccd  # pyright: ignore[reportDeprecated]
 
     if planes is MISSING:
         planes = [1, 2] if clip.format.color_family == vs.YUV else None
