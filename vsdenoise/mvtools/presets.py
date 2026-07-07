@@ -51,7 +51,7 @@ class AnalyzeArgs(TypedDict, total=False):
     badrange: int | None
     meander: bool | None
     trymany: bool | None
-    dct: bool | None
+    satd: bool | None
 
 
 class RecalculateArgs(TypedDict, total=False):
@@ -63,7 +63,7 @@ class RecalculateArgs(TypedDict, total=False):
     mvlambda: int | None
     pnew: int | None
     meander: bool | None
-    dct: bool | None
+    satd: bool | None
 
 
 class CompensateArgs(TypedDict, total=False):
@@ -219,7 +219,7 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
         return cls(
             search_clip=prefilter_to_full_range,
             analyze_args=AnalyzeArgs(blksize=16, overlap_div=2),
-            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, dct=True),
+            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True),
         )
 
     @classproperty
@@ -228,5 +228,5 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
         return cls(
             search_clip=prefilter_to_full_range,
             analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, mvlambda=0),
-            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, dct=True, mvlambda=0),
+            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True, mvlambda=0),
         )

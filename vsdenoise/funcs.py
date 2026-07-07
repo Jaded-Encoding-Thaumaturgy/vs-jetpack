@@ -35,8 +35,8 @@ def mc_degrain(
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     export_globals: Literal[False] = False,
     planes: Planes = None,
 ) -> vs.VideoNode: ...
@@ -56,8 +56,8 @@ def mc_degrain(
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     *,
     export_globals: Literal[True],
     planes: Planes = None,
@@ -78,8 +78,8 @@ def mc_degrain(
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     export_globals: bool = ...,
     planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]: ...
@@ -98,8 +98,8 @@ def mc_degrain(
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     export_globals: bool = False,
     planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]:
@@ -125,7 +125,7 @@ def mc_degrain(
             taken from pixels of source clip.
         thsad_recalc: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value is
             scaled to 8x8 block size.
-        limit: Maximum allowed change in pixel values.
+        limit: Maximum allowed change in pixel values (8-bit scale).
         thscd: Scene change detection thresholds:
 
                - First value: SAD threshold for considering a block changed between frames.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping, Sequence
 from fractions import Fraction
 from itertools import chain
@@ -746,8 +747,8 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
-        thsad: int | tuple[int | None, int | None] | None = None,
-        limit: float | tuple[float | None, float | None] | None = None,
+        thsad: int | tuple[int, int] | None = None,
+        limit: float | tuple[float, float] | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
         planes: Planes = None,
     ) -> vs.VideoNode:
@@ -792,19 +793,18 @@ class MVTools(VSObject):
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
-        thsad_val, thsadc_val = normalize_seq(thsad, 2)
-        thsad_list = [thsad_val] if thsadc_val is None else [thsad_val, thsadc_val]
+        limit = fallback(limit, self.degrain_args.get("limit"), default=None)
+        limit_list = normalize_seq(limit, 2) if limit is not None else limit
+        limit_list = (
+            [scale_delta(v, 8, clip) if math.isfinite(v) else v for v in limit_list]
+            if limit_list is not None
+            else limit_list
+        )
 
-        nlimit, nlimitc = normalize_seq(limit, 2)
-        nlimit = scale_delta(nlimit, 8, clip) if nlimit is not None else float("inf")
-
-        nlimitc = scale_delta(nlimitc, 8, clip) if nlimitc is not None else nlimit
-        limit_list = [nlimit, nlimitc]
-
-        planes_list = list(normalize_planes(clip, planes))
+        planes_list = normalize_planes(clip, planes)
 
         degrain_args = self.degrain_args | KwargsNotNone(
-            thsad=thsad_list,
+            thsad=thsad,
             planes=planes_list,
             limit=limit_list,
             thscd1=thscd1,
