@@ -245,17 +245,20 @@ class MVTools(VSObject):
         #     hpad, vpad = self.pad
         hpad, vpad = self.pad
 
-        if callable(pelclip):
-            pelclip = pelclip(clip)
+        if pelclip is not None:
+            pelclip = pelclip(clip) if callable(pelclip) else pelclip
+        else:
+            pelclip_arg = self.super_args.get("pelclip")
+            pelclip = pelclip_arg(clip) if isinstance(pelclip_arg, VSFunctionNoArgs) else pelclip_arg
 
         super_args = KwargsNotNone(
             blksize=self.blksize,
             overlap=overlap,
             pad=(fallback(hpad, 16), fallback(vpad, 16)),
             pel=fallback(self.pel, 2),
-            sharp=sharp if sharp is not None else self.super_args.get("sharp", 2),
-            rfilter=fallback(rfilter, self.super_args.get("rfilter"), 2),
-            pelclip=pelclip if pelclip is not None else self.super_args.get("pelclip"),
+            sharp=fallback(sharp, self.super_args.get("sharp"), 2),
+            rfilter=fallback(rfilter, self.super_args.get("rfilter"), 1),
+            pelclip=pelclip,
         )
 
         return _super_clip_cache.get_cached_super(clip, bool(onelevel), **super_args)
