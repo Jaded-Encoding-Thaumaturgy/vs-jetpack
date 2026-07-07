@@ -959,7 +959,6 @@ class MVTools(VSObject):
 
     def mask(
         self,
-        clip: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
         direction: Literal[MVDirection.FORWARD, MVDirection.BACKWARD] = MVDirection.FORWARD,
         delta: int = 1,
@@ -974,7 +973,6 @@ class MVTools(VSObject):
         Creates a mask clip from motion vectors data.
 
         Args:
-            clip: The clip to process. If None, the [clip][vsdenoise.MVTools.clip] attribute is used.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
             direction: Motion vector direction to use.
             delta: Motion vector delta to use.
@@ -993,8 +991,6 @@ class MVTools(VSObject):
         Returns:
             Motion mask clip.
         """
-
-        clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
         vect = vectors.get_vector(direction, delta)
 

@@ -8,7 +8,7 @@ from jetpytools import KwargsNotNone, classproperty
 from vstools import VSFunctionNoArgs, VSObjectABC, vs
 
 from ..prefilters import prefilter_to_full_range
-from .enums import MaskMode, PenaltyMode, RFilterMode, SearchMode, SharpMode
+from .enums import PenaltyMode, RFilterMode, SearchMode, SharpMode
 
 __all__ = [
     "AnalyzeArgs",
@@ -114,7 +114,6 @@ class FlowBlurArgs(TypedDict, total=False):
 class MaskArgs(TypedDict, total=False):
     ml: float | None
     gamma: float | None
-    kind: MaskMode | None
     time: float | None
     scval: float | None
     thscd1: int | None
