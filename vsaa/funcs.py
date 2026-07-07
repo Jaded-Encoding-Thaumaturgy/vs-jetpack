@@ -5,11 +5,10 @@ from typing import Any, Literal
 
 from jetpytools import CustomValueError, fallback
 
-from vsexprtools import norm_expr
 from vskernels import Box, Catrom, NoScale, Scaler, ScalerLike, is_noscale_like
 from vsmasktools import EdgeDetect, EdgeDetectLike, Morpho, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
-from vsscale import ArtCNN
+from vsscale import ArtCNN, pscale_blend
 from vstools import (
     ConvMode,
     FunctionUtil,
@@ -173,9 +172,7 @@ def based_aa(
     aa = antialiaser.antialias(ss, **aa_kwargs)
     aa = downscaler.scale(aa, clip.width, clip.height)
 
-    if pscale != 1.0:
-        no_aa = downscaler.scale(ss, clip.width, clip.height)
-        aa = norm_expr([ss_clip, aa, no_aa], "x z x - {pscale} * + y z - +", pscale=pscale, func=based_aa)
+    aa = pscale_blend(ss_clip, aa, lambda: downscaler.scale(ss, clip.width, clip.height), pscale, func=based_aa)
 
     if callable(postfilter):
         aa = postfilter(aa)
