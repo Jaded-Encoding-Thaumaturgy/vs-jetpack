@@ -25,7 +25,6 @@ from vstools import (
     normalize_param_planes,
     normalize_planes,
     scale_delta,
-    scale_mask,
     scale_value,
     vs,
 )
@@ -117,7 +116,7 @@ def awarpsharp(
     """
     from vsmasktools import Sobel, normalize_mask
 
-    thresh = scale_mask(thresh, 8, clip)
+    thresh = scale_delta(thresh, 8, clip)
     mask_first_plane = fallback(mask_first_plane, clip.format.color_family is vs.YUV)
     mask_planes = 0 if mask_first_plane else planes
 
