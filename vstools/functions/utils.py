@@ -4,7 +4,7 @@ import operator
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial, reduce, wraps
 from types import NoneType
-from typing import Any, Literal, Self, SupportsIndex, overload
+from typing import Any, Literal, Self, SupportsIndex, cast, overload
 from weakref import WeakValueDictionary
 
 from jetpytools import (
@@ -656,7 +656,14 @@ def split(clip: vs.VideoNode, /, strict: bool = True) -> list[vs.VideoNode]:
     Returns:
         List of individual planes.
     """
-    return [clip] if clip.format.num_planes == 1 else [plane(clip, i, strict) for i in range(clip.format.num_planes)]
+    if clip.format.num_planes == 1:
+        return [clip]
+
+    if not strict and clip.format.color_family is vs.RGB:
+        clip = core.std.RemoveFrameProps(clip, "_Matrix")
+
+    # clip has 3 planes so it WILL return a list
+    return cast(list[vs.VideoNode], core.std.SplitPlanes(clip))
 
 
 def flatten_vnodes(*clips: VideoNodeIterable, split_planes: bool = False) -> Sequence[vs.VideoNode]:
