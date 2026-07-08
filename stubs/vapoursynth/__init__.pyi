@@ -1828,10 +1828,6 @@ class VideoNode(RawNode):
     hysteresis: Final[_hysteresis._VideoNode_bound.Plugin]
     """Hysteresis filter."""
 # </attribute/VideoNode_bound/hysteresis>
-# <attribute/VideoNode_bound/knlm>
-    knlm: Final[_knlm._VideoNode_bound.Plugin]
-    """KNLMeansCL for VapourSynth"""
-# </attribute/VideoNode_bound/knlm>
 # <attribute/VideoNode_bound/manipmv>
     manipmv: Final[_manipmv._VideoNode_bound.Plugin]
     """Manipulate Motion Vectors"""
@@ -1844,14 +1840,6 @@ class VideoNode(RawNode):
     ncnn: Final[_ncnn._VideoNode_bound.Plugin]
     """NCNN ML Filter Runtime"""
 # </attribute/VideoNode_bound/ncnn>
-# <attribute/VideoNode_bound/nlm_cuda>
-    nlm_cuda: Final[_nlm_cuda._VideoNode_bound.Plugin]
-    """Non-local means denoise filter implemented in CUDA"""
-# </attribute/VideoNode_bound/nlm_cuda>
-# <attribute/VideoNode_bound/nlm_hip>
-    nlm_hip: Final[_nlm_hip._VideoNode_bound.Plugin]
-    """Non-local means denoise filter implemented in HIP"""
-# </attribute/VideoNode_bound/nlm_hip>
 # <attribute/VideoNode_bound/nlm_ispc>
     nlm_ispc: Final[_nlm_ispc._VideoNode_bound.Plugin]
     """Non-local means denoise filter implemented in ISPC"""
@@ -2130,10 +2118,6 @@ class Core:
     hysteresis: Final[_hysteresis._Core_bound.Plugin]
     """Hysteresis filter."""
 # </attribute/Core_bound/hysteresis>
-# <attribute/Core_bound/knlm>
-    knlm: Final[_knlm._Core_bound.Plugin]
-    """KNLMeansCL for VapourSynth"""
-# </attribute/Core_bound/knlm>
 # <attribute/Core_bound/lsmas>
     lsmas: Final[_lsmas._Core_bound.Plugin]
     """LSMASHSource for VapourSynth"""
@@ -2150,14 +2134,6 @@ class Core:
     ncnn: Final[_ncnn._Core_bound.Plugin]
     """NCNN ML Filter Runtime"""
 # </attribute/Core_bound/ncnn>
-# <attribute/Core_bound/nlm_cuda>
-    nlm_cuda: Final[_nlm_cuda._Core_bound.Plugin]
-    """Non-local means denoise filter implemented in CUDA"""
-# </attribute/Core_bound/nlm_cuda>
-# <attribute/Core_bound/nlm_hip>
-    nlm_hip: Final[_nlm_hip._Core_bound.Plugin]
-    """Non-local means denoise filter implemented in HIP"""
-# </attribute/Core_bound/nlm_hip>
 # <attribute/Core_bound/nlm_ispc>
     nlm_ispc: Final[_nlm_ispc._Core_bound.Plugin]
     """Non-local means denoise filter implemented in ISPC"""
@@ -2916,20 +2892,6 @@ class _hysteresis:
 
 # </implementation/hysteresis>
 
-# <implementation/knlm>
-class _knlm:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def KNLMeansCL(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_type: _AnyStr | None = None, device_id: _IntLike | None = None, ocl_x: _IntLike | None = None, ocl_y: _IntLike | None = None, ocl_r: _IntLike | None = None, info: _IntLike | None = None, mode_9_to_15bits: _IntLike | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def KNLMeansCL(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_type: _AnyStr | None = None, device_id: _IntLike | None = None, ocl_x: _IntLike | None = None, ocl_y: _IntLike | None = None, ocl_r: _IntLike | None = None, info: _IntLike | None = None, mode_9_to_15bits: _IntLike | None = None) -> VideoNode: ...
-
-# </implementation/knlm>
-
 # <implementation/lsmas>
 class _lsmas:
     class _Core_bound:
@@ -3078,36 +3040,6 @@ class _ncnn:
             def Model(self, /, network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, builtin: _IntLike | None = None, builtindir: _AnyStr | None = None, fp16: _IntLike | None = None, path_is_serialization: _IntLike | None = None, flexible_output_prop: _AnyStr | None = None, output_format: _IntLike | None = None) -> Any: ...
 
 # </implementation/ncnn>
-
-# <implementation/nlm_cuda>
-class _nlm_cuda:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def Version(self, /) -> Any: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NLMeans(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> Any: ...
-
-# </implementation/nlm_cuda>
-
-# <implementation/nlm_hip>
-class _nlm_hip:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NLMeans(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
-
-# </implementation/nlm_hip>
 
 # <implementation/nlm_ispc>
 class _nlm_ispc:

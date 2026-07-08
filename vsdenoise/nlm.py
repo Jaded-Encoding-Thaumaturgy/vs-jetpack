@@ -6,11 +6,13 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Callable, Sequence
+from enum import EnumMeta
 from logging import getLogger
-from typing import Any
+from typing import Any, Literal
 
-from jetpytools import CustomIntEnum, CustomRuntimeError, CustomStrEnum, normalize_seq, to_arr
+from jetpytools import CustomIntEnum, CustomRuntimeError, CustomStrEnum, EnumDeprecationWarning, normalize_seq, to_arr
 
+from vsjetpack import deprecated
 from vstools import Planes, core, join, normalize_planes, vs
 
 __all__ = ["nl_means"]
@@ -32,7 +34,40 @@ class NLMeans[**P, R]:
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
 
-    class Backend(CustomStrEnum):
+    class DeprecatedEnumMeta(EnumMeta):
+        @property
+        @deprecated(
+            '"ACCELERATOR" member is deprecated and will be removed in a future version.',
+            category=EnumDeprecationWarning,
+        )
+        def ACCELERATOR(cls) -> Literal[NLMeans.Backend.GPU]:  # noqa: N802
+            return NLMeans.Backend.GPU
+
+        @property
+        @deprecated(
+            '"CPU" member is deprecated and will be removed in a future version.',
+            category=EnumDeprecationWarning,
+        )
+        def CPU(cls) -> Literal[NLMeans.Backend.GPU]:  # noqa: N802
+            return NLMeans.Backend.GPU
+
+        @property
+        @deprecated(
+            '"CUDA" member is deprecated and will be removed in a future version.',
+            category=EnumDeprecationWarning,
+        )
+        def CUDA(cls) -> Literal[NLMeans.Backend.GPU]:  # noqa: N802
+            return NLMeans.Backend.GPU
+
+        @property
+        @deprecated(
+            '"HIP" member is deprecated and will be removed in a future version.',
+            category=EnumDeprecationWarning,
+        )
+        def HIP(cls) -> Literal[NLMeans.Backend.GPU]:  # noqa: N802
+            return NLMeans.Backend.GPU
+
+    class Backend(CustomStrEnum, metaclass=DeprecatedEnumMeta):
         """
         Enum representing available backends on which to run the plugin.
         """
@@ -41,12 +76,7 @@ class NLMeans[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Priority: "cuda" -> "hip" -> "accelerator" -> "gpu" -> "cpu" -> "ispc".
-        """
-
-        ACCELERATOR = "accelerator"
-        """
-        Dedicated OpenCL accelerators.
+        Priority: "gpu" -> "ispc".
         """
 
         GPU = "gpu"
@@ -54,24 +84,9 @@ class NLMeans[**P, R]:
         An OpenCL device that is a GPU.
         """
 
-        CPU = "cpu"
-        """
-        An OpenCL device that is the host processor.
-        """
-
         ISPC = "ispc"
         """
         ISPC (CPU-based) implementation.
-        """
-
-        CUDA = "cuda"
-        """
-        Nvidia CUDA (GPU-based) implementation.
-        """
-
-        HIP = "hip"
-        """
-        AMD HIP (GPU-based) implementation.
         """
 
         def NLMeans(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
@@ -89,31 +104,16 @@ class NLMeans[**P, R]:
             Returns:
                 Denoised clip.
             """
-
-            if self == NLMeans.Backend.CUDA:
-                return clip.nlm_cuda.NLMeans(*args, **kwargs)
-
-            if self == NLMeans.Backend.HIP:
-                return clip.nlm_hip.NLMeans(*args, **kwargs)
-
-            if self in [NLMeans.Backend.ACCELERATOR, NLMeans.Backend.GPU, NLMeans.Backend.CPU]:
-                return clip.knlm.KNLMeansCL(*args, **kwargs | {"device_type": self.value})
+            if self == NLMeans.Backend.GPU:
+                return clip.vszipcl.NLMeans(*args, **{"num_streams": 2} | kwargs)
 
             if self == NLMeans.Backend.ISPC:
                 return clip.nlm_ispc.NLMeans(*args, **kwargs)
 
             # Fallback selection based on available plugins
-            if hasattr(core, "nlm_cuda"):
-                logger.debug("%s: Auto selecting 'NLMeans.Backend.CUDA'", NLMeans.Backend.NLMeans)
-                return NLMeans.Backend.CUDA.NLMeans(clip, *args, **kwargs)
-
-            if hasattr(core, "nlm_hip"):
-                logger.debug("%s: Auto selecting 'NLMeans.Backend.HIP'", NLMeans.Backend.NLMeans)
-                return NLMeans.Backend.HIP.NLMeans(clip, *args, **kwargs)
-
-            if hasattr(core, "knlm"):
-                logger.debug("%s: Auto selecting KNLMeansCL auto 'device_type'", NLMeans.Backend.NLMeans)
-                return clip.knlm.KNLMeansCL(*args, **kwargs | {"device_type": "auto"})
+            if hasattr(core, "vszipcl"):
+                logger.debug("%s: Auto selecting 'NLMeans.Backend.GPU'", NLMeans.Backend.NLMeans)
+                return NLMeans.Backend.GPU.NLMeans(clip, *args, **kwargs)
 
             if hasattr(core, "nlm_ispc"):
                 logger.debug("%s: Auto selecting 'NLMeans.Backend.ISPC", NLMeans.Backend.NLMeans)

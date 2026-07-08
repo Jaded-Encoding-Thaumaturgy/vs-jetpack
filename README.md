@@ -39,7 +39,7 @@ Most extras are hierarchical. For example, `denoise` includes all plugins from `
 | **`gpu`**         | Generic GPU          | `ncnn`, `ort`                                                                         |
 | **`cl`**          | Open CL              | `vszipcl`                                                                             |
 | **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `dfttest2-[nvrtc,cuda]`, `ort-cuda`, `trt{-rtx}` (+ `cl`) |
-| **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]`, `nlm-hip` (+ `cl`, `gpu`)                      |
+| **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]` (+ `cl`, `gpu`)                                 |
 
 > [!IMPORTANT]
 > Some plugins distribute their wheels through our custom package index instead of PyPI.
