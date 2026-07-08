@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import inspect
+from collections.abc import Callable
 from functools import partial
 from typing import Any, Literal
 
-from jetpytools import CustomValueError, fallback
+from jetpytools import CustomTypeError, CustomValueError
 
+from vsjetpack import TypeIs
 from vskernels import Box, Catrom, NoScale, Scaler, ScalerLike, is_noscale_like
 from vsmasktools import EdgeDetect, EdgeDetectLike, Morpho, Prewitt
 from vsrgtools import MeanMode, bilateral, box_blur, gauss_blur, unsharpen
+from vsrgtools.blur import Bilateral
 from vsscale import ArtCNN, pscale_blend
 from vstools import (
     ConvMode,
@@ -54,6 +58,39 @@ def pre_aa(
     return func.return_clip(wclip)
 
 
+class BasedAA[**P, R]:
+    """
+    Class decorator that wraps the [based_aa][vsaa.funcs.based_aa] function and extends its functionality.
+
+    It is not meant to be used directly.
+    """
+
+    def __init__(self, func: Callable[P, R]) -> None:
+        self._func = func
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        return self._func(*args, **kwargs)
+
+    @staticmethod
+    def postfilter(
+        aa: vs.VideoNode,
+        ss: vs.VideoNode,
+        luma: vs.VideoNode,
+        sigmaS: float = 2.0,  # noqa: N803
+        sigmaR: float = 1 / 255,  # noqa: N803
+        backend: Bilateral.Backend = bilateral.Backend.CPU,
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        """
+        The default postfilter function used in based_aa.
+
+        Applies a median-filtered bilateral smoother to clean halos created during antialiasing
+        """
+        postfilter_args: dict[str, Any] = {"sigmaS": sigmaS, "sigmaR": sigmaR, "backend": backend} | kwargs
+        return MeanMode.MEDIAN(aa, ss, bilateral(aa, luma, **postfilter_args))
+
+
+@BasedAA
 def based_aa(
     clip: vs.VideoNode,
     rfactor: float = 2.0,
@@ -64,7 +101,10 @@ def based_aa(
     supersampler: ScalerLike | Literal[False] = ArtCNN,
     antialiaser: AntiAliaser | None = None,
     prefilter: vs.VideoNode | VSFunctionNoArgs | Literal[False] = False,
-    postfilter: VSFunctionNoArgs | Literal[False] | dict[str, Any] | None = None,
+    postfilter: Callable[[vs.VideoNode], vs.VideoNode]
+    | Callable[[vs.VideoNode, vs.VideoNode, vs.VideoNode], vs.VideoNode]
+    | Literal[False]
+    | dict[str, Any] = BasedAA.postfilter,
     show_mask: bool = False,
     **aa_kwargs: Any,
 ) -> vs.VideoNode:
@@ -99,9 +139,17 @@ def based_aa(
             (alpha=0.125, beta=0.25, vthresh0=12, vthresh1=24, field=1).
         prefilter: Prefilter to apply before anti-aliasing. Must be a VideoNode, a function that takes a VideoNode and
             returns a VideoNode, or False. Default: False.
-        postfilter: Postfilter to apply after anti-aliasing. Must be a function that takes a VideoNode and returns a
-            VideoNode, or None. If None, applies a median-filtered bilateral smoother to clean halos created during
-            antialiasing. Default: None.
+        postfilter: Postfilter to apply after anti-aliasing.
+            Must be either:
+
+                - A function that takes the antialised clip and returns a new clip.
+                - A function that takes the antialised clip, the raw supersampled clip
+                  and the luma source clip in this order and returns a new clip.
+                - A dict to adjust the default `BasedAA.postfilter` function.
+                - The boolean False to disable the step entirely.
+
+            The default argument is a callable that applies a median-filtered bilateral smoother
+            to clean halos created during antialiasing
         show_mask: If True, returns the edge detection mask instead of the processed clip. Default: False
 
     Returns:
@@ -175,10 +223,14 @@ def based_aa(
     aa = pscale_blend(ss_clip, aa, lambda: downscaler.scale(ss, clip.width, clip.height), pscale, func=based_aa)
 
     if callable(postfilter):
-        aa = postfilter(aa)
+        if _has_3_params(postfilter):
+            aa = postfilter(aa, ss_clip, luma)
+        elif _has_1_param(postfilter):
+            aa = postfilter(aa)
+        else:
+            raise CustomTypeError("Unsupported number of parameters", based_aa, repr(postfilter))
     elif postfilter is not False:
-        postfilter_args = {"sigmaS": 2, "sigmaR": 1 / 255} | fallback(postfilter, {})
-        aa = MeanMode.MEDIAN(aa, ss_clip, bilateral(aa, luma, **postfilter_args))
+        aa = based_aa.postfilter(aa, ss_clip, luma, **postfilter)
 
     if mask:
         aa = luma.std.MaskedMerge(aa, mask)
@@ -187,3 +239,13 @@ def based_aa(
         aa = join(aa, clip)
 
     return aa
+
+
+def _has_3_params(
+    func: Callable[..., Any],
+) -> TypeIs[Callable[[vs.VideoNode, vs.VideoNode, vs.VideoNode], vs.VideoNode]]:
+    return len(inspect.signature(func).parameters) == 3
+
+
+def _has_1_param(func: Callable[..., Any]) -> TypeIs[Callable[[vs.VideoNode], vs.VideoNode]]:
+    return len(inspect.signature(func).parameters) == 1
