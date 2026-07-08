@@ -5,7 +5,16 @@ from functools import partial, reduce
 from math import sqrt
 from typing import TYPE_CHECKING, Any, Literal, overload
 
-from jetpytools import CustomIntEnum, CustomStrEnum, CustomValueError, FuncExcept, cround, normalize_seq, to_arr
+from jetpytools import (
+    CustomIntEnum,
+    CustomNotImplementedError,
+    CustomStrEnum,
+    CustomValueError,
+    FuncExcept,
+    cround,
+    normalize_seq,
+    to_arr,
+)
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Gaussian, Point, Scaler, ScalerLike
@@ -22,6 +31,7 @@ from vstools import (
     core,
     get_plane_sizes,
     join,
+    normalize_param_planes,
     normalize_planes,
     split,
     vs,
@@ -130,9 +140,41 @@ class GaussBlur[**P, R]:
 
     def __init__(self, gauss_blur: Callable[P, R]) -> None:
         self._func = gauss_blur
+        self._backend = GaussBlur.Backend.CPU
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
+
+    class Backend(CustomStrEnum):
+        """
+        Enum representing available backends on which to run the plugin.
+        """
+
+        AUTO = "auto"
+        """Select the default backend of the [gauss_blur][vsrgtools.blur.gauss_blur] singleton."""
+
+        CPU = "zimg"
+        """Zimg-based Gaussian resizer."""
+
+        GPU = "vszipcl"
+        """OpenCL CL implementation."""
+
+        def resolve(self) -> GaussBlur.Backend:
+            return gauss_blur.backend if self is GaussBlur.Backend.AUTO else self
+
+    @property
+    def backend(self) -> Backend:
+        """The default backend for [gauss_blur][vsrgtools.blur.gauss_blur]"""
+        return self._backend
+
+    @backend.setter
+    def backend(self, value: str) -> None:
+        new = GaussBlur.Backend(value)
+
+        if new == GaussBlur.Backend.AUTO:
+            raise CustomValueError("Unsupported value as default backend", self, new)
+
+        self._backend = new
 
     @staticmethod
     def get_sigma(radius: int) -> float:
@@ -194,6 +236,7 @@ def gauss_blur(
     radius: int | None = None,
     mode: OneDimConvMode | TempConvMode = ConvMode.HV,
     planes: Planes = None,
+    backend: GaussBlur.Backend = GaussBlur.Backend.AUTO,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
@@ -205,24 +248,34 @@ def gauss_blur(
         radius: Size of the kernel in each direction. Automatically determined if not specified.
         mode: Convolution mode (horizontal, vertical, both, or temporal). Defaults to HV.
         planes: Planes to process. Defaults to all.
-        **kwargs: Additional arguments passed to the resizer or blur kernel. Specifying `_fast=True` enables fast
-            approximation.
+        backend: The backend to use for processing.
+            Set `gauss_blur.backend = gauss_blur.Backend.GPU` to make the GPU the default backend
+            for all subsequent explicit and implicit calls.
+        **kwargs: Additional arguments passed to the resizer or blur kernel.
+            Specifying `_fast=True` enables fast bilinear approximation.
 
     Raises:
-        CustomValueError: If square convolution mode is specified, which is unsupported.
+        CustomValueError: If `mode` is `ConvMode.SQUARE`, which is not supported.
+        CustomNotImplementedError: If the GPU backend is selected and `mode` is not `ConvMode.HV`.
 
     Returns:
         Blurred clip.
     """
-    planes = normalize_planes(clip, planes)
-
     if not TYPE_CHECKING and mode == ConvMode.SQUARE:
         raise CustomValueError("Invalid mode specified", gauss_blur, mode)
+
+    fast = kwargs.pop("_fast", False)
+
+    if backend.resolve() == gauss_blur.Backend.GPU:
+        if mode != ConvMode.HV:
+            raise CustomNotImplementedError(f"GPU backend doesn't support the mode {mode}", gauss_blur)
+
+        return core.vszipcl.GaussBlur(clip, normalize_param_planes(clip, sigma, planes, 0), **kwargs)
 
     if isinstance(sigma, Sequence):
         return normalize_radius(clip, gauss_blur, {"sigma": sigma}, planes, radius=radius, mode=mode)
 
-    fast = kwargs.pop("_fast", False)
+    planes = normalize_planes(clip, planes)
 
     sigma_constant = 0.9 if fast and not mode.is_temporal else sigma
 
