@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 from fractions import Fraction
-from typing import SupportsFloat, SupportsInt
+from typing import TYPE_CHECKING, Any, SupportsFloat, SupportsInt
 
-from jetpytools import CustomNotImplementedError, fallback, mod_x
+from jetpytools import CustomNotImplementedError, CustomTypeError, fallback, mod_x
+
+from vsjetpack import TypeIs
 
 from ..enums import Dar, Sar
 from ..exceptions import UnsupportedColorFamilyError
 from ..types import HoldsVideoFormat, VideoFormatLike
 from ..vs_proxy import vs
+
+if TYPE_CHECKING:
+    from ..types import HoldsNumpyFormat
 
 __all__ = [
     "get_color_family",
@@ -23,6 +28,14 @@ __all__ = [
     "get_video_format",
     "get_w",
 ]
+
+
+def _is_int_like(x: Any) -> TypeIs[SupportsInt]:
+    try:
+        int(x)
+    except (TypeError, ValueError):
+        return False
+    return True
 
 
 def get_var_infos(frame: vs.VideoNode | vs.VideoFrame) -> tuple[vs.VideoFormat, int, int]:
@@ -42,7 +55,10 @@ def get_var_infos(frame: vs.VideoNode | vs.VideoFrame) -> tuple[vs.VideoFormat, 
 
 
 def get_video_format(
-    value: SupportsInt | VideoFormatLike | HoldsVideoFormat, /, *, sample_type: int | vs.SampleType | None = None
+    value: SupportsInt | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat,
+    /,
+    *,
+    sample_type: int | vs.SampleType | None = None,
 ) -> vs.VideoFormat:
     """
     Retrieve a VapourSynth VideoFormat object from various input types.
@@ -54,9 +70,11 @@ def get_video_format(
                - A unique format ID
                - A VideoFormat-like object
                - An object holding a VideoFormat (i.e., exposing a `format` attribute)
+               - A NumPy array (resolving to its dtype)
+               - Any object compatible with `numpy.typing.DTypeLike` (e.g. `np.uint8`, `"uint8"`, etc.)
 
-        sample_type: Optional override for the sample type. Accepts either an integer or a SampleType. If None, the
-            default or inferred sample type is used.
+        sample_type: Optional override for the sample type. Accepts either an integer or a SampleType.
+            If None, the default or inferred sample type is used.
 
     Returns:
         A VideoFormat object derived from the input.
@@ -67,7 +85,7 @@ def get_video_format(
     if sample_type is not None:
         sample_type = vs.SampleType(sample_type)
 
-    if isinstance(value, SupportsInt):
+    if _is_int_like(value):
         value = int(value)
 
         if value > 32 or value == 0:
@@ -78,13 +96,26 @@ def get_video_format(
 
         return vs.core.query_video_format(vs.YUV, sample_type, value)
 
+    if isinstance(value, (vs.VideoNode, vs.VideoFrame)):
+        return value.format.replace(sample_type=sample_type) if sample_type is not None else value.format
+
+    import numpy as np
+
+    dtype = value.dtype if isinstance(value, np.ndarray) else np.dtype(value)
+
     if sample_type is not None:
-        return value.format.replace(sample_type=sample_type)
+        sample_type = vs.SampleType(sample_type)
+    elif dtype.kind in "ui":
+        sample_type = vs.INTEGER
+    elif dtype.kind == "f":
+        sample_type = vs.FLOAT
+    else:
+        raise CustomTypeError(f"Unsupported numpy dtype: {dtype}", get_video_format)
 
-    return value.format
+    return vs.core.query_video_format(vs.YUV, sample_type, dtype.itemsize * 8)
 
 
-def get_depth(clip: VideoFormatLike | HoldsVideoFormat, /) -> int:
+def get_depth(clip: VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat, /) -> int:
     """
     Get the bitdepth of a given clip or value.
     """
@@ -92,7 +123,7 @@ def get_depth(clip: VideoFormatLike | HoldsVideoFormat, /) -> int:
     return get_video_format(clip).bits_per_sample
 
 
-def get_sample_type(clip: VideoFormatLike | HoldsVideoFormat | vs.SampleType, /) -> vs.SampleType:
+def get_sample_type(clip: VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.SampleType, /) -> vs.SampleType:
     """
     Get the sample type of a given clip.
     """
@@ -103,7 +134,7 @@ def get_sample_type(clip: VideoFormatLike | HoldsVideoFormat | vs.SampleType, /)
     return get_video_format(clip).sample_type
 
 
-def get_color_family(clip: VideoFormatLike | HoldsVideoFormat | vs.ColorFamily, /) -> vs.ColorFamily:
+def get_color_family(clip: VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily, /) -> vs.ColorFamily:
     """
     Get the color family of a given clip.
     """
@@ -157,7 +188,7 @@ def get_resolutions(clip: vs.VideoNode | vs.VideoFrame) -> tuple[tuple[int, int,
     return tuple((plane, *get_plane_sizes(clip, plane)) for plane in range(clip.format.num_planes))
 
 
-def get_subsampling(clip: VideoFormatLike | HoldsVideoFormat, /) -> str:
+def get_subsampling(clip: VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat, /) -> str:
     """
     Get the subsampling of a clip as a human-readable name.
 
