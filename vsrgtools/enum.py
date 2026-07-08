@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable
 from enum import auto
-from math import ceil, exp, pi, sqrt
 from typing import Any, Literal, Self, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError, CustomValueError, FuncExcept, fallback, iterate, to_arr
@@ -325,16 +325,7 @@ class BlurMatrix(CustomEnum):
                 radius = fallback(radius, 1)
                 mode = kwargs.pop("mode", ConvMode.HV)
 
-                c = 1
-                n = radius * 2 + 1
-
-                matrix = list[int]()
-
-                for i in range(1, radius + 2):
-                    matrix.append(c)
-                    c = c * (n - i) // i
-
-                kernel = self.custom(matrix[:-1] + matrix[::-1], mode)
+                kernel = self.custom([math.comb(2 * radius, i) for i in range(2 * radius + 1)], mode)
 
             case BlurMatrix.GAUSS:
                 sigma = kwargs.pop("sigma", 0.5)
@@ -342,18 +333,14 @@ class BlurMatrix(CustomEnum):
                 scale_value = kwargs.pop("scale_value", 1023)
 
                 if mode == ConvMode.SQUARE:
-                    scale_value = sqrt(scale_value)
+                    scale_value = math.sqrt(scale_value)
 
                 if radius is None:
                     radius = self.get_radius(sigma)
 
                 if sigma > 0.0:
-                    half_pisqrt = 1.0 / sqrt(2.0 * pi) * sigma
                     doub_qsigma = 2 * sigma**2
-
-                    high, *mat = [half_pisqrt * exp(-(x**2) / doub_qsigma) for x in range(radius + 1)]
-
-                    mat = [x * scale_value / high for x in mat]
+                    mat = [scale_value * math.exp(-(x**2) / doub_qsigma) for x in range(1, radius + 1)]
                     mat = [*mat[::-1], scale_value, *mat]
                 else:
                     mat = [scale_value]
@@ -412,7 +399,7 @@ class BlurMatrix(CustomEnum):
         """
         assert self is BlurMatrix.GAUSS
 
-        return ceil(sigma * 6 + 1) // 2
+        return math.ceil(sigma * 6 + 1) // 2
 
     @classmethod
     def custom[Nb: float | int](cls, values: Iterable[Nb], mode: ConvMode = ConvMode.SQUARE) -> BlurMatrixBase[Nb]:
