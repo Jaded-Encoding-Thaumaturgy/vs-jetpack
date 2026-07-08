@@ -473,7 +473,10 @@ class MVTools(VSObject):
                     vects.append(vectors.get_vector(direction, d))
                     keys.append((direction, d))
 
-        recalculated = cast(list[vs.VideoNode], core.mvu.Recalculate(super_clip, vects, **recalculate_args))
+        recalculated = core.mvu.Recalculate(super_clip, vects, **recalculate_args)
+
+        if isinstance(recalculated, vs.VideoNode):
+            recalculated = [recalculated]
 
         for (direction, d), vect in zip(keys, recalculated):
             vectors.set_vector(vect, direction, d)
