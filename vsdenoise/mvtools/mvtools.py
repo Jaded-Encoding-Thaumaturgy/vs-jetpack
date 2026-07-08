@@ -233,7 +233,7 @@ class MVTools(VSObject):
                 2, 4, etc. for pel=2), with interpolated pixels in between. The clip should not be padded.
 
         Returns:
-            The original clip with the super clip attached as a frame property.
+            The original clip with MVUtensils frame properties attached to it.
         """
         clip = fallback(clip, self.clip)
         overlap = refine_blksize(self.blksize, self.overlap_div)
@@ -292,7 +292,7 @@ class MVTools(VSObject):
 
         Takes a prepared super clip (containing hierarchical frame data) and estimates motion by comparing blocks
         between frames.
-        Outputs motion vector data that can be used by other functions for motion compensation.
+        Set motion vector data that can be used by other functions for motion compensation.
 
         The motion vector search is performed hierarchically, starting from a coarse image scale and progressively
         refining to finer scales.
@@ -341,10 +341,6 @@ class MVTools(VSObject):
             trymany: Whether to test multiple predictor vectors during the search process at coarser levels. Enabling
                 this can find better vectors but increases processing time.
             satd: Whether to use Sum of Absolute Transformed Differences (SATD) instead of SAD for luma comparison.
-
-        Returns:
-            A [MotionVectors][vsdenoise.MotionVectors] object containing the analyzed motion vectors for each frame.
-            These vectors describe the estimated motion between frames and can be used for motion compensation.
         """
         nblksize = cast(tuple[int, int], tuple(normalize_seq(fallback(blksize, self.blksize), 2)))
         noverlap_div = cast(tuple[int, int], tuple(normalize_seq(fallback(overlap_div, self.overlap_div), 2)))
@@ -858,7 +854,7 @@ class MVTools(VSObject):
             interleave: Whether to interleave the interpolated frames with the source clip.
 
         Returns:
-            List of the motion interpolated frames if interleave=False else a motion interpolated clip.
+            Motion interpolated clip.
         """
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
@@ -873,11 +869,7 @@ class MVTools(VSObject):
         )
 
         interpolated = core.mvu.FlowInter(clip, super_clip, [vect_b[0], vect_f[0]], **flow_interpolate_args)
-
-        if interleave:
-            interpolated = core.std.Interleave([clip, interpolated])
-
-        return interpolated
+        return core.std.Interleave([clip, interpolated]) if interleave else interpolated
 
     def flow_fps(
         self,
