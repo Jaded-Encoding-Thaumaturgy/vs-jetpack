@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
+from contextlib import contextmanager
 from functools import partial, reduce
+from logging import getLogger
 from math import sqrt
 from typing import TYPE_CHECKING, Any, Literal, overload
 
@@ -53,6 +55,8 @@ __all__ = [
     "sbr",
     "side_box_blur",
 ]
+
+logger = getLogger(__name__)
 
 
 def box_blur(
@@ -159,6 +163,16 @@ class GaussBlur[**P, R]:
         GPU = "vszipcl"
         """OpenCL CL implementation."""
 
+        @contextmanager
+        def __call__(self, new_backend: str, /) -> Generator[None]:
+            """Set this backend for the duration of the context manager."""
+            old = gauss_blur.backend
+            try:
+                gauss_blur.backend = new_backend
+                yield
+            finally:
+                gauss_blur.backend = old
+
         def resolve(self) -> GaussBlur.Backend:
             return gauss_blur.backend if self is GaussBlur.Backend.AUTO else self
 
@@ -249,8 +263,9 @@ def gauss_blur(
         mode: Convolution mode (horizontal, vertical, both, or temporal). Defaults to HV.
         planes: Planes to process. Defaults to all.
         backend: The backend to use for processing.
-            Set `gauss_blur.backend = gauss_blur.Backend.GPU` to make the GPU the default backend
-            for all subsequent explicit and implicit calls.
+            Set `gauss_blur.backend = gauss_blur.Backend.GPU`
+            or use the context manager `with gauss_blur.backend(gauss_blur.Backend.GPU):`
+            to make the GPU the default backend for all subsequent explicit and implicit calls.
         **kwargs: Additional arguments passed to the resizer or blur kernel.
             Specifying `_fast=True` enables fast bilinear approximation.
 
@@ -265,6 +280,8 @@ def gauss_blur(
         raise CustomValueError("Invalid mode specified", gauss_blur, mode)
 
     fast = kwargs.pop("_fast", False)
+    backend = backend.resolve()
+    logger.debug("gauss_blur(): Selecting backend %r", backend)
 
     if backend.resolve() == gauss_blur.Backend.GPU:
         if mode != ConvMode.HV:
@@ -583,6 +600,16 @@ class Bilateral[**P, R]:
         Uses `bilateralgpu_rtc.Bilateral` — a CUDA-based GPU implementation with runtime shader compilation.
         """
 
+        @contextmanager
+        def __call__(self, new_backend: str, /) -> Generator[None]:
+            """Set this backend for the duration of the context manager."""
+            old = bilateral.backend
+            try:
+                bilateral.backend = new_backend
+                yield
+            finally:
+                bilateral.backend = old
+
         def resolve(self) -> Bilateral.Backend:
             return bilateral.backend if self is Bilateral.Backend.AUTO else self
 
@@ -639,7 +666,7 @@ def bilateral(
     For more details, see:
 
       - <https://github.com/dnjulek/vapoursynth-zip/wiki/Bilateral>
-      - <https://github.com/HomeOfVapourSynthEvolution/VapourSynth-Bilateral>
+      - <https://github.com/dnjulek/vapoursynth-zipcl/wiki/Bilateral>
       - <https://github.com/WolframRhodium/VapourSynth-BilateralGPU>
 
     Args:
@@ -647,15 +674,20 @@ def bilateral(
         ref: Optional reference clip for joint bilateral filtering.
         sigmaS: Spatial sigma (controls the extent of spatial smoothing). Can be a float or per-plane list.
         sigmaR: Range sigma (controls sensitivity to intensity differences). Can be a float or per-plane list.
-        backend: Backend implementation to use.
-            Set `bilateral.backend = bilateral.Backend.GPU` to make the GPU the default backend
-            for all subsequent explicit and implicit calls.
+        backend: The backend to use for processing.
+            Set `bilateral.backend = bilateral.Backend.GPU`
+            or use the context manager `with bilateral.backend(bilateral.Backend.GPU):`
+            to make the GPU the default backend for all subsequent explicit and implicit calls.
         **kwargs: Additional arguments forwarded to the backend-specific implementation.
 
     Returns:
         Bilaterally filtered clip.
     """
-    match backend.resolve():
+
+    backend = backend.resolve()
+    logger.debug("bilateral(): Selecting backend %r", backend)
+
+    match backend:
         case Bilateral.Backend.CPU:
             bilateral_args = {"ref": ref, "sigmaS": sigmaS, "sigmaR": sigmaR, "planes": normalize_planes(clip)}
         case Bilateral.Backend.GPU:
