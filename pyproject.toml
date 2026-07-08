@@ -54,8 +54,7 @@ dependencies = [
     "typing_extensions>=4.15.0; python_version<'3.15'",
     # VapourSynth plugins
     "vapoursynth-akarin>=1.4.1",
-    "vapoursynth-fmtconv>=31",
-    "vapoursynth-vszip>=14.0.0",
+    "vapoursynth-vszip>=21.0.0",
 ]
 
 [project.urls]
@@ -127,6 +126,7 @@ denoise = [
     "dfttest2[gcc]>=10 ; platform_machine != 'x86_64' and platform_machine != 'AMD64'",
     "dfttest2[cpu]>=10 ; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
     "vapoursynth-deblock>=8.0",
+    "vapoursynth-fmtconv>=31",
     "vapoursynth-manipmv>=1.3.0",
     "vapoursynth-mvtools>=26",
     "vapoursynth-nlm-ispc>=3",

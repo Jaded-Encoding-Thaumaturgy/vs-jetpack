@@ -2694,20 +2694,20 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-vszip"
-version = "19.0.0"
+version = "21.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/43/f8/c41504357632bafb09e820666f77453b500a56f2cd70fe9931c974c6542a/vapoursynth_vszip-19.0.0.tar.gz", hash = "sha256:525cc5e8d108fccb710b9cf03a8330f6f001c9201dec4a1ad3b64c8eb27e6699", size = 147237, upload-time = "2026-06-28T18:06:42.83Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b6/07/28c95fd6137e64281b470c9a03226f544d89a1cea23529b51b410a36cf0e/vapoursynth_vszip-21.0.0.tar.gz", hash = "sha256:ce8f6dadd22c48177145056f608f0ae12b6b785b13e28f37127a22c75a18ef2c", size = 204767, upload-time = "2026-07-08T00:03:58.972Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7d/cd/01fb665d7fefeb777c62afb5342068f72e380c2e70e2adbf2ec2a9d16728/vapoursynth_vszip-19.0.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:a7d860af82fe27b97bc68a95d54b09183985d5146c2ee6c8581272aabef772ef", size = 846713, upload-time = "2026-06-28T18:06:31.778Z" },
-    { url = "https://files.pythonhosted.org/packages/93/99/dc8e8899127c35e1ec994ab2e0f04b74d5e28502aca64ddf785b7347636a/vapoursynth_vszip-19.0.0-py3-none-macosx_11_0_x86_64.whl", hash = "sha256:e39d8509e7a8cf85049988b57ad80c9f0a7e3a11a9842f41fdee869c92717899", size = 1000296, upload-time = "2026-06-28T18:06:33.556Z" },
-    { url = "https://files.pythonhosted.org/packages/d3/0b/f132871cb8aac393d0c830b8875bcb210eb93eab3d958500848071035f09/vapoursynth_vszip-19.0.0-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:5fe2862c19f3a6d6707511da5c5f0045a2b0adb34ec66668cc4463a67f25700a", size = 936784, upload-time = "2026-06-28T18:06:35.038Z" },
-    { url = "https://files.pythonhosted.org/packages/1d/23/de22a3b4da77c14db9dabdb1ef6a968a6fef741027998a9a6a2d82ff6e88/vapoursynth_vszip-19.0.0-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:5507ec0ad13d4e0de1de028e4fe96966a172d8415638b51e4f78c8c751f07ad7", size = 3406748, upload-time = "2026-06-28T18:06:36.397Z" },
-    { url = "https://files.pythonhosted.org/packages/96/3e/572078df425dde295232348526a7588f1037764ac82139061203c5b9a2eb/vapoursynth_vszip-19.0.0-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:f414cc3ed5a2e5d76306c01e10520cf6d8f9da726abd2391d196b401ac979721", size = 934807, upload-time = "2026-06-28T18:06:38.32Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/97/c0d34a86174cca261cfbd0da2a1da05ce1c0dceab17ce40fb8457892bad8/vapoursynth_vszip-19.0.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:b5137e648153eaca599c16a58a581e5d569532bd6270202598bb34a3faa6f4a2", size = 3401376, upload-time = "2026-06-28T18:06:39.517Z" },
-    { url = "https://files.pythonhosted.org/packages/67/08/776dc02c2dcd6fd8d510c0d04ae98ad3dd06f67463761ed5e18e09e7963a/vapoursynth_vszip-19.0.0-py3-none-win_amd64.whl", hash = "sha256:5668215da6bcdf5febdb8f0cf30ae26e2c2073998551686bc4b12321690852e4", size = 3526960, upload-time = "2026-06-28T18:06:41.155Z" },
+    { url = "https://files.pythonhosted.org/packages/11/fa/b2fba16f3a1f0df891de4c506ed93b69ac8766e7faebd7623fec759e6ff6/vapoursynth_vszip-21.0.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:13fd8de2dcad8ec71a9b8016bd3514bd846ec253da6f5169ee3409e85eba969c", size = 882905, upload-time = "2026-07-08T00:03:46.962Z" },
+    { url = "https://files.pythonhosted.org/packages/88/e1/b5d27e4bb0d1eee712ac50c8bcbd5e64cf1281436fa0193046c18f4c675e/vapoursynth_vszip-21.0.0-py3-none-macosx_11_0_x86_64.whl", hash = "sha256:fa5bc477b7d3a2a3a31a0f61c50075bf8cd8cd9564f2719e614e6eb33946f7c4", size = 1083061, upload-time = "2026-07-08T00:03:48.662Z" },
+    { url = "https://files.pythonhosted.org/packages/36/3d/5487366693b67f720acd08b1138bbd7faa4f92ba4668be8ff2858bb5f756/vapoursynth_vszip-21.0.0-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:a086b2ecf4c286209aa47a5a0e8bf147ff933ea74d0d2cb6b6bd8d215e2e642a", size = 965753, upload-time = "2026-07-08T00:03:50.072Z" },
+    { url = "https://files.pythonhosted.org/packages/be/1c/8d24924f54ebab0da8bde7662cff25bb829da318d098305f8d5f422c75ec/vapoursynth_vszip-21.0.0-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:2ab436fbd0751ef62069234f8f88b37738933f3228bb203a8431da7cbab549f1", size = 3422860, upload-time = "2026-07-08T00:03:51.471Z" },
+    { url = "https://files.pythonhosted.org/packages/91/58/57afdcda9b4d34527b5612ada2f4c13a767e727b677683e910f1088b43af/vapoursynth_vszip-21.0.0-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:cbe07650769847ee09f7eee86b5f30e312d2654472bf2b2a76394755a874af63", size = 964011, upload-time = "2026-07-08T00:03:53.606Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/a3/25772bd4b28d52a98d7a71b2ba62d4c81c15708c9c86e6a667a8c544fa22/vapoursynth_vszip-21.0.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:2d04969c947d61aee64cd9300d6eab263deff124174f4a6ba9b1ac5aeeee025e", size = 3417967, upload-time = "2026-07-08T00:03:55.458Z" },
+    { url = "https://files.pythonhosted.org/packages/53/cc/a2157aa31ce4019634f1500f9a596e23717a311951f3644796c67c977a23/vapoursynth_vszip-21.0.0-py3-none-win_amd64.whl", hash = "sha256:8e41c6916e11281f31c8cb36d19cad656690e794f844a210f93b4921628f1ead", size = 3548479, upload-time = "2026-07-08T00:03:57.464Z" },
 ]
 
 [[package]]
@@ -2788,7 +2788,6 @@ dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.15'" },
     { name = "vapoursynth" },
     { name = "vapoursynth-akarin" },
-    { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-vszip" },
 ]
 
@@ -2865,6 +2864,7 @@ deband = [
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
     { name = "vapoursynth-ffms2" },
+    { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-manipmv" },
@@ -2908,6 +2908,7 @@ dehalo = [
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
     { name = "vapoursynth-ffms2" },
+    { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-manipmv" },
@@ -2951,6 +2952,7 @@ deinterlace = [
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
     { name = "vapoursynth-ffms2" },
+    { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-manipmv" },
@@ -2994,6 +2996,7 @@ denoise = [
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
     { name = "vapoursynth-ffms2" },
+    { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-manipmv" },
@@ -3037,6 +3040,7 @@ full = [
     { name = "vapoursynth-edgemasks" },
     { name = "vapoursynth-eedi3" },
     { name = "vapoursynth-ffms2" },
+    { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-manipmv" },
@@ -3373,7 +3377,11 @@ requires-dist = [
     { name = "vapoursynth-ffms2", marker = "extra == 'mask'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-ffms2", marker = "extra == 'scale'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-ffms2", marker = "extra == 'source'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-fmtconv", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-fmtconv", marker = "extra == 'deband'", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-fmtconv", marker = "extra == 'dehalo'", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-fmtconv", marker = "extra == 'deinterlace'", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-fmtconv", marker = "extra == 'denoise'", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-fmtconv", marker = "extra == 'full'", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-hysteresis", marker = "extra == 'aa'", specifier = ">=1.1.3" },
     { name = "vapoursynth-hysteresis", marker = "extra == 'deband'", specifier = ">=1.1.3" },
     { name = "vapoursynth-hysteresis", marker = "extra == 'dehalo'", specifier = ">=1.1.3" },
@@ -3457,7 +3465,7 @@ requires-dist = [
     { name = "vapoursynth-subtext", marker = "extra == 'scale'", specifier = ">=6.0" },
     { name = "vapoursynth-vivtc", marker = "extra == 'deinterlace'", specifier = ">=2.0" },
     { name = "vapoursynth-vivtc", marker = "extra == 'full'", specifier = ">=2.0" },
-    { name = "vapoursynth-vszip", specifier = ">=14.0.0" },
+    { name = "vapoursynth-vszip", specifier = ">=21.0.0" },
     { name = "vapoursynth-wnnm", marker = "(sys_platform == 'linux' and extra == 'deband') or (sys_platform == 'win32' and extra == 'deband')", specifier = ">=3" },
     { name = "vapoursynth-wnnm", marker = "(sys_platform == 'linux' and extra == 'dehalo') or (sys_platform == 'win32' and extra == 'dehalo')", specifier = ">=3" },
     { name = "vapoursynth-wnnm", marker = "(sys_platform == 'linux' and extra == 'deinterlace') or (sys_platform == 'win32' and extra == 'deinterlace')", specifier = ">=3" },
