@@ -509,12 +509,17 @@ class Bilateral[**P, R]:
         Uses `vszip.Bilateral` — a fast, CPU-based implementation written in Zig.
         """
 
-        GPU = "bilateralgpu"
+        GPU = "vszipcl"
+        """
+        Uses vszipcl.Bilateral — a fast OpenCL-based implementation written in Zig.
+        """
+
+        CUDA = "bilateralgpu"
         """
         Uses `bilateralgpu.Bilateral` — a CUDA-based GPU implementation.
         """
 
-        GPU_RTC = "bilateralgpu_rtc"
+        CUDA_RTC = "bilateralgpu_rtc"
         """
         Uses `bilateralgpu_rtc.Bilateral` — a CUDA-based GPU implementation with runtime shader compilation.
         """
@@ -572,10 +577,13 @@ def bilateral(
     Returns:
         Bilaterally filtered clip.
     """
-    if backend == Bilateral.Backend.CPU:
-        bilateral_args = {"ref": ref, "sigmaS": sigmaS, "sigmaR": sigmaR, "planes": normalize_planes(clip)}
-    else:
-        bilateral_args = {"ref": ref, "sigma_spatial": sigmaS, "sigma_color": sigmaR}
+    match backend:
+        case Bilateral.Backend.CPU:
+            bilateral_args = {"ref": ref, "sigmaS": sigmaS, "sigmaR": sigmaR, "planes": normalize_planes(clip)}
+        case Bilateral.Backend.GPU:
+            bilateral_args = {"ref": ref, "sigma_spatial": sigmaS, "sigma_color": sigmaR, "num_streams": 2}
+        case Bilateral.Backend.CUDA | Bilateral.Backend.CUDA_RTC:
+            bilateral_args = {"ref": ref, "sigma_spatial": sigmaS, "sigma_color": sigmaR}
 
     return backend.Bilateral(clip, **bilateral_args | kwargs)
 

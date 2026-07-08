@@ -1916,6 +1916,10 @@ class VideoNode(RawNode):
     vszip: Final[_vszip._VideoNode_bound.Plugin]
     """VapourSynth Zig Image Process"""
 # </attribute/VideoNode_bound/vszip>
+# <attribute/VideoNode_bound/vszipcl>
+    vszipcl: Final[_vszipcl._VideoNode_bound.Plugin]
+    """VapourSynth Zig Image Process OpenCL"""
+# </attribute/VideoNode_bound/vszipcl>
 # <attribute/VideoNode_bound/wnnm>
     wnnm: Final[_wnnm._VideoNode_bound.Plugin]
     """Weighted Nuclear Norm Minimization Denoiser"""
@@ -2218,6 +2222,10 @@ class Core:
     vszip: Final[_vszip._Core_bound.Plugin]
     """VapourSynth Zig Image Process"""
 # </attribute/Core_bound/vszip>
+# <attribute/Core_bound/vszipcl>
+    vszipcl: Final[_vszipcl._Core_bound.Plugin]
+    """VapourSynth Zig Image Process OpenCL"""
+# </attribute/Core_bound/vszipcl>
 # <attribute/Core_bound/wnnm>
     wnnm: Final[_wnnm._Core_bound.Plugin]
     """Weighted Nuclear Norm Minimization Denoiser"""
@@ -3855,6 +3863,40 @@ class _vszip:
             def XPSNR(self, /, distorted: VideoNode, temporal: _IntLike | None = None, verbose: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/vszip>
+
+# <implementation/vszipcl>
+class _vszipcl:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def Bilateral(self, /, clip: VideoNode, sigma_spatial: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigma_color: _FloatLike | _SequenceLike[_FloatLike] | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, use_shared_memory: _IntLike | None = None, ref: VideoNode | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def Deband(self, /, clip: VideoNode, iterations: _IntLike | None = None, threshold: _FloatLike | None = None, radius: _FloatLike | None = None, grain: _FloatLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, dither: _IntLike | None = None, dither_algo: _IntLike | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def EEDI3(self, /, clip: VideoNode, field: _IntLike, dh: _IntLike | None = None, mdis: _IntLike | None = None, nrad: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def EEDI3H(self, /, clip: VideoNode, field: _IntLike, dh: _IntLike | None = None, mdis: _IntLike | None = None, nrad: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def GaussBlur(self, /, clip: VideoNode, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def Bilateral(self, /, sigma_spatial: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigma_color: _FloatLike | _SequenceLike[_FloatLike] | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, use_shared_memory: _IntLike | None = None, ref: VideoNode | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def Deband(self, /, iterations: _IntLike | None = None, threshold: _FloatLike | None = None, radius: _FloatLike | None = None, grain: _FloatLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, dither: _IntLike | None = None, dither_algo: _IntLike | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def EEDI3(self, /, field: _IntLike, dh: _IntLike | None = None, mdis: _IntLike | None = None, nrad: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def EEDI3H(self, /, field: _IntLike, dh: _IntLike | None = None, mdis: _IntLike | None = None, nrad: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def GaussBlur(self, /, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def NLMeans(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+
+# </implementation/vszipcl>
 
 # <implementation/wnnm>
 class _wnnm:
