@@ -548,6 +548,7 @@ class Bilateral[**P, R]:
 
     def __init__(self, bilateral_func: Callable[P, R]) -> None:
         self._func = bilateral_func
+        self._backend = Bilateral.Backend.CPU
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
@@ -555,6 +556,11 @@ class Bilateral[**P, R]:
     class Backend(CustomStrEnum):
         """
         Enum specifying which backend implementation of the bilateral filter to use.
+        """
+
+        AUTO = "auto"
+        """
+        Select the default backend of the [bilateral][vsrgtools.blur.bilateral] singleton.
         """
 
         CPU = "vszip"
@@ -577,6 +583,9 @@ class Bilateral[**P, R]:
         Uses `bilateralgpu_rtc.Bilateral` — a CUDA-based GPU implementation with runtime shader compilation.
         """
 
+        def resolve(self) -> Bilateral.Backend:
+            return bilateral.backend if self is Bilateral.Backend.AUTO else self
+
         def Bilateral(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
             """
             Applies the bilateral filter using the plugin associated with the selected backend.
@@ -591,6 +600,20 @@ class Bilateral[**P, R]:
             """
             return getattr(clip, self.value).Bilateral(*args, **kwargs)
 
+    @property
+    def backend(self) -> Backend:
+        """The default backend for [bilateral][vsrgtools.blur.bilateral]"""
+        return self._backend
+
+    @backend.setter
+    def backend(self, value: str) -> None:
+        new = Bilateral.Backend(value)
+
+        if new == Bilateral.Backend.AUTO:
+            raise CustomValueError("Unsupported value as default backend", self, new)
+
+        self._backend = new
+
 
 @Bilateral
 def bilateral(
@@ -598,7 +621,7 @@ def bilateral(
     ref: vs.VideoNode | None = None,
     sigmaS: float | Sequence[float] | None = None,  # noqa: N803
     sigmaR: float | Sequence[float] | None = None,  # noqa: N803
-    backend: Bilateral.Backend = Bilateral.Backend.CPU,
+    backend: Bilateral.Backend = Bilateral.Backend.AUTO,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
@@ -625,18 +648,22 @@ def bilateral(
         sigmaS: Spatial sigma (controls the extent of spatial smoothing). Can be a float or per-plane list.
         sigmaR: Range sigma (controls sensitivity to intensity differences). Can be a float or per-plane list.
         backend: Backend implementation to use.
+            Set `bilateral.backend = bilateral.Backend.GPU` to make the GPU the default backend
+            for all subsequent explicit and implicit calls.
         **kwargs: Additional arguments forwarded to the backend-specific implementation.
 
     Returns:
         Bilaterally filtered clip.
     """
-    match backend:
+    match backend.resolve():
         case Bilateral.Backend.CPU:
             bilateral_args = {"ref": ref, "sigmaS": sigmaS, "sigmaR": sigmaR, "planes": normalize_planes(clip)}
         case Bilateral.Backend.GPU:
             bilateral_args = {"ref": ref, "sigma_spatial": sigmaS, "sigma_color": sigmaR, "num_streams": 2}
         case Bilateral.Backend.CUDA | Bilateral.Backend.CUDA_RTC:
             bilateral_args = {"ref": ref, "sigma_spatial": sigmaS, "sigma_color": sigmaR}
+        case _:
+            raise CustomNotImplementedError
 
     return backend.Bilateral(clip, **bilateral_args | kwargs)
 
