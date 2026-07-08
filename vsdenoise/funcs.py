@@ -4,7 +4,7 @@ This module contains general denoising functions built on top of base denoisers.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, Literal, overload
 
 from jetpytools import MISSING, CustomRuntimeError, FuncExcept, KwargsNotNone, MissingT, fallback, normalize_seq
@@ -27,7 +27,7 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = ...,
+    preset: Mapping[str, Any] = ...,
     tr: int = 1,
     delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
@@ -48,7 +48,7 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = ...,
+    preset: Mapping[str, Any] = ...,
     tr: int = 1,
     delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
@@ -70,7 +70,7 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = ...,
+    preset: Mapping[str, Any] = ...,
     tr: int = 1,
     delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
@@ -90,7 +90,7 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = MVToolsPreset.HQ_SAD,
+    preset: Mapping[str, Any] = MVToolsPreset.HQ_SAD,
     tr: int = 1,
     delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
@@ -138,7 +138,7 @@ def mc_degrain(
         Motion compensated and temporally filtered clip with reduced noise. If export_globals is true: A tuple
         containing the processed clip and the MVTools object.
     """
-    mv_args = preset | KwargsNotNone(search_clip=prefilter)
+    mv_args = {**preset, **KwargsNotNone(search_clip=prefilter)}
 
     thsad_recalc = fallback(thsad_recalc, round((thsad[0] if isinstance(thsad, tuple) else thsad) / 2))
 
