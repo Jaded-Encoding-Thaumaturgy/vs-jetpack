@@ -207,6 +207,8 @@ class MVTools(VSObject):
         sharp: SharpMode | None = None,
         rfilter: RFilterMode | None = None,
         pelclip: vs.VideoNode | VSFunctionNoArgs | None = None,
+        blksize: int | tuple[int, int] | None = None,
+        overlap_div: int | tuple[int, int] | None = None,
     ) -> vs.VideoNode:
         """
         Get source clip and prepare special "super" clip with multilevel (hierarchical scaled) frames data.
@@ -231,13 +233,18 @@ class MVTools(VSObject):
             pelclip: Optional upsampled source clip to use instead of internal subpixel interpolation (if pel > 1). The
                 clip must contain the original source pixels at positions that are multiples of pel (e.g., positions 0,
                 2, 4, etc. for pel=2), with interpolated pixels in between. The clip should not be padded.
+            blksize: Size of blocks for padding. If None, resolves from vectors or default configuration.
+            overlap_div: Divisor for block overlap size. If None, resolves from vectors or default configuration.
 
         Returns:
             The original clip with MVUtensils frame properties attached to it.
         """
         clip = fallback(clip, self.clip)
-        overlap = refine_blksize(self.blksize, self.overlap_div)
         vectors = fallback(vectors, self.vectors)
+
+        s_blksize = fallback(blksize, vectors.blksize, self.blksize)
+        s_overlap_div = fallback(overlap_div, vectors.overlap_div, self.overlap_div)
+        s_overlap = refine_blksize(s_blksize, s_overlap_div)  # type: ignore[arg-type]
 
         # if vectors.scaled:
         #     hpad, vpad = vectors.analysis_data["Analysis_Padding"]
@@ -252,8 +259,8 @@ class MVTools(VSObject):
             pelclip = pelclip_arg(clip) if isinstance(pelclip_arg, VSFunctionNoArgs) else pelclip_arg
 
         super_args = KwargsNotNone(
-            blksize=self.blksize,
-            overlap=overlap,
+            blksize=s_blksize,
+            overlap=s_overlap,
             pad=(fallback(hpad, 16), fallback(vpad, 16)),
             pel=fallback(self.pel, 2),
             sharp=fallback(sharp, self.super_args.get("sharp"), 2),
@@ -346,7 +353,12 @@ class MVTools(VSObject):
         noverlap_div = cast(tuple[int, int], tuple(normalize_seq(fallback(overlap_div, self.overlap_div), 2)))
         noverlap = refine_blksize(nblksize, noverlap_div)
 
-        super_clip = self.super(fallback(super, self.search_clip), onelevel=False)
+        super_clip = self.super(
+            fallback(super, self.search_clip),
+            blksize=nblksize,
+            overlap_div=noverlap_div,
+            onelevel=False,
+        )
 
         analyze_args = KwargsNotNone(
             blksize=nblksize,
@@ -373,6 +385,8 @@ class MVTools(VSObject):
         )
 
         self.vectors.clear()
+        self.vectors.blksize = nblksize
+        self.vectors.overlap_div = noverlap_div
 
         if delta is None:
             vects = core.mvu.AnalyseMany(super_clip, radius=tr, delta=2 if self.fields else 1, **analyze_args)
@@ -448,7 +462,13 @@ class MVTools(VSObject):
         noverlap_div = cast(tuple[int, int], tuple(normalize_seq(overlap_div, 2)))
         noverlap = refine_blksize(nblksize, noverlap_div)
 
-        super_clip = self.super(fallback(super, self.search_clip), vectors=vectors, onelevel=True)
+        super_clip = self.super(
+            fallback(super, self.search_clip),
+            vectors=vectors,
+            blksize=nblksize,
+            overlap_div=noverlap_div,
+            onelevel=True,
+        )
 
         recalculate_args = KwargsNotNone(
             thsad=fallback(thsad, self.recalculate_args.get("thsad"), default=None),
@@ -480,6 +500,9 @@ class MVTools(VSObject):
 
         for (direction, d), vect in zip(keys, recalculated):
             vectors.set_vector(vect, direction, d)
+
+        vectors.blksize = nblksize
+        vectors.overlap_div = noverlap_div
 
     @overload
     def compensate(

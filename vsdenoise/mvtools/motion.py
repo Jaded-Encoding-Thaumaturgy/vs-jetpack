@@ -2,18 +2,17 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Sequence
+from contextlib import suppress
 from types import MappingProxyType
 from typing import Any, Literal
 
-from jetpytools import CustomRuntimeError, cachedproperty, fallback
+from jetpytools import CustomRuntimeError, cachedproperty, fallback, normalize_seq, to_arr
 
 from vstools import VSObject, vs
 
 from .enums import MVDirection
 
-__all__ = [
-    "MotionVectors",
-]
+__all__ = ["MotionVectors"]
 
 
 class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]]):
@@ -23,9 +22,56 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
     Contains both backward and forward motion vectors.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        blksize: int | tuple[int, int] | None = None,
+        overlap_div: int | tuple[int, int] | None = None,
+    ) -> None:
         super().__init__(None, {w: {} for w in MVDirection})
         self.scaled = False
+        self._blksize: tuple[int, int] | None = None
+        self._overlap_div: tuple[int, int] | None = None
+        self.blksize = blksize
+        self.overlap_div = overlap_div
+
+    @property
+    def blksize(self) -> tuple[int, int] | None:
+        if self._blksize is not None:
+            return self._blksize
+
+        with suppress(KeyError, CustomRuntimeError):
+            return (
+                self.analysis_data["MVUtensilsAnalysisBlkSizeX"],
+                self.analysis_data["MVUtensilsAnalysisBlkSizeY"],
+            )
+
+        return None
+
+    @blksize.setter
+    def blksize(self, value: int | tuple[int, int] | None) -> None:
+        self._blksize = tuple(normalize_seq(value, 2)) if value is not None else None  # type: ignore[assignment]
+
+    @property
+    def overlap_div(self) -> tuple[int, int] | None:
+        if self._overlap_div is not None:
+            return self._overlap_div
+
+        if self.blksize is None:
+            return None
+
+        try:
+            overlap = (
+                self.analysis_data["MVUtensilsAnalysisOverlapX"],
+                self.analysis_data["MVUtensilsAnalysisOverlapY"],
+            )
+        except (KeyError, CustomRuntimeError):
+            return None
+
+        return self.blksize[0] // overlap[0], self.blksize[1] // overlap[1]
+
+    @overlap_div.setter
+    def overlap_div(self, value: int | tuple[int, int] | None) -> None:
+        self._overlap_div = tuple(normalize_seq(value, 2)) if value is not None else None  # type: ignore[assignment]
 
     def clear(self) -> None:
         """
@@ -35,6 +81,8 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
         for v in self.values():
             v.clear()
 
+        self._blksize = None
+        self._overlap_div = None
         cachedproperty.clear_cache(self)
 
     def set_vector(self, vector: vs.VideoNode, direction: MVDirection, delta: int) -> None:
