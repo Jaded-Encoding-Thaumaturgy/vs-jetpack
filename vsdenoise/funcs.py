@@ -31,7 +31,7 @@ def mc_degrain(
     tr: int = 1,
     delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
@@ -52,7 +52,7 @@ def mc_degrain(
     tr: int = 1,
     delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
@@ -74,7 +74,7 @@ def mc_degrain(
     tr: int = 1,
     delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
@@ -94,7 +94,7 @@ def mc_degrain(
     tr: int = 1,
     delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
@@ -146,11 +146,11 @@ def mc_degrain(
     mfilter = mfilter(mv.clip) if callable(mfilter) else fallback(mfilter, mv.clip)
 
     if not vectors:
-        mv.analyze(tr=tr, delta=delta, blksize=blksize, overlap_div=overlap)
+        mv.analyze(tr=tr, delta=delta, blksize=blksize, overlap_div=overlap_div)
 
         for _ in range(refine):
             blksize = refine_blksize(blksize)
-            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap)
+            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap_div)
 
     den = mv.degrain(mfilter, super=mv.clip, tr=tr, delta=delta, thsad=thsad, limit=limit, thscd=thscd, planes=planes)
 
