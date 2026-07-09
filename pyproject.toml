@@ -188,7 +188,7 @@ full = [
 
 [dependency-groups]
 dev = [
-    "mypy~=2.1.0",
+    "mypy~=2.2.0",
     "ruff~=0.15.0",
     "prek>=0.3.6",
     "scipy-stubs>=1.16.0.0",
@@ -346,7 +346,6 @@ warn_unreachable = true
 
 allow_redefinition = true
 implicit_reexport = false
-enable_incomplete_feature = ["TypeForm"]
 strict = true
 
 show_column_numbers = true
