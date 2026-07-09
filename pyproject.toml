@@ -346,7 +346,6 @@ warn_unreachable = true
 
 allow_redefinition = true
 implicit_reexport = false
-enable_incomplete_feature = ["TypeForm"]
 strict = true
 
 show_column_numbers = true
