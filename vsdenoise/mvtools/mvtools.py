@@ -6,7 +6,7 @@ from fractions import Fraction
 from itertools import chain
 from typing import Any, Literal, NamedTuple, cast, overload
 
-from jetpytools import KwargsNotNone, fallback, normalize_seq
+from jetpytools import KwargsNotNone, fallback, normalize_seq, to_arr
 
 from vstools import (
     Field,
@@ -390,18 +390,16 @@ class MVTools(VSObject):
 
         if delta is None:
             vects = core.mvu.AnalyseMany(super_clip, radius=tr, delta=2 if self.fields else 1, **analyze_args)
-            for i, d in enumerate(range(1, tr + 1)):
-                self.vectors.set_vector(vects[i * 2], MVDirection.BACKWARD, d)
-                self.vectors.set_vector(vects[i * 2 + 1], MVDirection.FORWARD, d)
+            for i in range(tr):
+                actual_delta = (i + 1) * 2 if self.fields else (i + 1)
+                self.vectors.set_vector(vects[i * 2], MVDirection.BACKWARD, actual_delta)
+                self.vectors.set_vector(vects[i * 2 + 1], MVDirection.FORWARD, actual_delta)
         else:
-            deltas = [delta] if isinstance(delta, int) else delta
+            deltas = [d * 2 if self.fields else d for d in to_arr(delta)]
 
             for d in deltas:
-                # Scaled delta for interlaced fields
-                plugin_delta = d * 2 if self.fields else d
-
                 for direction in MVDirection:
-                    actual_delta = plugin_delta if direction is MVDirection.BACKWARD else -plugin_delta
+                    actual_delta = d if direction is MVDirection.BACKWARD else -d
 
                     self.vectors.set_vector(
                         core.mvu.Analyse(super_clip, delta=actual_delta, **analyze_args), direction, d
@@ -605,7 +603,15 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
-        vect_b, vect_f = vectors.get_vectors(direction, tr, delta)
+
+        if delta is not None:
+            deltas = [d * 2 if self.fields else d for d in to_arr(delta)]
+        else:
+            v_tr = (vectors.tr // 2 if self.fields else vectors.tr) or None
+            tr_val = fallback(tr, v_tr, 1)
+            deltas = [d * 2 if self.fields else d for d in range(1, tr_val + 1)]
+
+        vect_b, vect_f = vectors.get_vectors(direction, tr=None, delta=deltas)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -734,7 +740,15 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
-        vect_b, vect_f = vectors.get_vectors(direction, tr, delta)
+
+        if delta is not None:
+            deltas = [d * 2 if self.fields else d for d in to_arr(delta)]
+        else:
+            v_tr = (vectors.tr // 2 if self.fields else vectors.tr) or None
+            tr_val = fallback(tr, v_tr, 1)
+            deltas = [d * 2 if self.fields else d for d in range(1, tr_val + 1)]
+
+        vect_b, vect_f = vectors.get_vectors(direction, tr=None, delta=deltas)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -812,10 +826,11 @@ class MVTools(VSObject):
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
 
         if delta is not None:
-            deltas = [delta] if isinstance(delta, int) else list(delta)
+            deltas = [d * 2 if self.fields else d for d in to_arr(delta)]
         else:
-            tr_val = fallback(tr, vectors.tr)
-            deltas = range(1, tr_val + 1)
+            v_tr = (vectors.tr // 2 if self.fields else vectors.tr) or None
+            tr_val = fallback(tr, v_tr, 1)
+            deltas = [d * 2 if self.fields else d for d in range(1, tr_val + 1)]
 
         vect_b, vect_f = vectors.get_vectors(tr=None, delta=deltas)
 
@@ -886,7 +901,7 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
 
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
-        vect_b, vect_f = vectors.get_vectors(tr=1)
+        vect_b, vect_f = vectors.get_vectors(delta=2 if self.fields else 1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -938,7 +953,7 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
-        vect_b, vect_f = vectors.get_vectors(tr=1)
+        vect_b, vect_f = vectors.get_vectors(delta=2 if self.fields else 1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -986,7 +1001,7 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
-        vect_b, vect_f = vectors.get_vectors(tr=1)
+        vect_b, vect_f = vectors.get_vectors(delta=2 if self.fields else 1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -1029,7 +1044,7 @@ class MVTools(VSObject):
             Motion mask clip.
         """
         vectors = fallback(vectors, self.vectors)
-        vect = vectors.get_vector(direction, delta)
+        vect = vectors.get_vector(direction, delta * 2 if self.fields else delta)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -1076,6 +1091,7 @@ class MVTools(VSObject):
 
         sc_detection_args = self.sc_detection_args | KwargsNotNone(thscd1=thscd1, thscd2=thscd2)
 
+        delta = delta * 2 if self.fields else delta
         detect = clip
         for direction in MVDirection:
             detect = core.mvu.SCDetection(detect, vectors.get_vector(direction, delta), **sc_detection_args)

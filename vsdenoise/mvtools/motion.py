@@ -6,7 +6,7 @@ from contextlib import suppress
 from types import MappingProxyType
 from typing import Any, Literal
 
-from jetpytools import CustomRuntimeError, cachedproperty, fallback, normalize_seq, to_arr
+from jetpytools import CustomRuntimeError, cachedproperty, normalize_seq, to_arr
 
 from vstools import VSObject, vs
 
@@ -135,10 +135,11 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
             The first list contains backward vectors and the second contains forward vectors.
         """
         if delta is not None:
-            deltas = [delta] if isinstance(delta, int) else list(delta)
-        else:
-            tr = fallback(tr, self.tr)
+            deltas = to_arr(delta)
+        elif tr is not None:
             deltas = range(1, tr + 1)
+        else:
+            deltas = self.deltas
 
         vectors_backward = list[vs.VideoNode]()
         vectors_forward = list[vs.VideoNode]()
