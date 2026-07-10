@@ -93,7 +93,6 @@ rg = [
 mask = [
     "vsjetpack[source]",
     "vsjetpack[rg]",
-    "vapoursynth-adaptivegrain>=0.5.0",
     "vapoursynth-edgemasks>=4.0",
     "vapoursynth-hysteresis>=1.1.3",
     "vapoursynth-subtext>=6.0",

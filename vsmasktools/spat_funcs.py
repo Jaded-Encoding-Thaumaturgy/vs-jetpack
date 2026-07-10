@@ -5,16 +5,16 @@ from typing import overload
 
 from jetpytools import FuncExcept, StrList, fallback, to_arr
 
-from vsexprtools import ExprOp, ExprVars, norm_expr
+from vsexprtools import ExprList, ExprOp, ExprVars, norm_expr
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
     DitherType,
     Range,
+    core,
     depth,
     get_lowest_value,
     get_peak_value,
     get_y,
-    plane,
     scale_mask,
     scale_value,
     vs,
@@ -27,17 +27,22 @@ __all__ = ["adg_mask", "flat_mask", "retinex", "texture_mask"]
 
 
 @overload
+@Range.FULL
 def adg_mask(
-    clip: vs.VideoNode, luma_scaling: float = 8.0, relative: bool = False, func: FuncExcept | None = None
+    clip: vs.VideoNode,
+    luma_scaling: float = 8.0,
+    relative: bool = False,
+    func: FuncExcept | None = None,
 ) -> vs.VideoNode: ...
-
-
 @overload
+@Range.FULL
 def adg_mask(
-    clip: vs.VideoNode, luma_scaling: Sequence[float], relative: bool = False, func: FuncExcept | None = None
+    clip: vs.VideoNode,
+    luma_scaling: Sequence[float],
+    relative: bool = False,
+    func: FuncExcept | None = None,
 ) -> list[vs.VideoNode]: ...
-
-
+@Range.FULL
 def adg_mask(
     clip: vs.VideoNode,
     luma_scaling: float | Sequence[float] = 8.0,
@@ -60,44 +65,38 @@ def adg_mask(
     Returns:
         A single mask or a list of masks (if `luma_scaling` is a sequence), corresponding to the input clip.
     """
+    fp16 = clip.format.bits_per_sample == 16 and clip.format.sample_type == vs.FLOAT
+
+    # Converting to full range is necessary to have meaningful planestats
+    # and an equivalent mask between different formats.
+    if not (fp16 or relative):
+        clip = depth(clip, range_out=vs.RANGE_FULL)
+        masks = [core.vszip.AdaptiveGrainMask(clip, ls) for ls in to_arr(luma_scaling)]
+
+        return masks if isinstance(luma_scaling, list) else masks[0]
+
     func = func or adg_mask
 
-    luma = plane(clip, 0)
+    luma = get_y(clip)
+    # TODO: std.PlaneStats R78 doesn't support fp16. vsjetpack can probably be bumped safely to simplify this.
+    y = depth(luma, 32, vs.FLOAT) if fp16 and vs.__version__ < (78, 0) else depth(luma, range_out=vs.RANGE_FULL)
+    y, y_inv = y.std.PlaneStats(prop="P"), y.std.Invert().std.PlaneStats(prop="P")
 
-    if clip.format.bits_per_sample > 16 or relative:
-        y, y_inv = luma.std.PlaneStats(prop="P"), luma.std.Invert().std.PlaneStats(prop="P")
+    expr = ExprList(["x mask_max /"])
 
-        peak = get_peak_value(y)
+    if relative:
+        expr.append("Y! Y@ 0.5 < x.PMin 0 max 0.5 / log Y@ * x.PMax 1.0 min 0.5 / log Y@ * ? ")
 
-        is_integer = y.format.sample_type == vs.INTEGER
+    expr.append("0 0.999 clamp X!")
+    expr.append("1 X@ X@ X@ X@ X@ 18.188 * 45.47 - * 36.624 + * 9.466 - * 1.124 + * - x.PAverage 2 pow {ls} * pow")
+    expr.append("mask_max * 0.5 +" if y.format.sample_type == vs.INTEGER else "0 1 clamp")
 
-        x_string, aft_int = (f"x {peak} / ", f" {peak} * 0.5 +") if is_integer else ("x ", "0 1 clamp")
+    def adgfunc(y: vs.VideoNode, ls: float) -> vs.VideoNode:
+        return norm_expr(y, expr, format=luma, func=func, ls=ls)
 
-        if relative:
-            x_string += "Y! Y@ 0.5 < x.PMin 0 max 0.5 / log Y@ * x.PMax 1.0 min 0.5 / log Y@ * ? "
+    scaled_clips = [adgfunc(y_inv if ls < 0 else y, abs(ls)) for ls in to_arr(luma_scaling)]
 
-        x_string += "0 0.999 clamp X!"
-
-        def _adgfunc(luma: vs.VideoNode, ls: float) -> vs.VideoNode:
-            return norm_expr(
-                luma,
-                f"{x_string} 1 X@ X@ X@ X@ X@ "
-                "18.188 * 45.47 - * 36.624 + * 9.466 - * 1.124 + * - "
-                f"x.PAverage 2 pow {ls} * pow {aft_int}",
-                func=func,
-            )
-    else:
-        y, y_inv = luma.std.PlaneStats(), luma.std.Invert().std.PlaneStats()
-
-        def _adgfunc(luma: vs.VideoNode, ls: float) -> vs.VideoNode:
-            return luma.adg.Mask(ls)
-
-    scaled_clips = [_adgfunc(y_inv if ls < 0 else y, abs(ls)) for ls in to_arr(luma_scaling)]
-
-    if isinstance(luma_scaling, Sequence):
-        return scaled_clips
-
-    return scaled_clips[0]
+    return scaled_clips if isinstance(luma_scaling, Sequence) else scaled_clips[0]
 
 
 def retinex(

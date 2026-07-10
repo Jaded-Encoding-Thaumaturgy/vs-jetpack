@@ -1736,10 +1736,6 @@ class VideoNode(RawNode):
     ) -> None: ...
 
 # <plugins/bound/VideoNode>
-# <attribute/VideoNode_bound/adg>
-    adg: Final[_adg._VideoNode_bound.Plugin]
-    """Adaptive grain"""
-# </attribute/VideoNode_bound/adg>
 # <attribute/VideoNode_bound/akarin>
     akarin: Final[_akarin._VideoNode_bound.Plugin]
     """Akarin's Experimental Filters"""
@@ -2018,10 +2014,6 @@ class Core:
     def version_number(self) -> int: ...
 
 # <plugins/bound/Core>
-# <attribute/Core_bound/adg>
-    adg: Final[_adg._Core_bound.Plugin]
-    """Adaptive grain"""
-# </attribute/Core_bound/adg>
 # <attribute/Core_bound/akarin>
     akarin: Final[_akarin._Core_bound.Plugin]
     """Akarin's Experimental Filters"""
@@ -2249,20 +2241,6 @@ class _CoreProxy(Core):
 core: _CoreProxy
 
 # <plugins/implementations>
-# <implementation/adg>
-class _adg:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Mask(self, /, clip: VideoNode, luma_scaling: _FloatLike | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Mask(self, /, luma_scaling: _FloatLike | None = None) -> VideoNode: ...
-
-# </implementation/adg>
-
 # <implementation/akarin>
 _ReturnDict_akarin_Version = TypedDict("_ReturnDict_akarin_Version", {"version": _AnyStr, "expr_backend": _AnyStr, "expr_features": _AnyStr | list[_AnyStr], "select_features": _AnyStr | list[_AnyStr], "text_features": _AnyStr | list[_AnyStr], "tmpl_features": _AnyStr | list[_AnyStr]})
 
