@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache, partial
@@ -16,7 +15,7 @@ from vskernels import MixedScalerProcess, SampleGridModel, Scaler, ScalerLike, i
 from vstools import FunctionUtil, Planes, VSFunctionNoArgs, get_w, vs
 
 if TYPE_CHECKING:
-    from device_smi import Device  # type: ignore[import-untyped]
+    from pyopencl import Device
 
 from .various import ComplexSuperSamplerProcess
 
@@ -532,11 +531,21 @@ def get_gpu(device_id: int = 0) -> Device | None:
     Return the GPU available for the requested device id.
     """
     try:
-        from device_smi import Device
+        from pyopencl import device_type, get_platforms
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", module=r"device_smi.*")
-            return Device(f"gpu:{device_id}")
+        platforms = get_platforms()
+        if not platforms:
+            logger.debug("No OpenCL platforms found.")
+            return None
+
+        # platform also resolves any software/cpu targets
+        # but it doesn't seem like any one platform can have multiple devices
+        gpus = [device for device in [pl.get_devices()[0] for pl in platforms] if device.type == device_type.GPU]
+
+        if len(gpus) < device_id + 1:
+            raise CustomValueError(f"No GPU found for device_id {device_id}!")
+
+        return gpus[device_id]
     except Exception as e:
         logger.debug(e)
         return None

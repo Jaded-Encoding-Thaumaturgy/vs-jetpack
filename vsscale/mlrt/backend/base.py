@@ -6,7 +6,7 @@ from abc import ABC
 from collections.abc import Sequence
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Any, ClassVar, Literal, cast, overload
+from typing import Any, ClassVar, Literal, overload
 
 from jetpytools import to_arr
 
@@ -132,18 +132,11 @@ class Backend:
         """
 
         gpu = get_gpu(device_id)
-        vendor = (
-            cast(str | None, gpu.vendor)
-            if gpu
-            else "apple"
-            # macOS x86_64 is unsupported
-            if platform.system().lower() == "darwin" and platform.machine() == "x86_64"
-            else None
-        )
+        vendor = None if not gpu else str(gpu.vendor).strip()
 
         match vendor:
             # Windows & Linux
-            case "nvidia":
+            case "NVIDIA Corporation":
                 if hasattr(core, "trt"):
                     backend = UserBackend.TRT
                 elif hasattr(core, "trt_rtx"):
@@ -157,7 +150,7 @@ class Backend:
                 else:
                     backend = UserBackend.OV_CPU
             # Windows & Linux
-            case "amd":
+            case "Advanced Micro Devices, Inc.":
                 if platform.system().lower() == "windows" and hasattr(core, "ort"):
                     backend = UserBackend.ORT_DML
                 elif hasattr(core, "migx"):
@@ -167,9 +160,7 @@ class Backend:
                 else:
                     backend = UserBackend.OV_CPU
             # Windows & Linux
-            case "intel":
-                # device-smi can't detect Intel NPUs in 0.5.6
-                # https://github.com/ModelCloud/Device-SMI#roadmap
+            case "Intel(R) Corporation":
                 if hasattr(core, "ov"):
                     backend = UserBackend.OV_GPU
                 elif platform.system().lower() == "windows" and hasattr(core, "ort"):
@@ -179,7 +170,7 @@ class Backend:
                 else:
                     backend = UserBackend.OV_CPU
             # macOS ARM64 & x86_64
-            case "apple":
+            case "Apple":
                 if hasattr(core, "ncnn"):
                     backend = UserBackend.NCNN_VK
                 elif hasattr(core, "ort"):
