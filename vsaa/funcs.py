@@ -241,11 +241,20 @@ def based_aa(
     return aa
 
 
+def _has_x_params(func: Callable[..., Any], n: int) -> bool:
+    empty = [
+        p
+        for p in inspect.signature(func).parameters.values()
+        if p.default is p.empty and p.kind not in [p.VAR_KEYWORD, p.VAR_POSITIONAL]
+    ]
+    return len(empty) == n
+
+
 def _has_3_params(
     func: Callable[..., Any],
 ) -> TypeIs[Callable[[vs.VideoNode, vs.VideoNode, vs.VideoNode], vs.VideoNode]]:
-    return len(inspect.signature(func).parameters) == 3
+    return _has_x_params(func, 3)
 
 
 def _has_1_param(func: Callable[..., Any]) -> TypeIs[Callable[[vs.VideoNode], vs.VideoNode]]:
-    return len(inspect.signature(func).parameters) == 1
+    return _has_x_params(func, 1)
