@@ -736,6 +736,7 @@ class VideoFormat:
     def replace(
         self,
         *,
+        core: Core | _CoreProxy = ...,
         color_family: ColorFamily = ...,
         sample_type: SampleType = ...,
         bits_per_sample: _IntLike = ...,
@@ -3109,15 +3110,11 @@ class _nlm_cuda:
 # </implementation/nlm_cuda>
 
 # <implementation/nlm_hip>
-_ReturnDict_nlm_hip_Version = TypedDict("_ReturnDict_nlm_hip_Version", {"version": _AnyStr, "hip_version": int})
-
 class _nlm_hip:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
             def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def Version(self, /) -> _ReturnDict_nlm_hip_Version: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
@@ -3822,6 +3819,8 @@ class _vszip:
             @_Wrapper.Function
             def SSIMULACRA2(self, /, reference: VideoNode, distorted: VideoNode) -> VideoNode: ...
             @_Wrapper.Function
+            def WNNM(self, /, clip: VideoNode, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, group_size: _IntLike | None = None, bm_range: _IntLike | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, residual: _IntLike | None = None, adaptive_aggregation: _IntLike | None = None, rclip: VideoNode | None = None) -> VideoNode: ...
+            @_Wrapper.Function
             def XPSNR(self, /, reference: VideoNode, distorted: VideoNode, temporal: _IntLike | None = None, verbose: _IntLike | None = None) -> VideoNode: ...
 
     class _VideoNode_bound:
@@ -3872,6 +3871,8 @@ class _vszip:
             def RFS(self, /, clipb: VideoNode, frames: _IntLike | _SequenceLike[_IntLike], mismatch: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def SSIMULACRA2(self, /, distorted: VideoNode) -> VideoNode: ...
+            @_Wrapper.Function
+            def WNNM(self, /, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, group_size: _IntLike | None = None, bm_range: _IntLike | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, residual: _IntLike | None = None, adaptive_aggregation: _IntLike | None = None, rclip: VideoNode | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def XPSNR(self, /, distorted: VideoNode, temporal: _IntLike | None = None, verbose: _IntLike | None = None) -> VideoNode: ...
 
