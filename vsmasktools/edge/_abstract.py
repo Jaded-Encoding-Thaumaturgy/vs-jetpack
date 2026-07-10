@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from contextlib import suppress
 from enum import IntFlag, auto
 from inspect import isabstract
 from typing import TYPE_CHECKING, Any, ClassVar, Self
@@ -374,17 +375,14 @@ class EdgeMasksEdgeDetect(MatrixEdgeDetect):
         multi: float | Sequence[float] = 1.0,
         clamp: bool | tuple[float, float] | list[tuple[float, float]] = False,
         planes: Planes = None,
+        *,
+        use_expr: bool = False,
         **kwargs: Any,
     ) -> vs.VideoNode:
-        if not hasattr(core, "edgemasks"):
-            kwargs.setdefault("use_expr", True)
-
-        return super().edgemask(clip, lthr, hthr, multi, clamp, planes, **kwargs)
+        return super().edgemask(clip, lthr, hthr, multi, clamp, planes, use_expr=use_expr, **kwargs)
 
     def _preprocess(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        if kwargs.get("use_expr"):
-            return super()._preprocess(clip)
-        return clip
+        return super()._preprocess(clip) if kwargs.get("use_expr") else clip
 
     def _compute_edge_mask(
         self,
@@ -396,6 +394,10 @@ class EdgeMasksEdgeDetect(MatrixEdgeDetect):
     ) -> vs.VideoNode:
         if kwargs.pop("use_expr", False):
             return super()._compute_edge_mask(clip, multi=multi, planes=planes, **kwargs)
+
+        if clip.format.bits_per_sample == 16 and clip.format.sample_type == vs.FLOAT:
+            with suppress(vs.Error):
+                return getattr(core.std, self.__class__.__name__)(clip, planes, multi, **kwargs)
 
         return getattr(core.edgemasks, self.__class__.__name__)(clip, planes, multi, **kwargs)
 
