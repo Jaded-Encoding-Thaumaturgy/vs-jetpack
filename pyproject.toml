@@ -102,12 +102,12 @@ scale = [
     "vsjetpack[mask]",
     "anyio>=4.13.0",
     "cyclopts>=4.15.0",
-    "device-smi>=0.5.6",
     "humanize>=4.15.0",
-    "questionary>=2.1.0",
     "niquests>=3.18.8",
     "packaging>=26.0",
     "platformdirs>=4.9.6",
+    "pyopencl>=2026.1.2",
+    "questionary>=2.1.0",
     "vapoursynth-mlrt-ov>=15.16",
 ]
 aa = [
