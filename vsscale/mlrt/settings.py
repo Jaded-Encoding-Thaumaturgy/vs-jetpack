@@ -82,7 +82,7 @@ def is_global_in_env(filetype: str) -> bool:
 
 
 def get_model_folder(provider: str, version: str | None = None) -> Path:
-    folder = get_provider_folder() / provider.lower()
+    folder = get_provider_folder(global_=True) / provider.lower()
 
     if version is None:
         latest = sorted(folder.glob("*"), reverse=True)
