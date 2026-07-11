@@ -937,7 +937,8 @@ def _get_onnx_model(
     func: FuncExcept | None = None,
 ) -> Path:
     try:
-        return get_model_folder(provider) / f"{model_name}.onnx"
+        if (path := get_model_folder(provider) / f"{model_name}.onnx").exists():
+            return path
     except FileNotExistsError:
         logger.debug("%r does not exist", model_name)
 
