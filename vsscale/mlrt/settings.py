@@ -56,11 +56,12 @@ def get_cache(thing: str, *, global_: bool = False) -> Path:
 @cache
 def get_provider_folder(*, global_: bool = False) -> Path:
     r"""
-    Linux: ~/.cache/vsscale/provider
+    If `global_=True`:
+        - Linux: ~/.cache/vsscale/provider
+        - macOS: ~/Library/Caches/vsscale/provider
+        - Windows: ...\AppData\Local\vsjet\vsscale\Cache\provider
 
-    macOS: ~/Library/Caches/vsscale/provider
-
-    Windows: ...\AppData\Local\vsjet\vsscale\Cache\provider
+    Else returns a local `.vsjet` package storage.
     """
     return get_cache("provider", global_=global_) / "provider"
 
@@ -68,11 +69,12 @@ def get_provider_folder(*, global_: bool = False) -> Path:
 @cache
 def get_artifacts_folder(*, global_: bool = False) -> Path:
     r"""
-    Linux: ~/.cache/vsscale/artifact
+    If `global_=True`:
+        - Linux: ~/.cache/vsscale/artifact
+        - macOS: ~/Library/Caches/vsscale/artifact
+        - Windows: ...\AppData\Local\vsjet\vsscale\Cache\artifact
 
-    macOS: ~/Library/Caches/vsscale/artifact
-
-    Windows: ...\AppData\Local\vsjet\vsscale\Cache\artifact
+    Else returns a local `.vsjet` package storage.
     """
     return get_cache("artifact", global_=global_) / "artifact"
 
