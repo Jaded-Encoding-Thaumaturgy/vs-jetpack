@@ -648,6 +648,7 @@ def bilateral(
     ref: vs.VideoNode | None = None,
     sigmaS: float | Sequence[float] | None = None,  # noqa: N803
     sigmaR: float | Sequence[float] | None = None,  # noqa: N803
+    planes: Planes = None,
     backend: Bilateral.Backend = Bilateral.Backend.AUTO,
     **kwargs: Any,
 ) -> vs.VideoNode:
@@ -674,6 +675,7 @@ def bilateral(
         ref: Optional reference clip for joint bilateral filtering.
         sigmaS: Spatial sigma (controls the extent of spatial smoothing). Can be a float or per-plane list.
         sigmaR: Range sigma (controls sensitivity to intensity differences). Can be a float or per-plane list.
+        planes: Planes to process. Defaults to all.
         backend: The backend to use for processing.
             Set `bilateral.backend = bilateral.Backend.GPU`
             or use the context manager `with bilateral.backend(bilateral.Backend.GPU):`
@@ -687,15 +689,17 @@ def bilateral(
     backend = backend.resolve()
     logger.debug("bilateral(): Selecting backend %r", backend)
 
-    match backend:
-        case Bilateral.Backend.CPU:
-            bilateral_args = {"ref": ref, "sigmaS": sigmaS, "sigmaR": sigmaR, "planes": normalize_planes(clip)}
-        case Bilateral.Backend.GPU:
-            bilateral_args = {"ref": ref, "sigma_spatial": sigmaS, "sigma_color": sigmaR, "num_streams": 2}
-        case Bilateral.Backend.CUDA | Bilateral.Backend.CUDA_RTC:
-            bilateral_args = {"ref": ref, "sigma_spatial": sigmaS, "sigma_color": sigmaR}
-        case _:
-            raise CustomNotImplementedError
+    bilateral_args: dict[str, Any] = {"ref": ref}
+
+    if backend == Bilateral.Backend.CPU:
+        bilateral_args |= {"sigmaS": sigmaS, "sigmaR": sigmaR, "planes": normalize_planes(clip, planes)}
+    else:
+        sigmaS = normalize_param_planes(clip, sigmaS, planes, 0) if sigmaS is not None else sigmaS
+        sigmaR = normalize_param_planes(clip, sigmaR, planes, 0) if sigmaR is not None else sigmaR
+        bilateral_args |= {"sigma_spatial": sigmaS, "sigma_color": sigmaR}
+
+        if backend == Bilateral.Backend.GPU:
+            bilateral_args["num_streams"] = 2
 
     return backend.Bilateral(clip, **bilateral_args | kwargs)
 
