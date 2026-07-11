@@ -1,4 +1,4 @@
-from typing import Unpack
+from typing import Any, Unpack
 
 from vstools import vs
 
@@ -63,6 +63,11 @@ class CustomBicubic(CustomComplexKernel, Bicubic):
         return 0.0
 
     def get_params_args(
-        self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any
+        self,
+        is_descale: bool,
+        clip: vs.VideoNode,
+        width: int | None = None,
+        height: int | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         return CustomComplexKernel.get_params_args(self, is_descale, clip, width, height, **kwargs)
