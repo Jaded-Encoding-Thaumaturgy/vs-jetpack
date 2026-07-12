@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import AbstractContextManager
+from dataclasses import dataclass
 from fractions import Fraction
 from math import floor
 from types import TracebackType
-from typing import Any, Self, overload
+from typing import Any, Literal, Self, overload
 
 from jetpytools import MISSING, CustomValueError, MissingT, normalize_seq, to_arr
 from jetpytools import flatten as jetp_flatten
+
+from vsjetpack import deprecated
 
 from ..enums import Align, Matrix
 from ..types import Planes
@@ -19,6 +22,7 @@ from .props import get_props
 from .scale import get_lowest_values, get_neutral_values, get_peak_values
 
 __all__ = [
+    "Padder",
     "change_fps",
     "flatten",
     "invert_planes",
@@ -102,27 +106,53 @@ def match_clip(
     return clip.std.AssumeFPS(fpsnum=ref.fps.numerator, fpsden=ref.fps.denominator)
 
 
-# ruff: noqa: N802, N801
-class padder_ctx(AbstractContextManager["padder_ctx"]):
-    """
-    Context manager for the padder class.
-    """
+@dataclass
+class Padder(Sequence[int]):
+    """Pad out the pixels on the sides of a clip."""
 
-    def __init__(self, mod: int = 8, min: int = 0, align: Align = Align.MIDDLE_CENTER) -> None:
-        """
-        Initializes the class
+    left: int = 0
+    """Padding added to the left side of the clip."""
 
-        Args:
-            mod: The modulus used for calculations or constraints. Defaults to 8.
-            min: The minimum value allowed or used as a base threshold. Defaults to 0.
-            align: The alignment configuration. Defaults to Align.MIDDLE_CENTER.
-        """
-        self.mod = mod
-        self.min = min
-        self.align = align
-        self.pad_ops = list[tuple[tuple[int, int, int, int], tuple[int, int]]]()
+    right: int = 0
+    """Padding added to the right side of the clip."""
 
-    def CROP(self, clip: vs.VideoNode, crop_scale: float | tuple[float, float] | None = None) -> vs.VideoNode:
+    top: int = 0
+    """Padding added to the top side of the clip."""
+
+    bottom: int = 0
+    """Padding added to the bottom side of the clip."""
+
+    input_width: int | None = None
+    """Original width of the input clip."""
+
+    input_height: int | None = None
+    """Original height of the input clip."""
+
+    @overload
+    def __getitem__(self, i: int, /) -> int: ...
+    @overload
+    def __getitem__(self, s: slice[int | None, int | None, int | None], /) -> Sequence[int]: ...
+    def __getitem__(self, value: Any) -> Any:
+        return [self.left, self.right, self.top, self.bottom][value]
+
+    def __len__(self) -> Literal[4]:
+        return 4
+
+    @property
+    def padded_width(self) -> int:
+        """Padded width of the clip."""
+        if self.input_width is None:
+            raise CustomValueError("Input width is not set. Specify input_width when instantiating Padder.", "Padder")
+        return self.input_width + self.left + self.right
+
+    @property
+    def padded_height(self) -> int:
+        """Padded height of the clip."""
+        if self.input_height is None:
+            raise CustomValueError("Input height is not set. Specify input_height when instantiating Padder.", "Padder")
+        return self.input_height + self.top + self.bottom
+
+    def crop(self, clip: vs.VideoNode, crop_scale: float | tuple[float, float] | None = None) -> vs.VideoNode:
         """
         Crop a clip with the padding values.
 
@@ -133,104 +163,20 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):
         Returns:
             Cropped clip.
         """
-        (padding, sizes) = self.pad_ops.pop(0)
-
         if crop_scale is None:
-            crop_scale = (clip.width / sizes[0], clip.height / sizes[1])
+            crop_scale = (clip.width / self.padded_width, clip.height / self.padded_height)
+        elif not isinstance(crop_scale, tuple):
+            crop_scale = (crop_scale, crop_scale)
 
-        crop_pad = padder._crop_padding(padder._get_sizes_crop_scale(clip, crop_scale)[1])
+        left_pad, right_pad, top_pad, bottom_pad = tuple(crop_scale[0 if i < 2 else 1] for i in range(4))
+        return clip.std.Crop(
+            left=int(self.left * left_pad),
+            right=int(self.right * right_pad),
+            top=int(self.top * top_pad),
+            bottom=int(self.bottom * bottom_pad),
+        )
 
-        return clip.std.Crop(*(x * y for x, y in zip(padding, crop_pad)))
-
-    def MIRROR(self, clip: vs.VideoNode) -> vs.VideoNode:
-        """
-        Pad a clip with reflect mode. This will reflect the clip on each side.
-
-        Args:
-            clip: Input clip.
-
-        Returns:
-            Padded clip with reflected borders.
-        """
-        padding = padder.mod_padding(clip, self.mod, self.min, self.align)
-        out = padder.MIRROR(clip, *padding)
-        self.pad_ops.append((padding, (out.width, out.height)))
-        return out
-
-    def REPEAT(self, clip: vs.VideoNode) -> vs.VideoNode:
-        """
-        Pad a clip with repeat mode. This will simply repeat the last row/column till the end.
-
-        Args:
-            clip: Input clip.
-
-        Returns:
-            Padded clip with repeated borders.
-        """
-        padding = padder.mod_padding(clip, self.mod, self.min, self.align)
-        out = padder.REPEAT(clip, *padding)
-        self.pad_ops.append((padding, (out.width, out.height)))
-        return out
-
-    def COLOR(self, clip: vs.VideoNode, color: float | None | Sequence[float | None] = (False, None)) -> vs.VideoNode:
-        """
-        Pad a clip with a constant color.
-
-        Args:
-            clip: Input clip.
-            color: Constant color that should be added on the sides:
-
-                   * number: This will be treated as such and not converted or clamped.
-                   * False: Lowest value for this clip format and color range.
-                   * True: Highest value for this clip format and color range.
-                   * None: Neutral value for this clip format.
-                   * MISSING: Automatically set to False if RGB, else None.
-
-        Returns:
-            Padded clip with colored borders.
-        """
-        padding = padder.mod_padding(clip, self.mod, self.min, self.align)
-        out = padder.COLOR(clip, *padding, color)
-        self.pad_ops.append((padding, (out.width, out.height)))
-        return out
-
-    def __enter__(self) -> Self:
-        return self
-
-    def __exit__(
-        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
-    ) -> None:
-        return None
-
-
-class padder:
-    """
-    Pad out the pixels on the sides by the given amount of pixels.
-    """
-
-    ctx = padder_ctx
-    """Context manager for the padder class."""
-
-    @staticmethod
-    def _base(
-        clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0
-    ) -> tuple[int, int, vs.VideoFormat, int, int]:
-        width = clip.width + left + right
-        height = clip.height + top + bottom
-
-        w_sub, h_sub = 2**clip.format.subsampling_w, 2**clip.format.subsampling_h
-
-        if width % w_sub or height % h_sub:
-            raise CustomValueError(
-                "Values must result in a mod congruent to the clip's subsampling ({subsampling}).",
-                "padder",
-                subsampling=get_subsampling(clip),
-            )
-
-        return width, height, clip.format, w_sub, h_sub
-
-    @classmethod
-    def MIRROR(cls, clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> vs.VideoNode:
+    def mirror(self, clip: vs.VideoNode) -> vs.VideoNode:
         """
         Pad a clip with reflect mode. This will reflect the clip on each side.
 
@@ -243,30 +189,26 @@ class padder:
 
         Args:
             clip: Input clip.
-            left: Padding added to the left side of the clip.
-            right: Padding added to the right side of the clip.
-            top: Padding added to the top side of the clip.
-            bottom: Padding added to the bottom side of the clip.
 
         Returns:
             Padded clip with reflected borders.
         """
+        width, height, *_ = self._get_values(clip)
 
-        width, height, *_ = cls._base(clip, left, right, top, bottom)
-
-        padded = core.resize.Point(
-            core.std.CopyFrameProps(clip, clip.std.BlankClip()),
-            width,
-            height,
-            src_top=-top,
-            src_left=-left,
-            src_width=width,
-            src_height=height,
+        return (
+            clip.std.RemoveFrameProps()
+            .resize.Point(
+                width,
+                height,
+                src_top=-self.top,
+                src_left=-self.left,
+                src_width=width,
+                src_height=height,
+            )
+            .std.CopyFrameProps(clip)
         )
-        return core.std.CopyFrameProps(padded, clip)
 
-    @classmethod
-    def REPEAT(cls, clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> vs.VideoNode:
+    def repeat(self, clip: vs.VideoNode) -> vs.VideoNode:
         """
         Pad a clip with repeat mode. This will simply repeat the last row/column till the end.
 
@@ -279,24 +221,19 @@ class padder:
 
         Args:
             clip: Input clip.
-            left: Padding added to the left side of the clip.
-            right: Padding added to the right side of the clip.
-            top: Padding added to the top side of the clip.
-            bottom: Padding added to the bottom side of the clip.
 
         Returns:
             Padded clip with repeated borders.
         """
+        *_, fmt, w_sub, h_sub = self._get_values(clip)
 
-        *_, fmt, w_sub, h_sub = cls._base(clip, left, right, top, bottom)
+        padded = clip.std.AddBorders(self.left, self.right, self.top, self.bottom)
 
-        padded = clip.std.AddBorders(left, right, top, bottom)
-
-        right, bottom = clip.width + left, clip.height + top
+        right_idx, bottom_idx = clip.width + self.left, clip.height + self.top
 
         pads = [
-            (left, right, top, bottom),
-            (left // w_sub, right // w_sub, top // h_sub, bottom // h_sub),
+            (self.left, right_idx, self.top, bottom_idx),
+            (self.left // w_sub, right_idx // w_sub, self.top // h_sub, bottom_idx // h_sub),
         ][: fmt.num_planes]
 
         return padded.akarin.Expr(
@@ -328,9 +265,322 @@ class padder:
             ]
         )
 
+    def color(
+        self,
+        clip: vs.VideoNode,
+        color: float | None | MissingT | Sequence[float | None | MissingT] = (False, MISSING),
+    ) -> vs.VideoNode:
+        """
+        Pad a clip with a constant color.
+
+        Visual example:
+            ```
+            >>> |ABCDE
+            >>> padder.COLOR(left=3, color=Z)
+            >>> ZZZ|ABCDE
+            ```
+
+        Args:
+            clip: Input clip.
+            color: Constant color that should be added on the sides:
+
+                   * number: This will be treated as such and not converted or clamped.
+                   * False: Lowest value for this clip format and color range.
+                   * True: Highest value for this clip format and color range.
+                   * None: Neutral value for this clip format.
+                   * MISSING: Automatically set to False if RGB, else None.
+
+        Returns:
+            Padded clip with colored borders.
+        """
+        self._get_values(clip)
+
+        def _norm(colr: float | bool | None | MissingT) -> Sequence[float]:
+            if colr is MISSING:
+                colr = False if clip.format.color_family is vs.RGB else None
+
+            if colr is False:
+                return get_lowest_values(clip, clip)
+
+            if colr is True:
+                return get_peak_values(clip, clip)
+
+            if colr is None:
+                return get_neutral_values(clip)
+
+            return normalize_seq(colr, clip.format.num_planes)
+
+        if not isinstance(color, Sequence):
+            norm_colors = _norm(color)
+        else:
+            norm_colors = [_norm(c)[i] for i, c in enumerate(normalize_seq(color, clip.format.num_planes))]
+
+        return core.std.AddBorders(clip, self.left, self.right, self.top, self.bottom, norm_colors)
+
     @classmethod
-    def COLOR(
+    def from_mod(cls, clip: vs.VideoNode, mod: int = 16, min: int = 4, align: Align = Align.MIDDLE_CENTER) -> Self:
+        """
+        Initialize Padder based on modulus constraints of a clip.
+
+        Args:
+            clip: Input clip to calculate mod padding for.
+            mod: Modulus value (e.g. 16).
+            min: Minimum padding required.
+            align: Align option.
+
+        Returns:
+            Padder instance with calculated padding values and input clip size.
+        """
+        return cls(*cls.mod_padding(clip, mod, min, align), clip.width, clip.height)
+
+    @classmethod
+    def mod_padding(
         cls,
+        sizes: tuple[int, int] | vs.VideoNode,
+        mod: int = 16,
+        min: int = 4,
+        align: Align = Align.MIDDLE_CENTER,
+    ) -> tuple[int, int, int, int]:
+        """
+        Calculate required padding to make clip dimensions divisible by modulus.
+
+        Args:
+            sizes: Width and height tuple or a VideoNode.
+            mod: Modulus value (e.g. 16).
+            min: Minimum padding required.
+            align: Align option.
+
+        Returns:
+            A tuple of left, right, top, bottom padding values.
+        """
+        if isinstance(sizes, vs.VideoNode):
+            sizes = (sizes.width, sizes.height)
+
+        ph, pv = (mod - (((x + min * 2) - 1) % mod + 1) for x in sizes)
+        left, top = floor(ph / 2), floor(pv / 2)
+        left, right, top, bottom = tuple(x + min for x in (left, ph - left, top, pv - top))
+
+        if align & Align.TOP:
+            bottom += top
+            top = 0
+        elif align & Align.BOTTOM:
+            top += bottom
+            bottom = 0
+
+        if align & Align.LEFT:
+            right += left
+            left = 0
+        elif align & Align.RIGHT:
+            left += right
+            right = 0
+
+        return left, right, top, bottom
+
+    @classmethod
+    def mod_padding_crop(
+        cls,
+        sizes: tuple[int, int] | vs.VideoNode,
+        mod: int = 16,
+        min: int = 4,
+        crop_scale: float | tuple[float, float] = 2,
+        align: Align = Align.MIDDLE_CENTER,
+    ) -> tuple[tuple[int, int, int, int], tuple[int, int, int, int]]:
+        """
+        Calculate mod padding and its corresponding cropped padding.
+
+        Args:
+            sizes: Width and height tuple or a VideoNode.
+            mod: Modulus value (e.g. 16).
+            min: Minimum padding required.
+            crop_scale: Crop scale factor.
+            align: Align option.
+
+        Returns:
+            A tuple containing padding tuple and scaled crop padding tuple.
+        """
+        if not isinstance(crop_scale, tuple):
+            crop_scale = (crop_scale, crop_scale)
+        padding = cls.mod_padding(sizes, mod, min, align)
+        return padding, tuple(int(pad * crop_scale[0 if i < 2 else 1]) for i, pad in enumerate(padding))  # type: ignore[return-value]
+
+    def _get_values(self, clip: vs.VideoNode) -> tuple[int, int, vs.VideoFormat, int, int]:
+        width = clip.width + self.left + self.right
+        height = clip.height + self.top + self.bottom
+
+        w_sub, h_sub = 2**clip.format.subsampling_w, 2**clip.format.subsampling_h
+
+        if width % w_sub or height % h_sub:
+            raise CustomValueError(
+                "Values must result in a mod congruent to the clip's subsampling ({subsampling}).",
+                "Padder",
+                subsampling=get_subsampling(clip),
+            )
+
+        return width, height, clip.format, w_sub, h_sub
+
+
+# ruff: noqa: N802, N801
+@deprecated("Use Padder instead", category=DeprecationWarning)
+class padder_ctx(AbstractContextManager["padder_ctx"]):  # pyright: ignore[reportDeprecated]
+    """
+    Context manager for the padder class.
+    """
+
+    def __init__(self, mod: int = 8, min: int = 0, align: Align = Align.MIDDLE_CENTER) -> None:
+        """
+        Initializes the class
+
+        Args:
+            mod: The modulus used for calculations or constraints. Defaults to 8.
+            min: The minimum value allowed or used as a base threshold. Defaults to 0.
+            align: The alignment configuration. Defaults to Align.MIDDLE_CENTER.
+        """
+        self.mod = mod
+        self.min = min
+        self.align = align
+        self.pad_ops = list[tuple[tuple[int, int, int, int], tuple[int, int]]]()
+
+    def CROP(self, clip: vs.VideoNode, crop_scale: float | tuple[float, float] | None = None) -> vs.VideoNode:
+        """
+        Crop a clip with the padding values.
+
+        Args:
+            clip: Input clip.
+            crop_scale: Optional scale factor for the padding values. If None, no scaling is applied.
+
+        Returns:
+            Cropped clip.
+        """
+        (padding, sizes) = self.pad_ops.pop(0)
+
+        input_width = sizes[0] - padding[0] - padding[1]
+        input_height = sizes[1] - padding[2] - padding[3]
+        pad = Padder(padding[0], padding[1], padding[2], padding[3], input_width, input_height)
+        return pad.crop(clip, crop_scale)
+
+    def MIRROR(self, clip: vs.VideoNode) -> vs.VideoNode:
+        """
+        Pad a clip with reflect mode. This will reflect the clip on each side.
+
+        Args:
+            clip: Input clip.
+
+        Returns:
+            Padded clip with reflected borders.
+        """
+        padding = Padder.mod_padding(clip, self.mod, self.min, self.align)
+        pad = Padder(*padding, clip.width, clip.height)
+        out = pad.mirror(clip)
+        self.pad_ops.append((padding, (out.width, out.height)))
+        return out
+
+    def REPEAT(self, clip: vs.VideoNode) -> vs.VideoNode:
+        """
+        Pad a clip with repeat mode. This will simply repeat the last row/column till the end.
+
+        Args:
+            clip: Input clip.
+
+        Returns:
+            Padded clip with repeated borders.
+        """
+        padding = Padder.mod_padding(clip, self.mod, self.min, self.align)
+        pad = Padder(*padding, clip.width, clip.height)
+        out = pad.repeat(clip)
+        self.pad_ops.append((padding, (out.width, out.height)))
+        return out
+
+    def COLOR(self, clip: vs.VideoNode, color: float | None | Sequence[float | None] = (False, None)) -> vs.VideoNode:
+        """
+        Pad a clip with a constant color.
+
+        Args:
+            clip: Input clip.
+            color: Constant color that should be added on the sides:
+
+                   * number: This will be treated as such and not converted or clamped.
+                   * False: Lowest value for this clip format and color range.
+                   * True: Highest value for this clip format and color range.
+                   * None: Neutral value for this clip format.
+                   * MISSING: Automatically set to False if RGB, else None.
+
+        Returns:
+            Padded clip with colored borders.
+        """
+        padding = Padder.mod_padding(clip, self.mod, self.min, self.align)
+        pad = Padder(*padding, clip.width, clip.height)
+        out = pad.color(clip, color)
+        self.pad_ops.append((padding, (out.width, out.height)))
+        return out
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
+    ) -> None:
+        return None
+
+
+@deprecated("Use Padder instead", category=DeprecationWarning)
+class padder:
+    """
+    Pad out the pixels on the sides by the given amount of pixels.
+    """
+
+    ctx = padder_ctx  # pyright: ignore[reportDeprecated]
+    """Context manager for the padder class."""
+
+    @staticmethod
+    def MIRROR(clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> vs.VideoNode:
+        """
+        Pad a clip with reflect mode. This will reflect the clip on each side.
+
+        Visual example:
+            ```
+            >>> |ABCDE
+            >>> padder.MIRROR(left=3)
+            >>> CBA|ABCDE
+            ```
+
+        Args:
+            clip: Input clip.
+            left: Padding added to the left side of the clip.
+            right: Padding added to the right side of the clip.
+            top: Padding added to the top side of the clip.
+            bottom: Padding added to the bottom side of the clip.
+
+        Returns:
+            Padded clip with reflected borders.
+        """
+        return Padder(left, right, top, bottom).mirror(clip)
+
+    @staticmethod
+    def REPEAT(clip: vs.VideoNode, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0) -> vs.VideoNode:
+        """
+        Pad a clip with repeat mode. This will simply repeat the last row/column till the end.
+
+        Visual example:
+            ```
+            >>> |ABCDE
+            >>> padder.REPEAT(left=3)
+            >>> AAA|ABCDE
+            ```
+
+        Args:
+            clip: Input clip.
+            left: Padding added to the left side of the clip.
+            right: Padding added to the right side of the clip.
+            top: Padding added to the top side of the clip.
+            bottom: Padding added to the bottom side of the clip.
+
+        Returns:
+            Padded clip with repeated borders.
+        """
+        return Padder(left, right, top, bottom).repeat(clip)
+
+    @staticmethod
+    def COLOR(
         clip: vs.VideoNode,
         left: int = 0,
         right: int = 0,
@@ -365,83 +615,10 @@ class padder:
         Returns:
             Padded clip with colored borders.
         """
-        cls._base(clip, left, right, top, bottom)
+        return Padder(left, right, top, bottom).color(clip, color)
 
-        def _norm(colr: float | bool | None | MissingT) -> Sequence[float]:
-            if colr is MISSING:
-                colr = False if clip.format.color_family is vs.RGB else None
-
-            if colr is False:
-                return get_lowest_values(clip, clip)
-
-            if colr is True:
-                return get_peak_values(clip, clip)
-
-            if colr is None:
-                return get_neutral_values(clip)
-
-            return normalize_seq(colr, clip.format.num_planes)
-
-        if not isinstance(color, Sequence):
-            norm_colors = _norm(color)
-        else:
-            norm_colors = [_norm(c)[i] for i, c in enumerate(normalize_seq(color, clip.format.num_planes))]
-
-        return core.std.AddBorders(clip, left, right, top, bottom, norm_colors)
-
-    @staticmethod
-    def _get_sizes_crop_scale(
-        sizes: tuple[int, int] | vs.VideoNode, crop_scale: float | tuple[float, float]
-    ) -> tuple[tuple[int, int], tuple[int, int]]:
-        if isinstance(sizes, vs.VideoNode):
-            sizes = (sizes.width, sizes.height)
-
-        if not isinstance(crop_scale, tuple):
-            crop_scale = (crop_scale, crop_scale)
-
-        return sizes, crop_scale  # type: ignore[return-value]
-
-    @staticmethod
-    def _crop_padding(crop_scale: tuple[int, int]) -> tuple[int, int, int, int]:
-        return tuple(crop_scale[0 if i < 2 else 1] for i in range(4))  # type: ignore
-
-    @classmethod
-    def mod_padding(
-        cls, sizes: tuple[int, int] | vs.VideoNode, mod: int = 16, min: int = 4, align: Align = Align.MIDDLE_CENTER
-    ) -> tuple[int, int, int, int]:
-        sizes, _ = cls._get_sizes_crop_scale(sizes, 1)
-        ph, pv = (mod - (((x + min * 2) - 1) % mod + 1) for x in sizes)
-        left, top = floor(ph / 2), floor(pv / 2)
-        left, right, top, bottom = tuple(x + min for x in (left, ph - left, top, pv - top))
-
-        if align & Align.TOP:
-            bottom += top
-            top = 0
-        elif align & Align.BOTTOM:
-            top += bottom
-            bottom = 0
-
-        if align & Align.LEFT:
-            right += left
-            left = 0
-        elif align & Align.RIGHT:
-            left += right
-            right = 0
-
-        return left, right, top, bottom
-
-    @classmethod
-    def mod_padding_crop(
-        cls,
-        sizes: tuple[int, int] | vs.VideoNode,
-        mod: int = 16,
-        min: int = 4,
-        crop_scale: float | tuple[float, float] = 2,
-        align: Align = Align.MIDDLE_CENTER,
-    ) -> tuple[tuple[int, int, int, int], tuple[int, int, int, int]]:
-        sizes, crop_scale = cls._get_sizes_crop_scale(sizes, crop_scale)
-        padding = cls.mod_padding(sizes, mod, min, align)
-        return padding, tuple(int(pad * crop_scale[0 if i < 2 else 1]) for i, pad in enumerate(padding))  # type: ignore[return-value]
+    mod_padding = Padder.mod_padding
+    mod_padding_crop = Padder.mod_padding_crop
 
 
 def normalize_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:

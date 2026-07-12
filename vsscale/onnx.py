@@ -27,6 +27,7 @@ from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vstools import (
     ConvMode,
     Matrix,
+    Padder,
     ProcessVariableResClip,
     check_variable_resolution,
     core,
@@ -34,7 +35,6 @@ from vstools import (
     get_y,
     join,
     limiter,
-    padder,
     vs,
 )
 
@@ -704,10 +704,10 @@ class _Waifu2xCunet(BaseWaifu2x):
             return super().inference(clip, **kwargs)
 
         logger.debug("%s: Padding clip %r", self, clip)
-        with padder.ctx(4, 0) as pad:
-            padded = pad.MIRROR(clip)
-            scaled = super().inference(padded, **kwargs)
-            cropped = pad.CROP(scaled)
+        pad = Padder.from_mod(clip, 4, 0)
+        padded = pad.mirror(clip)
+        scaled = super().inference(padded, **kwargs)
+        cropped = pad.crop(scaled)
 
         return cropped
 
@@ -900,15 +900,15 @@ class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
         logger.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
 
         # Padding
-        padding = padder.mod_padding(clip, self.multiple, 0)
+        pad = Padder.from_mod(clip, self.multiple, 0)
 
-        if not any(padding) or kwargs.pop("no_pad", False):
+        if not any(pad) or kwargs.pop("no_pad", False):
             return self.backend.inference([clip, strength], model, overlaps, tilesize, **kwargs)
 
-        clip = padder.MIRROR(clip, *padding)
-        strength = padder.MIRROR(strength, *padding)
+        clip = pad.mirror(clip)
+        strength = pad.mirror(strength)
 
-        return self.backend.inference([clip, strength], model, overlaps, tilesize, **kwargs).std.Crop(*padding)
+        return pad.crop(self.backend.inference([clip, strength], model, overlaps, tilesize, **kwargs))
 
 
 class DPIR(BaseDPIR):
