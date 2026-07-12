@@ -5,7 +5,7 @@ from typing import Any, assert_never
 
 from jetpytools import CustomIntEnum, fallback
 
-from vstools import padder, vs
+from vstools import Padder, vs
 
 __all__ = [
     "BorderHandling",
@@ -80,9 +80,9 @@ class BorderHandling(CustomIntEnum):
 
         match self:
             case BorderHandling.ZERO:
-                padded = padder.COLOR(clip, left, right, top, bottom)
+                padded = Padder(left, right, top, bottom).color(clip)
             case BorderHandling.REPEAT:
-                padded = padder.REPEAT(clip, left, right, top, bottom)
+                padded = Padder(left, right, top, bottom).repeat(clip)
             case _:
                 assert_never(self)
 
