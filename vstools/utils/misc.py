@@ -10,10 +10,8 @@ from typing import Any, Self, overload
 from jetpytools import MISSING, CustomValueError, MissingT, normalize_seq, to_arr
 from jetpytools import flatten as jetp_flatten
 
-from vsjetpack import deprecated
-
 from ..enums import Align, Matrix
-from ..types import AudioNodeIterable, Planes, RawNodeIterable, VideoNodeIterable
+from ..types import Planes
 from ..vs_proxy import core, vs
 from .check import check_variable
 from .info import get_subsampling
@@ -29,7 +27,6 @@ __all__ = [
     "normalize_planes",
     "padder",
     "padder_ctx",
-    "set_output",
 ]
 
 
@@ -445,50 +442,6 @@ class padder:
         sizes, crop_scale = cls._get_sizes_crop_scale(sizes, crop_scale)
         padding = cls.mod_padding(sizes, mod, min, align)
         return padding, tuple(int(pad * crop_scale[0 if i < 2 else 1]) for i, pad in enumerate(padding))  # type: ignore[return-value]
-
-
-@deprecated(
-    "`set_output` is deprecated and will be removed in a future version. "
-    "Use the corresponding function in your previewer instead.",
-    category=DeprecationWarning,
-)
-def set_output(
-    node: vs.VideoNode | VideoNodeIterable | AudioNodeIterable | RawNodeIterable,
-    index_or_name: int | Sequence[int] | str | bool | None = None,
-    name: str | bool | None = None,
-    /,
-    alpha: vs.VideoNode | None = None,
-    **kwargs: Any,
-) -> None:
-    """
-    Wrapper around vspreview.set_output if available, falling back to basic VapourSynth output.
-
-    Args:
-        node: Output node(s).
-        index_or_name: Index number or name, defaults to current maximum index number + 1.
-        name: Node's display name, defaults to variable name if True.
-        alpha: Optional alpha planes node.
-        **kwargs: Extra arguments passed through to vspreview.set_output.
-    """
-    try:
-        from vspreview import set_output as vsp_set_output  # type: ignore[import-not-found]
-
-    except ModuleNotFoundError:
-        index = None if isinstance(index_or_name, (str, bool)) else index_or_name
-
-        outputs = vs.get_outputs()
-        nodes = list(flatten(node))
-        indices = to_arr(index) if index is not None else [max(outputs, default=-1) + 1]
-
-        while len(indices) < len(nodes):
-            indices.append(indices[-1] + 1)
-
-        for idx, n in zip(indices[: len(nodes)], nodes):
-            n.set_output(idx)
-    else:
-        kwargs.setdefault("frame_depth", 2)
-
-        return vsp_set_output(node, index_or_name, name, alpha=alpha, **kwargs)
 
 
 def normalize_planes(clip: vs.VideoNode, planes: Planes = None) -> list[int]:
