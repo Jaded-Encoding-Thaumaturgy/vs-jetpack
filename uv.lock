@@ -2836,6 +2836,18 @@ wheels = [
 ]
 
 [[package]]
+name = "vsjetengine"
+version = "1.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "vapoursynth" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b2/5a/f9f67ab3be39ee4561098266b0a3bbf45834efee7cdf09e3c53e432e464a/vsjetengine-1.5.0.tar.gz", hash = "sha256:b860f9ba29ba9651d81bc0a12948873d65a2f8a63afee33c54c1c74fa8fe6030", size = 49558, upload-time = "2026-07-12T03:20:16.652Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dc/3b/0c794aef10424b1bcf1f170c4bff1978580d94fed39d735628767a6d5651/vsjetengine-1.5.0-py3-none-any.whl", hash = "sha256:5da63785a515d57a709e5de8fac313276581050290f058493869a9d9f4ee34bf", size = 39343, upload-time = "2026-07-12T03:20:15.426Z" },
+]
+
+[[package]]
 name = "vsjetpack"
 source = { editable = "." }
 dependencies = [
@@ -3203,6 +3215,7 @@ dev = [
     { name = "ruff" },
     { name = "scipy-stubs" },
     { name = "types-psutil" },
+    { name = "vsjetengine" },
     { name = "vsstubs" },
     { name = "vstransitions" },
 ]
@@ -3221,6 +3234,7 @@ doc = [
 test = [
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "vsjetengine" },
 ]
 
 [package.metadata]
@@ -3551,10 +3565,11 @@ dev = [
     { name = "prek", specifier = ">=0.3.6" },
     { name = "pybind11-stubgen", specifier = ">=2.5.5" },
     { name = "pytest", specifier = ">=9.0.0,<10.0.0" },
-    { name = "pytest-cov", specifier = ">=6.2.1,<8.0.0" },
+    { name = "pytest-cov", specifier = ">=7.1.0,<8.0.0" },
     { name = "ruff", specifier = "~=0.15.0" },
     { name = "scipy-stubs", specifier = ">=1.16.0.0" },
     { name = "types-psutil", specifier = ">=7.0.0.20250801" },
+    { name = "vsjetengine", specifier = ">=1.5.0" },
     { name = "vsstubs", specifier = ">=2.1.1" },
     { name = "vstransitions", specifier = "==0.1.4" },
 ]
@@ -3572,7 +3587,8 @@ doc = [
 ]
 test = [
     { name = "pytest", specifier = ">=9.0.0,<10.0.0" },
-    { name = "pytest-cov", specifier = ">=6.2.1,<8.0.0" },
+    { name = "pytest-cov", specifier = ">=7.1.0,<8.0.0" },
+    { name = "vsjetengine", specifier = ">=1.5.0" },
 ]
 
 [[package]]

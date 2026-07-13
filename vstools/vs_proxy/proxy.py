@@ -873,8 +873,13 @@ def has_environment() -> bool:
 
 def get_policy() -> EnvironmentPolicy | VSScriptEnvironmentPolicy | StandaloneEnvironmentPolicy:
     """Retrieve the currently active VapourSynth EnvironmentPolicy."""
-    if (data := get_current_environment().env()) is None:
-        raise CustomRuntimeError("No environment is currently activated.")
+    try:
+        env = get_current_environment()
+        data = env.env()
+        if data is None:
+            raise RuntimeError
+    except RuntimeError as e:
+        raise CustomRuntimeError("No environment is currently activated.") from e
 
     policy = _find_ref(data, (EnvironmentPolicy, VSScriptEnvironmentPolicy, StandaloneEnvironmentPolicy))
 
@@ -889,7 +894,7 @@ def get_policy_api() -> EnvironmentPolicyAPI:
     api = _find_ref(get_policy(), (EnvironmentPolicyAPI,))
 
     if api is None:
-        raise CustomRuntimeError("No policy API is currently registered.")
+        raise CustomRuntimeError("No policy API found.")
 
     return api
 

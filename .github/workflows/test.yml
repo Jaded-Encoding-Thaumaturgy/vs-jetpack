@@ -26,6 +26,10 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -44,7 +48,7 @@ jobs:
           --extra basic --extra kernels --extra expr --extra rg --extra denoise
 
       - name: Run tests
-        run: uv run pytest --cov-report=term-missing:skip-covered --cov=vskernels --cov=vstools --cov=vsexprtools tests
+        run: uv run coverage run -m pytest tests
 
       - name: Convert coverage report to cobertura
         run: uv run coverage xml

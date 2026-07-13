@@ -1,9 +1,16 @@
+import pytest
+
 from vstools import core, video_heuristics, vs
 
-clip = core.std.BlankClip(None, 640, 360, vs.YUV420P16).std.SetFrameProps(_Matrix=vs.MATRIX_BT709, _Range=vs.RANGE_FULL)
+
+@pytest.fixture
+def clip() -> vs.VideoNode:
+    return core.std.BlankClip(None, 640, 360, vs.YUV420P16).std.SetFrameProps(
+        _Matrix=vs.MATRIX_BT709, _Range=vs.RANGE_FULL
+    )
 
 
-def test_video_heuristics_props_none() -> None:
+def test_video_heuristics_props_none(clip: vs.VideoNode) -> None:
     heuristics, assumed = video_heuristics(clip, None, assumed_return=True)
 
     assert heuristics == {
@@ -16,7 +23,7 @@ def test_video_heuristics_props_none() -> None:
     assert assumed == ["_Matrix", "_Primaries", "_Transfer", "_Range", "_ChromaLocation"]
 
 
-def test_video_heuristics_props_false() -> None:
+def test_video_heuristics_props_false(clip: vs.VideoNode) -> None:
     heuristics, assumed = video_heuristics(clip, False, assumed_return=True)
 
     assert heuristics == {
@@ -29,7 +36,8 @@ def test_video_heuristics_props_false() -> None:
     assert assumed == ["_Matrix", "_Primaries", "_Transfer", "_Range", "_ChromaLocation"]
 
 
-def test_video_heuristics_props_true() -> None:
+@pytest.mark.filterwarnings("ignore:The _ColorRange frame property has been deprecated, use _Range instead")
+def test_video_heuristics_props_true(clip: vs.VideoNode) -> None:
     heuristics, assumed = video_heuristics(clip, True, assumed_return=True)
 
     assert heuristics == {
@@ -42,7 +50,8 @@ def test_video_heuristics_props_true() -> None:
     assert assumed == ["_Primaries", "_Transfer", "_ChromaLocation"]
 
 
-def test_video_heuristics_props_frameprops() -> None:
+@pytest.mark.filterwarnings("ignore:The _ColorRange frame property has been deprecated, use _Range instead")
+def test_video_heuristics_props_frameprops(clip: vs.VideoNode) -> None:
     with clip.get_frame(0) as f:
         props = f.props.copy()
     props.update(_ChromaLocation=2)
