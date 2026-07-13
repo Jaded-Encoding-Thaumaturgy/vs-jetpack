@@ -32,7 +32,7 @@ Most extras are hierarchical. For example, `denoise` includes all plugins from `
 | **`rg`**          | Repair & Smoothing   | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                              |
 | **`mask`**        | Masking              | `adaptivegrain`, `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)              |
 | **`aa`**          | Anti-aliasing        | `bwdif`, `eedi3`, `sangnom`, `sneedif`, `znedi3` (+ `mask`)                           |
-| **`denoise`**     | Denoising            | `bm3d`, `dfttest2`, `deblock`, `mvtools`, `nlm-ispc`, `wnnm` (+ `aa`)                 |
+| **`denoise`**     | Denoising            | `bm3d`, `dfttest2`, `deblock`, `mvtools`, `nlm-ispc` (+ `aa`)                         |
 | **`deband`**      | Debanding            | `vsnoise` (+ `denoise`)                                                               |
 | **`deinterlace`** | Deinterlacing        | `dmetrics`, `vivtc` (+ `denoise`)                                                     |
 | **`full`**        | All CPU-based extras | All of the above                                                                      |
@@ -80,13 +80,13 @@ Not all extras have prebuilt wheels on every platform:
 | `mask`        |     ✅      |         ✅          |        ✅         |           ✅            |
 | `scale`       |     ✅      |         ✅          |        ❌         |           ✅            |
 | `aa`          |     ✅      |         ✅          |        ❌         |           ✅            |
-| `denoise`     |     ✅      |         ✅          |        ❌         |         ⚠️[^1]          |
+| `denoise`     |     ✅      |         ✅          |        ❌         |           ✅            |
 | `deband`      |     ✅      |         ✅          |        ❌         |           ✅            |
 | `deinterlace` |     ✅      |         ✅          |        ❌         |           ✅            |
-| `full`        |     ✅      |         ✅          |        ❌         |           ⚠️            |
+| `full`        |     ✅      |         ✅          |        ❌         |           ✅            |
 | `gpu`         |     ✅      |         ✅          |        ❌         |           ✅            |
 | `cl`          |     ✅      |         ✅          |        ❌         |           ✅            |
-| `nvidia`      |   ⚠️[^2]    |         ✅          |        ❌         |           ❌            |
+| `nvidia`      |   ⚠️[^1]    |         ✅          |        ❌         |           ❌            |
 | `amd`         |     ✅      |         ✅          |        ❌         |           ❌            |
 
 > [!TIP]
@@ -94,6 +94,4 @@ Not all extras have prebuilt wheels on every platform:
 >
 > Refer to the plugin repository for platform-specific build instructions.
 
-[^1]: `wnnm` isn't available on macOS.
-
-[^2]: `bilateralgpu` requires Glibc 2.39+.
+[^1]: `bilateralgpu` requires Glibc 2.39+.

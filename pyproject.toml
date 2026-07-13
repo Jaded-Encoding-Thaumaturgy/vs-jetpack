@@ -54,7 +54,7 @@ dependencies = [
     "typing_extensions>=4.15.0; python_version<'3.15'",
     # VapourSynth plugins
     "vapoursynth-akarin>=1.4.1",
-    "vapoursynth-vszip>=21.0.0",
+    "vapoursynth-vszip>=22.0.0",
 ]
 
 [project.urls]
@@ -129,7 +129,6 @@ denoise = [
     "vapoursynth-manipmv>=1.3.0",
     "vapoursynth-mvtools>=26",
     "vapoursynth-nlm-ispc>=3",
-    "vapoursynth-wnnm>=3 ; platform_system == 'Linux' or platform_system == 'Windows'",
 ]
 dehalo = ["vsjetpack[denoise]"]
 deinterlace = [
@@ -139,7 +138,7 @@ deinterlace = [
 ]
 deband = ["vsjetpack[denoise]", "vsnoise>=1.2"]
 gpu = ["vapoursynth-mlrt-ncnn>=15.16", "vapoursynth-mlrt-ort>=15.16"]
-cl = ["vapoursynth-vszipcl>=1.0.0"]
+cl = ["vapoursynth-vszipcl>=1.2.0"]
 nvidia = [
     "vsjetpack[cl]",
     "onnx>=1.21.0",

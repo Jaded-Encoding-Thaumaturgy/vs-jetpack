@@ -63,7 +63,9 @@ def wnnm(
     Because of this, WNNM exhibits less blocking and ringing artifact compared to BM3D,
     but the computational complexity is much higher. This stage is called collaborative filtering in BM3D.
 
-    For more information, see the [WNNM README](https://github.com/WolframRhodium/VapourSynth-WNNM).
+    For more information:
+        - https://github.com/WolframRhodium/VapourSynth-WNNM
+        - https://github.com/dnjulek/vapoursynth-zip/wiki/WNNM
 
     Args:
         clip: The input clip. Must be of 32 bit float format. Each plane is denoised separately.
@@ -131,7 +133,7 @@ def wnnm(
     )
 
     previous = clip
-    denoised = core.wnnm.WNNM(clip, **kwargs)
+    denoised = core.vszip.WNNM(clip, **kwargs)
 
     for i in range(refine):
         if i == 0:
@@ -139,7 +141,7 @@ def wnnm(
         else:
             previous = norm_expr([clip, previous, denoised], f"x y - {merge_factor} * z +", planes, func=wnnm)
 
-        denoised = core.wnnm.WNNM(previous, **kwargs)
+        denoised = core.vszip.WNNM(previous, **kwargs)
 
     return denoised
 
