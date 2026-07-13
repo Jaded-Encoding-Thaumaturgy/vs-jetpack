@@ -1,11 +1,22 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
+from contextlib import contextmanager
 from functools import partial, reduce
+from logging import getLogger
 from math import sqrt
 from typing import TYPE_CHECKING, Any, Literal, overload
 
-from jetpytools import CustomIntEnum, CustomStrEnum, CustomValueError, FuncExcept, cround, normalize_seq, to_arr
+from jetpytools import (
+    CustomIntEnum,
+    CustomNotImplementedError,
+    CustomStrEnum,
+    CustomValueError,
+    FuncExcept,
+    cround,
+    normalize_seq,
+    to_arr,
+)
 
 from vsexprtools import norm_expr
 from vskernels import Bilinear, Gaussian, Point, Scaler, ScalerLike
@@ -22,6 +33,7 @@ from vstools import (
     core,
     get_plane_sizes,
     join,
+    normalize_param_planes,
     normalize_planes,
     split,
     vs,
@@ -43,6 +55,8 @@ __all__ = [
     "sbr",
     "side_box_blur",
 ]
+
+logger = getLogger(__name__)
 
 
 def box_blur(
@@ -130,9 +144,51 @@ class GaussBlur[**P, R]:
 
     def __init__(self, gauss_blur: Callable[P, R]) -> None:
         self._func = gauss_blur
+        self._backend = GaussBlur.Backend.CPU
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
+
+    class Backend(CustomStrEnum):
+        """
+        Enum representing available backends on which to run the plugin.
+        """
+
+        AUTO = "auto"
+        """Select the default backend of the [gauss_blur][vsrgtools.blur.gauss_blur] singleton."""
+
+        CPU = "zimg"
+        """Zimg-based Gaussian resizer."""
+
+        GPU = "vszipcl"
+        """OpenCL CL implementation."""
+
+        @contextmanager
+        def __call__(self, new_backend: str, /) -> Generator[None]:
+            """Set this backend for the duration of the context manager."""
+            old = gauss_blur.backend
+            try:
+                gauss_blur.backend = new_backend
+                yield
+            finally:
+                gauss_blur.backend = old
+
+        def resolve(self) -> GaussBlur.Backend:
+            return gauss_blur.backend if self is GaussBlur.Backend.AUTO else self
+
+    @property
+    def backend(self) -> Backend:
+        """The default backend for [gauss_blur][vsrgtools.blur.gauss_blur]"""
+        return self._backend
+
+    @backend.setter
+    def backend(self, value: str) -> None:
+        new = GaussBlur.Backend(value)
+
+        if new == GaussBlur.Backend.AUTO:
+            raise CustomValueError("Unsupported value as default backend", self, new)
+
+        self._backend = new
 
     @staticmethod
     def get_sigma(radius: int) -> float:
@@ -194,6 +250,7 @@ def gauss_blur(
     radius: int | None = None,
     mode: OneDimConvMode | TempConvMode = ConvMode.HV,
     planes: Planes = None,
+    backend: GaussBlur.Backend = GaussBlur.Backend.AUTO,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
@@ -205,24 +262,37 @@ def gauss_blur(
         radius: Size of the kernel in each direction. Automatically determined if not specified.
         mode: Convolution mode (horizontal, vertical, both, or temporal). Defaults to HV.
         planes: Planes to process. Defaults to all.
-        **kwargs: Additional arguments passed to the resizer or blur kernel. Specifying `_fast=True` enables fast
-            approximation.
+        backend: The backend to use for processing.
+            Set `gauss_blur.backend = gauss_blur.Backend.GPU`
+            or use the context manager `with gauss_blur.backend(gauss_blur.Backend.GPU):`
+            to make the GPU the default backend for all subsequent explicit and implicit calls.
+        **kwargs: Additional arguments passed to the resizer or blur kernel.
+            Specifying `_fast=True` enables fast bilinear approximation.
 
     Raises:
-        CustomValueError: If square convolution mode is specified, which is unsupported.
+        CustomValueError: If `mode` is `ConvMode.SQUARE`, which is not supported.
+        CustomNotImplementedError: If the GPU backend is selected and `mode` is not `ConvMode.HV`.
 
     Returns:
         Blurred clip.
     """
-    planes = normalize_planes(clip, planes)
-
     if not TYPE_CHECKING and mode == ConvMode.SQUARE:
         raise CustomValueError("Invalid mode specified", gauss_blur, mode)
+
+    fast = kwargs.pop("_fast", False)
+    backend = backend.resolve()
+    logger.debug("gauss_blur(): Selecting backend %r", backend)
+
+    if backend.resolve() == gauss_blur.Backend.GPU:
+        if mode != ConvMode.HV:
+            raise CustomNotImplementedError(f"GPU backend doesn't support the mode {mode}", gauss_blur)
+
+        return core.vszipcl.GaussBlur(clip, normalize_param_planes(clip, sigma, planes, 0), **kwargs)
 
     if isinstance(sigma, Sequence):
         return normalize_radius(clip, gauss_blur, {"sigma": sigma}, planes, radius=radius, mode=mode)
 
-    fast = kwargs.pop("_fast", False)
+    planes = normalize_planes(clip, planes)
 
     sigma_constant = 0.9 if fast and not mode.is_temporal else sigma
 
@@ -495,6 +565,7 @@ class Bilateral[**P, R]:
 
     def __init__(self, bilateral_func: Callable[P, R]) -> None:
         self._func = bilateral_func
+        self._backend = Bilateral.Backend.CPU
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
@@ -504,20 +575,43 @@ class Bilateral[**P, R]:
         Enum specifying which backend implementation of the bilateral filter to use.
         """
 
+        AUTO = "auto"
+        """
+        Select the default backend of the [bilateral][vsrgtools.blur.bilateral] singleton.
+        """
+
         CPU = "vszip"
         """
         Uses `vszip.Bilateral` — a fast, CPU-based implementation written in Zig.
         """
 
-        GPU = "bilateralgpu"
+        GPU = "vszipcl"
+        """
+        Uses vszipcl.Bilateral — a fast OpenCL-based implementation written in Zig.
+        """
+
+        CUDA = "bilateralgpu"
         """
         Uses `bilateralgpu.Bilateral` — a CUDA-based GPU implementation.
         """
 
-        GPU_RTC = "bilateralgpu_rtc"
+        CUDA_RTC = "bilateralgpu_rtc"
         """
         Uses `bilateralgpu_rtc.Bilateral` — a CUDA-based GPU implementation with runtime shader compilation.
         """
+
+        @contextmanager
+        def __call__(self, new_backend: str, /) -> Generator[None]:
+            """Set this backend for the duration of the context manager."""
+            old = bilateral.backend
+            try:
+                bilateral.backend = new_backend
+                yield
+            finally:
+                bilateral.backend = old
+
+        def resolve(self) -> Bilateral.Backend:
+            return bilateral.backend if self is Bilateral.Backend.AUTO else self
 
         def Bilateral(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
             """
@@ -533,6 +627,20 @@ class Bilateral[**P, R]:
             """
             return getattr(clip, self.value).Bilateral(*args, **kwargs)
 
+    @property
+    def backend(self) -> Backend:
+        """The default backend for [bilateral][vsrgtools.blur.bilateral]"""
+        return self._backend
+
+    @backend.setter
+    def backend(self, value: str) -> None:
+        new = Bilateral.Backend(value)
+
+        if new == Bilateral.Backend.AUTO:
+            raise CustomValueError("Unsupported value as default backend", self, new)
+
+        self._backend = new
+
 
 @Bilateral
 def bilateral(
@@ -540,7 +648,7 @@ def bilateral(
     ref: vs.VideoNode | None = None,
     sigmaS: float | Sequence[float] | None = None,  # noqa: N803
     sigmaR: float | Sequence[float] | None = None,  # noqa: N803
-    backend: Bilateral.Backend = Bilateral.Backend.CPU,
+    backend: Bilateral.Backend = Bilateral.Backend.AUTO,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
@@ -558,7 +666,7 @@ def bilateral(
     For more details, see:
 
       - <https://github.com/dnjulek/vapoursynth-zip/wiki/Bilateral>
-      - <https://github.com/HomeOfVapourSynthEvolution/VapourSynth-Bilateral>
+      - <https://github.com/dnjulek/vapoursynth-zipcl/wiki/Bilateral>
       - <https://github.com/WolframRhodium/VapourSynth-BilateralGPU>
 
     Args:
@@ -566,16 +674,28 @@ def bilateral(
         ref: Optional reference clip for joint bilateral filtering.
         sigmaS: Spatial sigma (controls the extent of spatial smoothing). Can be a float or per-plane list.
         sigmaR: Range sigma (controls sensitivity to intensity differences). Can be a float or per-plane list.
-        backend: Backend implementation to use.
+        backend: The backend to use for processing.
+            Set `bilateral.backend = bilateral.Backend.GPU`
+            or use the context manager `with bilateral.backend(bilateral.Backend.GPU):`
+            to make the GPU the default backend for all subsequent explicit and implicit calls.
         **kwargs: Additional arguments forwarded to the backend-specific implementation.
 
     Returns:
         Bilaterally filtered clip.
     """
-    if backend == Bilateral.Backend.CPU:
-        bilateral_args = {"ref": ref, "sigmaS": sigmaS, "sigmaR": sigmaR, "planes": normalize_planes(clip)}
-    else:
-        bilateral_args = {"ref": ref, "sigma_spatial": sigmaS, "sigma_color": sigmaR}
+
+    backend = backend.resolve()
+    logger.debug("bilateral(): Selecting backend %r", backend)
+
+    match backend:
+        case Bilateral.Backend.CPU:
+            bilateral_args = {"ref": ref, "sigmaS": sigmaS, "sigmaR": sigmaR, "planes": normalize_planes(clip)}
+        case Bilateral.Backend.GPU:
+            bilateral_args = {"ref": ref, "sigma_spatial": sigmaS, "sigma_color": sigmaR, "num_streams": 2}
+        case Bilateral.Backend.CUDA | Bilateral.Backend.CUDA_RTC:
+            bilateral_args = {"ref": ref, "sigma_spatial": sigmaS, "sigma_color": sigmaR}
+        case _:
+            raise CustomNotImplementedError
 
     return backend.Bilateral(clip, **bilateral_args | kwargs)
 

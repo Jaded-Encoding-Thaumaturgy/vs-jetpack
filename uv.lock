@@ -2443,22 +2443,6 @@ wheels = [
 ]
 
 [[package]]
-name = "vapoursynth-knlmeanscl"
-version = "1.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f0/80/42bd4bd74ae141350a5d3ad7f3085396cb78a668d8fc611620d78fe27627/vapoursynth_knlmeanscl-1.3.tar.gz", hash = "sha256:174b60b1e748bc7dcf291fc6147ab1664d7f4fa5357c5433fd302779292c658f", size = 76010, upload-time = "2026-05-10T00:20:58.906Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/df/86/231c25b7f8d1a89c756e2fe33487687fe072916367a07dda79ea11f5512e/vapoursynth_knlmeanscl-1.3-py3-none-macosx_15_0_arm64.whl", hash = "sha256:78a044c24f9a185159990f3127040d3db2d354dce2235f7362a811211c8fa96b", size = 39461, upload-time = "2026-05-10T00:20:51.627Z" },
-    { url = "https://files.pythonhosted.org/packages/93/07/9654dbe2d8785b1bb30f23e0041c13758acf256623135ba02670396b29ec/vapoursynth_knlmeanscl-1.3-py3-none-macosx_15_0_x86_64.whl", hash = "sha256:1bbf61c762392ab5c22f4cbfbf900e4dd4d9db8de17fcbeb0e738b68780af198", size = 39683, upload-time = "2026-05-10T00:20:53.05Z" },
-    { url = "https://files.pythonhosted.org/packages/c7/9f/352518601296a2c6055bc305e6630d1ecb24e1093be8d15fba6e2640e675/vapoursynth_knlmeanscl-1.3-py3-none-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:adb528054ae57aec3710362975453a204bee07438d910cd43b4240d95e8e574d", size = 619281, upload-time = "2026-05-10T00:20:54.423Z" },
-    { url = "https://files.pythonhosted.org/packages/a8/07/c177a809cc93508e4cebdf41e664a7e59a17690fe1265caf6df3ddd539f6/vapoursynth_knlmeanscl-1.3-py3-none-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:87c7b34bb86518a430b8d8b2ea6c6f5878a94cf6af75a34df2b65b97a2cb03be", size = 637561, upload-time = "2026-05-10T00:20:55.997Z" },
-    { url = "https://files.pythonhosted.org/packages/af/bd/1ca191f9f998a3adc1ade6c6642e722a16f0cd3dfba62cd3365cb485b470/vapoursynth_knlmeanscl-1.3-py3-none-win_amd64.whl", hash = "sha256:6ba28e0c24240479f1c398a7a01b1dbc9b89a34aeb340399389f4d73df2b278b", size = 187293, upload-time = "2026-05-10T00:20:57.521Z" },
-]
-
-[[package]]
 name = "vapoursynth-lsmas"
 version = "1296.0.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2624,30 +2608,6 @@ wheels = [
 ]
 
 [[package]]
-name = "vapoursynth-nlm-cuda"
-version = "4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/80/941ad6a66abfabf074ef55c4de185c77292238981b654e95921d87dcf5f0/vapoursynth_nlm_cuda-4-py3-none-manylinux_2_34_x86_64.manylinux_2_39_x86_64.whl", hash = "sha256:198dc64bb2e6bc0435db7ec6c7b709803e750944cec1d2da2c6498bac7ef6aa9", size = 300975, upload-time = "2026-04-27T01:15:27.245Z" },
-    { url = "https://files.pythonhosted.org/packages/fd/d1/4461870185f90f721d7d54d37bddf4702c17b07b15a8473b9915fa34590d/vapoursynth_nlm_cuda-4-py3-none-win_amd64.whl", hash = "sha256:8e8fcadc493c8a8f55b5892e94cc37dc8b93c45c52fa5bacbf6b568197fe6a1b", size = 341964, upload-time = "2026-04-27T01:15:29.063Z" },
-]
-
-[[package]]
-name = "vapoursynth-nlm-hip"
-version = "4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/66/c1/c627df5ebd6d0c5ab8b79c1009435176179d34720d37372a85a32ecf3253/vapoursynth_nlm_hip-4-py3-none-manylinux_2_39_x86_64.whl", hash = "sha256:b8a3e7ae4892a06232892394b32346773096ce2df8da5e8a02fa63c4097b0a20", size = 15147902, upload-time = "2026-07-02T01:27:46.396Z" },
-    { url = "https://files.pythonhosted.org/packages/f0/fb/73af9903cfbea886ef4aec5a8e19b9fbf112abd0101ed5a51390bc463295/vapoursynth_nlm_hip-4-py3-none-win_amd64.whl", hash = "sha256:f1c2a27104b30d15a258b801119afb8609888ff6a6b08e405889d5d38337a608", size = 5851292, upload-time = "2026-07-02T01:27:49.58Z" },
-]
-
-[[package]]
 name = "vapoursynth-nlm-ispc"
 version = "3"
 source = { registry = "https://pypi.org/simple" }
@@ -2769,16 +2729,19 @@ wheels = [
 ]
 
 [[package]]
-name = "vapoursynth-wnnm"
-version = "3"
+name = "vapoursynth-vszipcl"
+version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/81/57/6e2639f3d2c12aa62278b994fab1bed66d50ab5f3f42cdcaaa175a4758a8/vapoursynth_vszipcl-1.2.0.tar.gz", hash = "sha256:0c94d98be339b8676264844d797c393955a0911a1ec1432a41940f1bcbf7debe", size = 61561, upload-time = "2026-07-09T16:46:23.682Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2d/8d/f73d37b54ccd0c8a8f8e29b2656ed0ec11a34ea59bf80c016bec53fb27aa/vapoursynth_wnnm-3-py3-none-manylinux_2_34_x86_64.manylinux_2_39_x86_64.whl", hash = "sha256:77a617d0d6f518e896ae7a7462113adcaf213cec79b09770e611d45d55b76ae6", size = 1700980, upload-time = "2026-04-24T12:09:21.453Z" },
-    { url = "https://files.pythonhosted.org/packages/56/07/82bec54cd3d4a8af1f552be2e23a35394b3d304eb3235adc66152a6801ad/vapoursynth_wnnm-3-py3-none-manylinux_2_38_aarch64.manylinux_2_39_aarch64.whl", hash = "sha256:a2f87bd3fdac6d623b23fa17cd45a299143b0c3281625eaded9b5c7c45862f7c", size = 83316147, upload-time = "2026-04-24T12:09:24.136Z" },
-    { url = "https://files.pythonhosted.org/packages/3f/89/6bdd44d0b19d012b144b1c1407dbd024b01c5fb57dcea471076a7d241dfb/vapoursynth_wnnm-3-py3-none-win_amd64.whl", hash = "sha256:0698b4b830f6fdd9a8719c768df3cbe8ea19505785b797c0451e9423dcc49c6c", size = 2372498, upload-time = "2026-04-24T12:09:27.022Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/0a/8e33cbe7429699c7eceb47bae94dede58d8b645310f22789d2cc786ff72c/vapoursynth_vszipcl-1.2.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:a2d0511e042d204892f8caa99ccf80ec7cc6a355819c0d4db480286d14bdfd70", size = 157120, upload-time = "2026-07-09T16:46:17.49Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/8c/4ed83f39040fad64aa0152fcb2e68590106f72bb458135b69894f88ccdd9/vapoursynth_vszipcl-1.2.0-py3-none-macosx_11_0_x86_64.whl", hash = "sha256:abaa8dbc652d2be45ba406ffc8ad0c345c6a331537f0f965f2455cd3cd9a4361", size = 159854, upload-time = "2026-07-09T16:46:18.684Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/b4/748704562d3fbfeec56c3d6bf677d91d5b5af633ed409f96325210e6720b/vapoursynth_vszipcl-1.2.0-py3-none-manylinux_2_17_aarch64.manylinux_2_34_aarch64.whl", hash = "sha256:3109a66227cb6566956961961b380ea69590ca4b1f753b45a9b516ad9b970000", size = 202805, upload-time = "2026-07-09T16:46:19.851Z" },
+    { url = "https://files.pythonhosted.org/packages/10/fb/2508ea9ac85a9df51aea9b6fe34a4b197be96d9b2263bcf2c08d894d932f/vapoursynth_vszipcl-1.2.0-py3-none-manylinux_2_17_x86_64.manylinux_2_34_x86_64.whl", hash = "sha256:617953968f79ab597f4d9fce9a3d62d9c78ccdd975f3be2361b5c8dfd0c1fa80", size = 205254, upload-time = "2026-07-09T16:46:21.017Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/e4/0301a1250fb7e7b701da2fb0a528b2b02af7e09cc1d86ec9e304e34f569c/vapoursynth_vszipcl-1.2.0-py3-none-win_amd64.whl", hash = "sha256:087b291b831536b6babec07033d744a0dc1b7a80094ef43539efc691a02f7366", size = 229648, upload-time = "2026-07-09T16:46:22.218Z" },
 ]
 
 [[package]]
@@ -2895,16 +2858,13 @@ aa = [
 amd = [
     { name = "dfttest2", extra = ["hipfft", "hiprtc"] },
     { name = "vapoursynth-bm3dhip" },
-    { name = "vapoursynth-knlmeanscl" },
     { name = "vapoursynth-mlrt-migx", marker = "sys_platform == 'linux'" },
     { name = "vapoursynth-mlrt-ncnn" },
     { name = "vapoursynth-mlrt-ort" },
-    { name = "vapoursynth-nlm-hip" },
+    { name = "vapoursynth-vszipcl" },
 ]
 cl = [
-    { name = "vapoursynth-knlmeanscl" },
-    { name = "vapoursynth-mlrt-ncnn" },
-    { name = "vapoursynth-mlrt-ort" },
+    { name = "vapoursynth-vszipcl" },
 ]
 deband = [
     { name = "anyio" },
@@ -2943,7 +2903,6 @@ deband = [
     { name = "vapoursynth-sangnom" },
     { name = "vapoursynth-sneedif" },
     { name = "vapoursynth-subtext" },
-    { name = "vapoursynth-wnnm", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
     { name = "vapoursynth-znedi3" },
     { name = "vapoursynth-zsmooth" },
     { name = "vs-placebo" },
@@ -2986,7 +2945,6 @@ dehalo = [
     { name = "vapoursynth-sangnom" },
     { name = "vapoursynth-sneedif" },
     { name = "vapoursynth-subtext" },
-    { name = "vapoursynth-wnnm", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
     { name = "vapoursynth-znedi3" },
     { name = "vapoursynth-zsmooth" },
     { name = "vs-placebo" },
@@ -3030,7 +2988,6 @@ deinterlace = [
     { name = "vapoursynth-sneedif" },
     { name = "vapoursynth-subtext" },
     { name = "vapoursynth-vivtc" },
-    { name = "vapoursynth-wnnm", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
     { name = "vapoursynth-znedi3" },
     { name = "vapoursynth-zsmooth" },
     { name = "vs-placebo" },
@@ -3072,7 +3029,6 @@ denoise = [
     { name = "vapoursynth-sangnom" },
     { name = "vapoursynth-sneedif" },
     { name = "vapoursynth-subtext" },
-    { name = "vapoursynth-wnnm", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
     { name = "vapoursynth-znedi3" },
     { name = "vapoursynth-zsmooth" },
     { name = "vs-placebo" },
@@ -3116,11 +3072,14 @@ full = [
     { name = "vapoursynth-sneedif" },
     { name = "vapoursynth-subtext" },
     { name = "vapoursynth-vivtc" },
-    { name = "vapoursynth-wnnm", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
     { name = "vapoursynth-znedi3" },
     { name = "vapoursynth-zsmooth" },
     { name = "vs-placebo" },
     { name = "vsnoise" },
+]
+gpu = [
+    { name = "vapoursynth-mlrt-ncnn" },
+    { name = "vapoursynth-mlrt-ort" },
 ]
 kernels = [
     { name = "vapoursynth-descale" },
@@ -3160,7 +3119,7 @@ nvidia = [
     { name = "vapoursynth-mlrt-ort-cuda" },
     { name = "vapoursynth-mlrt-trt" },
     { name = "vapoursynth-mlrt-trt-rtx" },
-    { name = "vapoursynth-nlm-cuda" },
+    { name = "vapoursynth-vszipcl" },
 ]
 rg = [
     { name = "scipy" },
@@ -3273,7 +3232,7 @@ requires-dist = [
     { name = "humanize", marker = "extra == 'denoise'", specifier = ">=4.15.0" },
     { name = "humanize", marker = "extra == 'full'", specifier = ">=4.15.0" },
     { name = "humanize", marker = "extra == 'scale'", specifier = ">=4.15.0" },
-    { name = "jetpytools", specifier = ">=3.0.0,<4.0.0" },
+    { name = "jetpytools", specifier = ">=3.1.0,<4.0.0" },
     { name = "ml-dtypes", marker = "extra == 'nvidia'", specifier = ">=0.5.4" },
     { name = "niquests", marker = "extra == 'aa'", specifier = ">=3.18.8" },
     { name = "niquests", marker = "extra == 'deband'", specifier = ">=3.18.8" },
@@ -3446,8 +3405,6 @@ requires-dist = [
     { name = "vapoursynth-hysteresis", marker = "extra == 'full'", specifier = ">=1.1.3" },
     { name = "vapoursynth-hysteresis", marker = "extra == 'mask'", specifier = ">=1.1.3" },
     { name = "vapoursynth-hysteresis", marker = "extra == 'scale'", specifier = ">=1.1.3" },
-    { name = "vapoursynth-knlmeanscl", marker = "extra == 'amd'", specifier = ">=1.2" },
-    { name = "vapoursynth-knlmeanscl", marker = "extra == 'cl'", specifier = ">=1.2" },
     { name = "vapoursynth-lsmas", marker = "extra == 'aa'", specifier = ">=1282.0.0" },
     { name = "vapoursynth-lsmas", marker = "extra == 'deband'", specifier = ">=1282.0.0" },
     { name = "vapoursynth-lsmas", marker = "extra == 'dehalo'", specifier = ">=1282.0.0" },
@@ -3464,9 +3421,9 @@ requires-dist = [
     { name = "vapoursynth-manipmv", marker = "extra == 'full'", specifier = ">=1.3.0" },
     { name = "vapoursynth-mlrt-migx", marker = "sys_platform == 'linux' and extra == 'amd'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'amd'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'cl'", specifier = ">=15.16" },
+    { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'gpu'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ort", marker = "extra == 'amd'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ort", marker = "extra == 'cl'", specifier = ">=15.16" },
+    { name = "vapoursynth-mlrt-ort", marker = "extra == 'gpu'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ort-cuda", marker = "extra == 'nvidia'", specifier = ">=15.16.2" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'aa'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'deband'", specifier = ">=15.16" },
@@ -3482,8 +3439,6 @@ requires-dist = [
     { name = "vapoursynth-mvtools", marker = "extra == 'deinterlace'", specifier = ">=26" },
     { name = "vapoursynth-mvtools", marker = "extra == 'denoise'", specifier = ">=26" },
     { name = "vapoursynth-mvtools", marker = "extra == 'full'", specifier = ">=26" },
-    { name = "vapoursynth-nlm-cuda", marker = "extra == 'nvidia'", specifier = ">=4" },
-    { name = "vapoursynth-nlm-hip", marker = "extra == 'amd'", specifier = ">=2" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'deband'", specifier = ">=3" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'dehalo'", specifier = ">=3" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'deinterlace'", specifier = ">=3" },
@@ -3521,12 +3476,10 @@ requires-dist = [
     { name = "vapoursynth-subtext", marker = "extra == 'scale'", specifier = ">=6.0" },
     { name = "vapoursynth-vivtc", marker = "extra == 'deinterlace'", specifier = ">=2.0" },
     { name = "vapoursynth-vivtc", marker = "extra == 'full'", specifier = ">=2.0" },
-    { name = "vapoursynth-vszip", specifier = ">=21.0.0" },
-    { name = "vapoursynth-wnnm", marker = "(sys_platform == 'linux' and extra == 'deband') or (sys_platform == 'win32' and extra == 'deband')", specifier = ">=3" },
-    { name = "vapoursynth-wnnm", marker = "(sys_platform == 'linux' and extra == 'dehalo') or (sys_platform == 'win32' and extra == 'dehalo')", specifier = ">=3" },
-    { name = "vapoursynth-wnnm", marker = "(sys_platform == 'linux' and extra == 'deinterlace') or (sys_platform == 'win32' and extra == 'deinterlace')", specifier = ">=3" },
-    { name = "vapoursynth-wnnm", marker = "(sys_platform == 'linux' and extra == 'denoise') or (sys_platform == 'win32' and extra == 'denoise')", specifier = ">=3" },
-    { name = "vapoursynth-wnnm", marker = "(sys_platform == 'linux' and extra == 'full') or (sys_platform == 'win32' and extra == 'full')", specifier = ">=3" },
+    { name = "vapoursynth-vszip", specifier = ">=22.0.0" },
+    { name = "vapoursynth-vszipcl", marker = "extra == 'amd'", specifier = ">=1.2.0" },
+    { name = "vapoursynth-vszipcl", marker = "extra == 'cl'", specifier = ">=1.2.0" },
+    { name = "vapoursynth-vszipcl", marker = "extra == 'nvidia'", specifier = ">=1.2.0" },
     { name = "vapoursynth-znedi3", marker = "extra == 'aa'", specifier = ">=2.1" },
     { name = "vapoursynth-znedi3", marker = "extra == 'deband'", specifier = ">=2.1" },
     { name = "vapoursynth-znedi3", marker = "extra == 'dehalo'", specifier = ">=2.1" },
@@ -3555,7 +3508,7 @@ requires-dist = [
     { name = "vsnoise", marker = "extra == 'deband'", specifier = ">=1.2" },
     { name = "vsnoise", marker = "extra == 'full'", specifier = ">=1.2" },
 ]
-provides-extras = ["aa", "amd", "basic", "cl", "deband", "dehalo", "deinterlace", "denoise", "expr", "full", "kernels", "mask", "nvidia", "rg", "scale", "source"]
+provides-extras = ["aa", "amd", "basic", "cl", "deband", "dehalo", "deinterlace", "denoise", "expr", "full", "gpu", "kernels", "mask", "nvidia", "rg", "scale", "source"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -1828,10 +1828,6 @@ class VideoNode(RawNode):
     hysteresis: Final[_hysteresis._VideoNode_bound.Plugin]
     """Hysteresis filter."""
 # </attribute/VideoNode_bound/hysteresis>
-# <attribute/VideoNode_bound/knlm>
-    knlm: Final[_knlm._VideoNode_bound.Plugin]
-    """KNLMeansCL for VapourSynth"""
-# </attribute/VideoNode_bound/knlm>
 # <attribute/VideoNode_bound/manipmv>
     manipmv: Final[_manipmv._VideoNode_bound.Plugin]
     """Manipulate Motion Vectors"""
@@ -1844,14 +1840,6 @@ class VideoNode(RawNode):
     ncnn: Final[_ncnn._VideoNode_bound.Plugin]
     """NCNN ML Filter Runtime"""
 # </attribute/VideoNode_bound/ncnn>
-# <attribute/VideoNode_bound/nlm_cuda>
-    nlm_cuda: Final[_nlm_cuda._VideoNode_bound.Plugin]
-    """Non-local means denoise filter implemented in CUDA"""
-# </attribute/VideoNode_bound/nlm_cuda>
-# <attribute/VideoNode_bound/nlm_hip>
-    nlm_hip: Final[_nlm_hip._VideoNode_bound.Plugin]
-    """Non-local means denoise filter implemented in HIP"""
-# </attribute/VideoNode_bound/nlm_hip>
 # <attribute/VideoNode_bound/nlm_ispc>
     nlm_ispc: Final[_nlm_ispc._VideoNode_bound.Plugin]
     """Non-local means denoise filter implemented in ISPC"""
@@ -1916,10 +1904,10 @@ class VideoNode(RawNode):
     vszip: Final[_vszip._VideoNode_bound.Plugin]
     """VapourSynth Zig Image Process"""
 # </attribute/VideoNode_bound/vszip>
-# <attribute/VideoNode_bound/wnnm>
-    wnnm: Final[_wnnm._VideoNode_bound.Plugin]
-    """Weighted Nuclear Norm Minimization Denoiser"""
-# </attribute/VideoNode_bound/wnnm>
+# <attribute/VideoNode_bound/vszipcl>
+    vszipcl: Final[_vszipcl._VideoNode_bound.Plugin]
+    """VapourSynth Zig Image Process OpenCL"""
+# </attribute/VideoNode_bound/vszipcl>
 # <attribute/VideoNode_bound/znedi3>
     znedi3: Final[_znedi3._VideoNode_bound.Plugin]
     """Neural network edge directed interpolation (3rd gen.)"""
@@ -2126,10 +2114,6 @@ class Core:
     hysteresis: Final[_hysteresis._Core_bound.Plugin]
     """Hysteresis filter."""
 # </attribute/Core_bound/hysteresis>
-# <attribute/Core_bound/knlm>
-    knlm: Final[_knlm._Core_bound.Plugin]
-    """KNLMeansCL for VapourSynth"""
-# </attribute/Core_bound/knlm>
 # <attribute/Core_bound/lsmas>
     lsmas: Final[_lsmas._Core_bound.Plugin]
     """LSMASHSource for VapourSynth"""
@@ -2146,14 +2130,6 @@ class Core:
     ncnn: Final[_ncnn._Core_bound.Plugin]
     """NCNN ML Filter Runtime"""
 # </attribute/Core_bound/ncnn>
-# <attribute/Core_bound/nlm_cuda>
-    nlm_cuda: Final[_nlm_cuda._Core_bound.Plugin]
-    """Non-local means denoise filter implemented in CUDA"""
-# </attribute/Core_bound/nlm_cuda>
-# <attribute/Core_bound/nlm_hip>
-    nlm_hip: Final[_nlm_hip._Core_bound.Plugin]
-    """Non-local means denoise filter implemented in HIP"""
-# </attribute/Core_bound/nlm_hip>
 # <attribute/Core_bound/nlm_ispc>
     nlm_ispc: Final[_nlm_ispc._Core_bound.Plugin]
     """Non-local means denoise filter implemented in ISPC"""
@@ -2218,10 +2194,10 @@ class Core:
     vszip: Final[_vszip._Core_bound.Plugin]
     """VapourSynth Zig Image Process"""
 # </attribute/Core_bound/vszip>
-# <attribute/Core_bound/wnnm>
-    wnnm: Final[_wnnm._Core_bound.Plugin]
-    """Weighted Nuclear Norm Minimization Denoiser"""
-# </attribute/Core_bound/wnnm>
+# <attribute/Core_bound/vszipcl>
+    vszipcl: Final[_vszipcl._Core_bound.Plugin]
+    """VapourSynth Zig Image Process OpenCL"""
+# </attribute/Core_bound/vszipcl>
 # <attribute/Core_bound/znedi3>
     znedi3: Final[_znedi3._Core_bound.Plugin]
     """Neural network edge directed interpolation (3rd gen.)"""
@@ -2908,20 +2884,6 @@ class _hysteresis:
 
 # </implementation/hysteresis>
 
-# <implementation/knlm>
-class _knlm:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def KNLMeansCL(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_type: _AnyStr | None = None, device_id: _IntLike | None = None, ocl_x: _IntLike | None = None, ocl_y: _IntLike | None = None, ocl_r: _IntLike | None = None, info: _IntLike | None = None, mode_9_to_15bits: _IntLike | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def KNLMeansCL(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_type: _AnyStr | None = None, device_id: _IntLike | None = None, ocl_x: _IntLike | None = None, ocl_y: _IntLike | None = None, ocl_r: _IntLike | None = None, info: _IntLike | None = None, mode_9_to_15bits: _IntLike | None = None) -> VideoNode: ...
-
-# </implementation/knlm>
-
 # <implementation/lsmas>
 class _lsmas:
     class _Core_bound:
@@ -3070,36 +3032,6 @@ class _ncnn:
             def Model(self, /, network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, builtin: _IntLike | None = None, builtindir: _AnyStr | None = None, fp16: _IntLike | None = None, path_is_serialization: _IntLike | None = None, flexible_output_prop: _AnyStr | None = None, output_format: _IntLike | None = None) -> Any: ...
 
 # </implementation/ncnn>
-
-# <implementation/nlm_cuda>
-class _nlm_cuda:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def Version(self, /) -> Any: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NLMeans(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> Any: ...
-
-# </implementation/nlm_cuda>
-
-# <implementation/nlm_hip>
-class _nlm_hip:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NLMeans(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
-
-# </implementation/nlm_hip>
 
 # <implementation/nlm_ispc>
 class _nlm_ispc:
@@ -3856,29 +3788,39 @@ class _vszip:
 
 # </implementation/vszip>
 
-# <implementation/wnnm>
-class _wnnm:
+# <implementation/vszipcl>
+class _vszipcl:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def VAggregate(self, /, clip: VideoNode, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike], internal: _IntLike | None = None) -> Any: ...
+            def Bilateral(self, /, clip: VideoNode, sigma_spatial: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigma_color: _FloatLike | _SequenceLike[_FloatLike] | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, use_shared_memory: _IntLike | None = None, ref: VideoNode | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Version(self, /) -> Any: ...
+            def Deband(self, /, clip: VideoNode, iterations: _IntLike | None = None, threshold: _FloatLike | None = None, radius: _FloatLike | None = None, grain: _FloatLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, dither: _IntLike | None = None, dither_algo: _IntLike | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def WNNM(self, /, clip: VideoNode, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, group_size: _IntLike | None = None, bm_range: _IntLike | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, residual: _IntLike | None = None, adaptive_aggregation: _IntLike | None = None, rclip: VideoNode | None = None) -> Any: ...
+            def EEDI3(self, /, clip: VideoNode, field: _IntLike, dh: _IntLike | None = None, mdis: _IntLike | None = None, nrad: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def WNNMRaw(self, /, clip: VideoNode, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, group_size: _IntLike | None = None, bm_range: _IntLike | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, residual: _IntLike | None = None, adaptive_aggregation: _IntLike | None = None, rclip: VideoNode | None = None) -> Any: ...
+            def EEDI3H(self, /, clip: VideoNode, field: _IntLike, dh: _IntLike | None = None, mdis: _IntLike | None = None, nrad: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def GaussBlur(self, /, clip: VideoNode, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def VAggregate(self, /, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike], internal: _IntLike | None = None) -> Any: ...
+            def Bilateral(self, /, sigma_spatial: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigma_color: _FloatLike | _SequenceLike[_FloatLike] | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, use_shared_memory: _IntLike | None = None, ref: VideoNode | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def WNNM(self, /, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, group_size: _IntLike | None = None, bm_range: _IntLike | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, residual: _IntLike | None = None, adaptive_aggregation: _IntLike | None = None, rclip: VideoNode | None = None) -> Any: ...
+            def Deband(self, /, iterations: _IntLike | None = None, threshold: _FloatLike | None = None, radius: _FloatLike | None = None, grain: _FloatLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, dither: _IntLike | None = None, dither_algo: _IntLike | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def WNNMRaw(self, /, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, group_size: _IntLike | None = None, bm_range: _IntLike | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, residual: _IntLike | None = None, adaptive_aggregation: _IntLike | None = None, rclip: VideoNode | None = None) -> Any: ...
+            def EEDI3(self, /, field: _IntLike, dh: _IntLike | None = None, mdis: _IntLike | None = None, nrad: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def EEDI3H(self, /, field: _IntLike, dh: _IntLike | None = None, mdis: _IntLike | None = None, nrad: _IntLike | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def GaussBlur(self, /, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def NLMeans(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, tune: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
 
-# </implementation/wnnm>
+# </implementation/vszipcl>
 
 # <implementation/znedi3>
 class _znedi3:

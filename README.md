@@ -25,20 +25,21 @@ Most of these plugins are now available as Python packages on PyPI and can be in
 
 Most extras are hierarchical. For example, `denoise` includes all plugins from `aa`, which in turn includes `mask`, and so on.
 
-| Extra             | Purpose              | Included Plugins / Packages                                                              |
-| :---------------- | :------------------- | :--------------------------------------------------------------------------------------- |
-| **`source`**      | Clip Indexing        | `bestsource`, `ffms2`, `lsmas`, `d2vsource`, `dvdsrc2`                                   |
-| **`kernels`**     | Resizing             | `resize2`, `descale`, `vs-placebo`                                                       |
-| **`rg`**          | Repair & Smoothing   | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                                 |
-| **`mask`**        | Masking              | `adaptivegrain`, `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)                 |
-| **`aa`**          | Anti-aliasing        | `bwdif`, `eedi3`, `sangnom`, `sneedif`, `znedi3` (+ `mask`)                              |
-| **`denoise`**     | Denoising            | `bm3d`, `dfttest2`, `deblock`, `mvtools`, `nlm-ispc`, `wnnm` (+ `aa`)                    |
-| **`deband`**      | Debanding            | `vsnoise` (+ `denoise`)                                                                  |
-| **`deinterlace`** | Deinterlacing        | `dmetrics`, `vivtc` (+ `denoise`)                                                        |
-| **`full`**        | All CPU-based extras | All of the above                                                                         |
-| **`cl`**          | Open CL              | `knlmeanscl`, `ort`, `ncnn`                                                              |
-| **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `nlm-cuda`, `dfttest2-[nvrtc,cuda]`, `ort-cuda`, `trt{-rtx}` |
-| **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]`, `nlm-hip` (+ `cl`)                                |
+| Extra             | Purpose              | Included Plugins / Packages                                                           |
+| :---------------- | :------------------- | :------------------------------------------------------------------------------------ |
+| **`source`**      | Clip Indexing        | `bestsource`, `ffms2`, `lsmas`, `d2vsource`, `dvdsrc2`                                |
+| **`kernels`**     | Resizing             | `resize2`, `descale`, `vs-placebo`                                                    |
+| **`rg`**          | Repair & Smoothing   | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                              |
+| **`mask`**        | Masking              | `adaptivegrain`, `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)              |
+| **`aa`**          | Anti-aliasing        | `bwdif`, `eedi3`, `sangnom`, `sneedif`, `znedi3` (+ `mask`)                           |
+| **`denoise`**     | Denoising            | `bm3d`, `dfttest2`, `deblock`, `mvtools`, `nlm-ispc` (+ `aa`)                         |
+| **`deband`**      | Debanding            | `vsnoise` (+ `denoise`)                                                               |
+| **`deinterlace`** | Deinterlacing        | `dmetrics`, `vivtc` (+ `denoise`)                                                     |
+| **`full`**        | All CPU-based extras | All of the above                                                                      |
+| **`gpu`**         | Generic GPU          | `ncnn`, `ort`                                                                         |
+| **`cl`**          | Open CL              | `vszipcl`                                                                             |
+| **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `dfttest2-[nvrtc,cuda]`, `ort-cuda`, `trt{-rtx}` (+ `cl`) |
+| **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]` (+ `cl`, `gpu`)                                 |
 
 > [!IMPORTANT]
 > Some plugins distribute their wheels through our custom package index instead of PyPI.
@@ -79,12 +80,13 @@ Not all extras have prebuilt wheels on every platform:
 | `mask`        |     ✅      |         ✅          |        ✅         |           ✅            |
 | `scale`       |     ✅      |         ✅          |        ❌         |           ✅            |
 | `aa`          |     ✅      |         ✅          |        ❌         |           ✅            |
-| `denoise`     |     ✅      |         ✅          |        ❌         |         ⚠️[^1]          |
+| `denoise`     |     ✅      |         ✅          |        ❌         |           ✅            |
 | `deband`      |     ✅      |         ✅          |        ❌         |           ✅            |
 | `deinterlace` |     ✅      |         ✅          |        ❌         |           ✅            |
-| `full`        |     ✅      |         ✅          |        ❌         |           ⚠️            |
+| `full`        |     ✅      |         ✅          |        ❌         |           ✅            |
+| `gpu`         |     ✅      |         ✅          |        ❌         |           ✅            |
 | `cl`          |     ✅      |         ✅          |        ❌         |           ✅            |
-| `nvidia`      |     ✅      |       ⚠️[^2]        |        ❌         |           ❌            |
+| `nvidia`      |   ⚠️[^1]    |         ✅          |        ❌         |           ❌            |
 | `amd`         |     ✅      |         ✅          |        ❌         |           ❌            |
 
 > [!TIP]
@@ -92,6 +94,4 @@ Not all extras have prebuilt wheels on every platform:
 >
 > Refer to the plugin repository for platform-specific build instructions.
 
-[^1]: `wnnm` isn't available on macOS.
-
-[^2]: Requires Glibc 2.39+ for `bilateralgpu`.
+[^1]: `bilateralgpu` requires Glibc 2.39+.

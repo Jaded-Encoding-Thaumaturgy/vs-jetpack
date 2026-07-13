@@ -78,7 +78,7 @@ class BasedAA[**P, R]:
         luma: vs.VideoNode,
         sigmaS: float = 2.0,  # noqa: N803
         sigmaR: float = 1 / 255,  # noqa: N803
-        backend: Bilateral.Backend = bilateral.Backend.CPU,
+        backend: Bilateral.Backend = bilateral.Backend.AUTO,
         **kwargs: Any,
     ) -> vs.VideoNode:
         """

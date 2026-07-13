@@ -47,14 +47,14 @@ classifiers = [
 ]
 dependencies = [
     "vapoursynth>=75",
-    "jetpytools>=3.0.0,<4.0.0",
+    "jetpytools>=3.1.0,<4.0.0",
     "numpy>=2.0.0",
     "rich>=15.0.0",
     "psutil>=7.0.0",
     "typing_extensions>=4.15.0; python_version<'3.15'",
     # VapourSynth plugins
     "vapoursynth-akarin>=1.4.1",
-    "vapoursynth-vszip>=21.0.0",
+    "vapoursynth-vszip>=22.0.0",
 ]
 
 [project.urls]
@@ -129,7 +129,6 @@ denoise = [
     "vapoursynth-manipmv>=1.3.0",
     "vapoursynth-mvtools>=26",
     "vapoursynth-nlm-ispc>=3",
-    "vapoursynth-wnnm>=3 ; platform_system == 'Linux' or platform_system == 'Windows'",
 ]
 dehalo = ["vsjetpack[denoise]"]
 deinterlace = [
@@ -138,12 +137,10 @@ deinterlace = [
     "vapoursynth-vivtc>=2.0",
 ]
 deband = ["vsjetpack[denoise]", "vsnoise>=1.2"]
-cl = [
-    "vapoursynth-mlrt-ort>=15.16",
-    "vapoursynth-mlrt-ncnn>=15.16",
-    "vapoursynth-knlmeanscl>=1.2",
-]
+gpu = ["vapoursynth-mlrt-ncnn>=15.16", "vapoursynth-mlrt-ort>=15.16"]
+cl = ["vapoursynth-vszipcl>=1.2.0"]
 nvidia = [
+    "vsjetpack[cl]",
     "onnx>=1.21.0",
     "onnxconverter-common>=1.16.0",
     "cuda-python>=13.0.0,<14.0.0",
@@ -152,7 +149,6 @@ nvidia = [
     "dfttest2[cufft,nvrtc]>=10",
     "vapoursynth-bm3dcuda>=2.16",
     "vapoursynth-bilateralgpu>=14",
-    "vapoursynth-nlm-cuda>=4",
     "vapoursynth-mlrt-ort-cuda>=15.16.2",
     "vapoursynth-mlrt-trt>=15.16.1",
     "vapoursynth-mlrt-trt-rtx>=15.16.1",
@@ -164,11 +160,10 @@ nvidia = [
     "tensorrt-rtx-cu13-bindings",
 ]
 amd = [
-    "vsjetpack[cl]",
+    "vsjetpack[cl,gpu]",
     "dfttest2[hipfft,hiprtc]>=10",
     "vapoursynth-bm3dhip>=2.16",
     "vapoursynth-mlrt-migx>=15.16 ; platform_system == 'Linux'",
-    "vapoursynth-nlm-hip>=2",
 ]
 full = [
     "vsjetpack[basic]",
