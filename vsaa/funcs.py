@@ -204,12 +204,26 @@ def based_aa(
     ss = supersampler.scale(ss_clip, aaw, aah)
 
     if not antialiaser:
-        antialiaser = EEDI3(alpha=0.125, beta=0.25, gamma=40, vthresh=(12, 24, 4), sclip=ss)
+        antialiaser = EEDI3(
+            alpha=0.125,
+            beta=0.25,
+            gamma=40,
+            vthresh=(12, 24, 4),
+            sclip=ss,
+            backend=aa_kwargs.pop("backend", EEDI3.__dataclass_fields__["backend"].default),
+        )
 
-    # Only uses mclip if `use_mclip` is True,
-    # if mclip isn't in aa_kwargs
-    # and antialiaser is an instance of EEDI3
-    if aa_kwargs.pop("use_mclip", True) and "mclip" not in aa_kwargs and isinstance(antialiaser, EEDI3):
+    # Only uses mclip if
+    # - `use_mclip` is True,
+    # - mclip isn't in aa_kwargs
+    # - antialiaser is an instance of EEDI3
+    # - backend supports mclip
+    if (
+        aa_kwargs.pop("use_mclip", True)
+        and "mclip" not in aa_kwargs
+        and isinstance(antialiaser, EEDI3)
+        and antialiaser.backend.supports_mclip
+    ):
         mclip = None
 
         if mask:
