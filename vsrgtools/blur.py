@@ -164,11 +164,11 @@ class GaussBlur[**P, R]:
         """OpenCL CL implementation."""
 
         @contextmanager
-        def __call__(self, new_backend: str, /) -> Generator[None]:
+        def __call__(self) -> Generator[None]:
             """Set this backend for the duration of the context manager."""
             old = gauss_blur.backend
             try:
-                gauss_blur.backend = new_backend
+                gauss_blur.backend = self
                 yield
             finally:
                 gauss_blur.backend = old
@@ -264,7 +264,7 @@ def gauss_blur(
         planes: Planes to process. Defaults to all.
         backend: The backend to use for processing.
             Set `gauss_blur.backend = gauss_blur.Backend.GPU`
-            or use the context manager `with gauss_blur.backend(gauss_blur.Backend.GPU):`
+            or use the context manager `with gauss_blur.Backend.GPU(): ...`
             to make the GPU the default backend for all subsequent explicit and implicit calls.
         **kwargs: Additional arguments passed to the resizer or blur kernel.
             Specifying `_fast=True` enables fast bilinear approximation.
@@ -601,11 +601,11 @@ class Bilateral[**P, R]:
         """
 
         @contextmanager
-        def __call__(self, new_backend: str, /) -> Generator[None]:
+        def __call__(self) -> Generator[None]:
             """Set this backend for the duration of the context manager."""
             old = bilateral.backend
             try:
-                bilateral.backend = new_backend
+                bilateral.backend = self
                 yield
             finally:
                 bilateral.backend = old
@@ -678,7 +678,7 @@ def bilateral(
         planes: Planes to process. Defaults to all.
         backend: The backend to use for processing.
             Set `bilateral.backend = bilateral.Backend.GPU`
-            or use the context manager `with bilateral.backend(bilateral.Backend.GPU):`
+            or use the context manager `with bilateral.Backend.GPU(): ...`
             to make the GPU the default backend for all subsequent explicit and implicit calls.
         **kwargs: Additional arguments forwarded to the backend-specific implementation.
 
