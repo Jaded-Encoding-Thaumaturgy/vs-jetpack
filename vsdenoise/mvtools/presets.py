@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Required, Self, TypedDict
+from typing import Any, Required, TypedDict
 
 from jetpytools import KwargsNotNone, classproperty
 
@@ -213,7 +213,7 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
 
     @classproperty
     @classmethod
-    def HQ_COHERENCE(cls) -> Self:  # noqa: N802
+    def HQ_COHERENCE(cls) -> MVToolsPreset:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
             analyze_args=AnalyzeArgs(blksize=16, overlap_div=2),
@@ -222,7 +222,7 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
 
     @classproperty
     @classmethod
-    def HQ_SAD(cls) -> Self:  # noqa: N802
+    def HQ_SAD(cls) -> MVToolsPreset:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
             analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, mvlambda=0),

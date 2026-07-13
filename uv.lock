@@ -2782,14 +2782,14 @@ wheels = [
 
 [[package]]
 name = "vsjetengine"
-version = "1.5.0"
+version = "1.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/5a/f9f67ab3be39ee4561098266b0a3bbf45834efee7cdf09e3c53e432e464a/vsjetengine-1.5.0.tar.gz", hash = "sha256:b860f9ba29ba9651d81bc0a12948873d65a2f8a63afee33c54c1c74fa8fe6030", size = 49558, upload-time = "2026-07-12T03:20:16.652Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/7b/b483c48cf174ad8d1ee1e16c18419b0501a32dbee3e8a92bd52e36ddc804/vsjetengine-1.5.1.tar.gz", hash = "sha256:eb703a6f88d589ec9344952b812a82e797650334821de25564d7a191fff17885", size = 49879, upload-time = "2026-07-13T02:52:39.743Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dc/3b/0c794aef10424b1bcf1f170c4bff1978580d94fed39d735628767a6d5651/vsjetengine-1.5.0-py3-none-any.whl", hash = "sha256:5da63785a515d57a709e5de8fac313276581050290f058493869a9d9f4ee34bf", size = 39343, upload-time = "2026-07-12T03:20:15.426Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/74/6d466da915cab5a370ed2eb0dbe1288ba25dddd089bb20876576251b1cb3/vsjetengine-1.5.1-py3-none-any.whl", hash = "sha256:5fc77f5b8d7227fa9ebfcc39c46941f75405b77ba7618f1ec41ea20e0fb23f0c", size = 39375, upload-time = "2026-07-13T02:52:38.285Z" },
 ]
 
 [[package]]
@@ -3486,7 +3486,7 @@ dev = [
     { name = "ruff", specifier = "~=0.15.0" },
     { name = "scipy-stubs", specifier = ">=1.16.0.0" },
     { name = "types-psutil", specifier = ">=7.0.0.20250801" },
-    { name = "vsjetengine", specifier = ">=1.5.0" },
+    { name = "vsjetengine", specifier = ">=1.5.1" },
     { name = "vsstubs", specifier = ">=2.1.1" },
     { name = "vstransitions", specifier = "==0.1.4" },
 ]
@@ -3505,7 +3505,7 @@ doc = [
 test = [
     { name = "pytest", specifier = ">=9.0.0,<10.0.0" },
     { name = "pytest-cov", specifier = ">=7.1.0,<8.0.0" },
-    { name = "vsjetengine", specifier = ">=1.5.0" },
+    { name = "vsjetengine", specifier = ">=1.5.1" },
 ]
 
 [[package]]
