@@ -383,7 +383,9 @@ class NNEDI3(SuperSampler):
     """
     Neural Network Edge Directed Interpolation (3rd gen.)
 
-    More information: https://github.com/sekrit-twc/znedi3
+    More information:
+        - https://github.com/sekrit-twc/znedi3
+        - https://github.com/HolyWu/VapourSynth-nnedi3vk
     """
 
     nsize: int = 0
@@ -430,7 +432,7 @@ class NNEDI3(SuperSampler):
     - 1: Weights trained to minimise squared error.
     """
 
-    pscrn: int | None = None
+    pscrn: int = 4
     """
     The prescreener used to decide which pixels should be processed by the predictor neural network,
     and which can be handled by simple cubic interpolation.
@@ -442,16 +444,19 @@ class NNEDI3(SuperSampler):
     - 3: New prescreener level 1.
     - 4: New prescreener level 2.
 
-    The new prescreener is not available with float input.
-
-    - Wrapper default is 4 for integer input and 1 for float input. When `opencl=True` it is always 1.
-    - Plugin default is 2 for integer input and 1 for float input.
+    Wrapper default is 4, plugin default is 2.
     """
 
-    opencl: bool = False
-    """
-    Enables the use of the OpenCL variant.
-    """
+    gpu: bool = False
+    """Enables the use of the Vulkan variant."""
+
+    opencl: Never = cast(Never, MISSING)
+    """Unused deprecated parameter."""
+
+    def __post_init__(self) -> None:
+        if self.opencl is not cast(Never, MISSING):
+            warnings.warn("The 'opencl' argument has been removed and is deprecated.", RuntimeWarning)
+        return super().__post_init__()
 
     @Scaler.cachedproperty
     def kernel_radius(self) -> int:
@@ -466,21 +471,17 @@ class NNEDI3(SuperSampler):
                 return 32
 
     def get_deint_args(self, *, clip: vs.VideoNode | None = None, **kwargs: Any) -> dict[str, Any]:
-        pscrn = (
-            fallback(self.pscrn, 1 if self.opencl or clip.format.sample_type is vs.FLOAT else 4) if clip else self.pscrn
-        )
-
         return {
             "nsize": self.nsize,
             "nns": self.nns,
             "qual": self.qual,
             "etype": self.etype,
-            "pscrn": pscrn,
+            "pscrn": self.pscrn,
         } | kwargs
 
     @property
     def _deinterlacer_function(self) -> VSFunctionAllArgs:
-        return core.lazy.sneedif.NNEDI3 if self.opencl else core.lazy.znedi3.nnedi3
+        return core.lazy.nnedi3vk.NNEDI3 if self.gpu else core.lazy.znedi3.nnedi3
 
     def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = tff + double_rate * 2

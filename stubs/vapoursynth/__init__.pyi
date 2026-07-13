@@ -1844,6 +1844,10 @@ class VideoNode(RawNode):
     nlm_ispc: Final[_nlm_ispc._VideoNode_bound.Plugin]
     """Non-local means denoise filter implemented in ISPC"""
 # </attribute/VideoNode_bound/nlm_ispc>
+# <attribute/VideoNode_bound/nnedi3vk>
+    nnedi3vk: Final[_nnedi3vk._VideoNode_bound.Plugin]
+    """Neural Network Edge Directed Interpolation 3, using Vulkan compute"""
+# </attribute/VideoNode_bound/nnedi3vk>
 # <attribute/VideoNode_bound/noise>
     noise: Final[_noise._VideoNode_bound.Plugin]
     """Noise generator"""
@@ -1872,10 +1876,6 @@ class VideoNode(RawNode):
     sangnom: Final[_sangnom._VideoNode_bound.Plugin]
     """VapourSynth Single Field Deinterlacer"""
 # </attribute/VideoNode_bound/sangnom>
-# <attribute/VideoNode_bound/sneedif>
-    sneedif: Final[_sneedif._VideoNode_bound.Plugin]
-    """Setsugen No Ensemble of Edge Directed Interpolation Functions"""
-# </attribute/VideoNode_bound/sneedif>
 # <attribute/VideoNode_bound/std>
     std: Final[_std._VideoNode_bound.Plugin]
     """VapourSynth Core Functions"""
@@ -2134,6 +2134,10 @@ class Core:
     nlm_ispc: Final[_nlm_ispc._Core_bound.Plugin]
     """Non-local means denoise filter implemented in ISPC"""
 # </attribute/Core_bound/nlm_ispc>
+# <attribute/Core_bound/nnedi3vk>
+    nnedi3vk: Final[_nnedi3vk._Core_bound.Plugin]
+    """Neural Network Edge Directed Interpolation 3, using Vulkan compute"""
+# </attribute/Core_bound/nnedi3vk>
 # <attribute/Core_bound/noise>
     noise: Final[_noise._Core_bound.Plugin]
     """Noise generator"""
@@ -2162,10 +2166,6 @@ class Core:
     sangnom: Final[_sangnom._Core_bound.Plugin]
     """VapourSynth Single Field Deinterlacer"""
 # </attribute/Core_bound/sangnom>
-# <attribute/Core_bound/sneedif>
-    sneedif: Final[_sneedif._Core_bound.Plugin]
-    """Setsugen No Ensemble of Edge Directed Interpolation Functions"""
-# </attribute/Core_bound/sneedif>
 # <attribute/Core_bound/std>
     std: Final[_std._Core_bound.Plugin]
     """VapourSynth Core Functions"""
@@ -3049,6 +3049,20 @@ class _nlm_ispc:
 
 # </implementation/nlm_ispc>
 
+# <implementation/nnedi3vk>
+class _nnedi3vk:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def NNEDI3(self, /, clip: VideoNode, field: _IntLike, dh: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, nsize: _IntLike | None = None, nns: _IntLike | None = None, qual: _IntLike | None = None, etype: _IntLike | None = None, pscrn: _IntLike | None = None, coopvec: _IntLike | None = None, device_index: _IntLike | None = None, list_device: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def NNEDI3(self, /, field: _IntLike, dh: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, nsize: _IntLike | None = None, nns: _IntLike | None = None, qual: _IntLike | None = None, etype: _IntLike | None = None, pscrn: _IntLike | None = None, coopvec: _IntLike | None = None, device_index: _IntLike | None = None, list_device: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
+
+# </implementation/nnedi3vk>
+
 # <implementation/noise>
 class _noise:
     class _Core_bound:
@@ -3224,30 +3238,6 @@ class _sangnom:
             def SangNom(self, /, order: _IntLike | None = None, dh: _IntLike | None = None, aa: _IntLike | _SequenceLike[_IntLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
 
 # </implementation/sangnom>
-
-# <implementation/sneedif>
-_ReturnDict_sneedif_DeviceInfo = TypedDict("_ReturnDict_sneedif_DeviceInfo", {"name": _AnyStr, "vendor": _AnyStr, "profile": _AnyStr, "version": _AnyStr, "max_compute_units": int, "max_work_group_size": int, "max_work_item_sizes": _IntLike | list[_IntLike], "image2D_max_width": int, "image2D_max_height": int, "image_support": int, "global_memory_cache_type": _AnyStr, "global_memory_cache": int, "global_memory_size": int, "max_constant_buffer_size": int, "max_constant_arguments": int, "local_memory_type": _AnyStr, "local_memory_size": int, "available": int, "compiler_available": int, "linker_available": int, "opencl_c_version": _AnyStr, "image_max_buffer_size": int})
-_ReturnDict_sneedif_ListDevices = TypedDict("_ReturnDict_sneedif_ListDevices", {"numDevices": int, "deviceNames": _AnyStr | list[_AnyStr], "platformNames": _AnyStr | list[_AnyStr]})
-_ReturnDict_sneedif_PlatformInfo = TypedDict("_ReturnDict_sneedif_PlatformInfo", {"profile": _AnyStr, "version": _AnyStr, "name": _AnyStr, "vendor": _AnyStr})
-
-class _sneedif:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def DeviceInfo(self, /, device: _IntLike | None = None) -> _ReturnDict_sneedif_DeviceInfo: ...
-            @_Wrapper.Function
-            def ListDevices(self, /) -> _ReturnDict_sneedif_ListDevices: ...
-            @_Wrapper.Function
-            def NNEDI3(self, /, clip: VideoNode, field: _IntLike, dh: _IntLike | None = None, dw: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, nsize: _IntLike | None = None, nns: _IntLike | None = None, qual: _IntLike | None = None, etype: _IntLike | None = None, pscrn: _IntLike | None = None, transpose_first: _IntLike | None = None, device: _IntLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def PlatformInfo(self, /, device: _IntLike | None = None) -> _ReturnDict_sneedif_PlatformInfo: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NNEDI3(self, /, field: _IntLike, dh: _IntLike | None = None, dw: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, nsize: _IntLike | None = None, nns: _IntLike | None = None, qual: _IntLike | None = None, etype: _IntLike | None = None, pscrn: _IntLike | None = None, transpose_first: _IntLike | None = None, device: _IntLike | None = None) -> VideoNode: ...
-
-# </implementation/sneedif>
 
 # <implementation/std>
 class _std:
