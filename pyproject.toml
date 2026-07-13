@@ -112,7 +112,6 @@ scale = [
 aa = [
     "vsjetpack[scale]",
     "vapoursynth-bwdif>=5.0",
-    "vapoursynth-eedi3>=9.0",
     "vapoursynth-sangnom>=43",
     "vapoursynth-sneedif>=4.2",
     "vapoursynth-znedi3>=2.1",
@@ -137,10 +136,11 @@ deinterlace = [
     "vapoursynth-vivtc>=2.0",
 ]
 deband = ["vsjetpack[denoise]", "vsnoise>=1.2"]
-gpu = ["vapoursynth-mlrt-ncnn>=15.16", "vapoursynth-mlrt-ort>=15.16"]
+gpu = ["vapoursynth-mlrt-ort>=15.16"]
 cl = ["vapoursynth-vszipcl>=1.2.0"]
+vulkan = ["vapoursynth-eedi3vk2>=1.0", "vapoursynth-mlrt-ncnn>=15.16"]
 nvidia = [
-    "vsjetpack[cl]",
+    "vsjetpack[cl,vulkan]",
     "onnx>=1.21.0",
     "onnxconverter-common>=1.16.0",
     "cuda-python>=13.0.0,<14.0.0",
@@ -160,7 +160,7 @@ nvidia = [
     "tensorrt-rtx-cu13-bindings",
 ]
 amd = [
-    "vsjetpack[cl,gpu]",
+    "vsjetpack[gpu,cl,vulkan]",
     "dfttest2[hipfft,hiprtc]>=10",
     "vapoursynth-bm3dhip>=2.16",
     "vapoursynth-mlrt-migx>=15.16 ; platform_system == 'Linux'",

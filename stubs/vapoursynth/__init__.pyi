@@ -1816,10 +1816,10 @@ class VideoNode(RawNode):
     edgemasks: Final[_edgemasks._VideoNode_bound.Plugin]
     """Creates an edge mask using various operators"""
 # </attribute/VideoNode_bound/edgemasks>
-# <attribute/VideoNode_bound/eedi3m>
-    eedi3m: Final[_eedi3m._VideoNode_bound.Plugin]
-    """Enhanced Edge Directed Interpolation 3"""
-# </attribute/VideoNode_bound/eedi3m>
+# <attribute/VideoNode_bound/eedi3vk2>
+    eedi3vk2: Final[_eedi3vk2._VideoNode_bound.Plugin]
+    """Enhanced Edge Directed Interpolation 3, using Vulkan compute"""
+# </attribute/VideoNode_bound/eedi3vk2>
 # <attribute/VideoNode_bound/fmtc>
     fmtc: Final[_fmtc._VideoNode_bound.Plugin]
     """Format converter"""
@@ -2098,10 +2098,10 @@ class Core:
     edgemasks: Final[_edgemasks._Core_bound.Plugin]
     """Creates an edge mask using various operators"""
 # </attribute/Core_bound/edgemasks>
-# <attribute/Core_bound/eedi3m>
-    eedi3m: Final[_eedi3m._Core_bound.Plugin]
-    """Enhanced Edge Directed Interpolation 3"""
-# </attribute/Core_bound/eedi3m>
+# <attribute/Core_bound/eedi3vk2>
+    eedi3vk2: Final[_eedi3vk2._Core_bound.Plugin]
+    """Enhanced Edge Directed Interpolation 3, using Vulkan compute"""
+# </attribute/Core_bound/eedi3vk2>
 # <attribute/Core_bound/ffms2>
     ffms2: Final[_ffms2._Core_bound.Plugin]
     """FFmpegSource 2 for VapourSynth"""
@@ -2793,19 +2793,19 @@ class _edgemasks:
 
 # </implementation/edgemasks>
 
-# <implementation/eedi3m>
-class _eedi3m:
+# <implementation/eedi3vk2>
+class _eedi3vk2:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def EEDI3(self, /, clip: VideoNode, field: _IntLike, dh: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, nrad: _IntLike | None = None, mdis: _IntLike | None = None, hp: _IntLike | None = None, ucubic: _IntLike | None = None, cost3: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None, opt: _IntLike | None = None) -> VideoNode: ...
+            def EEDI3(self, /, clip: VideoNode, field: _IntLike, dh: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, nrad: _IntLike | None = None, mdis: _IntLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None, device_index: _IntLike | None = None, list_device: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def EEDI3(self, /, field: _IntLike, dh: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, nrad: _IntLike | None = None, mdis: _IntLike | None = None, hp: _IntLike | None = None, ucubic: _IntLike | None = None, cost3: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None, opt: _IntLike | None = None) -> VideoNode: ...
+            def EEDI3(self, /, field: _IntLike, dh: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, alpha: _FloatLike | None = None, beta: _FloatLike | None = None, gamma: _FloatLike | None = None, nrad: _IntLike | None = None, mdis: _IntLike | None = None, hp: _IntLike | None = None, vcheck: _IntLike | None = None, vthresh0: _FloatLike | None = None, vthresh1: _FloatLike | None = None, vthresh2: _FloatLike | None = None, sclip: VideoNode | None = None, mclip: VideoNode | None = None, device_index: _IntLike | None = None, list_device: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
 
-# </implementation/eedi3m>
+# </implementation/eedi3vk2>
 
 # <implementation/ffms2>
 class _ffms2:
