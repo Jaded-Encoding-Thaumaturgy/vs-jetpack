@@ -423,7 +423,7 @@ class Grainer(AbstractGrainer, CustomEnum, metaclass=EnumABCMeta):
             return GrainerPartial(self, **kwargs)
 
         if self == Grainer.PLACEBO:
-            if static is False:
+            if static is True:
                 raise CustomValueError("PlaceboGrain does not support static noise", self.name, static)
 
             return _apply_grainer(
