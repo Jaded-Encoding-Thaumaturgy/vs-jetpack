@@ -116,25 +116,29 @@ def _register_vs_del(obj: VSObject | VSObjectMeta) -> None:
     obj_ref = weakref.ref(obj)
 
     def del_register(core_id: int) -> None:
+        if (obj_inst := obj_ref()) is None:
+            return
+
         def vsdel_partial_register() -> None:
-            if (obj := obj_ref()) is None:
+            if (obj_inst_p := obj_ref()) is None:
                 log.log(5, "Dead object, skipping cleanup.")
                 return
 
-            getattr(obj, del_method)(core_id)
+            getattr(obj_inst_p, del_method)(core_id)
             log.log(
                 5,
                 "%r has been freed using %r%s",
-                getattr(obj, "__name__", obj.__class__.__name__),
+                getattr(obj_inst_p, "__name__", obj_inst_p.__class__.__name__),
                 del_method,
-                "... Custom dunder detected!" if _has_custom_dunder(obj) else "",
+                "... Custom dunder detected!" if _has_custom_dunder(obj_inst_p) else "",
             )
 
-        setattr(obj, prefix + partial_attr, vsdel_partial_register)
+        setattr(obj_inst, prefix + partial_attr, vsdel_partial_register)
         register_on_destroy(vsdel_partial_register)
 
-    setattr(obj, prefix + register_attr, del_register)
-    register_on_creation(del_register)
+    if (obj_inst := obj_ref()) is not None:
+        setattr(obj_inst, prefix + register_attr, del_register)
+        register_on_creation(del_register)
 
 
 class VSObjectMeta(type):
