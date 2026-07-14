@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterable
 from functools import wraps
 from typing import Any
 
-from jetpytools import cachedproperty
+from jetpytools import CustomValueError, cachedproperty
 
 from vsexprtools import ExprToken, norm_expr
 from vskernels import (
@@ -64,17 +64,18 @@ class RescaleBase(VSObjectABC):
     ) -> None:
         self._clipy, *chroma = split(depth(clip, 32))
         self._chroma = chroma
-
         self._kernel = ComplexKernel.ensure_obj(kernel)
         self._upscaler = Scaler.ensure_obj(upscaler)
-
         self._downscaler = Scaler.ensure_obj(downscaler)
-
         self._field_based = FieldBased.from_param_with_fallback(field_based)
-
         self._border_handling = BorderHandling.from_param(border_handling)
-
         self.__add_props = kwargs.get("_add_props")
+
+        if "border_handling" in self._kernel.kwargs:
+            raise CustomValueError(
+                "`border_handling` cannot be passed to a kernel instance. "  # no fmt
+                "Pass it to the `Rescale` constructor instead."
+            )
 
     @staticmethod
     def _apply_field_based[RescaleT: RescaleBase](
@@ -329,6 +330,12 @@ class Rescale(RescaleBase):
 
         if self._crop > (0, 0, 0, 0):
             self._clipy = self._clipy.std.Crop(*self._crop)
+
+        if "sample_grid_model" in self._kernel.kwargs:
+            raise CustomValueError(
+                "`sample_grid_model` cannot be passed to a kernel instance. "  # no fmt
+                "Pass it to the `Rescale` constructor instead."
+            )
 
     def _generate_descale(self, clip: vs.VideoNode) -> vs.VideoNode:
         if not self._ignore_mask:
