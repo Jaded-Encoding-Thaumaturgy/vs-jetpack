@@ -1,7 +1,7 @@
-from collections.abc import Generator, Iterable, Mapping
+import math
+from collections.abc import Generator, Mapping
 from contextlib import contextmanager, suppress
 from copy import deepcopy
-from math import factorial
 from typing import Any, Literal, Protocol, Self, TypedDict
 
 from jetpytools import CustomIntEnum, CustomValueError, FuncExcept, fallback, normalize_seq
@@ -11,7 +11,6 @@ from vsdeband import Grainer
 from vsdenoise import (
     DFTTest,
     MaskMode,
-    MotionVectors,
     MVDirection,
     MVTools,
     MVToolsPreset,
@@ -74,7 +73,6 @@ class QTGMCArgs:
         Arguments available when passing to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate].
         """
 
-        scbehavior: bool | None
         thsad: int | None
         time: float | None
 
@@ -88,7 +86,7 @@ class QTGMCArgs:
         [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final]
         """
 
-        limit: float | tuple[float | None, float | None] | None
+        limit: float | tuple[float, float] | None
         planes: Planes
 
     class Mask(TypedDict, total=False):
@@ -100,7 +98,7 @@ class QTGMCArgs:
         ml: float | None
         gamma: float | None
         time: float | None
-        ysc: int | None
+        scval: float | None
 
     class Blur(TypedDict, total=False):
         """
@@ -793,38 +791,17 @@ class QTempGaussMC(VSObject):
         return clip
 
     def _binomial_degrain(self, clip: vs.VideoNode, tr: int, **degrain_args: Any) -> vs.VideoNode:
-        from numpy import linalg, zeros
-
-        def _get_weights(n: int) -> Iterable[Any]:
-            k, rhs = 1, list[int]()
-            mat = zeros((n + 1, n + 1))
-
-            for i in range(1, n + 2):
-                mat[n + 1 - i, i - 1] = mat[n, i - 1] = 1 / 3
-                rhs.append(k)
-                k = k * (2 * n + 1 - i) // i
-
-            mat[n, 0] = 1
-
-            return linalg.solve(mat, rhs)
-
         if not tr:
             return clip
 
-        backward, forward = self.mv.vectors.get_vectors(tr=tr)
-        vectors = MotionVectors()
-        degrained = list[vs.VideoNode]()
-
-        for delta in range(tr):
-            vectors.set_vector(backward[delta], MVDirection.BACKWARD, 1)
-            vectors.set_vector(forward[delta], MVDirection.FORWARD, 1)
-
-            degrained.append(
-                self.mv.degrain(clip, vectors=vectors, thsad=self.basic_thsad, thscd=self.analyze_thscd, **degrain_args)
-            )
-            vectors.clear()
-
-        return BlurMatrix.custom(_get_weights(tr), ConvMode.TEMPORAL)([clip, *degrained], func=self._binomial_degrain)
+        return self.mv.degrain(
+            clip,
+            tr=tr,
+            thsad=self.basic_thsad,
+            thscd=self.analyze_thscd,
+            weights=BlurMatrix.BINOMIAL(radius=tr),
+            **degrain_args,
+        )
 
     def _apply_prefilter(self) -> None:
         self.draft = Catrom().bob(self.clip, tff=self.tff) if self.tff.is_inter and not self.is_repair else self.clip
@@ -889,11 +866,11 @@ class QTempGaussMC(VSObject):
         )
 
         self.mv = MVTools(self.draft, **{**self.analyze_preset, "search_clip": self.prefilter_output})
-        self.mv.analyze(tr=tr, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+        self.mv.analyze(tr=tr, blksize=blksize, overlap_div=overlap)
 
         for _ in range(self.analyze_refine):
             blksize = refine_blksize(blksize)
-            self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+            self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap)
 
     def _apply_denoise(self) -> None:
         self.denoise_output = self.clip
@@ -980,7 +957,6 @@ class QTempGaussMC(VSObject):
 
         if self.is_repair and self.basic_mask_args.get("ml", 0):
             mask = self.mv.mask(
-                self.prefilter_output,
                 direction=MVDirection.BACKWARD,
                 kind=MaskMode.SAD,
                 thscd=self.analyze_thscd,
@@ -1017,7 +993,7 @@ class QTempGaussMC(VSObject):
     def _apply_source_match(self, clip: vs.VideoNode) -> vs.VideoNode:
         def _error_adjustment(ref: vs.VideoNode, clip: vs.VideoNode, tr: int) -> vs.VideoNode:
             tr_f = 2 * tr - 1
-            binomial_coeff = factorial(tr_f) // factorial(tr) // factorial(tr_f - tr)
+            binomial_coeff = math.comb(tr_f, tr)
             error_adj = 2**tr_f / (binomial_coeff + self.source_match_similarity * (2**tr_f - binomial_coeff))
 
             return norm_expr([ref, clip], "x {adj} 1 + * y {adj} * -", adj=error_adj, func=_error_adjustment)
@@ -1206,9 +1182,8 @@ class QTempGaussMC(VSObject):
 
             if self.motion_blur_mask_args.get("ml", 0):
                 mask = self.mv.mask(
-                    self.prefilter_output,
                     direction=MVDirection.BACKWARD,
-                    kind=MaskMode.MOTION,
+                    kind=MaskMode.VECTOR_LENGTH,
                     thscd=self.analyze_thscd,
                     **self.motion_blur_mask_args,
                 )

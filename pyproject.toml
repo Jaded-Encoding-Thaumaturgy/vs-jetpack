@@ -124,8 +124,9 @@ denoise = [
     "dfttest2[cpu]>=10 ; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
     "vapoursynth-deblock>=8.0",
     "vapoursynth-fmtconv>=31",
-    "vapoursynth-manipmv>=1.3.0",
-    "vapoursynth-mvtools>=26",
+    # TODO: uncomment when manipmv is bumped and add it to the README
+    # "vapoursynth-manipmv>=1.6.0",
+    "vapoursynth-mvutensils>=2",
     "vapoursynth-nlm-ispc>=3",
 ]
 dehalo = ["vsjetpack[denoise]"]
@@ -201,7 +202,7 @@ dev = [
 test = [
     "pytest>=9.0.0, <10.0.0",
     "pytest-cov>=7.1.0, <8.0.0",
-    "vsjetengine>=1.5.0",
+    "vsjetengine>=1.5.1",
 ]
 doc = [
     "orderedsets",
@@ -307,6 +308,7 @@ distance-dirty = "{next_version}.dev{distance}+{vcs}{rev}.dirty"
 [tool.pytest.ini_options]
 pythonpath = "."
 testpaths = "tests"
+addopts = "--import-mode=importlib"
 
 [tool.coverage.run]
 source = [
@@ -356,6 +358,7 @@ exclude = [
     "stubs/tensorrt_rtx",
     "stubs/tensorrt_rtx_bindings",
 ]
+explicit_package_bases = true
 
 # Flags changed by --strict
 warn_return_any = false

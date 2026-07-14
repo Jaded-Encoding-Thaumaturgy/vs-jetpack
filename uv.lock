@@ -2461,24 +2461,6 @@ wheels = [
 ]
 
 [[package]]
-name = "vapoursynth-manipmv"
-version = "1.5.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/37/f0/8e4486fc4c827f00171f6ddd04d84668d2f386533cdafc060ddfe14f4a85/vapoursynth_manipmv-1.5.0.tar.gz", hash = "sha256:21858a01ccaf7c1afe47d1e79a69139e5e6c7685398fbfaaa63710dbaf7b4892", size = 67624, upload-time = "2026-06-02T00:18:49.646Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f6/2d/e49f244f5ae180fd923aa599ad597d18400c5f7c7ef57538d70e46f43f8b/vapoursynth_manipmv-1.5.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:95301548c1d5ba33f9e69cf282d542cd031cc930476bda9ccf1b30070efc38a7", size = 19925, upload-time = "2026-06-02T00:18:42.473Z" },
-    { url = "https://files.pythonhosted.org/packages/b2/b3/f8636ab3208ddcc605d29ef6af03c0d1547bf4d5a5540038076d7ce3d69f/vapoursynth_manipmv-1.5.0-py3-none-macosx_11_0_x86_64.whl", hash = "sha256:cb6a2f1e1fbe48659152507ab37bc432ad94597995bae3c3459264ccd7cdcaa5", size = 19382, upload-time = "2026-06-02T00:18:43.611Z" },
-    { url = "https://files.pythonhosted.org/packages/c6/00/5c4f8259e4758a4eff286194e09d25c73acb735d922307abb0ec425504e2/vapoursynth_manipmv-1.5.0-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:10d6c4a2a835bfe06631e4be1dcd99b8fcc1296423bf382d8a30ef4226a36417", size = 19588, upload-time = "2026-06-02T00:18:44.634Z" },
-    { url = "https://files.pythonhosted.org/packages/75/23/71a510b227c4ebf727f41fc58f7de78ebcfdbbde88434b2131e464ef816a/vapoursynth_manipmv-1.5.0-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:9d953a5c16e48af417fcd6baa92c117a423e123d24712455356e766ba3792aef", size = 30498, upload-time = "2026-06-02T00:18:45.601Z" },
-    { url = "https://files.pythonhosted.org/packages/40/a0/a745fee3f88c992c5d1b3c8996271538ed03c668401eaee3a9fe7d2170f8/vapoursynth_manipmv-1.5.0-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:8c19247ea8a8cda6689410503e4cd9c5c112ce5451b409a2061ba15b8c4df48a", size = 19495, upload-time = "2026-06-02T00:18:46.746Z" },
-    { url = "https://files.pythonhosted.org/packages/83/cb/17ef56da38433f7b2b7a5df7f77b37bf24b35547e990516c13fc0ff3a5c8/vapoursynth_manipmv-1.5.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:8ead0685e86d297ad5dda9adaa5188491b250a767e302e544d2cf92e7d0b3da6", size = 30239, upload-time = "2026-06-02T00:18:47.65Z" },
-    { url = "https://files.pythonhosted.org/packages/d7/ea/1e7bb8d2b8d89d2380a418a0f21dc681d9199266cb5d9daf872cd40b004f/vapoursynth_manipmv-1.5.0-py3-none-win_amd64.whl", hash = "sha256:4fb3113a3877390ae5cc54915dc37ccb26b6dbf911cc3b8b3a50ce3acacbe875", size = 134600, upload-time = "2026-06-02T00:18:48.662Z" },
-]
-
-[[package]]
 name = "vapoursynth-mlrt-migx"
 version = "15.16"
 source = { registry = "https://pypi.org/simple" }
@@ -2590,21 +2572,21 @@ wheels = [
 ]
 
 [[package]]
-name = "vapoursynth-mvtools"
-version = "29"
+name = "vapoursynth-mvutensils"
+version = "2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d0/e1/9a83c0b7fe2fa764bd9f309dba5f08e8849ffb87c09cf6cbefd410725fc1/vapoursynth_mvtools-29.tar.gz", hash = "sha256:e174ee9f07bcc4058c572559572de5c44e3a847b08dd658520a9130a272c587e", size = 288166, upload-time = "2026-06-21T15:20:41.426Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ce/d2/1899f56cacb5940a0e20b25aeca539dce6d50addd89266dedcedec40780d/vapoursynth_mvutensils-2.tar.gz", hash = "sha256:2c30093decf4859d023bd255fa2a68e1d29f6fe170597fa2b15c8789a676ddc2", size = 169253, upload-time = "2026-07-08T18:52:03.951Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/4a/96b5d75b693c0129535246b1626888695e3d335804d8a00e21e285e8ff18/vapoursynth_mvtools-29-py3-none-macosx_15_0_arm64.whl", hash = "sha256:c081fb4b367ebd44f2b56cf38e43ff146dd5f31ec31dacbf6cd8bf6560aa2478", size = 1026238, upload-time = "2026-06-21T15:20:30.454Z" },
-    { url = "https://files.pythonhosted.org/packages/b0/dd/50d1d1e6d831fe92f48fcc2d10794c57252408ace91077ee84d8d7ae4de9/vapoursynth_mvtools-29-py3-none-macosx_15_0_x86_64.whl", hash = "sha256:31556aaa6ba5e86e286ef7977e0359b547db9ea327143dc587dfc787fd1b9135", size = 2244996, upload-time = "2026-06-21T15:20:32.064Z" },
-    { url = "https://files.pythonhosted.org/packages/fd/53/3913b49baa697443dfaf622a27a6dde72c9cb1c06649c5f65dbcf70b08e7/vapoursynth_mvtools-29-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:402b9c431def570bae755d6e6dbd07537b219175fe17040305d056af3cb23f76", size = 1598901, upload-time = "2026-06-21T15:20:33.64Z" },
-    { url = "https://files.pythonhosted.org/packages/a1/7b/fe16b0dd4d032387e39f951e642baf2da4d37086fba4acaf87283a0a257a/vapoursynth_mvtools-29-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ceee185fe4a6fd4058612823bfb93c4c64e981d661248108de99a6560553bc2a", size = 2470300, upload-time = "2026-06-21T15:20:34.933Z" },
-    { url = "https://files.pythonhosted.org/packages/e2/90/e2a9b6bb0aee75b668c731a969d9909c2bf3da9c0b1c39a3e03fe7a7c9c7/vapoursynth_mvtools-29-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:c0b0afe8a1c506c6bd1e1f7d2a25e79e1dec4bd41df67885662cd8152813726d", size = 2720743, upload-time = "2026-06-21T15:20:36.375Z" },
-    { url = "https://files.pythonhosted.org/packages/d9/26/0578ce91e278ce276a1cffce70c3034726e5a16cee016d86f40d392ac85f/vapoursynth_mvtools-29-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:7f650243431bb6c0d23c97ff1baeac0afb8ab67dfbc0f9dce2142a71ac1fe1f2", size = 3278187, upload-time = "2026-06-21T15:20:37.892Z" },
-    { url = "https://files.pythonhosted.org/packages/28/f5/1697a4c7238f442a24982a3e5b7b4cbc54d411b40bf3f83b955ab0ed3cc2/vapoursynth_mvtools-29-py3-none-win_amd64.whl", hash = "sha256:d64d6525d88ce52572f93e04598083c7cff2a92bf6bc269168130fd7a5227746", size = 2757970, upload-time = "2026-06-21T15:20:39.823Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/a9/f6b20987cc7b54063e5bfe18afca7317eb57d2c81c38e2424d14989f5705/vapoursynth_mvutensils-2-py3-none-macosx_15_0_arm64.whl", hash = "sha256:d86cf4d6bf635bcd5dba8e0c86b72106528e930bceb0dc2c9ea360c2868e0b74", size = 1011181, upload-time = "2026-07-08T18:51:51.686Z" },
+    { url = "https://files.pythonhosted.org/packages/92/63/7fdd0d6c8db6dec7531d9e69419d422ebbb52dc3517fb7fef106a7bb896c/vapoursynth_mvutensils-2-py3-none-macosx_15_0_x86_64.whl", hash = "sha256:3f17eb0ae833f820907d75b84fb5329d8754bfc0ab6fda3642b0ce9f9d078c84", size = 4743204, upload-time = "2026-07-08T18:51:53.543Z" },
+    { url = "https://files.pythonhosted.org/packages/7b/a2/9c421d12fdbd0f0b303d471be7c85ce2e3e5ba62632dbcdae73dbd2e966c/vapoursynth_mvutensils-2-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:bc46767e503c9535d166be887bd5b96b984038ced23e75cd7ed1508ab3c0e3e3", size = 1279723, upload-time = "2026-07-08T18:51:55.539Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/ab/bb4f85122321629d4c321be1e7682f4d59f8f528813a11fa309afe3f0e23/vapoursynth_mvutensils-2-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3406573defbf5e4378b046c8685f96ac23b1d58c56f6ce56df3eaf30c750d00e", size = 4490179, upload-time = "2026-07-08T18:51:57.289Z" },
+    { url = "https://files.pythonhosted.org/packages/09/16/522f3d7e7fd3edc25f16fee8e34c8de67879f27820d3136d8419308adc8f/vapoursynth_mvutensils-2-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:32e1d10d3baf56854fb0b48ec8b2e8be6b8ab627a5f543a539ad2063f15238b2", size = 2556286, upload-time = "2026-07-08T18:51:58.916Z" },
+    { url = "https://files.pythonhosted.org/packages/cf/67/4a842adfa71a31c4b448c194cde538fd0a094d72baa75f4b9d1a3c63ad47/vapoursynth_mvutensils-2-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:8615d22ec67ee728b8cbff84a89a84ce4e9fa5db361bcacac3c5352b5022fe10", size = 5483109, upload-time = "2026-07-08T18:52:00.433Z" },
+    { url = "https://files.pythonhosted.org/packages/8f/ac/e8f46de19ceede948e2f2f7242751bd7c19abf7fbdf8d92bc8f3f66241b9/vapoursynth_mvutensils-2-py3-none-win_amd64.whl", hash = "sha256:bf0928851ebb7712e93acbd92d0b9323d2a56f9cd448c95dec846a6f4af8a8e3", size = 8633127, upload-time = "2026-07-08T18:52:02.106Z" },
 ]
 
 [[package]]
@@ -2800,14 +2782,14 @@ wheels = [
 
 [[package]]
 name = "vsjetengine"
-version = "1.5.0"
+version = "1.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/5a/f9f67ab3be39ee4561098266b0a3bbf45834efee7cdf09e3c53e432e464a/vsjetengine-1.5.0.tar.gz", hash = "sha256:b860f9ba29ba9651d81bc0a12948873d65a2f8a63afee33c54c1c74fa8fe6030", size = 49558, upload-time = "2026-07-12T03:20:16.652Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/7b/b483c48cf174ad8d1ee1e16c18419b0501a32dbee3e8a92bd52e36ddc804/vsjetengine-1.5.1.tar.gz", hash = "sha256:eb703a6f88d589ec9344952b812a82e797650334821de25564d7a191fff17885", size = 49879, upload-time = "2026-07-13T02:52:39.743Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dc/3b/0c794aef10424b1bcf1f170c4bff1978580d94fed39d735628767a6d5651/vsjetengine-1.5.0-py3-none-any.whl", hash = "sha256:5da63785a515d57a709e5de8fac313276581050290f058493869a9d9f4ee34bf", size = 39343, upload-time = "2026-07-12T03:20:15.426Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/74/6d466da915cab5a370ed2eb0dbe1288ba25dddd089bb20876576251b1cb3/vsjetengine-1.5.1-py3-none-any.whl", hash = "sha256:5fc77f5b8d7227fa9ebfcc39c46941f75405b77ba7618f1ec41ea20e0fb23f0c", size = 39375, upload-time = "2026-07-13T02:52:38.285Z" },
 ]
 
 [[package]]
@@ -2894,9 +2876,8 @@ deband = [
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-lsmas" },
-    { name = "vapoursynth-manipmv" },
     { name = "vapoursynth-mlrt-ov" },
-    { name = "vapoursynth-mvtools" },
+    { name = "vapoursynth-mvutensils" },
     { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
@@ -2934,9 +2915,8 @@ dehalo = [
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-lsmas" },
-    { name = "vapoursynth-manipmv" },
     { name = "vapoursynth-mlrt-ov" },
-    { name = "vapoursynth-mvtools" },
+    { name = "vapoursynth-mvutensils" },
     { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
@@ -2974,9 +2954,8 @@ deinterlace = [
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-lsmas" },
-    { name = "vapoursynth-manipmv" },
     { name = "vapoursynth-mlrt-ov" },
-    { name = "vapoursynth-mvtools" },
+    { name = "vapoursynth-mvutensils" },
     { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
@@ -3014,9 +2993,8 @@ denoise = [
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-lsmas" },
-    { name = "vapoursynth-manipmv" },
     { name = "vapoursynth-mlrt-ov" },
-    { name = "vapoursynth-mvtools" },
+    { name = "vapoursynth-mvutensils" },
     { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
@@ -3054,9 +3032,8 @@ full = [
     { name = "vapoursynth-fmtconv" },
     { name = "vapoursynth-hysteresis" },
     { name = "vapoursynth-lsmas" },
-    { name = "vapoursynth-manipmv" },
     { name = "vapoursynth-mlrt-ov" },
-    { name = "vapoursynth-mvtools" },
+    { name = "vapoursynth-mvutensils" },
     { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
@@ -3408,11 +3385,6 @@ requires-dist = [
     { name = "vapoursynth-lsmas", marker = "extra == 'mask'", specifier = ">=1282.0.0" },
     { name = "vapoursynth-lsmas", marker = "extra == 'scale'", specifier = ">=1282.0.0" },
     { name = "vapoursynth-lsmas", marker = "extra == 'source'", specifier = ">=1282.0.0" },
-    { name = "vapoursynth-manipmv", marker = "extra == 'deband'", specifier = ">=1.3.0" },
-    { name = "vapoursynth-manipmv", marker = "extra == 'dehalo'", specifier = ">=1.3.0" },
-    { name = "vapoursynth-manipmv", marker = "extra == 'deinterlace'", specifier = ">=1.3.0" },
-    { name = "vapoursynth-manipmv", marker = "extra == 'denoise'", specifier = ">=1.3.0" },
-    { name = "vapoursynth-manipmv", marker = "extra == 'full'", specifier = ">=1.3.0" },
     { name = "vapoursynth-mlrt-migx", marker = "sys_platform == 'linux' and extra == 'amd'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'amd'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'nvidia'", specifier = ">=15.16" },
@@ -3429,11 +3401,11 @@ requires-dist = [
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'scale'", specifier = ">=15.16" },
     { name = "vapoursynth-mlrt-trt", marker = "extra == 'nvidia'", specifier = ">=15.16.1" },
     { name = "vapoursynth-mlrt-trt-rtx", marker = "extra == 'nvidia'", specifier = ">=15.16.1" },
-    { name = "vapoursynth-mvtools", marker = "extra == 'deband'", specifier = ">=26" },
-    { name = "vapoursynth-mvtools", marker = "extra == 'dehalo'", specifier = ">=26" },
-    { name = "vapoursynth-mvtools", marker = "extra == 'deinterlace'", specifier = ">=26" },
-    { name = "vapoursynth-mvtools", marker = "extra == 'denoise'", specifier = ">=26" },
-    { name = "vapoursynth-mvtools", marker = "extra == 'full'", specifier = ">=26" },
+    { name = "vapoursynth-mvutensils", marker = "extra == 'deband'", specifier = ">=2" },
+    { name = "vapoursynth-mvutensils", marker = "extra == 'dehalo'", specifier = ">=2" },
+    { name = "vapoursynth-mvutensils", marker = "extra == 'deinterlace'", specifier = ">=2" },
+    { name = "vapoursynth-mvutensils", marker = "extra == 'denoise'", specifier = ">=2" },
+    { name = "vapoursynth-mvutensils", marker = "extra == 'full'", specifier = ">=2" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'deband'", specifier = ">=3" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'dehalo'", specifier = ">=3" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'deinterlace'", specifier = ">=3" },
@@ -3514,7 +3486,7 @@ dev = [
     { name = "ruff", specifier = "~=0.15.0" },
     { name = "scipy-stubs", specifier = ">=1.16.0.0" },
     { name = "types-psutil", specifier = ">=7.0.0.20250801" },
-    { name = "vsjetengine", specifier = ">=1.5.0" },
+    { name = "vsjetengine", specifier = ">=1.5.1" },
     { name = "vsstubs", specifier = ">=2.1.1" },
     { name = "vstransitions", specifier = "==0.1.4" },
 ]
@@ -3533,7 +3505,7 @@ doc = [
 test = [
     { name = "pytest", specifier = ">=9.0.0,<10.0.0" },
     { name = "pytest-cov", specifier = ">=7.1.0,<8.0.0" },
-    { name = "vsjetengine", specifier = ">=1.5.0" },
+    { name = "vsjetengine", specifier = ">=1.5.1" },
 ]
 
 [[package]]

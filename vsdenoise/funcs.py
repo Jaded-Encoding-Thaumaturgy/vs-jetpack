@@ -4,7 +4,7 @@ This module contains general denoising functions built on top of base denoisers.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, Literal, overload
 
 from jetpytools import MISSING, CustomRuntimeError, FuncExcept, KwargsNotNone, MissingT, fallback, normalize_seq
@@ -18,11 +18,7 @@ from vstools import Planes, VSFunctionNoArgs, check_ref_clip, get_color_family, 
 from .mvtools import MotionVectors, MVTools, MVToolsPreset, refine_blksize
 from .prefilters import PrefilterLike
 
-__all__ = [
-    "ccd",
-    "mc_clamp",
-    "mc_degrain",
-]
+__all__ = ["ccd", "mc_clamp", "mc_degrain"]
 
 
 @overload
@@ -31,15 +27,16 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = ...,
+    preset: Mapping[str, Any] = ...,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     export_globals: Literal[False] = False,
     planes: Planes = None,
 ) -> vs.VideoNode: ...
@@ -51,15 +48,16 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = ...,
+    preset: Mapping[str, Any] = ...,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     *,
     export_globals: Literal[True],
     planes: Planes = None,
@@ -72,15 +70,16 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = ...,
+    preset: Mapping[str, Any] = ...,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     export_globals: bool = ...,
     planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]: ...
@@ -91,15 +90,16 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = MVToolsPreset.HQ_SAD,
+    preset: Mapping[str, Any] = MVToolsPreset.HQ_SAD,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     export_globals: bool = False,
     planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]:
@@ -116,6 +116,7 @@ def mc_degrain(
         mfilter: Filter or clip to use where degrain couldn't find a matching block.
         preset: MVTools preset defining base values for the MVTools object. Default is HQ_SAD.
         tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
+        delta: Specific delta(s) of motion vectors to use.
         blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
         overlap: The blksize divisor for block overlap. Larger overlapping reduces blocking artifacts.
         refine: Number of times to recalculate motion vectors with halved block size.
@@ -124,7 +125,7 @@ def mc_degrain(
             taken from pixels of source clip.
         thsad_recalc: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value is
             scaled to 8x8 block size.
-        limit: Maximum allowed change in pixel values.
+        limit: Maximum allowed change in pixel values (8-bit scale).
         thscd: Scene change detection thresholds:
 
                - First value: SAD threshold for considering a block changed between frames.
@@ -137,7 +138,7 @@ def mc_degrain(
         Motion compensated and temporally filtered clip with reduced noise. If export_globals is true: A tuple
         containing the processed clip and the MVTools object.
     """
-    mv_args = preset | KwargsNotNone(search_clip=prefilter)
+    mv_args = {**preset, **KwargsNotNone(search_clip=prefilter)}
 
     thsad_recalc = fallback(thsad_recalc, round((thsad[0] if isinstance(thsad, tuple) else thsad) / 2))
 
@@ -145,13 +146,13 @@ def mc_degrain(
     mfilter = mfilter(mv.clip) if callable(mfilter) else fallback(mfilter, mv.clip)
 
     if not vectors:
-        mv.analyze(tr=tr, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+        mv.analyze(tr=tr, delta=delta, blksize=blksize, overlap_div=overlap_div)
 
         for _ in range(refine):
             blksize = refine_blksize(blksize)
-            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap_div)
 
-    den = mv.degrain(mfilter, mv.clip, None, tr, thsad, limit, thscd, planes)
+    den = mv.degrain(mfilter, super=mv.clip, tr=tr, delta=delta, thsad=thsad, limit=limit, thscd=thscd, planes=planes)
 
     return (den, mv) if export_globals else den
 
