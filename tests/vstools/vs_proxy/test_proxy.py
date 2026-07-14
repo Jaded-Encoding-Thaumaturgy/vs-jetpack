@@ -16,7 +16,7 @@ from vsengine.policy import ManagedEnvironment
 import __main__
 import vstools.vs_proxy.proxy as vs_proxy
 from vstools import VSCoreProxy, core, vs
-from vstools.vs_proxy.proxy import CoreProxy, FunctionProxy, PluginProxy, _find_ref
+from vstools.vs_proxy.proxy import CoreProxy, _find_ref
 
 _creation_called_cores = list[int]()
 
@@ -25,6 +25,7 @@ def _on_creation_callback(core_id: int) -> None:
     _creation_called_cores.append(core_id)
 
 
+@pytest.mark.vpy("no-policy")
 def test_interactive_env_emulation(monkeypatch: pytest.MonkeyPatch) -> None:
     # Back up
     if hasattr(__main__, "__file__"):
@@ -168,10 +169,10 @@ def test_core_proxy_proxied() -> None:
 @pytest.mark.vpy("unique-core")
 def test_plugin_and_function_proxies() -> None:
     plugin = core.lazy.std
-    assert isinstance(plugin, PluginProxy)
+    assert isinstance(plugin, vs_proxy.PluginProxy)
 
     func = plugin.BlankClip
-    assert isinstance(func, FunctionProxy)
+    assert isinstance(func, vs_proxy.FunctionProxy)
     assert func()
 
 
@@ -180,11 +181,11 @@ def test_core_proxy_lazy(vpy_stage: str) -> None:
     if vpy_stage == "no-core":
         assert not core.active
         lazy_std = core.lazy.std
-        assert isinstance(lazy_std, PluginProxy)
+        assert isinstance(lazy_std, vs_proxy.PluginProxy)
         assert not core.active
 
         lazy_func = lazy_std.BlankClip
-        assert isinstance(lazy_func, FunctionProxy)
+        assert isinstance(lazy_func, vs_proxy.FunctionProxy)
         assert not core.active
 
         with pytest.raises(vs.Error):
