@@ -81,8 +81,7 @@ def adg_mask(
     func = func or adg_mask
 
     luma = get_y(clip)
-    # TODO: std.PlaneStats R78 doesn't support fp16. vsjetpack can probably be bumped safely to simplify this.
-    y = depth(luma, 32, vs.FLOAT) if fp16 and vs.__version__ < (78, 0) else depth(luma, range_out=vs.RANGE_FULL)
+    y = depth(luma, range_out=vs.RANGE_FULL)
     y, y_inv = y.std.PlaneStats(prop="P"), y.std.Invert().std.PlaneStats(prop="P")
 
     expr = ExprList(["x mask_max /"])
@@ -95,7 +94,7 @@ def adg_mask(
     expr.append("mask_max * 0.5 +" if y.format.sample_type == vs.INTEGER else "0 1 clamp")
 
     def adgfunc(y: vs.VideoNode, ls: float) -> vs.VideoNode:
-        return norm_expr(y, expr, format=luma, func=func, ls=ls)
+        return norm_expr(y, expr, func=func, ls=ls)
 
     scaled_clips = [adgfunc(y_inv if ls < 0 else y, abs(ls)) for ls in to_arr(luma_scaling)]
 
