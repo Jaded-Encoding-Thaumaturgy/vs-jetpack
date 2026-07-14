@@ -10,6 +10,7 @@ from vsrgtools import box_blur, gauss_blur
 from vstools import (
     DitherType,
     Range,
+    UnsupportedColorFamilyError,
     core,
     depth,
     get_lowest_value,
@@ -65,6 +66,8 @@ def adg_mask(
     Returns:
         A single mask or a list of masks (if `luma_scaling` is a sequence), corresponding to the input clip.
     """
+    UnsupportedColorFamilyError.check(clip, [vs.GRAY, vs.YUV])
+
     fp16 = clip.format.bits_per_sample == 16 and clip.format.sample_type == vs.FLOAT
 
     # Converting to full range is necessary to have meaningful planestats
