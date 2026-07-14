@@ -7,7 +7,7 @@ from typing import Any, Literal, Self, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError, CustomValueError, FuncExcept, fallback, iterate, to_arr
 
-from vsexprtools import ExprList, ExprOp, ExprVars
+from vsexprtools import ExprList, ExprOp, ExprVars, norm_expr
 from vstools import ConvMode, Planes, core, shift_clip_multi, vs
 
 __all__ = ["BlurMatrix", "BlurMatrixBase"]
@@ -72,74 +72,111 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
             Processed (blurred) video clip.
         """
         func = func or self
-
         clip = to_arr(clip)
+        expr_kwargs = expr_kwargs or {}
 
         if len(self) <= 1:
             return clip[0]
 
-        expr_kwargs = expr_kwargs or {}
+        process = self._spatial_conv if self.mode.is_spatial else self._temporal_conv
+        return process(clip, planes, bias, divisor, saturate, passes, func, expr_kwargs, **kwargs)
 
-        fp16 = clip[0].format.sample_type == vs.FLOAT and clip[0].format.bits_per_sample == 16
+    def _spatial_conv(
+        self,
+        clip: list[vs.VideoNode],
+        planes: Planes,
+        bias: float | None,
+        divisor: float | None,
+        saturate: bool,
+        passes: int,
+        func: FuncExcept,
+        expr_kwargs: dict[str, Any],
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        if len(clip) > 1:
+            raise CustomValueError("You can't pass multiple clips when using a spatial mode.", func)
 
-        # Spatial mode
-        if self.mode.is_spatial:
-            if len(clip) > 1:
-                raise CustomValueError("You can't pass multiple clips when using a spatial mode.", func)
+        valid_coefs = all(-1023 <= x <= 1023 for x in self)
+        valid_length = len(self) <= 121 if self.mode == ConvMode.SQUARE else len(self) <= 25
 
-            # TODO: https://github.com/vapoursynth/vapoursynth/issues/1229
-            if all(
-                [
-                    not fp16,
-                    len(self) <= 25,
-                    all(-1023 <= x <= 1023 for x in self),
-                    self.mode == ConvMode.SQUARE and clip[0].format.sample_type == vs.FLOAT,
-                ]
-            ):
-                return iterate(clip[0], core.std.Convolution, passes, self, bias, divisor, planes, saturate, self.mode)
-
+        if valid_coefs and valid_length:
             return iterate(
                 clip[0],
-                ExprOp.convolution("x", self, bias, fallback(divisor, True), saturate, self.mode, **expr_kwargs),
+                lambda c: core.std.Convolution(c, self, bias, divisor, planes, saturate, self.mode),
                 passes,
-                planes=planes,
-                func=func,
-                **kwargs,
             )
 
-        # Temporal mode
-        use_std = all(
-            [
-                not fp16,
-                len(self) <= 31,
-                all(-1023 <= x <= 1023 for x in self),
-                not bias,
-                saturate,
-            ]
+        return iterate(
+            clip[0],
+            ExprOp.convolution("x", self, bias, fallback(divisor, True), saturate, self.mode, **expr_kwargs),
+            passes,
+            planes=planes,
+            func=func,
+            **kwargs,
         )
+
+    def _temporal_conv(
+        self,
+        clip: list[vs.VideoNode],
+        planes: Planes,
+        bias: float | None,
+        divisor: float | None,
+        saturate: bool,
+        passes: int,
+        func: FuncExcept,
+        expr_kwargs: dict[str, Any],
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        use_std = len(self) <= 31 and all(-1023 <= x <= 1023 for x in self) and not bias and saturate
 
         if len(clip) > 1:
             if passes != 1:
                 raise CustomValueError(
-                    "`passes` are not supported when passing multiple clips in temporal mode", func, passes
+                    "`passes` are not supported when passing multiple clips in temporal mode",
+                    func,
+                    passes,
                 )
 
             if use_std:
                 return core.std.AverageFrames(clip, self, divisor, planes=planes)
 
-            return ExprOp.convolution(
-                ExprVars(len(clip)), self, bias, fallback(divisor, True), saturate, self.mode, **expr_kwargs
-            )(clip, planes=planes, func=func, **kwargs)
+            return norm_expr(
+                clip,
+                ExprOp.convolution(
+                    ExprVars(len(clip)),
+                    self,
+                    bias,
+                    fallback(divisor, True),
+                    saturate,
+                    self.mode,
+                    **expr_kwargs,
+                ),
+                planes,
+                func=func,
+                **kwargs,
+            )
 
-        # std.AverageFrames doesn't support premultiply, multiply and clamp from ExprOp.convolution
+        # std.AverageFrames doesn't support premultiply, multiply, and clamp from ExprOp.convolution
         if use_std and not expr_kwargs and kwargs.keys() <= {"scenechange"}:
-            return iterate(clip[0], core.std.AverageFrames, passes, self, divisor, planes=planes, **kwargs)
+            return iterate(
+                clip[0],
+                lambda c: core.std.AverageFrames(c, self, divisor, planes=planes, **kwargs),
+                passes,
+            )
 
-        return self._averageframes_akarin(
-            clip[0], planes, bias, divisor, saturate, passes, expr_kwargs, func=func, **kwargs
+        return self._averageframes_expr(
+            clip[0],
+            planes,
+            bias,
+            divisor,
+            saturate,
+            passes,
+            expr_kwargs,
+            func=func,
+            **kwargs,
         )
 
-    def _averageframes_akarin(self, *args: Any, **kwargs: Any) -> vs.VideoNode:
+    def _averageframes_expr(self, *args: Any, **kwargs: Any) -> vs.VideoNode:
         clip, planes, bias, divisor, saturate, passes, expr_kwargs = args
 
         r = len(self) // 2
@@ -198,10 +235,7 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
         if premultiply := expr_kwargs.get("premultiply", None):
             expr.append(premultiply, ExprOp.MUL)
 
-        if divisor:
-            expr.append(divisor, ExprOp.DIV)
-        else:
-            expr.append(sum(self), ExprOp.DIV)
+        expr.append(divisor or sum(self), ExprOp.DIV)
 
         if bias:
             expr.append(bias, ExprOp.ADD)
@@ -212,7 +246,7 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
         if multiply := expr_kwargs.get("multiply", None):
             expr.append(multiply, ExprOp.MUL)
 
-        out = iterate(clip, lambda x: expr(shift_clip_multi(x, (-r, r)), planes=planes, **kwargs), passes)
+        out = iterate(clip, lambda clip: norm_expr(shift_clip_multi(clip, (-r, r)), expr, planes, **kwargs), passes)
 
         return core.std.CopyFrameProps(out, clip)
 
@@ -223,9 +257,9 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
         Returns:
             New `BlurMatrixBase` instance with 2D kernel and same mode.
         """
-        from numpy import outer
+        import numpy as np
 
-        return self.__class__(list[Nb](outer(self, self).flatten()), self.mode)  # pyright: ignore[reportArgumentType]
+        return self.__class__(list[Nb](np.outer(self, self).flatten()), self.mode)  # pyright: ignore[reportArgumentType]
 
 
 class BlurMatrix(CustomEnum):
