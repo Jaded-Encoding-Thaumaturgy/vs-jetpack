@@ -172,7 +172,7 @@ class FineDehalo[**P, R]:
             # Keeps only the sharpest edges (line edges)
             strong = norm_expr(
                 edges,
-                "x {thmif} - {thmaf} {thmif} - / mask_max *",
+                "x {thmif} - {thmaf} {thmif} - / mask_max * 0 mask_max clamp",
                 planes,
                 func=func,
                 thmif=thmif,
@@ -192,7 +192,7 @@ class FineDehalo[**P, R]:
             # Includes more edges than previously, but ignores simple details
             light = norm_expr(
                 edges,
-                "x {thlimif} - {thlimaf} {thlimif} - / mask_max *",
+                "x {thlimif} - {thlimaf} {thlimif} - / mask_max * 0 mask_max clamp",
                 planes,
                 func=func,
                 thlimif=thlimif,
@@ -226,9 +226,10 @@ class FineDehalo[**P, R]:
             # 1. If exclude is True: shr_med = max(strong, shrink), else: shr_med = strong
             # 2. base_mask = (large - shr_med) * 2    (amplify difference to saturate halo areas)
             # 3. If edgeproc > 0: mask = base_mask + (base_mask * strong * edgeproc * 2/3) else: mask = base_mask
+            # 4. Final clamp
             mask = norm_expr(
                 [strong, shrink, large],
-                "{edgeproc} not z {exclude} x y max x ? - 2 * dup x {edgeproc} 2 3 / * * + ?",
+                "{edgeproc} 0 > z {exclude} x y max x ? - 2 * dup x {edgeproc} 2 3 / * * + ? 0 mask_max clamp",
                 planes,
                 exclude=map(int, exclude),
                 edgeproc=edgeproc,
