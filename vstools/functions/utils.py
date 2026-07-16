@@ -168,20 +168,13 @@ class DitherType(CustomStrEnum):
         if force_fmtc is not cast(Never, MISSING):
             warnings.warn("`force_fmtc has been removed", category=RuntimeWarning)
 
-        if range_in is not None:
-            clip = Range.ensure_presence(clip, range_in)
-            range_in = Range.from_param(range_in)
-
-        if range_out is not None:
-            range_out = Range.from_param(range_out)
-
         return core.vszip.Dither(
             clip,
             bitdepth=out_fmt.bits_per_sample,
             dither_type=self._vszip_mode,
             sample_type=out_fmt.sample_type,
-            fulls=range_in,
-            fulld=range_out,
+            fulls=Range.from_param_or_video(range_in, clip, func_except=self.apply),
+            fulld=Range.from_param_or_video(range_out, clip, func_except=self.apply),
         )
 
 
@@ -216,8 +209,8 @@ def depth(
         clip: Input clip.
         bitdepth: Desired bitdepth of the output clip.
         sample_type: Desired sample type of output clip. Allows overriding default float/integer behavior.
-        range_in: Input pixel range (defaults to input `clip`'s range).
-        range_out: Output pixel range (defaults to input `clip`'s range).
+        range_in: Input pixel range (defaults to input `clip`'s range first frame).
+        range_out: Output pixel range (defaults to input `clip`'s range first frame).
         dither_type: Dithering algorithm. Allows overriding default dithering behavior.
 
     Returns:
@@ -228,8 +221,14 @@ def depth(
 
     in_fmt = get_video_format(clip)
     out_fmt = get_video_format(bitdepth or clip, sample_type=sample_type)
+    range_in = Range.from_param_or_video(range_in, clip, func_except=depth)
+    range_out = Range.from_param_or_video(range_out, clip, func_except=depth)
 
-    if (in_fmt.bits_per_sample, in_fmt.sample_type, range_in) == (
+    if (
+        in_fmt.bits_per_sample,
+        in_fmt.sample_type,
+        range_in,
+    ) == (
         out_fmt.bits_per_sample,
         out_fmt.sample_type,
         range_out,
