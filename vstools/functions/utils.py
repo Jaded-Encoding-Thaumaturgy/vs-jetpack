@@ -788,7 +788,8 @@ def stack_planes(
 
     Args:
         clip: Input clip to be split and visually stacked.
-        shift_float_chroma: If True, shift U and V by +0.5 when working in float YUV formats.
+        shift_float_chroma: If True, shift and scale U and V when working in float YUV formats
+            to match integer representation.
         offset_chroma: Apply chroma plane offseting:
 
                - "min": match luma minimum
@@ -816,7 +817,8 @@ def stack_planes(
 
     if clip.format.color_family is vs.YUV:
         if clip.format.sample_type is vs.FLOAT and shift_float_chroma:
-            clip = core.std.Expr(clip, ["", "x 0.5 +"])
+            expr = "x 0.5 + 224 219 / *" if Range.from_video(clip, func=stack_planes).is_limited else "x 0.5 +"
+            clip = core.akarin.Expr(clip, ["", expr])
 
         def offset_uv_planes(value: float, plane_stats: str) -> list[vs.VideoNode]:
             planes = split(clip)
