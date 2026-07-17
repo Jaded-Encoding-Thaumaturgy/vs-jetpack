@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable
-from functools import partial, wraps
+from functools import wraps
 from inspect import signature
 from typing import Any, Literal, SupportsInt, overload
 
@@ -298,7 +298,7 @@ def finalize_output[**P](
     final_args = dict[str, Any](bits=bits, clamp_tv_range=clamp_tv_range, func=func, **kwargs)
 
     if function is None:
-        return partial(finalize_output, **final_args)
+        return lambda function: finalize_output(function, **final_args)
 
     @wraps(function)
     def _wrapper(*args: P.args, **kwargs: P.kwargs) -> vs.VideoNode:
@@ -474,7 +474,7 @@ def initialize_input[**P](
     )
 
     if function is None:
-        return partial(initialize_input, **init_args)
+        return lambda function: initialize_input(function, **init_args)
 
     @wraps(function)
     def _wrapper(*args: P.args, **kwargs: P.kwargs) -> vs.VideoNode:
