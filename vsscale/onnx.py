@@ -956,7 +956,11 @@ def _get_onnx_model(
         user_provider = next((p for p in dconf.get("provider", []) if p.lower().startswith(provider.lower())), None)
         console = next((h.console for h in logger.handlers if isinstance(h, RichHandler)), None)
 
-        app(["onnx", "download", user_provider or provider, "--latest"], console=console, result_action="return_value")
+        app(
+            ["onnx", "download", user_provider or provider, "--latest", "--assumeyes"],
+            console=console,
+            result_action="return_value",
+        )
 
         with suppress(FileNotExistsError):
             if (path := get_model_path(provider, model_name)).exists():
