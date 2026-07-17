@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import warnings
 from abc import abstractmethod
 from collections.abc import Callable
 from functools import wraps
 from inspect import signature
-from typing import Any, Literal, SupportsInt, overload
+from typing import Any, Literal, Never, SupportsInt, cast, overload
 
-from jetpytools import CustomValueError, FuncExcept, StrictRange
+from jetpytools import MISSING, CustomValueError, FuncExcept, StrictRange
 
 from ..enums import (
     ChromaLocation,
@@ -307,7 +308,6 @@ def finalize_output[**P](
     return _wrapper
 
 
-@overload
 def initialize_clip(
     clip: vs.VideoNode,
     bits: int | None = 32,
@@ -317,91 +317,55 @@ def initialize_clip(
     chroma_location: ChromaLocationLike | None = None,
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
-    strict: Literal[False] = False,
-    *,
-    func: FuncExcept | None = None,
-    **kwargs: Any,
-) -> vs.VideoNode: ...
-
-
-@overload
-def initialize_clip(
-    clip: vs.VideoNode,
-    bits: int | None = 32,
-    *,
-    strict: Literal[True],
-    func: FuncExcept | None = None,
-    **kwargs: Any,
-) -> vs.VideoNode: ...
-
-
-def initialize_clip(
-    clip: vs.VideoNode,
-    bits: int | None = 32,
-    matrix: MatrixLike | None = None,
-    transfer: TransferLike | None = None,
-    primaries: PrimariesLike | None = None,
-    chroma_location: ChromaLocationLike | None = None,
-    color_range: RangeLike | None = None,
-    field_based: FieldBasedLike | None = None,
-    strict: bool = False,
+    strict: Never = cast(Never, MISSING),
     *,
     func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
-    Initialize a clip with default properties or ensure their existence.
+    Initialize a clip with core frame properties and convert its bit depth.
+
+    This function ensures that key video metadata properties are explicitly set on the clip's frame properties.
+
+    If any property is not explicitly provided, it will be resolved by:
+    1. Checking the clip's existing frame properties.
+    2. Failing that, applying heuristics based on the clip's resolution and format.
 
     It is HIGHLY recommended to always use this function at the beginning of your scripts!
 
-    This function operates in two modes defined by the `strict` parameter:
-
-    - `strict=False`: Sets missing properties. It attempts to read existing props.
-
-          * If missing, it uses the manually provided arguments.
-          * If those are None, it guesses based on resolution or video format.
-
-    - `strict=True`: Validates that the input clip has all relevant frame properties
-     (Matrix, Transfer, Primaries, ChromaLocation, Range, FieldBased) already set.
-     If any are missing, it raises an exception. Manual property arguments are not accepted.
-
     Args:
-        clip: Clip to initialize.
-        bits: Bitdepth to convert to. If None, no conversion is done. Defaults to 32.
-        matrix: Matrix property to set. Ignored if `strict=True`.
-        transfer: Transfer property to set. Ignored if `strict=True`.
-        primaries: Primaries property to set. Ignored if `strict=True`.
-        chroma_location: ChromaLocation prop to set. Ignored if `strict=True`.
-        color_range: Range prop to set. Ignored if `strict=True`.
-        field_based: FieldBased prop to set. Ignored if `strict=True`.
-        strict: Whether to strictly validate existing properties.
-            If True, arguments for specific properties (e.g. `matrix`) are not accepted.
-        func: Function returned for custom error handling. This should only be set by VS package developers.
-        **kwargs: Additional arguments passed to [depth][vstools.utils.depth].
+        clip: The input clip to initialize.
+        bits: The target bit depth to convert the clip to. If set to `None`, no bit depth
+            conversion will be performed. Defaults to 32.
+        matrix: The color matrix of the clip. If `None`, it is inferred.
+        transfer: The transfer characteristics. If `None`, it is inferred.
+        primaries: The color primaries. If `None`, it is inferred.
+        chroma_location: The chroma sample location. If `None`, it is inferred.
+        color_range: The color range. If `None`, it is inferred.
+        field_based: The field order type. If `None`, it is inferred.
+        func: Function returned for custom error handling
+        **kwargs: Additional keyword arguments forwarded to [depth][vstools.utils.depth]
 
     Returns:
-        Clip with relevant frame properties set/validated, and optionally converted to 32-bit (or target `bits`).
+        The initialized clip with all essential frame properties set and converted to the target bit depth.
     """
     func = func or initialize_clip
 
-    values: list[tuple[type[PropEnum], Any]] = [
-        (Matrix, matrix),
-        (Transfer, transfer),
-        (Primaries, primaries),
-        (ChromaLocation, chroma_location),
-        (Range, color_range),
-        (FieldBased, field_based),
-    ]
+    if strict is not cast(Never, MISSING):
+        warnings.warn("The 'strict' argument has been removed and is deprecated.", RuntimeWarning)
 
-    to_ensure_presence = list[type[PropEnum] | PropEnum]()
+    user_props: dict[type[PropEnum], Any] = {
+        Matrix: matrix,
+        Transfer: transfer,
+        Primaries: primaries,
+        ChromaLocation: chroma_location,
+        Range: color_range,
+        FieldBased: field_based,
+    }
 
-    for prop_t, prop_v in values:
-        if strict:
-            to_ensure_presence.append(prop_t)
-        else:
-            to_ensure_presence.append(prop_t.from_param_or_video(prop_v, clip, False, func))
-
-    clip = PropEnum.ensure_presences(clip, to_ensure_presence, func)
+    clip = clip.std.SetFrameProps(
+        **{p.prop_key: p.from_param_or_video(v, clip, func_except=func) for p, v in user_props.items()}
+    )
 
     return depth(clip, bits, **kwargs)
 
@@ -418,7 +382,6 @@ def initialize_input[**P](
     chroma_location: ChromaLocationLike | None = None,
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
-    strict: bool = False,
     func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> Callable[P, vs.VideoNode]: ...
@@ -450,7 +413,7 @@ def initialize_input[**P](
     chroma_location: ChromaLocationLike | None = None,
     color_range: RangeLike | None = None,
     field_based: FieldBasedLike | None = None,
-    strict: bool = False,
+    strict: Never = cast(Never, MISSING),
     func: FuncExcept | None = None,
     **kwargs: Any,
 ) -> Callable[P, vs.VideoNode] | Callable[[Callable[P, vs.VideoNode]], Callable[P, vs.VideoNode]]:
