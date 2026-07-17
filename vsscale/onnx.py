@@ -8,6 +8,7 @@ import dataclasses
 import math
 import re
 from abc import ABC
+from contextlib import suppress
 from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat
@@ -39,7 +40,7 @@ from vstools import (
 )
 
 from .generic import BaseGenericScaler
-from .mlrt import Backend, get_model_folder
+from .mlrt import Backend, get_model_path
 from .mlrt.backend.base import Backend as RealBackend
 from .mlrt.settings import get_toml_config
 
@@ -936,11 +937,11 @@ def _get_onnx_model(
     auto_download: bool | None = None,
     func: FuncExcept | None = None,
 ) -> Path:
-    try:
-        if (path := get_model_folder(provider) / f"{model_name}.onnx").exists():
+    with suppress(FileNotExistsError):
+        if (path := get_model_path(provider, model_name)).exists():
             return path
-    except FileNotExistsError:
-        logger.debug("%r does not exist", model_name)
+
+    logger.debug("%r does not exist", model_name)
 
     conf = get_toml_config()
     dconf = conf.get("onnx", {}).get("download", {})
@@ -957,8 +958,9 @@ def _get_onnx_model(
 
         app(["onnx", "download", user_provider or provider, "--latest"], console=console, result_action="return_value")
 
-        if (path := get_model_folder(provider) / f"{model_name}.onnx").exists():
-            return path
+        with suppress(FileNotExistsError):
+            if (path := get_model_path(provider, model_name)).exists():
+                return path
 
     raise CustomRuntimeError(
         f"The specified model {model_name} does not exist. "

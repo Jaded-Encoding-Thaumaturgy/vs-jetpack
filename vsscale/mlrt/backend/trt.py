@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 from vstools import UnsupportedSampleTypeError, core, depth, vs
 
-from ..settings import get_artifacts_folder, get_provider_folder
+from ..settings import get_artifact_path, get_onnx_folder
 from .base import Backend
 
 type Shape = tuple[int, int]
@@ -241,13 +241,13 @@ class TRT(Backend):
         elif self.bf16:
             network_path = self._convert_onnx_bf16(network_path)
 
-        dirname = get_artifacts_folder()
-        dirname.mkdir(parents=True, exist_ok=True)
         identity = self.get_identity(network_path, channels, tilesize)
-        engine_path = dirname / f"{identity}.engine"
+        engine_path = get_artifact_path(f"{identity}.engine", fallback=not self.force_rebuild)
 
         if not self.force_rebuild and engine_path.is_file() and engine_path.stat().st_size >= 1024:
             return engine_path
+
+        engine_path.parent.mkdir(parents=True, exist_ok=True)
 
         self.build(
             network_path=network_path,
@@ -409,10 +409,10 @@ class TRT(Backend):
 
         network = network_path.read_bytes()
 
-        get_provider_folder().mkdir(parents=True, exist_ok=True)
+        get_onnx_folder().mkdir(parents=True, exist_ok=True)
         suffix = "fp16" if not self.fp16_blacklist_ops else f"fp16_block_{'_'.join(self.fp16_blacklist_ops)}"
         checksum = zlib.crc32(network)
-        fp16_path = get_provider_folder() / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
+        fp16_path = get_onnx_folder() / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
 
         if fp16_path.is_file() and fp16_path.stat().st_size >= 1024:
             return fp16_path
@@ -448,9 +448,9 @@ class TRT(Backend):
 
         network = network_path.read_bytes()
 
-        get_provider_folder().mkdir(parents=True, exist_ok=True)
+        get_onnx_folder().mkdir(parents=True, exist_ok=True)
         checksum = zlib.crc32(network)
-        bf16_path = get_provider_folder() / f"{network_path.stem}_{checksum:x}_bf16_io.onnx"
+        bf16_path = get_onnx_folder() / f"{network_path.stem}_{checksum:x}_bf16_io.onnx"
 
         if bf16_path.is_file() and bf16_path.stat().st_size >= 1024:
             return bf16_path

@@ -22,7 +22,7 @@ from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, Trans
 from vsjetpack import __version__
 
 from .feeds import Asset, Feed, Release
-from .settings import TOML_CONFIG, TOML_KEYS, get_artifacts_folder, get_provider_folder
+from .settings import TOML_CONFIG, TOML_KEYS, get_artifacts_folder, get_onnx_folder
 
 MAX_CONCURRENCY = os.cpu_count() or 4
 
@@ -167,7 +167,7 @@ def show(
 
     match cmd:
         case "onnx":
-            folder = get_provider_folder(global_=global_)
+            folder = get_onnx_folder(global_=global_)
             ext = [".onnx"]
         case "artifact":
             folder = get_artifacts_folder(global_=global_)
@@ -199,7 +199,7 @@ def clear(
 
     match cmd:
         case "onnx":
-            folder = get_provider_folder(global_=global_)
+            folder = get_onnx_folder(global_=global_)
         case "artifact":
             folder = get_artifacts_folder(global_=global_)
         case _:
@@ -300,7 +300,7 @@ async def _select_assets(release: Release) -> list[Asset]:
 
 
 async def _download_assets(feed: Feed, release: Release, assets: Sequence[Asset], *, global_: bool = False) -> None:
-    dest_folder = anyio.Path(get_provider_folder(global_=global_) / feed.display_name.lower() / release.tag)
+    dest_folder = anyio.Path(get_onnx_folder(global_=global_) / feed.display_name.lower() / release.tag)
 
     console.print(f"[bold]Downloading to:[/bold] [cyan]{dest_folder}[/cyan]")
 

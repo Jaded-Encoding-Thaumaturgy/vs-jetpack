@@ -13,7 +13,7 @@ from jetpytools import CustomRuntimeError, CustomValueError, copy_signature, to_
 
 from vstools import UnsupportedSampleTypeError, core, vs
 
-from ..settings import get_artifacts_folder
+from ..settings import get_artifact_path
 from .base import BackendAutoConvertFloat
 
 type Shape = tuple[int, int]
@@ -145,13 +145,13 @@ class MIGX(BackendAutoConvertFloat):
         else:
             migraph_driver = shutil.which("migraphx-driver") or "migraphx-driver"
 
-        dirname = get_artifacts_folder()
-        dirname.mkdir(parents=True, exist_ok=True)
         identity = self.get_identity(network_path, tilesize)
-        program_path = dirname / f"{identity}.mxr"
+        program_path = get_artifact_path(f"{identity}.mxr", fallback=not self.force_rebuild)
 
         if not self.force_rebuild and program_path.is_file() and program_path.stat().st_size >= 1024:
             return program_path
+
+        program_path.parent.mkdir(parents=True, exist_ok=True)
 
         command: list[Any] = [
             migraph_driver,
