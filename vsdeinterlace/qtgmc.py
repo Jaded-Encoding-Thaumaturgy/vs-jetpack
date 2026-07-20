@@ -130,7 +130,7 @@ class QTempGaussMC(VSObject):
     These resources remain relevant, as the core algorithm used here is largely similar.
 
     Note that parameter names differ in this implementation due to a complete rewrite.
-    A mapping between vsjetpack and havsfunc parameters is available [here](https://gist.github.com/emotion3459/33bd2b2a2c21afc6497f65adaf7f0b02).
+    A mapping between vsjetpack and havsfunc parameters is available [here](https://gist.github.com/Ichunjo/76c96f1130c9e9f972de956f40571e54).
 
     Examples:
         - ...
