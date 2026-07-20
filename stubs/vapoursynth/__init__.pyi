@@ -1834,7 +1834,7 @@ class VideoNode(RawNode):
 # </attribute/VideoNode_bound/manipmv>
 # <attribute/VideoNode_bound/mvu>
     mvu: Final[_mvu._VideoNode_bound.Plugin]
-    """MVUtensils v1"""
+    """MVUtensils v4"""
 # </attribute/VideoNode_bound/mvu>
 # <attribute/VideoNode_bound/ncnn>
     ncnn: Final[_ncnn._VideoNode_bound.Plugin]
@@ -2124,7 +2124,7 @@ class Core:
 # </attribute/Core_bound/manipmv>
 # <attribute/Core_bound/mvu>
     mvu: Final[_mvu._Core_bound.Plugin]
-    """MVUtensils v1"""
+    """MVUtensils v4"""
 # </attribute/Core_bound/mvu>
 # <attribute/Core_bound/ncnn>
     ncnn: Final[_ncnn._Core_bound.Plugin]
@@ -3130,7 +3130,7 @@ class _placebo:
             @_Wrapper.Function
             def Shader(self, /, clip: VideoNode, shader: _AnyStr | None = None, width: _IntLike | None = None, height: _IntLike | None = None, chroma_loc: _IntLike | None = None, matrix: _IntLike | None = None, trc: _IntLike | None = None, linearize: _IntLike | None = None, sigmoidize: _IntLike | None = None, sigmoid_center: _FloatLike | None = None, sigmoid_slope: _FloatLike | None = None, antiring: _FloatLike | None = None, filter: _AnyStr | None = None, clamp: _FloatLike | None = None, blur: _FloatLike | None = None, taper: _FloatLike | None = None, radius: _FloatLike | None = None, param1: _FloatLike | None = None, param2: _FloatLike | None = None, shader_s: _AnyStr | None = None, log_level: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Tonemap(self, /, clip: VideoNode, src_csp: _IntLike | None = None, dst_csp: _IntLike | None = None, dst_prim: _IntLike | None = None, src_max: _FloatLike | None = None, src_min: _FloatLike | None = None, dst_max: _FloatLike | None = None, dst_min: _FloatLike | None = None, dynamic_peak_detection: _IntLike | None = None, smoothing_period: _FloatLike | None = None, scene_threshold_low: _FloatLike | None = None, scene_threshold_high: _FloatLike | None = None, percentile: _FloatLike | None = None, gamut_mapping: _IntLike | None = None, tone_mapping_function: _IntLike | None = None, tone_mapping_function_s: _AnyStr | None = None, tone_mapping_param: _FloatLike | None = None, metadata: _IntLike | None = None, use_dovi: _IntLike | None = None, visualize_lut: _IntLike | None = None, show_clipping: _IntLike | None = None, contrast_recovery: _FloatLike | None = None, log_level: _IntLike | None = None) -> VideoNode: ...
+            def Tonemap(self, /, clip: VideoNode, src_csp: _IntLike | None = None, dst_csp: _IntLike | None = None, dst_prim: _IntLike | None = None, src_max: _FloatLike | None = None, src_min: _FloatLike | None = None, dst_max: _FloatLike | None = None, dst_min: _FloatLike | None = None, dynamic_peak_detection: _IntLike | None = None, smoothing_period: _FloatLike | None = None, scene_threshold_low: _FloatLike | None = None, scene_threshold_high: _FloatLike | None = None, percentile: _FloatLike | None = None, gamut_mapping: _IntLike | None = None, tone_mapping_function: _IntLike | None = None, tone_mapping_function_s: _AnyStr | None = None, tone_mapping_param: _FloatLike | None = None, metadata: _IntLike | None = None, use_dovi: _IntLike | None = None, dovi_el: VideoNode | None = None, visualize_lut: _IntLike | None = None, show_clipping: _IntLike | None = None, contrast_recovery: _FloatLike | None = None, log_level: _IntLike | None = None) -> VideoNode: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
@@ -3141,7 +3141,7 @@ class _placebo:
             @_Wrapper.Function
             def Shader(self, /, shader: _AnyStr | None = None, width: _IntLike | None = None, height: _IntLike | None = None, chroma_loc: _IntLike | None = None, matrix: _IntLike | None = None, trc: _IntLike | None = None, linearize: _IntLike | None = None, sigmoidize: _IntLike | None = None, sigmoid_center: _FloatLike | None = None, sigmoid_slope: _FloatLike | None = None, antiring: _FloatLike | None = None, filter: _AnyStr | None = None, clamp: _FloatLike | None = None, blur: _FloatLike | None = None, taper: _FloatLike | None = None, radius: _FloatLike | None = None, param1: _FloatLike | None = None, param2: _FloatLike | None = None, shader_s: _AnyStr | None = None, log_level: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Tonemap(self, /, src_csp: _IntLike | None = None, dst_csp: _IntLike | None = None, dst_prim: _IntLike | None = None, src_max: _FloatLike | None = None, src_min: _FloatLike | None = None, dst_max: _FloatLike | None = None, dst_min: _FloatLike | None = None, dynamic_peak_detection: _IntLike | None = None, smoothing_period: _FloatLike | None = None, scene_threshold_low: _FloatLike | None = None, scene_threshold_high: _FloatLike | None = None, percentile: _FloatLike | None = None, gamut_mapping: _IntLike | None = None, tone_mapping_function: _IntLike | None = None, tone_mapping_function_s: _AnyStr | None = None, tone_mapping_param: _FloatLike | None = None, metadata: _IntLike | None = None, use_dovi: _IntLike | None = None, visualize_lut: _IntLike | None = None, show_clipping: _IntLike | None = None, contrast_recovery: _FloatLike | None = None, log_level: _IntLike | None = None) -> VideoNode: ...
+            def Tonemap(self, /, src_csp: _IntLike | None = None, dst_csp: _IntLike | None = None, dst_prim: _IntLike | None = None, src_max: _FloatLike | None = None, src_min: _FloatLike | None = None, dst_max: _FloatLike | None = None, dst_min: _FloatLike | None = None, dynamic_peak_detection: _IntLike | None = None, smoothing_period: _FloatLike | None = None, scene_threshold_low: _FloatLike | None = None, scene_threshold_high: _FloatLike | None = None, percentile: _FloatLike | None = None, gamut_mapping: _IntLike | None = None, tone_mapping_function: _IntLike | None = None, tone_mapping_function_s: _AnyStr | None = None, tone_mapping_param: _FloatLike | None = None, metadata: _IntLike | None = None, use_dovi: _IntLike | None = None, dovi_el: VideoNode | None = None, visualize_lut: _IntLike | None = None, show_clipping: _IntLike | None = None, contrast_recovery: _FloatLike | None = None, log_level: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/placebo>
 
