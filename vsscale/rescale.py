@@ -377,7 +377,11 @@ class Rescale(RescaleBase):
     def _generate_upscale(self, clip: vs.VideoNode) -> vs.VideoNode:
         upscale = super()._generate_upscale(clip)
 
-        merged_mask = norm_expr([self.line_mask, self.credit_mask], "x y - 0 mask_max clamp", func=self.__class__)
+        merged_mask = norm_expr(
+            [self.line_mask, self.credit_mask],
+            "x mask_max min y 0 mask_max clamp - 0 max",
+            func=self.__class__,
+        )
 
         upscale = core.std.CopyFrameProps(core.std.MaskedMerge(self._clipy, upscale, merged_mask), upscale)
 
