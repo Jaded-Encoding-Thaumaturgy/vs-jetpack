@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from functools import cache
 from itertools import count
-from typing import TYPE_CHECKING, SupportsIndex, overload
+from typing import Any, SupportsIndex, overload
 
 from jetpytools import CustomIndexError, CustomTypeError
-
-if TYPE_CHECKING:
-    from vapoursynth import _ReturnDict_akarin_Version
 
 from vstools import EXPR_VARS, HoldsVideoFormat, VideoFormatLike, get_video_format, vs
 
@@ -186,5 +183,5 @@ class ExprVars(Sequence[str], Iterator[str]):
 
 
 @cache
-def _get_akarin_expr_version() -> _ReturnDict_akarin_Version:
+def _get_akarin_expr_version() -> Mapping[str, Any]:
     return vs.core.akarin.Version()
