@@ -142,9 +142,11 @@ class GaussBlur[**P, R]:
     It is not meant to be used directly.
     """
 
+    type ConcreteBackend = Literal[GaussBlur.Backend.CPU, GaussBlur.Backend.GPU, GaussBlur.Backend.CUDA]
+
     def __init__(self, gauss_blur: Callable[P, R]) -> None:
         self._func = gauss_blur
-        self._backend = GaussBlur.Backend.CPU
+        self._backend: GaussBlur.ConcreteBackend = GaussBlur.Backend.CPU
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
@@ -176,11 +178,11 @@ class GaussBlur[**P, R]:
             finally:
                 gauss_blur.backend = old
 
-        def resolve(self) -> GaussBlur.Backend:
+        def resolve(self) -> GaussBlur.ConcreteBackend:
             return gauss_blur.backend if self is GaussBlur.Backend.AUTO else self
 
     @property
-    def backend(self) -> Backend:
+    def backend(self) -> GaussBlur.ConcreteBackend:
         """The default backend for [gauss_blur][vsrgtools.blur.gauss_blur]"""
         return self._backend
 
@@ -570,9 +572,16 @@ class Bilateral[**P, R]:
     It is not meant to be used directly.
     """
 
+    type ConcreteBackend = Literal[
+        Bilateral.Backend.CPU,
+        Bilateral.Backend.GPU,
+        Bilateral.Backend.CUDA,
+        Bilateral.Backend.CUDA_RTC,
+    ]
+
     def __init__(self, bilateral_func: Callable[P, R]) -> None:
         self._func = bilateral_func
-        self._backend = Bilateral.Backend.CPU
+        self._backend: Bilateral.ConcreteBackend = Bilateral.Backend.CPU
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
@@ -617,7 +626,7 @@ class Bilateral[**P, R]:
             finally:
                 bilateral.backend = old
 
-        def resolve(self) -> Bilateral.Backend:
+        def resolve(self) -> Bilateral.ConcreteBackend:
             return bilateral.backend if self is Bilateral.Backend.AUTO else self
 
         def Bilateral(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
@@ -635,7 +644,7 @@ class Bilateral[**P, R]:
             return getattr(clip, self.value).Bilateral(*args, **kwargs)
 
     @property
-    def backend(self) -> Backend:
+    def backend(self) -> Bilateral.ConcreteBackend:
         """The default backend for [bilateral][vsrgtools.blur.bilateral]"""
         return self._backend
 
