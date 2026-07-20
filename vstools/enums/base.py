@@ -19,6 +19,8 @@ from jetpytools import (
     fallback,
 )
 
+from vsjetpack import deprecated
+
 from ..vs_proxy import vs
 
 __all__ = ["PropEnum"]
@@ -220,6 +222,7 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
         return matched_strings.pop()
 
     @classmethod
+    @deprecated("This method is deprecated and will be removed in a future version", category=DeprecationWarning)
     def ensure_presence(cls, clip: vs.VideoNode, value: Any, func: FuncExcept | None = None) -> vs.VideoNode:
         """
         Ensure the presence of the property in the VideoNode.
@@ -229,6 +232,7 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
         return clip.std.SetFrameProp(enum_value.prop_key, enum_value.value)
 
     @staticmethod
+    @deprecated("This method is deprecated and will be removed in a future version", category=DeprecationWarning)
     def ensure_presences(
         clip: vs.VideoNode, prop_enums: Iterable[type[PropEnum] | PropEnum], func: FuncExcept | None = None
     ) -> vs.VideoNode:
