@@ -507,6 +507,9 @@ class EEDI3(SuperSampler):
         VULKAN = "eedi3vk2"
         """A Vulkan device"""
 
+        CUDA = "vszipcu"
+        """A CUDA device"""
+
         @property
         def supports_mclip(self) -> bool:
             """Whether the backend supports mclip."""
