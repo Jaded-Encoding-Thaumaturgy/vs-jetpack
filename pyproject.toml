@@ -156,6 +156,7 @@ nvidia = [
     "vapoursynth-mlrt-ort-cuda>=15.16.2",
     "vapoursynth-mlrt-trt>=15.16.1",
     "vapoursynth-mlrt-trt-rtx>=15.16.1",
+    "vapoursynth-vszipcu>=1.2.0",
     "tensorrt-cu13>=11.0.0.114",
     "tensorrt-rtx-cu13>=1.5.0.114",
     # Explicitly specify these so they're properly resolved through uv --index

@@ -163,6 +163,9 @@ class GaussBlur[**P, R]:
         GPU = "vszipcl"
         """OpenCL CL implementation."""
 
+        CUDA = "vszipcu"
+        """CUDA implementation."""
+
         @contextmanager
         def __call__(self) -> Generator[None]:
             """Set this backend for the duration of the context manager."""
@@ -266,7 +269,7 @@ def gauss_blur(
             Set `gauss_blur.backend = gauss_blur.Backend.GPU`
             or use the context manager `with gauss_blur.Backend.GPU(): ...`
             to make the GPU the default backend for all subsequent explicit and implicit calls.
-        **kwargs: Additional arguments passed to the resizer or blur kernel.
+        **kwargs: Additional arguments passed to the backend or blur kernel.
             Specifying `_fast=True` enables fast bilinear approximation.
 
     Raises:
@@ -283,11 +286,15 @@ def gauss_blur(
     backend = backend.resolve()
     logger.debug("gauss_blur(): Selecting backend %r", backend)
 
-    if backend.resolve() == gauss_blur.Backend.GPU:
+    if backend != gauss_blur.Backend.CPU:
         if mode != ConvMode.HV:
-            raise CustomNotImplementedError(f"GPU backend doesn't support the mode {mode}", gauss_blur)
+            raise CustomNotImplementedError(f"GPU-based backends don't support the mode {mode}", gauss_blur)
 
-        return core.vszipcl.GaussBlur(clip, normalize_param_planes(clip, sigma, planes, 0), **kwargs)
+        return getattr(core, backend.value).GaussBlur(
+            clip,
+            normalize_param_planes(clip, sigma, planes, 0),
+            **{"num_streams": 4} | kwargs,
+        )
 
     if isinstance(sigma, Sequence):
         return normalize_radius(clip, gauss_blur, {"sigma": sigma}, planes, radius=radius, mode=mode)

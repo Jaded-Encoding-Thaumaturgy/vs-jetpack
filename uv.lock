@@ -2727,6 +2727,20 @@ wheels = [
 ]
 
 [[package]]
+name = "vapoursynth-vszipcu"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nvidia-cuda-nvrtc" },
+    { name = "vapoursynth" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e1/b0/6ae895af5a15a2c63933178f542cf547c885ae627965931b5fc742614358/vapoursynth_vszipcu-1.2.0.tar.gz", hash = "sha256:43a12a562b386e42d718cd19a57948b6e53f626900c36613a327ae039ba1e828", size = 12825790, upload-time = "2026-07-14T16:06:06.383Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ad/af/3906459e05a23e5cbfb88037bd8e2de3ef8de0cdeae961acb2d21e1b9bcc/vapoursynth_vszipcu-1.2.0-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:e3f4d5f1f5eeebb1e507c6aee2b554a69b52ac716b574bc4f67f2701505cf7d7", size = 12954947, upload-time = "2026-07-14T16:06:01.875Z" },
+    { url = "https://files.pythonhosted.org/packages/06/27/8977bc201fe31508f7af00aa261132f73af32ad4cf8bb39d31dd92dd48a1/vapoursynth_vszipcu-1.2.0-py3-none-win_amd64.whl", hash = "sha256:7c71247a8caf82883187b2560c690807cf2ea4a2db465f935cbd923ef21251fd", size = 13017813, upload-time = "2026-07-14T16:06:04.148Z" },
+]
+
+[[package]]
 name = "vapoursynth-znedi3"
 version = "3.3"
 source = { registry = "https://pypi.org/simple" }
@@ -3089,6 +3103,7 @@ nvidia = [
     { name = "vapoursynth-mlrt-trt-rtx" },
     { name = "vapoursynth-nnedi3vk" },
     { name = "vapoursynth-vszipcl" },
+    { name = "vapoursynth-vszipcu" },
 ]
 rg = [
     { name = "scipy" },
@@ -3444,6 +3459,7 @@ requires-dist = [
     { name = "vapoursynth-vszipcl", marker = "extra == 'amd'", specifier = ">=1.2.0" },
     { name = "vapoursynth-vszipcl", marker = "extra == 'cl'", specifier = ">=1.2.0" },
     { name = "vapoursynth-vszipcl", marker = "extra == 'nvidia'", specifier = ">=1.2.0" },
+    { name = "vapoursynth-vszipcu", marker = "extra == 'nvidia'", specifier = ">=1.2.0" },
     { name = "vapoursynth-znedi3", marker = "extra == 'aa'", specifier = ">=2.1" },
     { name = "vapoursynth-znedi3", marker = "extra == 'deband'", specifier = ">=2.1" },
     { name = "vapoursynth-znedi3", marker = "extra == 'dehalo'", specifier = ">=2.1" },
