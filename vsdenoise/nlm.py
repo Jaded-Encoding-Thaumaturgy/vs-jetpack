@@ -53,14 +53,6 @@ class NLMeans[**P, R]:
 
         @property
         @deprecated(
-            '"CUDA" member is deprecated and will be removed in a future version.',
-            category=EnumDeprecationWarning,
-        )
-        def CUDA(cls) -> Literal[NLMeans.Backend.GPU]:  # noqa: N802
-            return NLMeans.Backend.GPU
-
-        @property
-        @deprecated(
             '"HIP" member is deprecated and will be removed in a future version.',
             category=EnumDeprecationWarning,
         )
@@ -76,12 +68,17 @@ class NLMeans[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Priority: "gpu" -> "ispc".
+        Priority: "gpu" -> "cuda" -> "ispc".
         """
 
         GPU = "gpu"
         """
         An OpenCL device that is a GPU.
+        """
+
+        CUDA = "cuda"
+        """
+        A CUDA device that is a GPU.
         """
 
         ISPC = "ispc"
@@ -107,6 +104,9 @@ class NLMeans[**P, R]:
             if self == NLMeans.Backend.GPU:
                 return clip.vszipcl.NLMeans(*args, **{"num_streams": 2} | kwargs)
 
+            if self == NLMeans.Backend.CUDA:
+                return clip.vszipcu.NLMeans(*args, **{"num_streams": 2} | kwargs)
+
             if self == NLMeans.Backend.ISPC:
                 return clip.nlm_ispc.NLMeans(*args, **kwargs)
 
@@ -114,6 +114,10 @@ class NLMeans[**P, R]:
             if hasattr(core, "vszipcl"):
                 logger.debug("%s: Auto selecting 'NLMeans.Backend.GPU'", NLMeans.Backend.NLMeans)
                 return NLMeans.Backend.GPU.NLMeans(clip, *args, **kwargs)
+
+            if hasattr(core, "vszipcu"):
+                logger.debug("%s: Auto selecting 'NLMeans.Backend.CUDA'", NLMeans.Backend.NLMeans)
+                return NLMeans.Backend.CUDA.NLMeans(clip, *args, **kwargs)
 
             if hasattr(core, "nlm_ispc"):
                 logger.debug("%s: Auto selecting 'NLMeans.Backend.ISPC", NLMeans.Backend.NLMeans)
