@@ -1232,7 +1232,7 @@ class QTempGaussMC(VSObject):
         self._apply_final()
         self._apply_motion_blur()
 
-        return self.motion_blur_output.std.AssumeFPS(self.motion_blur_output)
+        return self.motion_blur_output
 
     @contextmanager
     def _disable_fps_divisor(self) -> Generator[None]:
