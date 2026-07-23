@@ -186,7 +186,7 @@ full = [
 
 [dependency-groups]
 dev = [
-    "mypy~=2.2.0",
+    "mypy~=2.3.0",
     "ruff~=0.15.0",
     "prek>=0.3.6",
     "scipy-stubs>=1.16.0.0",
@@ -209,7 +209,7 @@ doc = [
     "griffe-inherited-docstrings==1.1.3",
     "mkdocs-gen-files==0.6.1",
     "mkdocs-literate-nav==0.6.3",
-    "mkdocs-material==9.7.6",
+    "mkdocs-material==9.7.7",
     "mkdocs-minify-plugin==0.8.0",
     "mkdocs-redirects==1.2.3",
     "mkdocstrings[python]==0.30.1",
