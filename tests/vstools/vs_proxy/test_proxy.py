@@ -68,7 +68,6 @@ def test_interactive_env_emulation(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.vpy("no-core", "unique-core")
 def test_callbacks_on_creation(vpy_stage: str, vpy_env_factory: Callable[[], ManagedEnvironment]) -> None:
-    global _creation_called_cores
     _creation_called_cores.clear()
 
     if vpy_stage == "no-core":
@@ -107,9 +106,9 @@ def test_environment_detection(vpy_stage: str) -> None:
         with pytest.raises(CustomRuntimeError, match=r"No environment is currently activated\."):
             vs.get_policy()
         with pytest.raises(CustomRuntimeError, match=r"Core hasn't been fetched yet!"):
-            core.core_id
+            _ = core.core_id
         with pytest.raises(RuntimeError, match=r"We are not running inside an environment\."):
-            core.env.data
+            _ = core.env.data
 
     elif vpy_stage == "unique-core":
         assert vs.has_environment()
@@ -126,7 +125,7 @@ def test_proxy_get_policy_errors(monkeypatch: pytest.MonkeyPatch) -> None:
         with pytest.raises(CustomRuntimeError, match=r"No environment is currently activated\."):
             vs_proxy.get_policy()
         with pytest.raises(CustomRuntimeError, match=r"No environment is currently activated\."):
-            core.env.data
+            _ = core.env.data
 
     # get_policy when policy is None (not found in gc)
     mock_env = MagicMock()
@@ -210,7 +209,7 @@ def test_vs_core_proxy_properties() -> None:
 def test_function_proxy_getattr() -> None:
     plugin = core.lazy.std
     func = plugin.BlankClip
-    assert getattr(func, "name") == "BlankClip"
+    assert func.name == "BlankClip"
 
 
 def test_plugin_proxy_getattr_non_lazy() -> None:
@@ -249,7 +248,7 @@ def test_core_proxy_vs_core_ref_fallback() -> None:
     gc.collect()
 
     with pytest.raises(CustomRuntimeError, match="The VapourSynth core has been freed!"):
-        core_proxy1._vs_core_ref
+        _ = core_proxy1._vs_core_ref
 
     # _own_core is False (should fall back to global active core)
     dummy2 = DummyCore()
@@ -283,7 +282,7 @@ def test_vs_core_proxy_setattr() -> None:
 def test_vs_core_proxy_no_policy_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("vstools.vs_proxy.proxy.has_policy", lambda: False)
     with pytest.raises(CustomRuntimeError, match="No policy has been registered!"):
-        core.env
+        _ = core.env
 
 
 def test_vs_core_proxy_proxied_caching() -> None:
@@ -315,4 +314,4 @@ def test_vs_core_proxy_core_freed_error() -> None:
     gc.collect()
 
     with pytest.raises(CustomRuntimeError, match="The core the proxy made reference to was freed!"):
-        temp_proxy._core
+        _ = temp_proxy._core

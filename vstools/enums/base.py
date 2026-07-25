@@ -248,7 +248,7 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
             else:
                 try:
                     prop_enum = prop_enum.from_video(clip, True, func)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     exceptions.append(e)
 
         if exceptions:

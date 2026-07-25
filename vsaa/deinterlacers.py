@@ -48,7 +48,6 @@ class SupportsBobDeinterlace(Protocol):
     __slots__ = ()
 
     def deinterlace(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode: ...
-
     def bob(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode: ...
 
 

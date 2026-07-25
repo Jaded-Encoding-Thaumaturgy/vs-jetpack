@@ -23,7 +23,7 @@ def detail_mask(
     clip: vs.VideoNode,
     brz_mm: float = 0.025,
     brz_ed: float = 0.045,
-    minmax: MinMax = MinMax(rady=3, radc=2),
+    minmax: MinMax = MinMax(rady=3, radc=2),  # noqa: B008
     edge: MaskLike = Kirsch,
     sigma: float | None = None,
 ) -> vs.VideoNode:

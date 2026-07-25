@@ -115,11 +115,15 @@ def tcanny_retinex(
 
 def limited_linemask(
     clip: vs.VideoNode,
-    sigmas: list[float] = [0.000125, 0.0025, 0.0055],
-    detail_sigmas: list[float] = [0.011, 0.013],
+    sigmas: Sequence[float] | None = None,
+    detail_sigmas: Sequence[float] | None = None,
     edgemasks: Sequence[MaskLike] = [Kirsch],
     **kwargs: Any,
 ) -> vs.VideoNode:
+    if detail_sigmas is None:
+        detail_sigmas = [0.011, 0.013]
+    if sigmas is None:
+        sigmas = [0.000125, 0.0025, 0.0055]
     clip_y = plane(clip, 0)
 
     return combine(

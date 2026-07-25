@@ -8,7 +8,7 @@ A7 = "y[0,1]"
 A8 = "y[1,1]"
 c = "y"
 val = "x"
-PIXELS = " ".join([A1, A2, A3, A4, A5, A6, A7, A8])
+PIXELS = f"{A1} {A2} {A3} {A4} {A5} {A6} {A7} {A8}"
 
 
 def aka_repair_expr_1_4(m: int) -> str:

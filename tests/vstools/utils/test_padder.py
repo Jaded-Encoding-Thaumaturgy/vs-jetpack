@@ -17,9 +17,9 @@ def test_padder_sequence_and_len() -> None:
 def test_padder_missing_dimensions() -> None:
     pad = Padder(1, 2, 3, 4)
     with pytest.raises(CustomValueError):
-        pad.padded_width
+        _ = pad.padded_width
     with pytest.raises(CustomValueError):
-        pad.padded_height
+        _ = pad.padded_height
 
 
 def test_padder_crop_scaling() -> None:

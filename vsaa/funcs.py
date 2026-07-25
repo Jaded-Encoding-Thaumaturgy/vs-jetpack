@@ -33,8 +33,8 @@ __all__ = ["based_aa", "pre_aa"]
 
 def pre_aa(
     clip: vs.VideoNode,
-    sharpener: VSFunctionNoArgs = partial(unsharpen, blur=partial(gauss_blur, mode=ConvMode.VERTICAL, sigma=1)),
-    antialiaser: AntiAliaser = NNEDI3(),
+    sharpener: VSFunctionNoArgs = partial(unsharpen, blur=partial(gauss_blur, mode=ConvMode.VERTICAL, sigma=1)),  # noqa: B008
+    antialiaser: AntiAliaser = NNEDI3(),  # noqa: B008
     transpose_first: bool = False,
     direction: AntiAliaser.AADirection = AntiAliaser.AADirection.BOTH,
     planes: Planes = None,

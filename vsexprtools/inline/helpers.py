@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterable
-from functools import cache
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -831,7 +830,6 @@ class Tokens(metaclass=SingletonMeta):
         RangeSize: Final[Token] = cast(Token, ...)
         """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
-    @cache
     def _get_token(self, name: str) -> Token:
         return Token(ExprToken[name])
 

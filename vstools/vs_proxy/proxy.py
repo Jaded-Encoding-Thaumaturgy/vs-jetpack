@@ -826,7 +826,7 @@ def register_on_creation(callback: Callable[[int], None]) -> bool:
         # that haven't been run for the current core instance yet.
         if has_policy() and has_environment() and core.active:
             with get_current_environment().use():
-                core._core_with_cb
+                _ = core._core_with_cb
             return True
 
         return False
@@ -856,10 +856,10 @@ def clear_cache() -> None:
                 if isinstance(output, VideoOutputTuple):
                     output.clip.get_frame(0).close()
                     break
-        except Exception:
+        except Exception:  # noqa: BLE001
             core.std.BlankClip().get_frame(0).close()
         core.max_cache_size = cache_size
-    except Exception:
+    except Exception:  # noqa: BLE001
         ...
 
 
@@ -1261,7 +1261,7 @@ class VSCoreProxy(_CoreProxyBase):
             threads = math.ceil(multiprocessing.cpu_count() * threads)
 
         if isinstance(threads, int):
-            threads = range(0, threads)
+            threads = range(threads)
         elif isinstance(threads, tuple):
             threads = range(*threads)
 

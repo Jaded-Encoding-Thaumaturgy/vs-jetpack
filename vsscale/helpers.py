@@ -82,7 +82,7 @@ def scale_var_clip(
                 if norm_scaler not in no_accepts_var:
                     try:
                         scaled = part_scaler(clip)
-                    except BaseException:
+                    except Exception:  # noqa: BLE001
                         no_accepts_var.append(norm_scaler)
 
                 if norm_scaler in no_accepts_var:
@@ -530,25 +530,24 @@ def get_gpu(device_id: int = 0) -> Device | None:
     """
     Return the GPU available for the requested device id.
     """
+    from pyopencl import device_type, get_platforms
+
+    if not (platforms := get_platforms()):
+        logger.debug("No OpenCL platforms found.")
+        return None
+
     try:
-        from pyopencl import device_type, get_platforms
-
-        platforms = get_platforms()
-        if not platforms:
-            logger.debug("No OpenCL platforms found.")
-            return None
-
         # platform also resolves any software/cpu targets
         # but it doesn't seem like any one platform can have multiple devices
         gpus = [device for device in [pl.get_devices()[0] for pl in platforms] if device.type == device_type.GPU]
-
-        if len(gpus) < device_id + 1:
-            raise CustomValueError(f"No GPU found for device_id {device_id}!")
-
-        return gpus[device_id]
     except Exception as e:
-        logger.debug(e)
+        logger.debug(e, exc_info=e)
         return None
+
+    try:
+        return gpus[device_id]
+    except KeyError:
+        raise CustomValueError(f"No GPU found for device_id {device_id}!") from None
 
 
 def is_gpu_available(device_id: int = 0) -> bool:

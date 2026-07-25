@@ -265,7 +265,7 @@ class VideoPackets(list[int]):
 
             try:
                 stats = scenestats[keyframes.scenes.indices[n]]
-            except Exception as e:
+            except KeyError as e:
                 warnings.warn(f"{func}: 'Could not find stats for a section... (Frame: {n})', error: {e}", UserWarning)
                 pkt = {"PktSize": -1, "PktSceneAvgSize": -1, "PktSceneMaxSize": -1, "PktSceneMinSize": -1}
             else:

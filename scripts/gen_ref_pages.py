@@ -50,7 +50,7 @@ EXCLUDE = [FrozenOrderedSet(path.split(".")) for path in set[str]()]
 
 # Explicitly included submodules that would otherwise not have been processed.
 # vsmasktools.edge submodules are `_` prefixed, so include the overarching module.
-INCLUDE = [FrozenOrderedSet(path.split(".")) for path in {"vsmasktools.edge"}]
+INCLUDE = [FrozenOrderedSet(path.split(".")) for path in ("vsmasktools.edge",)]
 
 
 def is_excluded(s: Iterable[Any]) -> bool:

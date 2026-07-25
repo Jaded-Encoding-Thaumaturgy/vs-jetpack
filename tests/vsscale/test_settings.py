@@ -78,7 +78,7 @@ def test_is_fallback_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
         assert is_fallback_enabled("onnx") is True
 
     with monkeypatch.context() as m:
-        m.setattr("vsscale.mlrt.settings.get_toml_config", lambda: {})
+        m.setattr("vsscale.mlrt.settings.get_toml_config", dict)
         assert is_fallback_enabled("onnx") is True
 
 
@@ -234,5 +234,5 @@ def test_get_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     with monkeypatch.context() as m:
         get_cache.cache_clear()
         m.setattr("vsscale.mlrt.settings.is_global_true", lambda thing: False)
-        m.setattr("vsscale.mlrt.settings.get_toml_config", lambda: {})
+        m.setattr("vsscale.mlrt.settings.get_toml_config", dict)
         assert get_cache("onnx") == dummy_local

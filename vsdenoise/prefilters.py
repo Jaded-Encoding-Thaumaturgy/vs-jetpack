@@ -219,7 +219,7 @@ class Prefilter(AbstractPrefilter, CustomEnum, metaclass=EnumABCMeta):
         planes: Planes = None,
         full_range: bool | float = False,
         *,
-        sloc: SLocationLike | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},
+        sloc: SLocationLike | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},  # noqa: B006
         pref_mask: vs.VideoNode | Literal[False] | tuple[int, int] = (16, 75),
         **kwargs: Any,
     ) -> vs.VideoNode:
@@ -352,7 +352,7 @@ class Prefilter(AbstractPrefilter, CustomEnum, metaclass=EnumABCMeta):
         *,
         planes: Planes = None,
         full_range: bool | float = False,
-        sloc: SLocationLike | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},
+        sloc: SLocationLike | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},  # noqa: B006
         pref_mask: vs.VideoNode | Literal[False] | tuple[int, int] = (16, 75),
         **kwargs: Any,
     ) -> PrefilterPartial:

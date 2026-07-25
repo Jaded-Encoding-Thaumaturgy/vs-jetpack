@@ -188,7 +188,7 @@ full = [
 [dependency-groups]
 dev = [
     "mypy~=2.3.0",
-    "ruff~=0.15.0",
+    "ruff~=0.16.0",
     "prek>=0.3.6",
     "scipy-stubs>=1.16.0.0",
     "types-psutil>=7.0.0.20250801",
@@ -216,7 +216,7 @@ doc = [
     "mkdocstrings[python]==0.30.1",
 
     # Used by mkdocstrings to format signatures.
-    "ruff~=0.15.0",
+    "ruff~=0.16.0",
 
     # Additional packages to be documented.
     "vstransitions==0.1.4",
@@ -423,7 +423,8 @@ extend-select = [
     "FURB",
     "RUF",
 ]
+ignore = ["B009", "B010"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.*" = ["F401", "F403"]
-"stubs/*" = ["PYI021", "E501", "N801", "N802", "N803", "RUF002"]
+"stubs/*" = ["PYI021", "E501", "N801", "N802", "N803", "RUF002", "D419"]

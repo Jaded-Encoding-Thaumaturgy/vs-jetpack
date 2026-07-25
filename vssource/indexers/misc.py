@@ -33,7 +33,7 @@ class _ProgressFromLogHandler(Handler):
             if m:
                 self.cb(float(m.group(1)))
                 return
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.handleError(record)
 
     @contextmanager

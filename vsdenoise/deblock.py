@@ -230,7 +230,7 @@ def deblock_qed(
 
 def mpeg2stinx(
     clip: vs.VideoNode,
-    bobber: Deinterlacer = NNEDI3(),
+    bobber: Deinterlacer = NNEDI3(),  # noqa: B008
     tff: FieldBasedLike | bool = True,
     mask: bool = True,
     radius: int | tuple[int, int] = 2,
