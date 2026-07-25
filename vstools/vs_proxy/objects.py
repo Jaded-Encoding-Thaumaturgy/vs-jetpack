@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Self
 
 from jetpytools import Singleton, classproperty, to_arr
 
-from vsjetpack import is_from_vs_module
+from vsjetpack import deprecated, is_from_vs_module
 
 from .proxy import core, register_on_creation, register_on_destroy
 
