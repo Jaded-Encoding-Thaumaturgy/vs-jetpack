@@ -240,6 +240,7 @@ class VSObjectABC(VSObject, ABC, metaclass=VSObjectABCMeta):
     __slots__ = ()
 
 
+@deprecated("This class is deprecated and will be removed in a future version.", category=DeprecationWarning)
 class VSDebug(Singleton, init=True):
     """
     Special class that follows the VapourSynth lifecycle for debug purposes.
