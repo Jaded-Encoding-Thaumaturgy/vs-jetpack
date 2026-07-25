@@ -226,7 +226,7 @@ def ccd(
     scale: float | None = None,
     ref: vs.VideoNode | None = None,
     pscale: float = 0.0,
-    chroma_upscaler: ScalerLike = Lanczos(
+    chroma_upscaler: ScalerLike = Lanczos(  # noqa: B008
         format=lambda clip: clip.format.replace(color_family=vs.RGB, subsampling_w=0, subsampling_h=0)
     ),
     chroma_downscaler: KernelLike = Catrom,

@@ -268,7 +268,7 @@ class Padder(Sequence[int]):
     def color(
         self,
         clip: vs.VideoNode,
-        color: float | None | MissingT | Sequence[float | None | MissingT] = (False, MISSING),
+        color: float | MissingT | Sequence[float | MissingT | None] | None = (False, MISSING),
     ) -> vs.VideoNode:
         """
         Pad a clip with a constant color.
@@ -295,7 +295,7 @@ class Padder(Sequence[int]):
         """
         self._get_values(clip)
 
-        def _norm(colr: float | bool | None | MissingT) -> Sequence[float]:
+        def _norm(colr: float | bool | MissingT | None) -> Sequence[float]:
             if colr is MISSING:
                 colr = False if clip.format.color_family is vs.RGB else None
 
@@ -490,7 +490,7 @@ class padder_ctx(AbstractContextManager["padder_ctx"]):  # pyright: ignore[repor
         self.pad_ops.append((padding, (out.width, out.height)))
         return out
 
-    def COLOR(self, clip: vs.VideoNode, color: float | None | Sequence[float | None] = (False, None)) -> vs.VideoNode:
+    def COLOR(self, clip: vs.VideoNode, color: float | Sequence[float | None] | None = (False, None)) -> vs.VideoNode:
         """
         Pad a clip with a constant color.
 
@@ -586,7 +586,7 @@ class padder:
         right: int = 0,
         top: int = 0,
         bottom: int = 0,
-        color: float | None | MissingT | Sequence[float | None | MissingT] = (False, MISSING),
+        color: float | MissingT | Sequence[float | MissingT | None] | None = (False, MISSING),
     ) -> vs.VideoNode:
         """
         Pad a clip with a constant color.

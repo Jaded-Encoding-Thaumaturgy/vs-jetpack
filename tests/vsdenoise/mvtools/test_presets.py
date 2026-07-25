@@ -56,8 +56,8 @@ def test_preset_getattr() -> None:
 
     # Defined in annotations but NOT present in _dict
     with pytest.raises(AttributeError):
-        preset.pel
+        _ = preset.pel
 
     # NOT defined in annotations and NOT present in __dict__
     with pytest.raises(AttributeError):
-        preset.non_existent_attr
+        _ = preset.non_existent_attr

@@ -228,8 +228,10 @@ class FixInterlacedFades(CustomStrEnum):
 
 def vinverse(
     clip: vs.VideoNode,
-    comb_blur: VSFunctionKwArgs | vs.VideoNode = partial(sbr, mode=ConvMode.VERTICAL),
-    contra_blur: VSFunctionKwArgs | vs.VideoNode = BlurMatrix.BINOMIAL(mode=ConvMode.VERTICAL),
+    comb_blur: VSFunctionKwArgs | vs.VideoNode = lambda clip, **kwargs: sbr(clip, mode=ConvMode.VERTICAL, **kwargs),
+    contra_blur: VSFunctionKwArgs | vs.VideoNode = lambda clip, **kwargs: BlurMatrix.BINOMIAL(mode=ConvMode.VERTICAL)(
+        clip, **kwargs
+    ),
     contra_str: float = 2.7,
     amnt: float | None = None,
     scl: float = 0.25,

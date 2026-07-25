@@ -270,7 +270,7 @@ class VSDebug(Singleton, init=True):
 
     @staticmethod
     def _print_stack(core_id: int) -> None:
-        raise Exception
+        raise Exception  # noqa: TRY002
 
     @staticmethod
     def _print_env_live(core_id: int) -> None:

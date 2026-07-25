@@ -48,8 +48,8 @@ def get_var_infos(frame: vs.VideoNode | vs.VideoFrame) -> tuple[vs.VideoFormat, 
         return infos
 
     if isinstance(frame, vs.VideoNode):
-        with frame.get_frame(0) as frame:
-            return get_var_infos(frame)
+        with frame.get_frame(0) as f:
+            return get_var_infos(f)
 
     return get_var_infos(frame)
 

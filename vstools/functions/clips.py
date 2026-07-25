@@ -96,7 +96,7 @@ class ProcessVariableClip[T](DynamicClipsCache[T]):
         if self.out.format and (0 not in (self.out.width, self.out.height)):
             try:
                 return self.get_clip(self.get_key(self.clip))
-            except Exception:
+            except Exception:  # noqa: BLE001
                 ...
 
         return vs.core.std.FrameEval(self.out, lambda n, f: self[self.get_key(f)], self.clip)

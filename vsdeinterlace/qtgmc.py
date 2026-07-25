@@ -1,3 +1,4 @@
+# ruff: noqa B006
 import math
 from collections.abc import Generator, Mapping
 from contextlib import contextmanager, suppress

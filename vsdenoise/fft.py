@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterator, Mapping, Sequence
-from functools import cache
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Literal, Self, overload
 
@@ -42,7 +41,7 @@ class _BackendBase(CustomEnum):
         return hash(self.name)
 
     def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
-        self = self.resolve()
+        self = self.resolve()  # noqa: PLW0642
 
         if self == DFTTest.Backend.OLD:
             return core.dfttest.DFTTest(clip, *args, **self.kwargs | kwargs)
@@ -56,7 +55,6 @@ class _BackendBase(CustomEnum):
 
         return dfttest2.DFTTest(clip, *args, **kwargs)
 
-    @cache
     def resolve(self) -> Self:
         if self.value != "auto":
             return self
@@ -75,7 +73,7 @@ class _BackendBase(CustomEnum):
 
     @property
     def plugin(self) -> vs.Plugin:
-        return getattr(core.lazy, self.resolve().value)
+        return getattr(core.lazy, self.resolve().value)  # type: ignore[call-overload]
 
 
 type Frequency = float
@@ -879,7 +877,6 @@ class DFTTest:
                 """
                 ...
 
-            @cache
             def resolve(self) -> Self:  # pyright: ignore[reportIncompatibleVariableOverride]
                 """
                 Resolves the appropriate DFTTest backend to use based on availability.

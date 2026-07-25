@@ -90,7 +90,7 @@ class TestFieldBased:
         assert FieldBased.TFF.field == 1
         assert FieldBased.BFF.field == 0
         with pytest.raises(UnsupportedFieldBasedError):
-            FieldBased.PROGRESSIVE.field
+            _ = FieldBased.PROGRESSIVE.field
 
     def test_is_tff(self) -> None:
         assert FieldBased.TFF.is_tff
@@ -102,4 +102,4 @@ class TestFieldBased:
         assert FieldBased.TFF.inverted_field == FieldBased.BFF
         assert FieldBased.BFF.inverted_field == FieldBased.TFF
         with pytest.raises(UnsupportedFieldBasedError):
-            FieldBased.PROGRESSIVE.inverted_field
+            _ = FieldBased.PROGRESSIVE.inverted_field

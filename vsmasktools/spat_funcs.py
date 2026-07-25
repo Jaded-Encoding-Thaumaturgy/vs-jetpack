@@ -192,9 +192,13 @@ def texture_mask(
     radc: int | None = None,
     blur: float = 8,
     thr: float = 0.2,
-    stages: list[tuple[int, int]] = [(60, 2), (40, 4), (20, 2)],
-    points: list[tuple[bool, float]] = [(False, 1.75), (True, 2.5), (True, 5), (False, 10)],
+    stages: list[tuple[int, int]] | None = None,
+    points: list[tuple[bool, float]] | None = None,
 ) -> vs.VideoNode:
+    if points is None:
+        points = [(False, 1.75), (True, 2.5), (True, 5), (False, 10)]
+    if stages is None:
+        stages = [(60, 2), (40, 4), (20, 2)]
     levels = [x for x, _ in points]
     points_ = [scale_value(x, 8, clip) for _, x in points]
     thr = scale_mask(thr, 8, 32)

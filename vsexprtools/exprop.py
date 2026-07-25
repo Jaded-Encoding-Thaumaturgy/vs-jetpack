@@ -66,7 +66,7 @@ class ExprToken(CustomStrEnum):
     RangeSize = "range_size"
     """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
-    @cache
+    @cache  # noqa: B019
     def get_value(self, clip: vs.VideoNode, chroma: bool = False, range_in: RangeLike | None = None) -> float:
         """
         Resolves the numeric value represented by this token based on the input clip and range.
@@ -616,7 +616,6 @@ class ExprOp(ExprOpBase, metaclass=ExprOpExtraMeta):
     Uses N coefficients below the top value (x), ordered from highest to lowest degree.
     """
 
-    @cache
     def is_extra(self) -> bool:
         """
         Check if the operator is an 'extra' operator.

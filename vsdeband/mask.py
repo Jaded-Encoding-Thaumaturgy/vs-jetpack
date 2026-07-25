@@ -12,7 +12,7 @@ __all__ = ["deband_detail_mask"]
 def deband_detail_mask(
     clip: vs.VideoNode,
     sigma: float = 1.0,
-    rxsigma: list[int] = [50, 200, 350],
+    rxsigma: Sequence[int] = (50, 200, 350),
     pf_sigma: float | None = 1.0,
     brz: tuple[float, float] = (0.038, 0.068),
     rg_mode: int | Sequence[int] = remove_grain.Mode.MINMAX_MEDIAN_OPP,

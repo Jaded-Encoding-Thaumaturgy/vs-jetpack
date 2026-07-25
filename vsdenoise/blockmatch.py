@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from functools import cache
 from logging import getLogger
 from types import MappingProxyType
 from typing import Any
@@ -181,7 +180,17 @@ class BM3D[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Selection priority: "CUDA_RTC" → "CUDA" → "HIP" → "SYCL" → "METAL" → "CPU" → "OLD".
+        Selection priority: "CUDA_ZIP" → "CUDA_RTC" → "CUDA" → "HIP" → "SYCL" → "METAL" → "CPU" → "OLD".
+        """
+
+        CUDA_ZIP = "vszipcu"
+        """
+        GPU implementation using NVIDIA CUDA from `vszipcu`.
+        """
+
+        OPENC_CL_ZIP = "vszipcl"
+        """
+        GPU implementation using NVIDIA CUDA from `vszipcu`.
         """
 
         CUDA_RTC = "bm3dcuda_rtc"
@@ -219,7 +228,6 @@ class BM3D[**P, R]:
         Reference VapourSynth-BM3D implementation.
         """
 
-        @cache
         def resolve(self) -> BM3D.Backend:
             """
             Resolves the appropriate BM3D backend to use.

@@ -358,11 +358,11 @@ def placebo_deband(
     plane_map = {tuple(i for i in range(clip.format.num_planes) if ngrain[i] == x): x for x in set_grn}
 
     debanded = clip
-    for planes, grain_val in plane_map.items():
-        if len({thr[p] for p in planes}) == 1:
-            debanded = _placebo(debanded, thr[planes[0]], grain_val, planes)
+    for all_planes, grain_val in plane_map.items():
+        if len({thr[p] for p in all_planes}) == 1:
+            debanded = _placebo(debanded, thr[all_planes[0]], grain_val, all_planes)
         else:
-            for p in planes:
+            for p in all_planes:
                 debanded = _placebo(debanded, thr[p], grain_val, [p])
 
     return debanded
