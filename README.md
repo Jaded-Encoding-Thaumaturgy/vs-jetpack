@@ -25,22 +25,23 @@ Most of these plugins are now available as Python packages on PyPI and can be in
 
 Most extras are hierarchical. For example, `denoise` includes all plugins from `aa`, which in turn includes `mask`, and so on.
 
-| Extra             | Purpose              | Included Plugins / Packages                                                                     |
-| :---------------- | :------------------- | :---------------------------------------------------------------------------------------------- |
-| **`source`**      | Clip Indexing        | `bestsource`, `ffms2`, `lsmas`, `d2vsource`, `dvdsrc2`                                          |
-| **`kernels`**     | Resizing             | `resize2`, `descale`, `vs-placebo`                                                              |
-| **`rg`**          | Repair & Smoothing   | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                                        |
-| **`mask`**        | Masking              | `adaptivegrain`, `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)                        |
-| **`aa`**          | Anti-aliasing        | `bwdif`, `sangnom`, `znedi3` (+ `mask`)                                                         |
-| **`denoise`**     | Denoising            | `bm3d`, `dfttest2`, `deblock`, `mvutensils`, `nlm-ispc` (+ `aa`)                                |
-| **`deband`**      | Debanding            | `vsnoise` (+ `denoise`)                                                                         |
-| **`deinterlace`** | Deinterlacing        | `dmetrics`, `vivtc` (+ `denoise`)                                                               |
-| **`full`**        | All CPU-based extras | All of the above                                                                                |
-| **`gpu`**         | Generic GPU          | `ort`                                                                                           |
-| **`cl`**          | Open CL              | `vszipcl`                                                                                       |
-| **`vulkan`**      | Vulkan Devices       | `eedi3vk2`, `ncnn`                                                                              |
-| **`nvidia`**      | NVIDIA GPU           | `bm3dcuda`, `bilateralgpu`, `dfttest2-[nvrtc,cuda]`, `ort-cuda`, `trt{-rtx}` (+ `cl`, `vulkan`) |
-| **`amd`**         | AMD GPU              | `bm3dhip`, `dfttest2-[hiprtc,hipfft]` (+ `gpu`, `cl`, `vulkan`)                                 |
+| Extra             | Purpose                | Included Plugins / Packages                                                                                |
+| :---------------- | :--------------------- | :--------------------------------------------------------------------------------------------------------- |
+| **`source`**      | Clip indexing          | `bestsource`, `ffms2`, `lsmas`, `d2vsource`, `dvdsrc2`                                                     |
+| **`kernels`**     | Resizing               | `resize2`, `descale`, `vs-placebo`                                                                         |
+| **`rg`**          | Repair & smoothing     | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                                                   |
+| **`mask`**        | Masking                | `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)                                                    |
+| **`scale`**       | Scaling and MLRT tools | `ov` and supporting Python packages (+ `mask`)                                                             |
+| **`aa`**          | Anti-aliasing          | `bwdif`, `sangnom`, `znedi3` (+ `scale`)                                                                   |
+| **`denoise`**     | Denoising              | `bm3d`, `bm3dcpu` / `bm3dmetal`, `dfttest2`, `deblock`, `fmtconv`, `mvutensils`, `nlm-ispc` (+ `aa`)       |
+| **`deband`**      | Debanding              | `vsnoise` (+ `denoise`)                                                                                    |
+| **`deinterlace`** | Deinterlacing          | `dmetrics`, `vivtc` (+ `denoise`)                                                                          |
+| **`full`**        | All CPU-based extras   | All of the above                                                                                           |
+| **`gpu`**         | Generic GPU            | `ort`                                                                                                      |
+| **`cl`**          | OpenCL                 | `vszipcl`                                                                                                  |
+| **`vulkan`**      | Vulkan devices         | `eedi3vk2`, `ncnn`, `nnedi3vk`                                                                             |
+| **`nvidia`**      | NVIDIA GPU             | `bm3dcuda`, `bilateralgpu`, `dfttest2[cufft,nvrtc]`, `ort-cuda`, `trt{-rtx}`, `vszipcu` (+ `cl`, `vulkan`) |
+| **`amd`**         | AMD GPU                | `bm3dhip`, `dfttest2[hiprtc,hipfft]`, Linux-only `mlrt-migx` (+ `gpu`, `cl`, `vulkan`)                     |
 
 > [!IMPORTANT]
 > Some plugins distribute their wheels through our custom package index instead of PyPI.
