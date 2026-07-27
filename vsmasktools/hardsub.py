@@ -124,7 +124,7 @@ class CustomMaskFromFolder(CustomMaskFromClipsAndRanges):
 
         self.files = list(folder_path.glob("*"))
 
-        self.clips = [self._idx.source(file, bits=-1) for file in self.files]
+        self.clips = [self._idx.source(file, bits=None) for file in self.files]
 
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]:
         return [
@@ -143,7 +143,8 @@ class CustomMaskFromRanges(CustomMaskFromClipsAndRanges):
     ranges: Mapping[FilePathType, FrameRangeN | FrameRangesN]
 
     def __post_init__(self, idx: IndexerLike | None) -> None:
-        self.clips = [self._idx.source(str(file), bits=-1) for file in self.ranges]
+        super().__post_init__(idx)
+        self.clips = [self._idx.source(str(file), bits=None) for file in self.ranges]
 
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]:
         return [normalize_ranges(clip, ranges) for ranges in self.ranges.values()]
