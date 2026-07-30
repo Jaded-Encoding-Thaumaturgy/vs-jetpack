@@ -174,7 +174,7 @@ class Indexer(ABC):
     def _source(
         self,
         clips: Iterable[vs.VideoNode],
-        bits: int | None = None,
+        bits: int | None = 32,
         matrix: MatrixLike | None = None,
         transfer: TransferLike | None = None,
         primaries: PrimariesLike | None = None,
@@ -192,7 +192,7 @@ class Indexer(ABC):
     def source(
         self,
         file: SPathLike | Iterable[SPathLike],
-        bits: int | None = None,
+        bits: int | None = 32,
         *,
         matrix: MatrixLike | None = None,
         transfer: TransferLike | None = None,
@@ -434,7 +434,7 @@ class ExternalIndexer(Indexer):
     def source(
         self,
         file: SPathLike | Iterable[SPathLike],
-        bits: int | None = None,
+        bits: int | None = 32,
         *,
         matrix: MatrixLike | None = None,
         transfer: TransferLike | None = None,
