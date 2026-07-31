@@ -922,7 +922,9 @@ class QTempGaussMC(VSObject):
                         noise_source, 2048, protect_edges=False, protect_neutral_chroma=False, neutral_out=True
                     )
                     gen_noise = norm_expr(
-                        [noise_max, noise_min, gen_noise], "x y - z * range_size / y +", func=self._apply_denoise
+                        [noise_max, noise_min, gen_noise],
+                        "x y - z neutral - range_size / 0.5 + * y +",
+                        func=self._apply_denoise,
                     )
                     new_noise = reweave(noise_source, gen_noise, self.tff.field, self._apply_denoise)
 
