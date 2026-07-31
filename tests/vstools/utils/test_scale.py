@@ -1,6 +1,19 @@
 import numpy as np
 
-from vstools import Range, scale_delta, scale_mask, scale_value, vs
+from vstools import (
+    Range,
+    core,
+    get_lowest_value,
+    get_lowest_values,
+    get_neutral_value,
+    get_neutral_values,
+    get_peak_value,
+    get_peak_values,
+    scale_delta,
+    scale_mask,
+    scale_value,
+    vs,
+)
 
 
 def test_scale_value_no_change() -> None:
@@ -73,6 +86,49 @@ def test_scale_value_numpy_format() -> None:
     assert np.array_equal(res_format, np.array([0, 6144, 16384, 65280], dtype=np.uint16))
 
 
+def test_scale_value_numpy_dtypes_and_float() -> None:
+    arr = np.array([0, 24, 64, 255], dtype=np.uint8)
+
+    res_f32 = scale_value(arr, 8, vs.YUV444PS)
+    assert res_f32.dtype == np.float32
+
+    res_f16 = scale_value(arr, 8, vs.YUV444PH)
+    assert res_f16.dtype == np.float16
+
+    res_u32 = scale_value(arr, 8, vs.YUV444P32)
+    assert res_u32.dtype == np.uint32
+
+    # Fast path for same format array rounding
+    arr_float_same = np.array([0.4, 24.4, 64.4, 127.5, 255.4], dtype=np.float64)
+    res_same = scale_value(arr_float_same, 8, 8)
+    assert np.array_equal(res_same, np.array([0, 24, 64, 128, 255], dtype=np.uint8))
+
+
+def test_scale_value_video_node_and_frame() -> None:
+    clip_8 = core.std.BlankClip(format=vs.YUV420P8)
+    clip_10 = core.std.BlankClip(format=vs.YUV420P10)
+    frame_8 = clip_8.get_frame(0)
+
+    assert scale_value(16, clip_8, clip_10) == 64
+    assert scale_value(16, frame_8, clip_10) == 64
+    assert scale_value(16, clip_8, 10) == 64
+
+
+def test_scale_value_rgb() -> None:
+    clip_rgb = core.std.BlankClip(format=vs.RGB24)
+
+    assert scale_value(0, clip_rgb, vs.RGB24) == 0
+    assert scale_value(128, vs.RGB24, vs.RGB30, chroma=True) == 514
+    assert scale_value(128, 8, 10, chroma=True, family=vs.RGB, range_in=Range.FULL, range_out=Range.FULL) == 514
+
+
+def test_scale_value_chroma_offsets() -> None:
+    assert scale_value(128, 8, 10, chroma=True) == 512
+    assert scale_value(512, 10, 8, chroma=True) == 128
+    assert scale_value(128, 8, vs.YUV444PS, chroma=True) == 0.0
+    assert scale_value(0.0, vs.YUV444PS, 8, chroma=True) == 128
+
+
 def test_scale_mask_numpy() -> None:
     arr = np.array([0, 24, 64, 255], dtype=np.uint8)
     # Scale mask
@@ -85,3 +141,77 @@ def test_scale_delta_numpy() -> None:
     # Scale delta
     res_delta = scale_delta(arr, 8, 10)
     assert np.array_equal(res_delta, np.array([0, 96, 256, 1020], dtype=np.uint16))
+
+
+def test_scale_delta_video_node() -> None:
+    clip_8 = core.std.BlankClip(format=vs.YUV420P8)
+    clip_10 = core.std.BlankClip(format=vs.YUV420P10)
+    frame_8 = clip_8.get_frame(0)
+
+    assert scale_delta(10, clip_8, 10) == 40
+    assert scale_delta(40, 10, clip_8) == 10
+    assert scale_delta(10, clip_8, clip_10) == 40
+    assert scale_delta(10, frame_8, 10) == 40
+
+
+def test_get_lowest_value() -> None:
+    assert get_lowest_value(8) == 16
+    assert get_lowest_value(8, range_in=Range.FULL) == 0
+    assert get_lowest_value(vs.YUV444PS) == 0.0
+    assert get_lowest_value(vs.YUV444PS, chroma=True) == -0.5
+
+    clip_8 = core.std.BlankClip(format=vs.YUV420P8)
+    clip_rgb = core.std.BlankClip(format=vs.RGB24)
+    frame_8 = clip_8.get_frame(0)
+
+    assert get_lowest_value(clip_8) == 16
+    assert get_lowest_value(frame_8) == 16
+    assert get_lowest_value(clip_rgb) == 0
+    assert get_lowest_value(vs.RGB24) == 0
+    assert get_lowest_value(8, family=vs.RGB) == 0
+
+
+def test_get_lowest_values() -> None:
+    assert get_lowest_values(8) == [16, 16, 16]
+    assert get_lowest_values(8, mask=True) == [0, 0, 0]
+    assert get_lowest_values(vs.YUV420P8) == [16, 16, 16]
+    assert get_lowest_values(vs.YUV444PS) == [0.0, -0.5, -0.5]
+
+
+def test_get_neutral_value() -> None:
+    assert get_neutral_value(8) == 128
+    assert get_neutral_value(10) == 512
+    assert get_neutral_value(16) == 32768
+    assert get_neutral_value(vs.YUV444PS) == 0.0
+
+
+def test_get_neutral_values() -> None:
+    assert get_neutral_values(8) == [128, 128, 128]
+    assert get_neutral_values(vs.YUV444PS) == [0.0, 0.0, 0.0]
+    clip_8 = core.std.BlankClip(format=vs.YUV420P8)
+    assert get_neutral_values(clip_8) == [128, 128, 128]
+
+
+def test_get_peak_value() -> None:
+    assert get_peak_value(8) == 235
+    assert get_peak_value(8, chroma=True) == 240
+    assert get_peak_value(8, range_in=Range.FULL) == 255
+    assert get_peak_value(vs.YUV444PS) == 1.0
+    assert get_peak_value(vs.YUV444PS, chroma=True) == 0.5
+
+    clip_8 = core.std.BlankClip(format=vs.YUV420P8)
+    clip_rgb = core.std.BlankClip(format=vs.RGB24)
+    frame_8 = clip_8.get_frame(0)
+
+    assert get_peak_value(clip_8) == 235
+    assert get_peak_value(frame_8) == 235
+    assert get_peak_value(clip_rgb) == 255
+    assert get_peak_value(vs.RGB24) == 255
+    assert get_peak_value(8, family=vs.RGB) == 255
+
+
+def test_get_peak_values() -> None:
+    assert get_peak_values(8) == [235, 240, 240]
+    assert get_peak_values(8, mask=True) == [255, 255, 255]
+    assert get_peak_values(vs.YUV420P8) == [235, 240, 240]
+    assert get_peak_values(vs.YUV444PS) == [1.0, 0.5, 0.5]
