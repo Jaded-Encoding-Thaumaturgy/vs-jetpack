@@ -83,7 +83,7 @@ def scale_value(
     """
     import numpy as np
 
-    def _vs_fmt_to_dtype(
+    def vsfmt2dtype(
         fmt: vs.VideoFormat,
     ) -> np.dtype[np.float32] | np.dtype[np.float16] | np.dtype[np.uint32] | np.dtype[np.uint16] | np.dtype[np.uint8]:
         match fmt.bits_per_sample, fmt.sample_type:
@@ -125,7 +125,13 @@ def scale_value(
         range_out = Range.from_param(range_out, scale_value)
 
     if in_fmt == out_fmt and range_in == range_out and in_fmt.sample_type == out_fmt.sample_type:
-        return out_value.astype(_vs_fmt_to_dtype(out_fmt)) if isinstance(out_value, np.ndarray) else out_value
+        if isinstance(out_value, np.ndarray):
+            if out_fmt.sample_type is vs.INTEGER:
+                out_value = np.round(out_value)
+            out_value = np.astype(out_value, vsfmt2dtype(out_fmt))
+        elif out_fmt.sample_type is vs.INTEGER:
+            out_value = round(out_value)
+        return out_value
 
     if vs.RGB in (in_fmt.color_family, out_fmt.color_family, family):
         chroma = False
@@ -152,11 +158,11 @@ def scale_value(
     if out_fmt.sample_type is vs.INTEGER:
         peak = get_peak_value(out_fmt, range_in=Range.FULL)
         if isinstance(out_value, np.ndarray):
-            out_value = out_value.round().clip(0, peak).astype(_vs_fmt_to_dtype(out_fmt))
+            out_value = out_value.round().clip(0, peak).astype(vsfmt2dtype(out_fmt))
         else:
             out_value = clamp(round(out_value), 0, peak)
     elif isinstance(out_value, np.ndarray):
-        out_value = out_value.astype(_vs_fmt_to_dtype(out_fmt))
+        out_value = out_value.astype(vsfmt2dtype(out_fmt))
 
     return out_value
 
