@@ -445,7 +445,7 @@ __all__: list[str] = [
     "volume",
     "warnings",
 ]
-__version__: str = "1.5.0.114"
+__version__: str = "1.6.1.120"
 attr: str = "VERBOSE"
 bfloat16: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.BF16: 7>
 bool: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.BOOL: 4>
