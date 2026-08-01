@@ -1,9 +1,9 @@
 import builtins
 import collections.abc
+import types
 import typing
 
 import numpy
-import typing_extensions
 
 __all__: list[str] = [
     "APILanguage",
@@ -467,7 +467,6 @@ class Builder:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
-
         """
     def __del__(self) -> None: ...
     def __init__(self, logger: ILogger) -> None:
@@ -596,7 +595,7 @@ class BuilderFlag:
 
       DISABLE_COMPILATION_CACHE : Disable caching JIT compilation results during engine build.
 
-      STRIP_PLAN : Strip the refittable weights from the engine plan file.
+      STRIP_PLAN : Strip refittable weights from the engine plan file. If no refit mode is specified, REFIT_IDENTICAL is enabled by default. When used with REFIT_INDIVIDUAL, only weights explicitly marked with INetworkDefinition.mark_weights_refittable() are stripped. When used with REFIT or REFIT_IDENTICAL, TensorRT determines which refittable weights are stripped according to the selected refit mode.
 
       REFIT_IDENTICAL : Create a refittable engine using identical weights. Different weights during refits yield unpredictable behavior.
 
@@ -1955,6 +1954,8 @@ class IBuilderConfig:
     :ivar tiling_optimization_level: The optimization level of tiling strategies. A Higher level allows TensorRT to spend more time searching for better optimization strategy.
     :ivar l2_limit_for_tiling: The target L2 cache usage for tiling optimization.
     :ivar remote_auto_tuning_config: The config string to be used during remote auto-tuning. Remote auto-tuning is only enabled for engines built with EngineCapability.SAFETY.
+    :ivar build_route: :class:`str` The build route string passed to the compiler. The build route is a whitespace-separated list of ``-name=value`` Myelin knob tokens (e.g. ``"-conv_use_long_w=off -kgen:codegen:cuda_tile=2"``) used to customize engine compilation for performance tuning. Knob names are validated against the list returned by :attr:`all_build_routes` unless the internal ``bypass_build_route_whitelist`` option (set via ``TRT_INTERNAL_OPTIONS``) is enabled. Setting an empty string resets the build route. Available only when the global performance tuner feature is enabled in the build (disabled by default on RTX/Windows targets).
+    :ivar all_build_routes: :class:`str` JSON description of every build-route knob the compiler supports, populated when the :class:`IBuilderConfig` is created. Read-only. Returns an empty string on platforms where the global performance tuner feature is disabled (e.g. RTX/Windows targets).
 
     Below are the descriptions about each builder optimization level:
 
@@ -1967,6 +1968,7 @@ class IBuilderConfig:
 
     """
 
+    build_route: str
     default_device_type: DeviceType
     engine_capability: EngineCapability
     hardware_compatibility_level: HardwareCompatibilityLevel
@@ -1982,7 +1984,6 @@ class IBuilderConfig:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
-
         """
     def __del__(self) -> None: ...
     def add_optimization_profile(self, profile: IOptimizationProfile) -> int:
@@ -2186,6 +2187,8 @@ class IBuilderConfig:
     @DLA_core.setter
     def DLA_core(self, arg1: typing.SupportsInt) -> None: ...
     @property
+    def all_build_routes(self) -> str: ...
+    @property
     def avg_timing_iterations(self) -> int: ...
     @avg_timing_iterations.setter
     def avg_timing_iterations(self, arg1: typing.SupportsInt) -> None: ...
@@ -2347,6 +2350,7 @@ class ICudaEngine:
     :ivar streamable_weights_size: Returns the size of the streamable weights in the engine. This may not include all the weights.
     :ivar weight_streaming_budget_v2: Set and get the current weight streaming budget for inference. The budget may be set any non-negative value. A value of 0 streams the most weights. Values equal to streamable_weights_size (default) or larger will disable weight streaming.
     :ivar weight_streaming_scratch_memory_size: The amount of scratch memory required by a TensorRT ExecutionContext to perform inference. This value may change based on the current weight streaming budget. Please use the V2 memory APIs, engine.device_memory_size_v2 and ExecutionContext.set_device_memory() to provide memory which includes the current weight streaming scratch memory. Not specifying these APIs or using the V1 APIs will not include this memory, so TensorRT will resort to allocating itself.
+    :ivar weights_loaded: Whether GPU weights are currently loaded and ready for inference. False after deferred deserialization, True after load_weights() succeeds.
 
     """
 
@@ -2359,7 +2363,6 @@ class ICudaEngine:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
-
         """
     def __del__(self) -> None: ...
     def __getitem__(self, arg0: typing.SupportsInt) -> str: ...
@@ -2585,6 +2588,41 @@ class ICudaEngine:
 
         :arg name: The tensor name.
         """
+    def load_weights(self, blob: collections.abc.Buffer) -> builtins.bool:
+        """
+        Load GPU weights for an engine deserialized with deferred weight loading.
+
+        After this call succeeds, weights_loaded is True and any IExecutionContexts
+        created before this call remain valid -- their internal weight bindings are
+        refreshed automatically.
+
+        :arg blob: The same serialized engine buffer originally passed to
+            Runtime.deserialize_cuda_engine().
+
+        :returns: True on success, False if the engine was not deserialized with
+            deferred weight loading, weights were already loaded, or the blob is invalid.
+        """
+    def load_weights_async(self, stream_reader: IStreamReaderV2, stream: typing.SupportsInt) -> builtins.bool:
+        """
+        Asynchronously load GPU weights for an engine deserialized with deferred weight loading.
+
+        Reads the engine plan's weight section from ``stream_reader`` and copies it to the
+        GPU on ``stream`` without synchronizing the stream before returning, allowing the
+        transfer to overlap other GPU work (e.g. a GDS-backed reader). After this call
+        returns, weights_loaded is True even though the copy may still be in flight; any
+        work submitted on ``stream`` after this call is ordered after the weight transfer.
+        Work on a different stream, or the synchronous execute_v2(), must be synchronized
+        with ``stream`` explicitly before it can observe the loaded weights.
+
+        :arg stream_reader: An :class:`IStreamReaderV2` that reads from the same serialized
+            engine buffer originally passed to Runtime.deserialize_cuda_engine().
+        :arg stream: The CUDA stream (as an int handle) on which the async reads and the
+            weight copy are issued.
+
+        :returns: True if the async work was successfully enqueued, False if the engine was
+            not deserialized with deferred weight loading, weights were already loaded, or
+            the plan could not be parsed.
+        """
     def serialize(self) -> IHostMemory:
         """
         Serialize the engine to a stream.
@@ -2625,6 +2663,12 @@ class ICudaEngine:
     def weight_streaming_budget_v2(self, arg1: typing.SupportsInt) -> builtins.bool: ...
     @property
     def weight_streaming_scratch_memory_size(self) -> int: ...
+    @property
+    def weights_loaded(self) -> builtins.bool:
+        """
+        Whether GPU weights are currently loaded and ready for inference.
+        False after deserialization with deferred weight loading, True after load_weights() succeeds.
+        """
 
 class ICumulativeLayer(ILayer):
     """
@@ -2671,7 +2715,7 @@ class IDebugListener:
     def __init__(self) -> None: ...
     def process_debug_tensor(
         self,
-        addr: typing_extensions.CapsuleType,
+        addr: types.CapsuleType,
         location: TensorLocation,
         type: DataType,
         shape: Dims,
@@ -3013,7 +3057,6 @@ class IExecutionContext:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
-
         """
     def __del__(self) -> None: ...
     def execute_async_v3(self, stream_handle: typing.SupportsInt) -> builtins.bool:
@@ -3148,7 +3191,7 @@ class IExecutionContext:
 
         :arg aux_streams: A list of cuda streams. If the length of the list is greater than engine.num_aux_streams, then only the first "engine.num_aux_streams" streams will be used. If the length is less than engine.num_aux_streams, such as an empty list, then TensorRT will use the provided streams for the first few auxiliary streams, and will create additional streams internally for the rest of the auxiliary streams.
         """
-    def set_communicator(self, communicator: typing_extensions.CapsuleType) -> builtins.bool:
+    def set_communicator(self, communicator: types.CapsuleType) -> builtins.bool:
         """
         Set the NCCL communicator for the execution context.
 
@@ -3322,7 +3365,6 @@ class IFillLayer(ILayer):
     alpha: typing.Any
     beta: typing.Any
     operation: FillOperation
-    shape: Dims
     to_type: DataType
     def is_alpha_beta_int64(self) -> builtins.bool: ...
     def set_input(self, index: typing.SupportsInt, tensor: ITensor) -> None:
@@ -3356,6 +3398,10 @@ class IFillLayer(ILayer):
         :arg index: the index of the input to modify.
         :arg tensor: the input tensor.
         """
+    @property
+    def shape(self) -> typing.Any: ...
+    @shape.setter
+    def shape(self, arg1: Dims) -> None: ...
 
 class IGatherLayer(ILayer):
     """
@@ -3399,7 +3445,7 @@ class IGpuAllocator(IVersionedInterface):
         alignment: typing.SupportsInt,
         flags: typing.SupportsInt,
         stream: typing.SupportsInt,
-    ) -> typing_extensions.CapsuleType:
+    ) -> types.CapsuleType:
         """
         A callback implemented by the application to handle acquisition of GPU memory asynchronously.
         This is just a wrapper around a syncronous method allocate.
@@ -3418,7 +3464,7 @@ class IGpuAllocator(IVersionedInterface):
 
         :returns: The address of the allocated memory
         """
-    def deallocate_async(self, memory: typing_extensions.CapsuleType, stream: typing.SupportsInt) -> builtins.bool:
+    def deallocate_async(self, memory: types.CapsuleType, stream: typing.SupportsInt) -> builtins.bool:
         """
         A callback implemented by the application to handle release of GPU memory asynchronously.
         This is just a wrapper around a syncronous method deallocate.
@@ -3432,8 +3478,8 @@ class IGpuAllocator(IVersionedInterface):
         :returns: True if the acquired memory is released successfully.
         """
     def reallocate(
-        self, address: typing_extensions.CapsuleType, alignment: typing.SupportsInt, new_size: typing.SupportsInt
-    ) -> typing_extensions.CapsuleType:
+        self, address: types.CapsuleType, alignment: typing.SupportsInt, new_size: typing.SupportsInt
+    ) -> types.CapsuleType:
         """
         A callback implemented by the application to resize an existing allocation.
 
@@ -3484,7 +3530,7 @@ class IGpuAsyncAllocator(IGpuAllocator):
         alignment: typing.SupportsInt,
         flags: typing.SupportsInt,
         stream: typing.SupportsInt,
-    ) -> typing_extensions.CapsuleType:
+    ) -> types.CapsuleType:
         """
         A callback implemented by the application to handle acquisition of GPU memory asynchronously.
         If an allocation request of size 0 is made, ``None`` should be returned.
@@ -3501,9 +3547,7 @@ class IGpuAsyncAllocator(IGpuAllocator):
 
         :returns: The address of the allocated memory
         """
-    def deallocate_async(
-        self: IGpuAllocator, memory: typing_extensions.CapsuleType, stream: typing.SupportsInt
-    ) -> builtins.bool:
+    def deallocate_async(self: IGpuAllocator, memory: types.CapsuleType, stream: typing.SupportsInt) -> builtins.bool:
         """
         A callback implemented by the application to handle release of GPU memory asynchronously.
 
@@ -3521,7 +3565,7 @@ class IGridSampleLayer(ILayer):
     A grid sample layer in an :class:`INetworkDefinition` .
 
     This layer uses an input tensor and a grid tensor to produce an interpolated output tensor.
-    The input and grid tensors must shape tensors of rank 4. The only supported `SampleMode` s are
+    The input and grid tensors must be tensors of rank 4 or 5. The only supported `SampleMode` s are
     trt.samplemode.CLAMP, trt.samplemode.FILL, and trt.samplemode.REFLECT.
 
     :ivar interpolation_mode: class:`InterpolationMode` The interpolation type to use. Defaults to LINEAR.
@@ -3553,7 +3597,6 @@ class IHostMemory:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
-
         """
     def __buffer__(self, flags):
         """
@@ -4240,7 +4283,6 @@ class INetworkDefinition:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
-
         """
     def __del__(self) -> None: ...
     def __getitem__(self, arg0: typing.SupportsInt) -> ILayer: ...
@@ -4517,7 +4559,7 @@ class INetworkDefinition:
         """
     def add_grid_sample(self, input: ITensor, grid: ITensor) -> IGridSampleLayer:
         """
-        Creates a GridSample layer with a trt.InterpolationMode.LINEAR, unaligned corners, and trt.SampleMode.FILL for 4d-shape input tensors.
+        Creates a GridSample layer with a trt.InterpolationMode.LINEAR, unaligned corners, and trt.SampleMode.FILL for rank 4 or 5 input tensors.
         See :class:`IGridSampleLayer` for more information.
 
         :arg input: The input tensor to the layer.
@@ -5585,7 +5627,7 @@ class IPluginRegistry:
         :returns: ``True`` if the plugin creator was deregistered, ``False`` if it was not found in the registry
                 or otherwise could not be deregistered.
         """
-    def deregister_library(self, handle: typing_extensions.CapsuleType) -> None:
+    def deregister_library(self, handle: types.CapsuleType) -> None:
         """
         Deregister plugins associated with a library. Any resources acquired when the library was loaded will be released.
 
@@ -5601,7 +5643,7 @@ class IPluginRegistry:
 
         :returns: An :class:`IPluginCreator` .
         """
-    def load_library(self, plugin_path: str) -> typing_extensions.CapsuleType:
+    def load_library(self, plugin_path: str) -> types.CapsuleType:
         """
         Load and register a shared library of plugins.
 
@@ -5725,9 +5767,9 @@ class IPluginV2:
     def execute_async(
         self,
         batch_size: typing.SupportsInt,
-        inputs: collections.abc.Sequence[typing_extensions.CapsuleType],
-        outputs: collections.abc.Sequence[typing_extensions.CapsuleType],
-        workspace: typing_extensions.CapsuleType,
+        inputs: collections.abc.Sequence[types.CapsuleType],
+        outputs: collections.abc.Sequence[types.CapsuleType],
+        workspace: types.CapsuleType,
         stream_handle: typing.SupportsInt,
     ) -> int:
         """
@@ -6012,10 +6054,7 @@ class IPluginV2Ext(IPluginV2):
     :ivar tensorrt_version: :class:`int` The API version with which this plugin was built.
     """
     def attach_to_context(
-        self,
-        cudnn: typing_extensions.CapsuleType,
-        cublas: typing_extensions.CapsuleType,
-        allocator: typing_extensions.CapsuleType,
+        self, cudnn: types.CapsuleType, cublas: types.CapsuleType, allocator: types.CapsuleType
     ) -> None:
         """
         Attach the plugin object to an execution context and grant the plugin the access to some context resource.
@@ -6696,7 +6735,7 @@ class IResizeLayer(ILayer):
        * (ResizeCoordinateTransformation.HALF_PIXEL, ResizeSelector.UPPER)
 
 
-    :ivar shape: :class:`Dims` The output dimensions. Must to equal to input dimensions size.
+    :ivar shape: :class:`Dims` The output dimensions, or ``None`` if they are specified dynamically through a second layer input or via scales instead. Must be equal to the input dimensions size.
     :ivar scales: :class:`List[float]` List of resize scales.
         If executing this layer on DLA, there are three restrictions:
         1. ``len(scales)`` has to be exactly 4.
@@ -6717,7 +6756,6 @@ class IResizeLayer(ILayer):
     nearest_rounding: ResizeRoundMode
     resize_mode: InterpolationMode
     selector_for_single_pixel: ResizeSelector
-    shape: Dims
     def set_input(self, index: typing.SupportsInt, tensor: ITensor) -> None:
         """
         Sets the input tensor for the given index.
@@ -6738,6 +6776,10 @@ class IResizeLayer(ILayer):
     def scales(self) -> list[float]: ...
     @scales.setter
     def scales(self, arg1: collections.abc.Sequence[typing.SupportsFloat]) -> None: ...
+    @property
+    def shape(self) -> typing.Any: ...
+    @shape.setter
+    def shape(self, arg1: Dims) -> None: ...
 
 class IReverseSequenceLayer(ILayer):
     """
@@ -6799,9 +6841,17 @@ class IRuntimeCache:
         """
         Deserialize the runtime cache.
 
+        The blob is validated against the current environment before its contents are loaded, and is rejected
+        (leaving this cache unchanged) on any mismatch. The checks include, but are not limited to, the cache wire
+        format, the TensorRT-RTX version, the GPU device properties/SKU, the CUDA-context CiG state, the
+        operating-system family, and the compiler backend version, which must match exactly; the CUDA driver version
+        must share the same major version and be the same or newer. A current CUDA context must be present so the
+        environment can be captured for comparison.
+
         :arg blob: Memory object containing the serialized runtime cache.
 
-        :returns: Boolean indicating success or failure.
+        :returns: Boolean indicating whether the cache was compatible and its contents were loaded. Returns False on
+            an invalid/corrupt blob or an environment mismatch.
         """
     def reset(self) -> builtins.bool:
         """
@@ -6959,7 +7009,7 @@ class IShuffleLayer(ILayer):
     This class shuffles data by applying in sequence: a transpose operation, a reshape operation and a second transpose operation. The dimension types of the output are those of the reshape dimension.
 
     :ivar first_transpose: :class:`Permutation` The permutation applied by the first transpose operation. Default: Identity Permutation
-    :ivar reshape_dims: :class:`Dims` The reshaped dimensions.
+    :ivar reshape_dims: :class:`Dims` The reshaped dimensions, or ``None`` if they are specified dynamically through a second layer input instead.
         Two special values can be used as dimensions.
         Value 0 copies the corresponding dimension from input. This special value can be used more than once in the dimensions. If number of reshape dimensions is less than input, 0s are resolved by aligning the most significant dimensions of input.
         Value -1 infers that particular dimension by looking at input and rest of the reshape dimensions. Note that only a maximum of one dimension is permitted to be specified as -1.
@@ -6972,7 +7022,6 @@ class IShuffleLayer(ILayer):
     """
 
     first_transpose: Permutation
-    reshape_dims: Dims
     second_transpose: Permutation
     zero_is_placeholder: builtins.bool
     def set_input(self, index: typing.SupportsInt, tensor: ITensor) -> None:
@@ -6997,6 +7046,10 @@ class IShuffleLayer(ILayer):
         :arg index: The index of the input tensor.
         :arg tensor: The input tensor.
         """
+    @property
+    def reshape_dims(self) -> typing.Any: ...
+    @reshape_dims.setter
+    def reshape_dims(self, arg1: Dims) -> None: ...
 
 class ISliceLayer(ILayer):
     """
@@ -7052,18 +7105,14 @@ class ISliceLayer(ILayer):
     * The input tensor has four dimensions.
     * For :const:`SliceMode.FILL` , the fill value input is a scalar output of an :class:`IConstantLayer` with value 0 that is not consumed by any other layer.
 
-    :ivar start: :class:`Dims` The start offset.
-    :ivar shape: :class:`Dims` The output dimensions.
-    :ivar stride: :class:`Dims` The slicing stride.
+    :ivar start: :class:`Dims` The start offset, or ``None`` if it is specified dynamically through a layer input instead.
+    :ivar shape: :class:`Dims` The output dimensions, or ``None`` if they are specified dynamically through a layer input instead.
+    :ivar stride: :class:`Dims` The slicing stride, or ``None`` if it is specified dynamically through a layer input instead.
     :ivar mode: :class:`SampleMode` Controls how :class:`ISliceLayer` handles out of bounds coordinates.
-    :ivar axes: :class:`Dims` The axes that starts, sizes, and strides correspond to.
+    :ivar axes: :class:`Dims` The axes that starts, sizes, and strides correspond to, or ``None`` if they are specified dynamically through a layer input instead.
     """
 
-    axes: Dims
     mode: SampleMode
-    shape: Dims
-    start: Dims
-    stride: Dims
     def set_input(self, index: typing.SupportsInt, tensor: ITensor) -> None:
         """
         Sets the input tensor for the given index. The index must be 0 or 4 for a static slice layer.
@@ -7089,6 +7138,22 @@ class ISliceLayer(ILayer):
         :arg index: The index of the input tensor.
         :arg tensor: The input tensor.
         """
+    @property
+    def axes(self) -> typing.Any: ...
+    @axes.setter
+    def axes(self, arg1: Dims) -> None: ...
+    @property
+    def shape(self) -> typing.Any: ...
+    @shape.setter
+    def shape(self, arg1: Dims) -> None: ...
+    @property
+    def start(self) -> typing.Any: ...
+    @start.setter
+    def start(self, arg1: Dims) -> None: ...
+    @property
+    def stride(self) -> typing.Any: ...
+    @stride.setter
+    def stride(self, arg1: Dims) -> None: ...
 
 class ISoftMaxLayer(ILayer):
     """
@@ -7190,9 +7255,7 @@ class IStreamReaderV2:
             return data
     """
     def __init__(self) -> None: ...
-    def read(
-        self, destination: typing_extensions.CapsuleType, num_bytes: typing.SupportsInt, stream: typing.SupportsInt
-    ) -> int:
+    def read(self, destination: types.CapsuleType, num_bytes: typing.SupportsInt, stream: typing.SupportsInt) -> int:
         """
         A callback implemented by the application to set the stream location.
 
@@ -7227,7 +7290,7 @@ class IStreamWriter:
 
     """
     def __init__(self) -> None: ...
-    def write(self, data: typing_extensions.CapsuleType, size: typing.SupportsInt) -> int:
+    def write(self, data: types.CapsuleType, size: typing.SupportsInt) -> int:
         """
         A callback implemented by the application to write a particular chunk of memory.
 
@@ -8151,7 +8214,6 @@ class OnnxParser:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
-
         """
     def __del__(self) -> None: ...
     def __init__(self, network: INetworkDefinition, logger: ILogger) -> None:
@@ -9373,6 +9435,7 @@ class Runtime:
     :ivar tempfile_control_flags: :class:`int` Flags which control whether TensorRT is allowed to create in-memory or temporary files.
                                                See :class:`TempfileControlFlag` for details.
     :ivar engine_host_code_allowed: :class:`builtins.bool` Whether this runtime is allowed to deserialize engines that contain host executable code (Default: False).
+    :ivar defer_weights_loading: :class:`builtins.bool` When True, the next deserialize_cuda_engine() call will skip GPU weight allocation. Call ICudaEngine.load_weights() or ICudaEngine.load_weights_async() to bring weights to the GPU when ready (Default: False).
 
     """
 
@@ -9387,7 +9450,6 @@ class Runtime:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
-
         """
     def __del__(self) -> None: ...
     def __init__(self, logger: ILogger) -> None:
@@ -9440,6 +9502,18 @@ class Runtime:
     def DLA_core(self) -> int: ...
     @DLA_core.setter
     def DLA_core(self, arg1: typing.SupportsInt) -> None: ...
+    @property
+    def defer_weights_loading(self) -> builtins.bool:
+        """
+        When set to True, the next call to deserialize_cuda_engine() will defer GPU weight
+        allocation. The engine can then be used to create execution contexts (driving JIT
+        compilation) without weights resident on the GPU. Call ICudaEngine.load_weights()
+        (host blob) or ICudaEngine.load_weights_async() (streamed from an
+        IStreamReaderV2 on a CUDA stream) when ready to bring weights to the GPU and enable
+        inference.
+        """
+    @defer_weights_loading.setter
+    def defer_weights_loading(self, arg1: builtins.bool) -> None: ...
     @property
     def engine_header_size(self) -> int: ...
     @property
@@ -10323,7 +10397,7 @@ def get_plugin_registry() -> IPluginRegistry:
     Return the plugin registry for standard runtime
     """
 
-def init_libnvinfer_plugins(logger: typing_extensions.CapsuleType, namespace: str) -> builtins.bool:
+def init_libnvinfer_plugins(logger: types.CapsuleType, namespace: str) -> builtins.bool:
     """
     Initialize and register all the existing TensorRT plugins to the :class:`IPluginRegistry` with an optional namespace.
     The plugin library author should ensure that this function name is unique to the library.
