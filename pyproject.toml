@@ -159,10 +159,6 @@ nvidia = [
     "vapoursynth-vszipcu>=1.2.0",
     "tensorrt-cu13>=11.0.0.114",
     "tensorrt-rtx-cu13>=1.5.0.114",
-    # Explicitly specify these so they're properly resolved through uv --index
-    "nvidia-cudnn-cu13",
-    "tensorrt-cu13-libs",
-    "tensorrt-rtx-cu13-bindings",
 ]
 amd = [
     "vsjetpack[gpu,cl,vulkan]",
@@ -221,6 +217,11 @@ doc = [
     # Additional packages to be documented.
     "vstransitions==0.1.4",
 ]
+index = [
+    # Explicitly specify these so they're properly resolved through uv --index
+    "nvidia-cudnn-cu13",
+    "tensorrt-cu13-libs",
+]
 
 [tool.vsscale.onnx.download]
 provider = ["ArtCNN==v1.6.2", "DPIR==20210902", "Waifu2x==20250502-2"]
@@ -231,9 +232,6 @@ vapoursynth-ffms2 = { index = "vs-wheels" }
 vapoursynth-fmtconv = { index = "vs-wheels" }
 nvidia-cudnn-cu13 = { index = "nvidia" }
 tensorrt-cu13-libs = { index = "nvidia" }
-tensorrt-rtx-cu13-bindings = [
-    { index = "vs-wheels", marker = "python_version == '3.14'" },
-]
 
 [[tool.uv.index]]
 # Not exactly necessary since nvidia wheels are also published on pypi as wheel stub (generic sdist)
