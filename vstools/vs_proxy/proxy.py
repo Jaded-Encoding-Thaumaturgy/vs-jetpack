@@ -980,12 +980,11 @@ class FunctionProxy(_FunctionProxyBase):
     if not TYPE_CHECKING:
 
         def __getattr__(self, name: str) -> Any:
-            return getattr(self._vs_function, name)
+            return getattr(self._vs_function(), name)
 
         def __call__(self, *args: Any, **kwargs: Any) -> Any:
-            return self._vs_function(*args, **kwargs)
+            return self._vs_function()(*args, **kwargs)
 
-    @property
     def _vs_function(self) -> Function:
         plugin, func_name = self._func_ref
         core, namespace = plugin._plugin_ref
