@@ -315,3 +315,12 @@ def test_vs_core_proxy_core_freed_error() -> None:
 
     with pytest.raises(CustomRuntimeError, match="The core the proxy made reference to was freed!"):
         _ = temp_proxy._core
+
+
+def test_missing_plugin_recursion_error() -> None:
+    func = core.lazy.nonexistent_plugin_xyz.some_func
+    with pytest.raises(AttributeError, match="No attribute with the name nonexistent_plugin_xyz exists"):
+        func()
+
+    with pytest.raises(AttributeError, match="No attribute with the name nonexistent_plugin_xyz exists"):
+        getattr(func, "some_attr")
