@@ -124,13 +124,16 @@ def scale_value(
     else:
         range_out = Range.from_param(range_out, scale_value)
 
+    out_peak = get_peak_value(out_fmt, range_in=Range.FULL)
+
     if in_fmt == out_fmt and range_in == range_out and in_fmt.sample_type == out_fmt.sample_type:
-        if isinstance(out_value, np.ndarray):
-            if out_fmt.sample_type is vs.INTEGER:
-                out_value = np.round(out_value)
-            out_value = np.astype(out_value, vsfmt2dtype(out_fmt))
-        elif out_fmt.sample_type is vs.INTEGER:
-            out_value = round(out_value)
+        if out_fmt.sample_type is vs.INTEGER:
+            if isinstance(out_value, np.ndarray):
+                out_value = out_value.round().clip(0, out_peak).astype(vsfmt2dtype(out_fmt))
+            else:
+                out_value = clamp(round(out_value), 0, out_peak)
+        elif isinstance(out_value, np.ndarray):
+            out_value = out_value.astype(vsfmt2dtype(out_fmt))
         return out_value
 
     if vs.RGB in (in_fmt.color_family, out_fmt.color_family, family):
@@ -156,11 +159,10 @@ def scale_value(
             out_value += 16 << (out_fmt.bits_per_sample - 8)
 
     if out_fmt.sample_type is vs.INTEGER:
-        peak = get_peak_value(out_fmt, range_in=Range.FULL)
         if isinstance(out_value, np.ndarray):
-            out_value = out_value.round().clip(0, peak).astype(vsfmt2dtype(out_fmt))
+            out_value = out_value.round().clip(0, out_peak).astype(vsfmt2dtype(out_fmt))
         else:
-            out_value = clamp(round(out_value), 0, peak)
+            out_value = clamp(round(out_value), 0, out_peak)
     elif isinstance(out_value, np.ndarray):
         out_value = out_value.astype(vsfmt2dtype(out_fmt))
 
