@@ -2124,18 +2124,18 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-cranexpr"
-version = "0.10.0"
+version = "0.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2f/ec/c5e89faf421486f0fe1dfd07af9da67d22f2cfe314a12bc58c71b95295e8/vapoursynth_cranexpr-0.10.0.tar.gz", hash = "sha256:070e72fce59f477e8824d6f8618e156efff70918c31b449918dbf745cd4f42c6", size = 100917, upload-time = "2026-06-06T16:20:42.196Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e9/65/4ce977b877b41b46a95a224dab3dd5cf3205cfd523c56d9c102a06110426/vapoursynth_cranexpr-0.12.0.tar.gz", hash = "sha256:218afaaf546aa52bb828bdb12fac88c7132b7bab1214bb875acd44b30afac864", size = 102498, upload-time = "2026-08-04T22:26:35.425Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8c/11/942d9f01a64d4bb109ac438896d8dfeafdd9402922cb073994b147597215/vapoursynth_cranexpr-0.10.0-py3-none-macosx_13_0_arm64.whl", hash = "sha256:1a4d350b74aa1e4f0c7becde15282323d5c55e5cc44a020442e14fc886850bb5", size = 1063730, upload-time = "2026-06-06T16:20:33.298Z" },
-    { url = "https://files.pythonhosted.org/packages/2b/e8/a1ad80722a85e219f0bf643e648a038942ecd238554d5cf6afcd071ff0ed/vapoursynth_cranexpr-0.10.0-py3-none-macosx_13_0_x86_64.whl", hash = "sha256:23247c1e04dd24b39564657e6ae9e8cf4cf6dd06cdedfb69dd38275db365b238", size = 3291880, upload-time = "2026-06-06T16:20:35.023Z" },
-    { url = "https://files.pythonhosted.org/packages/8d/5d/7516ce7e6d03c0e65fa5a2e80a5b730ca109ce6527be05642b2de8a4d53d/vapoursynth_cranexpr-0.10.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:fbdced87f527731c9fb60e11412eafb2376f9093f0730024b5a808b084fc671f", size = 1122831, upload-time = "2026-06-06T16:20:36.524Z" },
-    { url = "https://files.pythonhosted.org/packages/68/7c/53dc828cff490d31765a6bdc75eeb097e63f90a99c6da37cb78f761a415c/vapoursynth_cranexpr-0.10.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:665aa75aac285309f312329599b0bd59b15437dbfd2cec8d9f01c6f6f5062e0d", size = 5162524, upload-time = "2026-06-06T16:20:38.364Z" },
-    { url = "https://files.pythonhosted.org/packages/5d/e0/b7384f510319737561d593a9312fb4150bcbd4cf6f50eb1f1a3788176fa8/vapoursynth_cranexpr-0.10.0-py3-none-win_amd64.whl", hash = "sha256:1fbec25232a294af8596a71e1a48f574e7dfe8561b4e55a61bee34f97f8586e5", size = 4811253, upload-time = "2026-06-06T16:20:40.397Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/eb/f2f4fd5fba5c37912fc12695a30b152be7b0a5a86bd7a9bffb1481c030a4/vapoursynth_cranexpr-0.12.0-py3-none-macosx_13_0_arm64.whl", hash = "sha256:36db8ab08e4753a08453a1aa107830f3686a5ea050bf06d6bf5030f6b024bc95", size = 1087940, upload-time = "2026-08-04T22:26:28.328Z" },
+    { url = "https://files.pythonhosted.org/packages/af/1a/f8e029bbc30e84719cf53f748b850703cf830b8882149a575555972adcc9/vapoursynth_cranexpr-0.12.0-py3-none-macosx_13_0_x86_64.whl", hash = "sha256:b82eb473e1e0263de6d1f6978ce0647d885f53747d8b6ad9ab9a3b2f6693531a", size = 3343094, upload-time = "2026-08-04T22:26:29.758Z" },
+    { url = "https://files.pythonhosted.org/packages/b6/24/2f49873917d902d10634e37f88332d899d35809e7b6842077da3feb102c9/vapoursynth_cranexpr-0.12.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:cb1a852a843f1e3d3d002b1388cf7357708a6ecb7fd47038f2ea7542c2c64b31", size = 1146068, upload-time = "2026-08-04T22:26:31.096Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/5b/14757f41255d5d67c6614c05feb830bf6c09499cd99c86b23aa6560b2098/vapoursynth_cranexpr-0.12.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:d976f5423604c041956a9b3b5d32a10d61839f2bb473f2bfb8d33692bdaf0949", size = 5254214, upload-time = "2026-08-04T22:26:32.505Z" },
+    { url = "https://files.pythonhosted.org/packages/bf/7f/f483c6bfcae598e0874d42a391368dedfa6e5094fec0b5fec81ad827f1a5/vapoursynth_cranexpr-0.12.0-py3-none-win_amd64.whl", hash = "sha256:8d9a327623ff665a5ef917cbf789ee5b16d010d3e12524ba9fc3491500b952c8", size = 4906965, upload-time = "2026-08-04T22:26:34.025Z" },
 ]
 
 [[package]]
@@ -3273,7 +3273,7 @@ requires-dist = [
     { name = "vapoursynth-bwdif", marker = "extra == 'deinterlace'", specifier = ">=5.0" },
     { name = "vapoursynth-bwdif", marker = "extra == 'denoise'", specifier = ">=5.0" },
     { name = "vapoursynth-bwdif", marker = "extra == 'full'", specifier = ">=5.0" },
-    { name = "vapoursynth-cranexpr", specifier = "~=0.10.0" },
+    { name = "vapoursynth-cranexpr", specifier = "~=0.12.0" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'aa'", specifier = ">=1.4" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'deband'", specifier = ">=1.4" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'dehalo'", specifier = ">=1.4" },
