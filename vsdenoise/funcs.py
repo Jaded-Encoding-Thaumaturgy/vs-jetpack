@@ -4,23 +4,21 @@ This module contains general denoising functions built on top of base denoisers.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, Literal, overload
 
 from jetpytools import MISSING, CustomRuntimeError, FuncExcept, KwargsNotNone, MissingT, fallback, normalize_seq
 
 from vsexprtools import ExprOp, ExprVars, combine_expr, norm_expr
+from vsjetpack import deprecated
 from vskernels import Catrom, Kernel, KernelLike, Lanczos, Scaler, ScalerLike
+from vsscale import pscale_blend
 from vstools import Planes, VSFunctionNoArgs, check_ref_clip, get_color_family, join, normalize_planes, scale_delta, vs
 
 from .mvtools import MotionVectors, MVTools, MVToolsPreset, refine_blksize
 from .prefilters import PrefilterLike
 
-__all__ = [
-    "ccd",
-    "mc_clamp",
-    "mc_degrain",
-]
+__all__ = ["ccd", "mc_clamp", "mc_degrain"]
 
 
 @overload
@@ -29,15 +27,16 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = ...,
+    preset: Mapping[str, Any] = ...,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     export_globals: Literal[False] = False,
     planes: Planes = None,
 ) -> vs.VideoNode: ...
@@ -49,15 +48,16 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = ...,
+    preset: Mapping[str, Any] = ...,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     *,
     export_globals: Literal[True],
     planes: Planes = None,
@@ -70,15 +70,16 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = ...,
+    preset: Mapping[str, Any] = ...,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     export_globals: bool = ...,
     planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]: ...
@@ -89,15 +90,16 @@ def mc_degrain(
     vectors: MotionVectors | None = None,
     prefilter: vs.VideoNode | PrefilterLike | VSFunctionNoArgs | None = None,
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
-    preset: MVToolsPreset = MVToolsPreset.HQ_SAD,
+    preset: Mapping[str, Any] = MVToolsPreset.HQ_SAD,
     tr: int = 1,
+    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
-    overlap: int | tuple[int, int] = 2,
+    overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad_recalc: int | None = None,
-    limit: int | tuple[int | None, int | None] | None = None,
-    thscd: int | tuple[int | None, int | None] | None = None,
+    limit: float | tuple[float, float] | None = None,
+    thscd: int | tuple[int | None, float | None] | None = None,
     export_globals: bool = False,
     planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]:
@@ -114,6 +116,7 @@ def mc_degrain(
         mfilter: Filter or clip to use where degrain couldn't find a matching block.
         preset: MVTools preset defining base values for the MVTools object. Default is HQ_SAD.
         tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
+        delta: Specific delta(s) of motion vectors to use.
         blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
         overlap: The blksize divisor for block overlap. Larger overlapping reduces blocking artifacts.
         refine: Number of times to recalculate motion vectors with halved block size.
@@ -122,7 +125,7 @@ def mc_degrain(
             taken from pixels of source clip.
         thsad_recalc: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value is
             scaled to 8x8 block size.
-        limit: Maximum allowed change in pixel values.
+        limit: Maximum allowed change in pixel values (8-bit scale).
         thscd: Scene change detection thresholds:
 
                - First value: SAD threshold for considering a block changed between frames.
@@ -135,7 +138,7 @@ def mc_degrain(
         Motion compensated and temporally filtered clip with reduced noise. If export_globals is true: A tuple
         containing the processed clip and the MVTools object.
     """
-    mv_args = preset | KwargsNotNone(search_clip=prefilter)
+    mv_args = {**preset, **KwargsNotNone(search_clip=prefilter)}
 
     thsad_recalc = fallback(thsad_recalc, round((thsad[0] if isinstance(thsad, tuple) else thsad) / 2))
 
@@ -143,13 +146,13 @@ def mc_degrain(
     mfilter = mfilter(mv.clip) if callable(mfilter) else fallback(mfilter, mv.clip)
 
     if not vectors:
-        mv.analyze(tr=tr, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+        mv.analyze(tr=tr, delta=delta, blksize=blksize, overlap_div=overlap_div)
 
         for _ in range(refine):
             blksize = refine_blksize(blksize)
-            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap_div)
 
-    den = mv.degrain(mfilter, mv.clip, None, tr, thsad, limit, thscd, planes)
+    den = mv.degrain(mfilter, super=mv.clip, tr=tr, delta=delta, thsad=thsad, limit=limit, thscd=thscd, planes=planes)
 
     return (den, mv) if export_globals else den
 
@@ -210,14 +213,20 @@ def mc_clamp(
     )
 
 
+@deprecated(
+    "This function is deprecated and will be removed in a future version. "
+    "Use `zsmooth.CCD` directly instead, which supports YUV inputs as of version 0.19.0.",
+    category=DeprecationWarning,
+)
 def ccd(
     clip: vs.VideoNode,
     thr: float = 4,
     tr: int = 0,
     ref_points: Sequence[bool] = (True, True, False),
     scale: float | None = None,
+    ref: vs.VideoNode | None = None,
     pscale: float = 0.0,
-    chroma_upscaler: ScalerLike = Lanczos(
+    chroma_upscaler: ScalerLike = Lanczos(  # noqa: B008
         format=lambda clip: clip.format.replace(color_family=vs.RGB, subsampling_w=0, subsampling_h=0)
     ),
     chroma_downscaler: KernelLike = Catrom,
@@ -246,6 +255,8 @@ def ccd(
 
                - `1` = 25x25 matrix (original CCD)
                - `2` = 50x50, and so on.
+        ref: Reference clip used for internal calculations.
+            It may use a different subsampling, but all other format properties must match, including width and height.
         pscale: Correction strength for chroma ringing introduced during downscaling.
         chroma_upscaler: Upscaler for converting YUV input to full-resolution RGB before processing.
         chroma_downscaler: Kernel used to downscale the denoised RGB result back to the input format.
@@ -258,36 +269,40 @@ def ccd(
     Returns:
         Denoised clip.
     """
-    func = func or ccd
+    func = func or ccd  # pyright: ignore[reportDeprecated]
 
     if planes is MISSING:
         planes = [1, 2] if clip.format.color_family == vs.YUV else None
 
     planes = normalize_planes(clip, planes)
 
-    if (clip.format.subsampling_w, clip.format.subsampling_h) == (0, 0):
-        full = clip
-        pscale = 1.0
-    else:
-        full = Scaler.ensure_obj(chroma_upscaler, func).scale(clip, clip.width, clip.height)
+    def convert_to_rgb(c: vs.VideoNode, pscale: float = pscale) -> tuple[vs.VideoNode, float]:
+        if (c.format.subsampling_w, c.format.subsampling_h) == (0, 0):
+            full = c
+            pscale = 1.0
+        else:
+            full = Scaler.ensure_obj(chroma_upscaler, func).scale(c, c.width, c.height)
 
-        if (full.format.subsampling_w, full.format.subsampling_h) != (0, 0):
-            raise CustomRuntimeError("`chroma_upscaler` didn't upscale chroma planes.", func, repr(full))
+            if (full.format.subsampling_w, full.format.subsampling_h) != (0, 0):
+                raise CustomRuntimeError("`chroma_upscaler` didn't upscale chroma planes.", func, repr(full))
 
-    if get_color_family(full) != vs.RGB:
-        rgb = vs.core.resize.Point(full, format=full.format.replace(color_family=vs.RGB))
-    else:
-        rgb = full
+        if get_color_family(full) != vs.RGB:
+            rgb = vs.core.resize.Point(full, format=full.format.replace(color_family=vs.RGB))
+        else:
+            rgb = full
 
-    processed = vs.core.zsmooth.CCD(rgb, thr, tr, ref_points, scale)
+        return rgb, pscale
+
+    rgb, pscale = convert_to_rgb(clip, pscale)
+    rgb_ref, _ = convert_to_rgb(ref) if ref else (None, None)
+
+    processed = vs.core.zsmooth.CCD(rgb, thr, tr, ref_points, scale, rgb_ref)
 
     if clip.format.id != processed.format.id:
         chroma_downscaler = Kernel.ensure_obj(chroma_downscaler, func)
         out = chroma_downscaler.resample(processed, clip, clip)
 
-        if pscale != 1.0:
-            no_denoise = chroma_downscaler.resample(rgb, clip, clip)
-            out = norm_expr([clip, out, no_denoise], f"x z x - {pscale} * + y z - +", planes=planes, func=func)
+        out = pscale_blend(clip, out, lambda: chroma_downscaler.resample(rgb, clip, clip), pscale, planes, func)
     else:
         out = processed
 

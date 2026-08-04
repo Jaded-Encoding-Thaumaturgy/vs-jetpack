@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterable
-from functools import cache
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -145,13 +144,13 @@ class Operators(metaclass=SingletonMeta):
         """Performs x == y."""
         return ComputedVar([x, y, ExprOp.EQ])
 
-    def gte(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
+    def ge(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
         """Performs x >= y."""
-        return ComputedVar([x, y, ExprOp.GTE])
+        return ComputedVar([x, y, ExprOp.GE])
 
-    def lte(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
+    def le(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
         """Performs x <= y."""
-        return ComputedVar([x, y, ExprOp.LTE])
+        return ComputedVar([x, y, ExprOp.LE])
 
     def and_(self, x: ExprVarLike, y: ExprVarLike) -> ComputedVar:
         """Performs a logical AND."""
@@ -403,14 +402,14 @@ class ExprVar(ABC):
     def __lt__(self, other: ExprVarLike) -> ComputedVar:
         return op.lt(self, other)
 
-    def __lte__(self, other: ExprVarLike) -> ComputedVar:
-        return op.lte(self, other)
+    def __le__(self, other: ExprVarLike) -> ComputedVar:
+        return op.le(self, other)
 
     def __gt__(self, other: ExprVarLike) -> ComputedVar:
         return op.gt(self, other)
 
-    def __gte__(self, other: ExprVarLike) -> ComputedVar:
-        return op.gte(self, other)
+    def __ge__(self, other: ExprVarLike) -> ComputedVar:
+        return op.ge(self, other)
 
     def __bool__(self) -> bool:
         raise NotImplementedError
@@ -449,7 +448,7 @@ class ExprVar(ABC):
     def __str__(self) -> str: ...
 
     def __hash__(self) -> int:
-        return hash(self)
+        return hash(str(self))
 
     def __eq__(self, value: object) -> bool:
         return str(self) == str(value)
@@ -750,10 +749,11 @@ class ClipVar(VSObjectABC, ExprVar):
         return op.rel_pix(self.char, *index)
 
     @property
-    @cache
     def props(self) -> ClipVarProps:
         """A helper to access frame properties."""
-        return ClipVarProps(self)
+        if not hasattr(self, "_props"):
+            self._props = ClipVarProps(self)
+        return self._props
 
     @property
     def char(self) -> str:
@@ -830,7 +830,6 @@ class Tokens(metaclass=SingletonMeta):
         RangeSize: Final[Token] = cast(Token, ...)
         """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
-    @cache
     def _get_token(self, name: str) -> Token:
         return Token(ExprToken[name])
 

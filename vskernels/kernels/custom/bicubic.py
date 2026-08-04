@@ -1,12 +1,12 @@
 from typing import Any
 
+from vstools import vs
+
 from ...abstract import CustomComplexKernel
 from ..zimg import Bicubic
 from .helpers import poly3
 
-__all__ = [
-    "CustomBicubic",
-]
+__all__ = ["CustomBicubic"]
 
 
 class CustomBicubic(CustomComplexKernel, Bicubic):
@@ -60,3 +60,8 @@ class CustomBicubic(CustomComplexKernel, Bicubic):
             )
 
         return 0.0
+
+    def get_params_args(
+        self, is_descale: bool, clip: vs.VideoNode, width: int | None = None, height: int | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
+        return CustomComplexKernel.get_params_args(self, is_descale, clip, width, height, **kwargs)

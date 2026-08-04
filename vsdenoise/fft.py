@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterator, Mapping, Sequence
-from functools import cache
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Literal, Self, overload
 
@@ -35,8 +34,14 @@ logger = getLogger(__name__)
 class _BackendBase(CustomEnum):
     kwargs: dict[str, Any]
 
+    def __eq__(self, other: object) -> bool:
+        return self.name == other.name if isinstance(other, _BackendBase) else super().__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
     def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
-        self = self.resolve()
+        self = self.resolve()  # noqa: PLW0642
 
         if self == DFTTest.Backend.OLD:
             return core.dfttest.DFTTest(clip, *args, **self.kwargs | kwargs)
@@ -50,7 +55,6 @@ class _BackendBase(CustomEnum):
 
         return dfttest2.DFTTest(clip, *args, **kwargs)
 
-    @cache
     def resolve(self) -> Self:
         if self.value != "auto":
             return self
@@ -69,7 +73,7 @@ class _BackendBase(CustomEnum):
 
     @property
     def plugin(self) -> vs.Plugin:
-        return getattr(core.lazy, self.resolve().value)
+        return getattr(core.lazy, self.resolve().value)  # type: ignore[call-overload]
 
 
 type Frequency = float
@@ -842,7 +846,10 @@ class DFTTest:
             Returns:
                 The configured backend with applied parameters.
             """
-            new_enum = _BackendBase(self.__class__.__name__, DFTTest.Backend.__members__)  # type: ignore
+            new_enum = _BackendBase(  # type: ignore[call-arg]
+                self.__class__.__name__,
+                {name: member.value for name, member in DFTTest.Backend.__members__.items()},
+            )
             member = getattr(new_enum, self.name)
             member.kwargs = kwargs
             return member
@@ -870,7 +877,6 @@ class DFTTest:
                 """
                 ...
 
-            @cache
             def resolve(self) -> Self:  # pyright: ignore[reportIncompatibleVariableOverride]
                 """
                 Resolves the appropriate DFTTest backend to use based on availability.

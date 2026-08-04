@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterable
 from functools import wraps
 from typing import Any
 
-from jetpytools import cachedproperty
+from jetpytools import CustomValueError, cachedproperty
 
 from vsexprtools import ExprToken, norm_expr
 from vskernels import (
@@ -57,24 +57,25 @@ class RescaleBase(VSObjectABC):
         /,
         kernel: ComplexKernelLike,
         upscaler: ScalerLike = ArtCNN,
-        downscaler: ScalerLike = Hermite(linear=True),
+        downscaler: ScalerLike | None = None,
         field_based: FieldBasedLike | bool | None = None,
         border_handling: int = BorderHandling.MIRROR,
         **kwargs: Any,
     ) -> None:
         self._clipy, *chroma = split(depth(clip, 32))
         self._chroma = chroma
-
-        self._kernel = ComplexKernel.ensure_obj(kernel)
-        self._upscaler = Scaler.ensure_obj(upscaler)
-
-        self._downscaler = Scaler.ensure_obj(downscaler)
-
+        self._kernel = ComplexKernel.ensure_obj(kernel, self.__class__)
+        self._upscaler = Scaler.ensure_obj(upscaler, self.__class__)
+        self._downscaler = Scaler.ensure_obj(downscaler or Hermite(linear=True), self.__class__)
         self._field_based = FieldBased.from_param_with_fallback(field_based)
-
-        self._border_handling = BorderHandling.from_param(border_handling)
-
+        self._border_handling = BorderHandling.from_param(border_handling, self.__class__)
         self.__add_props = kwargs.get("_add_props")
+
+        if "border_handling" in self._kernel.kwargs:
+            raise CustomValueError(
+                "`border_handling` cannot be passed to a kernel instance. "  # no fmt
+                "Pass it to the `Rescale` constructor instead."
+            )
 
     @staticmethod
     def _apply_field_based[RescaleT: RescaleBase](
@@ -274,7 +275,7 @@ class Rescale(RescaleBase):
         height: int | float,  # noqa: PYI041
         kernel: ComplexKernelLike,
         upscaler: ScalerLike = ArtCNN,
-        downscaler: ScalerLike = Hermite(linear=True),
+        downscaler: ScalerLike | None = None,
         width: int | float | None = None,  # noqa: PYI041
         base_height: int | None = None,
         base_width: int | None = None,
@@ -293,8 +294,8 @@ class Rescale(RescaleBase):
             height: Height to be descaled to. If passed as a float, a fractional descale is performed.
             kernel: Kernel used for descaling.
             upscaler: Scaler that supports doubling. Defaults to ``ArtCNN``.
-            downscaler: Scaler used to downscale the upscaled clip back to input resolution. Defaults to
-                ``Hermite(linear=True)``.
+            downscaler: Scaler used to downscale the upscaled clip back to input resolution.
+                Defaults to ``Hermite(linear=True)``.
             width: Width to be descaled to. If ``None``, it is automatically calculated from the height.
             base_height: Integer height to contain the clip within. If ``None``, it is automatically calculated from the
                 height.
@@ -325,10 +326,24 @@ class Rescale(RescaleBase):
             clip, height, width, base_height, base_width, shift[0], shift[1], crop, sample_grid_model, mode="hw"
         )
 
-        super().__init__(clip, kernel, upscaler, downscaler, field_based, border_handling, **kwargs)
+        super().__init__(
+            clip,
+            kernel,
+            upscaler,
+            downscaler or Hermite(linear=True),
+            field_based,
+            border_handling,
+            **kwargs,
+        )
 
         if self._crop > (0, 0, 0, 0):
             self._clipy = self._clipy.std.Crop(*self._crop)
+
+        if "sample_grid_model" in self._kernel.kwargs:
+            raise CustomValueError(
+                "`sample_grid_model` cannot be passed to a kernel instance. "  # no fmt
+                "Pass it to the `Rescale` constructor instead."
+            )
 
     def _generate_descale(self, clip: vs.VideoNode) -> vs.VideoNode:
         if not self._ignore_mask:
@@ -370,12 +385,16 @@ class Rescale(RescaleBase):
     def _generate_upscale(self, clip: vs.VideoNode) -> vs.VideoNode:
         upscale = super()._generate_upscale(clip)
 
-        merged_mask = norm_expr([self.line_mask, self.credit_mask], "x y - 0 mask_max clamp", func=self.__class__)
+        merged_mask = norm_expr(
+            [self.line_mask, self.credit_mask],
+            "x mask_max min y 0 mask_max clamp - 0 max",
+            func=self.__class__,
+        )
 
         upscale = core.std.CopyFrameProps(core.std.MaskedMerge(self._clipy, upscale, merged_mask), upscale)
 
         if self._crop > (0, 0, 0, 0):
-            pre_y = get_y(self._pre)
+            pre_y = get_y(depth(self._pre, 32))
 
             mask = region_rel_mask(
                 pre_y.std.BlankClip(length=1, keep=True),

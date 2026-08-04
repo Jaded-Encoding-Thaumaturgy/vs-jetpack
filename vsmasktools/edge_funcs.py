@@ -48,7 +48,7 @@ def ringing_mask(
     edgemask = normalize_mask(credit_mask, plane(clip, 0), **kwargs)
     edgemask = limiter(edgemask, mask=True, func=ringing_mask)
 
-    light = norm_expr(edgemask, f"x {thlimi} - {thma - thmi} / mask_mask *", func=ringing_mask)
+    light = norm_expr(edgemask, f"x {thlimi} - {thma - thmi} / mask_max *", func=ringing_mask)
 
     shrink = Morpho.dilation(light, rad)
     shrink = Morpho.binarize_mask(shrink, brz)
@@ -115,11 +115,15 @@ def tcanny_retinex(
 
 def limited_linemask(
     clip: vs.VideoNode,
-    sigmas: list[float] = [0.000125, 0.0025, 0.0055],
-    detail_sigmas: list[float] = [0.011, 0.013],
+    sigmas: Sequence[float] | None = None,
+    detail_sigmas: Sequence[float] | None = None,
     edgemasks: Sequence[MaskLike] = [Kirsch],
     **kwargs: Any,
 ) -> vs.VideoNode:
+    if detail_sigmas is None:
+        detail_sigmas = [0.011, 0.013]
+    if sigmas is None:
+        sigmas = [0.000125, 0.0025, 0.0055]
     clip_y = plane(clip, 0)
 
     return combine(
@@ -252,6 +256,6 @@ class dre_edgemask(CustomEnum):  # noqa: N801
         merge = norm_expr([dreluma_edges, Kirsch.edgemask(luma)], "x y + mask_max min", func=self.__class__)
 
         if brz:
-            return Morpho.binarize(merge, brz)
+            return Morpho.binarize_mask(merge, brz)
 
         return merge

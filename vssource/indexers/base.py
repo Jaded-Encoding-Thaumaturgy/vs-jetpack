@@ -174,7 +174,7 @@ class Indexer(ABC):
     def _source(
         self,
         clips: Iterable[vs.VideoNode],
-        bits: int | None = None,
+        bits: int | None = 32,
         matrix: MatrixLike | None = None,
         transfer: TransferLike | None = None,
         primaries: PrimariesLike | None = None,
@@ -192,7 +192,7 @@ class Indexer(ABC):
     def source(
         self,
         file: SPathLike | Iterable[SPathLike],
-        bits: int | None = None,
+        bits: int | None = 32,
         *,
         matrix: MatrixLike | None = None,
         transfer: TransferLike | None = None,
@@ -426,7 +426,7 @@ class ExternalIndexer(Indexer):
     def get_video_idx_path(self, folder: SPath, file_hash: str, video_name: SPathLike) -> SPath:
         vid_name = SPath(video_name).stem
         current_indxer = SPath(self._bin_path).name
-        filename = "_".join([file_hash, vid_name, current_indxer])
+        filename = f"{file_hash}_{vid_name}_{current_indxer}"
 
         return self.get_idx_file_path(PackageStorage(folder, package_name=__name__).get_file(filename))
 
@@ -434,7 +434,7 @@ class ExternalIndexer(Indexer):
     def source(
         self,
         file: SPathLike | Iterable[SPathLike],
-        bits: int | None = None,
+        bits: int | None = 32,
         *,
         matrix: MatrixLike | None = None,
         transfer: TransferLike | None = None,

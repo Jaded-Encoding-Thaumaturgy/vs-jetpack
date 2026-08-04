@@ -95,7 +95,7 @@ def jivtc(
 
     final = join(ivtced, final) if chroma_only else final
 
-    return FieldBased.ensure_presence(final, FieldBased.PROGRESSIVE)
+    return FieldBased.PROGRESSIVE.apply(final)
 
 
 def vfm(

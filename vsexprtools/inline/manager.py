@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from contextlib import contextmanager
-from functools import cache
 from inspect import currentframe
 from types import FrameType
 from typing import Any, Self, SupportsIndex, cast, overload
@@ -350,7 +349,8 @@ class InlineExprWrapper(VSObject):
         self._nodes = clips
         self._format = get_video_format(format if format is not None else clips[0])
         self._final_expr_node = self.as_var("")
-        self._inner = (self.vars, self.op, cast(Self, self))
+        self._vars = tuple(ClipVar(char, clip) for char, clip in zip(ExprVars.cycle(), self._nodes))
+        self._inner = (self._vars, self.op, cast(Self, self))
         self._final_clip: vs.VideoNode | None = None
 
     @overload
@@ -388,7 +388,6 @@ class InlineExprWrapper(VSObject):
         return ComputedVar(x)
 
     @property
-    @cache
     def vars(self) -> Sequence[ClipVar]:
         """
         Sequence of [ClipVar][vsexprtools.inline.helpers.ClipVar] objects, one for each input clip.
@@ -403,7 +402,7 @@ class InlineExprWrapper(VSObject):
         Returns:
             Sequence of [ClipVar][vsexprtools.inline.helpers.ClipVar] objects.
         """
-        return tuple(ClipVar(char, clip) for char, clip in zip(ExprVars.cycle(), self._nodes))
+        return self._vars
 
     @property
     def out(self) -> ComputedVar:

@@ -66,7 +66,7 @@ class CustomMaskFromClipsAndRanges(VSObjectABC, GeneralMask):
 
     clips: list[vs.VideoNode] = field(init=False)
 
-    processing: VSFunctionNoArgs = field(default=core.lazy.std.BinarizeMask, kw_only=True)
+    processing: VSFunctionNoArgs = field(default=Morpho.binarize_mask, kw_only=True)
     idx: InitVar[IndexerLike | None] = field(default=None, kw_only=True)
 
     def __post_init__(self, idx: IndexerLike | None) -> None:
@@ -124,7 +124,7 @@ class CustomMaskFromFolder(CustomMaskFromClipsAndRanges):
 
         self.files = list(folder_path.glob("*"))
 
-        self.clips = [self._idx.source(file, bits=-1) for file in self.files]
+        self.clips = [self._idx.source(file, bits=None) for file in self.files]
 
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]:
         return [
@@ -143,7 +143,8 @@ class CustomMaskFromRanges(CustomMaskFromClipsAndRanges):
     ranges: Mapping[FilePathType, FrameRangeN | FrameRangesN]
 
     def __post_init__(self, idx: IndexerLike | None) -> None:
-        self.clips = [self._idx.source(str(file), bits=-1) for file in self.ranges]
+        super().__post_init__(idx)
+        self.clips = [self._idx.source(str(file), bits=None) for file in self.ranges]
 
     def frame_ranges(self, clip: vs.VideoNode) -> list[list[tuple[int, int]]]:
         return [normalize_ranges(clip, ranges) for ranges in self.ranges.values()]
@@ -476,8 +477,7 @@ class HardsubASS(HardsubMask):
     def _mask(self, clip: vs.VideoNode, ref: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
         mask = core.sub.TextFile(ref, self.filename, fontdir=self.fontdir, blend=False).std.PropToClip("_Alpha")
 
-        mask = mask.std.BinarizeMask(1)
-
+        mask = Morpho.binarize_mask(mask, 1 / 255)
         mask = iterate(mask, core.lazy.std.Maximum, 3)
         mask = iterate(mask, core.lazy.std.Inflate, 3)
 

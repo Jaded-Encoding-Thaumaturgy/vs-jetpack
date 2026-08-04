@@ -204,7 +204,6 @@ def based_diff_mask(
         elif isinstance(postfilter, tuple):
             mask = iterate(mask, remove_grain, postfilter[0], postfilter[1])
         elif isinstance(postfilter, list):
-            mask = mask
             for count, rgmode in postfilter:
                 mask = iterate(mask, remove_grain, count, rgmode)
         else:

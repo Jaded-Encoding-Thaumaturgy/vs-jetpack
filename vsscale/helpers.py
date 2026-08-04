@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache, partial
@@ -9,17 +8,27 @@ from math import ceil, floor
 from types import NoneType
 from typing import TYPE_CHECKING, Any, NamedTuple, Self, overload
 
-from jetpytools import CustomTypeError, FuncExcept, mod2, mod_x
+from jetpytools import CustomTypeError, CustomValueError, FuncExcept, mod2, mod_x
 
+from vsexprtools import norm_expr
 from vskernels import MixedScalerProcess, SampleGridModel, Scaler, ScalerLike, is_scaler_like
 from vstools import FunctionUtil, Planes, VSFunctionNoArgs, get_w, vs
 
 if TYPE_CHECKING:
-    from device_smi import Device  # type: ignore[import-untyped]
+    from pyopencl import Device
 
 from .various import ComplexSuperSamplerProcess
 
-__all__ = ["CropAbs", "CropRel", "ScalingArgs", "pre_ss", "scale_var_clip"]
+__all__ = [
+    "CropAbs",
+    "CropRel",
+    "ScalingArgs",
+    "get_gpu",
+    "is_gpu_available",
+    "pre_ss",
+    "pscale_blend",
+    "scale_var_clip",
+]
 
 logger = getLogger(__name__)
 
@@ -73,7 +82,7 @@ def scale_var_clip(
                 if norm_scaler not in no_accepts_var:
                     try:
                         scaled = part_scaler(clip)
-                    except BaseException:
+                    except Exception:  # noqa: BLE001
                         no_accepts_var.append(norm_scaler)
 
                 if norm_scaler in no_accepts_var:
@@ -314,6 +323,56 @@ class ScalingArgs:
         )
 
 
+def pscale_blend(
+    clip: vs.VideoNode,
+    processed: vs.VideoNode,
+    unprocessed: vs.VideoNode | Callable[[], vs.VideoNode],
+    pscale: float = 0.0,
+    planes: Planes = None,
+    func: FuncExcept | None = None,
+) -> vs.VideoNode:
+    """
+    Apply pscale-based error correction/scaling expression.
+
+    This function calculates a blend of the processed clip, the original clip,
+    and an unprocessed, re-scaled and downscaled clip to correct downscaling artifacts/ringing.
+
+    The formula evaluated is:
+        `y + (1 - pscale) * (x - z)`
+
+    Where:
+        - `x` is `clip` (original input clip)
+        - `y` is `processed` (processed and downscaled clip)
+        - `z` is `unprocessed` (unprocessed and downscaled clip)
+
+    - Behavior of `pscale`:
+        - `1.0`: No correction is applied (`y` is returned).
+        - `0.5`: The scaling change is blended back at half strength.
+        - `0.0`: The scaling change is blended back at full strength.
+        - `> 1.0`: Subtracts scaling changes (acts as a low-pass/blur).
+        - `< 0.0`: Amplifies scaling changes (acts as a low-quality sharpen).
+
+    Args:
+        clip: Original input clip (x).
+        processed: Processed and resampled/downscaled clip (y).
+        unprocessed: Unprocessed resampled/downscaled clip or a callable that returns it (z).
+        pscale: Scale factor/correction strength.
+        planes: Planes to process.
+        func: Function returned for custom error handling.
+    Returns:
+        The blended/corrected clip.
+    """
+    func = func or pscale_blend
+
+    if pscale == 1.0:
+        return processed
+
+    if callable(unprocessed):
+        unprocessed = unprocessed()
+
+    return norm_expr([clip, processed, unprocessed], f"x z - {1.0 - pscale} * y +", planes, func=func)
+
+
 @overload
 def pre_ss(
     clip: vs.VideoNode,
@@ -322,6 +381,7 @@ def pre_ss(
     sp: type[MixedScalerProcess[Any, Any]] = ComplexSuperSamplerProcess,
     *,
     mod: int = 4,
+    pscale: float = 1.0,
     planes: Planes = None,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode: ...
@@ -334,6 +394,7 @@ def pre_ss(
     rfactor: float = 2.0,
     sp: MixedScalerProcess[Any, Any],
     mod: int = 4,
+    pscale: float = 1.0,
     planes: Planes = None,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode: ...
@@ -348,6 +409,7 @@ def pre_ss(
     supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
     downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
     mod: int = 4,
+    pscale: float = 1.0,
     planes: Planes = None,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode: ...
@@ -361,6 +423,7 @@ def pre_ss(
     supersampler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] | None = None,
     downscaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode] | None = None,
     mod: int = 4,
+    pscale: float = 1.0,
     planes: Planes = None,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
@@ -406,6 +469,7 @@ def pre_ss(
         supersampler: Scaler used to upscale the input clip if `sp` is not specified.
         downscaler: Downscaler used for undoing the upscaling done by the supersampler if `sp` is not specified.
         mod: Ensures the supersampled resolution is a multiple of this value. Defaults to 4.
+        pscale: Scaling correction strength.
         planes: Which planes to process.
         func: An optional function to use for error handling.
 
@@ -421,30 +485,44 @@ def pre_ss(
     )
 
     if isinstance(sp, MixedScalerProcess):
+        if pscale != 1.0:
+            raise CustomValueError("pscale is not supported when using a MixedScalerProcess!", func_util.func)
         return func_util.return_clip(sp.scale(*args))
 
     if supersampler and downscaler and function:
-        ss = (
-            Scaler.ensure_obj(supersampler, func_util.func).scale(*args)
-            if is_scaler_like(supersampler)
-            else supersampler(*args)
-        )
+        ss = _get_scaled(supersampler, *args, func_util.func)
 
         processed = function(ss)
 
-        args = processed, clip.width, clip.height
-        down = (
-            Scaler.ensure_obj(downscaler, func_util.func).scale(*args)
-            if is_scaler_like(downscaler)
-            else downscaler(*args)
+        down = _get_scaled(downscaler, processed, clip.width, clip.height, func_util.func)
+        down = pscale_blend(
+            func_util.work_clip,
+            down,
+            lambda: _get_scaled(downscaler, ss, clip.width, clip.height, func_util.func),
+            pscale,
+            func=func_util.func,
         )
 
         return func_util.return_clip(down)
 
     if function:
-        return pre_ss(clip, sp=sp(function=function), rfactor=rfactor, mod=mod, planes=planes, func=func)
+        return pre_ss(clip, sp=sp(function=function), rfactor=rfactor, mod=mod, pscale=pscale, planes=planes, func=func)
 
     raise CustomTypeError
+
+
+def _get_scaled(
+    scaler: ScalerLike | Callable[[vs.VideoNode, int, int], vs.VideoNode],
+    clip: vs.VideoNode,
+    width: int,
+    height: int,
+    func: FuncExcept,
+) -> vs.VideoNode:
+    return (
+        Scaler.ensure_obj(scaler, func).scale(clip, width, height)
+        if is_scaler_like(scaler)
+        else scaler(clip, width, height)
+    )
 
 
 @cache
@@ -452,15 +530,24 @@ def get_gpu(device_id: int = 0) -> Device | None:
     """
     Return the GPU available for the requested device id.
     """
-    try:
-        from device_smi import Device
+    from pyopencl import device_type, get_platforms
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", module=r"device_smi.*")
-            return Device(f"gpu:{device_id}")
-    except Exception as e:
-        logger.debug(e)
+    if not (platforms := get_platforms()):
+        logger.debug("No OpenCL platforms found.")
         return None
+
+    try:
+        # platform also resolves any software/cpu targets
+        # but it doesn't seem like any one platform can have multiple devices
+        gpus = [device for device in [pl.get_devices()[0] for pl in platforms] if device.type == device_type.GPU]
+    except Exception as e:
+        logger.debug(e, exc_info=e)
+        return None
+
+    try:
+        return gpus[device_id]
+    except KeyError:
+        raise CustomValueError(f"No GPU found for device_id {device_id}!") from None
 
 
 def is_gpu_available(device_id: int = 0) -> bool:

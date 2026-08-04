@@ -131,7 +131,9 @@ def _linearize(
     if sigmoid or linear:
         from ..util import LinearLight
 
-        fmt = obj.kwargs.pop("format", kwargs.pop("format", None))
+        fmt = kwargs.pop("format", None)
+        if fmt is None:
+            fmt = obj.kwargs.get("format")
 
         llargs = dict[str, Any](clip=clip, sigmoid=sigmoid, out_fmt=fmt)
 
@@ -540,8 +542,10 @@ class ComplexScaler(KeepArScaler, LinearScaler):
             sample_grid_model=sample_grid_model,
             sar=sar,
             keep_ar=keep_ar,
-            blur=blur,
         )
+
+        if blur is not None:
+            kwargs["blur"] = blur
 
         shift_top, shift_left = shift
 
@@ -687,11 +691,11 @@ class ComplexDescaler(LinearDescaler):
 
             shift_y, shift_x = _descale_shift_norm(shift, False, self.descale)
 
-            kwargs_tf, shift = sample_grid_model.for_src(clip, width, height, (shift_y[0], shift_x[0]), **kwargs)
-            kwargs_bf, shift = sample_grid_model.for_src(clip, width, height, (shift_y[1], shift_x[1]), **kwargs)
+            kwargs_tf, shift_tf = sample_grid_model.for_src(clip, width, height, (shift_y[0], shift_x[0]), **kwargs)
+            kwargs_bf, shift_bf = sample_grid_model.for_src(clip, width, height, (shift_y[1], shift_x[1]), **kwargs)
 
-            de_kwargs_tf = self.get_descale_args(clip, (shift_y[0], shift_x[0]), *de_base_args, **kwargs_tf)
-            de_kwargs_bf = self.get_descale_args(clip, (shift_y[1], shift_x[1]), *de_base_args, **kwargs_bf)
+            de_kwargs_tf = self.get_descale_args(clip, shift_tf, *de_base_args, **kwargs_tf)
+            de_kwargs_bf = self.get_descale_args(clip, shift_bf, *de_base_args, **kwargs_bf)
 
             if height % 2:
                 raise CustomIndexError("You can't descale to odd resolution when crossconverted!", self.descale)

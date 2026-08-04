@@ -119,7 +119,7 @@ class BaseScalerSpecializer[DefaultScalerT: BaseScaler](BaseScaler, metaclass=Ba
 
         def __new__(cls, *args: Any, **kwargs: Any) -> Self:
             if not cls.__isspecialized__:
-                cls = get_origin(cls[cls.default_scaler])
+                cls = get_origin(cls[cls.default_scaler])  # noqa: PLW0642
 
             return super().__new__(cls, *args, **kwargs)
 

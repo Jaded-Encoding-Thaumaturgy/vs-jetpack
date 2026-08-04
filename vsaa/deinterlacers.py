@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections import UserDict
-from collections.abc import Mapping, Sequence
+from collections.abc import MutableMapping, Sequence
 from dataclasses import dataclass, replace
 from enum import IntFlag, auto
 from fractions import Fraction
-from typing import TYPE_CHECKING, Any, Protocol, Self, cast, runtime_checkable
+from operator import attrgetter
+from typing import TYPE_CHECKING, Any, Never, Protocol, Self, cast, runtime_checkable
 
-from jetpytools import CustomNotImplementedError, CustomValueError, fallback, normalize_seq
+from jetpytools import MISSING, CustomNotImplementedError, CustomStrEnum, CustomValueError, fallback, normalize_seq
 
 from vsjetpack import TypeVar
 from vskernels import (
@@ -46,7 +48,6 @@ class SupportsBobDeinterlace(Protocol):
     __slots__ = ()
 
     def deinterlace(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode: ...
-
     def bob(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode: ...
 
 
@@ -230,7 +231,11 @@ class AntiAliaser(Deinterlacer, ABC):
 
         return clip
 
-    def transpose(self, clip: vs.VideoNode, **kwargs: Any) -> tuple[vs.VideoNode, Mapping[str, vs.VideoNode | None]]:
+    def transpose(
+        self,
+        clip: vs.VideoNode,
+        **kwargs: Any,
+    ) -> tuple[vs.VideoNode, MutableMapping[str, vs.VideoNode | None]]:
         """
         Transpose the input clip by swapping its horizontal and vertical axes.
 
@@ -377,7 +382,9 @@ class NNEDI3(SuperSampler):
     """
     Neural Network Edge Directed Interpolation (3rd gen.)
 
-    More information: https://github.com/sekrit-twc/znedi3
+    More information:
+        - https://github.com/sekrit-twc/znedi3
+        - https://github.com/HolyWu/VapourSynth-nnedi3vk
     """
 
     nsize: int = 0
@@ -424,7 +431,7 @@ class NNEDI3(SuperSampler):
     - 1: Weights trained to minimise squared error.
     """
 
-    pscrn: int | None = None
+    pscrn: int = 4
     """
     The prescreener used to decide which pixels should be processed by the predictor neural network,
     and which can be handled by simple cubic interpolation.
@@ -436,16 +443,19 @@ class NNEDI3(SuperSampler):
     - 3: New prescreener level 1.
     - 4: New prescreener level 2.
 
-    The new prescreener is not available with float input.
-
-    - Wrapper default is 4 for integer input and 1 for float input. When `opencl=True` it is always 1.
-    - Plugin default is 2 for integer input and 1 for float input.
+    Wrapper default is 4, plugin default is 2.
     """
 
-    opencl: bool = False
-    """
-    Enables the use of the OpenCL variant.
-    """
+    gpu: bool = False
+    """Enables the use of the Vulkan variant."""
+
+    opencl: Never = cast(Never, MISSING)
+    """Unused deprecated parameter."""
+
+    def __post_init__(self) -> None:
+        if self.opencl is not cast(Never, MISSING):
+            warnings.warn("The 'opencl' argument has been removed and is deprecated.", RuntimeWarning)
+        return super().__post_init__()
 
     @Scaler.cachedproperty
     def kernel_radius(self) -> int:
@@ -460,21 +470,17 @@ class NNEDI3(SuperSampler):
                 return 32
 
     def get_deint_args(self, *, clip: vs.VideoNode | None = None, **kwargs: Any) -> dict[str, Any]:
-        pscrn = (
-            fallback(self.pscrn, 1 if self.opencl or clip.format.sample_type is vs.FLOAT else 4) if clip else self.pscrn
-        )
-
         return {
             "nsize": self.nsize,
             "nns": self.nns,
             "qual": self.qual,
             "etype": self.etype,
-            "pscrn": pscrn,
+            "pscrn": self.pscrn,
         } | kwargs
 
     @property
     def _deinterlacer_function(self) -> VSFunctionAllArgs:
-        return core.lazy.sneedif.NNEDI3 if self.opencl else core.lazy.znedi3.nnedi3
+        return core.lazy.nnedi3vk.NNEDI3 if self.gpu else core.lazy.znedi3.nnedi3
 
     def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = tff + double_rate * 2
@@ -487,6 +493,95 @@ class EEDI3(SuperSampler):
     """
     Enhanced Edge Directed Interpolation (3rd gen.)
     """
+
+    class Backend(CustomStrEnum):
+        """Enum representing available backends on which to run the plugin."""
+
+        CPU = "vszip"
+        """Pure CPU implementation"""
+
+        OPENCL = "vszipcl"
+        """An OpenCL device"""
+
+        VULKAN = "eedi3vk2"
+        """A Vulkan device"""
+
+        CUDA = "vszipcu"
+        """A CUDA device"""
+
+        @property
+        def supports_mclip(self) -> bool:
+            """Whether the backend supports mclip."""
+            return "mclip" in getattr(core, self.value).EEDI3.__signature__.parameters
+
+        @property
+        def supports_h(self) -> bool:
+            """Whether the backend supports columns interpolating."""
+            return hasattr(getattr(core, self.value), "EEDI3H")
+
+        @property
+        def should_h(self) -> bool:
+            """Whether the backend should run columns interpolating."""
+            return self.supports_h and self != EEDI3.Backend.CPU
+
+        def EEDI3(  # noqa: N802
+            self,
+            clip: vs.VideoNode,
+            field: int,
+            *args: Any,
+            sclip: vs.VideoNode | None = None,
+            mclip: vs.VideoNode | None = None,
+            **kwargs: Any,
+        ) -> vs.VideoNode:
+            """Applies the EEDI3 filter using the plugin associated with the selected backend."""
+            if self.supports_mclip:
+                kwargs.update(sclip=sclip, mclip=mclip)
+            else:
+                kwargs.update(sclip=sclip)
+
+            return getattr(core, self.value).EEDI3(clip, field, *args, **kwargs)
+
+        def EEDI3H(  # noqa: N802
+            self,
+            clip: vs.VideoNode,
+            field: int,
+            *args: Any,
+            sclip: vs.VideoNode | None = None,
+            mclip: vs.VideoNode | None = None,
+            **kwargs: Any,
+        ) -> vs.VideoNode:
+            """Applies the EEDI3H filter using the plugin associated with the selected backend."""
+            if self.should_h:
+                attr = "EEDI3H"
+                tclips = {"sclip": sclip, "mclip": mclip}
+            else:
+                attr = "EEDI3"
+                clip, tclips = self.transpose(clip, sclip=sclip, mclip=mclip, **kwargs)
+
+            if self.supports_mclip:
+                kwargs.update(sclip=tclips["sclip"], mclip=tclips["mclip"])
+            else:
+                kwargs.update(sclip=tclips["sclip"])
+
+            result = attrgetter(f"{self.value}.{attr}")(core)(clip, field, *args, **kwargs)
+            return result if self.should_h else result.std.Transpose()
+
+        @staticmethod
+        def transpose(
+            clip: vs.VideoNode,
+            *,
+            sclip: vs.VideoNode | None = None,
+            mclip: vs.VideoNode | None = None,
+            **kwargs: Any,
+        ) -> tuple[vs.VideoNode, MutableMapping[str, vs.VideoNode | None]]:
+            """Transpose the input clip by swapping its horizontal and vertical axes."""
+            if isinstance(sclip, vs.VideoNode):
+                sclip = sclip.std.Transpose()
+
+            if isinstance(mclip, vs.VideoNode):
+                mclip = mclip.std.Transpose()
+
+            return clip.std.Transpose(), kwargs | {"sclip": sclip, "mclip": mclip}
 
     alpha: float = 0.2
     """
@@ -533,19 +628,18 @@ class EEDI3(SuperSampler):
     but this can also increase the chance of artifacts and slow down processing.
     """
 
-    ucubic: bool = True
+    hp: bool = False
     """
-    Determines the type of interpolation used.
-    - When `ucubic=True`, cubic 4-point interpolation is applied.
-    - When `ucubic=False`, 2-point linear interpolation is used.
+    Determines the type of search steps:
+    - When hp=True, it uses half-pel search steps.
+    - When hp=False, it uses full-pel search steps.
     """
 
-    cost3: bool = True
-    """
-    Defines the neighborhood cost function used to measure similarity.
-    - When `cost3=True`, a 3-neighborhood cost function is used.
-    - When `cost3=False`, a 1-neighborhood cost function is applied.
-    """
+    ucubic: Never = cast(Never, MISSING)
+    """Unused deprecated parameter."""
+
+    cost3: Never = cast(Never, MISSING)
+    """Unused deprecated parameter."""
 
     vcheck: int = 2
     """
@@ -579,6 +673,13 @@ class EEDI3(SuperSampler):
     or bicubic methods instead.
     The primary purpose of the mask is to reduce computational overhead
     by limiting edge-directed interpolation to certain pixels.
+
+    Only the VULKAN and CPU backends supports it.
+    """
+
+    backend: Backend = Backend.CPU
+    """
+    Set the backend to use for processing.
     """
 
     @Scaler.cachedproperty
@@ -627,7 +728,7 @@ class EEDI3(SuperSampler):
     def get_deint_args(self, **kwargs: Any) -> dict[str, Any]:
         vthresh = (None, None, None) if self.vthresh is None else self.vthresh
 
-        return {
+        kwargs = {
             "alpha": self.alpha,
             "beta": self.beta,
             "gamma": self.gamma,
@@ -643,26 +744,57 @@ class EEDI3(SuperSampler):
             "mclip": self.mclip,
         } | kwargs
 
+        # TODO: Remove that
+        for k, v in ((k, v) for k, v in kwargs.copy().items() if k in ["ucubic", "cost3"]):
+            if v is not cast(Never, MISSING):
+                warnings.warn(f"'{k}' argument has been removed and is deprecated.", RuntimeWarning)
+            del kwargs[k]
+
+        return kwargs
+
     def antialias(
-        self, clip: vs.VideoNode, direction: AntiAliaser.AADirection = AntiAliaser.AADirection.BOTH, **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        direction: AntiAliaser.AADirection = AntiAliaser.AADirection.BOTH,
+        **kwargs: Any,
     ) -> vs.VideoNode:
         kwargs = self.get_deint_args(**kwargs)
 
-        sclip, mclip = kwargs.pop("sclip"), kwargs.pop("mclip")
+        sclip, mclip = kwargs.pop("sclip", None), kwargs.pop("mclip", None)
 
         if isinstance(sclip, Deinterlacer):
             raise CustomValueError("sclip must be a callable or VideoNode", self.antialias)
 
-        if sclip and self.double_rate:
+        if sclip:
             if isinstance(sclip, VSFunctionNoArgs):
                 sclip = sclip(clip)
 
-            sclip = core.std.Interleave([sclip, sclip])
+            if self.double_rate:
+                sclip = core.std.Interleave([sclip, sclip])
 
         if isinstance(mclip, VSFunctionNoArgs):
             mclip = mclip(clip)
 
-        return super().antialias(clip, direction, sclip=sclip, mclip=mclip, **kwargs)
+        tff = fallback(kwargs.pop("tff", self.tff), True)
+
+        for y in sorted(self.AADirection, key=lambda x: x.value, reverse=self.transpose_first):
+            if direction in (y, self.AADirection.BOTH):
+                horizontal = y == self.AADirection.HORIZONTAL
+                clip = self._interpolate(
+                    clip,
+                    tff,
+                    self.double_rate,
+                    False,
+                    horizontal=horizontal,
+                    sclip=sclip,
+                    mclip=mclip,
+                    **kwargs,
+                )
+
+                if self.double_rate:
+                    clip = core.std.Merge(clip[::2], clip[1::2])
+
+        return clip
 
     def transpose(
         self,
@@ -671,8 +803,7 @@ class EEDI3(SuperSampler):
         sclip: vs.VideoNode | None = None,
         mclip: vs.VideoNode | None = None,
         **kwargs: Any,
-    ) -> tuple[vs.VideoNode, Mapping[str, vs.VideoNode | None]]:
-        # At this point, sclip and mclip can only be a VideoNode or None
+    ) -> tuple[vs.VideoNode, MutableMapping[str, vs.VideoNode | None]]:
         if isinstance(sclip, vs.VideoNode):
             sclip = sclip.std.Transpose()
 
@@ -698,10 +829,24 @@ class EEDI3(SuperSampler):
 
     @property
     def _deinterlacer_function(self) -> VSFunctionAllArgs:
-        return core.lazy.eedi3m.EEDI3
+        return self.backend.EEDI3
 
-    def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
-        return self._deinterlacer_function(clip, tff + double_rate * 2, dh, **kwargs)
+    @property
+    def _deinterlacer_function_h(self) -> VSFunctionAllArgs:
+        return self.backend.EEDI3H
+
+    def _interpolate(
+        self,
+        clip: vs.VideoNode,
+        tff: bool,
+        double_rate: bool,
+        dh: bool,
+        *,
+        horizontal: bool = False,
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        func = self._deinterlacer_function_h if horizontal else self._deinterlacer_function
+        return func(clip, tff + double_rate * 2, dh, **self.get_deint_args(**kwargs))
 
 
 @dataclass

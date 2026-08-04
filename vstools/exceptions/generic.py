@@ -18,6 +18,10 @@ from jetpytools import (
 from ..types import HoldsVideoFormat, VideoFormatLike
 from ..vs_proxy import vs
 
+if TYPE_CHECKING:
+    from ..types import HoldsNumpyFormat
+
+
 __all__ = [
     "ClipLengthError",
     "FormatsMismatchError",
@@ -121,8 +125,14 @@ class UnsupportedVideoFormatError(_UnsupportedError):
     def __init__(
         self,
         func: FuncExcept | None,
-        wrong: VideoFormatLike | HoldsVideoFormat | Iterable[VideoFormatLike | HoldsVideoFormat],
-        correct: VideoFormatLike | HoldsVideoFormat | Iterable[VideoFormatLike | HoldsVideoFormat],
+        wrong: VideoFormatLike
+        | HoldsVideoFormat
+        | HoldsNumpyFormat
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat],
+        correct: VideoFormatLike
+        | HoldsVideoFormat
+        | HoldsNumpyFormat
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat],
         message: SupportsString = "Input clip must be of {correct} format, not {wrong}.",
         **kwargs: Any,
     ) -> None:
@@ -140,8 +150,8 @@ class UnsupportedVideoFormatError(_UnsupportedError):
 
         super().__init__(
             func,
-            {get_video_format(f).name for f in to_arr(wrong)},  # type: ignore[arg-type]
-            {get_video_format(f).name for f in to_arr(correct)},  # type: ignore[arg-type]
+            {get_video_format(f).name for f in to_arr(wrong)},
+            {get_video_format(f).name for f in to_arr(correct)},
             message,
             **kwargs,
         )
@@ -149,8 +159,14 @@ class UnsupportedVideoFormatError(_UnsupportedError):
     @classmethod
     def check(
         cls,
-        to_check: VideoFormatLike | HoldsVideoFormat | Iterable[VideoFormatLike | HoldsVideoFormat],
-        correct: VideoFormatLike | HoldsVideoFormat | Iterable[VideoFormatLike | HoldsVideoFormat],
+        to_check: VideoFormatLike
+        | HoldsVideoFormat
+        | HoldsNumpyFormat
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat],
+        correct: VideoFormatLike
+        | HoldsVideoFormat
+        | HoldsNumpyFormat
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat],
         func: FuncExcept | None = None,
         message: SupportsString | None = None,
         **kwargs: Any,
@@ -170,7 +186,7 @@ class UnsupportedVideoFormatError(_UnsupportedError):
         """
         from ..utils import get_video_format
 
-        cls._check_builder(get_video_format, to_check, correct, func, message, **kwargs)  # type: ignore[arg-type]
+        cls._check_builder(get_video_format, to_check, correct, func, message, **kwargs)
 
 
 class UnsupportedColorFamilyError(_UnsupportedError):
@@ -183,12 +199,14 @@ class UnsupportedColorFamilyError(_UnsupportedError):
         func: FuncExcept | None,
         wrong: VideoFormatLike
         | HoldsVideoFormat
+        | HoldsNumpyFormat
         | vs.ColorFamily
-        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.ColorFamily],
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily],
         correct: VideoFormatLike
         | HoldsVideoFormat
+        | HoldsNumpyFormat
         | vs.ColorFamily
-        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.ColorFamily] = vs.YUV,
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily] = vs.YUV,
         message: SupportsString = "Input clip must be of {correct} color family, not {wrong}.",
         **kwargs: Any,
     ) -> None:
@@ -206,8 +224,8 @@ class UnsupportedColorFamilyError(_UnsupportedError):
 
         super().__init__(
             func,
-            {get_color_family(c).name for c in to_arr(wrong)},  # type: ignore[arg-type]
-            {get_color_family(c).name for c in to_arr(correct)},  # type: ignore[arg-type]
+            {get_color_family(c).name for c in to_arr(wrong)},
+            {get_color_family(c).name for c in to_arr(correct)},
             message,
             **kwargs,
         )
@@ -217,12 +235,14 @@ class UnsupportedColorFamilyError(_UnsupportedError):
         cls,
         to_check: VideoFormatLike
         | HoldsVideoFormat
+        | HoldsNumpyFormat
         | vs.ColorFamily
-        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.ColorFamily],
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily],
         correct: VideoFormatLike
         | HoldsVideoFormat
+        | HoldsNumpyFormat
         | vs.ColorFamily
-        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.ColorFamily],
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.ColorFamily],
         func: FuncExcept | None = None,
         message: SupportsString | None = None,
         **kwargs: Any,
@@ -242,7 +262,7 @@ class UnsupportedColorFamilyError(_UnsupportedError):
         """
         from ..utils import get_color_family
 
-        cls._check_builder(get_color_family, to_check, correct, func, message, **kwargs)  # type: ignore[arg-type]
+        cls._check_builder(get_color_family, to_check, correct, func, message, **kwargs)
 
 
 class UnsupportedSampleTypeError(_UnsupportedError):
@@ -255,12 +275,14 @@ class UnsupportedSampleTypeError(_UnsupportedError):
         func: FuncExcept | None,
         wrong: VideoFormatLike
         | HoldsVideoFormat
+        | HoldsNumpyFormat
         | vs.SampleType
-        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.SampleType],
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.SampleType],
         correct: VideoFormatLike
         | HoldsVideoFormat
+        | HoldsNumpyFormat
         | vs.SampleType
-        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.SampleType],
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.SampleType],
         message: SupportsString = "Input clip must be of {correct} sample type, not {wrong}.",
         **kwargs: Any,
     ) -> None:
@@ -278,8 +300,8 @@ class UnsupportedSampleTypeError(_UnsupportedError):
 
         super().__init__(
             func,
-            {get_sample_type(c).name for c in to_arr(wrong)},  # type: ignore[arg-type]
-            {get_sample_type(c).name for c in to_arr(correct)},  # type: ignore[arg-type]
+            {get_sample_type(c).name for c in to_arr(wrong)},
+            {get_sample_type(c).name for c in to_arr(correct)},
             message,
             **kwargs,
         )
@@ -289,12 +311,14 @@ class UnsupportedSampleTypeError(_UnsupportedError):
         cls,
         to_check: VideoFormatLike
         | HoldsVideoFormat
+        | HoldsNumpyFormat
         | vs.SampleType
-        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.SampleType],
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.SampleType],
         correct: VideoFormatLike
         | HoldsVideoFormat
+        | HoldsNumpyFormat
         | vs.SampleType
-        | Iterable[VideoFormatLike | HoldsVideoFormat | vs.SampleType],
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat | vs.SampleType],
         func: FuncExcept | None = None,
         message: SupportsString | None = None,
         **kwargs: Any,
@@ -314,7 +338,7 @@ class UnsupportedSampleTypeError(_UnsupportedError):
         """
         from ..utils import get_sample_type
 
-        cls._check_builder(get_sample_type, to_check, correct, func, message, **kwargs)  # type: ignore[arg-type]
+        cls._check_builder(get_sample_type, to_check, correct, func, message, **kwargs)
 
 
 class UnsupportedSubsamplingError(_UnsupportedError):
@@ -325,8 +349,16 @@ class UnsupportedSubsamplingError(_UnsupportedError):
     def __init__(
         self,
         func: FuncExcept,
-        wrong: str | VideoFormatLike | HoldsVideoFormat | Iterable[str | VideoFormatLike | HoldsVideoFormat],
-        correct: str | VideoFormatLike | HoldsVideoFormat | Iterable[str | VideoFormatLike | HoldsVideoFormat],
+        wrong: str
+        | VideoFormatLike
+        | HoldsVideoFormat
+        | HoldsNumpyFormat
+        | Iterable[str | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat],
+        correct: str
+        | VideoFormatLike
+        | HoldsVideoFormat
+        | HoldsNumpyFormat
+        | Iterable[str | VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat],
         message: SupportsString = "Input clip must be of {correct} subsampling, not {wrong}.",
         **kwargs: Any,
     ) -> None:
@@ -344,8 +376,8 @@ class UnsupportedSubsamplingError(_UnsupportedError):
 
         super().__init__(
             func,
-            {f if isinstance(f, str) else get_subsampling(f) for f in to_arr(wrong)},  # type: ignore[arg-type]
-            {f if isinstance(f, str) else get_subsampling(f) for f in to_arr(correct)},  # type: ignore[arg-type]
+            {f if isinstance(f, str) else get_subsampling(f) for f in to_arr(wrong)},
+            {f if isinstance(f, str) else get_subsampling(f) for f in to_arr(correct)},
             message,
             **kwargs,
         )
@@ -353,8 +385,14 @@ class UnsupportedSubsamplingError(_UnsupportedError):
     @classmethod
     def check(
         cls,
-        to_check: VideoFormatLike | HoldsVideoFormat | Iterable[VideoFormatLike | HoldsVideoFormat],
-        correct: VideoFormatLike | HoldsVideoFormat | Iterable[VideoFormatLike | HoldsVideoFormat],
+        to_check: VideoFormatLike
+        | HoldsVideoFormat
+        | HoldsNumpyFormat
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat],
+        correct: VideoFormatLike
+        | HoldsVideoFormat
+        | HoldsNumpyFormat
+        | Iterable[VideoFormatLike | HoldsVideoFormat | HoldsNumpyFormat],
         func: FuncExcept | None = None,
         message: SupportsString | None = None,
         **kwargs: Any,
@@ -374,7 +412,7 @@ class UnsupportedSubsamplingError(_UnsupportedError):
         """
         from ..utils import get_subsampling
 
-        cls._check_builder(get_subsampling, to_check, correct, func, message, **kwargs)  # type: ignore[arg-type]
+        cls._check_builder(get_subsampling, to_check, correct, func, message, **kwargs)
 
 
 class UnsupportedFramerateError(_UnsupportedError):

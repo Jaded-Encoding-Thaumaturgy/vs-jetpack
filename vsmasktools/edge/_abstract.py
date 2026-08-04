@@ -6,11 +6,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from contextlib import suppress
 from enum import IntFlag, auto
 from inspect import isabstract
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
-from jetpytools import FuncExcept, get_subclasses, inject_kwargs_params, inject_self, to_arr
+from jetpytools import CustomValueError, FuncExcept, get_subclasses, inject_kwargs_params, inject_self, to_arr
 
 from vsexprtools import ExprList, ExprOp, norm_expr
 from vstools import (
@@ -374,17 +375,14 @@ class EdgeMasksEdgeDetect(MatrixEdgeDetect):
         multi: float | Sequence[float] = 1.0,
         clamp: bool | tuple[float, float] | list[tuple[float, float]] = False,
         planes: Planes = None,
+        *,
+        use_expr: bool = False,
         **kwargs: Any,
     ) -> vs.VideoNode:
-        if not hasattr(core, "edgemasks"):
-            kwargs.setdefault("use_expr", True)
-
-        return super().edgemask(clip, lthr, hthr, multi, clamp, planes, **kwargs)
+        return super().edgemask(clip, lthr, hthr, multi, clamp, planes, use_expr=use_expr, **kwargs)
 
     def _preprocess(self, clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-        if kwargs.get("use_expr"):
-            return super()._preprocess(clip)
-        return clip
+        return super()._preprocess(clip) if kwargs.get("use_expr") else clip
 
     def _compute_edge_mask(
         self,
@@ -396,6 +394,10 @@ class EdgeMasksEdgeDetect(MatrixEdgeDetect):
     ) -> vs.VideoNode:
         if kwargs.pop("use_expr", False):
             return super()._compute_edge_mask(clip, multi=multi, planes=planes, **kwargs)
+
+        if clip.format.bits_per_sample == 16 and clip.format.sample_type == vs.FLOAT:
+            with suppress(vs.Error):
+                return getattr(core.std, self.__class__.__name__)(clip, planes, multi, **kwargs)
 
         return getattr(core.edgemasks, self.__class__.__name__)(clip, planes, multi, **kwargs)
 
@@ -432,7 +434,15 @@ class MagnitudeMatrix(MatrixEdgeDetect):
         self.mag_directions = mag_directions
 
     def _get_matrices(self) -> Sequence[Sequence[float]]:
-        return [m for m in self.mag_directions.select_matrices(self.matrices) if m]
+        selected = [m for m in self.mag_directions.select_matrices(self.matrices) if m]
+
+        if not selected:
+            raise CustomValueError(
+                f"Requested direction(s) ({self.mag_directions!r}) resolve to no defined matrices.",
+                self.__class__,
+            )
+
+        return selected
 
 
 class MagnitudeEdgeMasks(EdgeMasksEdgeDetect, MagnitudeMatrix):
@@ -601,11 +611,17 @@ class RidgeDetect(MatrixEdgeDetect):
         planes: Planes = None,
         **kwargs: Any,
     ) -> vs.VideoNode:
+        modes = self._get_mode_types()
+
         def _x(c: vs.VideoNode) -> vs.VideoNode:
-            return c.std.Convolution(matrix=self._get_matrices()[0], divisor=self._get_divisors()[0], planes=planes)
+            return c.std.Convolution(
+                matrix=self._get_matrices()[0], divisor=self._get_divisors()[0], mode=modes[0], planes=planes
+            )
 
         def _y(c: vs.VideoNode) -> vs.VideoNode:
-            return c.std.Convolution(matrix=self._get_matrices()[1], divisor=self._get_divisors()[1], planes=planes)
+            return c.std.Convolution(
+                matrix=self._get_matrices()[1], divisor=self._get_divisors()[1], mode=modes[1], planes=planes
+            )
 
         return self._merge_ridge([_x(clip), _y(clip)], multi=multi, planes=planes, **kwargs)
 
@@ -617,9 +633,16 @@ class RidgeDetect(MatrixEdgeDetect):
         planes: Planes = None,
         **kwargs: Any,
     ) -> vs.VideoNode:
-        (xx,) = ExprOp.convolution("x", self._get_matrices()[0], divisor=self._get_divisors()[0], mode=ConvMode.SQUARE)
-        (yy,) = ExprOp.convolution("y", self._get_matrices()[1], divisor=self._get_divisors()[1], mode=ConvMode.SQUARE)
-        (xy,) = ExprOp.convolution("x", self._get_matrices()[1], divisor=self._get_divisors()[1], mode=ConvMode.SQUARE)
+        modes = self._get_mode_types()
+        (xx,) = ExprOp.convolution(
+            "x", self._get_matrices()[0], divisor=self._get_divisors()[0], mode=ConvMode(modes[0])
+        )
+        (yy,) = ExprOp.convolution(
+            "y", self._get_matrices()[1], divisor=self._get_divisors()[1], mode=ConvMode(modes[1])
+        )
+        (xy,) = ExprOp.convolution(
+            "x", self._get_matrices()[1], divisor=self._get_divisors()[1], mode=ConvMode(modes[1])
+        )
 
         expr = [
             xx,

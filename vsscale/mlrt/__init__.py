@@ -47,6 +47,10 @@ By default, files are managed locally within the package storage `.vsjet` folder
 Add the `--global` flag to target the platform-specific user cache directory
 (e.g., `AppData\\Local\\vsjet\\vsscale\\Cache` on Windows).
 
+If models or compiled engine artifacts are not found in the local cache,
+the library will automatically fall back to checking the global cache before raising an error or downloading.
+This fallback behavior can be customized or disabled (see Configuration section).
+
 ---
 
 ## Configuration (TOML & Environment Variables)
@@ -60,12 +64,14 @@ The library parses configurations from `vsjet.toml` or `pyproject.toml` in the w
   ```toml
   [vsscale]
   global = true       # Use the global cache folder by default
+  fallback = false    # Disable global cache fallback (default is true)
   ```
 
 - **pyproject.toml**:
   ```toml
   [tool.vsscale]
   global = true
+  fallback = false
 
   [tool.vsscale.onnx.download]
   # This tells the CLI to automatically download the latest release
@@ -89,6 +95,8 @@ The library parses configurations from `vsjet.toml` or `pyproject.toml` in the w
 #### Environment Variables:
 - `VSSCALE_GLOBAL` / `VSSCALE_ONNX_GLOBAL` / `VSSCALE_ARTIFACT_GLOBAL`:
   Set to `true` to force global storage.
+- `VSSCALE_FALLBACK` / `VSSCALE_ONNX_FALLBACK` / `VSSCALE_ARTIFACT_FALLBACK`:
+  Set to `false` to disable the automatic global cache fallback.
 - `VSSCALE_LATEST` / `VSSCALE_ONNX_DOWNLOAD_LATEST`:
   Set to `true` to default to downloading latest releases.
 
@@ -153,18 +161,22 @@ You can explicitly instantiate specific backends and configure their execution d
 
 from .backend import Backend
 from .settings import (
+    get_artifact_path,
     get_artifacts_folder,
     get_global_cache,
     get_local_cache,
     get_model_folder,
-    get_provider_folder,
+    get_model_path,
+    get_onnx_folder,
 )
 
 __all__ = [
     "Backend",
+    "get_artifact_path",
     "get_artifacts_folder",
     "get_global_cache",
     "get_local_cache",
     "get_model_folder",
-    "get_provider_folder",
+    "get_model_path",
+    "get_onnx_folder",
 ]

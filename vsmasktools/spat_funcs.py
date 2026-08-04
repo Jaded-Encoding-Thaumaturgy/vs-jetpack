@@ -5,16 +5,17 @@ from typing import overload
 
 from jetpytools import FuncExcept, StrList, fallback, to_arr
 
-from vsexprtools import ExprOp, ExprVars, norm_expr
+from vsexprtools import ExprList, ExprOp, ExprVars, norm_expr
 from vsrgtools import box_blur, gauss_blur
 from vstools import (
     DitherType,
     Range,
+    UnsupportedColorFamilyError,
+    core,
     depth,
+    get_lowest_value,
     get_peak_value,
-    get_sample_type,
     get_y,
-    plane,
     scale_mask,
     scale_value,
     vs,
@@ -27,17 +28,22 @@ __all__ = ["adg_mask", "flat_mask", "retinex", "texture_mask"]
 
 
 @overload
+@Range.FULL
 def adg_mask(
-    clip: vs.VideoNode, luma_scaling: float = 8.0, relative: bool = False, func: FuncExcept | None = None
+    clip: vs.VideoNode,
+    luma_scaling: float = 8.0,
+    relative: bool = False,
+    func: FuncExcept | None = None,
 ) -> vs.VideoNode: ...
-
-
 @overload
+@Range.FULL
 def adg_mask(
-    clip: vs.VideoNode, luma_scaling: Sequence[float], relative: bool = False, func: FuncExcept | None = None
+    clip: vs.VideoNode,
+    luma_scaling: Sequence[float],
+    relative: bool = False,
+    func: FuncExcept | None = None,
 ) -> list[vs.VideoNode]: ...
-
-
+@Range.FULL
 def adg_mask(
     clip: vs.VideoNode,
     luma_scaling: float | Sequence[float] = 8.0,
@@ -60,44 +66,39 @@ def adg_mask(
     Returns:
         A single mask or a list of masks (if `luma_scaling` is a sequence), corresponding to the input clip.
     """
+    UnsupportedColorFamilyError.check(clip, [vs.GRAY, vs.YUV])
+
+    fp16 = clip.format.bits_per_sample == 16 and clip.format.sample_type == vs.FLOAT
+
+    # Converting to full range is necessary to have meaningful planestats
+    # and an equivalent mask between different formats.
+    if not (fp16 or relative):
+        clip = depth(clip, range_out=vs.RANGE_FULL)
+        masks = [core.vszip.AdaptiveGrainMask(clip, ls) for ls in to_arr(luma_scaling)]
+
+        return masks if isinstance(luma_scaling, list) else masks[0]
+
     func = func or adg_mask
 
-    luma = plane(clip, 0)
+    luma = get_y(clip)
+    y = depth(luma, range_out=vs.RANGE_FULL)
+    y, y_inv = y.std.PlaneStats(prop="P"), y.std.Invert().std.PlaneStats(prop="P")
 
-    if clip.format.bits_per_sample > 16 or relative:
-        y, y_inv = luma.std.PlaneStats(prop="P"), luma.std.Invert().std.PlaneStats(prop="P")
+    expr = ExprList(["x mask_max /"])
 
-        peak = get_peak_value(y)
+    if relative:
+        expr.append("Y! Y@ 0.5 < x.PMin 0 max 0.5 / log Y@ * x.PMax 1.0 min 0.5 / log Y@ * ? ")
 
-        is_integer = y.format.sample_type == vs.INTEGER
+    expr.append("0 0.999 clamp X!")
+    expr.append("1 X@ X@ X@ X@ X@ 18.188 * 45.47 - * 36.624 + * 9.466 - * 1.124 + * - x.PAverage 2 pow {ls} * pow")
+    expr.append("mask_max * 0.5 +" if y.format.sample_type == vs.INTEGER else "0 1 clamp")
 
-        x_string, aft_int = (f"x {peak} / ", f" {peak} * 0.5 +") if is_integer else ("x ", "0 1 clamp")
+    def adgfunc(y: vs.VideoNode, ls: float) -> vs.VideoNode:
+        return norm_expr(y, expr, func=func, ls=ls)
 
-        if relative:
-            x_string += "Y! Y@ 0.5 < x.PMin 0 max 0.5 / log Y@ * x.PMax 1.0 min 0.5 / log Y@ * ? "
+    scaled_clips = [adgfunc(y_inv if ls < 0 else y, abs(ls)) for ls in to_arr(luma_scaling)]
 
-        x_string += "0 0.999 clamp X!"
-
-        def _adgfunc(luma: vs.VideoNode, ls: float) -> vs.VideoNode:
-            return norm_expr(
-                luma,
-                f"{x_string} 1 X@ X@ X@ X@ X@ "
-                "18.188 * 45.47 - * 36.624 + * 9.466 - * 1.124 + * - "
-                f"x.PAverage 2 pow {ls} * pow {aft_int}",
-                func=func,
-            )
-    else:
-        y, y_inv = luma.std.PlaneStats(), luma.std.Invert().std.PlaneStats()
-
-        def _adgfunc(luma: vs.VideoNode, ls: float) -> vs.VideoNode:
-            return luma.adg.Mask(ls)
-
-    scaled_clips = [_adgfunc(y_inv if ls < 0 else y, abs(ls)) for ls in to_arr(luma_scaling)]
-
-    if isinstance(luma_scaling, Sequence):
-        return scaled_clips
-
-    return scaled_clips[0]
+    return scaled_clips if isinstance(luma_scaling, Sequence) else scaled_clips[0]
 
 
 def retinex(
@@ -129,38 +130,48 @@ def retinex(
     sigma = sorted(sigma)
 
     y = get_y(clip)
-
-    y = y.std.PlaneStats()
-    is_float = get_sample_type(y) is vs.FLOAT
-
-    if is_float:
-        luma_float = norm_expr(y, "x x.PlaneStatsMin - x.PlaneStatsMax x.PlaneStatsMin - /", func=func)
-    else:
-        luma_float = norm_expr(
-            y, "1 x.PlaneStatsMax x.PlaneStatsMin - / x x.PlaneStatsMin - *", None, vs.GRAYS, func=func
-        )
+    luma_norm = norm_expr(
+        depth(y, 32).std.PlaneStats(),
+        "x.PlaneStatsMax x.PlaneStatsMin = 0 x x.PlaneStatsMin - x.PlaneStatsMax x.PlaneStatsMin - / ?",
+        func=func,
+    )
 
     slen, slenm = len(sigma), len(sigma) - 1
 
     expr_msr = StrList([f"{x} 0 <= 1 x {x} / 1 + ? " for x in ExprVars(1, slen + (not fast))])
 
     if fast:
-        expr_msr.append("x.PlaneStatsMax 0 <= 1 x x.PlaneStatsMax / 1 + ? ")
+        norm_avg_expr = (
+            "x.PlaneStatsMax x.PlaneStatsMin = 0 "
+            "x.PlaneStatsAverage x.PlaneStatsMin - x.PlaneStatsMax x.PlaneStatsMin - / ? "
+            "AVG!"
+        )
+        expr_msr.append(f"{norm_avg_expr} AVG@ 0 <= 1 x AVG@ / 1 + ? ")
         sigma = sigma[:-1]
 
-    expr_msr.extend(ExprOp.ADD * slenm)
+    expr_msr.extend(ExprOp.MUL * slenm)
     expr_msr.append(f"log {slen} /")
 
-    msr = norm_expr([luma_float, *(gauss_blur(luma_float, i, _fast=fast) for i in sigma)], expr_msr, func=func)
+    msr = norm_expr([luma_norm, *(gauss_blur(luma_norm, i, _fast=fast) for i in sigma)], expr_msr, func=func)
+    msr_norm_stats = norm_expr(
+        msr.std.PlaneStats(),
+        "x.PlaneStatsMax x.PlaneStatsMin = 0 x x.PlaneStatsMin - x.PlaneStatsMax x.PlaneStatsMin - / ?",
+        func=func,
+    ).vszip.PlaneMinMax(lower_thr, upper_thr)
 
-    msr_stats = msr.vszip.PlaneMinMax(lower_thr, upper_thr)
+    expr_balance = StrList(["x.psmMax x.psmMin = x x x.psmMin - x.psmMax x.psmMin - / ?"])
 
-    expr_balance = "x x.psmMin - x.psmMax x.psmMin - /"
+    if y.format.sample_type is vs.INTEGER:
+        expr_balance.append("{ymax} {ymin} - * {ymin} + round {ymin} {ymax} clamp")
 
-    if not is_float:
-        expr_balance = f"{expr_balance} plane_max plane_min - * plane_min + round plane_min plane_max clamp"
-
-    return norm_expr(msr_stats, expr_balance, None, y, func=func)
+    return norm_expr(
+        msr_norm_stats,
+        expr_balance,
+        format=y,
+        ymin=get_lowest_value(y, False, Range.FULL),
+        ymax=get_peak_value(y, False, Range.FULL),
+        func=func,
+    )
 
 
 def flat_mask(src: vs.VideoNode, radius: int = 5, thr: float = 0.011, gauss: bool = False) -> vs.VideoNode:
@@ -181,20 +192,31 @@ def texture_mask(
     radc: int | None = None,
     blur: float = 8,
     thr: float = 0.2,
-    stages: list[tuple[int, int]] = [(60, 2), (40, 4), (20, 2)],
-    points: list[tuple[bool, float]] = [(False, 1.75), (True, 2.5), (True, 5), (False, 10)],
+    stages: list[tuple[int, int]] | None = None,
+    points: list[tuple[bool, float]] | None = None,
 ) -> vs.VideoNode:
+    if points is None:
+        points = [(False, 1.75), (True, 2.5), (True, 5), (False, 10)]
+    if stages is None:
+        stages = [(60, 2), (40, 4), (20, 2)]
     levels = [x for x, _ in points]
-    points_ = [scale_mask(x, 8, clip) for _, x in points]
+    points_ = [scale_value(x, 8, clip) for _, x in points]
     thr = scale_mask(thr, 8, 32)
 
+    for i in range(len(points_) - 1):
+        if points_[i + 1] <= points_[i]:
+            points_[i + 1] = points_[i] + 1e-4
     qm, peak = len(points), get_peak_value(clip)
 
     rmask = MinMax(rady, fallback(radc, rady)).edgemask(clip, lthr=0)
     emask = Prewitt.edgemask(clip)
 
     rm_txt = ExprOp.MIN(
-        rmask, (Morpho.minimum(Morpho.binarize_mask(emask, thr, 1.0, 0), iterations=it) for thr, it in stages)
+        rmask,
+        (
+            Morpho.minimum(Morpho.binarize_mask(emask, scale_mask(thr, 8, 32), 1.0, 0), iterations=it)
+            for thr, it in stages
+        ),
     )
 
     expr = [f"x {points_[0]} < x {points_[-1]} > or 0"]

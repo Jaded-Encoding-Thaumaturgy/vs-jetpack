@@ -114,7 +114,7 @@ class FineDehalo[**P, R]:
         debugging or further processing.
         """
 
-        _names = ("EDGES", "SHARP_EDGES", "LARGE_EDGES", "IGNORE_DETAILS", "SHRINK", "SHRINK_EDGES_EXCL", "MAIN")
+        _names = ("EDGES", "SHARP_EDGES", "LARGE_EDGES", "IGNORE_DETAILS", "SHRINK", "MAIN")
 
         def __init__(
             self,
@@ -172,7 +172,7 @@ class FineDehalo[**P, R]:
             # Keeps only the sharpest edges (line edges)
             strong = norm_expr(
                 edges,
-                "x {thmif} - {thmaf} {thmif} - / mask_max *",
+                "x {thmif} - {thmaf} {thmif} - / mask_max * 0 mask_max clamp",
                 planes,
                 func=func,
                 thmif=thmif,
@@ -192,7 +192,7 @@ class FineDehalo[**P, R]:
             # Includes more edges than previously, but ignores simple details
             light = norm_expr(
                 edges,
-                "x {thlimif} - {thlimaf} {thlimif} - / mask_max *",
+                "x {thlimif} - {thlimaf} {thlimif} - / mask_max * 0 mask_max clamp",
                 planes,
                 func=func,
                 thlimif=thlimif,
@@ -206,11 +206,12 @@ class FineDehalo[**P, R]:
             # Mask growing
             shrink = Morpho.expand(light, rx, ry, XxpandMode.ELLIPSE, planes=planes, func=func)
 
-            # At this point, because the mask was made of a shades of grey, we may
-            # end up with large areas of dark grey after shrinking. To avoid this,
-            # we amplify and saturate the mask here (actually we could even
-            # binarize it).
-            shrink = norm_expr(shrink, "x 4 *", planes, func=func)
+            # At this point, because the mask was made of shades of grey, we may
+            # end up with large areas of dark grey after shrinking.
+            # To avoid this, we binarize the mask at 0.25.
+            # This also prevents float values from escaping the [0, 1] range,
+            # which would break the subsequent box blur smoothing step.
+            shrink = Morpho.binarize_mask(shrink, 0.25, planes=planes)
             shrink = Morpho.inpand(shrink, rx, ry, XxpandMode.ELLIPSE, planes=planes, func=func)
 
             # This mask is almost binary, which will produce distinct
@@ -219,22 +220,21 @@ class FineDehalo[**P, R]:
 
             # Final mask building #
 
-            # Previous mask may be a bit weak on the pure edge side, so we ensure
-            # that the main edges are really excluded. We do not want them to be
-            # smoothed by the halo removal.
-            shr_med = (
-                norm_expr([strong, shrink], tuple("x y max" * ex for ex in exclude), planes, func=func)
-                if any(exclude)
-                else strong
+            # Expression that combines edge exclusion, mask subtraction,
+            # and optional edge processing into a single filter node.
+            # Explanation:
+            # 1. If exclude is True: shr_med = max(strong, shrink), else: shr_med = strong
+            # 2. base_mask = (large - shr_med) * 2    (amplify difference to saturate halo areas)
+            # 3. If edgeproc > 0: mask = base_mask + (base_mask * strong * edgeproc * 2/3) else: mask = base_mask
+            # 4. Final clamp
+            mask = norm_expr(
+                [strong, shrink, large],
+                "{edgeproc} 0 > z {exclude} x y max x ? - 2 * dup x {edgeproc} 2 3 / * * + ? 0 mask_max clamp",
+                planes,
+                exclude=map(int, exclude),
+                edgeproc=edgeproc,
+                func=func,
             )
-
-            # Subtracts masks and amplifies the difference to be sure we get 255
-            # on the areas to be processed.
-            mask = norm_expr([large, shr_med], "x y - 2 *", planes, func=func)
-
-            # If edge processing is required, adds the edgemask
-            if any(edgeproc):
-                mask = norm_expr([mask, strong], "x y {edgeproc} 0.66 * * +", planes, func=func, edgeproc=edgeproc)
 
             # Smooth again and amplify to grow the mask a bit, otherwise the halo
             # parts sticking to the edges could be missed.
@@ -246,7 +246,6 @@ class FineDehalo[**P, R]:
             self._large = large
             self._light = light
             self._shrink = shrink
-            self._shr_med = shr_med
             self._main = mask
 
         def __getitem__(self, index: str) -> vs.VideoNode:
@@ -284,10 +283,6 @@ class FineDehalo[**P, R]:
             return self._shrink
 
         @property
-        def SHRINK_EDGES_EXCL(self) -> vs.VideoNode:  # noqa: N802
-            return self._shr_med
-
-        @property
         def MAIN(self) -> vs.VideoNode:  # noqa: N802
             return self._main
 
@@ -298,7 +293,7 @@ def fine_dehalo(
     # dehalo_alpha params
     blur: IterArr[float]
     | VSFunctionPlanesArgs
-    | tuple[float | list[float] | VSFunctionPlanesArgs, ...] = Prefilter.GAUSS(sigma=1.4),
+    | tuple[float | list[float] | VSFunctionPlanesArgs, ...] = Prefilter.GAUSS(sigma=1.4),  # noqa: B008
     lowsens: IterArr[float] = 50.0,
     highsens: IterArr[float] = 50.0,
     ss: float | tuple[float, ...] = 1.5,
@@ -517,7 +512,7 @@ def fine_dehalo2(
         if mask:
             dehaloed = dehaloed.std.MaskedMerge(fix, mask)
 
-    if darkstr != brightstr != 1.0:
+    if darkstr != 1.0 or brightstr != 1.0:
         dehaloed = norm_expr(
             [work_clip, dehaloed],
             "x x y - dup {brightstr} * dup1 {darkstr} * ? -",
@@ -528,4 +523,13 @@ def fine_dehalo2(
 
     out = dehaloed if not chroma else join([dehaloed, *chroma])
 
-    return out if not attach_masks else out.std.SetFrameProps(FineDehalo2MaskV=mask_v, FineDehalo2MaskH=mask_h)
+    if attach_masks:
+        props = dict[str, vs.VideoNode]()
+        if mask_v is not None:
+            props["FineDehalo2MaskV"] = mask_v
+        if mask_h is not None:
+            props["FineDehalo2MaskH"] = mask_h
+        if props:
+            out = out.std.SetFrameProps(**props)
+
+    return out

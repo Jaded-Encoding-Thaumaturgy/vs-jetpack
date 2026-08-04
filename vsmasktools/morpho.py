@@ -453,18 +453,21 @@ class Morpho:
         else:
             r, conv_mode = radius, ConvMode.SQUARE
 
-        if iterations == 1 and conv_mode is not ConvMode.HV:
+        # Radius <= 3 is faster with one expr here
+        if (
+            iterations == 1
+            and (r <= 3 or coords is not None)
+            and conv_mode is not ConvMode.HV
+            and clip.format.sample_type is vs.FLOAT
+        ):
+            morpho_func = partial(self._morpho_xx_imum, clip, (r, conv_mode), thr, coords, None, True, func=func)
             return norm_expr(
                 clip,
                 "{dilated} {eroded} - {multiply}",
                 planes,
                 func=func,
-                dilated=self._morpho_xx_imum(
-                    clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MAX, func=func
-                )[0].to_str(),
-                eroded=self._morpho_xx_imum(
-                    clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MIN, func=func
-                )[0].to_str(),
+                dilated=morpho_func(op=ExprOp.MAX)[0].to_str(),
+                eroded=morpho_func(op=ExprOp.MIN)[0].to_str(),
                 multiply="" if multiply is None else f"{multiply} *",
             )
 
@@ -555,7 +558,7 @@ class Morpho:
     @inject_self
     def black_hat(self, *args: Any, **kwargs: Any) -> vs.VideoNode:
         """Alias for [bottom_hat][vsmasktools.Morpho.bottom_hat]."""
-        return self.top_hat(*args, **{"func": self.black_hat} | kwargs)
+        return self.bottom_hat(*args, **{"func": self.black_hat} | kwargs)
 
     @inject_self
     def outer_hat(
@@ -594,13 +597,25 @@ class Morpho:
         else:
             r, conv_mode = radius, ConvMode.SQUARE
 
-        if iterations == 1 and conv_mode is not ConvMode.HV:
+        if (
+            iterations == 1
+            and (r == 1 or coords is not None)
+            and conv_mode is not ConvMode.HV
+            and clip.format.sample_type is vs.FLOAT
+        ):
             return norm_expr(
                 clip,
                 "{dilated} {multiply} x -",
                 planes,
                 dilated=self._morpho_xx_imum(
-                    clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MAX, func=func
+                    clip,
+                    (r, conv_mode),
+                    thr,
+                    coords,
+                    None,
+                    True,
+                    op=ExprOp.MAX,
+                    func=func,
                 )[0].to_str(),
                 multiply="" if multiply is None else f"{multiply} *",
             )
@@ -646,13 +661,25 @@ class Morpho:
         else:
             r, conv_mode = radius, ConvMode.SQUARE
 
-        if iterations == 1 and conv_mode is not ConvMode.HV:
+        if (
+            iterations == 1
+            and (r == 1 or coords is not None)
+            and conv_mode is not ConvMode.HV
+            and clip.format.sample_type is vs.FLOAT
+        ):
             return norm_expr(
                 clip,
                 "x {eroded} {multiply} -",
                 planes,
                 eroded=self._morpho_xx_imum(
-                    clip, (r, conv_mode), thr, coords, multiply, True, op=ExprOp.MIN, func=func
+                    clip,
+                    (r, conv_mode),
+                    thr,
+                    coords,
+                    None,
+                    True,
+                    op=ExprOp.MIN,
+                    func=func,
                 )[0].to_str(),
                 multiply="" if multiply is None else f"{multiply} *",
             )
@@ -750,7 +777,7 @@ class Morpho:
             if multiply is not None:
                 e.append(multiply, ExprOp.MUL)
 
-            if clamp:
+            if clamp and clip.format.sample_type is vs.FLOAT:
                 e.append(ExprOp.clamp())
 
             nexpr[i] = e
@@ -778,6 +805,31 @@ class Morpho:
             conv_mode = ConvMode.SQUARE
 
         if radius > 1:
+            if not coords:
+                res = self._mm_func(
+                    clip,
+                    iterations=radius * iterations,
+                    planes=planes,
+                    func=func,
+                    mm_func=mm_func,
+                    op=op,
+                    **kwargs,
+                )
+                if thr is None and multiply is None:
+                    return res
+
+                expr = ExprList(["x"])
+
+                if thr is not None:
+                    expr.append("y", scale_delta(thr, 32, clip))
+                    limit = (ExprOp.SUB, ExprOp.MAX) if op == ExprOp.MIN else (ExprOp.ADD, ExprOp.MIN)
+                    expr.append(*limit)
+
+                if multiply is not None:
+                    expr.append(multiply, ExprOp.MUL)
+
+                return norm_expr([res, clip], expr, planes=planes, func=func)
+
             mm_func = norm_expr
             kwargs.update(
                 expr=self._morpho_xx_imum(clip, (radius, conv_mode), thr, coords, multiply, False, op=op, func=func),
@@ -785,6 +837,8 @@ class Morpho:
                 func=func,
             )
         else:
+            iterations *= radius
+
             if not coords:
                 match conv_mode:
                     case ConvMode.VERTICAL:
@@ -873,11 +927,13 @@ class Morpho:
             else:
                 expr = ExprOp.matrix("x", radius, conv_mode, exclude=[(0, 0)])
 
+            if thr is not None:
+                thr = scale_delta(thr, 32, clip)
+
             for e in expr:
                 e.append(ExprOp.ADD * e.mlength, len(e), ExprOp.DIV, "x", ExprOp.MAX if inflate else ExprOp.MIN)
 
                 if thr is not None:
-                    thr = scale_delta(thr, 32, clip)
                     limit = ["x", thr, ExprOp.ADD, ExprOp.MIN] if inflate else ["x", thr, ExprOp.SUB, ExprOp.MAX]
                     e.append(limit)
 

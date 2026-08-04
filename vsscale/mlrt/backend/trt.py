@@ -5,7 +5,8 @@ import subprocess
 import sys
 import warnings
 import zlib
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Generator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from importlib.util import find_spec
 from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, getLogger
@@ -13,8 +14,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, SupportsInt
 
-from jetpytools import CustomRuntimeError, CustomValueError, cachedproperty, classproperty, copy_signature, to_arr
-from packaging.version import Version
+from jetpytools import CustomRuntimeError, CustomValueError, cachedproperty, copy_signature, to_arr
 
 if TYPE_CHECKING:
     import tensorrt
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 from vstools import UnsupportedSampleTypeError, core, depth, vs
 
-from ..settings import get_artifacts_folder, get_provider_folder
+from ..settings import get_artifact_path, get_onnx_folder
 from .base import Backend
 
 type Shape = tuple[int, int]
@@ -41,9 +41,7 @@ LOGGING_VERBOSITY_MAP = {DEBUG: 0, INFO: 1, WARNING: 2, ERROR: 3, CRITICAL: 4}
 class TRT(Backend):
     """TensorRT backend for Nvidia GPUs using the `core.trt` plugin."""
 
-    plugin = core.lazy.trt
-
-    plugin: ClassVar[vs.Plugin]
+    plugin: ClassVar[vs.Plugin] = core.lazy.trt
 
     # Hardware & Runtime Execution
     device_id: int = 0
@@ -138,6 +136,8 @@ class TRT(Backend):
 
     @property
     def version(self) -> tuple[int, int, int]:
+        from packaging.version import Version
+
         v = int(self.plugin.Version()["tensorrt_version_build"])
         plugin_version = Version(f"{v // 10000}.{v // 100 % 100}.{v % 100}")
         bindings_version = Version(self.trt.__version__)
@@ -149,9 +149,8 @@ class TRT(Backend):
 
         return version  # type: ignore[return-value]
 
-    @classproperty.cached
-    @classmethod
-    def logger(cls) -> tensorrt.ILogger:
+    @property
+    def logger(self) -> tensorrt.ILogger:
         from ._trt import Logger
 
         return Logger(logger)
@@ -242,13 +241,13 @@ class TRT(Backend):
         elif self.bf16:
             network_path = self._convert_onnx_bf16(network_path)
 
-        dirname = get_artifacts_folder()
-        dirname.mkdir(parents=True, exist_ok=True)
         identity = self.get_identity(network_path, channels, tilesize)
-        engine_path = dirname / f"{identity}.engine"
+        engine_path = get_artifact_path(f"{identity}.engine", fallback=not self.force_rebuild)
 
         if not self.force_rebuild and engine_path.is_file() and engine_path.stat().st_size >= 1024:
             return engine_path
+
+        engine_path.parent.mkdir(parents=True, exist_ok=True)
 
         self.build(
             network_path=network_path,
@@ -268,46 +267,47 @@ class TRT(Backend):
         tilesize: Shape,
         input_name: str,
     ) -> None:
-        trt_logger = self.logger
-        builder = self.trt.Builder(trt_logger)
+        with cuda_device(self.device_id):
+            trt_logger = self.logger
+            builder = self.trt.Builder(trt_logger)
 
-        if self.max_threads is not None:
-            builder.max_threads = self.max_threads
+            if self.max_threads is not None:
+                builder.max_threads = self.max_threads
 
-        network = builder.create_network()
-        parser = self.trt.OnnxParser(network, trt_logger)
+            network = builder.create_network()
+            parser = self.trt.OnnxParser(network, trt_logger)
 
-        if not parser.parse_from_file(str(network_path)):
-            errors = [str(parser.get_error(i)) for i in range(parser.num_errors)]
-            raise CustomRuntimeError(f"Failed to parse ONNX model: {network_path}\n" + "\n".join(errors))
+            if not parser.parse_from_file(str(network_path)):
+                errors = [str(parser.get_error(i)) for i in range(parser.num_errors)]
+                raise CustomRuntimeError(f"Failed to parse ONNX model: {network_path}\n" + "\n".join(errors))
 
-        config = builder.create_builder_config()
+            config = builder.create_builder_config()
 
-        # Delegate builder setup
-        self.configure_builder_config(config, network)
-        self.setup_optimization_profile(builder, network, config, channels, input_name, tilesize)
+            # Delegate builder setup
+            self.configure_builder_config(config, network)
+            self.setup_optimization_profile(builder, network, config, channels, input_name, tilesize)
 
-        # Timing Cache
-        timing_cache_path = Path(f"{engine_path}.cache")
-        timing_cache_data = b""
-        if timing_cache_path.exists():
-            timing_cache_data = timing_cache_path.read_bytes()
+            # Timing Cache
+            timing_cache_path = Path(f"{engine_path}.cache")
+            timing_cache_data = b""
+            if timing_cache_path.exists():
+                timing_cache_data = timing_cache_path.read_bytes()
 
-        timing_cache = config.create_timing_cache(timing_cache_data)
-        config.set_timing_cache(timing_cache, ignore_mismatch=True)
+            timing_cache = config.create_timing_cache(timing_cache_data)
+            config.set_timing_cache(timing_cache, ignore_mismatch=True)
 
-        # Build
-        logger.info(f"Building TensorRT {self.__class__.__name__} engine from {network_path}...")
-        serialized = builder.build_serialized_network(network, config)
+            # Build
+            logger.info(f"Building TensorRT {self.__class__.__name__} engine from {network_path}...")
+            serialized = builder.build_serialized_network(network, config)
 
-        if not serialized:
-            raise CustomRuntimeError(f"TensorRT engine build failed for {network_path}")
+            if not serialized:
+                raise CustomRuntimeError(f"TensorRT engine build failed for {network_path}")
 
-        engine_path.write_bytes(serialized)
+            engine_path.write_bytes(serialized)
 
-        # Save Cache
-        updated_cache = config.get_timing_cache()
-        timing_cache_path.write_bytes(updated_cache.serialize())
+            # Save Cache
+            updated_cache = config.get_timing_cache()
+            timing_cache_path.write_bytes(updated_cache.serialize())
 
         logger.info(f"Engine saved to {engine_path}")
 
@@ -409,10 +409,10 @@ class TRT(Backend):
 
         network = network_path.read_bytes()
 
-        get_provider_folder().mkdir(parents=True, exist_ok=True)
+        get_onnx_folder().mkdir(parents=True, exist_ok=True)
         suffix = "fp16" if not self.fp16_blacklist_ops else f"fp16_block_{'_'.join(self.fp16_blacklist_ops)}"
         checksum = zlib.crc32(network)
-        fp16_path = get_provider_folder() / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
+        fp16_path = get_onnx_folder() / f"{network_path.stem}_{checksum:x}_{suffix}.onnx"
 
         if fp16_path.is_file() and fp16_path.stat().st_size >= 1024:
             return fp16_path
@@ -448,9 +448,9 @@ class TRT(Backend):
 
         network = network_path.read_bytes()
 
-        get_provider_folder().mkdir(parents=True, exist_ok=True)
+        get_onnx_folder().mkdir(parents=True, exist_ok=True)
         checksum = zlib.crc32(network)
-        bf16_path = get_provider_folder() / f"{network_path.stem}_{checksum:x}_bf16_io.onnx"
+        bf16_path = get_onnx_folder() / f"{network_path.stem}_{checksum:x}_bf16_io.onnx"
 
         if bf16_path.is_file() and bf16_path.stat().st_size >= 1024:
             return bf16_path
@@ -485,7 +485,7 @@ class TRT(Backend):
 class TRT_RTX(TRT):  # noqa: N801
     """TensorRT RTX backend for Nvidia RTX GPUs using the `core.trt_rtx` plugin."""
 
-    plugin = core.lazy.trt_rtx
+    plugin: ClassVar[vs.Plugin] = core.lazy.trt_rtx
 
     if TYPE_CHECKING:
         import tensorrt_rtx as trt
@@ -500,9 +500,25 @@ class TRT_RTX(TRT):  # noqa: N801
 
             raise ModuleNotFoundError("The 'tensorrt_rtx' dependency is not installed.") from None
 
-    @classproperty.cached
-    @classmethod
-    def logger(cls) -> tensorrt_rtx.ILogger:  # type: ignore[override]
+    @property
+    def logger(self) -> tensorrt_rtx.ILogger:  # type: ignore[override]
         from ._trt_rtx import Logger
 
         return Logger(logger)
+
+
+@contextmanager
+def cuda_device(id: int) -> Generator[None]:
+    """Set cuda device id within this context."""
+
+    import cuda.core  # type: ignore[import-untyped]
+
+    current_id = cuda.core.Device().device_id
+    logger.debug("Current cuda device id is %s", current_id)
+    try:
+        cuda.core.Device(id).set_current()
+        logger.debug("Set cuda device id to %s", id)
+        yield
+    finally:
+        cuda.core.Device(current_id).set_current()
+        logger.debug("Restore cuda device id to %s", current_id)

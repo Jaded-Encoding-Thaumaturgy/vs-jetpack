@@ -423,7 +423,8 @@ class Grainer(AbstractGrainer, CustomEnum, metaclass=EnumABCMeta):
             return GrainerPartial(self, **kwargs)
 
         if self == Grainer.PLACEBO:
-            assert static is False, "PlaceboGrain does not support static noise!"
+            if static is True:
+                raise CustomValueError("PlaceboGrain does not support static noise", self.name, static)
 
             return _apply_grainer(
                 clip,
@@ -443,6 +444,9 @@ class Grainer(AbstractGrainer, CustomEnum, metaclass=EnumABCMeta):
             clip: vs.VideoNode, strength: float | Sequence[float], planes: Planes, **kwds: Any
         ) -> vs.VideoNode:
             strength = normalize_param_planes(clip, strength, planes, 0)
+
+            if clip.format.num_planes == 1:
+                return core.noise.Add(clip, strength[0], type=self.value, constant=static, **kwds)
 
             if len(set(strength[1:])) != 1:
                 raise CustomValueError("Inconsistent grain values on chroma planes.", self.name, strength[1:])
@@ -514,7 +518,7 @@ def _apply_grainer(
         length=clip.num_frames + temporal_rad * 2,
         color=get_neutral_values(clip),
         keep=True,
-    )
+    ).std.CopyFrameProps(clip)
 
     if not planes:
         return clip if not neutral_out else base_clip[temporal_rad:-temporal_rad]
@@ -558,7 +562,9 @@ def _apply_grainer(
                 grained = pp(grained)
 
     if protect_neutral_chroma or luma_scaling is not None:
-        base_clip = clip.std.BlankClip(length=clip.num_frames, color=get_neutral_values(clip), keep=True)
+        base_clip = clip.std.BlankClip(
+            length=clip.num_frames, color=get_neutral_values(clip), keep=True
+        ).std.CopyFrameProps(clip)
 
         if protect_neutral_chroma:
             grained = _protect_neutral_chroma(clip, grained, base_clip, protect_neutral_chroma_blend, planes, func)

@@ -161,7 +161,7 @@ def regression(
     mean: MeanMode | MeanFunction = lambda c, radius: box_blur(c, radius, mode=ConvMode.HV),
     alpha: float = 0.20,
     weight_method: Literal["threshold", "fisher"] = "threshold",
-    intercept: float = False,
+    intercept: float = 0.0,
     eps: float = 1e-7,
     func: FuncExcept | None = None,
 ) -> list[RegressClips]:
@@ -186,7 +186,7 @@ def regression(
         mean: Function or mode used to compute local means. Defaults to box blur.
         alpha: Significance/confidence level for reliability weighting. Defaults to 0.20.
         weight_method: Method for computing reliability weight, "threshold" or "fisher".
-        intercept: If True, compute regression intercepts. If False, intercepts are None.
+        intercept: Regression intercept scale/weight factor. Defaults to 0.0.
         eps: Small constant to avoid division by zero. Defaults to 1e-7.
         func: An optional function to use for error handling.
 
@@ -225,7 +225,7 @@ def regression(
 
     if intercept:
         intercepts = [
-            norm_expr([y, slope, mean_x], f"src0 src1 src2 * - {float(intercept)} /", func=func)
+            norm_expr([y, slope, mean_x], f"src0 src1 src2 * - {intercept} /", func=func)
             for y, slope in zip(mean_ys, slopes)
         ]
     else:

@@ -1,22 +1,25 @@
 from __future__ import annotations
 
 import operator
+import warnings
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial, reduce, wraps
 from types import NoneType
-from typing import Any, Literal, Self, SupportsIndex, overload
+from typing import Any, Literal, Never, Self, SupportsIndex, cast, overload
 from weakref import WeakValueDictionary
 
 from jetpytools import (
+    MISSING,
     CustomIndexError,
     CustomNotImplementedError,
     CustomStrEnum,
     CustomTypeError,
     FuncExcept,
-    cachedproperty,
     normalize_seq,
     to_arr,
 )
+
+from vsjetpack import deprecated
 
 from ..enums import Matrix, Range, RangeLike
 from ..exceptions import ClipLengthError, UnsupportedColorFamilyError
@@ -82,70 +85,72 @@ Variables to access clips in Expr.
 
 class DitherType(CustomStrEnum):
     """
-    Enum for `zimg_dither_type_e` and fmtc `dmode`.
+    Enum for `zimg_dither_type_e` and vszip `dither_type`.
     """
 
-    NONE = "none", 1
+    NONE = "none", 0
     """
     Round to nearest.
     """
+    ROUND = NONE
 
-    ORDERED = "ordered", 0
+    ORDERED = "ordered", 1
     """
     Bayer patterned dither.
     """
 
-    RANDOM = "random", 8
+    RANDOM = "random", 2
     """
     Pseudo-random noise of magnitude 0.5.
     """
 
-    ERROR_DIFFUSION = "error_diffusion", 6
+    ERROR_DIFFUSION = "error_diffusion", 3
     """
     Floyd-Steinberg error diffusion.
     """
 
     FLOYD_STEINBERG = ERROR_DIFFUSION
 
-    SIERRA_2_4A = "sierra_2_4a", 3
+    SIERRA_2_4A = "sierra_2_4a", 5
     """
+    Aka "Filter Lite".
+
     Another type of error diffusion.
     Quick and excellent quality, similar to Floyd-Steinberg.
     """
 
-    STUCKI = "stucki", 4
+    STUCKI = "stucki", 6
     """
     Another error diffusion kernel.
     Preserves delicate edges better but distorts gradients.
     """
 
-    ATKINSON = "atkinson", 5
+    ATKINSON = "atkinson", 7
     """
     Another error diffusion kernel.
     Generates distinct patterns but keeps clean the flat areas (noise modulation).
     """
 
-    OSTROMOUKHOV = "ostromoukhov", 7
+    OSTROMOUKHOV = "ostromoukhov", 9
     """
     Another error diffusion kernel.
     Slow, available only for integer input at the moment. Avoids usual F-S artifacts.
     """
 
-    VOID = RANDOM
+    VOID = "void", 10
 
-    QUASIRANDOM = "quasirandom", 9
+    QUASIRANDOM = "quasirandom", 11
     """
     Dither using quasirandom sequences.
     Good intermediary between void, cluster, and error diffusion algorithms.
     """
 
-    _fmtc_dmode: int
+    _vszip_mode: int
 
-    def __new__(cls, value: Any, fmtc_dmode: int) -> Self:
+    def __new__(cls, value: Any, vszip_mode: int) -> Self:
         obj = str.__new__(cls, value)
         obj._value_ = value
-
-        obj._fmtc_dmode = fmtc_dmode
+        obj._vszip_mode = vszip_mode
 
         return obj
 
@@ -155,40 +160,21 @@ class DitherType(CustomStrEnum):
         out_fmt: vs.VideoFormat,
         range_in: RangeLike | None,
         range_out: RangeLike | None,
-        force_fmtc: bool,
+        force_fmtc: Never = cast(Never, MISSING),
     ) -> vs.VideoNode:
         """
         Apply the given DitherType to a clip.
         """
-        fmt = get_video_format(clip)
+        if force_fmtc is not cast(Never, MISSING):
+            warnings.warn("`force_fmtc has been removed", category=RuntimeWarning)
 
-        if range_in is not None:
-            clip = Range.ensure_presence(clip, range_in)
-            range_in = Range.from_param(range_in)
-
-        if range_out is not None:
-            range_out = Range.from_param(range_out)
-
-        if not (self.is_fmtc or force_fmtc):
-            return clip.resize.Point(format=out_fmt, dither_type=self.value.lower(), range_in=range_in, range=range_out)
-
-        # Workaround because fmtc doesn't support FLOAT 16 input
-        if fmt.sample_type is vs.FLOAT and fmt.bits_per_sample == 16:
-            clip = DitherType.NONE.apply(clip, fmt.replace(bits_per_sample=32), None, None, False)
-
-        return clip.fmtc.bitdepth(dmode=self._fmtc_dmode, bits=out_fmt.bits_per_sample, fulls=range_in, fulld=range_out)
-
-    @cachedproperty
-    def is_fmtc(self) -> bool:
-        """
-        Whether the DitherType is exclusive to fmtc.
-        """
-        return self in (
-            DitherType.SIERRA_2_4A,
-            DitherType.STUCKI,
-            DitherType.ATKINSON,
-            DitherType.OSTROMOUKHOV,
-            DitherType.QUASIRANDOM,
+        return core.vszip.Dither(
+            clip,
+            bitdepth=out_fmt.bits_per_sample,
+            dither_type=self._vszip_mode,
+            sample_type=out_fmt.sample_type,
+            fulls=Range.from_param_or_video(range_in, clip, func_except=self.apply),
+            fulld=Range.from_param_or_video(range_out, clip, func_except=self.apply),
         )
 
 
@@ -201,7 +187,7 @@ def depth(
     range_in: RangeLike | None = None,
     range_out: RangeLike | None = None,
     dither_type: str | DitherType = DitherType.RANDOM,
-    force_fmtc: bool = False,
+    force_fmtc: Never = cast(Never, MISSING),
 ) -> vs.VideoNode:
     """
     A convenience bitdepth conversion function using only internal plugins if possible.
@@ -223,18 +209,26 @@ def depth(
         clip: Input clip.
         bitdepth: Desired bitdepth of the output clip.
         sample_type: Desired sample type of output clip. Allows overriding default float/integer behavior.
-        range_in: Input pixel range (defaults to input `clip`'s range).
-        range_out: Output pixel range (defaults to input `clip`'s range).
+        range_in: Input pixel range (defaults to input `clip`'s range first frame).
+        range_out: Output pixel range (defaults to input `clip`'s range first frame).
         dither_type: Dithering algorithm. Allows overriding default dithering behavior.
-        force_fmtc: Force usage of fmtc to apply dithering.
 
     Returns:
         Converted clip with desired bit depth and sample type. `ColorFamily` will be same as input.
     """
+    if force_fmtc is not cast(Never, MISSING):
+        warnings.warn("`force_fmtc has been removed", category=RuntimeWarning)
+
     in_fmt = get_video_format(clip)
     out_fmt = get_video_format(bitdepth or clip, sample_type=sample_type)
+    range_in = Range.from_param_or_video(range_in, clip, func_except=depth)
+    range_out = Range.from_param_or_video(range_out, clip, func_except=depth)
 
-    if (in_fmt.bits_per_sample, in_fmt.sample_type, range_in) == (
+    if (
+        in_fmt.bits_per_sample,
+        in_fmt.sample_type,
+        range_in,
+    ) == (
         out_fmt.bits_per_sample,
         out_fmt.sample_type,
         range_out,
@@ -243,9 +237,10 @@ def depth(
 
     new_format = in_fmt.replace(bits_per_sample=out_fmt.bits_per_sample, sample_type=out_fmt.sample_type)
 
-    return DitherType.from_param(dither_type, depth).apply(clip, new_format, range_in, range_out, force_fmtc)
+    return DitherType.from_param(dither_type, depth).apply(clip, new_format, range_in, range_out)
 
 
+@deprecated("This function is deprecated and will be removed in a future version.", category=DeprecationWarning)
 def expect_bits(clip: vs.VideoNode, /, expected_depth: int = 16, **kwargs: Any) -> tuple[vs.VideoNode, int]:
     """
     Expected output bitdepth for a clip.
@@ -653,7 +648,14 @@ def split(clip: vs.VideoNode, /, strict: bool = True) -> list[vs.VideoNode]:
     Returns:
         List of individual planes.
     """
-    return [clip] if clip.format.num_planes == 1 else [plane(clip, i, strict) for i in range(clip.format.num_planes)]
+    if clip.format.num_planes == 1:
+        return [clip]
+
+    if not strict and clip.format.color_family is vs.RGB:
+        clip = core.std.RemoveFrameProps(clip, "_Matrix")
+
+    # clip has 3 planes so it WILL return a list
+    return cast(list[vs.VideoNode], core.std.SplitPlanes(clip))
 
 
 def flatten_vnodes(*clips: VideoNodeIterable, split_planes: bool = False) -> Sequence[vs.VideoNode]:
@@ -786,7 +788,8 @@ def stack_planes(
 
     Args:
         clip: Input clip to be split and visually stacked.
-        shift_float_chroma: If True, shift U and V by +0.5 when working in float YUV formats.
+        shift_float_chroma: If True, shift and scale U and V when working in float YUV formats
+            to match integer representation.
         offset_chroma: Apply chroma plane offseting:
 
                - "min": match luma minimum
@@ -807,16 +810,10 @@ def stack_planes(
     if clip.format.color_family is vs.GRAY:
         return clip
 
-    # std.PlaneStats and text.Text don't support fp16.
-    # Upconversion from fp16 to fp32.
-    if clip.format.sample_type is vs.FLOAT and (isinstance(offset_chroma, (str, float)) or write_plane_name):
-        clip, bits = expect_bits(clip, 32)
-    else:
-        bits = clip.format.bits_per_sample
-
     if clip.format.color_family is vs.YUV:
         if clip.format.sample_type is vs.FLOAT and shift_float_chroma:
-            clip = core.cranexpr.Expr(clip, ["", "x 0.5 +"])
+            expr = "x 0.5 + 224 219 / *" if Range.from_video(clip, func=stack_planes).is_limited else "x 0.5 +"
+            clip = core.cranexpr.Expr(clip, ["", expr])
 
         def offset_uv_planes(value: float, plane_stats: str) -> list[vs.VideoNode]:
             planes = split(clip)
@@ -862,8 +859,7 @@ def stack_planes(
     if mode == "v":
         org = [org]
 
-    # If the source clip was fp16, this will be converted back to fp16 here.
-    stacked = depth(stack_clips(org), bits)
+    stacked = stack_clips(org)
 
     return core.std.RemoveFrameProps(stacked, Matrix.prop_key) if clip.format.color_family == vs.RGB else stacked
 

@@ -40,7 +40,7 @@ _log = getLogger(__name__)
 
 
 class _LazyLogExpr:
-    __slots__ = "expr"
+    __slots__ = ("expr",)
 
     def __init__(self, expr: str | Sequence[str]) -> None:
         self.expr = expr
@@ -185,7 +185,7 @@ def combine(
     )
 
 
-type NestedStrLike = SupportsString | None | Iterable[NestedStrLike]
+type NestedStrLike = SupportsString | Iterable[NestedStrLike] | None
 """
 A recursive type representing string-like values or collections thereof.
 

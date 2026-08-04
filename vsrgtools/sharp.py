@@ -40,7 +40,7 @@ __all__ = ["awarpsharp", "fast_line_darken", "fine_sharp", "soothe", "unsharpen"
 def unsharpen(
     clip: vs.VideoNode,
     strength: float = 1.0,
-    blur: vs.VideoNode | VSFunctionNoArgs = partial(gauss_blur, sigma=1.5),
+    blur: vs.VideoNode | VSFunctionNoArgs = lambda clip: gauss_blur(clip, sigma=1.5),
     planes: Planes = None,
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
@@ -77,7 +77,7 @@ def unsharpen(
 def awarpsharp(
     clip: vs.VideoNode,
     mask: MaskLike | None = None,
-    thresh: float = 128,
+    thresh: float = 127.5,
     blur: int | VSFunctionPlanesArgs | Literal[False] = 3,
     depth_h: int | Sequence[int] | None = None,
     depth_v: int | Sequence[int] | None = None,

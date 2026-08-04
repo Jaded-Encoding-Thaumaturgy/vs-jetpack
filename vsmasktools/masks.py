@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from typing import SupportsFloat
 
-from jetpytools import FuncExcept, clamp, normalize_seq
+from jetpytools import CustomValueError, FuncExcept, normalize_seq
 
 from vsexprtools import ExprOp
 from vsrgtools import BlurMatrix, median_blur
@@ -98,7 +98,7 @@ def strength_zones_mask(
         rng = normalize_ranges(base_clip, rng)
 
         for s, e in rng:
-            e += bool(not replace_ranges.exclusive)
+            e += not replace_ranges.exclusive
             indices[s:e] = [(i, n) for n in range(s, e)]
 
         if isinstance(strength, vs.VideoNode):
@@ -184,6 +184,9 @@ def stabilize_mask(
     radius_blur = radius * 2 + 1
     blurred = kernel(radius_blur, mode=ConvMode.TEMPORAL)(median, planes, scenechange=True, func=func)
 
-    binarized = Morpho.binarize_mask(blurred, 1.0 / (radius_blur - clamp(brz, 0, radius_blur)), planes=planes)
+    if not 0 <= brz < radius_blur:
+        raise CustomValueError(f"brz must be between 0 and {radius_blur - 1}, got {brz}", func)
+
+    binarized = Morpho.binarize_mask(blurred, 1.0 / (radius_blur - brz), planes=planes)
 
     return binarized

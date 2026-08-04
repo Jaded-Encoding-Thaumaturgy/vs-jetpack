@@ -1,7 +1,8 @@
-from collections.abc import Generator, Iterable, Mapping
+# ruff: noqa B006
+import math
+from collections.abc import Generator, Mapping
 from contextlib import contextmanager, suppress
 from copy import deepcopy
-from math import factorial
 from typing import Any, Literal, Protocol, Self, TypedDict
 
 from jetpytools import CustomIntEnum, CustomValueError, FuncExcept, fallback, normalize_seq
@@ -11,7 +12,6 @@ from vsdeband import Grainer
 from vsdenoise import (
     DFTTest,
     MaskMode,
-    MotionVectors,
     MVDirection,
     MVTools,
     MVToolsPreset,
@@ -74,7 +74,6 @@ class QTGMCArgs:
         Arguments available when passing to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate].
         """
 
-        scbehavior: bool | None
         thsad: int | None
         time: float | None
 
@@ -88,7 +87,7 @@ class QTGMCArgs:
         [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final]
         """
 
-        limit: float | tuple[float | None, float | None] | None
+        limit: float | tuple[float, float] | None
         planes: Planes
 
     class Mask(TypedDict, total=False):
@@ -100,7 +99,7 @@ class QTGMCArgs:
         ml: float | None
         gamma: float | None
         time: float | None
-        ysc: int | None
+        scval: float | None
 
     class Blur(TypedDict, total=False):
         """
@@ -132,7 +131,7 @@ class QTempGaussMC(VSObject):
     These resources remain relevant, as the core algorithm used here is largely similar.
 
     Note that parameter names differ in this implementation due to a complete rewrite.
-    A mapping between vsjetpack and havsfunc parameters is available [here](https://gist.github.com/emotion3459/33bd2b2a2c21afc6497f65adaf7f0b02).
+    A mapping between vsjetpack and havsfunc parameters is available [here](https://gist.github.com/Ichunjo/76c96f1130c9e9f972de956f40571e54).
 
     Examples:
         - ...
@@ -458,7 +457,7 @@ class QTempGaussMC(VSObject):
         mode: NoiseProcessMode = NoiseProcessMode.IDENTIFY,
         deint: NoiseDeintMode = NoiseDeintMode.GENERATE,
         mc_denoise: bool = True,
-        stabilize: tuple[float, float] | Literal[False] = (0.6, 0.2),
+        stabilize: float = 0.6,
         func_comp_args: QTGMCArgs.Compensate | None = None,
         stabilize_comp_args: QTGMCArgs.Compensate | None = None,
     ) -> Self:
@@ -483,7 +482,7 @@ class QTempGaussMC(VSObject):
         self.denoise_mode = mode
         self.denoise_deint = deint
         self.denoise_mc_denoise = mc_denoise
-        self.denoise_stabilize: tuple[float, float] | Literal[False] = stabilize
+        self.denoise_stabilize = stabilize
         self.denoise_func_comp_args = fallback(func_comp_args, QTGMCArgs.Compensate())
         self.denoise_stabilize_comp_args = fallback(stabilize_comp_args, QTGMCArgs.Compensate())
 
@@ -756,34 +755,35 @@ class QTempGaussMC(VSObject):
         if not erosion_distance:
             return flt
 
-        ed_iter1, ed_iter2 = (1 + erosion_distance // 3, 1 + (erosion_distance + 1) // 3)
-        od_iter1, od_iter2 = (over_dilation // 3, over_dilation % 3)
+        ed_iter1 = 1 + erosion_distance // 3
+        ed_iter2 = 1 + (erosion_distance + 1) // 3
+        ed_res = erosion_distance % 3
+        od_iter1, od_iter2 = divmod(over_dilation, 3)
 
         diff = src.std.MakeDiff(flt)
 
-        closing = Morpho.maximum(diff, iterations=ed_iter1, coords=Coordinates.VERTICAL, func=self._mask_shimmer)
-        opening = Morpho.minimum(diff, iterations=ed_iter1, coords=Coordinates.VERTICAL, func=self._mask_shimmer)
+        processed = []
+        for grow_op, shrink_op, inflate_op, deflate_op in [
+            (Morpho.maximum, Morpho.minimum, Morpho.inflate, Morpho.deflate),
+            (Morpho.minimum, Morpho.maximum, Morpho.deflate, Morpho.inflate),
+        ]:
+            clip = grow_op(diff, iterations=ed_iter1, coords=Coordinates.VERTICAL, func=self._mask_shimmer)
 
-        if erosion_residual := erosion_distance % 3:
-            closing = Morpho.inflate(closing, func=self._mask_shimmer)
-            opening = Morpho.deflate(opening, func=self._mask_shimmer)
+            if ed_res:
+                clip = inflate_op(clip, func=self._mask_shimmer)
+                if ed_res == 2:
+                    clip = median_blur(clip, func=self._mask_shimmer)
 
-            if erosion_residual == 2:
-                closing = median_blur(closing, func=self._mask_shimmer)
-                opening = median_blur(opening, func=self._mask_shimmer)
+            clip = shrink_op(clip, iterations=ed_iter2, coords=Coordinates.VERTICAL, func=self._mask_shimmer)
 
-        closing = Morpho.minimum(closing, iterations=ed_iter2, coords=Coordinates.VERTICAL, func=self._mask_shimmer)
-        opening = Morpho.maximum(opening, iterations=ed_iter2, coords=Coordinates.VERTICAL, func=self._mask_shimmer)
+            if over_dilation:
+                clip = shrink_op(clip, iterations=od_iter1, func=self._mask_shimmer)
+                clip = deflate_op(clip, iterations=od_iter2, func=self._mask_shimmer)
 
-        if over_dilation:
-            closing = Morpho.minimum(closing, iterations=od_iter1, func=self._mask_shimmer)
-            opening = Morpho.maximum(opening, iterations=od_iter1, func=self._mask_shimmer)
-
-            closing = Morpho.deflate(closing, iterations=od_iter2, func=self._mask_shimmer)
-            opening = Morpho.inflate(opening, iterations=od_iter2, func=self._mask_shimmer)
+            processed.append(clip)
 
         return norm_expr(
-            [flt, diff, closing, opening], "x y z neutral min a neutral max clip neutral - +", func=self._mask_shimmer
+            [flt, diff, *processed], "x y z neutral min a neutral max clip neutral - +", func=self._mask_shimmer
         )
 
     def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
@@ -793,38 +793,17 @@ class QTempGaussMC(VSObject):
         return clip
 
     def _binomial_degrain(self, clip: vs.VideoNode, tr: int, **degrain_args: Any) -> vs.VideoNode:
-        from numpy import linalg, zeros
-
-        def _get_weights(n: int) -> Iterable[Any]:
-            k, rhs = 1, list[int]()
-            mat = zeros((n + 1, n + 1))
-
-            for i in range(1, n + 2):
-                mat[n + 1 - i, i - 1] = mat[n, i - 1] = 1 / 3
-                rhs.append(k)
-                k = k * (2 * n + 1 - i) // i
-
-            mat[n, 0] = 1
-
-            return linalg.solve(mat, rhs)
-
         if not tr:
             return clip
 
-        backward, forward = self.mv.vectors.get_vectors(tr=tr)
-        vectors = MotionVectors()
-        degrained = list[vs.VideoNode]()
-
-        for delta in range(tr):
-            vectors.set_vector(backward[delta], MVDirection.BACKWARD, 1)
-            vectors.set_vector(forward[delta], MVDirection.FORWARD, 1)
-
-            degrained.append(
-                self.mv.degrain(clip, vectors=vectors, thsad=self.basic_thsad, thscd=self.analyze_thscd, **degrain_args)
-            )
-            vectors.clear()
-
-        return BlurMatrix.custom(_get_weights(tr), ConvMode.TEMPORAL)([clip, *degrained], func=self._binomial_degrain)
+        return self.mv.degrain(
+            clip,
+            tr=tr,
+            thsad=self.basic_thsad,
+            thscd=self.analyze_thscd,
+            weights=BlurMatrix.BINOMIAL(radius=tr),
+            **degrain_args,
+        )
 
     def _apply_prefilter(self) -> None:
         self.draft = Catrom().bob(self.clip, tff=self.tff) if self.tff.is_inter and not self.is_repair else self.clip
@@ -855,11 +834,12 @@ class QTempGaussMC(VSObject):
                     [blurred, smoothed, search],
                     "z y {lim1} - y {lim1} + clip TWEAK! "
                     "x {lim2} + TWEAK@ < x {lim3} + x {lim2} - TWEAK@ > x {lim3} - "
-                    "x {bias} * TWEAK@ 1 {bias} - * + ? ?",
+                    "x {weight1} * TWEAK@ {weight2} * + ? ?",
                     lim1=lim1,
                     lim2=lim2,
                     lim3=lim3,
-                    bias=self.prefilter_bias,
+                    weight1=self.prefilter_bias,
+                    weight2=1 - self.prefilter_bias,
                     func=self._apply_prefilter,
                 )
         else:
@@ -889,11 +869,11 @@ class QTempGaussMC(VSObject):
         )
 
         self.mv = MVTools(self.draft, **{**self.analyze_preset, "search_clip": self.prefilter_output})
-        self.mv.analyze(tr=tr, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+        self.mv.analyze(tr=tr, blksize=blksize, overlap_div=overlap)
 
         for _ in range(self.analyze_refine):
             blksize = refine_blksize(blksize)
-            self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=refine_blksize(blksize, overlap))
+            self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap)
 
     def _apply_denoise(self) -> None:
         self.denoise_output = self.clip
@@ -933,26 +913,26 @@ class QTempGaussMC(VSObject):
                 case self.NoiseDeintMode.GENERATE:
                     noise_source = self.noise.std.SeparateFields(self.tff.is_tff)
 
-                    noise_max = Morpho.maximum(
-                        Morpho.maximum(noise_source), coords=Coordinates.HORIZONTAL, func=self._apply_denoise
-                    )
-                    noise_min = Morpho.minimum(
-                        Morpho.minimum(noise_source), coords=Coordinates.HORIZONTAL, func=self._apply_denoise
-                    )
+                    noise_max = Morpho.expand(noise_source, sw=2, sh=1, func=self._apply_denoise)
+                    noise_min = Morpho.inpand(noise_source, sw=2, sh=1, func=self._apply_denoise)
 
                     gen_noise = Grainer.GAUSS(
-                        noise_source, 2048, protect_edges=False, protect_neutral_chroma=False, neutral_out=True
+                        noise_source,
+                        ((0.5 * 255) / 3) ** 2,  # 3σ rule
+                        protect_edges=False,
+                        protect_neutral_chroma=False,
+                        neutral_out=True,
                     )
                     gen_noise = norm_expr(
-                        [noise_max, noise_min, gen_noise], "x y - z * range_size / y +", func=self._apply_denoise
+                        [noise_max, noise_min, gen_noise],
+                        "y x y - z neutral - range_size / 0.5 + * +",
+                        func=self._apply_denoise,
                     )
                     new_noise = reweave(noise_source, gen_noise, self.tff.field, self._apply_denoise)
 
             self.noise = FieldBased.PROGRESSIVE.apply(new_noise)
 
         if self.denoise_stabilize:
-            weight1, weight2 = self.denoise_stabilize
-
             noise_comp, _ = self.mv.compensate(
                 self.noise,
                 direction=MVDirection.BACKWARD,
@@ -965,8 +945,8 @@ class QTempGaussMC(VSObject):
             self.noise = norm_expr(
                 [self.noise, *noise_comp],
                 "x neutral - abs y neutral - abs > x y ? {weight1} * x y + {weight2} * +",
-                weight1=weight1,
-                weight2=weight2,
+                weight1=self.denoise_stabilize,
+                weight2=(1 - self.denoise_stabilize) / 2,
                 func=self._apply_denoise,
             )
 
@@ -980,7 +960,6 @@ class QTempGaussMC(VSObject):
 
         if self.is_repair and self.basic_mask_args.get("ml", 0):
             mask = self.mv.mask(
-                self.prefilter_output,
                 direction=MVDirection.BACKWARD,
                 kind=MaskMode.SAD,
                 thscd=self.analyze_thscd,
@@ -1017,10 +996,13 @@ class QTempGaussMC(VSObject):
     def _apply_source_match(self, clip: vs.VideoNode) -> vs.VideoNode:
         def _error_adjustment(ref: vs.VideoNode, clip: vs.VideoNode, tr: int) -> vs.VideoNode:
             tr_f = 2 * tr - 1
-            binomial_coeff = factorial(tr_f) // factorial(tr) // factorial(tr_f - tr)
-            error_adj = 2**tr_f / (binomial_coeff + self.source_match_similarity * (2**tr_f - binomial_coeff))
+            tr_s = 2**tr_f
+            binomial_coeff = math.comb(tr_f, tr)
+            error_adj = tr_s / (binomial_coeff + self.source_match_similarity * (tr_s - binomial_coeff))
 
-            return norm_expr([ref, clip], "x {adj} 1 + * y {adj} * -", adj=error_adj, func=_error_adjustment)
+            return norm_expr(
+                [ref, clip], "x {adj1} * y {adj2} * -", adj1=error_adj + 1, adj2=error_adj, func=_error_adjustment
+            )
 
         if self.tff.is_inter:
             clip = reinterlace(clip, self.tff, self._apply_source_match)
@@ -1206,9 +1188,8 @@ class QTempGaussMC(VSObject):
 
             if self.motion_blur_mask_args.get("ml", 0):
                 mask = self.mv.mask(
-                    self.prefilter_output,
                     direction=MVDirection.BACKWARD,
-                    kind=MaskMode.MOTION,
+                    kind=MaskMode.VECTOR_LENGTH,
                     thscd=self.analyze_thscd,
                     **self.motion_blur_mask_args,
                 )

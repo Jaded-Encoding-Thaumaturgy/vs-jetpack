@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
+from functools import wraps
 from string import capwords
 from typing import Any, Self, overload
 
@@ -17,6 +18,8 @@ from jetpytools import (
     classproperty,
     fallback,
 )
+
+from vsjetpack import deprecated
 
 from ..vs_proxy import vs
 
@@ -36,6 +39,40 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
     def __init__(self, _: Any, string: str | None = None, pretty_string: str | None = None) -> None:
         self._string = fallback(string, self._name_.lower())
         self._pretty_string = fallback(pretty_string, capwords(self._string.replace("_", " ")))
+
+    @overload
+    def __call__(self, clip: vs.VideoNode, /) -> vs.VideoNode: ...
+    @overload
+    def __call__[**P](self, func: Callable[P, vs.VideoNode], /) -> Callable[P, vs.VideoNode]: ...
+    @overload
+    def __call__[**P](self, func: Callable[P, Sequence[vs.VideoNode]], /) -> Callable[P, Sequence[vs.VideoNode]]: ...
+    @overload
+    def __call__[**P](
+        self, func: Callable[P, vs.VideoNode | Sequence[vs.VideoNode]], /
+    ) -> Callable[P, vs.VideoNode | Sequence[vs.VideoNode]]: ...
+    def __call__[**P](
+        self, param: vs.VideoNode | Callable[P, vs.VideoNode | Sequence[vs.VideoNode]]
+    ) -> vs.VideoNode | Callable[P, vs.VideoNode | Sequence[vs.VideoNode]]:
+        """
+        Applies the property to the VideoNode or to the output(s) of the decorated function.
+        """
+        if isinstance(param, vs.VideoNode):
+            return self.apply(param)
+
+        func = param
+
+        @wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> vs.VideoNode | Sequence[vs.VideoNode]:
+            result = func(*args, **kwargs)
+
+            if isinstance(result, vs.VideoNode):
+                return self(result)
+
+            seq_type = tuple[vs.VideoNode] if isinstance(result, tuple) else list[vs.VideoNode]
+
+            return seq_type(self(r) for r in result)
+
+        return wrapper
 
     @classmethod
     def _missing_(cls, value: object) -> Self | None:
@@ -185,6 +222,7 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
         return matched_strings.pop()
 
     @classmethod
+    @deprecated("This method is deprecated and will be removed in a future version", category=DeprecationWarning)
     def ensure_presence(cls, clip: vs.VideoNode, value: Any, func: FuncExcept | None = None) -> vs.VideoNode:
         """
         Ensure the presence of the property in the VideoNode.
@@ -194,6 +232,7 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
         return clip.std.SetFrameProp(enum_value.prop_key, enum_value.value)
 
     @staticmethod
+    @deprecated("This method is deprecated and will be removed in a future version", category=DeprecationWarning)
     def ensure_presences(
         clip: vs.VideoNode, prop_enums: Iterable[type[PropEnum] | PropEnum], func: FuncExcept | None = None
     ) -> vs.VideoNode:
@@ -209,7 +248,7 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
             else:
                 try:
                     prop_enum = prop_enum.from_video(clip, True, func)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     exceptions.append(e)
 
         if exceptions:

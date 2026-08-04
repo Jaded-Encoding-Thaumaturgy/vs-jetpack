@@ -156,7 +156,7 @@ class dpir(CustomStrEnum):  # noqa: N801
             out = dpired
 
         if planes != normalize_planes(clip, None):
-            out = join({None: clip, tuple(planes): dpired}, clip.format.color_family, prop_src=clip)
+            out = join({None: clip, tuple(planes): out}, clip.format.color_family, prop_src=clip)
 
         return out
 
@@ -167,6 +167,7 @@ def deblock_qed(
     alpha: tuple[int | None, int | None] = (1, 1),
     beta: tuple[int | None, int | None] = (2, 2),
     chroma_mode: int = 0,
+    interlaced: bool = False,
     planes: Planes = None,
 ) -> vs.VideoNode:
     """
@@ -185,16 +186,18 @@ def deblock_qed(
                - 1 = Directly use chroma deblock from the normal deblock.
                - 2 = Directly use chroma deblock from the strong deblock.
 
+        interlaced: Enable interlaced processing, input is expected to be separated fields.
         planes: Planes to process.
 
     Returns:
         Deblocked clip
     """
-    fieldbased = FieldBased.from_video(clip, func=deblock_qed)
     planes_pp = 0 if chroma_mode else planes
 
-    if fieldbased.is_inter:
-        clip = Point().scale(clip.std.SeparateFields(fieldbased.is_tff), height=clip.height)
+    orig_height = clip.height
+
+    if interlaced:
+        clip = Point().scale(clip, height=orig_height * 2)
 
     normal, strong = (
         clip.deblock.Deblock(quant[0], alpha[0], beta[0], planes),
@@ -210,7 +213,7 @@ def deblock_qed(
     )
 
     strong_diff = norm_expr([clip, strong, mask], "z x y - 1.01 * neutral + neutral ?", planes_pp, func=deblock_qed)
-    strong_pp = strong_diff.dctf.DCTFilter([1, 1, 0, 0, 0, 0, 0, 0], planes_pp)
+    strong_pp = core.zsmooth.DCTFilter(strong_diff, [1, 1, 0, 0, 0, 0, 0, 0], planes_pp)
     deblocked = norm_expr([clip, normal, strong_pp, mask], "a y x z neutral - - ?", planes_pp, func=deblock_qed)
 
     if clip.format.color_family is not vs.GRAY:
@@ -219,17 +222,15 @@ def deblock_qed(
         if chroma_mode == 2:
             deblocked = join(deblocked, strong)
 
-    if fieldbased.is_inter:
-        from vsdeinterlace import weave
-
-        deblocked = weave(Box().scale(deblocked, height=clip.height // 2), fieldbased.field, deblock_qed)
+    if interlaced:
+        deblocked = Box().scale(deblocked, height=orig_height)
 
     return deblocked
 
 
 def mpeg2stinx(
     clip: vs.VideoNode,
-    bobber: Deinterlacer = NNEDI3(),
+    bobber: Deinterlacer = NNEDI3(),  # noqa: B008
     tff: FieldBasedLike | bool = True,
     mask: bool = True,
     radius: int | tuple[int, int] = 2,

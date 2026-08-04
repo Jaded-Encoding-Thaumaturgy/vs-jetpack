@@ -23,7 +23,7 @@ def detail_mask(
     clip: vs.VideoNode,
     brz_mm: float = 0.025,
     brz_ed: float = 0.045,
-    minmax: MinMax = MinMax(rady=3, radc=2),
+    minmax: MinMax = MinMax(rady=3, radc=2),  # noqa: B008
     edge: MaskLike = Kirsch,
     sigma: float | None = None,
 ) -> vs.VideoNode:
@@ -60,10 +60,10 @@ def detail_mask_neo(
     prew_mask = normalize_mask(edgemask, clip_y).std.Deflate().std.Inflate()
 
     if detail_brz > 0:
-        blur_pref = Morpho.binarize(blur_pref, detail_brz)
+        blur_pref = Morpho.binarize_mask(blur_pref, detail_brz)
 
     if lines_brz > 0:
-        prew_mask = Morpho.binarize(prew_mask, lines_brz)
+        prew_mask = Morpho.binarize_mask(prew_mask, lines_brz)
 
     merged = ExprOp.ADD.combine(blur_pref, prew_mask)
 

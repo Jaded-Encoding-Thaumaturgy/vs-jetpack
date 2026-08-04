@@ -36,7 +36,7 @@ def dehalo_alpha(
     # Blur param
     blur: IterArr[float]
     | VSFunctionPlanesArgs
-    | tuple[float | list[float] | VSFunctionPlanesArgs, ...] = Prefilter.GAUSS(sigma=1.4),
+    | tuple[float | list[float] | VSFunctionPlanesArgs, ...] = Prefilter.GAUSS(sigma=1.4),  # noqa: B008
     # Mask params
     lowsens: IterArr[float] = 50.0,
     highsens: IterArr[float] = 50.0,

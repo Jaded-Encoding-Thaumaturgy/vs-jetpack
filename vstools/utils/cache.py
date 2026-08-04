@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections import OrderedDict, UserDict
 from collections.abc import MutableMapping
+from threading import RLock
 from typing import TYPE_CHECKING
 
 from ..vs_proxy import VSObject, VSObjectABC, vs
@@ -35,18 +36,25 @@ class DynamicClipsCache[T](VSObjectABC, UserDict[T, vs.VideoNode]):
     def __init__(self, cache_size: int = 2) -> None:
         super().__init__()
         self.cache_size = cache_size
+        self._lock = RLock()
 
     @abstractmethod
     def get_clip(self, key: T) -> vs.VideoNode: ...
 
-    def __getitem__(self, key: T) -> vs.VideoNode:
+    def __delitem__(self, key: T) -> None:
         if key not in self:
-            self[key] = self.get_clip(key)
+            return
+        return super().__delitem__(key)
 
-            if len(self) > self.cache_size:
-                del self[next(iter(self.keys()))]
+    def __getitem__(self, key: T) -> vs.VideoNode:
+        with self._lock:
+            if key not in self:
+                self[key] = self.get_clip(key)
 
-        return super().__getitem__(key)
+                if len(self) > self.cache_size:
+                    del self[next(iter(self.keys()))]
+
+            return super().__getitem__(key)
 
 
 class LRUCache[K, V](VSObject, OrderedDict[K, V]):

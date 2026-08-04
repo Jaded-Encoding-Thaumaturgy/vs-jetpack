@@ -12,7 +12,7 @@ __all__ = ["deband_detail_mask"]
 def deband_detail_mask(
     clip: vs.VideoNode,
     sigma: float = 1.0,
-    rxsigma: list[int] = [50, 200, 350],
+    rxsigma: Sequence[int] = (50, 200, 350),
     pf_sigma: float | None = 1.0,
     brz: tuple[float, float] = (0.038, 0.068),
     rg_mode: int | Sequence[int] = remove_grain.Mode.MINMAX_MEDIAN_OPP,
@@ -30,10 +30,10 @@ def deband_detail_mask(
     blur_ret_diff = Morpho.deflate(ExprOp.SUB(blur_ret, ret))
 
     blur_ret_brz = Morpho.inflate(blur_ret_diff, 4)
-    blur_ret_brz = Morpho.closing(Morpho.binarize(blur_ret_brz, brz0), 3)
+    blur_ret_brz = Morpho.closing(Morpho.binarize_mask(blur_ret_brz, brz0), 3)
 
     prewitt_mask = Morpho.inflate(Morpho.deflate(Prewitt.edgemask(clip_y, brz1, brz1)))
-    prewitt_brz = Morpho.closing(Morpho.binarize(prewitt_mask, brz1), 2)
+    prewitt_brz = Morpho.closing(Morpho.binarize_mask(prewitt_mask, brz1), 2)
 
     merged = ExprOp.ADD(blur_ret_brz, prewitt_brz)
 

@@ -4,22 +4,11 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Any, overload
 
-from jetpytools import CustomTypeError, inject_self, normalize_seq
+from jetpytools import CustomTypeError, Position, Size, inject_self, normalize_seq
 
 from vsexprtools import ExprOp
 from vsrgtools import box_blur
-from vstools import (
-    FrameRangeN,
-    FrameRangesN,
-    FramesLengthError,
-    Position,
-    Range,
-    Size,
-    depth,
-    limiter,
-    replace_ranges,
-    vs,
-)
+from vstools import FrameRangeN, FrameRangesN, FramesLengthError, Range, depth, limiter, replace_ranges, vs
 
 __all__ = ["BoundingBox", "DeferredMask", "GeneralMask"]
 
@@ -129,7 +118,7 @@ class DeferredMask(GeneralMask):
                 if rf is None:
                     rf = ref.num_frames - 1
                 elif rf < 0:
-                    rf = ref.num_frames - 1 + rf
+                    rf = ref.num_frames + rf
 
                 mask = depth(self._mask(clip[rf], ref[rf], **kwargs), clip, range_out=Range.FULL, range_in=Range.FULL)
                 mask = vs.core.std.Loop(mask, hm.num_frames)

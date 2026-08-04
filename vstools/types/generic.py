@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from jetpytools import MissingT
 
 from ..vs_proxy import vs
 from .builtins import Planes
 
+if TYPE_CHECKING:
+    import numpy.typing as npt
+
 __all__ = [
     "AudioNodeIterable",
     "GenericVSFunction",
+    "HoldsNumpyFormat",
     "HoldsPropValue",
     "HoldsVideoFormat",
     "MissingT",
@@ -28,6 +32,12 @@ __all__ = [
 type VideoNodeIterable = vs.VideoNode | Iterable[VideoNodeIterable]
 type AudioNodeIterable = vs.AudioNode | Iterable[AudioNodeIterable]
 type RawNodeIterable = vs.RawNode | Iterable[RawNodeIterable]
+
+
+type HoldsNumpyFormat = npt.NDArray[Any] | npt.DTypeLike
+"""
+Numpy types from which a VideoFormat can be retrieved.
+"""
 
 
 VideoFormatLike = vs.PresetVideoFormat | vs.VideoFormat

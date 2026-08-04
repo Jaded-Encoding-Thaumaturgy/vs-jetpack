@@ -483,7 +483,7 @@ def volume(iterable):
     :returns: The volume of the iterable. This will return 1 for empty iterables, as a scalar has an empty shape and the volume of a tensor with empty shape is 1.
     """
 
-__version__: str = "11.0.0.114"
+__version__: str = "11.2.1.2"
 attr: str = "VERBOSE"
 bfloat16: tensorrt.DataType  # value = <DataType.BF16: 7>
 bool: tensorrt.DataType  # value = <DataType.BOOL: 4>

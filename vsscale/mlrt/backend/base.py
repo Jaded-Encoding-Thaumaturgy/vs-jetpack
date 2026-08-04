@@ -2,19 +2,17 @@ from __future__ import annotations
 
 import os
 import platform
+from abc import ABC
 from collections.abc import Sequence
 from dataclasses import dataclass
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast, overload
+from typing import Any, ClassVar, Literal, overload
 
 from jetpytools import to_arr
 
 from vstools import UnsupportedSampleTypeError, core, vs
 
 from ...helpers import get_gpu
-
-if TYPE_CHECKING:
-    from . import migx, ncnn, ort, ov, trt
 
 type Shape = tuple[int, int]
 
@@ -29,22 +27,6 @@ class Backend:
 
     plugin: ClassVar[vs.Plugin]
     flexible_output_prop: ClassVar[str] = "MlrtFlexible"
-
-    if TYPE_CHECKING:
-        MIGX = migx.MIGX
-        NCNN = ncnn.NCNN
-        NCNN_VK = ncnn.NCNN
-        ORT = ort.ORT
-        ORT_CPU = ort.ORT_CPU
-        ORT_CUDA = ort.ORT_CUDA
-        ORT_DML = ort.ORT_DML
-        ORT_COREML = ort.ORT_COREML
-        OV = ov.OV
-        OV_CPU = ov.OV_CPU
-        OV_GPU = ov.OV_GPU
-        OV_NPU = ov.OV_NPU
-        TRT = trt.TRT
-        TRT_RTX = trt.TRT_RTX
 
     @overload
     def inference(
@@ -136,8 +118,8 @@ class Backend:
         """Return backend plugin arguments derived from this configuration."""
         return {}
 
-    @classmethod
-    def autoselect(cls, device_id: int = 0, **kwargs: Any) -> Backend:
+    @staticmethod
+    def autoselect(device_id: int = 0, **kwargs: Any) -> Backend:
         """
         Try to select the best backend for the current system.
 
@@ -150,64 +132,58 @@ class Backend:
         """
 
         gpu = get_gpu(device_id)
-        vendor = (
-            cast(str | None, gpu.vendor)
-            if gpu
-            else "apple"
-            # macOS x86_64 is unsupported
-            if platform.system().lower() == "darwin" and platform.machine() == "x86_64"
-            else None
-        )
+        vendor = None if not gpu else str(gpu.vendor).strip()
 
         match vendor:
             # Windows & Linux
-            case "nvidia":
+            case "NVIDIA Corporation":
                 if hasattr(core, "trt"):
-                    backend = Backend.TRT
+                    backend = UserBackend.TRT
                 elif hasattr(core, "trt_rtx"):
-                    backend = Backend.TRT_RTX
+                    backend = UserBackend.TRT_RTX
                 elif platform.system().lower() == "windows" and hasattr(core, "ort"):
-                    backend = Backend.ORT_DML
+                    backend = UserBackend.ORT_DML
                 elif hasattr(core, "ort"):
-                    backend = Backend.ORT_CUDA
+                    backend = UserBackend.ORT_CUDA
                 elif hasattr(core, "ncnn"):
-                    backend = Backend.NCNN
+                    backend = UserBackend.NCNN
                 else:
-                    backend = Backend.OV_CPU
+                    backend = UserBackend.OV_CPU
             # Windows & Linux
-            case "amd":
+            case "Advanced Micro Devices, Inc.":
                 if platform.system().lower() == "windows" and hasattr(core, "ort"):
-                    backend = Backend.ORT_DML
+                    backend = UserBackend.ORT_DML
                 elif hasattr(core, "migx"):
-                    backend = Backend.MIGX
+                    backend = UserBackend.MIGX
                 elif hasattr(core, "ncnn"):
-                    backend = Backend.NCNN_VK
+                    backend = UserBackend.NCNN_VK
                 else:
-                    backend = Backend.OV_CPU
+                    backend = UserBackend.OV_CPU
             # Windows & Linux
-            case "intel":
-                # device-smi can't detect Intel NPUs in 0.5.6
-                # https://github.com/ModelCloud/Device-SMI#roadmap
+            case "Intel(R) Corporation":
                 if hasattr(core, "ov"):
-                    backend = Backend.OV_GPU
+                    backend = UserBackend.OV_GPU
                 elif platform.system().lower() == "windows" and hasattr(core, "ort"):
-                    backend = Backend.ORT_DML
+                    backend = UserBackend.ORT_DML
                 elif hasattr(core, "ncnn"):
-                    backend = Backend.NCNN_VK
+                    backend = UserBackend.NCNN_VK
                 else:
-                    backend = Backend.OV_CPU
+                    backend = UserBackend.OV_CPU
             # macOS ARM64 & x86_64
-            case "apple":
+            case "Apple":
                 if hasattr(core, "ncnn"):
-                    backend = Backend.NCNN_VK
+                    backend = UserBackend.NCNN_VK
                 elif hasattr(core, "ort"):
-                    backend = Backend.ORT_COREML
+                    backend = UserBackend.ORT_COREML
                 else:
-                    backend = Backend.OV_CPU
+                    backend = UserBackend.OV_CPU
             case _:
-                backend = Backend.OV_CPU
+                backend = UserBackend.OV_CPU
 
         del gpu
+
+        if hasattr(backend, "device_id"):
+            kwargs["device_id"] = device_id
 
         return backend(**kwargs)
 
@@ -217,20 +193,29 @@ class BackendAutoConvertFloat(Backend):
         return {"output_format": max(c.format.bits_per_sample for c in to_arr(clips)) == 16}
 
 
-if not TYPE_CHECKING:
-    from . import migx, ncnn, ort, ov, trt
+from . import migx, ncnn, ort, ov, trt  # noqa: E402
 
-    Backend.MIGX = migx.MIGX
-    Backend.NCNN = ncnn.NCNN
-    Backend.NCNN_VK = Backend.NCNN
-    Backend.ORT = ort.ORT
-    Backend.ORT_CPU = ort.ORT_CPU
-    Backend.ORT_CUDA = ort.ORT_CUDA
-    Backend.ORT_DML = ort.ORT_DML
-    Backend.ORT_COREML = ort.ORT_COREML
-    Backend.OV = ov.OV
-    Backend.OV_CPU = ov.OV_CPU
-    Backend.OV_GPU = ov.OV_GPU
-    Backend.OV_NPU = ov.OV_NPU
-    Backend.TRT = trt.TRT
-    Backend.TRT_RTX = trt.TRT_RTX
+
+@dataclass(kw_only=True, frozen=True)
+class UserBackend(ABC):
+    """Backend namespace for user interaction."""
+
+    MIGX = migx.MIGX
+    NCNN = ncnn.NCNN
+    NCNN_VK = ncnn.NCNN
+    ORT = ort.ORT
+    ORT_CPU = ort.ORT_CPU
+    ORT_CUDA = ort.ORT_CUDA
+    ORT_DML = ort.ORT_DML
+    ORT_COREML = ort.ORT_COREML
+    OV = ov.OV
+    OV_CPU = ov.OV_CPU
+    OV_GPU = ov.OV_GPU
+    OV_NPU = ov.OV_NPU
+    TRT = trt.TRT
+    TRT_RTX = trt.TRT_RTX
+
+    autoselect = Backend.autoselect
+
+
+UserBackend.register(Backend)

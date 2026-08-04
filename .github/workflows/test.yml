@@ -26,12 +26,16 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v8.2.0
+        uses: astral-sh/setup-uv@v9.0.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
@@ -44,13 +48,13 @@ jobs:
           --extra basic --extra kernels --extra expr --extra rg --extra denoise
 
       - name: Run tests
-        run: uv run pytest --cov-report=term-missing:skip-covered --cov=vskernels --cov=vstools --cov=vsexprtools tests
+        run: uv run coverage run -m pytest tests
 
       - name: Convert coverage report to cobertura
         run: uv run coverage xml
 
       - name: Coveralls GitHub Action
-        uses: coverallsapp/github-action@v2.3.7
+        uses: coverallsapp/github-action@v2.3.8
         with:
           file: coverage.xml
           format: cobertura
@@ -70,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Mark Coveralls as finished
-        uses: coverallsapp/github-action@v2.3.7
+        uses: coverallsapp/github-action@v2.3.8
         with:
           parallel-finished: true
           fail-on-error: false

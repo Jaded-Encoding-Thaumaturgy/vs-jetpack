@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from fractions import Fraction
 
-from vstools import Timecodes, core, vs
+from vstools import Timecodes, core
 from vstools.functions.timecodes import FrameDur
-
-clip = core.std.BlankClip(format=vs.YUV420P16, width=1920, height=1080)
-clip_descaled = core.std.BlankClip(format=vs.YUV420P16, width=1600, height=900)
 
 
 def test_timecodes_to_normalized_ranges() -> None:

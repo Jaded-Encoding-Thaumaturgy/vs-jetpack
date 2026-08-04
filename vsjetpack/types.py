@@ -1,13 +1,14 @@
 import sys
 
-__all__ = ["TypeIs", "TypeVar", "deprecated"]
+__all__ = ["TypeForm", "TypeIs", "TypeVar", "deprecated"]
 
 if sys.version_info < (3, 13):
-    import typing_extensions
-
-    TypeIs = typing_extensions.TypeIs
-    TypeVar = typing_extensions.TypeVar
-    deprecated = typing_extensions.deprecated
+    from typing_extensions import TypeIs, TypeVar, deprecated
 else:
     from typing import TypeIs, TypeVar
     from warnings import deprecated
+
+if sys.version_info < (3, 15):
+    from typing_extensions import TypeForm
+else:
+    from typing import TypeForm

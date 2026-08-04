@@ -5,7 +5,7 @@ This module defines the base abstract interfaces for general scaling operations.
 from __future__ import annotations
 
 from collections.abc import Callable
-from functools import cache, wraps
+from functools import wraps
 from inspect import isabstract
 from logging import getLogger
 from math import ceil
@@ -59,7 +59,6 @@ from vstools import (
     split,
     vs,
 )
-from vstools.enums.color import _norm_props_enums
 
 from ..exceptions import (
     UnknownDescalerError,
@@ -94,11 +93,10 @@ def _add_init_kwargs[BaseScalerT: BaseScaler, **P, R](
     def _wrapped(self: BaseScalerT, *args: P.args, **kwargs: P.kwargs) -> R:
         init_kwargs = {k: self.kwargs.pop(k) for k in self.kwargs.keys() & method.__annotations__.keys()}
 
-        returned = method(self, *args, **init_kwargs | kwargs)  # pyright: ignore[reportCallIssue]
-
-        self.kwargs |= init_kwargs
-
-        return returned
+        try:
+            return method(self, *args, **init_kwargs | kwargs)  # pyright: ignore[reportCallIssue]
+        finally:
+            self.kwargs |= init_kwargs
 
     setattr(_wrapped, "__has_init_kwargs__", True)
 
@@ -147,7 +145,6 @@ def _base_ensure_obj[BaseScalerT: BaseScaler](
     return cls.from_param(value, func_except)()
 
 
-@cache
 def _is_base_scaler_abstract(cls: type[BaseScaler]) -> bool:
     return cls in abstract_kernels or not hasattr(cls, "kernel_radius") or isabstract(cls)
 
@@ -525,9 +522,6 @@ class Scaler(BaseScaler):
 
         scale_args = self.get_scale_args(clip, shift, width, height, **kwargs)
 
-        if vs.__version__ < (74, 0):
-            scale_args = _norm_props_enums(scale_args)
-
         logger.debug("%s: Passing clip: %r; arguments: %s", self.scale, clip, scale_args)
 
         return self.scale_function(clip, **scale_args)
@@ -636,9 +630,6 @@ class Descaler(BaseScaler):
 
         descale_args = self.get_descale_args(clip, shift, width, height, **kwargs)
 
-        if vs.__version__ < (74, 0):
-            descale_args = _norm_props_enums(descale_args)
-
         logger.debug("%s: Passing clip: %r; arguments: %s", self.descale, clip, descale_args)
 
         return self.descale_function(clip, **descale_args)
@@ -670,9 +661,6 @@ class Descaler(BaseScaler):
         width, height = self._wh_norm(clip, width, height)
 
         rescale_args = self.get_rescale_args(clip, shift, width, height, **kwargs)
-
-        if vs.__version__ < (74, 0):
-            rescale_args = _norm_props_enums(rescale_args)
 
         logger.debug("%s: Passing clip: %r; arguments: %s", self.rescale, clip, rescale_args)
 
@@ -800,9 +788,6 @@ class Resampler(BaseScaler):
             chromaloc_in,
             **kwargs,
         )
-
-        if vs.__version__ < (74, 0):
-            resample_args = _norm_props_enums(resample_args)
 
         logger.debug("%s: Passing clip: %r; arguments: %s", self.resample, clip, resample_args)
 

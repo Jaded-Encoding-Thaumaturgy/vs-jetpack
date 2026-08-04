@@ -22,7 +22,7 @@ from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, Trans
 from vsjetpack import __version__
 
 from .feeds import Asset, Feed, Release
-from .settings import TOML_CONFIG, TOML_KEYS, get_artifacts_folder, get_provider_folder
+from .settings import TOML_CONFIG, TOML_KEYS, get_artifacts_folder, get_onnx_folder
 
 MAX_CONCURRENCY = os.cpu_count() or 4
 
@@ -48,7 +48,7 @@ app.command(artifact_app)
 
 @app.meta.default
 def meta_main(
-    *tokens: Annotated[str, cyclopts.Parameter(show=False)],
+    *tokens: Annotated[str, cyclopts.Parameter(show=False, allow_leading_hyphen=True)],
     no_config: Annotated[
         bool,
         cyclopts.Parameter(
@@ -76,19 +76,15 @@ async def download(
     *provider: Annotated[str, cyclopts.Parameter(name="--provider")],
     latest: Annotated[
         bool,
-        cyclopts.Parameter(
-            negative=(),
-            show_default=False,
-            env_var=["VSSCALE_ONNX_DOWNLOAD_LATEST", "VSSCALE_LATEST"],
-        ),
+        cyclopts.Parameter(negative=(), show_default=False, env_var="VSSCALE_LATEST"),
     ] = False,
     global_: Annotated[
         bool,
-        cyclopts.Parameter(
-            negative=(),
-            show_default=False,
-            env_var=["VSSCALE_ONNX_DOWNLOAD_GLOBAL", "VSSCALE_GLOBAL"],
-        ),
+        cyclopts.Parameter(negative=(), show_default=False, env_var="VSSCALE_GLOBAL"),
+    ] = False,
+    assumeyes: Annotated[
+        bool,
+        cyclopts.Parameter(alias="-y", negative=(), show_default=False),
     ] = False,
 ) -> None:
     """
@@ -108,6 +104,7 @@ async def download(
             Use '==' syntax to pin a version (e.g. ArtCNN==v1.6.2).
         latest: Whether to automatically download all models from the latest release.
         global_: Whether to download models to the global folder.
+        assumeyes: Answer yes for all questions.
     """
     if not provider:
         # Fully interactive: pick model, then tag, then assets
@@ -115,7 +112,10 @@ async def download(
         releases = await _fetch_releases(feed)
         release = await _select_tag(releases)
         assets = await _select_assets(release)
-        return await _download_assets(feed, release, assets, global_=global_)
+        dest_folder = anyio.Path(get_onnx_folder(global_=global_) / feed.display_name.lower() / release.tag)
+        if not assumeyes:
+            await _confirm_download(dest_folder)
+        return await _download_assets(feed, assets, dest_folder)
 
     for spec in provider:
         model_name, pinned_version = _parse_model_spec(spec)
@@ -141,7 +141,11 @@ async def download(
             release = await _select_tag(releases)
             assets = await _select_assets(release)
 
-        await _download_assets(feed, release, assets, global_=global_)
+        dest_folder = anyio.Path(get_onnx_folder(global_=global_) / feed.display_name.lower() / release.tag)
+
+        if not assumeyes:
+            await _confirm_download(dest_folder)
+        await _download_assets(feed, assets, dest_folder)
         console.print()
 
 
@@ -166,8 +170,8 @@ def show(
     (cmd, *_), _, _ = app.parse_commands()
 
     match cmd:
-        case "provider":
-            folder = get_provider_folder(global_=global_)
+        case "onnx":
+            folder = get_onnx_folder(global_=global_)
             ext = [".onnx"]
         case "artifact":
             folder = get_artifacts_folder(global_=global_)
@@ -198,8 +202,8 @@ def clear(
     (cmd, *_), _, _ = app.parse_commands()
 
     match cmd:
-        case "provider":
-            folder = get_provider_folder(global_=global_)
+        case "onnx":
+            folder = get_onnx_folder(global_=global_)
         case "artifact":
             folder = get_artifacts_folder(global_=global_)
         case _:
@@ -299,9 +303,15 @@ async def _select_assets(release: Release) -> list[Asset]:
     return selected
 
 
-async def _download_assets(feed: Feed, release: Release, assets: Sequence[Asset], *, global_: bool = False) -> None:
-    dest_folder = anyio.Path(get_provider_folder(global_=global_) / feed.display_name.lower() / release.tag)
+async def _confirm_download(dest_folder: anyio.Path) -> None:
+    msg = f"The models will be downloaded to: '{dest_folder}'"
+    res = await quest.confirm(msg).ask_async()
 
+    if not res:
+        raise SystemExit(1)
+
+
+async def _download_assets(feed: Feed, assets: Sequence[Asset], dest_folder: anyio.Path) -> None:
     console.print(f"[bold]Downloading to:[/bold] [cyan]{dest_folder}[/cyan]")
 
     async with niquests.AsyncSession(
@@ -361,14 +371,10 @@ class _AssetDownloader:
     async def _download_asset(self, asset: Asset) -> None:
         dest_path = self.dest_folder / asset.name
 
-        if await dest_path.exists():
-            data = await dest_path.read_bytes()
-            hash_val = await anyio.to_thread.run_sync(lambda: hashlib.sha256(data).hexdigest())
-
-            if hash_val == asset.sha256:
-                self.progress.console.print(f"  [dim]⏭ {asset.name} (already downloaded)[/dim]")
-                self.skipped.add(asset)
-                return
+        if await dest_path.exists() and await self.calculate_sha256(dest_path) == asset.sha256:
+            self.progress.console.print(f"  [dim]⏭ {asset.name} (already downloaded)[/dim]")
+            self.skipped.add(asset)
+            return
 
         async with self.limiter, _delete_on_error(dest_path):
             task = self.progress.add_task("download", filename=asset.name, total=asset.size)
@@ -381,7 +387,18 @@ class _AssetDownloader:
                     await f.write(chunk)
                     self.progress.update(task, advance=len(chunk))
                 self.progress.update(task, visible=False)
+
+            if (computed_hash := await self.calculate_sha256(dest_path)) != asset.sha256:
+                raise ValueError(
+                    f"Integrity check failed for {asset.name}. Expected sha256: {asset.sha256}, got: {computed_hash}"
+                )
+
             self.downloaded.add(asset)
+
+    @staticmethod
+    async def calculate_sha256(path: anyio.Path) -> str:
+        data = await path.read_bytes()
+        return await anyio.to_thread.run_sync(lambda: hashlib.sha256(data).hexdigest())
 
 
 @asynccontextmanager

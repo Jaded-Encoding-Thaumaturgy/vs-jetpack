@@ -356,7 +356,7 @@ def get_props[CT](
     for k in keys:
         try:
             prop = get_prop(obj, k, **kwargs)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             exceptions.append(e)
         else:
             props[k if isinstance(k, str) else k.prop_key] = prop

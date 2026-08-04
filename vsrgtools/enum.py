@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable
 from enum import auto
-from math import ceil, exp, pi, sqrt
 from typing import Any, Literal, Self, overload
 
 from jetpytools import CustomEnum, CustomNotImplementedError, CustomValueError, FuncExcept, fallback, iterate, to_arr
 
-from vsexprtools import ExprList, ExprOp, ExprVars
+from vsexprtools import ExprList, ExprOp, ExprVars, norm_expr
 from vstools import ConvMode, Planes, core, shift_clip_multi, vs
 
 __all__ = ["BlurMatrix", "BlurMatrixBase"]
@@ -72,64 +72,108 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
             Processed (blurred) video clip.
         """
         func = func or self
-
         clip = to_arr(clip)
+        expr_kwargs = expr_kwargs or {}
 
         if len(self) <= 1:
             return clip[0]
 
-        expr_kwargs = expr_kwargs or {}
+        process = self._spatial_conv if self.mode.is_spatial else self._temporal_conv
+        return process(clip, planes, bias, divisor, saturate, passes, func, expr_kwargs, **kwargs)
 
-        fp16 = clip[0].format.sample_type == vs.FLOAT and clip[0].format.bits_per_sample == 16
+    def _spatial_conv(
+        self,
+        clip: list[vs.VideoNode],
+        planes: Planes,
+        bias: float | None,
+        divisor: float | None,
+        saturate: bool,
+        passes: int,
+        func: FuncExcept,
+        expr_kwargs: dict[str, Any],
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        if len(clip) > 1:
+            raise CustomValueError("You can't pass multiple clips when using a spatial mode.", func)
 
-        # Spatial mode
-        if self.mode.is_spatial:
-            if len(clip) > 1:
-                raise CustomValueError("You can't pass multiple clips when using a spatial mode.", func)
+        valid_coefs = all(-1023 <= x <= 1023 for x in self)
+        valid_length = len(self) <= 121 if self.mode == ConvMode.SQUARE else len(self) <= 25
 
-            # TODO: https://github.com/vapoursynth/vapoursynth/issues/1101
-            if all([not fp16, len(self) <= 25, all(-1023 <= x <= 1023 for x in self), self.mode != ConvMode.SQUARE]):
-                return iterate(clip[0], core.std.Convolution, passes, self, bias, divisor, planes, saturate, self.mode)
-
+        if valid_coefs and valid_length:
             return iterate(
                 clip[0],
-                ExprOp.convolution("x", self, bias, fallback(divisor, True), saturate, self.mode, **expr_kwargs),
+                lambda c: core.std.Convolution(c, self, bias, divisor, planes, saturate, self.mode),
                 passes,
-                planes=planes,
-                func=func,
-                **kwargs,
             )
 
-        # Temporal mode
-        use_std = all(
-            [
-                not fp16,
-                len(self) <= 31,
-                all(-1023 <= x <= 1023 for x in self),
-                not bias,
-                saturate,
-            ]
+        return iterate(
+            clip[0],
+            ExprOp.convolution("x", self, bias, fallback(divisor, True), saturate, self.mode, **expr_kwargs),
+            passes,
+            planes=planes,
+            func=func,
+            **kwargs,
         )
+
+    def _temporal_conv(
+        self,
+        clip: list[vs.VideoNode],
+        planes: Planes,
+        bias: float | None,
+        divisor: float | None,
+        saturate: bool,
+        passes: int,
+        func: FuncExcept,
+        expr_kwargs: dict[str, Any],
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        use_std = len(self) <= 31 and all(-1023 <= x <= 1023 for x in self) and not bias and saturate
 
         if len(clip) > 1:
             if passes != 1:
                 raise CustomValueError(
-                    "`passes` are not supported when passing multiple clips in temporal mode", func, passes
+                    "`passes` are not supported when passing multiple clips in temporal mode",
+                    func,
+                    passes,
                 )
 
             if use_std:
                 return core.std.AverageFrames(clip, self, divisor, planes=planes)
 
-            return ExprOp.convolution(
-                ExprVars(len(clip)), self, bias, fallback(divisor, True), saturate, self.mode, **expr_kwargs
-            )(clip, planes=planes, func=func, **kwargs)
+            return norm_expr(
+                clip,
+                ExprOp.convolution(
+                    ExprVars(len(clip)),
+                    self,
+                    bias,
+                    fallback(divisor, True),
+                    saturate,
+                    self.mode,
+                    **expr_kwargs,
+                ),
+                planes,
+                func=func,
+                **kwargs,
+            )
 
-        # std.AverageFrames doesn't support premultiply, multiply and clamp from ExprOp.convolution
+        # std.AverageFrames doesn't support premultiply, multiply, and clamp from ExprOp.convolution
         if use_std and not expr_kwargs and kwargs.keys() <= {"scenechange"}:
-            return iterate(clip[0], core.std.AverageFrames, passes, self, divisor, planes=planes, **kwargs)
+            return iterate(
+                clip[0],
+                lambda c: core.std.AverageFrames(c, self, divisor, planes=planes, **kwargs),
+                passes,
+            )
 
         return self._averageframes_expr(
-            clip[0], planes, bias, divisor, saturate, passes, expr_kwargs, func=func, **kwargs
+            clip[0],
+            planes,
+            bias,
+            divisor,
+            saturate,
+            passes,
+            expr_kwargs,
+            func=func,
+            **kwargs,
         )
 
     def _averageframes_expr(self, *args: Any, **kwargs: Any) -> vs.VideoNode:
@@ -191,10 +235,7 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
         if premultiply := expr_kwargs.get("premultiply", None):
             expr.append(premultiply, ExprOp.MUL)
 
-        if divisor:
-            expr.append(divisor, ExprOp.DIV)
-        else:
-            expr.append(sum(self), ExprOp.DIV)
+        expr.append(divisor or sum(self), ExprOp.DIV)
 
         if bias:
             expr.append(bias, ExprOp.ADD)
@@ -205,7 +246,7 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
         if multiply := expr_kwargs.get("multiply", None):
             expr.append(multiply, ExprOp.MUL)
 
-        out = iterate(clip, lambda x: expr(shift_clip_multi(x, (-r, r)), planes=planes, **kwargs), passes)
+        out = iterate(clip, lambda clip: norm_expr(shift_clip_multi(clip, (-r, r)), expr, planes, **kwargs), passes)
 
         return core.std.CopyFrameProps(out, clip)
 
@@ -216,9 +257,9 @@ class BlurMatrixBase[Nb: float | int](list[Nb]):
         Returns:
             New `BlurMatrixBase` instance with 2D kernel and same mode.
         """
-        from numpy import outer
+        import numpy as np
 
-        return self.__class__(list[Nb](outer(self, self).flatten()), self.mode)  # pyright: ignore[reportArgumentType]
+        return self.__class__(list[Nb](np.outer(self, self).flatten()), self.mode)  # pyright: ignore[reportArgumentType]
 
 
 class BlurMatrix(CustomEnum):
@@ -318,16 +359,7 @@ class BlurMatrix(CustomEnum):
                 radius = fallback(radius, 1)
                 mode = kwargs.pop("mode", ConvMode.HV)
 
-                c = 1
-                n = radius * 2 + 1
-
-                matrix = list[int]()
-
-                for i in range(1, radius + 2):
-                    matrix.append(c)
-                    c = c * (n - i) // i
-
-                kernel = self.custom(matrix[:-1] + matrix[::-1], mode)
+                kernel = self.custom([math.comb(2 * radius, i) for i in range(2 * radius + 1)], mode)
 
             case BlurMatrix.GAUSS:
                 sigma = kwargs.pop("sigma", 0.5)
@@ -335,18 +367,14 @@ class BlurMatrix(CustomEnum):
                 scale_value = kwargs.pop("scale_value", 1023)
 
                 if mode == ConvMode.SQUARE:
-                    scale_value = sqrt(scale_value)
+                    scale_value = math.sqrt(scale_value)
 
                 if radius is None:
                     radius = self.get_radius(sigma)
 
                 if sigma > 0.0:
-                    half_pisqrt = 1.0 / sqrt(2.0 * pi) * sigma
                     doub_qsigma = 2 * sigma**2
-
-                    high, *mat = [half_pisqrt * exp(-(x**2) / doub_qsigma) for x in range(radius + 1)]
-
-                    mat = [x * scale_value / high for x in mat]
+                    mat = [scale_value * math.exp(-(x**2) / doub_qsigma) for x in range(1, radius + 1)]
                     mat = [*mat[::-1], scale_value, *mat]
                 else:
                     mat = [scale_value]
@@ -405,7 +433,7 @@ class BlurMatrix(CustomEnum):
         """
         assert self is BlurMatrix.GAUSS
 
-        return ceil(sigma * 6 + 1) // 2
+        return math.ceil(sigma * 6 + 1) // 2
 
     @classmethod
     def custom[Nb: float | int](cls, values: Iterable[Nb], mode: ConvMode = ConvMode.SQUARE) -> BlurMatrixBase[Nb]:

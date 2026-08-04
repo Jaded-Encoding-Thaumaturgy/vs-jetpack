@@ -8,17 +8,27 @@ import dataclasses
 import math
 import re
 from abc import ABC
+from contextlib import suppress
 from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat
 
-from jetpytools import CustomRuntimeError, CustomValueError, FileNotExistsError, FuncExcept, SPath, SPathLike
+from jetpytools import (
+    CustomRuntimeError,
+    CustomTypeError,
+    CustomValueError,
+    FileNotExistsError,
+    FuncExcept,
+    SPath,
+    SPathLike,
+)
 
 from vsexprtools import ExprOp, combine_expr, norm_expr
 from vskernels import Bilinear, Catrom, Kernel, KernelLike, ScalerLike
 from vstools import (
     ConvMode,
     Matrix,
+    Padder,
     ProcessVariableResClip,
     check_variable_resolution,
     core,
@@ -26,15 +36,15 @@ from vstools import (
     get_y,
     join,
     limiter,
-    padder,
     vs,
 )
 
 from .generic import BaseGenericScaler
-from .mlrt import Backend, get_model_folder
+from .mlrt import Backend, get_model_path
+from .mlrt.backend.base import Backend as RealBackend
 from .mlrt.settings import get_toml_config
 
-type BackendLike = type[Backend] | Backend
+type BackendLike = type[Backend | RealBackend] | Backend | RealBackend
 
 __all__ = ["DPIR", "ArtCNN", "BaseOnnxScaler", "GenericOnnxScaler", "Waifu2x"]
 
@@ -86,13 +96,15 @@ class BaseOnnxScaler(BaseGenericScaler, ABC):
             self.model = SPath(model).resolve()
 
         if backend is None:
-            self.backend = Backend.autoselect(**self.kwargs)
-        elif isinstance(backend, type):
+            self.backend = RealBackend.autoselect(**self.kwargs)
+        elif isinstance(backend, type) and issubclass(backend, RealBackend):
             self.backend = backend(**self.kwargs)
-        elif self.kwargs:
+        elif self.kwargs and isinstance(backend, RealBackend):
             self.backend = dataclasses.replace(backend, **self.kwargs)
-        else:
+        elif isinstance(backend, RealBackend):
             self.backend = backend
+        else:
+            raise CustomTypeError("Invalid backend")
 
         if isinstance(self.backend, Backend.ORT) and self.backend.fp16:
             bl = set(self.backend.fp16_blacklist_ops or []).union(["ConstantOfShape", "Resize"])
@@ -693,10 +705,10 @@ class _Waifu2xCunet(BaseWaifu2x):
             return super().inference(clip, **kwargs)
 
         logger.debug("%s: Padding clip %r", self, clip)
-        with padder.ctx(4, 0) as pad:
-            padded = pad.MIRROR(clip)
-            scaled = super().inference(padded, **kwargs)
-            cropped = pad.CROP(scaled)
+        pad = Padder.from_mod(clip, 4, 0)
+        padded = pad.mirror(clip)
+        scaled = super().inference(padded, **kwargs)
+        cropped = pad.crop(scaled)
 
         return cropped
 
@@ -862,11 +874,11 @@ class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
         strength_fmt = clip.format.replace(color_family=vs.GRAY)
 
         if isinstance(self.strength, vs.VideoNode):
-            self.strength = norm_expr(self.strength, "x 255 /", format=strength_fmt, func=self.__class__)
+            strength = norm_expr(self.strength, "x 255 /", format=strength_fmt, func=self.__class__)
         else:
-            self.strength = clip.std.BlankClip(format=strength_fmt, color=float(self.strength) / 255, keep=True)
+            strength = clip.std.BlankClip(format=strength_fmt, color=float(self.strength) / 255, keep=True)
 
-        logger.debug("%s: Passing strength clip format: %r", self.inference, self.strength.format)
+        logger.debug("%s: Passing strength clip format: %r", self.inference, strength.format)
 
         # Get model name
         model_name = "drunet"
@@ -889,15 +901,15 @@ class BaseDPIR(BaseOnnxScalerRGB, BaseOnnxScaler):
         logger.debug("%s: Passing extra kwargs: %s", self.inference, kwargs)
 
         # Padding
-        padding = padder.mod_padding(clip, self.multiple, 0)
+        pad = Padder.from_mod(clip, self.multiple, 0)
 
-        if not any(padding) or kwargs.pop("no_pad", False):
-            return self.backend.inference([clip, self.strength], model, overlaps, tilesize, **kwargs)
+        if not any(pad) or kwargs.pop("no_pad", False):
+            return self.backend.inference([clip, strength], model, overlaps, tilesize, **kwargs)
 
-        clip = padder.MIRROR(clip, *padding)
-        strength = padder.MIRROR(self.strength, *padding)
+        clip = pad.mirror(clip)
+        strength = pad.mirror(strength)
 
-        return self.backend.inference([clip, strength], self.model, overlaps, tilesize, **kwargs).std.Crop(*padding)
+        return pad.crop(self.backend.inference([clip, strength], model, overlaps, tilesize, **kwargs))
 
 
 class DPIR(BaseDPIR):
@@ -925,10 +937,11 @@ def _get_onnx_model(
     auto_download: bool | None = None,
     func: FuncExcept | None = None,
 ) -> Path:
-    try:
-        return get_model_folder(provider) / f"{model_name}.onnx"
-    except FileNotExistsError:
-        logger.debug("%r does not exist", model_name)
+    with suppress(FileNotExistsError):
+        if (path := get_model_path(provider, model_name)).exists():
+            return path
+
+    logger.debug("%r does not exist", model_name)
 
     conf = get_toml_config()
     dconf = conf.get("onnx", {}).get("download", {})
@@ -943,10 +956,15 @@ def _get_onnx_model(
         user_provider = next((p for p in dconf.get("provider", []) if p.lower().startswith(provider.lower())), None)
         console = next((h.console for h in logger.handlers if isinstance(h, RichHandler)), None)
 
-        app(["onnx", "download", user_provider or provider, "--latest"], console=console, result_action="return_value")
+        app(
+            ["onnx", "download", user_provider or provider, "--latest", "--assumeyes"],
+            console=console,
+            result_action="return_value",
+        )
 
-        if (path := get_model_folder(provider) / f"{model_name}.onnx").exists():
-            return path
+        with suppress(FileNotExistsError):
+            if (path := get_model_path(provider, model_name)).exists():
+                return path
 
     raise CustomRuntimeError(
         f"The specified model {model_name} does not exist. "

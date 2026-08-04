@@ -10,11 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from jetpytools import CustomRuntimeError, CustomValueError, copy_signature, to_arr
-from packaging.version import Version
 
-from vstools import UnsupportedSampleTypeError, core, depth, vs
+from vstools import UnsupportedSampleTypeError, core, vs
 
-from ..settings import get_artifacts_folder
+from ..settings import get_artifact_path
 from .base import BackendAutoConvertFloat
 
 type Shape = tuple[int, int]
@@ -71,6 +70,10 @@ class MIGX(BackendAutoConvertFloat):
     migraph-driver compile --help
     """
 
+    # Build Process
+    force_rebuild: bool = field(default=False, repr=False)
+    """Force a full program rebuild, ignoring any cached program."""
+
     def __post_init__(self) -> None:
         if self.fp16 is self.bf16 is None:
             object.__setattr__(self, "fp16", True)
@@ -80,6 +83,8 @@ class MIGX(BackendAutoConvertFloat):
 
     @property
     def version(self) -> tuple[int, int]:
+        from packaging.version import Version
+
         version_info = self.plugin.Version()
 
         v_run = int(version_info["hip_runtime_version"])
@@ -111,24 +116,8 @@ class MIGX(BackendAutoConvertFloat):
 
         clips = to_arr(clips)
         channels = sum(c.format.num_planes for c in clips)
-        bitdepth = max(c.format.bits_per_sample for c in clips)
-
         program_path = self.build_program(Path(network_path), channels, tilesize)
-
-        if self.fp16:
-            # Clips must be in fp16 format is fp16 is enabled,
-            # otherwise the MIGX plugin errors out.
-            clips = [depth(c, 16, sample_type=vs.SampleType.FLOAT) for c in clips]
-        else:
-            clips = [depth(c, 32) for c in clips]
-
-        res = super().inference(clips, program_path, overlap, tilesize, flexible=flexible, **kwargs)
-
-        return (
-            depth(res, bitdepth, sample_type=vs.FLOAT)
-            if isinstance(res, vs.VideoNode)
-            else [depth(r, bitdepth, sample_type=vs.FLOAT) for r in res]
-        )
+        return super().inference(clips, program_path, overlap, tilesize, flexible=flexible, **kwargs)
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
         return {"device_id": self.device_id, "num_streams": self.num_streams}
@@ -156,10 +145,13 @@ class MIGX(BackendAutoConvertFloat):
         else:
             migraph_driver = shutil.which("migraphx-driver") or "migraphx-driver"
 
-        dirname = get_artifacts_folder()
-        dirname.mkdir(parents=True, exist_ok=True)
         identity = self.get_identity(network_path, tilesize)
-        program_path = dirname / f"{identity}.mxr"
+        program_path = get_artifact_path(f"{identity}.mxr", fallback=not self.force_rebuild)
+
+        if not self.force_rebuild and program_path.is_file() and program_path.stat().st_size >= 1024:
+            return program_path
+
+        program_path.parent.mkdir(parents=True, exist_ok=True)
 
         command: list[Any] = [
             migraph_driver,

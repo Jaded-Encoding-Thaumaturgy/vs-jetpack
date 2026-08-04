@@ -157,6 +157,6 @@ def dmetrics(
     metrics = core.dmetrics.DMetrics(clip, tff, chroma, nt, y[0], y[1])
 
     if clip2 is not None:
-        metrics = core.std.CopyFrameProps(clip2, clip, ("MMetrics", "VMetrics"))
+        metrics = core.std.CopyFrameProps(clip2, metrics, ("MMetrics", "VMetrics"))
 
     return metrics

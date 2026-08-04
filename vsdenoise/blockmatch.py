@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from functools import cache
 from logging import getLogger
 from types import MappingProxyType
 from typing import Any
@@ -22,6 +21,7 @@ from vskernels import Point
 from vstools import (
     Planes,
     Range,
+    UnsupportedVideoFormatError,
     core,
     depth,
     join,
@@ -62,7 +62,9 @@ def wnnm(
     Because of this, WNNM exhibits less blocking and ringing artifact compared to BM3D,
     but the computational complexity is much higher. This stage is called collaborative filtering in BM3D.
 
-    For more information, see the [WNNM README](https://github.com/WolframRhodium/VapourSynth-WNNM).
+    For more information:
+        - https://github.com/WolframRhodium/VapourSynth-WNNM
+        - https://github.com/dnjulek/vapoursynth-zip/wiki/WNNM
 
     Args:
         clip: The input clip. Must be of 32 bit float format. Each plane is denoised separately.
@@ -130,7 +132,7 @@ def wnnm(
     )
 
     previous = clip
-    denoised = core.wnnm.WNNM(clip, **kwargs)
+    denoised = core.vszip.WNNM(clip, **kwargs)
 
     for i in range(refine):
         if i == 0:
@@ -138,7 +140,7 @@ def wnnm(
         else:
             previous = norm_expr([clip, previous, denoised], f"x y - {merge_factor} * z +", planes, func=wnnm)
 
-        denoised = core.wnnm.WNNM(previous, **kwargs)
+        denoised = core.vszip.WNNM(previous, **kwargs)
 
     return denoised
 
@@ -163,6 +165,8 @@ class BM3D[**P, R]:
 
     def __init__(self, bm3d_func: Callable[P, R]) -> None:
         self._func = bm3d_func
+        self.__name__ = bm3d_func.__name__
+        self.__wrapped__ = bm3d_func
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
@@ -176,7 +180,17 @@ class BM3D[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Selection priority: "CUDA_RTC" → "CUDA" → "HIP" → "SYCL" → "METAL" → "CPU" → "OLD".
+        Selection priority: "CUDA_ZIP" → "CUDA_RTC" → "CUDA" → "HIP" → "SYCL" → "METAL" → "CPU" → "OLD".
+        """
+
+        CUDA_ZIP = "vszipcu"
+        """
+        GPU implementation using NVIDIA CUDA from `vszipcu`.
+        """
+
+        OPENC_CL_ZIP = "vszipcl"
+        """
+        GPU implementation using NVIDIA CUDA from `vszipcu`.
         """
 
         CUDA_RTC = "bm3dcuda_rtc"
@@ -214,7 +228,6 @@ class BM3D[**P, R]:
         Reference VapourSynth-BM3D implementation.
         """
 
-        @cache
         def resolve(self) -> BM3D.Backend:
             """
             Resolves the appropriate BM3D backend to use.
@@ -477,6 +490,8 @@ class BM3D[**P, R]:
 
                 if radius:
                     args.update(radius=radius)
+            else:
+                args.update(radius=radius)
 
             return args
 
@@ -600,7 +615,7 @@ def bm3d(
     nfinal_args = fallback(final_args, {})
 
     matrix_rgb2opp = kwargs.pop("matrix_rgb2opp", BM3D.matrix_rgb2opp)
-    matrix_opp2rgb = kwargs.pop("matrix_rgb2opp", BM3D.matrix_opp2rgb)
+    matrix_opp2rgb = kwargs.pop("matrix_opp2rgb", BM3D.matrix_opp2rgb)
 
     plugins_args = dict[str, Any](
         nsigma=nsigma,
@@ -654,6 +669,15 @@ def bm3d(
             if 0 in nsigma:
                 final = join({p: clip if s == 0 else final for p, s in zip(range(3), nsigma)}, vs.YUV)
             return final
+
+        # Raise format error if we are on OLD backend and it is subsampled YUV.
+        case BM3D.Backend.OLD, vs.YUV:
+            raise UnsupportedVideoFormatError(
+                func,
+                clip,
+                clip.format.replace(subsampling_w=0, subsampling_h=0),
+                "Subsampled YUV formats are not supported with BM3D.Backend.OLD.",
+            )
 
         # When input is RGB, BM3D CUDA and others need manual conversion to OPP.
         # Convert back to RGB after processing.
@@ -721,13 +745,14 @@ def _bm3d_mawen(
 
     if not ref:
         b_args = profile.basic_args(radius_basic) | nbasic_args | kwargs
-        r = b_args["radius"]
+        r = b_args.get("radius", 0)
 
         if r > 0:
             basic = core.bm3d.VBasic(preclip, pre, profile, nsigma, matrix=100, **b_args).bm3d.VAggregate(
                 r, preclip.format.sample_type
             )
         else:
+            b_args.pop("radius", None)
             basic = core.bm3d.Basic(preclip, pre, profile, nsigma, matrix=100, **b_args)
     else:
         basic = ref
@@ -736,7 +761,7 @@ def _bm3d_mawen(
         final = basic
     else:
         f_args = profile.final_args(radius_final) | nfinal_args | kwargs
-        r = f_args["radius"]
+        r = f_args.get("radius", 0)
 
         final = basic
 
@@ -746,6 +771,7 @@ def _bm3d_mawen(
                     r, preclip.format.sample_type
                 )
             else:
+                f_args.pop("radius", None)
                 final = core.bm3d.Final(preclip, final, profile, nsigma, matrix=100, **f_args)
 
     if 0 in nsigma:
