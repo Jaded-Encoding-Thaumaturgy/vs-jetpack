@@ -21,6 +21,7 @@ def test_scale_value_no_change() -> None:
     assert scale_value(24, 8, 8) == 24
     assert scale_value(64, 8, 8) == 64
     assert scale_value(255, 8, 8) == 255
+    assert scale_value(0.42, 32, 32) == 0.42
 
 
 def test_scale_value_to_10bit() -> None:
@@ -65,6 +66,13 @@ def test_scale_value_from_limited() -> None:
     assert scale_value(235, 8, 8, Range.LIMITED, Range.FULL) == 255
 
 
+def test_scale_value_round_and_clamp() -> None:
+    assert scale_value(128.75, 8, 8) == 129
+    assert scale_value(12.4, 8, 8) == 12
+    assert scale_value(300, 8, 8) == 255
+    assert scale_value(-5, 8, 8) == 0
+
+
 def test_scale_value_numpy() -> None:
     arr = np.array([0, 24, 64, 255], dtype=np.uint8)
 
@@ -75,6 +83,33 @@ def test_scale_value_numpy() -> None:
     # Scale back to 8-bit uint8 array
     res_8 = scale_value(res_10, 10, 8)
     assert np.array_equal(res_8, np.array([0, 24, 64, 255], dtype=np.uint8))
+
+
+def test_scale_value_numpy_no_change() -> None:
+    arr = np.array([0, 24, 64, 255], dtype=np.uint8)
+    res = scale_value(arr, 8, 8)
+    assert np.array_equal(res, arr)
+    assert res.dtype == arr.dtype
+
+    arr = np.array([4096, 32768, 50000], dtype=np.uint16)
+    res = scale_value(arr, 16, 16)
+    assert np.array_equal(res, arr)
+    assert res.dtype == arr.dtype
+
+    arr = np.array([0.124532213251, 0.98656564, -0.521212], dtype=np.float32)
+    res = scale_value(arr, 32, 32)
+    assert np.array_equal(res, arr)
+    assert res.dtype == arr.dtype
+
+
+def test_scale_value_numpy_round_and_clamp() -> None:
+    arr = np.array([128.75, 12.4], dtype=np.float32)
+    res = scale_value(arr, 8, 8)
+    assert np.array_equal(res, np.array([129, 12], dtype=np.uint8))
+
+    arr = np.array([-5, 300], dtype=np.int16)
+    res = scale_value(arr, 8, 8)
+    assert np.array_equal(res, np.array([0, 255], dtype=np.uint8))
 
 
 def test_scale_value_numpy_format() -> None:
