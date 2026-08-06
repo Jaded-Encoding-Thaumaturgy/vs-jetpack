@@ -403,7 +403,7 @@ class QTempGaussMC(VSObject):
         self.prefilter_tr = tr
         self.prefilter_sc_threshold = sc_threshold
         self.prefilter_postprocess = postprocess
-        self.prefilter_strength: tuple[float, float] | Literal[False] = strength
+        self.prefilter_strength = strength
         self.prefilter_limit = limit
         self.prefilter_bias = bias
         self.prefilter_range_expansion_args = fallback(range_expansion_args, QTGMCArgs.PrefilterToFullRange())
@@ -457,7 +457,7 @@ class QTempGaussMC(VSObject):
         mode: NoiseProcessMode = NoiseProcessMode.IDENTIFY,
         deint: NoiseDeintMode = NoiseDeintMode.GENERATE,
         mc_denoise: bool = True,
-        stabilize: float = 0.6,
+        stabilize: float | Literal[False] = 0.4,
         func_comp_args: QTGMCArgs.Compensate | None = None,
         stabilize_comp_args: QTGMCArgs.Compensate | None = None,
     ) -> Self:
@@ -470,7 +470,7 @@ class QTempGaussMC(VSObject):
             mode: Noise handling method to use.
             deint: Noise deinterlacing method to use.
             mc_denoise: Whether to perform motion-compensated denoising.
-            stabilize: Weights to use when blending source noise with compensated noise.
+            stabilize: Weight to use when blending max noise variance with averaged noise.
             func_comp_args: Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for
                 denoising.
             stabilize_comp_args: Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate]
@@ -762,7 +762,7 @@ class QTempGaussMC(VSObject):
 
         diff = src.std.MakeDiff(flt)
 
-        processed = []
+        processed = list[vs.VideoNode]()
         for grow_op, shrink_op, inflate_op, deflate_op in [
             (Morpho.maximum, Morpho.minimum, Morpho.inflate, Morpho.deflate),
             (Morpho.minimum, Morpho.maximum, Morpho.deflate, Morpho.inflate),
@@ -783,7 +783,7 @@ class QTempGaussMC(VSObject):
             processed.append(clip)
 
         return norm_expr(
-            [flt, diff, *processed], "x y z neutral min a neutral max clip neutral - +", func=self._mask_shimmer
+            [flt, diff, *processed], "x y z neutral min a neutral max clamp neutral - +", func=self._mask_shimmer
         )
 
     def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
@@ -932,7 +932,7 @@ class QTempGaussMC(VSObject):
 
             self.noise = FieldBased.PROGRESSIVE.apply(new_noise)
 
-        if self.denoise_stabilize:
+        if self.denoise_stabilize is not False:
             noise_comp, _ = self.mv.compensate(
                 self.noise,
                 direction=MVDirection.BACKWARD,
@@ -945,8 +945,8 @@ class QTempGaussMC(VSObject):
             self.noise = norm_expr(
                 [self.noise, *noise_comp],
                 "x neutral - abs y neutral - abs > x y ? {weight1} * x y + {weight2} * +",
-                weight1=self.denoise_stabilize,
-                weight2=(1 - self.denoise_stabilize) / 2,
+                weight1=1 - self.denoise_stabilize,
+                weight2=self.denoise_stabilize / 2,
                 func=self._apply_denoise,
             )
 
