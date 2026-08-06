@@ -470,7 +470,7 @@ class QTempGaussMC(VSObject):
             mode: Noise handling method to use.
             deint: Noise deinterlacing method to use.
             mc_denoise: Whether to perform motion-compensated denoising.
-            stabilize: Weight to use when blending peak noise variance with averaged noise.
+            stabilize: Weight to use when blending max noise variance with averaged noise.
             func_comp_args: Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for
                 denoising.
             stabilize_comp_args: Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate]
