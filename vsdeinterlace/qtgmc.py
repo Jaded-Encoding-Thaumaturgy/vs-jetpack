@@ -850,16 +850,25 @@ class QTempGaussMC(VSObject):
         )
 
     def _apply_analyze(self) -> None:
+        angle_in, angle_out = self.motion_blur_shutter_angle
+
         tr = max(
+            # Unconditional radii
             self.analyze_force_tr,
-            self.denoise_tr,
             self.basic_tr,
             self.source_match_tr,
+            self.final_tr,
+            # Conditional radii
+            self.denoise_tr if self.denoise_mc_denoise else 0,
             self.sharpen_limit_radius
-            if self.sharpen_limit_mode
+            if (self.sharpen_strength or self.sharpen_thin)
+            and self.sharpen_limit_mode
             in (self.SharpenLimitMode.TEMPORAL_PRESMOOTH, self.SharpenLimitMode.TEMPORAL_POSTSMOOTH)
             else 0,
-            self.final_tr,
+            # Feature flags
+            int(self.denoise_stabilize is not False),
+            int(bool(self.is_repair and self.basic_mask_args.get("ml"))),
+            int(angle_out * self.motion_blur_fps_divisor != angle_in),
         )
 
         blksize, overlap = self.analyze_blksize, self.analyze_overlap
@@ -1076,7 +1085,7 @@ class QTempGaussMC(VSObject):
 
                 clamp = norm_expr(
                     [clip, source_min, source_max],
-                    "y z + 2 / AVG! AVG@ x > AVG@ {undershoot} - AVG@ x < AVG@ {overshoot} + AVG@ ? ?",
+                    "y z + 2 / AVG! AVG@ x > AVG@ {undershoot} - AVG@ x < AVG@ {overshoot} + x ? ?",
                     undershoot=scale_delta(undershoot, 8, clip),
                     overshoot=scale_delta(overshoot, 8, clip),
                     func=self._apply_sharpen,
@@ -1178,10 +1187,9 @@ class QTempGaussMC(VSObject):
 
     def _apply_motion_blur(self) -> None:
         angle_in, angle_out = self.motion_blur_shutter_angle
+        blur_level = (angle_out * self.motion_blur_fps_divisor - angle_in) * 100 / 360
 
-        if angle_out * self.motion_blur_fps_divisor != angle_in:
-            blur_level = (angle_out * self.motion_blur_fps_divisor - angle_in) * 100 / 360
-
+        if blur_level:
             blurred = self.mv.flow_blur(
                 self.final_output, blur=blur_level, thscd=self.analyze_thscd, **self.motion_blur_blur_args
             )
@@ -1198,7 +1206,7 @@ class QTempGaussMC(VSObject):
         else:
             blurred = self.final_output
 
-        if self.motion_blur_fps_divisor > 1:
+        if self.motion_blur_fps_divisor != 1:
             blurred = blurred[:: self.motion_blur_fps_divisor]
 
         self.motion_blur_output = blurred
