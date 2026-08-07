@@ -190,7 +190,7 @@ class QTempGaussMC(VSObject):
 
         GAUSSBLUR_EDGESOFTEN = 1
         """
-        Gaussian blur & edge softening.
+        Gaussian blur & limited edge softening.
         """
 
     class NoiseProcessMode(CustomIntEnum):
@@ -609,7 +609,7 @@ class QTempGaussMC(VSObject):
             clamp: Clamp the sharpening strength of
                 [SharpenMode.UNSHARP_MINMAX][vsdeinterlace.qtgmc.QTempGaussMC.SharpenMode.UNSHARP_MINMAX] to the min/max
                 average plus/minus this.
-            thin: How much to vertically thin edges.
+            thin: How much to thin horizontal edges.
         """
 
         self.sharpen_mode = mode
@@ -743,8 +743,8 @@ class QTempGaussMC(VSObject):
         over_dilation: int = 0,
     ) -> vs.VideoNode:
         """
-        Compare processed clip with reference clip,
-        only allow thin, horizontal areas of difference, i.e. bob shimmer fixes.
+        Removes areas of difference between a temporally smoothed clip and reference that are not due to bob-shimmer by
+        only allowing thin horizontal areas of difference.
 
         Args:
             flt: Processed clip to perform masking on.
@@ -832,7 +832,7 @@ class QTempGaussMC(VSObject):
 
                 blurred = norm_expr(
                     [blurred, smoothed, search],
-                    "z y {lim1} - y {lim1} + clip TWEAK! "
+                    "z y {lim1} - y {lim1} + clamp TWEAK! "
                     "x {lim2} + TWEAK@ < x {lim3} + x {lim2} - TWEAK@ > x {lim3} - "
                     "x {weight1} * TWEAK@ {weight2} * + ? ?",
                     lim1=lim1,
