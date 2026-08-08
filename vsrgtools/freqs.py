@@ -202,7 +202,7 @@ class MeanMode(CustomEnum):
                 for x in range(2):
                     expr.extend([[f"D{i}@ {p - x} pow" for i in range(n_len)], ExprOp.ADD * (n_len - 1), f"P{x}!"])
 
-                expr.append("P1@ abs 2 -126 pow < neutral P0@ P1@ / neutral + ?")
+                expr.append("P1@ 0 = neutral P0@ P1@ / neutral + ?")
 
                 return expr
             case MeanMode.CONTRAHARMONIC:

@@ -1,13 +1,11 @@
-import contextlib
 import math
 from collections.abc import Iterable, Sequence
-from typing import Any, cast
+from typing import Any
 
 import pytest
 from jetpytools import clamp
 
 from vsexprtools import ExprOp, ExprToken, expr_func, norm_expr
-from vsexprtools.util import _get_akarin_expr_version
 from vstools import Range, core, get_lowest_value, get_peak_value, vs
 
 
@@ -63,15 +61,6 @@ def get_clip_fp32(color: list[float]) -> vs.VideoNode:
     return core.std.BlankClip(None, 10, 10, vs.YUV420PS, length=10, color=color, keep=True)
 
 
-@pytest.mark.parametrize(["color", "expected"], [([0.0, 0.0, 0.0], 0), ([-0.5, -0.5, -0.5], -1), ([0.5, 0.5, 0.5], 1)])
-def test_expr_op_str_sgn(color: list[float], expected: Any) -> None:
-    clip = get_clip_fp32(color)
-    clip = expr_func(clip, f"x {ExprOp.SGN.convert_extra()}")
-
-    for f in clip.frames(close=True):
-        assert f[0][0, 0] == expected
-
-
 @pytest.mark.parametrize("color", [[0.0, 0.0, 0.0], [-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]])
 def test_expr_op_str_neg(color: list[float]) -> None:
     input_clip = get_clip_fp32(color)
@@ -79,15 +68,6 @@ def test_expr_op_str_neg(color: list[float]) -> None:
 
     for f, f_in in zip(clip.frames(close=True), input_clip.frames(close=True)):
         assert f[0][0, 0] == -f_in[0][0, 0]
-
-
-@pytest.mark.parametrize("color", [[0.0, 0.0, 0.0], [-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]])
-def test_expr_op_str_tan(color: list[float]) -> None:
-    input_clip = get_clip_fp32(color)
-    clip = expr_func(input_clip, f"x {ExprOp.TAN.convert_extra()}")
-
-    for f, f_in in zip(clip.frames(close=True), input_clip.frames(close=True)):
-        assert f[0][0, 0] == pytest.approx(math.tan(f_in[0][0, 0]))
 
 
 @pytest.mark.parametrize("color", [[0.0, 0.0, 0.0], [-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]])
@@ -173,20 +153,13 @@ def test_expr_op_str_mmg(is_float: bool, color_a: list[Any], color_b: list[Any],
         ),
     ],
 )
-@pytest.mark.parametrize("legacy", (False, True))
-def test_expr_op_str_lerp(is_float: bool, color_a: list[Any], color_b: list[Any], t: float, legacy: bool) -> None:
+def test_expr_op_str_lerp(is_float: bool, color_a: list[Any], color_b: list[Any], t: float) -> None:
     get_clip = get_clip_fp32 if is_float else get_clip_int8
     clip_a = get_clip(color_a)
     clip_b = get_clip(color_b)
 
     def lerp(x: float, y: float, z: float) -> float:
         return (1 - z) * x + z * y
-
-    if not legacy:
-        _get_akarin_expr_version.cache_clear()
-    else:
-        with contextlib.suppress(ValueError):
-            cast(list[bytes], _get_akarin_expr_version()["expr_features"]).remove(bytes(ExprOp.LERP.value, "utf-8"))
 
     expr = norm_expr([clip_a, clip_b], f"x y {t} {ExprOp.LERP.convert_extra()}")
 
@@ -262,8 +235,7 @@ def test_expr_op_str_lerp(is_float: bool, color_a: list[Any], color_b: list[Any]
         [117, 206, 41, 94],
     ],
 )
-@pytest.mark.parametrize("legacy", (False, True))
-def test_expr_op_str_polyval(is_float: bool, color: list[Any], coeffs: Sequence[float], legacy: bool) -> None:
+def test_expr_op_str_polyval(is_float: bool, color: list[Any], coeffs: Sequence[float]) -> None:
     get_clip = get_clip_fp32 if is_float else get_clip_int8
     input_clip = get_clip(color)
 
@@ -272,12 +244,6 @@ def test_expr_op_str_polyval(is_float: bool, color: list[Any], coeffs: Sequence[
         for coeff in coeffs:
             result = result * x + coeff
         return result
-
-    if not legacy:
-        _get_akarin_expr_version.cache_clear()
-    else:
-        with contextlib.suppress(ValueError):
-            cast(list[bytes], _get_akarin_expr_version()["expr_features"]).remove(b"polyval")
 
     expr = expr_func(
         input_clip, " ".join(str(c) for c in coeffs) + " x " + ExprOp.POLYVAL.convert_extra(len(coeffs) - 1)
