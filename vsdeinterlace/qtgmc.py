@@ -861,9 +861,9 @@ class QTempGaussMC(VSObject):
             # Conditional radii
             self.denoise_tr if self.denoise_mc_denoise else 0,
             self.sharpen_limit_radius
-            if (self.sharpen_strength or self.sharpen_thin)
-            and self.sharpen_limit_mode
+            if self.sharpen_limit_mode
             in (self.SharpenLimitMode.TEMPORAL_PRESMOOTH, self.SharpenLimitMode.TEMPORAL_POSTSMOOTH)
+            and (self.sharpen_strength or self.sharpen_thin)
             else 0,
             # Feature flags
             int(self.denoise_stabilize is not False),
@@ -980,8 +980,8 @@ class QTempGaussMC(VSObject):
         if self.basic_tr:
             smoothed = self._mask_shimmer(smoothed, self.bobbed, **self.basic_mask_shimmer_args)
 
-        if self.source_match_mode:
-            smoothed = self._apply_source_match(smoothed)
+            if self.source_match_mode:
+                smoothed = self._apply_source_match(smoothed)
 
         if self.lossless_mode == self.LosslessMode.PRESHARPEN:
             smoothed = self._apply_lossless(smoothed)
@@ -1004,6 +1004,9 @@ class QTempGaussMC(VSObject):
 
     def _apply_source_match(self, clip: vs.VideoNode) -> vs.VideoNode:
         def _error_adjustment(ref: vs.VideoNode, clip: vs.VideoNode, tr: int) -> vs.VideoNode:
+            if not tr:
+                return ref
+
             tr_f = 2 * tr - 1
             tr_s = 2**tr_f
             binomial_coeff = math.comb(tr_f, tr)
@@ -1121,7 +1124,7 @@ class QTempGaussMC(VSObject):
         return flt
 
     def _apply_sharpen_limit(self, clip: vs.VideoNode) -> vs.VideoNode:
-        if (self.sharpen_strength or self.sharpen_thin) and self.sharpen_limit_radius:
+        if self.sharpen_limit_radius and (self.sharpen_strength or self.sharpen_thin):
             if self.sharpen_limit_mode in (
                 self.SharpenLimitMode.SPATIAL_PRESMOOTH,
                 self.SharpenLimitMode.SPATIAL_POSTSMOOTH,
