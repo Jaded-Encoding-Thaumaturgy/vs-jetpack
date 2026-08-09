@@ -1,8 +1,9 @@
-# ruff: noqa B006
-import math
+# ruff: noqa: B006, B008, RUF003
 from collections.abc import Generator, Mapping
 from contextlib import contextmanager, suppress
 from copy import deepcopy
+from enum import auto
+from math import comb
 from typing import Any, Literal, Protocol, Self, TypedDict
 
 from jetpytools import CustomIntEnum, CustomValueError, FuncExcept, fallback, normalize_seq
@@ -19,7 +20,8 @@ from vsdenoise import (
     prefilter_to_full_range,
     refine_blksize,
 )
-from vsexprtools import ExprOp, norm_expr
+from vsexprtools import norm_expr
+from vsjetpack import deprecated
 from vskernels import Bobber, BobberLike, Catrom
 from vsmasktools import Coordinates, Morpho
 from vsrgtools import BlurMatrix, gauss_blur, median_blur, remove_grain, repair, unsharpen
@@ -49,51 +51,63 @@ class QTGMCArgs:
     """Namespace containing helper TypedDict definitions for various argument groups."""
 
     class PrefilterToFullRange(TypedDict, total=False):
-        """
-        Arguments available when passing to [prefilter_to_full_range][vsdenoise.prefilters.prefilter_to_full_range].
-        """
+        """Arguments accepted by [prefilter_to_full_range][vsdenoise.prefilters.prefilter_to_full_range]."""
 
         slope: float
         smooth: float
 
     class MaskShimmer(TypedDict, total=False):
         """
-        Arguments available when passing to the internal `_mask_shimmer` method through
+        Arguments accepted by the internal `_mask_shimmer` method through
         [QTempGaussMC.prefilter][vsdeinterlace.QTempGaussMC.prefilter],
-        [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic]
-        and [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final].
+        [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] and
+        [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final].
+
+        Removes areas of difference between a temporally blurred clip and a reference clip that are not due to
+        bob shimmer by only allowing thin horizontal areas of difference.
+
+        High-level overview:
+            - Vertical morphological analysis: Extracts the difference between source and filtered clips, running
+                vertical opening and closing operations to collapse thin bob shimmer while leaving large motion
+                artifacts intact.
+            - Safety margin adjustment: Applies extra dilation passes to fine-tune detection boundaries on soft sources,
+                ensuring proper mask coverage on blurry edges.
         """
 
         erosion_distance: int
-        """How much to deflate then reflate to remove thin areas."""
+        """
+        Vertical radius for shimmer detection.
+
+        Larger values capture more spread-out shimmer artifacts on soft sources.
+        """
+
         over_dilation: int
-        """Extra inflation to ensure areas to restore back are fully caught."""
+        """
+        Extra dilation passes for safety margins.
+
+        Larger values shrink the mask boundary to prevent artifacts on blurry edges. Defaults to 0.
+        """
 
     class Compensate(TypedDict, total=False):
-        """
-        Arguments available when passing to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate].
-        """
+        """Arguments accepted by [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate]."""
 
         thsad: int | None
         time: float | None
 
     class Degrain(TypedDict, total=False):
         """
-        Arguments available when passing to the internal `binomial_degrain` method,
-        calling [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain] through
-        [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic]
-        and [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match]
-        or directly calling [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain] through
-        [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final]
+        Arguments accepted by the internal `_binomial_degrain` method, calling
+        [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain] through
+        [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] and
+        [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match], or directly through
+        [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final].
         """
 
         limit: float | tuple[float, float] | None
         planes: Planes
 
     class Mask(TypedDict, total=False):
-        """
-        Arguments available when passing to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask].
-        """
+        """Arguments accepted by [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask]."""
 
         delta: int
         ml: float | None
@@ -102,9 +116,7 @@ class QTGMCArgs:
         scval: float | None
 
     class Blur(TypedDict, total=False):
-        """
-        Arguments available when passing to [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur].
-        """
+        """Arguments accepted by [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur]."""
 
         prec: int | None
 
@@ -113,237 +125,205 @@ class QTempGaussMC(VSObject):
     """
     Quick Temporal Gaussian Motion Compensated (QTGMC)
 
-    A very high quality deinterlacer with a range of features for both quality and convenience.
-    These include extensive noise processing capabilities, support for repair of progressive material,
-    precision source matching, shutter speed simulation, etc.
+    A very high-quality deinterlacer with a range of features for both quality and convenience. These include extensive
+    noise processing capabilities, support for repair of progressive material, precision source matching, shutter speed
+    simulation, and more.
 
     Originally based on TempGaussMC by Didée.
 
-    Basic usage:
-        ```py
-        deinterlace = QTempGaussMC().deinterlace(clip)
-        ```
+    Basic usage: [JET guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
 
-    Refer to the [AviSynth QTGMC documentation](http://avisynth.nl/index.php/QTGMC)
-    and the [havsfunc implementation](https://github.com/HomeOfVapourSynthEvolution/havsfunc/blob/aa79ebc9eb5517a3a76a74caa98a9d41993ac39b/havsfunc/havsfunc.py#L598-L848)
-    for detailed explanations of the underlying algorithm.
-
-    These resources remain relevant, as the core algorithm used here is largely similar.
-
-    Note that parameter names differ in this implementation due to a complete rewrite.
-    A mapping between vsjetpack and havsfunc parameters is available [here](https://gist.github.com/Ichunjo/76c96f1130c9e9f972de956f40571e54).
-
-    Examples:
-        - ...
-        - Passing a badly deinterlaced input to reduce shimmering (equivalent to `InputType=2, ProgSADMask=12`):
-        ```python
-        clip = QTempGaussMC().basic(mask_args={"ml": 12}).repair(clip)
-        ```
-        Or:
-        ```python
-        clip = QTempGaussMC(basic_mask_args={"ml": 12}).repair(clip)
-        ```
+    Alternate documentation reference: [AviSynth documentation](http://avisynth.nl/index.php/QTGMC)
     """
 
     mv: MVTools
-    """MVTools instance used during processing."""
+    """[MVTools][vsdenoise.mvtools.mvtools.MVTools] instance used during processing."""
 
     clip: vs.VideoNode
     """Clip to process."""
 
     draft: vs.VideoNode
-    """Draft processed clip, used as a base for prefiltering & denoising."""
+    """
+    Draft processed clip, used as a base for [QTempGaussMC.prefilter][vsdeinterlace.QTempGaussMC.prefilter] and
+    [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise].
+    """
 
     input: vs.VideoNode
-    """Prepared input clip for high quality interpolation."""
+    """
+    Prepared input clip for high-quality interpolation. Used as a base for the internal `_interpolate` method.
+    """
 
     bobbed: vs.VideoNode
-    """High quality bobbed clip, initial spatial interpolation."""
+    """
+    High-quality bobbed clip, acting as a spatial interpolation base for
+    [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] and
+    [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match].
+    """
 
     noise: vs.VideoNode
-    """Extracted noise when noise processing is enabled."""
+    """Noise extracted by [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise]."""
 
     prefilter_output: vs.VideoNode
-    """Output of the prefilter stage."""
+    """Output of [QTempGaussMC.prefilter][vsdeinterlace.QTempGaussMC.prefilter]."""
 
     denoise_output: vs.VideoNode
-    """Output of the denoise stage."""
+    """Output of [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise]."""
 
     basic_output: vs.VideoNode
-    """Output of the basic stage."""
+    """Output of [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic]."""
 
     final_output: vs.VideoNode
-    """Output of the final stage."""
+    """Output of [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final]."""
 
     motion_blur_output: vs.VideoNode
-    """Output of the motion blur stage."""
+    """Output of [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur]."""
 
+    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
     class SearchPostProcess(CustomIntEnum):
-        """
-        Prefiltering to apply in order to assist with motion search.
-        """
-
         GAUSSBLUR = 0
-        """
-        Gaussian blur.
-        """
-
         GAUSSBLUR_EDGESOFTEN = 1
-        """
-        Gaussian blur & limited edge softening.
-        """
 
+    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
     class NoiseProcessMode(CustomIntEnum):
-        """
-        How to handle processing noise in the source.
-        """
-
         IDENTIFY = 0
-        """
-        Identify noise only & optionally restore some noise back at the end of basic or final stages.
-        """
-
         DENOISE = 1
-        """
-        Denoise source & optionally restore some noise back at the end of basic or final stages.
-        """
+
+    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
+    class SharpenMode(CustomIntEnum):
+        UNSHARP = 0
+        UNSHARP_MINMAX = 1
+
+    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
+    class SourceMatchMode(CustomIntEnum):
+        NONE = 0
+        BASIC = 1
+        REFINED = 2
+        TWICE_REFINED = 3
 
     class NoiseDeintMode(CustomIntEnum):
+        WEAVE = auto()
         """
-        When noise is taken from interlaced source, how to 'deinterlace' it before restoring.
+        Double weave source noise.
+
+        Lags behind by one frame.
         """
 
-        WEAVE = 0
+        BOB = auto()
         """
-        Double weave source noise, lags behind by one frame.
+        Bob source noise.
+
+        Results in coarse noise.
         """
 
-        BOB = 1
+        GENERATE = auto()
         """
-        Bob source noise, results in coarse noise.
-        """
-
-        GENERATE = 2
-        """
-        Generates fresh noise lines.
-        """
-
-    class SharpenMode(CustomIntEnum):
-        """
-        How to re-sharpen the clip after temporal smoothing.
-        """
-
-        UNSHARP = 0
-        """
-        Re-sharpening using unsharpening.
-        """
-
-        UNSHARP_MINMAX = 1
-        """
-        Re-sharpening using unsharpening clamped to the local 3x3 min/max average.
+        Generate fresh noise lines.
         """
 
     class SharpenLimitMode(CustomIntEnum):
+        NONE = auto()
         """
-        How to limit and when to apply re-sharpening of the clip.
-        """
-
-        SPATIAL_PRESMOOTH = 0
-        """
-        Spatial sharpness limiting prior to final stage.
+        No sharpness limiting.
         """
 
-        TEMPORAL_PRESMOOTH = 1
+        SPATIAL_PRESMOOTH = auto()
         """
-        Temporal sharpness limiting prior to final stage.
+        Spatial sharpness limiting prior to [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final] smoothing.
+
+        Spatial limiting is less accurate, but allows more sharpening. Applying sharpness limiting earlier in the
+        algorithm leaves the result softer, but produces fewer artifacts.
         """
 
-        SPATIAL_POSTSMOOTH = 2
+        TEMPORAL_PRESMOOTH = auto()
         """
-        Spatial sharpness limiting after the final stage.
+        Temporal sharpness limiting prior to [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final] smoothing.
+
+        Temporal limiting is more accurate, but allows less sharpening. Applying sharpness limiting earlier in the
+        algorithm leaves the result softer, but produces fewer artifacts.
         """
 
-        TEMPORAL_POSTSMOOTH = 3
+        SPATIAL_POSTSMOOTH = auto()
         """
-        Temporal sharpness limiting after the final stage.
+        Spatial sharpness limiting after [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final] smoothing.
+
+        Spatial limiting is less accurate, but allows more sharpening. Applying sharpness limiting later in the
+        algorithm leaves the result sharper, but can produce additional artifacts.
+        """
+
+        TEMPORAL_POSTSMOOTH = auto()
+        """
+        Temporal sharpness limiting after [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final] smoothing.
+
+        Temporal limiting is more accurate, but allows less sharpening. Applying sharpness limiting later in the
+        algorithm leaves the result sharper, but can produce additional artifacts.
         """
 
     class BackBlendMode(CustomIntEnum):
+        NONE = auto()
         """
-        When to back blend (blurred) difference between pre & post sharpened clip.
+        No back-blending.
+
+        Keeps all [QTempGaussMC.sharpen][vsdeinterlace.QTempGaussMC.sharpen] frequencies.
         """
 
-        PRELIMIT = 0
+        PRELIMIT = auto()
         """
-        Perform back-blending prior to sharpness limiting.
+        Back-blending prior to [QTempGaussMC.sharpen_limit][vsdeinterlace.QTempGaussMC.sharpen_limit].
+
+        Provides the weakest low-frequency dampening.
         """
 
-        POSTLIMIT = 1
+        POSTLIMIT = auto()
         """
-        Perform back-blending after sharpness limiting.
+        Back-blending after [QTempGaussMC.sharpen_limit][vsdeinterlace.QTempGaussMC.sharpen_limit].
+
+        Provides the strongest low-frequency dampening.
+
+        Note:
+            Identical to `PRELIMIT` when using `SharpenLimitMode.NONE`, `SharpenLimitMode.SPATIAL_POSTSMOOTH` or
+            `SharpenLimitMode.TEMPORAL_POSTSMOOTH`.
         """
 
-        BOTH = 2
+        BOTH = auto()
         """
-        Perform back-blending both before and after sharpness limiting.
-        """
+        Back-blending both before and after [QTempGaussMC.sharpen_limit][vsdeinterlace.QTempGaussMC.sharpen_limit].
 
-    class SourceMatchMode(CustomIntEnum):
-        """
-        Creates higher fidelity output with extra processing.
-        Will capture more source detail and reduce oversharpening / haloing.
-        """
+        Provides a balanced middle ground between `PRELIMIT` sharpening strength and `POSTLIMIT` dampening.
 
-        NONE = 0
-        """
-        No source match processing.
-        """
-
-        BASIC = 1
-        """
-        Conservative halfway stage that rarely introduces artifacts.
-        """
-
-        REFINED = 2
-        """
-        Restores almost exact source detail but is sensitive to noise & can introduce occasional aliasing.
-        """
-
-        TWICE_REFINED = 3
-        """
-        Restores almost exact source detail.
+        Note:
+            Identical to `PRELIMIT` when using `SharpenLimitMode.NONE`, `SharpenLimitMode.SPATIAL_POSTSMOOTH` or
+            `SharpenLimitMode.TEMPORAL_POSTSMOOTH`.
         """
 
     class LosslessMode(CustomIntEnum):
+        NONE = auto()
         """
-        When to put exact source fields into result & clean any artifacts.
-        """
-
-        NONE = 0
-        """
-        Do not restore source fields.
+        Do not restore the original fields.
         """
 
-        PRESHARPEN = 1
+        PRESHARPEN = auto()
         """
-        Restore source fields prior to re-sharpening. Not exactly lossless.
+        Restore the original fields prior to [QTempGaussMC.sharpen][vsdeinterlace.QTempGaussMC.sharpen].
+
+        Provides near-lossless fidelity, mitigates most artifacts, and retains sharpness control.
         """
 
-        POSTSMOOTH = 2
+        POSTSMOOTH = auto()
         """
-        Restore source fields after final temporal smooth. True lossless but less stable.
+        Restore the original fields after [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final] smoothing.
+
+        Provides true lossless output, given [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final] `noise_restore` is
+        not used. Offers minimal sharpness control and tends to have more significant artifacts.
         """
 
     def __init__(self, **kwargs: Any) -> None:
         """
         Args:
-            **kwargs: Additional arguments to be passed to the parameter stage methods.
-                Use the method's name as prefix to pass an argument to the respective method.
-
-                Example for passing tr=1 to the prefilter stage: `prefilter_tr=1`.
+            **kwargs: Additional arguments to be passed to the parameter category methods. Use the method's name as a
+                prefix to pass an argument to the respective method.
         """
 
-        # Set default parameters for all the stages in this exact order
+        # Set default parameters for all the categories in this exact order
         self._settings_methods = (
             self.prefilter,
             self.analyze,
@@ -371,33 +351,70 @@ class QTempGaussMC(VSObject):
         *,
         tr: int = 2,
         sc_threshold: float = 0.1,
-        postprocess: SearchPostProcess = SearchPostProcess.GAUSSBLUR_EDGESOFTEN,
-        strength: tuple[float, float] | Literal[False] = (1.9, 0.1),
+        postprocess: SearchPostProcess | None = None,
+        strength: tuple[float, float] = (1.9, 0.9),
         limit: tuple[float, float, float] = (3, 7, 2),
         bias: float = 0.51,
         range_expansion_args: QTGMCArgs.PrefilterToFullRange | None = None,
         mask_shimmer_args: QTGMCArgs.MaskShimmer | None = {"erosion_distance": 4},
     ) -> Self:
         """
-        Configure parameters for the prefilter stage.
+        Configures parameters for the prefilter stage.
+
+        Prepares a suitable search clip to be provided for motion analysis purposes.
+
+        High-level overview:
+            - [[QTempGaussMC.deinterlace][vsdeinterlace.QTempGaussMC.deinterlace]] Draft bobbed clip generation:
+                Begins with simple spatial interpolation to produce
+                [QTempGaussMC.draft][vsdeinterlace.QTempGaussMC.draft], which inherently contains severe temporal
+                instability known as bob shimmer.
+            - [[QTempGaussMC.repair][vsdeinterlace.QTempGaussMC.repair]] Vertical spatial pre-filtering: Applies a
+                vertical binomial blur to filter out residual vertical artifacts.
+            - Temporal binomial blurring: Applies a temporal binomial blur to smooth
+                [QTempGaussMC.draft][vsdeinterlace.QTempGaussMC.draft], removing the shimmer, which prevents
+                [MVTools][vsdenoise.mvtools.mvtools.MVTools] from falsely latching onto the shimmer as motion (though
+                this uncompensated blur introduces ghosting).
+            - Shimmer masking: Uses a specialized masking process to eliminate the introduced ghosting while retaining
+                the shimmer removal.
+            - Gaussian blurring post-processing: Applies Gaussian blurring to lower high SAD values caused by sharp
+                edges, ensuring edges are properly processed rather than skipped.
+            - Edge detail restoration: Conservatively restores essential edge detail from
+                [QTempGaussMC.draft][vsdeinterlace.QTempGaussMC.draft] back into the blurred clip via a limiting process
+                so [MVTools][vsdenoise.mvtools.mvtools.MVTools] retains the ability to track motion effectively.
+            - Levels optimization:
+                Applies level adjustments to brighten dark regions and enhance contrast, enabling
+                [MVTools][vsdenoise.mvtools.mvtools.MVTools] to better track dark details, reducing downstream ghosting
+                and blurring.
 
         Args:
-            tr: Radius of the initial temporal binomial smooth.
-            sc_threshold: Threshold for scene changes, disables sc detection if False.
-            postprocess: Post-processing routine to use.
-            strength: Tuple containing gaussian blur sigma & blend weight of the blur.
-            limit: 3-step limiting (8-bit) thresholds for the gaussian blur post-processing. Only for
-                [SearchPostProcess.GAUSSBLUR_EDGESOFTEN][vsdeinterlace.qtgmc.QTempGaussMC.SearchPostProcess.GAUSSBLUR_EDGESOFTEN].
-            bias: Bias for blending the gaussian blurred clip with the limited output. Only for
-                [SearchPostProcess.GAUSSBLUR_EDGESOFTEN][vsdeinterlace.qtgmc.QTempGaussMC.SearchPostProcess.GAUSSBLUR_EDGESOFTEN].
-            range_expansion_args: Arguments passed to
-                [prefilter_to_full_range][vsdenoise.prefilters.prefilter_to_full_range].
-            mask_shimmer_args: Arguments passed to the mask_shimmer call:
+            tr: Temporal radius of the binomial blur. Larger values reduce more shimmer but can introduce blurring and
+                ghosting. Defaults to 2.
+            sc_threshold: Threshold for scene changes. Higher values are less sensitive. Defaults to 0.1.
+            strength: Tuple containing the prefilter Gaussian blur sigma and blend weight.
 
-                   - erosion_distance: How much to deflate then reflate to remove thin areas.
-                     Default is 4 for this stage.
-                   - over_dilation: Extra inflation to ensure areas to restore back are fully caught.
-                     Default is 0.
+                - First value: Gaussian blur sigma. Higher values result in more blurring.
+                - Second value: Blend weight of the Gaussian blur. Higher values give more weight to the
+                    Gaussian-blurred clip.
+
+                Defaults to (1.9, 0.9).
+            limit: Tuple containing the 3-step limiting (8-bit) thresholds for the Gaussian blur post-processing:
+
+                   - First value: Maximum allowed delta between the temporally blurred clip and
+                   [QTempGaussMC.draft][vsdeinterlace.QTempGaussMC.draft]. Smaller values clamp
+                   [QTempGaussMC.draft][vsdeinterlace.QTempGaussMC.draft] closer to the temporally blurred clip.
+                   - Second value: Tolerance threshold for the allowed difference between the clamped clip and the
+                    Gaussian-blurred clip before hard clipping triggers. Larger values widen the allowed range for
+                    smooth blending before hard clipping is enforced.
+                   - Third value: Offset applied to the Gaussian-blurred clip when the second threshold is exceeded.
+                    Larger values allow a bigger delta from the Gaussian-blurred clip when clipped.
+
+                Defaults to (3, 7, 2).
+            bias: Weight used when blending the Gaussian-blurred clip back with the limited clip. Higher
+                values give more weight to the Gaussian-blurred clip. Defaults to 0.51.
+            range_expansion_args: Additional arguments passed to
+                [prefilter_to_full_range][vsdenoise.prefilters.prefilter_to_full_range]. Defaults to None.
+            mask_shimmer_args: Additional arguments passed to the internal `_mask_shimmer` call. Defaults to
+                {"erosion_distance": 4}.
         """
 
         self.prefilter_tr = tr
@@ -408,6 +425,9 @@ class QTempGaussMC(VSObject):
         self.prefilter_bias = bias
         self.prefilter_range_expansion_args = fallback(range_expansion_args, QTGMCArgs.PrefilterToFullRange())
         self.prefilter_mask_shimmer_args = fallback(mask_shimmer_args, QTGMCArgs.MaskShimmer())
+
+        if postprocess is not None and not postprocess.value:  # TODO: remove
+            self.prefilter_limit = (0, 0, 0)
 
         return self
 
@@ -423,20 +443,36 @@ class QTempGaussMC(VSObject):
         thscd: int | tuple[int | None, float | None] | None = (180, 38.5),
     ) -> Self:
         """
-        Configure parameters for the motion analysis stage.
+        Configures parameters for motion analysis.
+
+        Performs motion analysis, which is then utilized by all subsequent stages for motion-compensated processing.
+
+        High-level overview:
+            - Dynamic temporal radius calculation: Determines the maximum required temporal search radius across all
+                actively used settings and processes.
+            - Motion vector refinement: Iteratively shrinks block size and calls
+                [MVTools.recalculate][vsdenoise.mvtools.mvtools.MVTools.recalculate] to improve motion vector precision.
 
         Args:
-            force_tr: Always analyze motion to at least this, even if otherwise unnecessary.
-            preset: MVTools preset defining base values for the MVTools object.
-            blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
-            overlap: The blksize divisor for block overlap. Larger overlapping reduces blocking artifacts.
-            refine: Number of times to recalculate motion vectors with halved block size.
-            thsad_recalc: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value
-                is scaled to 8x8 block size.
-            thscd: Scene change detection thresholds:
+            force_tr: Always analyze motion to at least this value, even if otherwise unnecessary. Useful if you want to
+                reuse the generated motion vectors for other tasks. Defaults to 0.
+            preset: [MVTools][vsdenoise.mvtools.mvtools.MVTools] preset defining base values for
+                [MVTools][vsdenoise.mvtools.mvtools.MVTools]. Defaults to MVToolsPreset.HQ_SAD.
+            blksize: Motion analysis block size. Larger blocks are faster and less sensitive to noise, but less
+                accurate. Defaults to 16.
+            overlap: The block size divisor for block size overlap. Larger overlap reduces blocking artifacts of
+                [MVTools][vsdenoise.mvtools.mvtools.MVTools] processes. Defaults to 2.
+            refine: Number of iterations to recalculate motion vectors with halved block size. Improves motion vector
+                precision without reducing denoising effectiveness. Defaults to 1.
+            thsad_recalc: Only poor-quality new vectors with a SAD above this value will be re-estimated by motion
+                search. Only active when refine is used. Defaults to
+                [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] `thsad` / 2.
+            thscd: Scene-change detection thresholds:
 
                    - First value: SAD threshold for considering a block changed between frames.
                    - Second value: Percentage of changed blocks needed to trigger a scene change.
+
+                Defaults to (180, 38.5).
         """
 
         self.analyze_force_tr = force_tr
@@ -454,37 +490,68 @@ class QTempGaussMC(VSObject):
         *,
         tr: int = 1,
         func: DFTTest | _DenoiseFuncTr = DFTTest(sigma=8),
-        mode: NoiseProcessMode = NoiseProcessMode.IDENTIFY,
+        mode: NoiseProcessMode | None = None,
         deint: NoiseDeintMode = NoiseDeintMode.GENERATE,
+        full_denoise: bool = False,
         mc_denoise: bool = True,
         stabilize: float | Literal[False] = 0.4,
         func_comp_args: QTGMCArgs.Compensate | None = None,
         stabilize_comp_args: QTGMCArgs.Compensate | None = None,
     ) -> Self:
         """
-        Configure parameters for the denoise stage.
+        Configures parameters for the denoise stage.
+
+        Determines how to handle noise in the source, including extraction, removal, deinterlacing, and stabilization.
+
+        High-level overview:
+            - Noise handling approaches:
+                - Complete denoising: Denoise the source clip entirely, run the denoised clip through the standard
+                    deinterlacing routine, and optionally restore a portion of the original noise later in the
+                    algorithm.
+                - Noise extraction: Denoise the source clip solely to estimate the noise profile, run the source clip
+                    through the standard deinterlacing routine (which naturally reduces noise), and optionally restore a
+                    portion of the original noise later in the algorithm.
+
+            - Motion-compensated denoising: Motion compensation can optionally be used during the denoising to improve
+                the accuracy of the noise estimation.
+            - [[QTempGaussMC.deinterlace][vsdeinterlace.QTempGaussMC.deinterlace]] Interlaced noise processing: Because
+                the extracted noise is inherently interlaced and standard processing would eliminate it, three
+                alternative methods ([QTempGaussMC.NoiseDeintMode][vsdeinterlace.QTempGaussMC.NoiseDeintMode]) are
+                available to process it separately.
+            - Noise stabilization: The extracted noise can optionally be stabilized at the end of processing using a
+                blend of the maximum variance determined through motion compensation and the average of that maximum
+                variance and the extracted noise.
 
         Args:
-            tr: Temporal radius of the denoising function & it's motion compensation.
-            func: Denoising function to use.
-            mode: Noise handling method to use.
-            deint: Noise deinterlacing method to use.
-            mc_denoise: Whether to perform motion-compensated denoising.
-            stabilize: Weight to use when blending max noise variance with averaged noise.
-            func_comp_args: Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for
-                denoising.
-            stabilize_comp_args: Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate]
-                for stabilization.
+            tr: Temporal radius of the denoising function and its motion compensation. Larger values remove/separate
+                more noise. Defaults to 1.
+            func: Denoising function to use. Defaults to DFTTest(sigma=8).
+            deint: Specifies how to 'deinterlace' noise taken from an interlaced source before restoration. Defaults to
+                NoiseDeintMode.GENERATE.
+            full_denoise: Whether the denoised output will be directly used in all subsequent processing. If `False`,
+                the denoising is only for noise extraction. Defaults to False.
+            mc_denoise: Whether to motion-compensate the denoiser being used. Provides more accurate denoising/noise
+                extraction when using a non-motion-compensated temporal denoiser. Defaults to True.
+            stabilize: Weight used when blending max noise variance with averaged noise. Higher values give more
+                weight to the averaged noise. `False` disables stabilization. Defaults to 0.4.
+            func_comp_args: Additional arguments passed to
+                [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for denoising. Defaults to None.
+            stabilize_comp_args: Additional arguments passed to
+                [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for noise stabilization. Defaults to
+                None.
         """
 
         self.denoise_tr = tr
         self.denoise_func = func.denoise if isinstance(func, DFTTest) else func
-        self.denoise_mode = mode
         self.denoise_deint = deint
+        self.denoise_full_denoise = full_denoise
         self.denoise_mc_denoise = mc_denoise
         self.denoise_stabilize = stabilize
         self.denoise_func_comp_args = fallback(func_comp_args, QTGMCArgs.Compensate())
         self.denoise_stabilize_comp_args = fallback(stabilize_comp_args, QTGMCArgs.Compensate())
+
+        if mode is not None:  # TODO: remove
+            self.denoise_full_denoise = bool(mode)
 
         return self
 
@@ -500,22 +567,44 @@ class QTempGaussMC(VSObject):
         mask_shimmer_args: QTGMCArgs.MaskShimmer | None = {"erosion_distance": 0},
     ) -> Self:
         """
-        Configure parameters for the basic stage.
+        Configures parameters for the basic stage.
+
+        Creates the basic output of the core algorithm. Intended to eliminate bob shimmer.
+
+        High-level overview:
+            - High-quality bobbed clip generation: Begins with high-quality spatial interpolation to produce
+                [QTempGaussMC.bobbed][vsdeinterlace.QTempGaussMC.bobbed], which inherently contains severe temporal
+                instability known as bob shimmer.
+            - [[QTempGaussMC.repair][vsdeinterlace.QTempGaussMC.repair]] Motion SAD masking: Generates a motion-vector
+                SAD mask to blend [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise] output over
+                [QTempGaussMC.bobbed][vsdeinterlace.QTempGaussMC.bobbed], protecting static/low-motion detail.
+            - Motion-compensated temporal binomial smoothing: Applies a motion-compensated temporal binomial blur to
+                smooth [QTempGaussMC.bobbed][vsdeinterlace.QTempGaussMC.bobbed], removing the shimmer while avoiding
+                ghosting artifacts.
+            - Shimmer masking: Uses a specialized masking process to eliminate the introduced blurring while retaining
+                the shimmer removal.
+            - Additional refinements: Passes the temporally smoothed clip through optional fine-tuning processes:
+                - [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match]
+                - [QTempGaussMC.lossless][vsdeinterlace.QTempGaussMC.lossless]
+                - [QTempGaussMC.sharpen][vsdeinterlace.QTempGaussMC.sharpen]
+                - [QTempGaussMC.back_blend][vsdeinterlace.QTempGaussMC.back_blend]
+                - [QTempGaussMC.sharpen_limit][vsdeinterlace.QTempGaussMC.sharpen_limit]
+
+            - Noise restoration: Optionally restores noise previously extracted by
+                [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise] at the end of the pipeline.
 
         Args:
-            tr: Temporal radius of the motion compensated binomial smooth.
-            thsad: Thsad of the motion compensated binomial smooth.
-            bobber: Bobber to use for initial spatial interpolation.
-            noise_restore: How much noise to restore after this stage.
-            degrain_args: Arguments passed to the binomial_degrain call.
-            mask_args: Arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask] for
-                [repair][vsdeinterlace.qtgmc.QTempGaussMC.repair].
-            mask_shimmer_args: Arguments passed to the mask_shimmer call:
-
-                   - erosion_distance: How much to deflate then reflate to remove thin areas.
-                     Default is 0 for this stage.
-                   - over_dilation: Extra inflation to ensure areas to restore back are fully caught.
-                     Default is 0.
+            tr: Temporal radius of the motion-compensated binomial blur. Larger values reduce more shimmer but can
+                introduce blurring and ghosting. Defaults to 2.
+            thsad: SAD threshold of the motion-compensated binomial blur. Larger values reduce more shimmer but can
+                introduce blurring and ghosting. Defaults to 640.
+            bobber: Bobber to use for spatial interpolation. Defaults to NNEDI3(nsize=1).
+            noise_restore: Amount of noise to restore after this stage. Used to retain stable noise. Defaults to 0.
+            degrain_args: Additional arguments passed to the internal `_binomial_degrain` call. Defaults to None.
+            mask_args: Additional arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask]. Only used
+                for [QTempGaussMC.repair][vsdeinterlace.QTempGaussMC.repair]. Defaults to {"ml": 10}.
+            mask_shimmer_args: Additional arguments passed to the internal `_mask_shimmer` call. Defaults to
+                {"erosion_distance": 0}.
         """
 
         self.basic_tr = tr
@@ -535,29 +624,57 @@ class QTempGaussMC(VSObject):
         *,
         tr: int = 1,
         bobber: BobberLike | None = None,
-        mode: SourceMatchMode = SourceMatchMode.NONE,
+        iterations: Literal[0, 1, 2, 3] = 0,
+        mode: SourceMatchMode | None = None,
         similarity: float = 0.5,
         enhance: float = 0.5,
         degrain_args: QTGMCArgs.Degrain | None = None,
     ) -> Self:
         """
-        Configure parameters for the source_match stage.
+        Configures parameters for source match processing.
+
+        Creates higher-fidelity output with extra processing; acts as an alternative method for sharpness restoration.
+
+        High-level overview:
+            - Error-adjusted source matching: Computes a weighted error-correction factor based on temporal radius and
+                similarity, adjusting the input clip to compensate for the upcoming blur before re-interpolating and
+                applying smoothing.
+            - Detail enhancement: Optionally applies unsharpening to the result when `enhance` is used.
+            - Residual refinement pass: For multiple iterations, isolates the difference between the original input and
+                the current matched clip, interpolates and smooths this residual error (applying an additional
+                error-adjustment pass if `iterations` > 2), and merges it back to restore fine detail missed during the
+                initial pass.
+
+        Note:
+            - When source matching is used:
+                - [QTempGaussMC.sharpen][vsdeinterlace.QTempGaussMC.sharpen] is disabled by default, as source matching
+                    acts as an alternative form of sharpness restoration.
+                - [QTempGaussMC.sharpen_limit][vsdeinterlace.QTempGaussMC.sharpen_limit] is disabled by default, as it
+                    reduces the accuracy of source matching.
 
         Args:
-            tr: Temporal radius of the refinement motion compensated binomial smooth.
-            bobber: Bobber to use for refined spatial interpolation. Defaults to the basic bobber.
-            mode: Specifies number of refinement steps to perform.
-            similarity: Temporal similarity of the error created by smoothing.
-            enhance: Sharpening strength prior to source match refinement.
-            degrain_args: Arguments passed to the binomial_degrain call.
+            tr: Temporal radius of the refinement motion-compensated binomial blur. Larger values reduce more shimmer
+                but can introduce blurring and ghosting. Only used for `iterations` > 1. Defaults to 1.
+            bobber: Bobber to use for refined spatial interpolation. Only used for `iterations` > 1. Defaults to
+                [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] `bobber`.
+            iterations: Number of source match iterations to perform. Higher values are slower and more accurate. Using
+                2 or 3 iterations restores almost exact source detail but is sensitive to noise and introduces
+                occasional aliasing (to a lesser extent for 3). Defaults to 0.
+            similarity: Temporal similarity of the error from frame to frame. Lower values make the result sharper.
+                Defaults to 0.5.
+            enhance: Enhances detail found by `iterations` > 1. Higher values exaggerate detail more. Defaults to 0.5.
+            degrain_args: Additional arguments passed to the internal `_binomial_degrain` call. Defaults to None.
         """
 
         self.source_match_tr = tr
         self.source_match_bobber = bobber
-        self.source_match_mode = mode
+        self.source_match_iterations = iterations
         self.source_match_similarity = similarity
         self.source_match_enhance = enhance
         self.source_match_degrain_args = fallback(degrain_args, QTGMCArgs.Degrain())
+
+        if mode is not None:  # TODO: remove
+            self.source_match_iterations = mode.value  # type: ignore
 
         return self
 
@@ -578,11 +695,20 @@ class QTempGaussMC(VSObject):
 
     def lossless(self, *, mode: LosslessMode = LosslessMode.NONE, anti_comb: bool = True) -> Self:
         """
-        Configure parameter for the lossless stage.
+        Configures parameters for lossless processing.
+
+        Restoring original fields significantly improves fidelity, but may introduce minor shimmering, combing,
+        or noise.
+
+        High-level overview:
+            - Source field weaving: Weaves the original fields together with the newly smoothed fields to preserve the
+                original lines, removing the original field alteration introduced by temporal blurring.
+            - Residual combing reduction: Applies vertical median filtering to clean up residual combing caused by
+                mismatches between the original fields and the processed fields.
 
         Args:
-            mode: Specifies at which stage to re-weave the original fields.
-            anti_comb: Whether to apply combing reduction post-processing.
+            mode: When to put the original fields into the output. Defaults to LosslessMode.NONE.
+            anti_comb: Whether to apply combing reduction post-processing. Defaults to True.
         """
 
         self.lossless_mode = mode
@@ -593,47 +719,66 @@ class QTempGaussMC(VSObject):
     def sharpen(
         self,
         *,
-        mode: SharpenMode = SharpenMode.UNSHARP_MINMAX,
+        mode: SharpenMode | None = None,
         strength: float | None = None,
-        clamp: float | tuple[float, float] = 1,
+        offset: float | tuple[float, float] | Literal[False] = 1,
         thin: float = 0,
     ) -> Self:
         """
-        Configure parameters for the sharpen stage.
+        Configures parameters for sharpening.
+
+        Re-sharpens the output after temporal smoothing is performed.
+
+        High-level overview:
+            - Pre-blur range limiting: Calculates the local vertical average and offsets it prior to applying the blur
+                used for unsharpening to increase vertical sharpening while reducing overshoot/undershoot.
+            - Unsharpening: Applies unsharpening onto the temporally smoothed clip to restore image sharpness.
+            - Horizontal edge thinning: Optionally thins horizontal edges that have been widened due to interpolation
+                into neighboring field lines.
 
         Args:
-            mode: Specifies the type of sharpening to use.
-                Defaults to [SharpenMode.UNSHARP_MINMAX][vsdeinterlace.qtgmc.QTempGaussMC.SharpenMode.UNSHARP_MINMAX].
-            strength: Sharpening strength. Defaults to 1 for
-                [SourceMatchMode.NONE][vsdeinterlace.qtgmc.QTempGaussMC.SourceMatchMode.NONE] or 0 otherwise.
-            clamp: Clamp the sharpening strength of
-                [SharpenMode.UNSHARP_MINMAX][vsdeinterlace.qtgmc.QTempGaussMC.SharpenMode.UNSHARP_MINMAX] to the min/max
-                average plus/minus this.
-            thin: How much to thin horizontal edges.
+            strength: Sharpening strength. Higher values result in more sharpening. Defaults to 1 when
+                [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match] `iterations` is 0, and 0 otherwise.
+            offset: Offsets the blur source to the vertical min/max average ±this value. Smaller values result in more
+                vertical sharpening. Passing a tuple of values results in asymmetric offsetting. `False` disables
+                range limiting. Defaults to 1.
+            thin: How much to thin down horizontal edges. Higher values result in more thinning. Defaults to 0.
         """
 
-        self.sharpen_mode = mode
         self.sharpen_strength = strength
-        self.sharpen_clamp = normalize_seq(clamp, 2)
+        self.sharpen_offset = offset is not False and normalize_seq(offset, 2)
         self.sharpen_thin = thin
+
+        if mode is not None and not mode.value:  # TODO: remove
+            self.sharpen_offset = False
 
         return self
 
     @property
     def sharpen_strength(self) -> float:
-        return fallback(self._sharpen_strength, 0 if self.source_match_mode else 1)
+        return fallback(self._sharpen_strength, 0 if self.source_match_iterations else 1)
 
     @sharpen_strength.setter
     def sharpen_strength(self, value: float | None) -> None:
         self._sharpen_strength = value
 
-    def back_blend(self, *, mode: BackBlendMode = BackBlendMode.PRELIMIT, sigma: float = 1.4) -> Self:
+    def back_blend(self, *, mode: BackBlendMode = BackBlendMode.BOTH, sigma: float = 1.4) -> Self:
         """
-        Configure parameters for the back_blend stage.
+        Configures parameters for back-blending.
+
+        Improves [QTempGaussMC.sharpen][vsdeinterlace.QTempGaussMC.sharpen] fidelity by dampening low-frequency
+        enhancement caused by unsharpening.
+
+        High-level overview:
+            - Low-frequency back-blending: Gaussian-blurs the pre- and post-sharpening difference to isolate broad
+                low-frequency shifts, then merges that blurred difference back onto the source to preserve only
+                high-frequency edge sharpening.
 
         Args:
-            mode: Specifies at which stage to perform back-blending.
-            sigma: Gaussian blur sigma.
+            mode: When to back-blend the (blurred) difference between the pre- and post-sharpened clips. Defaults to
+                BackBlendMode.BOTH.
+            sigma: Gaussian blur sigma applied to the pre- and post-sharpening difference. Lower values dampen
+                sharpening more aggressively. Defaults to 1.4.
         """
 
         self.backblend_mode = mode
@@ -644,37 +789,53 @@ class QTempGaussMC(VSObject):
     def sharpen_limit(
         self,
         *,
-        mode: SharpenLimitMode = SharpenLimitMode.TEMPORAL_PRESMOOTH,
-        radius: int | None = None,
+        mode: SharpenLimitMode | None = None,
+        radius: int = 1,
         clamp: float | tuple[float, float] = 0,
         comp_args: QTGMCArgs.Compensate | None = None,
     ) -> Self:
         """
-        Configure parameters for the sharpen_limit stage.
+        Configures parameters for sharpness limiting.
+
+        Limits the effect of [QTempGaussMC.sharpen][vsdeinterlace.QTempGaussMC.sharpen] to reduce oversharpening
+        artifacts.
+
+        High-level overview:
+            - Sharpness limiting approaches:
+                - Spatial limiting: Clamps the sharpened clip's pixel values to the local spatial minimum and maximum
+                    bounds of [QTempGaussMC.bobbed][vsdeinterlace.QTempGaussMC.bobbed].
+                - Motion-compensated temporal limiting: Clamps the sharpened clip using motion-compensated reference
+                    frames from [QTempGaussMC.bobbed][vsdeinterlace.QTempGaussMC.bobbed].
 
         Args:
-            mode: Specifies type of limiting & at which stage to perform it.
-            radius: Radius of sharpness limiting. Defaults to 1 for
-                [SourceMatchMode.NONE][vsdeinterlace.qtgmc.QTempGaussMC.SourceMatchMode.NONE] or 0 otherwise.
-            clamp: How much undershoot/overshoot to allow.
-            comp_args: Arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for
-                temporal limiting.
+            mode: How and when to apply limiting to [QTempGaussMC.sharpen][vsdeinterlace.QTempGaussMC.sharpen]. Defaults
+                to SharpenLimitMode.TEMPORAL_PRESMOOTH when
+                [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match] `iterations` is 0 and
+                SharpenLimitMode.NONE otherwise.
+            radius: Radius of the sharpness limiting. Larger values allow more sharpening. Defaults to 1.
+            clamp: How much undershoot/overshoot to allow. Larger values result in less limiting. Passing a tuple of
+                values allows for asymmetric limiting. Defaults to 0.
+            comp_args: Additional arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate]
+                for temporal limiting. Defaults to None.
         """
 
         self.sharpen_limit_mode = mode
         self.sharpen_limit_radius = radius
-        self.sharpen_limit_clamp = clamp
+        self.sharpen_limit_clamp = normalize_seq(clamp, 2)
         self.sharpen_limit_comp_args = fallback(comp_args, QTGMCArgs.Compensate())
 
         return self
 
     @property
-    def sharpen_limit_radius(self) -> int:
-        return fallback(self._sharpen_limit_radius, 0 if self.source_match_mode else 1)
+    def sharpen_limit_mode(self) -> SharpenLimitMode:
+        return fallback(
+            self._sharpen_limit_mode,
+            self.SharpenLimitMode.NONE if self.source_match_iterations else self.SharpenLimitMode.TEMPORAL_PRESMOOTH,
+        )
 
-    @sharpen_limit_radius.setter
-    def sharpen_limit_radius(self, value: int | None) -> None:
-        self._sharpen_limit_radius = value
+    @sharpen_limit_mode.setter
+    def sharpen_limit_mode(self, value: SharpenLimitMode | None) -> None:
+        self._sharpen_limit_mode = value
 
     def final(
         self,
@@ -686,19 +847,32 @@ class QTempGaussMC(VSObject):
         mask_shimmer_args: QTGMCArgs.MaskShimmer | None = {"erosion_distance": 4},
     ) -> Self:
         """
-        Configure parameters for the final stage.
+        Configures parameters for the final stage.
+
+        Creates the final output of the core algorithm. Intended to eliminate residual artifacts.
+
+        High-level overview:
+            - Motion-compensated temporal linear smoothing: Applies a motion-compensated temporal linear blur to smooth
+                the output of [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic], cleaning any residual artifacts.
+            - Shimmer masking: Uses a specialized masking process to eliminate the introduced blurring while retaining
+                the artifact removal.
+            - Additional refinements: Passes the temporally smoothed clip through optional fine-tuning processes:
+                - [QTempGaussMC.sharpen_limit][vsdeinterlace.QTempGaussMC.sharpen_limit]
+                - [QTempGaussMC.lossless][vsdeinterlace.QTempGaussMC.lossless]
+
+            - Noise restoration: Optionally restores noise previously extracted by
+                [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise] at the end of the pipeline.
 
         Args:
-            tr: Temporal radius of the motion compensated smooth.
-            thsad: Thsad of the motion compensated smooth.
-            noise_restore: How much noise to restore after this stage.
-            degrain_args: Arguments passed to [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain].
-            mask_shimmer_args: Arguments passed to the mask_shimmer call:
-
-                   - erosion_distance: How much to deflate then reflate to remove thin areas.
-                     Default is 4 for this stage.
-                   - over_dilation: Extra inflation to ensure areas to restore back are fully caught.
-                     Default is 0.
+            tr: Temporal radius of the motion-compensated linear blur. Larger values clean more artifacts but can
+                introduce blurring and ghosting. Defaults to 1.
+            thsad: SAD threshold of the motion-compensated linear blur. Larger values clean more artifacts but can
+                introduce blurring and ghosting. Defaults to 256.
+            noise_restore: Amount of noise to restore after this stage. Used to retain any noise. Defaults to 0.
+            degrain_args: Additional arguments passed to [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain].
+                Defaults to None.
+            mask_shimmer_args: Additional arguments passed to the internal `_mask_shimmer` call. Defaults to
+                {"erosion_distance": 4}.
         """
 
         self.final_tr = tr
@@ -718,14 +892,28 @@ class QTempGaussMC(VSObject):
         mask_args: QTGMCArgs.Mask | None = {"ml": 4},
     ) -> Self:
         """
-        Configure parameters for the motion blur stage.
+        Configures parameters for the motion blur stage.
+
+        Simulates realistic camera shutter blur to smooth playback motion, primarily when reducing output frame rate.
+
+        High-level overview:
+            - Shutter angle calculation: Computes the required blur intensity based on the estimated input shutter
+                angle, the output shutter angle, and the frame rate divisor.
+            - Motion-compensated blurring: Applies vector-based directional blur along motion vectors when the required
+                blur amount is non-zero.
+            - Motion-adaptive masking: Generates a mask based on motion to selectively merge motion blur into the source
+                while keeping static areas sharp.
+            - Frame rate reduction: Optionally decimates frame rate (e.g., dropping every other frame for single-rate
+                output) after motion blur application.
 
         Args:
-            shutter_angle: Tuple containing the source and output shutter angle. Will apply motion blur if they do not
-                match.
-            fps_divisor: Factor by which to reduce framerate.
-            blur_args: Arguments passed to [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur].
-            mask_args: Arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask].
+            shutter_angle: Tuple containing the source and output shutter angles. Motion blur is applied if they do not
+                match. Defaults to (180, 180).
+            fps_divisor: Factor by which to smoothly reduce frame rate. Defaults to 1.
+            blur_args: Additional arguments passed to [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur].
+                Defaults to None.
+            mask_args: Additional arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask]. Defaults
+                to {"ml": 4}.
         """
 
         self.motion_blur_shutter_angle = shutter_angle
@@ -742,16 +930,6 @@ class QTempGaussMC(VSObject):
         erosion_distance: int,
         over_dilation: int = 0,
     ) -> vs.VideoNode:
-        """
-        Removes areas of difference between a temporally smoothed clip and reference that are not due to bob-shimmer by
-        only allowing thin horizontal areas of difference.
-
-        Args:
-            flt: Processed clip to perform masking on.
-            src: Unprocessed clip to restore from.
-            erosion_distance: How much to deflate then reflate to remove thin areas.
-            over_dilation: Extra inflation to ensure areas to restore back are fully caught.
-        """
         if not erosion_distance:
             return flt
 
@@ -814,36 +992,30 @@ class QTempGaussMC(VSObject):
             search = self.draft
 
         if self.prefilter_tr:
-            scenes = sc_detect(search, self.prefilter_sc_threshold)
             smoothed = BlurMatrix.BINOMIAL(self.prefilter_tr, mode=ConvMode.TEMPORAL)(
-                scenes, scenechange=True, func=self._apply_prefilter
+                sc_detect(search, self.prefilter_sc_threshold), scenechange=True, func=self._apply_prefilter
             )
             smoothed = self._mask_shimmer(smoothed, search, **self.prefilter_mask_shimmer_args)
         else:
             smoothed = search
 
-        if self.prefilter_strength:
-            gauss_sigma, blend_weight = self.prefilter_strength
+        gauss_sigma, blend_weight = self.prefilter_strength
+        lim1, lim2, lim3 = [scale_delta(thr, 8, self.clip) for thr in self.prefilter_limit]
 
-            blurred = core.std.Merge(gauss_blur(smoothed, gauss_sigma), smoothed, blend_weight)
-
-            if self.prefilter_postprocess == self.SearchPostProcess.GAUSSBLUR_EDGESOFTEN:
-                lim1, lim2, lim3 = [scale_delta(thr, 8, self.clip) for thr in self.prefilter_limit]
-
-                blurred = norm_expr(
-                    [blurred, smoothed, search],
-                    "z y {lim1} - y {lim1} + clamp TWEAK! "
-                    "x {lim2} + TWEAK@ < x {lim3} + x {lim2} - TWEAK@ > x {lim3} - "
-                    "x {weight1} * TWEAK@ {weight2} * + ? ?",
-                    lim1=lim1,
-                    lim2=lim2,
-                    lim3=lim3,
-                    weight1=self.prefilter_bias,
-                    weight2=1 - self.prefilter_bias,
-                    func=self._apply_prefilter,
-                )
-        else:
-            blurred = smoothed
+        # TODO: Figure out early exits
+        blurred = gauss_blur(smoothed, gauss_sigma) if gauss_sigma and blend_weight else smoothed
+        blurred = norm_expr(
+            [blurred, smoothed, search],
+            "y x y - {weight} * + BLUR! z y {lim1} - y {lim1} + clamp TWEAK! "
+            "BLUR@ {lim2} + TWEAK@ < BLUR@ {lim3} + BLUR@ {lim2} - TWEAK@ > BLUR@ {lim3} - "
+            "TWEAK@ BLUR@ TWEAK@ - {bias} * + ? ?",
+            weight=blend_weight,
+            lim1=lim1,
+            lim2=lim2,
+            lim3=lim3,
+            bias=self.prefilter_bias,
+            func=self._apply_prefilter,
+        )
 
         self.prefilter_output = prefilter_to_full_range(
             blurred, func=self._apply_prefilter, **self.prefilter_range_expansion_args
@@ -862,34 +1034,34 @@ class QTempGaussMC(VSObject):
             self.denoise_tr if self.denoise_mc_denoise else 0,
             self.sharpen_limit_radius
             if self.sharpen_limit_mode
-            in (self.SharpenLimitMode.TEMPORAL_PRESMOOTH, self.SharpenLimitMode.TEMPORAL_POSTSMOOTH)
+            in {self.SharpenLimitMode.TEMPORAL_PRESMOOTH, self.SharpenLimitMode.TEMPORAL_POSTSMOOTH}
             and (self.sharpen_strength or self.sharpen_thin)
             else 0,
             # Feature flags
-            int(self.denoise_stabilize is not False),
+            int(self.denoise_stabilize is not False and (self.basic_noise_restore or self.final_noise_restore)),
             int(bool(self.is_repair and self.basic_mask_args.get("ml"))),
             int(angle_out * self.motion_blur_fps_divisor != angle_in),
         )
 
-        blksize, overlap = self.analyze_blksize, self.analyze_overlap
+        blksize = self.analyze_blksize
         thsad_recalc = fallback(
             self.analyze_thsad_recalc,
             round((self.basic_thsad[0] if isinstance(self.basic_thsad, tuple) else self.basic_thsad) / 2),
         )
 
         self.mv = MVTools(self.draft, **{**self.analyze_preset, "search_clip": self.prefilter_output})
-        self.mv.analyze(tr=tr, blksize=blksize, overlap_div=overlap)
+        self.mv.analyze(tr=tr, blksize=blksize, overlap_div=self.analyze_overlap)
 
         for _ in range(self.analyze_refine):
             blksize = refine_blksize(blksize)
-            self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap)
+            self.mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=self.analyze_overlap)
 
     def _apply_denoise(self) -> None:
         self.denoise_output = self.clip
 
         no_restore = self.basic_noise_restore == self.final_noise_restore == 0
 
-        if self.denoise_mode == self.NoiseProcessMode.IDENTIFY and no_restore:
+        if not self.denoise_full_denoise and no_restore:
             return
 
         if self.denoise_mc_denoise:
@@ -905,7 +1077,7 @@ class QTempGaussMC(VSObject):
         if self.tff.is_inter and not self.is_repair:
             denoised = reinterlace(denoised, self.tff, self._apply_denoise)
 
-        if self.denoise_mode == self.NoiseProcessMode.DENOISE:
+        if self.denoise_full_denoise:
             self.denoise_output = denoised
 
         self.noise = self.clip.std.MakeDiff(denoised)
@@ -953,9 +1125,9 @@ class QTempGaussMC(VSObject):
 
             self.noise = norm_expr(
                 [self.noise, *noise_comp],
-                "x neutral - abs y neutral - abs > x y ? {weight1} * x y + {weight2} * +",
-                weight1=1 - self.denoise_stabilize,
-                weight2=self.denoise_stabilize / 2,
+                "x neutral - abs y neutral - abs > x y ? {weight2} * x y + {weight1} * +",
+                weight1=self.denoise_stabilize / 2,
+                weight2=1 - self.denoise_stabilize,
                 func=self._apply_denoise,
             )
 
@@ -977,10 +1149,11 @@ class QTempGaussMC(VSObject):
             self.bobbed = self.denoise_output.std.MaskedMerge(self.bobbed, mask)
 
         smoothed = self._binomial_degrain(self.bobbed, self.basic_tr, **self.basic_degrain_args)
+
         if self.basic_tr:
             smoothed = self._mask_shimmer(smoothed, self.bobbed, **self.basic_mask_shimmer_args)
 
-            if self.source_match_mode:
+            if self.source_match_iterations:
                 smoothed = self._apply_source_match(smoothed)
 
         if self.lossless_mode == self.LosslessMode.PRESHARPEN:
@@ -988,16 +1161,18 @@ class QTempGaussMC(VSObject):
 
         resharp = self._apply_sharpen(smoothed)
 
-        if self.backblend_mode in (self.BackBlendMode.PRELIMIT, self.BackBlendMode.BOTH):
-            resharp = self._apply_back_blend(resharp, smoothed)
-
-        if self.sharpen_limit_mode in (
+        if self.sharpen_limit_mode in {
             self.SharpenLimitMode.SPATIAL_PRESMOOTH,
             self.SharpenLimitMode.TEMPORAL_PRESMOOTH,
-        ):
+        }:
+            if self.backblend_mode in {self.BackBlendMode.PRELIMIT, self.BackBlendMode.BOTH}:
+                resharp = self._apply_back_blend(resharp, smoothed)
+
             resharp = self._apply_sharpen_limit(resharp)
 
-        if self.backblend_mode in (self.BackBlendMode.POSTLIMIT, self.BackBlendMode.BOTH):
+            if self.backblend_mode in {self.BackBlendMode.POSTLIMIT, self.BackBlendMode.BOTH}:
+                resharp = self._apply_back_blend(resharp, smoothed)
+        elif self.backblend_mode != self.BackBlendMode.NONE:
             resharp = self._apply_back_blend(resharp, smoothed)
 
         self.basic_output = self._apply_noise_restore(resharp, self.basic_noise_restore)
@@ -1009,12 +1184,10 @@ class QTempGaussMC(VSObject):
 
             tr_f = 2 * tr - 1
             tr_s = 2**tr_f
-            binomial_coeff = math.comb(tr_f, tr)
+            binomial_coeff = comb(tr_f, tr)
             error_adj = tr_s / (binomial_coeff + self.source_match_similarity * (tr_s - binomial_coeff))
 
-            return norm_expr(
-                [ref, clip], "x {adj1} * y {adj2} * -", adj1=error_adj + 1, adj2=error_adj, func=_error_adjustment
-            )
+            return norm_expr([ref, clip], "x x y - {error_adj} * +", error_adj=error_adj, func=_error_adjustment)
 
         if self.tff.is_inter:
             clip = reinterlace(clip, self.tff, self._apply_source_match)
@@ -1023,7 +1196,7 @@ class QTempGaussMC(VSObject):
         new_bobbed = self._interpolate(adjusted, self.basic_bobber)
         matched = self._binomial_degrain(new_bobbed, self.basic_tr, **self.basic_degrain_args)
 
-        if self.source_match_mode > self.SourceMatchMode.BASIC:
+        if self.source_match_iterations > 1:
             if self.source_match_enhance:
                 matched = unsharpen(
                     matched, self.source_match_enhance, BlurMatrix.BINOMIAL(), func=self._apply_source_match
@@ -1037,7 +1210,7 @@ class QTempGaussMC(VSObject):
                 refine_bobbed, self.source_match_tr, **self.source_match_degrain_args
             )
 
-            if self.source_match_mode == self.SourceMatchMode.TWICE_REFINED:
+            if self.source_match_iterations > 2:
                 refine_adjusted = _error_adjustment(refine_bobbed, refine_matched, self.source_match_tr)
                 refine_matched = self._binomial_degrain(
                     refine_adjusted, self.source_match_tr, **self.source_match_degrain_args
@@ -1048,7 +1221,7 @@ class QTempGaussMC(VSObject):
         return matched
 
     def _apply_lossless(self, clip: vs.VideoNode) -> vs.VideoNode:
-        if not self.tff.is_inter:
+        if not self.tff.is_inter or clip is self.bobbed:
             return clip
 
         fields_src = self.denoise_output.std.SeparateFields(self.tff.is_tff)
@@ -1059,18 +1232,16 @@ class QTempGaussMC(VSObject):
         woven = reweave(fields_src, fields_flt, self.tff.field, self._apply_lossless)
 
         if self.lossless_anti_comb:
-            median_diff = woven.std.MakeDiff(median_blur(woven, mode=ConvMode.VERTICAL, func=self._apply_lossless))
+            median_diff = median_blur(woven, mode=ConvMode.VERTICAL, func=self._apply_lossless).std.MakeDiff(woven)
             fields_diff = median_diff.std.SeparateFields(self.tff.is_tff).std.SelectEvery(4, (1, 2))
 
-            processed_diff = norm_expr(
+            cleaned_diff = norm_expr(
                 [median_blur(fields_diff, mode=ConvMode.VERTICAL, func=self._apply_lossless), fields_diff],
                 "x neutral - X! y neutral - Y! X@ Y@ xor neutral X@ abs Y@ abs < x y ? ?",
                 func=self._apply_lossless,
             )
-            processed_diff = repair.Mode.MINMAX_SQUARE1(
-                processed_diff, remove_grain.Mode.MINMAX_AROUND2(processed_diff)
-            )
-            woven = reweave(fields_src, fields_flt.std.MakeDiff(processed_diff), self.tff.field, self._apply_lossless)
+            cleaned_diff = repair.Mode.MINMAX_SQUARE1(cleaned_diff, remove_grain.Mode.MINMAX_AROUND2(cleaned_diff))
+            woven = reweave(fields_src, fields_flt.std.MergeDiff(cleaned_diff), self.tff.field, self._apply_lossless)
 
         return FieldBased.PROGRESSIVE.apply(woven)
 
@@ -1078,27 +1249,26 @@ class QTempGaussMC(VSObject):
         resharp = clip
 
         if self.sharpen_strength:
-            if self.sharpen_mode == self.SharpenMode.UNSHARP:
-                resharp = unsharpen(clip, self.sharpen_strength, BlurMatrix.BINOMIAL(), func=self._apply_sharpen)
-            elif self.sharpen_mode == self.SharpenMode.UNSHARP_MINMAX:
-                undershoot, overshoot = self.sharpen_clamp
+            if self.sharpen_offset is not False:
+                dark_offset, bright_offset = self.sharpen_offset
 
                 source_min = Morpho.minimum(clip, coords=Coordinates.VERTICAL, func=self._apply_sharpen)
                 source_max = Morpho.maximum(clip, coords=Coordinates.VERTICAL, func=self._apply_sharpen)
 
-                clamp = norm_expr(
+                resharp = norm_expr(
                     [clip, source_min, source_max],
-                    "y z + 2 / AVG! AVG@ x > AVG@ {undershoot} - AVG@ x < AVG@ {overshoot} + x ? ?",
-                    undershoot=scale_delta(undershoot, 8, clip),
-                    overshoot=scale_delta(overshoot, 8, clip),
+                    "y z + 2 / AVG! AVG@ x > AVG@ {dark_offset} - AVG@ x < AVG@ {bright_offset} + x ? ?",
+                    dark_offset=scale_delta(dark_offset, 8, clip),
+                    bright_offset=scale_delta(bright_offset, 8, clip),
                     func=self._apply_sharpen,
                 )
-                resharp = unsharpen(
-                    clip,
-                    self.sharpen_strength,
-                    BlurMatrix.BINOMIAL()(clamp, func=self._apply_sharpen),
-                    func=self._apply_sharpen,
-                )
+
+            resharp = unsharpen(
+                clip,
+                self.sharpen_strength,
+                BlurMatrix.BINOMIAL()(resharp, func=self._apply_sharpen),
+                func=self._apply_sharpen,
+            )
 
         if self.sharpen_thin:
             median_diff = norm_expr(
@@ -1118,18 +1288,20 @@ class QTempGaussMC(VSObject):
         return resharp
 
     def _apply_back_blend(self, flt: vs.VideoNode, src: vs.VideoNode) -> vs.VideoNode:
-        if self.backblend_sigma and (self.sharpen_strength or self.sharpen_thin):
-            flt = flt.std.MakeDiff(gauss_blur(flt.std.MakeDiff(src), self.backblend_sigma))
+        if self.sharpen_strength or self.sharpen_thin:
+            flt = src.std.MergeDiff(gauss_blur(flt.std.MakeDiff(src), self.backblend_sigma))
 
         return flt
 
     def _apply_sharpen_limit(self, clip: vs.VideoNode) -> vs.VideoNode:
-        if self.sharpen_limit_radius and (self.sharpen_strength or self.sharpen_thin):
-            if self.sharpen_limit_mode in (
+        undershoot, overshoot = self.sharpen_limit_clamp
+
+        if self.sharpen_strength or self.sharpen_thin:
+            if self.sharpen_limit_mode in {
                 self.SharpenLimitMode.SPATIAL_PRESMOOTH,
                 self.SharpenLimitMode.SPATIAL_POSTSMOOTH,
-            ):
-                if self.sharpen_limit_radius == 1:
+            }:
+                if self.sharpen_limit_radius == 1 and undershoot == overshoot == 0:
                     clip = repair.Mode.MINMAX_SQUARE1(clip, self.bobbed)
                 else:
                     inpand = Morpho.minimum(
@@ -1138,16 +1310,22 @@ class QTempGaussMC(VSObject):
                     expand = Morpho.maximum(
                         self.bobbed, iterations=self.sharpen_limit_radius, func=self._apply_sharpen_limit
                     )
-                    clip = ExprOp.CLAMP(clip, inpand, expand, func=self._apply_sharpen_limit)
-            elif self.sharpen_limit_mode in (
+                    clip = norm_expr(
+                        [clip, inpand, expand],
+                        "x y {undershoot} - z {overshoot} + clamp",
+                        undershoot=undershoot,
+                        overshoot=overshoot,
+                        func=self._apply_sharpen_limit,
+                    )
+            elif self.sharpen_limit_mode in {
                 self.SharpenLimitMode.TEMPORAL_PRESMOOTH,
                 self.SharpenLimitMode.TEMPORAL_POSTSMOOTH,
-            ):
+            }:
                 clip = mc_clamp(
                     clip,
                     self.bobbed,
                     self.mv,
-                    self.sharpen_limit_clamp,
+                    (undershoot, overshoot),
                     self._apply_sharpen_limit,
                     tr=self.sharpen_limit_radius,
                     thscd=self.analyze_thscd,
@@ -1175,12 +1353,14 @@ class QTempGaussMC(VSObject):
             )
         else:
             smoothed = self.basic_output
-        smoothed = self._mask_shimmer(smoothed, self.bobbed, **self.final_mask_shimmer_args)
 
-        if self.sharpen_limit_mode in (
+        if smoothed is not self.bobbed:
+            smoothed = self._mask_shimmer(smoothed, self.bobbed, **self.final_mask_shimmer_args)
+
+        if self.sharpen_limit_mode in {
             self.SharpenLimitMode.SPATIAL_POSTSMOOTH,
             self.SharpenLimitMode.TEMPORAL_POSTSMOOTH,
-        ):
+        }:
             smoothed = self._apply_sharpen_limit(smoothed)
 
         if self.lossless_mode == self.LosslessMode.POSTSMOOTH:
@@ -1263,10 +1443,13 @@ class QTempGaussMC(VSObject):
 
     def deinterlace(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
         """
-        Deinterlace interlaced input. Motion blur stage FPS divisor is respected.
+        Deinterlace interlaced input. [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur] `fps_divisor`
+        is respected.
+
+        Interpolates missing fields to reconstruct progressive frames.
 
         Args:
-            clip: Input clip.
+            clip: Clip to process.
             tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
 
         Returns:
@@ -1276,10 +1459,13 @@ class QTempGaussMC(VSObject):
 
     def bob(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
         """
-        Bob interlaced input. Motion blur stage FPS divisor is ignored.
+        Bob interlaced input. [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur] `fps_divisor` is
+        ignored.
+
+        Interpolates missing fields to reconstruct double-framerate progressive frames.
 
         Args:
-            clip: Input clip.
+            clip: Clip to process.
             tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
 
         Returns:
@@ -1292,8 +1478,10 @@ class QTempGaussMC(VSObject):
         """
         Repair badly deinterlaced input.
 
+        Drops half the fields to recreate an interlaced stream using the remaining ones.
+
         Args:
-            clip: Input clip.
+            clip: Clip to process.
             tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
 
         Returns:
@@ -1305,8 +1493,10 @@ class QTempGaussMC(VSObject):
         """
         Deshimmer progressive input.
 
+        Removes horizontal shimmering artifacts from progressive sources.
+
         Args:
-            clip: Input clip.
+            clip: Clip to process.
 
         Returns:
             Deshimmered clip.
