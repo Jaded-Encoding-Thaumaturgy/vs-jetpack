@@ -34,6 +34,7 @@ def mc_degrain(
     overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
+    thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
     thscd: int | tuple[int | None, float | None] | None = None,
@@ -55,6 +56,7 @@ def mc_degrain(
     overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
+    thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
     thscd: int | tuple[int | None, float | None] | None = None,
@@ -77,6 +79,7 @@ def mc_degrain(
     overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
+    thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
     thscd: int | tuple[int | None, float | None] | None = None,
@@ -97,6 +100,7 @@ def mc_degrain(
     overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
+    thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
     thscd: int | tuple[int | None, float | None] | None = None,
@@ -123,6 +127,10 @@ def mc_degrain(
         thsad: Defines the soft threshold of block sum absolute differences. Blocks with SAD above this threshold have
             zero weight for averaging (denoising). Blocks with low SAD have highest weight. The remaining weight is
             taken from pixels of source clip.
+            Applies to the nearest references (temporal distance 1); more distant references interpolate towards thsad2.
+        thsad2: Defines the soft threshold for the furthest references (temporal distance radius).
+            Each reference at distance d in 1...radius uses a raised-cosine interpolation
+            between thsad (at d=1) and thsad2 (at d=radius). Defaults to thsad.
         thsad_recalc: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value is
             scaled to 8x8 block size.
         limit: Maximum allowed change in pixel values (8-bit scale).
@@ -152,7 +160,17 @@ def mc_degrain(
             blksize = refine_blksize(blksize)
             mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap_div)
 
-    den = mv.degrain(mfilter, super=mv.clip, tr=tr, delta=delta, thsad=thsad, limit=limit, thscd=thscd, planes=planes)
+    den = mv.degrain(
+        mfilter,
+        super=mv.clip,
+        tr=tr,
+        delta=delta,
+        thsad=thsad,
+        thsad2=thsad2,
+        limit=limit,
+        thscd=thscd,
+        planes=planes,
+    )
 
     return (den, mv) if export_globals else den
 

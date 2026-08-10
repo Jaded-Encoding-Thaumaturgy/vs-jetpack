@@ -141,9 +141,9 @@ def test_mvtools_flow() -> None:
 def test_mvtools_degrain() -> None:
     clip = core.std.BlankClip(format=vs.YUV420P8, width=160, height=120, length=5)
     mv = MVTools(clip)
-    mv.analyze(tr=1)
+    mv.analyze(tr=2)
 
-    degrained = mv.degrain(tr=1, limit=5.0, weights=[1, 1, 1])
+    degrained = mv.degrain(tr=2, thsad=400, thsad2=200, limit=5.0, weights=[1, 1, 1, 1, 1])
     assert degrained.num_frames == 5
     assert degrained.format == clip.format
 
