@@ -136,7 +136,7 @@ def based_aa(
             used to scale the clip back to its original resolution. The supersampler should ideally be fairly sharp
             without introducing too much ringing. Default: ArtCNN (R8F64).
         antialiaser: Antialiaser used for anti-aliasing. If None, EEDI3 will be selected with these default settings:
-            (alpha=0.125, beta=0.25, vthresh0=12, vthresh1=24, field=1).
+            (alpha=0.125, beta=0.25, gamma=40, vthresh=(12, 24, 4)).
         prefilter: Prefilter to apply before anti-aliasing. Must be a VideoNode, a function that takes a VideoNode and
             returns a VideoNode, or False. Default: False.
         postfilter: Postfilter to apply after anti-aliasing.
