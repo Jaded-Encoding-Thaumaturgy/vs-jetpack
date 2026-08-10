@@ -54,8 +54,9 @@ def test_mc_degrain_params() -> None:
     clip = core.std.BlankClip(format=vs.YUV420P8, width=160, height=120, length=5)
     denoised = mc_degrain(
         clip,
-        delta=1,
+        tr=2,
         thsad=(400, 300),
+        thsad2=(200, 150),
         limit=(2.0, 2.0),
         thscd=(400, 0.5),
         planes=[0],

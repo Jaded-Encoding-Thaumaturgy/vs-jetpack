@@ -126,7 +126,7 @@ denoise = [
     "vapoursynth-fmtconv>=31",
     # TODO: uncomment when manipmv is bumped and add it to the README
     # "vapoursynth-manipmv>=1.6.0",
-    "vapoursynth-mvutensils>=2",
+    "vapoursynth-mvutensils>=6",
     "vapoursynth-nlm-ispc>=3",
 ]
 dehalo = ["vsjetpack[denoise]"]
