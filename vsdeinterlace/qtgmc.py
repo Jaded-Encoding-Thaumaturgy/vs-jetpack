@@ -493,6 +493,7 @@ class QTempGaussMC(VSObject):
         *,
         tr: int = 2,
         thsad: int | tuple[int, int] = 640,
+        thsad2: int | tuple[int, int] | None = None,
         bobber: BobberLike = NNEDI3(nsize=1),
         noise_restore: float = 0,
         degrain_args: QTGMCArgs.Degrain | None = None,
@@ -505,6 +506,7 @@ class QTempGaussMC(VSObject):
         Args:
             tr: Temporal radius of the motion compensated binomial smooth.
             thsad: Thsad of the motion compensated binomial smooth.
+            thsad2: Thsad2 of the motion compensated binomial smooth for distant references.
             bobber: Bobber to use for initial spatial interpolation.
             noise_restore: How much noise to restore after this stage.
             degrain_args: Arguments passed to the binomial_degrain call.
@@ -520,6 +522,7 @@ class QTempGaussMC(VSObject):
 
         self.basic_tr = tr
         self.basic_thsad = thsad
+        self.basic_thsad2 = thsad2
         self.basic_bobber = (
             deepcopy(bobber) if isinstance(bobber, Bobber) else Bobber.ensure_obj(bobber, self.__class__)
         )
@@ -681,6 +684,7 @@ class QTempGaussMC(VSObject):
         *,
         tr: int = 1,
         thsad: int | tuple[int, int] = 256,
+        thsad2: int | tuple[int, int] | None = None,
         noise_restore: float = 0,
         degrain_args: QTGMCArgs.Degrain | None = None,
         mask_shimmer_args: QTGMCArgs.MaskShimmer | None = {"erosion_distance": 4},
@@ -691,6 +695,7 @@ class QTempGaussMC(VSObject):
         Args:
             tr: Temporal radius of the motion compensated smooth.
             thsad: Thsad of the motion compensated smooth.
+            thsad2: Thsad2 of the motion compensated smooth for distant references.
             noise_restore: How much noise to restore after this stage.
             degrain_args: Arguments passed to [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain].
             mask_shimmer_args: Arguments passed to the mask_shimmer call:
@@ -703,6 +708,7 @@ class QTempGaussMC(VSObject):
 
         self.final_tr = tr
         self.final_thsad = thsad
+        self.final_thsad2 = thsad2
         self.final_noise_restore = noise_restore
         self.final_degrain_args = fallback(degrain_args, QTGMCArgs.Degrain())
         self.final_mask_shimmer_args = fallback(mask_shimmer_args, QTGMCArgs.MaskShimmer())
@@ -800,6 +806,7 @@ class QTempGaussMC(VSObject):
             clip,
             tr=tr,
             thsad=self.basic_thsad,
+            thsad2=self.basic_thsad2,
             thscd=self.analyze_thscd,
             weights=BlurMatrix.BINOMIAL(radius=tr),
             **degrain_args,
@@ -1170,6 +1177,7 @@ class QTempGaussMC(VSObject):
                 self.basic_output,
                 tr=self.final_tr,
                 thsad=self.final_thsad,
+                thsad2=self.final_thsad2,
                 thscd=self.analyze_thscd,
                 **self.final_degrain_args,
             )
