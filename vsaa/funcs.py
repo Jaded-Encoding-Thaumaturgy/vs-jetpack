@@ -212,11 +212,7 @@ def based_aa(
             backend=aa_kwargs.pop("backend", EEDI3.__dataclass_fields__["backend"].default),
         )
 
-    if (
-        isinstance(antialiaser, EEDI3)
-        and antialiaser.sclip is None
-        and "sclip" not in aa_kwargs
-    ):
+    if isinstance(antialiaser, EEDI3) and antialiaser.sclip is None and "sclip" not in aa_kwargs:
         aa_kwargs["sclip"] = ss
 
     # Only uses mclip if
