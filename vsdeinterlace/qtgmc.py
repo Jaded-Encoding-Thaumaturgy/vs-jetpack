@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from contextlib import suppress
 from copy import deepcopy
 from enum import auto
 from math import comb
@@ -77,7 +76,7 @@ class QTGMCArgs:
 
     class Degrain(TypedDict, total=False):
         """
-        Arguments accepted by the internal `_binomial_degrain` method, calling
+        Arguments accepted by the internal `binomial_degrain` method, calling
         [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain] through
         [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] and
         [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match], or directly through
@@ -281,22 +280,20 @@ class _QTGMCBuilder:
 
         High-level overview:
             - ([QTempGaussMC.deinterlace][vsdeinterlace.QTempGaussMC.deinterlace]) Draft bobbed clip generation:
-                Begins with simple spatial interpolation to produce
-                [QTempGaussMC.draft][vsdeinterlace.QTempGaussMC.draft], which inherently contains severe temporal
-                instability known as bob shimmer.
+                Begins with simple spatial interpolation to produce the draft clip, which inherently contains severe
+                temporal instability known as bob shimmer.
             - ([QTempGaussMC.repair][vsdeinterlace.QTempGaussMC.repair]) Vertical spatial pre-filtering: Applies a
                 vertical binomial blur to filter out residual vertical artifacts.
             - Temporal binomial blurring: Applies a temporal binomial blur to smooth
-                [QTempGaussMC.draft][vsdeinterlace.QTempGaussMC.draft], removing the shimmer, which prevents
-                [MVTools][vsdenoise.mvtools.mvtools.MVTools] from falsely latching onto the shimmer as motion (though
-                this uncompensated blur introduces ghosting).
+                the draft clip, removing the shimmer, which prevents [MVTools][vsdenoise.mvtools.mvtools.MVTools] from
+                falsely latching onto the shimmer as motion (though this uncompensated blur introduces ghosting).
             - Shimmer masking: Uses a specialized masking process to eliminate the introduced ghosting while retaining
                 the shimmer removal.
             - Gaussian blurring post-processing: Applies Gaussian blurring to lower high SAD values caused by sharp
                 edges, ensuring edges are properly processed rather than skipped.
-            - Edge detail restoration: Conservatively restores essential edge detail from
-                [QTempGaussMC.draft][vsdeinterlace.QTempGaussMC.draft] back into the blurred clip via a limiting process
-                so [MVTools][vsdenoise.mvtools.mvtools.MVTools] retains the ability to track motion effectively.
+            - Edge detail restoration: Conservatively restores essential edge detail from the draft clip back into the
+                blurred clip via a limiting process so [MVTools][vsdenoise.mvtools.mvtools.MVTools] retains the ability
+                to track motion effectively.
             - Levels optimization:
                 Applies level adjustments to brighten dark regions and enhance contrast, enabling
                 [MVTools][vsdenoise.mvtools.mvtools.MVTools] to better track dark details, reducing downstream ghosting
@@ -315,9 +312,8 @@ class _QTGMCBuilder:
                 Defaults to (1.9, 0.9).
             limit: Tuple containing the 3-step limiting thresholds (8-bit) for the Gaussian blur post-processing:
 
-                   - First value: Maximum allowed delta between the temporally blurred clip and
-                   [QTempGaussMC.draft][vsdeinterlace.QTempGaussMC.draft]. Smaller values clamp
-                   [QTempGaussMC.draft][vsdeinterlace.QTempGaussMC.draft] closer to the temporally blurred clip.
+                   - First value: Maximum allowed delta between the temporally blurred clip and the draft clip. Smaller
+                    values clamp the draft clip closer to the temporally blurred clip.
                    - Second value: Tolerance threshold for the allowed difference between the clamped clip and the
                     Gaussian-blurred clip before hard clipping triggers. Larger values widen the allowed range for
                     smooth blending before hard clipping is enforced.
@@ -475,6 +471,18 @@ class _QTGMCBuilder:
 
         return self
 
+    @property
+    def _denoise_enabled(self) -> bool:
+        return self.denoise_full_denoise or self._noise_restore_enabled
+
+    @property
+    def _noise_restore_enabled(self) -> bool:
+        return bool(self.basic_noise_restore or self.final_noise_restore)
+
+    @property
+    def _stabilization_enabled(self) -> bool:
+        return self.denoise_stabilize is not False and self._noise_restore_enabled
+
     def basic(
         self,
         *,
@@ -493,15 +501,13 @@ class _QTGMCBuilder:
         Creates the basic output of the core algorithm. Intended to eliminate bob shimmer.
 
         High-level overview:
-            - High-quality bobbed clip generation: Begins with high-quality spatial interpolation to produce
-                [QTempGaussMC.bobbed][vsdeinterlace.QTempGaussMC.bobbed], which inherently contains severe temporal
-                instability known as bob shimmer.
+            - High-quality bobbed clip generation: Begins with high-quality spatial interpolation to produce the bobbed
+                clip, which inherently contains severe temporal instability known as bob shimmer.
             - ([QTempGaussMC.repair][vsdeinterlace.QTempGaussMC.repair]) Motion SAD masking: Generates a motion-vector
-                SAD mask to blend [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise] output over
-                [QTempGaussMC.bobbed][vsdeinterlace.QTempGaussMC.bobbed], protecting static/low-motion detail.
+                SAD mask to blend [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise] output over the bobbed
+                clip, protecting static/low-motion detail.
             - Motion-compensated temporal binomial smoothing: Applies a motion-compensated temporal binomial blur to
-                smooth [QTempGaussMC.bobbed][vsdeinterlace.QTempGaussMC.bobbed], removing the shimmer while avoiding
-                ghosting artifacts.
+                smooth the bobbed clip, removing the shimmer while avoiding ghosting artifacts.
             - Shimmer masking: Uses a specialized masking process to eliminate the introduced blurring while retaining
                 the shimmer removal.
             - Additional refinements: Passes the temporally smoothed clip through optional fine-tuning processes:
@@ -525,7 +531,7 @@ class _QTGMCBuilder:
                 to None.
             bobber: Bobber to use for spatial interpolation. Defaults to NNEDI3(nsize=1).
             noise_restore: Amount of noise to restore after this stage. Used to retain stable noise. Defaults to 0.
-            degrain_args: Additional arguments passed to the internal `_binomial_degrain` call. Defaults to None.
+            degrain_args: Additional arguments passed to the internal `binomial_degrain` call. Defaults to None.
             mask_args: Additional arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask]. Only used
                 for [QTempGaussMC.repair][vsdeinterlace.QTempGaussMC.repair]. Defaults to {"ml": 10}.
             mask_shimmer_args: Additional arguments passed to [mask_shimmer][vsdeinterlace.qtgmc.mask_shimmer]. Defaults
@@ -589,7 +595,7 @@ class _QTGMCBuilder:
             similarity: Temporal similarity of the error from frame to frame. Lower values make the result sharper.
                 Defaults to 0.5.
             enhance: Enhances detail found by `iterations` > 1. Higher values exaggerate detail more. Defaults to 0.5.
-            degrain_args: Additional arguments passed to the internal `_binomial_degrain` call. Defaults to None.
+            degrain_args: Additional arguments passed to the internal `binomial_degrain` call. Defaults to None.
         """
 
         self.source_match_tr = tr
@@ -615,6 +621,10 @@ class _QTGMCBuilder:
             self._source_match_bobber = deepcopy(value)
         else:
             self._source_match_bobber = Bobber.ensure_obj(value, self.__class__)
+
+    @property
+    def _source_match_enabled(self) -> bool:
+        return bool(self.source_match_iterations and self.basic_tr)
 
     def lossless(self, *, mode: LosslessMode = LosslessMode.NONE, anti_comb: bool = True) -> Self:
         """
@@ -681,6 +691,13 @@ class _QTGMCBuilder:
     def sharpen_strength(self, value: float | None) -> None:
         self._sharpen_strength = value
 
+    @property
+    def _sharpening_enabled(self) -> bool:
+        return bool(
+            (self.sharpen_strength or self.sharpen_thin)
+            and (self.back_blend_mode is self.BackBlendMode.NONE or self.back_blend_sigma)
+        )
+
     def back_blend(self, *, mode: BackBlendMode = BackBlendMode.BOTH, sigma: float = 1.4) -> Self:
         """
         Configures parameters for back-blending.
@@ -700,8 +717,8 @@ class _QTGMCBuilder:
                 sharpening more aggressively. Defaults to 1.4.
         """
 
-        self.backblend_mode = mode
-        self.backblend_sigma = sigma
+        self.back_blend_mode = mode
+        self.back_blend_sigma = sigma
 
         return self
 
@@ -722,9 +739,9 @@ class _QTGMCBuilder:
         High-level overview:
             - Sharpness limiting approaches:
                 - Spatial limiting: Clamps the sharpened clip's pixel values to the local spatial minimum and maximum
-                    bounds of [QTempGaussMC.bobbed][vsdeinterlace.QTempGaussMC.bobbed].
+                    bounds of the bobbed clip.
                 - Motion-compensated temporal limiting: Clamps the sharpened clip using motion-compensated reference
-                    frames from [QTempGaussMC.bobbed][vsdeinterlace.QTempGaussMC.bobbed].
+                    frames from the bobbed clip.
 
         Args:
             mode: How and when to apply limiting to [QTempGaussMC.sharpen][vsdeinterlace.QTempGaussMC.sharpen]. Defaults
@@ -755,6 +772,14 @@ class _QTGMCBuilder:
     @sharpen_limit_mode.setter
     def sharpen_limit_mode(self, value: SharpenLimitMode | None) -> None:
         self._sharpen_limit_mode = value
+
+    @property
+    def _sharpness_limiting_enabled(self) -> bool:
+        return bool(
+            self.sharpen_limit_mode is not self.SharpenLimitMode.NONE
+            and self.sharpen_limit_radius
+            and self._sharpening_enabled
+        )
 
     def final(
         self,
@@ -848,36 +873,506 @@ class _QTGMCBuilder:
 
         return self
 
-    @property
-    def _denoise_enabled(self) -> bool:
-        return self.denoise_full_denoise or self._noise_restore_enabled
 
-    @property
-    def _noise_restore_enabled(self) -> bool:
-        return bool(self.basic_noise_restore or self.final_noise_restore)
+class _QTGMCRun:
+    class Mode(CustomIntEnum):
+        DEINTERLACE = auto()
+        BOB = auto()
+        REPAIR = auto()
+        DESHIMMER = auto()
 
-    @property
-    def _stabilization_enabled(self) -> bool:
-        return self.denoise_stabilize is not False and self._noise_restore_enabled
+    def __init__(
+        self,
+        clip: vs.VideoNode,
+        tff: FieldBasedLike | bool | None,
+        mode: Mode,
+        settings: _QTGMCBuilder,
+        func: FuncExcept,
+    ) -> None:
+        self.clip = clip
+        self.tff = FieldBased.from_param_or_video(tff, self.clip, True, func)
+        self.mode = mode
+        self.settings = settings
 
-    @property
-    def _source_match_enabled(self) -> bool:
-        return bool(self.source_match_iterations and self.basic_tr)
+        if not self.tff.is_inter and self.mode is not self.Mode.DESHIMMER:
+            raise UnsupportedFieldBasedError("This method is incompatible with progressive video!", func)
 
-    @property
-    def _sharpening_enabled(self) -> bool:
-        return bool(
-            (self.sharpen_strength or self.sharpen_thin)
-            and (self.backblend_mode == self.BackBlendMode.NONE or self.backblend_sigma)
+    @cachedproperty
+    def is_deinterlace(self) -> bool:
+        return self.tff.is_inter and not self.is_repair
+
+    @cachedproperty
+    def is_repair(self) -> bool:
+        return self.mode is self.Mode.REPAIR
+
+    @cachedproperty
+    def required_analyze_tr(self) -> int:
+        return max(
+            self.settings.analyze_force_tr,
+            self.settings.denoise_tr if self.settings.denoise_mc_denoise and self.settings._denoise_enabled else 0,
+            self.settings._stabilization_enabled,
+            self.settings.basic_tr,
+            self.repair_mask_enabled,
+            self.settings.source_match_tr
+            if self.settings.source_match_iterations > 1 and self.settings._source_match_enabled
+            else 0,
+            self.settings.sharpen_limit_radius
+            if self.settings.sharpen_limit_mode.is_temporal and self.settings._sharpness_limiting_enabled
+            else 0,
+            self.settings.final_tr,
+            bool(self.motion_blur_level),
         )
 
-    @property
-    def _sharpness_limiting_enabled(self) -> bool:
-        return bool(
-            self._sharpening_enabled
-            and self.sharpen_limit_mode != self.SharpenLimitMode.NONE
-            and self.sharpen_limit_radius
+    @cachedproperty
+    def repair_mask_enabled(self) -> bool:
+        return bool(self.is_repair and self.settings.basic_mask_args.get("ml", 0))
+
+    @cachedproperty
+    def motion_blur_level(self) -> float:
+        angle_in, angle_out = self.settings.motion_blur_shutter_angle
+
+        return (angle_out * self.motion_blur_fps_divisor - angle_in) * 100 / 360
+
+    @cachedproperty
+    def motion_blur_fps_divisor(self) -> int:
+        return 1 if self.mode is self.Mode.BOB else self.settings.motion_blur_fps_divisor
+
+    def interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
+        if self.tff.is_inter:
+            clip = bobber.bob(clip, tff=self.tff)
+
+        return clip
+
+    def binomial_degrain(self, clip: vs.VideoNode, tr: int, **degrain_args: Any) -> vs.VideoNode:
+        if not tr:
+            return clip
+
+        return self.mv.degrain(
+            clip,
+            tr=tr,
+            thsad=self.settings.basic_thsad,
+            thsad2=self.settings.basic_thsad2,
+            thscd=self.settings.analyze_thscd,
+            weights=BlurMatrix.BINOMIAL(radius=tr),
+            **degrain_args,
         )
+
+    def apply_prefilter(self) -> None:
+        if not (self.required_analyze_tr or self.settings._denoise_enabled):
+            return
+
+        self.draft = Catrom().bob(self.clip, tff=self.tff) if self.is_deinterlace else self.clip
+
+        if not self.required_analyze_tr or self.settings.analyze_vectors:
+            return
+
+        if self.is_repair:
+            search = BlurMatrix.BINOMIAL()(self.draft, mode=ConvMode.VERTICAL, func=self.apply_prefilter)
+        else:
+            search = self.draft
+
+        if self.settings.prefilter_tr:
+            smoothed = BlurMatrix.BINOMIAL(self.settings.prefilter_tr, mode=ConvMode.TEMPORAL)(
+                sc_detect(search, self.settings.prefilter_sc_threshold), scenechange=True, func=self.apply_prefilter
+            )
+            smoothed = mask_shimmer(
+                smoothed, search, **self.settings.prefilter_mask_shimmer_args, func=self.apply_prefilter
+            )
+        else:
+            smoothed = search
+
+        gauss_sigma, blend_weight = self.settings.prefilter_strength
+        lim1, lim2, lim3 = [scale_delta(thr, 8, self.clip) for thr in self.settings.prefilter_limit]
+        apply_blur = bool(gauss_sigma and blend_weight)
+
+        blurred = gauss_blur(smoothed, gauss_sigma) if apply_blur else smoothed
+
+        if apply_blur or (self.settings.prefilter_tr and lim1 and (lim2 or lim3)):
+            blurred = norm_expr(
+                [blurred, smoothed, search],
+                "y x y - {weight} * + BLUR! z y {lim1} - y {lim1} + clamp TWEAK! "
+                "BLUR@ {lim2} + TWEAK@ < BLUR@ {lim3} + BLUR@ {lim2} - TWEAK@ > BLUR@ {lim3} - "
+                "TWEAK@ BLUR@ TWEAK@ - {bias} * + ? ?",
+                weight=blend_weight,
+                lim1=lim1,
+                lim2=lim2,
+                lim3=lim3,
+                bias=self.settings.prefilter_bias,
+                func=self.apply_prefilter,
+            )
+
+        self.prefilter_output = prefilter_to_full_range(
+            blurred, func=self.apply_prefilter, **self.settings.prefilter_range_expansion_args
+        )
+
+    def apply_analyze(self) -> None:
+        if not self.required_analyze_tr:
+            return
+
+        blksize = self.settings.analyze_blksize
+        if not self.settings.analyze_vectors:
+            preset = {**self.settings.analyze_preset, "search_clip": self.prefilter_output}
+
+        self.mv = MVTools(self.draft, vectors=self.settings.analyze_vectors, **preset)
+
+        if not self.settings.analyze_vectors:
+            self.mv.analyze(tr=self.required_analyze_tr, blksize=blksize, overlap_div=self.settings.analyze_overlap)
+
+            for _ in range(self.settings.analyze_refine):
+                blksize = refine_blksize(blksize)
+                self.mv.recalculate(
+                    thsad=self.settings.analyze_thsad_recalc,
+                    blksize=blksize,
+                    overlap_div=self.settings.analyze_overlap,
+                )
+
+    def apply_denoise(self) -> None:
+        self.denoise_output = self.clip
+
+        if not self.settings._denoise_enabled:
+            return
+
+        if self.settings.denoise_mc_denoise and self.settings.denoise_tr:
+            denoised = self.mv.compensate(
+                tr=self.settings.denoise_tr,
+                thscd=self.settings.analyze_thscd,
+                temporal_func=lambda clip: self.settings.denoise_func(clip, tr=self.settings.denoise_tr),
+                **self.settings.denoise_func_comp_args,
+            )
+        else:
+            denoised = self.settings.denoise_func(self.draft, tr=self.settings.denoise_tr)
+
+        if self.is_deinterlace:
+            denoised = reinterlace(denoised, self.tff, self.apply_denoise)
+
+        if self.settings.denoise_full_denoise:
+            self.denoise_output = denoised
+
+        if not self.settings._noise_restore_enabled:
+            return
+
+        self.noise = self.clip.std.MakeDiff(denoised)
+
+        if self.is_deinterlace:
+            match self.settings.denoise_deint:
+                case self.settings.NoiseDeintMode.WEAVE:
+                    new_noise = self.noise.std.SeparateFields(self.tff.is_tff).std.DoubleWeave(self.tff.is_tff)
+                case self.settings.NoiseDeintMode.BOB:
+                    new_noise = Catrom().bob(self.noise, tff=self.tff)
+                case self.settings.NoiseDeintMode.GENERATE:
+                    noise_source = self.noise.std.SeparateFields(self.tff.is_tff)
+
+                    noise_max = Morpho.expand(noise_source, sw=2, sh=1, func=self.apply_denoise)
+                    noise_min = Morpho.inpand(noise_source, sw=2, sh=1, func=self.apply_denoise)
+
+                    gen_noise = Grainer.GAUSS(
+                        noise_source,
+                        ((0.5 * 255) / 3) ** 2,  # 3σ rule  # noqa: RUF003
+                        protect_edges=False,
+                        protect_neutral_chroma=False,
+                        neutral_out=True,
+                    )
+                    gen_noise = norm_expr(
+                        [noise_max, noise_min, gen_noise],
+                        "y x y - z neutral - range_size / 0.5 + * +",
+                        func=self.apply_denoise,
+                    )
+                    new_noise = reweave(noise_source, gen_noise, self.tff.field, self.apply_denoise)
+
+            self.noise = FieldBased.PROGRESSIVE.apply(new_noise)
+
+        if self.settings._stabilization_enabled:
+            noise_comp, _ = self.mv.compensate(
+                self.noise,
+                direction=MVDirection.BACKWARD,
+                tr=1,
+                thscd=self.settings.analyze_thscd,
+                interleave=False,
+                **self.settings.denoise_stabilize_comp_args,
+            )
+
+            self.noise = norm_expr(
+                [self.noise, *noise_comp],
+                "x neutral - abs y neutral - abs > x y ? dup x y + 2 / swap - {weight} * +",
+                weight=self.settings.denoise_stabilize,
+                func=self.apply_denoise,
+            )
+
+    def apply_basic(self) -> None:
+        if self.is_repair:
+            self.bob_input = reinterlace(self.denoise_output, self.tff, self.apply_basic)
+        else:
+            self.bob_input = self.denoise_output
+
+        self.bobbed = self.interpolate(self.bob_input, self.settings.basic_bobber)
+
+        if self.repair_mask_enabled:
+            mask = self.mv.mask(
+                direction=MVDirection.BACKWARD,
+                kind=MaskMode.SAD,
+                thscd=self.settings.analyze_thscd,
+                **self.settings.basic_mask_args,
+            )
+            self.bobbed = self.denoise_output.std.MaskedMerge(self.bobbed, mask)
+
+        smoothed = self.binomial_degrain(self.bobbed, self.settings.basic_tr, **self.settings.basic_degrain_args)
+
+        if self.settings.basic_tr:
+            smoothed = mask_shimmer(
+                smoothed, self.bobbed, **self.settings.basic_mask_shimmer_args, func=self.apply_basic
+            )
+
+        if self.settings._source_match_enabled:
+            smoothed = self.apply_source_match(smoothed)
+
+        if self.settings.lossless_mode is self.settings.LosslessMode.PRESHARPEN:
+            smoothed = self.apply_lossless(smoothed)
+
+        if self.settings._sharpening_enabled:
+            resharp = self.apply_sharpen(smoothed)
+
+            if self.settings._sharpness_limiting_enabled and self.settings.sharpen_limit_mode.is_presmooth:
+                if self.settings.back_blend_mode in (
+                    self.settings.BackBlendMode.PRELIMIT,
+                    self.settings.BackBlendMode.BOTH,
+                ):
+                    resharp = self.apply_back_blend(resharp, smoothed)
+
+                resharp = self.apply_sharpen_limit(resharp)
+
+                if self.settings.back_blend_mode in (
+                    self.settings.BackBlendMode.POSTLIMIT,
+                    self.settings.BackBlendMode.BOTH,
+                ):
+                    resharp = self.apply_back_blend(resharp, smoothed)
+            elif self.settings.back_blend_mode is not self.settings.BackBlendMode.NONE:
+                resharp = self.apply_back_blend(resharp, smoothed)
+        else:
+            resharp = smoothed
+
+        self.basic_output = self.apply_noise_restore(resharp, self.settings.basic_noise_restore)
+
+    def apply_source_match(self, clip: vs.VideoNode) -> vs.VideoNode:
+        def error_adjustment(ref: vs.VideoNode, clip: vs.VideoNode, tr: int) -> vs.VideoNode:
+            if not tr:
+                return ref
+
+            tr_f = 2 * tr - 1
+            tr_s = 2**tr_f
+            binomial_coeff = comb(tr_f, tr)
+            error_adj = tr_s / (binomial_coeff + self.settings.source_match_similarity * (tr_s - binomial_coeff))
+
+            return norm_expr([ref, clip], "x x y - {error_adj} * +", error_adj=error_adj, func=error_adjustment)
+
+        if self.tff.is_inter:
+            clip = reinterlace(clip, self.tff, self.apply_source_match)
+
+        adjusted = error_adjustment(self.bob_input, clip, self.settings.basic_tr)
+        new_bobbed = self.interpolate(adjusted, self.settings.basic_bobber)
+        matched = self.binomial_degrain(new_bobbed, self.settings.basic_tr, **self.settings.basic_degrain_args)
+
+        if self.settings.source_match_iterations > 1:
+            if self.settings.source_match_enhance:
+                matched = unsharpen(
+                    matched,
+                    self.settings.source_match_enhance,
+                    BlurMatrix.BINOMIAL(),
+                    func=self.apply_source_match,
+                )
+
+            clip = reinterlace(matched, self.tff, self.apply_source_match) if self.tff.is_inter else matched
+
+            diff = self.bob_input.std.MakeDiff(clip)
+            refine_bobbed = self.interpolate(diff, self.settings.source_match_bobber)
+            refine_matched = self.binomial_degrain(
+                refine_bobbed, self.settings.source_match_tr, **self.settings.source_match_degrain_args
+            )
+
+            if self.settings.source_match_iterations > 2:
+                refine_adjusted = error_adjustment(refine_bobbed, refine_matched, self.settings.source_match_tr)
+                refine_matched = self.binomial_degrain(
+                    refine_adjusted, self.settings.source_match_tr, **self.settings.source_match_degrain_args
+                )
+
+            return matched.std.MergeDiff(refine_matched)
+
+        return matched
+
+    def apply_lossless(self, clip: vs.VideoNode) -> vs.VideoNode:
+        if not self.tff.is_inter or clip is self.bobbed:
+            return clip
+
+        fields_src = self.denoise_output.std.SeparateFields(self.tff.is_tff)
+        if self.is_repair:
+            fields_src = fields_src.std.SelectEvery(4, (0, 3))
+        fields_flt = clip.std.SeparateFields(self.tff.is_tff).std.SelectEvery(4, (1, 2))
+
+        woven = reweave(fields_src, fields_flt, self.tff.field, self.apply_lossless)
+
+        if self.settings.lossless_anti_comb:
+            median_diff = median_blur(woven, mode=ConvMode.VERTICAL, func=self.apply_lossless).std.MakeDiff(woven)
+            fields_diff = median_diff.std.SeparateFields(self.tff.is_tff).std.SelectEvery(4, (1, 2))
+
+            cleaned_diff = norm_expr(
+                [median_blur(fields_diff, mode=ConvMode.VERTICAL, func=self.apply_lossless), fields_diff],
+                "x neutral - X! y neutral - Y! X@ Y@ xor neutral X@ abs Y@ abs < x y ? ?",
+                func=self.apply_lossless,
+            )
+            cleaned_diff = repair.Mode.MINMAX_SQUARE1(cleaned_diff, remove_grain.Mode.MINMAX_AROUND2(cleaned_diff))
+            woven = reweave(fields_src, fields_flt.std.MergeDiff(cleaned_diff), self.tff.field, self.apply_lossless)
+
+        return FieldBased.PROGRESSIVE.apply(woven)
+
+    def apply_sharpen(self, clip: vs.VideoNode) -> vs.VideoNode:
+        resharp = clip
+
+        if self.settings.sharpen_strength:
+            if self.settings.sharpen_offset is not False:
+                dark_offset, bright_offset = self.settings.sharpen_offset
+
+                source_min = Morpho.minimum(clip, coords=Coordinates.VERTICAL, func=self.apply_sharpen)
+                source_max = Morpho.maximum(clip, coords=Coordinates.VERTICAL, func=self.apply_sharpen)
+
+                resharp = norm_expr(
+                    [clip, source_min, source_max],
+                    "y z + 2 / AVG! AVG@ x > AVG@ {dark_offset} - AVG@ x < AVG@ {bright_offset} + x ? ?",
+                    dark_offset=scale_delta(dark_offset, 8, self.clip),
+                    bright_offset=scale_delta(bright_offset, 8, self.clip),
+                    func=self.apply_sharpen,
+                )
+
+            resharp = unsharpen(
+                clip,
+                self.settings.sharpen_strength,
+                BlurMatrix.BINOMIAL()(resharp, func=self.apply_sharpen),
+                func=self.apply_sharpen,
+            )
+
+        if self.settings.sharpen_thin:
+            median_diff = norm_expr(
+                [clip, median_blur(clip, mode=ConvMode.VERTICAL, func=self.apply_sharpen)],
+                "y x - {thin} * neutral +",
+                thin=self.settings.sharpen_thin,
+                func=self.apply_sharpen,
+            )
+            blurred_diff = BlurMatrix.BINOMIAL(mode=ConvMode.HORIZONTAL)(median_diff, func=self.apply_sharpen)
+
+            resharp = norm_expr(
+                [resharp, BlurMatrix.BINOMIAL()(blurred_diff, func=self.apply_sharpen), blurred_diff],
+                "y neutral - dup abs z neutral - abs > swap x + x ?",
+                func=self.apply_sharpen,
+            )
+
+        return resharp
+
+    def apply_back_blend(self, flt: vs.VideoNode, src: vs.VideoNode) -> vs.VideoNode:
+        return flt.std.MergeDiff(gauss_blur(src.std.MakeDiff(flt), self.settings.back_blend_sigma))
+
+    def apply_sharpen_limit(self, clip: vs.VideoNode) -> vs.VideoNode:
+        undershoot, overshoot = self.settings.sharpen_limit_clamp
+
+        if self.settings.sharpen_limit_mode.is_spatial:
+            if self.settings.sharpen_limit_radius == 1 and undershoot == overshoot == 0:
+                clip = repair.Mode.MINMAX_SQUARE1(clip, self.bobbed)
+            else:
+                inpand = Morpho.minimum(
+                    self.bobbed, iterations=self.settings.sharpen_limit_radius, func=self.apply_sharpen_limit
+                )
+                expand = Morpho.maximum(
+                    self.bobbed,
+                    iterations=self.settings.sharpen_limit_radius,
+                    func=self.apply_sharpen_limit,
+                )
+                clip = norm_expr(
+                    [clip, inpand, expand],
+                    "x y {undershoot} - z {overshoot} + clamp",
+                    undershoot=scale_delta(undershoot, 8, self.clip),
+                    overshoot=scale_delta(overshoot, 8, self.clip),
+                    func=self.apply_sharpen_limit,
+                )
+        elif self.settings.sharpen_limit_mode.is_temporal:
+            clip = mc_clamp(
+                clip,
+                self.bobbed,
+                self.mv,
+                (undershoot, overshoot),
+                self.apply_sharpen_limit,
+                tr=self.settings.sharpen_limit_radius,
+                thscd=self.settings.analyze_thscd,
+                **self.settings.sharpen_limit_comp_args,
+            )
+
+        return clip
+
+    def apply_noise_restore(self, clip: vs.VideoNode, restore: float) -> vs.VideoNode:
+        if restore:
+            clip = norm_expr(
+                [clip, self.noise], "x y neutral - {restore} * +", restore=restore, func=self.apply_noise_restore
+            )
+
+        return clip
+
+    def apply_final(self) -> None:
+        if self.settings.final_tr:
+            smoothed = self.mv.degrain(
+                self.basic_output,
+                tr=self.settings.final_tr,
+                thsad=self.settings.final_thsad,
+                thsad2=self.settings.final_thsad2,
+                thscd=self.settings.analyze_thscd,
+                **self.settings.final_degrain_args,
+            )
+        else:
+            smoothed = self.basic_output
+
+        if smoothed is not self.bobbed:
+            smoothed = mask_shimmer(
+                smoothed, self.bobbed, **self.settings.final_mask_shimmer_args, func=self.apply_final
+            )
+
+        if self.settings._sharpness_limiting_enabled and self.settings.sharpen_limit_mode.is_postsmooth:
+            smoothed = self.apply_sharpen_limit(smoothed)
+
+        if self.settings.lossless_mode is self.settings.LosslessMode.POSTSMOOTH:
+            smoothed = self.apply_lossless(smoothed)
+
+        self.final_output = self.apply_noise_restore(smoothed, self.settings.final_noise_restore)
+
+    def apply_motion_blur(self) -> None:
+        if self.motion_blur_level:
+            blurred = self.mv.flow_blur(
+                self.final_output,
+                blur=self.motion_blur_level,
+                thscd=self.settings.analyze_thscd,
+                **self.settings.motion_blur_blur_args,
+            )
+
+            if self.settings.motion_blur_mask_args.get("ml", 0):
+                mask = self.mv.mask(
+                    direction=MVDirection.BACKWARD,
+                    kind=MaskMode.VECTOR_LENGTH,
+                    thscd=self.settings.analyze_thscd,
+                    **self.settings.motion_blur_mask_args,
+                )
+
+                blurred = self.final_output.std.MaskedMerge(blurred, mask)
+        else:
+            blurred = self.final_output
+
+        if self.motion_blur_fps_divisor > 1:
+            blurred = blurred[:: self.motion_blur_fps_divisor]
+
+        self.motion_blur_output = blurred
+
+    def run(self) -> vs.VideoNode:
+        self.apply_prefilter()
+        self.apply_analyze()
+        self.apply_denoise()
+        self.apply_basic()
+        self.apply_final()
+        self.apply_motion_blur()
+
+        return self.motion_blur_output
 
 
 class QTempGaussMC(_QTGMCBuilder, VSObject):
@@ -891,548 +1386,7 @@ class QTempGaussMC(_QTGMCBuilder, VSObject):
     Originally based on TempGaussMC by Didée.
 
     Basic usage: [JET guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
-
-    Alternate documentation reference: [AviSynth documentation](http://avisynth.nl/index.php/QTGMC)
     """
-
-    func: FuncExcept
-    """Processing method in use."""
-
-    mv: MVTools
-    """
-    [MVTools][vsdenoise.mvtools.mvtools.MVTools] instance used during processing.
-
-    Only available after processing a clip that requires motion analysis.
-    """
-
-    tff: FieldBased
-    """Field order used during processing."""
-
-    clip: vs.VideoNode
-    """Clip to process."""
-
-    draft: vs.VideoNode
-    """
-    Draft processed clip, used as a base for [QTempGaussMC.prefilter][vsdeinterlace.QTempGaussMC.prefilter] and
-    [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise].
-
-    Only available after processing a clip that requires motion-vector processing or denoising.
-    """
-
-    bob_input: vs.VideoNode
-    """
-    Prepared input clip for high-quality interpolation. Used as a base for the internal `_interpolate` method and as a
-    reference for [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match].
-    """
-
-    bobbed: vs.VideoNode
-    """
-    High-quality bobbed clip, acting as a spatial interpolation base for
-    [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] and
-    [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match].
-    """
-
-    noise: vs.VideoNode
-    """
-    Noise extracted by [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise].
-
-    Only available after processing a clip that requires noise restoration.
-    """
-
-    prefilter_output: vs.VideoNode
-    """
-    Output of [QTempGaussMC.prefilter][vsdeinterlace.QTempGaussMC.prefilter].
-
-    Only available after processing a clip that requires internally generated motion vectors.
-    """
-
-    denoise_output: vs.VideoNode
-    """Output of [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise]."""
-
-    basic_output: vs.VideoNode
-    """Output of [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic]."""
-
-    final_output: vs.VideoNode
-    """Output of [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final]."""
-
-    motion_blur_output: vs.VideoNode
-    """Output of [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur]."""
-
-    @property
-    def _is_deinterlace(self) -> bool:
-        return self.tff.is_inter and not self._is_repair
-
-    @property
-    def _is_repair(self) -> bool:
-        return self.func == self.repair
-
-    @property
-    def _required_analyze_tr(self) -> int:
-        return max(
-            self.analyze_force_tr,
-            self.denoise_tr if self.denoise_mc_denoise and self._denoise_enabled else 0,
-            self._stabilization_enabled,
-            self.basic_tr,
-            self._repair_mask_enabled,
-            self.source_match_tr if self.source_match_iterations > 1 and self._source_match_enabled else 0,
-            self.sharpen_limit_radius
-            if self.sharpen_limit_mode.is_temporal and self._sharpness_limiting_enabled
-            else 0,
-            self.final_tr,
-            bool(self._motion_blur_level),
-        )
-
-    @property
-    def _repair_mask_enabled(self) -> bool:
-        return bool(self._is_repair and self.basic_mask_args.get("ml", 0))
-
-    @property
-    def _motion_blur_level(self) -> float:
-        angle_in, angle_out = self.motion_blur_shutter_angle
-
-        return (angle_out * self._motion_blur_fps_divisor - angle_in) * 100 / 360
-
-    @property
-    def _motion_blur_fps_divisor(self) -> int:
-        return 1 if self.func == self.bob else self.motion_blur_fps_divisor
-
-    def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
-        if self.tff.is_inter:
-            clip = bobber.bob(clip, tff=self.tff)
-
-        return clip
-
-    def _binomial_degrain(self, clip: vs.VideoNode, tr: int, **degrain_args: Any) -> vs.VideoNode:
-        if not tr:
-            return clip
-
-        return self.mv.degrain(
-            clip,
-            tr=tr,
-            thsad=self.basic_thsad,
-            thsad2=self.basic_thsad2,
-            thscd=self.analyze_thscd,
-            weights=BlurMatrix.BINOMIAL(radius=tr),
-            **degrain_args,
-        )
-
-    def _apply_prefilter(self) -> None:
-        analyze_tr = self._required_analyze_tr
-
-        if not (analyze_tr or self._denoise_enabled):
-            return
-
-        self.draft = Catrom().bob(self.clip, tff=self.tff) if self._is_deinterlace else self.clip
-
-        if not analyze_tr or self.analyze_vectors:
-            return
-
-        if self._is_repair:
-            search = BlurMatrix.BINOMIAL()(self.draft, mode=ConvMode.VERTICAL, func=self._apply_prefilter)
-        else:
-            search = self.draft
-
-        if self.prefilter_tr:
-            smoothed = BlurMatrix.BINOMIAL(self.prefilter_tr, mode=ConvMode.TEMPORAL)(
-                sc_detect(search, self.prefilter_sc_threshold), scenechange=True, func=self._apply_prefilter
-            )
-            smoothed = mask_shimmer(smoothed, search, **self.prefilter_mask_shimmer_args, func=self._apply_prefilter)
-        else:
-            smoothed = search
-
-        gauss_sigma, blend_weight = self.prefilter_strength
-        lim1, lim2, lim3 = [scale_delta(thr, 8, self.clip) for thr in self.prefilter_limit]
-        apply_blur = bool(gauss_sigma and blend_weight)
-
-        blurred = gauss_blur(smoothed, gauss_sigma) if apply_blur else smoothed
-
-        if apply_blur or (self.prefilter_tr and lim1 and (lim2 or lim3)):
-            blurred = norm_expr(
-                [blurred, smoothed, search],
-                "y x y - {weight} * + BLUR! z y {lim1} - y {lim1} + clamp TWEAK! "
-                "BLUR@ {lim2} + TWEAK@ < BLUR@ {lim3} + BLUR@ {lim2} - TWEAK@ > BLUR@ {lim3} - "
-                "TWEAK@ BLUR@ TWEAK@ - {bias} * + ? ?",
-                weight=blend_weight,
-                lim1=lim1,
-                lim2=lim2,
-                lim3=lim3,
-                bias=self.prefilter_bias,
-                func=self._apply_prefilter,
-            )
-
-        self.prefilter_output = prefilter_to_full_range(
-            blurred, func=self._apply_prefilter, **self.prefilter_range_expansion_args
-        )
-
-    def _apply_analyze(self) -> None:
-        tr = self._required_analyze_tr
-
-        if not tr:
-            return
-
-        blksize = self.analyze_blksize
-        if not self.analyze_vectors:
-            preset = {**self.analyze_preset, "search_clip": self.prefilter_output}
-
-        self.mv = MVTools(self.draft, vectors=self.analyze_vectors, **preset)
-
-        if not self.analyze_vectors:
-            self.mv.analyze(tr=tr, blksize=blksize, overlap_div=self.analyze_overlap)
-
-            for _ in range(self.analyze_refine):
-                blksize = refine_blksize(blksize)
-                self.mv.recalculate(thsad=self.analyze_thsad_recalc, blksize=blksize, overlap_div=self.analyze_overlap)
-
-    def _apply_denoise(self) -> None:
-        self.denoise_output = self.clip
-
-        if not self._denoise_enabled:
-            return
-
-        if self.denoise_mc_denoise and self.denoise_tr:
-            denoised = self.mv.compensate(
-                tr=self.denoise_tr,
-                thscd=self.analyze_thscd,
-                temporal_func=lambda clip: self.denoise_func(clip, tr=self.denoise_tr),
-                **self.denoise_func_comp_args,
-            )
-        else:
-            denoised = self.denoise_func(self.draft, tr=self.denoise_tr)
-
-        if self._is_deinterlace:
-            denoised = reinterlace(denoised, self.tff, self._apply_denoise)
-
-        if self.denoise_full_denoise:
-            self.denoise_output = denoised
-
-        if not self._noise_restore_enabled:
-            return
-
-        self.noise = self.clip.std.MakeDiff(denoised)
-
-        if self._is_deinterlace:
-            match self.denoise_deint:
-                case self.NoiseDeintMode.WEAVE:
-                    new_noise = self.noise.std.SeparateFields(self.tff.is_tff).std.DoubleWeave(self.tff.is_tff)
-                case self.NoiseDeintMode.BOB:
-                    new_noise = Catrom().bob(self.noise, tff=self.tff)
-                case self.NoiseDeintMode.GENERATE:
-                    noise_source = self.noise.std.SeparateFields(self.tff.is_tff)
-
-                    noise_max = Morpho.expand(noise_source, sw=2, sh=1, func=self._apply_denoise)
-                    noise_min = Morpho.inpand(noise_source, sw=2, sh=1, func=self._apply_denoise)
-
-                    gen_noise = Grainer.GAUSS(
-                        noise_source,
-                        ((0.5 * 255) / 3) ** 2,  # 3σ rule  # noqa: RUF003
-                        protect_edges=False,
-                        protect_neutral_chroma=False,
-                        neutral_out=True,
-                    )
-                    gen_noise = norm_expr(
-                        [noise_max, noise_min, gen_noise],
-                        "y x y - z neutral - range_size / 0.5 + * +",
-                        func=self._apply_denoise,
-                    )
-                    new_noise = reweave(noise_source, gen_noise, self.tff.field, self._apply_denoise)
-
-            self.noise = FieldBased.PROGRESSIVE.apply(new_noise)
-
-        if self._stabilization_enabled:
-            noise_comp, _ = self.mv.compensate(
-                self.noise,
-                direction=MVDirection.BACKWARD,
-                tr=1,
-                thscd=self.analyze_thscd,
-                interleave=False,
-                **self.denoise_stabilize_comp_args,
-            )
-
-            self.noise = norm_expr(
-                [self.noise, *noise_comp],
-                "x neutral - abs y neutral - abs > x y ? dup x y + 2 / swap - {weight} * +",
-                weight=self.denoise_stabilize,
-                func=self._apply_denoise,
-            )
-
-    def _apply_basic(self) -> None:
-        if self._is_repair:
-            self.bob_input = reinterlace(self.denoise_output, self.tff, self._apply_basic)
-        else:
-            self.bob_input = self.denoise_output
-
-        self.bobbed = self._interpolate(self.bob_input, self.basic_bobber)
-
-        if self._repair_mask_enabled:
-            mask = self.mv.mask(
-                direction=MVDirection.BACKWARD,
-                kind=MaskMode.SAD,
-                thscd=self.analyze_thscd,
-                **self.basic_mask_args,
-            )
-            self.bobbed = self.denoise_output.std.MaskedMerge(self.bobbed, mask)
-
-        smoothed = self._binomial_degrain(self.bobbed, self.basic_tr, **self.basic_degrain_args)
-
-        if self.basic_tr:
-            smoothed = mask_shimmer(smoothed, self.bobbed, **self.basic_mask_shimmer_args, func=self._apply_basic)
-
-        if self._source_match_enabled:
-            smoothed = self._apply_source_match(smoothed)
-
-        if self.lossless_mode == self.LosslessMode.PRESHARPEN:
-            smoothed = self._apply_lossless(smoothed)
-
-        if self._sharpening_enabled:
-            resharp = self._apply_sharpen(smoothed)
-
-            if self._sharpness_limiting_enabled and self.sharpen_limit_mode.is_presmooth:
-                if self.backblend_mode in (self.BackBlendMode.PRELIMIT, self.BackBlendMode.BOTH):
-                    resharp = self._apply_back_blend(resharp, smoothed)
-
-                resharp = self._apply_sharpen_limit(resharp)
-
-                if self.backblend_mode in (self.BackBlendMode.POSTLIMIT, self.BackBlendMode.BOTH):
-                    resharp = self._apply_back_blend(resharp, smoothed)
-            elif self.backblend_mode != self.BackBlendMode.NONE:
-                resharp = self._apply_back_blend(resharp, smoothed)
-        else:
-            resharp = smoothed
-
-        self.basic_output = self._apply_noise_restore(resharp, self.basic_noise_restore)
-
-    def _apply_source_match(self, clip: vs.VideoNode) -> vs.VideoNode:
-        def _error_adjustment(ref: vs.VideoNode, clip: vs.VideoNode, tr: int) -> vs.VideoNode:
-            if not tr:
-                return ref
-
-            tr_f = 2 * tr - 1
-            tr_s = 2**tr_f
-            binomial_coeff = comb(tr_f, tr)
-            error_adj = tr_s / (binomial_coeff + self.source_match_similarity * (tr_s - binomial_coeff))
-
-            return norm_expr([ref, clip], "x x y - {error_adj} * +", error_adj=error_adj, func=_error_adjustment)
-
-        if self.tff.is_inter:
-            clip = reinterlace(clip, self.tff, self._apply_source_match)
-
-        adjusted = _error_adjustment(self.bob_input, clip, self.basic_tr)
-        new_bobbed = self._interpolate(adjusted, self.basic_bobber)
-        matched = self._binomial_degrain(new_bobbed, self.basic_tr, **self.basic_degrain_args)
-
-        if self.source_match_iterations > 1:
-            if self.source_match_enhance:
-                matched = unsharpen(
-                    matched, self.source_match_enhance, BlurMatrix.BINOMIAL(), func=self._apply_source_match
-                )
-
-            clip = reinterlace(matched, self.tff, self._apply_source_match) if self.tff.is_inter else matched
-
-            diff = self.bob_input.std.MakeDiff(clip)
-            refine_bobbed = self._interpolate(diff, self.source_match_bobber)
-            refine_matched = self._binomial_degrain(
-                refine_bobbed, self.source_match_tr, **self.source_match_degrain_args
-            )
-
-            if self.source_match_iterations > 2:
-                refine_adjusted = _error_adjustment(refine_bobbed, refine_matched, self.source_match_tr)
-                refine_matched = self._binomial_degrain(
-                    refine_adjusted, self.source_match_tr, **self.source_match_degrain_args
-                )
-
-            return matched.std.MergeDiff(refine_matched)
-
-        return matched
-
-    def _apply_lossless(self, clip: vs.VideoNode) -> vs.VideoNode:
-        if not self.tff.is_inter or clip is self.bobbed:
-            return clip
-
-        fields_src = self.denoise_output.std.SeparateFields(self.tff.is_tff)
-        if self._is_repair:
-            fields_src = fields_src.std.SelectEvery(4, (0, 3))
-        fields_flt = clip.std.SeparateFields(self.tff.is_tff).std.SelectEvery(4, (1, 2))
-
-        woven = reweave(fields_src, fields_flt, self.tff.field, self._apply_lossless)
-
-        if self.lossless_anti_comb:
-            median_diff = median_blur(woven, mode=ConvMode.VERTICAL, func=self._apply_lossless).std.MakeDiff(woven)
-            fields_diff = median_diff.std.SeparateFields(self.tff.is_tff).std.SelectEvery(4, (1, 2))
-
-            cleaned_diff = norm_expr(
-                [median_blur(fields_diff, mode=ConvMode.VERTICAL, func=self._apply_lossless), fields_diff],
-                "x neutral - X! y neutral - Y! X@ Y@ xor neutral X@ abs Y@ abs < x y ? ?",
-                func=self._apply_lossless,
-            )
-            cleaned_diff = repair.Mode.MINMAX_SQUARE1(cleaned_diff, remove_grain.Mode.MINMAX_AROUND2(cleaned_diff))
-            woven = reweave(fields_src, fields_flt.std.MergeDiff(cleaned_diff), self.tff.field, self._apply_lossless)
-
-        return FieldBased.PROGRESSIVE.apply(woven)
-
-    def _apply_sharpen(self, clip: vs.VideoNode) -> vs.VideoNode:
-        resharp = clip
-
-        if self.sharpen_strength:
-            if self.sharpen_offset is not False:
-                dark_offset, bright_offset = self.sharpen_offset
-
-                source_min = Morpho.minimum(clip, coords=Coordinates.VERTICAL, func=self._apply_sharpen)
-                source_max = Morpho.maximum(clip, coords=Coordinates.VERTICAL, func=self._apply_sharpen)
-
-                resharp = norm_expr(
-                    [clip, source_min, source_max],
-                    "y z + 2 / AVG! AVG@ x > AVG@ {dark_offset} - AVG@ x < AVG@ {bright_offset} + x ? ?",
-                    dark_offset=scale_delta(dark_offset, 8, self.clip),
-                    bright_offset=scale_delta(bright_offset, 8, self.clip),
-                    func=self._apply_sharpen,
-                )
-
-            resharp = unsharpen(
-                clip,
-                self.sharpen_strength,
-                BlurMatrix.BINOMIAL()(resharp, func=self._apply_sharpen),
-                func=self._apply_sharpen,
-            )
-
-        if self.sharpen_thin:
-            median_diff = norm_expr(
-                [clip, median_blur(clip, mode=ConvMode.VERTICAL, func=self._apply_sharpen)],
-                "y x - {thin} * neutral +",
-                thin=self.sharpen_thin,
-                func=self._apply_sharpen,
-            )
-            blurred_diff = BlurMatrix.BINOMIAL(mode=ConvMode.HORIZONTAL)(median_diff, func=self._apply_sharpen)
-
-            resharp = norm_expr(
-                [resharp, BlurMatrix.BINOMIAL()(blurred_diff, func=self._apply_sharpen), blurred_diff],
-                "y neutral - dup abs z neutral - abs > swap x + x ?",
-                func=self._apply_sharpen,
-            )
-
-        return resharp
-
-    def _apply_back_blend(self, flt: vs.VideoNode, src: vs.VideoNode) -> vs.VideoNode:
-        return flt.std.MergeDiff(gauss_blur(src.std.MakeDiff(flt), self.backblend_sigma))
-
-    def _apply_sharpen_limit(self, clip: vs.VideoNode) -> vs.VideoNode:
-        if not self._sharpness_limiting_enabled:
-            return clip
-
-        undershoot, overshoot = self.sharpen_limit_clamp
-
-        if self.sharpen_limit_mode.is_spatial:
-            if self.sharpen_limit_radius == 1 and undershoot == overshoot == 0:
-                clip = repair.Mode.MINMAX_SQUARE1(clip, self.bobbed)
-            else:
-                inpand = Morpho.minimum(
-                    self.bobbed, iterations=self.sharpen_limit_radius, func=self._apply_sharpen_limit
-                )
-                expand = Morpho.maximum(
-                    self.bobbed,
-                    iterations=self.sharpen_limit_radius,
-                    func=self._apply_sharpen_limit,
-                )
-                clip = norm_expr(
-                    [clip, inpand, expand],
-                    "x y {undershoot} - z {overshoot} + clamp",
-                    undershoot=scale_delta(undershoot, 8, self.clip),
-                    overshoot=scale_delta(overshoot, 8, self.clip),
-                    func=self._apply_sharpen_limit,
-                )
-        elif self.sharpen_limit_mode.is_temporal:
-            clip = mc_clamp(
-                clip,
-                self.bobbed,
-                self.mv,
-                (undershoot, overshoot),
-                self._apply_sharpen_limit,
-                tr=self.sharpen_limit_radius,
-                thscd=self.analyze_thscd,
-                **self.sharpen_limit_comp_args,
-            )
-
-        return clip
-
-    def _apply_noise_restore(self, clip: vs.VideoNode, restore: float) -> vs.VideoNode:
-        if restore:
-            clip = norm_expr(
-                [clip, self.noise], "x y neutral - {restore} * +", restore=restore, func=self._apply_noise_restore
-            )
-
-        return clip
-
-    def _apply_final(self) -> None:
-        if self.final_tr:
-            smoothed = self.mv.degrain(
-                self.basic_output,
-                tr=self.final_tr,
-                thsad=self.final_thsad,
-                thsad2=self.final_thsad2,
-                thscd=self.analyze_thscd,
-                **self.final_degrain_args,
-            )
-        else:
-            smoothed = self.basic_output
-
-        if smoothed is not self.bobbed:
-            smoothed = mask_shimmer(smoothed, self.bobbed, **self.final_mask_shimmer_args, func=self._apply_final)
-
-        if self._sharpness_limiting_enabled and self.sharpen_limit_mode.is_postsmooth:
-            smoothed = self._apply_sharpen_limit(smoothed)
-
-        if self.lossless_mode == self.LosslessMode.POSTSMOOTH:
-            smoothed = self._apply_lossless(smoothed)
-
-        self.final_output = self._apply_noise_restore(smoothed, self.final_noise_restore)
-
-    def _apply_motion_blur(self) -> None:
-        blur_level = self._motion_blur_level
-
-        if blur_level:
-            blurred = self.mv.flow_blur(
-                self.final_output,
-                blur=blur_level,
-                thscd=self.analyze_thscd,
-                **self.motion_blur_blur_args,
-            )
-
-            if self.motion_blur_mask_args.get("ml", 0):
-                mask = self.mv.mask(
-                    direction=MVDirection.BACKWARD,
-                    kind=MaskMode.VECTOR_LENGTH,
-                    thscd=self.analyze_thscd,
-                    **self.motion_blur_mask_args,
-                )
-
-                blurred = self.final_output.std.MaskedMerge(blurred, mask)
-        else:
-            blurred = self.final_output
-
-        if self._motion_blur_fps_divisor > 1:
-            blurred = blurred[:: self.motion_blur_fps_divisor]
-
-        self.motion_blur_output = blurred
-
-    def _run_process(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None, func: FuncExcept) -> vs.VideoNode:
-        for attr in QTempGaussMC.__annotations__:
-            with suppress(AttributeError):
-                delattr(self, attr)
-
-        self.clip = clip
-        self.tff = FieldBased.from_param_or_video(tff, self.clip, True, func)
-        self.func = func
-
-        if not self.tff.is_inter and func != self.deshimmer:
-            raise UnsupportedFieldBasedError("This method is incompatible with progressive video!", func)
-
-        self._apply_prefilter()
-        self._apply_analyze()
-        self._apply_denoise()
-        self._apply_basic()
-        self._apply_final()
-        self._apply_motion_blur()
-
-        return self.motion_blur_output
 
     def deinterlace(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
         """
@@ -1448,7 +1402,7 @@ class QTempGaussMC(_QTGMCBuilder, VSObject):
         Returns:
             Deinterlaced clip.
         """
-        return self._run_process(clip, tff, self.deinterlace)
+        return _QTGMCRun(clip, tff, _QTGMCRun.Mode.DEINTERLACE, self, self.deinterlace).run()
 
     def bob(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
         """
@@ -1464,7 +1418,7 @@ class QTempGaussMC(_QTGMCBuilder, VSObject):
         Returns:
             Bobbed clip.
         """
-        return self._run_process(clip, tff, self.bob)
+        return _QTGMCRun(clip, tff, _QTGMCRun.Mode.BOB, self, self.bob).run()
 
     def repair(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
         """
@@ -1479,7 +1433,7 @@ class QTempGaussMC(_QTGMCBuilder, VSObject):
         Returns:
             Repaired clip.
         """
-        return self._run_process(clip, tff, self.repair)
+        return _QTGMCRun(clip, tff, _QTGMCRun.Mode.REPAIR, self, self.repair).run()
 
     def deshimmer(self, clip: vs.VideoNode) -> vs.VideoNode:
         """
@@ -1493,7 +1447,7 @@ class QTempGaussMC(_QTGMCBuilder, VSObject):
         Returns:
             Deshimmered clip.
         """
-        return self._run_process(clip, FieldBased.PROGRESSIVE, self.deshimmer)
+        return _QTGMCRun(clip, FieldBased.PROGRESSIVE, _QTGMCRun.Mode.DESHIMMER, self, self.deshimmer).run()
 
 
 def mask_shimmer(
@@ -1517,12 +1471,15 @@ def mask_shimmer(
     Args:
         flt: Filtered clip to perform masking on.
         src: Source clip to restore from.
-        erosion_distance: Vertical radius for shimmer detection. Larger values capture more spread-out shimmer artifacts
-            on soft sources. Defaults to 4.
+        erosion_distance: Vertical radius for shimmer detection. Larger values capture more spread-out artifacts on soft
+            sources. Defaults to 4.
         over_dilation: Extra dilation passes for safety margins. Larger values shrink the mask boundary to avoid
             artifacts on blurry edges. Defaults to 0.
         func: Function returned for custom error handling. This should only be set by VS package developers. Defaults to
             None.
+
+    Returns:
+        Clip with only bob shimmer fixes kept.
     """
     func = func or mask_shimmer
 
@@ -1544,8 +1501,8 @@ def mask_shimmer(
 
         if ed_res:
             clip = inflate_op(clip, func=func)
-            if ed_res == 2:
-                clip = median_blur(clip, func=func)
+        if ed_res == 2:
+            clip = median_blur(clip, func=func)
 
         clip = shrink_op(clip, iterations=ed_neg, coords=Coordinates.VERTICAL, func=func)
 
