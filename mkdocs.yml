@@ -5,7 +5,7 @@ repo_url: https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack
 theme:
   direction: ltr
   language: en
-  name: material
+  name: materialx
   features:
     - content.tooltips
     - navigation.indexes
@@ -15,6 +15,7 @@ theme:
     - navigation.top
     - search.highlight
     - search.suggest
+  topbar_style: primary
   palette:
     - media: "(prefers-color-scheme)"
       toggle:
