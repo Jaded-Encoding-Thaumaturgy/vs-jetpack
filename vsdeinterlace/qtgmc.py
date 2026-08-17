@@ -20,6 +20,7 @@ from vsdenoise import (
     refine_blksize,
 )
 from vsexprtools import norm_expr
+from vsjetpack import deprecated
 from vskernels import Bobber, BobberLike, Catrom
 from vsmasktools import Coordinates, Morpho
 from vsrgtools import BlurMatrix, gauss_blur, median_blur, remove_grain, repair, unsharpen
@@ -170,7 +171,7 @@ class _QTGMCBuilder:
 
         BOTH = auto()
         """
-        Back-blending both before and after [QTempGaussMC.sharpen_limit][vsdeinterlace.QTempGaussMC.sharpen_limit].
+        Back-blending prior to and after [QTempGaussMC.sharpen_limit][vsdeinterlace.QTempGaussMC.sharpen_limit].
 
         Provides a balanced middle ground between `PRELIMIT` and `POSTLIMIT` dampening.
 
@@ -233,6 +234,28 @@ class _QTGMCBuilder:
         def is_postsmooth(self) -> bool:
             return self in (self.SPATIAL_POSTSMOOTH, self.TEMPORAL_POSTSMOOTH)
 
+    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
+    class SearchPostProcess(CustomIntEnum):
+        GAUSSBLUR = 0
+        GAUSSBLUR_EDGESOFTEN = 1
+
+    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
+    class NoiseProcessMode(CustomIntEnum):
+        IDENTIFY = 0
+        DENOISE = 1
+
+    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
+    class SourceMatchMode(CustomIntEnum):
+        NONE = 0
+        BASIC = 1
+        REFINED = 2
+        TWICE_REFINED = 3
+
+    @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
+    class SharpenMode(CustomIntEnum):
+        UNSHARP = 0
+        UNSHARP_MINMAX = 1
+
     def __init__(self, **kwargs: Any) -> None:
         """
         Args:
@@ -272,6 +295,7 @@ class _QTGMCBuilder:
         bias: float = 0.51,
         range_expansion_args: QTGMCArgs.PrefilterToFullRange | None = None,
         mask_shimmer_args: QTGMCArgs.MaskShimmer | None = None,
+        postprocess: SearchPostProcess | None = None,
     ) -> Self:
         """
         Configures parameters for the prefilter stage.
@@ -336,6 +360,9 @@ class _QTGMCBuilder:
         self.prefilter_bias = bias
         self.prefilter_range_expansion_args = fallback(range_expansion_args, QTGMCArgs.PrefilterToFullRange())
         self.prefilter_mask_shimmer_args = fallback(mask_shimmer_args, QTGMCArgs.MaskShimmer())
+
+        if postprocess is not None and not postprocess.value:  # TODO: remove
+            self.prefilter_limit = (0, 0, 0)
 
         return self
 
@@ -416,6 +443,7 @@ class _QTGMCBuilder:
         stabilize: float | Literal[False] = 0.4,
         func_comp_args: QTGMCArgs.Compensate | None = None,
         stabilize_comp_args: QTGMCArgs.Compensate | None = None,
+        mode: NoiseProcessMode | None = None,
     ) -> Self:
         """
         Configures parameters for the denoise stage.
@@ -468,6 +496,9 @@ class _QTGMCBuilder:
         self.denoise_stabilize = stabilize
         self.denoise_func_comp_args = fallback(func_comp_args, QTGMCArgs.Compensate())
         self.denoise_stabilize_comp_args = fallback(stabilize_comp_args, QTGMCArgs.Compensate())
+
+        if mode is not None:  # TODO: remove
+            self.denoise_full_denoise = bool(mode.value)
 
         return self
 
@@ -564,6 +595,7 @@ class _QTGMCBuilder:
         similarity: float = 0.5,
         enhance: float = 0.5,
         degrain_args: QTGMCArgs.Degrain | None = None,
+        mode: SourceMatchMode = SourceMatchMode.NONE,
     ) -> Self:
         """
         Configures parameters for source match processing.
@@ -608,6 +640,9 @@ class _QTGMCBuilder:
         self.source_match_similarity = similarity
         self.source_match_enhance = enhance
         self.source_match_degrain_args = fallback(degrain_args, QTGMCArgs.Degrain())
+
+        if mode is not None:  # TODO: remove
+            self.source_match_iterations = mode.value  # type: ignore
 
         return self
 
@@ -658,6 +693,7 @@ class _QTGMCBuilder:
         strength: float | None = None,
         offset: float | tuple[float, float] | Literal[False] = 1,
         thin: float = 0,
+        mode: SharpenMode | None = None,
     ) -> Self:
         """
         Configures parameters for sharpening.
@@ -683,6 +719,9 @@ class _QTGMCBuilder:
         self.sharpen_strength = strength
         self.sharpen_offset = offset is not False and normalize_seq(offset, 2)
         self.sharpen_thin = thin
+
+        if mode is not None and not mode.value:  # TODO: remove
+            self.sharpen_offset = False
 
         return self
 
@@ -1096,7 +1135,7 @@ class _QTGMCGraph(VSObject):
 
     @cachedproperty
     def repair_mask_enabled(self) -> bool:
-        return bool(self.mode is self.Mode.REPAIR and self.settings.basic_mask_args.get("ml", 0))
+        return bool(self.mode is self.Mode.REPAIR and self.settings.basic_mask_args.get("ml"))
 
     @cachedproperty
     def motion_blur_level(self) -> float:
@@ -1356,7 +1395,7 @@ class _QTGMCGraph(VSObject):
                 **self.settings.motion_blur_blur_args,
             )
 
-            if self.settings.motion_blur_mask_args.get("ml", 0):
+            if self.settings.motion_blur_mask_args.get("ml"):
                 mask = self.mv.mask(
                     direction=MVDirection.BACKWARD,
                     kind=MaskMode.VECTOR_LENGTH,
