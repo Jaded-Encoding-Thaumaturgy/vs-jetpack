@@ -81,6 +81,7 @@ class FlowArgs(TypedDict, total=False):
 
 class DegrainArgs(TypedDict, total=False):
     thsad: int | tuple[int, int] | None
+    thsad2: int | tuple[int, int] | None
     limit: int | tuple[int, int] | None
     thscd1: int | None
     thscd2: float | None

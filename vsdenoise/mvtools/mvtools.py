@@ -787,6 +787,7 @@ class MVTools(VSObject):
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         thsad: int | tuple[int, int] | None = None,
+        thsad2: int | tuple[int, int] | None = None,
         limit: float | tuple[float, float] | None = None,
         weights: Sequence[int] | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
@@ -808,6 +809,11 @@ class MVTools(VSObject):
             thsad: Defines the soft threshold of block sum absolute differences. Blocks with SAD above this threshold
                 have zero weight for averaging (denoising). Blocks with low SAD have highest weight. The remaining
                 weight is taken from pixels of source clip.
+                Applies to the nearest references (temporal distance 1);
+                more distant references interpolate towards `thsad2`.
+            thsad2: Defines the soft threshold for the furthest references (temporal distance radius).
+                Each reference at distance `d` in 1...radius uses a raised-cosine interpolation
+                between `thsad` (at d=1) and `thsad2` (at d=radius). Defaults to `thsad`.
             limit: Maximum allowed change in pixel values (8 bits scale).
             weights: Optional per-frame bias applied on top of the SAD-derived weights. Given in temporal order:
                 `[bw_radius, ..., bw_1, centre, fw_1, ..., fw_radius]` (exactly `2 * radius + 1` non-negative values).
@@ -848,6 +854,7 @@ class MVTools(VSObject):
 
         degrain_args = self.degrain_args | KwargsNotNone(
             thsad=thsad,
+            thsad2=thsad2,
             planes=planes_list,
             limit=limit_list,
             thscd1=thscd1,

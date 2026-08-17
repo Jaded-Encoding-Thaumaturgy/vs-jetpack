@@ -126,7 +126,7 @@ denoise = [
     "vapoursynth-fmtconv>=31",
     # TODO: uncomment when manipmv is bumped and add it to the README
     # "vapoursynth-manipmv>=1.6.0",
-    "vapoursynth-mvutensils>=2",
+    "vapoursynth-mvutensils>=6",
     "vapoursynth-nlm-ispc>=3",
 ]
 dehalo = ["vsjetpack[denoise]"]
@@ -153,7 +153,8 @@ nvidia = [
     "dfttest2[cufft,nvrtc]>=10",
     "vapoursynth-bm3dcuda>=2.16",
     "vapoursynth-bilateralgpu>=14",
-    "vapoursynth-mlrt-ort-cuda>=15.16.2",
+    "vapoursynth-mlrt-ort>=16.2",
+    "vapoursynth-mlrt-ort-cuda>=16.2",
     "vapoursynth-mlrt-trt>=15.16.1",
     "vapoursynth-mlrt-trt-rtx>=15.16.1",
     "vapoursynth-vszipcu>=1.2.0",
