@@ -53,12 +53,7 @@ class QTGMCArgs:
     """Namespace containing helper TypedDict definitions for various argument groups."""
 
     class MaskShimmer(TypedDict, total=False):
-        """
-        Arguments accepted by [mask_shimmer][vsdeinterlace.qtgmc.mask_shimmer] through
-        [QTempGaussMC.prefilter][vsdeinterlace.QTempGaussMC.prefilter],
-        [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] and
-        [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final].
-        """
+        """Arguments accepted by [mask_shimmer][vsdeinterlace.qtgmc.mask_shimmer]."""
 
         erosion_distance: int
         over_dilation: int
@@ -76,13 +71,7 @@ class QTGMCArgs:
         time: float | None
 
     class Degrain(TypedDict, total=False):
-        """
-        Arguments accepted by the internal `binomial_degrain` method, calling
-        [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain] through
-        [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] and
-        [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match], or directly through
-        [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final].
-        """
+        """Arguments accepted by the internal `binomial_degrain` method."""
 
         limit: float | tuple[float, float] | None
         planes: Planes
@@ -1450,10 +1439,10 @@ class QTempGaussMC(_QTGMCBuilder):
         self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, debug: bool = False
     ) -> vs.VideoNode | tuple[vs.VideoNode, _QTGMCGraph]:
         """
-        Deinterlace interlaced input. [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur] `fps_divisor`
-        is respected.
+        Deinterlace interlaced input.
 
         Interpolates missing fields to reconstruct progressive frames.
+        [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur] `fps_divisor` is respected.
 
         Args:
             clip: Clip to process.
@@ -1496,10 +1485,10 @@ class QTempGaussMC(_QTGMCBuilder):
         self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, debug: bool = False
     ) -> vs.VideoNode | tuple[vs.VideoNode, _QTGMCGraph]:
         """
-        Bob interlaced input. [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur] `fps_divisor` is
-        ignored.
+        Bob interlaced input.
 
         Interpolates missing fields to reconstruct progressive frames.
+        [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur] `fps_divisor` is ignored.
 
         Args:
             clip: Clip to process.
@@ -1603,8 +1592,7 @@ def mask_shimmer(
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
     """
-    Removes areas of difference between a temporally blurred clip and a reference clip that are not due to
-    bob shimmer by only allowing thin horizontal areas of difference.
+    Filters out differences unrelated to bob shimmer by isolating only thin horizontal areas.
 
     High-level overview:
         - Vertical morphological analysis: Extracts the difference between source and filtered clips, running
