@@ -1135,7 +1135,7 @@ class _QTGMCGraph(VSObject):
 
     @cachedproperty
     def repair_mask_enabled(self) -> bool:
-        return bool(self.mode is self.Mode.REPAIR and self.settings.basic_mask_args.get("ml"))
+        return bool(self.mode is self.Mode.REPAIR and self.settings.basic_mask_args.get("ml") != 0)
 
     @cachedproperty
     def motion_blur_level(self) -> float:
@@ -1395,7 +1395,7 @@ class _QTGMCGraph(VSObject):
                 **self.settings.motion_blur_blur_args,
             )
 
-            if self.settings.motion_blur_mask_args.get("ml"):
+            if self.settings.motion_blur_mask_args.get("ml") != 0:
                 mask = self.mv.mask(
                     direction=MVDirection.BACKWARD,
                     kind=MaskMode.VECTOR_LENGTH,
@@ -1457,12 +1457,12 @@ class QTempGaussMC(_QTGMCBuilder):
 
         Args:
             clip: Clip to process.
-            tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
+            tff: Field order (top-field-first). If `None`, inferred from the clip. Defaults to None.
             debug: Whether to return the internal `_QTGMCGraph` object. Defaults to False.
 
         Returns:
             The deinterlaced clip, or a tuple of (clip, graph) containing the deinterlaced clip and the internal
-            `_QTGMCGraph` object if debug is True
+            `_QTGMCGraph` object if debug is `True`
         """
 
         run = _QTGMCGraph(clip, tff, _QTGMCGraph.Mode.DEINTERLACE, self, self.deinterlace)
@@ -1503,12 +1503,12 @@ class QTempGaussMC(_QTGMCBuilder):
 
         Args:
             clip: Clip to process.
-            tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
+            tff: Field order (top-field-first). If `None`, inferred from the clip. Defaults to None.
             debug: Whether to return the internal `_QTGMCGraph` object. Defaults to False.
 
         Returns:
             The bobbed clip, or a tuple of (clip, graph) containing the bobbed clip and the internal `_QTGMCGraph`
-            object if debug is True
+            object if debug is `True`
         """
 
         run = _QTGMCGraph(clip, tff, _QTGMCGraph.Mode.BOB, self, self.bob)
@@ -1548,12 +1548,12 @@ class QTempGaussMC(_QTGMCBuilder):
 
         Args:
             clip: Clip to process.
-            tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
+            tff: Field order (top-field-first). If `None`, inferred from the clip. Defaults to None.
             debug: Whether to return the internal `_QTGMCGraph` object. Defaults to False.
 
         Returns:
             The repaired clip, or a tuple of (clip, graph) containing the repaired clip and the internal `_QTGMCGraph`
-            object if debug is True
+            object if debug is `True`
         """
 
         run = _QTGMCGraph(clip, tff, _QTGMCGraph.Mode.REPAIR, self, self.repair)
@@ -1584,7 +1584,7 @@ class QTempGaussMC(_QTGMCBuilder):
 
         Returns:
             The deshimmered clip, or a tuple of (clip, graph) containing the deshimmered clip and the internal
-            `_QTGMCGraph` object if debug is True
+            `_QTGMCGraph` object if debug is `True`
         """
 
         run = _QTGMCGraph(clip, FieldBased.PROGRESSIVE, _QTGMCGraph.Mode.DESHIMMER, self, self.deshimmer)
