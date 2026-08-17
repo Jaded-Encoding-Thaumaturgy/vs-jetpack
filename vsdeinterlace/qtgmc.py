@@ -2,7 +2,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 from enum import auto
 from math import comb
-from typing import Any, Literal, Protocol, Self, TypedDict
+from typing import Any, Literal, Protocol, Self, TypedDict, overload
 
 from jetpytools import CustomIntEnum, CustomValueError, FuncExcept, cachedproperty, fallback, normalize_seq, to_arr
 
@@ -884,6 +884,13 @@ class _QTGMCGraph(VSObject):
         REPAIR = auto()
         DESHIMMER = auto()
 
+    class _FrozenCache(dict[str, Any]):
+        def __contains__(self, key: object) -> bool:
+            return True
+
+        def __missing__(self, key: str) -> Any:
+            raise AttributeError(key)
+
     def __init__(
         self,
         clip: vs.VideoNode,
@@ -893,12 +900,21 @@ class _QTGMCGraph(VSObject):
         func: FuncExcept,
     ) -> None:
         self.clip = clip
-        self.tff = FieldBased.from_param_or_video(tff, self.clip, True, func)
+        self.tff = FieldBased.from_param_or_video(tff, clip, True, func)
         self.mode = mode
         self.settings = settings
+        self.func = func
 
-        if not self.tff.is_inter and self.mode is not self.Mode.DESHIMMER:
+        if not (self.tff.is_inter or mode is self.Mode.DESHIMMER):
             raise UnsupportedFieldBasedError("This mode is incompatible with progressive video!", func)
+
+    def freeze(self) -> Self:
+        cache = self.__dict__.setdefault(cachedproperty.cache_key, {})
+
+        if not isinstance(cache, self._FrozenCache):
+            self.__dict__[cachedproperty.cache_key] = self._FrozenCache(cache)
+
+        return self
 
     def interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
         if self.mode is not self.Mode.DESHIMMER:
@@ -1102,15 +1118,15 @@ class _QTGMCGraph(VSObject):
     @cachedproperty
     def prefilter(self) -> vs.VideoNode:
         if self.mode is self.Mode.REPAIR:
-            search = BlurMatrix.BINOMIAL()(self.draft, mode=ConvMode.VERTICAL, func=self.__class__)
+            search = BlurMatrix.BINOMIAL()(self.draft, mode=ConvMode.VERTICAL, func=self.func)
         else:
             search = self.draft
 
         if self.settings.prefilter_tr:
             smoothed = BlurMatrix.BINOMIAL(self.settings.prefilter_tr, mode=ConvMode.TEMPORAL)(
-                sc_detect(search, self.settings.prefilter_sc_threshold), scenechange=True, func=self.__class__
+                sc_detect(search, self.settings.prefilter_sc_threshold), scenechange=True, func=self.func
             )
-            smoothed = mask_shimmer(smoothed, search, **self.settings.prefilter_mask_shimmer_args, func=self.__class__)
+            smoothed = mask_shimmer(smoothed, search, **self.settings.prefilter_mask_shimmer_args, func=self.func)
         else:
             smoothed = search
 
@@ -1131,17 +1147,16 @@ class _QTGMCGraph(VSObject):
                 lim2=lim2,
                 lim3=lim3,
                 bias=self.settings.prefilter_bias,
-                func=self.__class__,
+                func=self.func,
             )
 
-        return prefilter_to_full_range(blurred, func=self.__class__, **self.settings.prefilter_range_expansion_args)
+        return prefilter_to_full_range(blurred, func=self.func, **self.settings.prefilter_range_expansion_args)
 
     @cachedproperty
     def mv(self) -> MVTools:
+        preset = dict(self.settings.analyze_preset)
         if not self.settings.analyze_vectors:
-            preset = {**self.settings.analyze_preset, "search_clip": self.prefilter}
-        else:
-            preset = self.settings.analyze_preset
+            preset.update(search_clip=self.prefilter)
 
         mv = MVTools(self.draft, vectors=self.settings.analyze_vectors, **preset)
 
@@ -1164,12 +1179,12 @@ class _QTGMCGraph(VSObject):
             bool(self.motion_blur_level),
         )
 
-        self.mv.analyze(tr=tr, blksize=self.settings.analyze_blksize, overlap_div=self.settings.analyze_overlap)
+        mv.analyze(tr=tr, blksize=self.settings.analyze_blksize, overlap_div=self.settings.analyze_overlap)
 
         blksize = self.settings.analyze_blksize
         for _ in range(self.settings.analyze_refine):
             blksize = refine_blksize(blksize)
-            self.mv.recalculate(
+            mv.recalculate(
                 thsad=self.settings.analyze_thsad_recalc, blksize=blksize, overlap_div=self.settings.analyze_overlap
             )
 
@@ -1188,7 +1203,7 @@ class _QTGMCGraph(VSObject):
             denoised = self.settings.denoise_func(self.draft, tr=self.settings.denoise_tr)
 
         if self.mode in (self.Mode.DEINTERLACE, self.Mode.BOB):
-            denoised = reinterlace(denoised, self.tff, self.__class__)
+            denoised = reinterlace(denoised, self.tff, self.func)
 
         return denoised
 
@@ -1209,8 +1224,8 @@ class _QTGMCGraph(VSObject):
                 case self.settings.NoiseDeintMode.GENERATE:
                     noise = noise.std.SeparateFields(self.tff.is_tff)
 
-                    noise_min = Morpho.inpand(noise, sw=2, sh=1, func=self.__class__)
-                    noise_max = Morpho.expand(noise, sw=2, sh=1, func=self.__class__)
+                    noise_min = Morpho.inpand(noise, sw=2, sh=1, func=self.func)
+                    noise_max = Morpho.expand(noise, sw=2, sh=1, func=self.func)
 
                     noise_gen = Grainer.GAUSS(
                         noise,
@@ -1222,9 +1237,9 @@ class _QTGMCGraph(VSObject):
                     noise_gen = norm_expr(
                         [noise_max, noise_min, noise_gen],
                         "y x y - z neutral - range_size / 0.5 + * +",
-                        func=self.__class__,
+                        func=self.func,
                     )
-                    noise = reweave(noise, noise_gen, self.tff.field, self.__class__)
+                    noise = reweave(noise, noise_gen, self.tff.field, self.func)
 
             noise = FieldBased.PROGRESSIVE.apply(noise)
 
@@ -1242,7 +1257,7 @@ class _QTGMCGraph(VSObject):
                 [noise, *noise_comp],
                 "x neutral - abs y neutral - abs > x y ? dup x y + 2 / swap - {weight} * +",
                 weight=self.settings.denoise_stabilize,
-                func=self.__class__,
+                func=self.func,
             )
 
         return noise
@@ -1250,7 +1265,7 @@ class _QTGMCGraph(VSObject):
     @cachedproperty
     def bob_input(self) -> vs.VideoNode:
         if self.mode is self.Mode.REPAIR:
-            return reinterlace(self.denoise, self.tff, self.__class__)
+            return reinterlace(self.denoise, self.tff, self.func)
 
         return self.denoise
 
@@ -1274,7 +1289,7 @@ class _QTGMCGraph(VSObject):
         smoothed = self.binomial_degrain(self.bobbed, self.settings.basic_tr, **self.settings.basic_degrain_args)
 
         if self.settings.basic_tr:
-            smoothed = mask_shimmer(smoothed, self.bobbed, **self.settings.basic_mask_shimmer_args, func=self.__class__)
+            smoothed = mask_shimmer(smoothed, self.bobbed, **self.settings.basic_mask_shimmer_args, func=self.func)
 
         if self.settings._source_match_enabled:
             smoothed = self.source_match(smoothed)
@@ -1321,7 +1336,7 @@ class _QTGMCGraph(VSObject):
             smoothed = self.basic
 
         if smoothed is not self.bobbed:
-            smoothed = mask_shimmer(smoothed, self.bobbed, **self.settings.final_mask_shimmer_args, func=self.__class__)
+            smoothed = mask_shimmer(smoothed, self.bobbed, **self.settings.final_mask_shimmer_args, func=self.func)
 
         if self.settings.sharpen_limit_mode.is_postsmooth and self.settings._sharpness_limiting_enabled:
             smoothed = self.sharpen_limit(smoothed)
@@ -1372,7 +1387,29 @@ class QTempGaussMC(_QTGMCBuilder):
     Usage Info: [JET guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
     """
 
-    def deinterlace(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
+    @overload
+    def deinterlace(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, debug: Literal[False] = False
+    ) -> vs.VideoNode: ...
+
+    @overload
+    def deinterlace(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, *, debug: Literal[True]
+    ) -> tuple[vs.VideoNode, _QTGMCGraph]: ...
+
+    @overload
+    def deinterlace(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None, debug: Literal[True]
+    ) -> tuple[vs.VideoNode, _QTGMCGraph]: ...
+
+    @overload
+    def deinterlace(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, debug: bool = ...
+    ) -> vs.VideoNode | tuple[vs.VideoNode, _QTGMCGraph]: ...
+
+    def deinterlace(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, debug: bool = False
+    ) -> vs.VideoNode | tuple[vs.VideoNode, _QTGMCGraph]:
         """
         Deinterlace interlaced input. [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur] `fps_divisor`
         is respected.
@@ -1382,13 +1419,43 @@ class QTempGaussMC(_QTGMCBuilder):
         Args:
             clip: Clip to process.
             tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
+            debug: Whether to return the internal `_QTGMCGraph` object. Defaults to False.
 
         Returns:
-            Deinterlaced clip.
+            The deinterlaced clip, or a tuple of (clip, graph) containing the deinterlaced clip and the internal
+            `_QTGMCGraph` object if debug is True
         """
-        return _QTGMCGraph(clip, tff, _QTGMCGraph.Mode.DEINTERLACE, self, self.deinterlace).motion_blur
 
-    def bob(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
+        run = _QTGMCGraph(clip, tff, _QTGMCGraph.Mode.DEINTERLACE, self, self.deinterlace)
+
+        if debug:
+            return run.motion_blur, run.freeze()
+
+        return run.motion_blur
+
+    @overload
+    def bob(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, debug: Literal[False] = False
+    ) -> vs.VideoNode: ...
+
+    @overload
+    def bob(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, *, debug: Literal[True]
+    ) -> tuple[vs.VideoNode, _QTGMCGraph]: ...
+
+    @overload
+    def bob(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None, debug: Literal[True]
+    ) -> tuple[vs.VideoNode, _QTGMCGraph]: ...
+
+    @overload
+    def bob(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, debug: bool = ...
+    ) -> vs.VideoNode | tuple[vs.VideoNode, _QTGMCGraph]: ...
+
+    def bob(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, debug: bool = False
+    ) -> vs.VideoNode | tuple[vs.VideoNode, _QTGMCGraph]:
         """
         Bob interlaced input. [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur] `fps_divisor` is
         ignored.
@@ -1398,13 +1465,43 @@ class QTempGaussMC(_QTGMCBuilder):
         Args:
             clip: Clip to process.
             tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
+            debug: Whether to return the internal `_QTGMCGraph` object. Defaults to False.
 
         Returns:
-            Bobbed clip.
+            The bobbed clip, or a tuple of (clip, graph) containing the bobbed clip and the internal `_QTGMCGraph`
+            object if debug is True
         """
-        return _QTGMCGraph(clip, tff, _QTGMCGraph.Mode.BOB, self, self.bob).motion_blur
 
-    def repair(self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None) -> vs.VideoNode:
+        run = _QTGMCGraph(clip, tff, _QTGMCGraph.Mode.BOB, self, self.bob)
+
+        if debug:
+            return run.motion_blur, run.freeze()
+
+        return run.motion_blur
+
+    @overload
+    def repair(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, debug: Literal[False] = False
+    ) -> vs.VideoNode: ...
+
+    @overload
+    def repair(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, *, debug: Literal[True]
+    ) -> tuple[vs.VideoNode, _QTGMCGraph]: ...
+
+    @overload
+    def repair(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None, debug: Literal[True]
+    ) -> tuple[vs.VideoNode, _QTGMCGraph]: ...
+
+    @overload
+    def repair(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, debug: bool = ...
+    ) -> vs.VideoNode | tuple[vs.VideoNode, _QTGMCGraph]: ...
+
+    def repair(
+        self, clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, debug: bool = False
+    ) -> vs.VideoNode | tuple[vs.VideoNode, _QTGMCGraph]:
         """
         Repair badly deinterlaced input.
 
@@ -1413,13 +1510,30 @@ class QTempGaussMC(_QTGMCBuilder):
         Args:
             clip: Clip to process.
             tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
+            debug: Whether to return the internal `_QTGMCGraph` object. Defaults to False.
 
         Returns:
-            Repaired clip.
+            The repaired clip, or a tuple of (clip, graph) containing the repaired clip and the internal `_QTGMCGraph`
+            object if debug is True
         """
-        return _QTGMCGraph(clip, tff, _QTGMCGraph.Mode.REPAIR, self, self.repair).motion_blur
 
-    def deshimmer(self, clip: vs.VideoNode) -> vs.VideoNode:
+        run = _QTGMCGraph(clip, tff, _QTGMCGraph.Mode.REPAIR, self, self.repair)
+
+        if debug:
+            return run.motion_blur, run.freeze()
+
+        return run.motion_blur
+
+    @overload
+    def deshimmer(self, clip: vs.VideoNode, debug: Literal[False] = False) -> vs.VideoNode: ...
+
+    @overload
+    def deshimmer(self, clip: vs.VideoNode, debug: Literal[True]) -> tuple[vs.VideoNode, _QTGMCGraph]: ...
+
+    @overload
+    def deshimmer(self, clip: vs.VideoNode, debug: bool = ...) -> vs.VideoNode | tuple[vs.VideoNode, _QTGMCGraph]: ...
+
+    def deshimmer(self, clip: vs.VideoNode, debug: bool = False) -> vs.VideoNode | tuple[vs.VideoNode, _QTGMCGraph]:
         """
         Deshimmer progressive input.
 
@@ -1427,11 +1541,19 @@ class QTempGaussMC(_QTGMCBuilder):
 
         Args:
             clip: Clip to process.
+            debug: Whether to return the internal `_QTGMCGraph` object. Defaults to False.
 
         Returns:
-            Deshimmered clip.
+            The deshimmered clip, or a tuple of (clip, graph) containing the deshimmered clip and the internal
+            `_QTGMCGraph` object if debug is True
         """
-        return _QTGMCGraph(clip, FieldBased.PROGRESSIVE, _QTGMCGraph.Mode.DESHIMMER, self, self.deshimmer).motion_blur
+
+        run = _QTGMCGraph(clip, FieldBased.PROGRESSIVE, _QTGMCGraph.Mode.DESHIMMER, self, self.deshimmer)
+
+        if debug:
+            return run.motion_blur, run.freeze()
+
+        return run.motion_blur
 
 
 def mask_shimmer(
