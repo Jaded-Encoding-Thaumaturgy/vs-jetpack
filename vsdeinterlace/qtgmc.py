@@ -1537,11 +1537,20 @@ class QTempGaussMC(_QTGMCBuilder):
     processing capabilities, support for repair of progressive material, precision source matching, shutter speed
     simulation, and more.
 
-    Originally based on TempGaussMC by Didée.
+    Originally based on QTGMC by Vit and TempGaussMC by Didée
 
-    Basic Usage:
+    Usage examples:
+        - Basic call with defaults:
         ```python
-        deinterlace = QTempGaussMC().deinterlace(clip)
+        deinterlaced = QTempGaussMC().deinterlace(clip)
+        ```
+        - Using `EEDI3` for interpolation:
+        ```python
+        deinterlaced = QTempGaussMC().basic(bobber=EEDI3()).deinterlace(clip)
+        ```
+        - Enabling lossless and increasing final `tr`:
+        ```python
+        deinterlaced = QTempGaussMC().lossless(QTempGaussMC.LosslessMode.PRESHARPEN).final(tr=2).deinterlace(clip)
         ```
 
     Additional Usage Info: [JET guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
