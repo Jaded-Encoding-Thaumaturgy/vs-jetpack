@@ -382,6 +382,14 @@ class Rescale(RescaleBase):
 
         return _generate_descale_ignore_mask(self, clip)
 
+    def _generate_rescale(self, clip: vs.VideoNode) -> vs.VideoNode:
+        rescale = super()._generate_rescale(clip)
+
+        if self._crop > (0, 0, 0, 0):
+            rescale = self._add_cropped_borders(rescale)
+
+        return rescale
+
     def _generate_upscale(self, clip: vs.VideoNode) -> vs.VideoNode:
         upscale = super()._generate_upscale(clip)
 
@@ -394,17 +402,7 @@ class Rescale(RescaleBase):
         upscale = core.std.CopyFrameProps(core.std.MaskedMerge(self._clipy, upscale, merged_mask), upscale)
 
         if self._crop > (0, 0, 0, 0):
-            pre_y = get_y(depth(self._pre, 32))
-
-            mask = region_rel_mask(
-                pre_y.std.BlankClip(length=1, keep=True),
-                *self._crop,
-                replace_in=0,
-                replace_out=ExprToken.MaskMax,
-                func=self.__class__,
-            )
-
-            upscale = core.std.MaskedMerge(upscale.std.AddBorders(*self._crop), pre_y, mask)
+            upscale = self._add_cropped_borders(upscale)
 
         return upscale
 
@@ -558,3 +556,16 @@ class Rescale(RescaleBase):
         self.credit_mask = credit_mask
 
         return self.credit_mask
+
+    def _add_cropped_borders(self, clip: vs.VideoNode) -> vs.VideoNode:
+        pre_y = get_y(depth(self._pre, 32))
+
+        mask = region_rel_mask(
+            pre_y.std.BlankClip(length=1, keep=True),
+            *self._crop,
+            replace_in=0,
+            replace_out=ExprToken.MaskMax,
+            func=self.__class__,
+        )
+
+        return core.std.MaskedMerge(clip.std.AddBorders(*self._crop), pre_y, mask)
