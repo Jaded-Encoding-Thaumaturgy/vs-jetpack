@@ -1218,7 +1218,7 @@ class QTGMCGraph(VSObject):
         Used as a base for [QTempGaussMC.prefilter][vsdeinterlace.QTempGaussMC.prefilter] and
         [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise].
 
-        Only available after processing a clip that requires motion-compensated processing or denoising.
+        Only available when using denoising or motion-compensated processing.
         """
 
         if self.mode in (self.Mode.DEINTERLACE, self.Mode.BOB):
@@ -1231,7 +1231,7 @@ class QTGMCGraph(VSObject):
         """
         Output of [QTempGaussMC.prefilter][vsdeinterlace.QTempGaussMC.prefilter].
 
-        Only available after processing a clip that requires internally generated motion vectors.
+        Only available when motion vectors need to be generated.
         """
 
         if self.mode is self.Mode.REPAIR:
@@ -1274,7 +1274,7 @@ class QTGMCGraph(VSObject):
         """
         [MVTools][vsdenoise.mvtools.mvtools.MVTools] instance used during processing.
 
-        Only available after processing a clip that requires motion analysis.
+        Only available when using motion-compensated processing.
         """
 
         preset = dict(self.settings.analyze_preset)
@@ -1341,7 +1341,7 @@ class QTGMCGraph(VSObject):
         """
         Noise extracted by [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise].
 
-        Only available after processing a clip that requires noise restoration.
+        Only available when using noise restoration.
         """
 
         noise = self.clip.std.MakeDiff(self._run_denoiser)
