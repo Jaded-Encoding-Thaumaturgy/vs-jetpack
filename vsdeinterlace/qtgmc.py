@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from copy import deepcopy
 from enum import auto
@@ -914,7 +916,7 @@ class _QTGMCBuilder:
 
 class QTGMCGraph(VSObject):
     """
-    Processing graph for a single [QTempGaussMC][vsdeinterlace.QTempGaussMC] operation.
+    Processing graph for an individual [QTempGaussMC][vsdeinterlace.QTempGaussMC] run.
 
     The graph exposes each processing stage as a lazily evaluated cached property. It is returned alongside the output
     clip when `return_graph=True` is passed to a [QTempGaussMC][vsdeinterlace.QTempGaussMC] processing method. This
@@ -956,6 +958,15 @@ class QTGMCGraph(VSObject):
         Removes horizontal shimmering artifacts from progressive sources.
         """
 
+        def __call__(
+            self,
+            clip: vs.VideoNode,
+            tff: FieldBasedLike | bool | None,
+            settings: _QTGMCBuilder,
+            func: FuncExcept,
+        ) -> QTGMCGraph:
+            return QTGMCGraph(self, clip, tff, settings, func)
+
     class _FrozenCache(dict[str, Any]):
         def __contains__(self, key: object) -> bool:
             if super().__contains__(key):
@@ -965,17 +976,17 @@ class QTGMCGraph(VSObject):
 
     def __init__(
         self,
+        mode: Mode,
         clip: vs.VideoNode,
         tff: FieldBasedLike | bool | None,
-        mode: Mode,
         settings: _QTGMCBuilder,
         func: FuncExcept,
     ) -> None:
         """
         Args:
+            mode: Processing mode used to construct the graph.
             clip: Clip to process.
             tff: Field order (top-field-first). If `None`, inferred from the clip.
-            mode: Processing mode used to construct the graph.
             settings: `_QTGMCBuilder` instance containing the settings for each processing stage.
             func: Function returned for custom error handling. This should only be set by VS package developers.
 
@@ -1573,7 +1584,7 @@ class QTempGaussMC(_QTGMCBuilder):
             object if `return_graph` is `True`.
         """
 
-        run = QTGMCGraph(clip, tff, QTGMCGraph.Mode.DEINTERLACE, self, self.deinterlace)
+        run = QTGMCGraph.Mode.DEINTERLACE(clip, tff, self, self.deinterlace)
 
         if return_graph:
             return run.motion_blur, run.freeze()
@@ -1621,7 +1632,7 @@ class QTempGaussMC(_QTGMCBuilder):
             `return_graph` is `True`.
         """
 
-        run = QTGMCGraph(clip, tff, QTGMCGraph.Mode.BOB, self, self.bob)
+        run = QTGMCGraph.Mode.BOB(clip, tff, self, self.bob)
 
         if return_graph:
             return run.motion_blur, run.freeze()
@@ -1668,7 +1679,7 @@ class QTempGaussMC(_QTGMCBuilder):
             `return_graph` is `True`.
         """
 
-        run = QTGMCGraph(clip, tff, QTGMCGraph.Mode.REPAIR, self, self.repair)
+        run = QTGMCGraph.Mode.REPAIR(clip, tff, self, self.repair)
 
         if return_graph:
             return run.motion_blur, run.freeze()
@@ -1705,7 +1716,7 @@ class QTempGaussMC(_QTGMCBuilder):
                 object if `return_graph` is `True`.
         """
 
-        run = QTGMCGraph(clip, FieldBased.PROGRESSIVE, QTGMCGraph.Mode.DESHIMMER, self, self.deshimmer)
+        run = QTGMCGraph.Mode.DESHIMMER(clip, FieldBased.PROGRESSIVE, self, self.deshimmer)
 
         if return_graph:
             return run.motion_blur, run.freeze()
