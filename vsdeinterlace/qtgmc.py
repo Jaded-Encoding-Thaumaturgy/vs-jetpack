@@ -219,18 +219,22 @@ class _QTGMCBuilder:
 
         @cachedproperty
         def is_spatial(self) -> bool:
+            """Whether the mode uses spatial sharpness limiting."""
             return self in (self.SPATIAL_PRESMOOTH, self.SPATIAL_POSTSMOOTH)
 
         @cachedproperty
         def is_temporal(self) -> bool:
+            """Whether the mode uses temporal sharpness limiting."""
             return self in (self.TEMPORAL_PRESMOOTH, self.TEMPORAL_POSTSMOOTH)
 
         @cachedproperty
         def is_presmooth(self) -> bool:
+            """Whether the mode applies sharpness limiting prior to smoothing."""
             return self in (self.SPATIAL_PRESMOOTH, self.TEMPORAL_PRESMOOTH)
 
         @cachedproperty
         def is_postsmooth(self) -> bool:
+            """Whether the mode applies sharpness limiting after smoothing."""
             return self in (self.SPATIAL_POSTSMOOTH, self.TEMPORAL_POSTSMOOTH)
 
     @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
@@ -1576,7 +1580,7 @@ class QTempGaussMC(_QTGMCBuilder):
             clip: Clip to process.
             tff: Field order (top-field-first). If `None`, inferred from the clip. Defaults to None.
             return_graph: Whether to return the [QTGMCGraph][vsdeinterlace.qtgmc.QTGMCGraph] object. It can be used for
-                debugging the output or [QTGMCGraph.mv][vsdeinterlace.qtgmc.QTGMCGraph.mv] can be reused for other
+                inspecting the output or [QTGMCGraph.mv][vsdeinterlace.qtgmc.QTGMCGraph.mv] can be reused for other
                 motion-compensated processing. Defaults to False.
 
         Returns:
@@ -1624,7 +1628,7 @@ class QTempGaussMC(_QTGMCBuilder):
             clip: Clip to process.
             tff: Field order (top-field-first). If `None`, inferred from the clip. Defaults to None.
             return_graph: Whether to return the [QTGMCGraph][vsdeinterlace.qtgmc.QTGMCGraph] object. It can be used for
-                debugging the output or [QTGMCGraph.mv][vsdeinterlace.qtgmc.QTGMCGraph.mv] can be reused for other
+                inspecting the output or [QTGMCGraph.mv][vsdeinterlace.qtgmc.QTGMCGraph.mv] can be reused for other
                 motion-compensated processing. Defaults to False.
 
         Returns:
@@ -1671,7 +1675,7 @@ class QTempGaussMC(_QTGMCBuilder):
             clip: Clip to process.
             tff: Field order (top-field-first). If `None`, inferred from the clip. Defaults to None.
             return_graph: Whether to return the [QTGMCGraph][vsdeinterlace.qtgmc.QTGMCGraph] object. It can be used for
-                debugging the output or [QTGMCGraph.mv][vsdeinterlace.qtgmc.QTGMCGraph.mv] can be reused for other
+                inspecting the output or [QTGMCGraph.mv][vsdeinterlace.qtgmc.QTGMCGraph.mv] can be reused for other
                 motion-compensated processing. Defaults to False.
 
         Returns:
@@ -1708,7 +1712,7 @@ class QTempGaussMC(_QTGMCBuilder):
         Args:
             clip: Clip to process.
             return_graph: Whether to return the [QTGMCGraph][vsdeinterlace.qtgmc.QTGMCGraph] object. It can be used for
-                debugging the output or [QTGMCGraph.mv][vsdeinterlace.qtgmc.QTGMCGraph.mv] can be reused for other
+                inspecting the output or [QTGMCGraph.mv][vsdeinterlace.qtgmc.QTGMCGraph.mv] can be reused for other
                 motion-compensated processing. Defaults to False.
 
         Returns:
