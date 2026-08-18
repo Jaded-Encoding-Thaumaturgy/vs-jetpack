@@ -92,7 +92,7 @@ class QTGMCArgs:
 
 class _QTGMCBuilder:
     class NoiseDeintMode(CustomIntEnum):
-        """How to 'deinterlace' noise taken from an interlaced source before restoration."""
+        """How to 'deinterlace' noise taken from an interlaced source."""
 
         WEAVE = auto()
         """
@@ -470,8 +470,7 @@ class _QTGMCBuilder:
             func: Denoising function to use. Defaults to DFTTest(sigma=8).
             tr: Temporal radius of the denoising function and its motion compensation. Larger values remove/separate
                 more noise. Defaults to 1.
-            deint: How to 'deinterlace' noise taken from an interlaced source before restoration. Defaults to
-                NoiseDeintMode.GENERATE.
+            deint: How to 'deinterlace' noise taken from an interlaced source. Defaults to NoiseDeintMode.GENERATE.
             mc_denoise: Whether to motion-compensate the denoiser being used. Provides more accurate denoising/noise
                 extraction when using a non-motion-compensated temporal denoiser. Defaults to True.
             full_denoise: Whether the denoised output will be directly used in all subsequent processing. If `False`,
