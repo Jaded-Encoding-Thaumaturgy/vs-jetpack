@@ -712,9 +712,9 @@ class _QTGMCBuilder:
         Args:
             strength: Sharpening strength. Higher values result in more sharpening. Defaults to 1 when
                 [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match] `iterations` is 0, and 0 otherwise.
-            offset: Offsets the blur source to the vertical min/max average ± this value (8-bit). Smaller values result
-                in more vertical sharpening. Passing a tuple of values results in asymmetric offsetting. `False`
-                disables range limiting. Defaults to 1.
+            offset: Shifts the unsharpen blur source to the vertical min/max average ± this value (8-bit). Smaller
+                values result in more vertical sharpening. Passing a tuple of values results in asymmetric offsetting.
+                `False` disables range limiting. Defaults to 1.
             thin: How much to thin down horizontal edges. Higher values result in more thinning. Defaults to 0.
         """
 
@@ -1363,12 +1363,12 @@ class QTGMCGraph(VSObject):
 
                     noise_gen = Grainer.GAUSS(
                         noise,
-                        ((0.5 * 255) / 3) ** 2,  # 3σ rule  # noqa: RUF003
+                        ((0.5 * 255) / 3) ** 2,  # 3σ rule.  # noqa: RUF003
                         protect_edges=False,
                         protect_neutral_chroma=False,
                         neutral_out=True,
                     )
-                    noise_gen = norm_expr(
+                    noise_gen = norm_expr(  # Off-center neutral in int formats prevents the scale from reaching 1.
                         [noise_max, noise_min, noise_gen],
                         "y x y - z neutral - range_size / 0.5 + * +",
                         func=self.func,
@@ -1536,7 +1536,7 @@ class QTempGaussMC(_QTGMCBuilder):
     processing capabilities, support for repair of progressive material, precision source matching, shutter speed
     simulation, and more.
 
-    Originally based on QTGMC by Vit and TempGaussMC by Didée
+    Originally based on QTGMC by Vit and TempGaussMC by Didée.
 
     Usage examples:
         - Basic call with defaults:
