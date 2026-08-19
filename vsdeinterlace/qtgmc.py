@@ -1139,17 +1139,13 @@ class QTGMCGraph(VSObject):
             )
 
         if self.settings.sharpen_thin:
-            median_diff = norm_expr(
-                [clip, median_blur(clip, mode=ConvMode.VERTICAL, func=self._sharpen)],
-                "y x - {thin} * neutral +",
-                thin=self.settings.sharpen_thin,
-                func=self._sharpen,
-            )
+            median_diff = median_blur(clip, mode=ConvMode.VERTICAL, func=self._sharpen).std.MakeDiff(clip)
             blurred_diff = BlurMatrix.BINOMIAL(mode=ConvMode.HORIZONTAL)(median_diff, func=self._sharpen)
 
             resharp = norm_expr(
                 [resharp, BlurMatrix.BINOMIAL()(blurred_diff, func=self._sharpen), blurred_diff],
-                "y neutral - dup abs z neutral - abs > swap x + x ?",
+                "y neutral - dup abs z neutral - abs > swap {thin} * x + x ?",
+                thin=self.settings.sharpen_thin,
                 func=self._sharpen,
             )
 
