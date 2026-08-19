@@ -880,7 +880,7 @@ class _QTGMCBuilder:
     def motion_blur(
         self,
         *,
-        shutter_angle: tuple[float, float] = (180, 180),
+        shutter_angle: tuple[float, float] | Literal[False] = False,
         fps_divisor: int = 1,
         blur_args: QTGMCArgs.Blur | None = None,
         mask_args: QTGMCArgs.Mask | None = None,
@@ -902,7 +902,7 @@ class _QTGMCBuilder:
 
         Args:
             shutter_angle: Tuple containing the source and output shutter angles. Motion blur is applied if they do not
-                match. Defaults to (180, 180).
+                match. `False` disables motion blur. Defaults to False.
             fps_divisor: Factor by which to smoothly reduce frame rate. Defaults to 1.
             blur_args: Additional arguments passed to [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur].
                 Defaults to None.
@@ -1206,6 +1206,9 @@ class QTGMCGraph(VSObject):
 
     @cachedproperty
     def _motion_blur_level(self) -> float:
+        if self.settings.motion_blur_shutter_angle is False:
+            return 0
+
         angle_in, angle_out = self.settings.motion_blur_shutter_angle
 
         return (angle_out * self._motion_blur_fps_divisor - angle_in) * 100 / 360
@@ -1306,9 +1309,9 @@ class QTGMCGraph(VSObject):
             bool(self._motion_blur_level),
         )
 
-        mv.analyze(tr=tr, blksize=self.settings.analyze_blksize, overlap_div=self.settings.analyze_overlap)
-
         blksize = self.settings.analyze_blksize
+        mv.analyze(tr=tr, blksize=blksize, overlap_div=self.settings.analyze_overlap)
+
         for _ in range(self.settings.analyze_refine):
             blksize = refine_blksize(blksize)
             mv.recalculate(
