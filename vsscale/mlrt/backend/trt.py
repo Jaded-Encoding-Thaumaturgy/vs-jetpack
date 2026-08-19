@@ -58,6 +58,8 @@ class TRT(Backend):
     # Model Precision & Data Types
     fp16: bool | None = None
     """Convert the ONNX model to FP16 before building. Default to True."""
+    skip_fp16_conversion: bool = False
+    """Skip ONNX FP16 conversion when the model is already in FP16 format."""
     fp16_blacklist_ops: Collection[str] | None = None
     """ONNX node or op names to keep in FP32 during FP16 conversion."""
     bf16: bool | None = None
@@ -236,7 +238,7 @@ class TRT(Backend):
         Returns:
             Path to the serialized engine file.
         """
-        if self.fp16:
+        if self.fp16 and not self.skip_fp16_conversion:
             network_path = self._convert_onnx_fp16(network_path)
         elif self.bf16:
             network_path = self._convert_onnx_bf16(network_path)
