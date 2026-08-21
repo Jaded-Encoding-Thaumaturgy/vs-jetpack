@@ -906,6 +906,7 @@ class _QTGMCBuilder:
 
     @property
     def _sharpen_sigma(self) -> float:
+        # Combined variance of the (binomial) basic blur and (linear) final blur.
         return sqrt(self.basic_tr / 2 + self.final_tr * (self.final_tr + 1) / 3)
 
     @property
