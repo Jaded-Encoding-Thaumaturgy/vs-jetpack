@@ -910,13 +910,6 @@ class _QTGMCBuilder:
         return sqrt(self.basic_tr / 2 + self.final_tr * (self.final_tr + 1) / 3)
 
     @property
-    def _sharpening_enabled(self) -> bool:
-        return bool(
-            ((self.sharpen_strength and self._sharpen_sigma) or self.sharpen_thin)
-            and (self.back_blend_mode is self.BackBlendMode.NONE or self._back_blend_sigma)
-        )
-
-    @property
     def _back_blend_sigma(self) -> float:
         passes = 1 + bool(
             self.back_blend_mode is self.BackBlendMode.BOTH
@@ -925,6 +918,13 @@ class _QTGMCBuilder:
         )
 
         return self._sharpen_sigma * (self.back_blend_scale / sqrt(passes))
+
+    @property
+    def _sharpening_enabled(self) -> bool:
+        return bool(
+            ((self.sharpen_strength and self._sharpen_sigma) or self.sharpen_thin)
+            and (self.back_blend_mode is self.BackBlendMode.NONE or self._back_blend_sigma)
+        )
 
     @property
     def _sharpness_limiting_enabled(self) -> bool:
@@ -958,6 +958,8 @@ class QTGMCGraph(VSObject):
         deinterlaced, graph = qtgmc.deinterlace(clip, return_graph=True)
         prefilter = graph.prefilter
         ```
+
+    Additional Usage Info: [JET Guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
     """
 
     class Mode(CustomIntEnum):
@@ -1578,16 +1580,17 @@ class QTempGaussMC(_QTGMCBuilder):
         ```python
         deinterlaced = QTempGaussMC().deinterlace(clip)
         ```
-        - Using `EEDI3` for interpolation:
+        - Using [EEDI3][vsaa.EEDI3] for interpolation:
         ```python
         deinterlaced = QTempGaussMC().basic(bobber=EEDI3()).deinterlace(clip)
         ```
-        - Enabling lossless and increasing final `tr`:
+        - Enabling [QTempGaussMC.lossless][vsdeinterlace.QTempGaussMC.lossless] and increasing
+            [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final] `tr`:
         ```python
         deinterlaced = QTempGaussMC().lossless(QTempGaussMC.LosslessMode.PRESHARPEN).final(tr=2).deinterlace(clip)
         ```
 
-    Additional Usage Info: [JET guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
+    Additional Usage Info: [JET Guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
     """
 
     @overload
