@@ -774,9 +774,6 @@ class _QTGMCBuilder:
 
     @property
     def back_blend_scale(self) -> float:
-        if not self._back_blend_scale:
-            return 0
-
         passes = 1 + bool(
             self.back_blend_mode is self.BackBlendMode.BOTH
             and self.sharpen_limit_mode.is_presmooth
