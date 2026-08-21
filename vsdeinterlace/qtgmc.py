@@ -959,7 +959,7 @@ class QTGMCGraph(VSObject):
         prefilter = graph.prefilter
         ```
 
-    Additional Usage Info: [JET Guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
+    Additional usage info: [JET Guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
     """
 
     class Mode(CustomIntEnum):
@@ -1590,7 +1590,7 @@ class QTempGaussMC(_QTGMCBuilder):
         deinterlaced = QTempGaussMC().lossless(QTempGaussMC.LosslessMode.PRESHARPEN).final(tr=2).deinterlace(clip)
         ```
 
-    Additional Usage Info: [JET Guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
+    Additional usage info: [JET Guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
     """
 
     @overload
