@@ -601,7 +601,7 @@ class _QTGMCBuilder:
         similarity: float = 0.5,
         enhance: float = 0.5,
         degrain_args: QTGMCArgs.Degrain | None = None,
-        mode: SourceMatchMode = SourceMatchMode.NONE,
+        mode: SourceMatchMode | None = None,
     ) -> Self:
         """
         Configures parameters for source match processing.
