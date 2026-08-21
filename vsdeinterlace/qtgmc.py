@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from copy import deepcopy
 from enum import auto
-from math import comb
+from math import comb, sqrt
 from typing import Any, Literal, Protocol, Self, TypedDict, overload
 
 from jetpytools import CustomIntEnum, CustomValueError, FuncExcept, cachedproperty, fallback, normalize_seq, to_arr
@@ -588,6 +588,10 @@ class _QTGMCBuilder:
 
         return self
 
+    @property
+    def _temporal_blur_variance(self) -> float:
+        return sqrt(self.basic_tr / 2 + self.final_tr * (self.final_tr + 1) / 3)
+
     def source_match(
         self,
         *,
@@ -711,7 +715,8 @@ class _QTGMCBuilder:
 
         Args:
             strength: Sharpening strength. Higher values result in more sharpening. Defaults to 1 when
-                [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match] `iterations` is 0, and 0 otherwise.
+                [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match] `iterations` is `0`, and 0
+                otherwise.
             offset: Shifts the unsharpen blur source to the vertical min/max average ± this value (8-bit). Smaller
                 values result in more vertical sharpening. Passing a tuple of values results in asymmetric offsetting.
                 `False` disables range limiting. Defaults to 1.
@@ -720,7 +725,9 @@ class _QTGMCBuilder:
 
         self.sharpen_strength = strength
         self.sharpen_offset = offset is not False and normalize_seq(offset, 2)
-        self.sharpen_thin = thin
+        # Premultiply thin strength by the inverse L2 norm of the binomial blurs used in the algorithm.
+        # After multiplication, thin = 1.0 means edges found by median filtering are merged at full strength.
+        self.sharpen_thin = thin * 32 / sqrt(105)
 
         if mode is not None and not mode.value:  # TODO: remove
             self.sharpen_offset = False
@@ -738,11 +745,11 @@ class _QTGMCBuilder:
     @property
     def _sharpening_enabled(self) -> bool:
         return bool(
-            (self.sharpen_strength or self.sharpen_thin)
-            and (self.back_blend_mode is self.BackBlendMode.NONE or self.back_blend_sigma)
+            ((self.sharpen_strength and self._temporal_blur_variance) or self.sharpen_thin)
+            and (self.back_blend_mode is self.BackBlendMode.NONE or self.back_blend_scale)
         )
 
-    def back_blend(self, *, mode: BackBlendMode = BackBlendMode.BOTH, sigma: float = 1.4) -> Self:
+    def back_blend(self, *, mode: BackBlendMode = BackBlendMode.BOTH, scale: float = 2) -> Self:
         """
         Configures parameters for back-blending.
 
@@ -755,16 +762,32 @@ class _QTGMCBuilder:
                 high-frequency edge sharpening.
 
         Args:
-            mode: When to back-blend the (blurred) difference between the pre- and post-sharpened clips. Defaults to
-                BackBlendMode.BOTH.
-            sigma: Gaussian blur sigma applied to the pre- and post-sharpening difference. Lower values dampen
-                sharpening more aggressively. Defaults to 1.4.
+            mode: When to back-blend the (blurred) sharpening difference. Defaults to BackBlendMode.BOTH.
+            scale: Scale factor for the Gaussian blur sigma applied to the sharpening difference. Lower values dampen
+                sharpening more aggressively. Defaults to 2.
         """
 
         self.back_blend_mode = mode
-        self.back_blend_sigma = sigma
+        self.back_blend_scale = scale
 
         return self
+
+    @property
+    def back_blend_scale(self) -> float:
+        if not self._back_blend_scale:
+            return 0
+
+        passes = 1 + bool(
+            self.back_blend_mode is self.BackBlendMode.BOTH
+            and self.sharpen_limit_mode.is_presmooth
+            and self.sharpen_limit_radius
+        )
+
+        return self._temporal_blur_variance * (self._back_blend_scale / sqrt(passes))
+
+    @back_blend_scale.setter
+    def back_blend_scale(self, value: float) -> None:
+        self._back_blend_scale = value
 
     def sharpen_limit(
         self,
@@ -790,7 +813,7 @@ class _QTGMCBuilder:
         Args:
             mode: How and when to apply limiting to [QTempGaussMC.sharpen][vsdeinterlace.QTempGaussMC.sharpen]. Defaults
                 to SharpenLimitMode.TEMPORAL_PRESMOOTH when
-                [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match] `iterations` is 0 and
+                [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match] `iterations` is `0` and
                 SharpenLimitMode.NONE otherwise.
             radius: Radius of the sharpness limiting. Larger values allow more sharpening. Defaults to 1.
             clamp: How much undershoot/overshoot to allow (8-bit). Larger values result in less limiting. Passing a
@@ -1052,7 +1075,7 @@ class QTGMCGraph(VSObject):
             binomial_coeff = comb(tr_f, tr)
             error_adj = tr_s / (binomial_coeff + self.settings.source_match_similarity * (tr_s - binomial_coeff))
 
-            return norm_expr([ref, clip], "x x y - {error_adj} * +", error_adj=error_adj, func=error_adjustment)
+            return unsharpen(ref, error_adj, clip, func=error_adjustment)
 
         if self.mode is not self.Mode.DESHIMMER:
             clip = reinterlace(clip, self.tff, self._source_match)
@@ -1116,7 +1139,7 @@ class QTGMCGraph(VSObject):
     def _sharpen(self, clip: vs.VideoNode) -> vs.VideoNode:
         resharp = clip
 
-        if self.settings.sharpen_strength:
+        if self.settings.sharpen_strength and self.settings._temporal_blur_variance:
             if self.settings.sharpen_offset is not False:
                 dark_offset, bright_offset = self.settings.sharpen_offset
 
@@ -1134,7 +1157,7 @@ class QTGMCGraph(VSObject):
             resharp = unsharpen(
                 clip,
                 self.settings.sharpen_strength,
-                BlurMatrix.BINOMIAL()(resharp, func=self._sharpen),
+                gauss_blur(resharp, self.settings._temporal_blur_variance),
                 func=self._sharpen,
             )
 
@@ -1152,7 +1175,7 @@ class QTGMCGraph(VSObject):
         return resharp
 
     def _back_blend(self, flt: vs.VideoNode, src: vs.VideoNode) -> vs.VideoNode:
-        return flt.std.MergeDiff(gauss_blur(src.std.MakeDiff(flt), self.settings.back_blend_sigma))
+        return flt.std.MergeDiff(gauss_blur(src.std.MakeDiff(flt), self.settings.back_blend_scale))
 
     def _sharpen_limit(self, clip: vs.VideoNode) -> vs.VideoNode:
         undershoot, overshoot = self.settings.sharpen_limit_clamp
@@ -1363,13 +1386,16 @@ class QTGMCGraph(VSObject):
 
                     noise_gen = Grainer.GAUSS(
                         noise,
-                        ((0.5 * 255) / 3) ** 2,  # 3σ rule.  # noqa: RUF003
+                        # Use the maximum variance that satisfies the 3-sigma rule.
+                        ((0.5 * 255) / 3) ** 2,
                         protect_edges=False,
                         protect_neutral_chroma=False,
                         neutral_out=True,
                     )
-                    noise_gen = norm_expr(  # Off-center neutral in int formats prevents the scale from reaching 1.
+                    noise_gen = norm_expr(
                         [noise_max, noise_min, noise_gen],
+                        # Limitation: This gain map can never reach 1.0 with integer formats.
+                        # Peak gain at 8-bit: (255 - 128) / 256 + 0.5 = ~0.996.
                         "y x y - z neutral - range_size / 0.5 + * +",
                         func=self.func,
                     )
