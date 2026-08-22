@@ -78,6 +78,11 @@ class QTGMCArgs:
         limit: float | tuple[float, float] | None
         planes: Planes
 
+    class Blur(TypedDict, total=False):
+        """Arguments accepted by [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur]."""
+
+        prec: int | None
+
     class Mask(TypedDict, total=False):
         """Arguments accepted by [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask]."""
 
@@ -85,11 +90,6 @@ class QTGMCArgs:
         gamma: float | None
         time: float | None
         scval: float | None
-
-    class Blur(TypedDict, total=False):
-        """Arguments accepted by [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur]."""
-
-        prec: int | None
 
 
 class _QTGMCBuilder:
@@ -440,9 +440,9 @@ class _QTGMCBuilder:
         *,
         func: DFTTest | _DenoiseFuncTr = _DFTTEST_DEFAULT,
         tr: int = 1,
-        deint: NoiseDeintMode = NoiseDeintMode.GENERATE,
         mc_denoise: bool = True,
         full_denoise: bool = False,
+        deint: NoiseDeintMode = NoiseDeintMode.GENERATE,
         stabilize: float | Literal[False] = 0.4,
         func_comp_args: QTGMCArgs.Compensate | None = None,
         stabilize_comp_args: QTGMCArgs.Compensate | None = None,
@@ -476,11 +476,11 @@ class _QTGMCBuilder:
             func: Denoising function to use. Defaults to DFTTest(sigma=8).
             tr: Temporal radius of the denoising function and its motion compensation. Larger values remove/separate
                 more noise. Defaults to 1.
-            deint: How to 'deinterlace' noise taken from an interlaced source. Defaults to NoiseDeintMode.GENERATE.
             mc_denoise: Whether to motion-compensate the denoiser being used. Provides more accurate denoising/noise
                 extraction when using a non-motion-compensated temporal denoiser. Defaults to True.
             full_denoise: Whether the denoised output will be directly used in all subsequent processing. If `False`,
                 the denoising is only for noise extraction. Defaults to False.
+            deint: How to 'deinterlace' noise taken from an interlaced source. Defaults to NoiseDeintMode.GENERATE.
             stabilize: Weight used when blending max noise variance with averaged noise. Higher values give more
                 weight to the averaged noise. `False` disables stabilization. Defaults to 0.4.
             func_comp_args: Additional arguments passed to
@@ -492,9 +492,9 @@ class _QTGMCBuilder:
 
         self.denoise_func = func.denoise if isinstance(func, DFTTest) else func
         self.denoise_tr = tr
-        self.denoise_deint = deint
         self.denoise_mc_denoise = mc_denoise
         self.denoise_full_denoise = full_denoise
+        self.denoise_deint = deint
         self.denoise_stabilize = stabilize
         self.denoise_func_comp_args = fallback(func_comp_args, QTGMCArgs.Compensate())
         self.denoise_stabilize_comp_args = fallback(stabilize_comp_args, QTGMCArgs.Compensate())
@@ -576,10 +576,10 @@ class _QTGMCBuilder:
         self,
         *,
         iterations: Literal[0, 1, 2, 3] = 0,
+        similarity: float = 0.5,
         bobber: BobberLike | None = None,
         tr: int = 1,
         enhance: float = 0.5,
-        similarity: float = 0.5,
         degrain_args: QTGMCArgs.Degrain | None = None,
         mode: SourceMatchMode | None = None,
     ) -> Self:
@@ -610,21 +610,21 @@ class _QTGMCBuilder:
                 `2` or `3` iterations restores almost exact source detail but is sensitive to noise and introduces
                 occasional aliasing (to a lesser extent for `3`). Requires
                 [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] `tr` > `0` Defaults to 0.
+            similarity: Temporal similarity of the error from frame to frame. Lower values make the result sharper.
+                Defaults to 0.5.
             bobber: Bobber to use for refined spatial interpolation. Only used for `iterations` > `1`. Defaults to
                 [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] `bobber`.
             tr: Temporal radius of the refinement motion-compensated binomial blur. Larger values reduce more shimmer
                 but can introduce blurring and ghosting. Only used for `iterations` > `1`. Defaults to 1.
             enhance: Enhances detail found by `iterations` > `1`. Higher values exaggerate detail more. Defaults to 0.5.
-            similarity: Temporal similarity of the error from frame to frame. Lower values make the result sharper.
-                Defaults to 0.5.
             degrain_args: Additional arguments passed to the internal `_binomial_degrain` call. Defaults to None.
         """
 
         self.source_match_iterations = iterations
+        self.source_match_similarity = similarity
         self.source_match_bobber = bobber
         self.source_match_tr = tr
         self.source_match_enhance = enhance
-        self.source_match_similarity = similarity
         self.source_match_degrain_args = fallback(degrain_args, QTGMCArgs.Degrain())
 
         if mode is not None:  # TODO: remove
@@ -1388,7 +1388,7 @@ class QTGMCGraph(VSObject):
 
         angle_in, angle_out = self.settings.motion_blur_shutter_angle
 
-        return (angle_out * self._motion_blur_fps_divisor - angle_in) * 100 / 360
+        return (angle_out * self._motion_blur_fps_divisor - angle_in) / 3.60
 
     def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
         if self.mode is not self.Mode.DESHIMMER:
