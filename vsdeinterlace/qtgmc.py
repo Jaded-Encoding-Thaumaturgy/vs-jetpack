@@ -885,28 +885,12 @@ class _QTGMCBuilder:
         return self
 
     @property
-    def _noise_restore_enabled(self) -> bool:
-        return bool(self.basic_noise_restore or self.final_noise_restore)
-
-    @property
-    def _mc_denoise_tr(self) -> int:
-        return (
-            self.denoise_tr
-            if self.denoise_mc_denoise and (self.denoise_full_denoise or self._noise_restore_enabled)
-            else 0
-        )
-
-    @property
-    def _stabilization_enabled(self) -> bool:
-        return self.denoise_stabilize is not False and self._noise_restore_enabled
-
-    @property
     def _source_match_enabled(self) -> bool:
         return bool(self.source_match_iterations and self.basic_tr)
 
     @property
     def _sharpen_sigma(self) -> float:
-        # Combined variance of the (binomial) basic blur and (linear) final blur.
+        # Total variance of the (binomial) basic blur and (linear) final blur.
         return sqrt(self.basic_tr / 2 + self.final_tr * (self.final_tr + 1) / 3)
 
     @property
@@ -933,6 +917,10 @@ class _QTGMCBuilder:
             and self.sharpen_limit_radius
             and self._sharpening_enabled
         )
+
+    @property
+    def _noise_restore_enabled(self) -> bool:
+        return bool(self.basic_noise_restore or self.final_noise_restore)
 
 
 class QTGMCGraph(VSObject):
@@ -1135,12 +1123,15 @@ class QTGMCGraph(VSObject):
 
         tr = max(
             self.settings.analyze_force_tr,
-            self.settings._mc_denoise_tr,
-            self.settings._stabilization_enabled,
-            self.settings.basic_tr,
+            self.settings.denoise_tr
+            if self.settings.denoise_mc_denoise
+            and (self.settings.denoise_full_denoise or self.settings._noise_restore_enabled)
+            else 0,
+            self.settings.denoise_stabilize is not False and self.settings._noise_restore_enabled,
             self._repair_mask_enabled,
+            self.settings.basic_tr,
             self.settings.source_match_tr
-            if self.settings.source_match_iterations > 1 and self.settings._source_match_enabled
+            if self.settings.source_match_iterations > 1 and self.settings.basic_tr
             else 0,
             self.settings.sharpen_limit_radius
             if self.settings.sharpen_limit_mode.is_temporal and self.settings._sharpness_limiting_enabled
@@ -1207,7 +1198,7 @@ class QTGMCGraph(VSObject):
 
             noise = FieldBased.PROGRESSIVE.apply(noise)
 
-        if self.settings._stabilization_enabled:
+        if self.settings.denoise_stabilize is not False:
             noise_comp, _ = self.mv.compensate(
                 noise,
                 direction=MVDirection.BACKWARD,
@@ -1271,8 +1262,8 @@ class QTGMCGraph(VSObject):
         if self.settings.basic_tr:
             smoothed = mask_shimmer(smoothed, self.bobbed, **self.settings.basic_mask_shimmer_args, func=self.func)
 
-        if self.settings._source_match_enabled:
-            smoothed = self._source_match(smoothed)
+            if self.settings.source_match_iterations:
+                smoothed = self._source_match(smoothed)
 
         if self.settings.lossless_mode is self.settings.LosslessMode.PRESHARPEN:
             smoothed = self._lossless(smoothed)
@@ -1359,7 +1350,7 @@ class QTGMCGraph(VSObject):
 
     @cachedproperty
     def _apply_denoise(self) -> vs.VideoNode:
-        if self.settings._mc_denoise_tr:
+        if self.settings.denoise_mc_denoise and self.settings.denoise_tr:
             denoised = self.mv.compensate(
                 tr=self.settings.denoise_tr,
                 thscd=self.settings.analyze_thscd,
