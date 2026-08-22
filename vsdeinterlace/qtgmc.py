@@ -946,17 +946,18 @@ class QTGMCGraph(VSObject):
     Returned graphs are frozen after evaluation so that access is limited to stages used to construct the output.
 
     Usage examples:
-        - Reusing the [MVTools][vsdenoise.mvtools.mvtools.MVTools] object:
-        ```python
-        qtgmc = vsdeinterlace.QTempGaussMC()
-        deinterlaced, graph = qtgmc.deinterlace(clip, return_graph=True)
-        mv = graph.mv
-        ```
         - Inspecting the output of [QTempGaussMC.prefilter][vsdeinterlace.QTempGaussMC.prefilter]:
         ```python
         qtgmc = vsdeinterlace.QTempGaussMC()
         deinterlaced, graph = qtgmc.deinterlace(clip, return_graph=True)
         prefilter = graph.prefilter
+        ```
+        - Reusing the internal [MVTools][vsdenoise.mvtools.mvtools.MVTools] object's
+            [MotionVectors][vsdenoise.mvtools.motion.MotionVectors]:
+        ```python
+        qtgmc = vsdeinterlace.QTempGaussMC()
+        deinterlaced, graph = qtgmc.deinterlace(clip, return_graph=True)
+        vectors = graph.mv.vectors
         ```
 
     Additional usage info: [JET Encoding Guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
