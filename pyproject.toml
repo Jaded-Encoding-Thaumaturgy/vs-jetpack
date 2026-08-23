@@ -228,6 +228,11 @@ index = [
 provider = ["ArtCNN==v1.6.2", "DPIR==20210902", "Waifu2x==20250502-2"]
 auto = true
 
+[tool.uv]
+constraint-dependencies = [
+    "nvidia-cublas != 13.6.1.10; sys_platform == 'win32'",
+]
+
 [tool.uv.sources]
 vapoursynth-ffms2 = { index = "vs-wheels" }
 vapoursynth-fmtconv = { index = "vs-wheels" }

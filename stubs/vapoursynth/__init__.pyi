@@ -1830,7 +1830,7 @@ class VideoNode(RawNode):
 # </attribute/VideoNode_bound/hysteresis>
 # <attribute/VideoNode_bound/mvu>
     mvu: Final[_mvu._VideoNode_bound.Plugin]
-    """MVUtensils v6"""
+    """MVUtensils v7"""
 # </attribute/VideoNode_bound/mvu>
 # <attribute/VideoNode_bound/ncnn>
     ncnn: Final[_ncnn._VideoNode_bound.Plugin]
@@ -2120,7 +2120,7 @@ class Core:
 # </attribute/Core_bound/lsmas>
 # <attribute/Core_bound/mvu>
     mvu: Final[_mvu._Core_bound.Plugin]
-    """MVUtensils v6"""
+    """MVUtensils v7"""
 # </attribute/Core_bound/mvu>
 # <attribute/Core_bound/ncnn>
     ncnn: Final[_ncnn._Core_bound.Plugin]
@@ -2445,13 +2445,13 @@ class _bm3dhip:
 # </implementation/bm3dhip>
 
 # <implementation/bs>
-_ReturnDict_bs_TrackInfo = TypedDict("_ReturnDict_bs_TrackInfo", {"mediatype": int, "mediatypestr": _AnyStr, "codec": int, "codecstr": _AnyStr, "disposition": int, "dispositionstr": _AnyStr})
+_ReturnDict_bs_TrackInfo = TypedDict("_ReturnDict_bs_TrackInfo", {"tracktype": _IntLike | list[_IntLike], "tracktypestr": _AnyStr | list[_AnyStr], "codec": _IntLike | list[_IntLike], "codecstr": _AnyStr | list[_AnyStr], "disposition": _IntLike | list[_IntLike], "dispositionstr": _AnyStr | list[_AnyStr]})
 
 class _bs:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def AudioSource(self, /, source: _AnyStr, track: _IntLike | None = None, adjustdelay: _IntLike | None = None, threads: _IntLike | None = None, enable_drefs: _IntLike | None = None, use_absolute_path: _IntLike | None = None, drc_scale: _FloatLike | None = None, cachemode: _IntLike | None = None, cachepath: _AnyStr | None = None, cachesize: _IntLike | None = None, showprogress: _IntLike | None = None, maxdecoders: _IntLike | None = None) -> AudioNode: ...
+            def AudioSource(self, /, source: _AnyStr, track: _IntLike | None = None, adjustdelay: _IntLike | None = None, threads: _IntLike | None = None, enable_drefs: _IntLike | None = None, use_absolute_path: _IntLike | None = None, drc_scale: _FloatLike | None = None, cachemode: _IntLike | None = None, cachepath: _AnyStr | None = None, cachesize: _IntLike | None = None, showprogress: _IntLike | None = None, maxdecoders: _IntLike | None = None, variableformat: _IntLike | None = None) -> AudioNode: ...
             @_Wrapper.Function
             def Metadata(self, /, source: _AnyStr, track: _IntLike | None = None, enable_drefs: _IntLike | None = None, use_absolute_path: _IntLike | None = None) -> Any: ...
             @_Wrapper.Function
@@ -2889,7 +2889,11 @@ class _lsmas:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
+            def LWLibavAudioSource(self, /, source: _AnyStr, stream_index: _IntLike | None = None, cache: _IntLike | None = None, cachefile: _AnyStr | None = None, av_sync: _IntLike | None = None, layout: _AnyStr | None = None, rate: _IntLike | None = None, decoder: _AnyStr | None = None, ff_loglevel: _IntLike | None = None, cachedir: _AnyStr | None = None, indexingpr: _IntLike | None = None, drc_scale: _FloatLike | None = None, ff_options: _AnyStr | None = None, fill_agaps: _IntLike | None = None) -> AudioNode: ...
+            @_Wrapper.Function
             def LWLibavSource(self, /, source: _AnyStr, stream_index: _IntLike | None = None, cache: _IntLike | None = None, cachefile: _AnyStr | None = None, threads: _IntLike | None = None, seek_mode: _IntLike | None = None, seek_threshold: _IntLike | None = None, dr: _IntLike | None = None, fpsnum: _IntLike | None = None, fpsden: _IntLike | None = None, variable: _IntLike | None = None, format: _AnyStr | None = None, decoder: _AnyStr | None = None, prefer_hw: _IntLike | None = None, repeat: _IntLike | None = None, dominance: _IntLike | None = None, ff_loglevel: _IntLike | None = None, cachedir: _AnyStr | None = None, ff_options: _AnyStr | None = None, rap_verification: _IntLike | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def LibavSMASHAudioSource(self, /, source: _AnyStr, track: _IntLike | None = None, skip_priming: _IntLike | None = None, layout: _AnyStr | None = None, rate: _IntLike | None = None, decoder: _AnyStr | None = None, ff_loglevel: _IntLike | None = None, drc_scale: _FloatLike | None = None, ff_options: _AnyStr | None = None) -> AudioNode: ...
             @_Wrapper.Function
             def LibavSMASHSource(self, /, source: _AnyStr, track: _IntLike | None = None, threads: _IntLike | None = None, seek_mode: _IntLike | None = None, seek_threshold: _IntLike | None = None, dr: _IntLike | None = None, fpsnum: _IntLike | None = None, fpsden: _IntLike | None = None, variable: _IntLike | None = None, format: _AnyStr | None = None, decoder: _AnyStr | None = None, prefer_hw: _IntLike | None = None, ff_loglevel: _IntLike | None = None, ff_options: _AnyStr | None = None) -> VideoNode: ...
 
@@ -3100,14 +3104,12 @@ class _nlm_ispc:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None) -> Any: ...
-            @_Wrapper.Function
-            def Version(self, /) -> Any: ...
+            def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None) -> VideoNode: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def NLMeans(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None) -> Any: ...
+            def NLMeans(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None) -> VideoNode: ...
 
 # </implementation/nlm_ispc>
 
@@ -3637,20 +3639,20 @@ class _sub:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def ImageFile(self, /, clip: VideoNode, file: _AnyStr, id: _IntLike | None = None, palette: _IntLike | _SequenceLike[_IntLike] | None = None, gray: _IntLike | None = None, info: _IntLike | None = None, flatten: _IntLike | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None) -> VideoNode: ...
+            def ImageFile(self, /, clip: VideoNode, file: _AnyStr, id: _IntLike | None = None, palette: _IntLike | _SequenceLike[_IntLike] | None = None, gray: _IntLike | None = None, info: _IntLike | None = None, flatten: _IntLike | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Subtitle(self, /, clip: VideoNode, text: _AnyStr, start: _IntLike | None = None, end: _IntLike | None = None, debuglevel: _IntLike | None = None, fontdir: _AnyStr | None = None, linespacing: _FloatLike | None = None, margins: _IntLike | _SequenceLike[_IntLike] | None = None, sar: _FloatLike | None = None, style: _AnyStr | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None) -> VideoNode: ...
+            def Subtitle(self, /, clip: VideoNode, text: _AnyStr, start: _IntLike | None = None, end: _IntLike | None = None, debuglevel: _IntLike | None = None, fontdir: _AnyStr | None = None, linespacing: _FloatLike | None = None, margins: _IntLike | _SequenceLike[_IntLike] | None = None, sar: _FloatLike | None = None, style: _AnyStr | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def TextFile(self, /, clip: VideoNode, file: _AnyStr, charset: _AnyStr | None = None, scale: _FloatLike | None = None, debuglevel: _IntLike | None = None, fontdir: _AnyStr | None = None, linespacing: _FloatLike | None = None, margins: _IntLike | _SequenceLike[_IntLike] | None = None, sar: _FloatLike | None = None, style: _AnyStr | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None) -> VideoNode: ...
+            def TextFile(self, /, clip: VideoNode, file: _AnyStr, charset: _AnyStr | None = None, scale: _FloatLike | None = None, debuglevel: _IntLike | None = None, fontdir: _AnyStr | None = None, linespacing: _FloatLike | None = None, margins: _IntLike | _SequenceLike[_IntLike] | None = None, sar: _FloatLike | None = None, style: _AnyStr | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None) -> VideoNode: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def ImageFile(self, /, file: _AnyStr, id: _IntLike | None = None, palette: _IntLike | _SequenceLike[_IntLike] | None = None, gray: _IntLike | None = None, info: _IntLike | None = None, flatten: _IntLike | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None) -> VideoNode: ...
+            def ImageFile(self, /, file: _AnyStr, id: _IntLike | None = None, palette: _IntLike | _SequenceLike[_IntLike] | None = None, gray: _IntLike | None = None, info: _IntLike | None = None, flatten: _IntLike | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Subtitle(self, /, text: _AnyStr, start: _IntLike | None = None, end: _IntLike | None = None, debuglevel: _IntLike | None = None, fontdir: _AnyStr | None = None, linespacing: _FloatLike | None = None, margins: _IntLike | _SequenceLike[_IntLike] | None = None, sar: _FloatLike | None = None, style: _AnyStr | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None) -> VideoNode: ...
+            def Subtitle(self, /, text: _AnyStr, start: _IntLike | None = None, end: _IntLike | None = None, debuglevel: _IntLike | None = None, fontdir: _AnyStr | None = None, linespacing: _FloatLike | None = None, margins: _IntLike | _SequenceLike[_IntLike] | None = None, sar: _FloatLike | None = None, style: _AnyStr | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def TextFile(self, /, file: _AnyStr, charset: _AnyStr | None = None, scale: _FloatLike | None = None, debuglevel: _IntLike | None = None, fontdir: _AnyStr | None = None, linespacing: _FloatLike | None = None, margins: _IntLike | _SequenceLike[_IntLike] | None = None, sar: _FloatLike | None = None, style: _AnyStr | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None) -> VideoNode: ...
+            def TextFile(self, /, file: _AnyStr, charset: _AnyStr | None = None, scale: _FloatLike | None = None, debuglevel: _IntLike | None = None, fontdir: _AnyStr | None = None, linespacing: _FloatLike | None = None, margins: _IntLike | _SequenceLike[_IntLike] | None = None, sar: _FloatLike | None = None, style: _AnyStr | None = None, blend: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None) -> VideoNode: ...
 
 # </implementation/sub>
 
@@ -3995,7 +3997,7 @@ class _zsmooth:
             @_Wrapper.Function
             def TemporalRepair(self, /, clip: VideoNode, repairclip: VideoNode, mode: _IntLike | _SequenceLike[_IntLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def TemporalSoften(self, /, clip: VideoNode, radius: _IntLike | None = None, threshold: _FloatLike | _SequenceLike[_FloatLike] | None = None, scenechange: _IntLike | None = None, scalep: _IntLike | None = None) -> VideoNode: ...
+            def TemporalSoften(self, /, clip: VideoNode, radius: _IntLike | None = None, threshold: _FloatLike | _SequenceLike[_FloatLike] | None = None, scenechange: _IntLike | None = None, scalep: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def VerticalCleaner(self, /, clip: VideoNode, mode: _IntLike | _SequenceLike[_IntLike]) -> VideoNode: ...
 
@@ -4036,7 +4038,7 @@ class _zsmooth:
             @_Wrapper.Function
             def TemporalRepair(self, /, repairclip: VideoNode, mode: _IntLike | _SequenceLike[_IntLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def TemporalSoften(self, /, radius: _IntLike | None = None, threshold: _FloatLike | _SequenceLike[_FloatLike] | None = None, scenechange: _IntLike | None = None, scalep: _IntLike | None = None) -> VideoNode: ...
+            def TemporalSoften(self, /, radius: _IntLike | None = None, threshold: _FloatLike | _SequenceLike[_FloatLike] | None = None, scenechange: _IntLike | None = None, scalep: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def VerticalCleaner(self, /, mode: _IntLike | _SequenceLike[_IntLike]) -> VideoNode: ...
 
