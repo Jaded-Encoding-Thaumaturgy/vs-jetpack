@@ -888,40 +888,6 @@ class _QTGMCBuilder:
     def _source_match_enabled(self) -> bool:
         return bool(self.source_match_iterations and self.basic_tr)
 
-    @property
-    def _sharpen_sigma(self) -> float:
-        # Total variance of the (binomial) basic blur and (linear) final blur.
-        return sqrt(self.basic_tr / 2 + self.final_tr * (self.final_tr + 1) / 3)
-
-    @property
-    def _back_blend_sigma(self) -> float:
-        passes = 1 + bool(
-            self.back_blend_mode is self.BackBlendMode.BOTH
-            and self.sharpen_limit_mode.is_presmooth
-            and self.sharpen_limit_radius
-        )
-
-        return self._sharpen_sigma * (self.back_blend_scale / sqrt(passes))
-
-    @property
-    def _sharpening_enabled(self) -> bool:
-        return bool(
-            ((self.sharpen_strength and self._sharpen_sigma) or self.sharpen_thin)
-            and (self.back_blend_mode is self.BackBlendMode.NONE or self._back_blend_sigma)
-        )
-
-    @property
-    def _sharpness_limiting_enabled(self) -> bool:
-        return bool(
-            self.sharpen_limit_mode is not self.SharpenLimitMode.NONE
-            and self.sharpen_limit_radius
-            and self._sharpening_enabled
-        )
-
-    @property
-    def _noise_restore_enabled(self) -> bool:
-        return bool(self.basic_noise_restore or self.final_noise_restore)
-
 
 class QTGMCGraph(VSObject):
     """
@@ -1083,8 +1049,8 @@ class QTGMCGraph(VSObject):
             smoothed = search
 
         gauss_sigma, blend_weight = self.settings.prefilter_strength
-        lim1, lim2, lim3 = [scale_delta(thr, 8, self.clip) for thr in self.settings.prefilter_limit]
         apply_blur = bool(gauss_sigma and blend_weight)
+        lim1, lim2, lim3 = [scale_delta(thr, 8, self.clip) for thr in self.settings.prefilter_limit]
 
         blurred = gauss_blur(smoothed, gauss_sigma) if apply_blur else smoothed
 
@@ -1124,17 +1090,16 @@ class QTGMCGraph(VSObject):
         tr = max(
             self.settings.analyze_force_tr,
             self.settings.denoise_tr
-            if self.settings.denoise_mc_denoise
-            and (self.settings.denoise_full_denoise or self.settings._noise_restore_enabled)
+            if self.settings.denoise_mc_denoise and (self.settings.denoise_full_denoise or self._noise_restore_enabled)
             else 0,
-            self.settings.denoise_stabilize is not False and self.settings._noise_restore_enabled,
+            self.settings.denoise_stabilize is not False and self._noise_restore_enabled,
             self._repair_mask_enabled,
             self.settings.basic_tr,
             self.settings.source_match_tr
             if self.settings.source_match_iterations > 1 and self.settings.basic_tr
             else 0,
             self.settings.sharpen_limit_radius
-            if self.settings.sharpen_limit_mode.is_temporal and self.settings._sharpness_limiting_enabled
+            if self.settings.sharpen_limit_mode.is_temporal and self._sharpness_limiting_enabled
             else 0,
             self.settings.final_tr,
             bool(self._motion_blur_level),
@@ -1268,27 +1233,33 @@ class QTGMCGraph(VSObject):
         if self.settings.lossless_mode is self.settings.LosslessMode.PRESHARPEN:
             smoothed = self._lossless(smoothed)
 
-        if self.settings._sharpening_enabled:
-            resharp = self._sharpen(smoothed)
+        # TODO:
+        # back-blending should only apply when unsharpening is enabled
+        # back-blending scale 0 cancels all sharpening, so skip all sharpening when 0 and unsharpening is enabled
+        # this means that thin should still apply when unsharpen is disabled (regardless of backblend cfg),
+        # but skip thinning when scale is 0 and unsharpen is enabled
+        resharp = self._sharpen(smoothed)
 
-            if self.settings.sharpen_limit_mode.is_presmooth and self.settings._sharpness_limiting_enabled:
-                if self.settings.back_blend_mode in (
-                    self.settings.BackBlendMode.PRELIMIT,
-                    self.settings.BackBlendMode.BOTH,
-                ):
-                    resharp = self._back_blend(resharp, smoothed)
-
-                resharp = self._sharpen_limit(resharp)
-
-                if self.settings.back_blend_mode in (
-                    self.settings.BackBlendMode.POSTLIMIT,
-                    self.settings.BackBlendMode.BOTH,
-                ):
-                    resharp = self._back_blend(resharp, smoothed)
-            elif self.settings.back_blend_mode is not self.settings.BackBlendMode.NONE:
+        if self.settings.sharpen_limit_mode.is_presmooth and self._sharpness_limiting_enabled:
+            if self.settings.back_blend_mode in (
+                self.settings.BackBlendMode.PRELIMIT,
+                self.settings.BackBlendMode.BOTH,
+            ):
                 resharp = self._back_blend(resharp, smoothed)
-        else:
-            resharp = smoothed
+
+            resharp = self._sharpen_limit(resharp)
+
+            if self.settings.back_blend_mode in (
+                self.settings.BackBlendMode.POSTLIMIT,
+                self.settings.BackBlendMode.BOTH,
+            ):
+                resharp = self._back_blend(resharp, smoothed)
+        elif (
+            self.settings.back_blend_mode is not self.settings.BackBlendMode.NONE
+            and self._sharpening_enabled
+            and not self._back_blend_noop
+        ):
+            resharp = self._back_blend(resharp, smoothed)
 
         return self._noise_restore(resharp, self.settings.basic_noise_restore)
 
@@ -1311,7 +1282,7 @@ class QTGMCGraph(VSObject):
         if smoothed is not self.bobbed:
             smoothed = mask_shimmer(smoothed, self.bobbed, **self.settings.final_mask_shimmer_args, func=self.func)
 
-        if self.settings.sharpen_limit_mode.is_postsmooth and self.settings._sharpness_limiting_enabled:
+        if self.settings.sharpen_limit_mode.is_postsmooth and self._sharpness_limiting_enabled:
             smoothed = self._sharpen_limit(smoothed)
 
         if self.settings.lossless_mode is self.settings.LosslessMode.POSTSMOOTH:
@@ -1367,11 +1338,33 @@ class QTGMCGraph(VSObject):
 
     @cachedproperty
     def _repair_mask_enabled(self) -> bool:
-        return bool(self.mode is self.Mode.REPAIR and self.settings.basic_mask_args.get("ml") != 0)
+        return self.mode is self.Mode.REPAIR and self.settings.basic_mask_args.get("ml") != 0
 
     @cachedproperty
-    def _motion_blur_fps_divisor(self) -> int:
-        return 1 if self.mode is self.Mode.BOB else self.settings.motion_blur_fps_divisor
+    def _sharpen_sigma(self) -> float:
+        # Total variance of the (binomial) basic blur and (linear) final blur.
+        return sqrt(self.settings.basic_tr / 2 + self.settings.final_tr * (self.settings.final_tr + 1) / 3)
+
+    @cachedproperty
+    def _sharpening_enabled(self) -> bool:
+        return bool(self.settings.sharpen_strength and self._sharpen_sigma)
+
+    @cachedproperty
+    def _back_blend_noop(self) -> bool:
+        return not (self.settings.back_blend_mode is self.settings.BackBlendMode.NONE or self.settings.back_blend_scale)
+
+    @cachedproperty
+    def _sharpness_limiting_enabled(self) -> bool:
+        return (
+            self.settings.sharpen_limit_mode is not self.settings.SharpenLimitMode.NONE
+            and bool(self.settings.sharpen_limit_radius)
+            and self._sharpening_enabled
+            and not self._back_blend_noop
+        )
+
+    @cachedproperty
+    def _noise_restore_enabled(self) -> bool:
+        return bool(self.settings.basic_noise_restore or self.settings.final_noise_restore)
 
     @cachedproperty
     def _motion_blur_level(self) -> float:
@@ -1381,6 +1374,10 @@ class QTGMCGraph(VSObject):
         angle_in, angle_out = self.settings.motion_blur_shutter_angle
 
         return (angle_out * self._motion_blur_fps_divisor - angle_in) / 3.60
+
+    @cachedproperty
+    def _motion_blur_fps_divisor(self) -> int:
+        return 1 if self.mode is self.Mode.BOB else self.settings.motion_blur_fps_divisor
 
     def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
         if self.mode is not self.Mode.DESHIMMER:
@@ -1476,7 +1473,10 @@ class QTGMCGraph(VSObject):
     def _sharpen(self, clip: vs.VideoNode) -> vs.VideoNode:
         resharp = clip
 
-        if self.settings.sharpen_strength and self.settings._sharpen_sigma:
+        if self._sharpening_enabled:
+            if self._back_blend_noop:
+                return clip
+
             if self.settings.sharpen_offset is not False:
                 dark_offset, bright_offset = self.settings.sharpen_offset
 
@@ -1485,7 +1485,7 @@ class QTGMCGraph(VSObject):
 
                 resharp = norm_expr(
                     [clip, source_min, source_max],
-                    "y z + 2 / AVG! AVG@ x > AVG@ {dark_offset} - AVG@ x < AVG@ {bright_offset} + x ? ?",
+                    "y z + 2 / AVG! x AVG@ < AVG@ {dark_offset} - x AVG@ > AVG@ {bright_offset} + x ? ?",
                     dark_offset=scale_delta(dark_offset, 8, self.clip),
                     bright_offset=scale_delta(bright_offset, 8, self.clip),
                     func=self._sharpen,
@@ -1494,7 +1494,7 @@ class QTGMCGraph(VSObject):
             resharp = unsharpen(
                 clip,
                 self.settings.sharpen_strength,
-                gauss_blur(resharp, self.settings._sharpen_sigma),
+                gauss_blur(resharp, self._sharpen_sigma),
                 func=self._sharpen,
             )
 
@@ -1512,7 +1512,9 @@ class QTGMCGraph(VSObject):
         return resharp
 
     def _back_blend(self, flt: vs.VideoNode, src: vs.VideoNode) -> vs.VideoNode:
-        return flt.std.MergeDiff(gauss_blur(src.std.MakeDiff(flt), self.settings._back_blend_sigma))
+        return flt.std.MergeDiff(
+            gauss_blur(src.std.MakeDiff(flt), self._sharpen_sigma * self.settings.back_blend_scale)
+        )
 
     def _sharpen_limit(self, clip: vs.VideoNode) -> vs.VideoNode:
         undershoot, overshoot = self.settings.sharpen_limit_clamp
