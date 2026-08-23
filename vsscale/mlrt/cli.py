@@ -67,7 +67,7 @@ def _custom_help_formatter(console: Console, options: ConsoleOptions, panel: Hel
     for i, entry in enumerate(panel.entries):
         if "--provider" in entry.positive_names:
             clean_names = tuple(name for name in entry.positive_names if name != "--provider")
-            panel.entries[i] = entry.copy(positive_names=clean_names)  # type: ignore[no-untyped-call]
+            panel.entries[i] = entry.copy(positive_names=clean_names)
     cyclopts.help.DefaultFormatter()(console, options, panel)
 
 
