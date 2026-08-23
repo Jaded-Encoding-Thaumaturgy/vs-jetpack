@@ -1233,11 +1233,6 @@ class QTGMCGraph(VSObject):
         if self.settings.lossless_mode is self.settings.LosslessMode.PRESHARPEN:
             smoothed = self._lossless(smoothed)
 
-        # TODO:
-        # back-blending should only apply when unsharpening is enabled
-        # back-blending scale 0 cancels all sharpening, so skip all sharpening when 0 and unsharpening is enabled
-        # this means that thin should still apply when unsharpen is disabled (regardless of backblend cfg),
-        # but skip thinning when scale is 0 and unsharpen is enabled
         resharp = self._sharpen(smoothed)
 
         if self.settings.sharpen_limit_mode.is_presmooth and self._sharpness_limiting_enabled:
