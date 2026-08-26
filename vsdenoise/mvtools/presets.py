@@ -217,7 +217,7 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_COHERENCE(cls) -> MVToolsPreset:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2),
+            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, satd=True),
             recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True),
         )
 
@@ -226,6 +226,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_SAD(cls) -> MVToolsPreset:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, mvlambda=0),
-            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True, mvlambda=0),
+            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, satd=True, mvlambda=100),
+            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True, mvlambda=100),
         )
