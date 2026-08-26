@@ -53,7 +53,7 @@ dependencies = [
     "psutil>=7.0.0",
     "typing_extensions>=4.15.0; python_version<'3.15'",
     # VapourSynth plugins
-    "vapoursynth-akarin>=1.4.1",
+    "vapoursynth-cranexpr~=0.12.0",
     "vapoursynth-vszip>=22.0.0",
 ]
 
@@ -249,6 +249,12 @@ url = "https://pypi.org/simple"
 [[tool.uv.index]]
 name = "vs-wheels"
 url = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple"
+
+# REMOVEME?: avoid circular dependency between vsjetpack and vstransitions.
+[[tool.uv.dependency-metadata]]
+name = "vstransitions"
+version = "0.1.4"
+requires-dist = ["vapoursynth"]
 
 [tool.hatch.build]
 artifacts = ["vsjetpack/_version.py"]
