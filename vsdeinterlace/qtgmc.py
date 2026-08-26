@@ -6,7 +6,16 @@ from enum import auto
 from math import comb, sqrt
 from typing import Any, Literal, Protocol, Self, TypedDict, overload
 
-from jetpytools import CustomIntEnum, CustomValueError, FuncExcept, cachedproperty, fallback, normalize_seq, to_arr
+from jetpytools import (
+    CustomEnum,
+    CustomIntEnum,
+    CustomValueError,
+    FuncExcept,
+    cachedproperty,
+    fallback,
+    normalize_seq,
+    to_arr,
+)
 
 from vsaa import NNEDI3
 from vsdeband import Grainer
@@ -93,7 +102,7 @@ class QTGMCArgs:
 
 
 class _QTGMCBuilder:
-    class NoiseDeintMode(CustomIntEnum):
+    class NoiseDeintMode(CustomEnum):
         """How to 'deinterlace' noise taken from an interlaced source."""
 
         WEAVE = auto()
@@ -115,7 +124,7 @@ class _QTGMCBuilder:
         Generate fresh noise lines.
         """
 
-    class LosslessMode(CustomIntEnum):
+    class LosslessMode(CustomEnum):
         """When to put the original fields into the output."""
 
         NONE = auto()
@@ -138,7 +147,7 @@ class _QTGMCBuilder:
         not used. Offers minimal sharpness control and tends to have more significant artifacts.
         """
 
-    class BackBlendMode(CustomIntEnum):
+    class BackBlendMode(CustomEnum):
         """When to back-blend the (blurred) difference between the pre- and post-sharpened clips."""
 
         NONE = auto()
@@ -177,7 +186,7 @@ class _QTGMCBuilder:
             `SharpenLimitMode.TEMPORAL_POSTSMOOTH`.
         """
 
-    class SharpenLimitMode(CustomIntEnum):
+    class SharpenLimitMode(CustomEnum):
         """How and when to apply limiting to [QTempGaussMC.sharpen][vsdeinterlace.QTempGaussMC.sharpen]."""
 
         NONE = auto()
@@ -217,22 +226,22 @@ class _QTGMCBuilder:
         algorithm leaves the result sharper, but can produce additional artifacts.
         """
 
-        @cachedproperty
+        @property
         def is_spatial(self) -> bool:
             """Whether the mode uses spatial sharpness limiting."""
             return self in (self.SPATIAL_PRESMOOTH, self.SPATIAL_POSTSMOOTH)
 
-        @cachedproperty
+        @property
         def is_temporal(self) -> bool:
             """Whether the mode uses temporal sharpness limiting."""
             return self in (self.TEMPORAL_PRESMOOTH, self.TEMPORAL_POSTSMOOTH)
 
-        @cachedproperty
+        @property
         def is_presmooth(self) -> bool:
             """Whether the mode applies sharpness limiting prior to smoothing."""
             return self in (self.SPATIAL_PRESMOOTH, self.TEMPORAL_PRESMOOTH)
 
-        @cachedproperty
+        @property
         def is_postsmooth(self) -> bool:
             """Whether the mode applies sharpness limiting after smoothing."""
             return self in (self.SPATIAL_POSTSMOOTH, self.TEMPORAL_POSTSMOOTH)
@@ -293,7 +302,7 @@ class _QTGMCBuilder:
         *,
         tr: int = 2,
         sc_threshold: float = 0.1,
-        strength: tuple[float, float] = (1.9, 0.9),
+        strength: tuple[float, float] = (1.96, 0.9),
         limit: tuple[float, float, float] = (3, 7, 2),
         bias: float = 0.51,
         mask_shimmer_args: QTGMCArgs.MaskShimmer | None = None,
@@ -917,7 +926,7 @@ class QTGMCGraph(VSObject):
     Additional usage info: [JET Encoding Guide](https://jaded-encoding-thaumaturgy.github.io/JET-guide/master/filtering/situational/qtgmc/)
     """
 
-    class Mode(CustomIntEnum):
+    class Mode(CustomEnum):
         """Processing mode used to construct the graph."""
 
         DEINTERLACE = auto()
@@ -1048,27 +1057,24 @@ class QTGMCGraph(VSObject):
         else:
             smoothed = search
 
-        gauss_sigma, blend_weight = self.settings.prefilter_strength
-        apply_blur = bool(gauss_sigma and blend_weight)
+        sigma, blend_weight = self.settings.prefilter_strength
         lim1, lim2, lim3 = [scale_delta(thr, 8, self.clip) for thr in self.settings.prefilter_limit]
 
-        blurred = gauss_blur(smoothed, gauss_sigma) if apply_blur else smoothed
+        blurred = gauss_blur(smoothed, sigma) if sigma and blend_weight else smoothed
+        limited = norm_expr(
+            [blurred, smoothed, search],
+            "y x y - {weight} * + BLUR! z y {lim1} - y {lim1} + clamp TWEAK! "
+            "BLUR@ {lim2} + TWEAK@ < BLUR@ {lim3} + BLUR@ {lim2} - TWEAK@ > BLUR@ {lim3} - "
+            "TWEAK@ BLUR@ TWEAK@ - {bias} * + ? ?",
+            weight=blend_weight,
+            lim1=lim1,
+            lim2=lim2,
+            lim3=lim3,
+            bias=self.settings.prefilter_bias,
+            func=self.func,
+        )
 
-        if apply_blur or (self.settings.prefilter_tr and lim1 and (lim2 or lim3)):
-            blurred = norm_expr(
-                [blurred, smoothed, search],
-                "y x y - {weight} * + BLUR! z y {lim1} - y {lim1} + clamp TWEAK! "
-                "BLUR@ {lim2} + TWEAK@ < BLUR@ {lim3} + BLUR@ {lim2} - TWEAK@ > BLUR@ {lim3} - "
-                "TWEAK@ BLUR@ TWEAK@ - {bias} * + ? ?",
-                weight=blend_weight,
-                lim1=lim1,
-                lim2=lim2,
-                lim3=lim3,
-                bias=self.settings.prefilter_bias,
-                func=self.func,
-            )
-
-        return prefilter_to_full_range(blurred, func=self.func, **self.settings.prefilter_range_expansion_args)
+        return prefilter_to_full_range(limited, func=self.func, **self.settings.prefilter_range_expansion_args)
 
     @cachedproperty
     def mv(self) -> MVTools:
@@ -1249,11 +1255,7 @@ class QTGMCGraph(VSObject):
                 self.settings.BackBlendMode.BOTH,
             ):
                 resharp = self._back_blend(resharp, smoothed)
-        elif (
-            self.settings.back_blend_mode is not self.settings.BackBlendMode.NONE
-            and self._sharpening_enabled
-            and not self._back_blend_noop
-        ):
+        elif self.settings.back_blend_mode is not self.settings.BackBlendMode.NONE and self._sharpening_enabled:
             resharp = self._back_blend(resharp, smoothed)
 
         return self._noise_restore(resharp, self.settings.basic_noise_restore)
@@ -1345,16 +1347,11 @@ class QTGMCGraph(VSObject):
         return bool(self.settings.sharpen_strength and self._sharpen_sigma)
 
     @cachedproperty
-    def _back_blend_noop(self) -> bool:
-        return not (self.settings.back_blend_mode is self.settings.BackBlendMode.NONE or self.settings.back_blend_scale)
-
-    @cachedproperty
     def _sharpness_limiting_enabled(self) -> bool:
         return (
             self.settings.sharpen_limit_mode is not self.settings.SharpenLimitMode.NONE
             and bool(self.settings.sharpen_limit_radius)
             and self._sharpening_enabled
-            and not self._back_blend_noop
         )
 
     @cachedproperty
@@ -1469,9 +1466,6 @@ class QTGMCGraph(VSObject):
         resharp = clip
 
         if self._sharpening_enabled:
-            if self._back_blend_noop:
-                return clip
-
             if self.settings.sharpen_offset is not False:
                 dark_offset, bright_offset = self.settings.sharpen_offset
 
