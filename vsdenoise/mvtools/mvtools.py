@@ -35,7 +35,10 @@ class _SuperConfigKey(NamedTuple):
 
 
 class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
-    def get_cached_super(self, clip: vs.VideoNode, onelevel: bool, **args: Any) -> vs.VideoNode:
+    def __vs_del__(self, core_id: int) -> None:
+        self.clear()
+
+    def get_clip(self, clip: vs.VideoNode, onelevel: bool, **args: Any) -> vs.VideoNode:
         args_key = tuple(sorted(args.items()))
         key = _SuperConfigKey(onelevel, args_key)
 
@@ -53,13 +56,16 @@ class _ClipSuperCache(VSObject):
     def __init__(self) -> None:
         self._cache = weakref.WeakKeyDictionary[vs.VideoNode, _SuperConfigCache]()
 
-    def get_cached_super(self, clip: vs.VideoNode, onelevel: bool, **args: Any) -> vs.VideoNode:
+    def __vs_del__(self, core_id: int) -> None:
+        self.clear()
+
+    def get(self, clip: vs.VideoNode, onelevel: bool, **args: Any) -> vs.VideoNode:
         cache = self._cache.get(clip)
 
         if cache is None:
             self._cache[clip] = cache = _SuperConfigCache()
 
-        return cache.get_cached_super(clip, onelevel, **args)
+        return cache.get_clip(clip, onelevel, **args)
 
     def clear(self) -> None:
         self._cache.clear()
@@ -275,7 +281,7 @@ class MVTools(VSObject):
             pelclip=pelclip,
         )
 
-        return _super_clip_cache.get_cached_super(clip, bool(onelevel), **super_args)
+        return _super_clip_cache.get(clip, bool(onelevel), **super_args)
 
     def analyze(
         self,
