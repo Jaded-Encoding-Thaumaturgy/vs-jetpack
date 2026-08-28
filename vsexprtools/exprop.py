@@ -5,7 +5,7 @@ from enum import EnumMeta
 from functools import cache
 from itertools import product
 from math import inf, isqrt
-from typing import Any, Literal, Self, SupportsIndex, cast, overload
+from typing import Any, Literal, Self, SupportsIndex, assert_never, cast, overload
 
 from jetpytools import (
     CustomIndexError,
@@ -96,7 +96,7 @@ class ExprToken(CustomStrEnum):
                 val = get_peak_value(clip, range_in=Range.FULL)
                 return val if clip.format.sample_type is vs.FLOAT else val + 1
             case _:
-                raise NotImplementedError
+                assert_never(self)
 
     def __getitem__(
         self, i: SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]
