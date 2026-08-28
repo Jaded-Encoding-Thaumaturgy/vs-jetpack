@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import weakref
 from collections.abc import Mapping, Sequence
 from fractions import Fraction
 from itertools import chain
@@ -48,14 +49,20 @@ class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
         return self[key]
 
 
-class _ClipSuperCache(VSObject, dict[vs.VideoNode, _SuperConfigCache]):
+class _ClipSuperCache(VSObject):
+    def __init__(self) -> None:
+        self._cache = weakref.WeakKeyDictionary[vs.VideoNode, _SuperConfigCache]()
+
     def get_cached_super(self, clip: vs.VideoNode, onelevel: bool, **args: Any) -> vs.VideoNode:
-        cache = self.get(clip)
+        cache = self._cache.get(clip)
 
         if cache is None:
-            self[clip] = cache = _SuperConfigCache()
+            self._cache[clip] = cache = _SuperConfigCache()
 
         return cache.get_cached_super(clip, onelevel, **args)
+
+    def clear(self) -> None:
+        self._cache.clear()
 
 
 _super_clip_cache = _ClipSuperCache()
