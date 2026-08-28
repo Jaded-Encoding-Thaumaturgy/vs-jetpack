@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Collection, Iterable, Iterator, Sequence
 from enum import EnumMeta
-from functools import cache
 from itertools import product
 from math import inf, isqrt
 from typing import Any, Literal, Self, SupportsIndex, assert_never, cast, overload
@@ -66,7 +65,6 @@ class ExprToken(CustomStrEnum):
     RangeSize = "range_size"
     """Size of the full range (e.g. 256 for 8-bit, 65536 for 16-bit)."""
 
-    @cache  # noqa: B019
     def get_value(self, clip: vs.VideoNode, chroma: bool = False, range_in: RangeLike | None = None) -> float:
         """
         Resolves the numeric value represented by this token based on the input clip and range.
@@ -130,17 +128,6 @@ class ExprToken(CustomStrEnum):
 
     def __str__(self) -> str:
         return self._value_
-
-
-def _cache_clear_expr_token(core_id: int) -> None:
-    def cache_clear() -> None:
-        for token in ExprToken:
-            token.get_value.cache_clear()
-
-    vs.register_on_destroy(cache_clear)
-
-
-vs.register_on_creation(_cache_clear_expr_token)
 
 
 class ExprList(StrList):
