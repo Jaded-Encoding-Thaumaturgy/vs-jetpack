@@ -28,7 +28,7 @@ def get_clip_yuv_limited() -> vs.VideoNode:
 )
 @pytest.mark.filterwarnings("ignore:The _ColorRange frame property has been deprecated, use _Range instead")
 def test_expr_token_get_value_limited(token: ExprToken, range_in: Range | None, expected: float) -> None:
-    assert token.get_value(get_clip_yuv_limited(), None, range_in) == expected
+    assert token.get_value(get_clip_yuv_limited(), False, range_in) == expected
 
 
 @pytest.mark.parametrize(
