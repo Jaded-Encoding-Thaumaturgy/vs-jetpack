@@ -4,6 +4,7 @@ import logging
 import weakref
 from abc import ABC, ABCMeta
 from collections.abc import Callable, Mapping, MutableMapping, MutableSequence, MutableSet
+from contextlib import suppress
 from enum import Flag
 from functools import partial
 from itertools import chain
@@ -13,7 +14,7 @@ from jetpytools import Singleton, classproperty, to_arr
 
 from vsjetpack import deprecated, is_from_vs_module
 
-from .proxy import core, register_on_creation, register_on_destroy
+from .proxy import core, register_on_creation, register_on_destroy, unregister_on_creation, unregister_on_destroy
 
 __all__ = ["VSDebug", "VSObject", "VSObjectABC", "VSObjectABCMeta", "VSObjectMeta"]
 
@@ -114,6 +115,7 @@ def _register_vs_del(obj: VSObject | VSObjectMeta) -> None:
             prefix = _get_mangle_name(obj.__class__.__name__)
 
     obj_ref = weakref.ref(obj)
+    registered_cbs = list[Callable[[], None]]()
 
     def del_register(core_id: int) -> None:
         if (obj_inst := obj_ref()) is None:
@@ -133,12 +135,22 @@ def _register_vs_del(obj: VSObject | VSObjectMeta) -> None:
                 "... Custom dunder detected!" if _has_custom_dunder(obj_inst_p) else "",
             )
 
+        registered_cbs.append(vsdel_partial_register)
         setattr(obj_inst, prefix + partial_attr, vsdel_partial_register)
         register_on_destroy(vsdel_partial_register)
+
+    def weak_finalize() -> None:
+        unregister_on_creation(del_register)
+        for cb in registered_cbs:
+            with suppress(ValueError, RuntimeError):
+                unregister_on_destroy(cb)
+        registered_cbs.clear()
 
     if (obj_inst := obj_ref()) is not None:
         setattr(obj_inst, prefix + register_attr, del_register)
         register_on_creation(del_register)
+        if not isinstance(obj, VSObjectMeta):
+            weakref.finalize(obj_inst, weak_finalize)
 
 
 class VSObjectMeta(type):
