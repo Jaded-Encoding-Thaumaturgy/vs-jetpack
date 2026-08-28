@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import weakref
 from abc import abstractmethod
 from collections import OrderedDict, UserDict
 from collections.abc import MutableMapping
@@ -137,8 +138,10 @@ class NodeFramesCache[NodeT: vs.RawNode, FrameT: vs.RawFrame](VSObjectABC, UserD
 class ClipFramesCache(NodeFramesCache[vs.VideoNode, vs.VideoFrame]): ...
 
 
-class NodesPropsCache[NodeT: vs.RawNode](LRUCache[tuple[NodeT, int], MutableMapping[str, "_PropValue"]]):
-    def __delitem__(self, key: tuple[NodeT, int]) -> None:
+class NodesPropsCache[NodeT: vs.RawNode](
+    LRUCache[tuple[weakref.ReferenceType[NodeT], int], MutableMapping[str, "_PropValue"]]
+):
+    def __delitem__(self, key: tuple[weakref.ReferenceType[NodeT], int]) -> None:
         if key not in self:
             return
 

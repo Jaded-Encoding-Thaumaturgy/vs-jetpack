@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import weakref
 from collections.abc import Callable, Iterable
 from types import UnionType
 from typing import Any, Literal, Union, get_args, get_origin, overload
@@ -180,13 +181,14 @@ def get_prop[CT, DT](
     func = func or get_prop
 
     if isinstance(obj, vs.RawNode):
-        props = _get_prop_cache.get((obj, 0), MISSING)
+        weak_obj = weakref.ref(obj, lambda ref: _get_prop_cache.pop((ref, 0), None))
+        props = _get_prop_cache.get((weak_obj, 0), MISSING)
 
         if props is MISSING:
             with obj.get_frame(0) as f:
                 props = f.props.copy()
 
-            _get_prop_cache[obj, 0] = props
+            _get_prop_cache[weak_obj, 0] = props
 
     elif isinstance(obj, vs.RawFrame):
         props = obj.props
