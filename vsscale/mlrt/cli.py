@@ -28,6 +28,15 @@ MAX_CONCURRENCY = os.cpu_count() or 4
 
 console = Console(stderr=True)
 
+
+def _custom_help_formatter(console: Console, options: ConsoleOptions, panel: HelpPanel) -> None:
+    for i, entry in enumerate(panel.entries):
+        if "--provider" in entry.positive_names:
+            clean_names = tuple(name for name in entry.positive_names if name != "--provider")
+            panel.entries[i] = entry.copy(positive_names=clean_names)
+    cyclopts.help.DefaultFormatter()(console, options, panel)
+
+
 app = cyclopts.App(
     name="vsscale",
     version=__version__,
@@ -39,6 +48,7 @@ app = cyclopts.App(
         cyclopts.config.Toml(TOML_CONFIG[0], root_keys=TOML_KEYS[0], allow_unknown=True),
         cyclopts.config.Toml(TOML_CONFIG[1], root_keys=TOML_KEYS[1], allow_unknown=True),
     ],
+    help_formatter=_custom_help_formatter,
 )
 onnx_app = cyclopts.App(name="onnx", help="Manage downloaded ONNX models.")
 artifact_app = cyclopts.App(name="artifact", help="Manage built TensorRT and MIGraphxX artifacts.")
@@ -61,14 +71,6 @@ def meta_main(
     if no_config:
         app.config = None
     app(tokens)
-
-
-def _custom_help_formatter(console: Console, options: ConsoleOptions, panel: HelpPanel) -> None:
-    for i, entry in enumerate(panel.entries):
-        if "--provider" in entry.positive_names:
-            clean_names = tuple(name for name in entry.positive_names if name != "--provider")
-            panel.entries[i] = entry.copy(positive_names=clean_names)
-    cyclopts.help.DefaultFormatter()(console, options, panel)
 
 
 @onnx_app.command(help_formatter=_custom_help_formatter)
@@ -149,8 +151,8 @@ async def download(
         console.print()
 
 
-@artifact_app.command(help="List built TensorRT & MIGraphxX artifacts.", help_formatter=_custom_help_formatter)
-@onnx_app.command(help="List downloaded ONNX models.", help_formatter=_custom_help_formatter)
+@artifact_app.command(help="List built TensorRT & MIGraphxX artifacts.")
+@onnx_app.command(help="List downloaded ONNX models.")
 def show(
     global_: Annotated[
         bool,
@@ -183,8 +185,8 @@ def show(
     return print(pretty_repr(sorted(files, reverse=True)))
 
 
-@artifact_app.command(help="Clear built TensorRT & MIGraphxX artifacts.", help_formatter=_custom_help_formatter)
-@onnx_app.command(help="Clear downloaded ONNX models.", help_formatter=_custom_help_formatter)
+@artifact_app.command(help="Clear built TensorRT & MIGraphxX artifacts.")
+@onnx_app.command(help="Clear downloaded ONNX models.")
 def clear(
     global_: Annotated[
         bool,
