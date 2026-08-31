@@ -1360,7 +1360,7 @@ class QTGMCGraph(VSObject):
 
     @cachedproperty
     def _motion_blur_level(self) -> float:
-        if self.settings.motion_blur_shutter_angle is False:
+        if not self.settings.motion_blur_shutter_angle:
             return 0
 
         angle_in, angle_out = self.settings.motion_blur_shutter_angle
