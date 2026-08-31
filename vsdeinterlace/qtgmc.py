@@ -42,6 +42,7 @@ from vstools import (
     Planes,
     UnsupportedFieldBasedError,
     VSObject,
+    get_y,
     sc_detect,
     scale_delta,
     vs,
@@ -1090,10 +1091,13 @@ class QTGMCGraph(VSObject):
         Only available when motion vectors need to be generated.
         """
 
+        search = self.draft
+
+        if not self.builder.analyze_preset.get("chroma", True):
+            search = get_y(search)
+
         if self.mode is self.Mode.REPAIR:
-            search = BlurMatrix.BINOMIAL()(self.draft, mode=ConvMode.VERTICAL, func=self.func)
-        else:
-            search = self.draft
+            search = BlurMatrix.BINOMIAL()(search, mode=ConvMode.VERTICAL, func=self.func)
 
         if self.builder.prefilter_tr:
             smoothed = BlurMatrix.BINOMIAL(self.builder.prefilter_tr, mode=ConvMode.TEMPORAL)(
