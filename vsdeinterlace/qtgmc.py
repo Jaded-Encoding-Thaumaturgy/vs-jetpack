@@ -339,14 +339,14 @@ class _QTGMCBuilder:
             tr: Temporal radius of the binomial blur. Larger values reduce more shimmer but can introduce blurring and
                 ghosting. Defaults to 2.
             sc_threshold: Threshold for scene changes. Higher values are less sensitive. Defaults to 0.1.
-            strength: Tuple containing the prefilter Gaussian blur sigma and blend weight.
+            strength: Gaussian blur sigma and its blend weight.
 
                 - First value: Gaussian blur sigma. Higher values result in more blurring.
                 - Second value: Blend weight of the Gaussian blur. Higher values give more weight to the
                     Gaussian-blurred clip.
 
                 Defaults to (1.9, 0.9).
-            limit: Tuple containing the 3-step limiting thresholds (8-bit) for the Gaussian blur post-processing:
+            limit: Three-step limiting thresholds (8-bit scale) for the Gaussian blur post-processing:
 
                    - First value: Maximum allowed delta between the temporally blurred clip and the draft clip. Smaller
                     values clamp the draft clip closer to the temporally blurred clip.
@@ -408,10 +408,19 @@ class _QTGMCBuilder:
             force_tr: Always analyze motion to at least this value, even if otherwise unnecessary. Useful if you want to
                 reuse the generated motion vectors for other tasks. Defaults to 0.
             blksize: Motion analysis block size. Larger values are faster and less sensitive to noise, but less
-                accurate. Passing a tuple of values results in asymmetric block sizes. Defaults to 16.
+                accurate.
+
+                - First value: Horizontal block size.
+                - Second value: Vertical block size.
+
+                A single value applies to both axes. Defaults to 16.
             overlap: The block size divisor for block size overlap. Smaller values reduce blocking artifacts of
-                [MVTools][vsdenoise.mvtools.mvtools.MVTools] processes. Passing a tuple of values results in asymmetric
-                overlap. Defaults to 2.
+                [MVTools][vsdenoise.mvtools.mvtools.MVTools] processes.
+
+                - First value: Horizontal block size divisor.
+                - Second value: Vertical block size divisor.
+
+                A single value applies to both axes. Defaults to 2.
             refine: Number of iterations to recalculate motion vectors with halved block size. Improves motion vector
                 precision without reducing denoising effectiveness. Defaults to 1.
             thsad_recalc: Only poor-quality new vectors with a SAD above this value will be re-estimated by motion
@@ -555,11 +564,19 @@ class _QTGMCBuilder:
             tr: Temporal radius of the motion-compensated binomial blur. Larger values reduce more shimmer but can
                 introduce blurring and ghosting. Defaults to 2.
             thsad: SAD threshold of the motion-compensated binomial blur. Larger values reduce more shimmer but can
-                introduce blurring and ghosting. Passing a tuple of values results in per-plane thresholds. Defaults to
-                640.
-            thsad2: Second SAD threshold of the motion-compensated linear blur. Larger values clean more artifacts but
-                can introduce blurring and ghosting. Passing a tuple of values results in per-plane thresholds. Defaults
-                to None.
+                introduce blurring and ghosting.
+
+                - First value: Luma SAD threshold.
+                - Second value: Chroma SAD threshold.
+
+                A single value applies to both luma and chroma. Defaults to 640.
+            thsad2: SAD threshold of the motion-compensated linear blur for the furthest references. Larger values clean
+                more artifacts but can introduce blurring and ghosting.
+
+                - First value: Luma SAD threshold.
+                - Second value: Chroma SAD threshold.
+
+                A single value applies to both luma and chroma. Defaults to None.
             noise_restore: Amount of noise to restore after this stage. Used to retain stable noise. Defaults to 0.
             mask_args: Additional arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask]. Only used
                 for [QTempGaussMC.repair][vsdeinterlace.QTempGaussMC.repair]. Defaults to {"ml": 10}.
@@ -702,9 +719,13 @@ class _QTGMCBuilder:
             strength: Sharpening strength. Higher values result in more sharpening. Defaults to 1 when
                 [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match] `iterations` is `0`, and 0
                 otherwise.
-            offset: Shifts the unsharpen blur source to the vertical min/max average ± this value (8-bit). Smaller
-                values result in more vertical sharpening. Passing a tuple of values results in asymmetric offsetting.
-                `False` disables range limiting. Defaults to 1.
+            offset: Shifts the unsharpen blur source to the vertical min/max average ± this value (8-bit scale). Smaller
+                values result in more vertical sharpening.
+
+                - First value: Dark offset.
+                - Second value: Bright offset.
+
+                A single value applies to both dark and bright offsets. `False` disables range limiting. Defaults to 1.
             thin: How much to thin down horizontal edges. Higher values result in more thinning. Defaults to 0.
         """
 
@@ -777,8 +798,12 @@ class _QTGMCBuilder:
                 [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match] `iterations` is `0` and
                 SharpenLimitMode.NONE otherwise.
             radius: Radius of the sharpness limiting. Larger values allow more sharpening. Defaults to 1.
-            clamp: How much undershoot/overshoot to allow (8-bit). Larger values result in less limiting. Passing a
-                tuple of values allows for asymmetric limiting. Defaults to 0.
+            clamp: How much undershoot/overshoot to allow (8-bit scale). Larger values result in less limiting.
+
+                - First value: Undershoot to allow.
+                - Second value: Overshoot to allow.
+
+                A single value applies to both undershoot and overshoot. Defaults to 0.
             comp_args: Additional arguments passed to [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate]
                 for temporal limiting. Defaults to None.
         """
@@ -832,11 +857,19 @@ class _QTGMCBuilder:
             tr: Temporal radius of the motion-compensated linear blur. Larger values clean more artifacts but can
                 introduce blurring and ghosting. Defaults to 1.
             thsad: SAD threshold of the motion-compensated linear blur. Larger values clean more artifacts but can
-                introduce blurring and ghosting. Passing a tuple of values results in per-plane thresholds. Defaults to
-                256.
-            thsad2: Second SAD threshold of the motion-compensated linear blur. Larger values clean more artifacts but
-                can introduce blurring and ghosting. Passing a tuple of values results in per-plane thresholds. Defaults
-                to None.
+                introduce blurring and ghosting.
+
+                - First value: Luma SAD threshold.
+                - Second value: Chroma SAD threshold.
+
+                A single value applies to both luma and chroma. Defaults to 256.
+            thsad2: SAD threshold of the motion-compensated linear blur for the furthest references. Larger values clean
+                more artifacts but can introduce blurring and ghosting.
+
+                - First value: Luma SAD threshold.
+                - Second value: Chroma SAD threshold.
+
+                A single value applies to both luma and chroma. Defaults to None.
             noise_restore: Amount of noise to restore after this stage. Used to retain any noise. Defaults to 0.
             degrain_args: Additional arguments passed to [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain].
                 Defaults to None.
@@ -871,14 +904,18 @@ class _QTGMCBuilder:
                 angle, the output shutter angle, and the frame rate divisor.
             - Motion-compensated blurring: Applies vector-based directional blur along motion vectors when the required
                 blur amount is non-zero.
-            - Motion-adaptive masking: Generates a mask based on motion to selectively merge motion blur into the source
-                while keeping static areas sharp.
+            - Motion-compensated masking: Generates a mask based on motion to selectively merge motion blur into the
+                source while keeping static areas sharp.
             - Frame rate reduction: Optionally decimates frame rate (e.g., dropping every other frame for single-rate
                 output) after motion blur application.
 
         Args:
-            shutter_angle: Tuple containing the source and output shutter angles. Motion blur is applied if they do not
-                match. `False` disables motion blur. Defaults to False.
+            shutter_angle: Source and output shutter angle. Motion blur is applied if they do not match.
+
+                - First value: Source shutter angle.
+                - Second value: Output shutter angle.
+
+                `False` disables motion blur. Defaults to False.
             fps_divisor: Factor by which to smoothly reduce frame rate. Defaults to 1.
             blur_args: Additional arguments passed to [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur].
                 Defaults to None.
@@ -1028,7 +1065,7 @@ class QTGMCGraph(VSObject):
         Used as a base for [QTempGaussMC.prefilter][vsdeinterlace.QTempGaussMC.prefilter] and
         [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise].
 
-        Only available when using denoising or motion-compensated processing.
+        Only available when using noise or motion-compensated processing.
         """
 
         if self.mode in (self.Mode.DEINTERLACE, self.Mode.BOB):
@@ -1124,9 +1161,26 @@ class QTGMCGraph(VSObject):
 
     @cachedproperty
     def denoise(self) -> vs.VideoNode:
-        """Output of [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise]."""
+        """
+        Output of [QTempGaussMC.denoise][vsdeinterlace.QTempGaussMC.denoise].
 
-        return self._apply_denoise if self.settings.denoise_full_denoise else self.clip
+        Only available when using noise processing.
+        """
+
+        if self.settings.denoise_mc_denoise and self.settings.denoise_tr:
+            denoised = self.mv.compensate(
+                tr=self.settings.denoise_tr,
+                thscd=self.settings.analyze_thscd,
+                temporal_func=lambda clip: self.settings.denoise_func(clip, tr=self.settings.denoise_tr),
+                **self.settings.denoise_func_comp_args,
+            )
+        else:
+            denoised = self.settings.denoise_func(self.draft, tr=self.settings.denoise_tr)
+
+        if self.mode in (self.Mode.DEINTERLACE, self.Mode.BOB):
+            denoised = reinterlace(denoised, self.tff, self.func)
+
+        return denoised
 
     @cachedproperty
     def noise(self) -> vs.VideoNode:
@@ -1136,7 +1190,7 @@ class QTGMCGraph(VSObject):
         Only available when using noise restoration.
         """
 
-        noise = self.clip.std.MakeDiff(self._apply_denoise)
+        noise = self.clip.std.MakeDiff(self.denoise)
 
         if self.mode in (self.Mode.DEINTERLACE, self.Mode.BOB):
             match self.settings.denoise_deint:
@@ -1189,20 +1243,6 @@ class QTGMCGraph(VSObject):
         return noise
 
     @cachedproperty
-    def bob_input(self) -> vs.VideoNode:
-        """
-        Prepared input clip for high-quality interpolation.
-
-        Used as a base for the internal `_interpolate` method and as a reference for
-        [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match].
-        """
-
-        if self.mode is self.Mode.REPAIR:
-            return reinterlace(self.denoise, self.tff, self.func)
-
-        return self.denoise
-
-    @cachedproperty
     def bobbed(self) -> vs.VideoNode:
         """
         High-quality bobbed clip.
@@ -1211,7 +1251,7 @@ class QTGMCGraph(VSObject):
         [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match].
         """
 
-        bobbed = self._interpolate(self.bob_input, self.settings.basic_bobber)
+        bobbed = self._interpolate(self._bob_input, self.settings.basic_bobber)
 
         if self._repair_mask_enabled:
             mask = self.mv.mask(
@@ -1220,7 +1260,7 @@ class QTGMCGraph(VSObject):
                 thscd=self.settings.analyze_thscd,
                 **self.settings.basic_mask_args,
             )
-            bobbed = self.denoise.std.MaskedMerge(bobbed, mask)
+            bobbed = self._denoise_output.std.MaskedMerge(bobbed, mask)
 
         return bobbed
 
@@ -1317,21 +1357,15 @@ class QTGMCGraph(VSObject):
         return blurred
 
     @cachedproperty
-    def _apply_denoise(self) -> vs.VideoNode:
-        if self.settings.denoise_mc_denoise and self.settings.denoise_tr:
-            denoised = self.mv.compensate(
-                tr=self.settings.denoise_tr,
-                thscd=self.settings.analyze_thscd,
-                temporal_func=lambda clip: self.settings.denoise_func(clip, tr=self.settings.denoise_tr),
-                **self.settings.denoise_func_comp_args,
-            )
-        else:
-            denoised = self.settings.denoise_func(self.draft, tr=self.settings.denoise_tr)
+    def _denoise_output(self) -> vs.VideoNode:
+        return self.denoise if self.settings.denoise_full_denoise else self.clip
 
-        if self.mode in (self.Mode.DEINTERLACE, self.Mode.BOB):
-            denoised = reinterlace(denoised, self.tff, self.func)
+    @cachedproperty
+    def _bob_input(self) -> vs.VideoNode:
+        if self.mode is self.Mode.REPAIR:
+            return reinterlace(self._denoise_output, self.tff, self.func)
 
-        return denoised
+        return self._denoise_output
 
     @cachedproperty
     def _repair_mask_enabled(self) -> bool:
@@ -1406,7 +1440,7 @@ class QTGMCGraph(VSObject):
         if self.mode is not self.Mode.DESHIMMER:
             clip = reinterlace(clip, self.tff, self._source_match)
 
-        adjusted = error_adjustment(self.bob_input, clip, self.settings.basic_tr)
+        adjusted = error_adjustment(self._bob_input, clip, self.settings.basic_tr)
         new_bobbed = self._interpolate(adjusted, self.settings.basic_bobber)
         matched = self._binomial_degrain(new_bobbed, self.settings.basic_tr, **self.settings.basic_degrain_args)
 
@@ -1421,7 +1455,7 @@ class QTGMCGraph(VSObject):
             else:
                 clip = matched
 
-            diff = self.bob_input.std.MakeDiff(clip)
+            diff = self._bob_input.std.MakeDiff(clip)
             refine_bobbed = self._interpolate(diff, self.settings.source_match_bobber)
             refine_matched = self._binomial_degrain(
                 refine_bobbed, self.settings.source_match_tr, **self.settings.source_match_degrain_args
@@ -1441,7 +1475,7 @@ class QTGMCGraph(VSObject):
         if self.mode is self.Mode.DESHIMMER or clip is self.bobbed:
             return clip
 
-        fields_src = self.denoise.std.SeparateFields(self.tff.is_tff)
+        fields_src = self._denoise_output.std.SeparateFields(self.tff.is_tff)
         if self.mode is self.Mode.REPAIR:
             fields_src = fields_src.std.SelectEvery(4, (0, 3))
         fields_flt = clip.std.SeparateFields(self.tff.is_tff).std.SelectEvery(4, (1, 2))
@@ -1613,7 +1647,7 @@ class QTempGaussMC(_QTGMCBuilder):
                 motion-compensated processing. Defaults to False.
 
         Returns:
-            The deinterlaced clip, or a tuple of (clip, graph) containing the deinterlaced clip and its `QTGMCGraph`
+            The deinterlaced clip, or a (clip, graph) pair containing the deinterlaced clip and its `QTGMCGraph`
             object if `return_graph` is `True`.
         """
 
@@ -1661,7 +1695,7 @@ class QTempGaussMC(_QTGMCBuilder):
                 motion-compensated processing. Defaults to False.
 
         Returns:
-            The bobbed clip, or a tuple of (clip, graph) containing the bobbed clip and its `QTGMCGraph` object if
+            The bobbed clip, or a (clip, graph) pair containing the bobbed clip and its `QTGMCGraph` object if
             `return_graph` is `True`.
         """
 
@@ -1708,7 +1742,7 @@ class QTempGaussMC(_QTGMCBuilder):
                 motion-compensated processing. Defaults to False.
 
         Returns:
-            The repaired clip, or a tuple of (clip, graph) containing the repaired clip and its `QTGMCGraph` object if
+            The repaired clip, or a (clip, graph) pair containing the repaired clip and its `QTGMCGraph` object if
             `return_graph` is `True`.
         """
 
@@ -1745,7 +1779,7 @@ class QTempGaussMC(_QTGMCBuilder):
                 motion-compensated processing. Defaults to False.
 
         Returns:
-            The deshimmered clip, or a tuple of (clip, graph) containing the deshimmered clip and its `QTGMCGraph`
+            The deshimmered clip, or a (clip, graph) pair containing the deshimmered clip and its `QTGMCGraph`
                 object if `return_graph` is `True`.
         """
 
