@@ -396,7 +396,7 @@ class _QTGMCBuilder:
         Performs motion analysis, which is then utilized by all subsequent stages for motion-compensated processing.
 
         High-level overview:
-            - Dynamic temporal radius calculation: Determines the maximum required temporal search radius across all
+            - Dynamic temporal radius calculation: Determines the minimum required temporal search radius across all
                 actively used settings and processes.
             - Motion vector refinement: Iteratively shrinks block size and calls
                 [MVTools.recalculate][vsdenoise.mvtools.mvtools.MVTools.recalculate] to improve motion vector precision.
