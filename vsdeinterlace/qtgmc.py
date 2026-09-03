@@ -1130,12 +1130,14 @@ class QTGMCGraph(VSObject):
         if self.settings.analyze_vectors:
             return mv
 
+        noise_restore_enabled = bool(self.settings.basic_noise_restore or self.settings.final_noise_restore)
+
         tr = max(
             self.settings.analyze_force_tr,
             self.settings.denoise_tr
-            if self.settings.denoise_mc_denoise and (self.settings.denoise_full_denoise or self._noise_restore_enabled)
+            if self.settings.denoise_mc_denoise and (self.settings.denoise_full_denoise or noise_restore_enabled)
             else 0,
-            self.settings.denoise_stabilize is not False and self._noise_restore_enabled,
+            self.settings.denoise_stabilize is not False and noise_restore_enabled,
             self._repair_mask_enabled,
             self.settings.basic_tr,
             self.settings.source_match_tr
@@ -1251,7 +1253,7 @@ class QTGMCGraph(VSObject):
         [QTempGaussMC.source_match][vsdeinterlace.QTempGaussMC.source_match].
         """
 
-        bobbed = self._interpolate(self._bob_input, self.settings.basic_bobber)
+        bobbed = self._interpolate(self._bobber_input, self.settings.basic_bobber)
 
         if self._repair_mask_enabled:
             mask = self.mv.mask(
@@ -1361,7 +1363,7 @@ class QTGMCGraph(VSObject):
         return self.denoise if self.settings.denoise_full_denoise else self.clip
 
     @cachedproperty
-    def _bob_input(self) -> vs.VideoNode:
+    def _bobber_input(self) -> vs.VideoNode:
         if self.mode is self.Mode.REPAIR:
             return reinterlace(self._denoise_output, self.tff, self.func)
 
@@ -1387,10 +1389,6 @@ class QTGMCGraph(VSObject):
             and bool(self.settings.sharpen_limit_radius)
             and self._sharpening_enabled
         )
-
-    @cachedproperty
-    def _noise_restore_enabled(self) -> bool:
-        return bool(self.settings.basic_noise_restore or self.settings.final_noise_restore)
 
     @cachedproperty
     def _motion_blur_level(self) -> float:
@@ -1440,7 +1438,7 @@ class QTGMCGraph(VSObject):
         if self.mode is not self.Mode.DESHIMMER:
             clip = reinterlace(clip, self.tff, self._source_match)
 
-        adjusted = error_adjustment(self._bob_input, clip, self.settings.basic_tr)
+        adjusted = error_adjustment(self._bobber_input, clip, self.settings.basic_tr)
         new_bobbed = self._interpolate(adjusted, self.settings.basic_bobber)
         matched = self._binomial_degrain(new_bobbed, self.settings.basic_tr, **self.settings.basic_degrain_args)
 
@@ -1455,7 +1453,7 @@ class QTGMCGraph(VSObject):
             else:
                 clip = matched
 
-            diff = self._bob_input.std.MakeDiff(clip)
+            diff = self._bobber_input.std.MakeDiff(clip)
             refine_bobbed = self._interpolate(diff, self.settings.source_match_bobber)
             refine_matched = self._binomial_degrain(
                 refine_bobbed, self.settings.source_match_tr, **self.settings.source_match_degrain_args
@@ -1575,7 +1573,7 @@ class QTGMCGraph(VSObject):
 
     def _noise_restore(self, clip: vs.VideoNode, restore: float) -> vs.VideoNode:
         if restore:
-            clip = norm_expr(
+            return norm_expr(
                 [clip, self.noise], "x y neutral - {restore} * +", restore=restore, func=self._noise_restore
             )
 
@@ -1799,7 +1797,7 @@ def mask_shimmer(
     func: FuncExcept | None = None,
 ) -> vs.VideoNode:
     """
-    Filters out differences unrelated to bob shimmer by isolating only thin horizontal areas.
+    Filters out differences unrelated to bob shimmer by isolating thin horizontal areas.
 
     High-level overview:
         - Vertical morphological analysis: Extracts the difference between source and filtered clips, running
