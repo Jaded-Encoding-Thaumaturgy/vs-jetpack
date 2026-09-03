@@ -1358,7 +1358,7 @@ class QTGMCGraph(VSObject):
 
         return blurred
 
-    @cachedproperty
+    @property
     def _denoise_output(self) -> vs.VideoNode:
         return self.denoise if self.settings.denoise_full_denoise else self.clip
 
@@ -1369,20 +1369,20 @@ class QTGMCGraph(VSObject):
 
         return self._denoise_output
 
-    @cachedproperty
+    @property
     def _repair_mask_enabled(self) -> bool:
         return self.mode is self.Mode.REPAIR and self.settings.basic_mask_args.get("ml") != 0
 
-    @cachedproperty
+    @property
     def _sharpen_sigma(self) -> float:
         # Total variance of the (binomial) basic blur and (linear) final blur.
         return sqrt(self.settings.basic_tr / 2 + self.settings.final_tr * (self.settings.final_tr + 1) / 3)
 
-    @cachedproperty
+    @property
     def _sharpening_enabled(self) -> bool:
         return bool(self.settings.sharpen_strength and self._sharpen_sigma)
 
-    @cachedproperty
+    @property
     def _sharpness_limiting_enabled(self) -> bool:
         return (
             self.settings.sharpen_limit_mode is not self.settings.SharpenLimitMode.NONE
@@ -1390,7 +1390,11 @@ class QTGMCGraph(VSObject):
             and self._sharpening_enabled
         )
 
-    @cachedproperty
+    @property
+    def _motion_blur_fps_divisor(self) -> int:
+        return 1 if self.mode is self.Mode.BOB else self.settings.motion_blur_fps_divisor
+
+    @property
     def _motion_blur_level(self) -> float:
         if not self.settings.motion_blur_shutter_angle:
             return 0
@@ -1398,10 +1402,6 @@ class QTGMCGraph(VSObject):
         angle_in, angle_out = self.settings.motion_blur_shutter_angle
 
         return (angle_out * self._motion_blur_fps_divisor - angle_in) / 3.60
-
-    @cachedproperty
-    def _motion_blur_fps_divisor(self) -> int:
-        return 1 if self.mode is self.Mode.BOB else self.settings.motion_blur_fps_divisor
 
     def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
         if self.mode is not self.Mode.DESHIMMER:
