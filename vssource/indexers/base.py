@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterable, Sequence
 from functools import cache
 from logging import getLogger
 from os import name as os_name
-from typing import Any, ClassVar, Literal, Protocol, Self
+from typing import Any, ClassVar, Literal, Self
 
 from jetpytools import (
     MISSING,
@@ -36,7 +36,7 @@ from vstools import (
 
 from ..dataclasses import IndexFileType
 
-__all__ = ["CacheIndexer", "ExternalIndexer", "Indexer", "IndexerLike", "VSSourceFunc"]
+__all__ = ["CacheIndexer", "ExternalIndexer", "Indexer", "IndexerLike"]
 
 log = getLogger(__name__)
 
@@ -87,10 +87,6 @@ def _base_ensure_obj[IndexerT: Indexer](
         return value
 
     return cls.from_param(value, func_except)()
-
-
-class VSSourceFunc(Protocol):
-    def __call__(self, path: str | bytes | bytearray, *args: Any, **kwargs: Any) -> vs.VideoNode: ...
 
 
 class Indexer(ABC):
