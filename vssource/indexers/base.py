@@ -41,54 +41,6 @@ __all__ = ["CacheIndexer", "ExternalIndexer", "Indexer", "IndexerLike"]
 log = getLogger(__name__)
 
 
-def _base_from_param[IndexerT: Indexer](
-    cls: type[IndexerT], value: str | type[IndexerT] | IndexerT | None, func_except: FuncExcept | None = None
-) -> type[IndexerT]:
-    # If value is an instance returns the class
-    if isinstance(value, cls):
-        return value.__class__
-
-    # If value is a type and a subclass of the caller returns the value itself
-    if isinstance(value, type) and issubclass(value, cls):
-        return value
-
-    # Search for the subclasses of the caller and the caller itself
-    # + plugin namespace
-    if isinstance(value, str):
-        all_indexers = dict[str, type[IndexerT]]()
-
-        for s in [*get_subclasses(cls), cls]:
-            all_indexers[s.__name__.lower()] = s
-
-            source_func = getattr(s, "_source_func", None)
-            plugin = getattr(source_func, "plugin", None)
-            plugin_ns = getattr(plugin, "namespace", None)
-
-            if plugin_ns:
-                all_indexers[plugin_ns] = s
-
-        try:
-            return all_indexers[value.lower().strip()]
-        except KeyError:
-            raise CustomValueError("Unknown indexer", func_except or cls.from_param, value) from None
-
-    if value is None:
-        return cls
-
-    raise CustomValueError("Unknown indexer", func_except or cls.from_param, value)
-
-
-def _base_ensure_obj[IndexerT: Indexer](
-    cls: type[IndexerT],
-    value: str | type[IndexerT] | IndexerT | None,
-    func_except: FuncExcept | None = None,
-) -> IndexerT:
-    if isinstance(value, cls):
-        return value
-
-    return cls.from_param(value, func_except)()
-
-
 class Indexer(ABC):
     """
     Abstract indexer interface.
@@ -467,3 +419,51 @@ This includes:
 - A class type subclassing [Indexer][vssource.Indexer].
 - An instance of a [Indexer][vssource.Indexer].
 """
+
+
+def _base_from_param[IndexerT: Indexer](
+    cls: type[IndexerT], value: str | type[IndexerT] | IndexerT | None, func_except: FuncExcept | None = None
+) -> type[IndexerT]:
+    # If value is an instance returns the class
+    if isinstance(value, cls):
+        return value.__class__
+
+    # If value is a type and a subclass of the caller returns the value itself
+    if isinstance(value, type) and issubclass(value, cls):
+        return value
+
+    # Search for the subclasses of the caller and the caller itself
+    # + plugin namespace
+    if isinstance(value, str):
+        all_indexers = dict[str, type[IndexerT]]()
+
+        for s in [*get_subclasses(cls), cls]:
+            all_indexers[s.__name__.lower()] = s
+
+            source_func = getattr(s, "_source_func", None)
+            plugin = getattr(source_func, "plugin", None)
+            plugin_ns = getattr(plugin, "namespace", None)
+
+            if plugin_ns:
+                all_indexers[plugin_ns] = s
+
+        try:
+            return all_indexers[value.lower().strip()]
+        except KeyError:
+            raise CustomValueError("Unknown indexer", func_except or cls.from_param, value) from None
+
+    if value is None:
+        return cls
+
+    raise CustomValueError("Unknown indexer", func_except or cls.from_param, value)
+
+
+def _base_ensure_obj[IndexerT: Indexer](
+    cls: type[IndexerT],
+    value: str | type[IndexerT] | IndexerT | None,
+    func_except: FuncExcept | None = None,
+) -> IndexerT:
+    if isinstance(value, cls):
+        return value
+
+    return cls.from_param(value, func_except)()
