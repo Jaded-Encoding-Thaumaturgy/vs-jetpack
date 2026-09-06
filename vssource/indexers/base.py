@@ -87,22 +87,6 @@ class Indexer(ABC):
         return _base_ensure_obj(cls, indexer, func_except)
 
     @classmethod
-    def _split_lines(cls, buff: list[str]) -> tuple[list[str], list[str]]:
-        return buff[: (split_idx := buff.index(""))], buff[split_idx + 1 :]
-
-    @classmethod
-    def get_joined_names(cls, files: list[SPath]) -> str:
-        return "_".join([file.name for file in files])
-
-    @classmethod
-    def get_videos_hash(cls, files: list[SPath]) -> str:
-        from hashlib import md5
-
-        length = sum(file.stat().st_size for file in files)
-        to_hash = length.to_bytes(32, "little") + cls.get_joined_names(files).encode()
-        return md5(to_hash).hexdigest()
-
-    @classmethod
     def source_func(cls, path: SPathLike, **kwargs: Any) -> vs.VideoNode:
         log.debug("%s: indexing %r; arguments: %r", cls, path, kwargs)
         return cls._source_func(str(path), **kwargs)
@@ -407,6 +391,18 @@ class ExternalIndexer(Indexer):
             idx_props=idx_props,
             **kwargs,
         )
+
+    @classmethod
+    def get_joined_names(cls, files: list[SPath]) -> str:
+        return "_".join([file.name for file in files])
+
+    @classmethod
+    def get_videos_hash(cls, files: list[SPath]) -> str:
+        from hashlib import md5
+
+        length = sum(file.stat().st_size for file in files)
+        to_hash = length.to_bytes(32, "little") + cls.get_joined_names(files).encode()
+        return md5(to_hash).hexdigest()
 
 
 type IndexerLike = str | type[Indexer] | Indexer
