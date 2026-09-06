@@ -74,7 +74,7 @@ source = [
     "vapoursynth-d2vsource>=1.4",
     "vapoursynth-dvdsrc2>=3.0",
     "vapoursynth-ffms2>=5.2.0",
-    "vapoursynth-lsmas>=1282.0.0",
+    "vapoursynth-lsmas>=1310.0.0",
 ]
 kernels = [
     "vsjetpack[basic]",
