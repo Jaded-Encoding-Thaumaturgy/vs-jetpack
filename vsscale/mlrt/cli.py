@@ -4,6 +4,7 @@ import shutil
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from pathlib import Path
 from types import TracebackType
 from typing import Annotated, Self
 
@@ -22,11 +23,20 @@ from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, Trans
 from vsjetpack import __version__
 
 from .feeds import Asset, Feed, Release
-from .settings import TOML_CONFIG, TOML_KEYS, get_artifacts_folder, get_onnx_folder
+from .settings import TOML_CONFIG, TOML_KEYS, get_artifacts_folder, get_onnx_folder, get_toml_config, write_toml_config
 
 MAX_CONCURRENCY = os.cpu_count() or 4
 
 console = Console(stderr=True)
+
+
+def _custom_help_formatter(console: Console, options: ConsoleOptions, panel: HelpPanel) -> None:
+    for i, entry in enumerate(panel.entries):
+        if "--provider" in entry.positive_names:
+            clean_names = tuple(name for name in entry.positive_names if name != "--provider")
+            panel.entries[i] = entry.copy(positive_names=clean_names)
+    cyclopts.help.DefaultFormatter()(console, options, panel)
+
 
 app = cyclopts.App(
     name="vsscale",
@@ -39,11 +49,14 @@ app = cyclopts.App(
         cyclopts.config.Toml(TOML_CONFIG[0], root_keys=TOML_KEYS[0], allow_unknown=True),
         cyclopts.config.Toml(TOML_CONFIG[1], root_keys=TOML_KEYS[1], allow_unknown=True),
     ],
+    help_formatter=_custom_help_formatter,
 )
 onnx_app = cyclopts.App(name="onnx", help="Manage downloaded ONNX models.")
 artifact_app = cyclopts.App(name="artifact", help="Manage built TensorRT and MIGraphxX artifacts.")
+config_app = cyclopts.App(name="config", help="Manage vsscale configuration.")
 app.command(onnx_app)
 app.command(artifact_app)
+app.command(config_app)
 
 
 @app.meta.default
@@ -61,14 +74,6 @@ def meta_main(
     if no_config:
         app.config = None
     app(tokens)
-
-
-def _custom_help_formatter(console: Console, options: ConsoleOptions, panel: HelpPanel) -> None:
-    for i, entry in enumerate(panel.entries):
-        if "--provider" in entry.positive_names:
-            clean_names = tuple(name for name in entry.positive_names if name != "--provider")
-            panel.entries[i] = entry.copy(positive_names=clean_names)
-    cyclopts.help.DefaultFormatter()(console, options, panel)
 
 
 @onnx_app.command(help_formatter=_custom_help_formatter)
@@ -149,8 +154,8 @@ async def download(
         console.print()
 
 
-@artifact_app.command(help="List built TensorRT & MIGraphxX artifacts.", help_formatter=_custom_help_formatter)
-@onnx_app.command(help="List downloaded ONNX models.", help_formatter=_custom_help_formatter)
+@artifact_app.command(help="List built TensorRT & MIGraphxX artifacts.")
+@onnx_app.command(help="List downloaded ONNX models.")
 def show(
     global_: Annotated[
         bool,
@@ -183,8 +188,8 @@ def show(
     return print(pretty_repr(sorted(files, reverse=True)))
 
 
-@artifact_app.command(help="Clear built TensorRT & MIGraphxX artifacts.", help_formatter=_custom_help_formatter)
-@onnx_app.command(help="Clear downloaded ONNX models.", help_formatter=_custom_help_formatter)
+@artifact_app.command(help="Clear built TensorRT & MIGraphxX artifacts.")
+@onnx_app.command(help="Clear downloaded ONNX models.")
 def clear(
     global_: Annotated[
         bool,
@@ -210,6 +215,106 @@ def clear(
             raise ValueError
 
     return shutil.rmtree(folder, ignore_errors=True)
+
+
+@config_app.default
+def config(
+    file: Path | None = None,
+    /,
+    *provider: str,
+    latest: bool | None = None,
+    auto: bool | None = None,
+    global_: bool | None = None,
+    fallback: bool | None = None,
+    assumeyes: Annotated[bool, cyclopts.Parameter(alias="-y", negative=(), show_default=False)] = False,
+) -> None:
+    """
+    Write or update vsscale configuration in pyproject.toml or vsjet.toml.
+
+    Args:
+        file: Target configuration file ('pyproject.toml' or 'vsjet.toml').
+        provider: Default ONNX model(s) to configure (e.g. 'ArtCNN', 'DPIR', 'Waifu2x').
+        latest: Whether to download latest model releases by default.
+        auto: Whether to automatically download missing models on demand.
+        global_: Whether to use global cache directory by default.
+        fallback: Whether to enable global cache fallback.
+        assumeyes: Answer yes for all questions and skip interactive wizard.
+    """
+    if file is None:
+        toml = "pyproject.toml" if Path("pyproject.toml").exists() else "vsjet.toml"
+        if assumeyes:
+            target_path = Path(toml)
+        else:
+            choices = [
+                quest.Choice("pyproject.toml", value="pyproject.toml"),
+                quest.Choice("vsjet.toml", value="vsjet.toml"),
+            ]
+            selected = quest.select("Select configuration file target:", choices, toml, qmark="📝").ask()
+            if selected is None:
+                raise SystemExit(0)
+            target_path = Path(selected)
+    else:
+        target_path = Path(file)
+
+    if not assumeyes:
+        if global_ is None:
+            global_ = quest.confirm("Use global cache directory by default?", default=False, qmark="🌐").ask()
+            if global_ is None:
+                raise SystemExit(0)
+
+        if fallback is None:
+            fallback = quest.confirm(
+                "Enable global cache fallback if local model is missing?", default=True, qmark="🔄"
+            ).ask()
+            if fallback is None:
+                raise SystemExit(0)
+
+        if not provider:
+            choices = [quest.Choice(title=name, value=name, checked=True) for name in Feed.all_feeds]
+            providers = quest.checkbox("Select default ONNX models to configure:", choices=choices, qmark="📦").ask()
+            if providers is None:
+                raise SystemExit(0)
+            provider = tuple(providers)
+
+        if latest is None:
+            latest = quest.confirm("Download latest model release automatically?", default=True, qmark="🏷️").ask()
+            if latest is None:
+                raise SystemExit(0)
+
+        if auto is None:
+            auto = quest.confirm("Auto-download models when used in Python?", default=True, qmark="⚡").ask()
+            if auto is None:
+                raise SystemExit(0)
+
+    written_path = write_toml_config(
+        target_path,
+        global_=global_,
+        fallback=fallback,
+        provider=provider,
+        latest=latest,
+        auto=auto,
+    )
+
+    console.print(f"[green]✔ Successfully updated configuration in [bold]{written_path.name}[/bold][/green]")
+
+
+@config_app.command(name="show")
+def show_config() -> None:
+    """Display the currently active vsscale configuration."""
+    config = get_toml_config()
+    detected_file = None
+    for config_file in TOML_CONFIG:
+        p = Path(config_file).expanduser().resolve().absolute()
+        if p.exists():
+            detected_file = p
+            break
+
+    if detected_file:
+        console.print(f"[bold]Active configuration file:[/bold] [cyan]{detected_file}[/cyan]")
+    else:
+        console.print("[yellow]No active configuration file found.[/yellow]")
+
+    console.print(pretty_repr(config))
 
 
 def _parse_model_spec(spec: str) -> tuple[str, str | None]:

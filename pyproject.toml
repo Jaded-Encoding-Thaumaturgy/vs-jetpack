@@ -107,6 +107,7 @@ scale = [
     "platformdirs>=4.9.6",
     "pyopencl>=2026.1.2",
     "questionary>=2.1.0",
+    "tomlkit>=0.15.1",
     "vapoursynth-mlrt-ov>=15.16",
 ]
 aa = [
@@ -224,9 +225,14 @@ index = [
     "tensorrt-cu13-libs",
 ]
 
+[tool.vsscale]
+global = false
+fallback = false
+
 [tool.vsscale.onnx.download]
 provider = ["ArtCNN==v1.6.2", "DPIR==20210902", "Waifu2x==20250502-2"]
 auto = true
+latest = true
 
 [tool.uv]
 constraint-dependencies = [
