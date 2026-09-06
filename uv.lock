@@ -3,19 +3,19 @@ revision = 3
 requires-python = ">=3.12"
 resolution-markers = [
     "(python_full_version >= '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32')",
-    "(python_full_version == '3.14.*' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'win32')",
     "(python_full_version >= '3.15' and platform_machine == 'AMD64' and sys_platform != 'win32') or (python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform != 'win32')",
+    "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform != 'win32'",
+    "(python_full_version == '3.14.*' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'win32')",
     "(python_full_version == '3.14.*' and platform_machine == 'AMD64' and sys_platform != 'win32') or (python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform != 'win32')",
+    "python_full_version == '3.14.*' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform != 'win32'",
     "(python_full_version == '3.13.*' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'win32')",
     "(python_full_version == '3.13.*' and platform_machine == 'AMD64' and sys_platform != 'win32') or (python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform != 'win32')",
-    "(python_full_version < '3.13' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version < '3.13' and platform_machine == 'x86_64' and sys_platform == 'win32')",
-    "(python_full_version < '3.13' and platform_machine == 'AMD64' and sys_platform != 'win32') or (python_full_version < '3.13' and platform_machine == 'x86_64' and sys_platform != 'win32')",
-    "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform == 'win32'",
-    "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform != 'win32'",
-    "python_full_version == '3.14.*' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform != 'win32'",
     "python_full_version == '3.13.*' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform != 'win32'",
+    "(python_full_version < '3.13' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version < '3.13' and platform_machine == 'x86_64' and sys_platform == 'win32')",
+    "(python_full_version < '3.13' and platform_machine == 'AMD64' and sys_platform != 'win32') or (python_full_version < '3.13' and platform_machine == 'x86_64' and sys_platform != 'win32')",
     "python_full_version < '3.13' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform == 'win32'",
     "python_full_version < '3.13' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform != 'win32'",
 ]
@@ -2134,6 +2134,15 @@ wheels = [
 ]
 
 [[package]]
+name = "tomlkit"
+version = "0.15.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/96/e07752635b98536177fa1f37671c8f3cdde2e724c6bcf6034b2cfb571565/tomlkit-0.15.1.tar.gz", hash = "sha256:e25bbf38843005246210a12982776f27f99cb9be67160e14434d0c0d21ee1e97", size = 180129, upload-time = "2026-07-17T01:48:04.562Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/13/bc/8c13eb66537dce1d2bd3a57132902f38d0e7f5bb46fa9f4daed9fe9d76ee/tomlkit-0.15.1-py3-none-any.whl", hash = "sha256:177a05aece5a8ca5266fd3c448abb47b8d352f09d477d3ca8332db4d89b24304", size = 49449, upload-time = "2026-07-17T01:48:05.728Z" },
+]
+
+[[package]]
 name = "types-psutil"
 version = "7.2.2.20260827"
 source = { registry = "https://pypi.org/simple" }
@@ -3018,6 +3027,7 @@ aa = [
     { name = "pyopencl" },
     { name = "questionary" },
     { name = "scipy" },
+    { name = "tomlkit" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bwdif" },
@@ -3062,6 +3072,7 @@ deband = [
     { name = "pyopencl" },
     { name = "questionary" },
     { name = "scipy" },
+    { name = "tomlkit" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
@@ -3101,6 +3112,7 @@ dehalo = [
     { name = "pyopencl" },
     { name = "questionary" },
     { name = "scipy" },
+    { name = "tomlkit" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
@@ -3139,6 +3151,7 @@ deinterlace = [
     { name = "pyopencl" },
     { name = "questionary" },
     { name = "scipy" },
+    { name = "tomlkit" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
@@ -3179,6 +3192,7 @@ denoise = [
     { name = "pyopencl" },
     { name = "questionary" },
     { name = "scipy" },
+    { name = "tomlkit" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
@@ -3217,6 +3231,7 @@ full = [
     { name = "pyopencl" },
     { name = "questionary" },
     { name = "scipy" },
+    { name = "tomlkit" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
@@ -3307,6 +3322,7 @@ scale = [
     { name = "pyopencl" },
     { name = "questionary" },
     { name = "scipy" },
+    { name = "tomlkit" },
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-d2vsource" },
@@ -3462,6 +3478,13 @@ requires-dist = [
     { name = "scipy", marker = "extra == 'scale'", specifier = ">=1.17.0" },
     { name = "tensorrt-cu13", marker = "extra == 'nvidia'", specifier = ">=11.0.0.114" },
     { name = "tensorrt-rtx-cu13", marker = "extra == 'nvidia'", specifier = ">=1.5.0.114" },
+    { name = "tomlkit", marker = "extra == 'aa'", specifier = ">=0.15.1" },
+    { name = "tomlkit", marker = "extra == 'deband'", specifier = ">=0.15.1" },
+    { name = "tomlkit", marker = "extra == 'dehalo'", specifier = ">=0.15.1" },
+    { name = "tomlkit", marker = "extra == 'deinterlace'", specifier = ">=0.15.1" },
+    { name = "tomlkit", marker = "extra == 'denoise'", specifier = ">=0.15.1" },
+    { name = "tomlkit", marker = "extra == 'full'", specifier = ">=0.15.1" },
+    { name = "tomlkit", marker = "extra == 'scale'", specifier = ">=0.15.1" },
     { name = "typing-extensions", marker = "python_full_version < '3.15'", specifier = ">=4.15.0" },
     { name = "vapoursynth", specifier = ">=78" },
     { name = "vapoursynth-akarin", specifier = ">=1.4.1" },

@@ -40,6 +40,18 @@ The CLI tool `vsscale` provides commands to manage models (ONNX) and built engin
   # Delete compiled TensorRT/MIGraphX engines/caches
   vsscale artifact clear
   ```
+- **Configuration**:
+  ```bash
+  # Interactive configuration wizard (prompts for settings & target file)
+  vsscale config
+
+  # Write configuration directly with CLI flags
+  vsscale config pyproject.toml --global --fallback --latest --auto -y
+  vsscale config vsjet.toml ArtCNN DPIR -y
+
+  # View currently active configuration
+  vsscale config show
+  ```
 
 #### Global VS Local Cache:
 By default, files are managed locally within the package storage `.vsjet` folder.
@@ -168,6 +180,7 @@ from .settings import (
     get_model_folder,
     get_model_path,
     get_onnx_folder,
+    write_toml_config,
 )
 
 __all__ = [
@@ -179,4 +192,5 @@ __all__ = [
     "get_model_folder",
     "get_model_path",
     "get_onnx_folder",
+    "write_toml_config",
 ]

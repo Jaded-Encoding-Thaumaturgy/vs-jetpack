@@ -16,6 +16,7 @@ from vsscale.mlrt.settings import (
     get_toml_config,
     is_fallback_enabled,
     is_global_true,
+    write_toml_config,
 )
 
 
@@ -116,6 +117,7 @@ def test_get_model_path_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     global_model = global_provider / "ArtCNN_R8F64.onnx"
     global_model.touch()
 
+    monkeypatch.setattr("vsscale.mlrt.settings.get_toml_config", dict)
     monkeypatch.setattr(
         "vsscale.mlrt.settings.get_onnx_folder",
         lambda global_=False: global_dir if global_ else local_dir,
@@ -150,6 +152,7 @@ def test_get_artifact_path_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     global_file = global_dir / "test.engine"
     global_file.touch()
 
+    monkeypatch.setattr("vsscale.mlrt.settings.get_toml_config", dict)
     monkeypatch.setattr(
         "vsscale.mlrt.settings.get_artifacts_folder",
         lambda global_=False: global_dir if global_ else local_dir,
@@ -236,3 +239,45 @@ def test_get_cache(monkeypatch: pytest.MonkeyPatch) -> None:
         m.setattr("vsscale.mlrt.settings.is_global_true", lambda thing: False)
         m.setattr("vsscale.mlrt.settings.get_toml_config", dict)
         assert get_cache("onnx") == dummy_local
+
+
+def test_write_toml_config_pyproject(tmp_path: Path) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+
+    write_toml_config(
+        pyproject,
+        global_=True,
+        fallback=False,
+        provider=["ArtCNN==v1.6.2", "DPIR==20210902"],
+        latest=True,
+        auto=True,
+    )
+
+    content = pyproject.read_text(encoding="utf-8")
+    assert "[tool.vsscale]" in content
+    assert "global = true" in content
+    assert "fallback = false" in content
+    assert "[tool.vsscale.onnx.download]" in content
+    assert 'provider = ["ArtCNN==v1.6.2", "DPIR==20210902"]' in content
+    assert "latest = true" in content
+    assert "auto = true" in content
+
+
+def test_write_toml_config_vsjet(tmp_path: Path) -> None:
+    vsjet = tmp_path / "vsjet.toml"
+
+    write_toml_config(
+        vsjet,
+        global_=False,
+        fallback=True,
+        provider=["ArtCNN", "DPIR"],
+        auto=True,
+    )
+
+    content = vsjet.read_text(encoding="utf-8")
+    assert "[vsscale]" in content
+    assert "global = false" in content
+    assert "fallback = true" in content
+    assert "[vsscale.onnx.download]" in content
+    assert 'provider = ["ArtCNN", "DPIR"]' in content
+    assert "auto = true" in content
