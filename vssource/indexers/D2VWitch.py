@@ -5,14 +5,13 @@ from __future__ import annotations
 import os
 import re
 import shutil
-from collections.abc import Callable
 from fractions import Fraction
 from functools import partial
-from typing import ClassVar, override
+from typing import override
 
 from jetpytools import SPath
 
-from vstools import core, vs
+from vstools import core
 
 from ..dataclasses import D2VIndexFileInfo, D2VIndexFrameData, D2VIndexHeader
 from .base import ExternalIndexer
@@ -23,7 +22,8 @@ __all__ = ["D2VWitch"]
 class D2VWitch(ExternalIndexer):
     _bin_path = "d2vwitch"
     _ext = "d2v"
-    _source_func: ClassVar[Callable[..., vs.VideoNode]] = core.lazy.d2v.Source
+    _source_func = core.lazy.d2v.Source
+    _asource_func = None
 
     _default_args = ("--single-input",)
 
