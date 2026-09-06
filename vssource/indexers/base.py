@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import hashlib
+import os
+import subprocess
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
 from functools import cache
 from logging import getLogger
-from os import name as os_name
-from typing import Any, ClassVar, Literal, Self
+from typing import Any, ClassVar, Literal, Self, override
 
 from jetpytools import (
     MISSING,
@@ -103,23 +105,6 @@ class Indexer(ABC):
 
         return files
 
-    def _source(
-        self,
-        clips: Iterable[vs.VideoNode],
-        bits: int | None = 32,
-        matrix: MatrixLike | None = None,
-        transfer: TransferLike | None = None,
-        primaries: PrimariesLike | None = None,
-        chroma_location: ChromaLocation | None = None,
-        color_range: RangeLike | None = None,
-        field_based: FieldBasedLike | None = None,
-    ) -> vs.VideoNode:
-        clips = list(clips)
-
-        clip = clips[0] if len(clips) == 1 else core.std.Splice(clips)
-
-        return initialize_clip(clip, bits, matrix, transfer, primaries, chroma_location, color_range, field_based)
-
     @inject_self
     def source(
         self,
@@ -166,6 +151,23 @@ class Indexer(ABC):
 
         return clip
 
+    def _source(
+        self,
+        clips: Iterable[vs.VideoNode],
+        bits: int | None = 32,
+        matrix: MatrixLike | None = None,
+        transfer: TransferLike | None = None,
+        primaries: PrimariesLike | None = None,
+        chroma_location: ChromaLocation | None = None,
+        color_range: RangeLike | None = None,
+        field_based: FieldBasedLike | None = None,
+    ) -> vs.VideoNode:
+        clips = list(clips)
+
+        clip = clips[0] if len(clips) == 1 else core.std.Splice(clips)
+
+        return initialize_clip(clip, bits, matrix, transfer, primaries, chroma_location, color_range, field_based)
+
 
 @cache
 def _get_indexer_cache_storage() -> PackageStorage:
@@ -178,21 +180,8 @@ class CacheIndexer(Indexer):
     _cache_arg_name: ClassVar[str]
     _ext: ClassVar[str | None]
 
-    @staticmethod
-    def get_cache_path(source_path: SPathLike, ext: str | None = None) -> SPath:
-        from hashlib import blake2s
-
-        source_file = SPath(source_path).resolve()
-        hashed_path = blake2s(source_file.to_str().encode("utf-8"), digest_size=4).hexdigest()
-        cache_filename = f"{source_file.name}_{hashed_path}"
-
-        if ext:
-            cache_filename = f"{cache_filename}.{ext.lstrip('.')}"
-
-        storage = _get_indexer_cache_storage()
-        return storage.get_file(cache_filename)
-
     @classmethod
+    @override
     def source_func(cls, path: SPathLike, **kwargs: Any) -> vs.VideoNode:
         path = SPath(path)
 
@@ -200,6 +189,18 @@ class CacheIndexer(Indexer):
             kwargs[cls._cache_arg_name] = cls.get_cache_path(path, cls._ext)
 
         return super().source_func(path, **kwargs)
+
+    @staticmethod
+    def get_cache_path(source_path: SPathLike, ext: str | None = None) -> SPath:
+        source_file = SPath(source_path).resolve()
+        hashed_path = hashlib.blake2s(source_file.to_str().encode("utf-8"), digest_size=4).hexdigest()
+        cache_filename = f"{source_file.name}_{hashed_path}"
+
+        if ext:
+            cache_filename = f"{cache_filename}.{ext.lstrip('.')}"
+
+        storage = _get_indexer_cache_storage()
+        return storage.get_file(cache_filename)
 
 
 class ExternalIndexer(Indexer):
@@ -234,55 +235,46 @@ class ExternalIndexer(Indexer):
         """
         Returns the indexer command
         """
-        raise NotImplementedError
 
     @abstractmethod
     def get_info(self, index_path: SPath, file_idx: int = 0) -> IndexFileType:
         """
         Returns info about the indexing file
         """
-        raise NotImplementedError
 
     @abstractmethod
-    def update_video_filenames(self, index_path: SPath, filepaths: list[SPath]) -> None:
-        raise NotImplementedError
+    def update_video_filenames(self, index_path: SPath, filepaths: list[SPath]) -> None: ...
 
-    def _get_bin_path(self) -> SPath:
-        from shutil import which
+    @inject_self
+    @override
+    def source(
+        self,
+        file: SPathLike | Iterable[SPathLike],
+        bits: int | None = 32,
+        *,
+        matrix: MatrixLike | None = None,
+        transfer: TransferLike | None = None,
+        primaries: PrimariesLike | None = None,
+        chroma_location: ChromaLocation | None = None,
+        color_range: RangeLike | None = None,
+        field_based: FieldBasedLike | None = None,
+        idx_props: bool = True,
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        index_files = self.index(self.normalize_filenames(file))
 
-        if not (bin_path := which(str(self.bin_path))):
-            raise FileNotFoundError(f"Indexer: `{self.bin_path}` was not found{' in PATH' if os_name == 'nt' else ''}!")
-        return SPath(bin_path)
-
-    def _run_index(self, files: list[SPath], output: SPath, cmd_args: Sequence[str]) -> None:
-        from subprocess import Popen
-
-        output.mkdirp()
-
-        proc = Popen(
-            list(map(str, (*self.get_cmd(files, output), *cmd_args, *self._default_args))),
-            text=True,
-            encoding="utf-8",
-            shell=os_name == "nt",
-            cwd=output.get_folder().to_str(),
+        return super().source(
+            index_files,
+            bits,
+            matrix=matrix,
+            transfer=transfer,
+            primaries=primaries,
+            chroma_location=chroma_location,
+            color_range=color_range,
+            field_based=field_based,
+            idx_props=idx_props,
+            **kwargs,
         )
-
-        status = proc.wait()
-
-        if status:
-            stderr = stdout = ""
-
-            if proc.stderr:
-                stderr = proc.stderr.read().strip()
-                if stderr:
-                    stderr = f"\n\t{stderr}"
-
-            if proc.stdout:
-                stdout = proc.stdout.read().strip()
-                if stdout:
-                    stdout = f"\n\t{stdout}"
-
-            raise CustomRuntimeError(f"There was an error while running the {self.bin_path} command!: {stderr}{stdout}")
 
     def get_out_folder(
         self, output_folder: SPathLike | Literal[False] | None = None, file: SPath | None = None
@@ -362,47 +354,44 @@ class ExternalIndexer(Indexer):
 
         return self.get_idx_file_path(PackageStorage(folder, package_name=__name__).get_file(filename))
 
-    @inject_self
-    def source(
-        self,
-        file: SPathLike | Iterable[SPathLike],
-        bits: int | None = 32,
-        *,
-        matrix: MatrixLike | None = None,
-        transfer: TransferLike | None = None,
-        primaries: PrimariesLike | None = None,
-        chroma_location: ChromaLocation | None = None,
-        color_range: RangeLike | None = None,
-        field_based: FieldBasedLike | None = None,
-        idx_props: bool = True,
-        **kwargs: Any,
-    ) -> vs.VideoNode:
-        index_files = self.index(self.normalize_filenames(file))
-
-        return super().source(
-            index_files,
-            bits,
-            matrix=matrix,
-            transfer=transfer,
-            primaries=primaries,
-            chroma_location=chroma_location,
-            color_range=color_range,
-            field_based=field_based,
-            idx_props=idx_props,
-            **kwargs,
-        )
-
     @classmethod
     def get_joined_names(cls, files: list[SPath]) -> str:
         return "_".join([file.name for file in files])
 
     @classmethod
     def get_videos_hash(cls, files: list[SPath]) -> str:
-        from hashlib import md5
 
         length = sum(file.stat().st_size for file in files)
         to_hash = length.to_bytes(32, "little") + cls.get_joined_names(files).encode()
-        return md5(to_hash).hexdigest()
+        return hashlib.md5(to_hash).hexdigest()
+
+    def _run_index(self, files: list[SPath], output: SPath, cmd_args: Sequence[str]) -> None:
+        output.mkdirp()
+
+        proc = subprocess.Popen(
+            list(map(str, (*self.get_cmd(files, output), *cmd_args, *self._default_args))),
+            text=True,
+            encoding="utf-8",
+            shell=os.name == "nt",
+            cwd=output.get_folder().to_str(),
+        )
+
+        status = proc.wait()
+
+        if status:
+            stderr = stdout = ""
+
+            if proc.stderr:
+                stderr = proc.stderr.read().strip()
+                if stderr:
+                    stderr = f"\n\t{stderr}"
+
+            if proc.stdout:
+                stdout = proc.stdout.read().strip()
+                if stdout:
+                    stdout = f"\n\t{stdout}"
+
+            raise CustomRuntimeError(f"There was an error while running the {self.bin_path} command!: {stderr}{stdout}")
 
 
 type IndexerLike = str | type[Indexer] | Indexer

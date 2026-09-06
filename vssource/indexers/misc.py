@@ -126,6 +126,7 @@ class BestSource(CacheIndexer):
         )
 
     @classmethod
+    @override
     def source_func(cls, path: SPathLike, **kwargs: Any) -> vs.VideoNode:
         if kwargs["cachemode"] <= cls.CacheMode.CACHE_PATH_WRITE and cls._cache_arg_name not in kwargs:
             kwargs[cls._cache_arg_name] = None

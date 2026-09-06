@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import os
 import re
+import shutil
 from collections.abc import Callable
 from fractions import Fraction
 from functools import partial
-from typing import ClassVar
+from typing import ClassVar, override
 
 from jetpytools import SPath
 
@@ -25,33 +27,14 @@ class D2VWitch(ExternalIndexer):
 
     _default_args = ("--single-input",)
 
+    @override
     def get_cmd(self, files: list[SPath], output: SPath) -> list[str]:
-        return list(map(str, [self._get_bin_path(), *files, "--output", output]))
+        if not (bin_path := shutil.which(str(self.bin_path))):
+            raise FileNotFoundError(f"Indexer: `{self.bin_path}` was not found{' in PATH' if os.name == 'nt' else ''}!")
 
-    def update_video_filenames(self, index_path: SPath, filepaths: list[SPath]) -> None:
-        with open(index_path) as file:
-            file_content = file.read()
+        return list(map(str, [bin_path, *files, "--output", output]))
 
-        lines = file_content.split("\n")
-
-        str_filepaths = list(map(str, filepaths))
-
-        if "DGIndex" not in lines[0]:
-            self.file_corrupted(index_path)
-
-        if not (n_files := int(lines[1])) or n_files != len(str_filepaths):
-            self.file_corrupted(index_path)
-
-        end_videos = lines.index("")
-
-        if lines[2:end_videos] == str_filepaths:
-            return
-
-        lines[2:end_videos] = str_filepaths
-
-        with open(index_path, "w") as file:
-            file.write("\n".join(lines))
-
+    @override
     def get_info(self, index_path: SPath, file_idx: int = -1) -> D2VIndexFileInfo:
         with open(index_path) as f:
             file_content = f.read()
@@ -147,3 +130,32 @@ class D2VWitch(ExternalIndexer):
                 )
 
         return D2VIndexFileInfo(index_path, file_idx, header, frame_data)
+
+    @override
+    def update_video_filenames(self, index_path: SPath, filepaths: list[SPath]) -> None:
+        with open(index_path) as file:
+            file_content = file.read()
+
+        lines = file_content.split("\n")
+
+        str_filepaths = list(map(str, filepaths))
+
+        if "DGIndex" not in lines[0]:
+            self.file_corrupted(index_path)
+
+        if not (n_files := int(lines[1])) or n_files != len(str_filepaths):
+            self.file_corrupted(index_path)
+
+        end_videos = lines.index("")
+
+        if lines[2:end_videos] == str_filepaths:
+            return
+
+        lines[2:end_videos] = str_filepaths
+
+        with open(index_path, "w") as file:
+            file.write("\n".join(lines))
+
+    @staticmethod
+    def _split_lines(buff: list[str]) -> tuple[list[str], list[str]]:
+        return buff[: (split_idx := buff.index(""))], buff[split_idx + 1 :]
