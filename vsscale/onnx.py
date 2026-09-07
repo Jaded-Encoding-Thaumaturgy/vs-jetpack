@@ -4,12 +4,12 @@ This module implements scalers for ONNX models.
 
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import math
 import re
 from abc import ABC
 from contextlib import suppress
-from functools import partial
 from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat
@@ -948,7 +948,6 @@ def _get_onnx_model(
     dconf = conf.get("onnx", {}).get("download", {})
 
     if dconf.get("auto", auto_download):
-        import anyio
         from rich.logging import RichHandler
 
         from .mlrt.cli import download
@@ -958,9 +957,8 @@ def _get_onnx_model(
         user_provider = next((p for p in dconf.get("provider", []) if p.lower().startswith(provider.lower())), None)
         console = next((h.console for h in getLogger().handlers if isinstance(h, RichHandler)), None)
 
-        anyio.run(
-            partial(
-                download,
+        asyncio.run(
+            download(
                 user_provider or provider,
                 latest=dconf.get("latest", True),
                 global_=dconf.get("global", False),
