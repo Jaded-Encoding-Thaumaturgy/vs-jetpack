@@ -1209,7 +1209,7 @@ class QTGMCGraph(VSObject):
                     noise_gen = Grainer.GAUSS(
                         noise,
                         # Use the maximum variance that satisfies the 3-sigma rule.
-                        ((0.5 * 255) / 3) ** 2,
+                        (0.5 * 255 / 3) ** 2,
                         protect_edges=False,
                         protect_neutral_chroma=False,
                         neutral_out=True,
