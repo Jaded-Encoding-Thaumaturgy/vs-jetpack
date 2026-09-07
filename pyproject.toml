@@ -135,7 +135,7 @@ deinterlace = [
     "vapoursynth-dmetrics>=2.0",
     "vapoursynth-vivtc>=2.0",
 ]
-deband = ["vsjetpack[denoise]", "vsnoise>=1.2"]
+deband = ["vsjetpack[denoise]", "vsnoise>=1.3"]
 gpu = ["vapoursynth-mlrt-ort>=15.16"]
 cl = ["vapoursynth-vszipcl>=1.2.0"]
 vulkan = [
