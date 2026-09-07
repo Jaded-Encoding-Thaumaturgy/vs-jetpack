@@ -4,9 +4,10 @@ import shutil
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from logging import ERROR, INFO, WARNING, getLogger
 from pathlib import Path
 from types import TracebackType
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
 import anyio
 import anyio.to_thread
@@ -19,6 +20,7 @@ from cyclopts.help import HelpPanel
 from rich.console import Console, ConsoleOptions
 from rich.pretty import pretty_repr
 from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TransferSpeedColumn
+from rich.text import Text
 
 from vsjetpack import __version__
 
@@ -27,7 +29,7 @@ from .settings import TOML_CONFIG, TOML_KEYS, get_artifacts_folder, get_onnx_fol
 
 MAX_CONCURRENCY = os.cpu_count() or 4
 
-console = Console(stderr=True)
+logger = getLogger(__name__)
 
 
 def _custom_help_formatter(console: Console, options: ConsoleOptions, panel: HelpPanel) -> None:
@@ -43,7 +45,7 @@ app = cyclopts.App(
     version=__version__,
     help="CLI utility for managing machine learning models and TensorRT/MIGraphX artifacts for VapourSynth.",
     help_on_error=True,
-    console=console,
+    console=Console(stderr=True),
     config=[
         cyclopts.config.Env("VSSCALE_"),
         cyclopts.config.Toml(TOML_CONFIG[0], root_keys=TOML_KEYS[0], allow_unknown=True),
@@ -71,9 +73,14 @@ def meta_main(
         ),
     ] = False,
 ) -> None:
+    os.environ["VSSCALE_CLI"] = "1"
     if no_config:
         app.config = None
-    app(tokens)
+    try:
+        app(tokens)
+    except Exception as e:  # noqa: BLE001
+        app.console.print(f"[red]{e.__class__.__name__}:[/red] {e}")
+        raise SystemExit(1)
 
 
 @onnx_app.command(help_formatter=_custom_help_formatter)
@@ -91,6 +98,7 @@ async def download(
         bool,
         cyclopts.Parameter(alias="-y", negative=(), show_default=False),
     ] = False,
+    console: Annotated[Console | None, cyclopts.Parameter(parse=False)] = None,
 ) -> None:
     """
     Download ONNX models.
@@ -126,22 +134,27 @@ async def download(
         model_name, pinned_version = _parse_model_spec(spec)
         feed = _find_feed(model_name)
 
-        releases = await _fetch_releases(feed)
+        releases = await _fetch_releases(feed, console=console)
 
         if pinned_version is not None:
             release = next((r for r in releases if r.tag == pinned_version), None)
 
             if not release:
-                console.print(f"[red]Error: Version '{pinned_version}' not found.[/red]")
-                available_tags = ", ".join(r.tag for r in releases[:10])
-                console.print(f"[yellow]Available versions: {available_tags}[/yellow]")
-                raise SystemExit(1)
+                raise ValueError(
+                    f"Version {pinned_version} not found. Available versions: {', '.join(r.tag for r in releases[:10])}"
+                )
 
             assets = release.assets
         elif latest:
             release = releases[0]
             assets = release.assets
-            console.print(f"[bold]Latest release: {release.tag} ({release.published_at[:10]})[/bold]")
+            _display(
+                INFO,
+                "[bold]Latest release for %s: %s (%s)[/bold]",
+                feed.display_name,
+                release.tag,
+                release.published_at[:10],
+            )
         else:
             release = await _select_tag(releases)
             assets = await _select_assets(release)
@@ -150,8 +163,8 @@ async def download(
 
         if not assumeyes:
             await _confirm_download(dest_folder)
-        await _download_assets(feed, assets, dest_folder)
-        console.print()
+        await _download_assets(feed, assets, dest_folder, console=console)
+        _display(INFO, "")
 
 
 @artifact_app.command(help="List built TensorRT & MIGraphxX artifacts.")
@@ -295,7 +308,7 @@ def config(
         auto=auto,
     )
 
-    console.print(f"[green]✔ Successfully updated configuration in [bold]{written_path.name}[/bold][/green]")
+    _display(INFO, "[green]✔ Successfully updated configuration in [bold]%s[/bold][/green]", written_path.name)
 
 
 @config_app.command(name="show")
@@ -310,11 +323,11 @@ def show_config() -> None:
             break
 
     if detected_file:
-        console.print(f"[bold]Active configuration file:[/bold] [cyan]{detected_file}[/cyan]")
+        _display(INFO, "[bold]Active configuration file:[/bold] [cyan]%s[/cyan]", detected_file)
     else:
-        console.print("[yellow]No active configuration file found.[/yellow]")
+        _display(WARNING, "No active configuration file found.")
 
-    console.print(pretty_repr(config))
+    _display(INFO, pretty_repr(config))
 
 
 def _parse_model_spec(spec: str) -> tuple[str, str | None]:
@@ -329,14 +342,13 @@ def _find_feed(name: str) -> Feed:
     lookup = {k.lower(): k for k in Feed.all_feeds}
 
     if (matched_key := lookup.get(name)) is None:
-        console.print(f"[red]Error: Unknown model '{name}'.[/red]")
-        console.print(f"[yellow]Available models: {', '.join(Feed.all_feeds)}[/yellow]")
-        raise SystemExit(1)
+        raise ValueError(f"Unknown model '{name}'. Available models: {', '.join(Feed.all_feeds)}")
 
     return Feed.all_feeds[matched_key]()
 
 
-async def _fetch_releases(feed: Feed) -> list[Release]:
+async def _fetch_releases(feed: Feed, console: Console | None = None) -> list[Release]:
+    console = console or app.console
     try:
         with console.status(f"Fetching releases for [bold]{feed.display_name}[/bold]...", spinner="dots"):
             async with niquests.AsyncSession(disable_http3=True) as session:
@@ -346,27 +358,26 @@ async def _fetch_releases(feed: Feed) -> list[Release]:
             case None:
                 raise
             case res if res.status_code == 401:
-                console.print("[red]Error: GitHub API token is unauthorized (401).[/red]")
-                console.print(
-                    "[yellow]Please check if your GITHUB_TOKEN environment variable is correct and valid.[/yellow]"
+                raise OSError(
+                    "GitHub API token is unauthorized (401). "
+                    "Please check if your GITHUB_TOKEN environment variable is correct and valid."
                 )
             case res if res.status_code == 403:
-                console.print("[red]Error: GitHub API rate limit exceeded or access forbidden (403).[/red]")
-                console.print(
-                    "[yellow]Please try again later or set the "
-                    "GITHUB_TOKEN environment variable to authenticate.[/yellow]"
+                raise OSError(
+                    "GitHub API rate limit exceeded or access forbidden (403). "
+                    "Please try again later or set the GITHUB_TOKEN environment variable to authenticate."
                 )
             case _:
                 raise
-        raise SystemExit(1)
 
     if not releases:
-        console.print("[yellow]No releases found for this model.[/yellow]")
+        _display(WARNING, "No releases found for %s.", feed.display_name)
         raise SystemExit(0)
 
     return releases
 
 
+# CLI Exclusive function
 async def _select_model() -> Feed:
     choices = [quest.Choice(title=f"{name}", value=name) for name, _ in Feed.all_feeds.items()]
 
@@ -378,6 +389,7 @@ async def _select_model() -> Feed:
     return Feed.all_feeds[selected]()
 
 
+# CLI Exclusive function
 async def _select_tag(releases: list[Release]) -> Release:
     choices = [
         quest.Choice(
@@ -395,6 +407,7 @@ async def _select_tag(releases: list[Release]) -> Release:
     return selected
 
 
+# CLI Exclusive function
 async def _select_assets(release: Release) -> list[Asset]:
     choices = [quest.Choice(f"{a.name}  ({humanize.naturalsize(a.size)})", a, checked=True) for a in release.assets]
 
@@ -402,12 +415,13 @@ async def _select_assets(release: Release) -> list[Asset]:
     selected = await quest.checkbox(msg, choices, qmark="📥").ask_async()
 
     if selected is None or len(selected) == 0:
-        console.print("[yellow]No models selected. Aborting.[/yellow]")
+        app.console.print("[yellow]No models selected. Aborting.[/yellow]")
         raise SystemExit(0)
 
     return selected
 
 
+# CLI Exclusive function
 async def _confirm_download(dest_folder: anyio.Path) -> None:
     msg = f"The models will be downloaded to: '{dest_folder}'"
     res = await quest.confirm(msg).ask_async()
@@ -416,8 +430,13 @@ async def _confirm_download(dest_folder: anyio.Path) -> None:
         raise SystemExit(1)
 
 
-async def _download_assets(feed: Feed, assets: Sequence[Asset], dest_folder: anyio.Path) -> None:
-    console.print(f"[bold]Downloading to:[/bold] [cyan]{dest_folder}[/cyan]")
+async def _download_assets(
+    feed: Feed,
+    assets: Sequence[Asset],
+    dest_folder: anyio.Path,
+    console: Console | None = None,
+) -> None:
+    _display(INFO, "[bold]Downloading %s to:[/bold] [cyan]%s[/cyan]", feed.display_name, dest_folder)
 
     async with niquests.AsyncSession(
         pool_connections=MAX_CONCURRENCY,
@@ -425,15 +444,27 @@ async def _download_assets(feed: Feed, assets: Sequence[Asset], dest_folder: any
         disable_http3=True,
     ) as session:
         await dest_folder.mkdir(parents=True, exist_ok=True)
-        downloader = _AssetDownloader(feed, dest_folder, session)
+        downloader = _AssetDownloader(feed, dest_folder, session, console=console or app.console)
         await downloader.download(assets)
 
     if downloader.downloaded:
         dl_count = len(downloader.downloaded)
-        console.print(f"[green]✔️  Downloaded {dl_count} model{'s' if dl_count != 1 else ''}.[/green]")
+        _display(
+            INFO,
+            "[green]✔️  Downloaded %d %s model%s.[/green]",
+            dl_count,
+            feed.display_name,
+            "s" if dl_count != 1 else "",
+        )
     if downloader.skipped:
         skip_count = len(downloader.skipped)
-        console.print(f"[dim]⏭  Skipped {skip_count} already-downloaded model{'s' if skip_count != 1 else ''}.[/dim]")
+        _display(
+            INFO,
+            "[dim]⏭  Skipped %d already-downloaded %s model%s.[/dim]",
+            skip_count,
+            feed.display_name,
+            "s" if skip_count != 1 else "",
+        )
 
 
 class _AsyncProgress(Progress):
@@ -454,6 +485,7 @@ class _AssetDownloader:
     feed: Feed
     dest_folder: anyio.Path
     session: niquests.AsyncSession
+    console: Console
 
     def __post_init__(self) -> None:
         self.limiter = anyio.CapacityLimiter(MAX_CONCURRENCY)
@@ -465,7 +497,7 @@ class _AssetDownloader:
             "[progress.percentage]{task.percentage:>3.0f}%",
             DownloadColumn(),
             TransferSpeedColumn(),
-            console=console,
+            console=self.console,
         )
 
     async def download(self, assets: Sequence[Asset]) -> None:
@@ -477,7 +509,7 @@ class _AssetDownloader:
         dest_path = self.dest_folder / asset.name
 
         if await dest_path.exists() and await self.calculate_sha256(dest_path) == asset.sha256:
-            self.progress.console.print(f"  [dim]⏭ {asset.name} (already downloaded)[/dim]")
+            _display(INFO, "  [dim]⏭ %s: %s (already downloaded)[/dim]", self.feed.display_name, asset.name)
             self.skipped.add(asset)
             return
 
@@ -513,3 +545,14 @@ async def _delete_on_error(dest_path: anyio.Path) -> AsyncGenerator[None]:
     except Exception:
         await dest_path.unlink(missing_ok=True)
         raise
+
+
+def _display(level: int, msg: str, *args: object, **kwargs: Any) -> None:
+    if os.environ.get("VSSCALE_CLI") == "1":
+        if level == WARNING:
+            msg = f"[yellow]{msg}[/yellow]"
+        elif level == ERROR:
+            msg = f"[red]{msg}[/red]"
+        app.console.print(msg % args if args else msg)
+    elif msg:
+        logger.log(level, Text.from_markup(msg).plain, *args, **kwargs)

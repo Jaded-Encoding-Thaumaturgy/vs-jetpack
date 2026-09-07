@@ -9,6 +9,7 @@ import math
 import re
 from abc import ABC
 from contextlib import suppress
+from functools import partial
 from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, SupportsFloat
@@ -947,19 +948,25 @@ def _get_onnx_model(
     dconf = conf.get("onnx", {}).get("download", {})
 
     if dconf.get("auto", auto_download):
+        import anyio
         from rich.logging import RichHandler
 
-        from .mlrt.cli import app
+        from .mlrt.cli import download
 
         logger.info("Auto-downloading %r from provider %r", model_name, provider)
 
         user_provider = next((p for p in dconf.get("provider", []) if p.lower().startswith(provider.lower())), None)
         console = next((h.console for h in getLogger().handlers if isinstance(h, RichHandler)), None)
 
-        app(
-            ["onnx", "download", user_provider or provider, "--latest", "--assumeyes"],
-            console=console,
-            result_action="return_value",
+        anyio.run(
+            partial(
+                download,
+                user_provider or provider,
+                latest=dconf.get("latest", True),
+                global_=dconf.get("global", False),
+                assumeyes=True,
+                console=console,
+            )
         )
 
         with suppress(FileNotExistsError):
