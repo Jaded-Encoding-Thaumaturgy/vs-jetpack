@@ -82,7 +82,7 @@ class QTGMCArgs:
         time: float | None
 
     class Degrain(TypedDict, total=False):
-        """Arguments accepted by the internal `_binomial_degrain` method."""
+        """Arguments accepted by [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain]."""
 
         limit: float | tuple[float, float] | None
         planes: Planes
