@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import os
 import shutil
@@ -9,8 +10,6 @@ from pathlib import Path
 from types import TracebackType
 from typing import Annotated, Any, Self
 
-import anyio
-import anyio.to_thread
 import cyclopts
 import cyclopts.help
 import humanize
@@ -125,7 +124,7 @@ async def download(
         releases = await _fetch_releases(feed)
         release = await _select_tag(releases)
         assets = await _select_assets(release)
-        dest_folder = anyio.Path(get_onnx_folder(global_=global_) / feed.display_name.lower() / release.tag)
+        dest_folder = get_onnx_folder(global_=global_) / feed.display_name.lower() / release.tag
         if not assumeyes:
             await _confirm_download(dest_folder)
         return await _download_assets(feed, assets, dest_folder)
@@ -159,7 +158,7 @@ async def download(
             release = await _select_tag(releases)
             assets = await _select_assets(release)
 
-        dest_folder = anyio.Path(get_onnx_folder(global_=global_) / feed.display_name.lower() / release.tag)
+        dest_folder = get_onnx_folder(global_=global_) / feed.display_name.lower() / release.tag
 
         if not assumeyes:
             await _confirm_download(dest_folder)
@@ -422,7 +421,7 @@ async def _select_assets(release: Release) -> list[Asset]:
 
 
 # CLI Exclusive function
-async def _confirm_download(dest_folder: anyio.Path) -> None:
+async def _confirm_download(dest_folder: Path) -> None:
     msg = f"The models will be downloaded to: '{dest_folder}'"
     res = await quest.confirm(msg).ask_async()
 
@@ -433,7 +432,7 @@ async def _confirm_download(dest_folder: anyio.Path) -> None:
 async def _download_assets(
     feed: Feed,
     assets: Sequence[Asset],
-    dest_folder: anyio.Path,
+    dest_folder: Path,
     console: Console | None = None,
 ) -> None:
     _display(INFO, "[bold]Downloading %s to:[/bold] [cyan]%s[/cyan]", feed.display_name, dest_folder)
@@ -443,7 +442,7 @@ async def _download_assets(
         pool_maxsize=MAX_CONCURRENCY,
         disable_http3=True,
     ) as session:
-        await dest_folder.mkdir(parents=True, exist_ok=True)
+        dest_folder.mkdir(parents=True, exist_ok=True)
         downloader = _AssetDownloader(feed, dest_folder, session, console=console or app.console)
         await downloader.download(assets)
 
@@ -483,12 +482,12 @@ class _AsyncProgress(Progress):
 @dataclass
 class _AssetDownloader:
     feed: Feed
-    dest_folder: anyio.Path
+    dest_folder: Path
     session: niquests.AsyncSession
     console: Console
 
     def __post_init__(self) -> None:
-        self.limiter = anyio.CapacityLimiter(MAX_CONCURRENCY)
+        self.sema = asyncio.Semaphore(MAX_CONCURRENCY)
         self.skipped = set[Asset]()
         self.downloaded = set[Asset]()
         self.progress = _AsyncProgress(
@@ -498,52 +497,53 @@ class _AssetDownloader:
             DownloadColumn(),
             TransferSpeedColumn(),
             console=self.console,
+            refresh_per_second=30,
         )
 
     async def download(self, assets: Sequence[Asset]) -> None:
-        async with self.progress, anyio.create_task_group() as tg:
+        async with self.progress, asyncio.TaskGroup() as tg:
             for asset in assets:
-                tg.start_soon(self._download_asset, asset, name=asset.name)
+                tg.create_task(self._download_asset(asset), name=asset.name)
 
     async def _download_asset(self, asset: Asset) -> None:
         dest_path = self.dest_folder / asset.name
 
-        if await dest_path.exists() and await self.calculate_sha256(dest_path) == asset.sha256:
+        with dest_path.open("rb") as f:
+            dest_hash = hashlib.file_digest(f, "sha256").hexdigest()
+
+        if dest_path.exists() and dest_hash == asset.sha256:
             _display(INFO, "  [dim]⏭ %s: %s (already downloaded)[/dim]", self.feed.display_name, asset.name)
             self.skipped.add(asset)
             return
 
-        async with self.limiter, _delete_on_error(dest_path):
+        async with self.sema, _delete_on_error(dest_path):
             task = self.progress.add_task("download", filename=asset.name, total=asset.size)
+            hasher = hashlib.sha256()
 
-            async with (
-                (await self.session.get(asset.url, stream=True, headers=self.feed.headers)).raise_for_status() as res,
-                await anyio.open_file(dest_path, "wb") as f,
-            ):
-                async for chunk in await res.iter_content(chunk_size=64 * 1024):
-                    await f.write(chunk)
-                    self.progress.update(task, advance=len(chunk))
+            res = await self.session.get(asset.url, stream=True, headers=self.feed.headers)
+
+            async with res.raise_for_status():
+                with dest_path.open("wb") as f:
+                    async for chunk in await res.iter_content(chunk_size=64 * 1024):
+                        f.write(chunk)
+                        hasher.update(chunk)
+                        self.progress.update(task, advance=len(chunk))
                 self.progress.update(task, visible=False)
 
-            if (computed_hash := await self.calculate_sha256(dest_path)) != asset.sha256:
+            if (computed_hash := hasher.hexdigest()) != asset.sha256:
                 raise ValueError(
                     f"Integrity check failed for {asset.name}. Expected sha256: {asset.sha256}, got: {computed_hash}"
                 )
 
             self.downloaded.add(asset)
 
-    @staticmethod
-    async def calculate_sha256(path: anyio.Path) -> str:
-        data = await path.read_bytes()
-        return await anyio.to_thread.run_sync(lambda: hashlib.sha256(data).hexdigest())
-
 
 @asynccontextmanager
-async def _delete_on_error(dest_path: anyio.Path) -> AsyncGenerator[None]:
+async def _delete_on_error(dest_path: Path) -> AsyncGenerator[None]:
     try:
         yield
     except Exception:
-        await dest_path.unlink(missing_ok=True)
+        dest_path.unlink(missing_ok=True)
         raise
 
 
