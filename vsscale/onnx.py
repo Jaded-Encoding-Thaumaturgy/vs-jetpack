@@ -954,7 +954,7 @@ def _get_onnx_model(
         logger.info("Auto-downloading %r from provider %r", model_name, provider)
 
         user_provider = next((p for p in dconf.get("provider", []) if p.lower().startswith(provider.lower())), None)
-        console = next((h.console for h in logger.handlers if isinstance(h, RichHandler)), None)
+        console = next((h.console for h in getLogger().handlers if isinstance(h, RichHandler)), None)
 
         app(
             ["onnx", "download", user_provider or provider, "--latest", "--assumeyes"],
