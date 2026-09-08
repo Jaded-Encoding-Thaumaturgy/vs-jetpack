@@ -1827,24 +1827,24 @@ def mask_shimmer(
     ed_res = erosion_distance % 3
     od, od_res = divmod(over_dilation, 3)
 
-    ops = ((Morpho.maximum, Morpho.inflate), (Morpho.minimum, Morpho.deflate))
+    ops = ((Morpho.minimum, Morpho.deflate), (Morpho.maximum, Morpho.inflate))
 
     diff = src.std.MakeDiff(flt)
 
     processed = list[vs.VideoNode]()
-    for (expand_op, inflate_op), (inpand_op, deflate_op) in (ops, ops[::-1]):
-        clip = expand_op(diff, iterations=ed1, coords=Coordinates.VERTICAL, func=func)
+    for (inpand_op, deflate_op), (expand_op, inflate_op) in (ops[::-1], ops):
+        clip = inpand_op(diff, iterations=ed1, coords=Coordinates.VERTICAL, func=func)
 
         if ed_res:
-            clip = inflate_op(clip, func=func)
+            clip = deflate_op(clip, func=func)
         if ed_res == 2:
             clip = median_blur(clip, func=func)
 
-        clip = inpand_op(clip, iterations=ed2, coords=Coordinates.VERTICAL, func=func)
+        clip = expand_op(clip, iterations=ed2, coords=Coordinates.VERTICAL, func=func)
 
         if over_dilation:
-            clip = inpand_op(clip, iterations=od, func=func)
-            clip = deflate_op(clip, iterations=od_res, func=func)
+            clip = expand_op(clip, iterations=od, func=func)
+            clip = inflate_op(clip, iterations=od_res, func=func)
 
         processed.append(clip)
 
