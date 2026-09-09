@@ -43,6 +43,18 @@ __all__ = [
 
 
 def max_planes(*_clips: vs.VideoNode | Iterable[vs.VideoNode], resizer: KernelLike = Bilinear) -> vs.VideoNode:
+    """
+    Take the per-pixel maximum across the planes of every input clip.
+
+    Useful for merging multiple single-plane or multi-plane masks into one.
+
+    Args:
+        *_clips: Clips to combine.
+        resizer: Kernel used to scale clips to a common resolution and format. Defaults to Bilinear.
+
+    Returns:
+        A single clip holding the per-pixel maximum of all input planes.
+    """
     clips = flatten_vnodes(_clips)
 
     resizer = Kernel.ensure_obj(resizer, max_planes)
