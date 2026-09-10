@@ -345,7 +345,7 @@ class _QTGMCBuilder:
                 - Second value: Blend weight of the Gaussian blur. Higher values give more weight to the
                     Gaussian-blurred clip.
 
-                Defaults to (1.9, 0.9).
+                Defaults to (1.96, 0.9).
             limit: Three-step limiting thresholds (8-bit scale) for the Gaussian blur post-processing:
 
                    - First value: Maximum allowed delta between the temporally blurred clip and the draft clip. Smaller
