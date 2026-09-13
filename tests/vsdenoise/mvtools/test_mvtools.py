@@ -104,11 +104,11 @@ def test_mvtools_compensate() -> None:
     assert comp_clip.num_frames == 15
 
     # Compensate with interleave=False
-    comp_back, comp_fwrd = mv.compensate(interleave=False)
-    assert len(comp_back) == 1
+    comp_fwrd, comp_back = mv.compensate(interleave=False)
     assert len(comp_fwrd) == 1
-    assert comp_back[0].num_frames == 5
+    assert len(comp_back) == 1
     assert comp_fwrd[0].num_frames == 5
+    assert comp_back[0].num_frames == 5
 
     # Compensate with temporal_func
     comp_temp = mv.compensate(temporal_func=lambda clip: clip.std.Invert())
@@ -127,11 +127,11 @@ def test_mvtools_flow() -> None:
     assert flow_clip.num_frames == 15
 
     # Flow with interleave=False
-    flow_back, flow_fwrd = mv.flow(interleave=False)
-    assert len(flow_back) == 1
+    flow_fwrd, flow_back = mv.flow(interleave=False)
     assert len(flow_fwrd) == 1
-    assert flow_back[0].num_frames == 5
+    assert len(flow_back) == 1
     assert flow_fwrd[0].num_frames == 5
+    assert flow_back[0].num_frames == 5
 
     # Flow with temporal_func
     flow_temp = mv.flow(temporal_func=lambda clip: clip.std.Invert())
