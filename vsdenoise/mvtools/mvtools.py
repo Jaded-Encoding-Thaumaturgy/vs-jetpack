@@ -773,13 +773,13 @@ class MVTools(VSObject):
             tff=self.tff,
         )
 
-        flow_back, flow_fwrd = [
+        flow_fwrd, flow_back = [
             [core.mvu.Flow(clip, super_clip, vectors=vect, **flow_args) for vect in vectors_list]
-            for vectors_list in (reversed(vect_b), vect_f)
+            for vectors_list in (reversed(vect_f), vect_b)
         ]
 
         if not interleave:
-            return (flow_back, flow_fwrd)
+            return (flow_fwrd, flow_back)
 
         flow_clips = [*flow_fwrd, clip, *flow_back]
         cycle = len(flow_clips)
