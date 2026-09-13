@@ -637,13 +637,13 @@ class MVTools(VSObject):
             tff=self.tff,
         )
 
-        comp_back, comp_fwrd = [
+        comp_fwrd, comp_back = [
             [core.mvu.Compensate(clip, super_clip, vectors=vect, **compensate_args) for vect in vectors_list]
-            for vectors_list in (reversed(vect_b), vect_f)
+            for vectors_list in (reversed(vect_f), vect_b)
         ]
 
         if not interleave:
-            return (comp_back, comp_fwrd)
+            return (comp_fwrd, comp_back)
 
         comp_clips = [*comp_fwrd, clip, *comp_back]
         cycle = len(comp_clips)
