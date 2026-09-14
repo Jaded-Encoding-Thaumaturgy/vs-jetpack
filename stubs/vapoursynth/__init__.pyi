@@ -1798,7 +1798,7 @@ class VideoNode(RawNode):
 # </attribute/VideoNode_bound/dfttest2_gcc>
 # <attribute/VideoNode_bound/dfttest2_hip>
     dfttest2_hip: Final[_dfttest2_hip._VideoNode_bound.Plugin]
-    """DFTTest2 (HIP)"""
+    """DFTTest2 (hipFFT)"""
 # </attribute/VideoNode_bound/dfttest2_hip>
 # <attribute/VideoNode_bound/dfttest2_hiprtc>
     dfttest2_hiprtc: Final[_dfttest2_hiprtc._VideoNode_bound.Plugin]
@@ -1830,7 +1830,7 @@ class VideoNode(RawNode):
 # </attribute/VideoNode_bound/hysteresis>
 # <attribute/VideoNode_bound/mvu>
     mvu: Final[_mvu._VideoNode_bound.Plugin]
-    """MVUtensils v7"""
+    """MVUtensils v8"""
 # </attribute/VideoNode_bound/mvu>
 # <attribute/VideoNode_bound/ncnn>
     ncnn: Final[_ncnn._VideoNode_bound.Plugin]
@@ -2076,7 +2076,7 @@ class Core:
 # </attribute/Core_bound/dfttest2_gcc>
 # <attribute/Core_bound/dfttest2_hip>
     dfttest2_hip: Final[_dfttest2_hip._Core_bound.Plugin]
-    """DFTTest2 (HIP)"""
+    """DFTTest2 (hipFFT)"""
 # </attribute/Core_bound/dfttest2_hip>
 # <attribute/Core_bound/dfttest2_hiprtc>
     dfttest2_hiprtc: Final[_dfttest2_hiprtc._Core_bound.Plugin]
@@ -2120,7 +2120,7 @@ class Core:
 # </attribute/Core_bound/lsmas>
 # <attribute/Core_bound/mvu>
     mvu: Final[_mvu._Core_bound.Plugin]
-    """MVUtensils v7"""
+    """MVUtensils v8"""
 # </attribute/Core_bound/mvu>
 # <attribute/Core_bound/ncnn>
     ncnn: Final[_ncnn._Core_bound.Plugin]
@@ -2445,7 +2445,7 @@ class _bm3dhip:
 # </implementation/bm3dhip>
 
 # <implementation/bs>
-_ReturnDict_bs_TrackInfo = TypedDict("_ReturnDict_bs_TrackInfo", {"tracktype": _IntLike | list[_IntLike], "tracktypestr": _AnyStr | list[_AnyStr], "codec": _IntLike | list[_IntLike], "codecstr": _AnyStr | list[_AnyStr], "disposition": _IntLike | list[_IntLike], "dispositionstr": _AnyStr | list[_AnyStr]})
+_ReturnDict_bs_TrackInfo = TypedDict("_ReturnDict_bs_TrackInfo", {"tracktype": int | list[int], "tracktypestr": _AnyStr | list[_AnyStr], "codec": int | list[int], "codecstr": _AnyStr | list[_AnyStr], "disposition": int | list[int], "dispositionstr": _AnyStr | list[_AnyStr]})
 
 class _bs:
     class _Core_bound:
@@ -2457,7 +2457,7 @@ class _bs:
             @_Wrapper.Function
             def SetDebugOutput(self, /, enable: _IntLike) -> None: ...
             @_Wrapper.Function
-            def SetFFmpegLogLevel(self, /, level: _IntLike) -> _IntLike: ...
+            def SetFFmpegLogLevel(self, /, level: _IntLike) -> int: ...
             @_Wrapper.Function
             def TrackInfo(self, /, source: _AnyStr, enable_drefs: _IntLike | None = None, use_absolute_path: _IntLike | None = None) -> _ReturnDict_bs_TrackInfo: ...
             @_Wrapper.Function
@@ -2581,16 +2581,16 @@ class _dfttest2_cpu:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, clip: VideoNode, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, opt: _IntLike | None = None) -> Any: ...
+            def DFTTest(self, /, clip: VideoNode, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, opt: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
+            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> float | list[float]: ...
             @_Wrapper.Function
             def Version(self, /) -> Any: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, opt: _IntLike | None = None) -> Any: ...
+            def DFTTest(self, /, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, opt: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/dfttest2_cpu>
 
@@ -2599,18 +2599,16 @@ class _dfttest2_cuda:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, clip: VideoNode, kernel: _AnyStr | _SequenceLike[_AnyStr], radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None) -> Any: ...
+            def DFTTest(self, /, clip: VideoNode, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-            @_Wrapper.Function
-            def ToSingle(self, /, data: _FloatLike | _SequenceLike[_FloatLike]) -> Any: ...
+            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> float | list[float]: ...
             @_Wrapper.Function
             def Version(self, /) -> Any: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, kernel: _AnyStr | _SequenceLike[_AnyStr], radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None) -> Any: ...
+            def DFTTest(self, /, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/dfttest2_cuda>
 
@@ -2619,16 +2617,16 @@ class _dfttest2_gcc:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, clip: VideoNode, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> Any: ...
+            def DFTTest(self, /, clip: VideoNode, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
+            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> float | list[float]: ...
             @_Wrapper.Function
             def Version(self, /) -> Any: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> Any: ...
+            def DFTTest(self, /, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
 
 # </implementation/dfttest2_gcc>
 
@@ -2637,18 +2635,16 @@ class _dfttest2_hip:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, clip: VideoNode, kernel: _AnyStr | _SequenceLike[_AnyStr], radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None) -> Any: ...
+            def DFTTest(self, /, clip: VideoNode, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-            @_Wrapper.Function
-            def ToSingle(self, /, data: _FloatLike | _SequenceLike[_FloatLike]) -> Any: ...
+            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> float | list[float]: ...
             @_Wrapper.Function
             def Version(self, /) -> Any: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, kernel: _AnyStr | _SequenceLike[_AnyStr], radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None) -> Any: ...
+            def DFTTest(self, /, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/dfttest2_hip>
 
@@ -2657,18 +2653,16 @@ class _dfttest2_hiprtc:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, clip: VideoNode, kernel: _AnyStr | _SequenceLike[_AnyStr], radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> Any: ...
+            def DFTTest(self, /, clip: VideoNode, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-            @_Wrapper.Function
-            def ToSingle(self, /, data: _FloatLike | _SequenceLike[_FloatLike]) -> Any: ...
+            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> float | list[float]: ...
             @_Wrapper.Function
             def Version(self, /) -> Any: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, kernel: _AnyStr | _SequenceLike[_AnyStr], radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> Any: ...
+            def DFTTest(self, /, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/dfttest2_hiprtc>
 
@@ -2677,18 +2671,16 @@ class _dfttest2_nvrtc:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, clip: VideoNode, kernel: _AnyStr | _SequenceLike[_AnyStr], radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> Any: ...
+            def DFTTest(self, /, clip: VideoNode, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-            @_Wrapper.Function
-            def ToSingle(self, /, data: _FloatLike | _SequenceLike[_FloatLike]) -> Any: ...
+            def RDFT(self, /, data: _FloatLike | _SequenceLike[_FloatLike], shape: _IntLike | _SequenceLike[_IntLike]) -> float | list[float]: ...
             @_Wrapper.Function
             def Version(self, /) -> Any: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def DFTTest(self, /, kernel: _AnyStr | _SequenceLike[_AnyStr], radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, in_place: _IntLike | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> Any: ...
+            def DFTTest(self, /, window: _FloatLike | _SequenceLike[_FloatLike], sigma: _FloatLike | _SequenceLike[_FloatLike], sigma2: _FloatLike, pmin: _FloatLike, pmax: _FloatLike, filter_type: _IntLike, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, zero_mean: _IntLike | None = None, window_freq: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/dfttest2_nvrtc>
 
@@ -2711,7 +2703,7 @@ class _dvdsrc2:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def Admap(self, /, path: _AnyStr, vts: _IntLike) -> _IntLike | list[_IntLike]: ...
+            def Admap(self, /, path: _AnyStr, vts: _IntLike) -> int | list[int]: ...
             @_Wrapper.Function
             def FullVts(self, /, path: _AnyStr, vts: _IntLike, ranges: _IntLike | _SequenceLike[_IntLike] | None = None, domain: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
@@ -2812,11 +2804,11 @@ class _ffms2:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def GetLogLevel(self, /) -> _IntLike: ...
+            def GetLogLevel(self, /) -> int: ...
             @_Wrapper.Function
             def Index(self, /, source: _AnyStr, cachefile: _AnyStr | None = None, indextracks: _IntLike | _SequenceLike[_IntLike] | None = None, errorhandling: _IntLike | None = None, overwrite: _IntLike | None = None, enable_drefs: _IntLike | None = None, use_absolute_path: _IntLike | None = None) -> _AnyStr: ...
             @_Wrapper.Function
-            def SetLogLevel(self, /, level: _IntLike) -> _IntLike: ...
+            def SetLogLevel(self, /, level: _IntLike) -> int: ...
             @_Wrapper.Function
             def Source(self, /, source: _AnyStr, track: _IntLike | None = None, cache: _IntLike | None = None, cachefile: _AnyStr | None = None, fpsnum: _IntLike | None = None, fpsden: _IntLike | None = None, threads: _IntLike | None = None, timecodes: _AnyStr | None = None, seekmode: _IntLike | None = None, width: _IntLike | None = None, height: _IntLike | None = None, resizer: _AnyStr | None = None, format: _IntLike | None = None, alpha: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
