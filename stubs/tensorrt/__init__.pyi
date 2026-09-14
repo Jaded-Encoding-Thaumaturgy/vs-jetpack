@@ -27,6 +27,7 @@ from tensorrt_bindings.tensorrt import (
     Dims4,
     DimsExprs,
     DimsHW,
+    DLAWorkspaceAllocationStrategy,
     DynamicPluginTensorDesc,
     ElementWiseOperation,
     EngineCapability,
@@ -225,6 +226,7 @@ __all__: list[str] = [
     "CausalMaskKind",
     "CollectiveOperation",
     "CumulativeOperation",
+    "DLAWorkspaceAllocationStrategy",
     "DataType",
     "DeviceType",
     "DimensionOperation",
@@ -443,7 +445,7 @@ __all__: list[str] = [
     "volume",
     "warnings",
 ]
-__version__: str = "11.2.1.2"
+__version__: str = "11.3.0.99"
 attr: str = "VERBOSE"
 bfloat16: tensorrt_bindings.tensorrt.DataType  # value = <DataType.BF16: 7>
 bool: tensorrt_bindings.tensorrt.DataType  # value = <DataType.BOOL: 4>

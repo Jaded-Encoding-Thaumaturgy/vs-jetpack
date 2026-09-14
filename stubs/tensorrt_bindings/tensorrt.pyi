@@ -1,9 +1,9 @@
 import builtins
 import collections.abc
-import types
 import typing
 
 import numpy
+import typing_extensions
 
 __all__: list[str] = [
     "APILanguage",
@@ -17,6 +17,7 @@ __all__: list[str] = [
     "CausalMaskKind",
     "CollectiveOperation",
     "CumulativeOperation",
+    "DLAWorkspaceAllocationStrategy",
     "DataType",
     "DeviceType",
     "DimensionOperation",
@@ -466,6 +467,7 @@ class Builder:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def __init__(self, logger: ILogger) -> None:
@@ -778,6 +780,51 @@ class CumulativeOperation:
     def __index__(self) -> int: ...
     def __init__(self, value: typing.SupportsInt) -> None: ...
     def __int__(self) -> int: ...
+    def __ne__(self, other: object) -> builtins.bool: ...
+    def __setstate__(self, state: typing.SupportsInt) -> None: ...
+    @property
+    def name(self) -> str: ...
+    @property
+    def value(self) -> int: ...
+
+class DLAWorkspaceAllocationStrategy:
+    """
+
+        Describes how DLA workspace memory is allocated.
+
+        See :attr:`Runtime.dla_workspace_allocation_strategy`.
+
+
+    Members:
+
+      DEFAULT : Each DLA module allocates its workspace memory separately.
+
+      SHARED_STATIC :
+        DLA modules deserialized by the same runtime for the same DLA core share a static workspace pool. This can reduce
+        memory consumption when multiple DLA engines are loaded concurrently. Each DLA core has a separate workspace pool,
+        and each engine captures the core selected by the runtime when it is deserialized.
+
+        .. warning::
+            Concurrent execution of engines that share DLA workspace results in undefined behavior.
+    """
+
+    DEFAULT: typing.ClassVar[DLAWorkspaceAllocationStrategy]  # value = <DLAWorkspaceAllocationStrategy.DEFAULT: 0>
+    SHARED_STATIC: typing.ClassVar[
+        DLAWorkspaceAllocationStrategy
+    ]  # value = <DLAWorkspaceAllocationStrategy.SHARED_STATIC: 1>
+    __members__: typing.ClassVar[
+        dict[str, DLAWorkspaceAllocationStrategy]
+    ]  # value = {'DEFAULT': <DLAWorkspaceAllocationStrategy.DEFAULT: 0>, 'SHARED_STATIC': <DLAWorkspaceAllocationStrategy.SHARED_STATIC: 1>}
+    def __eq__(self, other: object) -> builtins.bool: ...
+    def __ge__(self, other: typing.Any) -> builtins.bool: ...
+    def __getstate__(self) -> int: ...
+    def __gt__(self, other: typing.Any) -> builtins.bool: ...
+    def __hash__(self) -> int: ...
+    def __index__(self) -> int: ...
+    def __init__(self, value: typing.SupportsInt) -> None: ...
+    def __int__(self) -> int: ...
+    def __le__(self, other: typing.Any) -> builtins.bool: ...
+    def __lt__(self, other: typing.Any) -> builtins.bool: ...
     def __ne__(self, other: object) -> builtins.bool: ...
     def __setstate__(self, state: typing.SupportsInt) -> None: ...
     @property
@@ -1775,6 +1822,7 @@ class IBuilderConfig:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def add_optimization_profile(self, profile: IOptimizationProfile) -> int:
@@ -2130,6 +2178,7 @@ class ICudaEngine:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def __getitem__(self, arg0: typing.SupportsInt) -> str: ...
@@ -2441,7 +2490,7 @@ class IDebugListener:
     def __init__(self) -> None: ...
     def process_debug_tensor(
         self,
-        addr: types.CapsuleType,
+        addr: typing_extensions.CapsuleType,
         location: TensorLocation,
         type: DataType,
         shape: Dims,
@@ -2783,6 +2832,7 @@ class IExecutionContext:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def execute_async_v3(self, stream_handle: typing.SupportsInt) -> builtins.bool:
@@ -2909,7 +2959,7 @@ class IExecutionContext:
 
         :arg aux_streams: A list of cuda streams. If the length of the list is greater than engine.num_aux_streams, then only the first "engine.num_aux_streams" streams will be used. If the length is less than engine.num_aux_streams, such as an empty list, then TensorRT will use the provided streams for the first few auxiliary streams, and will create additional streams internally for the rest of the auxiliary streams.
         """
-    def set_communicator(self, communicator: types.CapsuleType) -> builtins.bool:
+    def set_communicator(self, communicator: typing_extensions.CapsuleType) -> builtins.bool:
         """
         Set the NCCL communicator for the execution context.
 
@@ -3159,7 +3209,7 @@ class IGpuAllocator(IVersionedInterface):
     def __init__(self) -> None: ...
     def allocate(
         self, size: typing.SupportsInt, alignment: typing.SupportsInt, flags: typing.SupportsInt
-    ) -> types.CapsuleType:
+    ) -> typing_extensions.CapsuleType:
         """
         [DEPRECATED] Deprecated in TensorRT 10.0. Please use allocate_async instead.
         A callback implemented by the application to handle acquisition of GPU memory.
@@ -3182,7 +3232,7 @@ class IGpuAllocator(IVersionedInterface):
         alignment: typing.SupportsInt,
         flags: typing.SupportsInt,
         stream: typing.SupportsInt,
-    ) -> types.CapsuleType:
+    ) -> typing_extensions.CapsuleType:
         """
         A callback implemented by the application to handle acquisition of GPU memory asynchronously.
         This is just a wrapper around a syncronous method allocate.
@@ -3201,7 +3251,7 @@ class IGpuAllocator(IVersionedInterface):
 
         :returns: The address of the allocated memory
         """
-    def deallocate(self, memory: types.CapsuleType) -> builtins.bool:
+    def deallocate(self, memory: typing_extensions.CapsuleType) -> builtins.bool:
         """
         [DEPRECATED] Deprecated in TensorRT 10.0. Please use dealocate_async instead;
         A callback implemented by the application to handle release of GPU memory.
@@ -3212,7 +3262,7 @@ class IGpuAllocator(IVersionedInterface):
 
         :returns: True if the acquired memory is released successfully.
         """
-    def deallocate_async(self, memory: types.CapsuleType, stream: typing.SupportsInt) -> builtins.bool:
+    def deallocate_async(self, memory: typing_extensions.CapsuleType, stream: typing.SupportsInt) -> builtins.bool:
         """
         A callback implemented by the application to handle release of GPU memory asynchronously.
         This is just a wrapper around a syncronous method deallocate.
@@ -3226,8 +3276,8 @@ class IGpuAllocator(IVersionedInterface):
         :returns: True if the acquired memory is released successfully.
         """
     def reallocate(
-        self, address: types.CapsuleType, alignment: typing.SupportsInt, new_size: typing.SupportsInt
-    ) -> types.CapsuleType:
+        self, address: typing_extensions.CapsuleType, alignment: typing.SupportsInt, new_size: typing.SupportsInt
+    ) -> typing_extensions.CapsuleType:
         """
         A callback implemented by the application to resize an existing allocation.
 
@@ -3274,7 +3324,7 @@ class IGpuAsyncAllocator(IGpuAllocator):
     def __init__(self) -> None: ...
     def allocate(
         self, size: typing.SupportsInt, alignment: typing.SupportsInt, flags: typing.SupportsInt
-    ) -> types.CapsuleType:
+    ) -> typing_extensions.CapsuleType:
         """
         [DEPRECATED] Deprecated in TensorRT 10.0. Please use allocate_async instead.
         A callback implemented by the application to handle acquisition of GPU memory.
@@ -3299,7 +3349,7 @@ class IGpuAsyncAllocator(IGpuAllocator):
         alignment: typing.SupportsInt,
         flags: typing.SupportsInt,
         stream: typing.SupportsInt,
-    ) -> types.CapsuleType:
+    ) -> typing_extensions.CapsuleType:
         """
         A callback implemented by the application to handle acquisition of GPU memory asynchronously.
         If an allocation request of size 0 is made, ``None`` should be returned.
@@ -3316,7 +3366,7 @@ class IGpuAsyncAllocator(IGpuAllocator):
 
         :returns: The address of the allocated memory
         """
-    def deallocate(self, memory: types.CapsuleType) -> builtins.bool:
+    def deallocate(self, memory: typing_extensions.CapsuleType) -> builtins.bool:
         """
         [DEPRECATED] Deprecated in TensorRT 10.0. Please use deallocate_async instead.
         A callback implemented by the application to handle release of GPU memory.
@@ -3328,7 +3378,9 @@ class IGpuAsyncAllocator(IGpuAllocator):
 
         :returns: True if the acquired memory is released successfully.
         """
-    def deallocate_async(self: IGpuAllocator, memory: types.CapsuleType, stream: typing.SupportsInt) -> builtins.bool:
+    def deallocate_async(
+        self: IGpuAllocator, memory: typing_extensions.CapsuleType, stream: typing.SupportsInt
+    ) -> builtins.bool:
         """
         A callback implemented by the application to handle release of GPU memory asynchronously.
 
@@ -3378,6 +3430,7 @@ class IHostMemory:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __buffer__(self, flags):
         """
@@ -4064,6 +4117,7 @@ class INetworkDefinition:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def __getitem__(self, arg0: typing.SupportsInt) -> ILayer: ...
@@ -5457,7 +5511,7 @@ class IPluginRegistry:
         :returns: ``True`` if the plugin creator was deregistered, ``False`` if it was not found in the registry
                 or otherwise could not be deregistered.
         """
-    def deregister_library(self, handle: types.CapsuleType) -> None:
+    def deregister_library(self, handle: typing_extensions.CapsuleType) -> None:
         """
         Deregister plugins associated with a library. Any resources acquired when the library was loaded will be released.
 
@@ -5473,7 +5527,7 @@ class IPluginRegistry:
 
         :returns: An :class:`IPluginCreator` .
         """
-    def load_library(self, plugin_path: str) -> types.CapsuleType:
+    def load_library(self, plugin_path: str) -> typing_extensions.CapsuleType:
         """
         Load and register a shared library of plugins.
 
@@ -5597,9 +5651,9 @@ class IPluginV2:
     def execute_async(
         self,
         batch_size: typing.SupportsInt,
-        inputs: collections.abc.Sequence[types.CapsuleType],
-        outputs: collections.abc.Sequence[types.CapsuleType],
-        workspace: types.CapsuleType,
+        inputs: collections.abc.Sequence[typing_extensions.CapsuleType],
+        outputs: collections.abc.Sequence[typing_extensions.CapsuleType],
+        workspace: typing_extensions.CapsuleType,
         stream_handle: typing.SupportsInt,
     ) -> int:
         """
@@ -5884,7 +5938,10 @@ class IPluginV2Ext(IPluginV2):
     :ivar tensorrt_version: :class:`int` The API version with which this plugin was built.
     """
     def attach_to_context(
-        self, cudnn: types.CapsuleType, cublas: types.CapsuleType, allocator: types.CapsuleType
+        self,
+        cudnn: typing_extensions.CapsuleType,
+        cublas: typing_extensions.CapsuleType,
+        allocator: typing_extensions.CapsuleType,
     ) -> None:
         """
         Attach the plugin object to an execution context and grant the plugin the access to some context resource.
@@ -7038,7 +7095,9 @@ class IStreamReaderV2:
             return data
     """
     def __init__(self) -> None: ...
-    def read(self, destination: types.CapsuleType, num_bytes: typing.SupportsInt, stream: typing.SupportsInt) -> int:
+    def read(
+        self, destination: typing_extensions.CapsuleType, num_bytes: typing.SupportsInt, stream: typing.SupportsInt
+    ) -> int:
         """
         A callback implemented by the application to set the stream location.
 
@@ -7073,7 +7132,7 @@ class IStreamWriter:
 
     """
     def __init__(self) -> None: ...
-    def write(self, data: types.CapsuleType, size: typing.SupportsInt) -> int:
+    def write(self, data: typing_extensions.CapsuleType, size: typing.SupportsInt) -> int:
         """
         A callback implemented by the application to write a particular chunk of memory.
 
@@ -8030,6 +8089,7 @@ class OnnxParser:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def __init__(self, network: INetworkDefinition, logger: ILogger) -> None:
@@ -9280,8 +9340,19 @@ class Runtime:
     :ivar error_recorder: :class:`IErrorRecorder` Application-implemented error reporting interface for TensorRT objects.
     :ivar gpu_allocator: :class:`IGpuAllocator` The GPU allocator to be used by the :class:`Runtime` . All GPU memory
         acquired will use this allocator. If set to None, the default allocator will be used (Default: cudaMalloc/cudaFree).
-    :ivar DLA_core: :class:`int` The DLA core that the engine executes on. Must be between 0 and N-1 where N is the number of available DLA cores.
-    :ivar num_DLA_cores: :class:`int` The number of DLA engines available to this builder.
+    :ivar DLA_core: :class:`int` The DLA core used by the network. Defaults to -1. This property specifies which DLA
+        core to use by index when multiple cores are available. Its current value is the assigned DLA core, or -1 if
+        DLA is unavailable or no core is set. The value must be in the range [0, :attr:`num_DLA_cores`). If no DLA
+        core is set when :attr:`DLAWorkspaceAllocationStrategy.SHARED_STATIC` is selected, core 0 is used
+        automatically. If :attr:`num_DLA_cores` is 0, setting this property does nothing.
+    :ivar num_DLA_cores: :class:`int` The number of DLA hardware cores accessible, or 0 if DLA is unavailable.
+    :ivar dla_workspace_allocation_strategy: :class:`DLAWorkspaceAllocationStrategy` The DLA workspace allocation
+        strategy used for subsequent engine deserializations. Engines already deserialized by this runtime retain
+        the strategy that was selected when they were deserialized. Selecting
+        :attr:`DLAWorkspaceAllocationStrategy.SHARED_STATIC` creates or reuses a shared workspace for the selected
+        DLA core. If no DLA core is selected, TensorRT selects core 0. Changing :attr:`DLA_core` while shared
+        workspace is selected creates or reuses a separate shared workspace for the newly selected core. Setting this
+        property raises :class:`RuntimeError` if the workspace allocation strategy cannot be changed successfully.
     :ivar logger: :class:`ILogger` The logger provided when creating the refitter.
     :ivar max_threads: :class:`int` The maximum thread that can be used by the :class:`Runtime`.
     :ivar temporary_directory: :class:`str` The temporary directory to use when loading executable code for engines.  If set to None (the default), TensorRT will
@@ -9295,6 +9366,7 @@ class Runtime:
 
     """
 
+    dla_workspace_allocation_strategy: DLAWorkspaceAllocationStrategy
     engine_host_code_allowed: builtins.bool
     error_recorder: IErrorRecorder
     temporary_directory: str
@@ -9306,6 +9378,7 @@ class Runtime:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def __init__(self, logger: ILogger) -> None:
@@ -10235,7 +10308,7 @@ def get_plugin_registry() -> IPluginRegistry:
     Return the plugin registry for standard runtime
     """
 
-def init_libnvinfer_plugins(logger: types.CapsuleType, namespace: str) -> builtins.bool:
+def init_libnvinfer_plugins(logger: typing_extensions.CapsuleType, namespace: str) -> builtins.bool:
     """
     Initialize and register all the existing TensorRT plugins to the :class:`IPluginRegistry` with an optional namespace.
     The plugin library author should ensure that this function name is unique to the library.
