@@ -2061,38 +2061,38 @@ wheels = [
 
 [[package]]
 name = "tensorrt-cu13"
-version = "11.2.1.2"
+version = "11.3.0.99"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tensorrt-cu13-bindings" },
     { name = "tensorrt-cu13-libs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2d/68/82741621fc5733459d582c5086385e4d5da727833af5aa40bf251a5dbc73/tensorrt_cu13-11.2.1.2.tar.gz", hash = "sha256:5a15c04615c59338d8f95205f5a24e7dfe18086d4a3449ddd5992e75f0f829b9", size = 17973, upload-time = "2026-07-30T19:16:37.228Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/35/de/e6de4794bd8f47f675798105eddd8da9977a3a5f2b681d86656d9389ac90/tensorrt_cu13-11.3.0.99.tar.gz", hash = "sha256:6410ec3c25e661faf217620365b0c661024933b8fdb03c5190172690e8070162", size = 17985, upload-time = "2026-09-09T16:30:46.75Z" }
 
 [[package]]
 name = "tensorrt-cu13-bindings"
-version = "11.2.1.2"
+version = "11.3.0.99"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/45/e4/19d92435fb102320ece532fc9df58f0e39deee675f5b5d204dfc667a4ed3/tensorrt_cu13_bindings-11.2.1.2-cp312-none-manylinux_2_28_x86_64.whl", hash = "sha256:b3ba3b47a13b8c37c6f55e72502ddc2b369adc7f4c3e49eb9398836a204669ae", size = 1253266, upload-time = "2026-07-30T19:19:09.046Z" },
-    { url = "https://files.pythonhosted.org/packages/8c/aa/7464ea7d4edfaf97e235f4c04389cdc67edbb11a808035168d3b51ee4227/tensorrt_cu13_bindings-11.2.1.2-cp312-none-manylinux_2_35_aarch64.whl", hash = "sha256:994c8d528ef55a4d3a1416f485499d7210c2e903f3c9c93cc721501786549c58", size = 1226685, upload-time = "2026-07-30T19:19:32.152Z" },
-    { url = "https://files.pythonhosted.org/packages/ab/5e/5ac7396a5362bc8a15b15699a8ed3e8d1475cdff15dbb65c42f173fddd8f/tensorrt_cu13_bindings-11.2.1.2-cp312-none-win_amd64.whl", hash = "sha256:6b4c7fb311543bf99e8c513e7a89677eeb443101848b60a7b0d782e3c8cf3e48", size = 891698, upload-time = "2026-07-30T19:19:55.467Z" },
-    { url = "https://files.pythonhosted.org/packages/a0/95/38abad5a69de3ad8aa05572fe659161c3792f5beea876587724863266e26/tensorrt_cu13_bindings-11.2.1.2-cp313-none-manylinux_2_28_x86_64.whl", hash = "sha256:4c4370517a6d7cdcb21c0463bf12fd8190a629a05276e82ca0eccc76f4e1c176", size = 1252058, upload-time = "2026-07-30T19:20:18.582Z" },
-    { url = "https://files.pythonhosted.org/packages/51/3a/59d89fbfffba29edee489a102229f54c35ab6dbbc9a49a9bf42398c3030e/tensorrt_cu13_bindings-11.2.1.2-cp313-none-manylinux_2_35_aarch64.whl", hash = "sha256:48bed389fcebad02f574cdd880d2a68015fa771aac8e0fd0ea688df457da5b41", size = 1226625, upload-time = "2026-07-30T19:20:45.018Z" },
-    { url = "https://files.pythonhosted.org/packages/01/a0/644c3aab1428f5be7c557d8f9370804aa51f5fad5fab9c94dd029e0d74f1/tensorrt_cu13_bindings-11.2.1.2-cp313-none-win_amd64.whl", hash = "sha256:5efa6822b8a69d1342f18c086fdaa4ec25fdcc9e13857ee6c210e49f5c7dc9f4", size = 891575, upload-time = "2026-07-30T19:21:04.419Z" },
-    { url = "https://files.pythonhosted.org/packages/b6/b2/436022da948a9121dae7a69eb0bcb10533bfa7146f9353146d454f0482b1/tensorrt_cu13_bindings-11.2.1.2-cp314-none-manylinux_2_28_x86_64.whl", hash = "sha256:837d512ee78f79c309bd654928146837c2a4dc5e2c81e6b2f9af7d0b04f7d4aa", size = 1258252, upload-time = "2026-07-30T19:21:17.08Z" },
-    { url = "https://files.pythonhosted.org/packages/55/31/6b80dde0d72ba6ae2c382d823157179fe8a5d34528e3b8c42ca8f316da5a/tensorrt_cu13_bindings-11.2.1.2-cp314-none-manylinux_2_35_aarch64.whl", hash = "sha256:323183f29c6675a39204939b8a4a83489e51ce30d4bc2b53e76ae6c44b056798", size = 1230585, upload-time = "2026-07-30T19:21:39.229Z" },
-    { url = "https://files.pythonhosted.org/packages/93/c5/2854bb1b16c202f159bd16e1c805d584abad20633a6e0779cf085f67329a/tensorrt_cu13_bindings-11.2.1.2-cp314-none-win_amd64.whl", hash = "sha256:0b7e513e2cd70bf608d1bc36885519e16ae7c6b2cff8c0eaf166134a1739670b", size = 892885, upload-time = "2026-07-30T19:21:55.354Z" },
+    { url = "https://files.pythonhosted.org/packages/85/6b/fbe3105bea649e1c5a4c1ee27090ce964081b29da715ae4b81e0568dd43b/tensorrt_cu13_bindings-11.3.0.99-cp312-none-manylinux_2_28_x86_64.whl", hash = "sha256:91b4e4cbe385dfd405ad8cfd927c6c22d5cd431895929b74a31f9887761c09b3", size = 1257701, upload-time = "2026-09-09T16:33:57.278Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/38/4507c655d53c37be3d2d78990d63301c261b59d81a6045bf52b36ae7db87/tensorrt_cu13_bindings-11.3.0.99-cp312-none-manylinux_2_35_aarch64.whl", hash = "sha256:bb5b014cdddbc3215815c88a968cf22dd113f325b203937335ec3fdd5b9c8614", size = 1229963, upload-time = "2026-09-09T16:34:21.697Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/80/38707dfd43f0959efdcd53d95516bbf8a0eced6b8a05d44094373cd5eafe/tensorrt_cu13_bindings-11.3.0.99-cp312-none-win_amd64.whl", hash = "sha256:83ce38483b329dec1a1df7ccf5a465319f9d3a16db6686e1e17ed89f8bfee8ab", size = 894169, upload-time = "2026-09-09T16:34:42.395Z" },
+    { url = "https://files.pythonhosted.org/packages/4d/97/d47aaf03639928369b5a2117cd26fc44c758d09a97c2d1951e26c14f2190/tensorrt_cu13_bindings-11.3.0.99-cp313-none-manylinux_2_28_x86_64.whl", hash = "sha256:0a3fe4a0d8ce0b19dfb516ebc0c8c0809655e8dbd8e1d498b0e4dbdddd6a872d", size = 1256546, upload-time = "2026-09-09T16:35:11.853Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/37/93c121b5d1be00fef309d2d0358147ff512f9daa1c1e1319a8526b5fa07e/tensorrt_cu13_bindings-11.3.0.99-cp313-none-manylinux_2_35_aarch64.whl", hash = "sha256:81cdbb8b0c80c19301b637f320920f4095c58df2d72253e72a1d912a3cbb577b", size = 1229908, upload-time = "2026-09-09T16:35:31.156Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/b5/559b9baa12b934cd928566505aecc0553338305e7fe3c3d486e246383344/tensorrt_cu13_bindings-11.3.0.99-cp313-none-win_amd64.whl", hash = "sha256:bc458d6805e0405ffcef440671bad933c5d9b425c3890d51ce6cbb26daeb4100", size = 894174, upload-time = "2026-09-09T16:35:54.166Z" },
+    { url = "https://files.pythonhosted.org/packages/4a/32/b23283f148dad2660a706c503c386597bb3bde0740d553c56698f437a000/tensorrt_cu13_bindings-11.3.0.99-cp314-none-manylinux_2_28_x86_64.whl", hash = "sha256:4de928ba22b6ca4cc426d243a5e9b1055149e790c76850df82038d1457ec77c8", size = 1261390, upload-time = "2026-09-09T16:36:22.073Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/b6/d1411d8399a221b65de4ee9c6d62bb402ef2e19d9cae8a0fe7ea7be8533a/tensorrt_cu13_bindings-11.3.0.99-cp314-none-manylinux_2_35_aarch64.whl", hash = "sha256:82dfd45ee1b0f34572d2aa3baee49383ec9ce56592724bd423e331b40e4a02d1", size = 1234739, upload-time = "2026-09-09T16:36:41.19Z" },
+    { url = "https://files.pythonhosted.org/packages/c9/95/6ff92831740232bb2a231e3d70171906a86e8802575ac5ee3191cf98ee7a/tensorrt_cu13_bindings-11.3.0.99-cp314-none-win_amd64.whl", hash = "sha256:95e162d5321b0907cdd9a2a8ef2dca9a35c832f03618ff259ee018c326115968", size = 895009, upload-time = "2026-09-09T16:37:03.625Z" },
 ]
 
 [[package]]
 name = "tensorrt-cu13-libs"
-version = "11.2.1.2"
+version = "11.3.0.99"
 source = { registry = "https://pypi.nvidia.com/" }
 wheels = [
-    { url = "https://pypi.nvidia.com/tensorrt-cu13-libs/tensorrt_cu13_libs-11.2.1.2-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:c2b7c6c3972b986bc66b219aff79cc4de80c845c188c38d4eacd8a0643854753" },
-    { url = "https://pypi.nvidia.com/tensorrt-cu13-libs/tensorrt_cu13_libs-11.2.1.2-py3-none-manylinux_2_35_aarch64.whl", hash = "sha256:ef6f7f89aadc6ab5417b40d4b9dacb308af2bf952fb1a29b987dac8d29006b22" },
-    { url = "https://pypi.nvidia.com/tensorrt-cu13-libs/tensorrt_cu13_libs-11.2.1.2-py3-none-win_amd64.whl", hash = "sha256:6e4b8b5ef990f4de4ba15eef79281f2acaca04186ed18ea5ab3f79d1379c21a0" },
+    { url = "https://pypi.nvidia.com/tensorrt-cu13-libs/tensorrt_cu13_libs-11.3.0.99-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:cef957e0b48a525f2bcc8849742de06883cedcc6b96185b9cf0b17c9c75a858a" },
+    { url = "https://pypi.nvidia.com/tensorrt-cu13-libs/tensorrt_cu13_libs-11.3.0.99-py3-none-manylinux_2_35_aarch64.whl", hash = "sha256:0205735080669d4aecfe34e49d125f171d930ab94018a3ee89e9d91c34f99381" },
+    { url = "https://pypi.nvidia.com/tensorrt-cu13-libs/tensorrt_cu13_libs-11.3.0.99-py3-none-win_amd64.whl", hash = "sha256:9d504bd9f77a93b30f5c782c1a3cb3f4e53595ea100347360134e5adea198eff" },
 ]
 
 [[package]]
@@ -2662,50 +2662,50 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-mlrt-migx"
-version = "16.0"
+version = "17.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/59/70/f5f755a9d607dd5328e6dadcd98a10efde58b9db3a76e86b861662aacd08/vapoursynth_mlrt_migx-16.0.tar.gz", hash = "sha256:4bde76dab3f92b353332b07eb5d58d4689a8ab58ace6bd85b5666cc8699196fa", size = 673731, upload-time = "2026-07-25T21:56:33.035Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d6/f5/7809b28e51ead2624869ae82284338d8bade5d14a72e9590a815a16b3589/vapoursynth_mlrt_migx-17.0.tar.gz", hash = "sha256:ad4e1c973f02a07eeed6a8e7746c4066a964472132f502b05a6921a208e74579", size = 103247, upload-time = "2026-09-14T16:19:11.355Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d3/1f/dc16583b2b7981b6ad3a84711d2478ee8d644c44d9e4458f7d2bb4f8e124/vapoursynth_mlrt_migx-16.0-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:6f0282dc8879bdce13203b70ede6381ef6add55651f7a5cad71b586d6c5dea2f", size = 124174, upload-time = "2026-07-25T21:56:31.425Z" },
+    { url = "https://files.pythonhosted.org/packages/9a/c9/4319ec03ef62aa1d3ab9d14bc42bbf8ea1be57dec7f1708b3cd38d688a27/vapoursynth_mlrt_migx-17.0-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c17d725fcd9eeddb627f29744a2627e13c95f0bf20b3a82e76d557510556c39d", size = 126233, upload-time = "2026-09-14T16:19:09.923Z" },
 ]
 
 [[package]]
 name = "vapoursynth-mlrt-ncnn"
-version = "16.0"
+version = "17.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cf/8d/5313444e3124796fc42055808d0cc162a402dff02f17060422cd1f7cf165/vapoursynth_mlrt_ncnn-16.0.tar.gz", hash = "sha256:493d4590fda512c7efacba90a7ffd3dafbc49f9a4bd117d370d4d846df90e333", size = 674765, upload-time = "2026-08-14T14:32:11.419Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/5d/718895bec75056b001838d391b383afd280cbd459608e0786530220aadf0/vapoursynth_mlrt_ncnn-17.0.tar.gz", hash = "sha256:d0b08eeed3d13ec8fe00e7dab81ae0ee402cfe68bcbe0e72b1903217873b961d", size = 102565, upload-time = "2026-09-14T16:17:26.272Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4b/dd/47e4b5a31649b73babdbbf7a6f60edbe5af1ddcb5527b4380327e5e11997/vapoursynth_mlrt_ncnn-16.0-py3-none-macosx_15_0_arm64.whl", hash = "sha256:3f430ee00e485fc61ec60162ea2b03895cd2f63e2a737d6528636842e7e46433", size = 4605442, upload-time = "2026-08-14T14:32:02.66Z" },
-    { url = "https://files.pythonhosted.org/packages/cb/cc/bcbf044650a00f7c69ad5bb89bee3273a2c75f41c3faac4818c8834ac09c/vapoursynth_mlrt_ncnn-16.0-py3-none-manylinux_2_34_aarch64.whl", hash = "sha256:b3bddee3e8b3f13d8c60b2f2cf80a453193432c8abdec7611508a9d9a95ec83e", size = 5904919, upload-time = "2026-08-14T14:32:05.253Z" },
-    { url = "https://files.pythonhosted.org/packages/76/e5/6380960cc3e83015c3f4d50ee47454faf679d835c477ec695ba18f5a410d/vapoursynth_mlrt_ncnn-16.0-py3-none-manylinux_2_35_x86_64.whl", hash = "sha256:5962dbfc285136c20098aa87968a8f41508b146030ed9231712215c600a5c065", size = 9134994, upload-time = "2026-08-14T14:32:07.209Z" },
-    { url = "https://files.pythonhosted.org/packages/b4/5a/18134df1a6c1da71f97c63106ce60e3f9fdb400de2f4d07b74434276bd0f/vapoursynth_mlrt_ncnn-16.0-py3-none-win_amd64.whl", hash = "sha256:ee7647295d213204b2d60b277afa7b9e0e8adbdcefeab0564054663e09e24271", size = 5791129, upload-time = "2026-08-14T14:32:09.903Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/c1/69b7deb2ce1993a1d292e5a132620f170e7f8d01d9f053899bee41de7969/vapoursynth_mlrt_ncnn-17.0-py3-none-macosx_15_0_arm64.whl", hash = "sha256:98455799edc7272687a1ced1e8802ede2c92fb1869f58379132442e0fa659bc8", size = 4606837, upload-time = "2026-09-14T16:17:18.658Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/e8/8559c65003450197dca61c6b6b78d511ab945024dfa4efff743565739431/vapoursynth_mlrt_ncnn-17.0-py3-none-manylinux_2_34_aarch64.whl", hash = "sha256:fb5ccd54f6e2b5615e0f32a9cbf9b190d3c9f43434678b7559b8734d30d99642", size = 5903326, upload-time = "2026-09-14T16:17:20.335Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/a0/d3285b537f9bfa961a164324ca44452f55d636fa8e3a46dfdf7c7f640a56/vapoursynth_mlrt_ncnn-17.0-py3-none-manylinux_2_35_x86_64.whl", hash = "sha256:52c5ab4d899b2cfb58598be33595de5e32e27c0bf63db793bc2e8dc23c0916c7", size = 9135224, upload-time = "2026-09-14T16:17:22.142Z" },
+    { url = "https://files.pythonhosted.org/packages/85/af/ee8e57236e4e20901196e114259f7502ef283bfc9fba35787c53c3c41397/vapoursynth_mlrt_ncnn-17.0-py3-none-win_amd64.whl", hash = "sha256:fc566dc50362c4812052eec336f65acae562b9f841aff9e69fb34fb08241d273", size = 5791805, upload-time = "2026-09-14T16:17:24.32Z" },
 ]
 
 [[package]]
 name = "vapoursynth-mlrt-ort"
-version = "16.2"
+version = "17.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3d/66/53e695c0234f10ef1354e98949355eb37982aa6d5f3449b182f3737fefbe/vapoursynth_mlrt_ort-16.2.tar.gz", hash = "sha256:7bf1917dfe58399341a33e04f7de073d63eb76bcb73a57caa2023823fb8518de", size = 676300, upload-time = "2026-08-14T14:33:41.418Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/65/75/f71b33deb0c384743665896b139eeb99864794915327b8d0e83ff73c61be/vapoursynth_mlrt_ort-17.0.tar.gz", hash = "sha256:7960bb9e22acddf82b60d8ce9ee0c23c496cb17a0a5521aba3f5d581d067583e", size = 104706, upload-time = "2026-09-14T16:24:37.351Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b0/34/8c2886d79652812497f0505932db2718cd9039dbd666f7b98edfea1a7206/vapoursynth_mlrt_ort-16.2-py3-none-macosx_15_0_arm64.whl", hash = "sha256:ebc0838b26b06a9ca53671e86e8af1faf66735bdb09ca9ffcbbe6ba4619c348d", size = 9660705, upload-time = "2026-08-14T14:33:28.426Z" },
-    { url = "https://files.pythonhosted.org/packages/47/f2/1aef3f6b7cf204754a529dacdb0c096b3fde9d70b55a460143712fdad2ae/vapoursynth_mlrt_ort-16.2-py3-none-macosx_15_0_x86_64.whl", hash = "sha256:b75b26d6bd7fbcab84dbb2df96c51acccd87ec3b1c2be501e5a0dff3faebe11a", size = 11687237, upload-time = "2026-08-14T14:33:30.697Z" },
-    { url = "https://files.pythonhosted.org/packages/bc/97/575dc12e14cd3ef8b27cc54e560bd188e3992cf8649ffab94e89c1cf59d8/vapoursynth_mlrt_ort-16.2-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:5bd09883b2345b25c7cdbddb11c3858ef0f3d711157742360d3ea5fb6be1e1d5", size = 9350780, upload-time = "2026-08-14T14:33:33.471Z" },
-    { url = "https://files.pythonhosted.org/packages/86/a1/152eaaff2dd065573cd2f6cfe80efea3f7f5bce7d3a1291f0ff97c2072aa/vapoursynth_mlrt_ort-16.2-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5d3321f68893d2d1faaae8cf363149cb5545b86781915e5275cc66b65e2cbdd7", size = 10832803, upload-time = "2026-08-14T14:33:35.732Z" },
-    { url = "https://files.pythonhosted.org/packages/7a/69/ed538ca71da6c2dff8c455bcdeaafd8fab352a54024c47138ac5f27c5bf3/vapoursynth_mlrt_ort-16.2-py3-none-win_amd64.whl", hash = "sha256:630524103be4c4d9310134507e625f0588a0c383e4a8838ea281a2dd6f3f7993", size = 16305193, upload-time = "2026-08-14T14:33:39.13Z" },
+    { url = "https://files.pythonhosted.org/packages/dc/15/b0f78557c7acbe53c94a1d64ab1a5cb76d2ecba4afcb64a147a5706f2ebb/vapoursynth_mlrt_ort-17.0-py3-none-macosx_15_0_arm64.whl", hash = "sha256:f5df3cfea21a514acf9c78e837d866ac5e218d5bffc3ba3e6762bf5cebf046d3", size = 8910410, upload-time = "2026-09-14T16:24:23.827Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/76/37d5606b2f8b15cdecf59578c659edc2bf325867ab571ab58d01c6ef33fa/vapoursynth_mlrt_ort-17.0-py3-none-macosx_15_0_x86_64.whl", hash = "sha256:e99f5f768b1e7d78c85d681ba68832f5fe28d6012db3db9019335771e387d5af", size = 10825870, upload-time = "2026-09-14T16:24:27.249Z" },
+    { url = "https://files.pythonhosted.org/packages/00/0e/64ba46ffd833c93ae2d685534239c6a18ef7ddc2a63b76815d2753aecae1/vapoursynth_mlrt_ort-17.0-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b0bd17812650fa3d6b882be9e9b3e02a56fc6e3efbcb86a30555aa297a62fd63", size = 8959696, upload-time = "2026-09-14T16:24:29.7Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/83/8464bf2f593ef02658612753b8bd35576641970d65cc2fcf1d5845d03a94/vapoursynth_mlrt_ort-17.0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:887d7333842b77c6d6ff3eec714c21afa8bff2804706447d2cbc65ac4df0ddb3", size = 10316479, upload-time = "2026-09-14T16:24:32.045Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/cd/abef4dc993894e4fcb96dea4fd004427981cfd62755674ef6148f4b1e5f7/vapoursynth_mlrt_ort-17.0-py3-none-win_amd64.whl", hash = "sha256:d158aa6975e7e9b4c3a2320cbdec57a7ec6a5c18be58ee490e39e0f1c3212b2b", size = 16054903, upload-time = "2026-09-14T16:24:35.05Z" },
 ]
 
 [[package]]
 name = "vapoursynth-mlrt-ort-cuda"
-version = "16.2"
+version = "17.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "nvidia-cublas" },
@@ -2715,55 +2715,55 @@ dependencies = [
     { name = "nvidia-curand" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/c9/fd4a12fc98fa0ab26fdfc95f405d216e0e4778ee296a40bfef0200be38b6/vapoursynth_mlrt_ort_cuda-16.2-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c2a87d70a09d183cca8f63e95336dc03d6f99fee81ed107b45ab520ac097459c", size = 100708522, upload-time = "2026-08-14T14:33:47.283Z" },
-    { url = "https://files.pythonhosted.org/packages/a0/44/5ed5351c611ff4319b5c138d632790026eee84b126a8a1b05596b548bfe3/vapoursynth_mlrt_ort_cuda-16.2-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b3467f7e536ffd9d705d304c1b56c5bf4fa6e8472884c300085f748fbb815ac1", size = 101486747, upload-time = "2026-08-14T14:33:55.343Z" },
-    { url = "https://files.pythonhosted.org/packages/cf/cc/7dfc0014894a8e9d069a804b84dd1e8384350c474b168293f9cc5bfad62a/vapoursynth_mlrt_ort_cuda-16.2-py3-none-win_amd64.whl", hash = "sha256:c3ccb4ac0e63dd2d86b6028db73ed246dbd6576d5b7bfe5ca2b3971d16253d09", size = 94333494, upload-time = "2026-08-14T14:34:03.474Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/ff/d312307df78b80f333979b38bf9e687fb88dbf42757cbabef9ebc07b1b80/vapoursynth_mlrt_ort_cuda-17.0-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:5661e89629b5d88cc0e6200bb5fb7b54fb165bf36c838937bad9d81773e3036c", size = 49418200, upload-time = "2026-09-14T16:24:22.731Z" },
+    { url = "https://files.pythonhosted.org/packages/b2/9e/b5cf934ae9694e8f81559b74ffa1f86a742d27f5b4382fdfee3f9c670f84/vapoursynth_mlrt_ort_cuda-17.0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:85e916da5b2b1855c9bbfdc112f247e7855e90a65f2e051f270571f9422e322a", size = 50180816, upload-time = "2026-09-14T16:24:26.737Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/98/3c8a2da4bfd08cc12cd1c1f6f6d03938d37a357a01b022b50dc188745944/vapoursynth_mlrt_ort_cuda-17.0-py3-none-win_amd64.whl", hash = "sha256:2ea2e59c9074df5b9decd78e83d629fc816930cd1c6dfd4dd9490b701748e622", size = 48178371, upload-time = "2026-09-14T16:24:30.014Z" },
 ]
 
 [[package]]
 name = "vapoursynth-mlrt-ov"
-version = "16.1"
+version = "17.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e3/56/c83381e8836fe89eca7b65fee902938531b810a59b38e9b92f202f2cde1d/vapoursynth_mlrt_ov-16.1.tar.gz", hash = "sha256:3f37306d7ea854783ca6ec85e958e77dfe82073dc8c37555cbee9a1aed55bace", size = 674997, upload-time = "2026-08-29T21:10:11.041Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/5b/5514245700002632b1c4ea8c23330518a6dc2426b1c63d3abd784a9273f5/vapoursynth_mlrt_ov-17.0.tar.gz", hash = "sha256:dd72247b80b42ad9fda3388b5e6b02f8c4f1c1f4fb40b3ffcdc901d5043ccf27", size = 104861, upload-time = "2026-09-14T16:19:21.861Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/87/ec/870e81889a1dd81eae7848b6454e1a5cf6a15bb582f210e5ac670b1b48ca/vapoursynth_mlrt_ov-16.1-py3-none-macosx_14_0_arm64.whl", hash = "sha256:c68fa141f0d69740de4bef30132fa8786d9e407a886b6c5e2eaafa2bd1c49373", size = 23462598, upload-time = "2026-08-29T21:09:54.93Z" },
-    { url = "https://files.pythonhosted.org/packages/1f/10/b9fefa726fa9c2435d597b83be98e3faf2bb974ab178d77a5e598790b6e2/vapoursynth_mlrt_ov-16.1-py3-none-macosx_15_0_x86_64.whl", hash = "sha256:d297d9078f0003670762288a7740bf1d530efc8d0d041843cb9702d27b4ee870", size = 31411747, upload-time = "2026-08-29T21:09:57.685Z" },
-    { url = "https://files.pythonhosted.org/packages/2a/2f/79cda1c7ac8cfa37eeda80e89965eca690655080163ddd770693f1398047/vapoursynth_mlrt_ov-16.1-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a4b827687778ec15cef811d81d8abd32587b9735f0ada0f05dda7843eb54c8f5", size = 49131325, upload-time = "2026-08-29T21:10:01.751Z" },
-    { url = "https://files.pythonhosted.org/packages/65/3d/5cb054466282a1c9405c838595ccef09d944e70cb7330fb7110b901f8027/vapoursynth_mlrt_ov-16.1-py3-none-manylinux_2_35_aarch64.whl", hash = "sha256:6969127048ddf8f884b465feff51955a5162f2a9580065031eb58c7c02b5a790", size = 21566923, upload-time = "2026-08-29T21:10:04.722Z" },
-    { url = "https://files.pythonhosted.org/packages/1d/e9/12127196bdf0b05273772c5a397d3288d71922dbf778642e6dd78d4c0842/vapoursynth_mlrt_ov-16.1-py3-none-win_amd64.whl", hash = "sha256:cd007b950741496bac814f284f07fa1e2f4d4d4a8bbc4cc9591a86882fcf89f8", size = 69439786, upload-time = "2026-08-29T21:10:08.231Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/bd/e478f54bf725b4b645be787a59aa7b8a5541f2615ece1cfba5aecbd08af4/vapoursynth_mlrt_ov-17.0-py3-none-macosx_14_0_arm64.whl", hash = "sha256:97443603b3b2621ef85432d05ffddd373c1642cd39f2f474538d269faf27ae63", size = 23464402, upload-time = "2026-09-14T16:19:05.369Z" },
+    { url = "https://files.pythonhosted.org/packages/0d/17/0a82f844db2c9ee5d7649e5be806b2f5f3fd9e4221be5f281a36452e02d4/vapoursynth_mlrt_ov-17.0-py3-none-macosx_15_0_x86_64.whl", hash = "sha256:a67bce279ad1491c48d8d433ca99cdcbda24790b1b4cd50a8a755535df255af6", size = 31412711, upload-time = "2026-09-14T16:19:08.275Z" },
+    { url = "https://files.pythonhosted.org/packages/38/0c/a2666eaf78e10cf97d6a0707ba87e8d1a78044f3f31f88788836dfc6c87f/vapoursynth_mlrt_ov-17.0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:7b3041abd1de06aeed49d0ece7e1e688b9c3ef2df3667b58f76b150b3466561c", size = 49133395, upload-time = "2026-09-14T16:19:11.638Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/24/ae7c8252b08e7807ef3e4da6fcab722aa607174a30daddc2b79b16e9d350/vapoursynth_mlrt_ov-17.0-py3-none-manylinux_2_35_aarch64.whl", hash = "sha256:aa04fb0d51ee279e5af8d429a3c4485f2f627f4dec41896161643d9acb204da1", size = 21570173, upload-time = "2026-09-14T16:19:14.812Z" },
+    { url = "https://files.pythonhosted.org/packages/38/24/475bdf5d03907ea35670fe538f695d0b343587d5516caee5702a9b23d6ca/vapoursynth_mlrt_ov-17.0-py3-none-win_amd64.whl", hash = "sha256:abd0efba5ce0febb1a7d3b20d5003876c5963792c59d1f1ac87619d8325ba58f", size = 69443201, upload-time = "2026-09-14T16:19:19.243Z" },
 ]
 
 [[package]]
 name = "vapoursynth-mlrt-trt"
-version = "16.1"
+version = "17.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tensorrt-cu13-libs" },
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/92/be/dcea99636603e9f42d1f7921560914532be528b145a3edce7f15783134e4/vapoursynth_mlrt_trt-16.1.tar.gz", hash = "sha256:8e9c9826456f689da7c9176f53f2df09677e4e0a25706157a41ea66ab9db85cc", size = 675374, upload-time = "2026-07-31T16:00:59.322Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/59/37/8bd474195c6762b513018c313084d45173d8b3258240d77d85b33d027698/vapoursynth_mlrt_trt-17.0.tar.gz", hash = "sha256:e7c58d539c5a07bb957c1d76cef7303720e614116a2642764eb20ead3592afaf", size = 104315, upload-time = "2026-09-14T16:19:46.817Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/bf/a38d1be2310b45c4a3af5cf9fd211ab76930d5978300591c479d883cc9dd/vapoursynth_mlrt_trt-16.1-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:398a38635e91c43028acf072af89e71cd372c95c33191bbf23fdfd116e62a473", size = 277616, upload-time = "2026-07-31T16:00:54.417Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/a3/0d548fe77cd7b73ffc93a4208375e942905976f67a70e78a6ca98258e619/vapoursynth_mlrt_trt-16.1-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:a2f7230762c5f735b7117da7a3aa7151ca91b7d745bbb8dec38f65d9997e6e49", size = 274380, upload-time = "2026-07-31T16:00:56.171Z" },
-    { url = "https://files.pythonhosted.org/packages/57/c9/68209cddf0a61010d68561d23bea4d77d45ee4f3cef137a05ff88668acd3/vapoursynth_mlrt_trt-16.1-py3-none-win_amd64.whl", hash = "sha256:8c4c74736134ce6a8310ec3cbd6ffa25d934e8814a13c2d78b806b8989b8910a", size = 204302, upload-time = "2026-07-31T16:00:57.693Z" },
+    { url = "https://files.pythonhosted.org/packages/f2/d6/e03176342818f3673a1371b122816e8a82b9b0c960027c1c105612d8c59e/vapoursynth_mlrt_trt-17.0-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:6fab7d146f3c8616401ed32a159c65580b8cb318e95bbc08e237e4615d5523e4", size = 284430, upload-time = "2026-09-14T16:19:42.71Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/5a/1dd7f34a9dbef35c3dbe41c569ed8764ffbabd37da832d1625acd79b1b3c/vapoursynth_mlrt_trt-17.0-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:7b3f1cdd3e11fd4b7bbb3831542aa9c06ade2cbfd9071b3b226ea6fa225c0420", size = 280166, upload-time = "2026-09-14T16:19:44.178Z" },
+    { url = "https://files.pythonhosted.org/packages/a2/18/96660d876e557ac2981bf6d4ba4544ace1269435f774f8e6bd6b3d5f22d2/vapoursynth_mlrt_trt-17.0-py3-none-win_amd64.whl", hash = "sha256:7cf270c26e678b84ced010462f6d1eb0facbfdfe471c275602c71f362d697aa0", size = 208327, upload-time = "2026-09-14T16:19:45.51Z" },
 ]
 
 [[package]]
 name = "vapoursynth-mlrt-trt-rtx"
-version = "16.0"
+version = "17.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tensorrt-rtx-cu13-libs" },
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c4/fa/ad1c2dbad4058985f0c187b253a827f7211f16ac6a9c77013c456111e615/vapoursynth_mlrt_trt_rtx-16.0.tar.gz", hash = "sha256:9028b1f5c4efd0793c9f29c83dce9f1086b519008595fae25338bafbbc4cb611", size = 675401, upload-time = "2026-07-29T01:08:19.845Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/ba/3dbd0ab055359ae59ac9a63387825a6cc7655d3dc160e5ea4a92e49b0334/vapoursynth_mlrt_trt_rtx-17.0.tar.gz", hash = "sha256:cb8ccc90ff8a9321dadde8ca079bda2bedfe98e08f7ea85bab891b76c215ce1e", size = 104267, upload-time = "2026-09-14T16:16:45.544Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/d9/296131d69fd85b4f79377296c7706ebd10b917b17600ed583c5d047419ea/vapoursynth_mlrt_trt_rtx-16.0-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:bc7e31e6197f17e770a771e54a8fcd57c731881ef248ebd89f4de181d0b13662", size = 283376, upload-time = "2026-07-29T01:08:15.409Z" },
-    { url = "https://files.pythonhosted.org/packages/38/ac/24db85b37ea80d1f554156f1cb7af265d5b885833ec11f14a8a7f0a35873/vapoursynth_mlrt_trt_rtx-16.0-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:690eeef9c2aac6c35223a45bd354d763a83dd8e04b5a4aecf834438d9897f10e", size = 288739, upload-time = "2026-07-29T01:08:17.023Z" },
-    { url = "https://files.pythonhosted.org/packages/53/8c/883d963afcb24cfe7f21287e02c63540a132fc15ba709c6ef7ec776a9986/vapoursynth_mlrt_trt_rtx-16.0-py3-none-win_amd64.whl", hash = "sha256:031ea91c83ac7359d949a98f2afbd71683b1056075a28702cdcd08a0b3f9450c", size = 206303, upload-time = "2026-07-29T01:08:18.486Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/d7/6008132da345c10963a3acc28e7dd3d3462ee1ab1ca8f072b7d4fa916885/vapoursynth_mlrt_trt_rtx-17.0-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:dc773023d2c32bcf464be83a2b58d0d623fe9e1f7127f7779cc0994f2fa78ec8", size = 285298, upload-time = "2026-09-14T16:16:41.487Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/d1/7b117ef74fd43e9a0ca23480b5db4c351dfcff7a44ef0393ad7876ea8c20/vapoursynth_mlrt_trt_rtx-17.0-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:65cba8e00d61814f41605e870b466bd79ed8d2ceb52116523f88e38ce33c0433", size = 291368, upload-time = "2026-09-14T16:16:43.013Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/b8/1ed0c17cc43c3327e3f69e1fbb2f102ea60ec5ec9a897c4bcd297d4b6b76/vapoursynth_mlrt_trt_rtx-17.0-py3-none-win_amd64.whl", hash = "sha256:b2409f787c787bb861c18996116143d424d0910961aee51be002186a4fd409af", size = 210199, upload-time = "2026-09-14T16:16:44.353Z" },
 ]
 
 [[package]]
@@ -3464,8 +3464,8 @@ requires-dist = [
     { name = "scipy", marker = "extra == 'mask'", specifier = ">=1.17.0" },
     { name = "scipy", marker = "extra == 'rg'", specifier = ">=1.17.0" },
     { name = "scipy", marker = "extra == 'scale'", specifier = ">=1.17.0" },
-    { name = "tensorrt-cu13", marker = "extra == 'nvidia'", specifier = ">=11.0.0.114" },
-    { name = "tensorrt-rtx-cu13", marker = "extra == 'nvidia'", specifier = ">=1.5.0.114" },
+    { name = "tensorrt-cu13", marker = "extra == 'nvidia'", specifier = ">=11.3.0.99" },
+    { name = "tensorrt-rtx-cu13", marker = "extra == 'nvidia'", specifier = ">=1.6.1.120" },
     { name = "tomlkit", marker = "extra == 'aa'", specifier = ">=0.15.1" },
     { name = "tomlkit", marker = "extra == 'deband'", specifier = ">=0.15.1" },
     { name = "tomlkit", marker = "extra == 'dehalo'", specifier = ">=0.15.1" },
@@ -3595,23 +3595,23 @@ requires-dist = [
     { name = "vapoursynth-lsmas", marker = "extra == 'mask'", specifier = ">=1282.0.0" },
     { name = "vapoursynth-lsmas", marker = "extra == 'scale'", specifier = ">=1282.0.0" },
     { name = "vapoursynth-lsmas", marker = "extra == 'source'", specifier = ">=1282.0.0" },
-    { name = "vapoursynth-mlrt-migx", marker = "sys_platform == 'linux' and extra == 'amd'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'amd'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'nvidia'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'vulkan'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ort", marker = "extra == 'amd'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ort", marker = "extra == 'gpu'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ort", marker = "extra == 'nvidia'", specifier = ">=16.2" },
-    { name = "vapoursynth-mlrt-ort-cuda", marker = "extra == 'nvidia'", specifier = ">=16.2" },
-    { name = "vapoursynth-mlrt-ov", marker = "extra == 'aa'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ov", marker = "extra == 'deband'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ov", marker = "extra == 'dehalo'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ov", marker = "extra == 'deinterlace'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ov", marker = "extra == 'denoise'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ov", marker = "extra == 'full'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-ov", marker = "extra == 'scale'", specifier = ">=15.16" },
-    { name = "vapoursynth-mlrt-trt", marker = "extra == 'nvidia'", specifier = ">=15.16.1" },
-    { name = "vapoursynth-mlrt-trt-rtx", marker = "extra == 'nvidia'", specifier = ">=15.16.1" },
+    { name = "vapoursynth-mlrt-migx", marker = "sys_platform == 'linux' and extra == 'amd'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'amd'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'nvidia'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ncnn", marker = "extra == 'vulkan'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ort", marker = "extra == 'amd'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ort", marker = "extra == 'gpu'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ort", marker = "extra == 'nvidia'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ort-cuda", marker = "extra == 'nvidia'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ov", marker = "extra == 'aa'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ov", marker = "extra == 'deband'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ov", marker = "extra == 'dehalo'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ov", marker = "extra == 'deinterlace'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ov", marker = "extra == 'denoise'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ov", marker = "extra == 'full'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-ov", marker = "extra == 'scale'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-trt", marker = "extra == 'nvidia'", specifier = ">=17.0" },
+    { name = "vapoursynth-mlrt-trt-rtx", marker = "extra == 'nvidia'", specifier = ">=17.0" },
     { name = "vapoursynth-mvutensils", marker = "extra == 'deband'", specifier = ">=8" },
     { name = "vapoursynth-mvutensils", marker = "extra == 'dehalo'", specifier = ">=8" },
     { name = "vapoursynth-mvutensils", marker = "extra == 'deinterlace'", specifier = ">=8" },
@@ -3699,7 +3699,7 @@ dev = [
     { name = "scipy-stubs", specifier = ">=1.16.0.0" },
     { name = "types-psutil", specifier = ">=7.0.0.20250801" },
     { name = "vsjetengine", specifier = ">=1.5.1" },
-    { name = "vsstubs", specifier = ">=2.1.1" },
+    { name = "vsstubs", specifier = ">=2.3.2" },
     { name = "vstransitions", specifier = "==0.1.4" },
 ]
 doc = [
@@ -3744,7 +3744,7 @@ wheels = [
 
 [[package]]
 name = "vsstubs"
-version = "2.3.1"
+version = "2.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "build" },
@@ -3755,9 +3755,9 @@ dependencies = [
     { name = "uv-build" },
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/28/2c/fa06eac27cc26300acdc41881cf01fac62c9d2c22bddbe7d2b1b836a189f/vsstubs-2.3.1.tar.gz", hash = "sha256:182b8c90f34429bd695511a1a181b0c922d52e28c3d35d95ab71714b241da702", size = 36150, upload-time = "2026-09-11T03:06:51.943Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4e/05/f9e53a06d4f63d5ca20045e2e2a88a9e6a58edc5b03eae94fd02687b3221/vsstubs-2.3.3.tar.gz", hash = "sha256:85515e36e66ece13a6fca0401743e0554286cd7041511142d9a11ce720ce74b9", size = 36035, upload-time = "2026-09-14T19:25:57.527Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/86/15/a9cebfaeed1cbe7dfb31ad3f881082245c588264ba4b5b58f946cd343891/vsstubs-2.3.1-py3-none-any.whl", hash = "sha256:d84f8d242d567d1607bc19e1120107eed2f723c6b3835dc1cbc14f9bc014654e", size = 31176, upload-time = "2026-09-11T03:06:50.449Z" },
+    { url = "https://files.pythonhosted.org/packages/96/7c/febd0ae9ad744907824b850a3247d53b45df50c9d15d0179c1ed25c67383/vsstubs-2.3.3-py3-none-any.whl", hash = "sha256:7007e51aa0463fb253212cc0c56ec4f67b6f5175fcc842a654a072e2f01ab1e9", size = 31167, upload-time = "2026-09-14T19:25:56.358Z" },
 ]
 
 [[package]]

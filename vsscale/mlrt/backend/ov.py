@@ -20,6 +20,9 @@ class OV(Backend):
 
     device: ClassVar[str]
 
+    num_streams: int | None = None
+    """Number of OpenVINO inference streams."""
+
     custom_config: Mapping[str, Any] = field(default_factory=dict[str, Any])
     """
     Extra OpenVINO runtime configuration keys merged into the device configuration passed to `core.ov.Model`.
@@ -66,7 +69,7 @@ class OV(Backend):
         return self.custom_config
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
-        return {"device": self.device, "fp16": False, "config": OVConfig(self.config)}
+        return {"device": self.device, "fp16": False, "num_streams": self.num_streams, "config": OVConfig(self.config)}
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -76,8 +79,6 @@ class OV_CPU(OV):  # noqa: N801
     device = "CPU"
 
     # Hardware & Runtime Execution
-    num_streams: int = 1
-    """Number of OpenVINO inference streams."""
     num_threads: int = 0
     """Maximum CPU inference threads. `0` lets OpenVINO choose."""
     bind_thread: bool = True
@@ -101,7 +102,6 @@ class OV_CPU(OV):  # noqa: N801
     @property
     def config(self) -> Mapping[str, Any]:
         return dict(super().config) | {
-            "NUM_STREAMS": self.num_streams,
             "INFERENCE_NUM_THREADS": self.num_threads,
             "ENABLE_CPU_PINNING": {False: "NO", True: "YES"}[self.bind_thread],
             "INFERENCE_PRECISION_HINT": "f16" if self.fp16 else "bf16" if self.bf16 else "f32",
@@ -117,8 +117,6 @@ class OV_GPU(OV):  # noqa: N801
     # Hardware & Runtime Execution
     device_id: int = 0
     """OpenVINO GPU device index."""
-    num_streams: int = 1
-    """Number of OpenVINO inference streams."""
 
     # Model Precision & Data Types
     fp16: bool = True
@@ -128,10 +126,7 @@ class OV_GPU(OV):  # noqa: N801
 
     @property
     def config(self) -> dict[str, Any]:
-        return dict(super().config) | {
-            "NUM_STREAMS": self.num_streams,
-            "INFERENCE_PRECISION_HINT": "f16" if self.fp16 else "f32",
-        }
+        return dict(super().config) | {"INFERENCE_PRECISION_HINT": "f16" if self.fp16 else "f32"}
 
     def get_args(self, clips: vs.VideoNode | Sequence[vs.VideoNode]) -> dict[str, Any]:
         return super().get_args(clips) | {"device": f"{self.device}.{self.device_id}"}
