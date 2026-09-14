@@ -272,13 +272,19 @@ class SplitHelper:
     def split_range_ac3(title: Title, f: int, t: int, audio_i: int, outfile: str) -> float:
         nd = vs.core.dvdsrc2.RawAc3(str(title.core.iso_path), title.vts, audio_i, title.dvdsrc_ranges)
 
-        start, _ = (get_prop(nd, f"Stuff_{x}_PTS", int) for x in ("Start", "End"))
+        audio_start, _ = (get_prop(nd, f"Stuff_{x}_PTS", int) for x in ("Start", "End"))
 
-        raw_start = title.absolute_time[title.chapters[f - 1]] * PCR_CLOCK
-        raw_end = (title.absolute_time[title.chapters[t]] + title.duration_times[title.chapters[t]]) * PCR_CLOCK
+        start_frame = title.chapters[f - 1]
+        end_frame = title.chapters[t]
+        raw_start = title.absolute_time[start_frame] * PCR_CLOCK
+        raw_end = (
+            title.absolute_time[end_frame]
+            if end_frame < len(title.absolute_time)
+            else title.absolute_time[-1] + title.duration_times[-1]
+        ) * PCR_CLOCK
 
-        start_pts = raw_start + start
-        end_pts = start_pts + (raw_end - raw_start)
+        start_pts = raw_start + audio_start
+        end_pts = raw_end + audio_start
 
         audio_offset_pts = 0.0
 
@@ -292,13 +298,13 @@ class SplitHelper:
 
                 assert pkt_end_pts > start_pts
 
+                if pkt_start_pts >= end_pts:
+                    break
+
                 if pkt_start_pts < start_pts:
                     audio_offset_pts = start_pts - pkt_start_pts
 
                 outf.write(bytes(frame[0]))
-
-                if pkt_end_pts > end_pts:
-                    break
 
         return audio_offset_pts / PCR_CLOCK
 
