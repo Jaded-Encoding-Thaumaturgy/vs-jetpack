@@ -1058,12 +1058,11 @@ class _Wrapper_Core_bound_ncnn_Model:
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device_id: _IntLike | None = None,
             num_streams: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             flexible_output_prop: None = None,
             output_format: _IntLike | None = None,
+            batch_tiles: _IntLike | None = None,
         ) -> VideoNode: ...
         @overload
         def __call__(
@@ -1074,13 +1073,12 @@ class _Wrapper_Core_bound_ncnn_Model:
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device_id: _IntLike | None = None,
             num_streams: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             *,
             flexible_output_prop: _AnyStr,
             output_format: _IntLike | None = None,
+            batch_tiles: _IntLike | None = None,
         ) -> _ReturnDict_ncnn_Model: ...
         @overload
         def __call__(
@@ -1091,12 +1089,11 @@ class _Wrapper_Core_bound_ncnn_Model:
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device_id: _IntLike | None = None,
             num_streams: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             flexible_output_prop: _AnyStr | None = None,
             output_format: _IntLike | None = None,
+            batch_tiles: _IntLike | None = None,
         ) -> VideoNode | _ReturnDict_ncnn_Model: ...
 
 class _Wrapper_VideoNode_bound_ncnn_Model:
@@ -1110,12 +1107,11 @@ class _Wrapper_VideoNode_bound_ncnn_Model:
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device_id: _IntLike | None = None,
             num_streams: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             flexible_output_prop: None = None,
             output_format: _IntLike | None = None,
+            batch_tiles: _IntLike | None = None,
         ) -> VideoNode: ...
         @overload
         def __call__(
@@ -1125,13 +1121,12 @@ class _Wrapper_VideoNode_bound_ncnn_Model:
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device_id: _IntLike | None = None,
             num_streams: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             *,
             flexible_output_prop: _AnyStr,
             output_format: _IntLike | None = None,
+            batch_tiles: _IntLike | None = None,
         ) -> _ReturnDict_ncnn_Model: ...
         @overload
         def __call__(
@@ -1141,12 +1136,11 @@ class _Wrapper_VideoNode_bound_ncnn_Model:
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device_id: _IntLike | None = None,
             num_streams: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             flexible_output_prop: _AnyStr | None = None,
             output_format: _IntLike | None = None,
+            batch_tiles: _IntLike | None = None,
         ) -> VideoNode | _ReturnDict_ncnn_Model: ...
 
 class _ReturnDict_ort_Model(TypedDict):
@@ -1168,8 +1162,6 @@ class _Wrapper_Core_bound_ort_Model:
             num_streams: _IntLike | None = None,
             verbosity: _IntLike | None = None,
             cudnn_benchmark: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             use_cuda_graph: _IntLike | None = None,
@@ -1191,8 +1183,6 @@ class _Wrapper_Core_bound_ort_Model:
             num_streams: _IntLike | None = None,
             verbosity: _IntLike | None = None,
             cudnn_benchmark: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             use_cuda_graph: _IntLike | None = None,
@@ -1215,8 +1205,6 @@ class _Wrapper_Core_bound_ort_Model:
             num_streams: _IntLike | None = None,
             verbosity: _IntLike | None = None,
             cudnn_benchmark: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             use_cuda_graph: _IntLike | None = None,
@@ -1241,8 +1229,6 @@ class _Wrapper_VideoNode_bound_ort_Model:
             num_streams: _IntLike | None = None,
             verbosity: _IntLike | None = None,
             cudnn_benchmark: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             use_cuda_graph: _IntLike | None = None,
@@ -1263,8 +1249,6 @@ class _Wrapper_VideoNode_bound_ort_Model:
             num_streams: _IntLike | None = None,
             verbosity: _IntLike | None = None,
             cudnn_benchmark: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             use_cuda_graph: _IntLike | None = None,
@@ -1286,8 +1270,6 @@ class _Wrapper_VideoNode_bound_ort_Model:
             num_streams: _IntLike | None = None,
             verbosity: _IntLike | None = None,
             cudnn_benchmark: _IntLike | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
             fp16: _IntLike | None = None,
             path_is_serialization: _IntLike | None = None,
             use_cuda_graph: _IntLike | None = None,
@@ -1313,13 +1295,11 @@ class _Wrapper_Core_bound_ov_Model:
             overlap: _IntLike | _SequenceLike[_IntLike] | None = None,
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device: _AnyStr | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
+            num_streams: _IntLike | None = None,
             fp16: _IntLike | None = None,
             config: _VSCallback_ov_Model_config | None = None,
             path_is_serialization: _IntLike | None = None,
             fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None,
-            dot_path: _AnyStr | None = None,
             flexible_output_prop: None = None,
         ) -> VideoNode: ...
         @overload
@@ -1330,13 +1310,11 @@ class _Wrapper_Core_bound_ov_Model:
             overlap: _IntLike | _SequenceLike[_IntLike] | None = None,
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device: _AnyStr | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
+            num_streams: _IntLike | None = None,
             fp16: _IntLike | None = None,
             config: _VSCallback_ov_Model_config | None = None,
             path_is_serialization: _IntLike | None = None,
             fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None,
-            dot_path: _AnyStr | None = None,
             *,
             flexible_output_prop: _AnyStr,
         ) -> _ReturnDict_ov_Model: ...
@@ -1348,13 +1326,11 @@ class _Wrapper_Core_bound_ov_Model:
             overlap: _IntLike | _SequenceLike[_IntLike] | None = None,
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device: _AnyStr | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
+            num_streams: _IntLike | None = None,
             fp16: _IntLike | None = None,
             config: _VSCallback_ov_Model_config | None = None,
             path_is_serialization: _IntLike | None = None,
             fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None,
-            dot_path: _AnyStr | None = None,
             flexible_output_prop: _AnyStr | None = None,
         ) -> VideoNode | _ReturnDict_ov_Model: ...
 
@@ -1368,13 +1344,11 @@ class _Wrapper_VideoNode_bound_ov_Model:
             overlap: _IntLike | _SequenceLike[_IntLike] | None = None,
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device: _AnyStr | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
+            num_streams: _IntLike | None = None,
             fp16: _IntLike | None = None,
             config: _VSCallback_ov_Model_config | None = None,
             path_is_serialization: _IntLike | None = None,
             fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None,
-            dot_path: _AnyStr | None = None,
             flexible_output_prop: None = None,
         ) -> VideoNode: ...
         @overload
@@ -1384,13 +1358,11 @@ class _Wrapper_VideoNode_bound_ov_Model:
             overlap: _IntLike | _SequenceLike[_IntLike] | None = None,
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device: _AnyStr | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
+            num_streams: _IntLike | None = None,
             fp16: _IntLike | None = None,
             config: _VSCallback_ov_Model_config | None = None,
             path_is_serialization: _IntLike | None = None,
             fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None,
-            dot_path: _AnyStr | None = None,
             *,
             flexible_output_prop: _AnyStr,
         ) -> _ReturnDict_ov_Model: ...
@@ -1401,13 +1373,11 @@ class _Wrapper_VideoNode_bound_ov_Model:
             overlap: _IntLike | _SequenceLike[_IntLike] | None = None,
             tilesize: _IntLike | _SequenceLike[_IntLike] | None = None,
             device: _AnyStr | None = None,
-            builtin: _IntLike | None = None,
-            builtindir: _AnyStr | None = None,
+            num_streams: _IntLike | None = None,
             fp16: _IntLike | None = None,
             config: _VSCallback_ov_Model_config | None = None,
             path_is_serialization: _IntLike | None = None,
             fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None,
-            dot_path: _AnyStr | None = None,
             flexible_output_prop: _AnyStr | None = None,
         ) -> VideoNode | _ReturnDict_ov_Model: ...
 
@@ -3080,14 +3050,14 @@ class _ncnn:
             @_Wrapper.Function
             def DeviceProperties(self, /, device_id: _IntLike | None = None) -> Any: ...
             @_Wrapper_Core_bound_ncnn_Model.Function
-            def Model(self, /, clips: VideoNode | _SequenceLike[VideoNode], network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, builtin: _IntLike | None = None, builtindir: _AnyStr | None = None, fp16: _IntLike | None = None, path_is_serialization: _IntLike | None = None, flexible_output_prop: _AnyStr | None = None, output_format: _IntLike | None = None) -> Any: ...
+            def Model(self, /, clips: VideoNode | _SequenceLike[VideoNode], network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, fp16: _IntLike | None = None, path_is_serialization: _IntLike | None = None, flexible_output_prop: _AnyStr | None = None, output_format: _IntLike | None = None, batch_tiles: _IntLike | None = None) -> Any: ...
             @_Wrapper.Function
             def Version(self, /) -> Any: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper_VideoNode_bound_ncnn_Model.Function
-            def Model(self, /, network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, builtin: _IntLike | None = None, builtindir: _AnyStr | None = None, fp16: _IntLike | None = None, path_is_serialization: _IntLike | None = None, flexible_output_prop: _AnyStr | None = None, output_format: _IntLike | None = None) -> Any: ...
+            def Model(self, /, network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, fp16: _IntLike | None = None, path_is_serialization: _IntLike | None = None, flexible_output_prop: _AnyStr | None = None, output_format: _IntLike | None = None, batch_tiles: _IntLike | None = None) -> Any: ...
 
 # </implementation/ncnn>
 
@@ -3138,14 +3108,14 @@ class _ort:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper_Core_bound_ort_Model.Function
-            def Model(self, /, clips: VideoNode | _SequenceLike[VideoNode], network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, provider: _AnyStr | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, verbosity: _IntLike | None = None, cudnn_benchmark: _IntLike | None = None, builtin: _IntLike | None = None, builtindir: _AnyStr | None = None, fp16: _IntLike | None = None, path_is_serialization: _IntLike | None = None, use_cuda_graph: _IntLike | None = None, fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None, prefer_nhwc: _IntLike | None = None, output_format: _IntLike | None = None, tf32: _IntLike | None = None, flexible_output_prop: _AnyStr | None = None) -> Any: ...
+            def Model(self, /, clips: VideoNode | _SequenceLike[VideoNode], network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, provider: _AnyStr | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, verbosity: _IntLike | None = None, cudnn_benchmark: _IntLike | None = None, fp16: _IntLike | None = None, path_is_serialization: _IntLike | None = None, use_cuda_graph: _IntLike | None = None, fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None, prefer_nhwc: _IntLike | None = None, output_format: _IntLike | None = None, tf32: _IntLike | None = None, flexible_output_prop: _AnyStr | None = None) -> Any: ...
             @_Wrapper.Function
             def Version(self, /) -> Any: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper_VideoNode_bound_ort_Model.Function
-            def Model(self, /, network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, provider: _AnyStr | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, verbosity: _IntLike | None = None, cudnn_benchmark: _IntLike | None = None, builtin: _IntLike | None = None, builtindir: _AnyStr | None = None, fp16: _IntLike | None = None, path_is_serialization: _IntLike | None = None, use_cuda_graph: _IntLike | None = None, fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None, prefer_nhwc: _IntLike | None = None, output_format: _IntLike | None = None, tf32: _IntLike | None = None, flexible_output_prop: _AnyStr | None = None) -> Any: ...
+            def Model(self, /, network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, provider: _AnyStr | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, verbosity: _IntLike | None = None, cudnn_benchmark: _IntLike | None = None, fp16: _IntLike | None = None, path_is_serialization: _IntLike | None = None, use_cuda_graph: _IntLike | None = None, fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None, prefer_nhwc: _IntLike | None = None, output_format: _IntLike | None = None, tf32: _IntLike | None = None, flexible_output_prop: _AnyStr | None = None) -> Any: ...
 
 # </implementation/ort>
 
@@ -3156,14 +3126,14 @@ class _ov:
             @_Wrapper.Function
             def AvailableDevices(self, /) -> Any: ...
             @_Wrapper_Core_bound_ov_Model.Function
-            def Model(self, /, clips: VideoNode | _SequenceLike[VideoNode], network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, device: _AnyStr | None = None, builtin: _IntLike | None = None, builtindir: _AnyStr | None = None, fp16: _IntLike | None = None, config: _VSCallback_ov_Model_config | None = None, path_is_serialization: _IntLike | None = None, fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None, flexible_output_prop: _AnyStr | None = None) -> Any: ...
+            def Model(self, /, clips: VideoNode | _SequenceLike[VideoNode], network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, device: _AnyStr | None = None, num_streams: _IntLike | None = None, fp16: _IntLike | None = None, config: _VSCallback_ov_Model_config | None = None, path_is_serialization: _IntLike | None = None, fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None, flexible_output_prop: _AnyStr | None = None) -> Any: ...
             @_Wrapper.Function
             def Version(self, /) -> Any: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper_VideoNode_bound_ov_Model.Function
-            def Model(self, /, network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, device: _AnyStr | None = None, builtin: _IntLike | None = None, builtindir: _AnyStr | None = None, fp16: _IntLike | None = None, config: _VSCallback_ov_Model_config | None = None, path_is_serialization: _IntLike | None = None, fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None, flexible_output_prop: _AnyStr | None = None) -> Any: ...
+            def Model(self, /, network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, device: _AnyStr | None = None, num_streams: _IntLike | None = None, fp16: _IntLike | None = None, config: _VSCallback_ov_Model_config | None = None, path_is_serialization: _IntLike | None = None, fp16_blacklist_ops: _AnyStr | _SequenceLike[_AnyStr] | None = None, flexible_output_prop: _AnyStr | None = None) -> Any: ...
 
 # </implementation/ov>
 

@@ -107,7 +107,7 @@ scale = [
     "pyopencl>=2026.1.2",
     "questionary>=2.1.0",
     "tomlkit>=0.15.1",
-    "vapoursynth-mlrt-ov>=15.16",
+    "vapoursynth-mlrt-ov>=17.0",
 ]
 aa = [
     "vsjetpack[scale]",
@@ -136,11 +136,11 @@ deinterlace = [
     "vapoursynth-vivtc>=2.0",
 ]
 deband = ["vsjetpack[denoise]", "vsnoise>=1.3"]
-gpu = ["vapoursynth-mlrt-ort>=15.16"]
+gpu = ["vapoursynth-mlrt-ort>=17.0"]
 cl = ["vapoursynth-vszipcl>=1.2.0"]
 vulkan = [
     "vapoursynth-eedi3vk2>=1.0",
-    "vapoursynth-mlrt-ncnn>=15.16",
+    "vapoursynth-mlrt-ncnn>=17.0",
     "vapoursynth-nnedi3vk>=1.0",
 ]
 nvidia = [
@@ -153,19 +153,19 @@ nvidia = [
     "dfttest2[cufft,nvrtc]>=11.0.0",
     "vapoursynth-bm3dcuda>=2.16",
     "vapoursynth-bilateralgpu>=14",
-    "vapoursynth-mlrt-ort>=16.2",
-    "vapoursynth-mlrt-ort-cuda>=16.2",
-    "vapoursynth-mlrt-trt>=15.16.1",
-    "vapoursynth-mlrt-trt-rtx>=15.16.1",
+    "vapoursynth-mlrt-ort>=17.0",
+    "vapoursynth-mlrt-ort-cuda>=17.0",
+    "vapoursynth-mlrt-trt>=17.0",
+    "vapoursynth-mlrt-trt-rtx>=17.0",
     "vapoursynth-vszipcu>=1.2.0",
-    "tensorrt-cu13>=11.0.0.114",
-    "tensorrt-rtx-cu13>=1.5.0.114",
+    "tensorrt-cu13>=11.3.0.99",
+    "tensorrt-rtx-cu13>=1.6.1.120",
 ]
 amd = [
     "vsjetpack[gpu,cl,vulkan]",
     "dfttest2[hipfft,hiprtc]>=11.0.0",
     "vapoursynth-bm3dhip>=2.16",
-    "vapoursynth-mlrt-migx>=15.16 ; platform_system == 'Linux'",
+    "vapoursynth-mlrt-migx>=17.0 ; platform_system == 'Linux'",
 ]
 full = [
     "vsjetpack[basic]",
@@ -194,7 +194,7 @@ dev = [
     "vstransitions==0.1.4",
     "orderedsets",
     "pybind11-stubgen>=2.5.5",
-    "vsstubs>=2.1.1",
+    "vsstubs>=2.3.2",
     { include-group = "test" },
 ]
 test = [

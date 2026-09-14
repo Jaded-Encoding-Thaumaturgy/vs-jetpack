@@ -18,6 +18,8 @@ class NCNN(BackendAutoConvertFloat):
     """Vulkan device index used by NCNN."""
     num_streams: int = 1
     """Number of parallel NCNN inference streams."""
+    batch_tiles: int | None = None
+    """Number of tiles processed per GPU dispatch. Higher values improve throughput. Lower values save memory."""
 
     # Model Precision & Data Types
     fp16: bool | None = True
@@ -30,4 +32,5 @@ class NCNN(BackendAutoConvertFloat):
             "fp16": self.fp16,
             "device_id": self.device_id,
             "num_streams": self.num_streams,
+            "batch_tiles": self.batch_tiles,
         }
