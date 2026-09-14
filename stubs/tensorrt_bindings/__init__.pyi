@@ -25,6 +25,7 @@ from tensorrt_bindings.tensorrt import (
     Dims4,
     DimsExprs,
     DimsHW,
+    DLAWorkspaceAllocationStrategy,
     DynamicPluginTensorDesc,
     ElementWiseOperation,
     EngineCapability,
@@ -225,6 +226,7 @@ __all__: list[str] = [
     "CausalMaskKind",
     "CollectiveOperation",
     "CumulativeOperation",
+    "DLAWorkspaceAllocationStrategy",
     "DataType",
     "DeviceType",
     "DimensionOperation",
@@ -453,6 +455,7 @@ def _itemsize(trt_type):
     :arg trt_type: The TensorRT data type.
 
     :returns: The size of the type.
+
     """
 
 def common_enter(this): ...
@@ -461,6 +464,7 @@ def common_exit(this, exc_type, exc_value, traceback):
 
     Context managers are deprecated and have no effect. Objects are automatically freed when
     the reference count reaches 0.
+
     """
 
 def nptype(trt_type):
@@ -471,6 +475,7 @@ def nptype(trt_type):
     :arg trt_type: The TensorRT data type to convert.
 
     :returns: The equivalent numpy type.
+
     """
 
 def volume(iterable):
@@ -481,9 +486,10 @@ def volume(iterable):
     :arg iterable: Any python iterable, including a :class:`Dims` object.
 
     :returns: The volume of the iterable. This will return 1 for empty iterables, as a scalar has an empty shape and the volume of a tensor with empty shape is 1.
+
     """
 
-__version__: str = "11.2.1.2"
+__version__: str = "11.3.0.99"
 attr: str = "VERBOSE"
 bfloat16: tensorrt.DataType  # value = <DataType.BF16: 7>
 bool: tensorrt.DataType  # value = <DataType.BOOL: 4>

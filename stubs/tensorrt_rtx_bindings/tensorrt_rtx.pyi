@@ -1,9 +1,9 @@
 import builtins
 import collections.abc
-import types
 import typing
 
 import numpy
+import typing_extensions
 
 __all__: list[str] = [
     "APILanguage",
@@ -467,6 +467,7 @@ class Builder:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def __init__(self, logger: ILogger) -> None:
@@ -1984,6 +1985,7 @@ class IBuilderConfig:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def add_optimization_profile(self, profile: IOptimizationProfile) -> int:
@@ -2363,6 +2365,7 @@ class ICudaEngine:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def __getitem__(self, arg0: typing.SupportsInt) -> str: ...
@@ -2715,7 +2718,7 @@ class IDebugListener:
     def __init__(self) -> None: ...
     def process_debug_tensor(
         self,
-        addr: types.CapsuleType,
+        addr: typing_extensions.CapsuleType,
         location: TensorLocation,
         type: DataType,
         shape: Dims,
@@ -3057,6 +3060,7 @@ class IExecutionContext:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def execute_async_v3(self, stream_handle: typing.SupportsInt) -> builtins.bool:
@@ -3191,7 +3195,7 @@ class IExecutionContext:
 
         :arg aux_streams: A list of cuda streams. If the length of the list is greater than engine.num_aux_streams, then only the first "engine.num_aux_streams" streams will be used. If the length is less than engine.num_aux_streams, such as an empty list, then TensorRT will use the provided streams for the first few auxiliary streams, and will create additional streams internally for the rest of the auxiliary streams.
         """
-    def set_communicator(self, communicator: types.CapsuleType) -> builtins.bool:
+    def set_communicator(self, communicator: typing_extensions.CapsuleType) -> builtins.bool:
         """
         Set the NCCL communicator for the execution context.
 
@@ -3445,7 +3449,7 @@ class IGpuAllocator(IVersionedInterface):
         alignment: typing.SupportsInt,
         flags: typing.SupportsInt,
         stream: typing.SupportsInt,
-    ) -> types.CapsuleType:
+    ) -> typing_extensions.CapsuleType:
         """
         A callback implemented by the application to handle acquisition of GPU memory asynchronously.
         This is just a wrapper around a syncronous method allocate.
@@ -3464,7 +3468,7 @@ class IGpuAllocator(IVersionedInterface):
 
         :returns: The address of the allocated memory
         """
-    def deallocate_async(self, memory: types.CapsuleType, stream: typing.SupportsInt) -> builtins.bool:
+    def deallocate_async(self, memory: typing_extensions.CapsuleType, stream: typing.SupportsInt) -> builtins.bool:
         """
         A callback implemented by the application to handle release of GPU memory asynchronously.
         This is just a wrapper around a syncronous method deallocate.
@@ -3478,8 +3482,8 @@ class IGpuAllocator(IVersionedInterface):
         :returns: True if the acquired memory is released successfully.
         """
     def reallocate(
-        self, address: types.CapsuleType, alignment: typing.SupportsInt, new_size: typing.SupportsInt
-    ) -> types.CapsuleType:
+        self, address: typing_extensions.CapsuleType, alignment: typing.SupportsInt, new_size: typing.SupportsInt
+    ) -> typing_extensions.CapsuleType:
         """
         A callback implemented by the application to resize an existing allocation.
 
@@ -3530,7 +3534,7 @@ class IGpuAsyncAllocator(IGpuAllocator):
         alignment: typing.SupportsInt,
         flags: typing.SupportsInt,
         stream: typing.SupportsInt,
-    ) -> types.CapsuleType:
+    ) -> typing_extensions.CapsuleType:
         """
         A callback implemented by the application to handle acquisition of GPU memory asynchronously.
         If an allocation request of size 0 is made, ``None`` should be returned.
@@ -3547,7 +3551,9 @@ class IGpuAsyncAllocator(IGpuAllocator):
 
         :returns: The address of the allocated memory
         """
-    def deallocate_async(self: IGpuAllocator, memory: types.CapsuleType, stream: typing.SupportsInt) -> builtins.bool:
+    def deallocate_async(
+        self: IGpuAllocator, memory: typing_extensions.CapsuleType, stream: typing.SupportsInt
+    ) -> builtins.bool:
         """
         A callback implemented by the application to handle release of GPU memory asynchronously.
 
@@ -3597,6 +3603,7 @@ class IHostMemory:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __buffer__(self, flags):
         """
@@ -4283,6 +4290,7 @@ class INetworkDefinition:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def __getitem__(self, arg0: typing.SupportsInt) -> ILayer: ...
@@ -5627,7 +5635,7 @@ class IPluginRegistry:
         :returns: ``True`` if the plugin creator was deregistered, ``False`` if it was not found in the registry
                 or otherwise could not be deregistered.
         """
-    def deregister_library(self, handle: types.CapsuleType) -> None:
+    def deregister_library(self, handle: typing_extensions.CapsuleType) -> None:
         """
         Deregister plugins associated with a library. Any resources acquired when the library was loaded will be released.
 
@@ -5643,7 +5651,7 @@ class IPluginRegistry:
 
         :returns: An :class:`IPluginCreator` .
         """
-    def load_library(self, plugin_path: str) -> types.CapsuleType:
+    def load_library(self, plugin_path: str) -> typing_extensions.CapsuleType:
         """
         Load and register a shared library of plugins.
 
@@ -5767,9 +5775,9 @@ class IPluginV2:
     def execute_async(
         self,
         batch_size: typing.SupportsInt,
-        inputs: collections.abc.Sequence[types.CapsuleType],
-        outputs: collections.abc.Sequence[types.CapsuleType],
-        workspace: types.CapsuleType,
+        inputs: collections.abc.Sequence[typing_extensions.CapsuleType],
+        outputs: collections.abc.Sequence[typing_extensions.CapsuleType],
+        workspace: typing_extensions.CapsuleType,
         stream_handle: typing.SupportsInt,
     ) -> int:
         """
@@ -6054,7 +6062,10 @@ class IPluginV2Ext(IPluginV2):
     :ivar tensorrt_version: :class:`int` The API version with which this plugin was built.
     """
     def attach_to_context(
-        self, cudnn: types.CapsuleType, cublas: types.CapsuleType, allocator: types.CapsuleType
+        self,
+        cudnn: typing_extensions.CapsuleType,
+        cublas: typing_extensions.CapsuleType,
+        allocator: typing_extensions.CapsuleType,
     ) -> None:
         """
         Attach the plugin object to an execution context and grant the plugin the access to some context resource.
@@ -7255,7 +7266,9 @@ class IStreamReaderV2:
             return data
     """
     def __init__(self) -> None: ...
-    def read(self, destination: types.CapsuleType, num_bytes: typing.SupportsInt, stream: typing.SupportsInt) -> int:
+    def read(
+        self, destination: typing_extensions.CapsuleType, num_bytes: typing.SupportsInt, stream: typing.SupportsInt
+    ) -> int:
         """
         A callback implemented by the application to set the stream location.
 
@@ -7290,7 +7303,7 @@ class IStreamWriter:
 
     """
     def __init__(self) -> None: ...
-    def write(self, data: types.CapsuleType, size: typing.SupportsInt) -> int:
+    def write(self, data: typing_extensions.CapsuleType, size: typing.SupportsInt) -> int:
         """
         A callback implemented by the application to write a particular chunk of memory.
 
@@ -8214,6 +8227,7 @@ class OnnxParser:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def __init__(self, network: INetworkDefinition, logger: ILogger) -> None:
@@ -9450,6 +9464,7 @@ class Runtime:
 
         Context managers are deprecated and have no effect. Objects are automatically freed when
         the reference count reaches 0.
+
         """
     def __del__(self) -> None: ...
     def __init__(self, logger: ILogger) -> None:
@@ -10397,7 +10412,7 @@ def get_plugin_registry() -> IPluginRegistry:
     Return the plugin registry for standard runtime
     """
 
-def init_libnvinfer_plugins(logger: types.CapsuleType, namespace: str) -> builtins.bool:
+def init_libnvinfer_plugins(logger: typing_extensions.CapsuleType, namespace: str) -> builtins.bool:
     """
     Initialize and register all the existing TensorRT plugins to the :class:`IPluginRegistry` with an optional namespace.
     The plugin library author should ensure that this function name is unique to the library.
