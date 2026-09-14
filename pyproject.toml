@@ -120,8 +120,8 @@ denoise = [
     "vapoursynth-bm3d>=10.0",
     "vapoursynth-bm3dcpu>=2.16.4 ; (platform_machine == 'x86_64' or platform_machine == 'AMD64') and (platform_system == 'Linux' or platform_system == 'Windows')",
     "vapoursynth-bm3dmetal>=4.0.0 ; platform_system == 'Darwin'",
-    "dfttest2[gcc]>=10 ; platform_machine != 'x86_64' and platform_machine != 'AMD64'",
-    "dfttest2[cpu]>=10 ; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
+    "dfttest2[gcc]>=11.0.0 ; platform_machine != 'x86_64' and platform_machine != 'AMD64'",
+    "dfttest2[cpu]>=11.0.0 ; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
     "vapoursynth-deblock>=8.0",
     "vapoursynth-fmtconv>=31",
     # TODO: uncomment when manipmv is bumped and add it to the README
@@ -150,7 +150,7 @@ nvidia = [
     "cuda-python>=13.0.0,<14.0.0",
     "ml-dtypes>=0.5.4",
     # Vapoursynth plugins
-    "dfttest2[cufft,nvrtc]>=10",
+    "dfttest2[cufft,nvrtc]>=11.0.0",
     "vapoursynth-bm3dcuda>=2.16",
     "vapoursynth-bilateralgpu>=14",
     "vapoursynth-mlrt-ort>=16.2",
@@ -163,7 +163,7 @@ nvidia = [
 ]
 amd = [
     "vsjetpack[gpu,cl,vulkan]",
-    "dfttest2[hipfft,hiprtc]>=10",
+    "dfttest2[hipfft,hiprtc]>=11.0.0",
     "vapoursynth-bm3dhip>=2.16",
     "vapoursynth-mlrt-migx>=15.16 ; platform_system == 'Linux'",
 ]
@@ -414,11 +414,7 @@ line-length = 120
 docstring-code-format = true
 
 [tool.ruff.lint]
-exclude = [
-    "stubs/dfttest2.pyi",
-    "stubs/vsmlrt.pyi",
-    "stubs/onnxconverter_common/**",
-]
+exclude = ["stubs/vsmlrt.pyi", "stubs/onnxconverter_common/**"]
 extend-select = [
     "E",
     "C4",
