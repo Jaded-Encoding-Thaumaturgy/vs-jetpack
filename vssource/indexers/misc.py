@@ -202,6 +202,7 @@ class FFMS2(CacheIndexer):
     """
 
     _source_func = core.lazy.ffms2.Source
+    _asource_func = core.lazy.ffms2.AudioSource
     _cache_arg_name = "cachefile"
     _ext = ".ffindex"
 

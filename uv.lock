@@ -2595,19 +2595,19 @@ wheels = [
 
 [[package]]
 name = "vapoursynth-ffms2"
-version = "5.2.4"
+version = "5.3.0"
 source = { registry = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" }
 dependencies = [
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.4/vapoursynth_ffms2-5.2.4.tar.gz", hash = "sha256:b00de243479a3aa05094edc59e982aee686bb0aa737e3b7181f478e05cd70482" }
+sdist = { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.3.0/vapoursynth_ffms2-5.3.0.tar.gz", hash = "sha256:f6767292c05206ab6fd8e503f9200ad3c004bea9a53b7c229ac156fe7e467673" }
 wheels = [
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.4/vapoursynth_ffms2-5.2.4-py3-none-macosx_13_0_arm64.whl", hash = "sha256:0af64b2265c1c52adf16bd08134af5a675a2c72ec480db4919c89fe3a2d3f666" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.4/vapoursynth_ffms2-5.2.4-py3-none-macosx_13_0_x86_64.whl", hash = "sha256:14616330d4153d90716577c538381b04ed45555d680ad2a0700320638a650415" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.4/vapoursynth_ffms2-5.2.4-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:e450140f7ee984d0a7406cb645bc2e4102ce5f360521d35dc9203801f3b9a703" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.4/vapoursynth_ffms2-5.2.4-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:8aa6769371c9324d66e066593dce327b43ec1bfb0b2a34fe61cd719cacd84abc" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.4/vapoursynth_ffms2-5.2.4-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:740a67fa7deec827ce1df4c7f7822037a60f7ac7cb1ba9076cbae3e044df1c34" },
-    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.2.4/vapoursynth_ffms2-5.2.4-py3-none-win_amd64.whl", hash = "sha256:34211e7ae0bd52fe137fbf67436a5da02cbbf888da3f8558b60f6519e7a19395" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.3.0/vapoursynth_ffms2-5.3.0-py3-none-macosx_13_0_arm64.whl", hash = "sha256:fadef8f28d0b65e53d1c2197db9773401f3394a1184110b002389ebeb4680ca3" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.3.0/vapoursynth_ffms2-5.3.0-py3-none-macosx_13_0_x86_64.whl", hash = "sha256:508568f57eb2ae130d5a5f653b33021a8aebe272eeb5c1ea941ab0e8bb3d57b9" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.3.0/vapoursynth_ffms2-5.3.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:2d312f54fece448eb9f509ff9e1373b9db154960c433093be72375918fad0921" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.3.0/vapoursynth_ffms2-5.3.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:198e45e3f3d722fda3d9c439d927c6fcaf3a7cb071757437b2197c871b965cdc" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.3.0/vapoursynth_ffms2-5.3.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:4f0a5a22a4c1c6c78eff95f64483873af943437d615ca227b2de7d43cb9e3b7d" },
+    { url = "https://github.com/Jaded-Encoding-Thaumaturgy/vs-wheels/releases/download/vapoursynth-ffms2-v5.3.0/vapoursynth_ffms2-5.3.0-py3-none-win_amd64.whl", hash = "sha256:5a3b5b78c6399efa8ece13687135ef196803b6c373e22b9ea47104439cf2f14a" },
 ]
 
 [[package]]
@@ -3564,15 +3564,15 @@ requires-dist = [
     { name = "vapoursynth-eedi3vk2", marker = "extra == 'amd'", specifier = ">=1.0" },
     { name = "vapoursynth-eedi3vk2", marker = "extra == 'nvidia'", specifier = ">=1.0" },
     { name = "vapoursynth-eedi3vk2", marker = "extra == 'vulkan'", specifier = ">=1.0" },
-    { name = "vapoursynth-ffms2", marker = "extra == 'aa'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-ffms2", marker = "extra == 'deband'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-ffms2", marker = "extra == 'dehalo'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-ffms2", marker = "extra == 'deinterlace'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-ffms2", marker = "extra == 'denoise'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-ffms2", marker = "extra == 'full'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-ffms2", marker = "extra == 'mask'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-ffms2", marker = "extra == 'scale'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
-    { name = "vapoursynth-ffms2", marker = "extra == 'source'", specifier = ">=5.2.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'aa'", specifier = ">=5.3.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'deband'", specifier = ">=5.3.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'dehalo'", specifier = ">=5.3.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'deinterlace'", specifier = ">=5.3.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'denoise'", specifier = ">=5.3.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'full'", specifier = ">=5.3.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'mask'", specifier = ">=5.3.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'scale'", specifier = ">=5.3.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
+    { name = "vapoursynth-ffms2", marker = "extra == 'source'", specifier = ">=5.3.0", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-fmtconv", marker = "extra == 'deband'", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-fmtconv", marker = "extra == 'dehalo'", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
     { name = "vapoursynth-fmtconv", marker = "extra == 'deinterlace'", specifier = ">=31", index = "https://jaded-encoding-thaumaturgy.github.io/vs-wheels/simple" },
