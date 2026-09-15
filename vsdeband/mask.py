@@ -29,7 +29,9 @@ def deband_detail_mask(
     blur_ret = gauss_blur(ret, sigma)
     blur_ret_diff = Morpho.deflate(ExprOp.SUB(blur_ret, ret))
 
-    blur_ret_brz = ExprOp.MAX(blur_ret_diff, core.vszip.BoxBlur(blur_ret_diff, 4, 1, 4, 1, planes=0))
+    blur_ret_brz = ExprOp.MAX(
+        blur_ret_diff, core.vszip.BoxBlur(blur_ret_diff, hradius=4, hpasses=1, vradius=4, vpasses=1, planes=0)
+    )
     blur_ret_brz = Morpho.closing(Morpho.binarize_mask(blur_ret_brz, brz0), 3)
 
     prewitt_mask = Morpho.inflate(Morpho.deflate(Prewitt.edgemask(clip_y, brz1, brz1)))
