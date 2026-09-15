@@ -73,6 +73,11 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
     def overlap_div(self, value: int | tuple[int, int] | None) -> None:
         self._overlap_div = tuple(normalize_seq(value, 2)) if value is not None else None  # type: ignore[assignment]
 
+    @property
+    def has_vectors(self) -> bool:
+        """Whether any motion vectors have been stored."""
+        return any(v for v in self.values())
+
     def clear(self) -> None:
         """
         Clear all stored motion vectors.
@@ -149,6 +154,13 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
                 vectors_backward.append(self[MVDirection.BACKWARD][d])
             if direction in [MVDirection.FORWARD, MVDirection.BOTH] and d in self[MVDirection.FORWARD]:
                 vectors_forward.append(self[MVDirection.FORWARD][d])
+
+        if not vectors_backward and not vectors_forward:
+            raise CustomRuntimeError(
+                "No motion vectors available! Did you forget to call analyze()?",
+                func=self.get_vectors,
+                reason={"direction": direction, "deltas": list(deltas)},
+            )
 
         return (vectors_backward, vectors_forward)
 
