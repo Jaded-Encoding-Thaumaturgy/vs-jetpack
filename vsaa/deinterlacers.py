@@ -734,6 +734,7 @@ class EEDI3(SuperSampler):
             "gamma": self.gamma,
             "nrad": self.nrad,
             "mdis": self.mdis,
+            "hp": self.hp,
             "ucubic": self.ucubic,
             "cost3": self.cost3,
             "vcheck": self.vcheck,
