@@ -1182,6 +1182,7 @@ class QTGMCGraph(VSObject):
 
         if self.builder.denoise_mc_denoise and self.builder.denoise_tr:
             denoised = self.mv.compensate(
+                self.draft,
                 tr=self.builder.denoise_tr,
                 thscd=self.builder.analyze_thscd,
                 temporal_func=lambda clip: self.builder.denoise_func(clip, tr=self.builder.denoise_tr),
@@ -1226,10 +1227,10 @@ class QTGMCGraph(VSObject):
                         neutral_out=True,
                     )
                     noise_gen = norm_expr(
-                        [noise_max, noise_min, noise_gen],
+                        [noise_min, noise_max, noise_gen],
                         # Limitation: This gain map can never reach 1.0 with integer formats.
                         # Peak gain at 8-bit: (255 - 128) / 256 + 0.5 = ~0.996.
-                        "y x y - z neutral - range_size / 0.5 + * +",
+                        "x y x - z neutral - range_size / 0.5 + * +",
                         func=self.func,
                     )
                     noise = reweave(noise, noise_gen, self.tff.field, self.func)
@@ -1237,7 +1238,7 @@ class QTGMCGraph(VSObject):
             noise = FieldBased.PROGRESSIVE.apply(noise)
 
         if self.builder.denoise_stabilize is not False:
-            noise_comp, _ = self.mv.compensate(
+            _, noise_comp = self.mv.compensate(
                 noise,
                 direction=MVDirection.BACKWARD,
                 tr=1,
@@ -1399,7 +1400,7 @@ class QTGMCGraph(VSObject):
 
     def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
         if self.mode is not self.Mode.DESHIMMER:
-            clip = bobber.bob(clip, tff=self.tff)
+            return bobber.bob(clip, tff=self.tff)
 
         return clip
 
