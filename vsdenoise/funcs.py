@@ -215,8 +215,8 @@ def mc_clamp(
 
     undershoot, overshoot = normalize_seq(clamp, 2)
 
-    backward_comp, forward_comp = mv_obj.compensate(src, interleave=False, **kwargs)
-    comp_clips = [src, *backward_comp, *forward_comp]
+    forward_comp, backward_comp = mv_obj.compensate(src, interleave=False, **kwargs)
+    comp_clips = [*forward_comp, src, *backward_comp]
 
     evars = ExprVars(1, len(comp_clips) + 1, expr_src=True)
 
