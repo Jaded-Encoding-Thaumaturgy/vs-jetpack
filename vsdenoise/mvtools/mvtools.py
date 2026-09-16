@@ -31,6 +31,8 @@ __all__ = ["MVTools"]
 
 class _SuperConfigKey(NamedTuple):
     onelevel: bool
+    blksize: tuple[int, int]
+    overlap: tuple[int, int]
     args: tuple[tuple[str, Any], ...]
 
 
@@ -38,16 +40,40 @@ class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
     def __vs_del__(self, core_id: int) -> None:
         self.clear()
 
-    def get_clip(self, clip: vs.VideoNode, onelevel: bool, **args: Any) -> vs.VideoNode:
+    def get_clip(
+        self,
+        clip: vs.VideoNode,
+        onelevel: bool,
+        *,
+        blksize: tuple[int, int],
+        overlap: tuple[int, int],
+        **args: Any,
+    ) -> vs.VideoNode:
         args_key = tuple(sorted(args.items()))
-        key = _SuperConfigKey(onelevel, args_key)
+        key = _SuperConfigKey(onelevel, blksize, overlap, args_key)
+
+        if key in self:
+            return self[key]
 
         # Check if there is a cached onelevel=False (hierarchical) clip with same args
-        if (key_hierarchical := _SuperConfigKey(False, args_key)) in self:
+        if (key_hierarchical := _SuperConfigKey(False, blksize, overlap, args_key)) in self:
             return self[key_hierarchical]
 
-        if key not in self:
-            self[key] = core.mvu.Super(clip, onelevel=onelevel, **args)
+        # If only one level is needed (recalculate, degrain, compensate), check if a cached clip
+        # can be reused because it has matching pixel-rendering properties and >= block size and overlap.
+        if onelevel:
+            for cached_key, cached_clip in self.items():
+                if (
+                    cached_key.args == args_key
+                    and cached_key.blksize[0] >= blksize[0]
+                    and cached_key.blksize[1] >= blksize[1]
+                    and cached_key.overlap[0] >= overlap[0]
+                    and cached_key.overlap[1] >= overlap[1]
+                ):
+                    self[key] = cached_clip
+                    return cached_clip
+
+        self[key] = core.mvu.Super(clip, blksize=blksize, overlap=overlap, onelevel=onelevel, **args)
 
         return self[key]
 
