@@ -3,6 +3,7 @@ from fractions import Fraction
 import pytest
 
 from vsdenoise import MaskMode, MVDirection, MVTools
+from vsdenoise.mvtools.mvtools import _super_clip_cache
 from vstools import UnsupportedColorFamilyError, core, vs
 
 
@@ -204,3 +205,19 @@ def test_mvtools_sc_detection() -> None:
     sc_clip = mv.sc_detection()
     assert sc_clip.num_frames == 5
     assert sc_clip.format == clip.format
+
+
+def test_mvtools_super_cache_reuse() -> None:
+    clip = core.std.BlankClip(format=vs.YUV420P8, width=160, height=120, length=5)
+    mv = MVTools(clip)
+
+    mv.analyze(blksize=16, overlap_div=2)
+    cached_super = _super_clip_cache._cache[mv.search_clip]
+    assert len(set(cached_super.values())) == 1
+
+    mv.recalculate(blksize=8, overlap_div=2)
+    assert len(set(cached_super.values())) == 1
+
+    degrained = mv.degrain()
+    assert degrained.num_frames == 5
+    assert len(set(cached_super.values())) == 1
