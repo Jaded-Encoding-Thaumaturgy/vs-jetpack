@@ -18,7 +18,7 @@ import questionary as quest
 from cyclopts.help import HelpPanel
 from rich.console import Console, ConsoleOptions
 from rich.pretty import pretty_repr
-from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TransferSpeedColumn
+from rich.progress import BarColumn, DownloadColumn, Progress, TaskID, TextColumn, TransferSpeedColumn
 from rich.text import Text
 
 from vsjetpack import __version__
@@ -464,6 +464,15 @@ async def _download_assets(
             feed.display_name,
             "s" if skip_count != 1 else "",
         )
+    if downloader.failed:
+        fail_count = len(downloader.failed)
+        _display(
+            ERROR,
+            "[red]❌  Failed to download %d %s model%s.[/red]",
+            fail_count,
+            feed.display_name,
+            "s" if fail_count != 1 else "",
+        )
 
 
 class _AsyncProgress(Progress):
@@ -490,6 +499,7 @@ class _AssetDownloader:
         self.sema = asyncio.Semaphore(MAX_CONCURRENCY)
         self.skipped = set[Asset]()
         self.downloaded = set[Asset]()
+        self.failed = dict[Asset, Exception]()
         self.progress = _AsyncProgress(
             TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
             BarColumn(bar_width=40),
@@ -508,34 +518,43 @@ class _AssetDownloader:
     async def _download_asset(self, asset: Asset) -> None:
         dest_path = self.dest_folder / asset.name
 
-        with dest_path.open("rb") as f:
-            dest_hash = hashlib.file_digest(f, "sha256").hexdigest()
+        def get_hash() -> str:
+            with dest_path.open("rb") as f:
+                return hashlib.file_digest(f, "sha256").hexdigest()
 
-        if dest_path.exists() and dest_hash == asset.sha256:
+        if dest_path.exists() and get_hash() == asset.sha256:
             _display(INFO, "  [dim]⏭ %s: %s (already downloaded)[/dim]", self.feed.display_name, asset.name)
             self.skipped.add(asset)
             return
 
-        async with self.sema, _delete_on_error(dest_path):
-            task = self.progress.add_task("download", filename=asset.name, total=asset.size)
-            hasher = hashlib.sha256()
+        task: TaskID | None = None
+        try:
+            async with self.sema, _delete_on_error(dest_path):
+                task = self.progress.add_task("download", filename=asset.name, total=asset.size)
+                hasher = hashlib.sha256()
 
-            res = await self.session.get(asset.url, stream=True, headers=self.feed.headers)
+                res = await self.session.get(asset.url, stream=True, headers=self.feed.headers)
 
-            async with res.raise_for_status():
-                with dest_path.open("wb") as f:
-                    async for chunk in await res.iter_content(chunk_size=64 * 1024):
-                        f.write(chunk)
-                        hasher.update(chunk)
-                        self.progress.update(task, advance=len(chunk))
+                async with res.raise_for_status():
+                    with dest_path.open("wb") as f:
+                        async for chunk in await res.iter_content(chunk_size=64 * 1024):
+                            f.write(chunk)
+                            hasher.update(chunk)
+                            self.progress.update(task, advance=len(chunk))
+                    self.progress.update(task, visible=False)
+
+                if (computed_hash := hasher.hexdigest()) != asset.sha256:
+                    raise ValueError(
+                        f"Integrity check failed for {asset.name}. "
+                        f"Expected sha256: {asset.sha256}, got: {computed_hash}"
+                    )
+
+                self.downloaded.add(asset)
+        except (niquests.RequestException, ValueError, OSError) as e:
+            if task is not None:
                 self.progress.update(task, visible=False)
-
-            if (computed_hash := hasher.hexdigest()) != asset.sha256:
-                raise ValueError(
-                    f"Integrity check failed for {asset.name}. Expected sha256: {asset.sha256}, got: {computed_hash}"
-                )
-
-            self.downloaded.add(asset)
+            self.failed[asset] = e
+            _display(ERROR, "  [red]❌ %s: %s (%s)[/red]", self.feed.display_name, asset.name, e)
 
 
 @asynccontextmanager
