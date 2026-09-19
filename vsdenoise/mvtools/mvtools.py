@@ -24,7 +24,7 @@ from vstools import (
 
 from .enums import MaskMode, MVDirection, PenaltyMode, RFilterMode, SearchMode, SharpMode
 from .motion import MotionVectors
-from .utils import normalize_thscd, refine_blksize
+from .utils import calc_super_dim, normalize_thscd, refine_blksize
 
 __all__ = ["MVTools"]
 
@@ -60,8 +60,12 @@ class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
             return self[key_hierarchical]
 
         # If only one level is needed (recalculate, degrain, compensate), check if a cached clip
-        # can be reused because it has matching pixel-rendering properties and >= block size and overlap.
+        # can be reused because it has matching pixel-rendering properties, matching padded dimensions,
+        # and >= block size and overlap.
         if onelevel:
+            req_w = calc_super_dim(clip.width, blksize[0], overlap[0])
+            req_h = calc_super_dim(clip.height, blksize[1], overlap[1])
+
             for cached_key, cached_clip in self.items():
                 if (
                     cached_key.args == args_key
@@ -69,6 +73,8 @@ class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
                     and cached_key.blksize[1] >= blksize[1]
                     and cached_key.overlap[0] >= overlap[0]
                     and cached_key.overlap[1] >= overlap[1]
+                    and calc_super_dim(clip.width, cached_key.blksize[0], cached_key.overlap[0]) == req_w
+                    and calc_super_dim(clip.height, cached_key.blksize[1], cached_key.overlap[1]) == req_h
                 ):
                     self[key] = cached_clip
                     return cached_clip

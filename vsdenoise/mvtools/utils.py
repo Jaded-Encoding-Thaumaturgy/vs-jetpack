@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import math
+
 from jetpytools import normalize_seq
 
-__all__ = ["normalize_thscd", "refine_blksize"]
+__all__ = ["calc_super_dim", "normalize_thscd", "refine_blksize"]
 
 
 def refine_blksize(blksize: int | tuple[int, ...], divisor: int | tuple[int, ...] = (2, 2)) -> tuple[int, int]:
@@ -28,3 +30,15 @@ def refine_blksize(blksize: int | tuple[int, ...], divisor: int | tuple[int, ...
 
 def normalize_thscd(thscd: int | tuple[int | None, float | None] | None) -> tuple[int | None, float | None]:
     return (None, None) if thscd is None else thscd if isinstance(thscd, tuple) else (thscd, None)
+
+
+def calc_super_dim(dim: int, blksize: int, overlap: int) -> int:
+    """
+    Calculate the padded dimension of a super clip for given block size and overlap.
+    """
+    step = blksize - overlap
+
+    if step <= 0 or dim <= overlap:
+        return dim
+
+    return math.ceil((dim - overlap) / step) * step + overlap
