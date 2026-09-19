@@ -82,3 +82,14 @@ def test_mc_clamp() -> None:
     # Since src is 10 and flt is 20, upper bound is 10 + 3 = 13.
     clamped_margin = mc_clamp(flt, src, mv, clamp=(2, 3))
     assert clamped_margin.get_frame(0)[0][0, 0] == 13
+
+
+def test_mc_degrain_padded_refine() -> None:
+    clip = core.std.BlankClip(format=vs.YUV420P16, width=1920, height=1080, length=5)
+    prefilter = core.std.BlankClip(format=vs.YUV420P16, width=1920, height=1080, length=5)
+
+    denoised = mc_degrain(clip, tr=2, prefilter=prefilter, thsad=125, blksize=32, refine=2)
+    assert denoised.format.id == clip.format.id
+    assert denoised.width == clip.width
+    assert denoised.height == clip.height
+    assert denoised.num_frames == clip.num_frames
