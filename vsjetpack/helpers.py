@@ -25,7 +25,7 @@ def is_from_vs_module(obj: Any) -> bool:
         _vs_module = vapoursynth
 
     if hasattr(obj, "__module__"):
-        return sys.modules[obj.__module__] is _vs_module
+        return sys.modules.get(obj.__module__) is _vs_module
 
     return getmodule(type(obj)) is _vs_module
 
