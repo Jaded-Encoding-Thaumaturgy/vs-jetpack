@@ -256,7 +256,7 @@ class Timecodes(list[FrameDur]):
         if "v1" in version:
 
             def _norm(xd: str) -> Fraction:
-                return Fraction(round(denominator / float(xd)), denominator)
+                return Fraction(round(denominator * float(xd)), denominator)
 
             assume = None
 
@@ -267,7 +267,7 @@ class Timecodes(list[FrameDur]):
                     continue
 
                 if line.startswith("Assume"):
-                    assume = _norm(line[7:])
+                    assume = 1 / _norm(line[7:])
                     continue
 
                 starts, ends, fps = line.split(",")
