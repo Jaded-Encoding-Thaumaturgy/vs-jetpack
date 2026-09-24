@@ -2,7 +2,7 @@ from fractions import Fraction
 
 import pytest
 
-from vsdenoise import MaskMode, MVTools
+from vsdenoise import AnalyzeArgs, MaskMode, MVTools, SearchMode, SharpMode, SuperArgs
 from vsdenoise.mvtools.mvtools import _super_clip_cache
 from vstools import UnsupportedColorFamilyError, core, vs
 
@@ -20,7 +20,12 @@ def test_mvtools_init() -> None:
     with pytest.raises(UnsupportedColorFamilyError):
         MVTools(rgb_clip)
 
-    mv_custom = MVTools(clip, chroma=True, super_args={"sharp": 1}, analyze_args={"search": 2})
+    mv_custom = MVTools(
+        clip,
+        chroma=True,
+        super_args=SuperArgs(sharp=SharpMode.BICUBIC),
+        analyze_args=AnalyzeArgs(search=SearchMode.HEXAGON),
+    )
     assert mv_custom.chroma is True
     assert mv_custom.super_args["sharp"] == 1
 
