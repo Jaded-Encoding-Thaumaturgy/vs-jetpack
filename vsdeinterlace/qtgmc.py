@@ -23,7 +23,6 @@ from vsdenoise import (
     DFTTest,
     MaskMode,
     MotionVectors,
-    MVDirection,
     MVTools,
     MVToolsPreset,
     mc_clamp,
@@ -386,7 +385,7 @@ class _QTGMCBuilder:
         preset: Mapping[str, Any] = MVToolsPreset.HQ_SAD,
         force_tr: int = 0,
         blksize: int | tuple[int, int] = 16,
-        overlap: int | tuple[int, int] = 2,
+        overlap_div: int | tuple[int, int] = 2,
         refine: int = 1,
         thsad_recalc: int | None = None,
         thscd: int | tuple[int | None, float | None] | None = (180, 38.5),
@@ -415,7 +414,7 @@ class _QTGMCBuilder:
                 - Second value: Vertical block size.
 
                 A single value applies to both axes. Defaults to 16.
-            overlap: The block size divisor for block size overlap. Smaller values reduce blocking artifacts of
+            overlap_div: The block size divisor for block overlap. Smaller values reduce blocking artifacts of
                 [MVTools][vsdenoise.mvtools.mvtools.MVTools] processes.
 
                 - First value: Horizontal block size divisor.
@@ -439,7 +438,7 @@ class _QTGMCBuilder:
         self.analyze_preset = preset
         self.analyze_force_tr = force_tr
         self.analyze_blksize = blksize
-        self.analyze_overlap = overlap
+        self.analyze_overlap_div = overlap_div
         self.analyze_refine = refine
         self.analyze_thsad_recalc = thsad_recalc
         self.analyze_thscd = thscd
@@ -1138,7 +1137,7 @@ class QTGMCGraph(VSObject):
         if not self.builder.analyze_vectors:
             preset.update(search_clip=self.prefilter)
 
-        mv = MVTools(self.draft, vectors=self.builder.analyze_vectors, **preset)
+        mv = MVTools(self.draft, vectors=self.builder.analyze_vectors, thscd=self.builder.analyze_thscd, **preset)
 
         if self.builder.analyze_vectors:
             return mv
@@ -1162,12 +1161,12 @@ class QTGMCGraph(VSObject):
         )
 
         blksize = self.builder.analyze_blksize
-        mv.analyze(tr=tr, blksize=blksize, overlap_div=self.builder.analyze_overlap)
+        mv.analyze(tr=tr, blksize=blksize, overlap_div=self.builder.analyze_overlap_div)
 
         for _ in range(self.builder.analyze_refine):
             blksize = refine_blksize(blksize)
             mv.recalculate(
-                thsad=self.builder.analyze_thsad_recalc, blksize=blksize, overlap_div=self.builder.analyze_overlap
+                thsad=self.builder.analyze_thsad_recalc, blksize=blksize, overlap_div=self.builder.analyze_overlap_div
             )
 
         return mv
@@ -1184,7 +1183,6 @@ class QTGMCGraph(VSObject):
             denoised = self.mv.compensate(
                 self.draft,
                 tr=self.builder.denoise_tr,
-                thscd=self.builder.analyze_thscd,
                 temporal_func=lambda clip: self.builder.denoise_func(clip, tr=self.builder.denoise_tr),
                 **self.builder.denoise_func_comp_args,
             )
@@ -1239,12 +1237,7 @@ class QTGMCGraph(VSObject):
 
         if self.builder.denoise_stabilize is not False:
             _, noise_comp = self.mv.compensate(
-                noise,
-                direction=MVDirection.BACKWARD,
-                tr=1,
-                thscd=self.builder.analyze_thscd,
-                interleave=False,
-                **self.builder.denoise_stabilize_comp_args,
+                noise, delta=1, interleave=False, **self.builder.denoise_stabilize_comp_args
             )
 
             noise = norm_expr(
@@ -1268,12 +1261,7 @@ class QTGMCGraph(VSObject):
         bobbed = self._interpolate(self._bobber_input, self.builder.basic_bobber)
 
         if self._repair_mask_enabled:
-            mask = self.mv.mask(
-                direction=MVDirection.BACKWARD,
-                kind=MaskMode.SAD,
-                thscd=self.builder.analyze_thscd,
-                **self.builder.basic_mask_args,
-            )
+            mask = self.mv.mask(kind=MaskMode.SAD, **self.builder.basic_mask_args)
             bobbed = self._denoise_output.std.MaskedMerge(bobbed, mask)
 
         return bobbed
@@ -1318,7 +1306,6 @@ class QTGMCGraph(VSObject):
                 tr=self.builder.final_tr,
                 thsad=self.builder.final_thsad,
                 thsad2=self.builder.final_thsad2,
-                thscd=self.builder.analyze_thscd,
                 **self.builder.final_degrain_args,
             )
         else:
@@ -1340,21 +1327,10 @@ class QTGMCGraph(VSObject):
         """Output of [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur]."""
 
         if self._motion_blur_level:
-            blurred = self.mv.flow_blur(
-                self.final,
-                blur=self._motion_blur_level,
-                thscd=self.builder.analyze_thscd,
-                **self.builder.motion_blur_blur_args,
-            )
+            blurred = self.mv.flow_blur(self.final, blur=self._motion_blur_level, **self.builder.motion_blur_blur_args)
 
             if self.builder.motion_blur_mask_args.get("ml") != 0:
-                mask = self.mv.mask(
-                    direction=MVDirection.BACKWARD,
-                    kind=MaskMode.VECTOR_LENGTH,
-                    thscd=self.builder.analyze_thscd,
-                    **self.builder.motion_blur_mask_args,
-                )
-
+                mask = self.mv.mask(kind=MaskMode.VECTOR_LENGTH, **self.builder.motion_blur_mask_args)
                 blurred = self.final.std.MaskedMerge(blurred, mask)
         else:
             blurred = self.final
@@ -1407,7 +1383,6 @@ class QTGMCGraph(VSObject):
             tr=tr,
             thsad=self.builder.basic_thsad,
             thsad2=self.builder.basic_thsad2,
-            thscd=self.builder.analyze_thscd,
             weights=BlurMatrix.BINOMIAL(radius=tr),
             **degrain_args,
         )
@@ -1552,7 +1527,6 @@ class QTGMCGraph(VSObject):
                 (undershoot, overshoot),
                 func=self.func,
                 tr=self.builder.sharpen_limit_radius,
-                thscd=self.builder.analyze_thscd,
                 **self.builder.sharpen_limit_comp_args,
             )
 
