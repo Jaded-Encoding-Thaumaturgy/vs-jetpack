@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from copy import deepcopy
-from enum import auto
+from enum import Flag, auto
 from math import comb, sqrt
 from typing import Any, Literal, Protocol, Self, TypedDict, overload
 
@@ -148,7 +148,7 @@ class _QTGMCBuilder:
         not used. Offers minimal sharpness control and tends to have more significant artifacts.
         """
 
-    class BackBlendMode(CustomEnum):
+    class BackBlendMode(Flag):
         """When to back-blend the (blurred) difference between the pre- and post-sharpened clips."""
 
         NONE = auto()
@@ -176,7 +176,7 @@ class _QTGMCBuilder:
             `SharpenLimitMode.TEMPORAL_POSTSMOOTH`.
         """
 
-        BOTH = auto()
+        BOTH = PRELIMIT | POSTLIMIT
         """
         Back-blending prior to and after [QTempGaussMC.sharpen_limit][vsdeinterlace.QTempGaussMC.sharpen_limit].
 
@@ -1192,7 +1192,7 @@ class QTGMCGraph(VSObject):
             denoised = self.builder.denoise_func(self.draft, tr=self.builder.denoise_tr)
 
         if self.mode in (self.Mode.DEINTERLACE, self.Mode.BOB):
-            denoised = reinterlace(denoised, self.tff, self.func)
+            denoised = reinterlace(denoised, self.tff, func=self.func)
 
         return denoised
 
@@ -1233,7 +1233,7 @@ class QTGMCGraph(VSObject):
                         "x y x - z neutral - range_size / 0.5 + * +",
                         func=self.func,
                     )
-                    noise = reweave(noise, noise_gen, self.tff.field, self.func)
+                    noise = reweave(noise, noise_gen, self.tff.field, func=self.func)
 
             noise = FieldBased.PROGRESSIVE.apply(noise)
 
@@ -1296,18 +1296,12 @@ class QTGMCGraph(VSObject):
         resharp = self._sharpen(smoothed)
 
         if self.builder.sharpen_limit_mode.is_presmooth and self.builder.sharpen_limit_radius:
-            if self.builder.back_blend_mode in (
-                self.builder.BackBlendMode.PRELIMIT,
-                self.builder.BackBlendMode.BOTH,
-            ):
+            if self.builder.back_blend_mode & self.builder.BackBlendMode.PRELIMIT:
                 resharp = self._back_blend(resharp, smoothed)
 
             resharp = self._sharpen_limit(resharp)
 
-            if self.builder.back_blend_mode in (
-                self.builder.BackBlendMode.POSTLIMIT,
-                self.builder.BackBlendMode.BOTH,
-            ):
+            if self.builder.back_blend_mode & self.builder.BackBlendMode.POSTLIMIT:
                 resharp = self._back_blend(resharp, smoothed)
         elif self.builder.back_blend_mode is not self.builder.BackBlendMode.NONE:
             resharp = self._back_blend(resharp, smoothed)
@@ -1377,7 +1371,7 @@ class QTGMCGraph(VSObject):
     @cachedproperty
     def _bobber_input(self) -> vs.VideoNode:
         if self.mode is self.Mode.REPAIR:
-            return reinterlace(self._denoise_output, self.tff, self.func)
+            return reinterlace(self._denoise_output, self.tff, func=self.func)
 
         return self._denoise_output
 
@@ -1428,10 +1422,10 @@ class QTGMCGraph(VSObject):
             binomial_coeff = comb(tr_f, tr)
             error_adj = tr_s / (binomial_coeff + self.builder.source_match_similarity * (tr_s - binomial_coeff))
 
-            return unsharpen(ref, error_adj, clip, func=error_adjustment)
+            return unsharpen(ref, error_adj, clip, func=self.func)
 
         if self.mode is not self.Mode.DESHIMMER:
-            clip = reinterlace(clip, self.tff, self._source_match)
+            clip = reinterlace(clip, self.tff, func=self.func)
 
         adjusted = error_adjustment(self._bobber_input, clip, self.builder.basic_tr)
         new_bobbed = self._interpolate(adjusted, self.builder.basic_bobber)
@@ -1439,14 +1433,9 @@ class QTGMCGraph(VSObject):
 
         if self.builder.source_match_iterations > 1:
             if self.builder.source_match_enhance:
-                matched = unsharpen(
-                    matched, self.builder.source_match_enhance, BlurMatrix.BINOMIAL(), func=self._source_match
-                )
+                matched = unsharpen(matched, self.builder.source_match_enhance, BlurMatrix.BINOMIAL(), func=self.func)
 
-            if self.mode is not self.Mode.DESHIMMER:
-                clip = reinterlace(matched, self.tff, self._source_match)
-            else:
-                clip = matched
+            clip = reinterlace(matched, self.tff, func=self.func) if self.mode is not self.Mode.DESHIMMER else matched
 
             diff = self._bobber_input.std.MakeDiff(clip)
             refine_bobbed = self._interpolate(diff, self.builder.source_match_bobber)
@@ -1473,19 +1462,19 @@ class QTGMCGraph(VSObject):
             fields_src = fields_src.std.SelectEvery(4, (0, 3))
         fields_flt = clip.std.SeparateFields(self.tff.is_tff).std.SelectEvery(4, (1, 2))
 
-        woven = reweave(fields_src, fields_flt, self.tff.field, self._lossless)
+        woven = reweave(fields_src, fields_flt, self.tff.field, func=self.func)
 
         if self.builder.lossless_anti_comb:
-            median_diff = median_blur(woven, mode=ConvMode.VERTICAL, func=self._lossless).std.MakeDiff(woven)
+            median_diff = median_blur(woven, mode=ConvMode.VERTICAL, func=self.func).std.MakeDiff(woven)
             fields_diff = median_diff.std.SeparateFields(self.tff.is_tff).std.SelectEvery(4, (1, 2))
 
             cleaned_diff = norm_expr(
-                [median_blur(fields_diff, mode=ConvMode.VERTICAL, func=self._lossless), fields_diff],
+                [median_blur(fields_diff, mode=ConvMode.VERTICAL, func=self.func), fields_diff],
                 "x neutral - X! y neutral - Y! X@ Y@ xor neutral X@ abs Y@ abs < x y ? ?",
-                func=self._lossless,
+                func=self.func,
             )
             cleaned_diff = repair.Mode.MINMAX_SQUARE1(cleaned_diff, remove_grain.Mode.MINMAX_AROUND2(cleaned_diff))
-            woven = reweave(fields_src, fields_flt.std.MergeDiff(cleaned_diff), self.tff.field, self._lossless)
+            woven = reweave(fields_src, fields_flt.std.MergeDiff(cleaned_diff), self.tff.field, func=self.func)
 
         return FieldBased.PROGRESSIVE.apply(woven)
 
@@ -1496,33 +1485,33 @@ class QTGMCGraph(VSObject):
             if self.builder.sharpen_offset is not False:
                 dark_offset, bright_offset = self.builder.sharpen_offset
 
-                source_min = Morpho.minimum(clip, coords=Coordinates.VERTICAL, func=self._sharpen)
-                source_max = Morpho.maximum(clip, coords=Coordinates.VERTICAL, func=self._sharpen)
+                source_min = Morpho.minimum(clip, coords=Coordinates.VERTICAL, func=self.func)
+                source_max = Morpho.maximum(clip, coords=Coordinates.VERTICAL, func=self.func)
 
                 resharp = norm_expr(
                     [clip, source_min, source_max],
                     "y z + 2 / AVG! x AVG@ < AVG@ {dark_offset} - x AVG@ > AVG@ {bright_offset} + x ? ?",
                     dark_offset=scale_delta(dark_offset, 8, self.clip),
                     bright_offset=scale_delta(bright_offset, 8, self.clip),
-                    func=self._sharpen,
+                    func=self.func,
                 )
 
             resharp = unsharpen(
                 clip,
                 self.builder.sharpen_strength,
                 gauss_blur(resharp, self.builder._sharpen_sigma),
-                func=self._sharpen,
+                func=self.func,
             )
 
         if self.builder.sharpen_thin:
-            median_diff = median_blur(clip, mode=ConvMode.VERTICAL, func=self._sharpen).std.MakeDiff(clip)
-            blurred_diff = BlurMatrix.BINOMIAL(mode=ConvMode.HORIZONTAL)(median_diff, func=self._sharpen)
+            median_diff = median_blur(clip, mode=ConvMode.VERTICAL, func=self.func).std.MakeDiff(clip)
+            blurred_diff = BlurMatrix.BINOMIAL(mode=ConvMode.HORIZONTAL)(median_diff, func=self.func)
 
             resharp = norm_expr(
-                [resharp, BlurMatrix.BINOMIAL()(blurred_diff, func=self._sharpen), blurred_diff],
+                [resharp, BlurMatrix.BINOMIAL()(blurred_diff, func=self.func), blurred_diff],
                 "y neutral - dup abs z neutral - abs > swap {thin} * x + x ?",
                 thin=self.builder.sharpen_thin,
-                func=self._sharpen,
+                func=self.func,
             )
 
         return resharp
@@ -1545,18 +1534,15 @@ class QTGMCGraph(VSObject):
             if self.builder.sharpen_limit_radius == 1 and undershoot == overshoot == 0:
                 clip = repair.Mode.MINMAX_SQUARE1(clip, self.bobbed)
             else:
-                inpand = Morpho.minimum(
-                    self.bobbed, iterations=self.builder.sharpen_limit_radius, func=self._sharpen_limit
-                )
-                expand = Morpho.maximum(
-                    self.bobbed, iterations=self.builder.sharpen_limit_radius, func=self._sharpen_limit
-                )
+                source_min = Morpho.minimum(self.bobbed, iterations=self.builder.sharpen_limit_radius, func=self.func)
+                source_max = Morpho.maximum(self.bobbed, iterations=self.builder.sharpen_limit_radius, func=self.func)
+
                 clip = norm_expr(
-                    [clip, inpand, expand],
+                    [clip, source_min, source_max],
                     "x y {undershoot} - z {overshoot} + clamp",
                     undershoot=scale_delta(undershoot, 8, self.clip),
                     overshoot=scale_delta(overshoot, 8, self.clip),
-                    func=self._sharpen_limit,
+                    func=self.func,
                 )
         elif self.builder.sharpen_limit_mode.is_temporal:
             clip = mc_clamp(
@@ -1564,7 +1550,7 @@ class QTGMCGraph(VSObject):
                 self.bobbed,
                 self.mv,
                 (undershoot, overshoot),
-                self._sharpen_limit,
+                func=self.func,
                 tr=self.builder.sharpen_limit_radius,
                 thscd=self.builder.analyze_thscd,
                 **self.builder.sharpen_limit_comp_args,
@@ -1574,9 +1560,7 @@ class QTGMCGraph(VSObject):
 
     def _noise_restore(self, clip: vs.VideoNode, restore: float) -> vs.VideoNode:
         if restore:
-            return norm_expr(
-                [clip, self.noise], "x y neutral - {restore} * +", restore=restore, func=self._noise_restore
-            )
+            return norm_expr([clip, self.noise], "x y neutral - {restore} * +", restore=restore, func=self.func)
 
         return clip
 
