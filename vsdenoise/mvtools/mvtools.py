@@ -75,7 +75,7 @@ class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
 
         # Get the required padding amount from clip dimension, blksize, and overlap.
         # pad & pel must match.
-        # If pel > 1, sharp & pelclip must match.
+        # If pel > 1, pelclip must match. If pelclip is used, sharp does not need to match.
         # If onelevel=False, blksize & rfilter must match.
         req_padx = calc_super_pad(clip.width, blksize[0], overlap[0])
         req_pady = calc_super_pad(clip.height, blksize[1], overlap[1])
@@ -87,7 +87,7 @@ class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
                     calc_super_pad(clip.height, cached_key.blksize[1], cached_key.overlap[1]) == req_pady,
                     cached_key.pad == pad,
                     cached_key.pel == pel,
-                    pel == 1 or (cached_key.sharp == sharp and cached_key.pelclip == pelclip),
+                    pel == 1 or (cached_key.pelclip == pelclip and (pelclip or cached_key.sharp == sharp)),
                     onelevel
                     or all((not cached_key.onelevel, cached_key.blksize == blksize, cached_key.rfilter == rfilter)),
                 )
