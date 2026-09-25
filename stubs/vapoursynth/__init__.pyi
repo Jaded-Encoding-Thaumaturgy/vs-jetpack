@@ -1605,6 +1605,8 @@ class RawFrame:
     def props(self, new_props: _SupportsKeysAndGetItem[str, _VSValue]) -> None: ...
     @property
     def readonly(self) -> bool: ...
+    @property
+    def gpu_resident(self) -> bool: ...
     def copy(self) -> Self: ...
     def close(self) -> None: ...
     def get_write_ptr(self, plane: _IntLike) -> c_void_p: ...
@@ -1644,6 +1646,8 @@ class RawNode:
     def __mul__(self, other: int) -> Self: ...
     def __getattr__(self, name: str) -> Plugin: ...
     @property
+    def gpu_resident(self) -> bool: ...
+    @property
     def node_name(self) -> str: ...
     @property
     def timings(self) -> int: ...
@@ -1667,7 +1671,11 @@ class RawNode:
     @overload
     def get_frame_async(self, n: _IntLike, cb: Callable[[RawFrame | None, Exception | None], None]) -> None: ...
     def frames(
-        self, prefetch: int | None = None, backlog: int | None = None, close: bool = False
+        self,
+        prefetch: int | None = None,
+        backlog: int | None = None,
+        close: bool = False,
+        collect_garbage: bool = True,
     ) -> Iterator[RawFrame]: ...
     def set_output(self, index: _IntLike = 0) -> None: ...
     def clear_cache(self) -> None: ...
@@ -1693,7 +1701,11 @@ class VideoNode(RawNode):
         self, n: _IntLike, cb: Callable[[VideoFrame | None, Exception | None], None]
     ) -> None: ...
     def frames(
-        self, prefetch: int | None = None, backlog: int | None = None, close: bool = False
+        self,
+        prefetch: int | None = None,
+        backlog: int | None = None,
+        close: bool = False,
+        collect_garbage: bool = True,
     ) -> Iterator[VideoFrame]: ...
     def set_output(self, index: _IntLike = 0, alpha: Self | None = None, alt_output: Literal[0, 1, 2] = 0) -> None: ...
     def output(
@@ -1714,34 +1726,10 @@ class VideoNode(RawNode):
     awarp: Final[_awarp._VideoNode_bound.Plugin]
     """AWarp filter from AWarpSharp2"""
 # </attribute/VideoNode_bound/awarp>
-# <attribute/VideoNode_bound/bilateralgpu>
-    bilateralgpu: Final[_bilateralgpu._VideoNode_bound.Plugin]
-    """Bilateral filter using CUDA"""
-# </attribute/VideoNode_bound/bilateralgpu>
-# <attribute/VideoNode_bound/bilateralgpu_rtc>
-    bilateralgpu_rtc: Final[_bilateralgpu_rtc._VideoNode_bound.Plugin]
-    """Bilateral filter using CUDA (NVRTC)"""
-# </attribute/VideoNode_bound/bilateralgpu_rtc>
 # <attribute/VideoNode_bound/bm3d>
     bm3d: Final[_bm3d._VideoNode_bound.Plugin]
     """Implementation of BM3D denoising filter for VapourSynth."""
 # </attribute/VideoNode_bound/bm3d>
-# <attribute/VideoNode_bound/bm3dcpu>
-    bm3dcpu: Final[_bm3dcpu._VideoNode_bound.Plugin]
-    """BM3D algorithm implemented in AVX and AVX2 intrinsics"""
-# </attribute/VideoNode_bound/bm3dcpu>
-# <attribute/VideoNode_bound/bm3dcuda>
-    bm3dcuda: Final[_bm3dcuda._VideoNode_bound.Plugin]
-    """BM3D algorithm implemented in CUDA"""
-# </attribute/VideoNode_bound/bm3dcuda>
-# <attribute/VideoNode_bound/bm3dcuda_rtc>
-    bm3dcuda_rtc: Final[_bm3dcuda_rtc._VideoNode_bound.Plugin]
-    """BM3D algorithm implemented in CUDA (NVRTC)"""
-# </attribute/VideoNode_bound/bm3dcuda_rtc>
-# <attribute/VideoNode_bound/bm3dhip>
-    bm3dhip: Final[_bm3dhip._VideoNode_bound.Plugin]
-    """BM3D algorithm implemented in HIP (AMD)"""
-# </attribute/VideoNode_bound/bm3dhip>
 # <attribute/VideoNode_bound/bwdif>
     bwdif: Final[_bwdif._VideoNode_bound.Plugin]
     """BobWeaver Deinterlacing Filter"""
@@ -1800,7 +1788,7 @@ class VideoNode(RawNode):
 # </attribute/VideoNode_bound/hysteresis>
 # <attribute/VideoNode_bound/mvu>
     mvu: Final[_mvu._VideoNode_bound.Plugin]
-    """MVUtensils v8"""
+    """MVUtensils v9"""
 # </attribute/VideoNode_bound/mvu>
 # <attribute/VideoNode_bound/ncnn>
     ncnn: Final[_ncnn._VideoNode_bound.Plugin]
@@ -1908,7 +1896,11 @@ class AudioNode(RawNode):
         self, n: _IntLike, cb: Callable[[AudioFrame | None, Exception | None], None]
     ) -> None: ...
     def frames(
-        self, prefetch: int | None = None, backlog: int | None = None, close: bool = False
+        self,
+        prefetch: int | None = None,
+        backlog: int | None = None,
+        close: bool = False,
+        collect_garbage: bool = True,
     ) -> Iterator[AudioFrame]: ...
     def output(
         self,
@@ -1926,6 +1918,27 @@ class AudioNode(RawNode):
     """VapourSynth Core Functions"""
 # </attribute/AudioNode_bound/std>
 # </plugins/bound/AudioNode>
+
+class _VulkanDeviceEntry(TypedDict):
+    index: int
+    name: str
+    api_version: tuple[int, int, int]
+    type: str
+    device_memory: int
+    usable: bool
+    reason: str
+    uuid: str
+
+class _VulkanDeviceInfo(TypedDict):
+    name: str
+    device_memory: int
+    budget: int
+    allocated: int
+    limit: int
+    uuid: str
+    export_handle_type: int
+    semaphore_export_handle_type: int
+    unified_memory: bool
 
 class Core:
     timings: Final[CoreTimings]
@@ -1948,7 +1961,16 @@ class Core:
     @property
     def used_cache_size(self) -> int: ...
     @property
+    def max_vram_cache_size(self) -> int: ...
+    @max_vram_cache_size.setter
+    def max_vram_cache_size(self, mb: int) -> None: ...
+    @property
     def flags(self) -> int: ...
+    @property
+    def vulkan_device_info(self) -> _VulkanDeviceInfo: ...
+    @property
+    def vulkan_devices(self) -> list[_VulkanDeviceEntry]: ...
+    def set_vulkan_device(self, index: int = -1) -> None: ...
     def plugins(self) -> Iterator[Plugin]: ...
     def query_video_format(
         self,
@@ -1984,34 +2006,10 @@ class Core:
     awarp: Final[_awarp._Core_bound.Plugin]
     """AWarp filter from AWarpSharp2"""
 # </attribute/Core_bound/awarp>
-# <attribute/Core_bound/bilateralgpu>
-    bilateralgpu: Final[_bilateralgpu._Core_bound.Plugin]
-    """Bilateral filter using CUDA"""
-# </attribute/Core_bound/bilateralgpu>
-# <attribute/Core_bound/bilateralgpu_rtc>
-    bilateralgpu_rtc: Final[_bilateralgpu_rtc._Core_bound.Plugin]
-    """Bilateral filter using CUDA (NVRTC)"""
-# </attribute/Core_bound/bilateralgpu_rtc>
 # <attribute/Core_bound/bm3d>
     bm3d: Final[_bm3d._Core_bound.Plugin]
     """Implementation of BM3D denoising filter for VapourSynth."""
 # </attribute/Core_bound/bm3d>
-# <attribute/Core_bound/bm3dcpu>
-    bm3dcpu: Final[_bm3dcpu._Core_bound.Plugin]
-    """BM3D algorithm implemented in AVX and AVX2 intrinsics"""
-# </attribute/Core_bound/bm3dcpu>
-# <attribute/Core_bound/bm3dcuda>
-    bm3dcuda: Final[_bm3dcuda._Core_bound.Plugin]
-    """BM3D algorithm implemented in CUDA"""
-# </attribute/Core_bound/bm3dcuda>
-# <attribute/Core_bound/bm3dcuda_rtc>
-    bm3dcuda_rtc: Final[_bm3dcuda_rtc._Core_bound.Plugin]
-    """BM3D algorithm implemented in CUDA (NVRTC)"""
-# </attribute/Core_bound/bm3dcuda_rtc>
-# <attribute/Core_bound/bm3dhip>
-    bm3dhip: Final[_bm3dhip._Core_bound.Plugin]
-    """BM3D algorithm implemented in HIP (AMD)"""
-# </attribute/Core_bound/bm3dhip>
 # <attribute/Core_bound/bs>
     bs: Final[_bs._Core_bound.Plugin]
     """Best Source 2"""
@@ -2090,7 +2088,7 @@ class Core:
 # </attribute/Core_bound/lsmas>
 # <attribute/Core_bound/mvu>
     mvu: Final[_mvu._Core_bound.Plugin]
-    """MVUtensils v8"""
+    """MVUtensils v9"""
 # </attribute/Core_bound/mvu>
 # <attribute/Core_bound/ncnn>
     ncnn: Final[_ncnn._Core_bound.Plugin]
@@ -2256,38 +2254,6 @@ class _awarp:
 
 # </implementation/awarp>
 
-# <implementation/bilateralgpu>
-class _bilateralgpu:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Bilateral(self, /, clip: VideoNode, sigma_spatial: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigma_color: _FloatLike | _SequenceLike[_FloatLike] | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, use_shared_memory: _IntLike | None = None, ref: VideoNode | None = None) -> Any: ...
-            @_Wrapper.Function
-            def Version(self, /) -> Any: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Bilateral(self, /, sigma_spatial: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigma_color: _FloatLike | _SequenceLike[_FloatLike] | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, use_shared_memory: _IntLike | None = None, ref: VideoNode | None = None) -> Any: ...
-
-# </implementation/bilateralgpu>
-
-# <implementation/bilateralgpu_rtc>
-class _bilateralgpu_rtc:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Bilateral(self, /, clip: VideoNode, sigma_spatial: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigma_color: _FloatLike | _SequenceLike[_FloatLike] | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, use_shared_memory: _IntLike | None = None, block_x: _IntLike | None = None, block_y: _IntLike | None = None, ref: VideoNode | None = None) -> Any: ...
-            @_Wrapper.Function
-            def Version(self, /) -> Any: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def Bilateral(self, /, sigma_spatial: _FloatLike | _SequenceLike[_FloatLike] | None = None, sigma_color: _FloatLike | _SequenceLike[_FloatLike] | None = None, radius: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, use_shared_memory: _IntLike | None = None, block_x: _IntLike | None = None, block_y: _IntLike | None = None, ref: VideoNode | None = None) -> Any: ...
-
-# </implementation/bilateralgpu_rtc>
-
 # <implementation/bm3d>
 class _bm3d:
     class _Core_bound:
@@ -2326,94 +2292,6 @@ class _bm3d:
 
 # </implementation/bm3d>
 
-# <implementation/bm3dcpu>
-class _bm3dcpu:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def BM3D(self, /, clip: VideoNode, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, chroma: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def BM3Dv2(self, /, clip: VideoNode, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, chroma: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def VAggregate(self, /, clip: VideoNode, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def BM3D(self, /, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, chroma: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def BM3Dv2(self, /, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, chroma: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def VAggregate(self, /, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-
-# </implementation/bm3dcpu>
-
-# <implementation/bm3dcuda>
-class _bm3dcuda:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def BM3D(self, /, clip: VideoNode, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def BM3Dv2(self, /, clip: VideoNode, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def VAggregate(self, /, clip: VideoNode, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def BM3D(self, /, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def BM3Dv2(self, /, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def VAggregate(self, /, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-
-# </implementation/bm3dcuda>
-
-# <implementation/bm3dcuda_rtc>
-class _bm3dcuda_rtc:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def BM3D(self, /, clip: VideoNode, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, bm_error_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, transform_2d_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, transform_1d_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def BM3Dv2(self, /, clip: VideoNode, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, bm_error_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, transform_2d_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, transform_1d_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def VAggregate(self, /, clip: VideoNode, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def BM3D(self, /, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, bm_error_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, transform_2d_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, transform_1d_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def BM3Dv2(self, /, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, bm_error_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, transform_2d_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, transform_1d_s: _AnyStr | _SequenceLike[_AnyStr] | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def VAggregate(self, /, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-
-# </implementation/bm3dcuda_rtc>
-
-# <implementation/bm3dhip>
-class _bm3dhip:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def BM3D(self, /, clip: VideoNode, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def BM3Dv2(self, /, clip: VideoNode, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def VAggregate(self, /, clip: VideoNode, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def BM3D(self, /, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def BM3Dv2(self, /, ref: VideoNode | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, block_step: _IntLike | _SequenceLike[_IntLike] | None = None, bm_range: _IntLike | _SequenceLike[_IntLike] | None = None, radius: _IntLike | None = None, ps_num: _IntLike | _SequenceLike[_IntLike] | None = None, ps_range: _IntLike | _SequenceLike[_IntLike] | None = None, chroma: _IntLike | None = None, device_id: _IntLike | None = None, fast: _IntLike | None = None, extractor_exp: _IntLike | None = None, zero_init: _IntLike | None = None) -> Any: ...
-            @_Wrapper.Function
-            def VAggregate(self, /, src: VideoNode, planes: _IntLike | _SequenceLike[_IntLike]) -> Any: ...
-
-# </implementation/bm3dhip>
-
 # <implementation/bs>
 _ReturnDict_bs_TrackInfo = TypedDict("_ReturnDict_bs_TrackInfo", {"tracktype": int | list[int], "tracktypestr": _AnyStr | list[_AnyStr], "codec": int | list[int], "codecstr": _AnyStr | list[_AnyStr], "disposition": int | list[int], "dispositionstr": _AnyStr | list[_AnyStr]})
 
@@ -2431,7 +2309,7 @@ class _bs:
             @_Wrapper.Function
             def TrackInfo(self, /, source: _AnyStr, enable_drefs: _IntLike | None = None, use_absolute_path: _IntLike | None = None) -> _ReturnDict_bs_TrackInfo: ...
             @_Wrapper.Function
-            def VideoSource(self, /, source: _AnyStr, track: _IntLike | None = None, variableformat: _IntLike | None = None, fpsnum: _IntLike | None = None, fpsden: _IntLike | None = None, rff: _IntLike | None = None, threads: _IntLike | None = None, seekpreroll: _IntLike | None = None, enable_drefs: _IntLike | None = None, use_absolute_path: _IntLike | None = None, cachemode: _IntLike | None = None, cachepath: _AnyStr | None = None, cachesize: _IntLike | None = None, hwdevice: _AnyStr | None = None, extrahwframes: _IntLike | None = None, timecodes: _AnyStr | None = None, start_number: _IntLike | None = None, viewid: _IntLike | None = None, showprogress: _IntLike | None = None, maxdecoders: _IntLike | None = None, hwfallback: _IntLike | None = None, exporttimestamps: _IntLike | None = None, apply_rotation: _IntLike | None = None) -> VideoNode: ...
+            def VideoSource(self, /, source: _AnyStr, track: _IntLike | None = None, variableformat: _IntLike | None = None, fpsnum: _IntLike | None = None, fpsden: _IntLike | None = None, rff: _IntLike | None = None, threads: _IntLike | None = None, seekpreroll: _IntLike | None = None, enable_drefs: _IntLike | None = None, use_absolute_path: _IntLike | None = None, cachemode: _IntLike | None = None, cachepath: _AnyStr | None = None, cachesize: _IntLike | None = None, timecodes: _AnyStr | None = None, start_number: _IntLike | None = None, viewid: _IntLike | None = None, showprogress: _IntLike | None = None, maxdecoders: _IntLike | None = None, gpufallback: _IntLike | None = None, exporttimestamps: _IntLike | None = None, apply_rotation: _IntLike | None = None, gpu: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/bs>
 
@@ -3170,40 +3048,40 @@ class _resize:
     class _Core_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def Bicubic(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Bicubic(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Bilinear(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Bilinear(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Bob(self, /, clip: VideoNode, filter: _AnyStr | None = None, tff: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Bob(self, /, clip: VideoNode, filter: _AnyStr | None = None, tff: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Lanczos(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Lanczos(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Point(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Point(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Spline16(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Spline16(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Spline36(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Spline36(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Spline64(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Spline64(self, /, clip: VideoNode, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
 
     class _VideoNode_bound:
         class Plugin(_VSPlugin):
             @_Wrapper.Function
-            def Bicubic(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Bicubic(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Bilinear(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Bilinear(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Bob(self, /, filter: _AnyStr | None = None, tff: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Bob(self, /, filter: _AnyStr | None = None, tff: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Lanczos(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Lanczos(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Point(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Point(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Spline16(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Spline16(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Spline36(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Spline36(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def Spline64(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, prefer_props: _IntLike | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
+            def Spline64(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, matrix: _IntLike | None = None, matrix_s: _AnyStr | None = None, transfer: _IntLike | None = None, transfer_s: _AnyStr | None = None, primaries: _IntLike | None = None, primaries_s: _AnyStr | None = None, range: _IntLike | None = None, range_s: _AnyStr | None = None, chromaloc: _IntLike | None = None, chromaloc_s: _AnyStr | None = None, matrix_in: _IntLike | None = None, matrix_in_s: _AnyStr | None = None, transfer_in: _IntLike | None = None, transfer_in_s: _AnyStr | None = None, primaries_in: _IntLike | None = None, primaries_in_s: _AnyStr | None = None, range_in: _IntLike | None = None, range_in_s: _AnyStr | None = None, chromaloc_in: _IntLike | None = None, chromaloc_in_s: _AnyStr | None = None, filter_param_a: _FloatLike | None = None, filter_param_b: _FloatLike | None = None, resample_filter_uv: _AnyStr | None = None, filter_param_a_uv: _FloatLike | None = None, filter_param_b_uv: _FloatLike | None = None, dither_type: _AnyStr | None = None, cpu_type: _AnyStr | None = None, src_left: _FloatLike | None = None, src_top: _FloatLike | None = None, src_width: _FloatLike | None = None, src_height: _FloatLike | None = None, nominal_luminance: _FloatLike | None = None, approximate_gamma: _IntLike | None = None, chromatic_adaptation: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/resize>
 
@@ -3300,11 +3178,9 @@ class _std:
             @_Wrapper.Function
             def BlankAudio(self, /, clip: AudioNode | None = None, channels: _IntLike | _SequenceLike[_IntLike] | None = None, bits: _IntLike | None = None, sampletype: _IntLike | None = None, samplerate: _IntLike | None = None, length: _IntLike | None = None, keep: _IntLike | None = None, waveform: _AnyStr | None = None, amplitude: _FloatLike | None = None, frequency: _FloatLike | None = None) -> AudioNode: ...
             @_Wrapper.Function
-            def BlankClip(self, /, clip: VideoNode | None = None, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, length: _IntLike | None = None, fpsnum: _IntLike | None = None, fpsden: _IntLike | None = None, color: _FloatLike | _SequenceLike[_FloatLike] | None = None, keep: _IntLike | None = None, varsize: _IntLike | None = None, varformat: _IntLike | None = None) -> VideoNode: ...
+            def BlankClip(self, /, clip: VideoNode | None = None, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, length: _IntLike | None = None, fpsnum: _IntLike | None = None, fpsden: _IntLike | None = None, color: _FloatLike | _SequenceLike[_FloatLike] | None = None, keep: _IntLike | None = None, varsize: _IntLike | None = None, varformat: _IntLike | None = None, gpu: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def BoxBlur(self, /, clip: VideoNode, planes: _IntLike | _SequenceLike[_IntLike] | None = None, hradius: _IntLike | None = None, hpasses: _IntLike | None = None, vradius: _IntLike | None = None, vpasses: _IntLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def Cache(self, /, clip: VideoNode, size: _IntLike | None = None, fixed: _IntLike | None = None, make_linear: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def ClipToProp(self, /, clip: VideoNode, mclip: VideoNode, prop: _AnyStr | None = None) -> VideoNode: ...
             @_Wrapper.Function
@@ -3335,6 +3211,10 @@ class _std:
             def FrameEval(self, /, clip: VideoNode, eval: _VSCallback_std_FrameEval_eval, prop_src: VideoNode | _SequenceLike[VideoNode] | None = None, clip_src: VideoNode | _SequenceLike[VideoNode] | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def FreezeFrames(self, /, clip: VideoNode, first: _IntLike | _SequenceLike[_IntLike] | None = None, last: _IntLike | _SequenceLike[_IntLike] | None = None, replacement: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def GPUDownload(self, /, clip: VideoNode) -> VideoNode: ...
+            @_Wrapper.Function
+            def GPUUpload(self, /, clip: VideoNode) -> VideoNode: ...
             @_Wrapper.Function
             def Inflate(self, /, clip: VideoNode, planes: _IntLike | _SequenceLike[_IntLike] | None = None, threshold: _FloatLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
@@ -3447,11 +3327,9 @@ class _std:
             @_Wrapper.Function
             def BinarizeMask(self, /, threshold: _FloatLike | _SequenceLike[_FloatLike] | None = None, v0: _FloatLike | _SequenceLike[_FloatLike] | None = None, v1: _FloatLike | _SequenceLike[_FloatLike] | None = None, planes: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
             @_Wrapper.Function
-            def BlankClip(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, length: _IntLike | None = None, fpsnum: _IntLike | None = None, fpsden: _IntLike | None = None, color: _FloatLike | _SequenceLike[_FloatLike] | None = None, keep: _IntLike | None = None, varsize: _IntLike | None = None, varformat: _IntLike | None = None) -> VideoNode: ...
+            def BlankClip(self, /, width: _IntLike | None = None, height: _IntLike | None = None, format: _IntLike | None = None, length: _IntLike | None = None, fpsnum: _IntLike | None = None, fpsden: _IntLike | None = None, color: _FloatLike | _SequenceLike[_FloatLike] | None = None, keep: _IntLike | None = None, varsize: _IntLike | None = None, varformat: _IntLike | None = None, gpu: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def BoxBlur(self, /, planes: _IntLike | _SequenceLike[_IntLike] | None = None, hradius: _IntLike | None = None, hpasses: _IntLike | None = None, vradius: _IntLike | None = None, vpasses: _IntLike | None = None) -> VideoNode: ...
-            @_Wrapper.Function
-            def Cache(self, /, size: _IntLike | None = None, fixed: _IntLike | None = None, make_linear: _IntLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def ClipToProp(self, /, mclip: VideoNode, prop: _AnyStr | None = None) -> VideoNode: ...
             @_Wrapper.Function
@@ -3482,6 +3360,10 @@ class _std:
             def FrameEval(self, /, eval: _VSCallback_std_FrameEval_eval, prop_src: VideoNode | _SequenceLike[VideoNode] | None = None, clip_src: VideoNode | _SequenceLike[VideoNode] | None = None) -> VideoNode: ...
             @_Wrapper.Function
             def FreezeFrames(self, /, first: _IntLike | _SequenceLike[_IntLike] | None = None, last: _IntLike | _SequenceLike[_IntLike] | None = None, replacement: _IntLike | _SequenceLike[_IntLike] | None = None) -> VideoNode: ...
+            @_Wrapper.Function
+            def GPUDownload(self, /) -> VideoNode: ...
+            @_Wrapper.Function
+            def GPUUpload(self, /) -> VideoNode: ...
             @_Wrapper.Function
             def Inflate(self, /, planes: _IntLike | _SequenceLike[_IntLike] | None = None, threshold: _FloatLike | None = None) -> VideoNode: ...
             @_Wrapper.Function
