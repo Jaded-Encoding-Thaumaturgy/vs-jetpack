@@ -541,8 +541,7 @@ class MVTools(VSObject):
         if isinstance(recalculated, vs.VideoNode):
             recalculated = [recalculated]
 
-        for delta, vect in zip(vectors.keys(), recalculated):
-            vectors[delta] = vect
+        vectors.update(zip(vectors, recalculated))
 
     @overload
     def compensate(
