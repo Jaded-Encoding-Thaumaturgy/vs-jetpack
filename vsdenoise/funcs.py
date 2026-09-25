@@ -30,7 +30,7 @@ def mc_degrain(
     preset: Mapping[str, Any] = ...,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
-    overlap_div: int | tuple[int, int] = 2,
+    overlap: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad2: int | tuple[int, int] | None = None,
@@ -51,7 +51,7 @@ def mc_degrain(
     preset: Mapping[str, Any] = ...,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
-    overlap_div: int | tuple[int, int] = 2,
+    overlap: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad2: int | tuple[int, int] | None = None,
@@ -73,7 +73,7 @@ def mc_degrain(
     preset: Mapping[str, Any] = ...,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
-    overlap_div: int | tuple[int, int] = 2,
+    overlap: int | tuple[int, int] = 2,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad2: int | tuple[int, int] | None = None,
@@ -93,7 +93,7 @@ def mc_degrain(
     preset: Mapping[str, Any] = MVToolsPreset.HQ_SAD,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
-    overlap_div: int | tuple[int, int] = 2,
+    overlap: int | tuple[int, int] = 8,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad2: int | tuple[int, int] | None = None,
@@ -117,7 +117,8 @@ def mc_degrain(
         preset: MVTools preset defining base values for the MVTools object. Default is HQ_SAD.
         tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
         blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
-        overlap_div: The blksize divisor for block overlap. Larger overlapping reduces blocking artifacts.
+        overlap: Block overlap value. Can be a single integer for both dimensions or a tuple of (horizontal, vertical)
+            overlap values.
         refine: Number of times to recalculate motion vectors with halved block size.
         thsad: Defines the soft threshold of block sum absolute differences. Blocks with SAD above this threshold have
             zero weight for averaging (denoising). Blocks with low SAD have highest weight. The remaining weight is
@@ -149,11 +150,11 @@ def mc_degrain(
     mfilter = mfilter(clip) if callable(mfilter) else fallback(mfilter, clip)
 
     if not vectors:
-        mv.analyze(tr=tr, blksize=blksize, overlap_div=overlap_div)
+        mv.analyze(tr=tr, blksize=blksize, overlap=overlap)
 
         for _ in range(refine):
-            blksize = refine_blksize(blksize)
-            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap_div)
+            blksize, overlap = refine_blksize(blksize), refine_blksize(overlap)
+            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
     den = mv.degrain(mfilter, clip, tr=tr, thsad=thsad, thsad2=thsad2, limit=limit, planes=planes)
 

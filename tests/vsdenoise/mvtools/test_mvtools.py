@@ -65,8 +65,8 @@ def test_mvtools_analyze() -> None:
     # Verify vector properties
     f = mv.vectors[1].get_frame(0)
     assert f.props["MVUtensilsAnalysisDeltaFrame"] == 1
-    assert f.props["MVUtensilsAnalysisBlkSizeX"] == 16
-    assert f.props["MVUtensilsAnalysisBlkSizeY"] == 16
+    assert f.props["MVUtensilsAnalysisBlkSizeX"] == 8
+    assert f.props["MVUtensilsAnalysisBlkSizeY"] == 8
 
     # Analyze with custom delta list
     mv.analyze(delta=[-1, 1])
@@ -209,11 +209,11 @@ def test_mvtools_super_cache_reuse() -> None:
     clip = core.std.BlankClip(format=vs.YUV420P8, width=160, height=120, length=5)
     mv = MVTools(clip)
 
-    mv.analyze(blksize=16, overlap_div=2)
+    mv.analyze(blksize=16, overlap=4)
     cached_super = _super_clip_cache._cache[mv.search_clip]
     assert len(set(cached_super.values())) == 1
 
-    mv.recalculate(blksize=8, overlap_div=2)
+    mv.recalculate(blksize=8, overlap=4)
     assert len(set(cached_super.values())) == 1
 
     degrained = mv.degrain()

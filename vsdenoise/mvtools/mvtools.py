@@ -36,7 +36,7 @@ from .presets import (
     ScDetectionArgs,
     SuperArgs,
 )
-from .utils import calc_super_pad, normalize_thscd, refine_blksize
+from .utils import calc_super_pad, normalize_thscd
 
 __all__ = ["MVTools"]
 
@@ -347,7 +347,6 @@ class MVTools(VSObject):
         delta: int | Sequence[int] | None = None,
         blksize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
-        overlap_div: int | tuple[int, int] | None = None,
         levels: int | None = None,
         search: SearchMode | None = None,
         searchparam: int | None = None,
@@ -390,7 +389,6 @@ class MVTools(VSObject):
             blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
             overlap: Block overlap value. Can be a single integer for both dimensions or a tuple of (horizontal,
                 vertical) overlap values. Each value must be even and less than its corresponding block size dimension.
-            overlap_div: Divisor for block overlap size.
             levels: Number of levels used in hierarchical motion vector analysis. A positive value specifies how many
                 levels to use. A negative or zero value specifies how many coarse levels to skip. Lower values generally
                 give better results since vectors of any length can be found. Sometimes adding more levels can help
@@ -422,13 +420,8 @@ class MVTools(VSObject):
             satd: Whether to use Sum of Absolute Transformed Differences (SATD) instead of SAD for luma comparison.
         """
 
-        blksize = cast(int | tuple[int, int], fallback(blksize, self.analyze_args.get("blksize"), default=16))
-        overlap = fallback(overlap, self.analyze_args.get("overlap"), default=None)
-        overlap_div = fallback(overlap_div, self.analyze_args.get("overlap_div"), default=None)
-
-        if overlap is None and overlap_div is not None:
-            overlap = refine_blksize(blksize, overlap_div)
-        overlap = fallback(overlap, 0)
+        blksize = fallback(blksize, self.analyze_args.get("blksize"), default=8)
+        overlap = fallback(overlap, self.analyze_args.get("overlap"), default=0)
 
         nblksize = cast(tuple[int, int], tuple(normalize_seq(blksize, 2)))
         noverlap = cast(tuple[int, int], tuple(normalize_seq(overlap, 2)))
@@ -462,7 +455,6 @@ class MVTools(VSObject):
             fields=self.fields,
             tff=self.tff,
         )
-        analyze_args.pop("overlap_div", None)
 
         if not delta:
             vects = core.mvu.AnalyseMany(super_clip, radius=tr, delta=1 + self.fields, **analyze_args)
@@ -483,7 +475,6 @@ class MVTools(VSObject):
         smooth: bool | None = None,
         blksize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
-        overlap_div: int | tuple[int, int] | None = None,
         search: SearchMode | None = None,
         searchparam: int | None = None,
         mvlambda: int | None = None,
@@ -516,7 +507,6 @@ class MVTools(VSObject):
                 less sensitive to noise and faster to process, but will produce less accurate vectors.
             overlap: Block overlap value. Can be a single integer for both dimensions or a tuple of (horizontal,
                 vertical) overlap values. Each value must be even and less than its corresponding block size dimension.
-            overlap_div: Divisor for block overlap size.
             search: Search algorithm to use at the finest level. See [SearchMode][vsdenoise.SearchMode] for options.
             searchparam: Search radius/step for the chosen.
             mvlambda: Controls the coherence of the motion vector field. Higher values enforce more coherent/smooth
@@ -531,22 +521,11 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, self.search_clip), vectors, onelevel=True)
 
-        blksize = cast(int | tuple[int, int], fallback(blksize, self.recalculate_args.get("blksize"), default=16))
-        overlap = fallback(overlap, self.recalculate_args.get("overlap"), default=None)
-        overlap_div = fallback(overlap_div, self.recalculate_args.get("overlap_div"), default=None)
-
-        if overlap is None and overlap_div is not None:
-            overlap = refine_blksize(blksize, overlap_div)
-        overlap = fallback(overlap, 0)
-
-        nblksize = cast(tuple[int, int], tuple(normalize_seq(blksize, 2)))
-        noverlap = cast(tuple[int, int], tuple(normalize_seq(overlap, 2)))
-
         recalculate_args: dict[str, Any] = self.recalculate_args | KwargsNotNone(
             thsad=thsad,
             smooth=smooth,
-            blksize=nblksize,
-            overlap=noverlap,
+            blksize=blksize,
+            overlap=overlap,
             search=search,
             searchparam=searchparam,
             mvlambda=mvlambda,
@@ -557,7 +536,6 @@ class MVTools(VSObject):
             fields=self.fields,
             tff=self.tff,
         )
-        recalculate_args.pop("overlap_div", None)
 
         recalculated = core.mvu.Recalculate(super_clip, tuple(vectors.values()), **recalculate_args)
         if isinstance(recalculated, vs.VideoNode):

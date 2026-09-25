@@ -28,20 +28,6 @@ def test_motion_vectors_get_set() -> None:
     assert mv.overlap is None
 
 
-def test_motion_vectors_overlap_div_fallback() -> None:
-    mv = MotionVectors()
-    assert mv.overlap is None
-
-    # If overlap_div is None and blksize is None, returns None
-    mv.blksize = None
-    assert mv.overlap is None
-
-    # If overlap_div is None and blksize is set, it falls back to analysis_data
-    # But since analysis_data is empty/not present, it will raise KeyError and return None
-    mv.blksize = (16, 16)
-    assert mv.overlap is None
-
-
 def test_motion_vectors_clear() -> None:
     mv = MotionVectors(blksize=(16, 16), overlap=(8, 8))
 
