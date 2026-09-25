@@ -858,7 +858,7 @@ class MVTools(VSObject):
             weights=weights,
         )
 
-        return core.mvu.Degrain(clip, super_clip, list(chain.from_iterable(zip(vect_b, vect_f))), **degrain_args)
+        return core.mvu.Degrain(clip, super_clip, tuple(chain.from_iterable(zip(vect_b, vect_f))), **degrain_args)
 
     def flow_interpolate(
         self,
@@ -1063,15 +1063,7 @@ class MVTools(VSObject):
             ml=ml, gamma=gamma, time=time, scval=scval, thscd1=thscd1, thscd2=thscd2
         )
 
-        match kind:
-            case MaskMode.VECTOR_LENGTH:
-                mask_func = core.mvu.VectorLengthMask
-            case MaskMode.SAD:
-                mask_func = core.mvu.SADMask
-            case MaskMode.OCCLUSION:
-                mask_func = core.mvu.OcclusionMask
-
-        return mask_func(vectors[delta], **mask_args)
+        return getattr(core.mvu, kind.value)(vectors[delta], **mask_args)
 
     def sc_detection(
         self,

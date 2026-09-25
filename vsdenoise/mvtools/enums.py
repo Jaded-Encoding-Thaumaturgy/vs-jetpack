@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from jetpytools import CustomIntEnum
+from jetpytools import CustomIntEnum, CustomStrEnum
 
 __all__ = ["MaskMode", "PenaltyMode", "RFilterMode", "SearchMode", "SharpMode"]
 
@@ -107,22 +107,22 @@ class PenaltyMode(CustomIntEnum):
     """
 
 
-class MaskMode(CustomIntEnum):
+class MaskMode(CustomStrEnum):
     """
     Defines the type of analysis mask to generate.
     """
 
-    VECTOR_LENGTH = 0
+    VECTOR_LENGTH = "VectorLengthMask"
     """
     Generates a mask based on motion vector magnitudes.
     """
 
-    SAD = 1
+    SAD = "SADMask"
     """
     Generates a mask based on SAD (Sum of Absolute Differences) values.
     """
 
-    OCCLUSION = 2
+    OCCLUSION = "OcclusionMask"
     """
     Generates a mask highlighting areas where motion estimation fails due to occlusion.
     """
