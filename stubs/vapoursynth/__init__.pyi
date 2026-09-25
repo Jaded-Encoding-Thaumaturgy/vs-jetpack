@@ -753,6 +753,24 @@ class ChannelLayout(int):
     def __iter__(self) -> Iterator[AudioChannels]: ...
     def __len__(self) -> int: ...
 
+type _PropValueInputsSingle = int | float | _AnyStr | RawFrame | VideoFrame | AudioFrame
+
+type _PropValueInputsIterable = (
+    _SupportsIter[_IntLike]
+    | _SupportsIter[_FloatLike]
+    | _SupportsIter[_AnyStr]
+    | _SupportsIter[RawFrame]
+    | _SupportsIter[VideoFrame]
+    | _SupportsIter[AudioFrame]
+    | _GetItemIterable[_IntLike]
+    | _GetItemIterable[_FloatLike]
+    | _GetItemIterable[_AnyStr]
+    | _GetItemIterable[RawFrame]
+    | _GetItemIterable[VideoFrame]
+    | _GetItemIterable[AudioFrame]
+)
+type _PropValueInputs = _PropValueInputsSingle | _PropValueInputsIterable
+
 type _PropValue = (
     int
     | float
@@ -761,10 +779,6 @@ type _PropValue = (
     | RawFrame
     | VideoFrame
     | AudioFrame
-    | RawNode
-    | VideoNode
-    | AudioNode
-    | Callable[..., Any]
     | list[int]
     | list[float]
     | list[str]
@@ -772,13 +786,9 @@ type _PropValue = (
     | list[RawFrame]
     | list[VideoFrame]
     | list[AudioFrame]
-    | list[RawNode]
-    | list[VideoNode]
-    | list[AudioNode]
-    | list[Callable[..., Any]]
 )
 
-# Only the _PropValue types are allowed in FrameProps but passing _VSValue is allowed.
+# Only the _PropValue types are allowed in FrameProps but passing _PropValueInputs is allowed.
 # Just keep in mind that _SupportsIter and _GetItemIterable will only yield their keys if they're Mapping-like.
 # Consider storing Mapping-likes as two separate props. One for the keys and one for the values as list.
 class FrameProps(MutableMapping[str, _PropValue]):
@@ -812,17 +822,17 @@ class FrameProps(MutableMapping[str, _PropValue]):
     def __getitem__(self, name: Literal["_Alpha"]) -> VideoFrame: ...
     @overload
     def __getitem__(self, name: str) -> _PropValue: ...
-    def __setitem__(self, name: str, value: _VSValue) -> None: ...
+    def __setitem__(self, name: str, value: _PropValueInputs) -> None: ...
     def __delitem__(self, name: str) -> None: ...
     def __iter__(self) -> Iterator[str]: ...
     def __len__(self) -> int: ...
-    def __setattr__(self, name: str, value: _VSValue) -> None: ...
+    def __setattr__(self, name: str, value: _PropValueInputs) -> None: ...
     def __delattr__(self, name: str) -> None: ...
     def __getattr__(self, name: str) -> _PropValue: ...
     @overload
     def setdefault(self, key: str, default: Literal[0] = 0, /) -> _PropValue | Literal[0]: ...
     @overload
-    def setdefault(self, key: str, default: _VSValue, /) -> _PropValue: ...  # pyright: ignore[reportIncompatibleMethodOverride]
+    def setdefault(self, key: str, default: _PropValueInputs, /) -> _PropValue: ...  # pyright: ignore[reportIncompatibleMethodOverride]
     def copy(self) -> dict[str, _PropValue]: ...
     @overload  # type: ignore[override]
     def get(

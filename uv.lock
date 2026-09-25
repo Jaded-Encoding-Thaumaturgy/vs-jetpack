@@ -3,15 +3,15 @@ revision = 3
 requires-python = ">=3.13"
 resolution-markers = [
     "(python_full_version >= '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32')",
-    "(python_full_version == '3.14.*' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'win32')",
     "(python_full_version >= '3.15' and platform_machine == 'AMD64' and sys_platform != 'win32') or (python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform != 'win32')",
+    "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform != 'win32'",
+    "(python_full_version == '3.14.*' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'win32')",
     "(python_full_version == '3.14.*' and platform_machine == 'AMD64' and sys_platform != 'win32') or (python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform != 'win32')",
+    "python_full_version == '3.14.*' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform != 'win32'",
     "(python_full_version < '3.14' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'win32')",
     "(python_full_version < '3.14' and platform_machine == 'AMD64' and sys_platform != 'win32') or (python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform != 'win32')",
-    "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform == 'win32'",
-    "python_full_version >= '3.15' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform != 'win32'",
-    "python_full_version == '3.14.*' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform != 'win32'",
     "python_full_version < '3.14' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform == 'win32'",
     "python_full_version < '3.14' and platform_machine != 'AMD64' and platform_machine != 'x86_64' and sys_platform != 'win32'",
 ]
@@ -3587,7 +3587,7 @@ dev = [
     { name = "scipy-stubs", specifier = ">=1.18.0.0" },
     { name = "types-psutil", specifier = ">=7.0.0.20250801" },
     { name = "vsjetengine", specifier = ">=1.5.1" },
-    { name = "vsstubs", specifier = ">=2.3.2" },
+    { name = "vsstubs", specifier = ">=3.0.1" },
     { name = "vstransitions", specifier = "==0.1.4" },
 ]
 doc = [
@@ -3632,7 +3632,7 @@ wheels = [
 
 [[package]]
 name = "vsstubs"
-version = "3.0.0"
+version = "3.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "build" },
@@ -3643,9 +3643,9 @@ dependencies = [
     { name = "uv-build" },
     { name = "vapoursynth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a8/c1/9dcaeb58a4ac43263ba7b445ee165a24d38ee4b881014cc247d0ed32dc18/vsstubs-3.0.0.tar.gz", hash = "sha256:7f1fd82cc279bad8ba48554cc0e13e6ef93b0d3ba28560331c3d666b75316c74", size = 36342, upload-time = "2026-09-25T16:28:44.364Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9d/e6/8b2a2d653b6b4b4736a234d9d692ed5a54a0319caa5a017330bc54146022/vsstubs-3.0.1.tar.gz", hash = "sha256:8b58707d0db28d4e0e8f2611cefcc184160bd3a7b590c882db864c9f93975927", size = 36424, upload-time = "2026-09-25T20:12:44.162Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f1/9d/ddebd6011e6e3b47d5d0810370544fb4b2afcfcab69d0fd806b1e0ada40f/vsstubs-3.0.0-py3-none-any.whl", hash = "sha256:53f1601b1850364fa61a8af40e67908d3e01b2f79642404f8f4cbcb3d7ae4fdc", size = 31222, upload-time = "2026-09-25T16:28:43.2Z" },
+    { url = "https://files.pythonhosted.org/packages/84/dc/d72eae98e521b6d80d298c6d72ebcf9e81c9e06e0f71dcefca4246d3b236/vsstubs-3.0.1-py3-none-any.whl", hash = "sha256:d39ea28957c65cf0328680b8a6b136a6f3b59c50c835876a69d18267c500b8d1", size = 31289, upload-time = "2026-09-25T20:12:42.859Z" },
 ]
 
 [[package]]

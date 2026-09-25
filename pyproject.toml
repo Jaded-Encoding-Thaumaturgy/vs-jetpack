@@ -194,7 +194,7 @@ dev = [
     "vstransitions==0.1.4",
     "orderedsets",
     "pybind11-stubgen>=2.5.5",
-    "vsstubs>=2.3.2",
+    "vsstubs>=3.0.1",
     { include-group = "test" },
 ]
 test = [
