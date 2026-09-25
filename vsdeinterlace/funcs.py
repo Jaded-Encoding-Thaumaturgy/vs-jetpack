@@ -53,7 +53,7 @@ class InterpolateOverlay(CustomEnum):
         vectors: MotionVectors | None = None,
         preset: Mapping[str, Any] = ...,
         blksize: int | tuple[int, int] = 8,
-        overlap: int | tuple[int, int] = 2,
+        overlap: int | tuple[int, int] = 4,
         refine: int = 1,
         thsad_recalc: int | None = None,
         export_globals: Literal[False] = False,
@@ -67,7 +67,7 @@ class InterpolateOverlay(CustomEnum):
         vectors: MotionVectors | None = None,
         preset: Mapping[str, Any] = ...,
         blksize: int | tuple[int, int] = 8,
-        overlap: int | tuple[int, int] = 2,
+        overlap: int | tuple[int, int] = 4,
         refine: int = 1,
         thsad_recalc: int | None = None,
         *,
@@ -82,7 +82,7 @@ class InterpolateOverlay(CustomEnum):
         vectors: MotionVectors | None = None,
         preset: Mapping[str, Any] = ...,
         blksize: int | tuple[int, int] = 8,
-        overlap: int | tuple[int, int] = 2,
+        overlap: int | tuple[int, int] = 4,
         refine: int = 1,
         thsad_recalc: int | None = None,
         export_globals: bool = ...,
@@ -95,7 +95,7 @@ class InterpolateOverlay(CustomEnum):
         vectors: MotionVectors | None = None,
         preset: Mapping[str, Any] = MVToolsPreset.HQ_COHERENCE,
         blksize: int | tuple[int, int] = 8,
-        overlap: int | tuple[int, int] = 2,
+        overlap: int | tuple[int, int] = 4,
         refine: int = 1,
         thsad_recalc: int | None = None,
         export_globals: bool = False,
@@ -110,7 +110,8 @@ class InterpolateOverlay(CustomEnum):
             pattern: First frame of any clean-combed-combed-clean-clean sequence.
             preset: MVTools preset defining base values for the MVTools object. Default is HQ_COHERENCE.
             blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
-            overlap: The blksize divisor for block overlap. Larger overlapping reduces blocking artifacts.
+            overlap: Block overlap value. Can be a single integer for both dimensions or a tuple of (horizontal,
+                vertical) overlap values.
             refine: Number of times to recalculate motion vectors with halved block size.
             thsad_recalc: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value
                 is scaled to 8x8 block size.

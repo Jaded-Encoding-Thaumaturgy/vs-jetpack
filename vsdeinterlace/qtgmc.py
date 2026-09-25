@@ -414,11 +414,11 @@ class _QTGMCBuilder:
                 - Second value: Vertical block size.
 
                 A single value applies to both axes. Defaults to 16.
-            overlap: Block overlap value. Larger values reduce blocking artifacts of
+            overlap: Block overlap amount. Larger values reduce blocking artifacts of
                 [MVTools][vsdenoise.mvtools.mvtools.MVTools] processes.
 
-                - First value: Horizontal overlap size.
-                - Second value: Vertical overlap size.
+                - First value: Horizontal overlap amount.
+                - Second value: Vertical overlap amount.
 
                 A single value applies to both axes. Defaults to 8.
             refine: Number of iterations to recalculate motion vectors with halved block size. Improves motion vector
