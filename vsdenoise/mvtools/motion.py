@@ -108,6 +108,7 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
         Draws generated vectors onto a clip.
 
         Args:
+            clip: The clip to overlay the motion vectors on.
             delta: Motion vector delta to use.
             scenechange: Skips drawing vectors if frame props indicate they are from a different scene than the current
                 frame of the clip.
