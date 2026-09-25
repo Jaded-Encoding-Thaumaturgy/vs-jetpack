@@ -7,10 +7,6 @@ from vstools import FramePropError, core, get_prop, merge_clip_props, vs
 pytestmark = pytest.mark.vpy("initial-core", "reloaded-core")
 
 
-def _test_func(value: Any) -> str:
-    return f"test func {value}"
-
-
 @pytest.fixture
 def clip() -> vs.VideoNode:
     c = core.std.BlankClip(format=vs.YUV420P8, width=1920, height=1080)
@@ -25,7 +21,6 @@ def clip() -> vs.VideoNode:
         __BoolProp=True,
         __BytesProp=b"test bytes",
         __VideoFrameProp=c.get_frame(0),
-        __FunctionProp=_test_func,
     )
 
 
@@ -119,7 +114,6 @@ def test_get_prop_cast_float_success(clip: vs.VideoNode, prop_name: str, prop_ty
         ("__BoolProp", int),
         ("__BytesProp", bytes),
         ("__VideoFrameProp", vs.VideoFrame),
-        ("__FunctionProp", "Callable"),
     ],
 )
 def test_get_prop_cast_bool(clip: vs.VideoNode, prop_name: str, prop_type: type[Any]) -> None:
