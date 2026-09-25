@@ -21,7 +21,7 @@ from vstools import (
     vs,
 )
 
-from .enums import MaskMode, MVDirection, PenaltyMode, RFilterMode, SearchMode, SharpMode
+from .enums import MaskMode, PenaltyMode, RFilterMode, SearchMode, SharpMode
 from .motion import MotionVectors
 from .presets import (
     AnalyzeArgs,
@@ -343,7 +343,6 @@ class MVTools(VSObject):
     def analyze(
         self,
         super: vs.VideoNode | None = None,
-        direction: MVDirection = MVDirection.BOTH,
         tr: int = 1,
         delta: int | Sequence[int] | None = None,
         blksize: int | tuple[int, int] | None = None,
@@ -385,7 +384,6 @@ class MVTools(VSObject):
         Args:
             super: The clip to be prepared by [super][vsdenoise.MVTools.super]. If None, super will be obtained from the
                 main clip.
-            direction: Motion vector direction to use.
             tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
                 Default: 1.
             delta: Specific delta(s) of motion vectors to use.
@@ -466,18 +464,11 @@ class MVTools(VSObject):
         )
         analyze_args.pop("overlap_div", None)
 
-        if not delta and direction is MVDirection.BOTH:
+        if not delta:
             vects = core.mvu.AnalyseMany(super_clip, radius=tr, delta=1 + self.fields, **analyze_args)
-            for v in range(tr):
-                d = v + 1
-                self.vectors[d] = vects[v * 2]
-                self.vectors[-d] = vects[v * 2 + 1]
+            for d in range(1, tr + 1):
+                self.vectors[d], self.vectors[-d] = vects[2 * d - 2 : 2 * d]
         else:
-            if not delta:
-                range_start = -tr if direction is MVDirection.FORWARD else 1
-                range_end = tr + 1 if direction is MVDirection.BACKWARD else 0
-                delta = range(range_start, range_end)
-
             for d in to_arr(delta):
                 if not d:
                     continue
@@ -581,7 +572,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
@@ -597,7 +587,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
@@ -614,7 +603,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
@@ -630,7 +618,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
@@ -651,7 +638,6 @@ class MVTools(VSObject):
             super: The clip to be prepared by [super][vsdenoise.MVTools.super]. If None, super will be obtained from the
                 main clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            direction: Motion vector direction to use.
             tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
             delta: Specific delta(s) of motion vectors to use.
             thsad: SAD threshold for safe compensation. If block SAD is above thsad, the source block is used instead of
@@ -677,7 +663,7 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors, onelevel=True)
 
-        vect_b, vect_f = vectors.get_vectors(direction, tr, delta)
+        vect_b, vect_f = vectors.get_vectors(tr, delta)
 
         thscd1, thscd2 = normalize_thscd(fallback(thscd, self.compensate_args.get("thscd"), default=self.thscd))
 
@@ -710,7 +696,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         time: float | None = None,
@@ -725,7 +710,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         time: float | None = None,
@@ -741,7 +725,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         time: float | None = None,
@@ -756,7 +739,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         time: float | None = None,
@@ -778,7 +760,6 @@ class MVTools(VSObject):
             super: The clip to be prepared by [super][vsdenoise.MVTools.super]. If None, super will be obtained from the
                 main clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            direction: Motion vector direction to use.
             tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
             delta: Specific delta(s) of motion vectors to use.
             time: Time position between frames as a percentage (0.0-100.0). Controls the interpolation position between
@@ -803,7 +784,7 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors, onelevel=True)
 
-        vect_b, vect_f = vectors.get_vectors(direction, tr, delta)
+        vect_b, vect_f = vectors.get_vectors(tr, delta)
 
         thscd1, thscd2 = normalize_thscd(fallback(thscd, self.flow_args.get("thscd"), default=self.thscd))
 
@@ -883,7 +864,7 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors, onelevel=True)
 
-        vect_b, vect_f = vectors.get_vectors(tr=tr, delta=delta)
+        vect_b, vect_f = vectors.get_vectors(tr, delta)
 
         thscd1, thscd2 = normalize_thscd(fallback(thscd, self.degrain_args.get("thscd"), default=self.thscd))
 

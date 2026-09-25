@@ -1,31 +1,8 @@
 from __future__ import annotations
 
-from enum import Flag, auto
-
 from jetpytools import CustomIntEnum
 
-__all__ = ["MVDirection", "MaskMode", "PenaltyMode", "RFilterMode", "SearchMode", "SharpMode"]
-
-
-class MVDirection(Flag):
-    """
-    Motion vector analyze direction.
-    """
-
-    BACKWARD = auto()
-    """
-    Backward motion compensation.
-    """
-
-    FORWARD = auto()
-    """
-    Forward motion compensation.
-    """
-
-    BOTH = BACKWARD | FORWARD
-    """
-    Backward and forward motion compensation.
-    """
+__all__ = ["MaskMode", "PenaltyMode", "RFilterMode", "SearchMode", "SharpMode"]
 
 
 class SharpMode(CustomIntEnum):

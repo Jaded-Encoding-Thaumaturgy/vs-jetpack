@@ -1,4 +1,4 @@
-from vsdenoise import MotionVectors, MVDirection
+from vsdenoise import MotionVectors
 from vstools import core
 
 
@@ -71,15 +71,15 @@ def test_motion_vectors_get_vectors() -> None:
     assert f == [dummy2]
 
     # get_vectors with tr
-    b, f = mv.get_vectors(direction=MVDirection.BOTH, tr=1)
+    b, f = mv.get_vectors(tr=1)
     assert b == [dummy1]
     assert f == [dummy2]
 
     # Test single directions
-    b, f = mv.get_vectors(direction=MVDirection.BACKWARD, tr=1)
+    b, f = mv.get_vectors(delta=1)
     assert b == [dummy1]
     assert f == []
 
-    b, f = mv.get_vectors(direction=MVDirection.FORWARD, tr=1)
+    b, f = mv.get_vectors(delta=-1)
     assert b == []
     assert f == [dummy2]

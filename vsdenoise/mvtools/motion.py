@@ -6,8 +6,6 @@ from jetpytools import to_arr
 
 from vstools import VSObject, vs
 
-from .enums import MVDirection
-
 __all__ = ["MotionVectors"]
 
 
@@ -47,7 +45,6 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
 
     def get_vectors(
         self,
-        direction: MVDirection = MVDirection.BOTH,
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
     ) -> tuple[list[vs.VideoNode], list[vs.VideoNode]]:
@@ -67,9 +64,7 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
         if delta:
             delta = to_arr(delta)
         elif tr:
-            range_start = -tr if direction & MVDirection.FORWARD else 1
-            range_end = tr + 1 if direction & MVDirection.BACKWARD else 0
-            delta = range(range_start, range_end)
+            delta = range(-tr, tr + 1)
         else:
             delta = self.keys()
 
