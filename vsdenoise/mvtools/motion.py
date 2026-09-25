@@ -90,10 +90,6 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
 
         scalex, scaley = normalize_seq(scale, 2)
 
-        assert self.blksize
-        assert self.overlap
-        assert self.pad
-
         if scalex > 1 or scaley > 1:
             for attr in ("blksize", "overlap", "pad"):
                 x, y = getattr(self, attr)
