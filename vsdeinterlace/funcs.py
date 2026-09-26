@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from functools import partial
 from typing import Any, Literal, overload
 
-from jetpytools import CustomEnum, CustomStrEnum, CustomValueError
+from jetpytools import CustomEnum, CustomStrEnum, CustomValueError, normalize_seq
 
 from vsdenoise import MotionVectors, MVTools, MVToolsPreset, prefilter_to_full_range, refine_blksize
 from vsexprtools import norm_expr
@@ -233,7 +233,7 @@ def vinverse(
         clip, **kwargs
     ),
     contra_str: float = 2.7,
-    amnt: float | None = None,
+    amnt: float | tuple[float, float] | None = None,
     scl: float = 0.25,
     planes: Planes = None,
 ) -> vs.VideoNode:
@@ -257,7 +257,7 @@ def vinverse(
     expr = "y z - {sstr} * D1! x y - D2! D1@ abs D2@ abs < D1@ D2@ ? D3! D1@ D2@ xor D3@ {scl} * D3@ ? y +"
 
     if amnt is not None:
+        amnt = [scale_delta(thr, 8, clip) for thr in normalize_seq(amnt, 2)]
         expr += " x {amnt} - x {amnt} + clamp"
-        amnt = scale_delta(amnt, 8, clip)
 
     return norm_expr([clip, blurred, blurred2], expr, planes, sstr=contra_str, amnt=amnt, scl=scl, func=vinverse)
