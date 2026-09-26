@@ -4,7 +4,7 @@ from collections.abc import Iterable, Mapping, Sequence
 
 from jetpytools import normalize_seq, to_arr
 
-from vstools import VSObject, vs
+from vstools import VSObject, core, vs
 
 __all__ = ["MotionVectors"]
 
@@ -52,7 +52,6 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
         Get the backward and forward vectors.
 
         Args:
-            direction: Motion vector direction to get.
             tr: The number of frames to get the vectors for.
             delta: Specific delta(s) of motion vectors to use.
 
@@ -96,7 +95,7 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
                 setattr(self, attr, (x * scalex, y * scaley))
 
             for delta, vect in self.items():
-                self[delta] = vect.manipmv.ScaleVect(scalex, scaley)
+                self[delta] = core.manipmv.ScaleVect(vect, scalex, scaley)
 
     def show_vector(
         self,
@@ -117,4 +116,4 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
             Clip with motion vectors overlaid.
         """
 
-        return clip.manipmv.ShowVect(self[delta], scenechange)
+        return core.manipmv.ShowVect(clip, self[delta], scenechange)

@@ -46,8 +46,8 @@ class _SuperConfigKey(NamedTuple):
     overlap: tuple[int, int]
     pad: tuple[int, int]
     pel: int
-    sharp: SharpMode
-    rfilter: RFilterMode
+    sharp: SharpMode | int
+    rfilter: RFilterMode | int
     onelevel: bool
     pelclip: vs.VideoNode | None
 
@@ -63,8 +63,8 @@ class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
         overlap: tuple[int, int],
         pad: tuple[int, int],
         pel: int,
-        sharp: SharpMode,
-        rfilter: RFilterMode,
+        sharp: SharpMode | int,
+        rfilter: RFilterMode | int,
         onelevel: bool,
         pelclip: vs.VideoNode | None,
     ) -> vs.VideoNode:
@@ -181,7 +181,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode,
         search_clip: vs.VideoNode | VSFunctionNoArgs | None = None,
         vectors: MotionVectors | None = None,
-        chroma: bool | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
         field: FieldLike | None = None,
         *,
@@ -220,7 +219,6 @@ class MVTools(VSObject):
             clip: The clip to process.
             search_clip: Optional clip or callable to be used for motion vector gathering only.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            chroma: Whether to consider chroma in motion vector calculations.
             thscd: Scene change detection thresholds:
 
                    - First value: SAD threshold for considering a block changed between frames.
@@ -244,11 +242,9 @@ class MVTools(VSObject):
         UnsupportedColorFamilyError.check(clip, (vs.YUV, vs.GRAY), self.__class__)
 
         self.clip = clip
-        self.chroma = chroma
         self.thscd = thscd
         self.fields = field is not None
         self.tff = Field.from_param_with_fallback(field)
-
         self.vectors = fallback(vectors, MotionVectors())
 
         if callable(search_clip):
@@ -274,8 +270,8 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         pad: int | tuple[int | None, int | None] | None = None,
         pel: int | None = None,
-        sharp: SharpMode | None = None,
-        rfilter: RFilterMode | None = None,
+        sharp: SharpMode | int | None = None,
+        rfilter: RFilterMode | int | None = None,
         onelevel: bool = False,
         pelclip: vs.VideoNode | VSFunctionNoArgs | None = None,
     ) -> vs.VideoNode:
@@ -348,12 +344,13 @@ class MVTools(VSObject):
         blksize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
         levels: int | None = None,
-        search: SearchMode | None = None,
+        search: SearchMode | int | None = None,
         searchparam: int | None = None,
         pelsearch: int | None = None,
         mvlambda: int | None = None,
+        chroma: bool | None = None,
         lsad: int | None = None,
-        plevel: PenaltyMode | None = None,
+        plevel: PenaltyMode | int | None = None,
         globalmv: bool | None = None,
         pnew: int | None = None,
         pzero: int | None = None,
@@ -397,6 +394,7 @@ class MVTools(VSObject):
             searchparam: Search radius/step for the chosen.
             mvlambda: Controls the coherence of the motion vector field. Higher values enforce more coherent/smooth
                 motion between blocks. Too high values may cause the algorithm to miss the optimal vectors.
+            chroma: Whether to consider chroma in motion vector calculations.
             lsad: SAD limit for mvlambda. When the SAD value of a vector predictor (formed from neighboring blocks)
                 exceeds this limit, the local mvlambda value is decreased. This helps prevent the use of bad predictors,
                 but reduces motion coherence between blocks.
@@ -440,7 +438,7 @@ class MVTools(VSObject):
             searchparam=searchparam,
             pelsearch=pelsearch,
             mvlambda=mvlambda,
-            chroma=self.chroma,
+            chroma=chroma,
             lsad=lsad,
             plevel=plevel,
             globalmv=globalmv,
@@ -475,9 +473,10 @@ class MVTools(VSObject):
         smooth: bool | None = None,
         blksize: int | tuple[int, int] | None = None,
         overlap: int | tuple[int, int] | None = None,
-        search: SearchMode | None = None,
+        search: SearchMode | int | None = None,
         searchparam: int | None = None,
         mvlambda: int | None = None,
+        chroma: bool | None = None,
         pnew: int | None = None,
         meander: bool | None = None,
         satd: bool | None = None,
@@ -511,6 +510,7 @@ class MVTools(VSObject):
             searchparam: Search radius/step for the chosen.
             mvlambda: Controls the coherence of the motion vector field. Higher values enforce more coherent/smooth
                 motion between blocks. Too high values may cause the algorithm to miss the optimal vectors.
+            chroma: Whether to consider chroma in motion vector calculations.
             pnew: Penalty multiplier (relative to 256) applied to the SAD cost when evaluating new candidate vectors.
                 Higher values make the search more conservative.
             meander: Whether to use a meandering scan pattern when processing blocks. If True, alternates between left-
@@ -529,7 +529,7 @@ class MVTools(VSObject):
             search=search,
             searchparam=searchparam,
             mvlambda=mvlambda,
-            chroma=self.chroma,
+            chroma=chroma,
             pnew=pnew,
             meander=meander,
             satd=satd,
@@ -656,7 +656,7 @@ class MVTools(VSObject):
         if not interleave:
             return (comp_fwrd, comp_back)
 
-        comp_clips = [*comp_fwrd, clip, *comp_back]
+        comp_clips = (*comp_fwrd, clip, *comp_back)
         cycle = len(comp_clips)
         offset = len(comp_fwrd)
 
@@ -777,7 +777,7 @@ class MVTools(VSObject):
         if not interleave:
             return (flow_fwrd, flow_back)
 
-        flow_clips = [*flow_fwrd, clip, *flow_back]
+        flow_clips = (*flow_fwrd, clip, *flow_back)
         cycle = len(flow_clips)
         offset = len(flow_fwrd)
 
@@ -798,8 +798,8 @@ class MVTools(VSObject):
         thsad: int | tuple[int, int] | None = None,
         thsad2: int | tuple[int, int] | None = None,
         limit: float | tuple[float, float] | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
         weights: Sequence[int] | None = None,
+        thscd: int | tuple[int | None, float | None] | None = None,
         planes: Planes = None,
     ) -> vs.VideoNode:
         """
@@ -824,13 +824,13 @@ class MVTools(VSObject):
                 Each reference at distance `d` in 1...radius uses a raised-cosine interpolation
                 between `thsad` (at d=1) and `thsad2` (at d=radius). Defaults to `thsad`.
             limit: Maximum allowed change in pixel values (8 bits scale).
+            weights: Optional per-frame bias applied on top of the SAD-derived weights. Given in temporal order:
+                `[bw_radius, ..., bw_1, centre, fw_1, ..., fw_radius]` (exactly `2 * radius + 1` non-negative values).
             thscd: Scene change detection thresholds:
 
                    - First value: SAD threshold for considering a block changed between frames.
                    - Second value: Percentage of changed blocks needed to trigger a scene change.
 
-            weights: Optional per-frame bias applied on top of the SAD-derived weights. Given in temporal order:
-                `[bw_radius, ..., bw_1, centre, fw_1, ..., fw_radius]` (exactly `2 * radius + 1` non-negative values).
             planes: Which planes to process. Default: None (all planes).
 
         Returns:
@@ -851,11 +851,11 @@ class MVTools(VSObject):
         degrain_args: dict[str, Any] = self.degrain_args | KwargsNotNone(
             thsad=thsad,
             thsad2=thsad2,
-            planes=normalize_planes(clip, planes),
             limit=nlimit,
+            weights=weights,
             thscd1=thscd1,
             thscd2=thscd2,
-            weights=weights,
+            planes=normalize_planes(clip, planes),
         )
 
         return core.mvu.Degrain(clip, super_clip, tuple(chain.from_iterable(zip(vect_b, vect_f))), **degrain_args)
@@ -865,7 +865,7 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        delta: int | tuple[int, int] | None = None,
+        delta: tuple[int, int] | None = None,
         time: float | None = None,
         ml: float | None = None,
         blend: bool | None = None,
@@ -922,7 +922,7 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        delta: int | tuple[int, int] | None = None,
+        delta: tuple[int, int] | None = None,
         fps: Fraction | None = None,
         extramask: bool | None = None,
         ml: float | None = None,
@@ -979,7 +979,7 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        delta: int | tuple[int, int] | None = None,
+        delta: tuple[int, int] | None = None,
         blur: float | None = None,
         prec: int | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
@@ -1026,9 +1026,9 @@ class MVTools(VSObject):
         self,
         vectors: MotionVectors | None = None,
         delta: int = 1,
+        kind: MaskMode = MaskMode.VECTOR_LENGTH,
         ml: float | None = None,
         gamma: float | None = None,
-        kind: MaskMode = MaskMode.VECTOR_LENGTH,
         time: float | None = None,
         scval: float | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
@@ -1039,11 +1039,11 @@ class MVTools(VSObject):
         Args:
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
             delta: Motion vector delta to use.
+            kind: Type of mask to generate. See [MaskMode][vsdenoise.MaskMode] for options.
             ml: Motion length scale factor. When the vector's length (or other mask value) is greater than or equal to
                 ml, the output is saturated to 255.
             gamma: Exponent for the relation between input and output values. 1.0 gives a linear relation, 2.0 gives a
                 quadratic relation.
-            kind: Type of mask to generate. See [MaskMode][vsdenoise.MaskMode] for options.
             time: Time position between frames as a percentage (0.0-100.0).
             scval: Value assigned to the mask on scene changes.
             thscd: Scene change detection thresholds:

@@ -41,7 +41,6 @@ from vstools import (
     Planes,
     UnsupportedFieldBasedError,
     VSObject,
-    get_y,
     sc_detect,
     scale_delta,
     vs,
@@ -80,17 +79,20 @@ class QTGMCArgs:
 
         thsad: int | None
         time: float | None
+        thscd: int | tuple[int | None, float | None] | None
 
     class Degrain(TypedDict, total=False):
         """Arguments accepted by [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain]."""
 
         limit: float | tuple[float, float] | None
+        thscd: int | tuple[int | None, float | None] | None
         planes: Planes
 
-    class Blur(TypedDict, total=False):
+    class FlowBlur(TypedDict, total=False):
         """Arguments accepted by [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur]."""
 
         prec: int | None
+        thscd: int | tuple[int | None, float | None] | None
 
     class Mask(TypedDict, total=False):
         """Arguments accepted by [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask]."""
@@ -99,6 +101,7 @@ class QTGMCArgs:
         gamma: float | None
         time: float | None
         scval: float | None
+        thscd: int | tuple[int | None, float | None] | None
 
 
 class _QTGMCBuilder:
@@ -891,7 +894,7 @@ class _QTGMCBuilder:
         *,
         shutter_angle: tuple[float, float] | Literal[False] = False,
         fps_divisor: int = 1,
-        blur_args: QTGMCArgs.Blur | None = None,
+        blur_args: QTGMCArgs.FlowBlur | None = None,
         mask_args: QTGMCArgs.Mask | None = None,
     ) -> Self:
         """
@@ -925,7 +928,7 @@ class _QTGMCBuilder:
 
         self.motion_blur_shutter_angle = shutter_angle
         self.motion_blur_fps_divisor = fps_divisor
-        self.motion_blur_blur_args = fallback(blur_args, QTGMCArgs.Blur())
+        self.motion_blur_blur_args = fallback(blur_args, QTGMCArgs.FlowBlur())
         self.motion_blur_mask_args = QTGMCArgs.Mask(ml=4) | (mask_args or {})
 
         return self
@@ -1090,13 +1093,10 @@ class QTGMCGraph(VSObject):
         Only available when motion vectors need to be generated.
         """
 
-        search = self.draft
-
-        if not self.builder.analyze_preset.get("chroma", True):
-            search = get_y(search)
-
         if self.mode is self.Mode.REPAIR:
-            search = BlurMatrix.BINOMIAL()(search, mode=ConvMode.VERTICAL, func=self.func)
+            search = BlurMatrix.BINOMIAL()(self.draft, mode=ConvMode.VERTICAL, func=self.func)
+        else:
+            search = self.draft
 
         if self.builder.prefilter_tr:
             smoothed = BlurMatrix.BINOMIAL(self.builder.prefilter_tr, mode=ConvMode.TEMPORAL)(

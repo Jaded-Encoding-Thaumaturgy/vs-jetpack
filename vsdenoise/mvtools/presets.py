@@ -29,8 +29,8 @@ __all__ = [
 class SuperArgs(TypedDict, total=False):
     pad: int | tuple[int | None, int | None] | None
     pel: int | None
-    sharp: SharpMode | None
-    rfilter: RFilterMode | None
+    sharp: SharpMode | int | None
+    rfilter: RFilterMode | int | None
     pelclip: vs.VideoNode | VSFunctionNoArgs | None
 
 
@@ -38,12 +38,13 @@ class AnalyzeArgs(TypedDict, total=False):
     blksize: int | tuple[int, int] | None
     overlap: int | tuple[int, int] | None
     levels: int | None
-    search: SearchMode | None
+    search: SearchMode | int | None
     searchparam: int | None
     pelsearch: int | None
     mvlambda: int | None
+    chroma: bool | None
     lsad: int | None
-    plevel: PenaltyMode | None
+    plevel: PenaltyMode | int | None
     globalmv: bool | None
     pnew: int | None
     pzero: int | None
@@ -60,9 +61,10 @@ class RecalculateArgs(TypedDict, total=False):
     smooth: bool | None
     blksize: int | tuple[int, int] | None
     overlap: int | tuple[int, int] | None
-    search: SearchMode | None
+    search: SearchMode | int | None
     searchparam: int | None
     mvlambda: int | None
+    chroma: bool | None
     pnew: int | None
     meander: bool | None
     satd: bool | None
@@ -83,8 +85,8 @@ class DegrainArgs(TypedDict, total=False):
     thsad: int | tuple[int, int] | None
     thsad2: int | tuple[int, int] | None
     limit: int | tuple[int, int] | None
-    thscd: int | tuple[int | None, float | None] | None
     weights: Sequence[int] | None
+    thscd: int | tuple[int | None, float | None] | None
 
 
 class FlowInterpolateArgs(TypedDict, total=False):
@@ -121,7 +123,6 @@ class ScDetectionArgs(TypedDict, total=False):
 
 class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     search_clip: vs.VideoNode | VSFunctionNoArgs
-    chroma: bool | None
     thscd: int | tuple[int | None, float | None] | None
     super_args: SuperArgs
     analyze_args: AnalyzeArgs
@@ -139,7 +140,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
         self,
         *,
         search_clip: vs.VideoNode | VSFunctionNoArgs | None = None,
-        chroma: bool | None = None,
         thscd: int | tuple[int | None, float | None] | None = None,
         super_args: SuperArgs | None = None,
         analyze_args: AnalyzeArgs | None = None,
@@ -155,7 +155,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     ) -> None:
         self._dict = KwargsNotNone(
             search_clip=search_clip,
-            chroma=chroma,
             thscd=thscd,
             super_args=super_args,
             analyze_args=analyze_args,
