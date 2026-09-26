@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Required, TypedDict
+from typing import Any, TypedDict
 
 from jetpytools import KwargsNotNone, classproperty
 
@@ -27,22 +27,24 @@ __all__ = [
 
 
 class SuperArgs(TypedDict, total=False):
-    onelevel: bool | None
-    sharp: SharpMode | None
-    rfilter: RFilterMode | None
+    pad: int | tuple[int | None, int | None] | None
+    pel: int | None
+    sharp: SharpMode | int | None
+    rfilter: RFilterMode | int | None
     pelclip: vs.VideoNode | VSFunctionNoArgs | None
 
 
 class AnalyzeArgs(TypedDict, total=False):
-    blksize: Required[int | tuple[int, int]]
-    overlap_div: Required[int | tuple[int, int]]
+    blksize: int | tuple[int, int] | None
+    overlap: int | tuple[int, int] | None
     levels: int | None
-    search: SearchMode | None
+    search: SearchMode | int | None
     searchparam: int | None
     pelsearch: int | None
     mvlambda: int | None
+    chroma: bool | None
     lsad: int | None
-    plevel: PenaltyMode | None
+    plevel: PenaltyMode | int | None
     globalmv: bool | None
     pnew: int | None
     pzero: int | None
@@ -55,12 +57,14 @@ class AnalyzeArgs(TypedDict, total=False):
 
 
 class RecalculateArgs(TypedDict, total=False):
-    blksize: Required[int | tuple[int, int]]
-    overlap_div: Required[int | tuple[int, int]]
     thsad: int | None
-    search: SearchMode | None
+    smooth: bool | None
+    blksize: int | tuple[int, int] | None
+    overlap: int | tuple[int, int] | None
+    search: SearchMode | int | None
     searchparam: int | None
     mvlambda: int | None
+    chroma: bool | None
     pnew: int | None
     meander: bool | None
     satd: bool | None
@@ -69,48 +73,40 @@ class RecalculateArgs(TypedDict, total=False):
 class CompensateArgs(TypedDict, total=False):
     thsad: int | None
     time: float | None
-    thscd1: int | None
-    thscd2: float | None
+    thscd: int | tuple[int | None, float | None] | None
 
 
 class FlowArgs(TypedDict, total=False):
     time: float | None
-    thscd1: int | None
-    thscd2: float | None
+    thscd: int | tuple[int | None, float | None] | None
 
 
 class DegrainArgs(TypedDict, total=False):
     thsad: int | tuple[int, int] | None
     thsad2: int | tuple[int, int] | None
     limit: int | tuple[int, int] | None
-    thscd1: int | None
-    thscd2: float | None
     weights: Sequence[int] | None
+    thscd: int | tuple[int | None, float | None] | None
 
 
 class FlowInterpolateArgs(TypedDict, total=False):
     time: float | None
     ml: float | None
     blend: bool | None
-    thscd1: int | None
-    thscd2: float | None
+    thscd: int | tuple[int | None, float | None] | None
 
 
 class FlowFpsArgs(TypedDict, total=False):
     extramask: bool | None
     ml: float | None
     blend: bool | None
-    thscd1: int | None
-    thscd2: float | None
-    num: int
-    den: int
+    thscd: int | tuple[int | None, float | None] | None
 
 
 class FlowBlurArgs(TypedDict, total=False):
     blur: float | None
     prec: int | None
-    thscd1: int | None
-    thscd2: float | None
+    thscd: int | tuple[int | None, float | None] | None
 
 
 class MaskArgs(TypedDict, total=False):
@@ -118,20 +114,16 @@ class MaskArgs(TypedDict, total=False):
     gamma: float | None
     time: float | None
     scval: float | None
-    thscd1: int | None
-    thscd2: float | None
+    thscd: int | tuple[int | None, float | None] | None
 
 
 class ScDetectionArgs(TypedDict, total=False):
-    thscd1: int | None
-    thscd2: float | None
+    thscd: int | tuple[int | None, float | None] | None
 
 
 class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     search_clip: vs.VideoNode | VSFunctionNoArgs
-    pel: int
-    pad: int | tuple[int | None, int | None]
-    chroma: bool
+    thscd: int | tuple[int | None, float | None] | None
     super_args: SuperArgs
     analyze_args: AnalyzeArgs
     recalculate_args: RecalculateArgs
@@ -148,9 +140,7 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
         self,
         *,
         search_clip: vs.VideoNode | VSFunctionNoArgs | None = None,
-        pel: int | None = None,
-        pad: int | tuple[int | None, int | None] | None = None,
-        chroma: bool | None = None,
+        thscd: int | tuple[int | None, float | None] | None = None,
         super_args: SuperArgs | None = None,
         analyze_args: AnalyzeArgs | None = None,
         recalculate_args: RecalculateArgs | None = None,
@@ -165,9 +155,7 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     ) -> None:
         self._dict = KwargsNotNone(
             search_clip=search_clip,
-            pel=pel,
-            pad=pad,
-            chroma=chroma,
+            thscd=thscd,
             super_args=super_args,
             analyze_args=analyze_args,
             recalculate_args=recalculate_args,
@@ -217,8 +205,8 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_COHERENCE(cls) -> MVToolsPreset:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, satd=True),
-            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True),
+            analyze_args=AnalyzeArgs(blksize=16, overlap=8, satd=True),
+            recalculate_args=RecalculateArgs(blksize=8, overlap=8, satd=True),
         )
 
     @classproperty
@@ -226,6 +214,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_SAD(cls) -> MVToolsPreset:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, satd=True, mvlambda=100),
-            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True, mvlambda=100),
+            analyze_args=AnalyzeArgs(blksize=16, overlap=8, satd=True, mvlambda=100),
+            recalculate_args=RecalculateArgs(blksize=8, overlap=8, satd=True, mvlambda=100),
         )
