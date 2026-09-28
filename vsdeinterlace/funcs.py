@@ -196,7 +196,7 @@ class FixInterlacedFades(CustomStrEnum):
             expr_clips.append(color)
             clipb, prop_name, expr_color = color.std.SeparateFields(tff=True), "Diff", "y"
         else:
-            fields = norm_expr(fields, "x  {color} - abs", planes, color=color, func=self.__class__)
+            fields = norm_expr(fields, "x {color} - abs", planes, color=color, func=self.__class__)
             clipb, prop_name, expr_color = None, "Average", color
 
         for i in planes:
@@ -252,10 +252,19 @@ def vinverse(
 
     FormatsMismatchError.check(vinverse, clip, blurred, blurred2)
 
-    expr = "y z - {sstr} * D1! x y - D2! D1@ abs D2@ abs < D1@ D2@ ? D3! D1@ D2@ xor D3@ {scl} * D3@ ? y +"
+    expr = "y z - {sstr} * D1! x y - D2! D1@ abs D2@ abs < D1@ D2@ ? D3! y D1@ D2@ xor D3@ {scl} * D3@ ? +"
 
     if amnt is not None:
-        amnt = [scale_delta(thr, 8, clip) for thr in normalize_seq(amnt, 2)]
-        expr += " x {amnt} - x {amnt} + clamp"
+        undershoot, overshoot = [scale_delta(thr, 8, clip) for thr in normalize_seq(amnt, 2)]
+        expr += " x {undershoot} - x {overshoot} + clamp"
 
-    return norm_expr([clip, blurred, blurred2], expr, planes, sstr=contra_str, amnt=amnt, scl=scl, func=vinverse)
+    return norm_expr(
+        [clip, blurred, blurred2],
+        expr,
+        planes,
+        sstr=contra_str,
+        undershoot=undershoot,
+        overshoot=overshoot,
+        scl=scl,
+        func=vinverse,
+    )
