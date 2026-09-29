@@ -88,7 +88,7 @@ class QTGMCArgs:
         limit: float | tuple[float, float] | None
         planes: Planes
 
-    class Blur(TypedDict, total=False):
+    class FlowBlur(TypedDict, total=False):
         """Arguments accepted by [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur]."""
 
         prec: int | None
@@ -892,7 +892,7 @@ class _QTGMCBuilder:
         *,
         shutter_angle: tuple[float, float] | Literal[False] = False,
         fps_divisor: int = 1,
-        blur_args: QTGMCArgs.Blur | None = None,
+        flow_blur_args: QTGMCArgs.FlowBlur | None = None,
         mask_args: QTGMCArgs.Mask | None = None,
     ) -> Self:
         """
@@ -918,15 +918,15 @@ class _QTGMCBuilder:
 
                 `False` disables motion blur. Defaults to False.
             fps_divisor: Factor by which to smoothly reduce frame rate. Defaults to 1.
-            blur_args: Additional arguments passed to [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur].
-                Defaults to None.
+            flow_blur_args: Additional arguments passed to
+                [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur]. Defaults to None.
             mask_args: Additional arguments passed to [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask]. Defaults
                 to {"ml": 4}.
         """
 
         self.motion_blur_shutter_angle = shutter_angle
         self.motion_blur_fps_divisor = fps_divisor
-        self.motion_blur_blur_args = fallback(blur_args, QTGMCArgs.Blur())
+        self.motion_blur_flow_blur_args = fallback(flow_blur_args, QTGMCArgs.FlowBlur())
         self.motion_blur_mask_args = QTGMCArgs.Mask(ml=4) | (mask_args or {})
 
         return self
@@ -1092,20 +1092,18 @@ class QTGMCGraph(VSObject):
         """
 
         search = self.draft
-
         if not self.builder.analyze_preset.get("chroma", True):
             search = get_y(search)
 
         if self.mode is self.Mode.REPAIR:
             search = BlurMatrix.BINOMIAL()(search, mode=ConvMode.VERTICAL, func=self.func)
 
+        smoothed = search
         if self.builder.prefilter_tr:
             smoothed = BlurMatrix.BINOMIAL(self.builder.prefilter_tr, mode=ConvMode.TEMPORAL)(
                 sc_detect(search, self.builder.prefilter_sc_threshold), scenechange=True, func=self.func
             )
             smoothed = mask_shimmer(smoothed, search, **self.builder.prefilter_mask_shimmer_args, func=self.func)
-        else:
-            smoothed = search
 
         sigma, blend_weight = self.builder.prefilter_strength
         lim1, lim2, lim3 = [scale_delta(thr, 8, self.clip) for thr in self.builder.prefilter_limit]
@@ -1143,22 +1141,23 @@ class QTGMCGraph(VSObject):
         if self.builder.analyze_vectors:
             return mv
 
-        noise_restore_enabled = bool(self.builder.basic_noise_restore or self.builder.final_noise_restore)
-
         tr = max(
+            # Since this property is only accessed when motion vectors are needed, the minimum tr can be hardcoded to 1.
+            # This removes the need to manually check settings combinations which only need a tr of 1.
+            1,
             self.builder.analyze_force_tr,
             self.builder.denoise_tr
-            if self.builder.denoise_mc_denoise and (self.builder.denoise_full_denoise or noise_restore_enabled)
+            if self.builder.denoise_mc_denoise
+            and any(
+                (self.builder.denoise_full_denoise, self.builder.basic_noise_restore, self.builder.final_noise_restore)
+            )
             else 0,
-            self.builder.denoise_stabilize is not False and noise_restore_enabled,
-            self._repair_mask_enabled,
             self.builder.basic_tr,
             self.builder.source_match_tr if self.builder.source_match_iterations > 1 and self.builder.basic_tr else 0,
             self.builder.sharpen_limit_radius
             if self.builder.sharpen_limit_mode.is_temporal and self.builder._sharpen_enabled
             else 0,
             self.builder.final_tr,
-            bool(self._motion_blur_level),
         )
 
         blksize = self.builder.analyze_blksize
@@ -1267,7 +1266,7 @@ class QTGMCGraph(VSObject):
 
         bobbed = self._interpolate(self._bobber_input, self.builder.basic_bobber)
 
-        if self._repair_mask_enabled:
+        if self.mode is self.Mode.REPAIR and self.builder.basic_mask_args.get("ml") != 0:
             mask = self.mv.mask(
                 direction=MVDirection.BACKWARD,
                 kind=MaskMode.SAD,
@@ -1312,6 +1311,7 @@ class QTGMCGraph(VSObject):
     def final(self) -> vs.VideoNode:
         """Output of [QTempGaussMC.final][vsdeinterlace.QTempGaussMC.final]."""
 
+        smoothed = self.basic
         if self.builder.final_tr:
             smoothed = self.mv.degrain(
                 self.basic,
@@ -1321,8 +1321,6 @@ class QTGMCGraph(VSObject):
                 thscd=self.builder.analyze_thscd,
                 **self.builder.final_degrain_args,
             )
-        else:
-            smoothed = self.basic
 
         if smoothed is not self.bobbed:
             smoothed = mask_shimmer(smoothed, self.bobbed, **self.builder.final_mask_shimmer_args, func=self.func)
@@ -1339,12 +1337,13 @@ class QTGMCGraph(VSObject):
     def motion_blur(self) -> vs.VideoNode:
         """Output of [QTempGaussMC.motion_blur][vsdeinterlace.QTempGaussMC.motion_blur]."""
 
-        if self._motion_blur_level:
+        shutter_angle = self.builder.motion_blur_shutter_angle
+        fps_divisor = 1 if self.mode is self.Mode.BOB else self.builder.motion_blur_fps_divisor
+
+        blurred = self.final
+        if shutter_angle and (blur_level := (shutter_angle[1] * fps_divisor - shutter_angle[0]) / 3.60):
             blurred = self.mv.flow_blur(
-                self.final,
-                blur=self._motion_blur_level,
-                thscd=self.builder.analyze_thscd,
-                **self.builder.motion_blur_blur_args,
+                self.final, blur=blur_level, thscd=self.builder.analyze_thscd, **self.builder.motion_blur_flow_blur_args
             )
 
             if self.builder.motion_blur_mask_args.get("ml") != 0:
@@ -1356,11 +1355,9 @@ class QTGMCGraph(VSObject):
                 )
 
                 blurred = self.final.std.MaskedMerge(blurred, mask)
-        else:
-            blurred = self.final
 
-        if self._motion_blur_fps_divisor > 1:
-            blurred = blurred[:: self._motion_blur_fps_divisor]
+        if fps_divisor > 1:
+            blurred = blurred[::fps_divisor]
 
         return blurred
 
@@ -1374,23 +1371,6 @@ class QTGMCGraph(VSObject):
             return reinterlace(self._denoise_output, self.tff, func=self.func)
 
         return self._denoise_output
-
-    @property
-    def _repair_mask_enabled(self) -> bool:
-        return self.mode is self.Mode.REPAIR and self.builder.basic_mask_args.get("ml") != 0
-
-    @property
-    def _motion_blur_fps_divisor(self) -> int:
-        return 1 if self.mode is self.Mode.BOB else self.builder.motion_blur_fps_divisor
-
-    @property
-    def _motion_blur_level(self) -> float:
-        if not self.builder.motion_blur_shutter_angle:
-            return 0
-
-        angle_in, angle_out = self.builder.motion_blur_shutter_angle
-
-        return (angle_out * self._motion_blur_fps_divisor - angle_in) / 3.60
 
     def _interpolate(self, clip: vs.VideoNode, bobber: Bobber) -> vs.VideoNode:
         if self.mode is not self.Mode.DESHIMMER:
