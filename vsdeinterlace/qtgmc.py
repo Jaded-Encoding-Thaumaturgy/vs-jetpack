@@ -1103,6 +1103,7 @@ class QTGMCGraph(VSObject):
             smoothed = BlurMatrix.BINOMIAL(self.builder.prefilter_tr, mode=ConvMode.TEMPORAL)(
                 sc_detect(search, self.builder.prefilter_sc_threshold), scenechange=True, func=self.func
             )
+
             smoothed = mask_shimmer(smoothed, search, **self.builder.prefilter_mask_shimmer_args, func=self.func)
 
         sigma, blend_weight = self.builder.prefilter_strength
@@ -1143,7 +1144,6 @@ class QTGMCGraph(VSObject):
 
         tr = max(
             # Since this property is only accessed when motion vectors are needed, the minimum tr can be hardcoded to 1.
-            # This removes the need to manually check settings combinations which only need a tr of 1.
             1,
             self.builder.analyze_force_tr,
             self.builder.denoise_tr
@@ -1232,6 +1232,7 @@ class QTGMCGraph(VSObject):
                         "x y x - z neutral - range_size / 0.5 + * +",
                         func=self.func,
                     )
+
                     noise = reweave(noise, noise_gen, self.tff.field, func=self.func)
 
             noise = FieldBased.PROGRESSIVE.apply(noise)
@@ -1325,7 +1326,7 @@ class QTGMCGraph(VSObject):
         if smoothed is not self.bobbed:
             smoothed = mask_shimmer(smoothed, self.bobbed, **self.builder.final_mask_shimmer_args, func=self.func)
 
-        if self.builder.sharpen_limit_mode.is_postsmooth:
+        if self.builder.sharpen_limit_mode.is_postsmooth and self.builder.sharpen_limit_radius:
             smoothed = self._sharpen_limit(smoothed)
 
         if self.builder.lossless_mode is self.builder.LosslessMode.POSTSMOOTH:
@@ -1411,27 +1412,26 @@ class QTGMCGraph(VSObject):
         new_bobbed = self._interpolate(adjusted, self.builder.basic_bobber)
         matched = self._binomial_degrain(new_bobbed, self.builder.basic_tr, **self.builder.basic_degrain_args)
 
-        if self.builder.source_match_iterations > 1:
-            if self.builder.source_match_enhance:
-                matched = unsharpen(matched, self.builder.source_match_enhance, BlurMatrix.BINOMIAL(), func=self.func)
+        if self.builder.source_match_iterations == 1:
+            return matched
 
-            clip = reinterlace(matched, self.tff, func=self.func) if self.mode is not self.Mode.DESHIMMER else matched
+        sharp = unsharpen(matched, self.builder.source_match_enhance, BlurMatrix.BINOMIAL(), func=self.func)
+        diff = self._bobber_input.std.MakeDiff(
+            reinterlace(sharp, self.tff, func=self.func) if self.mode is not self.Mode.DESHIMMER else sharp
+        )
 
-            diff = self._bobber_input.std.MakeDiff(clip)
-            refine_bobbed = self._interpolate(diff, self.builder.source_match_bobber)
+        refine_bobbed = self._interpolate(diff, self.builder.source_match_bobber)
+        refine_matched = self._binomial_degrain(
+            refine_bobbed, self.builder.source_match_tr, **self.builder.source_match_degrain_args
+        )
+
+        if self.builder.source_match_iterations > 2:
+            refine_adjusted = error_adjustment(refine_bobbed, refine_matched, self.builder.source_match_tr)
             refine_matched = self._binomial_degrain(
-                refine_bobbed, self.builder.source_match_tr, **self.builder.source_match_degrain_args
+                refine_adjusted, self.builder.source_match_tr, **self.builder.source_match_degrain_args
             )
 
-            if self.builder.source_match_iterations > 2:
-                refine_adjusted = error_adjustment(refine_bobbed, refine_matched, self.builder.source_match_tr)
-                refine_matched = self._binomial_degrain(
-                    refine_adjusted, self.builder.source_match_tr, **self.builder.source_match_degrain_args
-                )
-
-            return matched.std.MergeDiff(refine_matched)
-
-        return matched
+        return sharp.std.MergeDiff(refine_matched)
 
     def _lossless(self, clip: vs.VideoNode) -> vs.VideoNode:
         if self.mode is self.Mode.DESHIMMER or clip is self.bobbed:
@@ -1505,7 +1505,7 @@ class QTGMCGraph(VSObject):
         )
 
     def _sharpen_limit(self, clip: vs.VideoNode) -> vs.VideoNode:
-        if not (self.builder.sharpen_limit_radius and self.builder._sharpen_enabled):
+        if not self.builder._sharpen_enabled:
             return clip
 
         undershoot, overshoot = self.builder.sharpen_limit_clamp
