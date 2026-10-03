@@ -124,8 +124,7 @@ denoise = [
     "dfttest2[cpu]>=11.0.0 ; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
     "vapoursynth-deblock>=8.0",
     "vapoursynth-fmtconv>=31",
-    # TODO: uncomment when manipmv is bumped and add it to the README
-    # "vapoursynth-manipmv>=1.6.0",
+    # "vapoursynth-manipmv>=2.0.0",
     "vapoursynth-mvutensils>=8",
     "vapoursynth-nlm-ispc>=3",
 ]
