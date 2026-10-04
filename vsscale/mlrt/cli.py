@@ -11,12 +11,10 @@ from types import TracebackType
 from typing import Annotated, Any, Self
 
 import cyclopts
-import cyclopts.help
 import humanize
 import niquests
 import questionary as quest
-from cyclopts.help import HelpPanel
-from rich.console import Console, ConsoleOptions
+from rich.console import Console
 from rich.pretty import pretty_repr
 from rich.progress import BarColumn, DownloadColumn, Progress, TaskID, TextColumn, TransferSpeedColumn
 from rich.text import Text
@@ -31,26 +29,17 @@ MAX_CONCURRENCY = os.cpu_count() or 4
 logger = getLogger(__name__)
 
 
-def _custom_help_formatter(console: Console, options: ConsoleOptions, panel: HelpPanel) -> None:
-    for i, entry in enumerate(panel.entries):
-        if "--provider" in entry.positive_names:
-            clean_names = tuple(name for name in entry.positive_names if name != "--provider")
-            panel.entries[i] = entry.copy(positive_names=clean_names)
-    cyclopts.help.DefaultFormatter()(console, options, panel)
-
-
 app = cyclopts.App(
     name="vsscale",
     version=__version__,
-    help="CLI utility for managing machine learning models and TensorRT/MIGraphX artifacts for VapourSynth.",
     help_on_error=True,
     console=Console(stderr=True),
     config=[
-        cyclopts.config.Env("VSSCALE_"),
+        cyclopts.config.Env("VSSCALE_", show=False),
         cyclopts.config.Toml(TOML_CONFIG[0], root_keys=TOML_KEYS[0], allow_unknown=True),
         cyclopts.config.Toml(TOML_CONFIG[1], root_keys=TOML_KEYS[1], allow_unknown=True),
     ],
-    help_formatter=_custom_help_formatter,
+    default_parameter=cyclopts.Parameter(negative=()),
 )
 onnx_app = cyclopts.App(name="onnx", help="Manage downloaded ONNX models.")
 artifact_app = cyclopts.App(name="artifact", help="Manage built TensorRT and MIGraphxX artifacts.")
@@ -63,15 +52,14 @@ app.command(config_app)
 @app.meta.default
 def meta_main(
     *tokens: Annotated[str, cyclopts.Parameter(show=False, allow_leading_hyphen=True)],
-    no_config: Annotated[
-        bool,
-        cyclopts.Parameter(
-            negative=(),
-            show_default=False,
-            help="Ignore TOML configuration files and environment variables.",
-        ),
-    ] = False,
+    no_config: Annotated[bool, cyclopts.Parameter(show_default=False)] = False,
 ) -> None:
+    """
+    CLI utility for managing machine learning models and TensorRT/MIGraphX artifacts for VapourSynth.
+
+    Args:
+        no_config: Ignore TOML configuration files and environment variables.
+    """
     os.environ["VSSCALE_CLI"] = "1"
     if no_config:
         app.config = None
@@ -82,21 +70,12 @@ def meta_main(
         raise SystemExit(1)
 
 
-@onnx_app.command(help_formatter=_custom_help_formatter)
+@onnx_app.command(default_parameter=cyclopts.Parameter(show_default=False))
 async def download(
-    *provider: Annotated[str, cyclopts.Parameter(name="--provider")],
-    latest: Annotated[
-        bool,
-        cyclopts.Parameter(negative=(), show_default=False, env_var="VSSCALE_LATEST"),
-    ] = False,
-    global_: Annotated[
-        bool,
-        cyclopts.Parameter(negative=(), show_default=False, env_var="VSSCALE_GLOBAL"),
-    ] = False,
-    assumeyes: Annotated[
-        bool,
-        cyclopts.Parameter(alias="-y", negative=(), show_default=False),
-    ] = False,
+    *provider: str,
+    latest: Annotated[bool, cyclopts.Parameter(env_var="VSSCALE_LATEST")] = False,
+    global_: Annotated[bool, cyclopts.Parameter(env_var="VSSCALE_GLOBAL")] = False,
+    assumeyes: Annotated[bool, cyclopts.Parameter(alias="-y")] = False,
     console: Annotated[Console | None, cyclopts.Parameter(parse=False)] = None,
 ) -> None:
     """
@@ -171,11 +150,7 @@ async def download(
 def show(
     global_: Annotated[
         bool,
-        cyclopts.Parameter(
-            negative=(),
-            show_default=False,
-            env_var=["VSSCALE_SHOW_GLOBAL", "VSSCALE_GLOBAL"],
-        ),
+        cyclopts.Parameter(show_default=False, env_var=["VSSCALE_SHOW_GLOBAL", "VSSCALE_GLOBAL"]),
     ] = False,
 ) -> None:
     """
@@ -205,7 +180,7 @@ def show(
 def clear(
     global_: Annotated[
         bool,
-        cyclopts.Parameter(negative=(), show_default=False, env_var=["VSSCALE_CLEAR_GLOBAL", "VSSCALE_GLOBAL"]),
+        cyclopts.Parameter(show_default=False, env_var=["VSSCALE_CLEAR_GLOBAL", "VSSCALE_GLOBAL"]),
     ] = False,
 ) -> None:
     """
@@ -238,7 +213,7 @@ def config(
     auto: bool | None = None,
     global_: bool | None = None,
     fallback: bool | None = None,
-    assumeyes: Annotated[bool, cyclopts.Parameter(alias="-y", negative=(), show_default=False)] = False,
+    assumeyes: Annotated[bool, cyclopts.Parameter(alias="-y", show_default=False)] = False,
 ) -> None:
     """
     Write or update vsscale configuration in pyproject.toml or vsjet.toml.
