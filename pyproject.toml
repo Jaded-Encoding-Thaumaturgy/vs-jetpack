@@ -99,7 +99,7 @@ mask = [
 ]
 scale = [
     "vsjetpack[mask]",
-    "cyclopts>=4.15.0",
+    "cyclopts>=5.0.0",
     "humanize>=4.15.0",
     "niquests>=3.18.8",
     "packaging>=26.0",
