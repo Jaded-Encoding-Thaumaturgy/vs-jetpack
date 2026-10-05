@@ -65,8 +65,11 @@ def _run_prefilter(pref_type: Prefilter, clip: vs.VideoNode, planes: Planes, **k
     if pref_type == Prefilter.DFTTEST:
         peak = get_peak_value(clip)
         pref_mask: vs.VideoNode | Literal[False] | tuple[int, int] | None = kwargs.pop("pref_mask", None)
+        backend: DFTTest.Backend = kwargs.pop("backend", DFTTest.Backend.AUTO)
 
-        dftt = DFTTest(sloc={0.0: 4, 0.2: 9, 1.0: 15}).denoise(clip, kwargs.pop("sloc", None), planes=planes, **kwargs)
+        dftt = DFTTest(sloc={0.0: 4, 0.2: 9, 1.0: 15}, backend=backend).denoise(
+            clip, kwargs.pop("sloc", None), planes=planes, **kwargs
+        )
 
         if pref_mask is False:
             return dftt
@@ -221,6 +224,7 @@ class Prefilter(AbstractPrefilter, CustomEnum, metaclass=EnumABCMeta):
         *,
         sloc: SLocationLike | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},  # noqa: B006
         pref_mask: vs.VideoNode | Literal[False] | tuple[int, int] = (16, 75),
+        backend: DFTTest.Backend = DFTTest.Backend.AUTO,
         **kwargs: Any,
     ) -> vs.VideoNode:
         """
@@ -234,6 +238,7 @@ class Prefilter(AbstractPrefilter, CustomEnum, metaclass=EnumABCMeta):
             pref_mask: Gradient mask node for details retaining if VideoNode. Disable masking if False. Lower/upper
                 bound pixel values if tuple. Anything below lower bound isn't denoised at all. Anything above upper
                 bound is fully denoised. Values between them are a gradient.
+            backend: The backend to use for processing.
             **kwargs: Additional arguments to pass to the prefilter.
 
         Returns:
@@ -354,6 +359,7 @@ class Prefilter(AbstractPrefilter, CustomEnum, metaclass=EnumABCMeta):
         full_range: bool | float = False,
         sloc: SLocationLike | DFTTest.SLocation.MultiDim | None = {0.0: 4.0, 0.2: 9.0, 1.0: 15.0},  # noqa: B006
         pref_mask: vs.VideoNode | Literal[False] | tuple[int, int] = (16, 75),
+        backend: DFTTest.Backend = DFTTest.Backend.AUTO,
         **kwargs: Any,
     ) -> PrefilterPartial:
         """
@@ -366,6 +372,7 @@ class Prefilter(AbstractPrefilter, CustomEnum, metaclass=EnumABCMeta):
             pref_mask: Gradient mask node for details retaining if VideoNode. Disable masking if False. Lower/upper
                 bound pixel values if tuple. Anything below lower bound isn't denoised at all. Anything above upper
                 bound is fully denoised. Values between them are a gradient.
+            backend: The backend to use for processing.
             **kwargs: Additional arguments to pass to the prefilter.
 
         Returns:
