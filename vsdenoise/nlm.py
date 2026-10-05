@@ -86,6 +86,11 @@ class NLMeans[**P, R]:
         ISPC (CPU-based) implementation.
         """
 
+        FEEL = "vsfeel"
+        """
+        A Vulkan device using the vsfeel plugin.
+        """
+
         def NLMeans(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
             """
             Applies the Non-Local Means denoising filter using the plugin associated with the selected backend.
@@ -109,6 +114,9 @@ class NLMeans[**P, R]:
 
             if self == NLMeans.Backend.ISPC:
                 return clip.nlm_ispc.NLMeans(*args, **kwargs)
+
+            if self == NLMeans.Backend.FEEL:
+                return clip.vsfeel.NLMeans(*args, **kwargs)
 
             # Fallback selection based on available plugins
             if hasattr(core, "vszipcl"):

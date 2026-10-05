@@ -386,6 +386,26 @@ class NNEDI3(SuperSampler):
         - https://github.com/HolyWu/VapourSynth-nnedi3vk
     """
 
+    class Backend(CustomStrEnum):
+        """Enum representing available backends on which to run the plugin."""
+
+        CPU = "znedi3"
+        """Pure CPU implementation"""
+
+        VULKAN = "nnedi3vk"
+        """A Vulkan device"""
+
+        FEEL = "vsfeel"
+        """A Vulkan device using the vsfeel plugin"""
+
+        @property
+        def function(self) -> VSFunctionAllArgs:
+            """The plugin function associated with the selected backend."""
+            if self == NNEDI3.Backend.CPU:
+                return core.lazy.znedi3.nnedi3
+
+            return getattr(core.lazy, self.value).NNEDI3
+
     nsize: int = 0
     """
     Size of the local neighbourhood around each pixel used by the predictor neural network.
@@ -445,13 +465,20 @@ class NNEDI3(SuperSampler):
     Wrapper default is 4, plugin default is 2.
     """
 
+    backend: Backend = Backend.CPU
+    """Set the backend to use for processing."""
+
     gpu: bool = False
-    """Enables the use of the Vulkan variant."""
+    """Deprecated. Use `backend` instead."""
 
     opencl: Never = cast(Never, MISSING)
     """Unused deprecated parameter."""
 
     def __post_init__(self) -> None:
+        if self.gpu:
+            warnings.warn("The 'gpu' argument is deprecated. Use the 'backend' parameter instead.", RuntimeWarning)
+            self.backend = NNEDI3.Backend.VULKAN
+
         if self.opencl is not cast(Never, MISSING):
             warnings.warn("The 'opencl' argument has been removed and is deprecated.", RuntimeWarning)
         return super().__post_init__()
@@ -479,7 +506,7 @@ class NNEDI3(SuperSampler):
 
     @property
     def _deinterlacer_function(self) -> VSFunctionAllArgs:
-        return core.lazy.nnedi3vk.NNEDI3 if self.gpu else core.lazy.znedi3.nnedi3
+        return self.backend.function
 
     def _interpolate(self, clip: vs.VideoNode, tff: bool, double_rate: bool, dh: bool, **kwargs: Any) -> vs.VideoNode:
         field = tff + double_rate * 2
@@ -508,6 +535,9 @@ class EEDI3(SuperSampler):
         CUDA = "vszipcu"
         """A CUDA device"""
 
+        FEEL = "vsfeel"
+        """A Vulkan device using the vsfeel plugin"""
+
         @property
         def supports_mclip(self) -> bool:
             """Whether the backend supports mclip."""
@@ -517,6 +547,11 @@ class EEDI3(SuperSampler):
         def supports_h(self) -> bool:
             """Whether the backend supports columns interpolating."""
             return hasattr(getattr(core, self.value), "EEDI3H")
+
+        @property
+        def supports_aa(self) -> bool:
+            """Whether the backend supports interpolating both directions in a single pass."""
+            return hasattr(getattr(core, self.value), "EEDI3AA")
 
         @property
         def should_h(self) -> bool:
@@ -564,6 +599,23 @@ class EEDI3(SuperSampler):
 
             result = attrgetter(f"{self.value}.{attr}")(core)(clip, field, *args, **kwargs)
             return result if self.should_h else result.std.Transpose()
+
+        def EEDI3AA(  # noqa: N802
+            self,
+            clip: vs.VideoNode,
+            field: int,
+            *args: Any,
+            sclip: vs.VideoNode | None = None,
+            mclip: vs.VideoNode | None = None,
+            **kwargs: Any,
+        ) -> vs.VideoNode:
+            """Applies the fused EEDI3AA filter using the plugin associated with the selected backend."""
+            if self.supports_mclip:
+                kwargs.update(sclip=sclip, mclip=mclip)
+            else:
+                kwargs.update(sclip=sclip)
+
+            return getattr(core, self.value).EEDI3AA(clip, field, *args, **kwargs)
 
         @staticmethod
         def transpose(
@@ -673,7 +725,7 @@ class EEDI3(SuperSampler):
     The primary purpose of the mask is to reduce computational overhead
     by limiting edge-directed interpolation to certain pixels.
 
-    Only the VULKAN and CPU backends supports it.
+    Only the VULKAN, FEEL, and CPU backends support it.
     """
 
     backend: Backend = Backend.CPU
@@ -776,6 +828,14 @@ class EEDI3(SuperSampler):
             mclip = mclip(clip)
 
         tff = fallback(kwargs.pop("tff", self.tff), True)
+
+        if (
+            direction == self.AADirection.BOTH
+            and self.double_rate
+            and not self.transpose_first
+            and getattr(self.backend, "supports_aa", False)
+        ):
+            return self.backend.EEDI3AA(clip, tff + 2, False, sclip=sclip, mclip=mclip, **kwargs)
 
         for y in sorted(self.AADirection, key=lambda x: x.value, reverse=self.transpose_first):
             if direction in (y, self.AADirection.BOTH):

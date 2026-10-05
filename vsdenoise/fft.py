@@ -46,6 +46,9 @@ class _BackendBase(CustomEnum):
         if self == DFTTest.Backend.OLD:
             return core.dfttest.DFTTest(clip, *args, **self.kwargs | kwargs)
 
+        if self == DFTTest.Backend.FEEL:
+            return core.vsfeel.DFTTest(clip, *args, **self.kwargs | kwargs)
+
         try:
             import dfttest2
         except ModuleNotFoundError as e:
@@ -725,6 +728,11 @@ class DFTTest:
         AMD GPU backend using precompiled HIP and hipFFT.
         """
 
+        FEEL = "vsfeel"
+        """
+        Vulkan GPU backend using the vsfeel plugin.
+        """
+
         CPU = "dfttest2_cpu"
         """
         Modern CPU backend using optimized multi-threaded CPU code.
@@ -739,6 +747,18 @@ class DFTTest:
         """
         (Deprecated) Legacy DFTTest implementation by HolyWu.
         """
+
+        @overload
+        def __call__(self: Literal[DFTTest.Backend.FEEL]) -> DFTTest.Backend:  # type: ignore [misc]
+            """
+            Configures the vsfeel (Vulkan) backend for DFTTest.
+
+            vsfeel runs through the core's R80 GPU API, which owns the device and its queues,
+            so there is nothing to configure.
+
+            Returns:
+                The configured backend.
+            """
 
         @overload
         def __call__(  # type: ignore [misc]
