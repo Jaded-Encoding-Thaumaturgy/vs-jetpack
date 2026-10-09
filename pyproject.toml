@@ -236,6 +236,8 @@ latest = true
 [tool.uv]
 constraint-dependencies = [
     "nvidia-cublas != 13.6.1.10; sys_platform == 'win32'",
+    "nvidia-cublas != 13.6.2.16; sys_platform == 'win32'",
+    "nvidia-cublas != 13.8.1.7; sys_platform == 'win32'",
 ]
 
 [tool.uv.sources]
