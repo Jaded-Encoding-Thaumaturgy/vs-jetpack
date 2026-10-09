@@ -249,12 +249,13 @@ def vinverse(
     blurred = comb_blur(clip, planes=planes) if callable(comb_blur) else comb_blur
     blurred2 = contra_blur(blurred, planes=planes) if callable(contra_blur) else contra_blur
 
+    undershoot, overshoot = [scale_delta(thr, 8, clip) if thr else thr for thr in normalize_seq(amnt, 2)]
+
     FormatsMismatchError.check(vinverse, clip, blurred, blurred2)
 
     expr = "y z - {sstr} * D1! x y - D2! D1@ abs D2@ abs < D1@ D2@ ? D3! y D1@ D2@ xor D3@ {scl} * D3@ ? +"
 
     if amnt is not None:
-        undershoot, overshoot = [scale_delta(thr, 8, clip) for thr in normalize_seq(amnt, 2)]
         expr += " x {undershoot} - x {overshoot} + clamp"
 
     return norm_expr(
