@@ -291,10 +291,6 @@ class MVTools(VSObject):
         s_overlap_div = fallback(overlap_div, vectors.overlap_div, self.overlap_div)
         s_overlap = refine_blksize(s_blksize, s_overlap_div)  # type: ignore[arg-type]
 
-        # if vectors.scaled:
-        #     hpad, vpad = vectors.analysis_data["Analysis_Padding"]
-        # else:
-        #     hpad, vpad = self.pad
         hpad, vpad = self.pad
 
         if pelclip is not None:
