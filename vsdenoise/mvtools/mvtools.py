@@ -261,8 +261,6 @@ class MVTools(VSObject):
 
         You can use different Super clip for generation vectors with [analyze][vsdenoise.MVTools.analyze]
         and a different super clip format for the actual action.
-        Source clip is appended to clip's frameprops, [get_super][vsdenoise.MVTools.get_super] can be used
-        to extract the super clip if you wish to view it yourself.
 
         Args:
             clip: The clip to process. If None, the [clip][vsdenoise.MVTools.clip] attribute is used.
