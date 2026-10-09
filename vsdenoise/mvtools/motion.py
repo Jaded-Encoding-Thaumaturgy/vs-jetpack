@@ -168,26 +168,6 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
     def analysis_data(self) -> MappingProxyType[str, Any]:
         """Mapping containing motion vector analysis data."""
 
-        # vect = self.get_vector(MVDirection.BACKWARD, 1).manipmv.ExpandAnalysisData()
-
-        # props_list = (
-        #     "Analysis_BlockSize",
-        #     "Analysis_Pel",
-        #     "Analysis_LevelCount",
-        #     "Analysis_CpuFlags",
-        #     "Analysis_MotionFlags",
-        #     "Analysis_FrameSize",
-        #     "Analysis_Overlap",
-        #     "Analysis_BlockCount",
-        #     "Analysis_BitsPerSample",
-        #     "Analysis_ChromaRatio",
-        #     "Analysis_Padding",
-        # )
-
-        # return MappingProxyType(
-        #     get_props(vect, props_list, (int, list), func=self.__class__.__name__ + ".analysis_data")
-        # )
-
         with self.get_vector(MVDirection.BACKWARD, 1).get_frame(0) as fr:
             return MappingProxyType({key: fr.props[key] for key in fr.props if key.startswith("MVUtensils")})
 
@@ -203,37 +183,7 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
         Args:
             scale: Factor to scale motion vectors by.
         """
-        # supported_blksize = (
-        #     (4, 4),
-        #     (8, 4),
-        #     (8, 8),
-        #     (16, 2),
-        #     (16, 8),
-        #     (16, 16),
-        #     (32, 16),
-        #     (32, 32),
-        #     (64, 32),
-        #     (64, 64),
-        #     (128, 64),
-        #     (128, 128),
-        # )
 
-        # scalex, scaley = normalize_seq(scale, 2)
-
-        # if scalex > 1 or scaley > 1:
-        #     blksizex, blksizev = self.analysis_data["Analysis_BlockSize"]
-
-        #     scaled_blksize = (blksizex * scalex, blksizev * scaley)
-
-        #     if strict and scaled_blksize not in supported_blksize:
-        #         raise CustomRuntimeError("Unsupported block size!", self.scale_vectors, scaled_blksize)
-
-        #     del self.analysis_data
-        #     self.scaled = True
-
-        #     for delta in range(1, self.tr + 1):
-        #         for direction in MVDirection:
-        #             self[direction][delta] = self[direction][delta].manipmv.ScaleVect(scalex, scaley)
         raise NotImplementedError("scale_vectors is not supported with MVUtensils.")
 
     def show_vector(
@@ -256,9 +206,6 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
         Returns:
             Clip with motion vectors overlaid.
         """
-        # vect = self.get_vector(direction, delta)
-
-        # return clip.manipmv.ShowVect(vect, scenechange)
 
         raise NotImplementedError("show_vector is not supported with MVUtensils.")
 

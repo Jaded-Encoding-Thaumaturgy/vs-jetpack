@@ -122,7 +122,7 @@ def mc_degrain(
         tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
         delta: Specific delta(s) of motion vectors to use.
         blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
-        overlap: The blksize divisor for block overlap. Larger overlapping reduces blocking artifacts.
+        overlap_div: The blksize divisor for block overlap. Larger overlapping reduces blocking artifacts.
         refine: Number of times to recalculate motion vectors with halved block size.
         thsad: Defines the soft threshold of block sum absolute differences. Blocks with SAD above this threshold have
             zero weight for averaging (denoising). Blocks with low SAD have highest weight. The remaining weight is

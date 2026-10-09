@@ -10,8 +10,6 @@ from typing import Any, Literal, NamedTuple, cast, overload
 from jetpytools import KwargsNotNone, fallback, normalize_seq, to_arr
 
 from vstools import (
-    Field,
-    FieldLike,
     Planes,
     UnsupportedColorFamilyError,
     VSFunctionNoArgs,
@@ -158,7 +156,6 @@ class MVTools(VSObject):
         pad: int | tuple[int | None, int | None] | None = None,
         pel: int | None = None,
         chroma: bool | None = None,
-        field: FieldLike | None = None,
         *,
         super_args: Mapping[str, Any] | None = None,
         analyze_args: Mapping[str, Any] | None = None,
@@ -199,7 +196,6 @@ class MVTools(VSObject):
                 frame borders.
             pel: Subpixel precision for motion estimation (1=pixel, 2=half-pixel, 4=quarter-pixel). Default: 1.
             chroma: Whether to consider chroma in motion vector calculations.
-            field: Set field order for interlaced processing, input is expected to be separated fields.
             super_args: Arguments passed to every [MVTools.super][vsdenoise.MVTools.super] call.
             analyze_args: Arguments passed to every [MVTools.analyze][vsdenoise.MVTools.analyze] call.
             recalculate_args: Arguments passed to every [MVTools.recalculate][vsdenoise.MVTools.recalculate] call.
@@ -219,8 +215,6 @@ class MVTools(VSObject):
         self.pel = pel
         self.pad = normalize_seq(pad, 2)
         self.chroma = chroma
-        self.fields = field is not None
-        self.tff = Field.from_param_with_fallback(field)
 
         self.vectors = fallback(vectors, MotionVectors())
 
@@ -261,8 +255,6 @@ class MVTools(VSObject):
 
         You can use different Super clip for generation vectors with [analyze][vsdenoise.MVTools.analyze]
         and a different super clip format for the actual action.
-        Source clip is appended to clip's frameprops, [get_super][vsdenoise.MVTools.get_super] can be used
-        to extract the super clip if you wish to view it yourself.
 
         Args:
             clip: The clip to process. If None, the [clip][vsdenoise.MVTools.clip] attribute is used.
@@ -291,10 +283,6 @@ class MVTools(VSObject):
         s_overlap_div = fallback(overlap_div, vectors.overlap_div, self.overlap_div)
         s_overlap = refine_blksize(s_blksize, s_overlap_div)  # type: ignore[arg-type]
 
-        # if vectors.scaled:
-        #     hpad, vpad = vectors.analysis_data["Analysis_Padding"]
-        # else:
-        #     hpad, vpad = self.pad
         hpad, vpad = self.pad
 
         if pelclip is not None:
@@ -425,8 +413,6 @@ class MVTools(VSObject):
             meander=fallback(meander, self.analyze_args.get("meander"), default=None),
             trymany=fallback(trymany, self.analyze_args.get("trymany"), default=None),
             satd=fallback(satd, self.analyze_args.get("satd"), default=None),
-            fields=self.fields,
-            tff=self.tff,
         )
 
         self.vectors.clear()
@@ -434,15 +420,13 @@ class MVTools(VSObject):
         self.vectors.overlap_div = noverlap_div
 
         if delta is None:
-            vects = core.mvu.AnalyseMany(super_clip, radius=tr, delta=2 if self.fields else 1, **analyze_args)
+            vects = core.mvu.AnalyseMany(super_clip, radius=tr, **analyze_args)
             for i in range(tr):
-                actual_delta = (i + 1) * 2 if self.fields else (i + 1)
+                actual_delta = i + 1
                 self.vectors.set_vector(vects[i * 2], MVDirection.BACKWARD, actual_delta)
                 self.vectors.set_vector(vects[i * 2 + 1], MVDirection.FORWARD, actual_delta)
         else:
-            deltas = [d * 2 if self.fields else d for d in to_arr(delta)]
-
-            for d in deltas:
+            for d in to_arr(delta):
                 for direction in MVDirection:
                     actual_delta = d if direction is MVDirection.BACKWARD else -d
 
@@ -524,8 +508,6 @@ class MVTools(VSObject):
             pnew=fallback(pnew, self.recalculate_args.get("pnew"), default=None),
             meander=fallback(meander, self.recalculate_args.get("meander"), default=None),
             satd=fallback(satd, self.recalculate_args.get("satd"), default=None),
-            fields=self.fields,
-            tff=self.tff,
         )
         vects = list[vs.VideoNode]()
         keys = list[tuple[MVDirection, int]]()
@@ -650,24 +632,17 @@ class MVTools(VSObject):
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
 
         if delta is not None:
-            deltas = [d * 2 if self.fields else d for d in to_arr(delta)]
+            deltas = to_arr(delta)
         else:
-            v_tr = (vectors.tr // 2 if self.fields else vectors.tr) or None
+            v_tr = vectors.tr or None
             tr_val = fallback(tr, v_tr, 1)
-            deltas = [d * 2 if self.fields else d for d in range(1, tr_val + 1)]
+            deltas = list(range(1, tr_val + 1))
 
         vect_b, vect_f = vectors.get_vectors(direction, tr=None, delta=deltas)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
-        compensate_args = self.compensate_args | KwargsNotNone(
-            thsad=thsad,
-            time=time,
-            thscd1=thscd1,
-            thscd2=thscd2,
-            fields=self.fields,
-            tff=self.tff,
-        )
+        compensate_args = self.compensate_args | KwargsNotNone(thsad=thsad, time=time, thscd1=thscd1, thscd2=thscd2)
 
         comp_fwrd, comp_back = [
             [core.mvu.Compensate(clip, super_clip, vectors=vect, **compensate_args) for vect in vectors_list]
@@ -787,23 +762,17 @@ class MVTools(VSObject):
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
 
         if delta is not None:
-            deltas = [d * 2 if self.fields else d for d in to_arr(delta)]
+            deltas = to_arr(delta)
         else:
-            v_tr = (vectors.tr // 2 if self.fields else vectors.tr) or None
+            v_tr = vectors.tr or None
             tr_val = fallback(tr, v_tr, 1)
-            deltas = [d * 2 if self.fields else d for d in range(1, tr_val + 1)]
+            deltas = list(range(1, tr_val + 1))
 
         vect_b, vect_f = vectors.get_vectors(direction, tr=None, delta=deltas)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
-        flow_args = self.flow_args | KwargsNotNone(
-            time=time,
-            thscd1=thscd1,
-            thscd2=thscd2,
-            fields=self.fields,
-            tff=self.tff,
-        )
+        flow_args = self.flow_args | KwargsNotNone(time=time, thscd1=thscd1, thscd2=thscd2)
 
         flow_fwrd, flow_back = [
             [core.mvu.Flow(clip, super_clip, vectors=vect, **flow_args) for vect in vectors_list]
@@ -877,11 +846,11 @@ class MVTools(VSObject):
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
 
         if delta is not None:
-            deltas = [d * 2 if self.fields else d for d in to_arr(delta)]
+            deltas = to_arr(delta)
         else:
-            v_tr = (vectors.tr // 2 if self.fields else vectors.tr) or None
+            v_tr = vectors.tr or None
             tr_val = fallback(tr, v_tr, 1)
-            deltas = [d * 2 if self.fields else d for d in range(1, tr_val + 1)]
+            deltas = list(range(1, tr_val + 1))
 
         vect_b, vect_f = vectors.get_vectors(tr=None, delta=deltas)
 
@@ -953,7 +922,7 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
 
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
-        vect_b, vect_f = vectors.get_vectors(delta=2 if self.fields else 1)
+        vect_b, vect_f = vectors.get_vectors(delta=1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -1005,7 +974,7 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
-        vect_b, vect_f = vectors.get_vectors(delta=2 if self.fields else 1)
+        vect_b, vect_f = vectors.get_vectors(delta=1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -1053,7 +1022,7 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors=vectors, onelevel=True)
-        vect_b, vect_f = vectors.get_vectors(delta=2 if self.fields else 1)
+        vect_b, vect_f = vectors.get_vectors(delta=1)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -1096,7 +1065,7 @@ class MVTools(VSObject):
             Motion mask clip.
         """
         vectors = fallback(vectors, self.vectors)
-        vect = vectors.get_vector(direction, delta * 2 if self.fields else delta)
+        vect = vectors.get_vector(direction, delta)
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -1143,7 +1112,6 @@ class MVTools(VSObject):
 
         sc_detection_args = self.sc_detection_args | KwargsNotNone(thscd1=thscd1, thscd2=thscd2)
 
-        delta = delta * 2 if self.fields else delta
         detect = clip
         for direction in MVDirection:
             detect = core.mvu.SCDetection(detect, vectors.get_vector(direction, delta), **sc_detection_args)
