@@ -70,8 +70,7 @@ class InterpolateOverlay(CustomEnum):
         overlap: int | tuple[int, int] = 2,
         refine: int = 1,
         thsad_recalc: int | None = None,
-        *,
-        export_globals: Literal[True],
+        export_globals: Literal[True] = ...,
     ) -> tuple[vs.VideoNode, MVTools]: ...
 
     @overload

@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any, Literal, overload
 
-from jetpytools import MISSING, CustomRuntimeError, FuncExcept, KwargsNotNone, MissingT, fallback, normalize_seq
+from jetpytools import MISSING, CustomRuntimeError, FuncExcept, KwargsNotNone, MissingT, fallback, normalize_seq, to_arr
 
 from vsexprtools import ExprOp, ExprVars, combine_expr, norm_expr
 from vsjetpack import deprecated
@@ -29,7 +29,6 @@ def mc_degrain(
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: Mapping[str, Any] = ...,
     tr: int = 1,
-    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
     overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
@@ -51,7 +50,6 @@ def mc_degrain(
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: Mapping[str, Any] = ...,
     tr: int = 1,
-    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
     overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
@@ -60,8 +58,7 @@ def mc_degrain(
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
     thscd: int | tuple[int | None, float | None] | None = None,
-    *,
-    export_globals: Literal[True],
+    export_globals: Literal[True] = ...,
     planes: Planes = None,
 ) -> tuple[vs.VideoNode, MVTools]: ...
 
@@ -74,7 +71,6 @@ def mc_degrain(
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: Mapping[str, Any] = ...,
     tr: int = 1,
-    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
     overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
@@ -95,7 +91,6 @@ def mc_degrain(
     mfilter: vs.VideoNode | VSFunctionNoArgs | None = None,
     preset: Mapping[str, Any] = MVToolsPreset.HQ_SAD,
     tr: int = 1,
-    delta: int | Sequence[int] | None = None,
     blksize: int | tuple[int, int] = 16,
     overlap_div: int | tuple[int, int] = 2,
     refine: int = 1,
@@ -120,7 +115,6 @@ def mc_degrain(
         mfilter: Filter or clip to use where degrain couldn't find a matching block.
         preset: MVTools preset defining base values for the MVTools object. Default is HQ_SAD.
         tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
-        delta: Specific delta(s) of motion vectors to use.
         blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
         overlap_div: The blksize divisor for block overlap. Larger overlapping reduces blocking artifacts.
         refine: Number of times to recalculate motion vectors with halved block size.
@@ -148,29 +142,19 @@ def mc_degrain(
     """
     mv_args = {**preset, **KwargsNotNone(search_clip=prefilter)}
 
-    thsad_recalc = fallback(thsad_recalc, round((thsad[0] if isinstance(thsad, tuple) else thsad) / 2))
+    thsad_recalc = fallback(thsad_recalc, round(to_arr(thsad)[0] / 2))
 
     mv = MVTools(clip, vectors=vectors, **mv_args)
-    mfilter = mfilter(mv.clip) if callable(mfilter) else fallback(mfilter, mv.clip)
+    mfilter = mfilter(clip) if callable(mfilter) else mfilter
 
     if not vectors:
-        mv.analyze(tr=tr, delta=delta, blksize=blksize, overlap_div=overlap_div)
+        mv.analyze(tr=tr, blksize=blksize, overlap_div=overlap_div)
 
         for _ in range(refine):
             blksize = refine_blksize(blksize)
             mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap_div)
 
-    den = mv.degrain(
-        mfilter,
-        super=mv.clip,
-        tr=tr,
-        delta=delta,
-        thsad=thsad,
-        thsad2=thsad2,
-        limit=limit,
-        thscd=thscd,
-        planes=planes,
-    )
+    den = mv.degrain(mfilter, clip, tr=tr, thsad=thsad, thsad2=thsad2, limit=limit, thscd=thscd, planes=planes)
 
     return (den, mv) if export_globals else den
 
@@ -216,15 +200,15 @@ def mc_clamp(
     undershoot, overshoot = normalize_seq(clamp, 2)
 
     forward_comp, backward_comp = mv_obj.compensate(src, interleave=False, **kwargs)
-    comp_clips = [*forward_comp, src, *backward_comp]
+    comp_clips = (*forward_comp, src, *backward_comp)
 
     evars = ExprVars(1, len(comp_clips) + 1, expr_src=True)
 
     return norm_expr(
         [flt, *comp_clips],
         "src0 {comp_min} {undershoot} - {comp_max} {overshoot} + clamp",
-        undershoot=scale_delta(undershoot, 8, flt),
-        overshoot=scale_delta(overshoot, 8, flt),
+        undershoot=scale_delta(undershoot, 8, src),
+        overshoot=scale_delta(overshoot, 8, src),
         comp_min=combine_expr(evars, ExprOp.MIN).to_str(),
         comp_max=combine_expr(evars, ExprOp.MAX).to_str(),
         func=func,

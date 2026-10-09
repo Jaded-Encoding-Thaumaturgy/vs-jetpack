@@ -7,7 +7,7 @@ from jetpytools import normalize_seq
 __all__ = ["calc_super_dim", "normalize_thscd", "refine_blksize"]
 
 
-def refine_blksize(blksize: int | tuple[int, ...], divisor: int | tuple[int, ...] = (2, 2)) -> tuple[int, int]:
+def refine_blksize(blksize: int | tuple[int, ...], divisor: int | tuple[int, ...] = 2) -> tuple[int, int]:
     """
     Normalize and refine blksize.
 
