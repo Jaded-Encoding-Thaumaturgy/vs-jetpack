@@ -180,7 +180,7 @@ class BM3D[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Selection priority: "CUDA_ZIP" → "CUDA_RTC" → "CUDA" → "HIP" → "SYCL" → "METAL" → "CPU" → "OLD".
+        Selection priority: "CUDA_ZIP" → "CUDA_RTC" → "CUDA" → "HIP" → "SYCL" → "METAL" → "FEEL" → "CPU" → "OLD".
         """
 
         CUDA_ZIP = "vszipcu"
@@ -216,6 +216,11 @@ class BM3D[**P, R]:
         METAL = "bm3dmetal"
         """
         GPU implementation using Apple Metal.
+        """
+
+        FEEL = "vsfeel"
+        """
+        GPU implementation using Vulkan from `vsfeel`.
         """
 
         CPU = "bm3dcpu"
