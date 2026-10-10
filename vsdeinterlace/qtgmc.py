@@ -434,8 +434,8 @@ class _QTGMCBuilder:
             thsad_recalc: Only poor-quality new vectors with a SAD above this value will be re-estimated by motion
                 search. Only active when refine is used. Defaults to
                 [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] `thsad / 2`.
-            thscd1: SAD threshold for considering a block changed between frames.
-            thscd2: Percentage of changed blocks needed to trigger a scene change.
+            thscd1: SAD threshold for considering a block changed between frames. Defaults to 180.
+            thscd2: Percentage of changed blocks needed to trigger a scene change. Defaults to 38.5.
         """
 
         self.analyze_vectors = vectors
