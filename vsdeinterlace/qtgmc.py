@@ -23,7 +23,6 @@ from vsdenoise import (
     DFTTest,
     MaskMode,
     MotionVectors,
-    MVDirection,
     MVTools,
     MVToolsPreset,
     mc_clamp,
@@ -42,7 +41,6 @@ from vstools import (
     Planes,
     UnsupportedFieldBasedError,
     VSObject,
-    get_y,
     sc_detect,
     scale_delta,
     vs,
@@ -81,17 +79,23 @@ class QTGMCArgs:
 
         thsad: int | None
         time: float | None
+        thscd1: int | None
+        thscd2: float | None
 
     class Degrain(TypedDict, total=False):
         """Arguments accepted by [MVTools.degrain][vsdenoise.mvtools.mvtools.MVTools.degrain]."""
 
         limit: float | tuple[float, float] | None
+        thscd1: int | None
+        thscd2: float | None
         planes: Planes
 
     class FlowBlur(TypedDict, total=False):
         """Arguments accepted by [MVTools.flow_blur][vsdenoise.mvtools.mvtools.MVTools.flow_blur]."""
 
         prec: int | None
+        thscd1: int | None
+        thscd2: float | None
 
     class Mask(TypedDict, total=False):
         """Arguments accepted by [MVTools.mask][vsdenoise.mvtools.mvtools.MVTools.mask]."""
@@ -100,6 +104,8 @@ class QTGMCArgs:
         gamma: float | None
         time: float | None
         scval: float | None
+        thscd1: int | None
+        thscd2: float | None
 
 
 class _QTGMCBuilder:
@@ -386,10 +392,11 @@ class _QTGMCBuilder:
         preset: Mapping[str, Any] = MVToolsPreset.HQ_SAD,
         force_tr: int = 0,
         blksize: int | tuple[int, int] = 16,
-        overlap: int | tuple[int, int] = 2,
+        overlap: int | tuple[int, int] = 8,
         refine: int = 1,
         thsad_recalc: int | None = None,
-        thscd: int | tuple[int | None, float | None] | None = (180, 38.5),
+        thscd1: int | None = 180,
+        thscd2: float | None = 38.5,
     ) -> Self:
         """
         Configures parameters for motion analysis.
@@ -415,24 +422,20 @@ class _QTGMCBuilder:
                 - Second value: Vertical block size.
 
                 A single value applies to both axes. Defaults to 16.
-            overlap: The block size divisor for block size overlap. Smaller values reduce blocking artifacts of
+            overlap: Block overlap amount. Larger values reduce blocking artifacts of
                 [MVTools][vsdenoise.mvtools.mvtools.MVTools] processes.
 
-                - First value: Horizontal block size divisor.
-                - Second value: Vertical block size divisor.
+                - First value: Horizontal overlap amount.
+                - Second value: Vertical overlap amount.
 
-                A single value applies to both axes. Defaults to 2.
+                A single value applies to both axes. Defaults to 8.
             refine: Number of iterations to recalculate motion vectors with halved block size. Improves motion vector
                 precision without reducing denoising effectiveness. Defaults to 1.
             thsad_recalc: Only poor-quality new vectors with a SAD above this value will be re-estimated by motion
                 search. Only active when refine is used. Defaults to
                 [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] `thsad / 2`.
-            thscd: Scene-change detection thresholds:
-
-                   - First value: SAD threshold for considering a block changed between frames.
-                   - Second value: Percentage of changed blocks needed to trigger a scene change.
-
-                Defaults to (180, 38.5).
+            thscd1: SAD threshold for considering a block changed between frames.
+            thscd2: Percentage of changed blocks needed to trigger a scene change.
         """
 
         self.analyze_vectors = vectors
@@ -442,7 +445,8 @@ class _QTGMCBuilder:
         self.analyze_overlap = overlap
         self.analyze_refine = refine
         self.analyze_thsad_recalc = thsad_recalc
-        self.analyze_thscd = thscd
+        self.analyze_thscd1 = thscd1
+        self.analyze_thscd2 = thscd2
 
         return self
 
@@ -1092,11 +1096,8 @@ class QTGMCGraph(VSObject):
         """
 
         search = self.draft
-        if not self.builder.analyze_preset.get("chroma", True):
-            search = get_y(search)
-
         if self.mode is self.Mode.REPAIR:
-            search = BlurMatrix.BINOMIAL()(search, mode=ConvMode.VERTICAL, func=self.func)
+            search = BlurMatrix.BINOMIAL()(self.draft, mode=ConvMode.VERTICAL, func=self.func)
 
         smoothed = search
         if self.builder.prefilter_tr:
@@ -1137,7 +1138,13 @@ class QTGMCGraph(VSObject):
         if not self.builder.analyze_vectors:
             preset.update(search_clip=self.prefilter)
 
-        mv = MVTools(self.draft, vectors=self.builder.analyze_vectors, **preset)
+        mv = MVTools(
+            self.draft,
+            vectors=self.builder.analyze_vectors,
+            thscd1=self.builder.analyze_thscd1,
+            thscd2=self.builder.analyze_thscd2,
+            **preset,
+        )
 
         if self.builder.analyze_vectors:
             return mv
@@ -1160,14 +1167,12 @@ class QTGMCGraph(VSObject):
             self.builder.final_tr,
         )
 
-        blksize = self.builder.analyze_blksize
-        mv.analyze(tr=tr, blksize=blksize, overlap_div=self.builder.analyze_overlap)
+        blksize, overlap = self.builder.analyze_blksize, self.builder.analyze_overlap
+        mv.analyze(tr=tr, blksize=blksize, overlap=overlap)
 
         for _ in range(self.builder.analyze_refine):
-            blksize = refine_blksize(blksize)
-            mv.recalculate(
-                thsad=self.builder.analyze_thsad_recalc, blksize=blksize, overlap_div=self.builder.analyze_overlap
-            )
+            blksize, overlap = map(refine_blksize, (blksize, overlap))
+            mv.recalculate(thsad=self.builder.analyze_thsad_recalc, blksize=blksize, overlap=overlap)
 
         return mv
 
@@ -1183,7 +1188,6 @@ class QTGMCGraph(VSObject):
             denoised = self.mv.compensate(
                 self.draft,
                 tr=self.builder.denoise_tr,
-                thscd=self.builder.analyze_thscd,
                 temporal_func=lambda clip: self.builder.denoise_func(clip, tr=self.builder.denoise_tr),
                 **self.builder.denoise_func_comp_args,
             )
@@ -1239,12 +1243,7 @@ class QTGMCGraph(VSObject):
 
         if self.builder.denoise_stabilize is not False:
             _, noise_comp = self.mv.compensate(
-                noise,
-                direction=MVDirection.BACKWARD,
-                tr=1,
-                thscd=self.builder.analyze_thscd,
-                interleave=False,
-                **self.builder.denoise_stabilize_comp_args,
+                noise, delta=1, interleave=False, **self.builder.denoise_stabilize_comp_args
             )
 
             noise = norm_expr(
@@ -1268,12 +1267,7 @@ class QTGMCGraph(VSObject):
         bobbed = self._interpolate(self._bobber_input, self.builder.basic_bobber)
 
         if self.mode is self.Mode.REPAIR and self.builder.basic_mask_args.get("ml") != 0:
-            mask = self.mv.mask(
-                direction=MVDirection.BACKWARD,
-                kind=MaskMode.SAD,
-                thscd=self.builder.analyze_thscd,
-                **self.builder.basic_mask_args,
-            )
+            mask = self.mv.mask(kind=MaskMode.SAD, **self.builder.basic_mask_args)
             bobbed = self._denoise_output.std.MaskedMerge(bobbed, mask)
 
         return bobbed
@@ -1319,7 +1313,6 @@ class QTGMCGraph(VSObject):
                 tr=self.builder.final_tr,
                 thsad=self.builder.final_thsad,
                 thsad2=self.builder.final_thsad2,
-                thscd=self.builder.analyze_thscd,
                 **self.builder.final_degrain_args,
             )
 
@@ -1343,18 +1336,10 @@ class QTGMCGraph(VSObject):
 
         blurred = self.final
         if shutter_angle and (blur_level := (shutter_angle[1] * fps_divisor - shutter_angle[0]) / 3.60):
-            blurred = self.mv.flow_blur(
-                self.final, blur=blur_level, thscd=self.builder.analyze_thscd, **self.builder.motion_blur_flow_blur_args
-            )
+            blurred = self.mv.flow_blur(self.final, blur=blur_level, **self.builder.motion_blur_flow_blur_args)
 
             if self.builder.motion_blur_mask_args.get("ml") != 0:
-                mask = self.mv.mask(
-                    direction=MVDirection.BACKWARD,
-                    kind=MaskMode.VECTOR_LENGTH,
-                    thscd=self.builder.analyze_thscd,
-                    **self.builder.motion_blur_mask_args,
-                )
-
+                mask = self.mv.mask(kind=MaskMode.VECTOR_LENGTH, **self.builder.motion_blur_mask_args)
                 blurred = self.final.std.MaskedMerge(blurred, mask)
 
         if fps_divisor > 1:
@@ -1388,7 +1373,6 @@ class QTGMCGraph(VSObject):
             tr=tr,
             thsad=self.builder.basic_thsad,
             thsad2=self.builder.basic_thsad2,
-            thscd=self.builder.analyze_thscd,
             weights=BlurMatrix.BINOMIAL(radius=tr),
             **degrain_args,
         )
@@ -1532,7 +1516,6 @@ class QTGMCGraph(VSObject):
                 (undershoot, overshoot),
                 func=self.func,
                 tr=self.builder.sharpen_limit_radius,
-                thscd=self.builder.analyze_thscd,
                 **self.builder.sharpen_limit_comp_args,
             )
 
