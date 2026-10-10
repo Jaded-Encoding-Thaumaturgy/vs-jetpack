@@ -30,13 +30,14 @@ def mc_degrain(
     preset: Mapping[str, Any] = ...,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
-    overlap_div: int | tuple[int, int] = 2,
+    overlap: int | tuple[int, int] = 8,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
-    thscd: int | tuple[int | None, float | None] | None = None,
+    thscd1: int | None = None,
+    thscd2: float | None = None,
     export_globals: Literal[False] = False,
     planes: Planes = None,
 ) -> vs.VideoNode: ...
@@ -51,13 +52,14 @@ def mc_degrain(
     preset: Mapping[str, Any] = ...,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
-    overlap_div: int | tuple[int, int] = 2,
+    overlap: int | tuple[int, int] = 8,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
-    thscd: int | tuple[int | None, float | None] | None = None,
+    thscd1: int | None = None,
+    thscd2: float | None = None,
     export_globals: Literal[True] = ...,
     planes: Planes = None,
 ) -> tuple[vs.VideoNode, MVTools]: ...
@@ -72,13 +74,14 @@ def mc_degrain(
     preset: Mapping[str, Any] = ...,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
-    overlap_div: int | tuple[int, int] = 2,
+    overlap: int | tuple[int, int] = 8,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
-    thscd: int | tuple[int | None, float | None] | None = None,
+    thscd1: int | None = None,
+    thscd2: float | None = None,
     export_globals: bool = ...,
     planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]: ...
@@ -92,13 +95,14 @@ def mc_degrain(
     preset: Mapping[str, Any] = MVToolsPreset.HQ_SAD,
     tr: int = 1,
     blksize: int | tuple[int, int] = 16,
-    overlap_div: int | tuple[int, int] = 2,
+    overlap: int | tuple[int, int] = 8,
     refine: int = 1,
     thsad: int | tuple[int, int] = 400,
     thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
-    thscd: int | tuple[int | None, float | None] | None = None,
+    thscd1: int | None = None,
+    thscd2: float | None = None,
     export_globals: bool = False,
     planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]:
@@ -116,7 +120,8 @@ def mc_degrain(
         preset: MVTools preset defining base values for the MVTools object. Default is HQ_SAD.
         tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
         blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
-        overlap_div: The blksize divisor for block overlap. Larger overlapping reduces blocking artifacts.
+        overlap: Block overlap amount. Can be a single integer for both dimensions or a tuple of (horizontal, vertical)
+            overlap values.
         refine: Number of times to recalculate motion vectors with halved block size.
         thsad: Defines the soft threshold of block sum absolute differences. Blocks with SAD above this threshold have
             zero weight for averaging (denoising). Blocks with low SAD have highest weight. The remaining weight is
@@ -128,11 +133,8 @@ def mc_degrain(
         thsad_recalc: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value is
             scaled to 8x8 block size.
         limit: Maximum allowed change in pixel values (8-bit scale).
-        thscd: Scene change detection thresholds:
-
-               - First value: SAD threshold for considering a block changed between frames.
-               - Second value: Percentage of changed blocks needed to trigger a scene change.
-
+        thscd1: SAD threshold for considering a block changed between frames.
+        thscd2: Percentage of changed blocks needed to trigger a scene change.
         export_globals: Whether to return the MVTools object.
         planes: Which planes to process. Default: None (all planes).
 
@@ -144,17 +146,17 @@ def mc_degrain(
 
     thsad_recalc = fallback(thsad_recalc, round(to_arr(thsad)[0] / 2))
 
-    mv = MVTools(clip, vectors=vectors, **mv_args)
+    mv = MVTools(clip, vectors=vectors, thscd1=thscd1, thscd2=thscd2, **mv_args)
     mfilter = mfilter(clip) if callable(mfilter) else mfilter
 
     if not vectors:
-        mv.analyze(tr=tr, blksize=blksize, overlap_div=overlap_div)
+        mv.analyze(tr=tr, blksize=blksize, overlap=overlap)
 
         for _ in range(refine):
-            blksize = refine_blksize(blksize)
-            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap_div)
+            blksize, overlap = map(refine_blksize, (blksize, overlap))
+            mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap=overlap)
 
-    den = mv.degrain(mfilter, clip, tr=tr, thsad=thsad, thsad2=thsad2, limit=limit, thscd=thscd, planes=planes)
+    den = mv.degrain(clip, clip, mfilter, tr=tr, thsad=thsad, thsad2=thsad2, limit=limit, planes=planes)
 
     return (den, mv) if export_globals else den
 
