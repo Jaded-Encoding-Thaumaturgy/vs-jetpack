@@ -8,6 +8,34 @@ __all__ = ["FrameRange", "FrameRangeN", "FrameRangesN", "Planes", "PlanesT"]
 
 
 type Planes = int | Sequence[int] | None
+"""
+Type alias for planes.
+
+- `None`: All planes.
+- `int`: Single plane.
+- `Sequence[int]`: Multiple planes.
+
+Values outside the range of the clip's format will throw an error.
+
+Example of processing only the luma (Y) plane of a YUV clip:
+
+    ```py
+    planes=[0]  # Y
+    ```
+
+Example of processing only the chroma (U and V) planes of a YUV clip:
+
+    ```py
+    planes=[1, 2]  #  U, V
+    ```
+
+Example of processing all planes of a clip (regardless of the format):
+
+    ```py
+    planes=None  # All planes
+    ```
+"""
+
 PlanesT = Planes
 
 type FrameRange = SoftRange
