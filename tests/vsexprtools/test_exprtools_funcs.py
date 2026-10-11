@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 
 from vsexprtools import combine, expr_func, norm_expr
-from vstools import PlanesT, core, vs
+from vstools import Planes, core, vs
 
 
 def get_params() -> Iterator[dict[str, Any]]:
@@ -26,5 +26,5 @@ def test_combine(clip: vs.VideoNode) -> None:
 
 
 @pytest.mark.parametrize("planes", [0, [1, 2], [2]])
-def test_norm_expr(clip: vs.VideoNode, planes: PlanesT) -> None:
+def test_norm_expr(clip: vs.VideoNode, planes: Planes) -> None:
     norm_expr(clip, "x", planes)
