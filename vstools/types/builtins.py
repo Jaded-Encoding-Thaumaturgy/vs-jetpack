@@ -19,21 +19,21 @@ Values outside the range of the clip's format will throw an error.
 
 Example of processing only the luma (Y) plane of a YUV clip:
 
-    ```py
-    planes=[0]  # Y
-    ```
+```py
+planes=[0]  # Y
+```
 
 Example of processing only the chroma (U and V) planes of a YUV clip:
 
-    ```py
-    planes=[1, 2]  #  U, V
-    ```
+```py
+planes=[1, 2]  #  U, V
+```
 
 Example of processing all planes of a clip (regardless of the format):
 
-    ```py
-    planes=None  # All planes
-    ```
+```py
+planes=None  # All planes
+```
 """
 
 type FrameRange = SoftRange
