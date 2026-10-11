@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from jetpytools import SoftRange, SoftRangeN, SoftRangesN
 
-__all__ = ["FrameRange", "FrameRangeN", "FrameRangesN", "Planes", "PlanesT"]
+__all__ = ["FrameRange", "FrameRangeN", "FrameRangesN", "Planes"]
 
 
 type Planes = int | Sequence[int] | None
@@ -35,8 +35,6 @@ Example of processing all planes of a clip (regardless of the format):
     planes=None  # All planes
     ```
 """
-
-PlanesT = Planes
 
 type FrameRange = SoftRange
 type FrameRangeN = SoftRangeN
