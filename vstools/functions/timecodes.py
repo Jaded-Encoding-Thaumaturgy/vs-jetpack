@@ -271,7 +271,7 @@ class Timecodes(list[FrameDur]):
                     continue
 
                 starts, ends, fps = line.split(",")
-                timecodes_d[int(starts), int(ends) + 1] = _norm(fps)
+                timecodes_d[int(starts), int(ends)] = _norm(fps)
 
             norm_timecodes = cls.normalize_range_timecodes(timecodes_d, length, assume)
         elif "v2" in version:
