@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from functools import partial
 from typing import Any, Literal, overload
 
-from jetpytools import CustomEnum, CustomStrEnum, CustomValueError, normalize_seq
+from jetpytools import CustomEnum, CustomStrEnum, CustomValueError
 
 from vsdenoise import MotionVectors, MVTools, MVToolsPreset, prefilter_to_full_range, refine_blksize
 from vsexprtools import norm_expr
@@ -230,7 +230,7 @@ def vinverse(
         clip, **kwargs
     ),
     contra_str: float = 2.7,
-    amnt: float | tuple[float, float] | None = None,
+    amnt: float | None = None,
     scl: float = 0.25,
     planes: Planes = None,
 ) -> vs.VideoNode:
@@ -249,22 +249,11 @@ def vinverse(
     blurred = comb_blur(clip, planes=planes) if callable(comb_blur) else comb_blur
     blurred2 = contra_blur(blurred, planes=planes) if callable(contra_blur) else contra_blur
 
-    undershoot, overshoot = [scale_delta(thr, 8, clip) if thr else thr for thr in normalize_seq(amnt, 2)]
-
     FormatsMismatchError.check(vinverse, clip, blurred, blurred2)
 
     expr = "y z - {sstr} * D1! x y - D2! D1@ abs D2@ abs < D1@ D2@ ? D3! y D1@ D2@ xor D3@ {scl} * D3@ ? +"
-
     if amnt is not None:
-        expr += " x {undershoot} - x {overshoot} + clamp"
+        expr += " x {amnt} - x {amnt} + clamp"
+        amnt = scale_delta(amnt, 8, clip)
 
-    return norm_expr(
-        [clip, blurred, blurred2],
-        expr,
-        planes,
-        sstr=contra_str,
-        undershoot=undershoot,
-        overshoot=overshoot,
-        scl=scl,
-        func=vinverse,
-    )
+    return norm_expr([clip, blurred, blurred2], expr, planes, sstr=contra_str, amnt=amnt, scl=scl, func=vinverse)
