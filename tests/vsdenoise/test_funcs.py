@@ -1,4 +1,4 @@
-from vsdenoise import MVDirection, MVTools, mc_clamp, mc_degrain
+from vsdenoise import MVTools, mc_clamp, mc_degrain
 from vstools import core, vs
 
 
@@ -16,7 +16,6 @@ def test_mc_degrain_export_globals() -> None:
     denoised, mv = mc_degrain(clip, export_globals=True)
     assert denoised.format.id == clip.format.id
     assert mv.clip is clip
-    assert mv.pel is None
 
 
 def test_mc_degrain_refine() -> None:
@@ -25,7 +24,7 @@ def test_mc_degrain_refine() -> None:
     denoised, mv = mc_degrain(clip, refine=2, thsad_recalc=200, export_globals=True)
     assert denoised.format.id == clip.format.id
 
-    f = mv.vectors[MVDirection.BACKWARD][1].get_frame(0)
+    f = mv.vectors[1].get_frame(0)
     assert f.props["MVUtensilsAnalysisBlkSizeX"] == 4
     assert f.props["MVUtensilsAnalysisBlkSizeY"] == 4
 
@@ -53,13 +52,7 @@ def test_mc_degrain_filters() -> None:
 def test_mc_degrain_params() -> None:
     clip = core.std.BlankClip(format=vs.YUV420P8, width=160, height=120, length=5)
     denoised = mc_degrain(
-        clip,
-        tr=2,
-        thsad=(400, 300),
-        thsad2=(200, 150),
-        limit=(2.0, 2.0),
-        thscd=(400, 0.5),
-        planes=[0],
+        clip, tr=2, thsad=(400, 300), thsad2=(200, 150), limit=(2.0, 2.0), thscd1=400, thscd2=0.5, planes=[0]
     )
     assert denoised.format.id == clip.format.id
     assert denoised.num_frames == clip.num_frames
