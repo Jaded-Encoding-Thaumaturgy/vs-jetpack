@@ -68,7 +68,7 @@ class NLMeans[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Priority: "gpu" -> "cuda" -> "ispc".
+        Priority: "gpu" -> "cuda" -> "vsfeel" -> "ispc".
         """
 
         GPU = "gpu"
@@ -79,6 +79,11 @@ class NLMeans[**P, R]:
         CUDA = "cuda"
         """
         A CUDA device that is a GPU.
+        """
+
+        FEEL = "vsfeel"
+        """
+        A Vulkan device using the vsfeel plugin.
         """
 
         ISPC = "ispc"
@@ -107,6 +112,9 @@ class NLMeans[**P, R]:
             if self == NLMeans.Backend.CUDA:
                 return clip.vszipcu.NLMeans(*args, **{"num_streams": 2} | kwargs)
 
+            if self == NLMeans.Backend.FEEL:
+                return clip.vsfeel.NLMeans(*args, **kwargs)
+
             if self == NLMeans.Backend.ISPC:
                 return clip.nlm_ispc.NLMeans(*args, **kwargs)
 
@@ -118,6 +126,10 @@ class NLMeans[**P, R]:
             if hasattr(core, "vszipcu"):
                 logger.debug("%s: Auto selecting 'NLMeans.Backend.CUDA'", NLMeans.Backend.NLMeans)
                 return NLMeans.Backend.CUDA.NLMeans(clip, *args, **kwargs)
+
+            if hasattr(core, "vsfeel"):
+                logger.debug("%s: Auto selecting 'NLMeans.Backend.FEEL'", NLMeans.Backend.NLMeans)
+                return NLMeans.Backend.FEEL.NLMeans(clip, *args, **kwargs)
 
             if hasattr(core, "nlm_ispc"):
                 logger.debug("%s: Auto selecting 'NLMeans.Backend.ISPC", NLMeans.Backend.NLMeans)

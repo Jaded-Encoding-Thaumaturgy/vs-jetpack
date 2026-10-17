@@ -142,7 +142,9 @@ class GaussBlur[**P, R]:
     It is not meant to be used directly.
     """
 
-    type ConcreteBackend = Literal[GaussBlur.Backend.CPU, GaussBlur.Backend.GPU, GaussBlur.Backend.CUDA]
+    type ConcreteBackend = Literal[
+        GaussBlur.Backend.CPU, GaussBlur.Backend.GPU, GaussBlur.Backend.CUDA, GaussBlur.Backend.FEEL
+    ]
 
     def __init__(self, gauss_blur: Callable[P, R]) -> None:
         self._func = gauss_blur
@@ -167,6 +169,9 @@ class GaussBlur[**P, R]:
 
         CUDA = "vszipcu"
         """CUDA implementation."""
+
+        FEEL = "vsfeel"
+        """Vulkan implementation using the vsfeel plugin."""
 
         @contextmanager
         def __call__(self) -> Generator[None]:
@@ -577,6 +582,7 @@ class Bilateral[**P, R]:
         Bilateral.Backend.GPU,
         Bilateral.Backend.CUDA,
         Bilateral.Backend.CUDA_RTC,
+        Bilateral.Backend.FEEL,
     ]
 
     def __init__(self, bilateral_func: Callable[P, R]) -> None:
@@ -614,6 +620,11 @@ class Bilateral[**P, R]:
         CUDA_RTC = "bilateralgpu_rtc"
         """
         Uses `bilateralgpu_rtc.Bilateral` — a CUDA-based GPU implementation with runtime shader compilation.
+        """
+
+        FEEL = "vsfeel"
+        """
+        Uses `vsfeel.Bilateral` — a Vulkan-based GPU implementation.
         """
 
         @contextmanager
