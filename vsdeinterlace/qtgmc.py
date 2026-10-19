@@ -320,7 +320,7 @@ class _QTGMCBuilder:
                 Begins with simple spatial interpolation to produce the draft clip, which inherently contains severe
                 temporal instability known as bob shimmer.
             - ([QTempGaussMC.repair][vsdeinterlace.QTempGaussMC.repair]) Vertical spatial pre-filtering: Applies a
-                vertical binomial blur to filter out residual vertical artifacts.
+                vertical binomial blur to filter out residual horizontal artifacts.
             - Temporal binomial blurring: Applies a temporal binomial blur to smooth the draft clip, removing the
                 shimmer, which prevents [MVTools][vsdenoise.mvtools.mvtools.MVTools] from falsely latching onto the
                 shimmer as motion (though this uncompensated blur introduces ghosting).
@@ -636,7 +636,7 @@ class _QTGMCBuilder:
             iterations: Number of source match iterations to perform. Higher values are slower and more accurate. Using
                 `2` or `3` iterations restores almost exact source detail but is sensitive to noise and introduces
                 occasional aliasing (to a lesser extent for `3`). Requires
-                [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] `tr` > `0` Defaults to 0.
+                [QTempGaussMC.basic][vsdeinterlace.QTempGaussMC.basic] `tr` > `0`. Defaults to 0.
             similarity: Temporal similarity of the error from frame to frame. Lower values make the result sharper.
                 Defaults to 0.5.
             bobber: Bobber to use for refined spatial interpolation. Only used for `iterations` > `1`. Defaults to
