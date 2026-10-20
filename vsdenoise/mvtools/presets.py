@@ -27,7 +27,7 @@ __all__ = [
 
 
 class SuperArgs(TypedDict, total=False):
-    pad: int | tuple[int | None, int | None] | None
+    pad: int | tuple[int, int] | None
     pel: int | None
     sharp: SharpMode | int | None
     rfilter: RFilterMode | int | None

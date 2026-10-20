@@ -253,7 +253,7 @@ class MVTools(VSObject):
         self,
         clip: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        pad: int | tuple[int | None, int | None] | None = None,
+        pad: int | tuple[int, int] | None = None,
         pel: int | None = None,
         sharp: SharpMode | int | None = None,
         rfilter: RFilterMode | int | None = None,
