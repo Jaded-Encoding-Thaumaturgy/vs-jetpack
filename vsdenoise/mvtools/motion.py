@@ -5,7 +5,7 @@ from itertools import chain
 
 from jetpytools import normalize_seq, to_arr
 
-from vstools import VSObject, core, vs
+from vstools import VSObject, vs
 
 __all__ = ["MotionVectors"]
 
@@ -113,15 +113,17 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
             scale: Factor to scale motion vectors by.
         """
 
-        scalex, scaley = normalize_seq(scale, 2)
+        # scalex, scaley = normalize_seq(scale, 2)
 
-        if scalex > 1 or scaley > 1:
-            for attr in ("blksize", "overlap", "pad"):
-                x, y = getattr(self, attr)
-                setattr(self, attr, (x * scalex, y * scaley))
+        # if scalex > 1 or scaley > 1:
+        #    for attr in ("blksize", "overlap", "pad"):
+        #        x, y = getattr(self, attr)
+        #        setattr(self, attr, (x * scalex, y * scaley))
 
-            for delta, vect in self.items():
-                self[delta] = core.manipmv.ScaleVect(vect, scalex, scaley)
+        #    for delta, vect in self.items():
+        #        self[delta] = core.manipmv.ScaleVect(vect, scalex, scaley)
+
+        raise NotImplementedError
 
     def show_vector(
         self,
@@ -140,4 +142,6 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
             Clip with motion vectors overlaid.
         """
 
-        return core.manipmv.ShowVect(self[delta], scenechange)
+        # return core.manipmv.ShowVect(self[delta], scenechange)
+
+        raise NotImplementedError
