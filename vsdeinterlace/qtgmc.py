@@ -230,22 +230,22 @@ class _QTGMCBuilder:
         @property
         def is_spatial(self) -> bool:
             """Whether the mode uses spatial sharpness limiting."""
-            return self in (self.SPATIAL_PRESMOOTH, self.SPATIAL_POSTSMOOTH)
+            return "SPATIAL" in self.name
 
         @property
         def is_temporal(self) -> bool:
             """Whether the mode uses temporal sharpness limiting."""
-            return self in (self.TEMPORAL_PRESMOOTH, self.TEMPORAL_POSTSMOOTH)
+            return "TEMPORAL" in self.name
 
         @property
         def is_presmooth(self) -> bool:
             """Whether the mode applies sharpness limiting prior to smoothing."""
-            return self in (self.SPATIAL_PRESMOOTH, self.TEMPORAL_PRESMOOTH)
+            return "PRESMOOTH" in self.name
 
         @property
         def is_postsmooth(self) -> bool:
             """Whether the mode applies sharpness limiting after smoothing."""
-            return self in (self.SPATIAL_POSTSMOOTH, self.TEMPORAL_POSTSMOOTH)
+            return "POSTSMOOTH" in self.name
 
     @deprecated("This enum is deprecated and will be removed in a future version.", category=DeprecationWarning)
     class SearchPostProcess(CustomIntEnum):
