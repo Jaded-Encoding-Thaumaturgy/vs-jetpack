@@ -207,7 +207,7 @@ doc = [
     "griffe-inherited-docstrings==1.1.4",
     "mkdocs-gen-files==0.6.1",
     "mkdocs-literate-nav==0.6.3",
-    "mkdocs-material==9.7.7",
+    "mkdocs-material==9.8.0",
     "mkdocs-minify-plugin==0.8.0",
     "mkdocs-redirects==1.2.3",
     "mkdocstrings[python]==0.30.1",
