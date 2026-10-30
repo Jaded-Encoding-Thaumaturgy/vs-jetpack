@@ -248,9 +248,9 @@ class MVTools(VSObject):
         overlap: int | tuple[int, int] | None = None,
         pad: int | tuple[int, int] | None = None,
         pel: int | None = None,
-        onelevel: bool | None = None,
         sharp: SharpMode | int | None = None,
         rfilter: RFilterMode | int | None = None,
+        onelevel: bool | None = None,
         pelclip: vs.VideoNode | VSFunctionNoArgs | None = None,
     ) -> vs.VideoNode:
         """
@@ -269,14 +269,13 @@ class MVTools(VSObject):
             pad: How much padding to add to the source frame. Small padding is added to help with motion estimation near
                 frame borders.
             pel: Subpixel precision for motion estimation (1=pixel, 2=half-pixel, 4=quarter-pixel). Default: 2.
-            onelevel: Generate only one hierarchical level.
-                Only [analyze][vsdenoise.MVTools.analyze] uses more than one level,
-                so if the super clip is only passed to other functions set it to True
-                to save memory and a small speedup.
             sharp: Subpixel interpolation method if pel is 2 or 4.
                 For more information, see [SharpMode][vsdenoise.SharpMode].
             rfilter: Hierarchical levels smoothing and reducing (halving) filter. For more information, see
                 [RFilterMode][vsdenoise.RFilterMode].
+            onelevel: Generate only one hierarchical level. Only [analyze][vsdenoise.MVTools.analyze] uses more than one
+                level, so if the super clip is only passed to other functions set it to True to save memory and a small
+                speedup.
             pelclip: Optional upsampled source clip to use instead of internal subpixel interpolation (if pel > 1). The
                 clip must contain the original source pixels at positions that are multiples of pel (e.g., positions 0,
                 2, 4, etc. for pel=2), with interpolated pixels in between. The clip should not be padded.
@@ -288,26 +287,28 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
 
-        s_blksize = fallback(blksize, vectors.blksize, self.blksize)
-        s_overlap = fallback(overlap, vectors.overlap, self.overlap)
+        blksize = fallback(blksize, vectors.blksize, self.blksize)
+        overlap = fallback(overlap, vectors.overlap, self.overlap)
+        pad = fallback(pad, self.super_args.get("pad"), default=None)
+        pel = fallback(pel, self.super_args.get("pel"), default=None)
+        sharp = fallback(sharp, self.super_args.get("sharp"), default=SharpMode.WIENER)
+        rfilter = fallback(rfilter, self.super_args.get("rfilter"), default=RFilterMode.BILINEAR)
+        onelevel = fallback(onelevel, self.super_args.get("onelevel"), default=False)
+        pelclip = fallback(pelclip, self.super_args.get("pelclip"), default=None)
 
-        if pelclip is not None:
-            pelclip = pelclip(clip) if callable(pelclip) else pelclip
-        else:
-            pelclip_arg = self.super_args.get("pelclip")
-            pelclip = pelclip_arg(clip) if isinstance(pelclip_arg, VSFunctionNoArgs) else pelclip_arg
+        npelclip = pelclip(clip) if callable(pelclip) else pelclip
 
-        super_args = KwargsNotNone(
-            pad=fallback(pad, self.super_args.get("pad"), default=None),
-            pel=fallback(pel, self.super_args.get("pel"), default=None),
-            blksize=s_blksize,
-            overlap=s_overlap,
-            sharp=fallback(sharp, self.super_args.get("sharp"), SharpMode.WIENER),
-            rfilter=fallback(rfilter, self.super_args.get("rfilter"), RFilterMode.BILINEAR),
-            pelclip=pelclip,
+        return _super_clip_cache.get(
+            clip,
+            blksize=blksize,
+            overlap=overlap,
+            pad=pad,
+            pel=pel,
+            sharp=sharp,
+            rfilter=rfilter,
+            onelevel=onelevel,
+            pelclip=npelclip,
         )
-
-        return _super_clip_cache.get(clip, bool(onelevel), **super_args)
 
     def analyze(
         self,
