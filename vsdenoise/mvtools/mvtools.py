@@ -576,7 +576,7 @@ class MVTools(VSObject):
         thscd1: int | None = None,
         thscd2: float | None = None,
         interleave: Literal[False] = ...,
-        temporal_func: None = None,
+        temporal_func: VSFunctionNoArgs | None = None,
     ) -> tuple[list[vs.VideoNode], list[vs.VideoNode]]: ...
 
     def compensate(
@@ -635,6 +635,7 @@ class MVTools(VSObject):
         compensate_args: dict[str, Any] = self.compensate_args | KwargsNotNone(
             thsad=thsad, time=time, thscd1=thscd1, thscd2=thscd2
         )
+
         comp_fwrd, comp_back = [
             [core.mvu.Compensate(clip, super_clip, vect, **compensate_args) for vect in vect_list]
             for vect_list in (reversed(vect_f), vect_b)
