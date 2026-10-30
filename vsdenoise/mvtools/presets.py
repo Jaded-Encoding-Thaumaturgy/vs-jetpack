@@ -27,9 +27,11 @@ __all__ = [
 
 
 class SuperArgs(TypedDict, total=False):
-    onelevel: bool | None
+    pad: int | tuple[int, int] | None
+    pel: int | None
     sharp: SharpMode | int | None
     rfilter: RFilterMode | int | None
+    onelevel: bool | None
     pelclip: vs.VideoNode | VSFunctionNoArgs | None
 
 
@@ -130,8 +132,6 @@ class ScDetectionArgs(TypedDict, total=False):
 
 class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     search_clip: vs.VideoNode | VSFunctionNoArgs
-    pel: int
-    pad: int | tuple[int | None, int | None]
     chroma: bool
     thscd1: int | None
     thscd2: float | None
@@ -151,8 +151,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
         self,
         *,
         search_clip: vs.VideoNode | VSFunctionNoArgs | None = None,
-        pel: int | None = None,
-        pad: int | tuple[int | None, int | None] | None = None,
         chroma: bool | None = None,
         thscd1: int | None = None,
         thscd2: float | None = None,
@@ -170,8 +168,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     ) -> None:
         self._dict = KwargsNotNone(
             search_clip=search_clip,
-            pel=pel,
-            pad=pad,
             chroma=chroma,
             thscd1=thscd1,
             thscd2=thscd2,

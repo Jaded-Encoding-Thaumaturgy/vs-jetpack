@@ -22,7 +22,6 @@ from vsdenoise import (
     DFTTest,
     MaskMode,
     MotionVectors,
-    MVDirection,
     MVTools,
     MVToolsPreset,
     mc_clamp,
@@ -1238,11 +1237,7 @@ class QTGMCGraph(VSObject):
 
         if self.builder.denoise_stabilize is not False:
             _, noise_comp = self.mv.compensate(
-                noise,
-                direction=MVDirection.BACKWARD,
-                tr=1,
-                interleave=False,
-                **self.builder.denoise_stabilize_comp_args,
+                noise, delta=1, interleave=False, **self.builder.denoise_stabilize_comp_args
             )
 
             noise = norm_expr(
@@ -1266,7 +1261,7 @@ class QTGMCGraph(VSObject):
         bobbed = self._interpolate(self._bobber_input, self.builder.basic_bobber)
 
         if self.mode is self.Mode.REPAIR and self.builder.basic_mask_args.get("ml") != 0:
-            mask = self.mv.mask(direction=MVDirection.BACKWARD, kind=MaskMode.SAD, **self.builder.basic_mask_args)
+            mask = self.mv.mask(kind=MaskMode.SAD, **self.builder.basic_mask_args)
             bobbed = self._denoise_output.std.MaskedMerge(bobbed, mask)
 
         return bobbed
@@ -1338,10 +1333,7 @@ class QTGMCGraph(VSObject):
             blurred = self.mv.flow_blur(self.final, blur=blur_level, **self.builder.motion_blur_flow_blur_args)
 
             if self.builder.motion_blur_mask_args.get("ml") != 0:
-                mask = self.mv.mask(
-                    direction=MVDirection.BACKWARD, kind=MaskMode.VECTOR_LENGTH, **self.builder.motion_blur_mask_args
-                )
-
+                mask = self.mv.mask(kind=MaskMode.VECTOR_LENGTH, **self.builder.motion_blur_mask_args)
                 blurred = self.final.std.MaskedMerge(blurred, mask)
 
         if fps_divisor > 1:
