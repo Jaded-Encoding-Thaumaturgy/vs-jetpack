@@ -394,7 +394,7 @@ class _QTGMCBuilder:
         preset: Mapping[str, Any] = MVToolsPreset.HQ_SAD,
         force_tr: int = 0,
         blksize: int | tuple[int, int] = 16,
-        overlap: int | tuple[int, int] = 2,
+        overlap: int | tuple[int, int] = 8,
         refine: int = 1,
         thsad_recalc: int | None = None,
         thscd1: int | None = 180,
@@ -424,13 +424,13 @@ class _QTGMCBuilder:
                 - Second value: Vertical block size.
 
                 A single value applies to both axes. Defaults to 16.
-            overlap: The block size divisor for block size overlap. Smaller values reduce blocking artifacts of
+            overlap: Block overlap amount. Larger values reduce blocking artifacts of
                 [MVTools][vsdenoise.mvtools.mvtools.MVTools] processes.
 
-                - First value: Horizontal block size divisor.
-                - Second value: Vertical block size divisor.
+                - First value: Horizontal overlap amount.
+                - Second value: Vertical overlap amount.
 
-                A single value applies to both axes. Defaults to 2.
+                A single value applies to both axes. Defaults to 8.
             refine: Number of iterations to recalculate motion vectors with halved block size. Improves motion vector
                 precision without reducing denoising effectiveness. Defaults to 1.
             thsad_recalc: Only poor-quality new vectors with a SAD above this value will be re-estimated by motion
@@ -1172,14 +1172,12 @@ class QTGMCGraph(VSObject):
             self.builder.final_tr,
         )
 
-        blksize = self.builder.analyze_blksize
-        mv.analyze(tr=tr, blksize=blksize, overlap_div=self.builder.analyze_overlap)
+        blksize, overlap = self.builder.analyze_blksize, self.builder.analyze_overlap
+        mv.analyze(tr=tr, blksize=blksize, overlap=overlap)
 
         for _ in range(self.builder.analyze_refine):
-            blksize = refine_blksize(blksize)
-            mv.recalculate(
-                thsad=self.builder.analyze_thsad_recalc, blksize=blksize, overlap_div=self.builder.analyze_overlap
-            )
+            blksize, overlap = map(refine_blksize, (blksize, overlap))
+            mv.recalculate(thsad=self.builder.analyze_thsad_recalc, blksize=blksize, overlap=overlap)
 
         return mv
 

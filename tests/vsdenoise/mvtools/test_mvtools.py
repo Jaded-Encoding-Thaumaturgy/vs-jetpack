@@ -85,7 +85,7 @@ def test_mvtools_recalculate() -> None:
     mv.analyze(tr=1)
 
     # Recalculate vectors with a custom block size to verify wrapper parameter passing
-    mv.recalculate(blksize=8)
+    mv.recalculate(blksize=8, overlap=4)
     assert len(mv.vectors[MVDirection.BACKWARD]) == 1
 
     f = mv.vectors[MVDirection.BACKWARD][1].get_frame(0)
@@ -211,11 +211,11 @@ def test_mvtools_super_cache_reuse() -> None:
     clip = core.std.BlankClip(format=vs.YUV420P8, width=160, height=120, length=5)
     mv = MVTools(clip)
 
-    mv.analyze(blksize=16, overlap_div=2)
+    mv.analyze(blksize=16, overlap=8)
     cached_super = _super_clip_cache._cache[mv.search_clip]
     assert len(set(cached_super.values())) == 1
 
-    mv.recalculate(blksize=8, overlap_div=2)
+    mv.recalculate(blksize=8, overlap=4)
     assert len(set(cached_super.values())) == 1
 
     degrained = mv.degrain()

@@ -8,11 +8,11 @@ from vstools import core, vs
 def test_motion_vectors_init() -> None:
     mv = MotionVectors()
     assert mv.blksize is None
-    assert mv.overlap_div is None
+    assert mv.overlap is None
 
-    mv2 = MotionVectors(blksize=16, overlap_div=2)
+    mv2 = MotionVectors(blksize=16, overlap=8)
     assert mv2.blksize == (16, 16)
-    assert mv2.overlap_div == (2, 2)
+    assert mv2.overlap == (8, 8)
 
 
 def test_motion_vectors_get_set() -> None:
@@ -24,29 +24,29 @@ def test_motion_vectors_get_set() -> None:
     mv.blksize = None
     assert mv.blksize is None
 
-    mv.overlap_div = (4, 2)
-    assert mv.overlap_div == (4, 2)
+    mv.overlap = (8, 8)
+    assert mv.overlap == (8, 8)
 
-    mv.overlap_div = None
-    assert mv.overlap_div is None
+    mv.overlap = None
+    assert mv.overlap is None
 
 
-def test_motion_vectors_overlap_div_fallback() -> None:
+def test_motion_vectors_overlap_fallback() -> None:
     mv = MotionVectors()
-    assert mv.overlap_div is None
+    assert mv.overlap is None
 
-    # If overlap_div is None and blksize is None, returns None
+    # If overlap is None and blksize is None, returns None
     mv.blksize = None
-    assert mv.overlap_div is None
+    assert mv.overlap is None
 
-    # If overlap_div is None and blksize is set, it falls back to analysis_data
+    # If overlap is None and blksize is set, it falls back to analysis_data
     # But since analysis_data is empty/not present, it will raise KeyError and return None
     mv.blksize = (16, 16)
-    assert mv.overlap_div is None
+    assert mv.overlap is None
 
 
 def test_motion_vectors_clear() -> None:
-    mv = MotionVectors(blksize=16, overlap_div=2)
+    mv = MotionVectors(blksize=16, overlap=8)
     dummy_clip = core.std.BlankClip()
     mv.set_vector(dummy_clip, MVDirection.BACKWARD, 1)
 
@@ -55,7 +55,7 @@ def test_motion_vectors_clear() -> None:
 
     mv.clear()
     assert mv.blksize is None
-    assert mv.overlap_div is None  # type: ignore[unreachable]
+    assert mv.overlap is None  # type: ignore[unreachable]
     assert len(mv[MVDirection.BACKWARD]) == 0
 
 
@@ -135,9 +135,9 @@ def test_motion_vectors_analysis_data() -> None:
     assert data["MVUtensilsAnalysisOverlapY"] == 2
     assert "OtherProp" not in data
 
-    # Test fallback blksize and overlap_div via analysis_data when they are None
+    # Test fallback blksize and overlap via analysis_data when they are None
     assert mv.blksize == (16, 8)
-    assert mv.overlap_div == (4, 4)  # 16 // 4 = 4, 8 // 2 = 4
+    assert mv.overlap == (4, 2)
 
     # Deleter of analysis_data
     del mv.analysis_data
