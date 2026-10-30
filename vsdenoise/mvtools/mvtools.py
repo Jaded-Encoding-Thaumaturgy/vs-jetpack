@@ -22,7 +22,7 @@ from vstools import (
 
 from .enums import MaskMode, MVDirection, PenaltyMode, RFilterMode, SearchMode, SharpMode
 from .motion import MotionVectors
-from .utils import calc_super_dim, refine_blksize
+from .utils import calc_super_dim
 
 __all__ = ["MVTools"]
 
@@ -238,18 +238,18 @@ class MVTools(VSObject):
         self.sc_detection_args = dict(sc_detection_args) if sc_detection_args else {}
 
         self.blksize: tuple[int, int] = tuple(normalize_seq(self.analyze_args.get("blksize", 16), 2))
-        self.overlap_div: tuple[int, int] = tuple(normalize_seq(self.analyze_args.get("overlap_div", 2), 2))
+        self.overlap: tuple[int, int] = tuple(normalize_seq(self.analyze_args.get("overlap", 8), 2))
 
     def super(
         self,
         clip: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
+        blksize: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] | None = None,
         onelevel: bool | None = None,
         sharp: SharpMode | int | None = None,
         rfilter: RFilterMode | int | None = None,
         pelclip: vs.VideoNode | VSFunctionNoArgs | None = None,
-        blksize: int | tuple[int, int] | None = None,
-        overlap_div: int | tuple[int, int] | None = None,
     ) -> vs.VideoNode:
         """
         Get source clip and prepare special "super" clip with multilevel (hierarchical scaled) frames data.
@@ -261,6 +261,9 @@ class MVTools(VSObject):
         Args:
             clip: The clip to process. If None, the [clip][vsdenoise.MVTools.clip] attribute is used.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
+            blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+            overlap: Block overlap value. Can be a single integer for both dimensions or a tuple of (horizontal,
+                vertical) overlap values. Each value must be even and less than its corresponding block size dimension.
             onelevel: Generate only one hierarchical level.
                 Only [analyze][vsdenoise.MVTools.analyze] uses more than one level,
                 so if the super clip is only passed to other functions set it to True
@@ -272,8 +275,6 @@ class MVTools(VSObject):
             pelclip: Optional upsampled source clip to use instead of internal subpixel interpolation (if pel > 1). The
                 clip must contain the original source pixels at positions that are multiples of pel (e.g., positions 0,
                 2, 4, etc. for pel=2), with interpolated pixels in between. The clip should not be padded.
-            blksize: Size of blocks for padding. If None, resolves from vectors or default configuration.
-            overlap_div: Divisor for block overlap size. If None, resolves from vectors or default configuration.
 
         Returns:
             The original clip with MVUtensils frame properties attached to it.
@@ -283,8 +284,7 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
 
         s_blksize = fallback(blksize, vectors.blksize, self.blksize)
-        s_overlap_div = fallback(overlap_div, vectors.overlap_div, self.overlap_div)
-        s_overlap = refine_blksize(s_blksize, s_overlap_div)  # type: ignore[arg-type]
+        s_overlap = fallback(overlap, vectors.overlap, self.overlap)
 
         hpad, vpad = self.pad
 
@@ -312,6 +312,7 @@ class MVTools(VSObject):
         tr: int = 1,
         delta: int | Sequence[int] | None = None,
         blksize: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] | None = None,
         levels: int | None = None,
         search: SearchMode | int | None = None,
         searchparam: int | None = None,
@@ -323,7 +324,6 @@ class MVTools(VSObject):
         pnew: int | None = None,
         pzero: int | None = None,
         pglobal: int | None = None,
-        overlap_div: int | tuple[int, int] | None = None,
         badsad: int | None = None,
         badrange: int | None = None,
         meander: bool | None = None,
@@ -353,6 +353,8 @@ class MVTools(VSObject):
                 Default: 1.
             delta: Specific delta(s) of motion vectors to use.
             blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+            overlap: Block overlap value. Can be a single integer for both dimensions or a tuple of (horizontal,
+                vertical) overlap values. Each value must be even and less than its corresponding block size dimension.
             levels: Number of levels used in hierarchical motion vector analysis. A positive value specifies how many
                 levels to use. A negative or zero value specifies how many coarse levels to skip. Lower values generally
                 give better results since vectors of any length can be found. Sometimes adding more levels can help
@@ -374,8 +376,6 @@ class MVTools(VSObject):
                 values discourage using zero motion.
             pglobal: Penalty multiplier (relative to 256) applied to the SAD cost when using the global motion
                 predictor.
-            overlap_div: Divisor for the block overlap.
-                Can be a single integer for both dimensions or a tuple of (horizontal, vertical) overlap divisors.
             badsad: SAD threshold above which a wider secondary search will be performed to find better motion vectors.
                 Higher values mean fewer blocks will trigger the secondary search.
             badrange: Search radius for the secondary search when a block's SAD exceeds badsad.
@@ -387,13 +387,12 @@ class MVTools(VSObject):
         """
 
         nblksize = cast(tuple[int, int], tuple(normalize_seq(fallback(blksize, self.blksize), 2)))
-        noverlap_div = cast(tuple[int, int], tuple(normalize_seq(fallback(overlap_div, self.overlap_div), 2)))
-        noverlap = refine_blksize(nblksize, noverlap_div)
+        noverlap = cast(tuple[int, int], tuple(normalize_seq(fallback(overlap, self.overlap), 2)))
 
         super_clip = self.super(
             fallback(super, self.search_clip),
             blksize=nblksize,
-            overlap_div=noverlap_div,
+            overlap=noverlap,
             onelevel=False,
         )
 
@@ -421,7 +420,7 @@ class MVTools(VSObject):
 
         self.vectors.clear()
         self.vectors.blksize = nblksize
-        self.vectors.overlap_div = noverlap_div
+        self.vectors.overlap = noverlap
 
         if delta is None:
             vects = core.mvu.AnalyseMany(super_clip, radius=tr, **analyze_args)
@@ -445,11 +444,11 @@ class MVTools(VSObject):
         thsad: int | None = None,
         smooth: bool | None = None,
         blksize: int | tuple[int, int] | None = None,
+        overlap: int | tuple[int, int] | None = None,
         search: SearchMode | int | None = None,
         searchparam: int | None = None,
         mvlambda: int | None = None,
         pnew: int | None = None,
-        overlap_div: int | tuple[int, int] | None = None,
         meander: bool | None = None,
         satd: bool | None = None,
     ) -> None:
@@ -474,16 +473,15 @@ class MVTools(VSObject):
             thsad: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value is
                 scaled to 8x8 block size.
             smooth: Whether to interpolate the new (finer) vector field from neighbours or take the nearest old vector.
-            blksize: Size of blocks for motion estimation. Can be an int or tuple of (width, height). Larger blocks are
-                less sensitive to noise and faster to process, but will produce less accurate vectors.
+            blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
+            overlap: Block overlap value. Can be a single integer for both dimensions or a tuple of (horizontal,
+                vertical) overlap values. Each value must be even and less than its corresponding block size dimension.
             search: Search algorithm to use at the finest level. See [SearchMode][vsdenoise.SearchMode] for options.
             searchparam: Search radius/step for the chosen.
             mvlambda: Controls the coherence of the motion vector field. Higher values enforce more coherent/smooth
                 motion between blocks. Too high values may cause the algorithm to miss the optimal vectors.
             pnew: Penalty multiplier (relative to 256) applied to the SAD cost when evaluating new candidate vectors.
                 Higher values make the search more conservative.
-            overlap_div: Divisor for the block overlap.
-                Can be a single integer for both dimensions or a tuple of (horizontal, vertical) overlap divisors.
             meander: Whether to use a meandering scan pattern when processing blocks. If True, alternates between left-
                 to-right and right-to-left scanning between rows to improve motion coherence.
             satd: Whether to use Sum of Absolute Transformed Differences (SATD) instead of SAD for luma comparison.
@@ -491,16 +489,15 @@ class MVTools(VSObject):
 
         vectors = fallback(vectors, self.vectors)
         blksize = fallback(blksize, self.recalculate_args.get("blksize"), self.blksize)
-        overlap_div = fallback(overlap_div, self.recalculate_args.get("overlap_div"), self.overlap_div)
+        overlap = fallback(overlap, self.recalculate_args.get("overlap"), self.overlap)
         nblksize = cast(tuple[int, int], tuple(normalize_seq(blksize, 2)))
-        noverlap_div = cast(tuple[int, int], tuple(normalize_seq(overlap_div, 2)))
-        noverlap = refine_blksize(nblksize, noverlap_div)
+        noverlap = cast(tuple[int, int], tuple(normalize_seq(overlap, 2)))
 
         super_clip = self.super(
             fallback(super, self.search_clip),
             vectors,
             blksize=nblksize,
-            overlap_div=noverlap_div,
+            overlap=noverlap,
             onelevel=True,
         )
 
@@ -535,7 +532,7 @@ class MVTools(VSObject):
             vectors.set_vector(vect, direction, d)
 
         vectors.blksize = nblksize
-        vectors.overlap_div = noverlap_div
+        vectors.overlap = noverlap
 
     @overload
     def compensate(
