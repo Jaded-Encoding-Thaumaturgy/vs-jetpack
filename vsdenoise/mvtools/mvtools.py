@@ -1011,9 +1011,9 @@ class MVTools(VSObject):
         self,
         vectors: MotionVectors | None = None,
         delta: int = 1,
+        kind: MaskMode = MaskMode.VECTOR_LENGTH,
         ml: float | None = None,
         gamma: float | None = None,
-        kind: MaskMode = MaskMode.VECTOR_LENGTH,
         time: float | None = None,
         scval: float | None = None,
         thscd1: int | None = None,
@@ -1025,11 +1025,11 @@ class MVTools(VSObject):
         Args:
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
             delta: Motion vector delta to use.
+            kind: Type of mask to generate. See [MaskMode][vsdenoise.MaskMode] for options.
             ml: Motion length scale factor. When the vector's length (or other mask value) is greater than or equal to
                 ml, the output is saturated to 255.
             gamma: Exponent for the relation between input and output values. 1.0 gives a linear relation, 2.0 gives a
                 quadratic relation.
-            kind: Type of mask to generate. See [MaskMode][vsdenoise.MaskMode] for options.
             time: Time position between frames as a percentage (0.0-100.0).
             scval: Value assigned to the mask on scene changes.
             thscd1: SAD threshold for considering a block changed between frames.
