@@ -159,7 +159,7 @@ def test_mvtools_flow_fps() -> None:
     mv.analyze(tr=1)
 
     # Flow FPS with target FPS
-    fps_clip = mv.flow_fps(fps=Fraction(30, 1))
+    fps_clip = mv.flow_fps(num=30)
     assert fps_clip.fps == Fraction(30, 1)
     assert fps_clip.num_frames == 6
 

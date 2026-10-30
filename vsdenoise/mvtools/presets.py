@@ -102,8 +102,8 @@ class FlowInterpolateArgs(TypedDict, total=False):
 
 
 class FlowFpsArgs(TypedDict, total=False):
-    num: int
-    den: int
+    num: int | None
+    den: int | None
     extramask: bool | None
     ml: float | None
     blend: bool | None

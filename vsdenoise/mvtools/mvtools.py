@@ -3,7 +3,6 @@ from __future__ import annotations
 import math
 import weakref
 from collections.abc import Mapping, Sequence
-from fractions import Fraction
 from itertools import chain
 from typing import Any, Literal, NamedTuple, cast, overload
 
@@ -902,7 +901,8 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        fps: Fraction | None = None,
+        num: int | None = None,
+        den: int | None = None,
         extramask: bool | None = None,
         ml: float | None = None,
         blend: bool | None = None,
@@ -921,7 +921,8 @@ class MVTools(VSObject):
             super: The clip to be prepared by [super][vsdenoise.MVTools.super]. If None, super will be obtained from the
                 main clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            fps: Target output framerate as a Fraction.
+            num: Output frame-rate numerator.
+            den: Output frame-rate denominator.
             extramask: Whether to generate an extra mask for occlusion handling.
             ml: Mask scale parameter that controls occlusion mask strength. Higher values produce weaker occlusion
                 masks. Used in MakeVectorOcclusionMaskTime for modes 3-5. Used in MakeSADMaskTime for modes 6-8.
@@ -943,11 +944,8 @@ class MVTools(VSObject):
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
         flow_fps_args: dict[str, Any] = KwargsNotNone(
-            extramask=extramask, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
+            num=num, den=den, extramask=extramask, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
         )
-
-        if fps is not None:
-            flow_fps_args.update(num=fps.numerator, den=fps.denominator)
 
         return core.mvu.FlowFPS(clip, super_clip, (*vect_b, *vect_f), **self.flow_fps_args | flow_fps_args)
 
