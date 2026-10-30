@@ -5,7 +5,7 @@ from typing import Any, TypedDict
 
 from jetpytools import KwargsNotNone, classproperty
 
-from vstools import VSFunctionNoArgs, VSObjectABC, vs
+from vstools import Planes, VSFunctionNoArgs, VSObjectABC, vs
 
 from ..prefilters import prefilter_to_full_range
 from .enums import PenaltyMode, RFilterMode, SearchMode, SharpMode
@@ -88,9 +88,10 @@ class DegrainArgs(TypedDict, total=False):
     thsad: int | tuple[int, int] | None
     thsad2: int | tuple[int, int] | None
     limit: int | tuple[int, int] | None
+    weights: Sequence[int] | None
     thscd1: int | None
     thscd2: float | None
-    weights: Sequence[int] | None
+    planes: Planes
 
 
 class FlowInterpolateArgs(TypedDict, total=False):

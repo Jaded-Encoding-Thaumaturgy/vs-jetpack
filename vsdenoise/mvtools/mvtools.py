@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 import weakref
 from collections.abc import Sequence
 from itertools import chain
@@ -14,7 +13,6 @@ from vstools import (
     VSFunctionNoArgs,
     VSObject,
     core,
-    normalize_planes,
     scale_delta,
     vs,
 )
@@ -828,34 +826,25 @@ class MVTools(VSObject):
         super_clip = self.super(fallback(super, clip), vectors, onelevel=True)
         center_super_clip = self.super(center_super, vectors, onelevel=True) if center_super else None
 
+        limit = fallback(limit, self.degrain_args.get("limit"), default=None)
         thscd1 = fallback(thscd1, self.degrain_args.get("thscd1"), default=self.thscd1)
         thscd2 = fallback(thscd2, self.degrain_args.get("thscd2"), default=self.thscd2)
 
+        nlimit = [scale_delta(thr, 8, clip) for thr in normalize_seq(limit, 2)] if limit is not None else limit
+
         vect_b, vect_f = vectors.get_vectors(tr, delta)
 
-        limit = fallback(limit, self.degrain_args.get("limit"), default=None)
-        limit_list = normalize_seq(limit, 2) if limit is not None else limit
-        limit_list = (
-            [scale_delta(v, 8, clip) if math.isfinite(v) else v for v in limit_list]
-            if limit_list is not None
-            else limit_list
-        )
-
-        planes_list = normalize_planes(clip, planes)
-
         degrain_args: dict[str, Any] = self.degrain_args | KwargsNotNone(
-            thsad=thsad,
-            thsad2=thsad2,
-            limit=limit_list,
-            weights=weights,
-            thscd1=thscd1,
-            thscd2=thscd2,
-            planes=planes_list,
+            thsad=thsad, thsad2=thsad2, limit=nlimit, weights=weights, thscd1=thscd1, thscd2=thscd2, planes=planes
         )
 
-        vects_combined = list(chain.from_iterable(zip(vect_b, vect_f)))
-
-        return core.mvu.Degrain(clip, super_clip, vects_combined, centersuper=center_super_clip, **degrain_args)
+        return core.mvu.Degrain(
+            clip,
+            super_clip,
+            tuple(chain.from_iterable(zip(vect_b, vect_f))),
+            centersuper=center_super_clip,
+            **degrain_args,
+        )
 
     def flow_interpolate(
         self,
