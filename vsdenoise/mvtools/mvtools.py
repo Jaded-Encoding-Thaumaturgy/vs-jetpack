@@ -861,6 +861,7 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
+        delta: tuple[int, int] | None = None,
         time: float | None = None,
         ml: float | None = None,
         blend: bool | None = None,
@@ -880,6 +881,7 @@ class MVTools(VSObject):
             super: The clip to be prepared by [super][vsdenoise.MVTools.super]. If None, super will be obtained from the
                 main clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
+            delta: Specific deltas of motion vectors to use.
             time: Time position between frames as a percentage (0.0-100.0). Controls the interpolation position between
                 frames. Does nothing if multi is specified.
             ml: Mask scale parameter that controls occlusion mask strength. Higher values produce weaker occlusion
@@ -901,7 +903,7 @@ class MVTools(VSObject):
         thscd1 = fallback(thscd1, self.flow_interpolate_args.get("thscd1"), default=self.thscd1)
         thscd2 = fallback(thscd2, self.flow_interpolate_args.get("thscd2"), default=self.thscd2)
 
-        vect_b, vect_f = vectors.get_vectors(tr=1)
+        vect_b, vect_f = vectors.get_vectors(tr=1, delta=delta)
 
         flow_interpolate_args: dict[str, Any] = self.flow_interpolate_args | KwargsNotNone(
             time=time, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
