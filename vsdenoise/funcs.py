@@ -36,7 +36,8 @@ def mc_degrain(
     thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
-    thscd: int | tuple[int | None, float | None] | None = None,
+    thscd1: int | None = None,
+    thscd2: float | None = None,
     export_globals: Literal[False] = False,
     planes: Planes = None,
 ) -> vs.VideoNode: ...
@@ -57,7 +58,8 @@ def mc_degrain(
     thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
-    thscd: int | tuple[int | None, float | None] | None = None,
+    thscd1: int | None = None,
+    thscd2: float | None = None,
     export_globals: Literal[True] = ...,
     planes: Planes = None,
 ) -> tuple[vs.VideoNode, MVTools]: ...
@@ -78,7 +80,8 @@ def mc_degrain(
     thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
-    thscd: int | tuple[int | None, float | None] | None = None,
+    thscd1: int | None = None,
+    thscd2: float | None = None,
     export_globals: bool = ...,
     planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]: ...
@@ -98,7 +101,8 @@ def mc_degrain(
     thsad2: int | tuple[int, int] | None = None,
     thsad_recalc: int | None = None,
     limit: float | tuple[float, float] | None = None,
-    thscd: int | tuple[int | None, float | None] | None = None,
+    thscd1: int | None = None,
+    thscd2: float | None = None,
     export_globals: bool = False,
     planes: Planes = None,
 ) -> vs.VideoNode | tuple[vs.VideoNode, MVTools]:
@@ -128,11 +132,8 @@ def mc_degrain(
         thsad_recalc: Only bad quality new vectors with a SAD above this will be re-estimated by search. thsad value is
             scaled to 8x8 block size.
         limit: Maximum allowed change in pixel values (8-bit scale).
-        thscd: Scene change detection thresholds:
-
-               - First value: SAD threshold for considering a block changed between frames.
-               - Second value: Percentage of changed blocks needed to trigger a scene change.
-
+        thscd1: SAD threshold for considering a block changed between frames.
+        thscd2: Percentage of changed blocks needed to trigger a scene change.
         export_globals: Whether to return the MVTools object.
         planes: Which planes to process. Default: None (all planes).
 
@@ -144,7 +145,7 @@ def mc_degrain(
 
     thsad_recalc = fallback(thsad_recalc, round(to_arr(thsad)[0] / 2))
 
-    mv = MVTools(clip, vectors=vectors, **mv_args)
+    mv = MVTools(clip, vectors=vectors, thscd1=thscd1, thscd2=thscd2, **mv_args)
     mfilter = mfilter(clip) if callable(mfilter) else mfilter
 
     if not vectors:
@@ -154,7 +155,7 @@ def mc_degrain(
             blksize = refine_blksize(blksize)
             mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap_div)
 
-    den = mv.degrain(mfilter, clip, tr=tr, thsad=thsad, thsad2=thsad2, limit=limit, thscd=thscd, planes=planes)
+    den = mv.degrain(mfilter, clip, tr=tr, thsad=thsad, thsad2=thsad2, limit=limit, planes=planes)
 
     return (den, mv) if export_globals else den
 

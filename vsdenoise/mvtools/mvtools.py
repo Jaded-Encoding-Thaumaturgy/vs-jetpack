@@ -22,7 +22,7 @@ from vstools import (
 
 from .enums import MaskMode, MVDirection, PenaltyMode, RFilterMode, SearchMode, SharpMode
 from .motion import MotionVectors
-from .utils import calc_super_dim, normalize_thscd, refine_blksize
+from .utils import calc_super_dim, refine_blksize
 
 __all__ = ["MVTools"]
 
@@ -156,6 +156,8 @@ class MVTools(VSObject):
         pad: int | tuple[int | None, int | None] | None = None,
         pel: int | None = None,
         chroma: bool | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         *,
         super_args: Mapping[str, Any] | None = None,
         analyze_args: Mapping[str, Any] | None = None,
@@ -196,6 +198,8 @@ class MVTools(VSObject):
                 frame borders.
             pel: Subpixel precision for motion estimation (1=pixel, 2=half-pixel, 4=quarter-pixel). Default: 1.
             chroma: Whether to consider chroma in motion vector calculations.
+            thscd1: SAD threshold for considering a block changed between frames.
+            thscd2: Percentage of changed blocks needed to trigger a scene change.
             super_args: Arguments passed to every [MVTools.super][vsdenoise.MVTools.super] call.
             analyze_args: Arguments passed to every [MVTools.analyze][vsdenoise.MVTools.analyze] call.
             recalculate_args: Arguments passed to every [MVTools.recalculate][vsdenoise.MVTools.recalculate] call.
@@ -218,6 +222,8 @@ class MVTools(VSObject):
         self.pel = pel
         self.pad = normalize_seq(pad, 2)
         self.chroma = chroma
+        self.thscd1 = thscd1
+        self.thscd2 = thscd2
 
         self.super_args = dict(super_args) if super_args else {}
         self.analyze_args = dict(analyze_args) if analyze_args else {}
@@ -542,7 +548,8 @@ class MVTools(VSObject):
         delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
         time: float | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         interleave: Literal[True] = True,
         temporal_func: None = None,
     ) -> tuple[vs.VideoNode, tuple[int, int]]: ...
@@ -558,7 +565,8 @@ class MVTools(VSObject):
         delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
         time: float | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         interleave: Literal[True] = True,
         temporal_func: VSFunctionNoArgs = ...,
     ) -> vs.VideoNode: ...
@@ -574,7 +582,8 @@ class MVTools(VSObject):
         delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
         time: float | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         interleave: Literal[False] = ...,
         temporal_func: None = None,
     ) -> tuple[list[vs.VideoNode], list[vs.VideoNode]]: ...
@@ -589,7 +598,8 @@ class MVTools(VSObject):
         delta: int | Sequence[int] | None = None,
         thsad: int | None = None,
         time: float | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         interleave: bool = True,
         temporal_func: VSFunctionNoArgs | None = None,
     ) -> vs.VideoNode | tuple[list[vs.VideoNode], list[vs.VideoNode]] | tuple[vs.VideoNode, tuple[int, int]]:
@@ -612,11 +622,8 @@ class MVTools(VSObject):
                 the compensated block.
             time: Time position between frames as a percentage (0.0-100.0). Controls the interpolation position between
                 frames.
-            thscd: Scene change detection thresholds:
-
-                   - First value: SAD threshold for considering a block changed between frames.
-                   - Second value: Percentage of changed blocks needed to trigger a scene change.
-
+            thscd1: SAD threshold for considering a block changed between frames.
+            thscd2: Percentage of changed blocks needed to trigger a scene change.
             interleave: Whether to interleave the compensated frames with the input.
             temporal_func: Temporal function to apply to the motion compensated frames.
 
@@ -631,7 +638,8 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors, onelevel=True)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1 = fallback(thscd1, self.compensate_args.get("thscd1"), default=self.thscd1)
+        thscd2 = fallback(thscd2, self.compensate_args.get("thscd2"), default=self.thscd2)
 
         if delta is not None:
             deltas = to_arr(delta)
@@ -673,7 +681,8 @@ class MVTools(VSObject):
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         time: float | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         interleave: Literal[True] = True,
         temporal_func: None = None,
     ) -> tuple[vs.VideoNode, tuple[int, int]]: ...
@@ -688,7 +697,8 @@ class MVTools(VSObject):
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         time: float | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         interleave: Literal[True] = True,
         temporal_func: VSFunctionNoArgs = ...,
     ) -> vs.VideoNode: ...
@@ -703,7 +713,8 @@ class MVTools(VSObject):
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         time: float | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         interleave: Literal[False] = ...,
         temporal_func: None = None,
     ) -> tuple[list[vs.VideoNode], list[vs.VideoNode]]: ...
@@ -717,7 +728,8 @@ class MVTools(VSObject):
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
         time: float | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         interleave: bool = True,
         temporal_func: VSFunctionNoArgs | None = None,
     ) -> vs.VideoNode | tuple[list[vs.VideoNode], list[vs.VideoNode]] | tuple[vs.VideoNode, tuple[int, int]]:
@@ -740,11 +752,8 @@ class MVTools(VSObject):
             tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
             time: Time position between frames as a percentage (0.0-100.0). Controls the interpolation position between
                 frames.
-            thscd: Scene change detection thresholds:
-
-                   - First value: SAD threshold for considering a block changed between frames.
-                   - Second value: Percentage of changed blocks needed to trigger a scene change.
-
+            thscd1: SAD threshold for considering a block changed between frames.
+            thscd2: Percentage of changed blocks needed to trigger a scene change.
             interleave: Whether to interleave the compensated frames with the input.
             temporal_func: Optional function to process the motion compensated frames. Takes the interleaved frames as
                 input and returns processed frames.
@@ -760,7 +769,8 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors, onelevel=True)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1 = fallback(thscd1, self.flow_args.get("thscd1"), default=self.thscd1)
+        thscd2 = fallback(thscd2, self.flow_args.get("thscd2"), default=self.thscd2)
 
         if delta is not None:
             deltas = to_arr(delta)
@@ -803,7 +813,8 @@ class MVTools(VSObject):
         thsad2: int | tuple[int, int] | None = None,
         limit: float | tuple[float, float] | None = None,
         weights: Sequence[int] | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         planes: Planes = None,
     ) -> vs.VideoNode:
         """
@@ -830,11 +841,8 @@ class MVTools(VSObject):
             limit: Maximum allowed change in pixel values (8 bits scale).
             weights: Optional per-frame bias applied on top of the SAD-derived weights. Given in temporal order:
                 `[bw_radius, ..., bw_1, centre, fw_1, ..., fw_radius]` (exactly `2 * radius + 1` non-negative values).
-            thscd: Scene change detection thresholds:
-
-                   - First value: SAD threshold for considering a block changed between frames.
-                   - Second value: Percentage of changed blocks needed to trigger a scene change.
-
+            thscd1: SAD threshold for considering a block changed between frames.
+            thscd2: Percentage of changed blocks needed to trigger a scene change.
             planes: Which planes to process. Default: None (all planes).
 
         Returns:
@@ -845,7 +853,8 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors, onelevel=True)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1 = fallback(thscd1, self.degrain_args.get("thscd1"), default=self.thscd1)
+        thscd2 = fallback(thscd2, self.degrain_args.get("thscd2"), default=self.thscd2)
 
         if delta is not None:
             deltas = to_arr(delta)
@@ -888,7 +897,8 @@ class MVTools(VSObject):
         time: float | None = None,
         ml: float | None = None,
         blend: bool | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         interleave: bool = True,
     ) -> vs.VideoNode:
         """
@@ -909,11 +919,8 @@ class MVTools(VSObject):
                 masks. Used in MakeVectorOcclusionMaskTime for modes 3-5. Used in MakeSADMaskTime for modes 6-8.
             blend: Whether to blend frames at scene changes. If True, frames will be blended. If False, frames will be
                 copied.
-            thscd: Scene change detection thresholds:
-
-                   - First value: SAD threshold for considering a block changed between frames.
-                   - Second value: Percentage of changed blocks needed to trigger a scene change.
-
+            thscd1: SAD threshold for considering a block changed between frames.
+            thscd2: Percentage of changed blocks needed to trigger a scene change.
             interleave: Whether to interleave the interpolated frames with the source clip.
 
         Returns:
@@ -924,7 +931,8 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors, onelevel=True)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1 = fallback(thscd1, self.flow_interpolate_args.get("thscd1"), default=self.thscd1)
+        thscd2 = fallback(thscd2, self.flow_interpolate_args.get("thscd2"), default=self.thscd2)
 
         vect_b, vect_f = vectors.get_vectors(delta=1)
 
@@ -944,7 +952,8 @@ class MVTools(VSObject):
         extramask: bool | None = None,
         ml: float | None = None,
         blend: bool | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
     ) -> vs.VideoNode:
         """
         Changes the framerate of the clip by interpolating frames between existing frames.
@@ -964,11 +973,8 @@ class MVTools(VSObject):
                 masks. Used in MakeVectorOcclusionMaskTime for modes 3-5. Used in MakeSADMaskTime for modes 6-8.
             blend: Whether to blend frames at scene changes. If True, frames will be blended. If False, frames will be
                 copied.
-            thscd: Scene change detection thresholds:
-
-                   - First value: SAD threshold for considering a block changed between frames.
-                   - Second value: Percentage of changed blocks needed to trigger a scene change.
-
+            thscd1: SAD threshold for considering a block changed between frames.
+            thscd2: Percentage of changed blocks needed to trigger a scene change.
         Returns:
             Clip with its framerate resampled.
         """
@@ -977,7 +983,8 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors, onelevel=True)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1 = fallback(thscd1, self.flow_fps_args.get("thscd1"), default=self.thscd1)
+        thscd2 = fallback(thscd2, self.flow_fps_args.get("thscd2"), default=self.thscd2)
 
         vect_b, vect_f = vectors.get_vectors(delta=1)
 
@@ -997,7 +1004,8 @@ class MVTools(VSObject):
         vectors: MotionVectors | None = None,
         blur: float | None = None,
         prec: int | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
     ) -> vs.VideoNode:
         """
         Creates a motion blur effect by simulating finite shutter time, similar to film cameras.
@@ -1013,11 +1021,8 @@ class MVTools(VSObject):
             blur: Blur time interval between frames as a percentage (0.0-100.0). Controls the simulated shutter
                 time/motion blur strength.
             prec: Blur precision in pixel units. Controls the accuracy of the motion blur.
-            thscd: Scene change detection thresholds:
-
-                   - First value: SAD threshold for considering a block changed between frames.
-                   - Second value: Percentage of changed blocks needed to trigger a scene change.
-
+            thscd1: SAD threshold for considering a block changed between frames.
+            thscd2: Percentage of changed blocks needed to trigger a scene change.
         Returns:
             Motion blurred clip.
         """
@@ -1026,7 +1031,8 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors, onelevel=True)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1 = fallback(thscd1, self.flow_blur_args.get("thscd1"), default=self.thscd1)
+        thscd2 = fallback(thscd2, self.flow_blur_args.get("thscd2"), default=self.thscd2)
 
         vect_b, vect_f = vectors.get_vectors(delta=1)
 
@@ -1044,7 +1050,8 @@ class MVTools(VSObject):
         kind: MaskMode = MaskMode.VECTOR_LENGTH,
         time: float | None = None,
         scval: float | None = None,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
     ) -> vs.VideoNode:
         """
         Creates a mask clip from motion vectors data.
@@ -1060,11 +1067,8 @@ class MVTools(VSObject):
             kind: Type of mask to generate. See [MaskMode][vsdenoise.MaskMode] for options.
             time: Time position between frames as a percentage (0.0-100.0).
             scval: Value assigned to the mask on scene changes.
-            thscd: Scene change detection thresholds:
-
-                   - First value: SAD threshold for considering a block changed between frames.
-                   - Second value: Percentage of changed blocks needed to trigger a scene change.
-
+            thscd1: SAD threshold for considering a block changed between frames.
+            thscd2: Percentage of changed blocks needed to trigger a scene change.
         Returns:
             Motion mask clip.
         """
@@ -1072,7 +1076,8 @@ class MVTools(VSObject):
         vectors = fallback(vectors, self.vectors)
         vect = vectors.get_vector(direction, delta)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1 = fallback(thscd1, self.mask_args.get("thscd1"), default=self.thscd1)
+        thscd2 = fallback(thscd2, self.mask_args.get("thscd2"), default=self.thscd2)
 
         return getattr(core.mvu, kind.value)(
             vect,
@@ -1084,7 +1089,8 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
         delta: int = 1,
-        thscd: int | tuple[int | None, float | None] | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
     ) -> vs.VideoNode:
         """
         Creates scene change frameprops from motion vectors data.
@@ -1093,11 +1099,8 @@ class MVTools(VSObject):
             clip: The clip to process. If None, the [clip][vsdenoise.MVTools.clip] attribute is used.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
             delta: Motion vector delta to use.
-            thscd: Scene change detection thresholds:
-
-                   - First value: SAD threshold for considering a block changed between frames.
-                   - Second value: Percentage of changed blocks needed to trigger a scene change.
-
+            thscd1: SAD threshold for considering a block changed between frames.
+            thscd2: Percentage of changed blocks needed to trigger a scene change.
         Returns:
             Clip with scene change properties set.
         """
@@ -1105,7 +1108,8 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
 
-        thscd1, thscd2 = normalize_thscd(thscd)
+        thscd1 = fallback(thscd1, self.sc_detection_args.get("thscd1"), default=self.thscd1)
+        thscd2 = fallback(thscd2, self.sc_detection_args.get("thscd2"), default=self.thscd2)
 
         sc_detection_args = self.sc_detection_args | KwargsNotNone(thscd1=thscd1, thscd2=thscd2)
 
