@@ -323,6 +323,7 @@ class MVTools(VSObject):
         meander: bool | None = None,
         trymany: bool | None = None,
         satd: bool | None = None,
+        fields: bool = False,
     ) -> None:
         """
         Analyze motion vectors in a clip using block matching.
@@ -379,6 +380,7 @@ class MVTools(VSObject):
             trymany: Whether to test multiple predictor vectors during the search process at coarser levels. Enabling
                 this can find better vectors but increases processing time.
             satd: Whether to use Sum of Absolute Transformed Differences (SATD) instead of SAD for luma comparison.
+            fields: Set field order for interlaced processing, input is expected to be separated fields.
         """
 
         nblksize = cast(tuple[int, int], tuple(normalize_seq(fallback(blksize, self.blksize), 2)))
@@ -420,13 +422,13 @@ class MVTools(VSObject):
         if not delta:
             vect_list = cast(
                 list[vs.VideoNode],
-                core.mvu.AnalyseMany(super_clip, radius=tr, **analyze_args),
+                core.mvu.AnalyseMany(super_clip, radius=tr, delta=1 + fields, **analyze_args),
             )
             for d in range(1, tr + 1):
                 self.vectors[d], self.vectors[-d] = vect_list[2 * d - 2 : 2 * d]
         else:
             for d in to_arr(delta):
-                self.vectors[d] = core.mvu.Analyse(super_clip, delta=d, **analyze_args)
+                self.vectors[d] = core.mvu.Analyse(super_clip, delta=d * (fields + 1), **analyze_args)
 
     def recalculate(
         self,
