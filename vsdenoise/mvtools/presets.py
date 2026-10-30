@@ -35,7 +35,7 @@ class SuperArgs(TypedDict, total=False):
 
 class AnalyzeArgs(TypedDict, total=False):
     blksize: int | tuple[int, int] | None
-    overlap_div: int | tuple[int, int] | None
+    overlap: int | tuple[int, int] | None
     levels: int | None
     search: SearchMode | int | None
     searchparam: int | None
@@ -58,7 +58,7 @@ class RecalculateArgs(TypedDict, total=False):
     thsad: int | None
     smooth: bool | None
     blksize: int | tuple[int, int] | None
-    overlap_div: int | tuple[int, int] | None
+    overlap: int | tuple[int, int] | None
     search: SearchMode | int | None
     searchparam: int | None
     mvlambda: int | None
@@ -224,8 +224,8 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_COHERENCE(cls) -> MVToolsPreset:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, satd=True),
-            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True),
+            analyze_args=AnalyzeArgs(blksize=16, overlap=8, satd=True),
+            recalculate_args=RecalculateArgs(blksize=8, overlap=4, satd=True),
         )
 
     @classproperty
@@ -233,6 +233,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_SAD(cls) -> MVToolsPreset:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, satd=True, mvlambda=100),
-            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True, mvlambda=100),
+            analyze_args=AnalyzeArgs(blksize=16, overlap=8, satd=True, mvlambda=100),
+            recalculate_args=RecalculateArgs(blksize=8, overlap=4, satd=True, mvlambda=100),
         )
