@@ -915,6 +915,7 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
+        delta: tuple[int, int] | None = None,
         num: int | None = None,
         den: int | None = None,
         extramask: bool | None = None,
@@ -935,6 +936,7 @@ class MVTools(VSObject):
             super: The clip to be prepared by [super][vsdenoise.MVTools.super]. If None, super will be obtained from the
                 main clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
+            delta: Specific deltas of motion vectors to use.
             num: Output frame-rate numerator.
             den: Output frame-rate denominator.
             extramask: Whether to generate an extra mask for occlusion handling.
@@ -955,7 +957,7 @@ class MVTools(VSObject):
         thscd1 = fallback(thscd1, self.flow_fps_args.get("thscd1"), default=self.thscd1)
         thscd2 = fallback(thscd2, self.flow_fps_args.get("thscd2"), default=self.thscd2)
 
-        vect_b, vect_f = vectors.get_vectors(tr=1)
+        vect_b, vect_f = vectors.get_vectors(tr=1, delta=delta)
 
         flow_fps_args: dict[str, Any] = self.flow_fps_args | KwargsNotNone(
             num=num, den=den, extramask=extramask, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
