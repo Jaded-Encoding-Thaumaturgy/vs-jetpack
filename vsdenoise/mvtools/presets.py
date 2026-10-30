@@ -43,6 +43,7 @@ class AnalyzeArgs(TypedDict, total=False):
     searchparam: int | None
     pelsearch: int | None
     mvlambda: int | None
+    chroma: bool | None
     lsad: int | None
     plevel: PenaltyMode | int | None
     globalmv: bool | None
@@ -64,6 +65,7 @@ class RecalculateArgs(TypedDict, total=False):
     search: SearchMode | int | None
     searchparam: int | None
     mvlambda: int | None
+    chroma: bool | None
     pnew: int | None
     meander: bool | None
     satd: bool | None
@@ -132,7 +134,6 @@ class ScDetectionArgs(TypedDict, total=False):
 
 class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     search_clip: vs.VideoNode | VSFunctionNoArgs
-    chroma: bool
     thscd1: int | None
     thscd2: float | None
     super_args: SuperArgs
@@ -151,7 +152,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
         self,
         *,
         search_clip: vs.VideoNode | VSFunctionNoArgs | None = None,
-        chroma: bool | None = None,
         thscd1: int | None = None,
         thscd2: float | None = None,
         super_args: SuperArgs | None = None,
@@ -168,7 +168,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     ) -> None:
         self._dict = KwargsNotNone(
             search_clip=search_clip,
-            chroma=chroma,
             thscd1=thscd1,
             thscd2=thscd2,
             super_args=super_args,

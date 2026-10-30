@@ -11,7 +11,6 @@ def test_mvtools_init() -> None:
     clip = core.std.BlankClip(format=vs.YUV420P8, width=160, height=120)
     mv = MVTools(clip)
     assert mv.clip is clip
-    assert mv.chroma is None
 
     mv_search = MVTools(clip, search_clip=lambda clip: clip.std.Invert())
     assert mv_search.search_clip is not clip
@@ -20,10 +19,9 @@ def test_mvtools_init() -> None:
     with pytest.raises(UnsupportedColorFamilyError):
         MVTools(rgb_clip)
 
-    mv_custom = MVTools(clip, chroma=True, super_args={"sharp": 1, "pel": 2, "pad": (8, 8)}, analyze_args={"search": 2})
+    mv_custom = MVTools(clip, super_args={"sharp": 1, "pel": 2, "pad": (8, 8)}, analyze_args={"search": 2})
     assert mv_custom.super_args["pad"] == (8, 8)
     assert mv_custom.super_args["pel"] == 2
-    assert mv_custom.chroma is True
     assert mv_custom.super_args["sharp"] == 1
 
 
