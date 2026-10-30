@@ -796,6 +796,7 @@ class MVTools(VSObject):
         self,
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
+        center_super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
         tr: int | None = None,
         delta: int | Sequence[int] | None = None,
@@ -816,6 +817,7 @@ class MVTools(VSObject):
             clip: The clip to process. If None, the [clip][vsdenoise.MVTools.clip] attribute is used.
             super: The clip to be prepared by [super][vsdenoise.MVTools.super]. If None, super will be obtained from the
                 main clip.
+            center_super: Optional super clip that supplies the centre frame, and the reference for limit.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
             tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
             delta: Specific deltas of motion vectors to use.
@@ -844,6 +846,7 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
         super_clip = self.super(fallback(super, clip), vectors, onelevel=True)
+        center_super_clip = self.super(center_super, vectors, onelevel=True) if center_super else center_super
 
         thscd1, thscd2 = normalize_thscd(thscd)
 
@@ -878,7 +881,7 @@ class MVTools(VSObject):
 
         vects_combined = list(chain.from_iterable(zip(vect_b, vect_f)))
 
-        return core.mvu.Degrain(clip, super_clip, vects_combined, **degrain_args)
+        return core.mvu.Degrain(clip, super_clip, vects_combined, centersuper=center_super_clip, **degrain_args)
 
     def flow_interpolate(
         self,
