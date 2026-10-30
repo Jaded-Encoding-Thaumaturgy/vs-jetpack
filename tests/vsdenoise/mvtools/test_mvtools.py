@@ -2,7 +2,7 @@ from fractions import Fraction
 
 import pytest
 
-from vsdenoise import MaskMode, MVDirection, MVTools
+from vsdenoise import MaskMode, MotionVectors, MVTools
 from vsdenoise.mvtools.mvtools import _super_clip_cache
 from vstools import UnsupportedColorFamilyError, core, vs
 
@@ -20,23 +20,16 @@ def test_mvtools_init() -> None:
     with pytest.raises(UnsupportedColorFamilyError):
         MVTools(rgb_clip)
 
-    mv_custom = MVTools(
-        clip,
-        pad=(8, 8),
-        pel=2,
-        chroma=True,
-        super_args={"sharp": 1},
-        analyze_args={"search": 2},
-    )
-    assert mv_custom.pad == [8, 8]
-    assert mv_custom.pel == 2
+    mv_custom = MVTools(clip, chroma=True, super_args={"sharp": 1, "pel": 2, "pad": (8, 8)}, analyze_args={"search": 2})
+    assert mv_custom.super_args["pad"] == (8, 8)
+    assert mv_custom.super_args["pel"] == 2
     assert mv_custom.chroma is True
     assert mv_custom.super_args["sharp"] == 1
 
 
 def test_mvtools_super() -> None:
     clip = core.std.BlankClip(format=vs.GRAY8, width=160, height=120)
-    mv = MVTools(clip)
+    mv = MVTools(clip, vectors=MotionVectors(blksize=16, overlap=0))
 
     # Test default super
     s = mv.super()
@@ -61,22 +54,21 @@ def test_mvtools_analyze() -> None:
 
     # Default analyze (tr=1)
     mv.analyze(tr=1)
-    assert len(mv.vectors[MVDirection.BACKWARD]) == 1
-    assert len(mv.vectors[MVDirection.FORWARD]) == 1
+    assert len(mv.vectors) == 2
 
     # Verify vector properties
-    f = mv.vectors[MVDirection.BACKWARD][1].get_frame(0)
+    f = mv.vectors[1].get_frame(0)
     assert f.props["MVUtensilsAnalysisDeltaFrame"] == 1
     assert f.props["MVUtensilsAnalysisBlkSizeX"] == 16
     assert f.props["MVUtensilsAnalysisBlkSizeY"] == 16
 
     # Analyze with custom delta list
-    mv.analyze(delta=[1, 2])
-    assert 2 in mv.vectors[MVDirection.BACKWARD]
-    assert 2 in mv.vectors[MVDirection.FORWARD]
+    mv.analyze(delta=[-1, 2])
+    assert 2 in mv.vectors
+    assert -1 in mv.vectors
 
-    f_d2 = mv.vectors[MVDirection.FORWARD][2].get_frame(0)
-    assert f_d2.props["MVUtensilsAnalysisDeltaFrame"] == -2
+    f_d1 = mv.vectors[-1].get_frame(0)
+    assert f_d1.props["MVUtensilsAnalysisDeltaFrame"] == -1
 
 
 def test_mvtools_recalculate() -> None:
@@ -86,9 +78,9 @@ def test_mvtools_recalculate() -> None:
 
     # Recalculate vectors with a custom block size to verify wrapper parameter passing
     mv.recalculate(blksize=8, overlap=4)
-    assert len(mv.vectors[MVDirection.BACKWARD]) == 1
+    assert len(mv.vectors) == 2
 
-    f = mv.vectors[MVDirection.BACKWARD][1].get_frame(0)
+    f = mv.vectors[1].get_frame(0)
     assert f.props["MVUtensilsAnalysisBlkSizeX"] == 8
     assert f.props["MVUtensilsAnalysisBlkSizeY"] == 8
 
