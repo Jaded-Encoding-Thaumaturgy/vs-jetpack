@@ -133,6 +133,8 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     pel: int
     pad: int | tuple[int | None, int | None]
     chroma: bool
+    thscd1: int | None
+    thscd2: float | None
     super_args: SuperArgs
     analyze_args: AnalyzeArgs
     recalculate_args: RecalculateArgs
@@ -152,6 +154,8 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
         pel: int | None = None,
         pad: int | tuple[int | None, int | None] | None = None,
         chroma: bool | None = None,
+        thscd1: int | None = None,
+        thscd2: float | None = None,
         super_args: SuperArgs | None = None,
         analyze_args: AnalyzeArgs | None = None,
         recalculate_args: RecalculateArgs | None = None,
@@ -169,6 +173,8 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
             pel=pel,
             pad=pad,
             chroma=chroma,
+            thscd1=thscd1,
+            thscd2=thscd2,
             super_args=super_args,
             analyze_args=analyze_args,
             recalculate_args=recalculate_args,
