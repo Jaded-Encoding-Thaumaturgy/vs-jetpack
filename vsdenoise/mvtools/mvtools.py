@@ -696,7 +696,7 @@ class MVTools(VSObject):
         thscd1: int | None = None,
         thscd2: float | None = None,
         interleave: Literal[False] = ...,
-        temporal_func: None = None,
+        temporal_func: VSFunctionNoArgs | None = None,
     ) -> tuple[list[vs.VideoNode], list[vs.VideoNode]]: ...
 
     def flow(
@@ -726,8 +726,8 @@ class MVTools(VSObject):
             super: The clip to be prepared by [super][vsdenoise.MVTools.super]. If None, super will be obtained from the
                 main clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            delta: Specific delta(s) of motion vectors to use.
             tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
+            delta: Specific delta(s) of motion vectors to use.
             time: Time position between frames as a percentage (0.0-100.0). Controls the interpolation position between
                 frames.
             thscd1: SAD threshold for considering a block changed between frames.
