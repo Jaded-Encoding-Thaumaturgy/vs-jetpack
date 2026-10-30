@@ -32,16 +32,20 @@ from .presets import (
     ScDetectionArgs,
     SuperArgs,
 )
-from .utils import calc_super_dim
+from .utils import calc_super_pad
 
 __all__ = ["MVTools"]
 
 
 class _SuperConfigKey(NamedTuple):
-    onelevel: bool
     blksize: tuple[int, int]
     overlap: tuple[int, int]
-    args: tuple[tuple[str, Any], ...]
+    pad: tuple[int, int]
+    pel: int
+    sharp: SharpMode | int
+    rfilter: RFilterMode | int
+    onelevel: bool
+    pelclip: vs.VideoNode | None
 
 
 class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
@@ -51,43 +55,51 @@ class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
     def get_clip(
         self,
         clip: vs.VideoNode,
-        onelevel: bool,
-        *,
         blksize: tuple[int, int],
         overlap: tuple[int, int],
-        **args: Any,
+        pad: tuple[int, int],
+        pel: int,
+        sharp: SharpMode | int,
+        rfilter: RFilterMode | int,
+        onelevel: bool,
+        pelclip: vs.VideoNode | None,
     ) -> vs.VideoNode:
-        args_key = tuple(sorted(args.items()))
-        key = _SuperConfigKey(onelevel, blksize, overlap, args_key)
+        key = _SuperConfigKey(blksize, overlap, pad, pel, sharp, rfilter, onelevel, pelclip)
 
         if key in self:
             return self[key]
 
-        # Check if there is a cached onelevel=False (hierarchical) clip with same args
-        if (key_hierarchical := _SuperConfigKey(False, blksize, overlap, args_key)) in self:
-            return self[key_hierarchical]
+        # Get the required padding amount from clip dimension, blksize, and overlap.
+        # pad & pel must match.
+        # If pel > 1, pelclip must match. If pelclip is used, sharp does not need to match.
+        # If onelevel=False, ensure the cached super has enough levels. rfilter must match.
+        # Limitation: Callable pelclip when pel > 1 defeats caching.
+        req_padx = calc_super_pad(clip.width, blksize[0], overlap[0])
+        req_pady = calc_super_pad(clip.height, blksize[1], overlap[1])
 
-        # If only one level is needed (recalculate, degrain, compensate), check if a cached clip
-        # can be reused because it has matching pixel-rendering properties, matching padded dimensions,
-        # and >= block size and overlap.
-        if onelevel:
-            req_w = calc_super_dim(clip.width, blksize[0], overlap[0])
-            req_h = calc_super_dim(clip.height, blksize[1], overlap[1])
+        for cached_key, cached_clip in self.items():
+            if all(
+                (
+                    calc_super_pad(clip.width, cached_key.blksize[0], cached_key.overlap[0]) == req_padx,
+                    calc_super_pad(clip.height, cached_key.blksize[1], cached_key.overlap[1]) == req_pady,
+                    cached_key.pad == pad,
+                    cached_key.pel == pel,
+                    pel == 1 or (cached_key.pelclip == pelclip and (pelclip or cached_key.sharp == sharp)),
+                    onelevel
+                    or all(
+                        (
+                            not cached_key.onelevel,
+                            cached_key.blksize[0] <= blksize[0],
+                            cached_key.blksize[1] <= blksize[1],
+                            cached_key.rfilter == rfilter,
+                        )
+                    ),
+                )
+            ):
+                self[key] = cached_clip
+                return cached_clip
 
-            for cached_key, cached_clip in self.items():
-                if (
-                    cached_key.args == args_key
-                    and cached_key.blksize[0] >= blksize[0]
-                    and cached_key.blksize[1] >= blksize[1]
-                    and cached_key.overlap[0] >= overlap[0]
-                    and cached_key.overlap[1] >= overlap[1]
-                    and calc_super_dim(clip.width, cached_key.blksize[0], cached_key.overlap[0]) == req_w
-                    and calc_super_dim(clip.height, cached_key.blksize[1], cached_key.overlap[1]) == req_h
-                ):
-                    self[key] = cached_clip
-                    return cached_clip
-
-        self[key] = core.mvu.Super(clip, blksize=blksize, overlap=overlap, onelevel=onelevel, **args)
+        self[key] = core.mvu.Super(clip, blksize, overlap, pad, onelevel, sharp, rfilter, pel, pelclip)
 
         return self[key]
 
@@ -99,13 +111,13 @@ class _ClipSuperCache(VSObject):
     def __vs_del__(self, core_id: int) -> None:
         self.clear()
 
-    def get(self, clip: vs.VideoNode, onelevel: bool, **args: Any) -> vs.VideoNode:
+    def get(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:
         cache = self._cache.get(clip)
 
         if cache is None:
             self._cache[clip] = cache = _SuperConfigCache()
 
-        return cache.get_clip(clip, onelevel, **args)
+        return cache.get_clip(clip, *args, **kwargs)
 
     def clear(self) -> None:
         self._cache.clear()
@@ -299,15 +311,7 @@ class MVTools(VSObject):
         npelclip = pelclip(clip) if callable(pelclip) else pelclip
 
         return _super_clip_cache.get(
-            clip,
-            blksize=blksize,
-            overlap=overlap,
-            pad=pad,
-            pel=pel,
-            sharp=sharp,
-            rfilter=rfilter,
-            onelevel=onelevel,
-            pelclip=npelclip,
+            clip, blksize, overlap, vectors.pad, vectors.pel, sharp, rfilter, onelevel, npelclip
         )
 
     def analyze(
