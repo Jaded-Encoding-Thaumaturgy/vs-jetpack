@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 import weakref
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from itertools import chain
 from typing import Any, Literal, NamedTuple, cast, overload
 
@@ -21,6 +21,19 @@ from vstools import (
 
 from .enums import MaskMode, PenaltyMode, RFilterMode, SearchMode, SharpMode
 from .motion import MotionVectors
+from .presets import (
+    AnalyzeArgs,
+    CompensateArgs,
+    DegrainArgs,
+    FlowArgs,
+    FlowBlurArgs,
+    FlowFpsArgs,
+    FlowInterpolateArgs,
+    MaskArgs,
+    RecalculateArgs,
+    ScDetectionArgs,
+    SuperArgs,
+)
 from .utils import calc_super_dim
 
 __all__ = ["MVTools"]
@@ -114,37 +127,37 @@ class MVTools(VSObject):
     vectors: MotionVectors
     """Motion vectors analyzed and used for all operations."""
 
-    super_args: dict[str, Any]
+    super_args: SuperArgs
     """Arguments passed to every [MVTools.super][vsdenoise.MVTools.super] call."""
 
-    analyze_args: dict[str, Any]
+    analyze_args: AnalyzeArgs
     """Arguments passed to every [MVTools.analyze][vsdenoise.MVTools.analyze] call."""
 
-    recalculate_args: dict[str, Any]
+    recalculate_args: RecalculateArgs
     """Arguments passed to every [MVTools.recalculate][vsdenoise.MVTools.recalculate] call."""
 
-    compensate_args: dict[str, Any]
+    compensate_args: CompensateArgs
     """Arguments passed to every [MVTools.compensate][vsdenoise.MVTools.compensate] call."""
 
-    flow_args: dict[str, Any]
+    flow_args: FlowArgs
     """Arguments passed to every [MVTools.flow][vsdenoise.MVTools.flow] call."""
 
-    degrain_args: dict[str, Any]
+    degrain_args: DegrainArgs
     """Arguments passed to every [MVTools.degrain][vsdenoise.MVTools.degrain] call."""
 
-    flow_interpolate_args: dict[str, Any]
+    flow_interpolate_args: FlowInterpolateArgs
     """Arguments passed to every [MVTools.flow_interpolate][vsdenoise.MVTools.flow_interpolate] call."""
 
-    flow_fps_args: dict[str, Any]
+    flow_fps_args: FlowFpsArgs
     """Arguments passed to every [MVTools.flow_fps][vsdenoise.MVTools.flow_fps] call."""
 
-    flow_blur_args: dict[str, Any]
+    flow_blur_args: FlowBlurArgs
     """Arguments passed to every [MVTools.flow_blur][vsdenoise.MVTools.flow_blur] call."""
 
-    mask_args: dict[str, Any]
+    mask_args: MaskArgs
     """Arguments passed to every [MVTools.mask][vsdenoise.MVTools.mask] call."""
 
-    sc_detection_args: dict[str, Any]
+    sc_detection_args: ScDetectionArgs
     """Arguments passed to every [MVTools.sc_detection][vsdenoise.MVTools.sc_detection] call."""
 
     def __init__(
@@ -155,17 +168,17 @@ class MVTools(VSObject):
         thscd1: int | None = None,
         thscd2: float | None = None,
         *,
-        super_args: Mapping[str, Any] | None = None,
-        analyze_args: Mapping[str, Any] | None = None,
-        recalculate_args: Mapping[str, Any] | None = None,
-        compensate_args: Mapping[str, Any] | None = None,
-        flow_args: Mapping[str, Any] | None = None,
-        degrain_args: Mapping[str, Any] | None = None,
-        flow_interpolate_args: Mapping[str, Any] | None = None,
-        flow_fps_args: Mapping[str, Any] | None = None,
-        flow_blur_args: Mapping[str, Any] | None = None,
-        mask_args: Mapping[str, Any] | None = None,
-        sc_detection_args: Mapping[str, Any] | None = None,
+        super_args: SuperArgs | None = None,
+        analyze_args: AnalyzeArgs | None = None,
+        recalculate_args: RecalculateArgs | None = None,
+        compensate_args: CompensateArgs | None = None,
+        flow_args: FlowArgs | None = None,
+        degrain_args: DegrainArgs | None = None,
+        flow_interpolate_args: FlowInterpolateArgs | None = None,
+        flow_fps_args: FlowFpsArgs | None = None,
+        flow_blur_args: FlowBlurArgs | None = None,
+        mask_args: MaskArgs | None = None,
+        sc_detection_args: ScDetectionArgs | None = None,
     ) -> None:
         """
         MVTools is a collection of functions for motion estimation and compensation in video.
@@ -214,20 +227,20 @@ class MVTools(VSObject):
         self.thscd1 = thscd1
         self.thscd2 = thscd2
 
-        self.super_args = dict(super_args) if super_args else {}
-        self.analyze_args = dict(analyze_args) if analyze_args else {}
-        self.recalculate_args = dict(recalculate_args) if recalculate_args else {}
-        self.compensate_args = dict(compensate_args) if compensate_args else {}
-        self.degrain_args = dict(degrain_args) if degrain_args else {}
-        self.flow_args = dict(flow_args) if flow_args else {}
-        self.flow_interpolate_args = dict(flow_interpolate_args) if flow_interpolate_args else {}
-        self.flow_fps_args = dict(flow_fps_args) if flow_fps_args else {}
-        self.flow_blur_args = dict(flow_blur_args) if flow_blur_args else {}
-        self.mask_args = dict(mask_args) if mask_args else {}
-        self.sc_detection_args = dict(sc_detection_args) if sc_detection_args else {}
+        self.super_args = fallback(super_args, SuperArgs())
+        self.analyze_args = fallback(analyze_args, AnalyzeArgs())
+        self.recalculate_args = fallback(recalculate_args, RecalculateArgs())
+        self.compensate_args = fallback(compensate_args, CompensateArgs())
+        self.degrain_args = fallback(degrain_args, DegrainArgs())
+        self.flow_args = fallback(flow_args, FlowArgs())
+        self.flow_interpolate_args = fallback(flow_interpolate_args, FlowInterpolateArgs())
+        self.flow_fps_args = fallback(flow_fps_args, FlowFpsArgs())
+        self.flow_blur_args = fallback(flow_blur_args, FlowBlurArgs())
+        self.mask_args = fallback(mask_args, MaskArgs())
+        self.sc_detection_args = fallback(sc_detection_args, ScDetectionArgs())
 
-        self.blksize: tuple[int, int] = tuple(normalize_seq(self.analyze_args.get("blksize", 16), 2))
-        self.overlap: tuple[int, int] = tuple(normalize_seq(self.analyze_args.get("overlap", 8), 2))
+        self.blksize: tuple[int, int] = tuple(normalize_seq(self.analyze_args.get("blksize", 16), 2))  # type: ignore[assignment]
+        self.overlap: tuple[int, int] = tuple(normalize_seq(self.analyze_args.get("overlap", 8), 2))  # type: ignore[assignment]
 
     def super(
         self,
@@ -392,26 +405,26 @@ class MVTools(VSObject):
             onelevel=False,
         )
 
-        analyze_args = KwargsNotNone(
+        analyze_args: dict[str, Any] = self.analyze_args | KwargsNotNone(
             blksize=nblksize,
             overlap=noverlap,
             levels=levels,
-            search=fallback(search, self.analyze_args.get("search"), default=None),
-            searchparam=fallback(searchparam, self.analyze_args.get("searchparam"), default=None),
-            pelsearch=fallback(pelsearch, self.analyze_args.get("pelsearch"), default=None),
-            mvlambda=fallback(mvlambda, self.analyze_args.get("mvlambda"), default=None),
-            chroma=fallback(chroma, self.analyze_args.get("chroma"), default=None),
-            lsad=fallback(lsad, self.analyze_args.get("lsad"), default=None),
-            plevel=fallback(plevel, self.analyze_args.get("plevel"), default=None),
-            globalmv=fallback(globalmv, self.analyze_args.get("globalmv"), default=None),
-            pnew=fallback(pnew, self.analyze_args.get("pnew"), default=None),
-            pzero=fallback(pzero, self.analyze_args.get("pzero"), default=None),
-            pglobal=fallback(pglobal, self.analyze_args.get("pglobal"), default=None),
-            badsad=fallback(badsad, self.analyze_args.get("badsad"), default=None),
-            badrange=fallback(badrange, self.analyze_args.get("badrange"), default=None),
-            meander=fallback(meander, self.analyze_args.get("meander"), default=None),
-            trymany=fallback(trymany, self.analyze_args.get("trymany"), default=None),
-            satd=fallback(satd, self.analyze_args.get("satd"), default=None),
+            search=search,
+            searchparam=searchparam,
+            pelsearch=pelsearch,
+            mvlambda=mvlambda,
+            chroma=chroma,
+            lsad=lsad,
+            plevel=plevel,
+            globalmv=globalmv,
+            pnew=pnew,
+            pzero=pzero,
+            pglobal=pglobal,
+            badsad=badsad,
+            badrange=badrange,
+            meander=meander,
+            trymany=trymany,
+            satd=satd,
         )
 
         self.vectors.clear()
@@ -495,18 +508,18 @@ class MVTools(VSObject):
             onelevel=True,
         )
 
-        recalculate_args = KwargsNotNone(
-            thsad=fallback(thsad, self.recalculate_args.get("thsad"), default=None),
-            smooth=fallback(smooth, self.recalculate_args.get("smooth"), default=None),
+        recalculate_args: dict[str, Any] = self.recalculate_args | KwargsNotNone(
+            thsad=thsad,
+            smooth=smooth,
             blksize=nblksize,
             overlap=noverlap,
-            search=fallback(search, self.recalculate_args.get("search"), default=None),
-            searchparam=fallback(searchparam, self.recalculate_args.get("searchparam"), default=None),
-            mvlambda=fallback(mvlambda, self.recalculate_args.get("mvlambda"), default=None),
-            chroma=fallback(chroma, self.recalculate_args.get("chroma"), default=None),
-            pnew=fallback(pnew, self.recalculate_args.get("pnew"), default=None),
-            meander=fallback(meander, self.recalculate_args.get("meander"), default=None),
-            satd=fallback(satd, self.recalculate_args.get("satd"), default=None),
+            search=search,
+            searchparam=searchparam,
+            mvlambda=mvlambda,
+            chroma=chroma,
+            pnew=pnew,
+            meander=meander,
+            satd=satd,
         )
 
         recalculated = core.mvu.Recalculate(super_clip, tuple(vectors.values()), **recalculate_args)
@@ -619,8 +632,9 @@ class MVTools(VSObject):
 
         vect_b, vect_f = vectors.get_vectors(tr, delta)
 
-        compensate_args = self.compensate_args | KwargsNotNone(thsad=thsad, time=time, thscd1=thscd1, thscd2=thscd2)
-
+        compensate_args: dict[str, Any] = self.compensate_args | KwargsNotNone(
+            thsad=thsad, time=time, thscd1=thscd1, thscd2=thscd2
+        )
         comp_fwrd, comp_back = [
             [core.mvu.Compensate(clip, super_clip, vect, **compensate_args) for vect in vect_list]
             for vect_list in (reversed(vect_f), vect_b)
@@ -738,7 +752,7 @@ class MVTools(VSObject):
 
         vect_b, vect_f = vectors.get_vectors(tr, delta)
 
-        flow_args = self.flow_args | KwargsNotNone(time=time, thscd1=thscd1, thscd2=thscd2)
+        flow_args: dict[str, Any] = self.flow_args | KwargsNotNone(time=time, thscd1=thscd1, thscd2=thscd2)
 
         flow_fwrd, flow_back = [
             [core.mvu.Flow(clip, super_clip, vect, **flow_args) for vect in vect_list]
@@ -828,14 +842,14 @@ class MVTools(VSObject):
 
         planes_list = normalize_planes(clip, planes)
 
-        degrain_args = self.degrain_args | KwargsNotNone(
+        degrain_args: dict[str, Any] = self.degrain_args | KwargsNotNone(
             thsad=thsad,
             thsad2=thsad2,
-            planes=planes_list,
             limit=limit_list,
+            weights=weights,
             thscd1=thscd1,
             thscd2=thscd2,
-            weights=weights,
+            planes=planes_list,
         )
 
         vects_combined = list(chain.from_iterable(zip(vect_b, vect_f)))
@@ -889,7 +903,7 @@ class MVTools(VSObject):
 
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
-        flow_interpolate_args = self.flow_interpolate_args | KwargsNotNone(
+        flow_interpolate_args: dict[str, Any] = self.flow_interpolate_args | KwargsNotNone(
             time=time, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
         )
 
@@ -943,11 +957,11 @@ class MVTools(VSObject):
 
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
-        flow_fps_args: dict[str, Any] = KwargsNotNone(
+        flow_fps_args: dict[str, Any] = self.flow_fps_args | KwargsNotNone(
             num=num, den=den, extramask=extramask, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
         )
 
-        return core.mvu.FlowFPS(clip, super_clip, (*vect_b, *vect_f), **self.flow_fps_args | flow_fps_args)
+        return core.mvu.FlowFPS(clip, super_clip, (*vect_b, *vect_f), **flow_fps_args)
 
     def flow_blur(
         self,
@@ -988,8 +1002,9 @@ class MVTools(VSObject):
 
         vect_b, vect_f = vectors.get_vectors(tr=1)
 
-        flow_blur_args = self.flow_blur_args | KwargsNotNone(blur=blur, prec=prec, thscd1=thscd1, thscd2=thscd2)
-
+        flow_blur_args: dict[str, Any] = self.flow_blur_args | KwargsNotNone(
+            blur=blur, prec=prec, thscd1=thscd1, thscd2=thscd2
+        )
         return core.mvu.FlowBlur(clip, super_clip, (*vect_b, *vect_f), **flow_blur_args)
 
     def mask(
@@ -1028,10 +1043,11 @@ class MVTools(VSObject):
         thscd1 = fallback(thscd1, self.mask_args.get("thscd1"), default=self.thscd1)
         thscd2 = fallback(thscd2, self.mask_args.get("thscd2"), default=self.thscd2)
 
-        return getattr(core.mvu, kind.value)(
-            vectors[delta],
-            **self.mask_args | KwargsNotNone(ml=ml, gamma=gamma, time=time, scval=scval, thscd1=thscd1, thscd2=thscd2),
+        mask_args: dict[str, Any] = self.mask_args | KwargsNotNone(
+            ml=ml, gamma=gamma, time=time, scval=scval, thscd1=thscd1, thscd2=thscd2
         )
+
+        return getattr(core.mvu, kind.value)(vectors[delta], **mask_args)
 
     def sc_detection(
         self,
