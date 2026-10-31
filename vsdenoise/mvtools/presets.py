@@ -27,6 +27,8 @@ __all__ = [
 
 
 class SuperArgs(TypedDict, total=False):
+    blksize: int | tuple[int, int] | None
+    overlap: int | tuple[int, int] | None
     pad: int | tuple[int, int] | None
     pel: int | None
     sharp: SharpMode | int | None
