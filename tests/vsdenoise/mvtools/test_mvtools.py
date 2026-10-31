@@ -34,9 +34,9 @@ def test_mvtools_super() -> None:
     # Test default super
     s = mv.super()
     f = s.get_frame(0)
-    assert f.props["MVUtensilsSuperPel"] == 2
-    assert f.props["MVUtensilsSuperHPad"] == 8
-    assert f.props["MVUtensilsSuperVPad"] == 8
+    assert f.props["MVToolsSuperPel"] == 2
+    assert f.props["MVToolsSuperHPad"] == 8
+    assert f.props["MVToolsSuperVPad"] == 8
 
     # Test super with pelclip callable
     s_pel = mv.super(
@@ -44,8 +44,8 @@ def test_mvtools_super() -> None:
         onelevel=True,
     )
     f_pel = s_pel.get_frame(0)
-    assert f_pel.props["MVUtensilsSuperPel"] == 2
-    assert f_pel.props["MVUtensilsSuperLevels"] == 1
+    assert f_pel.props["MVToolsSuperPel"] == 2
+    assert f_pel.props["MVToolsSuperLevels"] == 1
 
 
 def test_mvtools_analyze() -> None:
@@ -58,9 +58,9 @@ def test_mvtools_analyze() -> None:
 
     # Verify vector properties
     f = mv.vectors[1].get_frame(0)
-    assert f.props["MVUtensilsAnalysisDeltaFrame"] == 1
-    assert f.props["MVUtensilsAnalysisBlkSizeX"] == 8
-    assert f.props["MVUtensilsAnalysisBlkSizeY"] == 8
+    assert f.props["MVToolsAnalysisDeltaFrame"] == 1
+    assert f.props["MVToolsAnalysisBlkSizeX"] == 8
+    assert f.props["MVToolsAnalysisBlkSizeY"] == 8
 
     # Analyze with custom delta list
     mv.analyze(delta=[-1, 2])
@@ -68,7 +68,7 @@ def test_mvtools_analyze() -> None:
     assert -1 in mv.vectors
 
     f_d1 = mv.vectors[-1].get_frame(0)
-    assert f_d1.props["MVUtensilsAnalysisDeltaFrame"] == -1
+    assert f_d1.props["MVToolsAnalysisDeltaFrame"] == -1
 
 
 def test_mvtools_recalculate() -> None:
@@ -81,8 +81,8 @@ def test_mvtools_recalculate() -> None:
     assert len(mv.vectors) == 2
 
     f = mv.vectors[1].get_frame(0)
-    assert f.props["MVUtensilsAnalysisBlkSizeX"] == 8
-    assert f.props["MVUtensilsAnalysisBlkSizeY"] == 8
+    assert f.props["MVToolsAnalysisBlkSizeX"] == 8
+    assert f.props["MVToolsAnalysisBlkSizeY"] == 8
 
 
 def test_mvtools_compensate() -> None:
