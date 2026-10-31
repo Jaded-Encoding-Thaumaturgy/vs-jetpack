@@ -249,8 +249,8 @@ class MVTools(VSObject):
         self.mask_args = fallback(mask_args, MaskArgs())
         self.sc_detection_args = fallback(sc_detection_args, ScDetectionArgs())
 
-        self.blksize: tuple[int, int] = tuple(normalize_seq(self.analyze_args.get("blksize", 16), 2))  # type: ignore[assignment]
-        self.overlap: tuple[int, int] = tuple(normalize_seq(self.analyze_args.get("overlap", 8), 2))  # type: ignore[assignment]
+        self.blksize = self.analyze_args.get("blksize", 16)
+        self.overlap = self.analyze_args.get("overlap", 8)
 
     def super(
         self,
@@ -398,19 +398,18 @@ class MVTools(VSObject):
             fields: Set field order for interlaced processing, input is expected to be separated fields.
         """
 
-        nblksize = cast(tuple[int, int], tuple(normalize_seq(fallback(blksize, self.blksize), 2)))
-        noverlap = cast(tuple[int, int], tuple(normalize_seq(fallback(overlap, self.overlap), 2)))
+        blksize = fallback(blksize, self.analyze_args.get("blksize"), default=self.blksize)
+        overlap = fallback(overlap, self.analyze_args.get("overlap"), default=self.overlap)
 
-        super_clip = self.super(
-            fallback(super, self.search_clip),
-            blksize=nblksize,
-            overlap=noverlap,
-            onelevel=False,
-        )
+        self.vectors.clear()
+        self.vectors.blksize = blksize
+        self.vectors.overlap = overlap
+
+        super_clip = self.super(fallback(super, self.search_clip), self.vectors, onelevel=False)
 
         analyze_args: dict[str, Any] = self.analyze_args | KwargsNotNone(
-            blksize=nblksize,
-            overlap=noverlap,
+            blksize=blksize,
+            overlap=overlap,
             levels=levels,
             search=search,
             searchparam=searchparam,
@@ -429,10 +428,6 @@ class MVTools(VSObject):
             trymany=trymany,
             satd=satd,
         )
-
-        self.vectors.clear()
-        self.vectors.blksize = nblksize
-        self.vectors.overlap = noverlap
 
         if not delta:
             vect_list = cast(
