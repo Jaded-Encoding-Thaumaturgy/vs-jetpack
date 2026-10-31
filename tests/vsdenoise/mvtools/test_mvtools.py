@@ -2,7 +2,7 @@ from fractions import Fraction
 
 import pytest
 
-from vsdenoise import MaskMode, MotionVectors, MVTools
+from vsdenoise import MaskMode, MVTools
 from vsdenoise.mvtools.mvtools import _super_clip_cache
 from vstools import UnsupportedColorFamilyError, core, vs
 
@@ -29,14 +29,14 @@ def test_mvtools_init() -> None:
 
 def test_mvtools_super() -> None:
     clip = core.std.BlankClip(format=vs.GRAY8, width=160, height=120)
-    mv = MVTools(clip, vectors=MotionVectors(blksize=16, overlap=0))
+    mv = MVTools(clip)
 
     # Test default super
     s = mv.super()
     f = s.get_frame(0)
     assert f.props["MVUtensilsSuperPel"] == 2
-    assert f.props["MVUtensilsSuperHPad"] == 16
-    assert f.props["MVUtensilsSuperVPad"] == 16
+    assert f.props["MVUtensilsSuperHPad"] == 8
+    assert f.props["MVUtensilsSuperVPad"] == 8
 
     # Test super with pelclip callable
     s_pel = mv.super(
@@ -59,8 +59,8 @@ def test_mvtools_analyze() -> None:
     # Verify vector properties
     f = mv.vectors[1].get_frame(0)
     assert f.props["MVUtensilsAnalysisDeltaFrame"] == 1
-    assert f.props["MVUtensilsAnalysisBlkSizeX"] == 16
-    assert f.props["MVUtensilsAnalysisBlkSizeY"] == 16
+    assert f.props["MVUtensilsAnalysisBlkSizeX"] == 8
+    assert f.props["MVUtensilsAnalysisBlkSizeY"] == 8
 
     # Analyze with custom delta list
     mv.analyze(delta=[-1, 2])

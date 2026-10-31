@@ -252,9 +252,6 @@ class MVTools(VSObject):
         self.mask_args = fallback(mask_args, MaskArgs())
         self.sc_detection_args = fallback(sc_detection_args, ScDetectionArgs())
 
-        self.blksize = self.analyze_args.get("blksize", 16)
-        self.overlap = self.analyze_args.get("overlap", 8)
-
     def super(
         self,
         clip: vs.VideoNode | None = None,
@@ -302,8 +299,8 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
 
-        blksize = fallback(blksize, vectors.blksize, self.blksize)
-        overlap = fallback(overlap, vectors.overlap, self.overlap)
+        blksize = fallback(blksize, self.super_args.get("blksize"), default=None)
+        overlap = fallback(overlap, self.super_args.get("overlap"), default=None)
         pad = fallback(pad, self.super_args.get("pad"), default=None)
         pel = fallback(pel, self.super_args.get("pel"), default=None)
         sharp = fallback(sharp, self.super_args.get("sharp"), default=SharpMode.WIENER)
@@ -311,10 +308,15 @@ class MVTools(VSObject):
         onelevel = fallback(onelevel, self.super_args.get("onelevel"), default=False)
         pelclip = fallback(pelclip, self.super_args.get("pelclip"), default=None)
 
+        vectors.blksize = cast(int | tuple[int, int], fallback(blksize, vectors.blksize, default=8))
+        vectors.overlap = cast(int | tuple[int, int], fallback(overlap, vectors.overlap, default=0))
+        vectors.pad = cast(int | tuple[int, int], fallback(pad, vectors.pad, default=vectors.blksize))
+        vectors.pel = fallback(pel, vectors.pel, default=2)
+
         npelclip = pelclip(clip) if callable(pelclip) else pelclip
 
         return _super_clip_cache.get(
-            clip, blksize, overlap, vectors.pad, vectors.pel, sharp, rfilter, onelevel, npelclip
+            clip, vectors.blksize, vectors.overlap, vectors.pad, vectors.pel, sharp, rfilter, onelevel, npelclip
         )
 
     def analyze(
@@ -399,12 +401,12 @@ class MVTools(VSObject):
             fields: Set field order for interlaced processing, input is expected to be separated fields.
         """
 
-        blksize = fallback(blksize, self.analyze_args.get("blksize"), default=self.blksize)
-        overlap = fallback(overlap, self.analyze_args.get("overlap"), default=self.overlap)
+        blksize = fallback(blksize, self.analyze_args.get("blksize"), default=self.vectors.blksize)
+        overlap = fallback(overlap, self.analyze_args.get("overlap"), default=self.vectors.overlap)
 
         self.vectors.clear()
-        self.vectors.blksize = blksize
-        self.vectors.overlap = overlap
+        self.vectors.blksize = cast(int | tuple[int, int], blksize)
+        self.vectors.overlap = cast(int | tuple[int, int], overlap)
 
         super_clip = self.super(fallback(super, self.search_clip), self.vectors, onelevel=False)
 
