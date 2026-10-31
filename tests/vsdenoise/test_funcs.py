@@ -25,8 +25,8 @@ def test_mc_degrain_refine() -> None:
     assert denoised.format.id == clip.format.id
 
     f = mv.vectors[1].get_frame(0)
-    assert f.props["MVUtensilsAnalysisBlkSizeX"] == 4
-    assert f.props["MVUtensilsAnalysisBlkSizeY"] == 4
+    assert f.props["MVToolsAnalysisBlkSizeX"] == 4
+    assert f.props["MVToolsAnalysisBlkSizeY"] == 4
 
 
 def test_mc_degrain_pre_calculated_vectors() -> None:
