@@ -57,8 +57,8 @@ def test_mvtools_analyze() -> None:
     # Verify vector properties
     f = mv.vectors[1].get_frame(0)
     assert f.props["MVUtensilsAnalysisDeltaFrame"] == 1
-    assert f.props["MVUtensilsAnalysisBlkSizeX"] == 16
-    assert f.props["MVUtensilsAnalysisBlkSizeY"] == 16
+    assert f.props["MVUtensilsAnalysisBlkSizeX"] == 8
+    assert f.props["MVUtensilsAnalysisBlkSizeY"] == 8
 
     # Analyze with custom delta list
     mv.analyze(delta=[-1, 2])

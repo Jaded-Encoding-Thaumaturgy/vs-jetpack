@@ -249,15 +249,10 @@ class MVTools(VSObject):
         self.mask_args = fallback(mask_args, MaskArgs())
         self.sc_detection_args = fallback(sc_detection_args, ScDetectionArgs())
 
-        self.blksize = self.analyze_args.get("blksize", 16)
-        self.overlap = self.analyze_args.get("overlap", 8)
-
     def super(
         self,
         clip: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        blksize: int | tuple[int, int] | None = None,
-        overlap: int | tuple[int, int] | None = None,
         pad: int | tuple[int, int] | None = None,
         pel: int | None = None,
         sharp: SharpMode | int | None = None,
@@ -275,9 +270,6 @@ class MVTools(VSObject):
         Args:
             clip: The clip to process. If None, the [clip][vsdenoise.MVTools.clip] attribute is used.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            blksize: Size of a block. Larger blocks are less sensitive to noise, are faster, but also less accurate.
-            overlap: Block overlap value. Can be a single integer for both dimensions or a tuple of (horizontal,
-                vertical) overlap values. Each value must be even and less than its corresponding block size dimension.
             pad: How much padding to add to the source frame. Small padding is added to help with motion estimation near
                 frame borders.
             pel: Subpixel precision for motion estimation (1=pixel, 2=half-pixel, 4=quarter-pixel). Default: 2.
@@ -299,8 +291,9 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
 
-        blksize = fallback(blksize, vectors.blksize, self.blksize)
-        overlap = fallback(overlap, vectors.overlap, self.overlap)
+        assert vectors.blksize
+        assert vectors.overlap
+
         pad = fallback(pad, self.super_args.get("pad"), default=None)
         pel = fallback(pel, self.super_args.get("pel"), default=None)
         sharp = fallback(sharp, self.super_args.get("sharp"), default=SharpMode.WIENER)
@@ -308,10 +301,12 @@ class MVTools(VSObject):
         onelevel = fallback(onelevel, self.super_args.get("onelevel"), default=False)
         pelclip = fallback(pelclip, self.super_args.get("pelclip"), default=None)
 
+        vectors.pad = cast(int | tuple[int, int], fallback(pad, vectors.pad, default=vectors.blksize))
+        vectors.pel = fallback(pel, vectors.pel, default=2)
         npelclip = pelclip(clip) if callable(pelclip) else pelclip
 
         return _super_clip_cache.get(
-            clip, blksize, overlap, vectors.pad, vectors.pel, sharp, rfilter, onelevel, npelclip
+            clip, vectors.blksize, vectors.overlap, vectors.pad, vectors.pel, sharp, rfilter, onelevel, npelclip
         )
 
     def analyze(
@@ -398,12 +393,12 @@ class MVTools(VSObject):
             fields: Set field order for interlaced processing, input is expected to be separated fields.
         """
 
-        blksize = fallback(blksize, self.analyze_args.get("blksize"), default=self.blksize)
-        overlap = fallback(overlap, self.analyze_args.get("overlap"), default=self.overlap)
+        blksize = fallback(blksize, self.analyze_args.get("blksize"), default=8)
+        overlap = fallback(overlap, self.analyze_args.get("overlap"), default=0)
 
         self.vectors.clear()
-        self.vectors.blksize = blksize
-        self.vectors.overlap = overlap
+        self.vectors.blksize = cast(int | tuple[int, int], blksize)
+        self.vectors.overlap = cast(int | tuple[int, int], overlap)
 
         super_clip = self.super(fallback(super, self.search_clip), self.vectors, onelevel=False)
 
