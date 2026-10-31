@@ -24,6 +24,7 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
         overlap: int | tuple[int, int] | None = None,
         pad: int | tuple[int, int] | None = None,
         pel: int | None = None,
+        prefix: str = "MVTools",
         **kwargs: vs.VideoNode,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -32,6 +33,7 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
         self.overlap = overlap
         self.pad = pad
         self.pel = pel
+        self.prefix = prefix
 
     @property
     def blksize(self) -> tuple[int, int] | None:

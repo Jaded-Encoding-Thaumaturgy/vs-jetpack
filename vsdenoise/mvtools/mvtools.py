@@ -46,6 +46,7 @@ class _SuperConfigKey(NamedTuple):
     rfilter: RFilterMode | int
     onelevel: bool
     pelclip: vs.VideoNode | None
+    prefix: str
 
 
 class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
@@ -63,8 +64,9 @@ class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
         rfilter: RFilterMode | int,
         onelevel: bool,
         pelclip: vs.VideoNode | None,
+        prefix: str,
     ) -> vs.VideoNode:
-        key = _SuperConfigKey(blksize, overlap, pad, pel, sharp, rfilter, onelevel, pelclip)
+        key = _SuperConfigKey(blksize, overlap, pad, pel, sharp, rfilter, onelevel, pelclip, prefix)
 
         if key in self:
             return self[key]
@@ -85,6 +87,7 @@ class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
                     cached_key.pad == pad,
                     cached_key.pel == pel,
                     pel == 1 or (cached_key.pelclip == pelclip and (pelclip or cached_key.sharp == sharp)),
+                    cached_key.prefix == prefix,
                     onelevel
                     or all(
                         (
@@ -99,7 +102,7 @@ class _SuperConfigCache(VSObject, dict[_SuperConfigKey, vs.VideoNode]):
                 self[key] = cached_clip
                 return cached_clip
 
-        self[key] = core.mvu.Super(clip, blksize, overlap, pad, onelevel, sharp, rfilter, pel, pelclip)
+        self[key] = core.mvu.Super(clip, blksize, overlap, pad, onelevel, sharp, rfilter, pel, pelclip, prefix)
 
         return self[key]
 
@@ -285,7 +288,7 @@ class MVTools(VSObject):
                 2, 4, etc. for pel=2), with interpolated pixels in between. The clip should not be padded.
 
         Returns:
-            The original clip with MVUtensils frame properties attached to it.
+            The original clip with MVTools frame properties attached to it.
         """
 
         clip = fallback(clip, self.clip)
@@ -306,7 +309,16 @@ class MVTools(VSObject):
         npelclip = pelclip(clip) if callable(pelclip) else pelclip
 
         return _super_clip_cache.get(
-            clip, vectors.blksize, vectors.overlap, vectors.pad, vectors.pel, sharp, rfilter, onelevel, npelclip
+            clip,
+            vectors.blksize,
+            vectors.overlap,
+            vectors.pad,
+            vectors.pel,
+            sharp,
+            rfilter,
+            onelevel,
+            npelclip,
+            vectors.prefix,
         )
 
     def analyze(
@@ -427,13 +439,17 @@ class MVTools(VSObject):
         if not delta:
             vect_list = cast(
                 list[vs.VideoNode],
-                core.mvu.AnalyseMany(super_clip, radius=tr, delta=1 + fields, **analyze_args),
+                core.mvu.AnalyseMany(
+                    super_clip, radius=tr, delta=1 + fields, prefix=self.vectors.prefix, **analyze_args
+                ),
             )
             for d in range(1, tr + 1):
                 self.vectors[d], self.vectors[-d] = vect_list[2 * d - 2 : 2 * d]
         else:
             for d in to_arr(delta):
-                self.vectors[d] = core.mvu.Analyse(super_clip, delta=d * (fields + 1), **analyze_args)
+                self.vectors[d] = core.mvu.Analyse(
+                    super_clip, delta=d * (fields + 1), prefix=self.vectors.prefix, **analyze_args
+                )
 
     def recalculate(
         self,
@@ -504,7 +520,9 @@ class MVTools(VSObject):
             satd=satd,
         )
 
-        recalculated = core.mvu.Recalculate(super_clip, tuple(vectors.values()), **recalculate_args)
+        recalculated = core.mvu.Recalculate(
+            super_clip, tuple(vectors.values()), prefix=vectors.prefix, **recalculate_args
+        )
         if isinstance(recalculated, vs.VideoNode):
             recalculated = [recalculated]
 
@@ -616,7 +634,10 @@ class MVTools(VSObject):
         )
 
         comp_fwrd, comp_back = [
-            [core.mvu.Compensate(clip, super_clip, vect, **compensate_args) for vect in vect_list]
+            [
+                core.mvu.Compensate(clip, super_clip, vect, prefix=vectors.prefix, **compensate_args)
+                for vect in vect_list
+            ]
             for vect_list in (reversed(vect_f), vect_b)
         ]
 
@@ -735,7 +756,7 @@ class MVTools(VSObject):
         flow_args: dict[str, Any] = self.flow_args | KwargsNotNone(time=time, thscd1=thscd1, thscd2=thscd2)
 
         flow_fwrd, flow_back = [
-            [core.mvu.Flow(clip, super_clip, vect, **flow_args) for vect in vect_list]
+            [core.mvu.Flow(clip, super_clip, vect, prefix=vectors.prefix, **flow_args) for vect in vect_list]
             for vect_list in (reversed(vect_f), vect_b)
         ]
 
@@ -824,6 +845,7 @@ class MVTools(VSObject):
             super_clip,
             tuple(chain.from_iterable(zip(vect_b, vect_f))),
             centersuper=center_super_clip,
+            prefix=vectors.prefix,
             **degrain_args,
         )
 
@@ -880,7 +902,9 @@ class MVTools(VSObject):
             time=time, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
         )
 
-        interpolated = core.mvu.FlowInter(clip, super_clip, (*vect_b, *vect_f), **flow_interpolate_args)
+        interpolated = core.mvu.FlowInter(
+            clip, super_clip, (*vect_b, *vect_f), prefix=vectors.prefix, **flow_interpolate_args
+        )
         return core.std.Interleave((clip, interpolated)) if interleave else interpolated
 
     def flow_fps(
@@ -936,7 +960,7 @@ class MVTools(VSObject):
             num=num, den=den, extramask=extramask, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
         )
 
-        return core.mvu.FlowFPS(clip, super_clip, (*vect_b, *vect_f), **flow_fps_args)
+        return core.mvu.FlowFPS(clip, super_clip, (*vect_b, *vect_f), prefix=vectors.prefix, **flow_fps_args)
 
     def flow_blur(
         self,
@@ -983,7 +1007,7 @@ class MVTools(VSObject):
             blur=blur, prec=prec, thscd1=thscd1, thscd2=thscd2
         )
 
-        return core.mvu.FlowBlur(clip, super_clip, (*vect_b, *vect_f), **flow_blur_args)
+        return core.mvu.FlowBlur(clip, super_clip, (*vect_b, *vect_f), prefix=vectors.prefix, **flow_blur_args)
 
     def mask(
         self,
@@ -1025,7 +1049,7 @@ class MVTools(VSObject):
             ml=ml, gamma=gamma, time=time, scval=scval, thscd1=thscd1, thscd2=thscd2
         )
 
-        return getattr(core.mvu, kind.value)(vectors[delta], **mask_args)
+        return getattr(core.mvu, kind.value)(vectors[delta], prefix=vectors.prefix, **mask_args)
 
     def sc_detection(
         self,
@@ -1057,6 +1081,6 @@ class MVTools(VSObject):
         vect_b, vect_f = vectors.get_vectors(tr=1, delta=delta)
 
         for vect in (*vect_b, *vect_f):
-            clip = core.mvu.SCDetection(clip, vect, thscd1, thscd2)
+            clip = core.mvu.SCDetection(clip, vect, thscd1, thscd2, vectors.prefix)
 
         return clip
