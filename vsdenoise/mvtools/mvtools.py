@@ -498,24 +498,13 @@ class MVTools(VSObject):
         """
 
         vectors = fallback(vectors, self.vectors)
-        blksize = fallback(blksize, self.recalculate_args.get("blksize"), self.blksize)
-        overlap = fallback(overlap, self.recalculate_args.get("overlap"), self.overlap)
-        nblksize = cast(tuple[int, int], tuple(normalize_seq(blksize, 2)))
-        noverlap = cast(tuple[int, int], tuple(normalize_seq(overlap, 2)))
-
-        super_clip = self.super(
-            fallback(super, self.search_clip),
-            vectors,
-            blksize=nblksize,
-            overlap=noverlap,
-            onelevel=True,
-        )
+        super_clip = self.super(fallback(super, self.search_clip), vectors, onelevel=True)
 
         recalculate_args: dict[str, Any] = self.recalculate_args | KwargsNotNone(
             thsad=thsad,
             smooth=smooth,
-            blksize=nblksize,
-            overlap=noverlap,
+            blksize=blksize,
+            overlap=overlap,
             search=search,
             searchparam=searchparam,
             mvlambda=mvlambda,
@@ -530,9 +519,6 @@ class MVTools(VSObject):
             recalculated = [recalculated]
 
         vectors.update(zip(vectors, recalculated))
-
-        vectors.blksize = nblksize
-        vectors.overlap = noverlap
 
     @overload
     def compensate(
