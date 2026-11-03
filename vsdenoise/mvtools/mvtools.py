@@ -178,7 +178,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode,
         search_clip: vs.VideoNode | VSFunctionNoArgs | None = None,
         vectors: MotionVectors | None = None,
-        chroma: bool | None = None,
         thscd1: int | None = None,
         thscd2: float | None = None,
         *,
@@ -217,7 +216,6 @@ class MVTools(VSObject):
             clip: The clip to process.
             search_clip: Optional clip or callable to be used for motion vector gathering only.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            chroma: Whether to consider chroma in motion vector calculations.
             thscd1: SAD threshold for considering a block changed between frames.
             thscd2: Percentage of changed blocks needed to trigger a scene change.
             super_args: Arguments passed to every [MVTools.super][vsdenoise.MVTools.super] call.
@@ -239,7 +237,6 @@ class MVTools(VSObject):
         self.clip = clip
         self.search_clip = search_clip(clip) if callable(search_clip) else fallback(search_clip, clip)
         self.vectors = fallback(vectors, MotionVectors())
-        self.chroma = chroma
         self.thscd1 = thscd1
         self.thscd2 = thscd2
 
@@ -343,6 +340,7 @@ class MVTools(VSObject):
         searchparam: int | None = None,
         pelsearch: int | None = None,
         mvlambda: int | None = None,
+        chroma: bool | None = None,
         lsad: int | None = None,
         plevel: PenaltyMode | int | None = None,
         globalmv: bool | None = None,
@@ -389,6 +387,7 @@ class MVTools(VSObject):
             searchparam: Search radius/step for the chosen.
             mvlambda: Controls the coherence of the motion vector field. Higher values enforce more coherent/smooth
                 motion between blocks. Too high values may cause the algorithm to miss the optimal vectors.
+            chroma: Whether to consider chroma in motion vector calculations.
             lsad: SAD limit for mvlambda. When the SAD value of a vector predictor (formed from neighboring blocks)
                 exceeds this limit, the local mvlambda value is decreased. This helps prevent the use of bad predictors,
                 but reduces motion coherence between blocks.
@@ -430,7 +429,7 @@ class MVTools(VSObject):
             searchparam=searchparam,
             pelsearch=pelsearch,
             mvlambda=mvlambda,
-            chroma=fallback(self.chroma, True),
+            chroma=chroma,
             lsad=lsad,
             plevel=plevel,
             globalmv=globalmv,
@@ -470,6 +469,7 @@ class MVTools(VSObject):
         search: SearchMode | int | None = None,
         searchparam: int | None = None,
         mvlambda: int | None = None,
+        chroma: bool | None = None,
         pnew: int | None = None,
         meander: bool | None = None,
         satd: bool | None = None,
@@ -502,6 +502,7 @@ class MVTools(VSObject):
             searchparam: Search radius/step for the chosen.
             mvlambda: Controls the coherence of the motion vector field. Higher values enforce more coherent/smooth
                 motion between blocks. Too high values may cause the algorithm to miss the optimal vectors.
+            chroma: Whether to consider chroma in motion vector calculations.
             pnew: Penalty multiplier (relative to 256) applied to the SAD cost when evaluating new candidate vectors.
                 Higher values make the search more conservative.
             meander: Whether to use a meandering scan pattern when processing blocks. If True, alternates between left-
@@ -520,7 +521,7 @@ class MVTools(VSObject):
             search=search,
             searchparam=searchparam,
             mvlambda=mvlambda,
-            chroma=fallback(self.chroma, True),
+            chroma=chroma,
             pnew=pnew,
             meander=meander,
             satd=satd,
