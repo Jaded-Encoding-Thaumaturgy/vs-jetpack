@@ -572,12 +572,7 @@ class Bilateral[**P, R]:
     It is not meant to be used directly.
     """
 
-    type ConcreteBackend = Literal[
-        Bilateral.Backend.CPU,
-        Bilateral.Backend.GPU,
-        Bilateral.Backend.CUDA,
-        Bilateral.Backend.CUDA_RTC,
-    ]
+    type ConcreteBackend = Literal[Bilateral.Backend.CPU, Bilateral.Backend.GPU]
 
     def __init__(self, bilateral_func: Callable[P, R]) -> None:
         self._func = bilateral_func
@@ -604,16 +599,6 @@ class Bilateral[**P, R]:
         GPU = "vszipcl"
         """
         Uses vszipcl.Bilateral — a fast OpenCL-based implementation written in Zig.
-        """
-
-        CUDA = "bilateralgpu"
-        """
-        Uses `bilateralgpu.Bilateral` — a CUDA-based GPU implementation.
-        """
-
-        CUDA_RTC = "bilateralgpu_rtc"
-        """
-        Uses `bilateralgpu_rtc.Bilateral` — a CUDA-based GPU implementation with runtime shader compilation.
         """
 
         @contextmanager

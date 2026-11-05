@@ -151,7 +151,6 @@ nvidia = [
     "ml-dtypes>=0.5.4",
     # Vapoursynth plugins
     "dfttest2[cufft,nvrtc]>=11.0.0",
-    "vapoursynth-bilateralgpu>=14",
     "vapoursynth-mlrt-ort>=17.0",
     "vapoursynth-mlrt-ort-cuda>=17.0",
     "vapoursynth-mlrt-trt>=17.0",
