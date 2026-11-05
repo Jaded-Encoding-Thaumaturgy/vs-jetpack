@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from logging import getLogger
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Self
 
 from jetpytools import (
     CustomEnum,
@@ -180,28 +180,41 @@ class BM3D[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Selection priority: "CUDA" → "OPENCL" → "METAL" → "OLD".
+        Selection priority: "CUDA" → "OPENCL" → "METAL" → "CPU" → "OLD".
         """
 
-        CUDA = "vszipcu"
+        CUDA = "vszipcu", "BM3Dv2"
         """
         GPU implementation using NVIDIA CUDA from `vszipcu`.
         """
 
-        OPENCL = "vszipcl"
+        OPENCL = "vszipcl", "BM3Dv2"
         """
-        GPU implementation using NVIDIA CUDA from `vszipcu`.
+        GPU implementation using OpenCL from `vszipcl`.
         """
 
-        METAL = "bm3dmetal"
+        METAL = "bm3dmetal", "BM3Dv2"
         """
         GPU implementation using Apple Metal.
+        """
+
+        CPU = "vszip", "BM3D"
+        """
+        Fast CPU implementation from `vszip`.
         """
 
         OLD = "bm3d"
         """
         Reference VapourSynth-BM3D implementation.
         """
+
+        _func: str
+
+        def __new__(cls, value: str, func: str = "") -> Self:
+            obj = object.__new__(cls)
+            obj._value_ = value
+            obj._func = func
+            return obj
 
         def resolve(self) -> BM3D.Backend:
             """
@@ -220,10 +233,9 @@ class BM3D[**P, R]:
                 return self
 
             for member in list(BM3D.Backend.__members__.values())[1:]:
-                if hasattr(core, member.value):
-                    backend = BM3D.Backend(member.value)
-                    logger.debug("%s: Auto selecting 'BM3D.Backend.%s'", BM3D.Backend.resolve, backend.name)
-                    return backend
+                if (plugin := getattr(core, member.value, None)) and hasattr(plugin, member._func):
+                    logger.debug("%s: Auto selecting 'BM3D.Backend.%s'", BM3D.Backend.resolve, member.name)
+                    return member
 
             raise CustomRuntimeError("No available BM3D plugin found. Please install one.")
 
@@ -236,6 +248,24 @@ class BM3D[**P, R]:
                 The corresponding BM3D plugin for the resolved backend.
             """
             return getattr(core.lazy, self.resolve().value)
+
+        @property
+        def function(self) -> vs.Function:
+            """
+            Returns the appropriate BM3D function based on the current backend.
+
+            Returns:
+                The corresponding BM3D function for the resolved backend.
+
+            Raises:
+                NotImplementedError: If the backend does not implement a clear function.
+            """
+            backend = self.resolve()
+
+            if not backend._func:
+                raise NotImplementedError('"Function" attribute not implemented for this backend')
+
+            return getattr(backend.plugin, backend._func)
 
     class Profile(CustomStrEnum):
         """
@@ -535,6 +565,7 @@ def bm3d(
 
     More information at:
         - https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D/
+        - https://github.com/dnjulek/vapoursynth-zip/wiki/BM3D
 
     Example:
         ```py
@@ -778,22 +809,22 @@ def _bm3d_new(
     """
 
     if not ref:
-        b_args = _clean_keywords(profile.basic_args(radius_basic), backend.plugin.BM3Dv2) | nbasic_args | kwargs
+        b_args = _clean_keywords(profile.basic_args(radius_basic), backend.function) | nbasic_args | kwargs
         b_args.update(chroma=chroma)
 
-        basic = backend.plugin.BM3Dv2(preclip, pre, nsigma, **b_args)
+        basic = backend.function(preclip, pre, nsigma, **b_args)
     else:
         basic = ref
 
     if not refine:
         final = basic
     else:
-        f_args = _clean_keywords(profile.final_args(radius_final), backend.plugin.BM3Dv2) | nfinal_args | kwargs
+        f_args = _clean_keywords(profile.final_args(radius_final), backend.function) | nfinal_args | kwargs
         f_args.update(chroma=chroma)
 
         final = basic
 
         for _ in range(refine):
-            final = backend.plugin.BM3Dv2(preclip, final, nsigma, **f_args)
+            final = backend.function(preclip, final, nsigma, **f_args)
 
     return final
