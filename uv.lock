@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.12"
 resolution-markers = [
     "(python_full_version >= '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32')",
@@ -3589,11 +3589,11 @@ requires-dist = [
     { name = "vapoursynth-mlrt-ov", marker = "extra == 'scale'", specifier = ">=17.0" },
     { name = "vapoursynth-mlrt-trt", marker = "extra == 'nvidia'", specifier = ">=17.0" },
     { name = "vapoursynth-mlrt-trt-rtx", marker = "extra == 'nvidia'", specifier = ">=17.0" },
-    { name = "vapoursynth-mvutensils", marker = "extra == 'deband'", specifier = ">=6" },
-    { name = "vapoursynth-mvutensils", marker = "extra == 'dehalo'", specifier = ">=6" },
-    { name = "vapoursynth-mvutensils", marker = "extra == 'deinterlace'", specifier = ">=6" },
-    { name = "vapoursynth-mvutensils", marker = "extra == 'denoise'", specifier = ">=6" },
-    { name = "vapoursynth-mvutensils", marker = "extra == 'full'", specifier = ">=6" },
+    { name = "vapoursynth-mvutensils", marker = "extra == 'deband'", specifier = ">=6,<10" },
+    { name = "vapoursynth-mvutensils", marker = "extra == 'dehalo'", specifier = ">=6,<10" },
+    { name = "vapoursynth-mvutensils", marker = "extra == 'deinterlace'", specifier = ">=6,<10" },
+    { name = "vapoursynth-mvutensils", marker = "extra == 'denoise'", specifier = ">=6,<10" },
+    { name = "vapoursynth-mvutensils", marker = "extra == 'full'", specifier = ">=6,<10" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'deband'", specifier = ">=3" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'dehalo'", specifier = ">=3" },
     { name = "vapoursynth-nlm-ispc", marker = "extra == 'deinterlace'", specifier = ">=3" },
