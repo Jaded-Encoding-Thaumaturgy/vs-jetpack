@@ -154,7 +154,9 @@ def mc_degrain(
             blksize = refine_blksize(blksize)
             mv.recalculate(thsad=thsad_recalc, blksize=blksize, overlap_div=overlap_div)
 
-    den = mv.degrain(clip, center_super=mfilter, tr=tr, thsad=thsad, thsad2=thsad2, limit=limit, planes=planes)
+    den = mv.degrain(
+        clip, center_super=mfilter, tr=tr, thsad=thsad, thsad2=thsad2, limit=limit, thscd=thscd, planes=planes
+    )
 
     return (den, mv) if export_globals else den
 
