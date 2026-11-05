@@ -6,10 +6,11 @@ import threading
 import weakref
 from collections.abc import Callable, Iterable
 from itertools import chain
+from logging import getLogger
 from operator import attrgetter
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from jetpytools import CustomRuntimeError, CustomValueError
 from vapoursynth import (
@@ -773,6 +774,8 @@ __all__ = [
     "vs_file",
 ]
 
+logger = getLogger(__name__)
+
 # Compatibility helper designed to fake a standard script execution environment
 # when running in interactive environments (such as Jupyter Notebooks, Python REPL, or IDE interactive windows)
 # or embedded hosts where __main__.__file__ is not defined.
@@ -820,15 +823,25 @@ def register_on_creation(callback: Callable[[int], None]) -> bool:
 
     Returns whether the callback was executed immediately because a core is already active.
     """
+    global _core_on_creation_callbacks_gen
+
     with _core_on_creation_callbacks_lock:
-        _core_on_creation_callbacks.add(callback)
+        prev_gen = _core_on_creation_callbacks_gen
+
+        if callback not in _core_on_creation_callbacks:
+            _core_on_creation_callbacks.add(callback)
+            _core_on_creation_callbacks_gen += 1
 
         # If a core is already active, the catch-up logic is triggered immediately.
-        # We trigger '_core_with_cb', which will execute any registered callbacks
-        # that haven't been run for the current core instance yet.
-        if has_policy() and has_environment() and core.active:
+        if _current_env_data() is not None and core.active:
             with get_current_environment().use():
-                _ = core._core_with_cb
+                vs_core = _resolve_vs_core(core)
+                state = _core_on_creation_callbacks_cores.get(vs_core)
+
+                if state is not None and state.gen == prev_gen:
+                    _sync_callbacks(vs_core, (callback,), _core_on_creation_callbacks_gen)
+                else:
+                    _ = core._core_with_cb
             return True
 
         return False
@@ -1105,7 +1118,14 @@ class EnvironmentProxy(_EnvironmentProxyBase):
 
         This avoids triggering the lazy creation of the Core.
         """
-        return any(isinstance(ref, (Core, CoreProxy)) for ref in gc.get_referents(self.data))
+        if (data := self.data) in _env_data_with_core:
+            return True
+
+        if any(isinstance(ref, (Core, CoreProxy)) for ref in gc.get_referents(data)):
+            _env_data_with_core.add(data)
+            return True
+
+        return False
 
 
 class VSCoreProxy(_CoreProxyBase):
@@ -1157,7 +1177,7 @@ class VSCoreProxy(_CoreProxyBase):
         A core is active if we have a direct/owned Core instance,
         or if a registered policy environment exists and already has an initialized Core.
         """
-        return (has_policy() and has_environment() and self.env.has_core) or (self._core is not None)
+        return (_current_env_data() is not None and self.env.has_core) or (self._core is not None)
 
     @property
     def core(self) -> Core:
@@ -1295,37 +1315,67 @@ class VSCoreProxy(_CoreProxyBase):
 
         This makes sure callbacks are executed when a new core is created.
         """
-        vs_core = self._core
-
-        if not vs_core:
-            import vapoursynth
-
-            vs_core = vapoursynth.core.core
+        vs_core = _resolve_vs_core(self)
 
         with _core_on_creation_callbacks_lock:
-            # Map each core to the callbacks already run for it.
-            # Weak references allow automatic cleanup when objects are destroyed.
-            if vs_core not in _core_on_creation_callbacks_cores:
-                _core_on_creation_callbacks_cores[vs_core] = weakref.WeakSet()
+            state = _core_on_creation_callbacks_cores.get(vs_core)
+            if state is not None and state.gen == _core_on_creation_callbacks_gen:
+                return vs_core
 
-            run_cbs = _core_on_creation_callbacks_cores[vs_core]
-            core_id = id(vs_core)
-
-            # Run callbacks that have not yet been called for this core.
-            for callback in list(_core_on_creation_callbacks):
-                if callback in run_cbs:
-                    continue
-
-                callback(core_id)
-                # Remember that this callback was run for this core.
-                run_cbs.add(callback)
+            _sync_callbacks(vs_core, _core_on_creation_callbacks, _core_on_creation_callbacks_gen)
 
         return vs_core
 
 
+class _CoreCbState(NamedTuple):
+    run: weakref.WeakSet[Callable[[int], None]]
+    gen: int | None
+
+
+def _current_env_data() -> EnvironmentData | None:
+    return get_current_environment().env() if has_policy() and has_environment() else None
+
+
+def _resolve_vs_core(proxy: VSCoreProxy) -> Core:
+    if (vs_core := proxy._core) is not None:
+        return vs_core
+
+    import vapoursynth
+
+    vs_core = vapoursynth.core.core
+
+    if (data := _current_env_data()) is not None:
+        _env_data_with_core.add(data)
+
+    return vs_core
+
+
+def _sync_callbacks(vs_core: Core, callbacks: Iterable[Callable[[int], None]], gen: int) -> None:
+    state = _core_on_creation_callbacks_cores.get(vs_core)
+    if state is None:
+        run_cbs = weakref.WeakSet[Callable[[int], None]]()
+        _core_on_creation_callbacks_cores[vs_core] = _CoreCbState(run_cbs, None)
+    else:
+        run_cbs = state.run
+
+    core_id = id(vs_core)
+    for cb in list(callbacks):
+        if cb in run_cbs:
+            continue
+        try:
+            cb(core_id)
+        except Exception:
+            logger.exception("on_creation callback %r failed for core %r", cb, core_id)
+        run_cbs.add(cb)
+
+    _core_on_creation_callbacks_cores[vs_core] = _CoreCbState(run_cbs, gen)
+
+
 _core_on_creation_callbacks = weakref.WeakSet[Callable[[int], None]]()
-_core_on_creation_callbacks_cores = weakref.WeakKeyDictionary[Core, weakref.WeakSet[Callable[[int], None]]]()
+_core_on_creation_callbacks_cores = weakref.WeakKeyDictionary[Core, _CoreCbState]()
+_core_on_creation_callbacks_gen = 0
 _core_on_creation_callbacks_lock = threading.RLock()
+_env_data_with_core = weakref.WeakSet[EnvironmentData]()
 _env_proxy = EnvironmentProxy()
 _objproxies = weakref.WeakKeyDictionary[VSCoreProxy, dict[Literal["proxied", "lazy"], CoreProxy]]()
 
