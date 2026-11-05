@@ -54,7 +54,7 @@ dependencies = [
     "typing_extensions>=4.15.0; python_version<'3.15'",
     # VapourSynth plugins
     "vapoursynth-akarin>=1.4.1",
-    "vapoursynth-vszip>=22.0.0",
+    "vapoursynth-vszip>=24.0.0",
 ]
 
 [project.urls]
