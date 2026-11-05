@@ -211,6 +211,9 @@ doc = [
     "mkdocs-minify-plugin==0.8.0",
     "mkdocs-redirects==1.2.3",
     "mkdocstrings[python]==0.30.1",
+    # TODO: Pin to 12.1 because of an error in doc generation
+    # TypeError: Highlight.__init__() missing 1 required positional argument: 'md'
+    "pymdown-extensions==12.1",
 
     # Used by mkdocstrings to format signatures.
     "ruff~=0.17.0",
