@@ -445,18 +445,18 @@ __all__: list[str] = [
     "volume",
     "warnings",
 ]
-__version__: str = "11.3.0.99"
+__version__: str = "11.4.0.106"
 attr: str = "VERBOSE"
-bfloat16: tensorrt_bindings.tensorrt.DataType  # value = <DataType.BF16: 7>
-bool: tensorrt_bindings.tensorrt.DataType  # value = <DataType.BOOL: 4>
-e8m0: tensorrt_bindings.tensorrt.DataType  # value = <DataType.E8M0: 11>
-float16: tensorrt_bindings.tensorrt.DataType  # value = <DataType.HALF: 1>
-float32: tensorrt_bindings.tensorrt.DataType  # value = <DataType.FLOAT: 0>
-fp4: tensorrt_bindings.tensorrt.DataType  # value = <DataType.FP4: 10>
-fp8: tensorrt_bindings.tensorrt.DataType  # value = <DataType.FP8: 6>
-int32: tensorrt_bindings.tensorrt.DataType  # value = <DataType.INT32: 3>
-int4: tensorrt_bindings.tensorrt.DataType  # value = <DataType.INT4: 9>
-int64: tensorrt_bindings.tensorrt.DataType  # value = <DataType.INT64: 8>
-int8: tensorrt_bindings.tensorrt.DataType  # value = <DataType.INT8: 2>
-uint8: tensorrt_bindings.tensorrt.DataType  # value = <DataType.UINT8: 5>
-value: tensorrt_bindings.tensorrt.ILogger.Severity  # value = <Severity.VERBOSE: 4>
+bfloat16: tensorrt_bindings.tensorrt.DataType
+bool: tensorrt_bindings.tensorrt.DataType
+e8m0: tensorrt_bindings.tensorrt.DataType
+float16: tensorrt_bindings.tensorrt.DataType
+float32: tensorrt_bindings.tensorrt.DataType
+fp4: tensorrt_bindings.tensorrt.DataType
+fp8: tensorrt_bindings.tensorrt.DataType
+int32: tensorrt_bindings.tensorrt.DataType
+int4: tensorrt_bindings.tensorrt.DataType
+int64: tensorrt_bindings.tensorrt.DataType
+int8: tensorrt_bindings.tensorrt.DataType
+uint8: tensorrt_bindings.tensorrt.DataType
+value: tensorrt_bindings.tensorrt.ILogger.Severity

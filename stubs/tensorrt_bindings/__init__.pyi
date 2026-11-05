@@ -448,59 +448,51 @@ __all__: list[str] = [
 
 def _itemsize(trt_type):
     """
-
     Returns the size in bytes of this :class:`DataType`.
     The returned size is a rational number, possibly a `Real` denoting a fraction of a byte.
 
     :arg trt_type: The TensorRT data type.
 
     :returns: The size of the type.
-
     """
 
 def common_enter(this): ...
 def common_exit(this, exc_type, exc_value, traceback):
     """
-
     Context managers are deprecated and have no effect. Objects are automatically freed when
     the reference count reaches 0.
-
     """
 
 def nptype(trt_type):
     """
-
     Returns the numpy-equivalent of a TensorRT :class:`DataType` .
 
     :arg trt_type: The TensorRT data type to convert.
 
     :returns: The equivalent numpy type.
-
     """
 
 def volume(iterable):
     """
-
     Computes the volume of an iterable.
 
     :arg iterable: Any python iterable, including a :class:`Dims` object.
 
     :returns: The volume of the iterable. This will return 1 for empty iterables, as a scalar has an empty shape and the volume of a tensor with empty shape is 1.
-
     """
 
-__version__: str = "11.3.0.99"
+__version__: str = "11.4.0.106"
 attr: str = "VERBOSE"
-bfloat16: tensorrt.DataType  # value = <DataType.BF16: 7>
-bool: tensorrt.DataType  # value = <DataType.BOOL: 4>
-e8m0: tensorrt.DataType  # value = <DataType.E8M0: 11>
-float16: tensorrt.DataType  # value = <DataType.HALF: 1>
-float32: tensorrt.DataType  # value = <DataType.FLOAT: 0>
-fp4: tensorrt.DataType  # value = <DataType.FP4: 10>
-fp8: tensorrt.DataType  # value = <DataType.FP8: 6>
-int32: tensorrt.DataType  # value = <DataType.INT32: 3>
-int4: tensorrt.DataType  # value = <DataType.INT4: 9>
-int64: tensorrt.DataType  # value = <DataType.INT64: 8>
-int8: tensorrt.DataType  # value = <DataType.INT8: 2>
-uint8: tensorrt.DataType  # value = <DataType.UINT8: 5>
-value: tensorrt.ILogger.Severity  # value = <Severity.VERBOSE: 4>
+bfloat16: tensorrt.DataType
+bool: tensorrt.DataType
+e8m0: tensorrt.DataType
+float16: tensorrt.DataType
+float32: tensorrt.DataType
+fp4: tensorrt.DataType
+fp8: tensorrt.DataType
+int32: tensorrt.DataType
+int4: tensorrt.DataType
+int64: tensorrt.DataType
+int8: tensorrt.DataType
+uint8: tensorrt.DataType
+value: tensorrt.ILogger.Severity
