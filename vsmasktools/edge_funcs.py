@@ -9,7 +9,6 @@ from vsexprtools import ExprOp, ExprToken, combine, norm_expr
 from vsrgtools import BlurMatrix, gauss_blur
 from vstools import (
     ConvMode,
-    depth,
     get_peak_value,
     get_y,
     limiter,
@@ -167,10 +166,7 @@ class dre_edgemask(CustomEnum):  # noqa: N801
         if self is dre_edgemask.CLAHE:
             limit, tile = kwargs.get("limit", 0.0305), kwargs.get("tile", 5)
 
-            return depth(
-                depth(clip, min(clip.format.bits_per_sample, 16)).vszip.CLAHE(scale_delta(limit, 32, 16), tile),
-                clip,
-            )
+            return clip.vszip.CLAHE(scale_delta(limit, 32, 16), tile)
 
         raise CustomNotImplementedError
 
