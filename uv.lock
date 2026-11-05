@@ -2743,22 +2743,6 @@ wheels = [
 ]
 
 [[package]]
-name = "vapoursynth-nlm-ispc"
-version = "4.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/7e/bd358fe4d2e90713e00d3ff9784cdd9a495cf4ef7d98530b45084d7481c0/vapoursynth_nlm_ispc-4.1.tar.gz", hash = "sha256:41b76fefb777a41d1e9cb67344d74b2f4bcbf8d67b58a56da09183fba11d368f", size = 43806, upload-time = "2026-10-19T14:55:09.588Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/6a/8fa7d5773656be6e552ee00876453e813dbedc94c74465cb8d6119077271/vapoursynth_nlm_ispc-4.1-py3-none-macosx_15_0_arm64.whl", hash = "sha256:a994ba491494e9001faa255a6244440bbab753c04b060a4e79571d4f541e0430", size = 120901, upload-time = "2026-10-19T14:55:02.402Z" },
-    { url = "https://files.pythonhosted.org/packages/e7/0d/f79e2a5209a590e03f6d24fdea5434921c5e6b741b35b19717c91b713fd6/vapoursynth_nlm_ispc-4.1-py3-none-macosx_15_0_x86_64.whl", hash = "sha256:821a25da21a60a6bbbd55aeff3b00f69d4e87b7c99caa196fe770e9976a0daef", size = 480926, upload-time = "2026-10-19T14:55:03.957Z" },
-    { url = "https://files.pythonhosted.org/packages/3a/af/b052a063a3366eefefd5fca22cb1c812c60319543cc29ec0777786e6f79c/vapoursynth_nlm_ispc-4.1-py3-none-manylinux_2_34_aarch64.whl", hash = "sha256:f5e0b5add435f710834a90fb63db72c21a8d28009a636d2079009a4d219603a2", size = 119635, upload-time = "2026-10-19T14:55:05.371Z" },
-    { url = "https://files.pythonhosted.org/packages/a2/d4/bfa0f8b7806044020e504e8803ff10915b25801c6971fe82e4dcc6c8e72f/vapoursynth_nlm_ispc-4.1-py3-none-manylinux_2_34_x86_64.whl", hash = "sha256:2ef9d72316aaaeae54afed5a2342efd0a17da3f8113d4ae57a85ab242005e2cf", size = 485245, upload-time = "2026-10-19T14:55:06.875Z" },
-    { url = "https://files.pythonhosted.org/packages/f0/69/669432b9f7365dfa8a3998dde3f96d55103c406772af49c7cd26a921d226/vapoursynth_nlm_ispc-4.1-py3-none-win_amd64.whl", hash = "sha256:12a391dcb5e38364e0b5e9aac6a08c099c86ca82aa9a21792e763359c5187759", size = 503420, upload-time = "2026-10-19T14:55:08.318Z" },
-]
-
-[[package]]
 name = "vapoursynth-nnedi3vk"
 version = "1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3047,7 +3031,6 @@ deband = [
     { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-mvutensils" },
-    { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
     { name = "vapoursynth-subtext" },
@@ -3085,7 +3068,6 @@ dehalo = [
     { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-mvutensils" },
-    { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
     { name = "vapoursynth-subtext" },
@@ -3123,7 +3105,6 @@ deinterlace = [
     { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-mvutensils" },
-    { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
     { name = "vapoursynth-subtext" },
@@ -3161,7 +3142,6 @@ denoise = [
     { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-mvutensils" },
-    { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
     { name = "vapoursynth-subtext" },
@@ -3199,7 +3179,6 @@ full = [
     { name = "vapoursynth-lsmas" },
     { name = "vapoursynth-mlrt-ov" },
     { name = "vapoursynth-mvutensils" },
-    { name = "vapoursynth-nlm-ispc" },
     { name = "vapoursynth-resize2" },
     { name = "vapoursynth-sangnom" },
     { name = "vapoursynth-subtext" },
@@ -3566,11 +3545,6 @@ requires-dist = [
     { name = "vapoursynth-mvutensils", marker = "extra == 'deinterlace'", specifier = ">=10" },
     { name = "vapoursynth-mvutensils", marker = "extra == 'denoise'", specifier = ">=10" },
     { name = "vapoursynth-mvutensils", marker = "extra == 'full'", specifier = ">=10" },
-    { name = "vapoursynth-nlm-ispc", marker = "extra == 'deband'", specifier = ">=3" },
-    { name = "vapoursynth-nlm-ispc", marker = "extra == 'dehalo'", specifier = ">=3" },
-    { name = "vapoursynth-nlm-ispc", marker = "extra == 'deinterlace'", specifier = ">=3" },
-    { name = "vapoursynth-nlm-ispc", marker = "extra == 'denoise'", specifier = ">=3" },
-    { name = "vapoursynth-nlm-ispc", marker = "extra == 'full'", specifier = ">=3" },
     { name = "vapoursynth-nnedi3vk", marker = "extra == 'amd'", specifier = ">=1.0" },
     { name = "vapoursynth-nnedi3vk", marker = "extra == 'nvidia'", specifier = ">=1.0" },
     { name = "vapoursynth-nnedi3vk", marker = "extra == 'vulkan'", specifier = ">=1.0" },

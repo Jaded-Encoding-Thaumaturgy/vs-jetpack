@@ -1808,10 +1808,6 @@ class VideoNode(RawNode):
     ncnn: Final[_ncnn._VideoNode_bound.Plugin]
     """NCNN ML Filter Runtime"""
 # </attribute/VideoNode_bound/ncnn>
-# <attribute/VideoNode_bound/nlm_ispc>
-    nlm_ispc: Final[_nlm_ispc._VideoNode_bound.Plugin]
-    """Non-local means denoise filter implemented in ISPC"""
-# </attribute/VideoNode_bound/nlm_ispc>
 # <attribute/VideoNode_bound/nnedi3vk>
     nnedi3vk: Final[_nnedi3vk._VideoNode_bound.Plugin]
     """Neural Network Edge Directed Interpolation 3, using Vulkan compute"""
@@ -2112,10 +2108,6 @@ class Core:
     ncnn: Final[_ncnn._Core_bound.Plugin]
     """NCNN ML Filter Runtime"""
 # </attribute/Core_bound/ncnn>
-# <attribute/Core_bound/nlm_ispc>
-    nlm_ispc: Final[_nlm_ispc._Core_bound.Plugin]
-    """Non-local means denoise filter implemented in ISPC"""
-# </attribute/Core_bound/nlm_ispc>
 # <attribute/Core_bound/nnedi3vk>
     nnedi3vk: Final[_nnedi3vk._Core_bound.Plugin]
     """Neural Network Edge Directed Interpolation 3, using Vulkan compute"""
@@ -2972,20 +2964,6 @@ class _ncnn:
             def Model(self, /, network_path: _AnyStr, overlap: _IntLike | _SequenceLike[_IntLike] | None = None, tilesize: _IntLike | _SequenceLike[_IntLike] | None = None, device_id: _IntLike | None = None, num_streams: _IntLike | None = None, fp16: _IntLike | None = None, path_is_serialization: _IntLike | None = None, flexible_output_prop: _AnyStr | None = None, output_format: _IntLike | None = None, batch_tiles: _IntLike | None = None) -> Any: ...
 
 # </implementation/ncnn>
-
-# <implementation/nlm_ispc>
-class _nlm_ispc:
-    class _Core_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NLMeans(self, /, clip: VideoNode, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None) -> VideoNode: ...
-
-    class _VideoNode_bound:
-        class Plugin(_VSPlugin):
-            @_Wrapper.Function
-            def NLMeans(self, /, d: _IntLike | None = None, a: _IntLike | None = None, s: _IntLike | None = None, h: _FloatLike | None = None, channels: _AnyStr | None = None, wmode: _IntLike | None = None, wref: _FloatLike | None = None, rclip: VideoNode | None = None) -> VideoNode: ...
-
-# </implementation/nlm_ispc>
 
 # <implementation/nnedi3vk>
 class _nnedi3vk:
