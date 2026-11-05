@@ -118,7 +118,6 @@ aa = [
 denoise = [
     "vsjetpack[aa]",
     "vapoursynth-bm3d>=10.0",
-    "vapoursynth-bm3dcpu>=2.16.4 ; (platform_machine == 'x86_64' or platform_machine == 'AMD64') and (platform_system == 'Linux' or platform_system == 'Windows')",
     "vapoursynth-bm3dmetal>=4.0.0 ; platform_system == 'Darwin'",
     "dfttest2[gcc]>=11.0.0 ; platform_machine != 'x86_64' and platform_machine != 'AMD64'",
     "dfttest2[cpu]>=11.0.0 ; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
@@ -151,7 +150,6 @@ nvidia = [
     "ml-dtypes>=0.5.4",
     # Vapoursynth plugins
     "dfttest2[cufft,nvrtc]>=11.0.0",
-    "vapoursynth-bm3dcuda>=2.16",
     "vapoursynth-bilateralgpu>=14",
     "vapoursynth-mlrt-ort>=17.0",
     "vapoursynth-mlrt-ort-cuda>=17.0",
@@ -164,7 +162,6 @@ nvidia = [
 amd = [
     "vsjetpack[gpu,cl,vulkan]",
     "dfttest2[hipfft,hiprtc]>=11.0.0",
-    "vapoursynth-bm3dhip>=2.16",
     "vapoursynth-mlrt-migx>=17.0 ; platform_system == 'Linux'",
 ]
 full = [

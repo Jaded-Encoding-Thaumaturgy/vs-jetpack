@@ -2303,47 +2303,6 @@ wheels = [
 ]
 
 [[package]]
-name = "vapoursynth-bm3dcpu"
-version = "2.17"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/43/bf/5a3724267dd0304007c47fbb20b1db82330bce4207fa3ccc836ad6776e75/vapoursynth_bm3dcpu-2.17.tar.gz", hash = "sha256:79e23dd57bdb3b9c78a993cf1e2746fafc5da9d01141834236c03c7d3e803744", size = 625999, upload-time = "2026-07-01T20:12:56.996Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ae/05/f6db2285c7c84a12fbdb0fa77b243e2848fdc0b44b5ed6e3ac0a30c7986f/vapoursynth_bm3dcpu-2.17-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:68b35426b720e71eac5d4285efc18300d73b113a5a563bbedf9dfca50d067905", size = 70253, upload-time = "2026-07-01T20:12:52.228Z" },
-    { url = "https://files.pythonhosted.org/packages/7e/cc/b35afdd95b7c6e389dfd9b5abf346e5630f1cdd0c399de0cc8bd7d1ba80b/vapoursynth_bm3dcpu-2.17-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:5c7ebe5f8ba8388fc7140204e49a61e0e58fac4b85160d6e1ca26a1d60a5d81c", size = 1101586, upload-time = "2026-07-01T20:12:53.875Z" },
-    { url = "https://files.pythonhosted.org/packages/d6/dc/3a833846c834ec1c2021d381784bf0a51a91d05b6bda9680aac978c04170/vapoursynth_bm3dcpu-2.17-py3-none-win_amd64.whl", hash = "sha256:2415584ad6b3c540a2bdb463db18e2cb3073d817c69ffa745d62bca9fe4fab30", size = 195194, upload-time = "2026-07-01T20:12:55.42Z" },
-]
-
-[[package]]
-name = "vapoursynth-bm3dcuda"
-version = "2.17"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/71/2a/8032844f8b81ff27cae28aba9fe2eaf8dfcd6ca7acc6f6c6604bb39af74c/vapoursynth_bm3dcuda-2.17.tar.gz", hash = "sha256:da6497f7da618b425bebdfbbeb29937492fb5d1c1ef2687fc2ac2b8de03b79de", size = 625434, upload-time = "2026-07-01T20:14:57.231Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/f3/c8a466eb2206a71c2a613d18a44ccbbd1fc764e02003ea0d382fdfe0b5c1/vapoursynth_bm3dcuda-2.17-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:3d1dd9a6e20328d888d7622dd3eca5d50a74054f57660e6293c14912e8c51996", size = 51872459, upload-time = "2026-07-01T20:14:46.599Z" },
-    { url = "https://files.pythonhosted.org/packages/b4/65/ce55bdc37f4561a478711f3eb1d00a7eb46926021932c365285337442bb7/vapoursynth_bm3dcuda-2.17-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:507adca6731b79beb85dbf33cb33765fb74dd5a05653df94f2cdfcfd2fb02605", size = 54435129, upload-time = "2026-07-01T20:14:50.337Z" },
-    { url = "https://files.pythonhosted.org/packages/25/d8/701f7557602b18852df89ef78173fcb76ecec215951762acfdf17f9a18c5/vapoursynth_bm3dcuda-2.17-py3-none-win_amd64.whl", hash = "sha256:27a37e0282ccea45518e731cccb1407f10c805413ff6beb9ca9a149dbcea2a7f", size = 48263199, upload-time = "2026-07-01T20:14:54.371Z" },
-]
-
-[[package]]
-name = "vapoursynth-bm3dhip"
-version = "2.17.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/06/04c09ad0af17e86a2012d4cdd4e362654b1d2f0fd1335f1ef3c19cea8636/vapoursynth_bm3dhip-2.17.5.tar.gz", hash = "sha256:5d9ccd5d2686d25ea48bb7d8195fcda8d0d99574adb143f02deac2d04732841b", size = 624960, upload-time = "2026-08-29T18:56:44.172Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/ae/fdc637024db11dd0cb93f4562077d8dfba9ee2e7ccea7a4f8276529c9f12/vapoursynth_bm3dhip-2.17.5-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:993f7815c32e962775183cd4b55ee18554b97a14d1fd98fbceb2516d7e7e9069", size = 92798652, upload-time = "2026-08-29T18:56:38.256Z" },
-    { url = "https://files.pythonhosted.org/packages/3b/f5/5169f3ed9a421d6379de8a096a25842f62e294d4e8395bd9a8eb554785f3/vapoursynth_bm3dhip-2.17.5-py3-none-win_amd64.whl", hash = "sha256:f90b2c996778b22fa084aa0c3ba1de0334414aeb6a8687be8ccaa42a02d2b4eb", size = 11471031, upload-time = "2026-08-29T18:56:42.093Z" },
-]
-
-[[package]]
 name = "vapoursynth-bm3dmetal"
 version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3042,7 +3001,6 @@ aa = [
 ]
 amd = [
     { name = "dfttest2", extra = ["hipfft", "hiprtc"] },
-    { name = "vapoursynth-bm3dhip" },
     { name = "vapoursynth-eedi3vk2" },
     { name = "vapoursynth-mlrt-migx", marker = "sys_platform == 'linux'" },
     { name = "vapoursynth-mlrt-ncnn" },
@@ -3069,7 +3027,6 @@ deband = [
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin'" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
@@ -3108,7 +3065,6 @@ dehalo = [
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin'" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
@@ -3146,7 +3102,6 @@ deinterlace = [
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin'" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
@@ -3186,7 +3141,6 @@ denoise = [
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin'" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
@@ -3224,7 +3178,6 @@ full = [
     { name = "vapoursynth-awarp" },
     { name = "vapoursynth-bestsource" },
     { name = "vapoursynth-bm3d" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')" },
     { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin'" },
     { name = "vapoursynth-bwdif" },
     { name = "vapoursynth-d2vsource" },
@@ -3282,7 +3235,6 @@ nvidia = [
     { name = "tensorrt-cu13" },
     { name = "tensorrt-rtx-cu13" },
     { name = "vapoursynth-bilateralgpu" },
-    { name = "vapoursynth-bm3dcuda" },
     { name = "vapoursynth-eedi3vk2" },
     { name = "vapoursynth-mlrt-ncnn" },
     { name = "vapoursynth-mlrt-ort" },
@@ -3494,13 +3446,6 @@ requires-dist = [
     { name = "vapoursynth-bm3d", marker = "extra == 'deinterlace'", specifier = ">=10.0" },
     { name = "vapoursynth-bm3d", marker = "extra == 'denoise'", specifier = ">=10.0" },
     { name = "vapoursynth-bm3d", marker = "extra == 'full'", specifier = ">=10.0" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'deband') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'deband') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'deband') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'deband')", specifier = ">=2.16.4" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'dehalo') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'dehalo') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'dehalo') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'dehalo')", specifier = ">=2.16.4" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'deinterlace') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'deinterlace') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'deinterlace') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'deinterlace')", specifier = ">=2.16.4" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'denoise') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'denoise') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'denoise') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'denoise')", specifier = ">=2.16.4" },
-    { name = "vapoursynth-bm3dcpu", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'full') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'full') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'full') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'full')", specifier = ">=2.16.4" },
-    { name = "vapoursynth-bm3dcuda", marker = "extra == 'nvidia'", specifier = ">=2.16" },
-    { name = "vapoursynth-bm3dhip", marker = "extra == 'amd'", specifier = ">=2.16" },
     { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin' and extra == 'deband'", specifier = ">=4.0.0" },
     { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin' and extra == 'dehalo'", specifier = ">=4.0.0" },
     { name = "vapoursynth-bm3dmetal", marker = "sys_platform == 'darwin' and extra == 'deinterlace'", specifier = ">=4.0.0" },
