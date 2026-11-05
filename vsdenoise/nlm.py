@@ -6,13 +6,11 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Callable, Sequence
-from enum import EnumMeta
 from logging import getLogger
-from typing import Any, Literal
+from typing import Any
 
-from jetpytools import CustomIntEnum, CustomRuntimeError, CustomStrEnum, EnumDeprecationWarning, normalize_seq, to_arr
+from jetpytools import CustomIntEnum, CustomRuntimeError, CustomStrEnum, normalize_seq, to_arr
 
-from vsjetpack import deprecated
 from vstools import Planes, core, join, normalize_planes, vs
 
 __all__ = ["nl_means"]
@@ -34,32 +32,7 @@ class NLMeans[**P, R]:
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
 
-    class DeprecatedEnumMeta(EnumMeta):
-        @property
-        @deprecated(
-            '"ACCELERATOR" member is deprecated and will be removed in a future version.',
-            category=EnumDeprecationWarning,
-        )
-        def ACCELERATOR(cls) -> Literal[NLMeans.Backend.GPU]:  # noqa: N802
-            return NLMeans.Backend.GPU
-
-        @property
-        @deprecated(
-            '"CPU" member is deprecated and will be removed in a future version.',
-            category=EnumDeprecationWarning,
-        )
-        def CPU(cls) -> Literal[NLMeans.Backend.GPU]:  # noqa: N802
-            return NLMeans.Backend.GPU
-
-        @property
-        @deprecated(
-            '"HIP" member is deprecated and will be removed in a future version.',
-            category=EnumDeprecationWarning,
-        )
-        def HIP(cls) -> Literal[NLMeans.Backend.GPU]:  # noqa: N802
-            return NLMeans.Backend.GPU
-
-    class Backend(CustomStrEnum, metaclass=DeprecatedEnumMeta):
+    class Backend(CustomStrEnum):
         """
         Enum representing available backends on which to run the plugin.
         """
