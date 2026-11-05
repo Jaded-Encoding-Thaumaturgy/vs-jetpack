@@ -180,15 +180,15 @@ class BM3D[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Selection priority: "CUDA_ZIP" → "OPENC_CL_ZIP" → "METAL" → "OLD".
+        Selection priority: "CUDA" → "OPENCL" → "METAL" → "OLD".
         """
 
-        CUDA_ZIP = "vszipcu"
+        CUDA = "vszipcu"
         """
         GPU implementation using NVIDIA CUDA from `vszipcu`.
         """
 
-        OPENC_CL_ZIP = "vszipcl"
+        OPENCL = "vszipcl"
         """
         GPU implementation using NVIDIA CUDA from `vszipcu`.
         """
