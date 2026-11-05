@@ -2273,18 +2273,6 @@ wheels = [
 ]
 
 [[package]]
-name = "vapoursynth-bilateralgpu"
-version = "15"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4c/68/97d8b495b677ecb4838a30815f8c303bfad9369d59a41c9df3f3c50e8340/vapoursynth_bilateralgpu-15-py3-none-manylinux_2_39_x86_64.whl", hash = "sha256:83bddb659e19fc972636c9d77b4ffda2c6ea6ac214fdf212f8c68ab7229c4ac6", size = 49086369, upload-time = "2026-09-26T09:25:06.872Z" },
-    { url = "https://files.pythonhosted.org/packages/b6/7a/755db9ba20ad3b7348264daf39d158fc6707856fad6b622b3e20d02f6bee/vapoursynth_bilateralgpu-15-py3-none-win_amd64.whl", hash = "sha256:0111e106eefe6e5f9a8c72534c7c1557458877d10624639361955542c283ca96", size = 47110369, upload-time = "2026-09-26T09:25:09.836Z" },
-]
-
-[[package]]
 name = "vapoursynth-bm3d"
 version = "12.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3253,7 +3241,6 @@ nvidia = [
     { name = "onnxconverter-common" },
     { name = "tensorrt-cu13" },
     { name = "tensorrt-rtx-cu13" },
-    { name = "vapoursynth-bilateralgpu" },
     { name = "vapoursynth-bm3dvk2" },
     { name = "vapoursynth-eedi3vk2" },
     { name = "vapoursynth-mlrt-ncnn" },
@@ -3461,7 +3448,6 @@ requires-dist = [
     { name = "vapoursynth-bestsource", marker = "extra == 'mask'", specifier = ">=17.0" },
     { name = "vapoursynth-bestsource", marker = "extra == 'scale'", specifier = ">=17.0" },
     { name = "vapoursynth-bestsource", marker = "extra == 'source'", specifier = ">=17.0" },
-    { name = "vapoursynth-bilateralgpu", marker = "extra == 'nvidia'", specifier = ">=14" },
     { name = "vapoursynth-bm3d", marker = "extra == 'deband'", specifier = ">=10.0" },
     { name = "vapoursynth-bm3d", marker = "extra == 'dehalo'", specifier = ">=10.0" },
     { name = "vapoursynth-bm3d", marker = "extra == 'deinterlace'", specifier = ">=10.0" },
