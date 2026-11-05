@@ -180,7 +180,7 @@ class BM3D[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Selection priority: "CUDA_ZIP" → "CUDA_RTC" → "CUDA" → "HIP" → "SYCL" → "METAL" → "CPU" → "OLD".
+        Selection priority: "CUDA_ZIP" → "OPENC_CL_ZIP" → "METAL" → "OLD".
         """
 
         CUDA_ZIP = "vszipcu"
@@ -193,34 +193,9 @@ class BM3D[**P, R]:
         GPU implementation using NVIDIA CUDA from `vszipcu`.
         """
 
-        CUDA_RTC = "bm3dcuda_rtc"
-        """
-        GPU implementation using NVIDIA CUDA with NVRTC (runtime compilation).
-        """
-
-        CUDA = "bm3dcuda"
-        """
-        GPU implementation using NVIDIA CUDA.
-        """
-
-        HIP = "bm3dhip"
-        """
-        GPU implementation using AMD HIP.
-        """
-
-        SYCL = "bm3dsycl"
-        """
-        GPU implementation using Intel SYCL.
-        """
-
         METAL = "bm3dmetal"
         """
         GPU implementation using Apple Metal.
-        """
-
-        CPU = "bm3dcpu"
-        """
-        Optimized CPU implementation using AVX and AVX2 intrinsics.
         """
 
         OLD = "bm3d"
@@ -560,7 +535,6 @@ def bm3d(
 
     More information at:
         - https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D/
-        - https://github.com/WolframRhodium/VapourSynth-BM3DCUDA
 
     Example:
         ```py
@@ -643,7 +617,7 @@ def bm3d(
     match backend, clip.format.color_family:
         # We can pass directly to OLD backend when it's RGB or GRAY input.
         case BM3D.Backend.OLD, vs.RGB | vs.GRAY:
-            return _bm3d_mawen(clip, pre, ref, **plugins_args, **kwargs)
+            return _bm3d_old(clip, pre, ref, **plugins_args, **kwargs)
 
         # When input is YUV444, we convert to RGB and call the function again.
         # Convert back to YUV after processing.
@@ -688,13 +662,13 @@ def bm3d(
             pre_opp = core.fmtc.matrix(pre, coef=coefs, col_fam=vs.YUV, bits=32) if pre else pre
             ref_opp = core.fmtc.matrix(ref, coef=coefs, col_fam=vs.YUV, bits=32) if ref else ref
 
-            denoised = _bm3d_wolfram(clip_opp, pre_opp, ref_opp, **plugins_args, backend=backend, **kwargs)
+            denoised = _bm3d_new(clip_opp, pre_opp, ref_opp, **plugins_args, backend=backend, **kwargs)
             return core.fmtc.matrix(denoised, coef=list(interleave_arr(matrix_opp2rgb, [0, 0, 0], 3)), col_fam=vs.RGB)
 
         # YUVXXX and GRAY inputs.
         # `chroma=True` when YUV444, otherwise it's False.
         case _, _:
-            return _bm3d_wolfram(
+            return _bm3d_new(
                 clip,
                 pre,
                 ref,
@@ -706,7 +680,7 @@ def bm3d(
             )
 
 
-def _bm3d_mawen(
+def _bm3d_old(
     preclip: vs.VideoNode,
     pre: vs.VideoNode | None,
     ref: vs.VideoNode | None,
@@ -720,7 +694,7 @@ def _bm3d_mawen(
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
-    Internal function for mawen1250 implementation.
+    Internal function for old implementation.
     """
 
     preclip = (
@@ -784,7 +758,7 @@ def _bm3d_mawen(
     )
 
 
-def _bm3d_wolfram(
+def _bm3d_new(
     preclip: vs.VideoNode,
     pre: vs.VideoNode | None,
     ref: vs.VideoNode | None,
@@ -800,7 +774,7 @@ def _bm3d_wolfram(
     **kwargs: Any,
 ) -> vs.VideoNode:
     """
-    Internal function for WolframRhodium implementation.
+    Internal function for new implementation.
     """
 
     if not ref:
