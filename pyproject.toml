@@ -138,6 +138,7 @@ deband = ["vsjetpack[denoise]", "vsnoise>=1.3"]
 gpu = ["vapoursynth-mlrt-ort>=17.0"]
 cl = ["vapoursynth-vszipcl>=1.2.0"]
 vulkan = [
+    "vapoursynth-bm3dvk2>=3.0",
     "vapoursynth-eedi3vk2>=1.0",
     "vapoursynth-mlrt-ncnn>=17.0",
     "vapoursynth-nnedi3vk>=1.0",

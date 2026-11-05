@@ -180,12 +180,17 @@ class BM3D[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Selection priority: "CUDA" → "OPENCL" → "METAL" → "CPU" → "OLD".
+        Selection priority: "CUDA" → "VULKAN" → "OPENCL" → "METAL" → "CPU" → "OLD".
         """
 
         CUDA = "vszipcu", "BM3Dv2"
         """
         GPU implementation using NVIDIA CUDA from `vszipcu`.
+        """
+
+        VULKAN = "bm3dvk2", "BM3D"
+        """
+        GPU implementation using Vulkan compute from `bm3dvk2`.
         """
 
         OPENCL = "vszipcl", "BM3Dv2"
@@ -318,7 +323,7 @@ class BM3D[**P, R]:
                         "spatial": {
                             "block_step": 8,
                             "bm_range": 9,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "block_size": 8,
                             "group_size": 8,
                         },
@@ -326,7 +331,7 @@ class BM3D[**P, R]:
                             "bm_range": 7,
                             "radius": 1,
                             "ps_range": 4,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "group_size": 8,
                         },
                     },
@@ -334,7 +339,7 @@ class BM3D[**P, R]:
                         "spatial": {
                             "block_step": 7,
                             "bm_range": 9,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "block_size": 8,
                             "group_size": 8,
                         },
@@ -342,7 +347,7 @@ class BM3D[**P, R]:
                             "bm_range": 7,
                             "radius": 1,
                             "ps_range": 5,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "group_size": 8,
                         },
                     },
@@ -352,7 +357,7 @@ class BM3D[**P, R]:
                         "spatial": {
                             "block_step": 6,
                             "bm_range": 9,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "block_size": 8,
                             "group_size": 16,
                         },
@@ -360,7 +365,7 @@ class BM3D[**P, R]:
                             "bm_range": 9,
                             "radius": 2,
                             "ps_range": 4,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "group_size": 8,
                         },
                     },
@@ -368,7 +373,7 @@ class BM3D[**P, R]:
                         "spatial": {
                             "block_step": 5,
                             "bm_range": 9,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "block_size": 8,
                             "group_size": 16,
                         },
@@ -376,7 +381,7 @@ class BM3D[**P, R]:
                             "bm_range": 9,
                             "radius": 2,
                             "ps_range": 5,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "group_size": 8,
                         },
                     },
@@ -386,7 +391,7 @@ class BM3D[**P, R]:
                         "spatial": {
                             "block_step": 4,
                             "bm_range": 16,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "block_size": 8,
                             "group_size": 16,
                         },
@@ -394,7 +399,7 @@ class BM3D[**P, R]:
                             "bm_range": 12,
                             "radius": 3,
                             "ps_range": 5,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "group_size": 8,
                         },
                     },
@@ -402,7 +407,7 @@ class BM3D[**P, R]:
                         "spatial": {
                             "block_step": 3,
                             "bm_range": 16,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "block_size": 8,
                             "group_size": 32,
                         },
@@ -410,7 +415,7 @@ class BM3D[**P, R]:
                             "bm_range": 12,
                             "radius": 3,
                             "ps_range": 6,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "group_size": 8,
                         },
                     },
@@ -420,7 +425,7 @@ class BM3D[**P, R]:
                         "spatial": {
                             "block_step": 3,
                             "bm_range": 16,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "block_size": 8,
                             "group_size": 16,
                         },
@@ -428,7 +433,7 @@ class BM3D[**P, R]:
                             "bm_range": 16,
                             "radius": 4,
                             "ps_range": 7,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "group_size": 8,
                         },
                     },
@@ -436,7 +441,7 @@ class BM3D[**P, R]:
                         "spatial": {
                             "block_step": 2,
                             "bm_range": 16,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "block_size": 8,
                             "group_size": 32,
                         },
@@ -444,7 +449,7 @@ class BM3D[**P, R]:
                             "bm_range": 16,
                             "radius": 4,
                             "ps_range": 8,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "group_size": 8,
                         },
                     },
@@ -462,7 +467,7 @@ class BM3D[**P, R]:
                             "bm_range": 12,
                             "radius": 4,
                             "ps_range": 5,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "group_size": 16,
                         },
                     },
@@ -477,7 +482,7 @@ class BM3D[**P, R]:
                             "bm_range": 12,
                             "radius": 4,
                             "ps_range": 6,
-                            # Only available in OLD
+                            # Only available in OLD and VULKAN
                             "group_size": 16,
                         },
                     },
@@ -566,6 +571,7 @@ def bm3d(
     More information at:
         - https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D/
         - https://github.com/dnjulek/vapoursynth-zip/wiki/BM3D
+        - https://github.com/HolyWu/VapourSynth-bm3dvk2
 
     Example:
         ```py
@@ -573,8 +579,9 @@ def bm3d(
         ```
 
     Args:
-        clip: The clip to process. If using BM3D.Backend.OLD, the clip format must be YUV444 or RGB, as filtering is
-            always performed in the OPPonent color space. If using another device type and the clip format is:
+        clip: The clip to process. If using BM3D.Backend.OLD or BM3D.Backend.VULKAN, the clip format must be YUV444,
+            RGB, or GRAY, as filtering is performed in the OPPonent color space for color formats.
+            If using another device type and the clip format is:
 
                - RGB       -> Processed in OPP format (BM3D algorithm, aka `chroma=False`).
                - YUV444    -> Processed in YUV444 format (CBM3D algorithm, aka `chroma=True`).
@@ -603,9 +610,11 @@ def bm3d(
         **kwargs: Internal keyword arguments for testing purposes.
 
     Raises:
-        CustomValueError: If both `pre` and `ref` are specified at the same time.
+        CustomValueError: If both `pre` and `ref` are specified at the same time,
+            or if `pre` is used with BM3D.Backend.VULKAN.
         UnsupportedProfileError: If the VERY_NOISY profile is not supported by the selected device type.
-        UnsupportedVideoFormatError: If the video format is not supported when using BM3D.Backend.OLD.
+        UnsupportedVideoFormatError: If the video format is not supported when using BM3D.Backend.OLD or
+            BM3D.Backend.VULKAN.
 
     Returns:
         Denoised clip.
@@ -632,31 +641,41 @@ def bm3d(
         nfinal_args=nfinal_args,
     )
 
+    fmt = clip.format
+
     if ref and pre:
         raise CustomValueError("You cannot specify both 'pre' and 'ref' at the same time.", func)
 
-    if backend != BM3D.Backend.OLD:
+    if backend == BM3D.Backend.VULKAN:
+        if pre is not None:
+            raise CustomValueError("The 'pre' argument is not supported with BM3D.Backend.VULKAN.", func)
+    elif backend != BM3D.Backend.OLD:
         if profile == BM3D.Profile.VERY_NOISY:
-            raise UnsupportedProfileError("The VERY_NOISY profile is only supported with BM3D.Backend.OLD.", func)
+            raise UnsupportedProfileError(
+                "The VERY_NOISY profile is only supported with BM3D.Backend.OLD and BM3D.Backend.VULKAN.", func
+            )
         if (
-            clip.format.bits_per_sample != 32
+            fmt.bits_per_sample != 32
             or (ref and ref.format.bits_per_sample != 32)
             or (pre and pre.format.bits_per_sample != 32)
         ):
             raise CustomRuntimeError(f"The backend {backend} only supports 32 bit float input.")
 
-    match backend, clip.format.color_family:
+    match backend, fmt.color_family:
         # We can pass directly to OLD backend when it's RGB or GRAY input.
         case BM3D.Backend.OLD, vs.RGB | vs.GRAY:
             return _bm3d_old(clip, pre, ref, **plugins_args, **kwargs)
 
+        case BM3D.Backend.VULKAN, vs.RGB | vs.GRAY:
+            return _bm3d_vulkan(clip, ref, **plugins_args, **kwargs)
+
         # When input is YUV444, we convert to RGB and call the function again.
         # Convert back to YUV after processing.
-        case BM3D.Backend.OLD, vs.YUV if clip.format.subsampling_w == clip.format.subsampling_h == 0:
+        case BM3D.Backend.OLD | BM3D.Backend.VULKAN, vs.YUV if fmt.subsampling_w == fmt.subsampling_h == 0:
             point = Point()
 
             denoised = bm3d(
-                point.resample(clip, clip.format.replace(color_family=vs.RGB)),
+                point.resample(clip, fmt.replace(color_family=vs.RGB)),
                 sigma,
                 (radius_basic, radius_final),
                 refine,
@@ -675,13 +694,13 @@ def bm3d(
                 final = join({p: clip if s == 0 else final for p, s in zip(range(3), nsigma)}, vs.YUV)
             return final
 
-        # Raise format error if we are on OLD backend and it is subsampled YUV.
-        case BM3D.Backend.OLD, vs.YUV:
+        # Raise format error if we are on OLD or VULKAN backend and it is subsampled YUV.
+        case BM3D.Backend.OLD | BM3D.Backend.VULKAN, vs.YUV:
             raise UnsupportedVideoFormatError(
                 func,
                 clip,
-                clip.format.replace(subsampling_w=0, subsampling_h=0),
-                "Subsampled YUV formats are not supported with BM3D.Backend.OLD.",
+                fmt.replace(subsampling_w=0, subsampling_h=0),
+                f"Subsampled YUV formats are not supported with {backend}.",
             )
 
         # When input is RGB, BM3D CUDA and others need manual conversion to OPP.
@@ -705,8 +724,7 @@ def bm3d(
                 ref,
                 **plugins_args,
                 backend=backend,
-                chroma=clip.format.subsampling_w == clip.format.subsampling_h == 0
-                and clip.format.color_family == vs.YUV,
+                chroma=fmt.subsampling_w == fmt.subsampling_h == 0 and fmt.color_family == vs.YUV,
                 **kwargs,
             )
 
@@ -826,5 +844,40 @@ def _bm3d_new(
 
         for _ in range(refine):
             final = backend.function(preclip, final, nsigma, **f_args)
+
+    return final
+
+
+def _bm3d_vulkan(
+    preclip: vs.VideoNode,
+    ref: vs.VideoNode | None,
+    nsigma: list[float],
+    refine: int,
+    profile: BM3D.Profile,
+    radius_basic: int | None,
+    radius_final: int | None,
+    nbasic_args: dict[str, Any],
+    nfinal_args: dict[str, Any],
+    **kwargs: Any,
+) -> vs.VideoNode:
+    """
+    Internal function for bm3dvk2 implementation.
+    """
+    function = BM3D.Backend.VULKAN.function
+
+    if not ref:
+        b_args = _clean_keywords(profile.basic_args(radius_basic), function) | nbasic_args | kwargs
+        basic = function(preclip, profile=profile.value, sigma=nsigma, **b_args)
+    else:
+        basic = ref
+
+    if not refine:
+        return basic
+
+    f_args = _clean_keywords(profile.final_args(radius_final), function) | nfinal_args | kwargs
+    final = basic
+
+    for _ in range(refine):
+        final = function(preclip, ref=final, profile=profile.value, sigma=nsigma, **f_args)
 
     return final

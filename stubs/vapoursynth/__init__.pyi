@@ -1740,6 +1740,10 @@ class VideoNode(RawNode):
     bm3d: Final[_bm3d._VideoNode_bound.Plugin]
     """Implementation of BM3D denoising filter for VapourSynth."""
 # </attribute/VideoNode_bound/bm3d>
+# <attribute/VideoNode_bound/bm3dvk2>
+    bm3dvk2: Final[_bm3dvk2._VideoNode_bound.Plugin]
+    """Block-Matching and 3D filtering, using Vulkan compute"""
+# </attribute/VideoNode_bound/bm3dvk2>
 # <attribute/VideoNode_bound/bwdif>
     bwdif: Final[_bwdif._VideoNode_bound.Plugin]
     """BobWeaver Deinterlacing Filter"""
@@ -2020,6 +2024,10 @@ class Core:
     bm3d: Final[_bm3d._Core_bound.Plugin]
     """Implementation of BM3D denoising filter for VapourSynth."""
 # </attribute/Core_bound/bm3d>
+# <attribute/Core_bound/bm3dvk2>
+    bm3dvk2: Final[_bm3dvk2._Core_bound.Plugin]
+    """Block-Matching and 3D filtering, using Vulkan compute"""
+# </attribute/Core_bound/bm3dvk2>
 # <attribute/Core_bound/bs>
     bs: Final[_bs._Core_bound.Plugin]
     """Best Source 2"""
@@ -2301,6 +2309,20 @@ class _bm3d:
             def VFinal(self, /, ref: VideoNode, profile: _AnyStr | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, group_size: _IntLike | None = None, bm_range: _IntLike | None = None, bm_step: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, ps_step: _IntLike | None = None, th_mse: _FloatLike | None = None, matrix: _IntLike | None = None) -> VideoNode: ...
 
 # </implementation/bm3d>
+
+# <implementation/bm3dvk2>
+class _bm3dvk2:
+    class _Core_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def BM3D(self, /, clip: VideoNode, ref: VideoNode | None = None, profile: _AnyStr | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, group_size: _IntLike | None = None, bm_range: _IntLike | None = None, bm_step: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, ps_step: _IntLike | None = None, th_mse: _FloatLike | None = None, hard_thr: _FloatLike | None = None, matrix: _IntLike | None = None) -> VideoNode: ...
+
+    class _VideoNode_bound:
+        class Plugin(_VSPlugin):
+            @_Wrapper.Function
+            def BM3D(self, /, ref: VideoNode | None = None, profile: _AnyStr | None = None, sigma: _FloatLike | _SequenceLike[_FloatLike] | None = None, radius: _IntLike | None = None, block_size: _IntLike | None = None, block_step: _IntLike | None = None, group_size: _IntLike | None = None, bm_range: _IntLike | None = None, bm_step: _IntLike | None = None, ps_num: _IntLike | None = None, ps_range: _IntLike | None = None, ps_step: _IntLike | None = None, th_mse: _FloatLike | None = None, hard_thr: _FloatLike | None = None, matrix: _IntLike | None = None) -> VideoNode: ...
+
+# </implementation/bm3dvk2>
 
 # <implementation/bs>
 _ReturnDict_bs_TrackInfo = TypedDict("_ReturnDict_bs_TrackInfo", {"tracktype": int | list[int], "tracktypestr": _AnyStr | list[_AnyStr], "codec": int | list[int], "codecstr": _AnyStr | list[_AnyStr], "disposition": int | list[int], "dispositionstr": _AnyStr | list[_AnyStr]})
