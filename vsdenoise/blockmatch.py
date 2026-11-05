@@ -599,7 +599,7 @@ def bm3d(
         profile: The preset profile. Defaults to BM3D.Profile.FAST.
         pre: A pre-filtered clip for the basic estimate. It should be more suitable for block-matching than the input
             clip, and must be of the same format and dimensions. Either `pre` or `ref` can be specified, not both.
-            Defaults to None.
+            Only supported with BM3D.Backend.OLD. Defaults to None.
         ref: A clip to be used as the basic estimate. It replaces BM3D's internal basic estimate and serves as the
             reference for the final estimate. Must be of the same format and dimensions as the input clip. Either `ref`
             or `pre` can be specified, not both. Defaults to None.
@@ -611,7 +611,7 @@ def bm3d(
 
     Raises:
         CustomValueError: If both `pre` and `ref` are specified at the same time,
-            or if `pre` is used with BM3D.Backend.VULKAN.
+            or if `pre` is used with a backend other than BM3D.Backend.OLD.
         UnsupportedProfileError: If the VERY_NOISY profile is not supported by the selected device type.
         UnsupportedVideoFormatError: If the video format is not supported when using BM3D.Backend.OLD or
             BM3D.Backend.VULKAN.
@@ -646,19 +646,22 @@ def bm3d(
     if ref and pre:
         raise CustomValueError("You cannot specify both 'pre' and 'ref' at the same time.", func)
 
+    if pre is not None and backend != BM3D.Backend.OLD:
+        raise CustomValueError("The 'pre' argument is only supported with BM3D.Backend.OLD.", func)
+
     if backend == BM3D.Backend.VULKAN:
-        if pre is not None:
-            raise CustomValueError("The 'pre' argument is not supported with BM3D.Backend.VULKAN.", func)
+        if fmt.sample_type != vs.FLOAT or (ref and ref.format.sample_type != vs.FLOAT):
+            raise CustomRuntimeError(
+                f"The backend {backend} only supports float input.",
+                bm3d,
+                (fmt, ref.format) if ref else fmt,
+            )
     elif backend != BM3D.Backend.OLD:
         if profile == BM3D.Profile.VERY_NOISY:
             raise UnsupportedProfileError(
                 "The VERY_NOISY profile is only supported with BM3D.Backend.OLD and BM3D.Backend.VULKAN.", func
             )
-        if (
-            fmt.bits_per_sample != 32
-            or (ref and ref.format.bits_per_sample != 32)
-            or (pre and pre.format.bits_per_sample != 32)
-        ):
+        if fmt.bits_per_sample != 32 or (ref and ref.format.bits_per_sample != 32):
             raise CustomRuntimeError(f"The backend {backend} only supports 32 bit float input.")
 
     match backend, fmt.color_family:
@@ -709,10 +712,9 @@ def bm3d(
             coefs = list(interleave_arr(matrix_rgb2opp, [0, 0, 0], 3))
 
             clip_opp = core.fmtc.matrix(clip, coef=coefs, col_fam=vs.YUV, bits=32)
-            pre_opp = core.fmtc.matrix(pre, coef=coefs, col_fam=vs.YUV, bits=32) if pre else pre
             ref_opp = core.fmtc.matrix(ref, coef=coefs, col_fam=vs.YUV, bits=32) if ref else ref
 
-            denoised = _bm3d_new(clip_opp, pre_opp, ref_opp, **plugins_args, backend=backend, **kwargs)
+            denoised = _bm3d_new(clip_opp, ref_opp, **plugins_args, backend=backend, **kwargs)
             return core.fmtc.matrix(denoised, coef=list(interleave_arr(matrix_opp2rgb, [0, 0, 0], 3)), col_fam=vs.RGB)
 
         # YUVXXX and GRAY inputs.
@@ -720,7 +722,6 @@ def bm3d(
         case _, _:
             return _bm3d_new(
                 clip,
-                pre,
                 ref,
                 **plugins_args,
                 backend=backend,
@@ -809,7 +810,6 @@ def _bm3d_old(
 
 def _bm3d_new(
     preclip: vs.VideoNode,
-    pre: vs.VideoNode | None,
     ref: vs.VideoNode | None,
     nsigma: list[float],
     refine: int,
@@ -830,7 +830,7 @@ def _bm3d_new(
         b_args = _clean_keywords(profile.basic_args(radius_basic), backend.function) | nbasic_args | kwargs
         b_args.update(chroma=chroma)
 
-        basic = backend.function(preclip, pre, nsigma, **b_args)
+        basic = backend.function(preclip, None, nsigma, **b_args)
     else:
         basic = ref
 
