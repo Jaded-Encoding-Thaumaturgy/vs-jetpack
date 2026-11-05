@@ -25,23 +25,23 @@ Most of these plugins are now available as Python packages on PyPI and can be in
 
 Most extras are hierarchical. For example, `denoise` includes all plugins from `aa`, which in turn includes `mask`, and so on.
 
-| Extra             | Purpose                | Included Plugins / Packages                                                                                |
-| :---------------- | :--------------------- | :--------------------------------------------------------------------------------------------------------- |
-| **`source`**      | Clip indexing          | `bestsource`, `ffms2`, `lsmas`, `d2vsource`, `dvdsrc2`                                                     |
-| **`kernels`**     | Resizing               | `resize2`, `descale`, `vs-placebo`                                                                         |
-| **`rg`**          | Repair & smoothing     | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                                                   |
-| **`mask`**        | Masking                | `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)                                                    |
-| **`scale`**       | Scaling and MLRT tools | `ov` and supporting Python packages (+ `mask`)                                                             |
-| **`aa`**          | Anti-aliasing          | `bwdif`, `sangnom`, `znedi3` (+ `scale`)                                                                   |
-| **`denoise`**     | Denoising              | `bm3d`, `bm3dcpu` / `bm3dmetal`, `dfttest2`, `deblock`, `fmtconv`, `mvutensils`, `nlm-ispc` (+ `aa`)       |
-| **`deband`**      | Debanding              | `vsnoise` (+ `denoise`)                                                                                    |
-| **`deinterlace`** | Deinterlacing          | `dmetrics`, `vivtc` (+ `denoise`)                                                                          |
-| **`full`**        | All CPU-based extras   | All of the above                                                                                           |
-| **`gpu`**         | Generic GPU            | `ort`                                                                                                      |
-| **`cl`**          | OpenCL                 | `vszipcl`                                                                                                  |
-| **`vulkan`**      | Vulkan devices         | `eedi3vk2`, `ncnn`, `nnedi3vk`                                                                             |
-| **`nvidia`**      | NVIDIA GPU             | `bm3dcuda`, `bilateralgpu`, `dfttest2[cufft,nvrtc]`, `ort-cuda`, `trt{-rtx}`, `vszipcu` (+ `cl`, `vulkan`) |
-| **`amd`**         | AMD GPU                | `bm3dhip`, `dfttest2[hiprtc,hipfft]`, Linux-only `mlrt-migx` (+ `gpu`, `cl`, `vulkan`)                     |
+| Extra             | Purpose                | Included Plugins / Packages                                                              |
+| :---------------- | :--------------------- | :--------------------------------------------------------------------------------------- |
+| **`source`**      | Clip indexing          | `bestsource`, `ffms2`, `lsmas`, `d2vsource`, `dvdsrc2`                                   |
+| **`kernels`**     | Resizing               | `resize2`, `descale`, `vs-placebo`                                                       |
+| **`rg`**          | Repair & smoothing     | `awarp`, `zsmooth` (+ `kernels`, `expr`)                                                 |
+| **`mask`**        | Masking                | `edgemasks`, `hysteresis`, `subtext` (+ `source`, `rg`)                                  |
+| **`scale`**       | Scaling and MLRT tools | `ov` and supporting Python packages (+ `mask`)                                           |
+| **`aa`**          | Anti-aliasing          | `bwdif`, `sangnom`, `znedi3` (+ `scale`)                                                 |
+| **`denoise`**     | Denoising              | `bm3d`, `bm3dmetal`, `dfttest2`, `deblock`, `fmtconv`, `mvutensils`, `nlm-ispc` (+ `aa`) |
+| **`deband`**      | Debanding              | `vsnoise` (+ `denoise`)                                                                  |
+| **`deinterlace`** | Deinterlacing          | `dmetrics`, `vivtc` (+ `denoise`)                                                        |
+| **`full`**        | All CPU-based extras   | All of the above                                                                         |
+| **`gpu`**         | Generic GPU            | `ort`                                                                                    |
+| **`cl`**          | OpenCL                 | `vszipcl`                                                                                |
+| **`vulkan`**      | Vulkan devices         | `eedi3vk2`, `ncnn`, `nnedi3vk`                                                           |
+| **`nvidia`**      | NVIDIA GPU             | `dfttest2[cufft,nvrtc]`, `ort-cuda`, `trt{-rtx}`, `vszipcu` (+ `cl`, `vulkan`)           |
+| **`amd`**         | AMD GPU                | `dfttest2[hiprtc,hipfft]`, Linux-only `mlrt-migx` (+ `gpu`, `cl`, `vulkan`)              |
 
 > [!IMPORTANT]
 > Some plugins distribute their wheels through our custom package index instead of PyPI.
@@ -89,12 +89,10 @@ Not all extras have prebuilt wheels on every platform:
 | `gpu`         |     ✅      |         ✅          |        ❌         |          ✅           |
 | `cl`          |     ✅      |         ✅          |        ❌         |          ✅           |
 | `vulkan`      |     ✅      |         ✅          |        ❌         |          ✅           |
-| `nvidia`      |     ✅      |       ⚠️[^1]        |        ❌         |          ❌           |
+| `nvidia`      |     ✅      |         ✅          |        ❌         |          ❌           |
 | `amd`         |     ✅      |         ✅          |        ❌         |          ❌           |
 
 > [!TIP]
 > If a plugin is unavailable for your platform, you may need to build it manually.
 >
 > Refer to the plugin repository for platform-specific build instructions.
-
-[^1]: `bilateralgpu` requires Glibc 2.39+.
