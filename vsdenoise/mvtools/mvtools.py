@@ -310,7 +310,7 @@ class MVTools(VSObject):
 
         vectors.blksize = cast(int | tuple[int, int], fallback(blksize, vectors.blksize, default=8))
         vectors.overlap = cast(int | tuple[int, int], fallback(overlap, vectors.overlap, default=0))
-        vectors.pad = cast(int | tuple[int, int], fallback(pad, vectors.pad, default=vectors.blksize))
+        vectors.pad = fallback(pad, vectors.pad, default=vectors.blksize)
         vectors.pel = fallback(pel, vectors.pel, default=2)
 
         npelclip = pelclip(clip) if callable(pelclip) else pelclip
@@ -416,8 +416,8 @@ class MVTools(VSObject):
         overlap = fallback(overlap, self.analyze_args.get("overlap"), default=self.vectors.overlap)
 
         self.vectors.clear()
-        self.vectors.blksize = cast(int | tuple[int, int], blksize)
-        self.vectors.overlap = cast(int | tuple[int, int], overlap)
+        self.vectors.blksize = blksize
+        self.vectors.overlap = overlap
 
         super_clip = self.super(fallback(super, self.search_clip), self.vectors, onelevel=False)
 
