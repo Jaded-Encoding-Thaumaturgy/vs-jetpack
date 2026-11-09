@@ -299,19 +299,20 @@ class MVTools(VSObject):
         clip = fallback(clip, self.clip)
         vectors = fallback(vectors, self.vectors)
 
-        blksize = fallback(blksize, self.super_args.get("blksize"), default=None)
-        overlap = fallback(overlap, self.super_args.get("overlap"), default=None)
-        pad = fallback(pad, self.super_args.get("pad"), default=None)
-        pel = fallback(pel, self.super_args.get("pel"), default=None)
+        blksize = fallback(blksize, vectors.blksize, default=self.super_args.get("blksize"))
+        overlap = fallback(overlap, vectors.overlap, default=self.super_args.get("overlap"))
+        pad = fallback(pad, vectors.pad, default=self.super_args.get("pad"))
+        pel = fallback(pel, vectors.pel, default=self.super_args.get("pel"))
+
         sharp = fallback(sharp, self.super_args.get("sharp"), default=SharpMode.WIENER)
         rfilter = fallback(rfilter, self.super_args.get("rfilter"), default=RFilterMode.BILINEAR)
         onelevel = fallback(onelevel, self.super_args.get("onelevel"), default=False)
         pelclip = fallback(pelclip, self.super_args.get("pelclip"), default=None)
 
-        vectors.blksize = cast(int | tuple[int, int], fallback(blksize, vectors.blksize, default=8))
-        vectors.overlap = cast(int | tuple[int, int], fallback(overlap, vectors.overlap, default=0))
-        vectors.pad = fallback(pad, vectors.pad, default=vectors.blksize)
-        vectors.pel = fallback(pel, vectors.pel, default=2)
+        vectors.blksize = cast(int | tuple[int, int], fallback(blksize, 8))
+        vectors.overlap = cast(int | tuple[int, int], fallback(overlap, 0))
+        vectors.pad = cast(int | tuple[int, int], fallback(pad, vectors.blksize))
+        vectors.pel = fallback(pel, 2)
 
         npelclip = pelclip(clip) if callable(pelclip) else pelclip
 
@@ -414,12 +415,13 @@ class MVTools(VSObject):
 
         blksize = fallback(blksize, self.analyze_args.get("blksize"), default=self.vectors.blksize)
         overlap = fallback(overlap, self.analyze_args.get("overlap"), default=self.vectors.overlap)
+        levels = fallback(levels, self.analyze_args.get("levels"), default=None)
 
         self.vectors.clear()
         self.vectors.blksize = blksize
         self.vectors.overlap = overlap
 
-        super_clip = self.super(fallback(super, self.search_clip), self.vectors, onelevel=False)
+        super_clip = self.super(fallback(super, self.search_clip), self.vectors, onelevel=levels == 1)
 
         analyze_args: dict[str, Any] = self.analyze_args | KwargsNotNone(
             blksize=blksize,
