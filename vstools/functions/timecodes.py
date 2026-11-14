@@ -597,7 +597,7 @@ class Keyframes(list[int]):
                     self.get_frame_ranges,
                 )
 
-        franges: FrameRangesN = []
+        franges: list[tuple[int | None, int | None]] = []
         last_stop = 0
 
         for frame in nframes:
