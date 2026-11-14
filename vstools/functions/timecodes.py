@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from abc import abstractmethod
+from bisect import bisect_right
 from collections.abc import Iterable
 from dataclasses import dataclass
 from fractions import Fraction
@@ -21,6 +22,7 @@ from jetpytools import (
 )
 
 from ..exceptions import FramesLengthError, UnsupportedTimecodeVersionError
+from ..types.builtins import FrameRangesN
 from ..utils import DynamicClipsCache, PackageStorage
 from ..vs_proxy import VSObject, vs
 from .ranges import replace_ranges
@@ -535,6 +537,95 @@ class Keyframes(list[int]):
         keyframes.to_file(file, force=True)
 
         return keyframes
+
+    def get_frame_ranges(
+        self,
+        frames: int | Iterable[int],
+        last_frame: vs.VideoNode | int | None = None,
+        strict: bool = False,
+    ) -> FrameRangesN:
+        """
+        Get the scene ranges from the given frame numbers.
+
+        For every frame given, it checks the current Keyframes object
+        to find its location and creates a frame range out of it
+        to be used with functions such as `replace_ranges`.
+
+        Args:
+            frames: A frame or list of frames to obtain frame ranges for.
+            last_frame: Optional inclusive final frame index.
+                If a ``VideoNode`` is provided, the `num_frames` will be used.
+                Default: None.
+            strict: Require all requested frames to fall within the known bounds.
+                Default: False.
+
+        Returns:
+            A sorted list of unique frame ranges.
+
+        Raises:
+            CustomValueError: `last_frame` is a negative value.
+            CustomValueError: `strict=True` and the first requested frame (after sorting)
+                precedes the first Keyframe.
+            CustomValueError: `strict=True` and the final requested frame (after sorting)
+                exceeds the last allowed frame if set.
+        """
+
+        if isinstance(frames, int):
+            frames = [frames]
+
+        nframes = sorted(set(frames))
+
+        if not nframes or not self:
+            return []
+
+        if isinstance(last_frame, vs.VideoNode):
+            last_frame = last_frame.num_frames - 1
+
+        if last_frame is not None and last_frame < 0:
+            raise CustomValueError("`last_frame` must not be negative!", self.get_frame_ranges, last_frame)
+
+        if strict:
+            if nframes[0] < self[0]:
+                raise CustomValueError(
+                    f"Frame {nframes[0]} precedes the first keyframe ({self[0]})!",
+                    self.get_frame_ranges,
+                )
+
+            if last_frame is not None and nframes[-1] > last_frame:
+                raise CustomValueError(
+                    f"Frame {nframes[-1]} exceeds the last frame ({last_frame})!",
+                    self.get_frame_ranges,
+                )
+
+        franges: FrameRangesN = []
+        last_stop = 0
+
+        for frame in nframes:
+            frame = max(0, min(frame, last_frame) if last_frame is not None else frame)
+
+            if frame < last_stop:
+                continue
+
+            scene_idx = bisect_right(self, frame) - 1
+
+            scene_end = self[scene_idx + 1] - 1 if scene_idx + 1 < len(self) else last_frame
+
+            if last_frame is not None and scene_end is not None:
+                scene_end = min(scene_end, last_frame)
+
+            franges.append(
+                (
+                    None if scene_idx < 0 or self[scene_idx] == 0 else self[scene_idx],
+                    scene_end,
+                )
+            )
+
+            if scene_end is None or scene_end == last_frame:
+                break
+
+            last_stop = scene_end + 1
+
+        return franges
 
     @staticmethod
     def _get_unique_path(clip: vs.VideoNode, key: str) -> SPath:
