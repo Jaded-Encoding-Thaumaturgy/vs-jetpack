@@ -383,6 +383,113 @@ class Keyframes(list[int]):
         super().__init__(sorted(iterable))
         self.scenes = self.__class__._Scenes(self)
 
+    def get_frame_ranges(
+        self,
+        frames: int | Iterable[int],
+        last_frame: vs.VideoNode | int | None = None,
+        strict: bool = False,
+        exclusive: bool | None = None,
+    ) -> FrameRangesN:
+        """
+        Get the scene ranges containing the given frame numbers.
+
+        For every given frame, it checks the current Keyframes object to find its location
+        and creates a frame range out of it to be used with functions
+        such as [replace_ranges][vstools.replace_ranges].
+
+        Args:
+            frames: A frame or iterable of frames to obtain ranges for.
+                Negative indices are relative to the end when the clip length is known.
+            last_frame: Optional inclusive final frame index.
+                If a ``VideoNode`` is provided, its length is used instead.
+            strict: Raise an error for requested frames that fall out of known bounds.
+            Otherwise, clamp them to the available bounds.
+                Default: False.
+            exclusive: Whether the returned ranges use exclusive endpoints.
+                Defaults to the current `replace_ranges.exclusive` setting.
+
+        Returns:
+            A sorted list of unique frame ranges.
+
+        Raises:
+            CustomValueError: The supplied `last_frame` is invalid.
+            CustomValueError: A requested frame exceeds the known bounds when `strict=True`.
+        """
+
+        if isinstance(frames, int):
+            frames = [frames]
+
+        if isinstance(last_frame, vs.VideoNode):
+            length = last_frame.num_frames
+        else:
+            length = last_frame + 1 if last_frame is not None else None
+
+        if length is not None and length <= 0:
+            raise CustomValueError(
+                "`last_frame` must not be negative!",
+                self.get_frame_ranges,
+                last_frame,
+            )
+
+        exclusive = fallback(exclusive, replace_ranges.exclusive, False)
+
+        normalized = set[int]()
+
+        for frame in frames:
+            if frame < 0 and length is not None:
+                frame += length
+
+            if not strict:
+                frame = clamp(frame, 0, length - 1) if length is not None else max(frame, 0)
+
+            normalized.add(frame)
+
+        if not normalized or not self:
+            return []
+
+        nframes = sorted(normalized)
+
+        if strict:
+            if nframes[0] < self[0]:
+                raise CustomValueError(
+                    f"Frame {nframes[0]} precedes the first keyframe ({self[0]})!",
+                    self.get_frame_ranges,
+                )
+
+            if length is not None and nframes[-1] >= length:
+                raise CustomValueError(
+                    f"Frame {nframes[-1]} exceeds the last frame ({length - 1})!",
+                    self.get_frame_ranges,
+                )
+
+        franges: list[tuple[int | None, int | None]] = []
+        last_stop = 0
+
+        for frame in nframes:
+            if frame < last_stop:
+                continue
+
+            scene_idx = bisect_right(self, frame) - 1
+
+            scene_end = self[scene_idx + 1] if scene_idx + 1 < len(self) else length
+
+            if length is not None and (scene_end is None or scene_end > length):
+                scene_end = length
+
+            franges.append(
+                (
+                    None if scene_idx < 0 or self[scene_idx] == 0 else self[scene_idx],
+                    None if scene_end is None else scene_end - (not exclusive),
+                )
+            )
+
+            if scene_end is None or scene_end == length:
+                break
+
+            last_stop = scene_end
+
+        return franges
+
     def to_file(
         self,
         out: str | os.PathLike[str],
@@ -538,113 +645,6 @@ class Keyframes(list[int]):
         keyframes.to_file(file, force=True)
 
         return keyframes
-
-    def get_frame_ranges(
-        self,
-        frames: int | Iterable[int],
-        last_frame: vs.VideoNode | int | None = None,
-        strict: bool = False,
-        exclusive: bool | None = None,
-    ) -> FrameRangesN:
-        """
-        Get the scene ranges containing the given frame numbers.
-
-        For every given frame, it checks the current Keyframes object to find its location
-        and creates a frame range out of it to be used with functions
-        such as [replace_ranges][vstools.replace_ranges].
-
-        Args:
-            frames: A frame or iterable of frames to obtain ranges for.
-                Negative indices are relative to the end when the clip length is known.
-            last_frame: Optional inclusive final frame index.
-                If a ``VideoNode`` is provided, its length is used instead.
-            strict: Raise an error for requested frames that fall out of known bounds.
-            Otherwise, clamp them to the available bounds.
-                Default: False.
-            exclusive: Whether the returned ranges use exclusive endpoints.
-                Defaults to the current `replace_ranges.exclusive` setting.
-
-        Returns:
-            A sorted list of unique frame ranges.
-
-        Raises:
-            CustomValueError: The supplied `last_frame` is invalid.
-            CustomValueError: A requested frame exceeds the known bounds when `strict=True`.
-        """
-
-        if isinstance(frames, int):
-            frames = [frames]
-
-        if isinstance(last_frame, vs.VideoNode):
-            length = last_frame.num_frames
-        else:
-            length = last_frame + 1 if last_frame is not None else None
-
-        if length is not None and length <= 0:
-            raise CustomValueError(
-                "`last_frame` must not be negative!",
-                self.get_frame_ranges,
-                last_frame,
-            )
-
-        exclusive = fallback(exclusive, replace_ranges.exclusive, False)
-
-        normalized = set[int]()
-
-        for frame in frames:
-            if frame < 0 and length is not None:
-                frame += length
-
-            if not strict:
-                frame = clamp(frame, 0, length - 1) if length is not None else max(frame, 0)
-
-            normalized.add(frame)
-
-        if not normalized or not self:
-            return []
-
-        nframes = sorted(normalized)
-
-        if strict:
-            if nframes[0] < self[0]:
-                raise CustomValueError(
-                    f"Frame {nframes[0]} precedes the first keyframe ({self[0]})!",
-                    self.get_frame_ranges,
-                )
-
-            if length is not None and nframes[-1] >= length:
-                raise CustomValueError(
-                    f"Frame {nframes[-1]} exceeds the last frame ({length - 1})!",
-                    self.get_frame_ranges,
-                )
-
-        franges: list[tuple[int | None, int | None]] = []
-        last_stop = 0
-
-        for frame in nframes:
-            if frame < last_stop:
-                continue
-
-            scene_idx = bisect_right(self, frame) - 1
-
-            scene_end = self[scene_idx + 1] if scene_idx + 1 < len(self) else length
-
-            if length is not None and (scene_end is None or scene_end > length):
-                scene_end = length
-
-            franges.append(
-                (
-                    None if scene_idx < 0 or self[scene_idx] == 0 else self[scene_idx],
-                    None if scene_end is None else scene_end - (not exclusive),
-                )
-            )
-
-            if scene_end is None or scene_end == length:
-                break
-
-            last_stop = scene_end
-
-        return franges
 
     @staticmethod
     def _get_unique_path(clip: vs.VideoNode, key: str) -> SPath:
