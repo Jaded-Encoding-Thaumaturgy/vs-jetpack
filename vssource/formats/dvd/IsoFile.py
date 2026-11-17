@@ -103,6 +103,7 @@ class IsoFile:
                 warnings.warn("Title is not one program chain (currently untested)")
 
         vobidcellids_to_take = list[tuple[int, int]]()
+        cell_sector_bounds_to_take = list[tuple[int, int]]()
         is_chapter = list[bool]()
 
         i = 0
@@ -147,6 +148,7 @@ class IsoFile:
 
                 if take_cell:
                     vobidcellids_to_take += [(cell_position.vob_id_nr, cell_position.cell_nr)]
+                    cell_sector_bounds_to_take += [(cell_playback.first_sector, cell_playback.last_sector)]
                     is_chapter += [(angle_start_cell_i + 1) in target_programs]  # pyright: ignore[reportPossiblyUnboundVariable]
 
             i += ptt_to_take_for_pgc
@@ -158,6 +160,7 @@ class IsoFile:
             tt,
             disable_rff,
             vobidcellids_to_take,
+            cell_sector_bounds_to_take,
             target_vts,
         )
 
@@ -319,16 +322,50 @@ def get_sectorranges_for_vobcellpair(current_vts: IFOX, pair_id: tuple[int, int]
     ]
 
 
+def get_sectorranges_for_cells(
+    current_vts: IFOX,
+    cells: list[tuple[tuple[int, int], tuple[int, int]]],
+) -> list[tuple[int, int]]:
+    ranges_with_bounds = [
+        (sector_range, cell_sector_bounds)
+        for pair_id, cell_sector_bounds in cells
+        for sector_range in get_sectorranges_for_vobcellpair(current_vts, pair_id)
+    ]
+    vobu_starts = set(current_vts.vts_vobu_admap)
+    all_ranges = list[tuple[int, int]]()
+
+    for i, (sector_range, cell_sector_bounds) in enumerate(ranges_with_bounds):
+        if i:
+            previous_range, previous_cell_sector_bounds = ranges_with_bounds[i - 1]
+            cell_boundary = cell_sector_bounds[0]
+            # A C_ADT cell piece can be one ILVU shared across a PGC cell boundary
+            shared_cell_boundary_range = (
+                sector_range == previous_range
+                and previous_cell_sector_bounds[1] + 1 == cell_boundary
+                and sector_range[0] <= cell_boundary <= sector_range[1]
+                and cell_boundary in vobu_starts
+            )
+
+            if shared_cell_boundary_range:
+                continue
+
+        all_ranges.append(sector_range)
+
+    return all_ranges
+
+
 def dvdsrc_parse_vts(
     iso_path: SPath,
     title: IFO0Title,
     disable_rff: bool,
     vobidcellids_to_take: list[tuple[int, int]],
+    cell_sector_bounds_to_take: list[tuple[int, int]],
     target_vts: IFOX,
 ) -> tuple[vs.VideoNode, list[int], list[tuple[int, int]], list[int]]:
     admap = target_vts.vts_vobu_admap
 
-    all_ranges = [x for a in vobidcellids_to_take for x in get_sectorranges_for_vobcellpair(target_vts, a)]
+    cells = list(zip(vobidcellids_to_take, cell_sector_bounds_to_take, strict=True))
+    all_ranges = get_sectorranges_for_cells(target_vts, cells)
 
     vts_indices = list[int]()
     for a in all_ranges:
