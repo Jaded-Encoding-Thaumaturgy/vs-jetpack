@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping, Sequence
-from functools import cache
+from collections.abc import Iterator, Sequence
 from itertools import count
-from typing import Any, SupportsIndex, overload
+from typing import SupportsIndex, overload
 
 from jetpytools import CustomIndexError, CustomTypeError
 
-from vstools import EXPR_VARS, HoldsVideoFormat, VideoFormatLike, get_video_format, vs
+from vstools import EXPR_VARS, HoldsVideoFormat, VideoFormatLike, get_video_format
 
 __all__ = ["ExprVars"]
 
@@ -180,8 +179,3 @@ class ExprVars(Sequence[str], Iterator[str]):
         """
         for x in count():
             yield cls.get_var(x)
-
-
-@cache
-def _get_akarin_expr_version() -> Mapping[str, Any]:
-    return vs.core.akarin.Version()

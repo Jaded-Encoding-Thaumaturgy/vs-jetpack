@@ -6,7 +6,7 @@ from vstools import ConvMode, core, vs
 
 
 def test_morpho_equivalence() -> None:
-    clip = core.std.BlankClip(format=vs.GRAY16, width=64, height=64, length=1).akarin.Expr("X Y + 500 *")
+    clip = core.std.BlankClip(format=vs.GRAY16, width=64, height=64, length=1).cranexpr.Expr("X Y + 500 *")
 
     morpho = Morpho()
 
@@ -27,7 +27,7 @@ def test_morpho_equivalence() -> None:
 
 
 def test_morpho_equivalence_with_thr() -> None:
-    clip = core.std.BlankClip(format=vs.GRAY16, width=64, height=64, length=1).akarin.Expr("X Y + 500 *")
+    clip = core.std.BlankClip(format=vs.GRAY16, width=64, height=64, length=1).cranexpr.Expr("X Y + 500 *")
     morpho = Morpho()
 
     # Dilation with thr=0.05
@@ -45,7 +45,7 @@ def test_morpho_equivalence_with_thr() -> None:
 
 
 def test_morpho_equivalence_with_multiply() -> None:
-    clip = core.std.BlankClip(format=vs.GRAY16, width=64, height=64, length=1).akarin.Expr("X Y + 500 *")
+    clip = core.std.BlankClip(format=vs.GRAY16, width=64, height=64, length=1).cranexpr.Expr("X Y + 500 *")
     morpho = Morpho()
 
     # Dilation with multiply=1.5

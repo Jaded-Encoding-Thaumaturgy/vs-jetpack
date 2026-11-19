@@ -7,7 +7,7 @@ from jetpytools import CustomIntEnum, CustomStrEnum, KwargsNotNone
 from vsexprtools import norm_expr
 from vstools import Planes, normalize_param_planes, vs
 
-from .aka_expr import removegrain_aka_exprs, repair_aka_exprs
+from .rg_expr import removegrain_exprs, repair_exprs
 
 __all__ = ["clense", "remove_grain", "repair", "vertical_cleaner"]
 
@@ -240,7 +240,7 @@ def repair(
     if all(m in range(24 + 1) for m in mode):
         return clip.zsmooth.Repair(repairclip, mode)
 
-    return norm_expr([clip, repairclip], tuple(repair_aka_exprs[m]() for m in mode), func=repair)
+    return norm_expr([clip, repairclip], tuple(repair_exprs[m]() for m in mode), func=repair)
 
 
 class RemoveGrain[**P, R]:
@@ -471,7 +471,7 @@ def remove_grain(
     if all(m in range(24 + 1) for m in mode):
         return clip.zsmooth.RemoveGrain(mode)
 
-    return norm_expr(clip, tuple(removegrain_aka_exprs[m]() for m in mode), func=remove_grain)
+    return norm_expr(clip, tuple(removegrain_exprs[m]() for m in mode), func=remove_grain)
 
 
 class Clense[**P, R]:
