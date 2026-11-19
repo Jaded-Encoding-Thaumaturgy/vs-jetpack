@@ -3,6 +3,7 @@ from fractions import Fraction
 import pytest
 
 from vsdenoise import MaskMode, MVDirection, MVTools
+from vsdenoise.mvtools.mvtools import _super_clip_cache
 from vstools import UnsupportedColorFamilyError, core, vs
 
 
@@ -104,11 +105,11 @@ def test_mvtools_compensate() -> None:
     assert comp_clip.num_frames == 15
 
     # Compensate with interleave=False
-    comp_back, comp_fwrd = mv.compensate(interleave=False)
-    assert len(comp_back) == 1
+    comp_fwrd, comp_back = mv.compensate(interleave=False)
     assert len(comp_fwrd) == 1
-    assert comp_back[0].num_frames == 5
+    assert len(comp_back) == 1
     assert comp_fwrd[0].num_frames == 5
+    assert comp_back[0].num_frames == 5
 
     # Compensate with temporal_func
     comp_temp = mv.compensate(temporal_func=lambda clip: clip.std.Invert())
@@ -127,11 +128,11 @@ def test_mvtools_flow() -> None:
     assert flow_clip.num_frames == 15
 
     # Flow with interleave=False
-    flow_back, flow_fwrd = mv.flow(interleave=False)
-    assert len(flow_back) == 1
+    flow_fwrd, flow_back = mv.flow(interleave=False)
     assert len(flow_fwrd) == 1
-    assert flow_back[0].num_frames == 5
+    assert len(flow_back) == 1
     assert flow_fwrd[0].num_frames == 5
+    assert flow_back[0].num_frames == 5
 
     # Flow with temporal_func
     flow_temp = mv.flow(temporal_func=lambda clip: clip.std.Invert())
@@ -204,3 +205,19 @@ def test_mvtools_sc_detection() -> None:
     sc_clip = mv.sc_detection()
     assert sc_clip.num_frames == 5
     assert sc_clip.format == clip.format
+
+
+def test_mvtools_super_cache_reuse() -> None:
+    clip = core.std.BlankClip(format=vs.YUV420P8, width=160, height=120, length=5)
+    mv = MVTools(clip)
+
+    mv.analyze(blksize=16, overlap_div=2)
+    cached_super = _super_clip_cache._cache[mv.search_clip]
+    assert len(set(cached_super.values())) == 1
+
+    mv.recalculate(blksize=8, overlap_div=2)
+    assert len(set(cached_super.values())) == 1
+
+    degrained = mv.degrain()
+    assert degrained.num_frames == 5
+    assert len(set(cached_super.values())) == 1

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Required, TypedDict
+from typing import Any, TypedDict
 
 from jetpytools import KwargsNotNone, classproperty
 
@@ -28,21 +28,21 @@ __all__ = [
 
 class SuperArgs(TypedDict, total=False):
     onelevel: bool | None
-    sharp: SharpMode | None
-    rfilter: RFilterMode | None
+    sharp: SharpMode | int | None
+    rfilter: RFilterMode | int | None
     pelclip: vs.VideoNode | VSFunctionNoArgs | None
 
 
 class AnalyzeArgs(TypedDict, total=False):
-    blksize: Required[int | tuple[int, int]]
-    overlap_div: Required[int | tuple[int, int]]
+    blksize: int | tuple[int, int] | None
+    overlap_div: int | tuple[int, int] | None
     levels: int | None
-    search: SearchMode | None
+    search: SearchMode | int | None
     searchparam: int | None
     pelsearch: int | None
     mvlambda: int | None
     lsad: int | None
-    plevel: PenaltyMode | None
+    plevel: PenaltyMode | int | None
     globalmv: bool | None
     pnew: int | None
     pzero: int | None
@@ -55,10 +55,11 @@ class AnalyzeArgs(TypedDict, total=False):
 
 
 class RecalculateArgs(TypedDict, total=False):
-    blksize: Required[int | tuple[int, int]]
-    overlap_div: Required[int | tuple[int, int]]
     thsad: int | None
-    search: SearchMode | None
+    smooth: bool | None
+    blksize: int | tuple[int, int] | None
+    overlap_div: int | tuple[int, int] | None
+    search: SearchMode | int | None
     searchparam: int | None
     mvlambda: int | None
     pnew: int | None
@@ -97,13 +98,13 @@ class FlowInterpolateArgs(TypedDict, total=False):
 
 
 class FlowFpsArgs(TypedDict, total=False):
+    num: int
+    den: int
     extramask: bool | None
     ml: float | None
     blend: bool | None
     thscd1: int | None
     thscd2: float | None
-    num: int
-    den: int
 
 
 class FlowBlurArgs(TypedDict, total=False):
@@ -217,7 +218,7 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_COHERENCE(cls) -> MVToolsPreset:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2),
+            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, satd=True),
             recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True),
         )
 
@@ -226,6 +227,6 @@ class MVToolsPreset(VSObjectABC, Mapping[str, Any]):
     def HQ_SAD(cls) -> MVToolsPreset:  # noqa: N802
         return cls(
             search_clip=prefilter_to_full_range,
-            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, mvlambda=0),
-            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True, mvlambda=0),
+            analyze_args=AnalyzeArgs(blksize=16, overlap_div=2, satd=True, mvlambda=100),
+            recalculate_args=RecalculateArgs(blksize=8, overlap_div=2, satd=True, mvlambda=100),
         )

@@ -50,7 +50,9 @@ HoldsVideoFormat = vs.VideoNode | vs.VideoFrame | vs.VideoFormat
 Types from which a clear VideoFormat can be retrieved.
 """
 
-HoldsPropValue = vs.FrameProps | vs.VideoFrame | vs.AudioFrame | vs.VideoNode | vs.AudioNode | Mapping[str, Any]
+HoldsPropValue = (
+    vs.FrameProps | vs.VideoFrame | vs.AudioFrame | vs.VideoNode | vs.AudioNode | vs.RawNode | Mapping[str, Any]
+)
 """
 Types that can hold a vs.FrameProps.
 """

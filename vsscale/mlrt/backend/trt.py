@@ -417,9 +417,13 @@ class TRT(Backend):
         if fp16_path.is_file() and fp16_path.stat().st_size >= 1024:
             return fp16_path
 
-        logger.info(f"Converting ONNX graph metadata to Float16 for: {network_path.name}")
-
         model = onnx.load_model_from_string(network)
+
+        if onnxcc.float16.check_if_fp16_ready(model.graph):
+            logger.info("Skipping conversion: '%s' is already in FP16 format.", network_path.name)
+            return network_path
+
+        logger.info("Converting model graph to FP16: %s", network_path.name)
 
         # Inject default value attribute to ConstantOfShape nodes if missing to ensure they get converted to Float16
         for node in model.graph.node:

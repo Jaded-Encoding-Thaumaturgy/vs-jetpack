@@ -29,6 +29,7 @@ from tensorrt_rtx_bindings.tensorrt_rtx import (
     Dims4,
     DimsExprs,
     DimsHW,
+    DLAWorkspaceAllocationStrategy,
     DynamicPluginTensorDesc,
     DynamicShapesKernelSpecializationStrategy,
     ElementWiseOperation,
@@ -153,6 +154,7 @@ from tensorrt_rtx_bindings.tensorrt_rtx import (
     IUnaryLayer,
     IUnsqueezeLayer,
     IVersionedInterface,
+    IWeightsManager,
     KVCacheMode,
     LayerInformationFormat,
     LayerType,
@@ -228,6 +230,7 @@ __all__: list[str] = [
     "ComputeCapability",
     "CudaGraphStrategy",
     "CumulativeOperation",
+    "DLAWorkspaceAllocationStrategy",
     "DataType",
     "DeviceType",
     "DimensionOperation",
@@ -359,6 +362,7 @@ __all__: list[str] = [
     "IUnaryLayer",
     "IUnsqueezeLayer",
     "IVersionedInterface",
+    "IWeightsManager",
     "InterfaceInfo",
     "InterpolationMode",
     "KVCacheMode",
@@ -445,18 +449,18 @@ __all__: list[str] = [
     "volume",
     "warnings",
 ]
-__version__: str = "1.6.1.120"
+__version__: str = "1.7.1.116"
 attr: str = "VERBOSE"
-bfloat16: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.BF16: 7>
-bool: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.BOOL: 4>
-e8m0: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.E8M0: 11>
-float16: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.HALF: 1>
-float32: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.FLOAT: 0>
-fp4: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.FP4: 10>
-fp8: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.FP8: 6>
-int32: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.INT32: 3>
-int4: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.INT4: 9>
-int64: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.INT64: 8>
-int8: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.INT8: 2>
-uint8: tensorrt_rtx_bindings.tensorrt_rtx.DataType  # value = <DataType.UINT8: 5>
-value: tensorrt_rtx_bindings.tensorrt_rtx.ILogger.Severity  # value = <Severity.VERBOSE: 4>
+bfloat16: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+bool: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+e8m0: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+float16: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+float32: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+fp4: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+fp8: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+int32: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+int4: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+int64: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+int8: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+uint8: tensorrt_rtx_bindings.tensorrt_rtx.DataType
+value: tensorrt_rtx_bindings.tensorrt_rtx.ILogger.Severity

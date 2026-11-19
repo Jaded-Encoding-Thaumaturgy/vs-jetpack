@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from vsrgtools import gauss_blur, remove_grain
+from vsrgtools import box_blur, gauss_blur, remove_grain
 from vstools import get_y, limiter, vs
 
 __all__ = ["deband_detail_mask"]
@@ -29,7 +29,7 @@ def deband_detail_mask(
     blur_ret = gauss_blur(ret, sigma)
     blur_ret_diff = Morpho.deflate(ExprOp.SUB(blur_ret, ret))
 
-    blur_ret_brz = Morpho.inflate(blur_ret_diff, 4)
+    blur_ret_brz = ExprOp.MAX(blur_ret_diff, box_blur(blur_ret_diff, 4))
     blur_ret_brz = Morpho.closing(Morpho.binarize_mask(blur_ret_brz, brz0), 3)
 
     prewitt_mask = Morpho.inflate(Morpho.deflate(Prewitt.edgemask(clip_y, brz1, brz1)))

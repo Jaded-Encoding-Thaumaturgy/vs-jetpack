@@ -58,6 +58,7 @@ class BestSource(CacheIndexer):
     """
 
     _source_func = core.lazy.bs.VideoSource
+    _asource_func = core.lazy.bs.AudioSource
     _cache_arg_name = "cachepath"
     _ext = None
 
@@ -126,17 +127,6 @@ class BestSource(CacheIndexer):
         )
 
     @classmethod
-    def source_func(cls, path: SPathLike, **kwargs: Any) -> vs.VideoNode:
-        if kwargs["cachemode"] <= cls.CacheMode.CACHE_PATH_WRITE and cls._cache_arg_name not in kwargs:
-            kwargs[cls._cache_arg_name] = None
-
-        if not (p := kwargs.pop("show_pretty_progress")):
-            return super().source_func(path, **kwargs)
-
-        with cls.pretty_progress(p):
-            return super().source_func(path, **kwargs)
-
-    @classmethod
     @contextmanager
     def pretty_progress(cls, progress: Literal[True] | Callable[[float], None]) -> Generator[None]:
         if callable(progress):
@@ -174,6 +164,32 @@ class BestSource(CacheIndexer):
             transient=True,
         )
 
+    @classmethod
+    @override
+    def _source_file(cls, path: SPathLike, **kwargs: Any) -> vs.VideoNode:
+        if kwargs["cachemode"] <= cls.CacheMode.CACHE_PATH_WRITE and cls._cache_arg_name not in kwargs:
+            kwargs[cls._cache_arg_name] = None
+
+        if not (p := kwargs.pop("show_pretty_progress", False)):
+            return super()._source_file(path, **kwargs)
+
+        with cls.pretty_progress(p):
+            return super()._source_file(path, **kwargs)
+
+    @classmethod
+    @override
+    def _asource_file(cls, path: SPathLike, **kwargs: Any) -> vs.AudioNode:
+        kwargs.pop("rff", None)
+
+        if kwargs["cachemode"] <= cls.CacheMode.CACHE_PATH_WRITE and cls._cache_arg_name not in kwargs:
+            kwargs[cls._cache_arg_name] = None
+
+        if not (p := kwargs.pop("show_pretty_progress", False)):
+            return super()._asource_file(path, **kwargs)
+
+        with cls.pretty_progress(p):
+            return super()._asource_file(path, **kwargs)
+
 
 class FFMS2(CacheIndexer):
     """
@@ -186,6 +202,7 @@ class FFMS2(CacheIndexer):
     """
 
     _source_func = core.lazy.ffms2.Source
+    _asource_func = core.lazy.ffms2.AudioSource
     _cache_arg_name = "cachefile"
     _ext = ".ffindex"
 
@@ -207,6 +224,8 @@ class LSMAS(CacheIndexer):
     """
 
     _source_func = core.lazy.lsmas.LWLibavSource
+    _asource_func = core.lazy.lsmas.LWLibavAudioSource
+    _audio_track_arg_name = "stream_index"
     _cache_arg_name = "cachefile"
     _ext = ".lwi"
 

@@ -1,5 +1,6 @@
 import os
 import tomllib
+from collections.abc import Sequence
 from contextlib import suppress
 from functools import cache
 from logging import getLogger
@@ -157,3 +158,62 @@ def get_artifact_path(filename: str, *, fallback: bool = True) -> Path:
 
     logger.info("Artifact %s not found. Returning default path: %s", filename, path)
     return path
+
+
+def write_toml_config(
+    file: str | os.PathLike[str],
+    *,
+    global_: bool | None = None,
+    fallback: bool | None = None,
+    provider: Sequence[str] | None = None,
+    latest: bool | None = None,
+    auto: bool | None = None,
+) -> Path:
+    import tomlkit
+
+    filepath = Path(file).expanduser().resolve().absolute()
+    is_pyproject = filepath.name.lower() == "pyproject.toml"
+
+    if filepath.exists():
+        content = filepath.read_text(encoding="utf-8")
+        doc = tomlkit.parse(content)
+    else:
+        doc = tomlkit.document()
+
+    if is_pyproject:
+        if "tool" not in doc:
+            doc["tool"] = tomlkit.table()
+        tool = doc["tool"]
+        if "vsscale" not in tool:
+            tool["vsscale"] = tomlkit.table()
+        vsscale_table = tool["vsscale"]
+    else:
+        if "vsscale" not in doc:
+            doc["vsscale"] = tomlkit.table()
+        vsscale_table = doc["vsscale"]
+
+    if global_ is not None:
+        vsscale_table["global"] = global_
+
+    if fallback is not None:
+        vsscale_table["fallback"] = fallback
+
+    if provider or latest is not None or auto is not None:
+        if "onnx" not in vsscale_table:
+            vsscale_table["onnx"] = tomlkit.table()
+        onnx_table = vsscale_table["onnx"]
+
+        if "download" not in onnx_table:
+            onnx_table["download"] = tomlkit.table()
+        download_table = onnx_table["download"]
+
+        if provider:
+            download_table["provider"] = list(provider)
+        if latest is not None:
+            download_table["latest"] = latest
+        if auto is not None:
+            download_table["auto"] = auto
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    filepath.write_text(tomlkit.dumps(doc), encoding="utf-8")
+    return filepath

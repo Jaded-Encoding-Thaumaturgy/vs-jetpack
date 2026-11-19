@@ -489,9 +489,9 @@ def fine_dehalo2(
         mask_v = norm_expr(mask_v, "x 3 *", func=func)
 
     if mask_h:
-        mask_h = grow_mask(mask_h, mask_radius, coord=Coordinates.VERTICAL, multiply=1.8, func=func)
+        mask_h = grow_mask(mask_h, mask_radius, coords=Coordinates.VERTICAL, multiply=1.8, func=func)
     if mask_v:
-        mask_v = grow_mask(mask_v, mask_radius, coord=Coordinates.HORIZONTAL, multiply=1.8, func=func)
+        mask_v = grow_mask(mask_v, mask_radius, coords=Coordinates.HORIZONTAL, multiply=1.8, func=func)
 
     mask_h = mask_h and limiter(mask_h, mask=True, func=func)
     mask_v = mask_v and limiter(mask_v, mask=True, func=func)

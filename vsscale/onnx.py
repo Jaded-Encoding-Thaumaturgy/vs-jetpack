@@ -4,6 +4,7 @@ This module implements scalers for ONNX models.
 
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import math
 import re
@@ -949,17 +950,21 @@ def _get_onnx_model(
     if dconf.get("auto", auto_download):
         from rich.logging import RichHandler
 
-        from .mlrt.cli import app
+        from .mlrt.cli import download
 
         logger.info("Auto-downloading %r from provider %r", model_name, provider)
 
         user_provider = next((p for p in dconf.get("provider", []) if p.lower().startswith(provider.lower())), None)
-        console = next((h.console for h in logger.handlers if isinstance(h, RichHandler)), None)
+        console = next((h.console for h in getLogger().handlers if isinstance(h, RichHandler)), None)
 
-        app(
-            ["onnx", "download", user_provider or provider, "--latest", "--assumeyes"],
-            console=console,
-            result_action="return_value",
+        asyncio.run(
+            download(
+                user_provider or provider,
+                latest=dconf.get("latest", True),
+                global_=dconf.get("global", False),
+                assumeyes=True,
+                console=console,
+            )
         )
 
         with suppress(FileNotExistsError):

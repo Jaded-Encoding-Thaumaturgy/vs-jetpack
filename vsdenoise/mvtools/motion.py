@@ -73,6 +73,11 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
     def overlap_div(self, value: int | tuple[int, int] | None) -> None:
         self._overlap_div = tuple(normalize_seq(value, 2)) if value is not None else None  # type: ignore[assignment]
 
+    @property
+    def has_vectors(self) -> bool:
+        """Whether any motion vectors have been stored."""
+        return any(v for v in self.values())
+
     def clear(self) -> None:
         """
         Clear all stored motion vectors.
@@ -150,31 +155,18 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
             if direction in [MVDirection.FORWARD, MVDirection.BOTH] and d in self[MVDirection.FORWARD]:
                 vectors_forward.append(self[MVDirection.FORWARD][d])
 
+        if not vectors_backward and not vectors_forward:
+            raise CustomRuntimeError(
+                "No motion vectors available! Did you forget to call analyze()?",
+                func=self.get_vectors,
+                reason={"direction": direction, "deltas": list(deltas)},
+            )
+
         return (vectors_backward, vectors_forward)
 
     @cachedproperty
     def analysis_data(self) -> MappingProxyType[str, Any]:
         """Mapping containing motion vector analysis data."""
-
-        # vect = self.get_vector(MVDirection.BACKWARD, 1).manipmv.ExpandAnalysisData()
-
-        # props_list = (
-        #     "Analysis_BlockSize",
-        #     "Analysis_Pel",
-        #     "Analysis_LevelCount",
-        #     "Analysis_CpuFlags",
-        #     "Analysis_MotionFlags",
-        #     "Analysis_FrameSize",
-        #     "Analysis_Overlap",
-        #     "Analysis_BlockCount",
-        #     "Analysis_BitsPerSample",
-        #     "Analysis_ChromaRatio",
-        #     "Analysis_Padding",
-        # )
-
-        # return MappingProxyType(
-        #     get_props(vect, props_list, (int, list), func=self.__class__.__name__ + ".analysis_data")
-        # )
 
         with self.get_vector(MVDirection.BACKWARD, 1).get_frame(0) as fr:
             return MappingProxyType({key: fr.props[key] for key in fr.props if key.startswith("MVUtensils")})
@@ -191,37 +183,7 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
         Args:
             scale: Factor to scale motion vectors by.
         """
-        # supported_blksize = (
-        #     (4, 4),
-        #     (8, 4),
-        #     (8, 8),
-        #     (16, 2),
-        #     (16, 8),
-        #     (16, 16),
-        #     (32, 16),
-        #     (32, 32),
-        #     (64, 32),
-        #     (64, 64),
-        #     (128, 64),
-        #     (128, 128),
-        # )
 
-        # scalex, scaley = normalize_seq(scale, 2)
-
-        # if scalex > 1 or scaley > 1:
-        #     blksizex, blksizev = self.analysis_data["Analysis_BlockSize"]
-
-        #     scaled_blksize = (blksizex * scalex, blksizev * scaley)
-
-        #     if strict and scaled_blksize not in supported_blksize:
-        #         raise CustomRuntimeError("Unsupported block size!", self.scale_vectors, scaled_blksize)
-
-        #     del self.analysis_data
-        #     self.scaled = True
-
-        #     for delta in range(1, self.tr + 1):
-        #         for direction in MVDirection:
-        #             self[direction][delta] = self[direction][delta].manipmv.ScaleVect(scalex, scaley)
         raise NotImplementedError("scale_vectors is not supported with MVUtensils.")
 
     def show_vector(
@@ -244,9 +206,6 @@ class MotionVectors(VSObject, defaultdict[MVDirection, dict[int, vs.VideoNode]])
         Returns:
             Clip with motion vectors overlaid.
         """
-        # vect = self.get_vector(direction, delta)
-
-        # return clip.manipmv.ShowVect(vect, scenechange)
 
         raise NotImplementedError("show_vector is not supported with MVUtensils.")
 

@@ -62,12 +62,12 @@ class IsoFile:
 
     def get_vts(self, title_set_nr: int = 1, apply_rff: bool = True) -> vs.VideoNode:
         fullvts = core.dvdsrc2.FullVts(str(self.iso_path), vts=title_set_nr)
-        if apply_rff:
+        if not apply_rff:
             return fullvts
-        else:
-            staff = dvdsrc_extract_data(fullvts)
 
-            return apply_rff_video(fullvts, staff.rff, staff.tff, staff.prog, staff.progseq)
+        staff = dvdsrc_extract_data(fullvts)
+
+        return apply_rff_video(fullvts, staff.rff, staff.tff, staff.prog, staff.progseq)
 
     def get_title(self, title_nr: int = 1, angle_nr: int | None = None, rff_mode: int = 0) -> Title:
         """

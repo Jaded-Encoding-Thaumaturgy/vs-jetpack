@@ -6,13 +6,11 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Callable, Sequence
-from enum import EnumMeta
 from logging import getLogger
-from typing import Any, Literal
+from typing import Any
 
-from jetpytools import CustomIntEnum, CustomRuntimeError, CustomStrEnum, EnumDeprecationWarning, normalize_seq, to_arr
+from jetpytools import CustomIntEnum, CustomStrEnum, normalize_seq, to_arr
 
-from vsjetpack import deprecated
 from vstools import Planes, core, join, normalize_planes, vs
 
 __all__ = ["nl_means"]
@@ -34,32 +32,7 @@ class NLMeans[**P, R]:
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self._func(*args, **kwargs)
 
-    class DeprecatedEnumMeta(EnumMeta):
-        @property
-        @deprecated(
-            '"ACCELERATOR" member is deprecated and will be removed in a future version.',
-            category=EnumDeprecationWarning,
-        )
-        def ACCELERATOR(cls) -> Literal[NLMeans.Backend.GPU]:  # noqa: N802
-            return NLMeans.Backend.GPU
-
-        @property
-        @deprecated(
-            '"CPU" member is deprecated and will be removed in a future version.',
-            category=EnumDeprecationWarning,
-        )
-        def CPU(cls) -> Literal[NLMeans.Backend.GPU]:  # noqa: N802
-            return NLMeans.Backend.GPU
-
-        @property
-        @deprecated(
-            '"HIP" member is deprecated and will be removed in a future version.',
-            category=EnumDeprecationWarning,
-        )
-        def HIP(cls) -> Literal[NLMeans.Backend.GPU]:  # noqa: N802
-            return NLMeans.Backend.GPU
-
-    class Backend(CustomStrEnum, metaclass=DeprecatedEnumMeta):
+    class Backend(CustomStrEnum):
         """
         Enum representing available backends on which to run the plugin.
         """
@@ -68,7 +41,7 @@ class NLMeans[**P, R]:
         """
         Automatically selects the best available backend.
 
-        Priority: "gpu" -> "cuda" -> "ispc".
+        Priority: "gpu" -> "cuda" -> "cpu".
         """
 
         GPU = "gpu"
@@ -81,9 +54,9 @@ class NLMeans[**P, R]:
         A CUDA device that is a GPU.
         """
 
-        ISPC = "ispc"
+        CPU = "cpu"
         """
-        ISPC (CPU-based) implementation.
+        CPU-based implementation.
         """
 
         def NLMeans(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
@@ -107,8 +80,8 @@ class NLMeans[**P, R]:
             if self == NLMeans.Backend.CUDA:
                 return clip.vszipcu.NLMeans(*args, **{"num_streams": 2} | kwargs)
 
-            if self == NLMeans.Backend.ISPC:
-                return clip.nlm_ispc.NLMeans(*args, **kwargs)
+            if self == NLMeans.Backend.CPU:
+                return clip.vszip.NLMeans(*args, **kwargs)
 
             # Fallback selection based on available plugins
             if hasattr(core, "vszipcl"):
@@ -119,11 +92,8 @@ class NLMeans[**P, R]:
                 logger.debug("%s: Auto selecting 'NLMeans.Backend.CUDA'", NLMeans.Backend.NLMeans)
                 return NLMeans.Backend.CUDA.NLMeans(clip, *args, **kwargs)
 
-            if hasattr(core, "nlm_ispc"):
-                logger.debug("%s: Auto selecting 'NLMeans.Backend.ISPC", NLMeans.Backend.NLMeans)
-                return NLMeans.Backend.ISPC.NLMeans(clip, *args, **kwargs)
-
-            raise CustomRuntimeError("No available NLMeans plugin found. Please install one.")
+            logger.debug("%s: Auto selecting 'NLMeans.Backend.CPU", NLMeans.Backend.NLMeans)
+            return NLMeans.Backend.CPU.NLMeans(clip, *args, **kwargs)
 
     class WeightMode(CustomIntEnum):
         """

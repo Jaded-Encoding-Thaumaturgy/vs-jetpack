@@ -43,9 +43,6 @@ class _BackendBase(CustomEnum):
     def DFTTest(self, clip: vs.VideoNode, *args: Any, **kwargs: Any) -> vs.VideoNode:  # noqa: N802
         self = self.resolve()  # noqa: PLW0642
 
-        if self == DFTTest.Backend.OLD:
-            return core.dfttest.DFTTest(clip, *args, **self.kwargs | kwargs)
-
         try:
             import dfttest2
         except ModuleNotFoundError as e:
@@ -735,11 +732,6 @@ class DFTTest:
         CPU backend compiled with GCC.
         """
 
-        OLD = "dfttest"
-        """
-        (Deprecated) Legacy DFTTest implementation by HolyWu.
-        """
-
         @overload
         def __call__(  # type: ignore [misc]
             self: Literal[DFTTest.Backend.NVRTC], *, device_id: int = 0, num_streams: int = 1
@@ -816,18 +808,6 @@ class DFTTest:
         def __call__(self: Literal[DFTTest.Backend.GCC]) -> DFTTest.Backend:  # type: ignore [misc]
             """
             Configures the GCC backend for DFTTest.
-
-            Returns:
-                The configured backend.
-            """
-
-        @overload
-        def __call__(self: Literal[DFTTest.Backend.OLD], *, opt: int = ...) -> DFTTest.Backend:  # type: ignore [misc]
-            """
-            Configures the legacy DFTTest (OLD) backend.
-
-            Args:
-                opt: CPU optimization level (default is auto detect).
 
             Returns:
                 The configured backend.
@@ -915,7 +895,7 @@ class DFTTest:
 
         Example:
             ```py
-            dfttest = DFTTest(clip, DFTTest.Backend.OLD)
+            dfttest = DFTTest(clip, DFTTest.Backend.CPU)
             denoised_low_frequencies = dfttest.denoise({0: 16, 0.25: 8, 0.5: 0, 1.0: 0})
             denoised_high_frequencies = dfttest.denoise([(0, 0), (0.5, 0), (0.75, 16), (1.0, 32)])
             ```

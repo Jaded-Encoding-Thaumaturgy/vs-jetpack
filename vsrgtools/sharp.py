@@ -66,12 +66,15 @@ def unsharpen(
     """
     func = func or unsharpen
 
+    if not strength:
+        return clip
+
     if callable(blur):
         blur = blur(clip)
 
     check_ref_clip(clip, blur, func)
 
-    return norm_expr([clip, blur], f"x y - {strength} * x +", planes, func=func)
+    return norm_expr([clip, blur], "x x y - {strength} * +", planes, strength=strength, func=func)
 
 
 def awarpsharp(
