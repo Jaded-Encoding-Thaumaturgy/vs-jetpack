@@ -61,6 +61,7 @@ from vstools import (
 )
 
 from ..exceptions import (
+    UnknownBobberError,
     UnknownDescalerError,
     UnknownKernelError,
     UnknownResamplerError,
@@ -1122,6 +1123,8 @@ class Bobber(BaseScaler):
 
     bob_function: Callable[..., vs.VideoNode]
     """Bob function called internally when performing bobbing operations."""
+
+    _err_class: ClassVar[type[_UnknownBaseScalerError]] = UnknownBobberError
 
     _implemented_funcs: ClassVar[tuple[str, ...]] = ("bob", "deinterlace")
 

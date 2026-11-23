@@ -61,3 +61,12 @@ class UnknownKernelError(_UnknownBaseScalerError):
 
     _placeholder = "kernel"
     _message = 'Unknown concrete kernel "{kernel}"!'
+
+
+class UnknownBobberError(_UnknownBaseScalerError):
+    """
+    Raised when an unknown bobber is passed.
+    """
+
+    _placeholder = "bobber"
+    _message = 'Unknown concrete bobber "{bobber}"!'
