@@ -785,7 +785,6 @@ class MVTools(VSObject):
         center_super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
         tr: int | None = None,
-        delta: int | Sequence[int] | None = None,
         thsad: int | tuple[int, int] | None = None,
         thsad2: int | tuple[int, int] | None = None,
         limit: float | tuple[float, float] | None = None,
@@ -807,7 +806,6 @@ class MVTools(VSObject):
             center_super: Optional super clip that supplies the centre frame, and the reference for limit.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
             tr: The temporal radius. This determines how many frames are analyzed before/after the current frame.
-            delta: Specific deltas of motion vectors to use.
             thsad: Defines the soft threshold of block sum absolute differences. Blocks with SAD above this threshold
                 have zero weight for averaging (denoising). Blocks with low SAD have highest weight. The remaining
                 weight is taken from pixels of source clip.
@@ -838,7 +836,7 @@ class MVTools(VSObject):
 
         nlimit = [scale_delta(thr, 8, clip) for thr in normalize_seq(limit, 2)] if limit is not None else limit
 
-        vect_b, vect_f = vectors.get_vectors(tr, delta)
+        vect_b, vect_f = vectors.get_vectors(tr)
 
         degrain_args: dict[str, Any] = self.degrain_args | KwargsNotNone(
             thsad=thsad, thsad2=thsad2, limit=nlimit, weights=weights, thscd1=thscd1, thscd2=thscd2, planes=planes
@@ -858,7 +856,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        delta: tuple[int, int] | None = None,
         time: float | None = None,
         ml: float | None = None,
         blend: bool | None = None,
@@ -878,7 +875,6 @@ class MVTools(VSObject):
             super: The clip to be prepared by [super][vsdenoise.MVTools.super]. If None, super will be obtained from the
                 main clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            delta: Specific deltas of motion vectors to use.
             time: Time position between frames as a percentage (0.0-100.0). Controls the interpolation position between
                 frames. Does nothing if multi is specified.
             ml: Mask scale parameter that controls occlusion mask strength. Higher values produce weaker occlusion
@@ -900,7 +896,7 @@ class MVTools(VSObject):
         thscd1 = fallback(thscd1, self.flow_interpolate_args.get("thscd1"), default=self.thscd1)
         thscd2 = fallback(thscd2, self.flow_interpolate_args.get("thscd2"), default=self.thscd2)
 
-        vect_b, vect_f = vectors.get_vectors(tr=1, delta=delta)
+        vect_b, vect_f = vectors.get_vectors(tr=1)
 
         flow_interpolate_args: dict[str, Any] = self.flow_interpolate_args | KwargsNotNone(
             time=time, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
@@ -916,7 +912,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        delta: tuple[int, int] | None = None,
         num: int | None = None,
         den: int | None = None,
         extramask: bool | None = None,
@@ -937,7 +932,6 @@ class MVTools(VSObject):
             super: The clip to be prepared by [super][vsdenoise.MVTools.super]. If None, super will be obtained from the
                 main clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            delta: Specific deltas of motion vectors to use.
             num: Output frame-rate numerator.
             den: Output frame-rate denominator.
             extramask: Whether to generate an extra mask for occlusion handling.
@@ -959,7 +953,7 @@ class MVTools(VSObject):
         thscd1 = fallback(thscd1, self.flow_fps_args.get("thscd1"), default=self.thscd1)
         thscd2 = fallback(thscd2, self.flow_fps_args.get("thscd2"), default=self.thscd2)
 
-        vect_b, vect_f = vectors.get_vectors(tr=1, delta=delta)
+        vect_b, vect_f = vectors.get_vectors(tr=1)
 
         flow_fps_args: dict[str, Any] = self.flow_fps_args | KwargsNotNone(
             num=num, den=den, extramask=extramask, ml=ml, blend=blend, thscd1=thscd1, thscd2=thscd2
@@ -972,7 +966,6 @@ class MVTools(VSObject):
         clip: vs.VideoNode | None = None,
         super: vs.VideoNode | None = None,
         vectors: MotionVectors | None = None,
-        delta: tuple[int, int] | None = None,
         blur: float | None = None,
         prec: int | None = None,
         thscd1: int | None = None,
@@ -989,7 +982,6 @@ class MVTools(VSObject):
             super: The clip to be prepared by [super][vsdenoise.MVTools.super]. If None, super will be obtained from the
                 main clip.
             vectors: Motion vectors to use. If None, uses the vectors from this instance.
-            delta: Specific deltas of motion vectors to use.
             blur: Blur time interval between frames as a percentage (0.0-100.0). Controls the simulated shutter
                 time/motion blur strength.
             prec: Blur precision in pixel units. Controls the accuracy of the motion blur.
@@ -1007,7 +999,7 @@ class MVTools(VSObject):
         thscd1 = fallback(thscd1, self.flow_blur_args.get("thscd1"), default=self.thscd1)
         thscd2 = fallback(thscd2, self.flow_blur_args.get("thscd2"), default=self.thscd2)
 
-        vect_b, vect_f = vectors.get_vectors(tr=1, delta=delta)
+        vect_b, vect_f = vectors.get_vectors(tr=1)
 
         flow_blur_args: dict[str, Any] = self.flow_blur_args | KwargsNotNone(
             blur=blur, prec=prec, thscd1=thscd1, thscd2=thscd2
