@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from copy import deepcopy
 from enum import Flag, auto
 from math import comb, sqrt
 from typing import Any, Literal, Protocol, Self, TypedDict, overload
@@ -586,9 +585,7 @@ class _QTGMCBuilder:
                 to {"erosion_distance": 0}.
         """
 
-        self.basic_bobber = (
-            deepcopy(bobber) if isinstance(bobber, Bobber) else Bobber.ensure_obj(bobber, self.__class__)
-        )
+        self.basic_bobber = Bobber.ensure_obj(bobber, self.__class__)
         self.basic_tr = tr
         self.basic_thsad = thsad
         self.basic_thsad2 = thsad2
@@ -665,14 +662,7 @@ class _QTGMCBuilder:
 
     @source_match_bobber.setter
     def source_match_bobber(self, value: BobberLike | None) -> None:
-        if value is None:
-            self._source_match_bobber = value
-            return
-
-        if isinstance(value, Bobber):
-            self._source_match_bobber = deepcopy(value)
-        else:
-            self._source_match_bobber = Bobber.ensure_obj(value, self.__class__)
+        self._source_match_bobber = Bobber.ensure_obj(value, self.__class__) if value is not None else value
 
     def lossless(self, *, mode: LosslessMode = LosslessMode.NONE, anti_comb: bool = True) -> Self:
         """
