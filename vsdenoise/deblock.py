@@ -5,9 +5,9 @@ from typing import Any, SupportsFloat, cast
 
 from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomStrEnum, normalize_seq
 
-from vsaa import BWDIF, NNEDI3, Deinterlacer
+from vsaa import BWDIF, NNEDI3
 from vsexprtools import ExprOp, norm_expr
-from vskernels import Box, Point
+from vskernels import Bobber, BobberLike, Box, Point
 from vsmasktools import Morpho, strength_zones_mask
 from vsrgtools import MeanMode, repair
 from vsscale import DPIR
@@ -230,11 +230,11 @@ def deblock_qed(
 
 def mpeg2stinx(
     clip: vs.VideoNode,
-    bobber: Deinterlacer = NNEDI3(),  # noqa: B008
+    bobber: BobberLike = NNEDI3,
     tff: FieldBasedLike | bool = True,
     mask: bool = True,
     radius: int | tuple[int, int] = 2,
-    limit: float | None = 1.0,
+    limit: float | None = 2,
 ) -> vs.VideoNode:
     """
     This filter is designed to eliminate certain combing-like compression artifacts that show up all too often
@@ -243,68 +243,70 @@ def mpeg2stinx(
 
     Args:
         clip: Clip to process.
-        tff: The field order.
-        mask: Whether to use BWDIF motion masking.
-        bobber: Callable to use in place of the internal deinterlacing filter.
-        radius: x, y radius of min-max clipping (i.e. repair) to remove artifacts.
-        limit: If specified, temporal limiting is used, where the changes by crossfieldrepair are limited to this times
-            the difference between the current frame and its neighbours.
+        bobber: Bobber to use for spatial interpolation. Defaults to NNEDI3.
+        tff: Field order (top-field-first). Defaults to True.
+        mask: Whether to use BWDIF motion masking. Defaults to True.
+        radius: x, y radius of min-max clipping (i.e. repair) to remove artifacts. Larger values preserve more detail
+            and clean flat areas better, but also keep more artifacts around edges. Defaults to 2.
+        limit: If specified, temporal limiting is used, where the changes by crossfield_repair are limited to this value
+            multiplied by the difference between the current frame and its neighbours. Larger values result in less
+            limiting. Defaults to 2.
 
     Returns:
         Clip with cross-field noise reduced.
     """
     from vsdeinterlace import weave
 
-    tff = FieldBased.from_param(tff, mpeg2stinx)
-
-    def _crossfield_repair(clip: vs.VideoNode, bobbed: vs.VideoNode) -> vs.VideoNode:
-        clip = core.std.Interleave([clip, clip])
-
-        if sw == sh == 1:
-            repaired = repair(clip, bobbed, 1)
-        else:
-            inpand, expand = (
-                Morpho.inpand(bobbed, sw, sh, func=mpeg2stinx),
-                Morpho.expand(bobbed, sw, sh, func=mpeg2stinx),
-            )
-            repaired = ExprOp.CLAMP(clip, inpand, expand, func=mpeg2stinx)
-
-        return weave(repaired.std.SeparateFields(tff.is_tff).std.SelectEvery(4, (2, 1)), tff.field, func=mpeg2stinx)
-
-    def _temporal_limit(src: vs.VideoNode, flt: vs.VideoNode, adj: vs.VideoNode | None) -> vs.VideoNode:
-        if limit is None:
-            return flt
-
-        assert adj
-
-        diff = norm_expr([core.std.Interleave([src, src]), adj], "x y - abs", func=mpeg2stinx)
-        diff = diff.std.SeparateFields(tff.is_tff)
-        diff = MeanMode.MINIMUM([diff.std.SelectEvery(4, (0, 1)), diff.std.SelectEvery(4, (2, 3))], func=mpeg2stinx)
-        diff = weave(Morpho.expand(diff, sw=2, sh=1), tff.field, mpeg2stinx)
-
-        return norm_expr([flt, src, diff], "z {limit} * LIM! x y LIM@ - y LIM@ + clamp", limit=limit, func=mpeg2stinx)
-
-    def _bobfunc(clip: vs.VideoNode) -> vs.VideoNode:
-        bobbed = bobber.bob(clip)
-
+    def bob_func(clip: vs.VideoNode, bobber: Bobber, tff: FieldBased, mask: bool) -> vs.VideoNode:
+        bobbed = bobber.bob(clip, tff=tff)
         if mask:
             bobbed = BWDIF(edeint=bobbed).bob(clip, tff=tff)
 
         return bobbed
 
+    def crossfield_repair(clip: vs.VideoNode, bobbed: vs.VideoNode, tff: FieldBased, sw: int, sh: int) -> vs.VideoNode:
+        if sw == sh == 1:
+            repaired = repair.Mode.MINMAX_SQUARE1(clip, bobbed)
+        else:
+            bobbed_min = Morpho.inpand(bobbed, sw, sh, func=mpeg2stinx)
+            bobbed_max = Morpho.expand(bobbed, sw, sh, func=mpeg2stinx)
+            repaired = ExprOp.CLAMP(clip, bobbed_min, bobbed_max, func=mpeg2stinx)
+
+        fields = repaired.std.SeparateFields(tff.is_tff).std.SelectEvery(4, (2, 1))
+        return weave(fields, tff.field, func=mpeg2stinx)
+
+    def temporal_limit(
+        clip: vs.VideoNode, flt: vs.VideoNode, ref: vs.VideoNode, adj: vs.VideoNode, tff: FieldBased, limit: float
+    ) -> vs.VideoNode:
+        diff = norm_expr([ref, adj], "x y - abs", func=mpeg2stinx).std.SeparateFields(tff.is_tff)
+        diff = MeanMode.MINIMUM([diff.std.SelectEvery(4, (0, 1)), diff.std.SelectEvery(4, (2, 3))], func=mpeg2stinx)
+        diff = weave(Morpho.expand(diff, sw=2, sh=1), tff.field, func=mpeg2stinx)
+
+        return norm_expr([flt, clip, diff], "z {limit} * LIM! x y LIM@ - y LIM@ + clamp", limit=limit, func=mpeg2stinx)
+
     assert check_progressive(clip, mpeg2stinx)
 
+    bobber = Bobber.ensure_obj(bobber, mpeg2stinx)
+    tff = FieldBased.from_param(tff, mpeg2stinx)
     sw, sh = normalize_seq(radius, 2)
-    bobber = bobber.copy(tff=tff)
 
     if limit is not None:
-        adjs = shift_clip_multi(clip)
-        adjs.pop(1)
-        adj = core.std.Interleave(adjs)
+        adj = shift_clip_multi(clip)
+        adj.pop(1)
+        adj = core.std.Interleave(adj)
     else:
         adj = None
 
-    fixed1 = _temporal_limit(clip, _crossfield_repair(clip, _bobfunc(clip)), adj)
-    fixed2 = _temporal_limit(fixed1, _crossfield_repair(fixed1, _bobfunc(fixed1)), adj)
+    def process(clip: vs.VideoNode) -> vs.VideoNode:
+        ref = core.std.Interleave([clip, clip])
+        bobbed = bob_func(clip, bobber, tff, mask)
+        repaired = crossfield_repair(ref, bobbed, tff, sw, sh)
 
-    return FieldBased.PROGRESSIVE.apply(fixed1.std.Merge(fixed2))
+        if not (adj and limit):
+            return repaired
+
+        return temporal_limit(clip, repaired, ref, adj, tff, limit)
+
+    pass1 = process(clip)
+    pass2 = process(pass1)
+    return FieldBased.PROGRESSIVE.apply(pass1.std.Merge(pass2))
