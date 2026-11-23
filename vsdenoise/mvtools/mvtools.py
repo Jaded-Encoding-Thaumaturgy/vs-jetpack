@@ -415,7 +415,6 @@ class MVTools(VSObject):
         blksize = fallback(blksize, self.analyze_args.get("blksize"), default=None)
         overlap = fallback(overlap, self.analyze_args.get("overlap"), default=None)
 
-        self.vectors.clear()
         super_clip = self.super(fallback(super, self.search_clip), self.vectors, blksize, overlap, onelevel=False)
 
         analyze_args: dict[str, Any] = self.analyze_args | KwargsNotNone(
