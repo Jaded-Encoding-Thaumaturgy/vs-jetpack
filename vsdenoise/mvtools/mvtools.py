@@ -947,6 +947,7 @@ class MVTools(VSObject):
                 copied.
             thscd1: SAD threshold for considering a block changed between frames.
             thscd2: Percentage of changed blocks needed to trigger a scene change.
+
         Returns:
             Clip with its framerate resampled.
         """
@@ -994,6 +995,7 @@ class MVTools(VSObject):
             prec: Blur precision in pixel units. Controls the accuracy of the motion blur.
             thscd1: SAD threshold for considering a block changed between frames.
             thscd2: Percentage of changed blocks needed to trigger a scene change.
+
         Returns:
             Motion blurred clip.
         """
@@ -1040,6 +1042,7 @@ class MVTools(VSObject):
             scval: Value assigned to the mask on scene changes.
             thscd1: SAD threshold for considering a block changed between frames.
             thscd2: Percentage of changed blocks needed to trigger a scene change.
+
         Returns:
             Motion mask clip.
         """
@@ -1072,6 +1075,7 @@ class MVTools(VSObject):
             delta: Specific delta(s) of motion vectors to use.
             thscd1: SAD threshold for considering a block changed between frames.
             thscd2: Percentage of changed blocks needed to trigger a scene change.
+
         Returns:
             Clip with scene change properties set.
         """
