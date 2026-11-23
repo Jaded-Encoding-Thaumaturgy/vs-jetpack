@@ -302,7 +302,7 @@ def mpeg2stinx(
         bobbed = bob_func(clip, bobber, tff, mask)
         repaired = crossfield_repair(ref, bobbed, tff, sw, sh)
 
-        if not (adj and limit):
+        if not (adj and limit is not None):
             return repaired
 
         return temporal_limit(clip, repaired, ref, adj, tff, limit)
