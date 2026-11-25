@@ -98,9 +98,9 @@ class MotionVectors(VSObject, dict[int, vs.VideoNode]):
         vectors_forward = list[vs.VideoNode]()
 
         for d in sorted(delta, key=abs):
-            if d < 0:
-                vectors_forward.append(self[d])
-            else:
+            if d > 0:
                 vectors_backward.append(self[d])
+            elif d < 0:
+                vectors_forward.append(self[d])
 
         return (vectors_backward, vectors_forward)
