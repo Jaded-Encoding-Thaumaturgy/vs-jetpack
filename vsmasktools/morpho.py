@@ -808,6 +808,7 @@ class Morpho:
             if not coords:
                 res = self._mm_func(
                     clip,
+                    (1, conv_mode),
                     iterations=radius * iterations,
                     planes=planes,
                     func=func,
