@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from enum import Flag, auto
-from math import comb, sqrt
+from math import comb, hypot, pi, sqrt
 from typing import Any, Literal, Protocol, Self, TypedDict, overload
 
 from jetpytools import (
@@ -465,7 +465,7 @@ class _QTGMCBuilder:
         mc_denoise: bool = True,
         full_denoise: bool = False,
         deint: NoiseDeintMode = NoiseDeintMode.GENERATE,
-        stabilize: float | Literal[False] = 0.4,
+        stabilize: bool = True,
         func_comp_args: QTGMCArgs.Compensate | None = None,
         stabilize_comp_args: QTGMCArgs.Compensate | None = None,
         mode: NoiseProcessMode | None = None,
@@ -490,9 +490,8 @@ class _QTGMCBuilder:
                 the extracted noise is inherently interlaced and standard processing would eliminate it, three
                 alternative methods ([QTempGaussMC.NoiseDeintMode][vsdeinterlace.QTempGaussMC.NoiseDeintMode]) are
                 available to process it separately.
-            - Noise stabilization: The extracted noise can optionally be stabilized at the end of processing using a
-                blend of the maximum variance determined through motion compensation and the average of that maximum
-                variance and the extracted noise.
+            - Noise stabilization: The extracted noise can optionally be stabilized at the end of processing by blending
+                the maximum magnitude of the extracted and compensated noise with their mean.
 
         Args:
             func: Denoising function to use. Defaults to DFTTest(sigma=8).
@@ -503,8 +502,7 @@ class _QTGMCBuilder:
             full_denoise: Whether the denoised output will be directly used in all subsequent processing. If `False`,
                 the denoising is only for noise extraction. Defaults to False.
             deint: How to 'deinterlace' noise taken from an interlaced source. Defaults to NoiseDeintMode.GENERATE.
-            stabilize: Weight used when blending max noise variance with averaged noise. Higher values give more
-                weight to the averaged noise. `False` disables stabilization. Defaults to 0.4.
+            stabilize: Whether to apply temporal stabilization to the extracted noise. Defaults to True.
             func_comp_args: Additional arguments passed to
                 [MVTools.compensate][vsdenoise.mvtools.mvtools.MVTools.compensate] for denoising. Defaults to None.
             stabilize_comp_args: Additional arguments passed to
@@ -931,7 +929,7 @@ class _QTGMCBuilder:
 
     @property
     def _sharpen_sigma(self) -> float:
-        # Total variance of the (binomial) basic blur and (linear) final blur.
+        # Standard deviation of the (binomial) basic blur and (linear) final blur.
         return sqrt(self.basic_tr / 2 + self.final_tr * (self.final_tr + 1) / 3)
 
     @property
@@ -1231,15 +1229,16 @@ class QTGMCGraph(VSObject):
 
             noise = FieldBased.PROGRESSIVE.apply(noise)
 
-        if self.builder.denoise_stabilize is not False:
+        if self.builder.denoise_stabilize:
             _, noise_comp = self.mv.compensate(
                 noise, delta=1, interleave=False, **self.builder.denoise_stabilize_comp_args
             )
 
             noise = norm_expr(
                 [noise, *noise_comp],
-                "x neutral - abs y neutral - abs > x y ? dup x y + 2 / swap - {weight} * +",
-                weight=self.builder.denoise_stabilize,
+                "x y + 2 / dup x neutral - abs y neutral - abs > x y ? swap - {weight} * +",
+                # Weight for the max magnitude & mean blend which preserves noise variance.
+                weight=pi / (hypot(pi, 2) + 2),
                 func=self.func,
             )
 
@@ -1504,8 +1503,8 @@ class QTGMCGraph(VSObject):
                 self.bobbed,
                 self.mv,
                 (undershoot, overshoot),
-                func=self.func,
                 tr=self.builder.sharpen_limit_radius,
+                func=self.func,
                 **self.builder.sharpen_limit_comp_args,
             )
 
