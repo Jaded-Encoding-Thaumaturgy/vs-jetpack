@@ -363,10 +363,12 @@ def initialize_clip(
         FieldBased: field_based,
     }
 
-    clip = clip.std.SetFrameProps(
-        **{p.prop_key: p.from_param_or_video(v, clip, func_except=func) for p, v in user_props.items()}
-    )
+    props = {p: p.from_param_or_video(v, clip, func_except=func) for p, v in user_props.items()}
 
+    clip = clip.std.SetFrameProps(**{p.prop_key: v for p, v in props.items()})
+
+    kwargs.setdefault("range_in", props[Range])
+    kwargs.setdefault("range_out", props[Range])
     return depth(clip, bits, **kwargs)
 
 
