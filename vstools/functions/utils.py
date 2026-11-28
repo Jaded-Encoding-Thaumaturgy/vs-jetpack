@@ -221,18 +221,15 @@ def depth(
 
     in_fmt = get_video_format(clip)
     out_fmt = get_video_format(bitdepth or clip, sample_type=sample_type)
+
+    same_depth = (in_fmt.bits_per_sample, in_fmt.sample_type) == (out_fmt.bits_per_sample, out_fmt.sample_type)
+    if same_depth and range_in is None and range_out is None:
+        return clip
+
     range_in = Range.from_param_or_video(range_in, clip, func_except=depth)
     range_out = Range.from_param_or_video(range_out, clip, func_except=depth)
 
-    if (
-        in_fmt.bits_per_sample,
-        in_fmt.sample_type,
-        range_in,
-    ) == (
-        out_fmt.bits_per_sample,
-        out_fmt.sample_type,
-        range_out,
-    ):
+    if same_depth and range_in == range_out:
         return clip
 
     new_format = in_fmt.replace(bits_per_sample=out_fmt.bits_per_sample, sample_type=out_fmt.sample_type)
