@@ -750,7 +750,6 @@ __all__ = [
     "__all__",
     "__api_version__",
     "__version__",
-    "clear_cache",
     "clear_output",
     "clear_outputs",
     "construct_parameter",
@@ -859,23 +858,6 @@ def unregister_on_creation(callback: Callable[[int], None]) -> bool:
             return True
         except KeyError:
             return False
-
-
-@deprecated("This function is deprecated. Use `core.clear_cache()` instead.", category=DeprecationWarning)
-def clear_cache() -> None:
-    try:
-        cache_size = int(core.max_cache_size)
-        core.max_cache_size = 1
-        try:
-            for output in get_outputs().values():
-                if isinstance(output, VideoOutputTuple):
-                    output.clip.get_frame(0).close()
-                    break
-        except Exception:  # noqa: BLE001
-            core.std.BlankClip().get_frame(0).close()
-        core.max_cache_size = cache_size
-    except Exception:  # noqa: BLE001
-        ...
 
 
 def has_environment() -> bool:
