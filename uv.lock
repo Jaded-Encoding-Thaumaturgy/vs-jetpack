@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.13"
 resolution-markers = [
     "(python_full_version >= '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32')",
@@ -23,6 +23,11 @@ constraints = [
     { name = "nvidia-cublas", marker = "sys_platform == 'win32'", specifier = "!=13.8.1.7" },
     { name = "nvidia-cublas", marker = "sys_platform == 'win32'", specifier = "!=13.8.2.12" },
 ]
+
+[[manifest.dependency-metadata]]
+name = "vstransitions"
+version = "0.1.4"
+requires-dist = ["vapoursynth"]
 
 [[package]]
 name = "ast-serialize"
@@ -489,13 +494,13 @@ wheels = [
 
 [package.optional-dependencies]
 cpu = [
-    { name = "vapoursynth-dfttest2-cpu" },
+    { name = "vapoursynth-dfttest2-cpu", marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
 ]
 cufft = [
     { name = "vapoursynth-dfttest2-cuda" },
 ]
 gcc = [
-    { name = "vapoursynth-dfttest2-gcc" },
+    { name = "vapoursynth-dfttest2-gcc", marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64'" },
 ]
 hipfft = [
     { name = "vapoursynth-dfttest2-hip" },
@@ -2220,23 +2225,6 @@ wheels = [
 ]
 
 [[package]]
-name = "vapoursynth-akarin"
-version = "1.5.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "vapoursynth" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/8b/d6/575de29784daf717ccb026e33d35e82ccb6e4d328e9c977379899c839e91/vapoursynth_akarin-1.5.0.tar.gz", hash = "sha256:68720c5163163fa59624eb72054564fef3375438ca266efe455a7882f1a07849", size = 538666, upload-time = "2026-08-27T00:27:28.387Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ff/61/9bcb383dc8fdfefe4444801130f40015490227e880873b8d233cd1d4c1cb/vapoursynth_akarin-1.5.0-py3-none-macosx_14_0_arm64.whl", hash = "sha256:bc5ab5c6629734ebe18d51a3ced79cde8b8ed9a0360506febd060bbb79136d84", size = 22108555, upload-time = "2026-08-27T00:27:05.417Z" },
-    { url = "https://files.pythonhosted.org/packages/37/bf/96fc6582ee058f64643eebf814992b9f6c861b8e2e70ccb80231cf737a17/vapoursynth_akarin-1.5.0-py3-none-macosx_14_0_x86_64.whl", hash = "sha256:6d5fc86474ea77e69063ab9319efb5860911b88f3fe55375660e54216a4ee096", size = 24670337, upload-time = "2026-08-27T00:27:09.404Z" },
-    { url = "https://files.pythonhosted.org/packages/9b/50/b586b7b54229814ec6e45ad1f3de813937f353052b5bd10c0b7816862497/vapoursynth_akarin-1.5.0-py3-none-manylinux_2_35_aarch64.whl", hash = "sha256:d07965fa5d64eb246fad6a3fefd69712e5923eda5b91f6471128a48635231ec0", size = 21224625, upload-time = "2026-08-27T00:27:13.077Z" },
-    { url = "https://files.pythonhosted.org/packages/88/82/656755adce60bdf2758c0b03eb3ed7b9622c114bed1d5a1c6c7e13fb5e77/vapoursynth_akarin-1.5.0-py3-none-manylinux_2_35_x86_64.whl", hash = "sha256:3e4473096d4fce9426e40ef7451e87bc96724c24982c82c7f9a268c3f1f875b8", size = 22594778, upload-time = "2026-08-27T00:27:17.111Z" },
-    { url = "https://files.pythonhosted.org/packages/69/ea/640cbce28eddfdd68f129e48868d887e2eca144acc03f721b94666220507/vapoursynth_akarin-1.5.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:162db3febcc225ff21153a430cf3c4461ff44df12c8539a4ac41897bd14e9653", size = 37418998, upload-time = "2026-08-27T00:27:22.054Z" },
-    { url = "https://files.pythonhosted.org/packages/0d/31/95658c029a7ee3bbfc1359f9fa623a13f0a3ff0d940ba9e204421dd7a0ca/vapoursynth_akarin-1.5.0-py3-none-win_amd64.whl", hash = "sha256:66ba011c36f2c0a630c6a6662a40ca62d992b266ea36a0c1bf3c988e1738d7ae", size = 25910614, upload-time = "2026-08-27T00:27:26.133Z" },
-]
-
-[[package]]
 name = "vapoursynth-awarp"
 version = "3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2295,7 +2283,7 @@ name = "vapoursynth-bm3dmetal"
 version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "vapoursynth" },
+    { name = "vapoursynth", marker = "sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2f/c0/f8b1f2924cc039d6f4558de62e4a532b486a2b9beeefa649ca237c3c5403/vapoursynth_bm3dmetal-4.0.0.tar.gz", hash = "sha256:69486b6992d944d029c2268c3472f137d7183aabf0c71c387a27907a26f89de3", size = 33195, upload-time = "2026-06-07T06:15:35.517Z" }
 wheels = [
@@ -2337,6 +2325,22 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/76/b7/ccc3bf16dca818cc9961892bcd583bcc696581b9aa6f637d26a40fb10304/vapoursynth_bwdif-5.1-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:ec96ea402a8caa9ad1ec08d70db0da6e1156a20ebef97d8f6e8b81e8638372b5", size = 1000158, upload-time = "2026-05-04T15:18:26.144Z" },
     { url = "https://files.pythonhosted.org/packages/c4/90/6322880c333855ac485d159bfc3e5cff8c2107bf9a2974bdd6e7bb4738c0/vapoursynth_bwdif-5.1-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:a0945e4b9179a3bfca2407a8d9075690eeeb4e3b9003b3ca99d39cfb1a0b5090", size = 1071364, upload-time = "2026-05-04T15:18:27.574Z" },
     { url = "https://files.pythonhosted.org/packages/ef/7a/e69a8271c254b5ec5cfcfcba2674de75263ed1e3ddaa05476df547c9fda6/vapoursynth_bwdif-5.1-py3-none-win_amd64.whl", hash = "sha256:4eb1fc68dd7d53f175b5522d5e435a0a48ab4bf178a20b50b9104e9db888eadd", size = 132735, upload-time = "2026-05-04T15:18:29.102Z" },
+]
+
+[[package]]
+name = "vapoursynth-cranexpr"
+version = "0.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "vapoursynth" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2f/c9/0399281e33070f6ad15402935b7665b1a4211e1b1c61e48475bc88c4340c/vapoursynth_cranexpr-0.13.0.tar.gz", hash = "sha256:27cf8f8ed22f51d92d61f56ec8d251a39b14614a8d36d490508c881a3d8c8ae3", size = 109964, upload-time = "2026-11-19T21:23:58.883Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8b/1d/014b140e6b9fd2ebdb70caf640f501eddeac598019de25213afe786b52f9/vapoursynth_cranexpr-0.13.0-py3-none-macosx_13_0_arm64.whl", hash = "sha256:af477c4aadf3b162f06925827d2736db4e593cabdbcbce01d2db725b632f6fec", size = 1154757, upload-time = "2026-11-19T21:23:49.84Z" },
+    { url = "https://files.pythonhosted.org/packages/21/64/206d47b48ed922089d37b56f9519b14517d47a25539f65acaecd0a9652ed/vapoursynth_cranexpr-0.13.0-py3-none-macosx_13_0_x86_64.whl", hash = "sha256:4b67e59f201f7f932940676a9047d67f79599a81763f39057a3f78874d91b4e1", size = 3588619, upload-time = "2026-11-19T21:23:51.921Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/cd/7268c2eaa34c7320ac02e55242d156aa00532fb49eb5a12c8fbd505a772b/vapoursynth_cranexpr-0.13.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:e9576bc2728cc65593d2d24fd83042ec1c26bfb4383729db90b59307444fad93", size = 1194046, upload-time = "2026-11-19T21:23:53.454Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/18/697611836f0c23d900cb8806ae7eb66c08334bb04ff23d1f1743add90a3b/vapoursynth_cranexpr-0.13.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:de6d5d2eff6660aabb173205787ee7be284d1d4044b717a8f504dc71e6c7ac6a", size = 5629296, upload-time = "2026-11-19T21:23:55.278Z" },
+    { url = "https://files.pythonhosted.org/packages/5f/4c/c482862693fa3b810dec8d406ff0216ceb61be9f64eb13d4eaaca9f6f327/vapoursynth_cranexpr-0.13.0-py3-none-win_amd64.whl", hash = "sha256:aa769ef6bd31335bc433f3b7b8e48707c45cab36cbe2c48be5fb6ac59bca50ca", size = 5413701, upload-time = "2026-11-19T21:23:57.22Z" },
 ]
 
 [[package]]
@@ -2396,7 +2400,7 @@ name = "vapoursynth-dfttest2-cpu"
 version = "11.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "vapoursynth" },
+    { name = "vapoursynth", marker = "platform_machine == 'AMD64' or platform_machine == 'x86_64'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/13/a6/ab2b5ff13a13584fd46133711747646a525e80fea7703b1c4a4021870976/vapoursynth_dfttest2_cpu-11.1.0.tar.gz", hash = "sha256:656b91c77b097ac521de89d216be34cea94164c2c7cb51c6baad149981859c49", size = 364697, upload-time = "2026-09-18T23:42:39.415Z" }
 wheels = [
@@ -2426,7 +2430,7 @@ name = "vapoursynth-dfttest2-gcc"
 version = "11.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "vapoursynth" },
+    { name = "vapoursynth", marker = "platform_machine != 'AMD64' and platform_machine != 'x86_64'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7b/b2/7ab7b6b13ab11374a885fa2ce2ebeca54d121475c4a8cacb3238f6842aea/vapoursynth_dfttest2_gcc-11.1.0.tar.gz", hash = "sha256:a5850a8bb9eac767cb52f602fe96d95be74b7e6c12b350e2d7b22db5221ba098", size = 364036, upload-time = "2026-09-18T23:41:59.253Z" }
 wheels = [
@@ -2623,7 +2627,7 @@ name = "vapoursynth-mlrt-migx"
 version = "17.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "vapoursynth" },
+    { name = "vapoursynth", marker = "sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d6/f5/7809b28e51ead2624869ae82284338d8bade5d14a72e9590a815a16b3589/vapoursynth_mlrt_migx-17.0.tar.gz", hash = "sha256:ad4e1c973f02a07eeed6a8e7746c4066a964472132f502b05a6921a208e74579", size = 103247, upload-time = "2026-09-14T16:19:11.355Z" }
 wheels = [
@@ -2956,7 +2960,7 @@ dependencies = [
     { name = "rich" },
     { name = "typing-extensions", marker = "python_full_version < '3.15'" },
     { name = "vapoursynth" },
-    { name = "vapoursynth-akarin" },
+    { name = "vapoursynth-cranexpr" },
     { name = "vapoursynth-vszip" },
 ]
 
@@ -3408,7 +3412,6 @@ requires-dist = [
     { name = "tomlkit", marker = "extra == 'scale'", specifier = ">=0.15.1" },
     { name = "typing-extensions", marker = "python_full_version < '3.15'", specifier = ">=4.15.0" },
     { name = "vapoursynth", specifier = ">=78" },
-    { name = "vapoursynth-akarin", specifier = ">=1.4.1" },
     { name = "vapoursynth-awarp", marker = "extra == 'aa'", specifier = ">=3.0" },
     { name = "vapoursynth-awarp", marker = "extra == 'deband'", specifier = ">=3.0" },
     { name = "vapoursynth-awarp", marker = "extra == 'dehalo'", specifier = ">=3.0" },
@@ -3446,6 +3449,7 @@ requires-dist = [
     { name = "vapoursynth-bwdif", marker = "extra == 'deinterlace'", specifier = ">=5.0" },
     { name = "vapoursynth-bwdif", marker = "extra == 'denoise'", specifier = ">=5.0" },
     { name = "vapoursynth-bwdif", marker = "extra == 'full'", specifier = ">=5.0" },
+    { name = "vapoursynth-cranexpr", specifier = ">=0.13.0" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'aa'", specifier = ">=1.4" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'deband'", specifier = ">=1.4" },
     { name = "vapoursynth-d2vsource", marker = "extra == 'dehalo'", specifier = ">=1.4" },
@@ -3690,7 +3694,6 @@ version = "0.1.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "vapoursynth" },
-    { name = "vsjetpack" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f6/0b/22a656cc31208a135c5820b1f6677a46fb53415150634e14c2c59423f14a/vstransitions-0.1.4.tar.gz", hash = "sha256:76c942e2050e2ccb12210a971e1d6e75bf6f27e499f764a443f25c7c72033639", size = 6227, upload-time = "2025-10-28T20:14:27.182Z" }
 wheels = [

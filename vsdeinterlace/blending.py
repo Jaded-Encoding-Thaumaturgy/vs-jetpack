@@ -36,7 +36,11 @@ def deblending_helper(
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
     expr_clips = inters + prop_srcs
 
-    return core.akarin.Select(expr_clips, prop_srcs, f"x._Combed N {length} % y._Combed 0 {length} ? + {len(inters)} ?")
+    return core.cranexpr.Select(
+        expr_clips,
+        prop_srcs,
+        f"x._Combed N {length} % y._Combed 0 {length} ? + {len(inters)} ?",
+    )
 
 
 def deblend(
@@ -117,4 +121,4 @@ def deblend_fix_kf(deblended: vs.VideoNode, fieldmatched: vs.VideoNode, func: Fu
     shifted_clips = shift_clip_multi(deblended)
     prop_srcs = shift_clip_multi(fieldmatched, (0, 1))
 
-    return core.akarin.Select(shifted_clips, prop_srcs, "x._Combed x.VFMSceneChange and y.VFMSceneChange 0 2 ? 1 ?")
+    return core.cranexpr.Select(shifted_clips, prop_srcs, "x._Combed x.VFMSceneChange and y.VFMSceneChange 0 2 ? 1 ?")
