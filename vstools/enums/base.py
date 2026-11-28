@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
 from functools import wraps
 from string import capwords
@@ -18,8 +18,6 @@ from jetpytools import (
     classproperty,
     fallback,
 )
-
-from vsjetpack import deprecated
 
 from ..vs_proxy import vs
 
@@ -220,41 +218,6 @@ class PropEnum(CustomIntEnum, metaclass=EnumABCMeta):
             )
 
         return matched_strings.pop()
-
-    @classmethod
-    @deprecated("This method is deprecated and will be removed in a future version", category=DeprecationWarning)
-    def ensure_presence(cls, clip: vs.VideoNode, value: Any, func: FuncExcept | None = None) -> vs.VideoNode:
-        """
-        Ensure the presence of the property in the VideoNode.
-        """
-        enum_value = cls.from_param_or_video(value, clip, True, func)
-
-        return clip.std.SetFrameProp(enum_value.prop_key, enum_value.value)
-
-    @staticmethod
-    @deprecated("This method is deprecated and will be removed in a future version", category=DeprecationWarning)
-    def ensure_presences(
-        clip: vs.VideoNode, prop_enums: Iterable[type[PropEnum] | PropEnum], func: FuncExcept | None = None
-    ) -> vs.VideoNode:
-        """
-        Ensure the presence of multiple PropEnums at once.
-        """
-        norm_prop_enums = list[PropEnum]()
-        exceptions = list[Exception]()
-
-        for prop_enum in prop_enums:
-            if isinstance(prop_enum, PropEnum):
-                norm_prop_enums.append(prop_enum)
-            else:
-                try:
-                    prop_enum = prop_enum.from_video(clip, True, func)
-                except Exception as e:  # noqa: BLE001
-                    exceptions.append(e)
-
-        if exceptions:
-            raise ExceptionGroup("Some props were missing:", exceptions)
-
-        return clip.std.SetFrameProps(**{value.prop_key: value.value for value in (norm_prop_enums)})
 
 
 def _base_from_video[PropEnumT: PropEnum](
