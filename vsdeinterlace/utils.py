@@ -4,6 +4,8 @@ Utilities for field-based processing and telecine pattern generation.
 
 from __future__ import annotations
 
+from typing import Never, cast
+
 from jetpytools import FuncExcept
 
 from vstools import Field, FieldBased, FieldBasedLike, FieldLike, core, vs
@@ -35,7 +37,7 @@ def telecine_patterns(
 
 
 def get_field_difference(
-    clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: FuncExcept | None = None
+    clip: vs.VideoNode, tff: FieldBasedLike | bool | None = None, func: Never = cast(Never, None)
 ) -> vs.VideoNode:
     """
     Compute the difference between top and bottom fields in a clip.
@@ -43,41 +45,41 @@ def get_field_difference(
     Args:
         clip: Input clip.
         tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
-        func: Function returned for custom error handling. This should only be set by VS package developers.
+        func: Unused parameter.
 
     Returns:
         A clip with a per-frame property "FieldDifference" indicating the absolute difference between fields.
     """
-    func = func or get_field_difference
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, func).is_tff
-
-    stats = clip.std.SeparateFields(tff).std.PlaneStats()
+    stats = clip.std.SeparateFields(_norm_tff(tff)).std.PlaneStats()
 
     return core.akarin.PropExpr(
         [clip, stats[::2], stats[1::2]], lambda: {"FieldDifference": "y.PlaneStatsAverage z.PlaneStatsAverage - abs"}
     )
 
 
-def weave(clip: vs.VideoNode, tff: FieldLike | bool | None = None, func: FuncExcept | None = None) -> vs.VideoNode:
+def weave(clip: vs.VideoNode, tff: FieldLike | bool | None = None, func: Never = cast(Never, None)) -> vs.VideoNode:
     """
     Recombine fields into frames using DoubleWeave.
 
     Args:
         clip: Input clip.
         tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
-        func: Function returned for custom error handling. This should only be set by VS package developers.
+        func: Unused parameter.
 
     Returns:
         A clip with fields woven back into full frames.
     """
-    func = func or weave
-
-    return clip.std.DoubleWeave(Field.from_param_or_video(tff, clip, True, func).value)[::2]
+    # DoubleWeave can read `_Field` from every frame by itself.
+    field = Field.from_param_with_fallback(tff)
+    return clip.std.DoubleWeave(None if field is None else field.value)[::2]
 
 
 def reweave(
-    clipa: vs.VideoNode, clipb: vs.VideoNode, tff: FieldLike | bool | None = None, func: FuncExcept | None = None
+    clipa: vs.VideoNode,
+    clipb: vs.VideoNode,
+    tff: FieldLike | bool | None = None,
+    func: Never = cast(Never, None),
 ) -> vs.VideoNode:
     """
     Interleave two clips and weave them into full frames.
@@ -86,13 +88,11 @@ def reweave(
         clipa: First input clip.
         clipb: Second input clip.
         tff: Field order (top-field-first). If None, inferred from the clip. Defaults to None.
-        func: Function returned for custom error handling. This should only be set by VS package developers.
+        func: Unused parameter.
 
     Returns:
         A reweaved clip with fields combined into frames.
     """
-    func = func or reweave
-
     return weave(core.std.Interleave([clipa, clipb]).std.SelectEvery(4, (0, 1, 3, 2)), tff, func)
 
 
@@ -112,7 +112,7 @@ def reinterlace(clip: vs.VideoNode, tff: FieldBasedLike | bool, func: FuncExcept
 
     tff = FieldBased.from_param(tff, func).is_tff
 
-    return weave(clip.std.SeparateFields(tff).std.SelectEvery(4, (0, 3)), tff, func)
+    return weave(clip.std.SeparateFields(tff).std.SelectEvery(4, (0, 3)), tff)
 
 
 def dmetrics(
@@ -160,3 +160,8 @@ def dmetrics(
         metrics = core.std.CopyFrameProps(clip2, metrics, ("MMetrics", "VMetrics"))
 
     return metrics
+
+
+def _norm_tff(tff: FieldBasedLike | bool | None) -> bool | None:
+    field_based = FieldBased.from_param_with_fallback(tff)
+    return None if field_based is None else field_based.is_tff

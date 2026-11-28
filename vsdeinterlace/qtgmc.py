@@ -1225,7 +1225,7 @@ class QTGMCGraph(VSObject):
                         func=self.func,
                     )
 
-                    noise = reweave(noise, noise_gen, self.tff.field, func=self.func)
+                    noise = reweave(noise, noise_gen, self.tff.field)
 
             noise = FieldBased.PROGRESSIVE.apply(noise)
 
@@ -1415,7 +1415,7 @@ class QTGMCGraph(VSObject):
             fields_src = fields_src.std.SelectEvery(4, (0, 3))
         fields_flt = clip.std.SeparateFields(self.tff.is_tff).std.SelectEvery(4, (1, 2))
 
-        woven = reweave(fields_src, fields_flt, self.tff.field, func=self.func)
+        woven = reweave(fields_src, fields_flt, self.tff.field)
 
         if self.builder.lossless_anti_comb:
             median_diff = median_blur(woven, mode=ConvMode.VERTICAL, func=self.func).std.MakeDiff(woven)
@@ -1427,7 +1427,7 @@ class QTGMCGraph(VSObject):
                 func=self.func,
             )
             cleaned_diff = repair.Mode.MINMAX_SQUARE1(cleaned_diff, remove_grain.Mode.MINMAX_AROUND2(cleaned_diff))
-            woven = reweave(fields_src, fields_flt.std.MergeDiff(cleaned_diff), self.tff.field, func=self.func)
+            woven = reweave(fields_src, fields_flt.std.MergeDiff(cleaned_diff), self.tff.field)
 
         return FieldBased.PROGRESSIVE.apply(woven)
 

@@ -18,6 +18,7 @@ from vstools import (
 
 from .blending import deblend
 from .enums import IVTCycles, VFMMode
+from .utils import _norm_tff
 
 __all__ = ["jivtc", "sivtc", "vdecimate", "vfm"]
 
@@ -43,7 +44,7 @@ def sivtc(
         IVTC'd clip.
     """
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, sivtc).is_tff
+    tff = _norm_tff(tff)
 
     ivtc = clip.std.SeparateFields(tff).std.DoubleWeave(tff)
     ivtc = ivtc_cycle.decimate(ivtc, pattern)
@@ -78,7 +79,7 @@ def jivtc(
         Inverse Telecined clip.
     """
 
-    tff = FieldBased.from_param_or_video(tff, clip, True, jivtc).is_tff
+    tff = _norm_tff(tff)
 
     UnsupportedFramerateError.check(clip, (30000, 1001), jivtc)
 
