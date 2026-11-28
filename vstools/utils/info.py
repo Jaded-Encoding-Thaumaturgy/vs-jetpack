@@ -3,7 +3,7 @@ from __future__ import annotations
 from fractions import Fraction
 from typing import TYPE_CHECKING, Any, SupportsFloat, SupportsInt
 
-from jetpytools import CustomNotImplementedError, CustomTypeError, fallback, mod_x
+from jetpytools import CustomNotImplementedError, CustomRuntimeError, CustomTypeError, fallback, mod_x
 
 from vsjetpack import TypeIs
 
@@ -40,18 +40,29 @@ def _is_int_like(x: Any) -> TypeIs[SupportsInt]:
 
 def get_var_infos(frame: vs.VideoNode | vs.VideoFrame) -> tuple[vs.VideoFormat, int, int]:
     """
-    Get information from a variable resolution clip or frame.
+    Get the format, width and height of a clip or frame.
+
+    A frame always has a known format and resolution.
+    A clip with a variable format or resolution does not, because each frame can be different.
+    For such a clip, pass a frame instead, for example from inside a `FrameEval` or `ModifyFrame` callback.
+
+    Args:
+        frame: The clip or frame to get the information from.
+
+    Raises:
+        CustomRuntimeError: If `frame` is a clip with a variable format or resolution.
+
+    Returns:
+        A tuple of (format, width, height).
     """
     infos = (frame.format, frame.width, frame.height)
 
     if all(infos):
         return infos
 
-    if isinstance(frame, vs.VideoNode):
-        with frame.get_frame(0) as f:
-            return get_var_infos(f)
-
-    return get_var_infos(frame)
+    raise CustomRuntimeError(
+        "Variable format or resolution clip, frame 0 is unreliable. Pass a VideoFrame instead.", get_var_infos
+    )
 
 
 def get_video_format(
